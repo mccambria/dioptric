@@ -1,1 +1,0 @@
-{"timeStamp": "2019-03-08_13-53-39", "name": "WSe2", "xyzCenters": [-0.108, 0.0, 6.076], "xScanRange": 0.4, "yScanRange": 0.4, "scanStepSize": 0.0033333333333333335, "readout": 10000000, "imgResolution": [3, 3], "imgArray": [[0, 2, 2], [0, 1, 3], [2, 1, 0]]}
