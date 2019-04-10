@@ -148,8 +148,8 @@ class Galvo(LabradServer):
         self.stream_writer.write_many_sample(cont_buffer_voltages)
 
     @setting(2, x_center='v[]', y_center='v[]',
-             x_range='v[]', y_range='v[]', num_steps='w', period='w',
-             returns='*7w')
+             x_range='v[]', y_range='v[]', num_steps='i', period='i',
+             returns='iv[]v[]iv[]v[]v[]')
     def load_scan(self, c, x_center, y_center,
                   x_range, y_range, num_steps, period):
 
