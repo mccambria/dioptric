@@ -78,20 +78,20 @@ class PulseStreamer(LabradServer):
             seq = seq_module.get_seq(self.wiring, args)
         return seq
 
-    @setting(0, seq_file='s', args='*?')
-    def stream_immediate(self, c, seq_file, args):
+    @setting(0, seq_file='s', num_repeat='i', args='*?')
+    def stream_immediate(self, c, seq_file, num_repeat, args):
         self.pulser.setTrigger(start=TriggerStart.IMMEDIATE,
                                rearm=TriggerRearm.Manual)
         seq = self.get_seq(seq_file, args)
         if seq is not None:
-            self.pulser.stream(seq, 1, self.default_output_state)
+            self.pulser.stream(seq, num_repeat, self.default_output_state)
 
-    @setting(1, seq_file='s', args='*?')
-    def stream_load(self, c, seq_file, args):
+    @setting(1, seq_file='s', num_repeat='i', args='*?')
+    def stream_load(self, c, seq_file, num_repeat, args):
         self.pulser.setTrigger(start=TriggerStart.SOFTWARE)
         seq = self.get_seq(seq_file, args)
         if seq is not None:
-            self.pulser.stream(seq, 1, self.default_output_state)
+            self.pulser.stream(seq, num_repeat, self.default_output_state)
 
     @setting(2)
     def stream_start(self, c):
