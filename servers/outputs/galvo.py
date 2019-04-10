@@ -50,7 +50,7 @@ class Galvo(LabradServer):
         return result['get']
 
     def on_get_config(self, config):
-        self.dev_name = config[0]
+        self.daq_name = config[0]
         self.daq_ao_galvo_x = config[1]
         self.daq_ao_galvo_y = config[2]
         self.daq_di_pulser_clock = config[3]
@@ -59,10 +59,10 @@ class Galvo(LabradServer):
     def write(self, c, xVoltage, yVoltage):
         with nidaqmx.Task() as task:
             # Set up the output channels
-            chanName = self.dev_name + '/AO' + self.daq_ao_galvo_x
+            chanName = self.daq_name + '/AO' + self.daq_ao_galvo_x
             task.ao_channels.add_ao_voltage_chan(chanName,
                                                  min_val=-10.0, max_val=10.0)
-            chanName = self.dev_name + '/AO' + self.daq_ao_galvo_y
+            chanName = self.daq_name + '/AO' + self.daq_ao_galvo_y
             task.ao_channels.add_ao_voltage_chan(chanName,
                                                  min_val=-10.0, max_val=10.0)
             task.write([xVoltage, yVoltage])
@@ -71,11 +71,11 @@ class Galvo(LabradServer):
     def read(self, c):
         with nidaqmx.Task() as task:
             # Set up the internal channels
-            chan_name = self.dev_name + '/_ao' + \
+            chan_name = self.daq_name + '/_ao' + \
                 self.daq_ao_galvo_x + '_vs_aognd'
             task.ai_channels.add_ai_voltage_chan(chan_name,
                                                  min_val=-10.0, max_val=10.0)
-            chan_name = self.dev_name + '/_ao' + \
+            chan_name = self.daq_name + '/_ao' + \
                 self.daq_ao_galvo_y + '_vs_aognd'
             task.ai_channels.add_ai_voltage_chan(chan_name,
                                                  min_val=-10.0, max_val=10.0)
@@ -96,10 +96,10 @@ class Galvo(LabradServer):
         self.buffer_pos = None
 
         # Set up the output channels
-        chan_name = self.dev_name + '/AO' + self.daq_ao_galvo_x
+        chan_name = self.daq_name + '/AO' + self.daq_ao_galvo_x
         task.ao_channels.add_ao_voltage_chan(chan_name,
                                              min_val=-10.0, max_val=10.0)
-        chan_name = self.dev_name + '/AO' + self.daq_ao_galvo_y
+        chan_name = self.daq_name + '/AO' + self.daq_ao_galvo_y
         task.ao_channels.add_ao_voltage_chan(chan_name,
                                              min_val=-10.0, max_val=10.0)
 

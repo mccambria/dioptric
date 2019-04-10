@@ -8,7 +8,7 @@ Created on Tue Apr  9 08:52:34 2019
 
 ### BEGIN NODE INFO
 [info]
-name = Apd
+name = Apd Counter
 version = 1.0
 description =
 
@@ -33,8 +33,8 @@ from nidaqmx.constants import Level
 from nidaqmx.constants import AcquisitionType
 
 
-class Apd(LabradServer):
-    name = 'Apd'
+class ApdCounter(LabradServer):
+    name = 'Apd Counter'
 
     def initServer(self):
         config = ensureDeferred(self.get_config())
@@ -192,7 +192,7 @@ class Apd(LabradServer):
             pass
 
 
-__server__ = Apd()
+__server__ = ApdCounter()
 
 if __name__ == '__main__':
     from labrad import util

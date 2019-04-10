@@ -117,7 +117,7 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
 
     # %% Set up the APD
 
-    cxn.apd.load_stream_reader(apd_index, period, total_num_samples)
+    cxn.apd_counter.load_stream_reader(apd_index, period, total_num_samples)
 
     # %% Set up the image display
 

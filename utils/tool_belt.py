@@ -96,7 +96,7 @@ def get_daq(daqName):
         except Exception as e:
             del DAQ
             print(e)
-            print('Couldn't get DAQ name ' + daqName)
+            print('Could not get DAQ name ' + daqName)
             return None
 
 
