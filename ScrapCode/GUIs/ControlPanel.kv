@@ -1,0 +1,201 @@
+#:kivy 1.0
+#:import utils kivy.utils
+
+<Panel>:
+    spacing: 7
+    padding: 10
+    canvas:
+        Color:
+            rgb: utils.get_color_from_hex("#2c2f33")
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            
+<PanelHeading>:
+    orientation: "vertical"
+
+<PanelSection>:
+    orientation: "vertical"
+    padding: 2
+    canvas:
+        Color:
+            rgb: utils.get_color_from_hex("#536872")
+        Line:
+            width: 2
+            rectangle: self.x, self.y, self.width, self.height
+            
+<ShortButton>:
+    size_hint: 1.0, None
+    height: 1.5 * self.texture_size[1]
+    
+<ParameterGrid>:
+    size_hint_y: None
+    height: self.minimum_height
+    row_default_height: 30
+    row_force_default: True
+    cols: 2
+
+<DAQPanel>:
+    
+    PanelHeading:
+    
+        Label: 
+            text: "DAQ"
+            bold: True
+    
+    PanelSection:
+        
+        Label:
+            text: "Parameters"
+        
+        ParameterGrid:
+            
+            Label:
+                text: "Galvo X AO (int)"
+            TextInput:
+                text: "0"
+            
+            Label:
+                text: "Galvo Y AO (int)"
+            TextInput:
+                text: "1"
+            
+            Label:
+                text: "Clock PFI (int)"
+            TextInput:
+                text: "0"
+                
+    BoxLayout:
+    
+    BoxLayout:
+
+<PulseStreamerPanel>:
+    
+    PanelHeading:
+        
+        Label: 
+            text: "PulseStreamer"
+            bold: True
+    
+    PanelSection:
+        
+        Label:
+            text: "Functions"
+            
+        ShortButton:
+            text: "Send all to zero"
+            on_press: root.pulser_all_zero()
+        
+        ShortButton: 
+            text: "Generate square wave"
+            on_press: root.pulser_square_wave()
+            
+    PanelSection:
+        id: parameterSection
+        
+        Label:
+            text: "Parameters"
+        
+        ParameterGrid:
+            id: parameterGrid
+            
+            Label:
+                text: "Period (sec, float)"
+            TextInput:
+                id: periodInput
+                text: "0.25"
+      
+    PanelSection:
+        
+        Label:
+            size_hint: 1.0, None
+            height: 2.0 * self.texture_size[1]
+            text: "Digital Outputs" 
+            
+        GridLayout:
+            id: digitalTogglesBox
+            cols: 2
+            
+            ToggleButton:
+                text: "0"
+                state: "down"
+            ToggleButton:
+                text: "4"
+            ToggleButton:
+                text: "1"
+            ToggleButton:
+                text: "5"
+            ToggleButton:
+                text: "2"
+            ToggleButton:
+                text: "6"
+            ToggleButton:
+                text: "3"
+            ToggleButton:
+                text: "7"
+        
+<MainPanel>:
+    do_default_tab: False
+
+    TabbedPanelItem:
+        text: "Sweep Galvo"
+            
+        PanelSection:
+        
+            Button:
+                text: "Sweep galvo"
+                on_press: root.sweep_galvo()
+                
+        PanelSection:
+        
+            Label:
+                text: "Parameters"
+                
+            ParameterGrid:
+                
+                Label:
+                    text: "Samples (list(int))"
+                TextInput:
+                    id: samplesInput
+                    text: "100, 100"
+                
+                Label:
+                    text: "Resolution (float)"
+                TextInput:
+                    id: resolutionInput
+                    text: "0.01"
+                
+                Label:
+                    text: "Offset (list(float))"
+                TextInput:
+                    id: offsetInput
+                    text: "-0.5, -0.5"
+                
+                Label:
+                    text: "Initial (list(float))"
+                TextInput:
+                    id: initialInput
+                    text: "0.0, 0.0"
+        
+        BoxLayout:
+        
+        BoxLayout:
+
+<ControlPanel>:
+    orientation: "vertical"
+    spacing: 5
+    canvas:
+        Color:
+            rgb: utils.get_color_from_hex("#99aab5")
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    
+    MainPanel:
+        id: MainPanelInst
+    
+    DAQPanel:
+        id: DAQPanelInst
+    
+    PulseStreamerPanel:
+        id: PulserPanelInst
