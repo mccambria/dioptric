@@ -12,7 +12,6 @@ Created on Sun Nov 25 14:00:28 2018
 # %% Imports
 
 
-import numpy
 import majorroutines.scan_sample as scan_sample
 
 
@@ -21,7 +20,7 @@ import majorroutines.scan_sample as scan_sample
 def do_scan_sample(name, x_center, y_center, z_center,
                    x_range, y_range, num_steps):
 
-    readout = numpy.int64(10 * 10**6)
+    readout = 10 * 10**6
     apd_index = 0
 
     scan_sample.main(name, x_center, y_center, z_center,
