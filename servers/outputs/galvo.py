@@ -88,12 +88,12 @@ class Galvo(LabradServer):
         if self.task is not None:
             self.task.close()
         task = nidaqmx.Task(task_name)
-        self.task = task
+        self.stream_task = task
 
         # Clear other existing stream state attributes
-        self.writer = None
+        self.stream_writer = None
         self.stream_voltages = None
-        self.buffer_pos = None
+        self.stream_buffer_pos = None
 
         # Set up the output channels
         chan_name = self.daq_name + '/AO' + self.daq_ao_galvo_x

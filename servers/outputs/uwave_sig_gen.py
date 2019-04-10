@@ -29,7 +29,6 @@ import visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 import nidaqmx
 import nidaqmx.stream_writers as stream_writers
 from nidaqmx.constants import AcquisitionType
-import numpy
 
 
 class UwaveSigGen(LabradServer):
@@ -68,20 +67,20 @@ class UwaveSigGen(LabradServer):
     def set_freq(self, c, freq):
         # Determine how many decimal places we need
         precision = len(str(freq).split('.')[1])
-        sigGen.write('FREQ {0:.{1}f}GHZ'.format(freq, precision))
+        self.sig_gen.write('FREQ {0:.{1}f}GHZ'.format(freq, precision))
 
     @setting(3, amp='v[]')
     def set_amp(self, c, amp):
         # Determine how many decimal places we need
         precision = len(str(amp).split('.')[1])
-        sigGen.write('AMPR {0:.{1}f}DBM'.format(amp, precision))
+        self.sig_gen.write('AMPR {0:.{1}f}DBM'.format(amp, precision))
 
     def load_stream_writer(self, task_name, voltages, period):
         # Close the existing task and create a new one
         if self.task is not None:
             self.task.close()
         task = nidaqmx.Task(task_name)
-        self.task = task
+        self.stream_task = task
 
         # Set up the output channels
         chan_name = self.daq_name + '/AO' + self.daq_ao_sig_gen_mod
@@ -108,7 +107,7 @@ class UwaveSigGen(LabradServer):
         writer.write_many_sample(voltages)
 
     @setting(4, fm_range='v[]', voltages='*v[]', period='i')
-    def load_fm(self, c, fm_range, num_steps, period):
+    def load_fm(self, c, fm_range, voltages, period):
         # Set up the DAQ AO that will control the modulation
         self.load_stream_writer('UwaveSigGen-load_fm', voltages, period)
         # Simple FM is type 1, subtype 0
@@ -125,7 +124,7 @@ class UwaveSigGen(LabradServer):
     @setting(5)
     def mod_off(self, c):
         self.sig_gen.write('MODL 0')
-        task = self.task
+        task = self.stream_task
         if task is not None:
             task.close()
 
