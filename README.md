@@ -9,3 +9,18 @@ Here are some things that I think people working on this in the future should be
 2. For streaming pulses, use Swabian's super useful Sequence class. It allows you to construct individual sequences for each channel and then combine them into one unified sequence that the PulseStreamer can actually read. 
 3. When using the Sequence class, be sure to specify durations in numpy's int64 type. This is what Sequence assumes you will be using. If you use something different (for example Python's built-in int type), then you can run into overflows pretty quickly since the unit is nanoseconds. These overflows don't throw errors; the sequence will just be missing any pulse that has an absolute timestamp past the overflow. 
 4. The PulseStreamer has a memory of 10^6 pulses. It's good to check that you haven't exceeded this once you get the unified sequence with GetSequence().
+
+pip install pylabrad
+pip install twised
+
+get scalabrad: https://github.com/labrad/scalabrad
+
+get scalabrad-web: https://github.com/labrad/scalabrad-web
+
+create batch file running:
+~/scalabrad-[ver]/bin/labrad.bat
+~/scalabrad-web-server-[ver]/bin/labrad-web.bat
+start chrome localhost:7667
+
+create node with: python -m labrad.node
+add servers to node via registry
