@@ -27,7 +27,8 @@ def do_image_sample(name, coords, x_range, y_range, num_steps):
 
     with labrad.connect() as cxn:
         image_sample.main(cxn, name, x_center, y_center, z_center,
-                           x_range, y_range, num_steps, readout, apd_index)
+                          x_range, y_range, num_steps, readout, apd_index)
+
 
 def do_optimize(name, coords):
 
@@ -53,12 +54,8 @@ if __name__ == '__main__':
     # For more, view the function definitions in their respective file.
 
     name = 'Ayrton9'
-    
-    coords = [-0.136, -0.017, 51.754]
 
-    # 1 V => ~100 um
-    # With gold nanoparticles 0.4 is good for broad field
-    # 0.04 is good for a single particle
+    coords = [-0.136, -0.017, 51.754]
 
 #    scan_range = 0.4
     scan_range = 0.05
@@ -67,7 +64,7 @@ if __name__ == '__main__':
     num_scan_steps = 60
 
     # %% Functions to run
-    
+
     try:
         do_image_sample(name, coords, x_scan_range, y_scan_range, num_scan_steps)
 #        do_optimize(name, coords)

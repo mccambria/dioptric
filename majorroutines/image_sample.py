@@ -44,7 +44,7 @@ def populate_img_array(valsToAdd, imgArray, writePos):
 
     yDim = imgArray.shape[0]
     xDim = imgArray.shape[1]
-    
+
     if len(writePos) == 0:
         writePos[:] = [xDim, yDim - 1]
 
@@ -109,14 +109,14 @@ def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
     x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
-    
+
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]
     x_high = x_voltages[x_num_steps-1]
     y_num_steps = len(y_voltages)
     y_low = y_voltages[0]
     y_high = y_voltages[y_num_steps-1]
-    
+
     pixel_size = x_voltages[1] - x_voltages[0]
 
     total_num_samples = x_num_steps * y_num_steps
@@ -160,7 +160,7 @@ def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
     timeout_inst = time.time() + timeout_duration
 
     num_read_so_far = 0
-    
+
     tool_belt.init_safe_stop()
 
     while num_read_so_far < total_num_samples:
@@ -168,7 +168,7 @@ def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
         if time.time() > timeout_inst:
             log.failure('Timed out before all samples were collected.')
             break
-        
+
         if tool_belt.safe_stop():
             break
 
@@ -197,16 +197,15 @@ def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
     filePath = tool_belt.get_file_path('scan_sample', timeStamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
-    
 
     # %% Clean up
-    
+
     # Stop the pulser
     cxn.pulse_streamer.constant_default()
 
     # Close tasks
     cxn.galvo.close_task()
     cxn.apd_counter.close_task(apd_index)
-    
+
     # Return to center
     cxn.galvo.write(x_center, y_center)
