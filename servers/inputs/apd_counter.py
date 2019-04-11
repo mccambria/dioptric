@@ -136,7 +136,7 @@ class ApdCounter(LabradServer):
         # Something funny is happening if we get more
         # than 1000 samples in one read
         state_dict['buffer_size'] = min(total_num_to_read, 1000)
-        state_dict['last_value'] = 0  # Last cumulative value we read
+        state_dict['last_value'] = None  # Last cumulative value we read
 
         # Start the task. It will start counting immediately so we'll have to
         # discard the first sample.
@@ -157,7 +157,7 @@ class ApdCounter(LabradServer):
         # signal after the task starts. This means there's one
         # sample from the counter stream that we don't want to record.
         # We do need it for a calculation below, however.
-        if num_read_so_far == 0:
+        if state_dict['last_value'] == None:
             state_dict['last_value'] = reader.read_one_sample_uint32()
 
         # Initialize the read sample array to its maximum possible size.
@@ -204,6 +204,7 @@ class ApdCounter(LabradServer):
             task = self.tasks[apd_index]
             task.close()
             self.tasks.pop(apd_index)
+            self.stream_reader_state.pop(apd_index)
         except Exception:
             pass
 

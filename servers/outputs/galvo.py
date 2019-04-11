@@ -36,6 +36,9 @@ class Galvo(LabradServer):
 
     def initServer(self):
         self.task = None
+        self.stream_writer = None
+        self.stream_voltages = None
+        self.stream_buffer_pos = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -84,7 +87,7 @@ class Galvo(LabradServer):
         if self.task is not None:
             self.task.close(c)
         task = nidaqmx.Task(task_name)
-        self.stream_task = task
+        self.task = task
 
         # Clear other existing stream state attributes
         self.stream_writer = None
@@ -108,11 +111,6 @@ class Galvo(LabradServer):
         task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_clock,
                                         sample_mode=AcquisitionType.CONTINUOUS)
 
-        # Start the task before writing so that the channel will sit on
-        # the last value when the task stops. The first sample won't actually
-        # be written until the first clock signal.
-        task.start()
-
         # We'll write incrementally if there are more than 4000 samples
         # per channel since the DAQ buffer supports 8191 samples max
         if voltages.shape[1] > 4000:
@@ -125,6 +123,12 @@ class Galvo(LabradServer):
             self.stream_buffer_pos = 4000
         else:
             buffer_voltages = voltages
+
+        # Start the task before writing so that the channel will sit on
+        # the last value when the task stops. The first sample won't actually
+        # be written until the first clock signal.
+        task.start()
+        
         writer.write_many_sample(buffer_voltages)
 
     def fill_buffer(self):
@@ -148,7 +152,11 @@ class Galvo(LabradServer):
 
         # Force the scan to have square pixels by only applying num_steps
         # to the shorter axis
-        if x_range <= y_range:
+        if x_range == y_range:
+            pixel_size = x_range / num_steps
+            x_num_steps = num_steps
+            y_num_steps = num_steps
+        elif x_range < y_range:
             pixel_size = x_range / num_steps
             x_num_steps = num_steps
             y_num_steps = int(y_range // pixel_size)
@@ -197,6 +205,7 @@ class Galvo(LabradServer):
             self.load_stream_writer(c, 'Galvo-set_up_sweep', voltages, period)
         except: 
             self.close_task(c)
+            raise
 
         x_low = x_voltages_1d[0]
         x_high = x_voltages_1d[len(x_voltages_1d) - 1]
@@ -210,6 +219,10 @@ class Galvo(LabradServer):
         task = self.task
         if task is not None:
             task.close()
+            self.task = None
+            self.stream_writer = None
+            self.stream_voltages = None
+            self.stream_buffer_pos = None
 
 
 __server__ = Galvo()

@@ -54,7 +54,7 @@ if __name__ == '__main__':
     scan_range = 1.5
     x_scan_range = scan_range
     y_scan_range = scan_range
-    num_scan_steps = 60
+    num_scan_steps = 100
 
     # %% Functions to run
 

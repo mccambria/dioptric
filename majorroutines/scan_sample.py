@@ -11,6 +11,8 @@ Created on Tue Apr  9 15:18:53 2019
 import numpy
 import utils.tool_belt as tool_belt
 import time
+from twisted.logger import Logger
+log = Logger()
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -30,8 +32,8 @@ def populate_img_array(valsToAdd, imgArray, writePos):
         imgArray: numpy.ndarray
             The xDim x yDim array of fluorescence counts
         writePos: tuple(int)
-            The last x, y write position on the image array. [-1, 0] to
-            start a new image from the top left corner.
+            The last x, y write position on the image array. [] will default
+            to the bottom right corner.
         startingPos: SweepStartingPosition
             Sweep starting position of the winding pattern
 
@@ -42,6 +44,9 @@ def populate_img_array(valsToAdd, imgArray, writePos):
 
     yDim = imgArray.shape[0]
     xDim = imgArray.shape[1]
+    
+    if len(writePos) == 0:
+        writePos[:] = [xDim, yDim - 1]
 
     xPos = writePos[0]
     yPos = writePos[1]
@@ -125,7 +130,7 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
     # are not interpreted as 0 by matplotlib's colobar
     img_array = numpy.empty((x_num_steps, y_num_steps))
     img_array[:] = numpy.nan
-    img_write_pos = [-1, 0]
+    img_write_pos = []
 
     # For the image extent, we need to bump out the min/max x/y by half the
     # pixel size in each direction so that the center of each pixel properly
@@ -139,7 +144,9 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
 
     # %% Run the PulseStreamer
 
-    cxn.pulse_streamer.stream_immediate('simple_readout.py', total_num_samples,
+    # We require bookends on samples so stream one extra cycle
+    seq_cycles = total_num_samples + 1
+    cxn.pulse_streamer.stream_immediate('simple_readout.py', seq_cycles,
                                         [period, readout, apd_index])
 
     # %% Collect the data
@@ -152,8 +159,8 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
     while num_read_so_far < total_num_samples:
 
         if time.time() > timeout_inst:
-            raise Warning('scan_sample timed out before all '
-                          'samples were collected.')
+            log.failure('scan_sample timed out before all '
+                        'samples were collected.')
             break
 
         # Read the samples and update the image
@@ -168,7 +175,7 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
 
     # Close tasks
     cxn.galvo.close_task()
-    cxn.apd.close_task()
+    cxn.apd_counter.close_task(apd_index)
 
     # Return to center
     cxn.galvo.write(x_center, y_center)
