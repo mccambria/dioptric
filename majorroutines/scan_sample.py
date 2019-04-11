@@ -139,7 +139,8 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
 
     # %% Run the PulseStreamer
 
-    cxn.pulse_streamer.stream_immediate('simple_readout.py', [period, readout])
+    cxn.pulse_streamer.stream_immediate('simple_readout.py', 
+                                        total_num_samples, [period, readout])
 
     # %% Collect the data
 

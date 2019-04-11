@@ -31,8 +31,7 @@ from pulsestreamer import TriggerRearm
 from pulsestreamer import OutputState
 import importlib
 import os
-from twisted.logger import Logger
-log = Logger()
+from servers.timing.sequencelibrary import simple_readout
 
 class PulseStreamer(LabradServer):
     name = 'Pulse Streamer'
@@ -84,7 +83,7 @@ class PulseStreamer(LabradServer):
     @setting(0, seq_file='s', num_repeat='i', args='*?')
     def stream_immediate(self, c, seq_file, num_repeat, args):
         self.pulser.setTrigger(start=TriggerStart.IMMEDIATE,
-                               rearm=TriggerRearm.Manual)
+                               rearm=TriggerRearm.MANUAL)
         seq = self.get_seq(seq_file, args)
         if seq is not None:
             self.pulser.stream(seq, num_repeat, self.default_output_state)

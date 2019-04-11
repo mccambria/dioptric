@@ -79,10 +79,10 @@ class Galvo(LabradServer):
 
         return voltages
 
-    def load_stream_writer(self, task_name, voltages, period):
+    def load_stream_writer(self, c, task_name, voltages, period):
         # Close the existing task and create a new one
         if self.task is not None:
-            self.task.close()
+            self.task.close(c)
         task = nidaqmx.Task(task_name)
         self.stream_task = task
 
@@ -151,12 +151,12 @@ class Galvo(LabradServer):
         if x_range <= y_range:
             pixel_size = x_range / num_steps
             x_num_steps = num_steps
-            y_num_steps = y_range // pixel_size
+            y_num_steps = int(y_range // pixel_size)
             y_range = pixel_size * y_num_steps
         else:
             pixel_size = y_range / num_steps
             y_num_steps = num_steps
-            x_num_steps = x_range // pixel_size
+            x_num_steps = int(x_range // pixel_size)
             x_range = pixel_size * x_num_steps
 
         # Calculate x and y offsets
@@ -194,9 +194,9 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
         try:
-            self.load_stream_writer('Galvo-set_up_sweep', voltages, period)
+            self.load_stream_writer(c, 'Galvo-set_up_sweep', voltages, period)
         except: 
-            self.close_task()
+            self.close_task(c)
 
         x_low = x_voltages_1d[0]
         x_high = x_voltages_1d[len(x_voltages_1d) - 1]

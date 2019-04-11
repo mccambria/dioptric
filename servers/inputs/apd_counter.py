@@ -93,7 +93,7 @@ class ApdCounter(LabradServer):
             self.try_load_stream_reader(c, apd_index,
                                         period, total_num_to_read)
         except:
-            self.close_task()
+            self.close_task(c, apd_index)
         
     def try_load_stream_reader(self, c, apd_index, period, total_num_to_read):
 
