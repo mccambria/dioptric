@@ -12,11 +12,7 @@ Created on Thu Apr 11 15:39:23 2019
 
 # User modules
 import Utils.tool_belt as tool_belt
-import Inputs.apd as apd
-from PulseStreamer.pulse_streamer_jrpc import Start
-from PulseStreamer.Sequence import Sequence
-import Outputs.xyz as xyz
-import MajorRoutines.find_nv_center as find_nv_center
+import majorroutines.optimize as optimize
 
 # Library modules
 import numpy
@@ -26,69 +22,8 @@ import time
 # %% Main
 
 
-def main(pulserIP, daqName, rfAddress,
-         daqAOGalvoX, daqAOGalvoY, piezoSerial, daqCIApd,
-         daqDIPulserClock, daqDIPulserGate,
-         pulserDODaqClock, pulserDODaqGate,
-         pulserDOAom, pulserDORf,
-         name, xCenter, yCenter, zCenter,
-         freqCenter, freqRange, freqResolution, rfPower,
-         readout):
-    """
-    Entry point for the routine
-
-    Params:
-
-        pulserIP: string
-            The IP of the PulseStreamer that we'll be using
-        daqName: string
-            The name of the DAQ that we'll be using
-        rfAddress: string
-            VISA address of the signal generator
-
-        daqAOGalvoX: int
-            DAQ AO carrying galvo X signal
-        daqAOGalvoY: int
-            DAQ AO carrying galvo Y signal
-        piezoSerial: string
-            Objective piezo serial number
-
-        daqCIApd: int
-            DAQ CI for APD
-
-        daqDIPulserClock: int
-            DAQ DI for clock signal from pulser
-        daqDIPulserGate: int
-            DAQ DI for gate signal from pulser
-
-        pulserDODaqClock: int
-            pulser DO carrying DAQ clock signal
-        pulserDODaqGate: int
-            pulser DO carrying DAQ gate signal
-        pulserDOAom: int
-            pulser DO carrying AOM gate signal
-        pulserDORf: int
-            pulser DO carrying RF gate signal
-
-        name: string
-            The file names consist of <date>_<time>_<name>.<ext>
-        xCenter: float
-            Fixed voltage for the galvo x
-        yCenter: float
-            Fixed voltage for the galvo y
-        zCenter: float
-            Fixed voltage for the piezo
-        freqCenter: float
-            Center frequency to scan about (GHz)
-        freqRange: float
-            Frequency range to scan about
-        freqResolution: int
-            Number of samples to take over the range
-        rfPower: float
-            Power setting of the signal generator (dBm)
-        readout: numpy.int64
-            Readout time of a sample (time APD channel is ungated) in ns
-    """
+def main(cxn, name, x_center, y_center, z_center, apd_index,
+         freq_center, freq_range, num_steps, uwave_power):
 
     # %% Initial calculations and setup
 
@@ -109,18 +44,7 @@ def main(pulserIP, daqName, rfAddress,
 
     # %% Run find_nv_center to optimize the position of the resonance scan
 
-    # Find the optimized position in x, y ,z
-    optiCenters = find_nv_center.main(pulserIP, daqName,
-						daqAOGalvoX, daqAOGalvoY, piezoSerial, daqCIApd,
-                        daqDIPulserClock, daqDIPulserGate,
-						pulserDODaqClock, pulserDODaqGate,
-                        pulserDOAom, name, xCenter, yCenter, zCenter, 0.1,
-						0.02/60.0, None, 10.0/60.0, numpy.int64(10 * 10**6))
-
-    # Set optimized positions based on the fins_nv_center to use for scan
-    xCenterOptimized = optiCenters[0]
-    yCenterOptimized = optiCenters[1]
-    zCenterOptimized = 0
+    optimize.main(cxn, name, x_center, y_center, z_center, apd_index)
 
     time.sleep(5.0)
 
@@ -243,4 +167,3 @@ def main(pulserIP, daqName, rfAddress,
     filePath = tool_belt.get_file_path("find_resonance", timeStamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
-
