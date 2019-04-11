@@ -31,11 +31,11 @@ from pulsestreamer import TriggerRearm
 from pulsestreamer import OutputState
 import importlib
 import os
-from servers.timing.sequencelibrary import simple_readout
+import sys
+
 
 class PulseStreamer(LabradServer):
     name = 'Pulse Streamer'
-    seq_lib_dir = 'servers.timing.sequencelibrary.{}'
 
     def initServer(self):
         config = ensureDeferred(self.get_config())
@@ -45,13 +45,16 @@ class PulseStreamer(LabradServer):
         p = self.client.registry.packet()
         p.cd('Config')
         p.get('pulse_streamer_ip')
+        p.get('sequence_library_path')
         p.cd(['Wiring', 'Pulser'])
         p.dir()
         result = await p.send()
         return result
 
     def on_get_config(self, config):
-        self.pulser = Pulser(config['get'])
+        get_result = config['get']
+        self.pulser = Pulser(get_result[0])
+        sys.path.insert(get_result[1])
         reg_keys = config['dir'][1]  # dir returns subdirs followed by keys
         wiring = ensureDeferred(self.get_wiring(reg_keys))
         wiring.addCallback(self.on_get_wiring, reg_keys)
@@ -75,8 +78,7 @@ class PulseStreamer(LabradServer):
         seq = None
         file_name, file_ext = os.path.splitext(seq_file)
         if file_ext == '.py':  # py: import as a module
-            module_path = self.seq_lib_dir.format(file_name)
-            seq_module = importlib.import_module(module_path)
+            seq_module = importlib.import_module(file_name)
             seq = seq_module.get_seq(self.wiring, args)
         return seq
 
