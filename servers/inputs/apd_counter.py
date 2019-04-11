@@ -39,20 +39,20 @@ class ApdCounter(LabradServer):
     def initServer(self):
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
-        self.tasks = []
-        self.stream_reader_state = []
+        self.tasks = {}
+        self.stream_reader_state = {}
 
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(['Config', 'Wiring', 'Daq'])
-        p.get('di_pulser_clock')
+        p.get('di_clock')
         p.dir()
         result = await p.send()
         return result
 
     def on_get_config(self, config):
         # The counters share a clock, but everything else is distinct
-        self.daq_di_pulser_clock = config['get']
+        self.daq_di_clock = config['get']
         # Determine how many APDs we're supposed to set up
         apd_sub_dirs = []
         apd_indices = []
@@ -94,15 +94,18 @@ class ApdCounter(LabradServer):
                                         period, total_num_to_read)
         except:
             self.close_task(c, apd_index)
+            raise
         
     def try_load_stream_reader(self, c, apd_index, period, total_num_to_read):
 
-        task = nidaqmx.Task('Apd-load_stream_reader_' + str(apd_index))
+        # Close the task if it exists
+        self.close_task(c, apd_index)
+        task = nidaqmx.Task('Apd-load_stream_reader_{}'.format(apd_index))
         self.tasks[apd_index] = task
 
         chan_name = self.daq_ctr_apd[apd_index]
         chan = task.ci_channels.add_ci_count_edges_chan(chan_name)
-        chan.ci_count_edges_term = 'PFI' + self.daq_ci_apd[apd_index]
+        chan.ci_count_edges_term = self.daq_ci_apd[apd_index]
 
         # Set up the input stream
         input_stream = nidaqmx.task.InStream(task)
@@ -114,14 +117,14 @@ class ApdCounter(LabradServer):
         # Pause when low - i.e. read only when high
         task.triggers.pause_trigger.trig_type = TriggerType.DIGITAL_LEVEL
         task.triggers.pause_trigger.dig_lvl_when = Level.LOW
-        gate_chan_name = self.daq_di_pulser_apdgate[apd_index]
+        gate_chan_name = self.daq_di_apd_gate[apd_index]
         task.triggers.pause_trigger.dig_lvl_src = gate_chan_name
 
         # Configure the sample to advance on the rising edge of the PFI input.
         # The frequency specified is just the max expected rate in this case.
         # We'll stop once we've run all the samples.
         freq = float(1/(period*(10**-9)))  # freq in seconds as a float
-        task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_pulser_clock,
+        task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_clock,
                                         sample_mode=AcquisitionType.CONTINUOUS)
 
         # Initialize the state dictionary for this stream
@@ -187,7 +190,8 @@ class ApdCounter(LabradServer):
 
             new_samples_diff[index] = new_samples_cum[index] - last_value
 
-        state_dict['last_value'] = new_samples_cum[num_new_samples-1]
+        if num_new_samples > 0:
+            state_dict['last_value'] = new_samples_cum[num_new_samples-1]
 
         # Update the current count
         state_dict['num_read_so_far'] = num_read_so_far + num_new_samples
@@ -199,6 +203,7 @@ class ApdCounter(LabradServer):
         try:
             task = self.tasks[apd_index]
             task.close()
+            self.tasks.pop(apd_index)
         except Exception:
             pass
 

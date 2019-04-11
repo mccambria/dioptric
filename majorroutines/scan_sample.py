@@ -30,7 +30,7 @@ def populate_img_array(valsToAdd, imgArray, writePos):
         imgArray: numpy.ndarray
             The xDim x yDim array of fluorescence counts
         writePos: tuple(int)
-            The last x, y write position on the image array. (-1, 0) to
+            The last x, y write position on the image array. [-1, 0] to
             start a new image from the top left corner.
         startingPos: SweepStartingPosition
             Sweep starting position of the winding pattern
@@ -125,7 +125,7 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
     # are not interpreted as 0 by matplotlib's colobar
     img_array = numpy.empty((x_num_steps, y_num_steps))
     img_array[:] = numpy.nan
-    img_write_pos = []
+    img_write_pos = [-1, 0]
 
     # For the image extent, we need to bump out the min/max x/y by half the
     # pixel size in each direction so that the center of each pixel properly
@@ -139,8 +139,8 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
 
     # %% Run the PulseStreamer
 
-    cxn.pulse_streamer.stream_immediate('simple_readout.py', 
-                                        total_num_samples, [period, readout])
+    cxn.pulse_streamer.stream_immediate('simple_readout.py', total_num_samples,
+                                        [period, readout, apd_index])
 
     # %% Collect the data
 
@@ -157,10 +157,12 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
             break
 
         # Read the samples and update the image
-        new_samples = cxn.read_stream(apd_index)
-        populate_img_array(new_samples, img_array, img_write_pos)
-        tool_belt.update_image_figure(fig, img_array)
-        num_read_so_far += len(new_samples)
+        new_samples = cxn.apd_counter.read_stream(apd_index)
+        num_new_samples = len(new_samples)
+        if num_new_samples > 0:
+            populate_img_array(new_samples, img_array, img_write_pos)
+            tool_belt.update_image_figure(fig, img_array)
+            num_read_so_far += num_new_samples
 
     # %% Clean up
 

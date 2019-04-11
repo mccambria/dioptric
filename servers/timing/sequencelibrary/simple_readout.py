@@ -12,15 +12,15 @@ LOW = 0
 HIGH = 1
 
 
-def get_seq(wiring, args):
-
-    # Get what we need out of the wiring dictionary
-    pulser_do_daq_clock = wiring['pulser_do_daq_clock']
-    pulser_do_daq_gate = wiring['pulser_do_daq_gate']
-    pulser_do_aom = wiring['pulser_do_aom']
+def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    period, readout = args
+    period, readout, apd_index = args
+
+    # Get what we need out of the wiring dictionary
+    pulser_do_daq_clock = pulser_wiring['do_daq_clock']
+    pulser_do_daq_gate = pulser_wiring['do_apd_gate_{}'.format(apd_index)]
+    pulser_do_aom = pulser_wiring['do_aom']
 
     # Convert the 32 bit ints into 64 bit ints
     period = numpy.int64(period)

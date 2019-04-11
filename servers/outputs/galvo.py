@@ -44,14 +44,14 @@ class Galvo(LabradServer):
         p.cd(['Config', 'Wiring', 'Daq'])
         p.get('ao_galvo_x')
         p.get('ao_galvo_y')
-        p.get('di_pulser_clock')
+        p.get('di_clock')
         result = await p.send()
         return result['get']
 
     def on_get_config(self, config):
         self.daq_ao_galvo_x = config[0]
         self.daq_ao_galvo_y = config[1]
-        self.daq_di_pulser_clock = config[2]
+        self.daq_di_clock = config[2]
 
     @setting(0, xVoltage='v[]', yVoltage='v[]')
     def write(self, c, xVoltage, yVoltage):
@@ -105,7 +105,7 @@ class Galvo(LabradServer):
         # The frequency specified is just the max expected rate in this case.
         # We'll stop once we've run all the samples.
         freq = float(1/(period*(10**-9)))  # freq in seconds as a float
-        task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_pulser_clock,
+        task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_clock,
                                         sample_mode=AcquisitionType.CONTINUOUS)
 
         # Start the task before writing so that the channel will sit on

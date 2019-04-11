@@ -32,6 +32,8 @@ from pulsestreamer import OutputState
 import importlib
 import os
 import sys
+from twisted.logger import Logger
+log = Logger()
 
 
 class PulseStreamer(LabradServer):
@@ -54,7 +56,7 @@ class PulseStreamer(LabradServer):
     def on_get_config(self, config):
         get_result = config['get']
         self.pulser = Pulser(get_result[0])
-        sys.path.insert(get_result[1])
+        sys.path.append(get_result[1])
         reg_keys = config['dir'][1]  # dir returns subdirs followed by keys
         wiring = ensureDeferred(self.get_wiring(reg_keys))
         wiring.addCallback(self.on_get_wiring, reg_keys)
@@ -67,9 +69,9 @@ class PulseStreamer(LabradServer):
         return result
 
     def on_get_wiring(self, wiring, reg_keys):
-        self.wiring = {}
+        self.pulser_wiring = {}
         for reg_key in reg_keys:
-            self.wiring[reg_key] = wiring[reg_key]
+            self.pulser_wiring[reg_key] = wiring[reg_key]
         # The default output state is to have the AOM on
         pulser_do_aom = wiring['do_aom']
         self.default_output_state = OutputState([pulser_do_aom], 0, 0)
@@ -79,7 +81,7 @@ class PulseStreamer(LabradServer):
         file_name, file_ext = os.path.splitext(seq_file)
         if file_ext == '.py':  # py: import as a module
             seq_module = importlib.import_module(file_name)
-            seq = seq_module.get_seq(self.wiring, args)
+            seq = seq_module.get_seq(self.pulser_wiring, args)
         return seq
 
     @setting(0, seq_file='s', num_repeat='i', args='*?')
