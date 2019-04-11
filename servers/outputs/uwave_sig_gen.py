@@ -42,18 +42,17 @@ class UwaveSigGen(LabradServer):
         p = self.client.registry.packet()
         p.cd('Config')
         p.get('uwave_sig_gen_visa_address')
-        p.get('daq0_name')
-        p.cd('Wiring')
-        p.get('daq_di_pulser_clock')
-        p.get('daq_ao_sig_gen_mod')
+        p.cd(['Wiring', 'Daq'])
+        p.get('di_pulser_clock')
+        p.get('ao_uwave_sig_gen_mod')
         result = await p.send()
         return result['get']
 
     def on_get_config(self, config):
-        self.sig_gen = visa.ResourceManager().open_resource(config[0])
-        self.daq_name = config[1]
-        self.daq_di_pulser_clock = config[2]
-        self.daq_ao_sig_gen_mod = config[1]
+        resource_manager = visa.ResourceManager()
+        self.sig_gen = resource_manager.open_resource(config[0])
+        self.daq_di_pulser_clock = config[1]
+        self.daq_ao_sig_gen_mod = config[2]
 
     @setting(0)
     def uwave_on(self, c):
@@ -83,8 +82,7 @@ class UwaveSigGen(LabradServer):
         self.stream_task = task
 
         # Set up the output channels
-        chan_name = self.daq_name + '/AO' + self.daq_ao_sig_gen_mod
-        task.ao_channels.add_ao_voltage_chan(chan_name,
+        task.ao_channels.add_ao_voltage_chan(self.daq_ao_sig_gen_mod,
                                              min_val=-1.0, max_val=1.0)
 
         # Set up the output stream
@@ -94,9 +92,8 @@ class UwaveSigGen(LabradServer):
         # Configure the sample to advance on the rising edge of the PFI input.
         # The frequency specified is just the max expected rate in this case.
         # We'll stop once we've run all the samples.
-        chan_name = 'PFI' + self.daq_di_pulser_clock
         freq = float(1/(period*(10**-9)))  # freq in seconds as a float
-        task.timing.cfg_samp_clk_timing(freq, source=chan_name,
+        task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_pulser_clock,
                                         sample_mode=AcquisitionType.CONTINUOUS)
 
         # Start the task before writing so that the channel will sit on

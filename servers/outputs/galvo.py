@@ -35,48 +35,44 @@ class Galvo(LabradServer):
     name = 'Galvo'
 
     def initServer(self):
+        self.task = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
-        p.get('daq0_name')
-        p.cd('Wiring')
-        p.get('daq_ao_galvo_x')
-        p.get('daq_ao_galvo_y')
-        p.get('daq_di_pulser_clock')
+        p.cd(['Config', 'Wiring', 'Daq'])
+        p.get('ao_galvo_x')
+        p.get('ao_galvo_y')
+        p.get('di_pulser_clock')
         result = await p.send()
         return result['get']
 
     def on_get_config(self, config):
-        self.daq_name = config[0]
-        self.daq_ao_galvo_x = config[1]
-        self.daq_ao_galvo_y = config[2]
-        self.daq_di_pulser_clock = config[3]
+        self.daq_ao_galvo_x = config[0]
+        self.daq_ao_galvo_y = config[1]
+        self.daq_di_pulser_clock = config[2]
 
     @setting(0, xVoltage='v[]', yVoltage='v[]')
     def write(self, c, xVoltage, yVoltage):
         with nidaqmx.Task() as task:
             # Set up the output channels
-            chanName = self.daq_name + '/AO' + self.daq_ao_galvo_x
-            task.ao_channels.add_ao_voltage_chan(chanName,
+            task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_x,
                                                  min_val=-10.0, max_val=10.0)
-            chanName = self.daq_name + '/AO' + self.daq_ao_galvo_y
-            task.ao_channels.add_ao_voltage_chan(chanName,
+            task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_y,
                                                  min_val=-10.0, max_val=10.0)
             task.write([xVoltage, yVoltage])
 
     @setting(1, returns='*2v[]')
     def read(self, c):
         with nidaqmx.Task() as task:
-            # Set up the internal channels
-            chan_name = self.daq_name + '/_ao' + \
-                self.daq_ao_galvo_x + '_vs_aognd'
+            # Set up the internal channels - to do the actual parsing...
+            if self.daq_ao_galvo_x == 'dev1\AO0':
+                chan_name = 'dev1/_ao0_vs_aognd'
             task.ai_channels.add_ai_voltage_chan(chan_name,
                                                  min_val=-10.0, max_val=10.0)
-            chan_name = self.daq_name + '/_ao' + \
-                self.daq_ao_galvo_y + '_vs_aognd'
+            if self.daq_ao_galvo_y == 'dev1\AO1':
+                chan_name = 'dev1/_ao1_vs_aognd'
             task.ai_channels.add_ai_voltage_chan(chan_name,
                                                  min_val=-10.0, max_val=10.0)
             voltages = task.read()
@@ -96,11 +92,9 @@ class Galvo(LabradServer):
         self.stream_buffer_pos = None
 
         # Set up the output channels
-        chan_name = self.daq_name + '/AO' + self.daq_ao_galvo_x
-        task.ao_channels.add_ao_voltage_chan(chan_name,
+        task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_x,
                                              min_val=-10.0, max_val=10.0)
-        chan_name = self.daq_name + '/AO' + self.daq_ao_galvo_y
-        task.ao_channels.add_ao_voltage_chan(chan_name,
+        task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_y,
                                              min_val=-10.0, max_val=10.0)
 
         # Set up the output stream
@@ -110,9 +104,8 @@ class Galvo(LabradServer):
         # Configure the sample to advance on the rising edge of the PFI input.
         # The frequency specified is just the max expected rate in this case.
         # We'll stop once we've run all the samples.
-        chan_name = 'PFI' + self.daq_di_pulser_clock
         freq = float(1/(period*(10**-9)))  # freq in seconds as a float
-        task.timing.cfg_samp_clk_timing(freq, source=chan_name,
+        task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_pulser_clock,
                                         sample_mode=AcquisitionType.CONTINUOUS)
 
         # Start the task before writing so that the channel will sit on
@@ -200,7 +193,10 @@ class Galvo(LabradServer):
         y_voltages = numpy.repeat(y_voltages_1d, x_num_steps)
 
         voltages = numpy.vstack((x_voltages, y_voltages))
-        self.load_stream_writer('Galvo-set_up_sweep', voltages, period)
+        try:
+            self.load_stream_writer('Galvo-set_up_sweep', voltages, period)
+        except: 
+            self.close_task()
 
         x_low = x_voltages_1d[0]
         x_high = x_voltages_1d[len(x_voltages_1d) - 1]

@@ -31,7 +31,8 @@ from pulsestreamer import TriggerRearm
 from pulsestreamer import OutputState
 import importlib
 import os
-
+from twisted.logger import Logger
+log = Logger()
 
 class PulseStreamer(LabradServer):
     name = 'Pulse Streamer'
@@ -44,29 +45,31 @@ class PulseStreamer(LabradServer):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd('Config')
-        p.get('pulse_streamer_serial')
-        p.cd('Wiring')
+        p.get('pulse_streamer_ip')
+        p.cd(['Wiring', 'Pulser'])
         p.dir()
         result = await p.send()
-        return result['get']
+        return result
 
     def on_get_config(self, config):
-        self.pulser = Pulser(config[0])
-        reg_keys = config[1]
+        self.pulser = Pulser(config['get'])
+        reg_keys = config['dir'][1]  # dir returns subdirs followed by keys
         wiring = ensureDeferred(self.get_wiring(reg_keys))
-        wiring.addCallback(self.on_get_wiring)
+        wiring.addCallback(self.on_get_wiring, reg_keys)
 
     async def get_wiring(self, reg_keys):
         p = self.client.registry.packet()
         for reg_key in reg_keys:
             p.get(reg_key, key=reg_key)  # Return as a dictionary
         result = await p.send()
-        return result['get']
+        return result
 
-    def on_get_wiring(self, wiring):
-        self.wiring = wiring
+    def on_get_wiring(self, wiring, reg_keys):
+        self.wiring = {}
+        for reg_key in reg_keys:
+            self.wiring[reg_key] = wiring[reg_key]
         # The default output state is to have the AOM on
-        pulser_do_aom = wiring['pulser_do_aom']
+        pulser_do_aom = wiring['do_aom']
         self.default_output_state = OutputState([pulser_do_aom], 0, 0)
 
     def get_seq(self, seq_file, args):

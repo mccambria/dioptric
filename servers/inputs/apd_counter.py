@@ -8,7 +8,7 @@ Created on Tue Apr  9 08:52:34 2019
 
 ### BEGIN NODE INFO
 [info]
-name = Apd Counter
+name = APD Counter
 version = 1.0
 description =
 
@@ -34,7 +34,7 @@ from nidaqmx.constants import AcquisitionType
 
 
 class ApdCounter(LabradServer):
-    name = 'Apd Counter'
+    name = 'APD Counter'
 
     def initServer(self):
         config = ensureDeferred(self.get_config())
@@ -44,51 +44,63 @@ class ApdCounter(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
-        p.get('daq0_name')
-        p.cd('Wiring')
-        p.get('daq_di_pulser_clock')
-        # The DAQ supports 4 counts max
-        for index in range(4):
-            p.get('daq_ctr_apd{}'.format(index))
-            p.get('daq_ci_apd{}'.format(index))
-            p.get('daq_di_pulser_apdgate{}'.format(index))
+        p.cd(['Config', 'Wiring', 'Daq'])
+        p.get('di_pulser_clock')
+        p.dir()
         result = await p.send()
-        return result['get']
+        return result
 
     def on_get_config(self, config):
         # The counters share a clock, but everything else is distinct
-        self.dev_name = config[0]
-        self.daq_di_pulser_clock = config[1]
-        self.daq_ctr_apd = []
-        self.daq_ci_apd = []
-        self.daq_di_pulser_apdgate = []
-        # Determine how many counters to set up
-        # We assume that all elements past the first empty are also empty
-        try:
-            first_empty = config.index('')
-            counter_config = config[1: first_empty]
-        except ValueError:
-            # If there are no empties then just take the rest of config
-            counter_config = config[1: len(config)]
-        num_counters = len(counter_config) / 3
-        if not num_counters.is_integer():
-            raise ValueError('Number of counters in registry '
-                             'is not an integer')
+        self.daq_di_pulser_clock = config['get']
+        # Determine how many APDs we're supposed to set up
+        apd_sub_dirs = []
+        apd_indices = []
+        sub_dirs = config['dir'][0]
+        for sub_dir in sub_dirs:
+            if sub_dir.startswith('Apd_'):
+                apd_sub_dirs.append(sub_dir)
+                apd_indices.append(int(sub_dir.split('_')[1]))
+        if len(apd_sub_dirs) > 0:
+            wiring = ensureDeferred(self.get_wiring(apd_sub_dirs))
+            wiring.addCallback(self.on_get_wiring, apd_indices)
+            
+    async def get_wiring(self, apd_sub_dirs):
+        p = self.client.registry.packet()
+        for sub_dir in apd_sub_dirs:
+            p.cd(['', 'Config', 'Wiring', 'Daq', sub_dir])
+            p.get('ctr_apd')
+            p.get('ci_apd')
+            p.get('di_apd_gate')
+        result = await p.send()
+        return result['get']
+    
+    def on_get_wiring(self, wiring, apd_indices):
+        self.daq_ctr_apd = {}
+        self.daq_ci_apd = {}
+        self.daq_di_apd_gate = {}
         # Loop through the possible counters
-        for index in range(int(num_counters)):
-            config_index = 3 * index
-            self.daq_ctr_apd[index] = config[config_index+1]
-            self.daq_ci_apd[index] = config[config_index+2]
-            self.daq_di_pulser_apdgate[index] = config[config_index+3]
+        for loop_index in range(len(apd_indices)):
+            apd_index = apd_indices[loop_index]
+            wiring_index = 3 * loop_index
+            self.daq_ctr_apd[apd_index] = wiring[wiring_index]
+            self.daq_ci_apd[apd_index] = wiring[wiring_index+1]
+            self.daq_di_apd_gate[apd_index] = wiring[wiring_index+2]
 
     @setting(0, apd_index='i', period='i', total_num_to_read='i')
     def load_stream_reader(self, c, apd_index, period, total_num_to_read):
+        try:
+            self.try_load_stream_reader(c, apd_index,
+                                        period, total_num_to_read)
+        except:
+            self.close_task()
+        
+    def try_load_stream_reader(self, c, apd_index, period, total_num_to_read):
 
         task = nidaqmx.Task('Apd-load_stream_reader_' + str(apd_index))
         self.tasks[apd_index] = task
 
-        chan_name = self.dev_name + '/ctr' + self.daq_ctr_apd[apd_index]
+        chan_name = self.daq_ctr_apd[apd_index]
         chan = task.ci_channels.add_ci_count_edges_chan(chan_name)
         chan.ci_count_edges_term = 'PFI' + self.daq_ci_apd[apd_index]
 
@@ -102,15 +114,14 @@ class ApdCounter(LabradServer):
         # Pause when low - i.e. read only when high
         task.triggers.pause_trigger.trig_type = TriggerType.DIGITAL_LEVEL
         task.triggers.pause_trigger.dig_lvl_when = Level.LOW
-        gate_chan_name = 'PFI' + self.daq_di_pulser_apdgate[apd_index]
+        gate_chan_name = self.daq_di_pulser_apdgate[apd_index]
         task.triggers.pause_trigger.dig_lvl_src = gate_chan_name
 
         # Configure the sample to advance on the rising edge of the PFI input.
         # The frequency specified is just the max expected rate in this case.
         # We'll stop once we've run all the samples.
-        clock_chan_name = 'PFI' + self.daq_di_pulser_clock
         freq = float(1/(period*(10**-9)))  # freq in seconds as a float
-        task.timing.cfg_samp_clk_timing(freq, source=clock_chan_name,
+        task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_pulser_clock,
                                         sample_mode=AcquisitionType.CONTINUOUS)
 
         # Initialize the state dictionary for this stream

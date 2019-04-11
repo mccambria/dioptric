@@ -11,7 +11,7 @@ Here are some things that I think people working on this in the future should be
 4. The PulseStreamer has a memory of 10^6 pulses. It's good to check that you haven't exceeded this once you get the unified sequence with GetSequence().
 
 pip install pylabrad
-pip install twised
+pip install twisted
 
 get scalabrad: https://github.com/labrad/scalabrad
 
