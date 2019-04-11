@@ -86,33 +86,38 @@ def on_click_image(event):
     """
 
     try:
-        print('\n    xCenter = %.3f\n    yCenter = %.3f' %
-              (event.xdata, event.ydata))
+        print('{:.3f}, {:.3f}'.format(event.xdata, event.ydata))
     except TypeError:
         # Ignore TypeError if you click in the figure but out of the image
         pass
 
 
-def main(name, x_center, y_center, z_center, x_range, y_range,
+def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
          num_steps, readout, apd_index, continuous=False):
 
     # %% Some initial calculations
-
-    cxn = tool_belt.get_cxn()
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
 
     # The galvo's small angle step response is 400 us
     # Let's give ourselves a buffer of 500 us (500000 ns)
-    period = readout + numpy.int64(500000)
+    period = readout + 500000
 
     # %% Set up the galvo
 
-    return_vals = cxn.galvo.load_scan(x_center, y_center, x_range, y_range,
-                                      num_steps, period)
-
-    x_num_steps, x_low, x_high, y_num_steps, y_low, y_high, pixel_size = return_vals
+    x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
+                                                       x_range, y_range,
+                                                       num_steps, period)
+    
+    x_num_steps = len(x_voltages)
+    x_low = x_voltages[0]
+    x_high = x_voltages[x_num_steps-1]
+    y_num_steps = len(y_voltages)
+    y_low = y_voltages[0]
+    y_high = y_voltages[y_num_steps-1]
+    
+    pixel_size = x_voltages[1] - x_voltages[0]
 
     total_num_samples = x_num_steps * y_num_steps
 
@@ -155,12 +160,16 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
     timeout_inst = time.time() + timeout_duration
 
     num_read_so_far = 0
+    
+    tool_belt.init_safe_stop()
 
     while num_read_so_far < total_num_samples:
 
         if time.time() > timeout_inst:
-            log.failure('scan_sample timed out before all '
-                        'samples were collected.')
+            log.failure('Timed out before all samples were collected.')
+            break
+        
+        if tool_belt.safe_stop():
             break
 
         # Read the samples and update the image
@@ -170,16 +179,6 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
             populate_img_array(new_samples, img_array, img_write_pos)
             tool_belt.update_image_figure(fig, img_array)
             num_read_so_far += num_new_samples
-
-    # %% Clean up
-
-    # Close tasks
-    cxn.galvo.close_task()
-    cxn.apd_counter.close_task(apd_index)
-
-    # Return to center
-    cxn.galvo.write(x_center, y_center)
-    cxn.objective_piezo.write_voltage(z_center)
 
     # %% Save the data
 
@@ -198,3 +197,16 @@ def main(name, x_center, y_center, z_center, x_range, y_range,
     filePath = tool_belt.get_file_path('scan_sample', timeStamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
+    
+
+    # %% Clean up
+    
+    # Stop the pulser
+    cxn.pulse_streamer.constant_default()
+
+    # Close tasks
+    cxn.galvo.close_task()
+    cxn.apd_counter.close_task(apd_index)
+    
+    # Return to center
+    cxn.galvo.write(x_center, y_center)

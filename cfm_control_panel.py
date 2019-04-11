@@ -11,20 +11,31 @@ Created on Sun Nov 25 14:00:28 2018
 
 # %% Imports
 
-
-import majorroutines.scan_sample as scan_sample
+import labrad
+import majorroutines.image_sample as image_sample
+import majorroutines.optimize as optimize
+import utils.tool_belt as tool_belt
 
 
 # %% Major Routines
 
-def do_scan_sample(name, x_center, y_center, z_center,
-                   x_range, y_range, num_steps):
+def do_image_sample(name, coords, x_range, y_range, num_steps):
 
+    x_center, y_center, z_center = coords
     readout = 10 * 10**6
     apd_index = 0
 
-    scan_sample.main(name, x_center, y_center, z_center,
-                     x_range, y_range, num_steps, readout, apd_index)
+    with labrad.connect() as cxn:
+        image_sample.main(cxn, name, x_center, y_center, z_center,
+                           x_range, y_range, num_steps, readout, apd_index)
+
+def do_optimize(name, coords):
+
+    x_center, y_center, z_center = coords
+    apd_index = 0
+
+    with labrad.connect() as cxn:
+        optimize.main(cxn, name, x_center, y_center, z_center, apd_index)
 
 
 # %% Script Code
@@ -42,21 +53,26 @@ if __name__ == '__main__':
     # For more, view the function definitions in their respective file.
 
     name = 'Ayrton9'
-
-    x_center = 0.0
-    y_center = 0.0
-    z_center = 50.0
+    
+    coords = [-0.136, -0.017, 51.754]
 
     # 1 V => ~100 um
     # With gold nanoparticles 0.4 is good for broad field
     # 0.04 is good for a single particle
 
-    scan_range = 1.5
+#    scan_range = 0.4
+    scan_range = 0.05
     x_scan_range = scan_range
     y_scan_range = scan_range
-    num_scan_steps = 100
+    num_scan_steps = 60
 
     # %% Functions to run
-
-    do_scan_sample(name, x_center, y_center, z_center,
-                   x_scan_range, y_scan_range, num_scan_steps)
+    
+    try:
+        do_image_sample(name, coords, x_scan_range, y_scan_range, num_scan_steps)
+#        do_optimize(name, coords)
+    finally:
+        pass
+        # Kill safe stop
+#        if tool_belt.check_safe_stop_alive():
+#            tool_belt.poll_safe_stop()

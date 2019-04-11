@@ -430,7 +430,7 @@ def get_file_path(subDirName, timeStamp, name):
     # Find the data directory relative to tool_belt's directory
     currentDir = os.path.dirname(__file__)
     folderDir = os.path.abspath(os.path.join(currentDir, '..',
-                                             'Data', subDirName))
+                                             'data', subDirName))
 
     # Make the required directory if it doesn't exist already
     if not os.path.isdir(folderDir):

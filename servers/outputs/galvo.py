@@ -85,7 +85,7 @@ class Galvo(LabradServer):
     def load_stream_writer(self, c, task_name, voltages, period):
         # Close the existing task and create a new one
         if self.task is not None:
-            self.task.close(c)
+            self.close_task(c)
         task = nidaqmx.Task(task_name)
         self.task = task
 
@@ -114,23 +114,24 @@ class Galvo(LabradServer):
         # We'll write incrementally if there are more than 4000 samples
         # per channel since the DAQ buffer supports 8191 samples max
         if voltages.shape[1] > 4000:
-            # Refill the buffer every 3000 samples
-            task.register_every_n_samples_transferred_from_buffer_event(3000, self.fill_buffer)
-            buffer_voltages = voltages[:, 0:4000]
+            buffered = True
+            buffer_voltages = numpy.ascontiguousarray(voltages[:, 0:4000])
             # Set up the stream state attributes
             self.stream_writer = writer
             self.stream_voltages = voltages
             self.stream_buffer_pos = 4000
         else:
+            buffered = False
             buffer_voltages = voltages
-
-        # Start the task before writing so that the channel will sit on
-        # the last value when the task stops. The first sample won't actually
-        # be written until the first clock signal.
+            
+        writer.write_many_sample(buffer_voltages)
+        
+        # Refill the buffer every 3000 samples
+        if buffered:
+            task.register_every_n_samples_transferred_from_buffer_event(3000, self.fill_buffer)
+            
         task.start()
         
-        writer.write_many_sample(buffer_voltages)
-
     def fill_buffer(self):
         # Check if there are more than 3000 samples left to write
         voltages = self.stream_voltages
@@ -146,42 +147,36 @@ class Galvo(LabradServer):
 
     @setting(2, x_center='v[]', y_center='v[]',
              x_range='v[]', y_range='v[]', num_steps='i', period='i',
-             returns='iv[]v[]iv[]v[]v[]')
-    def load_scan(self, c, x_center, y_center,
-                  x_range, y_range, num_steps, period):
+             returns='*v[]*v[]')
+    def load_sweep_scan(self, c, x_center, y_center,
+                        x_range, y_range, num_steps, period):
+        
+        ######### Assumes x_range == y_range #########
+        
+        if x_range != y_range:
+            raise ValueError('x_range must equal y_range for now')
+            
+        x_num_steps = num_steps
+        y_num_steps = num_steps
 
         # Force the scan to have square pixels by only applying num_steps
         # to the shorter axis
-        if x_range == y_range:
-            pixel_size = x_range / num_steps
-            x_num_steps = num_steps
-            y_num_steps = num_steps
-        elif x_range < y_range:
-            pixel_size = x_range / num_steps
-            x_num_steps = num_steps
-            y_num_steps = int(y_range // pixel_size)
-            y_range = pixel_size * y_num_steps
-        else:
-            pixel_size = y_range / num_steps
-            y_num_steps = num_steps
-            x_num_steps = int(x_range // pixel_size)
-            x_range = pixel_size * x_num_steps
-
-        # Calculate x and y offsets
-        x_offset = x_center - (x_range / 2)
-        y_offset = y_center - (y_range / 2)
-
-        # Set up vectors for the number of samples in each direction
-        # [0, 1, 2, ... length - 1]
-        x_steps = numpy.arange(x_num_steps)
-        y_steps = numpy.arange(y_num_steps)
+        half_x_range = x_range / 2
+        half_y_range = y_range / 2
+        
+        x_low = x_center - half_x_range
+        x_high = x_center + half_x_range
+        y_low = y_center - half_y_range
+        y_high = y_center + half_y_range
 
         # Apply scale and offset to get the voltages we'll apply to the galvo
         # Note that the polar/azimuthal angles, not the actual x/y positions
         # are linear in these voltages. For a small range, however, we don't
         # really care.
-        x_voltages_1d = (pixel_size * x_steps) + x_offset
-        y_voltages_1d = (pixel_size * y_steps) + y_offset
+        x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
+        y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
+        
+        ######### Works for any x_range, y_range #########
 
         # Winding cartesian product
         # The x values are repeated and the y values are mirrored and tiled
@@ -202,19 +197,40 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
         try:
-            self.load_stream_writer(c, 'Galvo-set_up_sweep', voltages, period)
+            self.load_stream_writer(c, 'Galvo-load_sweep_scan',
+                                    voltages, period)
         except: 
             self.close_task(c)
             raise
 
-        x_low = x_voltages_1d[0]
-        x_high = x_voltages_1d[len(x_voltages_1d) - 1]
-        y_low = y_voltages_1d[0]
-        y_high = y_voltages_1d[len(y_voltages_1d) - 1]
+        return x_voltages_1d, y_voltages_1d
+    
+    @setting(3, x_center='v[]', y_center='v[]', xy_range='v[]', 
+             num_steps='i', period='i', returns='*v[]*v[]')
+    def load_cross_scan(self, c, x_center, y_center,
+                        xy_range, num_steps, period):
+        
+        half_xy_range = xy_range / 2
+        
+        x_low = x_center - half_xy_range
+        x_high = x_center + half_xy_range
+        y_low = y_center - half_xy_range
+        y_high = y_center + half_xy_range
+        
+        x_voltages = numpy.linspace(x_low, x_high, num_steps)
+        y_voltages = numpy.linspace(y_low, y_high, num_steps)
+        
+        voltages = numpy.vstack((x_voltages, y_voltages))
+        try:
+            self.load_stream_writer(c, 'Galvo-load_cross_scan',
+                                    voltages, period)
+        except: 
+            self.close_task(c)
+            raise
+            
+        return x_voltages, y_voltages
 
-        return x_num_steps, x_low, x_high, y_num_steps, y_low, y_high, pixel_size
-
-    @setting(3)
+    @setting(4)
     def close_task(self, c):
         task = self.task
         if task is not None:

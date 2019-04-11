@@ -32,8 +32,6 @@ from pulsestreamer import OutputState
 import importlib
 import os
 import sys
-from twisted.logger import Logger
-log = Logger()
 
 
 class PulseStreamer(LabradServer):
@@ -102,6 +100,10 @@ class PulseStreamer(LabradServer):
     @setting(2)
     def stream_start(self, c):
         self.pulser.startNow()
+        
+    @setting(3)
+    def constant_default(self, c):
+        self.pulser.constant(self.default_output_state)
 
 
 __server__ = PulseStreamer()

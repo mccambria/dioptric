@@ -142,8 +142,8 @@ class ApdCounter(LabradServer):
         # discard the first sample.
         task.start()
 
-    @setting(1, apd_index='i', returns='*i')
-    def read_stream(self, c, apd_index):
+    @setting(1, apd_index='i', one_sample='b', returns='*i')
+    def read_stream(self, c, apd_index, one_sample=False):
 
         # Unpack the state dictionary
         state_dict = self.stream_reader_state[apd_index]
@@ -165,7 +165,11 @@ class ApdCounter(LabradServer):
                                       dtype=numpy.uint32)
 
         # Read the samples currently in the DAQ memory.
-        num_new_samples = reader.read_many_sample_uint32(new_samples_cum)
+        if one_sample:
+            num_new_samples = 1
+            new_samples_cum[0] = reader.read_one_sample_uint32()
+        else:
+            num_new_samples = reader.read_many_sample_uint32(new_samples_cum)
         if num_new_samples >= buffer_size:
             raise Warning('The DAQ buffer contained more samples than '
                           'expected. Validate your parameters and '
