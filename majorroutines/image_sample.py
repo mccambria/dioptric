@@ -34,12 +34,6 @@ def populate_img_array(valsToAdd, imgArray, writePos):
         writePos: tuple(int)
             The last x, y write position on the image array. [] will default
             to the bottom right corner.
-        startingPos: SweepStartingPosition
-            Sweep starting position of the winding pattern
-
-    Returns:
-        numpy.ndarray: The updated imgArray
-        tuple(int): The last x, y write position on the image array
     """
 
     yDim = imgArray.shape[0]
@@ -92,8 +86,8 @@ def on_click_image(event):
         pass
 
 
-def main(cxn, name, coords, x_range, y_range,
-         num_steps, readout, apd_index, continuous=False):
+def main(cxn, name, coords, x_range, y_range, num_steps, readout, apd_index,
+         continuous=False):
 
     # %% Some initial calculations
 
