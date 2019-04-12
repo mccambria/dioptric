@@ -29,7 +29,7 @@ def get_seq(pulser_wiring, args):
 
     seq = Sequence()
 
-    train = [(delay+readout, HIGH), (100, LOW)]
+    train = [(delay+readout, LOW), (100, HIGH)]
     seq.setDigital(pulser_do_daq_clock, train)
 
     train = [(delay, LOW), (readout, HIGH), (100, LOW)]
@@ -42,9 +42,9 @@ def get_seq(pulser_wiring, args):
 
 
 if __name__ == '__main__':
-    wiring = {'pulser_do_daq_clock': 0,
-              'pulser_do_daq_gate': 1,
-              'pulser_do_aom': 2}
-    args = [11 * 10**6, 10 * 10**6]
-    seq = get_seq(wiring, args)
+    wiring = {'do_daq_clock': 0,
+              'do_apd_gate_0': 1,
+              'do_aom': 2}
+    args = [11 * 10**6, 10 * 10**6, 0]
+    seq, ret_vals = get_seq(wiring, args)
     seq.plot()
