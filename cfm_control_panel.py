@@ -17,11 +17,27 @@ import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 
 
+# %% Minor Routines
+
+
+def set_xyz(coords):
+    with labrad.connect() as cxn:
+        cxn.galvo.write(coords[0], coords[1])
+        cxn.objective_piezo.write_voltage(coords[2])
+
+
+def set_xyz_zero():
+    with labrad.connect() as cxn:
+        cxn.galvo.write(0.0, 0.0)
+        cxn.objective_piezo.write_voltage(50.0)
+
+
 # %% Major Routines
+
 
 def do_image_sample(name, coords, scan_range, num_steps, apd_index):
 
-    readout = 10 * 10**6
+    readout = 10 * 10**6  # In nanoseconds
 
     with labrad.connect() as cxn:
         # For now we only support square scans so pass scan_range twice
@@ -63,6 +79,7 @@ if __name__ == '__main__':
     name = 'Ayrton9'
     apd_index = 0
 
+    coords = [0.0, 0.0, 50.0]
     coords = [-0.136, -0.017, 51.754]
 
 #    scan_range = 0.4
