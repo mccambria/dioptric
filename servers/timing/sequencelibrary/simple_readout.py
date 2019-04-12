@@ -38,7 +38,7 @@ def get_seq(pulser_wiring, args):
     train = [(period, HIGH)]
     seq.setDigital(pulser_do_aom, train)
 
-    return seq, period
+    return seq, [period]
 
 
 if __name__ == '__main__':

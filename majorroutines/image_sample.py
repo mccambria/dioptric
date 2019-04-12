@@ -110,8 +110,9 @@ def main(cxn, name, coords, x_range, y_range,
 
     # %% Load the PulseStreamer
 
-    period = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                            [delay, readout, apd_index])
+    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+                                              [delay, readout, apd_index])
+    period = ret_vals[0]
 
     # %% Set up the galvo
 

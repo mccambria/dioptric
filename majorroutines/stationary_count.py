@@ -48,8 +48,9 @@ def main(cxn, name, coords, run_time, readout, apd_index, continuous=False):
 
     # %% Load the PulseStreamer
 
-    period = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                            [0, readout, apd_index])
+    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+                                              [0, readout, apd_index])
+    period = ret_vals[0]
 
     total_num_samples = int(run_time / period)
 
