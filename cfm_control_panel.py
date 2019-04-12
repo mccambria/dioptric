@@ -14,29 +14,36 @@ Created on Sun Nov 25 14:00:28 2018
 import labrad
 import majorroutines.image_sample as image_sample
 import majorroutines.optimize as optimize
-import utils.tool_belt as tool_belt
+import majorroutines.stationary_count as stationary_count
 
 
 # %% Major Routines
 
-def do_image_sample(name, coords, x_range, y_range, num_steps):
+def do_image_sample(name, coords, scan_range, num_steps, apd_index):
 
-    x_center, y_center, z_center = coords
     readout = 10 * 10**6
-    apd_index = 0
 
     with labrad.connect() as cxn:
-        image_sample.main(cxn, name, x_center, y_center, z_center,
-                          x_range, y_range, num_steps, readout, apd_index)
+        # For now we only support square scans so pass scan_range twice
+        image_sample.main(cxn, name, coords, scan_range, scan_range,
+                          num_steps, readout, apd_index)
 
 
-def do_optimize(name, coords):
-
-    x_center, y_center, z_center = coords
-    apd_index = 0
+def do_optimize(name, coords, apd_index):
 
     with labrad.connect() as cxn:
-        optimize.main(cxn, name, x_center, y_center, z_center, apd_index)
+        optimize.main(cxn, name, coords, apd_index,
+                      set_to_opti_centers=True,
+                      save_data=True, plot_data=True)
+
+
+def do_stationary_count(name, coords, apd_index):
+
+    run_time = 20  # In seconds
+    readout = 100 * 10**6  # In nanoseconds
+
+    with labrad.connect() as cxn:
+        stationary_count.main(cxn, name, coords, run_time, readout, apd_index)
 
 
 # %% Script Code
@@ -54,19 +61,18 @@ if __name__ == '__main__':
     # For more, view the function definitions in their respective file.
 
     name = 'Ayrton9'
+    apd_index = 0
 
     coords = [-0.136, -0.017, 51.754]
 
 #    scan_range = 0.4
     scan_range = 0.05
-    x_scan_range = scan_range
-    y_scan_range = scan_range
     num_scan_steps = 60
 
     # %% Functions to run
 
     try:
-        do_image_sample(name, coords, x_scan_range, y_scan_range, num_scan_steps)
+        do_image_sample(name, coords, scan_range, num_scan_steps)
 #        do_optimize(name, coords)
     finally:
         pass

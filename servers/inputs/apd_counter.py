@@ -64,7 +64,7 @@ class ApdCounter(LabradServer):
         if len(apd_sub_dirs) > 0:
             wiring = ensureDeferred(self.get_wiring(apd_sub_dirs))
             wiring.addCallback(self.on_get_wiring, apd_indices)
-            
+
     async def get_wiring(self, apd_sub_dirs):
         p = self.client.registry.packet()
         for sub_dir in apd_sub_dirs:
@@ -74,7 +74,7 @@ class ApdCounter(LabradServer):
             p.get('di_apd_gate')
         result = await p.send()
         return result['get']
-    
+
     def on_get_wiring(self, wiring, apd_indices):
         self.daq_ctr_apd = {}
         self.daq_ci_apd = {}
@@ -95,7 +95,7 @@ class ApdCounter(LabradServer):
         except:
             self.close_task(c, apd_index)
             raise
-        
+
     def try_load_stream_reader(self, c, apd_index, period, total_num_to_read):
 
         # Close the task if it exists
@@ -154,11 +154,16 @@ class ApdCounter(LabradServer):
 
         # The counter task begins counting as soon as the task starts.
         # The AO channel writes its first samples only on the first clock
-        # signal after the task starts. This means there's one
-        # sample from the counter stream that we don't want to record.
-        # We do need it for a calculation below, however.
+        # signal after the task starts. This means that if we're running
+        # AOs on the clock, then there's one sample from the counter stream
+        # that we don't want to record. We do need it for calculations.
         if state_dict['last_value'] == None:
-            state_dict['last_value'] = reader.read_one_sample_uint32()
+            # If we're just collecting one sample, then assume there's no
+            # AO stream set up.
+            if one_sample:
+                state_dict['last_value'] = 0
+            else:
+                state_dict['last_value'] = reader.read_one_sample_uint32()
 
         # Initialize the read sample array to its maximum possible size.
         new_samples_cum = numpy.zeros(buffer_size,

@@ -16,7 +16,7 @@ import majorroutines.optimize as optimize
 
 # Library modules
 import numpy
-import time
+import os
 
 
 # %% Main
@@ -27,84 +27,38 @@ def main(cxn, name, x_center, y_center, z_center, apd_index,
 
     # %% Initial calculations and setup
 
-    # Calculate the frequencies we need to set
-    freqLow = freqCenter - (freqRange / 2)
-    freqStepSize = freqRange / freqResolution
-    freqSteps = numpy.arange(freqResolution)
-    freqs = (freqStepSize * freqSteps) + freqLow
+    file_name = os.path.basename(__file__)
+    file_name_no_ext = os.path.splitext(file_name)[0]
 
-    # As a test, flip the freqs
-#    freqs = numpy.flip(freqs)
+    # Calculate the frequencies we need to set
+    half_freq_range = freq_range / 2
+    freq_low = freq_center - half_freq_range
+    freq_high = freq_center + half_freq_range
+    freqs = numpy.linspace(freq_low, freq_high, num_steps)
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
-    counts = numpy.empty(freqResolution)
+    counts = numpy.empty(num_steps)
     counts[:] = numpy.nan
 
-    # %% Run find_nv_center to optimize the position of the resonance scan
+    # %% Optimize on the passed coordinates
 
     optimize.main(cxn, name, x_center, y_center, z_center, apd_index)
 
-    time.sleep(5.0)
-
     # %% Set up the pulser
 
-    pulser = tool_belt.get_pulser(pulserIP)
-
-    # Set the PulseStreamer to start on python's command. We can run the
-    # loaded stream repeatedly using startNow().
-    pulser.setTrigger(start=Start.SOFTWARE)
-
-    seq = Sequence()
-    low = 0
-    high = 1
-
-    delay = numpy.int64(0.1 * 10**9)
+    delay = 0.1 * 10**9  # 0.1 s to switch frequencies
+    readout = 10 * 10**6  # 0.01 to count
     period = delay + readout
 
-    # After delay, ungate the APD channel for readout.
-    # The delay is to allow the signal generator to switch frequencies.
-    readoutTrain = [(delay, low), (readout, high)]
-    seq.setDigitalChannel(pulserDODaqGate, readoutTrain)
-
-    # Collect a sample with rf off at the end of the first gating
-    clockTrain = [(period, low), (100, high)]
-    seq.setDigitalChannel(pulserDODaqClock, clockTrain)
-
-    # The AOM should always be on
-    staticOnTrain = [(period, high)]
-    seq.setDigitalChannel(pulserDOAom, staticOnTrain)
-
-    # The RF should always be on
-    seq.setDigitalChannel(pulserDORf, staticOnTrain)
-#    # The RF should be on during readout
-#    seq.setDigitalChannel(pulserDORf, readoutTrain)
-    # The RF should be on for half the period
-#    halfPeriodTrain = [(period // 2, low), (period // 2, high)]
-#    seq.setDigitalChannel(pulserDORf, halfPeriodTrain)
-
-
-    # Run the sequence once per start, leave the AOM and RF on when complete
-    pulser.stream(seq.getSequence(), 1, (0, [pulserDOAom, pulserDORf], 0, 0))
-    # Run the sequence once per start, leave the AOM on when complete
-#    pulser.stream(seq.getSequence(), 1, (0, [pulserDOAom], 0, 0))
-
-    # %% Set the galvo and piezo position
-
-    xyz.write_daq(daqName, daqAOGalvoX, daqAOGalvoY, piezoSerial,
-                  xCenterOptimized, yCenterOptimized, zCenterOptimized)
+    # The sequence library file is named the same as this file
+    cxn.pulse_streamer.stream_load(file_name, 1,
+                                   [period, readout, apd_index])
 
     # %% Load the APD task
 
-    streamReader, apdTask = apd.stream_read_load_daq(daqName, daqCIApd,
-                                                     daqDIPulserClock,
-                                                     daqDIPulserGate,
-                                                     period)
-
-    # %% Get the signal generator
-
-    sigGen = tool_belt.get_VISA_instr(rfAddress)
+    cxn.apd_counter.load_stream_reader(apd_index, period, num_steps)
 
     # %% Set up the plot
 
@@ -112,58 +66,50 @@ def main(cxn, name, x_center, y_center, z_center, apd_index,
 
     # %% Collect and plot the data
 
-    # The timeout for each sample will be 1.1 * (the period in seconds)
-    timeout = 1.1 * (float(period) * 10**-9)
-
-    # Set previousSample to 0 since we don't have any samples yet
-    previousSample = 0
-
-    # Start "Press enter to stop..."
+    # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
 
+    # Provide the counter with its reference sample
+    cxn.pulse_streamer.stream_start()
+
     # Take a sample and increment the frequency
-    for ind in range(freqResolution):
+    for ind in range(num_steps):
 
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
 
-        sigGen.write("FREQ %fGHZ" % (freqs[ind]))
+        cxn.uwave_sig_gen.set_freq(freqs[ind])
 
         # If this is the first sample then we have to enable the signal
         if ind == 0:
-            sigGen.write("AMPR %fDBM" % (rfPower))
-            sigGen.write("ENBR 1")
+            cxn.uwave_sig_gen.set_freq(uwave_power)
+            cxn.uwave_sig_gen.uwave_on()
 
         # Start the timing stream
-        pulser.startNow()
+        cxn.pulse_streamer.stream_start()
 
-        # Read the sample - this will hang until the sample becomes available
-        sample = streamReader.read_one_sample_uint32(timeout)
-
-        # The counter task returns the cumulative count over the life of the
-        # task. We want the individual count over each sample period.
-        counts[ind] = sample - previousSample
-        previousSample = sample
+        counts[ind] = cxn.apd_counter.read_stream(apd_index, True)[0]
 
         tool_belt.update_line_plot_figure(fig, counts)
 
     # %% Turn off the RF and save the data
 
-    sigGen.write("ENBR 0")
+    cxn.uwave_sig_gen.uwave_off()
 
-    timeStamp = tool_belt.get_time_stamp()
+    timestamp = tool_belt.get_time_stamp()
 
-    rawData = {"timeStamp": timeStamp,
-               "name": name,
-               "xyzCenters": [xCenter, yCenter, zCenter],
-               "freqCenter": freqCenter,
-               "freqRange": freqRange,
-               "freqResolution": freqResolution,
-               "rfPower": rfPower,
-               "readout": int(readout),
-               "counts": counts.astype(int).tolist()}
+    rawData = {'timestamp': timestamp,
+               'name': name,
+               'xyz_centers': [x_center, y_center, z_center],
+               'freq_center': freq_center,
+               'freq_range': freq_range,
+               'num_steps': num_steps,
+               'uwave_power': uwave_power,
+               'readout': readout,
+               'delay': delay,
+               'counts': counts.astype(int).tolist()}
 
-    filePath = tool_belt.get_file_path("find_resonance", timeStamp, name)
+    filePath = tool_belt.get_file_path(file_name_no_ext, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)

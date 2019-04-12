@@ -21,10 +21,12 @@ log = Logger()
 # %% Main
 
 
-def main(cxn, name, x_center, y_center, z_center, apd_index,
+def main(cxn, name, coords, apd_index,
          set_to_opti_centers=True, save_data=False, plot_data=False):
 
     # %% Initial set up
+
+    x_center, y_center, z_center = coords
 
     readout = 10 * 10**6
 
@@ -40,9 +42,14 @@ def main(cxn, name, x_center, y_center, z_center, apd_index,
 
     # The galvo's small angle step response is 400 us
     # Let's give ourselves a buffer of 500 us (500000 ns)
-    period = readout + 500000
+    delay = int(0.5 * 10**6)
 
     xy_num_steps = 2 * num_steps
+
+    # Run the PulseStreamer
+    seq_cycles = xy_num_steps + 1
+    period = cxn.pulse_streamer.stream_load('simple_readout.py', seq_cycles,
+                                            [delay, readout, apd_index])
 
     ret_vals = cxn.galvo.load_cross_scan(x_center, y_center, xy_range,
                                          num_steps, period)
@@ -53,20 +60,17 @@ def main(cxn, name, x_center, y_center, z_center, apd_index,
 
     cxn.apd_counter.load_stream_reader(apd_index, period, xy_num_steps)
 
-    # Run the PulseStreamer
-    seq_cycles = xy_num_steps + 1
-    cxn.pulse_streamer.stream_immediate('simple_readout.py', seq_cycles,
-                                        [period, readout, apd_index])
-
     # Collect the data
+
+    num_read_so_far = 0
+    xy_counts = []
+
     timeout_duration = ((period*(10**-9)) * xy_num_steps) + 10
     timeout_inst = time.time() + timeout_duration
 
-    num_read_so_far = 0
-
-    xy_counts = []
-
     tool_belt.init_safe_stop()
+
+    cxn.pulse_streamer.stream_start()
 
     while num_read_so_far < xy_num_steps:
 
@@ -102,21 +106,19 @@ def main(cxn, name, x_center, y_center, z_center, apd_index,
     z_voltages = numpy.linspace(z_low, z_high, num_steps)
 
     # Base this off the piezo hysteresis and step response
-    period = readout + 500000
+    delay = int(0.5 * 10**6)  # Assume it's the same as the galvo for now
 
     # Set up the galvo
     cxn.galvo.write(x_center, y_center)
+
+    # Set up the stream
+    period = cxn.pulse_streamer.stream_load('simple_readout.py', 1,
+                                            [delay, readout, apd_index])
 
     # Set up the APD
     cxn.apd_counter.load_stream_reader(apd_index, period, num_steps)
 
     z_counts = numpy.zeros(num_steps, dtype=numpy.uint32)
-
-    cxn.pulse_streamer.stream_load('simple_readout.py', 1,
-                                   [period, readout, apd_index])
-
-    # Provide the counter with its reference sample
-    cxn.pulse_streamer.stream_start()
 
     cxn.objective_piezo.write_voltage(z_voltages[0])
     time.sleep(0.5)
@@ -236,7 +238,7 @@ def main(cxn, name, x_center, y_center, z_center, apd_index,
                               y_counts.astype(int).tolist(),
                               z_counts.astype(int).tolist()]}
 
-        filePath = tool_belt.get_file_path('find_nv_center', timestamp, name)
+        filePath = tool_belt.get_file_path('optimize', timestamp, name)
         tool_belt.save_raw_data(rawData, filePath)
         if plot_data:
             tool_belt.save_figure(fig, filePath)

@@ -92,17 +92,28 @@ def on_click_image(event):
         pass
 
 
-def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
+def main(cxn, name, coords, x_range, y_range,
          num_steps, readout, apd_index, continuous=False):
 
     # %% Some initial calculations
+
+    x_center, y_center, z_center = coords
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
 
     # The galvo's small angle step response is 400 us
     # Let's give ourselves a buffer of 500 us (500000 ns)
-    period = readout + 500000
+    delay = int(0.5 * 10**6)
+
+    total_num_samples = num_steps**2
+
+    # %% Load the PulseStreamer
+
+    # We require bookends on samples so stream one extra cycle
+    seq_cycles = total_num_samples + 1
+    period = cxn.pulse_streamer.stream_load('simple_readout.py', seq_cycles,
+                                            [delay, readout, apd_index])
 
     # %% Set up the galvo
 
@@ -118,8 +129,6 @@ def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
     y_high = y_voltages[y_num_steps-1]
 
     pixel_size = x_voltages[1] - x_voltages[0]
-
-    total_num_samples = x_num_steps * y_num_steps
 
     # %% Set the piezo
 
@@ -147,14 +156,9 @@ def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
     fig = tool_belt.create_image_figure(img_array, img_extent,
                                         clickHandler=on_click_image)
 
-    # %% Run the PulseStreamer
-
-    # We require bookends on samples so stream one extra cycle
-    seq_cycles = total_num_samples + 1
-    cxn.pulse_streamer.stream_immediate('simple_readout.py', seq_cycles,
-                                        [period, readout, apd_index])
-
     # %% Collect the data
+
+    cxn.pulse_streamer.stream_start()
 
     timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
     timeout_inst = time.time() + timeout_duration
