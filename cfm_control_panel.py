@@ -55,8 +55,9 @@ def do_optimize(name, coords, apd_index):
 
 def do_stationary_count(name, coords, apd_index):
 
-    run_time = 20  # In seconds
-    readout = 100 * 10**6  # In nanoseconds
+    # In nanoseconds
+    run_time = 20 * 10**9
+    readout = 100 * 10**6
 
     with labrad.connect() as cxn:
         stationary_count.main(cxn, name, coords, run_time, readout, apd_index)

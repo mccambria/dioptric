@@ -40,6 +40,8 @@ class PulseStreamer(LabradServer):
     def initServer(self):
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
+        self.seq = None
+        self.loaded_seq_streamed = False
 
     async def get_config(self):
         p = self.client.registry.packet()
@@ -79,28 +81,31 @@ class PulseStreamer(LabradServer):
         file_name, file_ext = os.path.splitext(seq_file)
         if file_ext == '.py':  # py: import as a module
             seq_module = importlib.import_module(file_name)
-            seq = seq_module.get_seq(self.pulser_wiring, args)
-        return seq
+            seq, period = seq_module.get_seq(self.pulser_wiring, args)
+        return seq, period
 
-    @setting(0, seq_file='s', num_repeat='i', args='*?', returns='i')
-    def stream_immediate(self, c, seq_file, num_repeat, args):
-        self.pulser.setTrigger(start=TriggerStart.IMMEDIATE,
-                               rearm=TriggerRearm.MANUAL)
-        seq, period = self.get_seq(seq_file, args)
-        if seq is not None:
-            self.pulser.stream(seq, num_repeat, self.default_output_state)
+    @setting(0, seq_file='s', num_repeat='i', args='*?')
+    def stream_immediate(self, c, seq_file, num_repeat=1, args=None):
+        period = self.stream_load(seq_file, args)
+        self.stream_start(num_repeat)
         return period
 
-    @setting(1, seq_file='s', num_repeat='i', args='*?', returns='i')
-    def stream_load(self, c, seq_file, num_repeat, args):
+    @setting(1, seq_file='s', args='*?', returns='i')
+    def stream_load(self, c, seq_file, args=None):
         self.pulser.setTrigger(start=TriggerStart.SOFTWARE)
         seq, period = self.get_seq(seq_file, args)
         if seq is not None:
-            self.pulser.stream(seq, num_repeat, self.default_output_state)
+            self.seq = seq
+            self.loaded_seq_streamed = False
         return period
 
-    @setting(2)
-    def stream_start(self, c):
+    @setting(2, num_repeat='i')
+    def stream_start(self, c, num_repeat=1):
+        if self.seq == None:
+            raise RuntimeError('Stream started with no sequence.')
+        if not self.loaded_seq_streamed:
+            self.pulser.stream(self.seq, num_repeat, self.default_output_state)
+            self.loaded_seq_streamed = True
         self.pulser.startNow()
 
     @setting(3)

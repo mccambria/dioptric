@@ -44,17 +44,15 @@ def main(cxn, name, coords, apd_index,
     # Let's give ourselves a buffer of 500 us (500000 ns)
     delay = int(0.5 * 10**6)
 
-    xy_num_steps = 2 * num_steps
-
-    # Run the PulseStreamer
-    seq_cycles = xy_num_steps + 1
-    period = cxn.pulse_streamer.stream_load('simple_readout.py', seq_cycles,
+    period = cxn.pulse_streamer.stream_load('simple_readout.py',
                                             [delay, readout, apd_index])
 
     ret_vals = cxn.galvo.load_cross_scan(x_center, y_center, xy_range,
                                          num_steps, period)
 
     x_voltages, y_voltages = ret_vals
+
+    xy_num_steps = len(x_voltages) + len(y_voltages)
 
     cxn.objective_piezo.write_voltage(z_center)
 
@@ -70,7 +68,9 @@ def main(cxn, name, coords, apd_index,
 
     tool_belt.init_safe_stop()
 
-    cxn.pulse_streamer.stream_start()
+    # Run the PulseStreamer
+    seq_cycles = xy_num_steps + 1
+    cxn.pulse_streamer.stream_start(seq_cycles)
 
     while num_read_so_far < xy_num_steps:
 
@@ -112,7 +112,7 @@ def main(cxn, name, coords, apd_index,
     cxn.galvo.write(x_center, y_center)
 
     # Set up the stream
-    period = cxn.pulse_streamer.stream_load('simple_readout.py', 1,
+    period = cxn.pulse_streamer.stream_load('simple_readout.py',
                                             [delay, readout, apd_index])
 
     # Set up the APD

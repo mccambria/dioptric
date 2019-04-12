@@ -33,7 +33,7 @@ def update_line_plot(new_samples, num_read_so_far, *args):
     write_pos[0] = new_write_pos
 
     # Update the figure in k counts per sec
-    tool_belt.update_line_plot_figure(fig, samples / (10**3 * readout_sec))
+    tool_belt.update_line_plot_figure(fig, (samples * 10**-3) / readout_sec)
 
 
 # %% Main
@@ -44,18 +44,14 @@ def main(cxn, name, coords, run_time, readout, apd_index, continuous=False):
     # %% Some initial calculations
 
     x_center, y_center, z_center = coords
-
-    total_num_samples = int((run_time * 10**9) / readout)
-
-    # convert readout to seconds
     readout_sec = readout / 10**9
 
     # %% Load the PulseStreamer
 
-    # We require bookends on samples so stream one extra cycle
-    seq_cycles = total_num_samples + 1
-    period = cxn.pulse_streamer.stream_load('simple_readout.py', seq_cycles,
+    period = cxn.pulse_streamer.stream_load('simple_readout.py',
                                             [0, readout, apd_index])
+
+    total_num_samples = int(run_time / period)
 
     # %% Set x, y, and z
 
@@ -81,7 +77,7 @@ def main(cxn, name, coords, run_time, readout, apd_index, continuous=False):
     # Set labels
     axes = fig.get_axes()
     ax = axes[0]
-    ax.set_title("Stationary Counts")
+    ax.set_title('Stationary Counts')
     ax.set_xlabel('Elapsed time (s)')
     ax.set_ylabel('kcts/sec')
 
@@ -94,7 +90,9 @@ def main(cxn, name, coords, run_time, readout, apd_index, continuous=False):
 
     # %% Collect the data
 
-    cxn.pulse_streamer.stream_start()
+    # We require bookends on samples so stream one extra cycle
+    seq_cycles = total_num_samples + 1
+    cxn.pulse_streamer.stream_start(seq_cycles)
 
     timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
     timeout_inst = time.time() + timeout_duration
@@ -130,8 +128,8 @@ def main(cxn, name, coords, run_time, readout, apd_index, continuous=False):
     # %% Report the data
 
     average = numpy.mean(samples[0:write_pos[0]]) / (10**3 * readout_sec)
-    print("average: {0:d}".format(int(average)))
+    print('average: {0:d}'.format(int(average)))
     st_dev = numpy.std(samples[0:write_pos[0]]) / (10**3 * readout_sec)
-    print("standard deviation: {0:.3f}".format(st_dev))
+    print('standard deviation: {0:.3f}'.format(st_dev))
 
     return average, st_dev

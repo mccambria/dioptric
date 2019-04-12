@@ -110,9 +110,7 @@ def main(cxn, name, coords, x_range, y_range,
 
     # %% Load the PulseStreamer
 
-    # We require bookends on samples so stream one extra cycle
-    seq_cycles = total_num_samples + 1
-    period = cxn.pulse_streamer.stream_load('simple_readout.py', seq_cycles,
+    period = cxn.pulse_streamer.stream_load('simple_readout.py',
                                             [delay, readout, apd_index])
 
     # %% Set up the galvo
@@ -158,7 +156,9 @@ def main(cxn, name, coords, x_range, y_range,
 
     # %% Collect the data
 
-    cxn.pulse_streamer.stream_start()
+    # We require bookends on samples so stream one extra cycle
+    seq_cycles = total_num_samples + 1
+    cxn.pulse_streamer.stream_start(seq_cycles)
 
     timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
     timeout_inst = time.time() + timeout_duration
