@@ -43,7 +43,7 @@ class UwaveSigGen(LabradServer):
         p.cd('Config')
         p.get('uwave_sig_gen_visa_address')
         p.cd(['Wiring', 'Daq'])
-        p.get('di_pulser_clock')
+        p.get('di_clock')
         p.get('ao_uwave_sig_gen_mod')
         result = await p.send()
         return result['get']

@@ -68,7 +68,7 @@ def main(cxn, name, coords, apd_index,
 
     tool_belt.init_safe_stop()
 
-    # Run the PulseStreamer
+    # Run the PulseStreamer with bookends around samples
     seq_cycles = xy_num_steps + 1
     cxn.pulse_streamer.stream_start(seq_cycles)
 
@@ -82,7 +82,7 @@ def main(cxn, name, coords, apd_index,
             return opti_centers
 
         # Read the samples and update the image
-        new_samples = cxn.apd_counter.read_stream(apd_index)
+        new_samples = cxn.apd_counter.read_stream(apd_index, bookends=True)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             xy_counts.extend(new_samples)
@@ -131,7 +131,7 @@ def main(cxn, name, coords, apd_index,
         # Start the timing stream
         cxn.pulse_streamer.stream_start()
 
-        z_counts[ind] = cxn.apd_counter.read_stream(apd_index, True)[0]
+        z_counts[ind] = cxn.apd_counter.read_stream(apd_index, one_sample=True)[0]
 
     # Close tasks
     cxn.apd_counter.close_task(apd_index)

@@ -2,7 +2,7 @@
 """
 Created on Thu Apr 11 16:19:44 2019
 
-@author: Matt
+@author: mccambria
 """
 
 from pulsestreamer import Sequence
@@ -15,11 +15,13 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    period, readout, apd_index = args
-
-    period = numpy.int64(period)
+    readout, uwave_switch_delay, apd_index = args
+    
     readout = numpy.int64(readout)
-    delay_and_readout = delay + readout
+    readout = numpy.int64(readout)
+    uwave_switch_delay = numpy.int64(uwave_switch_delay)
+    clock_pulse = numpy.int64(100)
+    period = readout + clock_pulse + uwave_switch_delay + readout + clock_pulse
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_daq_clock']
@@ -29,25 +31,29 @@ def get_seq(pulser_wiring, args):
 
     seq = Sequence()
 
-    # After delay, ungate the APD channel for readout.
-    # The delay is to allow the signal generator to switch frequencies.
-    train = [(delay, LOW), (readout, HIGH),
-             (delay, LOW), (readout, HIGH)]
+    # Collect two samples
+    train = [(readout, LOW), (clock_pulse, HIGH),
+             (uwave_switch_delay, LOW),
+             (readout, LOW), (clock_pulse, HIGH)]
+    seq.setDigital(pulser_do_daq_clock, train)
+    
+    # Ungate the APD channel for the readouts
+    train = [(readout, HIGH), (clock_pulse, LOW),
+             (uwave_switch_delay, LOW),
+             (readout, HIGH), (clock_pulse, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
 
-    # Collect two samples
-    train = [(period, LOW), (100, HIGH)]
-    seq.setDigital(pulser_do_daq_clock, train)
-
     # Uwave should be on for the first measurement and off for the second
-    train = [(delay_and_readout, HIGH), (delay_and_readout, LOW)]
+    train = [(readout, LOW), (clock_pulse, LOW),
+             (uwave_switch_delay, HIGH),
+             (readout, HIGH), (clock_pulse, LOW)]
     seq.setDigital(pulser_do_uwave, train)
 
-    # The AOM and uwave should always be on
+    # The AOM should always be on
     train = [(period, HIGH)]
     seq.setDigital(pulser_do_aom, train)
 
-    return seq
+    return seq, [period]
 
 
 if __name__ == '__main__':
@@ -55,6 +61,6 @@ if __name__ == '__main__':
               'do_apd_gate_0': 1,
               'do_aom': 2,
               'do_uwave': 3}
-    args = [11 * 10**6, 10 * 10**6, 0]
+    args = [10 * 10**6, 10 * 10**6, 1 * 10**6, 0]
     seq = get_seq(wiring, args)
     seq.plot()

@@ -14,9 +14,11 @@ Created on Sun Nov 25 14:00:28 2018
 # %% Imports
 
 import labrad
+import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
+import majorroutines.resonance as resonance
 
 
 # %% Minor Routines
@@ -51,7 +53,7 @@ def do_optimize(name, coords, apd_index):
 
     with labrad.connect() as cxn:
         optimize.main(cxn, name, coords, apd_index,
-                      set_to_opti_centers=True,
+                      set_to_opti_centers=False,
                       save_data=True, plot_data=True)
 
 
@@ -65,6 +67,19 @@ def do_stationary_count(name, coords, apd_index):
         stationary_count.main(cxn, name, coords, run_time, readout, apd_index)
 
 
+def do_resonance(name, coords, apd_index):
+
+    freq_center = 2.87
+    freq_range = 0.3
+    num_steps = 60
+    num_runs = 5
+    uwave_power = -13.0  # -13.0 with a 1.0 ND is a good starting point
+
+    with labrad.connect() as cxn:
+        resonance.main(cxn, name, coords, apd_index, freq_center, freq_range,
+                       num_steps, num_runs, uwave_power)
+
+
 # %% Script Code
 
 
@@ -75,27 +90,27 @@ def do_stationary_count(name, coords, apd_index):
 # running it as a program.
 if __name__ == '__main__':
 
-    # %% Shared parameters
+    # %% Frequenctly modified/shared parameters
     # The file has minimal documentation.
     # For more, view the function definitions in their respective file.
 
-    name = 'Hopper'
+    name = 'ayrton12'
 
-    coords = [-0.046, -0.005, 51.4]
+#    coords = [0.0, 0.0, 50.0]
+    coords = [0.002, -0.010, 48.502]
+    
     apd_index = 0
 
-    coords = [0.0, 0.0, 50.0]
-    coords = [-0.136, -0.017, 51.754]
-
-#    scan_range = 0.4
     scan_range = 0.05
     num_scan_steps = 60
 
     # %% Functions to run
 
     try:
-        do_image_sample(name, coords, scan_range, num_scan_steps)
-#        do_optimize(name, coords)
+#        do_image_sample(name, coords, scan_range, num_scan_steps, apd_index)
+#        do_optimize(name, coords, apd_index)
+#        do_stationary_count(name, coords, apd_index)
+        do_resonance(name, coords, apd_index)
     finally:
         pass
         # Kill safe stop

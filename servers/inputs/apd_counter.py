@@ -31,6 +31,7 @@ import nidaqmx.stream_readers as stream_readers
 from nidaqmx.constants import TriggerType
 from nidaqmx.constants import Level
 from nidaqmx.constants import AcquisitionType
+from twisted.logger import Logger
 
 
 class ApdCounter(LabradServer):
@@ -142,11 +143,12 @@ class ApdCounter(LabradServer):
         # discard the first sample.
         task.start()
 
-    @setting(1, apd_index='i', one_sample='b', returns='*i')
-    def read_stream(self, c, apd_index, one_sample=False):
+    @setting(1, apd_index='i', one_sample='b', bookends='b', returns='*w')
+    def read_stream(self, c, apd_index, one_sample=False, bookends=False):
 
         # Unpack the state dictionary
         state_dict = self.stream_reader_state[apd_index]
+        
         reader = state_dict['reader']
         num_read_so_far = state_dict['num_read_so_far']
         total_num_to_read = state_dict['total_num_to_read']
@@ -160,7 +162,7 @@ class ApdCounter(LabradServer):
         if state_dict['last_value'] == None:
             # If we're just collecting one sample, then assume there's no
             # AO stream set up.
-            if one_sample:
+            if one_sample or not bookends:
                 state_dict['last_value'] = 0
             else:
                 state_dict['last_value'] = reader.read_one_sample_uint32()
@@ -203,7 +205,10 @@ class ApdCounter(LabradServer):
             state_dict['last_value'] = new_samples_cum[num_new_samples-1]
 
         # Update the current count
-        state_dict['num_read_so_far'] = num_read_so_far + num_new_samples
+        num_read_so_far += num_new_samples
+        if num_read_so_far == total_num_to_read:
+            self.close_task(c, apd_index)
+        state_dict['num_read_so_far'] = num_read_so_far
 
         return new_samples_diff
 
