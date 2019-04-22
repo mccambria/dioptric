@@ -52,16 +52,16 @@ if __name__ == '__main__':
     # The file has minimal documentation.
     # For more, view the function definitions in their respective file.
 
-    name = 'Ayrton9'
+    name = 'Hopper'
     
-    coords = [-0.136, -0.017, 51.754]
+    coords = [-0.046, -0.005, 51.4]
 
     # 1 V => ~100 um
     # With gold nanoparticles 0.4 is good for broad field
     # 0.04 is good for a single particle
 
 #    scan_range = 0.4
-    scan_range = 0.05
+    scan_range = 0.2
     x_scan_range = scan_range
     y_scan_range = scan_range
     num_scan_steps = 60
