@@ -40,7 +40,7 @@ def main(cxn, name, coords, apd_index,
     # useful for us here.
     counts = numpy.empty(num_steps)
     counts[:] = numpy.nan
-    
+
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
@@ -53,7 +53,7 @@ def main(cxn, name, coords, apd_index,
 
     # %% Set up the pulser
 
-    readout = 10 * 10**6  # 0.01 s 
+    readout = 10 * 10**6  # 0.01 s
     readout_sec = readout / (10**9)
     uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
 
@@ -63,7 +63,7 @@ def main(cxn, name, coords, apd_index,
     period = ret_vals[0]
 
     # %% Load the APD task
-    
+
     num_samples_per_run = 2 * num_steps  # Two samples for each frequency step
     num_samples = num_runs * num_samples_per_run
     cxn.apd_counter.load_stream_reader(apd_index, period, num_samples)
@@ -74,54 +74,53 @@ def main(cxn, name, coords, apd_index,
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
-    
+
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
 
 #        optimize.main(cxn, name, coords, apd_index)
-        
+
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):
-    
+
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
-    
+
             cxn.microwave_signal_generator.set_freq(freqs[step_ind])
-    
+
             # If this is the first sample then we have to enable the signal
             if (run_ind == 0) and (step_ind == 0):
                 cxn.microwave_signal_generator.set_freq(uwave_power)
                 cxn.microwave_signal_generator.uwave_on()
-    
+
             # Start the timing stream
             cxn.pulse_streamer.stream_start()
-            time.sleep(0.2)
-    
-            new_counts = cxn.apd_counter.read_stream(apd_index)
+
+            new_counts = cxn.apd_counter.read_stream(apd_index, 2)
             if len(new_counts) != 2:
                 raise RuntimeError('There should be exactly 2 samples per freq.')
-                
+
             counts_uwave_off[run_ind, step_ind] = new_counts[0]
             counts_uwave_on[run_ind, step_ind] = new_counts[1]
             counts_norm[run_ind, step_ind] = new_counts[1] / new_counts[0]
-            
+
     # %% Process and plot the data
-    
+
     # Find the averages across runs
     counts_uwave_off_avg = numpy.average(counts_uwave_off, axis=0)
     counts_uwave_on_avg = numpy.average(counts_uwave_on, axis=0)
     counts_norm_avg = numpy.average(counts_norm, axis=0)
-    
+
     # Convert to kilocounts per second
     kcps_uwave_off_avg = (counts_uwave_off_avg / (10**3)) / readout_sec
     kcpsc_uwave_on_avg = (counts_uwave_on_avg / (10**3)) / readout_sec
-    
+
     # Create an image with 2 plots on one row, with a specified size
     # Then draw the canvas and flush all the previous plots from the canvas
     fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-    
+
     # The first plot will display both the uwave_off and uwave_off counts
     ax = axes_pack[0]
     ax.plot(freqs, kcps_uwave_off_avg, 'r-', label = "uwave off")
@@ -136,7 +135,7 @@ def main(cxn, name, coords, apd_index,
     ax.set_title('Normalized Count Rate vs Frequency')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
-    
+
     fig.canvas.draw()
 #    fig.set_tight_layout(True)
     fig.canvas.flush_events()
@@ -157,8 +156,8 @@ def main(cxn, name, coords, apd_index,
                'uwave_power': uwave_power,
                'readout': readout,
                'uwave_switch_delay': uwave_switch_delay,
-               'counts_uwave_on': counts_uwave_on.astype(int).tolist(), 
-               'counts_uwave_off': counts_uwave_off.astype(int).tolist(), 
+               'counts_uwave_on': counts_uwave_on.astype(int).tolist(),
+               'counts_uwave_off': counts_uwave_off.astype(int).tolist(),
                'counts_norm_avg': counts_norm_avg.astype(int).tolist()}
 
     filePath = tool_belt.get_file_path(file_name_no_ext, timestamp, name)

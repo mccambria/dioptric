@@ -151,9 +151,7 @@ def main(cxn, name, coords, x_range, y_range, num_steps, readout, apd_index,
 
     # %% Collect the data
 
-    # We require bookends on samples so stream one extra cycle
-    seq_cycles = total_num_samples + 1
-    cxn.pulse_streamer.stream_start(seq_cycles)
+    cxn.pulse_streamer.stream_start(total_num_samples)
 
     timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
     timeout_inst = time.time() + timeout_duration
