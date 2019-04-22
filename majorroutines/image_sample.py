@@ -34,17 +34,11 @@ def populate_img_array(valsToAdd, imgArray, writePos):
         writePos: tuple(int)
             The last x, y write position on the image array. [] will default
             to the bottom right corner.
-        startingPos: SweepStartingPosition
-            Sweep starting position of the winding pattern
-
-    Returns:
-        numpy.ndarray: The updated imgArray
-        tuple(int): The last x, y write position on the image array
     """
 
     yDim = imgArray.shape[0]
     xDim = imgArray.shape[1]
-    
+
     if len(writePos) == 0:
         writePos[:] = [xDim, yDim - 1]
 
@@ -92,34 +86,42 @@ def on_click_image(event):
         pass
 
 
-def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
-         num_steps, readout, apd_index, continuous=False):
+def main(cxn, name, coords, x_range, y_range, num_steps, readout, apd_index,
+         continuous=False):
 
     # %% Some initial calculations
+
+    x_center, y_center, z_center = coords
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
 
     # The galvo's small angle step response is 400 us
     # Let's give ourselves a buffer of 500 us (500000 ns)
-    period = readout + 500000
+    delay = int(0.5 * 10**6)
+
+    total_num_samples = num_steps**2
+
+    # %% Load the PulseStreamer
+
+    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+                                              [delay, readout, apd_index])
+    period = ret_vals[0]
 
     # %% Set up the galvo
 
     x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
-    
+
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]
     x_high = x_voltages[x_num_steps-1]
     y_num_steps = len(y_voltages)
     y_low = y_voltages[0]
     y_high = y_voltages[y_num_steps-1]
-    
-    pixel_size = x_voltages[1] - x_voltages[0]
 
-    total_num_samples = x_num_steps * y_num_steps
+    pixel_size = x_voltages[1] - x_voltages[0]
 
     # %% Set the piezo
 
@@ -147,20 +149,17 @@ def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
     fig = tool_belt.create_image_figure(img_array, img_extent,
                                         clickHandler=on_click_image)
 
-    # %% Run the PulseStreamer
+    # %% Collect the data
 
     # We require bookends on samples so stream one extra cycle
     seq_cycles = total_num_samples + 1
-    cxn.pulse_streamer.stream_immediate('simple_readout.py', seq_cycles,
-                                        [period, readout, apd_index])
-
-    # %% Collect the data
+    cxn.pulse_streamer.stream_start(seq_cycles)
 
     timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
     timeout_inst = time.time() + timeout_duration
 
     num_read_so_far = 0
-    
+
     tool_belt.init_safe_stop()
 
     while num_read_so_far < total_num_samples:
@@ -168,7 +167,7 @@ def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
         if time.time() > timeout_inst:
             log.failure('Timed out before all samples were collected.')
             break
-        
+
         if tool_belt.safe_stop():
             break
 
@@ -197,16 +196,15 @@ def main(cxn, name, x_center, y_center, z_center, x_range, y_range,
     filePath = tool_belt.get_file_path('scan_sample', timeStamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
-    
 
     # %% Clean up
-    
+
     # Stop the pulser
     cxn.pulse_streamer.constant_default()
 
     # Close tasks
     cxn.galvo.close_task()
     cxn.apd_counter.close_task(apd_index)
-    
+
     # Return to center
     cxn.galvo.write(x_center, y_center)

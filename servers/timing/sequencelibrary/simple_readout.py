@@ -2,7 +2,7 @@
 """
 Created on Tue Apr  9 21:24:36 2019
 
-@author: Matt
+@author: mccambria
 """
 
 from pulsestreamer import Sequence
@@ -15,7 +15,7 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    period, readout, apd_index = args
+    delay, readout, apd_index = args
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_daq_clock']
@@ -23,27 +23,28 @@ def get_seq(pulser_wiring, args):
     pulser_do_aom = pulser_wiring['do_aom']
 
     # Convert the 32 bit ints into 64 bit ints
-    period = numpy.int64(period)
+    delay = numpy.int64(delay)
     readout = numpy.int64(readout)
+    period = numpy.int64(delay+readout+100)
 
     seq = Sequence()
 
-    train = [(100, HIGH), (period - 100, LOW)]
+    train = [(delay+readout, LOW), (100, HIGH)]
     seq.setDigital(pulser_do_daq_clock, train)
 
-    train = [(period - readout, LOW), (readout, HIGH)]
+    train = [(delay, LOW), (readout, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
 
     train = [(period, HIGH)]
     seq.setDigital(pulser_do_aom, train)
 
-    return seq
+    return seq, [period]
 
 
 if __name__ == '__main__':
-    wiring = {'pulser_do_daq_clock': 0,
-              'pulser_do_daq_gate': 1,
-              'pulser_do_aom': 2}
-    args = [11 * 10**6, 10 * 10**6]
-    seq = get_seq(wiring, args)
+    wiring = {'do_daq_clock': 0,
+              'do_apd_gate_0': 1,
+              'do_aom': 2}
+    args = [11 * 10**6, 10 * 10**6, 0]
+    seq, ret_vals = get_seq(wiring, args)
     seq.plot()
