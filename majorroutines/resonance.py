@@ -46,9 +46,9 @@ def main(cxn, name, coords, apd_index,
     # useful for us here.
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
-    counts_uwave_off = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
-    counts_uwave_off[:] = numpy.nan
-    counts_uwave_on = numpy.copy(counts_uwave_off)
+    ref_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
+    ref_counts[:] = numpy.nan
+    sig_counts = numpy.copy(ref_counts)
     counts_norm = numpy.empty([num_runs, num_steps])
 
     # %% Set up the pulser
@@ -104,20 +104,20 @@ def main(cxn, name, coords, apd_index,
             if len(new_counts) != 2:
                 raise RuntimeError('There should be exactly 2 samples per freq.')
 
-            counts_uwave_off[run_ind, step_ind] = new_counts[0]
-            counts_uwave_on[run_ind, step_ind] = new_counts[1]
+            ref_counts[run_ind, step_ind] = new_counts[0]
+            sig_counts[run_ind, step_ind] = new_counts[1]
             counts_norm[run_ind, step_ind] = new_counts[1] / new_counts[0]
 
     # %% Process and plot the data
 
     # Find the averages across runs
-    counts_uwave_off_avg = numpy.average(counts_uwave_off, axis=0)
-    counts_uwave_on_avg = numpy.average(counts_uwave_on, axis=0)
-    counts_norm_avg = numpy.average(counts_norm, axis=0)
+    ref_counts_avg = numpy.average(ref_counts, axis=0)
+    sig_counts_avg = numpy.average(sig_counts, axis=0)
+    norm_avg_sig = numpy.average(counts_norm, axis=0)
 
     # Convert to kilocounts per second
-    kcps_uwave_off_avg = (counts_uwave_off_avg / (10**3)) / readout_sec
-    kcpsc_uwave_on_avg = (counts_uwave_on_avg / (10**3)) / readout_sec
+    kcps_uwave_off_avg = (ref_counts_avg / (10**3)) / readout_sec
+    kcpsc_uwave_on_avg = (sig_counts_avg / (10**3)) / readout_sec
 
     # Create an image with 2 plots on one row, with a specified size
     # Then draw the canvas and flush all the previous plots from the canvas
@@ -133,7 +133,7 @@ def main(cxn, name, coords, apd_index,
     ax.legend()
     # The second plot will show their subtracted values
     ax = axes_pack[1]
-    ax.plot(freqs, counts_norm_avg, 'b-')
+    ax.plot(freqs, norm_avg_sig, 'b-')
     ax.set_title('Normalized Count Rate vs Frequency')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
@@ -158,9 +158,9 @@ def main(cxn, name, coords, apd_index,
                'uwave_power': uwave_power,
                'readout': readout,
                'uwave_switch_delay': uwave_switch_delay,
-               'counts_uwave_on': counts_uwave_on.astype(int).tolist(),
-               'counts_uwave_off': counts_uwave_off.astype(int).tolist(),
-               'counts_norm_avg': counts_norm_avg.astype(int).tolist()}
+               'sig_counts': sig_counts.astype(int).tolist(),
+               'ref_counts': ref_counts.astype(int).tolist(),
+               'norm_avg_sig': norm_avg_sig.astype(int).tolist()}
 
     filePath = tool_belt.get_file_path(file_name_no_ext, timestamp, name)
     tool_belt.save_figure(fig, filePath)
