@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Scans the microwave frequency, taking counts at each point.
+Electron spin resonance routine. Scans the microwave frequency, taking counts
+at each point.
 
 Created on Thu Apr 11 15:39:23 2019
 
@@ -15,7 +16,6 @@ import majorroutines.optimize as optimize
 import numpy
 import os
 import matplotlib.pyplot as plt
-import time
 
 
 # %% Main
@@ -68,7 +68,7 @@ def main(cxn, name, coords, apd_index,
     num_samples = num_runs * num_samples_per_run
     cxn.apd_counter.load_stream_reader(apd_index, period, num_samples)
 
-    # %% Collect and plot the data
+    # %% Collect the data
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -79,7 +79,7 @@ def main(cxn, name, coords, apd_index,
         if tool_belt.safe_stop():
             break
 
-#        optimize.main(cxn, name, coords, apd_index)
+        optimize.main(cxn, name, coords, apd_index)
 
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):
@@ -92,7 +92,7 @@ def main(cxn, name, coords, apd_index,
 
             # If this is the first sample then we have to enable the signal
             if (run_ind == 0) and (step_ind == 0):
-                cxn.microwave_signal_generator.set_freq(uwave_power)
+                cxn.microwave_signal_generator.set_amp(uwave_power)
                 cxn.microwave_signal_generator.uwave_on()
 
             # Start the timing stream

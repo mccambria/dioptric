@@ -116,14 +116,6 @@ def main(cxn, name, coords, run_time, readout, apd_index, continuous=False):
             update_line_plot(new_samples, num_read_so_far, *args)
             num_read_so_far += num_new_samples
 
-    # %% Clean up
-
-    # Stop the pulser
-    cxn.pulse_streamer.constant_default()
-
-    # Close tasks
-    cxn.apd_counter.close_task(apd_index)
-
     # %% Report the data
 
     average = numpy.mean(samples[0:write_pos[0]]) / (10**3 * readout_sec)

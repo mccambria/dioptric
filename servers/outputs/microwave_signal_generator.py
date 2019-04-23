@@ -8,7 +8,7 @@ Created on Wed Apr 10 12:53:38 2019
 
 ### BEGIN NODE INFO
 [info]
-name = Microwave Signal Generator
+name = microwave_signal_generator
 version = 1.0
 description =
 
@@ -31,8 +31,8 @@ import nidaqmx.stream_writers as stream_writers
 from nidaqmx.constants import AcquisitionType
 
 
-class UwaveSigGen(LabradServer):
-    name = 'Microwave Signal Generator'
+class MicrowaveSignalGenerator(LabradServer):
+    name = 'microwave_signal_generator'
 
     def initServer(self):
         config = ensureDeferred(self.get_config())
@@ -126,7 +126,7 @@ class UwaveSigGen(LabradServer):
             task.close()
 
 
-__server__ = UwaveSigGen()
+__server__ = MicrowaveSignalGenerator()
 
 if __name__ == '__main__':
     from labrad import util

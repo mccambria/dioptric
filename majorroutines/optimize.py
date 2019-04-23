@@ -88,10 +88,6 @@ def main(cxn, name, coords, apd_index,
 
     xy_counts = numpy.array(xy_counts, dtype=numpy.uint32)
 
-    # Close tasks
-    cxn.galvo.close_task()
-    cxn.apd_counter.close_task(apd_index)
-
     # %% Collect the z counts
 
     # If the user said stop, let's just stop
@@ -130,9 +126,6 @@ def main(cxn, name, coords, apd_index,
         cxn.pulse_streamer.stream_start()
 
         z_counts[ind] = cxn.apd_counter.read_stream(apd_index, 1)[0]
-
-    # Close tasks
-    cxn.apd_counter.close_task(apd_index)
 
     # %% Extract each dimension's counts
 

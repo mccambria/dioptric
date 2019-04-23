@@ -197,12 +197,5 @@ def main(cxn, name, coords, x_range, y_range, num_steps, readout, apd_index,
 
     # %% Clean up
 
-    # Stop the pulser
-    cxn.pulse_streamer.constant_default()
-
-    # Close tasks
-    cxn.galvo.close_task()
-    cxn.apd_counter.close_task(apd_index)
-
     # Return to center
     cxn.galvo.write(x_center, y_center)

@@ -8,7 +8,7 @@ Created on Mon Apr  8 19:50:12 2019
 
 ### BEGIN NODE INFO
 [info]
-name = Galvo
+name = galvo
 version = 1.0
 description =
 
@@ -32,7 +32,7 @@ import numpy
 
 
 class Galvo(LabradServer):
-    name = 'Galvo'
+    name = 'galvo'
 
     def initServer(self):
         self.task = None
@@ -154,7 +154,7 @@ class Galvo(LabradServer):
             self.stream_buffer_pos = next_buffer_pos
         else:
             buffer_voltages = voltages[:, buffer_pos:]
-            task.register_every_n_samples_transferred_from_buffer_event(num_left_to_write, self.close_task_internal)
+            self.task.register_every_n_samples_transferred_from_buffer_event(num_left_to_write, self.close_task_internal)
         cont_buffer_voltages = numpy.ascontiguousarray(buffer_voltages)
         self.stream_writer.write_many_sample(cont_buffer_voltages)
 

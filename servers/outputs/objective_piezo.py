@@ -8,7 +8,7 @@ Created on Thu Apr  4 15:58:30 2019
 
 ### BEGIN NODE INFO
 [info]
-name = Objective Piezo
+name = objective_piezo
 version = 1.0
 description =
 
@@ -29,7 +29,7 @@ from pipython import GCSDevice
 
 
 class ObjectivePiezo(LabradServer):
-    name = 'Objective Piezo'
+    name = 'objective_piezo'
 
     def initServer(self):
         config = ensureDeferred(self.get_config())

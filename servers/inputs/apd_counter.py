@@ -8,7 +8,7 @@ Created on Tue Apr  9 08:52:34 2019
 
 ### BEGIN NODE INFO
 [info]
-name = APD Counter
+name = apd_counter
 version = 1.0
 description =
 
@@ -35,7 +35,7 @@ from twisted.logger import Logger
 
 
 class ApdCounter(LabradServer):
-    name = 'APD Counter'
+    name = 'apd_counter'
 
     def initServer(self):
         config = ensureDeferred(self.get_config())
@@ -144,7 +144,7 @@ class ApdCounter(LabradServer):
         task.start()
 
     @setting(1, apd_index='i', min_num_to_read='i', returns='*w')
-    def read_stream(self, c, apd_index, min_num_to_read=None):
+    def read_stream(self, c, apd_index, num_to_read=None):
 
         # Unpack the state dictionary
         state_dict = self.stream_reader_state[apd_index]
@@ -156,14 +156,17 @@ class ApdCounter(LabradServer):
 
         # Read the samples currently in the DAQ memory
         if num_to_read == None:
-            # Initialize the read sample array to its maximum possible size
+            # Read whatever is in the buffer
             new_samples_cum = numpy.zeros(buffer_size, dtype=numpy.uint32)
             num_new_samples = reader.read_many_sample_uint32(new_samples_cum)
         else:
-            # Initialize the read sample array to its exact size
-            new_samples_cum = numpy.zeros(num_to_read, dtype=numpy.uint32)
-            num_new_samples = num_to_read
-            reader.read_many_sample_uint32(new_samples_cum, num_to_read)
+            # Read the specified number of samples
+            # new_samples_cum = numpy.zeros(num_to_read, dtype=numpy.uint32)
+            new_samples_cum = numpy.zeros(buffer_size, dtype=numpy.uint32)
+            # num_new_samples = num_to_read
+            num_new_samples = reader.read_many_sample_uint32(new_samples_cum, num_to_read)
+            if num_new_samples != num_to_read:
+                raise Warning('Read more/less samples than specified.')
 
         if num_new_samples >= buffer_size:
             raise Warning('The DAQ buffer contained more samples than '
@@ -194,9 +197,9 @@ class ApdCounter(LabradServer):
 
         # Update the current count
         num_read_so_far += num_new_samples
+        state_dict['num_read_so_far'] = num_read_so_far
         if num_read_so_far == total_num_to_read:
             self.close_task(c, apd_index)
-        state_dict['num_read_so_far'] = num_read_so_far
 
         return new_samples_diff
 
