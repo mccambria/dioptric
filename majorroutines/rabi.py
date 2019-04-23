@@ -16,6 +16,7 @@ import majorroutines.optimize as optimize
 import numpy
 import os
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
 
 # %% Main
@@ -110,6 +111,10 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
             count = cxn.apd_counter.read_stream(ref_apd_index, 1)
             ref_counts[run_ind, tau_ind] = count
 
+    # %% Turn off the signal generator
+
+    cxn.microwave_signal_generator.uwave_off()
+
     # %% Average the counts over the iterations
 
     sig_counts_avg = numpy.average(sig_counts, axis=0)
@@ -128,40 +133,42 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
     phase = 1.57
     decay = 10**-7
 
-    popt, pcov = curve_fit(tool_belt.sinexp, taus, norm_counts,
-                           p0=[offset, amplitude, frequency, phase, decay])
+    init_params = [offset, amplitude, frequency, phase, decay]
 
-    period = 1 / popt[2]
+    opti_params, cov_arr = curve_fit(tool_belt.sinexp, taus, norm_counts,
+                                     p0=init_params)
+
+    period = 1 / opti_params[2]
 
     # %% Plot the Rabi signal
 
-    fig1, axesPack = plt.subplots(1, 2, figsize=(17, 8.5))
+    fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
-    ax = axesPack[0]
-    ax.plot(tauArray, countsSignalAveraged, 'r-')
-    ax.plot(tauArray, countsReferenceAveraged, 'g-')
-#    ax.plot(tauArray, countsBackground, 'o-')
+    ax = axes_pack[0]
+    ax.plot(taus, sig_counts_avg, 'r-')
+    ax.plot(taus, ref_counts_avg, 'g-')
+    # ax.plot(tauArray, countsBackground, 'o-')
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
 
-    ax = axesPack[1]
-    ax.plot(tauArray , countsRabi, 'b-')
-    ax.set_title('Normalized Signal with varying rf time')
-    ax.set_xlabel('rf time (ns)')
-    ax.set_ylabel('Normalized signal')
+    ax = axes_pack[1]
+    ax.plot(taus , norm_counts, 'b-')
+    ax.set_title('Normalized Signal With Varying Microwave Duration')
+    ax.set_xlabel('Microwave duration (ns)')
+    ax.set_ylabel('Contrast (arb. units)')
 
-    fig1.canvas.draw()
-    fig1.set_tight_layout(True)
-    fig1.canvas.flush_events()
+    fig.canvas.draw()
+    # fig.set_tight_layout(True)
+    fig.canvas.flush_events()
 
     # %% Plot the data itself and the fitted curve
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(tauArray, countsRabi,'bo',label='data')
-    ax.plot(tauArray, sinexp(tauArray,*popt),'r-',label='fit')
-    ax.set_xlabel('rf Time (ns)')
+    ax.plot(taus, countsRabi,'bo',label='data')
+    ax.plot(taus, tool_belt.sinexp(tauArray, *opti_params), 'r-', label='fit')
+    ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Contrast (arb. units)')
-    ax.set_title('Rabi Oscillation of Nitrogen-Vacancy Center electron spin')
+    ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
     ax.legend()
     text = "\n".join((r'$C + A_0 \mathrm{sin}(\nu * 2 \pi * t + \phi) e^{-d * t}$',
                       r'$\frac{1}{\nu} = $' + "%.1f"%(period) + " ns",
@@ -171,21 +178,19 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
 
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     ax.text(0.55, 0.25, text, transform=ax.transAxes, fontsize=12,
-                            verticalalignment="top", bbox=props)
+            verticalalignment="top", bbox=props)
 
     fig.canvas.draw()
-    fig.set_tight_layout(True)
+    # fig.set_tight_layout(True)
     fig.canvas.flush_events()
 
-# %% Turn off the RF and save the data
+    # %% Save the data
 
-    sigGen.write("ENBR 0")
+    timestamp = tool_belt.get_time_stamp()
 
-    timeStamp = tool_belt.get_time_stamp()
-
-    rawData = {"timeStamp": timeStamp,
+    rawData = {"timestamp": timestamp,
                "name": name,
-               "xyzCenters": [xCenter, yCenter, zCenter],
+               "xyz_centers": coords,
                "rfFrequency": rfFrequency,
                "rfPower": rfPower,
                "rfMinTime": int(rfMinTime),

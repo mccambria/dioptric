@@ -172,8 +172,8 @@ def main(cxn, name, coords, apd_index,
 
         # Least squares
         try:
-            optiParams, varianceArr = curve_fit(tool_belt.gaussian, voltages,
-                                                k_counts_per_sec, p0=init_fit)
+            optiParams, cov_arr = curve_fit(tool_belt.gaussian, voltages,
+                                            k_counts_per_sec, p0=init_fit)
         except Exception:
             optimizationFailed = True
 

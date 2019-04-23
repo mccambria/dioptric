@@ -125,9 +125,9 @@ def main(cxn, name, coords, apd_index,
 
     # The first plot will display both the uwave_off and uwave_off counts
     ax = axes_pack[0]
-    ax.plot(freqs, kcps_uwave_off_avg, 'r-', label = "uwave off")
-    ax.plot(freqs, kcpsc_uwave_on_avg, 'g-', label = "uwave on")
-    ax.set_title('Non-normalized Count Rate vs Frequency')
+    ax.plot(freqs, kcps_uwave_off_avg, 'r-', label = 'Signal')
+    ax.plot(freqs, kcpsc_uwave_on_avg, 'g-', label = 'Reference')
+    ax.set_title('Non-normalized Count Rate Versus Frequency')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Count rate (kcps)')
     ax.legend()
