@@ -80,6 +80,7 @@ def main(cxn, name, coords, apd_index,
             break
 
         optimize.main(cxn, name, coords, apd_index)
+        tool_belt.set_xyz(cxn, coords)
 
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):

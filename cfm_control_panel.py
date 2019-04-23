@@ -26,14 +26,12 @@ import majorroutines.resonance as resonance
 
 def set_xyz(coords):
     with labrad.connect() as cxn:
-        cxn.galvo.write(coords[0], coords[1])
-        cxn.objective_piezo.write_voltage(coords[2])
+        tool_belt.set_xyz(cxn, coords)
 
 
 def set_xyz_zero():
     with labrad.connect() as cxn:
-        cxn.galvo.write(0.0, 0.0)
-        cxn.objective_piezo.write_voltage(50.0)
+        tool_belt.set_xyz_zero(cxn)
 
 
 # %% Major Routines
@@ -98,7 +96,7 @@ if __name__ == '__main__':
 
 #    coords = [0.0, 0.0, 50.0]
     coords = [0.002, -0.010, 48.502]
-    
+
     apd_index = 0
 
     scan_range = 0.05

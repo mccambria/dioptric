@@ -61,3 +61,5 @@ def main(cxn, name, coords, apd0_index, apd1_index,
     for run_ind in range(num_runs):
 
         optimize.main(cxn, name, coords, apd_index)
+        tool_belt.set_xyz(cxn, coords)
+
