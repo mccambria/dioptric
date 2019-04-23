@@ -92,7 +92,7 @@ def main(cxn, name, coords, apd_index,
     
             # If this is the first sample then we have to enable the signal
             if (run_ind == 0) and (step_ind == 0):
-                cxn.microwave_signal_generator.set_freq(uwave_power)
+                cxn.microwave_signal_generator.set_amp(uwave_power)
                 cxn.microwave_signal_generator.uwave_on()
     
             # Start the timing stream

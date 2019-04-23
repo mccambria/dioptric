@@ -97,7 +97,7 @@ if __name__ == '__main__':
     name = 'ayrton12'
 
 #    coords = [0.0, 0.0, 50.0]
-    coords = [0.002, -0.010, 48.502]
+    coords = [-0.098, 0.007, 49.0]
     
     apd_index = 0
 
