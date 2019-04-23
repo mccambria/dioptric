@@ -70,6 +70,8 @@ def main(cxn, name, coords, apd_index,
 
     # %% Collect the data
 
+    tool_belt.set_xyz(cxn, coords)
+
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
 
@@ -79,8 +81,7 @@ def main(cxn, name, coords, apd_index,
         if tool_belt.safe_stop():
             break
 
-        optimize.main(cxn, name, coords, apd_index)
-        tool_belt.set_xyz(cxn, coords)
+        # optimize.main(cxn, name, coords, apd_index)
 
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):

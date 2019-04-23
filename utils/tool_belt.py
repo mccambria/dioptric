@@ -260,6 +260,11 @@ def gaussian(x, *params):
     return offset + coeff**2*numpy.exp(-(centDist**2)/(2*var))
 
 
+def sinexp(t, offset, amp, freq, phase, decay):
+    two_pi = 2*numpy.pi
+    return offset + (amp * numpy.sin((two_pi * freq * t) + phase))
+
+
 # %%  Save utils
 
 
