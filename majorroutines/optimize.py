@@ -68,9 +68,7 @@ def main(cxn, name, coords, apd_index,
 
     tool_belt.init_safe_stop()
 
-    # Run the PulseStreamer with bookends around samples
-    seq_cycles = xy_num_steps + 1
-    cxn.pulse_streamer.stream_start(seq_cycles)
+    cxn.pulse_streamer.stream_start(xy_num_steps)
 
     while num_read_so_far < xy_num_steps:
 
@@ -82,17 +80,13 @@ def main(cxn, name, coords, apd_index,
             return opti_centers
 
         # Read the samples and update the image
-        new_samples = cxn.apd_counter.read_stream(apd_index, bookends=True)
+        new_samples = cxn.apd_counter.read_stream(apd_index)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             xy_counts.extend(new_samples)
             num_read_so_far += num_new_samples
 
     xy_counts = numpy.array(xy_counts, dtype=numpy.uint32)
-
-    # Close tasks
-    cxn.galvo.close_task()
-    cxn.apd_counter.close_task(apd_index)
 
     # %% Collect the z counts
 
@@ -131,10 +125,7 @@ def main(cxn, name, coords, apd_index,
         # Start the timing stream
         cxn.pulse_streamer.stream_start()
 
-        z_counts[ind] = cxn.apd_counter.read_stream(apd_index, one_sample=True)[0]
-
-    # Close tasks
-    cxn.apd_counter.close_task(apd_index)
+        z_counts[ind] = cxn.apd_counter.read_stream(apd_index, 1)[0]
 
     # %% Extract each dimension's counts
 
@@ -181,8 +172,8 @@ def main(cxn, name, coords, apd_index,
 
         # Least squares
         try:
-            optiParams, varianceArr = curve_fit(tool_belt.gaussian, voltages,
-                                                k_counts_per_sec, p0=init_fit)
+            optiParams, cov_arr = curve_fit(tool_belt.gaussian, voltages,
+                                            k_counts_per_sec, p0=init_fit)
         except Exception:
             optimizationFailed = True
 

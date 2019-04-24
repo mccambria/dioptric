@@ -8,7 +8,7 @@ Created on Tue Apr  9 08:52:34 2019
 
 ### BEGIN NODE INFO
 [info]
-name = APD Counter
+name = apd_counter
 version = 1.0
 description =
 
@@ -35,7 +35,7 @@ from twisted.logger import Logger
 
 
 class ApdCounter(LabradServer):
-    name = 'APD Counter'
+    name = 'apd_counter'
 
     def initServer(self):
         config = ensureDeferred(self.get_config())
@@ -93,7 +93,7 @@ class ApdCounter(LabradServer):
         try:
             self.try_load_stream_reader(c, apd_index,
                                         period, total_num_to_read)
-        except:
+        except Exception:
             self.close_task(c, apd_index)
             raise
 
@@ -137,46 +137,37 @@ class ApdCounter(LabradServer):
         # Something funny is happening if we get more
         # than 1000 samples in one read
         state_dict['buffer_size'] = min(total_num_to_read, 1000)
-        state_dict['last_value'] = None  # Last cumulative value we read
+        state_dict['last_value'] = 0  # Last cumulative value we read
 
         # Start the task. It will start counting immediately so we'll have to
         # discard the first sample.
         task.start()
 
-    @setting(1, apd_index='i', one_sample='b', bookends='b', returns='*w')
-    def read_stream(self, c, apd_index, one_sample=False, bookends=False):
+    @setting(1, apd_index='i', min_num_to_read='i', returns='*w')
+    def read_stream(self, c, apd_index, num_to_read=None):
 
         # Unpack the state dictionary
         state_dict = self.stream_reader_state[apd_index]
-        
+
         reader = state_dict['reader']
         num_read_so_far = state_dict['num_read_so_far']
         total_num_to_read = state_dict['total_num_to_read']
         buffer_size = state_dict['buffer_size']
 
-        # The counter task begins counting as soon as the task starts.
-        # The AO channel writes its first samples only on the first clock
-        # signal after the task starts. This means that if we're running
-        # AOs on the clock, then there's one sample from the counter stream
-        # that we don't want to record. We do need it for calculations.
-        if state_dict['last_value'] == None:
-            # If we're just collecting one sample, then assume there's no
-            # AO stream set up.
-            if one_sample or not bookends:
-                state_dict['last_value'] = 0
-            else:
-                state_dict['last_value'] = reader.read_one_sample_uint32()
-
-        # Initialize the read sample array to its maximum possible size.
-        new_samples_cum = numpy.zeros(buffer_size,
-                                      dtype=numpy.uint32)
-
-        # Read the samples currently in the DAQ memory.
-        if one_sample:
-            num_new_samples = 1
-            new_samples_cum[0] = reader.read_one_sample_uint32()
-        else:
+        # Read the samples currently in the DAQ memory
+        if num_to_read == None:
+            # Read whatever is in the buffer
+            new_samples_cum = numpy.zeros(buffer_size, dtype=numpy.uint32)
             num_new_samples = reader.read_many_sample_uint32(new_samples_cum)
+        else:
+            # Read the specified number of samples
+            # new_samples_cum = numpy.zeros(num_to_read, dtype=numpy.uint32)
+            new_samples_cum = numpy.zeros(buffer_size, dtype=numpy.uint32)
+            # num_new_samples = num_to_read
+            num_new_samples = reader.read_many_sample_uint32(new_samples_cum, num_to_read)
+            if num_new_samples != num_to_read:
+                raise Warning('Read more/less samples than specified.')
+
         if num_new_samples >= buffer_size:
             raise Warning('The DAQ buffer contained more samples than '
                           'expected. Validate your parameters and '
@@ -206,9 +197,9 @@ class ApdCounter(LabradServer):
 
         # Update the current count
         num_read_so_far += num_new_samples
+        state_dict['num_read_so_far'] = num_read_so_far
         if num_read_so_far == total_num_to_read:
             self.close_task(c, apd_index)
-        state_dict['num_read_so_far'] = num_read_so_far
 
         return new_samples_diff
 

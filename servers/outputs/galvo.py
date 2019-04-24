@@ -8,7 +8,7 @@ Created on Mon Apr  8 19:50:12 2019
 
 ### BEGIN NODE INFO
 [info]
-name = Galvo
+name = galvo
 version = 1.0
 description =
 
@@ -32,7 +32,7 @@ import numpy
 
 
 class Galvo(LabradServer):
-    name = 'Galvo'
+    name = 'galvo'
 
     def initServer(self):
         self.task = None
@@ -83,9 +83,19 @@ class Galvo(LabradServer):
         return voltages
 
     def load_stream_writer(self, c, task_name, voltages, period):
-        # Close the existing task and create a new one
+
+        # Close the existing task if there is one
         if self.task is not None:
             self.close_task(c)
+
+        # Write the initial voltages and stream the rest
+        self.write(c, voltages[0, 0], voltages[1, 0])
+        num_voltages = voltages.shape[1]
+        stream_voltages = voltages[:, 1:num_voltages-1]
+        stream_voltages = numpy.ascontiguousarray(stream_voltages)
+        num_stream_voltages = num_voltages - 1
+
+        # Create a new task
         task = nidaqmx.Task(task_name)
         self.task = task
 
@@ -113,35 +123,38 @@ class Galvo(LabradServer):
 
         # We'll write incrementally if there are more than 4000 samples
         # per channel since the DAQ buffer supports 8191 samples max
-        if voltages.shape[1] > 4000:
-            buffered = True
-            buffer_voltages = numpy.ascontiguousarray(voltages[:, 0:4000])
+        if num_stream_voltages > 4000:
+            buffer_voltages = numpy.ascontiguousarray(stream_voltages[:, 0:4000])
             # Set up the stream state attributes
             self.stream_writer = writer
-            self.stream_voltages = voltages
+            self.stream_voltages = stream_voltages
             self.stream_buffer_pos = 4000
+            # Refill the buffer every 3000 samples
+            transfer_num = 3000
+            transfer_callback = self.fill_buffer
         else:
-            buffered = False
-            buffer_voltages = voltages
-            
+            buffer_voltages = stream_voltages
+            # Close the task once we've written all the samples
+            transfer_num = num_stream_voltages
+            transfer_callback = self.close_task_internal
+
         writer.write_many_sample(buffer_voltages)
-        
-        # Refill the buffer every 3000 samples
-        if buffered:
-            task.register_every_n_samples_transferred_from_buffer_event(3000, self.fill_buffer)
-            
+        task.register_every_n_samples_transferred_from_buffer_event(transfer_num, transfer_callback)
+
         task.start()
-        
+
     def fill_buffer(self):
         # Check if there are more than 3000 samples left to write
         voltages = self.stream_voltages
         buffer_pos = self.stream_buffer_pos
-        if voltages.shape[1] - buffer_pos > 3000:
+        num_left_to_write = voltages.shape[1] - buffer_pos
+        if num_left_to_write > 3000:
             next_buffer_pos = buffer_pos + 3000
             buffer_voltages = voltages[:, buffer_pos:next_buffer_pos]
             self.stream_buffer_pos = next_buffer_pos
         else:
             buffer_voltages = voltages[:, buffer_pos:]
+            self.task.register_every_n_samples_transferred_from_buffer_event(num_left_to_write, self.close_task_internal)
         cont_buffer_voltages = numpy.ascontiguousarray(buffer_voltages)
         self.stream_writer.write_many_sample(cont_buffer_voltages)
 
@@ -150,12 +163,12 @@ class Galvo(LabradServer):
              returns='*v[]*v[]')
     def load_sweep_scan(self, c, x_center, y_center,
                         x_range, y_range, num_steps, period):
-        
+
         ######### Assumes x_range == y_range #########
-        
+
         if x_range != y_range:
             raise ValueError('x_range must equal y_range for now')
-            
+
         x_num_steps = num_steps
         y_num_steps = num_steps
 
@@ -163,7 +176,7 @@ class Galvo(LabradServer):
         # to the shorter axis
         half_x_range = x_range / 2
         half_y_range = y_range / 2
-        
+
         x_low = x_center - half_x_range
         x_high = x_center + half_x_range
         y_low = y_center - half_y_range
@@ -175,7 +188,7 @@ class Galvo(LabradServer):
         # really care.
         x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
         y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
-        
+
         ######### Works for any x_range, y_range #########
 
         # Winding cartesian product
@@ -199,39 +212,42 @@ class Galvo(LabradServer):
         try:
             self.load_stream_writer(c, 'Galvo-load_sweep_scan',
                                     voltages, period)
-        except: 
+        except Exception:
             self.close_task(c)
             raise
 
         return x_voltages_1d, y_voltages_1d
-    
-    @setting(3, x_center='v[]', y_center='v[]', xy_range='v[]', 
+
+    @setting(3, x_center='v[]', y_center='v[]', xy_range='v[]',
              num_steps='i', period='i', returns='*v[]*v[]')
     def load_cross_scan(self, c, x_center, y_center,
                         xy_range, num_steps, period):
-        
+
         half_xy_range = xy_range / 2
-        
+
         x_low = x_center - half_xy_range
         x_high = x_center + half_xy_range
         y_low = y_center - half_xy_range
         y_high = y_center + half_xy_range
-        
+
         x_voltages = numpy.linspace(x_low, x_high, num_steps)
         y_voltages = numpy.linspace(y_low, y_high, num_steps)
-        
+
         voltages = numpy.vstack((x_voltages, y_voltages))
         try:
             self.load_stream_writer(c, 'Galvo-load_cross_scan',
                                     voltages, period)
-        except: 
+        except Exception:
             self.close_task(c)
             raise
-            
+
         return x_voltages, y_voltages
 
     @setting(4)
     def close_task(self, c):
+        self.close_task_internal()
+
+    def close_task_internal(self):
         task = self.task
         if task is not None:
             task.close()

@@ -72,9 +72,6 @@ class PulseStreamer(LabradServer):
         self.pulser_wiring = {}
         for reg_key in reg_keys:
             self.pulser_wiring[reg_key] = wiring[reg_key]
-        # The default output state is to have the AOM on
-        pulser_do_aom = wiring['do_aom']
-        self.default_output_state = OutputState([pulser_do_aom], 0, 0)
 
     def get_seq(self, seq_file, args):
         seq = None
@@ -93,6 +90,7 @@ class PulseStreamer(LabradServer):
     @setting(1, seq_file='s', args='*?', returns='*?')
     def stream_load(self, c, seq_file, args=None):
         self.pulser.setTrigger(start=TriggerStart.SOFTWARE)
+        self.set_final_output()  # Set final output to the default
         seq, ret_vals = self.get_seq(seq_file, args)
         if seq is not None:
             self.seq = seq
@@ -104,13 +102,22 @@ class PulseStreamer(LabradServer):
         if self.seq == None:
             raise RuntimeError('Stream started with no sequence.')
         if not self.loaded_seq_streamed:
-            self.pulser.stream(self.seq, num_repeat, self.default_output_state)
+            self.pulser.stream(self.seq, num_repeat, self.final_output)
             self.loaded_seq_streamed = True
         self.pulser.startNow()
 
     @setting(3)
     def constant_default(self, c):
         self.pulser.constant(self.default_output_state)
+
+    @setting(3, output_state='i')
+    def set_final_output(self, c, output_state=0):
+        if output_state == 0:  # Default, AOM on
+            pulser_do_aom = self.pulser_wiring['do_aom']
+            self.final_output = OutputState(pulser_do_aom, 0, 0)
+        elif output_state == 1:  # DAQ clock on
+            pulser_do_daq_clock = self.pulser_wiring['do_daq_clock']
+            self.final_output = OutputState(pulser_do_daq_clock, 0, 0)
 
 
 __server__ = PulseStreamer()
