@@ -48,7 +48,7 @@ def main(cxn, name, coords, run_time, readout, apd_index, continuous=False):
 
     # %% Load the PulseStreamer
 
-    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py', 0,
                                               [0, readout, apd_index])
     period = ret_vals[0]
 

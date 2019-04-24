@@ -31,7 +31,6 @@ import nidaqmx.stream_readers as stream_readers
 from nidaqmx.constants import TriggerType
 from nidaqmx.constants import Level
 from nidaqmx.constants import AcquisitionType
-from twisted.logger import Logger
 
 
 class ApdCounter(LabradServer):
@@ -143,7 +142,7 @@ class ApdCounter(LabradServer):
         # discard the first sample.
         task.start()
 
-    @setting(1, apd_index='i', min_num_to_read='i', returns='*w')
+    @setting(1, apd_index='i', num_to_read='i', returns='*w')
     def read_stream(self, c, apd_index, num_to_read=None):
 
         # Unpack the state dictionary

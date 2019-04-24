@@ -8,7 +8,7 @@ Created on Tue Apr  9 17:12:27 2019
 
 ### BEGIN NODE INFO
 [info]
-name = Pulse Streamer
+name = pulse_streamer
 version = 1.0
 description =
 
@@ -35,7 +35,7 @@ import sys
 
 
 class PulseStreamer(LabradServer):
-    name = 'Pulse Streamer'
+    name = 'pulse_streamer'
 
     def initServer(self):
         config = ensureDeferred(self.get_config())
@@ -81,16 +81,26 @@ class PulseStreamer(LabradServer):
             seq, ret_vals = seq_module.get_seq(self.pulser_wiring, args)
         return seq, ret_vals
 
-    @setting(0, seq_file='s', num_repeat='i', args='*?', returns='*?')
-    def stream_immediate(self, c, seq_file, num_repeat=1, args=None):
-        ret_vals = self.stream_load(seq_file, args)
+    def set_final_output(self, final_output):
+        if final_output == 0:  # Default, AOM on
+            pulser_do_aom = self.pulser_wiring['do_aom']
+            self.final_output = OutputState([pulser_do_aom], 0, 0)
+        elif final_output == 1:  # DAQ clock on
+            pulser_do_daq_clock = self.pulser_wiring['do_daq_clock']
+            self.final_output = OutputState([pulser_do_daq_clock], 0, 0)
+
+    @setting(0, seq_file='s', num_repeat='i', final_output='i',
+             args='*?', returns='*?')
+    def stream_immediate(self, c, seq_file, num_repeat=1,
+                         final_output=0, args=None):
+        ret_vals = self.stream_load(seq_file, final_output, args)
         self.stream_start(num_repeat)
         return ret_vals
 
-    @setting(1, seq_file='s', args='*?', returns='*?')
-    def stream_load(self, c, seq_file, args=None):
+    @setting(1, seq_file='s', final_output='i', args='*?', returns='*?')
+    def stream_load(self, c, seq_file, final_output=0, args=None):
         self.pulser.setTrigger(start=TriggerStart.SOFTWARE)
-        self.set_final_output()  # Set final output to the default
+        self.set_final_output(final_output)
         seq, ret_vals = self.get_seq(seq_file, args)
         if seq is not None:
             self.seq = seq
@@ -109,15 +119,6 @@ class PulseStreamer(LabradServer):
     @setting(3)
     def constant_default(self, c):
         self.pulser.constant(self.default_output_state)
-
-    @setting(3, output_state='i')
-    def set_final_output(self, c, output_state=0):
-        if output_state == 0:  # Default, AOM on
-            pulser_do_aom = self.pulser_wiring['do_aom']
-            self.final_output = OutputState(pulser_do_aom, 0, 0)
-        elif output_state == 1:  # DAQ clock on
-            pulser_do_daq_clock = self.pulser_wiring['do_daq_clock']
-            self.final_output = OutputState(pulser_do_daq_clock, 0, 0)
 
 
 __server__ = PulseStreamer()

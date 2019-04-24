@@ -95,20 +95,21 @@ if __name__ == '__main__':
     name = 'ayrton12'
 
 #    coords = [0.0, 0.0, 50.0]
-    coords = [-0.098, 0.007, 49.0]
+    coords = [-0.013, -0.037, 48.237]
 
-    apd_index = 0
+    primary_apd_index = 0
+    secondary_apd_index = 1
 
-    scan_range = 0.05
-    num_scan_steps = 60
+    scan_range = 0.025
+    num_scan_steps = 100
 
     # %% Functions to run
 
     try:
-#        do_image_sample(name, coords, scan_range, num_scan_steps, apd_index)
-#        do_optimize(name, coords, apd_index)
-#        do_stationary_count(name, coords, apd_index)
-        do_resonance(name, coords, apd_index)
+        do_image_sample(name, coords, scan_range, num_scan_steps, primary_apd_index)
+#        do_optimize(name, coords, primary_apd_index)
+#        do_stationary_count(name, coords, primary_apd_index)
+#        do_resonance(name, coords, primary_apd_index)
     finally:
         pass
         # Kill safe stop

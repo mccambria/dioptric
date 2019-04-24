@@ -34,7 +34,7 @@ def get_seq(pulser_wiring, args):
     pulser_do_sig_apd_gate = pulser_wiring[key]
     key = 'do_apd_gate_{}'.format(ref_apd_index)
     pulser_do_ref_apd_gate = pulser_wiring[key]
-    pulser_do_uwave = pulser_wiring['do_uwave']
+    pulser_do_uwave = pulser_wiring['do_uwave_gate']
     pulser_do_aom = pulser_wiring['do_aom']
 
     # %% Couple calculated values
@@ -98,7 +98,7 @@ if __name__ == '__main__':
               'do_apd_gate_0': 1,
               'do_apd_gate_1': 2,
               'do_aom': 3,
-              'do_uwave': 4}
+              'do_uwave_gate': 4}
     args = [10 * 10**6, 10 * 10**6, 1 * 10**6, 0, 1]
     seq = get_seq(wiring, args)
     seq.plot()

@@ -56,37 +56,11 @@ class Galvo(LabradServer):
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
 
-    @setting(0, xVoltage='v[]', yVoltage='v[]')
-    def write(self, c, xVoltage, yVoltage):
-        with nidaqmx.Task() as task:
-            # Set up the output channels
-            task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_x,
-                                                 min_val=-10.0, max_val=10.0)
-            task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_y,
-                                                 min_val=-10.0, max_val=10.0)
-            task.write([xVoltage, yVoltage])
-
-    @setting(1, returns='*2v[]')
-    def read(self, c):
-        with nidaqmx.Task() as task:
-            # Set up the internal channels - to do the actual parsing...
-            if self.daq_ao_galvo_x == 'dev1\AO0':
-                chan_name = 'dev1/_ao0_vs_aognd'
-            task.ai_channels.add_ai_voltage_chan(chan_name,
-                                                 min_val=-10.0, max_val=10.0)
-            if self.daq_ao_galvo_y == 'dev1\AO1':
-                chan_name = 'dev1/_ao1_vs_aognd'
-            task.ai_channels.add_ai_voltage_chan(chan_name,
-                                                 min_val=-10.0, max_val=10.0)
-            voltages = task.read()
-
-        return voltages
-
     def load_stream_writer(self, c, task_name, voltages, period):
 
         # Close the existing task if there is one
         if self.task is not None:
-            self.close_task(c)
+            self.close_task_internal()
 
         # Write the initial voltages and stream the rest
         self.write(c, voltages[0, 0], voltages[1, 0])
@@ -119,31 +93,30 @@ class Galvo(LabradServer):
         # We'll stop once we've run all the samples.
         freq = float(1/(period*(10**-9)))  # freq in seconds as a float
         task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_clock,
-                                        sample_mode=AcquisitionType.CONTINUOUS)
+                                        samps_per_chan=num_stream_voltages)
 
         # We'll write incrementally if there are more than 4000 samples
         # per channel since the DAQ buffer supports 8191 samples max
-        if num_stream_voltages > 4000:
+        if False: # num_stream_voltages > 4000:
             buffer_voltages = numpy.ascontiguousarray(stream_voltages[:, 0:4000])
             # Set up the stream state attributes
             self.stream_writer = writer
             self.stream_voltages = stream_voltages
             self.stream_buffer_pos = 4000
             # Refill the buffer every 3000 samples
-            transfer_num = 3000
-            transfer_callback = self.fill_buffer
+            writer.write_many_sample(buffer_voltages)
+            task.register_every_n_samples_transferred_from_buffer_event(3000, self.fill_buffer)
         else:
-            buffer_voltages = stream_voltages
-            # Close the task once we've written all the samples
-            transfer_num = num_stream_voltages
-            transfer_callback = self.close_task_internal
-
-        writer.write_many_sample(buffer_voltages)
-        task.register_every_n_samples_transferred_from_buffer_event(transfer_num, transfer_callback)
+            # Just write all the samples
+            writer.write_many_sample(stream_voltages)
+            
+        # Close the task once we've written all the samples
+        task.register_done_event(self.close_task_internal)
 
         task.start()
 
-    def fill_buffer(self):
+    def fill_buffer(self, task_handle=None, every_n_samples_event_type=None,
+                    number_of_samples=None, callback_data=None):
         # Check if there are more than 3000 samples left to write
         voltages = self.stream_voltages
         buffer_pos = self.stream_buffer_pos
@@ -154,9 +127,45 @@ class Galvo(LabradServer):
             self.stream_buffer_pos = next_buffer_pos
         else:
             buffer_voltages = voltages[:, buffer_pos:]
-            self.task.register_every_n_samples_transferred_from_buffer_event(num_left_to_write, self.close_task_internal)
         cont_buffer_voltages = numpy.ascontiguousarray(buffer_voltages)
         self.stream_writer.write_many_sample(cont_buffer_voltages)
+
+    def close_task_internal(self, task_handle=None, status=None,
+                            callback_data=None):
+        task = self.task
+        if task is not None:
+            task.close()
+            self.task = None
+            self.stream_writer = None
+            self.stream_voltages = None
+            self.stream_buffer_pos = None
+        return 0
+
+    @setting(0, xVoltage='v[]', yVoltage='v[]')
+    def write(self, c, xVoltage, yVoltage):
+        with nidaqmx.Task() as task:
+            # Set up the output channels
+            task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_x,
+                                                 min_val=-10.0, max_val=10.0)
+            task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_y,
+                                                 min_val=-10.0, max_val=10.0)
+            task.write([xVoltage, yVoltage])
+
+    @setting(1, returns='*2v[]')
+    def read(self, c):
+        with nidaqmx.Task() as task:
+            # Set up the internal channels - to do the actual parsing...
+            if self.daq_ao_galvo_x == 'dev1\AO0':
+                chan_name = 'dev1/_ao0_vs_aognd'
+            task.ai_channels.add_ai_voltage_chan(chan_name,
+                                                 min_val=-10.0, max_val=10.0)
+            if self.daq_ao_galvo_y == 'dev1\AO1':
+                chan_name = 'dev1/_ao1_vs_aognd'
+            task.ai_channels.add_ai_voltage_chan(chan_name,
+                                                 min_val=-10.0, max_val=10.0)
+            voltages = task.read()
+
+        return voltages
 
     @setting(2, x_center='v[]', y_center='v[]',
              x_range='v[]', y_range='v[]', num_steps='i', period='i',
@@ -209,12 +218,8 @@ class Galvo(LabradServer):
         y_voltages = numpy.repeat(y_voltages_1d, x_num_steps)
 
         voltages = numpy.vstack((x_voltages, y_voltages))
-        try:
-            self.load_stream_writer(c, 'Galvo-load_sweep_scan',
-                                    voltages, period)
-        except Exception:
-            self.close_task(c)
-            raise
+        
+        self.load_stream_writer(c, 'Galvo-load_sweep_scan', voltages, period)
 
         return x_voltages_1d, y_voltages_1d
 
@@ -230,31 +235,23 @@ class Galvo(LabradServer):
         y_low = y_center - half_xy_range
         y_high = y_center + half_xy_range
 
-        x_voltages = numpy.linspace(x_low, x_high, num_steps)
-        y_voltages = numpy.linspace(y_low, y_high, num_steps)
+        x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
+        y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
+        
+        x_voltages = numpy.concatenate([x_voltages_1d,
+                                        numpy.full(num_steps, x_center)])
+        y_voltages = numpy.concatenate([numpy.full(num_steps, y_center),
+                                        y_voltages_1d])
 
         voltages = numpy.vstack((x_voltages, y_voltages))
-        try:
-            self.load_stream_writer(c, 'Galvo-load_cross_scan',
-                                    voltages, period)
-        except Exception:
-            self.close_task(c)
-            raise
+        
+        self.load_stream_writer(c, 'Galvo-load_cross_scan', voltages, period)
 
-        return x_voltages, y_voltages
+        return x_voltages_1d, y_voltages_1d
 
     @setting(4)
     def close_task(self, c):
         self.close_task_internal()
-
-    def close_task_internal(self):
-        task = self.task
-        if task is not None:
-            task.close()
-            self.task = None
-            self.stream_writer = None
-            self.stream_voltages = None
-            self.stream_buffer_pos = None
 
 
 __server__ = Galvo()

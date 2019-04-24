@@ -26,7 +26,7 @@ def get_seq(pulser_wiring, args):
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_daq_clock']
     pulser_do_apd_gate = pulser_wiring['do_apd_gate_{}'.format(apd_index)]
-    pulser_do_uwave = pulser_wiring['do_uwave']
+    pulser_do_uwave = pulser_wiring['do_uwave_gate']
     pulser_do_aom = pulser_wiring['do_aom']
 
     seq = Sequence()
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     wiring = {'do_daq_clock': 0,
               'do_apd_gate_0': 1,
               'do_aom': 2,
-              'do_uwave': 3}
+              'do_uwave_gate': 3}
     args = [10 * 10**6, 10 * 10**6, 1 * 10**6, 0]
     seq = get_seq(wiring, args)
     seq.plot()

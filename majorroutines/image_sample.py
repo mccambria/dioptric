@@ -104,7 +104,7 @@ def main(cxn, name, coords, x_range, y_range, num_steps, readout, apd_index,
 
     # %% Load the PulseStreamer
 
-    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py', 0,
                                               [delay, readout, apd_index])
     period = ret_vals[0]
 
@@ -120,7 +120,7 @@ def main(cxn, name, coords, x_range, y_range, num_steps, readout, apd_index,
     y_num_steps = len(y_voltages)
     y_low = y_voltages[0]
     y_high = y_voltages[y_num_steps-1]
-
+    
     pixel_size = x_voltages[1] - x_voltages[0]
 
     # %% Set the piezo
