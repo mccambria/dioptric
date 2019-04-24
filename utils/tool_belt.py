@@ -301,9 +301,7 @@ def get_file_path(subDirName, timeStamp, name):
     fileName = timeStamp + '_' + name
 
     # Find the data directory relative to tool_belt's directory
-    currentDir = os.path.dirname(__file__)
-    folderDir = os.path.abspath(os.path.join(currentDir, '..',
-                                             'data', subDirName))
+    folderDir = os.path.abspath(os.path.join('E:\Team Drives\Kolkowitz Lab Group\nvdata', subDirName))
 
     # Make the required directory if it doesn't exist already
     if not os.path.isdir(folderDir):
@@ -445,38 +443,3 @@ def poll_safe_stop():
 
 # %% Resets and clean up
 
-
-def task_list_close_all():
-    """
-    Closes and removes all tasks in the task list.
-    """
-
-    taskList = get_task_list()
-    for task in taskList:
-        task.stop()
-        task.close()
-    taskList.clear()
-
-
-def clean_up(pulserIP, daqName):
-    """
-    Do the necessary clean up after running a routine.
-
-    Params:
-        pulserIP: string
-            The IP of the PulseStreamer that we'll be using
-        daqName: string
-            The name of the DAQ that we'll be using
-    """
-
-    # PulseStreamer clean up
-    pulser = get_pulser(pulserIP)
-    if pulser is not None:
-        pulser.reset()
-
-    # DAQ clean up
-    task_list_close_all()
-
-    if check_safe_stop_alive():
-        print('\n\nRoutine complete. Press enter to exit.')
-        poll_safe_stop()
