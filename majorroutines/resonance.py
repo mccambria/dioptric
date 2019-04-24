@@ -75,7 +75,7 @@ def main(cxn, name, coords, apd_index,
         if tool_belt.safe_stop():
             break
 
-        optimize.main(cxn, name, coords, apd_index)
+        optimize.main(cxn, coords, apd_index)
 
         # Load the APD task with two samples for each frequency step
         cxn.apd_counter.load_stream_reader(apd_index, period, 2 * num_steps)

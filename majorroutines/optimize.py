@@ -21,7 +21,7 @@ log = Logger()
 # %% Main
 
 
-def main(cxn, name, coords, apd_index,
+def main(cxn, coords, apd_index, name='untitled',
          set_to_opti_centers=True, save_data=False, plot_data=False):
 
     # %% Initial set up

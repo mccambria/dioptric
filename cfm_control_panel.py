@@ -20,6 +20,7 @@ import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
 import majorroutines.rabi as rabi
+import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_measurement as t1_measurement
 
 
@@ -52,7 +53,7 @@ def do_image_sample(name, coords, scan_range, num_steps, apd_index):
 def do_optimize(name, coords, apd_index):
 
     with labrad.connect() as cxn:
-        optimize.main(cxn, name, coords, apd_index,
+        optimize.main(cxn, coords, apd_index, name,
                       set_to_opti_centers=False,
                       save_data=True, plot_data=True)
 
@@ -78,31 +79,47 @@ def do_resonance(name, coords, apd_index):
     with labrad.connect() as cxn:
         resonance.main(cxn, name, coords, apd_index, freq_center, freq_range,
                        num_steps, num_runs, uwave_power)
-        
+
 
 def do_rabi(name, coords, sig_apd_index, ref_apd_index):
-    
+
     uwave_freq = 2.861
     uwave_power = 5
     uwave_time_range = [0, 200]
     num_steps = 25
     num_reps = 10**5
     num_runs = 3
-    
+
     with labrad.connect() as cxn:
-        rabi.main(cxn, name, coords, sig_apd_index, ref_apd_index, 
+        rabi.main(cxn, name, coords, sig_apd_index, ref_apd_index,
                   uwave_freq, uwave_power, uwave_time_range,
                   num_steps, num_reps, num_runs)
-        
+
+
+def do_g2_measurement():
+    pass
+
+    # uwave_freq = 2.861
+    # uwave_power = 5
+    # uwave_time_range = [0, 200]
+    # num_steps = 25
+    # num_reps = 10**5
+    # num_runs = 3
+
+    # with labrad.connect() as cxn:
+    #     g2_measurement.main(cxn, name, coords, sig_apd_index, ref_apd_index,
+    #               uwave_freq, uwave_power, uwave_time_range,
+    #               num_steps, num_reps, num_runs)
+
 
 def do_t1_measurement():
-    
-    
-    
-    with labrad.connect() as cxn:
-        t1_measurement.main(cxn, name, coords, sig_apd_index, ref_apd_index, 
-                            uwave_freq, uwave_power, uwave_time_range,
-                            num_steps, num_reps, num_runs)
+    pass
+
+
+    # with labrad.connect() as cxn:
+    #     t1_measurement.main(cxn, name, coords, sig_apd_index, ref_apd_index,
+    #                         uwave_freq, uwave_power, uwave_time_range,
+    #                         num_steps, num_reps, num_runs)
 
 
 # %% Script Code
@@ -139,6 +156,7 @@ if __name__ == '__main__':
         do_resonance(name, coords, primary_apd_index)
 #        do_rabi(name, coords, primary_apd_index, secondary_apd_index)
 #        do_t1_measurement(name, coords, primary_apd_index)
+        # do_g2_measurement()
     finally:
         pass
         # Kill safe stop
