@@ -11,7 +11,7 @@ Created on Tue Apr 23 11:49:23 2019
 # %% Imports
 
 
-import Utils.tool_belt as tool_belt
+import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
 import os
@@ -60,15 +60,6 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
     ref_counts = numpy.copy(sig_counts)
     # norm_avg_sig = numpy.empty([num_runs, num_steps])
 
-
-    # %% Load the APD tasks
-
-    num_samples = num_runs * num_steps
-    cxn.apd_counter.load_stream_reader(sig_apd_index,
-                                       period, num_samples)
-    cxn.apd_counter.load_stream_reader(ref_apd_index,
-                                       period, num_samples)
-
     # %% Set up the microwaves
 
     cxn.microwave_signal_generator.set_freq(uwave_freq)
@@ -77,14 +68,18 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
 
     # %% Collect the data
 
-    tool_belt.set_xyz(cxn, coords)
+#    tool_belt.set_xyz(cxn, coords)
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
 
-        # optimize.main(cxn, name, coords, apd_index)
+        optimize.main(cxn, name, coords, sig_apd_index)
+    
+        # Load the APD tasks
+        cxn.apd_counter.load_stream_reader(sig_apd_index, period, num_steps)
+        cxn.apd_counter.load_stream_reader(ref_apd_index, period, num_steps)
 
         for tau_ind in range(len(taus)):
 

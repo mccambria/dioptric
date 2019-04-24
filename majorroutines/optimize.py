@@ -10,7 +10,7 @@ Created on Thu Apr 11 11:19:56 2019
 
 # %% Imports
 
-import Utils.tool_belt as tool_belt
+import utils.tool_belt as tool_belt
 import numpy
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
@@ -51,9 +51,6 @@ def main(cxn, name, coords, apd_index,
     ret_vals = cxn.galvo.load_cross_scan(x_center, y_center, xy_range,
                                          num_steps, period)
     x_voltages, y_voltages = ret_vals
-    
-    print(x_voltages)
-    print(y_voltages)
 
     xy_num_steps = len(x_voltages) + len(y_voltages)
 

@@ -19,6 +19,8 @@ import majorroutines.image_sample as image_sample
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
+import majorroutines.rabi as rabi
+import majorroutines.t1_measurement as t1_measurement
 
 
 # %% Minor Routines
@@ -70,12 +72,37 @@ def do_resonance(name, coords, apd_index):
     freq_center = 2.87
     freq_range = 0.3
     num_steps = 60
-    num_runs = 5
+    num_runs = 2
     uwave_power = -13.0  # -13.0 with a 1.0 ND is a good starting point
 
     with labrad.connect() as cxn:
         resonance.main(cxn, name, coords, apd_index, freq_center, freq_range,
                        num_steps, num_runs, uwave_power)
+        
+
+def do_rabi(name, coords, sig_apd_index, ref_apd_index):
+    
+    uwave_freq = 2.861
+    uwave_power = 5
+    uwave_time_range = [0, 200]
+    num_steps = 25
+    num_reps = 10**5
+    num_runs = 3
+    
+    with labrad.connect() as cxn:
+        rabi.main(cxn, name, coords, sig_apd_index, ref_apd_index, 
+                  uwave_freq, uwave_power, uwave_time_range,
+                  num_steps, num_reps, num_runs)
+        
+
+def do_t1_measurement():
+    
+    
+    
+    with labrad.connect() as cxn:
+        t1_measurement.main(cxn, name, coords, sig_apd_index, ref_apd_index, 
+                            uwave_freq, uwave_power, uwave_time_range,
+                            num_steps, num_reps, num_runs)
 
 
 # %% Script Code
@@ -95,21 +122,23 @@ if __name__ == '__main__':
     name = 'ayrton12'
 
 #    coords = [0.0, 0.0, 50.0]
-    coords = [-0.013, -0.037, 48.237]
+    coords = [-0.103, 0.001, 48.240]
 
     primary_apd_index = 0
     secondary_apd_index = 1
 
-    scan_range = 0.025
-    num_scan_steps = 100
+    scan_range = 0.1
+    num_scan_steps = 60
 
     # %% Functions to run
 
     try:
-        do_image_sample(name, coords, scan_range, num_scan_steps, primary_apd_index)
+#        do_image_sample(name, coords, scan_range, num_scan_steps, primary_apd_index)
 #        do_optimize(name, coords, primary_apd_index)
 #        do_stationary_count(name, coords, primary_apd_index)
-#        do_resonance(name, coords, primary_apd_index)
+        do_resonance(name, coords, primary_apd_index)
+#        do_rabi(name, coords, primary_apd_index, secondary_apd_index)
+#        do_t1_measurement(name, coords, primary_apd_index)
     finally:
         pass
         # Kill safe stop

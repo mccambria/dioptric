@@ -11,7 +11,7 @@ Created on Thu Apr 11 15:39:23 2019
 # %% Imports
 
 
-import Utils.tool_belt as tool_belt
+import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
 import os
@@ -59,18 +59,12 @@ def main(cxn, name, coords, apd_index,
 
     # The sequence library file is named the same as this file
     args = [readout, uwave_switch_delay, apd_index]
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, args)
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, 0, args)
     period = ret_vals[0]
-
-    # %% Load the APD task
-
-    num_samples_per_run = 2 * num_steps  # Two samples for each frequency step
-    num_samples = num_runs * num_samples_per_run
-    cxn.apd_counter.load_stream_reader(apd_index, period, num_samples)
 
     # %% Collect the data
 
-    tool_belt.set_xyz(cxn, coords)
+#    tool_belt.set_xyz(cxn, coords)
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -81,7 +75,10 @@ def main(cxn, name, coords, apd_index,
         if tool_belt.safe_stop():
             break
 
-        # optimize.main(cxn, name, coords, apd_index)
+        optimize.main(cxn, name, coords, apd_index)
+
+        # Load the APD task with two samples for each frequency step
+        cxn.apd_counter.load_stream_reader(apd_index, period, 2 * num_steps)
 
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):
@@ -106,7 +103,10 @@ def main(cxn, name, coords, apd_index,
 
             ref_counts[run_ind, step_ind] = new_counts[0]
             sig_counts[run_ind, step_ind] = new_counts[1]
-            counts_norm[run_ind, step_ind] = new_counts[1] / new_counts[0]
+            try:
+                counts_norm[run_ind, step_ind] = new_counts[1] / new_counts[0]
+            except Exception:
+                counts_norm[run_ind, step_ind] = 0
 
     # %% Process and plot the data
 

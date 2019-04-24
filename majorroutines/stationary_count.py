@@ -11,7 +11,7 @@ Created on Fri Apr 12 09:25:24 2019
 # %% Imports
 
 
-import Utils.tool_belt as tool_belt
+import utils.tool_belt as tool_belt
 import numpy
 import matplotlib.pyplot as plt
 import time

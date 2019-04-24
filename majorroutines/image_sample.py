@@ -11,8 +11,6 @@ Created on Tue Apr  9 15:18:53 2019
 import numpy
 import utils.tool_belt as tool_belt
 import time
-from twisted.logger import Logger
-log = Logger()
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -163,7 +161,6 @@ def main(cxn, name, coords, x_range, y_range, num_steps, readout, apd_index,
     while num_read_so_far < total_num_samples:
 
         if time.time() > timeout_inst:
-            log.failure('Timed out before all samples were collected.')
             break
 
         if tool_belt.safe_stop():
