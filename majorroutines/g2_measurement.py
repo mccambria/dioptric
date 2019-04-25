@@ -25,8 +25,8 @@ import time
 # %% Functions
 
 
-def calculate_differences(buffer, diff_window, differences_append,
-                          tagger_di_apd_a, tagger_di_apd_b):
+def process_raw_buffer(buffer, diff_window, afterpulse_window,
+                       differences_append, tagger_di_apd_a, tagger_di_apd_b):
 
     # Couple shorthands to speed up the calculation
     buffer_tagTimestamps = buffer.tagTimestamps
@@ -48,18 +48,17 @@ def calculate_differences(buffer, diff_window, differences_append,
         next_index = click_index + 1
         while next_index < buffer_size:
             diff = buffer_tagTimestamps[next_index] - click_time
-            if diff > 50 * 10**3:
+            if diff > afterpulse_window:
                 break
             if buffer_tagChannels[next_index] == click_channel:
                 indices_to_delete_append(next_index)
             next_index += 1
 
-    print("num deleted afterpulses: " + str(len(indices_to_delete)))
     buffer_tagTimestamps = numpy.delete(buffer_tagTimestamps, indices_to_delete)
     buffer_tagChannels = numpy.delete(buffer_tagChannels, indices_to_delete)
 
+    # Calculate differences
     num_vals = buffer_tagTimestamps.size
-
     for click_index in range(num_vals):
 
         click_time = buffer_tagTimestamps[click_index]
@@ -96,6 +95,7 @@ def main(cxn, name, coords, apd_a_index, apd_b_index):
 
     total_size = 0
     collect_time = 0
+    afterpulse_window = 50 * 10**3
 
     run_time = 60 * 7
 #    run_time = 30
@@ -126,14 +126,14 @@ def main(cxn, name, coords, apd_a_index, apd_b_index):
 
         if buffer is not None:
 
-            calculate_differences(buffer, diff_window, differences_append,
-                                  tagger_di_apd_a, tagger_di_apd_b)
+            process_raw_buffer(buffer, diff_window, afterpulse_window,
+                       differences_append, tagger_di_apd_a, tagger_di_apd_b)
 
             total_size += buffer.size
             print("calc time: " + str(time.time() - start_calc_time))
 
+            # Create/update the histogram
             if collection_index == 1:
-                # Plot the differences as a histogram
                 fig, ax = plt.subplots()
                 hist, bin_edges = numpy.histogram(differences, num_bins)
                 bin_edges = bin_edges / 1000  # ps to ns
@@ -144,7 +144,6 @@ def main(cxn, name, coords, apd_a_index, apd_b_index):
                 ax.set_ylabel('Differences')
                 ax.set_title(r'$g^{(2)}(\tau)$')
                 fig.tight_layout()
-                # Draw the canvas and flush the events to the backend
                 fig.canvas.draw()
                 fig.canvas.flush_events()
             elif collection_index > 1:
@@ -156,19 +155,20 @@ def main(cxn, name, coords, apd_a_index, apd_b_index):
         now = time.time()
         time_elapsed = now - start_calc_time
         time.sleep(max(sleep_time - time_elapsed, 0))
-        stream.getData(buffer_hardware)
+        stream.getData(buffer)
         buffer = buffer_hardware
-        print("buffer size: " + str(buffer.size))
-        if buffer.size != 0:
-            print("first tag at: " + str(buffer.tagTimestamps[0]))
+
+    # %% Save the data
 
     int_differences = list(map(int, differences))
 
-    rawData = {"name": name,
-               "xyzCenters": [x_center, y_center, z_center],
-               "differences": int_differences,
-               "total_size": total_size,
-               "collect_time": collect_time}
-    print("total collect time: " + str(collect_time))
+    raw_data = {"name": name,
+                "coords": coords,
+                "differences": int_differences,
+                "total_size": total_size,
+                "collect_time": collect_time}
 
-
+    timeStamp = tool_belt.get_time_stamp()
+    filePath = tool_belt.get_file_path("g2_measurement", timeStamp, name)
+    tool_belt.save_figure(fig, filePath)
+    tool_belt.save_raw_data(raw_data, filePath)
