@@ -25,7 +25,7 @@ import time
 
 
 def process_raw_buffer(buffer, diff_window, afterpulse_window,
-                       differences_append, tagger_di_apd_a, tagger_di_apd_b):
+                       differences_append, apd_a_index, apd_b_index):
 
     # Couple shorthands to speed up the calculation
     buffer_tagTimestamps = buffer.tagTimestamps
@@ -64,10 +64,10 @@ def process_raw_buffer(buffer, diff_window, afterpulse_window,
 
         # Determine the channel to take the difference with
         click_channel = buffer_tagChannels[click_index]
-        if click_channel == tagger_di_apd_a:
-            diff_channel = tagger_di_apd_b
+        if click_channel == apd_a_index:
+            diff_channel = apd_b_index
         else:
-            diff_channel = tagger_di_apd_a
+            diff_channel = apd_a_index
 
         # Calculate relevant differences
         next_index = click_index + 1
@@ -79,7 +79,7 @@ def process_raw_buffer(buffer, diff_window, afterpulse_window,
             # Only record the diff between opposite chanels
             if buffer_tagChannels[next_index] == diff_channel:
                 # Flip the sign for diffs relative to channel 2
-                if click_channel == tagger_di_apd_b:
+                if click_channel == apd_b_index:
                     diff = -diff
                 differences_append(diff)
             next_index += 1
@@ -107,6 +107,8 @@ def main(cxn, name, coords, apd_a_index, apd_b_index):
     collect_time = 0
     collection_index = 0
 
+    apd_indices = [apd_a_index, apd_b_index]
+
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
     buffer = None
@@ -118,24 +120,31 @@ def main(cxn, name, coords, apd_a_index, apd_b_index):
     start_calc_time = start_time
     tool_belt.init_safe_stop()
 
-    # Python does not have do-while loops so we will use a while True
-    cxn.apd_tagger.start_tag_stream()  # Expose the initial stream
-    while True:
+    # Python does not have do-while loops so we will use something like
+    # a while True
+    cxn.apd_tagger.start_tag_stream(apd_indices)  # Expose an initial stream
+    stop = False
+    while not stop:
 
         # Wait until some data has filled
         now = time.time()
         time_elapsed = now - start_calc_time
         time.sleep(max(sleep_time - time_elapsed, 0))
 
-        # Read the stream and expose a new one so that we collect data while
-        # we calculate
+        # Read the stream and
         buffer = cxn.apd_tagger.read_tag_stream()
-        cxn.apd_tagger.start_tag_stream()
+
+        # Check if we should stop
+        if (time.time() - start_time > run_time) or tool_belt.safe_stop():
+            stop = True
+        else:
+            # Expose a new stream so that we collect data while calculating
+            cxn.apd_tagger.start_tag_stream(apd_indices)
 
         # Process data
         start_calc_time = time.time()
         process_raw_buffer(buffer, diff_window, afterpulse_window,
-                   differences_append, tagger_di_apd_a, tagger_di_apd_b)
+                   differences_append, apd_a_index, apd_b_index)
 
         # Create/update the histogram
         if collection_index == 1:
@@ -157,12 +166,6 @@ def main(cxn, name, coords, apd_a_index, apd_b_index):
 
         collection_index += 1
         total_size += buffer.size
-
-        if time.time() - start_time > run_time:
-            break
-
-        if tool_belt.safe_stop():
-            break
 
     # %% Save the data
 
