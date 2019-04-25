@@ -144,7 +144,7 @@ def main(cxn, name, coords, apd_a_index, apd_b_index):
         # Process data
         start_calc_time = time.time()
         process_raw_buffer(buffer, diff_window, afterpulse_window,
-                   differences_append, apd_a_index, apd_b_index)
+                           differences_append, apd_a_index, apd_b_index)
 
         # Create/update the histogram
         if collection_index == 1:

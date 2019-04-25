@@ -89,16 +89,16 @@ class PulseStreamer(LabradServer):
             pulser_do_daq_clock = self.pulser_wiring['do_daq_clock']
             self.output_state = OutputState([pulser_do_daq_clock], 0, 0)
 
-    @setting(0, seq_file='s', num_repeat='i', output_state='i',
-             args='*?', returns='*?')
+    @setting(0, seq_file='s', num_repeat='i',
+             args='*?', output_state='i', returns='*?')
     def stream_immediate(self, c, seq_file, num_repeat=1,
-                         output_state=0, args=None):
+                         args=None, output_state=0):
         ret_vals = self.stream_load(seq_file, output_state, args)
         self.stream_start(num_repeat)
         return ret_vals
 
-    @setting(1, seq_file='s', output_state='i', args='*?', returns='*?')
-    def stream_load(self, c, seq_file, output_state=0, args=None):
+    @setting(1, seq_file='s', args='*?', output_state='i', returns='*?')
+    def stream_load(self, c, seq_file, args=None, output_state=0):
         self.pulser.setTrigger(start=TriggerStart.SOFTWARE)
         self.set_output_state(output_state)
         seq, ret_vals = self.get_seq(seq_file, args)

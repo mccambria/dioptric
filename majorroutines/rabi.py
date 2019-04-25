@@ -48,7 +48,7 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
     args = [taus[0], polarization_time, reference_time, signal_wait_time,
             reference_wait_time, background_wait_time,
             aom_delay_time, gate_time, max_uwave_time]
-    period = cxn.pulse_streamer.stream_load(file_name, args)
+    period = cxn.pulse_streamer.stream_load(file_name, args, 1)
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
@@ -76,7 +76,7 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
     for run_ind in range(num_runs):
 
         optimize.main(cxn, name, coords, sig_apd_index)
-    
+
         # Load the APD tasks
         cxn.apd_counter.load_stream_reader(sig_apd_index, period, num_steps)
         cxn.apd_counter.load_stream_reader(ref_apd_index, period, num_steps)
@@ -86,7 +86,6 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
             # Stream the sequence
             if (run_ind == 0) and (tau_ind == 0):
                 # For run 1, tau 1, the sequence has already been loaded
-                cxn.pulse_streamer.set_final_output(1)
                 cxn.pulse_streamer.stream_start(num_reps)
             else:
                 args = [taus[0], polarization_time, reference_time,
@@ -94,8 +93,8 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
                         background_wait_time, aom_delay_time,
                         gate_time, max_uwave_time,
                         sig_apd_index, ref_apd_index]
-                cxn.pulse_streamer.stream_immediate(file_name, num_reps, args)
-                cxn.pulse_streamer.set_final_output(1)
+                cxn.pulse_streamer.stream_immediate(file_name, num_reps,
+                                                    args, 1)
 
             count = cxn.apd_counter.read_stream(sig_apd_index, 1)
             sig_counts[run_ind, tau_ind] = count

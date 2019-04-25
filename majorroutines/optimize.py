@@ -44,7 +44,7 @@ def main(cxn, coords, apd_index, name='untitled',
     # Let's give ourselves a buffer of 500 us (500000 ns)
     delay = int(0.5 * 10**6)
 
-    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py', 0,
+    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               [delay, readout, apd_index])
     period = ret_vals[0]
 
@@ -106,7 +106,7 @@ def main(cxn, coords, apd_index, name='untitled',
     cxn.galvo.write(x_center, y_center)
 
     # Set up the stream
-    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py', 0,
+    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               [delay, readout, apd_index])
     period = ret_vals[0]
 

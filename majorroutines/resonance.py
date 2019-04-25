@@ -59,7 +59,7 @@ def main(cxn, name, coords, apd_index,
 
     # The sequence library file is named the same as this file
     args = [readout, uwave_switch_delay, apd_index]
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, 0, args)
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, args)
     period = ret_vals[0]
 
     # %% Collect the data
