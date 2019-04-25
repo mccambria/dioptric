@@ -16,7 +16,6 @@ Created on Wed Apr 24 17:33:26 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import time
@@ -93,82 +92,89 @@ def main(cxn, name, coords, apd_a_index, apd_b_index):
 
     # %% Initial calculations and setup
 
-    total_size = 0
-    collect_time = 0
-    afterpulse_window = 50 * 10**3
 
     run_time = 60 * 7
 #    run_time = 30
     sleep_time = 2
-    start_time = time.time()
+    afterpulse_window = 50 * 10**3
+    diff_window = 100 * 10**3  # 100 ns in ps
 
+    # Set xyz and open the AOM
+    tool_belt.set_xyz(cxn, coords)
+    cxn.pulse_streamer.constant()
+
+    total_size = 0
+    collect_time = 0
     collection_index = 0
 
-    # Create a list to hold the differences
-    differences = []
-    # Don't append every loop - just do it once here
-    differences_append = differences.append
-    diff_window = 100 * 10**3  # 100 ns in ps
-    num_bins = int((2 * diff_window) / 1000)  # 1 ns bins in ps
-
+    differences = []  # Create a list to hold the differences
+    differences_append = differences.append  # Skip unnecessary lookup
     buffer = None
-
-    tool_belt.init_safe_stop()
+    num_bins = int((2 * diff_window) / 1000)  # 1 ns bins in ps
 
     # %% Collect the data
 
-    while time.time() - start_time < run_time:
+    start_time = time.time()
+    start_calc_time = start_time
+    tool_belt.init_safe_stop()
 
-        if tool_belt.safe_stop():
-            break
+    # Python does not have do-while loops so we will use a while True
+    cxn.apd_tagger.start_tag_stream()  # Expose the initial stream
+    while True:
 
-        start_calc_time = time.time()
-
-        if buffer is not None:
-
-            process_raw_buffer(buffer, diff_window, afterpulse_window,
-                       differences_append, tagger_di_apd_a, tagger_di_apd_b)
-
-            total_size += buffer.size
-            print("calc time: " + str(time.time() - start_calc_time))
-
-            # Create/update the histogram
-            if collection_index == 1:
-                fig, ax = plt.subplots()
-                hist, bin_edges = numpy.histogram(differences, num_bins)
-                bin_edges = bin_edges / 1000  # ps to ns
-                bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
-                bin_centers = bin_edges[0: num_bins] + bin_center_offset
-                ax.plot(bin_centers, hist)
-                ax.set_xlabel('Time (ns)')
-                ax.set_ylabel('Differences')
-                ax.set_title(r'$g^{(2)}(\tau)$')
-                fig.tight_layout()
-                fig.canvas.draw()
-                fig.canvas.flush_events()
-            elif collection_index > 1:
-                hist, bin_edges = numpy.histogram(differences, num_bins)
-                tool_belt.update_line_plot_figure(fig, hist)
-
-            collection_index += 1
-
+        # Wait until some data has filled
         now = time.time()
         time_elapsed = now - start_calc_time
         time.sleep(max(sleep_time - time_elapsed, 0))
-        stream.getData(buffer)
-        buffer = buffer_hardware
+
+        # Read the stream and expose a new one so that we collect data while
+        # we calculate
+        buffer = cxn.apd_tagger.read_tag_stream()
+        cxn.apd_tagger.start_tag_stream()
+
+        # Process data
+        start_calc_time = time.time()
+        process_raw_buffer(buffer, diff_window, afterpulse_window,
+                   differences_append, tagger_di_apd_a, tagger_di_apd_b)
+
+        # Create/update the histogram
+        if collection_index == 1:
+            fig, ax = plt.subplots()
+            hist, bin_edges = numpy.histogram(differences, num_bins)
+            bin_edges = bin_edges / 1000  # ps to ns
+            bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
+            bin_centers = bin_edges[0: num_bins] + bin_center_offset
+            ax.plot(bin_centers, hist)
+            ax.set_xlabel('Time (ns)')
+            ax.set_ylabel('Differences')
+            ax.set_title(r'$g^{(2)}(\tau)$')
+            fig.tight_layout()
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+        elif collection_index > 1:
+            hist, bin_edges = numpy.histogram(differences, num_bins)
+            tool_belt.update_line_plot_figure(fig, hist)
+
+        collection_index += 1
+        total_size += buffer.size
+
+        if time.time() - start_time > run_time:
+            break
+
+        if tool_belt.safe_stop():
+            break
 
     # %% Save the data
 
     int_differences = list(map(int, differences))
 
-    raw_data = {"name": name,
-                "coords": coords,
-                "differences": int_differences,
-                "total_size": total_size,
-                "collect_time": collect_time}
+    raw_data = {'name': name,
+                'coords': coords,
+                'differences': int_differences,
+                'total_size': total_size,
+                'collect_time': collect_time}
 
     timeStamp = tool_belt.get_time_stamp()
-    filePath = tool_belt.get_file_path("g2_measurement", timeStamp, name)
+    filePath = tool_belt.get_file_path('g2_measurement', timeStamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(raw_data, filePath)
