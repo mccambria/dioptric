@@ -111,7 +111,6 @@ def main(cxn, coords, apd_index, name='untitled',
     # List to store the optimized centers
     opti_centers = [None, None, None]
     
-
     # Create 3 plots in the figure, one for each axis
     if plot_data:
         fig, axes_pack = plt.subplots(1, 3, figsize=(17, 8.5))

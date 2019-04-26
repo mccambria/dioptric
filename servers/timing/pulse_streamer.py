@@ -95,8 +95,8 @@ class PulseStreamer(LabradServer):
              args='*?', output_state='i', returns='*?')
     def stream_immediate(self, c, seq_file, num_repeat=1,
                          args=None, output_state=0):
-        ret_vals = self.stream_load(seq_file, output_state, args)
-        self.stream_start(num_repeat)
+        ret_vals = self.stream_load(c, seq_file, args, output_state)
+        self.stream_start(c, num_repeat)
         return ret_vals
 
     @setting(1, seq_file='s', args='*?', output_state='i', returns='*?')
