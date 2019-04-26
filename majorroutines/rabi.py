@@ -22,9 +22,9 @@ from scipy.optimize import curve_fit
 # %% Main
 
 
-def main(cxn, name, coords, sig_apd_index, ref_apd_index,
+def main(cxn, coords, sig_apd_index, ref_apd_index,
          uwave_freq, uwave_power, uwave_time_range,
-         num_steps, num_reps, num_runs):
+         num_steps, num_reps, num_runs, name='untitled'):
 
     # %% Initial calculations and setup
 

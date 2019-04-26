@@ -72,6 +72,9 @@ class PulseStreamer(LabradServer):
         self.pulser_wiring = {}
         for reg_key in reg_keys:
             self.pulser_wiring[reg_key] = wiring[reg_key]
+            
+    def stopServer(self):
+        self.constant()
 
     def get_seq(self, seq_file, args):
         seq = None

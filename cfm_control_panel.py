@@ -46,8 +46,8 @@ def do_image_sample(name, coords, scan_range, num_steps, apd_index):
 
     with labrad.connect() as cxn:
         # For now we only support square scans so pass scan_range twice
-        image_sample.main(cxn, name, coords, scan_range, scan_range,
-                          num_steps, readout, apd_index)
+        image_sample.main(cxn, coords, scan_range, scan_range,
+                          num_steps, readout, apd_index, name=name)
 
 
 def do_optimize(name, coords, apd_index):
@@ -65,7 +65,8 @@ def do_stationary_count(name, coords, apd_index):
     readout = 100 * 10**6
 
     with labrad.connect() as cxn:
-        stationary_count.main(cxn, name, coords, run_time, readout, apd_index)
+        stationary_count.main(cxn, coords, run_time, readout, apd_index,
+                              name=name)
 
 
 def do_resonance(name, coords, apd_index):
@@ -77,8 +78,8 @@ def do_resonance(name, coords, apd_index):
     uwave_power = -13.0  # -13.0 with a 1.0 ND is a good starting point
 
     with labrad.connect() as cxn:
-        resonance.main(cxn, name, coords, apd_index, freq_center, freq_range,
-                       num_steps, num_runs, uwave_power)
+        resonance.main(cxn, coords, apd_index, freq_center, freq_range,
+                       num_steps, num_runs, uwave_power, name=name)
 
 
 def do_rabi(name, coords, sig_apd_index, ref_apd_index):
@@ -91,9 +92,9 @@ def do_rabi(name, coords, sig_apd_index, ref_apd_index):
     num_runs = 3
 
     with labrad.connect() as cxn:
-        rabi.main(cxn, name, coords, sig_apd_index, ref_apd_index,
+        rabi.main(cxn, coords, sig_apd_index, ref_apd_index,
                   uwave_freq, uwave_power, uwave_time_range,
-                  num_steps, num_reps, num_runs)
+                  num_steps, num_reps, num_runs, name=name)
 
 
 def do_g2_measurement():
@@ -107,9 +108,9 @@ def do_g2_measurement():
     # num_runs = 3
 
     # with labrad.connect() as cxn:
-    #     g2_measurement.main(cxn, name, coords, sig_apd_index, ref_apd_index,
+    #     g2_measurement.main(cxn, coords, sig_apd_index, ref_apd_index,
     #               uwave_freq, uwave_power, uwave_time_range,
-    #               num_steps, num_reps, num_runs)
+    #               num_steps, num_reps, num_runs, name=name)
 
 
 def do_t1_measurement():
@@ -117,9 +118,9 @@ def do_t1_measurement():
 
 
     # with labrad.connect() as cxn:
-    #     t1_measurement.main(cxn, name, coords, sig_apd_index, ref_apd_index,
+    #     t1_measurement.main(cxn, coords, sig_apd_index, ref_apd_index,
     #                         uwave_freq, uwave_power, uwave_time_range,
-    #                         num_steps, num_reps, num_runs)
+    #                         num_steps, num_reps, num_runs, name=name)
 
 
 # %% Script Code
@@ -150,15 +151,15 @@ if __name__ == '__main__':
     # %% Functions to run
 
     try:
-#        do_image_sample(name, coords, scan_range, num_scan_steps, primary_apd_index)
+        do_image_sample(name, coords, scan_range, num_scan_steps, primary_apd_index)
 #        do_optimize(name, coords, primary_apd_index)
 #        do_stationary_count(name, coords, primary_apd_index)
-        do_resonance(name, coords, primary_apd_index)
+#        do_resonance(name, coords, primary_apd_index)
 #        do_rabi(name, coords, primary_apd_index, secondary_apd_index)
 #        do_t1_measurement(name, coords, primary_apd_index)
-        # do_g2_measurement()
+#         do_g2_measurement()
     finally:
         pass
         # Kill safe stop
-#        if tool_belt.check_safe_stop_alive():
-#            tool_belt.poll_safe_stop()
+        if tool_belt.check_safe_stop_alive():
+            tool_belt.poll_safe_stop()

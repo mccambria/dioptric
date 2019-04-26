@@ -30,7 +30,6 @@ import nidaqmx
 import nidaqmx.stream_readers as stream_readers
 from nidaqmx.constants import TriggerType
 from nidaqmx.constants import Level
-from nidaqmx.constants import AcquisitionType
 
 
 class ApdCounter(LabradServer):
@@ -87,6 +86,10 @@ class ApdCounter(LabradServer):
             self.daq_ci_apd[apd_index] = wiring[wiring_index+1]
             self.daq_di_apd_gate[apd_index] = wiring[wiring_index+2]
             
+    def stopServer(self):
+        for apd_index in self.tasks:
+            self.close_task_internal(apd_index)
+            
     def close_task_0(self):
         self.close_task_internal(0)
     def close_task_1(self):
@@ -97,18 +100,13 @@ class ApdCounter(LabradServer):
         self.close_task_internal(3)
             
     def close_task_internal(self, apd_index):
-        try:
-            task = self.tasks[apd_index]
-            task.close()
-            self.tasks.pop(apd_index)
-            self.stream_reader_state.pop(apd_index)
-        except Exception:
-            pass
+        task = self.tasks[apd_index]
+        task.close()
+        self.tasks.pop(apd_index)
+        self.stream_reader_state.pop(apd_index)
 
     def try_load_stream_reader(self, c, apd_index, period, total_num_to_read):
 
-        # Close the task if it exists
-        self.close_task(c, apd_index)
         task = nidaqmx.Task('Apd-load_stream_reader_{}'.format(apd_index))
         self.tasks[apd_index] = task
 
@@ -161,12 +159,13 @@ class ApdCounter(LabradServer):
 
     @setting(0, apd_index='i', period='i', total_num_to_read='i')
     def load_stream_reader(self, c, apd_index, period, total_num_to_read):
-        try:
-            self.try_load_stream_reader(c, apd_index,
-                                        period, total_num_to_read)
-        except Exception:
-            self.close_task(c, apd_index)
-            raise
+        self.try_load_stream_reader(c, apd_index, period, total_num_to_read)
+#        try:
+#            self.try_load_stream_reader(c, apd_index,
+#                                        period, total_num_to_read)
+#        except Exception:
+#            self.close_task(c, apd_index)
+#            raise
 
     @setting(1, apd_index='i', num_to_read='i', returns='*w')
     def read_stream(self, c, apd_index, num_to_read=None):
@@ -183,14 +182,16 @@ class ApdCounter(LabradServer):
         if num_to_read == None:
             # Read whatever is in the buffer
             new_samples_cum = numpy.zeros(buffer_size, dtype=numpy.uint32)
+            read_all_available = nidaqmx.constants.READ_ALL_AVAILABLE
             num_new_samples = reader.read_many_sample_uint32(new_samples_cum,
-                                                             number_of_samples_per_channel=nidaqmx.constants.READ_ALL_AVAILABLE)
+                     number_of_samples_per_channel=read_all_available)
         else:
             # Read the specified number of samples
             # new_samples_cum = numpy.zeros(num_to_read, dtype=numpy.uint32)
             new_samples_cum = numpy.zeros(buffer_size, dtype=numpy.uint32)
             # num_new_samples = num_to_read
-            num_new_samples = reader.read_many_sample_uint32(new_samples_cum, num_to_read)
+            num_new_samples = reader.read_many_sample_uint32(new_samples_cum,
+                                                             num_to_read)
             if num_new_samples != num_to_read:
                 raise Warning('Read more/less samples than specified.')
 

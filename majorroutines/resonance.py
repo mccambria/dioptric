@@ -21,8 +21,8 @@ import matplotlib.pyplot as plt
 # %% Main
 
 
-def main(cxn, name, coords, apd_index,
-         freq_center, freq_range, num_steps, num_runs, uwave_power):
+def main(cxn, coords, apd_index, freq_center, freq_range,
+         num_steps, num_runs, uwave_power, name='untitled'):
 
     # %% Initial calculations and setup
 

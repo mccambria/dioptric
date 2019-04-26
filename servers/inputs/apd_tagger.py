@@ -25,7 +25,6 @@ timeout = 5
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
-import numpy
 import TimeTagger
 
 
@@ -75,16 +74,16 @@ class ApdTagger(LabradServer):
             self.tagger_di_apd[apd_index] = wiring[loop_index]
 
     @setting(0, apd_indices='*i')
-    def start_tag_stream(apd_indices):
+    def start_tag_stream(self, apd_indices):
         self.buffer = TimeTagger.TimeTagStreamBuffer()
         buffer_size = int(10**6 / len(apd_indices))  # A million total
         apd_chans = []
         for ind in apd_indices:
             apd_chans.append(self.tagger_di_apd[ind])
-        self.stream = TimeTagger.TimeTagStream(tagger, buffer_size, apd_chans)
+        self.stream = TimeTagger.TimeTagStream(self.tagger, buffer_size, apd_chans)
 
     @setting(1, returns='*i')
-    def read_tag_stream():
+    def read_tag_stream(self):
         return self.stream.getData(self.buffer)
 
 

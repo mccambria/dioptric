@@ -27,7 +27,6 @@ from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 import nidaqmx
 import nidaqmx.stream_writers as stream_writers
-from nidaqmx.constants import AcquisitionType
 import numpy
 
 
@@ -55,6 +54,9 @@ class Galvo(LabradServer):
         self.daq_ao_galvo_x = config[0]
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
+        
+    def stopServer(self):
+        self.close_task_internal()
 
     def load_stream_writer(self, c, task_name, voltages, period):
 

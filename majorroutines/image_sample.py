@@ -84,8 +84,8 @@ def on_click_image(event):
         pass
 
 
-def main(cxn, name, coords, x_range, y_range, num_steps, readout, apd_index,
-         continuous=False):
+def main(cxn, coords, x_range, y_range, num_steps, readout, apd_index,
+         name='untitled', continuous=False):
 
     # %% Some initial calculations
 

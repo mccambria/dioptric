@@ -39,7 +39,7 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(cxn, name, coords, run_time, readout, apd_index, continuous=False):
+def main(cxn, coords, run_time, readout, apd_index, name='untitled', continuous=False):
 
     # %% Some initial calculations
 

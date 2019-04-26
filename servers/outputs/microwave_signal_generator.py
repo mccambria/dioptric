@@ -37,6 +37,7 @@ class MicrowaveSignalGenerator(LabradServer):
     def initServer(self):
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
+        self.task = None
 
     async def get_config(self):
         p = self.client.registry.packet()
@@ -53,6 +54,10 @@ class MicrowaveSignalGenerator(LabradServer):
         self.sig_gen = resource_manager.open_resource(config[0])
         self.daq_di_pulser_clock = config[1]
         self.daq_ao_sig_gen_mod = config[2]
+        
+    def stopServer(self):
+        if self.task is not None:
+            self.task.close()
 
     @setting(0)
     def uwave_on(self, c):
