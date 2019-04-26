@@ -261,7 +261,7 @@ class Galvo(LabradServer):
         return x_voltages_1d, y_voltages_1d
 
     @setting(4, x_center='v[]', y_center='v[]', scan_range='v[]',
-             num_steps='i', period='i', returns='*v[]*v[]')
+             num_steps='i', period='i', returns='*v[]')
     def load_x_scan(self, c, x_center, y_center,
                     scan_range, num_steps, period):
 
@@ -280,8 +280,8 @@ class Galvo(LabradServer):
         return x_voltages
 
     @setting(5, x_center='v[]', y_center='v[]', scan_range='v[]',
-             num_steps='i', period='i', returns='*v[]*v[]')
-    def load_x_scan(self, c, x_center, y_center,
+             num_steps='i', period='i', returns='*v[]')
+    def load_y_scan(self, c, x_center, y_center,
                     scan_range, num_steps, period):
 
         half_scan_range = scan_range / 2

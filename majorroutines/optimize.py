@@ -52,7 +52,7 @@ def read_timed_counts(cxn, num_steps, period, apd_index):
             counts.extend(new_samples)
             num_read_so_far += num_new_samples
 
-    counts = numpy.array(counts, dtype=numpy.uint32)
+    return numpy.array(counts, dtype=numpy.uint32)
     
     
 def do_plot_data(fig, ax, title, voltages, k_counts_per_sec, 
@@ -135,7 +135,7 @@ def main(cxn, coords, apd_index, name='untitled',
                                        num_steps, period)
     
     # Collect the data
-    x_counts = read_timed_counts(cxn, num_steps)
+    x_counts = read_timed_counts(cxn, num_steps, period, apd_index)
 
     if tool_belt.safe_stop():
         return opti_centers
@@ -164,7 +164,7 @@ def main(cxn, coords, apd_index, name='untitled',
                                        num_steps, period)
     
     # Collect the data
-    y_counts = read_timed_counts(cxn, num_steps)
+    y_counts = read_timed_counts(cxn, num_steps, period, apd_index)
 
     if tool_belt.safe_stop():
         return opti_centers
@@ -180,7 +180,7 @@ def main(cxn, coords, apd_index, name='untitled',
         optimizationFailed = True
 
     if not optimizationFailed:
-        opti_centers[0] = optiParams[1]
+        opti_centers[1] = optiParams[1]
     
     # Plot
     if plot_data:
@@ -236,7 +236,7 @@ def main(cxn, coords, apd_index, name='untitled',
         optimizationFailed = True
 
     if not optimizationFailed:
-        opti_centers[0] = optiParams[1]
+        opti_centers[2] = optiParams[1]
     
     # Plot
     if plot_data:
@@ -282,6 +282,13 @@ def main(cxn, coords, apd_index, name='untitled',
             cxn.galvo.write(x_center, y_center)
             cxn.objective_piezo.write_voltage(z_center)
         else:
-            print('{:.3f}, {:.3f}, {:.3f}'.format(*opti_centers))
+            center_texts = []
+            for center in opti_centers:
+                center_text = 'None'
+                if center is not None:
+                    center_text = '{:.3f}'.format(center)
+                center_texts.append(center_text)
+            print(opti_centers)
+            print(', '.join(center_texts))
 
     return opti_centers
