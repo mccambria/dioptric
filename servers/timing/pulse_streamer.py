@@ -27,7 +27,6 @@ from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 from pulsestreamer import PulseStreamer as Pulser
 from pulsestreamer import TriggerStart
-from pulsestreamer import TriggerRearm
 from pulsestreamer import OutputState
 import importlib
 import os

@@ -74,7 +74,7 @@ class ApdTagger(LabradServer):
             self.tagger_di_apd[apd_index] = wiring[loop_index]
 
     @setting(0, apd_indices='*i')
-    def start_tag_stream(self, apd_indices):
+    def start_tag_stream(self, c, apd_indices):
         self.buffer = TimeTagger.TimeTagStreamBuffer()
         buffer_size = int(10**6 / len(apd_indices))  # A million total
         apd_chans = []
@@ -83,7 +83,7 @@ class ApdTagger(LabradServer):
         self.stream = TimeTagger.TimeTagStream(self.tagger, buffer_size, apd_chans)
 
     @setting(1, returns='*i')
-    def read_tag_stream(self):
+    def read_tag_stream(self, c):
         return self.stream.getData(self.buffer)
 
 

@@ -14,6 +14,7 @@ Created on Sun Nov 25 14:00:28 2018
 # %% Imports
 
 import labrad
+import time
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
 import majorroutines.optimize as optimize
@@ -138,28 +139,38 @@ if __name__ == '__main__':
     # For more, view the function definitions in their respective file.
 
     name = 'ayrton12'
+    
+    nv0 = [-0.157, -0.199, 48.7]
+    nv1 = [-0.170, -0.184, 48.8]
+    nv2 = [-0.178, -0.159, 49.0]
+    nv3 = [-0.198, -0.145, 48.9]
+    nv4 = [-0.154, -0.090, 48.9]
+    nv5 = [-0.155, -0.161, 49.0]
 
 #    coords = [0.0, 0.0, 50.0]
-    coords = [-0.103, 0.001, 48.240]
+    coords = [-0.166, -0.187, 48.496]
+#    coords = nv1
+    
 
     primary_apd_index = 0
     secondary_apd_index = 1
 
-    scan_range = 0.1
-    num_scan_steps = 60
+    scan_range = 0.15
+    num_scan_steps = 15
 
     # %% Functions to run
 
     try:
-        do_image_sample(name, coords, scan_range, num_scan_steps, primary_apd_index)
-#        do_optimize(name, coords, primary_apd_index)
+#        do_image_sample(name, coords, scan_range, num_scan_steps, primary_apd_index)
+        do_optimize(name, coords, primary_apd_index)
 #        do_stationary_count(name, coords, primary_apd_index)
 #        do_resonance(name, coords, primary_apd_index)
 #        do_rabi(name, coords, primary_apd_index, secondary_apd_index)
 #        do_t1_measurement(name, coords, primary_apd_index)
 #         do_g2_measurement()
     finally:
-        pass
+#        pass
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
+            print("\n\nRoutine complete. Press enter to exit.")
             tool_belt.poll_safe_stop()

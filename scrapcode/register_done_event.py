@@ -48,11 +48,12 @@ class Test:
         try:
             
             task = None
-            num_samples = 11
+            num_samples = 6
             
 #            one_d_voltages = [-0.05, -0.04, -0.03, -0.02, -0.01, 0.0,
 #                              0.01, 0.02, 0.03, 0.04, 0.05]
-            one_d_voltages = [-0.05, -0.04, -0.03, -0.02, -0.01, 0.0]*750
+#            one_d_voltages = [-0.5, -0.4, -0.3, -0.2, -0.1, 0.0]*750
+            one_d_voltages = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25]
             voltages = [one_d_voltages,
                         one_d_voltages]
             voltages = numpy.array(voltages)
@@ -71,7 +72,7 @@ class Test:
             task.timing.cfg_samp_clk_timing(1, 
                                             source='PFI12',
 #                                            sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS,
-                                            samps_per_chan=len(one_d_voltages))
+                                            samps_per_chan=6)#len(one_d_voltages))
                     
             
             task.register_done_event(self.close_task_internal)
@@ -92,10 +93,10 @@ class Test:
             seq.setDigital(0, train)
             train = [(10**8, 1)]
             seq.setDigital(3, train)
-            pulser.stream(seq, num_samples, OutputState([3], 0, 0))
+            pulser.stream(seq, num_samples+1, OutputState([3], 0, 0))
             pulser.startNow()
             
-            time.sleep(15.0)
+            time.sleep(7.0)
             
         finally:
             

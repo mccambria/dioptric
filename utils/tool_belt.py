@@ -301,7 +301,7 @@ def get_file_path(subDirName, timeStamp, name):
     fileName = timeStamp + '_' + name
 
     # Find the data directory relative to tool_belt's directory
-    folderDir = os.path.abspath(os.path.join('E:\Team Drives\Kolkowitz Lab Group\nvdata', subDirName))
+    folderDir = os.path.abspath(os.path.join('E:/Team Drives/Kolkowitz Lab Group/nvdata', subDirName))
 
     # Make the required directory if it doesn't exist already
     if not os.path.isdir(folderDir):

@@ -90,15 +90,6 @@ class ApdCounter(LabradServer):
         for apd_index in self.tasks:
             self.close_task_internal(apd_index)
             
-    def close_task_0(self):
-        self.close_task_internal(0)
-    def close_task_1(self):
-        self.close_task_internal(1)
-    def close_task_2(self):
-        self.close_task_internal(2)
-    def close_task_3(self):
-        self.close_task_internal(3)
-            
     def close_task_internal(self, apd_index):
         task = self.tasks[apd_index]
         task.close()
@@ -106,8 +97,13 @@ class ApdCounter(LabradServer):
         self.stream_reader_state.pop(apd_index)
 
     def try_load_stream_reader(self, c, apd_index, period, total_num_to_read):
+        
+        # Close the stream task if it exists
+        # This can happen if we quit out early
+        if apd_index in self.tasks:
+            self.close_task_internal(apd_index)
 
-        task = nidaqmx.Task('Apd-load_stream_reader_{}'.format(apd_index))
+        task = nidaqmx.Task('ApdCounter-load_stream_reader_{}'.format(apd_index))
         self.tasks[apd_index] = task
 
         chan_name = self.daq_ctr_apd[apd_index]
@@ -145,13 +141,6 @@ class ApdCounter(LabradServer):
         # than 1000 samples in one read
         state_dict['buffer_size'] = min(total_num_to_read, 1000)
         state_dict['last_value'] = 0  # Last cumulative value we read
-        
-        # Close the task once we've written all the samples.
-        # The register_done_event method is supposed to allow parameters 
-        # (we could pass the APD index for example), but NI botched it so we
-        # have to do this getattr garbage
-        foo = getattr(self, 'close_task_{}'.format(apd_index))
-        task.register_done_event(foo)
 
         # Start the task. It will start counting immediately so we'll have to
         # discard the first sample.
@@ -160,12 +149,6 @@ class ApdCounter(LabradServer):
     @setting(0, apd_index='i', period='i', total_num_to_read='i')
     def load_stream_reader(self, c, apd_index, period, total_num_to_read):
         self.try_load_stream_reader(c, apd_index, period, total_num_to_read)
-#        try:
-#            self.try_load_stream_reader(c, apd_index,
-#                                        period, total_num_to_read)
-#        except Exception:
-#            self.close_task(c, apd_index)
-#            raise
 
     @setting(1, apd_index='i', num_to_read='i', returns='*w')
     def read_stream(self, c, apd_index, num_to_read=None):
@@ -187,9 +170,7 @@ class ApdCounter(LabradServer):
                      number_of_samples_per_channel=read_all_available)
         else:
             # Read the specified number of samples
-            # new_samples_cum = numpy.zeros(num_to_read, dtype=numpy.uint32)
             new_samples_cum = numpy.zeros(buffer_size, dtype=numpy.uint32)
-            # num_new_samples = num_to_read
             num_new_samples = reader.read_many_sample_uint32(new_samples_cum,
                                                              num_to_read)
             if num_new_samples != num_to_read:
@@ -222,14 +203,14 @@ class ApdCounter(LabradServer):
         if num_new_samples > 0:
             state_dict['last_value'] = new_samples_cum[num_new_samples-1]
 
-        # Update the current count
-        state_dict['num_read_so_far'] = num_read_so_far + num_new_samples
+        # Update the current count and check if we're done with the task
+        num_read_so_far += num_new_samples
+        if num_read_so_far == total_num_to_read:
+            self.close_task_internal(apd_index)
+        else:
+            state_dict['num_read_so_far'] = num_read_so_far
 
         return new_samples_diff
-
-    @setting(2, apd_index='i')
-    def close_task(self, c, apd_index):
-        self.close_task_internal(apd_index)
 
 
 __server__ = ApdCounter()
