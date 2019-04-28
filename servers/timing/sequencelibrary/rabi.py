@@ -27,7 +27,7 @@ def get_seq(pulser_wiring, args):
         gate_time, max_tau = durations
 
     # Get the APD indices
-    sig_apd_index, ref_apd_index = args[9:10]
+    sig_apd_index, ref_apd_index = args[9:11]
 
     # Get what we need out of the wiring dictionary
     key = 'do_apd_gate_{}'.format(sig_apd_index)

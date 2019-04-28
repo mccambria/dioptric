@@ -22,9 +22,9 @@ from scipy.optimize import curve_fit
 # %% Main
 
 
-def main(cxn, name, coords, sig_apd_index, ref_apd_index,
+def main(cxn, coords, sig_apd_index, ref_apd_index,
          uwave_freq, uwave_power, uwave_time_range,
-         num_steps, num_reps, num_runs):
+         num_steps, num_reps, num_runs, name='untitled'):
 
     # %% Initial calculations and setup
 
@@ -37,18 +37,23 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
     aom_delay_time = 750
     gate_time = 300
 
-    # Array of times to sweep through
+    # Array of times to sweep through 
+    # Must be ints since the pulse streamer only works with int64s
     min_uwave_time = uwave_time_range[0]
     max_uwave_time = uwave_time_range[1]
-    taus = numpy.linspace(min_uwave_time, max_uwave_time, num=num_steps)
+    taus = numpy.linspace(min_uwave_time, max_uwave_time,
+                          num=num_steps, dtype=numpy.int32)
 
     # Analyze the sequence
     file_name = os.path.basename(__file__)
     file_name_no_ext = os.path.splitext(file_name)[0]
-    args = [taus[0], polarization_time, reference_time, signal_wait_time,
-            reference_wait_time, background_wait_time,
-            aom_delay_time, gate_time, max_uwave_time]
-    period = cxn.pulse_streamer.stream_load(file_name, args, 1)
+    sequence_args = [taus[0], polarization_time, reference_time,
+                    signal_wait_time, reference_wait_time,
+                    background_wait_time, aom_delay_time,
+                    gate_time, max_uwave_time,
+                    sig_apd_index, ref_apd_index]
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
+    period = ret_vals[0]
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
@@ -75,7 +80,11 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
 
     for run_ind in range(num_runs):
 
-        optimize.main(cxn, name, coords, sig_apd_index)
+        # Break out of the while if the user says stop
+        if tool_belt.safe_stop():
+            break
+
+        optimize.main(cxn, coords, sig_apd_index)
 
         # Load the APD tasks
         cxn.apd_counter.load_stream_reader(sig_apd_index, period, num_steps)
@@ -83,18 +92,17 @@ def main(cxn, name, coords, sig_apd_index, ref_apd_index,
 
         for tau_ind in range(len(taus)):
 
+            # Break out of the while if the user says stop
+            if tool_belt.safe_stop():
+                break
+
             # Stream the sequence
-            if (run_ind == 0) and (tau_ind == 0):
-                # For run 1, tau 1, the sequence has already been loaded
-                cxn.pulse_streamer.stream_start(num_reps)
-            else:
-                args = [taus[0], polarization_time, reference_time,
-                        signal_wait_time, reference_wait_time,
-                        background_wait_time, aom_delay_time,
-                        gate_time, max_uwave_time,
-                        sig_apd_index, ref_apd_index]
-                cxn.pulse_streamer.stream_immediate(file_name, num_reps,
-                                                    args, 1)
+            args = [taus[tau_ind], polarization_time, reference_time,
+                    signal_wait_time, reference_wait_time,
+                    background_wait_time, aom_delay_time,
+                    gate_time, max_uwave_time,
+                    sig_apd_index, ref_apd_index]
+            cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)
 
             count = cxn.apd_counter.read_stream(sig_apd_index, 1)
             sig_counts[run_ind, tau_ind] = count

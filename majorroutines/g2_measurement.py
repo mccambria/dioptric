@@ -88,7 +88,7 @@ def process_raw_buffer(buffer, diff_window, afterpulse_window,
 # %% Main
 
 
-def main(cxn, name, coords, apd_a_index, apd_b_index):
+def main(cxn, coords, apd_a_index, apd_b_index, name='untitled'):
 
     # %% Initial calculations and setup
 

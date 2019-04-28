@@ -21,10 +21,17 @@ import matplotlib.pyplot as plt
 # %% Main
 
 
-def main(cxn, name, coords, apd_index,
-         freq_center, freq_range, num_steps, num_runs, uwave_power):
+def main(cxn, coords, apd_index, freq_center, freq_range,
+         num_steps, num_runs, uwave_power, name='untitled'):
 
     # %% Initial calculations and setup
+    
+    # Set up for the pulser - we can't load the sequence yet until after 
+    # optimize runs since optimize loads its own sequence
+    readout = 10 * 10**6  # 0.01 s
+    readout_sec = readout / (10**9)
+    uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
+    sequence_args = [readout, uwave_switch_delay, apd_index]
 
     file_name = os.path.basename(__file__)
     file_name_no_ext = os.path.splitext(file_name)[0]
@@ -51,17 +58,6 @@ def main(cxn, name, coords, apd_index,
     sig_counts = numpy.copy(ref_counts)
     counts_norm = numpy.empty([num_runs, num_steps])
 
-    # %% Set up the pulser
-
-    readout = 10 * 10**6  # 0.01 s
-    readout_sec = readout / (10**9)
-    uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
-
-    # The sequence library file is named the same as this file
-    args = [readout, uwave_switch_delay, apd_index]
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, args)
-    period = ret_vals[0]
-
     # %% Collect the data
 
 #    tool_belt.set_xyz(cxn, coords)
@@ -78,6 +74,8 @@ def main(cxn, name, coords, apd_index,
         optimize.main(cxn, coords, apd_index)
 
         # Load the APD task with two samples for each frequency step
+        ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args)
+        period = ret_vals[0]
         cxn.apd_counter.load_stream_reader(apd_index, period, 2 * num_steps)
 
         # Take a sample and increment the frequency
