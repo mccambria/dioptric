@@ -56,6 +56,9 @@ class Galvo(LabradServer):
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
 
+    def stopServer(self):
+        self.close_task_internal()
+
     def load_stream_writer(self, c, task_name, voltages, period):
 
         # Close the existing task if there is one
@@ -109,7 +112,7 @@ class Galvo(LabradServer):
         else:
             # Just write all the samples
             writer.write_many_sample(stream_voltages)
-            
+
         # Close the task once we've written all the samples
         task.register_done_event(self.close_task_internal)
 
@@ -218,7 +221,7 @@ class Galvo(LabradServer):
         y_voltages = numpy.repeat(y_voltages_1d, x_num_steps)
 
         voltages = numpy.vstack((x_voltages, y_voltages))
-        
+
         self.load_stream_writer(c, 'Galvo-load_sweep_scan', voltages, period)
 
         return x_voltages_1d, y_voltages_1d
@@ -237,21 +240,17 @@ class Galvo(LabradServer):
 
         x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
         y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
-        
+
         x_voltages = numpy.concatenate([x_voltages_1d,
                                         numpy.full(num_steps, x_center)])
         y_voltages = numpy.concatenate([numpy.full(num_steps, y_center),
                                         y_voltages_1d])
 
         voltages = numpy.vstack((x_voltages, y_voltages))
-        
+
         self.load_stream_writer(c, 'Galvo-load_cross_scan', voltages, period)
 
         return x_voltages_1d, y_voltages_1d
-
-    @setting(4)
-    def close_task(self, c):
-        self.close_task_internal()
 
 
 __server__ = Galvo()
