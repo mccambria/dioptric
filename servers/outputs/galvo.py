@@ -55,7 +55,10 @@ class Galvo(LabradServer):
         self.daq_ao_galvo_x = config[0]
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
-        
+
+    def stopServer(self):
+        self.close_task_internal()
+
     def stopServer(self):
         self.close_task_internal()
 
@@ -114,10 +117,10 @@ class Galvo(LabradServer):
         else:
             # Just write all the samples
             writer.write_many_sample(stream_voltages)
-        
+
         # Close the task once we've written all the samples
         task.register_done_event(self.close_task_internal)
-        
+
         task.start()
 
     def fill_buffer(self, task_handle=None, every_n_samples_event_type=None,
@@ -148,12 +151,12 @@ class Galvo(LabradServer):
 
     @setting(0, xVoltage='v[]', yVoltage='v[]')
     def write(self, c, xVoltage, yVoltage):
-        
+
         # Close the stream task if it exists
         # This can happen if we quit out early
         if self.task is not None:
             self.close_task_internal()
-            
+
         with nidaqmx.Task() as task:
             # Set up the output channels
             task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_x,
@@ -229,7 +232,7 @@ class Galvo(LabradServer):
         y_voltages = numpy.repeat(y_voltages_1d, x_num_steps)
 
         voltages = numpy.vstack((x_voltages, y_voltages))
-        
+
         self.load_stream_writer(c, 'Galvo-load_sweep_scan', voltages, period)
 
         return x_voltages_1d, y_voltages_1d
@@ -248,14 +251,14 @@ class Galvo(LabradServer):
 
         x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
         y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
-        
+
         x_voltages = numpy.concatenate([x_voltages_1d,
                                         numpy.full(num_steps, x_center)])
         y_voltages = numpy.concatenate([numpy.full(num_steps, y_center),
                                         y_voltages_1d])
 
         voltages = numpy.vstack((x_voltages, y_voltages))
-        
+
         self.load_stream_writer(c, 'Galvo-load_cross_scan', voltages, period)
 
         return x_voltages_1d, y_voltages_1d
@@ -274,7 +277,7 @@ class Galvo(LabradServer):
         y_voltages = numpy.full(num_steps, y_center)
 
         voltages = numpy.vstack((x_voltages, y_voltages))
-        
+
         self.load_stream_writer(c, 'Galvo-load_x_scan', voltages, period)
 
         return x_voltages
@@ -293,7 +296,7 @@ class Galvo(LabradServer):
         y_voltages = numpy.linspace(y_low, y_high, num_steps)
 
         voltages = numpy.vstack((x_voltages, y_voltages))
-        
+
         self.load_stream_writer(c, 'Galvo-load_y_scan', voltages, period)
 
         return y_voltages
