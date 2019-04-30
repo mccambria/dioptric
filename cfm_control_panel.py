@@ -14,7 +14,6 @@ Created on Sun Nov 25 14:00:28 2018
 # %% Imports
 
 import labrad
-import time
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
 import majorroutines.optimize as optimize
@@ -70,20 +69,20 @@ def do_stationary_count(name, coords, apd_index):
                               name=name)
 
 
-def do_resonance(name, coords, apd_index):
+def do_resonance(name, coords, nd_filter, apd_index):
 
     freq_center = 2.87
     freq_range = 0.2
-    num_steps = 100
-    num_runs = 3
+    num_steps = 200
+    num_runs = 10
     uwave_power = -13.0  # -13.0 with a 1.0 ND is a good starting point
 
     with labrad.connect() as cxn:
-        resonance.main(cxn, coords, apd_index, freq_center, freq_range,
+        resonance.main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
                        num_steps, num_runs, uwave_power, name=name)
 
 
-def do_rabi(name, coords, sig_apd_index, ref_apd_index):
+def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index):
 
     uwave_freq = 2.861
     uwave_power = 5
@@ -93,25 +92,20 @@ def do_rabi(name, coords, sig_apd_index, ref_apd_index):
     num_runs = 1
 
     with labrad.connect() as cxn:
-        rabi.main(cxn, coords, sig_apd_index, ref_apd_index,
+        rabi.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
                   uwave_freq, uwave_power, uwave_time_range,
                   num_steps, num_reps, num_runs, name=name)
 
 
-def do_g2_measurement():
-    pass
+def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 
-    # uwave_freq = 2.861
-    # uwave_power = 5
-    # uwave_time_range = [0, 200]
-    # num_steps = 25
-    # num_reps = 10**5
-    # num_runs = 3
-
-    # with labrad.connect() as cxn:
-    #     g2_measurement.main(cxn, coords, sig_apd_index, ref_apd_index,
-    #               uwave_freq, uwave_power, uwave_time_range,
-    #               num_steps, num_reps, num_runs, name=name)
+    run_time = 60 * 10
+#    run_time = 30
+    diff_window = 150 * 10**3  # 100 ns in ps
+    
+    with labrad.connect() as cxn:
+        g2_measurement.main(cxn, coords, nd_filter, run_time, diff_window,
+                            apd_a_index, apd_b_index, name=name)
 
 
 def do_t1_measurement():
@@ -134,41 +128,51 @@ def do_t1_measurement():
 # running it as a program.
 if __name__ == '__main__':
 
-    # %% Frequenctly modified/shared parameters
-    # The file has minimal documentation.
-    # For more, view the function definitions in their respective file.
+    # %% Frequently modified/shared parameters
 
     name = 'ayrton12'
     
-    nv0 = [-0.157, -0.199, 48.7]
-    nv1 = [-0.170, -0.184, 48.8]
-    nv2 = [-0.178, -0.159, 49.0]
-    nv3 = [-0.198, -0.145, 48.9]
-    nv4 = [-0.154, -0.090, 48.9]
-    nv5 = [-0.155, -0.161, 49.0]
+#    nv0 = [-0.157, -0.199, 48.7]
+    nv1 = [0.000, 0.051, 49.1]
+    nv2 = [-0.060, 0.040, 49.0]
+    nv3 = [0.006, 0.017, 49.0]
+    nv4 = [-0.021, 0.019, 49.0]
+    nv5 = [-0.026, -0.041, 49.0]
+    nv6 = [-0.069, -0.035, 49.2]
+    nv7 = [-0.080, -0.057, 49.0]
+    
+#    nv_list = [nv1]
+#    nv_list = [nv4]
+#    nv_list = [nv5]
+    nv_list = [nv2, nv4]
 
-#    coords = [0.0, 0.0, 50.0]
-    coords = [-0.164, -0.182, 48.776]
-#    coords = nv1
+#    other_coords = [0.0, -0.1, 49.2]
+#    other_coords = [-0.011, 0.006, 49.2]
+#    nv_list = [other_coords]
+    
+    nd_filter = 1.5
 
     primary_apd_index = 0
     secondary_apd_index = 1
 
-    scan_range = 0.05
-    num_scan_steps = 60
+    scan_range = 0.5
+    num_scan_steps = 200
 
     # %% Functions to run
 
     try:
-#        do_image_sample(name, coords, scan_range, num_scan_steps, primary_apd_index)
-#        do_optimize(name, coords, primary_apd_index)
-#        do_stationary_count(name, coords, primary_apd_index)
-#        do_resonance(name, coords, primary_apd_index)
-        do_rabi(name, coords, primary_apd_index, secondary_apd_index)
-#        do_t1_measurement(name, coords, primary_apd_index)
-#         do_g2_measurement()
+        for nv in nv_list:
+            coords = nv
+            print(coords)
+#            set_xyz_zero()
+#            do_image_sample(name, coords, scan_range, num_scan_steps, primary_apd_index)
+#            do_optimize(name, coords, primary_apd_index)
+#            do_stationary_count(name, coords, primary_apd_index)
+            do_resonance(name, coords, nd_filter, primary_apd_index)
+#            do_rabi(name, coords, nd_filter, primary_apd_index, secondary_apd_index)
+#            do_g2_measurement(name, coords, nd_filter, primary_apd_index, secondary_apd_index)
+#            do_t1_measurement(name, coords, primary_apd_index)
     finally:
-#        pass
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
             print("\n\nRoutine complete. Press enter to exit.")

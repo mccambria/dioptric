@@ -22,10 +22,14 @@ from scipy.optimize import curve_fit
 # %% Main
 
 
-def main(cxn, coords, sig_apd_index, ref_apd_index,
+def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
          uwave_freq, uwave_power, uwave_time_range,
          num_steps, num_reps, num_runs, name='untitled'):
 
+    # %% Get the starting time of the function
+    
+    timestampStart = tool_belt.get_time_stamp()
+    
     # %% Initial calculations and setup
 
     # Define some times (in ns)
@@ -185,11 +189,13 @@ def main(cxn, coords, sig_apd_index, ref_apd_index,
 
     # %% Save the data
 
-    timestamp = tool_belt.get_time_stamp()
+    timestampEnd = tool_belt.get_time_stamp()
 
-    raw_data = {'timestamp': timestamp,
+    raw_data = {'timestampStart': timestampStart,
+                'timestampEnd': timestampEnd,
                'name': name,
                'xyz_centers': coords,
+               'nd_filter': nd_filter,
                'uwave_freq': uwave_freq,
                'uwave_power': uwave_power,
                'uwave_time_range': uwave_time_range,
@@ -198,9 +204,9 @@ def main(cxn, coords, sig_apd_index, ref_apd_index,
                'num_runs': num_runs,
                'sig_counts': sig_counts.astype(int).tolist(),
                'ref_counts': ref_counts.astype(int).tolist(),
-               'norm_avg_sig': norm_avg_sig.astype(int).tolist()}
+               'norm_avg_sig': norm_avg_sig.astype(float).tolist()}
 
-    file_path = tool_belt.get_file_path(file_name_no_ext, timestamp, name)
+    file_path = tool_belt.get_file_path(file_name_no_ext, timestampEnd, name)
     tool_belt.save_figure(fig, file_path)
     tool_belt.save_figure(fig, file_path + '_fitting')
     tool_belt.save_raw_data(raw_data, file_path)

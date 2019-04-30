@@ -21,14 +21,18 @@ import matplotlib.pyplot as plt
 # %% Main
 
 
-def main(cxn, coords, apd_index, freq_center, freq_range,
+def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
          num_steps, num_runs, uwave_power, name='untitled'):
 
+    # %% Get the starting time of the function
+    
+    timestampStart = tool_belt.get_time_stamp()
+    
     # %% Initial calculations and setup
     
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
-    readout = 10 * 10**6  # 0.01 s
+    readout = 100 * 10**6  # 0.1 s
     readout_sec = readout / (10**9)
     uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
     sequence_args = [readout, uwave_switch_delay, apd_index]
@@ -66,6 +70,7 @@ def main(cxn, coords, apd_index, freq_center, freq_range,
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
+        print(run_ind)
 
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
@@ -137,18 +142,20 @@ def main(cxn, coords, apd_index, freq_center, freq_range,
     ax.set_ylabel('Contrast (arb. units)')
 
     fig.canvas.draw()
-#    fig.set_tight_layout(True)
+    fig.tight_layout()
     fig.canvas.flush_events()
 
     # %% Turn off the RF and save the data
 
     cxn.microwave_signal_generator.uwave_off()
 
-    timestamp = tool_belt.get_time_stamp()
+    timestampEnd = tool_belt.get_time_stamp()
 
-    rawData = {'timestamp': timestamp,
+    rawData = {'timestanpStart': timestampStart,
+               'timestampEnd': timestampEnd,
                'name': name,
-               'xyz_centers': coords,
+               'coords': coords,
+               'nd_filter': nd_filter,
                'freq_center': freq_center,
                'freq_range': freq_range,
                'num_steps': num_steps,
@@ -158,8 +165,8 @@ def main(cxn, coords, apd_index, freq_center, freq_range,
                'uwave_switch_delay': uwave_switch_delay,
                'sig_counts': sig_counts.astype(int).tolist(),
                'ref_counts': ref_counts.astype(int).tolist(),
-               'norm_avg_sig': norm_avg_sig.astype(int).tolist()}
+               'norm_avg_sig': norm_avg_sig.astype(float).tolist()}
 
-    filePath = tool_belt.get_file_path(file_name_no_ext, timestamp, name)
+    filePath = tool_belt.get_file_path(file_name_no_ext, timestampEnd, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)

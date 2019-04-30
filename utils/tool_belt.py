@@ -283,25 +283,31 @@ def get_time_stamp():
     return timestamp
 
 
-def get_file_path(subDirName, timeStamp, name):
+def get_file_path(caller_file, timeStamp, name):
     """
     Get the file path to save to. This will be in a subdirectory of Data.
 
     Params:
-        subDirName: string
-            The sub directory of Data to save to
+        caller_file: file object
+            __file__ of the caller - parsed to get the name of
+            the subdirectory we will write to
         timeStamp: string
             Formatted timestamp to include in the file name
         name: string
             The file names consist of <timestamp>_<name>.<ext>
             Ext is supplied by the save functions
     """
+    
+    caller_file_name = os.path.basename(caller_file)
+    sub_dir_name = os.path.splitext(caller_file_name)[0]
 
     # Set up a timestamp
     fileName = timeStamp + '_' + name
 
     # Find the data directory relative to tool_belt's directory
-    folderDir = os.path.abspath(os.path.join('E:/Team Drives/Kolkowitz Lab Group/nvdata', subDirName))
+    joined_path = os.path.join('E:/Team Drives/Kolkowitz Lab Group/nvdata',
+                               sub_dir_name)
+    folderDir = os.path.abspath(joined_path)
 
     # Make the required directory if it doesn't exist already
     if not os.path.isdir(folderDir):

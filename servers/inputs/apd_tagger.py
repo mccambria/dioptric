@@ -26,6 +26,7 @@ from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 import TimeTagger
+import numpy
 
 
 class ApdTagger(LabradServer):
@@ -54,7 +55,7 @@ class ApdTagger(LabradServer):
         for key in keys:
             if key.startswith('di_apd_'):
                 apd_keys.append(key)
-                apd_indices.append(int(key.split('_')[1]))
+                apd_indices.append(int(key.split('_')[2]))
         if len(apd_keys) > 0:
             wiring = ensureDeferred(self.get_wiring(apd_keys))
             wiring.addCallback(self.on_get_wiring, apd_indices)
@@ -68,23 +69,37 @@ class ApdTagger(LabradServer):
 
     def on_get_wiring(self, wiring, apd_indices):
         self.tagger_di_apd = {}
+        # Create an inversion of tagger_di_apd to pass back to the client
+        self.inverted_tagger_di_apd = {}
         # Loop through the possible counters
         for loop_index in range(len(apd_indices)):
             apd_index = apd_indices[loop_index]
-            self.tagger_di_apd[apd_index] = wiring[loop_index]
+            wire = wiring[loop_index]
+            self.tagger_di_apd[apd_index] = wire
+            self.inverted_tagger_di_apd[wire] = apd_index
 
     @setting(0, apd_indices='*i')
     def start_tag_stream(self, c, apd_indices):
-        self.buffer = TimeTagger.TimeTagStreamBuffer()
         buffer_size = int(10**6 / len(apd_indices))  # A million total
         apd_chans = []
         for ind in apd_indices:
             apd_chans.append(self.tagger_di_apd[ind])
         self.stream = TimeTagger.TimeTagStream(self.tagger, buffer_size, apd_chans)
 
-    @setting(1, returns='*i')
+    @setting(1, returns='*s*ii')
     def read_tag_stream(self, c):
-        return self.stream.getData(self.buffer)
+        buffer = self.stream.getData()
+        # Convert to strings since labrad does not support int64s
+        timestamps = buffer.getTimestamps().astype(str).tolist()
+        # Convert channels to APD indices
+        channels = buffer.getChannels()
+        indices = list(map(lambda x: self.inverted_tagger_di_apd[x], channels))
+        
+        return timestamps, indices, buffer.size
+    
+    @setting(2)
+    def stop_tag_stream(self, c):
+        self.stream.stop()
 
 
 __server__ = ApdTagger()

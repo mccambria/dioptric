@@ -24,46 +24,41 @@ import time
 # %% Functions
 
 
-def process_raw_buffer(buffer, diff_window, afterpulse_window,
+def process_raw_buffer(timestamps, apd_indices, buffer_size,
+                       diff_window, afterpulse_window,
                        differences_append, apd_a_index, apd_b_index):
-
-    # Couple shorthands to speed up the calculation
-    buffer_tagTimestamps = buffer.tagTimestamps
-    buffer_tagChannels = buffer.tagChannels
-    buffer_size = buffer.size
 
     indices_to_delete = []
     indices_to_delete_append = indices_to_delete.append
 
     # Throw out probable afterpulses
-    for click_index in range(buffer.size):
+    for click_index in range(buffer_size):
 
-        click_time = buffer_tagTimestamps[click_index]
+        click_time = timestamps[click_index]
 
         # Determine the afterpulse channel
-        click_channel = buffer_tagChannels[click_index]
+        click_channel = timestamps[click_index]
 
         # Calculate relevant differences
         next_index = click_index + 1
         while next_index < buffer_size:
-            diff = buffer_tagTimestamps[next_index] - click_time
+            diff = timestamps[next_index] - click_time
             if diff > afterpulse_window:
                 break
-            if buffer_tagChannels[next_index] == click_channel:
+            if timestamps[next_index] == click_channel:
                 indices_to_delete_append(next_index)
             next_index += 1
 
-    buffer_tagTimestamps = numpy.delete(buffer_tagTimestamps, indices_to_delete)
-    buffer_tagChannels = numpy.delete(buffer_tagChannels, indices_to_delete)
+    timestamps = numpy.delete(timestamps, indices_to_delete)
 
     # Calculate differences
-    num_vals = buffer_tagTimestamps.size
+    num_vals = timestamps.size
     for click_index in range(num_vals):
 
-        click_time = buffer_tagTimestamps[click_index]
+        click_time = timestamps[click_index]
 
         # Determine the channel to take the difference with
-        click_channel = buffer_tagChannels[click_index]
+        click_channel = apd_indices[click_index]
         if click_channel == apd_a_index:
             diff_channel = apd_b_index
         else:
@@ -73,11 +68,11 @@ def process_raw_buffer(buffer, diff_window, afterpulse_window,
         next_index = click_index + 1
         while next_index < num_vals:  # Don't go past the buffer end
             # Stop taking differences past the diff window
-            diff = buffer_tagTimestamps[next_index] - click_time
+            diff = timestamps[next_index] - click_time
             if diff > diff_window:
                 break
             # Only record the diff between opposite chanels
-            if buffer_tagChannels[next_index] == diff_channel:
+            if apd_indices[next_index] == diff_channel:
                 # Flip the sign for diffs relative to channel 2
                 if click_channel == apd_b_index:
                     diff = -diff
@@ -88,66 +83,65 @@ def process_raw_buffer(buffer, diff_window, afterpulse_window,
 # %% Main
 
 
-def main(cxn, coords, apd_a_index, apd_b_index, name='untitled'):
+def main(cxn, coords, nd_filter, run_time, diff_window,
+         apd_a_index, apd_b_index, name='untitled'):
 
     # %% Initial calculations and setup
-
-
-    run_time = 60 * 7
-#    run_time = 30
-    sleep_time = 2
+    
     afterpulse_window = 50 * 10**3
-    diff_window = 100 * 10**3  # 100 ns in ps
+    sleep_time = 2
 
     # Set xyz and open the AOM
     tool_belt.set_xyz(cxn, coords)
     cxn.pulse_streamer.constant()
 
-    total_size = 0
-    collect_time = 0
+    num_tags = 0
+    collect_time = 0.0
     collection_index = 0
 
     apd_indices = [apd_a_index, apd_b_index]
 
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
-    buffer = None
     num_bins = int((2 * diff_window) / 1000)  # 1 ns bins in ps
 
     # %% Collect the data
 
     start_time = time.time()
-    start_calc_time = start_time
+    print('Time remaining:')
     tool_belt.init_safe_stop()
 
     # Python does not have do-while loops so we will use something like
     # a while True
     cxn.apd_tagger.start_tag_stream(apd_indices)  # Expose an initial stream
     stop = False
+    start_calc_time = start_time
     while not stop:
 
         # Wait until some data has filled
         now = time.time()
-        time_elapsed = now - start_calc_time
-        time.sleep(max(sleep_time - time_elapsed, 0))
-
-        # Read the stream and
-        buffer = cxn.apd_tagger.read_tag_stream()
+        calc_time_elapsed = now - start_calc_time
+        time.sleep(max(sleep_time - calc_time_elapsed, 0))
+        # Read the stream and convert from strings to int64s
+        ret_vals = cxn.apd_tagger.read_tag_stream()
+        buffer_timestamps, buffer_apd_indices, buffer_size = ret_vals
+        buffer_timestamps = numpy.array(buffer_timestamps, dtype=numpy.int64)
 
         # Check if we should stop
-        if (time.time() - start_time > run_time) or tool_belt.safe_stop():
+        time_remaining = (start_time + run_time)- time.time()
+        if (time_remaining < 0) or tool_belt.safe_stop():
             stop = True
         else:
-            # Expose a new stream so that we collect data while calculating
-            cxn.apd_tagger.start_tag_stream(apd_indices)
+            print(int(time_remaining))
 
         # Process data
         start_calc_time = time.time()
-        process_raw_buffer(buffer, diff_window, afterpulse_window,
+        process_raw_buffer(buffer_timestamps, buffer_apd_indices, buffer_size,
+                           diff_window, afterpulse_window,
                            differences_append, apd_a_index, apd_b_index)
 
         # Create/update the histogram
-        if collection_index == 1:
+        if collection_index == 0:
             fig, ax = plt.subplots()
             hist, bin_edges = numpy.histogram(differences, num_bins)
             bin_edges = bin_edges / 1000  # ps to ns
@@ -165,7 +159,9 @@ def main(cxn, coords, apd_a_index, apd_b_index, name='untitled'):
             tool_belt.update_line_plot_figure(fig, hist)
 
         collection_index += 1
-        total_size += buffer.size
+        num_tags += buffer_size
+        
+    cxn.apd_tagger.stop_tag_stream()
 
     # %% Save the data
 
@@ -173,11 +169,12 @@ def main(cxn, coords, apd_a_index, apd_b_index, name='untitled'):
 
     raw_data = {'name': name,
                 'coords': coords,
-                'differences': int_differences,
-                'total_size': total_size,
-                'collect_time': collect_time}
+                'nd_filter': nd_filter,
+                'num_tags': num_tags,
+                'collect_time': collect_time,
+                'differences': int_differences}
 
     timeStamp = tool_belt.get_time_stamp()
-    filePath = tool_belt.get_file_path('g2_measurement', timeStamp, name)
+    filePath = tool_belt.get_file_path(__file__, timeStamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(raw_data, filePath)

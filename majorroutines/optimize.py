@@ -273,7 +273,7 @@ def main(cxn, coords, apd_index, name='untitled',
             cxn.galvo.write(opti_centers[0], opti_centers[1])
             cxn.objective_piezo.write_voltage(opti_centers[2])
         else:
-            print('{:.3f}, {:.3f}, {:.3f}'.format(*opti_centers))
+            print('{:.3f}, {:.3f}, {:.1f}'.format(*opti_centers))
     else:
         # Let the user know something went wrong and reset to what was passed
         print('Centers could not be located.')
@@ -282,10 +282,15 @@ def main(cxn, coords, apd_index, name='untitled',
             cxn.objective_piezo.write_voltage(z_center)
         else:
             center_texts = []
-            for center in opti_centers:
+            for center_ind in range(len(opti_centers)):
+                center = opti_centers[center_ind]
                 center_text = 'None'
                 if center is not None:
-                    center_text = '{:.3f}'.format(center)
+                    if center_ind == 3:
+                        center_text = '{:.1f}'
+                    else:
+                        center_text = '{:.3f}'
+                    center_text = center_text.format(center)
                 center_texts.append(center_text)
             print(opti_centers)
             print(', '.join(center_texts))

@@ -90,6 +90,8 @@ def main(cxn, coords, x_range, y_range, num_steps, readout, apd_index,
     # %% Some initial calculations
 
     x_center, y_center, z_center = coords
+    
+    readout_sec = float(readout) / 10**9
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
@@ -169,8 +171,11 @@ def main(cxn, coords, x_range, y_range, num_steps, readout, apd_index,
         # Read the samples and update the image
         new_samples = cxn.apd_counter.read_stream(apd_index)
         num_new_samples = len(new_samples)
+        new_samples = numpy.array(new_samples, dtype=float)
+        kcounts = new_samples / 1000
+        kcps = kcounts / readout_sec
         if num_new_samples > 0:
-            populate_img_array(new_samples, img_array, img_write_pos)
+            populate_img_array(kcps, img_array, img_write_pos)
             tool_belt.update_image_figure(fig, img_array)
             num_read_so_far += num_new_samples
 
@@ -180,15 +185,15 @@ def main(cxn, coords, x_range, y_range, num_steps, readout, apd_index,
 
     rawData = {'timeStamp': timeStamp,
                'name': name,
-               'xyz_centers': [x_center, y_center, z_center],
+               'coords': coords,
                'x_range': x_range,
                'y_range': y_range,
                'num_steps': num_steps,
                'readout': int(readout),
-               'resolution': [x_num_steps, x_num_steps],
+               'resolution': [x_num_steps, y_num_steps],
                'img_array': img_array.astype(int).tolist()}
 
-    filePath = tool_belt.get_file_path('scan_sample', timeStamp, name)
+    filePath = tool_belt.get_file_path(__file__, timeStamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
 
