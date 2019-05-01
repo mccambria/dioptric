@@ -32,7 +32,7 @@ import numpy
 import json
 import time
 import labrad
-
+from scipy import asarray as ar,exp
 
 # %% xyz sets
 
@@ -260,10 +260,10 @@ def gaussian(x, *params):
     return offset + coeff**2*numpy.exp(-(centDist**2)/(2*var))
 
 
-def sinexp(t, offset, amp, freq, phase, decay):
+def sinexp(t, offset, amp, freq, decay):
     two_pi = 2*numpy.pi
-    return offset + (amp * numpy.sin((two_pi * freq * t) + phase))
-
+    half_pi = numpy.pi / 2
+    return offset + (amp * numpy.sin((two_pi * freq * t) + half_pi)) * exp(-decay**2 * t)
 
 # %%  Save utils
 
