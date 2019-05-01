@@ -76,7 +76,7 @@ def process_raw_buffer(timestamps, apd_indices, buffer_size,
                 # Flip the sign for diffs relative to channel 2
                 if click_channel == apd_b_index:
                     diff = -diff
-                differences_append(diff)
+                differences_append(int(diff))
             next_index += 1
 
 
@@ -96,14 +96,13 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     cxn.pulse_streamer.constant()
 
     num_tags = 0
-    collect_time = 0.0
     collection_index = 0
 
     apd_indices = [apd_a_index, apd_b_index]
 
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
-    num_bins = int((2 * diff_window) / 1000)  # 1 ns bins in ps
+    num_bins = int((2 * diff_window) / 1000) + 1  # 1 ns bins in ps
 
     # %% Collect the data
 
@@ -124,8 +123,8 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
         time.sleep(max(sleep_time - calc_time_elapsed, 0))
         # Read the stream and convert from strings to int64s
         ret_vals = cxn.apd_tagger.read_tag_stream()
-        buffer_timestamps, buffer_apd_indices, buffer_size = ret_vals
-        buffer_timestamps = numpy.array(buffer_timestamps, dtype=numpy.int64)
+        buffer_timetags, buffer_apd_indices, buffer_size = ret_vals
+        buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
 
         # Check if we should stop
         time_remaining = (start_time + run_time)- time.time()
@@ -136,7 +135,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
 
         # Process data
         start_calc_time = time.time()
-        process_raw_buffer(buffer_timestamps, buffer_apd_indices, buffer_size,
+        process_raw_buffer(buffer_timetags, buffer_apd_indices, buffer_size,
                            diff_window, afterpulse_window,
                            differences_append, apd_a_index, apd_b_index)
 
@@ -165,16 +164,22 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
 
     # %% Save the data
 
-    int_differences = list(map(int, differences))
+    timestamp = tool_belt.get_time_stamp()
 
     raw_data = {'name': name,
+                'timestamp': timestamp,
                 'coords': coords,
+                'coords-units': 'V',
                 'nd_filter': nd_filter,
+                'run_time': run_time,
+                'run_time-units': 's',
+                'diff_window': diff_window,
+                'diff_window-units': 'ns',
+                'num_bins': num_bins,
                 'num_tags': num_tags,
-                'collect_time': collect_time,
-                'differences': int_differences}
+                'differences': differences,
+                'differences-units': 'ps'}
 
-    timeStamp = tool_belt.get_time_stamp()
-    filePath = tool_belt.get_file_path(__file__, timeStamp, name)
+    filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(raw_data, filePath)

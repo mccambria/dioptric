@@ -52,7 +52,7 @@ def read_timed_counts(cxn, num_steps, period, apd_index):
             counts.extend(new_samples)
             num_read_so_far += num_new_samples
 
-    return numpy.array(counts, dtype=numpy.uint32)
+    return numpy.array(counts, dtype=int)
     
     
 def do_plot_data(fig, ax, title, voltages, k_counts_per_sec, 
@@ -60,7 +60,7 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
     ax.plot(voltages, k_counts_per_sec)
     ax.set_title(title)
     ax.set_xlabel('Volts (V)')
-    ax.set_ylabel('kcts/sec')
+    ax.set_ylabel('Count rate (kcps)')
 
     # Plot the fit
     if not optimizationFailed:
@@ -89,7 +89,7 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
 # %% Main
 
 
-def main(cxn, coords, apd_index, name='untitled',
+def main(cxn, coords, nd_filter, apd_index, name='untitled',
          set_to_opti_centers=True, save_data=False, plot_data=False):
 
     # %% Initial set up
@@ -99,7 +99,7 @@ def main(cxn, coords, apd_index, name='untitled',
     readout = 10 * 10**6
     readout_sec = readout / 10**9  # Calculate the readout in seconds
 
-    num_steps = 50
+    num_steps = 51
 
     xy_range = 0.02
     z_range = 5.0
@@ -140,7 +140,7 @@ def main(cxn, coords, apd_index, name='untitled',
         return opti_centers
 
     # Fit
-    k_counts_per_sec = (x_counts / 10**3) / (readout_sec * 10**3)
+    k_counts_per_sec = (x_counts / 1000) / readout_sec
     init_fit = ((23. / readout) * 10**6, x_center, xy_range / 3, 50.)
     try:
         optiParams, cov_arr = curve_fit(tool_belt.gaussian, x_voltages,
@@ -169,7 +169,7 @@ def main(cxn, coords, apd_index, name='untitled',
         return opti_centers
 
     # Fit
-    k_counts_per_sec = (y_counts / 10**3) / (readout_sec * 10**3)
+    k_counts_per_sec = (y_counts / 1000) / readout_sec
     init_fit = ((23. / readout) * 10**6, y_center, xy_range / 3, 50.)
     try:
         optiParams, cov_arr = curve_fit(tool_belt.gaussian, y_voltages,
@@ -207,7 +207,7 @@ def main(cxn, coords, apd_index, name='untitled',
     # Set up the APD
     cxn.apd_counter.load_stream_reader(apd_index, period, num_steps)
 
-    z_counts = numpy.zeros(num_steps, dtype=numpy.uint32)
+    z_counts = numpy.zeros(num_steps, dtype=int)
 
     cxn.objective_piezo.write_voltage(z_voltages[0])
     time.sleep(0.5)
@@ -222,10 +222,10 @@ def main(cxn, coords, apd_index, name='untitled',
         # Start the timing stream
         cxn.pulse_streamer.stream_start()
 
-        z_counts[ind] = cxn.apd_counter.read_stream(apd_index, 1)[0]
+        z_counts[ind] = int(cxn.apd_counter.read_stream(apd_index, 1)[0])
 
     # Fit
-    k_counts_per_sec = (z_counts / 10**3) / (readout_sec * 10**3)
+    k_counts_per_sec = (z_counts / 1000) / readout_sec
     init_fit = ((23. / readout) * 10**6, z_center, z_range / 2, 0.)
     try:
         optiParams, cov_arr = curve_fit(tool_belt.gaussian, z_voltages,
@@ -252,16 +252,32 @@ def main(cxn, coords, apd_index, name='untitled',
 
         rawData = {'timestamp': timestamp,
                    'name': name,
-                   'xyz_centers': [x_center, y_center, z_center],
+                   'coords': coords,
+                   'coords-units': 'V',
+                   'nd_filter': nd_filter,
                    'xy_range': xy_range,
+                   'xy_range-units': 'V',
                    'z_range': z_range,
+                   'xy_range-units': 'V',
                    'num_steps': num_steps,
-                   'readout': int(readout),
-                   'counts': [x_counts.astype(int).tolist(),
-                              y_counts.astype(int).tolist(),
-                              z_counts.astype(int).tolist()]}
+                   'readout': readout,
+                   'readout-units': 'ns',
+                   'x_voltages': x_voltages,
+                   'x_voltages-units': 'V',
+                   'y_voltages': y_voltages,
+                   'y_voltages-units': 'V',
+                   'z_voltages': z_voltages,
+                   'z_voltages-units': 'V',
+                   'xyz_centers': [x_center, y_center, z_center],
+                   'xyz_centers-units': 'V',
+                   'x_counts': x_counts.tolist(),
+                   'x_counts-units': 'counts',
+                   'y_counts': x_counts.tolist(),
+                   'y_counts-units': 'counts',
+                   'z_counts': x_counts.tolist(),
+                   'z_counts-units': 'counts'}
 
-        filePath = tool_belt.get_file_path('optimize', timestamp, name)
+        filePath = tool_belt.get_file_path(__file__, timestamp, name)
         tool_belt.save_raw_data(rawData, filePath)
         if plot_data:
             tool_belt.save_figure(fig, filePath)

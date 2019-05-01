@@ -26,7 +26,7 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
 
     # %% Get the starting time of the function
     
-    timestampStart = tool_belt.get_time_stamp()
+    timestamp_start = tool_belt.get_time_stamp()
     
     # %% Initial calculations and setup
     
@@ -38,7 +38,6 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
     sequence_args = [readout, uwave_switch_delay, apd_index]
 
     file_name = os.path.basename(__file__)
-    file_name_no_ext = os.path.splitext(file_name)[0]
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -57,14 +56,16 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
     # useful for us here.
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
-    ref_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
+    ref_counts = numpy.empty([num_runs, num_steps])
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
-    counts_norm = numpy.empty([num_runs, num_steps])
+    norm_counts = numpy.empty([num_runs, num_steps])
 
     # %% Collect the data
 
 #    tool_belt.set_xyz(cxn, coords)
+    
+    optimize_failed = False
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -76,7 +77,9 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
         if tool_belt.safe_stop():
             break
 
-        optimize.main(cxn, coords, apd_index)
+        xyz_centers = optimize.main(cxn, coords, nd_filter, apd_index)
+        if None in xyz_centers:
+            optimize_failed = True
 
         # Load the APD task with two samples for each frequency step
         ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args)
@@ -107,20 +110,20 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
             ref_counts[run_ind, step_ind] = new_counts[0]
             sig_counts[run_ind, step_ind] = new_counts[1]
             try:
-                counts_norm[run_ind, step_ind] = new_counts[1] / new_counts[0]
+                norm_counts[run_ind, step_ind] = new_counts[1] / new_counts[0]
             except Exception:
-                counts_norm[run_ind, step_ind] = 0
+                norm_counts[run_ind, step_ind] = 0
 
     # %% Process and plot the data
 
     # Find the averages across runs
-    ref_counts_avg = numpy.average(ref_counts, axis=0)
-    sig_counts_avg = numpy.average(sig_counts, axis=0)
-    norm_avg_sig = numpy.average(counts_norm, axis=0)
+    avg_ref_counts = numpy.average(ref_counts, axis=0)
+    avg_sig_counts = numpy.average(sig_counts, axis=0)
+    avg_norm_sig = numpy.average(norm_counts, axis=0)
 
     # Convert to kilocounts per second
-    kcps_uwave_off_avg = (ref_counts_avg / (10**3)) / readout_sec
-    kcpsc_uwave_on_avg = (sig_counts_avg / (10**3)) / readout_sec
+    kcps_uwave_off_avg = (avg_ref_counts / (10**3)) / readout_sec
+    kcpsc_uwave_on_avg = (avg_sig_counts / (10**3)) / readout_sec
 
     # Create an image with 2 plots on one row, with a specified size
     # Then draw the canvas and flush all the previous plots from the canvas
@@ -136,7 +139,7 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
     ax.legend()
     # The second plot will show their subtracted values
     ax = axes_pack[1]
-    ax.plot(freqs, norm_avg_sig, 'b-')
+    ax.plot(freqs, avg_norm_sig, 'b-')
     ax.set_title('Normalized Count Rate vs Frequency')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
@@ -149,24 +152,33 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
 
     cxn.microwave_signal_generator.uwave_off()
 
-    timestampEnd = tool_belt.get_time_stamp()
+    timestamp = tool_belt.get_time_stamp()
 
-    rawData = {'timestanpStart': timestampStart,
-               'timestampEnd': timestampEnd,
+    rawData = {'timestamp': timestamp,
                'name': name,
                'coords': coords,
+               'coords-units': 'V',
+               'optimize_failed': optimize_failed,
                'nd_filter': nd_filter,
                'freq_center': freq_center,
+               'freq_center-units': 'GHz',
                'freq_range': freq_range,
+               'freq_range-units': 'GHz',
                'num_steps': num_steps,
                'num_runs': num_runs,
                'uwave_power': uwave_power,
+               'uwave_power-units': 'dBm',
                'readout': readout,
+               'readout-units': 'ns',
                'uwave_switch_delay': uwave_switch_delay,
+               'uwave_switch_delay-units': 'ns',
                'sig_counts': sig_counts.astype(int).tolist(),
+               'sig_counts-units': 'counts',
                'ref_counts': ref_counts.astype(int).tolist(),
-               'norm_avg_sig': norm_avg_sig.astype(float).tolist()}
+               'ref_counts-units': 'counts',
+               'avg_norm_sig': avg_norm_sig.astype(float).tolist(),
+               'avg_norm_sig-units': 'arb'}
 
-    filePath = tool_belt.get_file_path(file_name_no_ext, timestampEnd, name)
+    filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)

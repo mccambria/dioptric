@@ -84,7 +84,8 @@ def on_click_image(event):
         pass
 
 
-def main(cxn, coords, x_range, y_range, num_steps, readout, apd_index,
+def main(cxn, coords, nd_filter, x_range, y_range,
+         num_steps, readout, apd_index,
          name='untitled', continuous=False):
 
     # %% Some initial calculations
@@ -137,6 +138,7 @@ def main(cxn, coords, x_range, y_range, num_steps, readout, apd_index,
     # are not interpreted as 0 by matplotlib's colobar
     img_array = numpy.empty((x_num_steps, y_num_steps))
     img_array[:] = numpy.nan
+    img_array_kcps = numpy.copy(img_array)
     img_write_pos = []
 
     # For the image extent, we need to bump out the min/max x/y by half the
@@ -171,29 +173,39 @@ def main(cxn, coords, x_range, y_range, num_steps, readout, apd_index,
         # Read the samples and update the image
         new_samples = cxn.apd_counter.read_stream(apd_index)
         num_new_samples = len(new_samples)
-        new_samples = numpy.array(new_samples, dtype=float)
-        kcounts = new_samples / 1000
-        kcps = kcounts / readout_sec
         if num_new_samples > 0:
-            populate_img_array(kcps, img_array, img_write_pos)
-            tool_belt.update_image_figure(fig, img_array)
+            populate_img_array(new_samples, img_array, img_write_pos)
+            # This is a horribly inefficient way of getting kcps, but it
+            # is easy and readable and probably fine up to some resolution
+            # we likely will never try
+            img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
+            tool_belt.update_image_figure(fig, img_array_kcps)
             num_read_so_far += num_new_samples
 
     # %% Save the data
 
-    timeStamp = tool_belt.get_time_stamp()
+    timestamp = tool_belt.get_time_stamp()
 
-    rawData = {'timeStamp': timeStamp,
+    rawData = {'timestamp': timestamp,
                'name': name,
                'coords': coords,
+               'coords-units': 'V',
+               'nd_filter': nd_filter,
                'x_range': x_range,
+               'x_range-units': 'V',
                'y_range': y_range,
+               'y_range-units': 'V',
                'num_steps': num_steps,
-               'readout': int(readout),
-               'resolution': [x_num_steps, y_num_steps],
-               'img_array': img_array.astype(int).tolist()}
+               'readout': readout,
+               'readout-units': 'ns',
+               'x_voltages': x_voltages,
+               'x_voltages-units': 'V',
+               'y_voltages': y_voltages,
+               'y_voltages-units': 'V',
+               'img_array': img_array.astype(int).tolist(),
+               'img_array-units': 'counts'}
 
-    filePath = tool_belt.get_file_path(__file__, timeStamp, name)
+    filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
 

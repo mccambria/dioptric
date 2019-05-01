@@ -50,7 +50,6 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # Analyze the sequence
     file_name = os.path.basename(__file__)
-    file_name_no_ext = os.path.splitext(file_name)[0]
     sequence_args = [taus[0], polarization_time, reference_time,
                     signal_wait_time, reference_wait_time,
                     background_wait_time, aom_delay_time,
@@ -67,7 +66,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
-    # norm_avg_sig = numpy.empty([num_runs, num_steps])
+    # avg_norm_sig = numpy.empty([num_runs, num_steps])
 
     # %% Set up the microwaves
 
@@ -78,6 +77,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     # %% Collect the data
 
 #    tool_belt.set_xyz(cxn, coords)
+    
+    optimize_failed = False
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -88,7 +89,9 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
         if tool_belt.safe_stop():
             break
 
-        optimize.main(cxn, coords, sig_apd_index)
+        xyz_centers = optimize.main(cxn, coords, nd_filter, sig_apd_index)
+        if None in xyz_centers:
+            optimize_failed = True
 
         # Load the APD tasks
         cxn.apd_counter.load_stream_reader(sig_apd_index, period, num_steps)
@@ -120,42 +123,42 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # %% Average the counts over the iterations
 
-    sig_counts_avg = numpy.average(sig_counts, axis=0)
-    ref_counts_avg = numpy.average(ref_counts, axis=0)
+    avg_sig_counts = numpy.average(sig_counts, axis=0)
+    avg_ref_counts = numpy.average(ref_counts, axis=0)
 
     # %% Calculate the Rabi data, signal / reference over different Tau
 
-    norm_avg_sig = (sig_counts_avg) / (ref_counts_avg)
+    avg_norm_sig = (avg_sig_counts) / (avg_ref_counts)
 
     # %% Fit the data and extract piPulse
 
     # Estimated fit parameters
     offset = 0.9
-    amplitude = 0.01
-    frequency = 1/100
+    amplitude = 0.10
+    frequency = 1/200
     phase = 1.57
     decay = 10**-7
 
     init_params = [offset, amplitude, frequency, phase, decay]
 
-    opti_params, cov_arr = curve_fit(tool_belt.sinexp, taus, norm_avg_sig,
+    opti_params, cov_arr = curve_fit(tool_belt.sinexp, taus, avg_norm_sig,
                                      p0=init_params)
 
-    period = 1 / opti_params[2]
+    rabi_period = 1 / opti_params[2]
 
     # %% Plot the Rabi signal
 
     fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
-    ax.plot(taus, sig_counts_avg, 'r-')
-    ax.plot(taus, ref_counts_avg, 'g-')
+    ax.plot(taus, avg_sig_counts, 'r-')
+    ax.plot(taus, avg_ref_counts, 'g-')
     # ax.plot(tauArray, countsBackground, 'o-')
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
 
     ax = axes_pack[1]
-    ax.plot(taus , norm_avg_sig, 'b-')
+    ax.plot(taus , avg_norm_sig, 'b-')
     ax.set_title('Normalized Signal With Varying Microwave Duration')
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Contrast (arb. units)')
@@ -166,15 +169,18 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # %% Plot the data itself and the fitted curve
 
+    tausMore = numpy.linspace(min_uwave_time, max_uwave_time,
+                          num=1000)
+
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(taus, norm_avg_sig,'bo',label='data')
-    ax.plot(taus, tool_belt.sinexp(taus, *opti_params), 'r-', label='fit')
+    ax.plot(taus, avg_norm_sig,'bo',label='data')
+    ax.plot(tausMore, tool_belt.sinexp(tausMore, *opti_params), 'r-', label='fit')
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
     ax.legend()
     text = '\n'.join((r'$C + A_0 \mathrm{sin}(\nu * 2 \pi * t + \phi) e^{-d * t}$',
-                      r'$\frac{1}{\nu} = $' + '%.1f'%(period) + ' ns',
+                      r'$\frac{1}{\nu} = $' + '%.1f'%(rabi_period) + ' ns',
                       r'$A_0 = $' + '%.3f'%(opti_params[1]),
                       r'$d = $' + '%.3f'%(opti_params[4]) + ' ' + r'$ ns^{-1}$'))
 
@@ -189,28 +195,35 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # %% Save the data
 
-    timestampEnd = tool_belt.get_time_stamp()
+    timestamp = tool_belt.get_time_stamp()
 
-    raw_data = {'timestampStart': timestampStart,
-                'timestampEnd': timestampEnd,
-               'name': name,
-               'xyz_centers': coords,
-               'nd_filter': nd_filter,
-               'uwave_freq': uwave_freq,
-               'uwave_power': uwave_power,
-               'uwave_time_range': uwave_time_range,
-               'num_steps': num_steps,
-               'num_reps': num_reps,
-               'num_runs': num_runs,
-               'sig_counts': sig_counts.astype(int).tolist(),
-               'ref_counts': ref_counts.astype(int).tolist(),
-               'norm_avg_sig': norm_avg_sig.astype(float).tolist()}
+    raw_data = {'timestamp': timestamp,
+                'name': name,
+                'coords': coords,
+                'coords-units': 'V',
+                'optimize_failed': optimize_failed,
+                'nd_filter': nd_filter,
+                'uwave_freq': uwave_freq,
+                'uwave_freq-units': 'GHz',
+                'uwave_power': uwave_power,
+                'uwave_power-units': 'dBm',
+                'uwave_time_range': uwave_time_range,
+                'uwave_time_range-units': 'ns',
+                'num_steps': num_steps,
+                'num_reps': num_reps,
+                'num_runs': num_runs,
+                'sig_counts': sig_counts.astype(int).tolist(),
+                'sig_counts-units': 'counts',
+                'ref_counts': ref_counts.astype(int).tolist(),
+                'ref_counts-units': 'counts',
+                'avg_norm_sig': avg_norm_sig.astype(float).tolist(),
+                'avg_norm_sig-units': 'arb'}
 
-    file_path = tool_belt.get_file_path(file_name_no_ext, timestampEnd, name)
+    file_path = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, file_path)
     tool_belt.save_figure(fig, file_path + '_fitting')
     tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Return value for pi pulse
 
-    return numpy.int64(period)
+    return numpy.int64(rabi_period)

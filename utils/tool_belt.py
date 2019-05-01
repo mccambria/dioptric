@@ -335,7 +335,8 @@ def save_figure(fig, filePath):
 
 def save_raw_data(rawData, filePath):
     """
-    Save raw data in the form of a dictionary to a text file.
+    Save raw data in the form of a dictionary to a text file. New lines
+    will be printed between entries in the dictionary.
 
     Params:
         rawData: dict
@@ -346,7 +347,7 @@ def save_raw_data(rawData, filePath):
     """
 
     with open(filePath + '.txt', 'w') as file:
-        json.dump(rawData, file)
+        json.dump(rawData, file, indent=2)
 
 
 # %% Safe stop (TM mccambria)

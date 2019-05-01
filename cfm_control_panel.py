@@ -73,7 +73,7 @@ def do_resonance(name, coords, nd_filter, apd_index):
 
     freq_center = 2.87
     freq_range = 0.2
-    num_steps = 200
+    num_steps = 201
     num_runs = 10
     uwave_power = -13.0  # -13.0 with a 1.0 ND is a good starting point
 
@@ -84,12 +84,13 @@ def do_resonance(name, coords, nd_filter, apd_index):
 
 def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index):
 
-    uwave_freq = 2.861
+    uwave_freq = 2.8428
     uwave_power = 5
-    uwave_time_range = [0, 200]
-    num_steps = 25
+    uwave_time_range = [0, 500]
+    num_steps = 51
+    
     num_reps = 10**5
-    num_runs = 1
+    num_runs = 8
 
     with labrad.connect() as cxn:
         rabi.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
@@ -141,10 +142,9 @@ if __name__ == '__main__':
     nv6 = [-0.069, -0.035, 49.2]
     nv7 = [-0.080, -0.057, 49.0]
     
-#    nv_list = [nv1]
+    nv_list = [nv2]
 #    nv_list = [nv4]
-#    nv_list = [nv5]
-    nv_list = [nv2, nv4]
+#    nv_list = [nv2, nv4]
 
 #    other_coords = [0.0, -0.1, 49.2]
 #    other_coords = [-0.011, 0.006, 49.2]
@@ -168,8 +168,8 @@ if __name__ == '__main__':
 #            do_image_sample(name, coords, scan_range, num_scan_steps, primary_apd_index)
 #            do_optimize(name, coords, primary_apd_index)
 #            do_stationary_count(name, coords, primary_apd_index)
-            do_resonance(name, coords, nd_filter, primary_apd_index)
-#            do_rabi(name, coords, nd_filter, primary_apd_index, secondary_apd_index)
+#            do_resonance(name, coords, nd_filter, primary_apd_index)
+            do_rabi(name, coords, nd_filter, primary_apd_index, secondary_apd_index)
 #            do_g2_measurement(name, coords, nd_filter, primary_apd_index, secondary_apd_index)
 #            do_t1_measurement(name, coords, primary_apd_index)
     finally:
