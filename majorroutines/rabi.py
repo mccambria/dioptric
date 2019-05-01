@@ -133,15 +133,16 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     offset = 0.9
     amplitude = 0.01
     frequency = 1/100
-    phase = 1.57
+#    phase = 1.57
     decay = 10**-7
 
-    init_params = [offset, amplitude, frequency, phase, decay]
+    init_params = [offset, amplitude, frequency, decay]
 
     opti_params, cov_arr = curve_fit(tool_belt.sinexp, taus, norm_avg_sig,
                                      p0=init_params)
 
     period = 1 / opti_params[2]
+    decay = opti_params[3]**2
 
     # %% Plot the Rabi signal
 
@@ -166,9 +167,11 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # %% Plot the data itself and the fitted curve
 
+    linspaceTau = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
+
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ax.plot(taus, norm_avg_sig,'bo',label='data')
-    ax.plot(taus, tool_belt.sinexp(taus, *opti_params), 'r-', label='fit')
+    ax.plot(linspaceTau, tool_belt.sinexp(linspaceTau, *opti_params), 'r-', label='fit')
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
@@ -176,7 +179,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     text = '\n'.join((r'$C + A_0 \mathrm{sin}(\nu * 2 \pi * t + \phi) e^{-d * t}$',
                       r'$\frac{1}{\nu} = $' + '%.1f'%(period) + ' ns',
                       r'$A_0 = $' + '%.3f'%(opti_params[1]),
-                      r'$d = $' + '%.3f'%(opti_params[4]) + ' ' + r'$ ns^{-1}$'))
+                      r'$d = $' + '%.4f'%(decay) + ' ' + r'$ ns^{-1}$'))
 
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
