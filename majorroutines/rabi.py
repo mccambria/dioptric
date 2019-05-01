@@ -15,9 +15,9 @@ import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
 import os
+import time
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-
 
 # %% Main
 
@@ -28,7 +28,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # %% Get the starting time of the function
     
-    timestampStart = tool_belt.get_time_stamp()
+    startFunctionTime = time.time()
     
     # %% Initial calculations and setup
 
@@ -191,11 +191,15 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     fig.canvas.flush_events()
 
     # %% Save the data
+    
+    endFunctionTime = time.time()
+    
+    timeElapsed = endFunctionTime - startFunctionTime
 
-    timestampEnd = tool_belt.get_time_stamp()
+    timestamp = tool_belt.get_time_stamp()
 
-    raw_data = {'timestampStart': timestampStart,
-                'timestampEnd': timestampEnd,
+    raw_data = {'timestamp': timestamp,
+               'timeElapsed': timeElapsed,
                'name': name,
                'xyz_centers': coords,
                'nd_filter': nd_filter,
@@ -209,7 +213,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
                'ref_counts': ref_counts.astype(int).tolist(),
                'norm_avg_sig': norm_avg_sig.astype(float).tolist()}
 
-    file_path = tool_belt.get_file_path(file_name_no_ext, timestampEnd, name)
+    file_path = tool_belt.get_file_path(file_name_no_ext, timestamp, name)
     tool_belt.save_figure(fig, file_path)
     tool_belt.save_figure(fig, file_path + '_fitting')
     tool_belt.save_raw_data(raw_data, file_path)
