@@ -15,9 +15,9 @@ import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
 import os
+import time
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-
 
 # %% Main
 
@@ -28,7 +28,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # %% Get the starting time of the function
 
-#    timestampStart = tool_belt.get_time_stamp()
+    startFunctionTime = time.time()
 
     # %% Initial calculations and setup
 
@@ -195,9 +195,14 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # %% Save the data
 
+    endFunctionTime = time.time()
+
+    timeElapsed = endFunctionTime - startFunctionTime
+
     timestamp = tool_belt.get_time_stamp()
 
     raw_data = {'timestamp': timestamp,
+                'timeElapsed': timeElapsed
                 'name': name,
                 'coords': coords,
                 'coords-units': 'V',
