@@ -26,7 +26,7 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
 
     # %% Get the starting time of the function
     
-    timestamp_start = tool_belt.get_time_stamp()
+#    timestamp_start = tool_belt.get_time_stamp()
     
     # %% Initial calculations and setup
     
