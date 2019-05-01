@@ -28,7 +28,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # %% Get the starting time of the function
 
-    timestampStart = tool_belt.get_time_stamp()
+#    timestampStart = tool_belt.get_time_stamp()
 
     # %% Initial calculations and setup
 
@@ -149,7 +149,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # %% Plot the Rabi signal
 
-    fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
     ax.plot(taus, avg_sig_counts, 'r-')
@@ -164,15 +164,15 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Contrast (arb. units)')
 
-    fig.canvas.draw()
+    raw_fig.canvas.draw()
     # fig.set_tight_layout(True)
-    fig.canvas.flush_events()
+    raw_fig.canvas.flush_events()
 
     # %% Plot the data itself and the fitted curve
 
     linspaceTau = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
 
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+    fit_fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ax.plot(taus, avg_norm_sig,'bo',label='data')
     ax.plot(linspaceTau, tool_belt.sinexp(linspaceTau, *opti_params), 'r-', label='fit')
     ax.set_xlabel('Microwave duration (ns)')
@@ -189,9 +189,9 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     ax.text(0.55, 0.25, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
 
-    fig.canvas.draw()
+    fit_fig.canvas.draw()
     # fig.set_tight_layout(True)
-    fig.canvas.flush_events()
+    fit_fig.canvas.flush_events()
 
     # %% Save the data
 
@@ -220,8 +220,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
                 'avg_norm_sig-units': 'arb'}
 
     file_path = tool_belt.get_file_path(__file__, timestamp, name)
-    tool_belt.save_figure(fig, file_path)
-    tool_belt.save_figure(fig, file_path + '_fitting')
+    tool_belt.save_figure(raw_fig, file_path)
+    tool_belt.save_figure(fit_fig, file_path + '_fitting')
     tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Return value for pi pulse
