@@ -134,10 +134,10 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # Estimated fit parameters
     offset = 0.9
-    amplitude = 0.01
+    amplitude = 0.10
     frequency = 1/100
 #    phase = 1.57
-    decay = 10**-7
+    decay = 0.01
 
     init_params = [offset, amplitude, frequency, decay]
 
@@ -202,7 +202,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     timestamp = tool_belt.get_time_stamp()
 
     raw_data = {'timestamp': timestamp,
-                'timeElapsed': timeElapsed
+                'timeElapsed': timeElapsed,
                 'name': name,
                 'coords': coords,
                 'coords-units': 'V',
