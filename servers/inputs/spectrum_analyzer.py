@@ -67,11 +67,13 @@ class SpectrumAnalyzer(LabradServer):
 
     ############
 
-    def acquire_spectrum_internal(self, freq_center, freq_range):
+    def acquire_spectrum_internal(self, freq_center=2.87, freq_range=0.5):
+        freq_center_hz = freq_center / 10**9
+        freq_range_hz = freq_range / 10**9
         ref_level = 0
         resolution_bandwidth = 300e3
-        specSet = self.config_spectrum(freq_center, ref_level,
-                                       freq_range, resolution_bandwidth)
+        specSet = self.config_spectrum(freq_center_hz, ref_level,
+                                       freq_range_hz, resolution_bandwidth)
         spec_trace_1 = rsa_api.SpectrumTraces.SpectrumTrace1
         freqs = self.create_frequency_array(specSet)
         powers = rsa_api.SPECTRUM_Acquire_py(spec_trace_1,
@@ -79,15 +81,15 @@ class SpectrumAnalyzer(LabradServer):
         return freqs, powers
 
     @setting(0, freq_center='v[]', freq_range='v[]', returns='*v[]*v[]')
-    def acquire_spectrum(self, c, freq_center, freq_range):
+    def acquire_spectrum(self, c, freq_center=2.87, freq_range=0.5):
         return self.acquire_spectrum_internal(freq_center, freq_range)
 
     @setting(1, freq_center='v[]', freq_range='v[]', returns='v[]v[]')
-    def measure_peak(self, c, freq_center, freq_range):
+    def measure_peak(self, c, freq_center=2.87, freq_range=0.5):
         freqs, powers = self.acquire_spectrum_internal(freq_center, freq_range)
         peakPower = numpy.amax(powers)
         peakFreq = freqs[numpy.argmax(powers)]
-        return peakPower, peakFreq / 10**9
+        return peakFreq / 10**9, peakPower
 
 
 __server__ = SpectrumAnalyzer()

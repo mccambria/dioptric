@@ -283,7 +283,7 @@ def get_time_stamp():
     return timestamp
 
 
-def get_file_path(caller_file, timeStamp, name):
+def get_file_path(caller_file, timeStamp, name=''):
     """
     Get the file path to save to. This will be in a subdirectory of Data.
 
@@ -297,7 +297,7 @@ def get_file_path(caller_file, timeStamp, name):
             The file names consist of <timestamp>_<name>.<ext>
             Ext is supplied by the save functions
     """
-    
+
     caller_file_name = os.path.basename(caller_file)
     sub_dir_name = os.path.splitext(caller_file_name)[0]
 
