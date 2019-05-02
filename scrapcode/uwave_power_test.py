@@ -17,15 +17,15 @@ def check_power():
         cxn.microwave_signal_generator.set_amp(5.0)
         cxn.microwave_signal_generator.uwave_on()
         cxn.pulse_streamer.constant(2)
-        
+
         while True:
             power = input('Enter a power or nothing to stop: ')
-            
+
             if power != '':
                 cxn.microwave_signal_generator.set_amp(power)
             else:
                 break
-        
+
         cxn.pulse_streamer.constant(0)
         cxn.microwave_signal_generator.uwave_off()
 
@@ -47,26 +47,26 @@ def check_freq():
         cxn.microwave_signal_generator.set_amp(11.0)
         cxn.microwave_signal_generator.uwave_on()
         cxn.pulse_streamer.constant(2)
-        
+
 #        freqs = numpy.linspace(2.72, 3.02, 31)
-#        
+#
 #        for freq in freqs:
 #            cxn.microwave_signal_generator.set_freq(freq)
 #            print(freq)
 #            if input('Press enter to continue...') == 'stop':
 #                break
-        
+
         while True:
             freq = input('Enter a frequency or nothing to stop: ')
-            
+
             if freq != '':
                 cxn.microwave_signal_generator.set_freq(freq)
             else:
                 break
-        
+
         cxn.pulse_streamer.constant(0)
         cxn.microwave_signal_generator.uwave_off()
-        
+
     # Freq setting / Measured power / Power accounting for attenuator
     # At 5.0 dBm after switch, with -20 dBm attenuator:
         # 2.71 / -19.4 /  0.6
@@ -85,44 +85,44 @@ def check_freq():
         # 2.97 / -20.2 / -0.3
         # 2.99 / -20.2 / -0.2
         # 3.01 / -20.5 / -0.5
-        
+
     # Freq setting / Measured power / Power accounting for attenuator
     # At 10.5 dBm after switch, with -20 dBm attenuator:
         # 2.75 / -13.7 / 6.3
         # 2.79 / -14.4 / 5.6
         # 2.87 / -14.2 / 5.8
         # 3.01 / -15.1 / 4.9
-        
+
     # Freq setting / Measured power / Power accounting for attenuator
     # At 11.0 dBm after switch, with -20 dBm attenuator:
         # 2.75 / -13.2 / 6.8
         # 2.87 / -13.8 / 6.2
-        
+
     # The amplifier should add 40 dBm. The amp can handle 7.0 dBm input so
     # we will run at 11.0 dBm max to account for the gate
-    # With 40 dBm of attentuation in place and the amp on, the post-gate 
+    # With 40 dBm of attentuation in place and the amp on, the post-gate
     # input should match the output.
-        
+
     # Freq setting / Measured power / Power accounting for attenuator
     # At 10.5 dBm after switch, with -20 dBm attenuator:
         # 2.75 / -13.7 / 6.3
         # 2.79 / -14.4 / 5.6
         # 2.87 / -14.2 / 5.8
         # 3.01 / -15.1 / 4.9
-        
+
     # Measured attenuator performance, 2.87 GHz, 11.0 dBm into gate, amp on:
     # With all three (50 dB): -9.9 -> 49.8
     # measured -> actual attentuation
     # 1810MCLVAT-10W2: -0.1 -> 9.8
     # PE7005-20: 9.9 -> 19.8
     # 2082-6194-20: 10.3 -> 20.2
-        
+
     # Calculating amplifier gain (46 dB nominally)
     # 2.87 GHz, 11.0 dBm into gate, 6.2 dBm into amp
     # 6.2 + gain - 49.8 = meas
     # meas + atten = gain
     # -9.6 + 43.6 = 34.0...
-    
+
     # -30.0 attenuation, 2.87 GHz
     # set power / input power / measured power / calculated gain
     # set_power - gate_atten + amp_gain - atten = meas_power
@@ -150,15 +150,32 @@ def check_freq():
     # 9.0 / 10.0
     # 10.0 / 10.0
     # 11.0 / 10.1
-    
+
 def plot_data():
     # input power vs output power
-    x_vals = numpy.linspace(-10.0, 11.0, 22)
-    y_vals = [-0.2, 0.8, 1.8, 2.8, 3.7, 4.6, 5.4, 6.1, 6.8, 7.4,
-              8.0, 8.3, 8.7, 9.0, 9.3, 9.5, 9.7, 9.8, 9.9, 10.0, 10.0, 10.1]
-    plt.plot(y_vals, x_vals)
-    
-    
+    step = 1.0
+    in_powers = numpy.arange(-10.0, 11.0+step, step)
+    out_powers = [-0.2, 0.8, 1.8, 2.8, 3.7, 4.6, 5.4, 6.1, 6.8, 7.4,
+          8.0, 8.3, 8.7, 9.0, 9.3, 9.5, 9.7, 9.8, 9.9, 10.0, 10.0, 10.1]
+    # amp_gain = meas_power - set_power + gate_atten + atten
+    power_diffs = out_powers - in_powers
+    gains = power_diffs + 4.5 + 30.0
+    # fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+    fig, axes_pack = plt.subplots(1, 2, figsize=(12, 6))
+    ax = axes_pack[0]
+    ax.plot(in_powers, out_powers)
+    ax.set_title('Measured Power Versus Set Power At 2.87 GHz')
+    ax.set_xlabel('Set Power (dBm)')
+    ax.set_ylabel('Measured Power (dBm)')
+    ax = axes_pack[1]
+    ax.plot(in_powers, gains)
+    ax.set_title('Measured Amplifier Gain Versus Set Power At 2.87 GHz')
+    ax.set_xlabel('Set Power (dBm)')
+    ax.set_ylabel('Measured Amplifier Gain (dB)')
+    fig.tight_layout()
+
+
 if __name__ == '__main__':
-    check_power()
-#    check_freq()
+    # check_power()
+    # check_freq()
+    plot_data()
