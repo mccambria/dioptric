@@ -12,7 +12,8 @@ import json
 
 directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
 # file_name = '2019-04-29_16-37-06_ayrton12.txt'
-file_name = '2019-04-29_16-37-56_ayrton12.txt'
+# file_name = '2019-04-29_16-37-56_ayrton12.txt'
+file_name = '2019-04-29_16-19-11_ayrton12.txt'
 file_path = directory + file_name
 
 with open(file_path, 'r') as file:
@@ -40,11 +41,21 @@ hierarchy = hierarchy[0]
 
 # contour_img = cv2.drawContours(contour_img, contours, -1, (255,255,255), 1)
 
-# Loop through backwards to pop safely
-for ind in range(len(hierarchy), -1, -1):
-    hier = hierarchy[ind-1]
-    if hier[2] == -1:
-        contours.pop(ind-1)
+# Clean up the contour list
+# Only keep a contour if it has no children (ie it is innermost) and
+# has a parent (ie it is contained within another contour). findContours
+# finds internal and external lines around closed loops in the image
+# so this criteria selects only the internal lines. It can be fooled, but it
+# should work for our edge-processed images.
+contours_temp = []
+for ind in range(len(contours)):
+    hier = hierarchy[ind]
+    cnt = contours[ind]
+    child_cnt_id = hier[1]
+    parent_cnt_id = hier[3]
+    if (child_cnt_id == -1) and (parent_cnt_id != -1):
+        contours_temp.append(cnt)
+contours = contours_temp
 
 # contour_img = cv2.drawContours(contour_img, contours, -1, (255,255,255), 1)
 
