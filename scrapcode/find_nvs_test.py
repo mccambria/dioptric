@@ -10,10 +10,10 @@ import numpy
 from matplotlib import pyplot as plt
 import json
 
-#directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
-directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+# directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
 #file_name = '2019-04-29_16-37-06_ayrton12.txt'
-#file_name = '2019-04-29_16-37-56_ayrton12.txt'
+# file_name = '2019-04-29_16-37-56_ayrton12.txt'
 file_name = '2019-04-29_16-19-11_ayrton12.txt'
 file_path = directory + file_name
 
@@ -60,27 +60,37 @@ contours = contours_temp
 
 # contour_img = cv2.drawContours(contour_img, contours, -1, (255,255,255), 1)
 
+# Convert to rgb so we can plot centers in color
+img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
 for cnt in contours:
     (x, y), radius = cv2.minEnclosingCircle(cnt)
     center = (int(x),int(y))
     radius = int(radius)
     # contour_img = cv2.circle(contour_img, center, radius, (255,255,255), 1)
-    contour_img[center[1], center[0]] = 255
+    img[center[1], center[0]] = (255, 0, 0)
 
-fig, axes_pack = plt.subplots(1, 3, figsize=(15, 5))
+# fig, axes_pack = plt.subplots(1, 3, figsize=(15, 5))
+# ax = axes_pack[0]
+# ax.imshow(img, cmap='gray')
+# ax.set_title('Original')
+# ax = axes_pack[1]
+# ax.imshow(edges, cmap='gray')
+# ax.set_title('Edges')
+# ax = axes_pack[2]
+# ax.imshow(contour_img, cmap='gray')
+# ax.set_title('Circle Fits')
+
+fig, axes_pack = plt.subplots(1, 2, figsize=(10, 5))
 ax = axes_pack[0]
-ax.imshow(img, cmap='gray')
+ax.imshow(img)
 ax.set_title('Original')
 ax = axes_pack[1]
 ax.imshow(edges, cmap='gray')
 ax.set_title('Edges')
-ax = axes_pack[2]
-ax.imshow(contour_img, cmap='gray')
-ax.set_title('Circle Fits')
 
 # fig, ax = plt.subplots(figsize=(5,5))
-# ax.imshow(img, cmap='gray')
-# ax.set_title('Original')
+# ax.imshow(img)
 
 
 fig.show()
