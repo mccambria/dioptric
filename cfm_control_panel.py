@@ -73,8 +73,8 @@ def do_resonance(name, coords, nd_filter, apd_index):
 
     freq_center = 2.87
     freq_range = 0.2
-    num_steps = 201
-    num_runs = 10
+    num_steps = 101
+    num_runs = 5
     uwave_power = -13.0  # -13.0 with a 1.0 ND is a good starting point
 
     with labrad.connect() as cxn:
@@ -84,15 +84,15 @@ def do_resonance(name, coords, nd_filter, apd_index):
 
 def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index):
 
-    uwave_freq = 2.886
+    uwave_freq = 2.888
     uwave_power = 9.0
     uwave_time_range = [0, 500]
     num_steps = 51
     
     num_reps = 10**5
 #    num_reps = 100
-    num_runs = 8
-#    num_runs = 3
+#    num_runs = 8
+    num_runs = 3
 
     with labrad.connect() as cxn:
         rabi.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
@@ -138,9 +138,12 @@ if __name__ == '__main__':
     #  Coords are from 4/30 unless otherwise stated
 #    nv0 = [-0.157, -0.199, 48.7]
     nv1 = [0.000, 0.051, 49.1]
+    
     nv2 = [-0.060, 0.040, 49.0]
     nv2 = [-0.051, 0.042, 49.4]  # 5/1 am
     nv2 = [-0.060, 0.040, 49.0]  # 5/1 pm
+    nv2 = [-0.056, 0.041, 49.1]  # 5/3
+    
     nv3 = [0.006, 0.017, 49.0]
     nv4 = [-0.021, 0.019, 49.0]
     nv5 = [-0.026, -0.041, 49.0]
