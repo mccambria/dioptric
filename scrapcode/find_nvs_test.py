@@ -10,9 +10,10 @@ import numpy
 from matplotlib import pyplot as plt
 import json
 
-directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
-# file_name = '2019-04-29_16-37-06_ayrton12.txt'
-# file_name = '2019-04-29_16-37-56_ayrton12.txt'
+#directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+#file_name = '2019-04-29_16-37-06_ayrton12.txt'
+#file_name = '2019-04-29_16-37-56_ayrton12.txt'
 file_name = '2019-04-29_16-19-11_ayrton12.txt'
 file_path = directory + file_name
 
