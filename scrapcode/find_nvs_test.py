@@ -10,9 +10,10 @@ import numpy
 from matplotlib import pyplot as plt
 import json
 
-directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
-# file_name = '2019-04-29_16-37-06_ayrton12.txt'
-# file_name = '2019-04-29_16-37-56_ayrton12.txt'
+#directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+#file_name = '2019-04-29_16-37-06_ayrton12.txt'
+#file_name = '2019-04-29_16-37-56_ayrton12.txt'
 file_name = '2019-04-29_16-19-11_ayrton12.txt'
 file_path = directory + file_name
 
@@ -63,7 +64,8 @@ for cnt in contours:
     (x, y), radius = cv2.minEnclosingCircle(cnt)
     center = (int(x),int(y))
     radius = int(radius)
-    contour_img = cv2.circle(contour_img, center, radius, (255,255,255), 1)
+#    contour_img = cv2.circle(E:\Team Drives\Kolkowitz Lab Group\nvdata\image_sample, center, radius, (255,255,255), 1)
+    contour_img[center[1], center[0]] = 255
 
 fig, axes_pack = plt.subplots(1, 3, figsize=(15, 5))
 ax = axes_pack[0]
