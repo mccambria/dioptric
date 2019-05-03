@@ -63,7 +63,8 @@ for cnt in contours:
     (x, y), radius = cv2.minEnclosingCircle(cnt)
     center = (int(x),int(y))
     radius = int(radius)
-    contour_img = cv2.circle(contour_img, center, radius, (255,255,255), 1)
+    # contour_img = cv2.circle(contour_img, center, radius, (255,255,255), 1)
+    contour_img[center[1], center[0]] = 255
 
 fig, axes_pack = plt.subplots(1, 3, figsize=(15, 5))
 ax = axes_pack[0]
@@ -75,6 +76,11 @@ ax.set_title('Edges')
 ax = axes_pack[2]
 ax.imshow(contour_img, cmap='gray')
 ax.set_title('Circle Fits')
+
+# fig, ax = plt.subplots(figsize=(5,5))
+# ax.imshow(img, cmap='gray')
+# ax.set_title('Original')
+
 
 fig.show()
 fig.tight_layout()
