@@ -12,9 +12,10 @@ import json
 
 directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
 # directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
-#file_name = '2019-04-29_16-37-06_ayrton12.txt'
+# file_name = '2019-04-29_16-37-06_ayrton12.txt'
 # file_name = '2019-04-29_16-37-56_ayrton12.txt'
-file_name = '2019-04-29_16-19-11_ayrton12.txt'
+# file_name = '2019-04-29_16-19-11_ayrton12.txt'
+file_name = '2019-04-29_15-33-39_ayrton12.txt'
 file_path = directory + file_name
 
 with open(file_path, 'r') as file:
@@ -22,6 +23,8 @@ with open(file_path, 'r') as file:
 
 img_array = numpy.array(data['img_array'])
 readout = data['readout']
+
+
 
 # Convert to kcps
 img = (img_array / 1000) / (readout / 10**9)
@@ -33,8 +36,13 @@ img = img.astype(numpy.uint8)
 contour_img = numpy.copy(img)
 contour_img[:] = 0
 
-# grad = 50
-edges = cv2.Canny(img, 40, 50)
+img = cv2.GaussianBlur(img, (9,9), 0)
+
+edges = cv2.Canny(img, 10, 500, apertureSize=5, L2gradient=True)
+# edges = cv2.Canny(img, 40, 50, apertureSize=5, L2gradient=True)
+# edges = cv2.Canny(img, 40, 50, apertureSize=3)
+# edges = cv2.Canny(img, 40, 50, L2gradient=True)
+# edges = cv2.Canny(img, 40, 50)
 
 ret_vals = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 contours, hierarchy = ret_vals
