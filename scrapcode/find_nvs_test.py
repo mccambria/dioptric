@@ -10,11 +10,12 @@ import numpy
 from matplotlib import pyplot as plt
 import json
 
-#directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
-directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
-#file_name = '2019-04-29_16-37-06_ayrton12.txt'
-#file_name = '2019-04-29_16-37-56_ayrton12.txt'
-file_name = '2019-04-29_16-19-11_ayrton12.txt'
+directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+# directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+# file_name = '2019-04-29_16-37-06_ayrton12.txt'
+# file_name = '2019-04-29_16-37-56_ayrton12.txt'
+# file_name = '2019-04-29_16-19-11_ayrton12.txt'
+file_name = '2019-04-29_15-33-39_ayrton12.txt'
 file_path = directory + file_name
 
 with open(file_path, 'r') as file:
@@ -22,6 +23,8 @@ with open(file_path, 'r') as file:
 
 img_array = numpy.array(data['img_array'])
 readout = data['readout']
+
+
 
 # Convert to kcps
 img = (img_array / 1000) / (readout / 10**9)
@@ -33,8 +36,13 @@ img = img.astype(numpy.uint8)
 contour_img = numpy.copy(img)
 contour_img[:] = 0
 
-# grad = 50
-edges = cv2.Canny(img, 40, 50)
+img = cv2.GaussianBlur(img, (9,9), 0)
+
+edges = cv2.Canny(img, 10, 500, apertureSize=5, L2gradient=True)
+# edges = cv2.Canny(img, 40, 50, apertureSize=5, L2gradient=True)
+# edges = cv2.Canny(img, 40, 50, apertureSize=3)
+# edges = cv2.Canny(img, 40, 50, L2gradient=True)
+# edges = cv2.Canny(img, 40, 50)
 
 ret_vals = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 contours, hierarchy = ret_vals
@@ -60,23 +68,38 @@ contours = contours_temp
 
 # contour_img = cv2.drawContours(contour_img, contours, -1, (255,255,255), 1)
 
+# Convert to rgb so we can plot centers in color
+img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
 for cnt in contours:
     (x, y), radius = cv2.minEnclosingCircle(cnt)
     center = (int(x),int(y))
     radius = int(radius)
-#    contour_img = cv2.circle(E:\Team Drives\Kolkowitz Lab Group\nvdata\image_sample, center, radius, (255,255,255), 1)
-    contour_img[center[1], center[0]] = 255
+    # contour_img = cv2.circle(contour_img, center, radius, (255,255,255), 1)
+    img[center[1], center[0]] = (255, 0, 0)
 
-fig, axes_pack = plt.subplots(1, 3, figsize=(15, 5))
+# fig, axes_pack = plt.subplots(1, 3, figsize=(15, 5))
+# ax = axes_pack[0]
+# ax.imshow(img, cmap='gray')
+# ax.set_title('Original')
+# ax = axes_pack[1]
+# ax.imshow(edges, cmap='gray')
+# ax.set_title('Edges')
+# ax = axes_pack[2]
+# ax.imshow(contour_img, cmap='gray')
+# ax.set_title('Circle Fits')
+
+fig, axes_pack = plt.subplots(1, 2, figsize=(10, 5))
 ax = axes_pack[0]
-ax.imshow(img, cmap='gray')
+ax.imshow(img)
 ax.set_title('Original')
 ax = axes_pack[1]
 ax.imshow(edges, cmap='gray')
 ax.set_title('Edges')
-ax = axes_pack[2]
-ax.imshow(contour_img, cmap='gray')
-ax.set_title('Circle Fits')
+
+# fig, ax = plt.subplots(figsize=(5,5))
+# ax.imshow(img)
+
 
 fig.show()
 fig.tight_layout()
