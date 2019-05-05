@@ -47,7 +47,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     pol_to_piPulse_wait_time = 500
     # time between the second pi pulse and signal without illumination
     piPulse_to_pol_wait_time = 500
-    # the amount of time the AOM delays behind the gate and rf ##do we really know it lags behind the rf???
+    # the amount of time the AOM delays behind the gate and rf
     aom_delay_time = 750
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40

@@ -50,12 +50,17 @@ def get_seq(pulser_wiring, args):
     # In t1, the sequence is just a pi pulse, wait for a relaxation time, then
     # then a second pi pulse
     
-    # hopefully with future protocols, spin echo etc, it will be easy to use 
-    # this format of sequence building and just change this secion of the code
+    # I define both the time of this experiment, which is useful for the AOM 
+    # and gate sequences to dictate the time for them to be LOW
+    # And I define the actual uwave experiement to be plugged into the rf
+    # sequence. I hope that this formatting works.
+    
+    # With future protocols--ramsey, spin echo, etc--it will be easy to use 
+    # this format of sequence building and just change this secion of the file
     
     uwave_experiment = pi_pulse + tau + pi_pulse
     
-    uwave_experiemnt_seq = (pi_pulse, LOW), (tau, HIGH), (pi_pulse, LOW) 
+    uwave_experiemnt_seq = (pi_pulse, HIGH), (tau, LOW), (pi_pulse, HIGH) 
     
     # %% Couple calculated values
 
@@ -116,13 +121,13 @@ def get_seq(pulser_wiring, args):
     
 if __name__ == '__main__':
     wiring = {'do_daq_clock': 0,
-              'do_apd_gate_0': 1,
+              'do_apd_gate_0': 5,
               'do_apd_gate_1': 2,
+              'do_adp_gate_2': 6,
+              'do_apd_gate_3': 7,
               'do_aom': 3,
-              'do_uwave_gate': 4,
-              'do_adp_gate_2': 5,
-              'do_apd_gate_3': 6} #not sure about this...
-    args = [10 * 10**6, 10 * 10**6, 1 * 10**6, 0, 1]
+              'do_uwave_gate': 4} #based on wiring on old cfm_control_panel
+    args = [10 * 10**6, 10 * 10**6, 1 * 10**6, 1 * 10**6, 1 * 10**6, 0, 1] #What are these args refering to?
     seq = get_seq(wiring, args)
     seq.plot()    
     
