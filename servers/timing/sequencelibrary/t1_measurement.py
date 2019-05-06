@@ -117,39 +117,21 @@ def get_seq(pulser_wiring, args):
     train = [(pre_duration, LOW)]
     train.extend(uwave_experiment_seq)
     train.extend([(post_duration, LOW)])
-    print(train)
     seq.setDigital(pulser_do_uwave, train)
 
     return seq, [period]
     
 if __name__ == '__main__':
-    wiring = {'do_daq_clock': 0,
-              'do_apd_gate_0': 5,
-              'do_apd_gate_1': 2,
+    wiring = {'do_apd_gate_0': 0,
+              'do_apd_gate_1': 1,
               'do_apd_gate_2': 6,
               'do_apd_gate_3': 7,
-              'do_aom': 3,
-              'do_uwave_gate': 4} #based on wiring on old cfm_control_panel
-#    sequence_args = [taus[0], polarization_time, signal_time, reference_time, 
-#                    sig_to_ref_wait_time, pol_to_piPulse_wait_time, 
-#                    piPulse_to_pol_wait_time, aom_delay_time, rf_delay_time, 
-#                    gate_time, uwave_pi_pulse, max_relaxation_time,
-#                    sig_shrt_apd_index, ref_shrt_apd_index,
-#                    sig_long_apd_index, ref_long_apd_index]
-    args = [10,
-            10 * 10**6,
-            1 * 10**6,
-            1 * 10**6,
-            1 * 10**6,
-            100,100,100,100,100,
-            100,
-            2 * 10**6,
-            0, 1, 2, 3] #What are these args refering to?
-    seq = get_seq(wiring, args)
+              'do_aom': 2,
+              'do_uwave_gate': 3}
+
+    args = [100000 // 2, 3000, 3000, 3000, 1000, 500, 500, 
+            0, 0, 300, 137, 100000,
+            0, 1, 2, 3]
+    seq, ret_vals = get_seq(wiring, args)
     seq.plot()    
-    
-    
-    
-    
-        
         

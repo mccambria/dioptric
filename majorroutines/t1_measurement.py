@@ -84,6 +84,12 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
                           num=num_steps, dtype=numpy.int32)
     
+    # Remove taus that are in the range (0, 1 us) exclusive
+#    taus_temp = []
+#    for tau in taus:
+#        if (tau == 0) or (tau >= 1 * 10**3):
+#            taus_temp.append(tau)
+#    taus = numpy.array(taus_temp, dtype=numpy.int32)
  
     # %% Fix the length of the sequence FIXXX
      

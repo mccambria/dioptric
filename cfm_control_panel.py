@@ -84,7 +84,8 @@ def do_resonance(name, coords, nd_filter, apd_index):
 
 #    freq_center = 2.87
 #    freq_center = 2.843
-    freq_center = 2.875
+    freq_center = 2.853
+#    freq_center = 2.875
 #    freq_center = 2.888
 #    freq_range = 0.2
     freq_range = 0.05
@@ -99,9 +100,7 @@ def do_resonance(name, coords, nd_filter, apd_index):
 
 def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index):
 
-#    uwave_freq = 2.842
-    uwave_freq = 2.877
-#    uwave_freq = 2.888
+    uwave_freq = 2.853
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation 
     # ND 1.5 is a good starting point
     uwave_time_range = [0, 500]
@@ -122,20 +121,15 @@ def do_t1_measurement(name, coords, nd_filter,
                       sig_shrt_apd_index, ref_shrt_apd_index,
                       sig_long_apd_index, ref_long_apd_index):
     
-#    uwave_freq = 2.842
-    uwave_freq = 2.877
-#    uwave_freq = 2.888
+    uwave_freq = 2.853
     uwave_power = 9
-#    uwave_pi_pulse = round(200.9 / 2)
-    uwave_pi_pulse = round(274.9 / 2)
-#    uwave_pi_pulse = round(208.0 / 2)
+    uwave_pi_pulse = round(195.4 / 2)
 #    relaxation_time_range = [0, 100 * 10**3]
 #    relaxation_time_range = [0, 1000 * 10**3]
 #    relaxation_time_range = [0, 500 * 10**3]
     relaxation_time_range = [0, 100 * 10**3]
     num_steps = 26
     num_reps = 3 * 10**4
-#    num_reps = 10**4
     num_runs = 10
     measure_spin_0 = False
     
@@ -166,8 +160,8 @@ if __name__ == '__main__':
     nv0 = [-0.060, 0.041, 49.6]
     nv_list = [nv0]
 
-    other_coords = [-0.15, 0.05, 49.6]
-    nv_list = [other_coords]
+#    other_coords = [-0.15, 0.05, 49.6]
+#    nv_list = [other_coords]
     
     nd_filter = 1.5
 
