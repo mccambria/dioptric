@@ -171,8 +171,9 @@ class ApdCounter(LabradServer):
         else:
             # Read the specified number of samples
             new_samples_cum = numpy.zeros(buffer_size, dtype=numpy.uint32)
+            wait_inf = nidaqmx.constants.WAIT_INFINITELY
             num_new_samples = reader.read_many_sample_uint32(new_samples_cum,
-                                                             num_to_read)
+                                             num_to_read, timeout=wait_inf)
             if num_new_samples != num_to_read:
                 raise Warning('Read more/less samples than specified.')
 

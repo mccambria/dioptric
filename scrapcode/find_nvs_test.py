@@ -36,17 +36,17 @@ import json
 
 ####################### Files #######################
 
-directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
-# directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+#directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
 
-# file_name = '2019-04-29_16-37-06_ayrton12.txt'
-# file_name = '2019-04-29_16-37-56_ayrton12.txt'
+file_name = '2019-04-29_16-37-06_ayrton12.txt'
+#file_name = '2019-04-29_16-37-56_ayrton12.txt'
 
-# file_name = '2019-04-29_16-19-11_ayrton12.txt'
-file_name = '2019-04-30_14-45-29_ayrton12.txt'
+#file_name = '2019-04-29_16-19-11_ayrton12.txt'
+#file_name = '2019-04-30_14-45-29_ayrton12.txt'
 
-# file_name = '2019-04-29_15-33-39_ayrton12.txt'
-# file_name = '2019-05-01_15-55-20_ayrton12.txt'
+#file_name = '2019-04-29_15-33-39_ayrton12.txt'
+#file_name = '2019-05-01_15-55-20_ayrton12.txt'
 file_path = directory + file_name
 
 ####################### Parameters #######################
@@ -101,6 +101,7 @@ valid_radius_range = [low * diff_lim_spot_diam, high * diff_lim_spot_diam]
 # The Gaussian kernel should just about fit in the dimmest NV
 # we want to find
 gaussian_kernel_size = gaussian_kernel_frac * diff_lim_spot_diam
+print(gaussian_kernel_size)
 if gaussian_kernel_size < 3:
     print('The resolution is too low for accurate analysis.\n'
           'volts per pixel: {}'.format(volts_per_pixel))
