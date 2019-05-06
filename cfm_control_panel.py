@@ -69,37 +69,6 @@ def do_stationary_count(name, coords, nd_filter, apd_index):
                               name=name)
 
 
-def do_resonance(name, coords, nd_filter, apd_index):
-
-    freq_center = 2.87
-    freq_range = 0.2
-    num_steps = 101
-    num_runs = 5
-    uwave_power = -13.0  # -13.0 with a 1.0 ND is a good starting point
-
-    with labrad.connect() as cxn:
-        resonance.main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
-                       num_steps, num_runs, uwave_power, name=name)
-
-
-def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index):
-
-    uwave_freq = 2.888
-    uwave_power = 9.0
-    uwave_time_range = [0, 500]
-    num_steps = 51
-    
-    num_reps = 10**5
-#    num_reps = 100
-#    num_runs = 8
-    num_runs = 3
-
-    with labrad.connect() as cxn:
-        rabi.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
-                  uwave_freq, uwave_power, uwave_time_range,
-                  num_steps, num_reps, num_runs, name=name)
-
-
 def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 
     run_time = 60 * 10
@@ -111,14 +80,72 @@ def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
                             apd_a_index, apd_b_index, name=name)
 
 
-def do_t1_measurement():
-    pass
+def do_resonance(name, coords, nd_filter, apd_index):
+
+#    freq_center = 2.87
+#    freq_center = 2.843
+    freq_center = 2.875
+#    freq_center = 2.888
+#    freq_range = 0.2
+    freq_range = 0.05
+    num_steps = 101
+    num_runs = 5
+    uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
+
+    with labrad.connect() as cxn:
+        resonance.main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
+                       num_steps, num_runs, uwave_power, name=name)
 
 
-    # with labrad.connect() as cxn:
-    #     t1_measurement.main(cxn, coords, sig_apd_index, ref_apd_index,
-    #                         uwave_freq, uwave_power, uwave_time_range,
-    #                         num_steps, num_reps, num_runs, name=name)
+def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index):
+
+#    uwave_freq = 2.842
+    uwave_freq = 2.877
+#    uwave_freq = 2.888
+    uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation 
+    # ND 1.5 is a good starting point
+    uwave_time_range = [0, 500]
+    num_steps = 51
+    
+    num_reps = 10**5
+#    num_reps = 100
+    num_runs = 3
+#    num_runs = 8
+
+    with labrad.connect() as cxn:
+        rabi.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
+                  uwave_freq, uwave_power, uwave_time_range,
+                  num_steps, num_reps, num_runs, name=name)
+
+
+def do_t1_measurement(name, coords, nd_filter,
+                      sig_shrt_apd_index, ref_shrt_apd_index,
+                      sig_long_apd_index, ref_long_apd_index):
+    
+#    uwave_freq = 2.842
+    uwave_freq = 2.877
+#    uwave_freq = 2.888
+    uwave_power = 9
+#    uwave_pi_pulse = round(200.9 / 2)
+    uwave_pi_pulse = round(274.9 / 2)
+#    uwave_pi_pulse = round(208.0 / 2)
+#    relaxation_time_range = [0, 100 * 10**3]
+#    relaxation_time_range = [0, 1000 * 10**3]
+#    relaxation_time_range = [0, 500 * 10**3]
+    relaxation_time_range = [0, 100 * 10**3]
+    num_steps = 26
+    num_reps = 3 * 10**4
+#    num_reps = 10**4
+    num_runs = 10
+    measure_spin_0 = False
+    
+    with labrad.connect() as cxn:
+         t1_measurement.main(cxn, coords, nd_filter,
+                     sig_shrt_apd_index, ref_shrt_apd_index,
+                     sig_long_apd_index, ref_long_apd_index,
+                     uwave_freq, uwave_power, uwave_pi_pulse,
+                     relaxation_time_range, num_steps, num_reps, num_runs, 
+                     name, measure_spin_0)
 
 
 # %% Script Code
@@ -135,36 +162,22 @@ if __name__ == '__main__':
 
     name = 'ayrton12'
     
-    #  Coords are from 4/30 unless otherwise stated
-#    nv0 = [-0.157, -0.199, 48.7]
-    nv1 = [0.000, 0.051, 49.1]
-    
-    nv2 = [-0.060, 0.040, 49.0]
-    nv2 = [-0.051, 0.042, 49.4]  # 5/1 am
-    nv2 = [-0.060, 0.040, 49.0]  # 5/1 pm
-    nv2 = [-0.056, 0.041, 49.1]  # 5/3
-    
-    nv3 = [0.006, 0.017, 49.0]
-    nv4 = [-0.021, 0.019, 49.0]
-    nv5 = [-0.026, -0.041, 49.0]
-    nv6 = [-0.069, -0.035, 49.2]
-    nv7 = [-0.080, -0.057, 49.0]
-    
-    nv_list = [nv2]
-#    nv_list = [nv4]
-#    nv_list = [nv2, nv4]
+    #  Coords are from 5/6 unless otherwise stated
+    nv0 = [-0.060, 0.041, 49.6]
+    nv_list = [nv0]
 
-#    other_coords = [0.0, -0.1, 49.2]
-#    other_coords = [-0.011, 0.006, 49.2]
-#    nv_list = [other_coords]
+    other_coords = [-0.15, 0.05, 49.6]
+    nv_list = [other_coords]
     
     nd_filter = 1.5
 
-    primary_apd_index = 0
-    secondary_apd_index = 1
+    apd_a_index = 0
+    apd_b_index = 1
+    apd_c_index = 2
+    apd_d_index = 3
 
-    scan_range = 0.1
-    num_scan_steps = 40
+    scan_range = 0.2
+    num_scan_steps = 120
 
     # %% Functions to run
 
@@ -173,13 +186,13 @@ if __name__ == '__main__':
             coords = nv
             print(coords)
 #            set_xyz_zero()
-#            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, primary_apd_index)
-#            do_optimize(name, coords, nd_filter, primary_apd_index)
-#            do_stationary_count(name, coords, nd_filter, primary_apd_index)
-#            do_resonance(name, coords, nd_filter, primary_apd_index)
-            do_rabi(name, coords, nd_filter, primary_apd_index, secondary_apd_index)
-#            do_g2_measurement(name, coords, nd_filter, nd_filter, primary_apd_index, secondary_apd_index)
-#            do_t1_measurement(name, coords, nd_filter, primary_apd_index)
+#            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
+#            do_optimize(name, coords, nd_filter, apd_a_index)
+#            do_stationary_count(name, coords, nd_filter, apd_a_index)
+#            do_g2_measurement(name, coords, nd_filter, nd_filter, apd_a_index, apd_b_index)
+#            do_resonance(name, coords, nd_filter, apd_a_index)
+#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)
+            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index)
     finally:
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():

@@ -109,17 +109,13 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
 
             ref_counts[run_ind, step_ind] = new_counts[0]
             sig_counts[run_ind, step_ind] = new_counts[1]
-            try:
-                norm_counts[run_ind, step_ind] = new_counts[1] / new_counts[0]
-            except Exception:
-                norm_counts[run_ind, step_ind] = 0
 
     # %% Process and plot the data
 
     # Find the averages across runs
     avg_ref_counts = numpy.average(ref_counts, axis=0)
     avg_sig_counts = numpy.average(sig_counts, axis=0)
-    avg_norm_sig = numpy.average(norm_counts, axis=0)
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # Convert to kilocounts per second
     kcps_uwave_off_avg = (avg_ref_counts / (10**3)) / readout_sec
@@ -139,7 +135,7 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
     ax.legend()
     # The second plot will show their subtracted values
     ax = axes_pack[1]
-    ax.plot(freqs, avg_norm_sig, 'b-')
+    ax.plot(freqs, norm_avg_sig, 'b-')
     ax.set_title('Normalized Count Rate vs Frequency')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
@@ -176,8 +172,8 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
                'sig_counts-units': 'counts',
                'ref_counts': ref_counts.astype(int).tolist(),
                'ref_counts-units': 'counts',
-               'avg_norm_sig': avg_norm_sig.astype(float).tolist(),
-               'avg_norm_sig-units': 'arb'}
+               'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
+               'norm_avg_sig-units': 'arb'}
 
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)

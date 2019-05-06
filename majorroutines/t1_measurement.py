@@ -26,7 +26,16 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
          sig_long_apd_index, ref_long_apd_index,
          uwave_freq, uwave_power, uwave_pi_pulse, relaxation_time_range,
          num_steps, num_reps, num_runs, 
-         name='untitled', measure_spin_0 = True):
+         name='untitled', measure_spin_0=True):
+    
+    seq_time = relaxation_time_range[1] * 1.5
+    expected_run_time = num_steps * num_reps * num_runs * seq_time  # ns
+    expected_run_time /= (10**9 * 60)  # min
+    
+    msg = 'Expected run time: {} minutes. ' \
+        'Enter \'y\' to continue: '.format(expected_run_time)
+    if input(msg) != 'y':
+        return
     
     # %% Get the starting time of the function, to be used to calculate run time
 
@@ -66,11 +75,12 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # We also want to add this time to the maxTime so that the time divisions
     # work out to what we expect
     
-    min_relaxation_time = relaxation_time_range[0] + 1 * 10**3
-    max_relaxation_time = relaxation_time_range[1] + 1 * 10**3
+    min_relaxation_time = relaxation_time_range[0]
+    max_relaxation_time = relaxation_time_range[1]
     
     taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
                           num=num_steps, dtype=numpy.int32)
+    
  
     # %% Fix the length of the sequence FIXXX
      
@@ -154,6 +164,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break  
+            
             # Stream the sequence
             args = [taus[tau_ind], polarization_time, signal_time, reference_time, 
                     sig_to_ref_wait_time, pol_to_piPulse_wait_time, 
@@ -181,7 +192,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Calculate the t1 data, signal / reference over different relaxation times
 
-    avg_norm_sig = (avg_sig_counts) / (avg_ref_counts)
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
     
     # %% Plot the t1 signal
 
@@ -194,13 +205,14 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
-    ax.plot(taus / 10**6, avg_sig_counts, 'r-')
-    ax.plot(taus / 10**6, avg_ref_counts, 'g-')
+    ax.plot(taus / 10**6, avg_sig_counts, 'r-', label = 'signal')
+    ax.plot(taus / 10**6, avg_ref_counts, 'g-', label = 'reference')
     ax.set_xlabel('Relaxation time (ms)')
     ax.set_ylabel('Counts')
+    ax.legend()
 
     ax = axes_pack[1]
-    ax.plot(taus / 10**6, avg_norm_sig, 'b-')
+    ax.plot(taus / 10**6, norm_avg_sig, 'b-')
     ax.set_title('T1 Measurement of ' + spin)
     ax.set_xlabel('Relaxation time (ms)')
     ax.set_ylabel('Contrast (arb. units)')
@@ -240,8 +252,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             'sig_counts-units': 'counts',
             'ref_counts': ref_counts.astype(int).tolist(),
             'ref_counts-units': 'counts',
-            'avg_norm_sig': avg_norm_sig.astype(float).tolist(),
-            'avg_norm_sig-units': 'arb'}
+            'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
+            'norm_avg_sig-units': 'arb'}
     
     file_path = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(raw_fig, file_path)

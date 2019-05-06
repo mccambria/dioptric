@@ -66,7 +66,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
-    # avg_norm_sig = numpy.empty([num_runs, num_steps])
+    # norm_avg_sig = numpy.empty([num_runs, num_steps])
 
     # %% Set up the microwaves
 
@@ -128,7 +128,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     # %% Calculate the Rabi data, signal / reference over different Tau
 
-    avg_norm_sig = (avg_sig_counts) / (avg_ref_counts)
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # %% Fit the data and extract piPulse
 
@@ -141,7 +141,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     init_params = [offset, amplitude, frequency, decay]
 
-    opti_params, cov_arr = curve_fit(tool_belt.sinexp, taus, avg_norm_sig,
+    opti_params, cov_arr = curve_fit(tool_belt.sinexp, taus, norm_avg_sig,
                                      p0=init_params)
 
     rabi_period = 1 / opti_params[2]
@@ -159,7 +159,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     ax.set_ylabel('Counts')
 
     ax = axes_pack[1]
-    ax.plot(taus , avg_norm_sig, 'b-')
+    ax.plot(taus , norm_avg_sig, 'b-')
     ax.set_title('Normalized Signal With Varying Microwave Duration')
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Contrast (arb. units)')
@@ -173,7 +173,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     linspaceTau = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
 
     fit_fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(taus, avg_norm_sig,'bo',label='data')
+    ax.plot(taus, norm_avg_sig,'bo',label='data')
     ax.plot(linspaceTau, tool_belt.sinexp(linspaceTau, *opti_params), 'r-', label='fit')
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Contrast (arb. units)')
@@ -221,8 +221,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
                 'sig_counts-units': 'counts',
                 'ref_counts': ref_counts.astype(int).tolist(),
                 'ref_counts-units': 'counts',
-                'avg_norm_sig': avg_norm_sig.astype(float).tolist(),
-                'avg_norm_sig-units': 'arb'}
+                'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
+                'norm_avg_sig-units': 'arb'}
 
     file_path = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(raw_fig, file_path)
