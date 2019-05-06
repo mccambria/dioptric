@@ -20,6 +20,9 @@ import time
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+import json
+from scipy import asarray as ar,exp
+
 # %% Main
 
 def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
@@ -258,3 +261,69 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     file_path = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
+    
+# %%    
+    
+def decayExp(t, offset, amplitude, decay):
+    return offset + amplitude * exp(-decay * t)    
+    
+# %% Fitting the data
+    
+def t1_exponential_decay(fileName, saveAs):
+    
+    directory = 'G:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
+   
+    # Open the specified file
+    with open(directory + fileName + '.txt') as json_file:
+        
+        # Load the data from the file
+        data = json.load(json_file)
+        countsT1 = data["avg_norm_sig"]
+        relaxation_time_range = data["relaxation_time_range"]
+        num_steps = data["num_steps"]
+        spin = data["spin_measured?"]
+        
+    min_relaxation_time = relaxation_time_range[0] 
+    max_relaxation_time = relaxation_time_range[1]
+        
+    timeArray = numpy.linspace(min_relaxation_time, max_relaxation_time,
+                              num=num_steps, dtype=numpy.int32)
+    
+    offset = 0.8
+    amplitude = 0.1
+    decay = 1/10000 # inverse ns
+
+    popt,pcov = curve_fit(decayExp, timeArray, countsT1, 
+                              p0=[offset, amplitude, decay])
+    
+    decay_time = 1 / popt[2]
+            
+    first = timeArray[0]
+    last = timeArray[len(timeArray)-1]
+    linspaceTime = numpy.linspace(first, last, num=1000)
+    
+    
+    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(timeArray / 10**6, countsT1,'bo',label='data')
+    ax.plot(linspaceTime / 10**6, decayExp(linspaceTime,*popt),'r-',label='fit')
+    ax.set_xlabel('Dark Time (ms)')
+    ax.set_ylabel('Contrast (arb. units)')
+    ax.set_title('T1 of ' + str(spin))
+    ax.legend()
+    
+    text = "\n".join((r'$C + A_0 e^{-t / d}$',
+                      r'$C = $' + '%.1f'%(popt[0]),
+                      r'$A_0 = $' + '%.1f'%(popt[1]),
+                      r'$d = $' + "%.3f"%(decay_time / 10**6) + " ms"))
+    
+    
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(0.70, 0.95, text, transform=ax.transAxes, fontsize=12,
+                            verticalalignment="top", bbox=props)
+    
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    
+    fig.savefig(fileName + 'replot.' + saveAs)
+
+    
