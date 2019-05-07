@@ -82,8 +82,8 @@ def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 
 def do_resonance(name, coords, nd_filter, apd_index):
 
-    freq_center = 2.87
-    freq_range = 0.2
+    freq_center = 2.851
+    freq_range = 0.05
 #    freq_range = 0.05
     num_steps = 101
     num_runs = 5
@@ -96,15 +96,15 @@ def do_resonance(name, coords, nd_filter, apd_index):
 
 def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index):
 
-    uwave_freq = 2.851
+    uwave_freq = 2.882
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation 
     # ND 1.5 is a good starting point
-    uwave_time_range = [0, 500]
+    uwave_time_range = [0, 200]
     num_steps = 51
     
     num_reps = 10**5
 #    num_reps = 100
-    num_runs = 3
+    num_runs = 6
 #    num_runs = 8
 
     with labrad.connect() as cxn:
@@ -117,16 +117,16 @@ def do_t1_measurement(name, coords, nd_filter,
                       sig_shrt_apd_index, ref_shrt_apd_index,
                       sig_long_apd_index, ref_long_apd_index):
     
-    uwave_freq = 2.853
+    uwave_freq = 2.851
     uwave_power = 9
-    uwave_pi_pulse = round(195.4 / 2)
+    uwave_pi_pulse = round(110.3 / 2)
 #    relaxation_time_range = [0, 100 * 10**3]
 #    relaxation_time_range = [0, 1000 * 10**3]
 #    relaxation_time_range = [0, 500 * 10**3]
     relaxation_time_range = [0, 100 * 10**3]
     num_steps = 26
     num_reps = 3 * 10**4
-    num_runs = 10
+    num_runs = 3   
     measure_spin_0 = False
     
     with labrad.connect() as cxn:
@@ -153,8 +153,8 @@ if __name__ == '__main__':
     name = 'ayrton12'
     
     #  Coords from 4/30
-#    nv2 = [-0.060, 0.041, 49.6]
-#    nv_list = [nv2]
+    nv2 = [-0.059, 0.041, 47.7]
+    nv_list = [nv2]
     
     # Coords from 5/6
     nv0 = [0.005, 0.017, 49.6]
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     nv3 = [-0.027, -0.041, 49.8]
     nv4 = [-0.070, -0.035, 49.9]
     nv5 = [-0.101, -0.032, 49.7]
-    nv6 = [-0.057, 0.084, 49.7]
+    nv6 = [-0.055, 0.086, 47.8] ## 
     nv7 = [-0.067, 0.062, 49.7]
     nv8 = [-0.062, 0.128, 49.6]
     nv9 = [-0.162, 0.082, 49.7]
@@ -176,12 +176,12 @@ if __name__ == '__main__':
 #    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8,
 #               nv9, nv10, nv11, nv12, nv13, nv14, nv15]
 #    nv_list = [nv2, nv3, nv4, nv6, nv8]
-    nv_list = [nv6]
+#    nv_list = [nv6]
 
 #    other_coords = [-0.05, 0.05, 49.6]
 #    nv_list = [other_coords]
     
-    nd_filter = 2.0
+    nd_filter = 1.5
 
     apd_a_index = 0
     apd_b_index = 1
@@ -202,8 +202,8 @@ if __name__ == '__main__':
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_resonance(name, coords, nd_filter, apd_a_index)
-            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)
-#            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index)
+#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)
+            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index)
     finally:
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():

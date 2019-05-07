@@ -100,13 +100,27 @@ def fit_resonance(save_file_type):
 #    
 #        print(minFreqGuess)
     
+# %% Ask user input for guesses on the two resonances. 
+    minFreqGuess = numpy.empty([2])
+
+    msg_first_resonance = 'Need two init params for resonance centers.  ' \
+        'First resoancne = '
+    minFreqGuess[0] = input(msg_first_resonance)
+    
+    msg_second_resonance = '(if one resonance, input \'n\')  ' \
+        'Second resoancne = '
+    if input(msg_second_resonance) == 'n':
+        minFreqGuess[1] = minFreqGuess[0]
+    else:
+        minFreqGuess[1] = input(msg_second_resonance)
+    
 # %% If there are 1 or 2 guesses for the minimum, then fit a curve
         
     # Guess the st dev, contrast, and veritcal offset for the fitting           
     sigma = 0.01
     contrast = 0.1
     offset = 1
-    minFreqGuess = [2.85, 2.88]
+
         
 #    if len(minGuess) == 1:
 #        popt,pcov = curve_fit(gaus, freq, norm_avg_counts, 
