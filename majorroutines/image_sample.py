@@ -89,7 +89,7 @@ def on_click_image(event):
         # Ignore TypeError if you click in the figure but out of the image
         pass
     
-def recreate_scan_image(colorMap, saveAs):
+def reformat_plot(colorMap, save_file_type):
     """
     Creates a figure of a scan from the find_nvs function originally saved as a
     JSON .txt file. The created figure has axes plotted in microns and colorplot changes
@@ -204,7 +204,7 @@ def recreate_scan_image(colorMap, saveAs):
         fig.canvas.flush_events()
         
         # Save the file in the same file directory
-        fig.savefig(fileName + '_replot.' + saveAs)
+        fig.savefig(fileName + '_replot.' + save_file_type)
 
     # %%
 
