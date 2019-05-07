@@ -31,20 +31,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
          num_steps, num_reps, num_runs, 
          name='untitled', measure_spin_0=True):
     
-    seq_time = relaxation_time_range[1] * 1.5
-    expected_run_time = num_steps * num_reps * num_runs * seq_time  # ns
-    expected_run_time /= (10**9 * 60)  # min
-    
-    msg = 'Expected run time: {} minutes. ' \
-        'Enter \'y\' to continue: '.format(expected_run_time)
-    if input(msg) != 'y':
-        return
-    
-    # %% Get the starting time of the function, to be used to calculate run time
-
-    startFunctionTime = time.time()
-
-    # %% Initial calculations and setup
+    # %% Defiene the times to be used in the sequence
 
     # Define some times (in ns)
     # time to intially polarize the nv
@@ -55,28 +42,26 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     reference_time = 3 * 10**3
     # time between signal and reference without illumination
     sig_to_ref_wait_time = 1 * 10**3
-    # time between polarization and pi pulse without illumination
-    pol_to_piPulse_wait_time = 500
-    # time between the second pi pulse and signal without illumination
-    piPulse_to_pol_wait_time = 500
+    # time between polarization and experiment without illumination
+    pre_uwave_exp_wait_time = sig_to_ref_wait_time / 2
+    # time between the end of the experiment and signal without illumination
+    post_uwave_exp_wait_time = sig_to_ref_wait_time / 2
     # the amount of time the AOM delays behind the gate and rf
     aom_delay_time = 750
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
-    gate_time = 300    
+    gate_time = 300  
+            
+    # %% Conditional rf on or off depending on which type of t1 to meassure
     
+    if measure_spin_0 == True:
+        uwave_pi_pulse = 0
+
     # %% Create the array of relaxation times
     
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
-    
-    # We don't want the min time to be 0, but instead some amount of time so 
-    # that the two rf signals or polariation pulses don't overlap.
-    # Let's make that time 1 us, and we will redefine the min time
-    
-    # We also want to add this time to the maxTime so that the time divisions
-    # work out to what we expect
     
     min_relaxation_time = relaxation_time_range[0]
     max_relaxation_time = relaxation_time_range[1]
@@ -90,40 +75,22 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
 #        if (tau == 0) or (tau >= 1 * 10**3):
 #            taus_temp.append(tau)
 #    taus = numpy.array(taus_temp, dtype=numpy.int32)
- 
-    # %% Fix the length of the sequence FIXXX
+     
+    # %% Fix the length of the sequence to account for odd amount of elements
      
     # Our sequence pairs the longest time with the shortest time, and steps 
     # toward the middle. This means we only step through half of the length
-    # of the time array. If the number of elements is odd, we need to make the
-    # half length and integer to appease python. Adding 1.5 to the divided 
-    # number allows the loop to step through the middle value twice
+    # of the time array. 
     
-#    if len(timeArray) % 2 == 0:
-#        lengthTimeArray = len(timeArray)
-#    elif len(timeArray) % 2 == 1:
-#        lengthTimeArray = len(timeArray) + 1  
+    # That is a problem if the number of elements is odd. To fix this, we add 
+    # one to the length of the array. When this number is halfed and turned 
+    # into an integer, it will step through the middle element.
     
-    # %% Conditional rf on or off depending on which type of t1 to meassure
-    
-    if measure_spin_0 == True:
-        uwave_pi_pulse = 0
-        pol_to_piPulse_wait_time = 0
-        piPulse_to_pol_wait_time = 0
-    
-    # %% Analyze the sequence
-    
-    # pulls the file of the sequence from serves/timing/sequencelibrary
-    file_name = os.path.basename(__file__)
-    sequence_args = [taus[0], polarization_time, signal_time, reference_time, 
-                    sig_to_ref_wait_time, pol_to_piPulse_wait_time, 
-                    piPulse_to_pol_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_pulse, max_relaxation_time,
-                    sig_shrt_apd_index, ref_shrt_apd_index,
-                    sig_long_apd_index, ref_long_apd_index]
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
-    period = ret_vals[0]
-    
+    if len(taus) % 2 == 0:
+        half_length_taus = len(taus) / 2
+    elif len(taus) % 2 == 1:
+        half_length_taus = int( (len(taus) + 1) / 2 )
+        
     # %% Create data structure to save the counts
     
     # We create an array of NaNs that we'll fill
@@ -135,6 +102,34 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
+    
+    # %% Analyze the sequence
+    
+    # pulls the file of the sequence from serves/timing/sequencelibrary
+    file_name = os.path.basename(__file__)
+    sequence_args = [min_relaxation_time, polarization_time, signal_time, reference_time, 
+                    sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
+                    post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
+                    gate_time, uwave_pi_pulse, max_relaxation_time,
+                    sig_shrt_apd_index, ref_shrt_apd_index,
+                    sig_long_apd_index, ref_long_apd_index]
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
+    seq_time = ret_vals[0]
+    
+    # %% Ask user if they wish to run experiment based on run time
+    
+#    seq_time = relaxation_time_range[1] * 1.5
+    expected_run_time = num_steps * num_reps * num_runs * seq_time  # ns
+    expected_run_time /= (10**9 * 60)  # min
+    
+    msg = 'Expected run time: {} minutes. ' \
+        'Enter \'y\' to continue: '.format(expected_run_time)
+    if input(msg) != 'y':
+        return
+    
+    # %% Get the starting time of the function, to be used to calculate run time
+
+    startFunctionTime = time.time()
     
      # %% Set up the microwaves
 
@@ -163,12 +158,12 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             optimize_failed = True
             
         # Load the APD tasks
-        cxn.apd_counter.load_stream_reader(sig_shrt_apd_index, period, num_steps)
-        cxn.apd_counter.load_stream_reader(ref_shrt_apd_index, period, num_steps)
-#        cxn.apd_counter.load_stream_reader(sig_long_apd_index, period, num_steps)
-#        cxn.apd_counter.load_stream_reader(ref_long_apd_index, period, num_steps)    
+        cxn.apd_counter.load_stream_reader(sig_shrt_apd_index, seq_time, num_steps)
+        cxn.apd_counter.load_stream_reader(ref_shrt_apd_index, seq_time, num_steps)
+        cxn.apd_counter.load_stream_reader(sig_long_apd_index, seq_time, num_steps)
+        cxn.apd_counter.load_stream_reader(ref_long_apd_index, seq_time, num_steps)    
                 
-        for tau_ind in range(len(taus)):
+        for tau_ind in range(half_length_taus):
   
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
@@ -176,9 +171,9 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             
             # Stream the sequence
             args = [taus[tau_ind], polarization_time, signal_time, reference_time, 
-                    sig_to_ref_wait_time, pol_to_piPulse_wait_time, 
-                    piPulse_to_pol_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_pulse, max_relaxation_time,
+                    sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
+                    post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
+                    gate_time, uwave_pi_pulse, taus[-tau_ind - 1],
                     sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_long_apd_index, ref_long_apd_index]
             
@@ -188,7 +183,13 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             sig_counts[run_ind, tau_ind] = count
 
             count = cxn.apd_counter.read_stream(ref_shrt_apd_index, 1)
-            ref_counts[run_ind, tau_ind] = count    
+            ref_counts[run_ind, tau_ind] = count  
+            
+            count = cxn.apd_counter.read_stream(sig_long_apd_index, 1)
+            sig_counts[run_ind, -tau_ind - 1] = count
+
+            count = cxn.apd_counter.read_stream(ref_long_apd_index, 1)
+            ref_counts[run_ind, -tau_ind - 1] = count
             
     # %% Turn off the signal generator
 
