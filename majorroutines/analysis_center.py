@@ -12,7 +12,8 @@ Script to run various analysis techniques on the data.
 
 # User modules
 #import Utils.tool_belt as tool_belt
-import majorroutines.image_sample as image_sample
+import image_sample as image_sample
+import t1_measurement as t1_measurement
 
 
 # %% Analysis Routines
@@ -21,10 +22,16 @@ def recreate_image_sample():
     
     # Function specific parameters
     colorMap = 'inferno'
-    fileType = 'png'
+    saveAs = 'png'
     
     # Run the function
-    image_sample.recreate_scan_image(colorMap, fileType)
+    image_sample.recreate_scan_image(colorMap, saveAs)
+    
+def fit_exponential_decay(fileName):
+    
+    saveAs = 'png'
+    
+    t1_measurement.t1_exponential_decay(fileName, saveAs)
 
 # %% Script Code
 
@@ -39,7 +46,8 @@ if __name__ == "__main__":
 
     # %% Functions to run
     
-    recreate_image_sample()
+#    recreate_image_sample()
+    fit_exponential_decay('2019-05-06_13-50-00_ayrton12')
     
     
     
