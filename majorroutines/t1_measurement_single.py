@@ -62,8 +62,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
     
-    min_relaxation_time = relaxation_time_range[0]
-    max_relaxation_time = relaxation_time_range[1]
+    min_relaxation_time = int( relaxation_time_range[0] )
+    max_relaxation_time = int( relaxation_time_range[1] )
     
     taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
                           num=num_steps, dtype=numpy.int32)

@@ -83,11 +83,11 @@ def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 
 def do_resonance(name, coords, nd_filter, apd_index):
 
-    freq_center = 2.851
-    freq_range = 0.05
+    freq_center = 2.87
+    freq_range = 0.2
 #    freq_range = 0.05
     num_steps = 101
-    num_runs = 5
+    num_runs = 3
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 
     with labrad.connect() as cxn:
@@ -144,10 +144,10 @@ def do_t1_measurement_single(name, coords, nd_filter,
     uwave_freq = 2.888
     uwave_power = 9
     uwave_pi_pulse = round( 0 / 2)
-    relaxation_time_range = [0, 10**6]
-    num_steps = 6
+    relaxation_time_range = [0, 1.5 * 10**6]
+    num_steps = 101
     num_reps = 3 * 10**4
-    num_runs = 1  
+    num_runs = 10  
     measure_spin_0 = True
     
     
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     name = 'ayrton12'
     
     #  Coords from 4/30
-    nv2 = [-0.064, 0.048, 49.6] ## these coordinates have been updated
+    nv2 = [-0.044, 0.043, 49.1] ## these coordinates have been updated
     nv_list = [nv2]
     
     # Coords from 5/6
@@ -209,8 +209,9 @@ if __name__ == '__main__':
     apd_c_index = 2
     apd_d_index = 3
 
-    scan_range = 0.3
-    num_scan_steps = 150
+    scan_range = 0.1
+    num_scan_steps = 60
+       
 
     # %% Functions to run
 
