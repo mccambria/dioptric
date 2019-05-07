@@ -278,14 +278,14 @@ def decayExp(t, offset, amplitude, decay):
     
 def t1_exponential_decay(fileName, saveAs):
     
-    directory = 'G:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
+    directory = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
    
     # Open the specified file
     with open(directory + fileName + '.txt') as json_file:
         
         # Load the data from the file
         data = json.load(json_file)
-        countsT1 = data["avg_norm_sig"]
+        countsT1 = data["norm_avg_sig"]
         relaxation_time_range = data["relaxation_time_range"]
         num_steps = data["num_steps"]
         spin = data["spin_measured?"]

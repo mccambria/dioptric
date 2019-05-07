@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # %% Functions to run
     
 #    recreate_image_sample()
-    fit_exponential_decay('2019-05-06_13-50-00_ayrton12')
+    fit_exponential_decay('2019-05-06_16-19-54_ayrton12')
     
     
     

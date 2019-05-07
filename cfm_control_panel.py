@@ -82,13 +82,9 @@ def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 
 def do_resonance(name, coords, nd_filter, apd_index):
 
-#    freq_center = 2.87
-#    freq_center = 2.843
-    freq_center = 2.853
-#    freq_center = 2.875
-#    freq_center = 2.888
-#    freq_range = 0.2
-    freq_range = 0.05
+    freq_center = 2.87
+    freq_range = 0.2
+#    freq_range = 0.05
     num_steps = 101
     num_runs = 5
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
@@ -177,13 +173,15 @@ if __name__ == '__main__':
     nv13 = [-0.166, 0.135, 49.7]
     nv14 = [0.075, 0.188, 49.5]
     nv15 = [0.092, 0.190, 49.4]
-    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8,
-               nv9, nv10, nv11, nv12, nv13, nv14, nv15]
+#    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8,
+#               nv9, nv10, nv11, nv12, nv13, nv14, nv15]
+#    nv_list = [nv2, nv3, nv4, nv6, nv8]
+    nv_list = [nv6]
 
 #    other_coords = [-0.05, 0.05, 49.6]
 #    nv_list = [other_coords]
     
-    nd_filter = 1.5
+    nd_filter = 2.0
 
     apd_a_index = 0
     apd_b_index = 1
@@ -202,8 +200,8 @@ if __name__ == '__main__':
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
 #            do_optimize(name, coords, nd_filter, apd_a_index)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
-            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
-#            do_resonance(name, coords, nd_filter, apd_a_index)
+#            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
+            do_resonance(name, coords, nd_filter, apd_a_index)
 #            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index)
     finally:
