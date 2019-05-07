@@ -96,7 +96,7 @@ def do_resonance(name, coords, nd_filter, apd_index):
 
 def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index):
 
-    uwave_freq = 2.853
+    uwave_freq = 2.851
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation 
     # ND 1.5 is a good starting point
     uwave_time_range = [0, 500]
@@ -201,8 +201,8 @@ if __name__ == '__main__':
 #            do_optimize(name, coords, nd_filter, apd_a_index)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
-            do_resonance(name, coords, nd_filter, apd_a_index)
-#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)
+#            do_resonance(name, coords, nd_filter, apd_a_index)
+            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index)
     finally:
         # Kill safe stop

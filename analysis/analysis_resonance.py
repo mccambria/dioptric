@@ -35,17 +35,23 @@ def fit_resonance(save_file_type):
         
     print('Select file \n...')
     
+    from tkinter import Tk
+    from tkinter import filedialog 
     
     root = Tk()
     root.withdraw()
     root.focus_force()
-    fileName = filedialog.askopenfilename(initialdir = \"G:/Team Drives/Kolkowitz Lab Group/nvdata/resoannce",
+    open_file_name = filedialog.askopenfilename(initialdir = "G:/Team Drives/Kolkowitz Lab Group/nvdata/resonance", 
                 title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) ) 
     
-
     if open_file_name == '':
         print('No file selected')
     else: 
+        file_name_base = open_file_name[:-4]
+        
+        open_file_name = file_name_base + '.txt'  
+        print('File selected: ' + file_name_base + '.svg')
+        
     
     with open(open_file_name) as json_file:
         data = json.load(json_file)
@@ -100,14 +106,14 @@ def fit_resonance(save_file_type):
     sigma = 0.01
     contrast = 0.1
     offset = 1
-    minFreqGuess = [2.83, 2.89]
+    minFreqGuess = [2.85, 2.88]
         
 #    if len(minGuess) == 1:
 #        popt,pcov = curve_fit(gaus, freq, norm_avg_counts, 
 #                      p0=[offset, contrast, minFreqGuess[0], sigma,
 #                          contrast, minFreqGuess[0], sigma])
 #    elif len(minGuess) == 2:
-    popt,pcov = curve_fit(gaus, freq, norm_avg_counts, 
+    popt,pcov = curve_fit(gaus, freqs, norm_avg_counts, 
                       p0=[offset, contrast, minFreqGuess[0], sigma,
                           contrast, minFreqGuess[1], sigma])
    
@@ -115,8 +121,8 @@ def fit_resonance(save_file_type):
 # %% Plot the data itself and the fitted curve
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(freq, norm_avg_counts,'b',label='data')
-    ax.plot(freq, gaus(freq,*popt),'r-',label='fit')
+    ax.plot(freqs, norm_avg_counts,'b',label='data')
+    ax.plot(freqs, gaus(freqs,*popt),'r-',label='fit')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.set_title('ESR (60\N{DEGREE SIGN})')
@@ -140,5 +146,11 @@ def fit_resonance(save_file_type):
     fig.canvas.flush_events()
     
     # Save the file in the same file directory
-    fig.savefig(open_file_name + 'replot' + save_file_type)
+#    fig.savefig(open_file_name + 'replot' + save_file_type)
+    
+# %%
+    
+if __name__ == "__main__":
+    
+    fit_resonance('png')
     

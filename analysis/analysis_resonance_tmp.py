@@ -25,8 +25,8 @@ import matplotlib.pyplot as plt
 # %% Call in file and pass in data
 
 # %% Call the file and define the file format for saving in the end
-open_file_name = '2019-05-06_14-22-00_ayrton12.txt'
-save_file_type = ".png"
+#open_file_name = '2019-05-06_14-22-00_ayrton12.txt'
+#save_file_type = ".png"
 
 # %% Open the file with JSON
 
