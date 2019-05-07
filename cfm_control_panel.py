@@ -22,6 +22,7 @@ import majorroutines.resonance as resonance
 import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_measurement as t1_measurement
+import majorroutines.t1_measurement_single as t1_measurement_single
 
 
 # %% Minor Routines
@@ -136,6 +137,26 @@ def do_t1_measurement(name, coords, nd_filter,
                      uwave_freq, uwave_power, uwave_pi_pulse,
                      relaxation_time_range, num_steps, num_reps, num_runs, 
                      name, measure_spin_0)
+         
+def do_t1_measurement_single(name, coords, nd_filter,
+                             sig_apd_index, ref_apd_index):
+    
+    uwave_freq = 2.888
+    uwave_power = 9
+    uwave_pi_pulse = round( 0 / 2)
+    relaxation_time_range = [0, 10**6]
+    num_steps = 6
+    num_reps = 3 * 10**4
+    num_runs = 1  
+    measure_spin_0 = True
+    
+    
+    with labrad.connect() as cxn:
+        t1_measurement_single.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
+                        uwave_freq, uwave_power, uwave_pi_pulse, relaxation_time_range,
+                        num_steps, num_reps, num_runs, 
+                        name, measure_spin_0)
+    
 
 
 # %% Script Code
@@ -153,7 +174,7 @@ if __name__ == '__main__':
     name = 'ayrton12'
     
     #  Coords from 4/30
-    nv2 = [-0.059, 0.041, 47.7]
+    nv2 = [-0.064, 0.048, 49.6] ## these coordinates have been updated
     nv_list = [nv2]
     
     # Coords from 5/6
@@ -163,7 +184,7 @@ if __name__ == '__main__':
     nv3 = [-0.027, -0.041, 49.8]
     nv4 = [-0.070, -0.035, 49.9]
     nv5 = [-0.101, -0.032, 49.7]
-    nv6 = [-0.055, 0.086, 47.8] ## 
+    nv6 = [-0.055, 0.086, 47.8] ## these coordinates have been updated
     nv7 = [-0.067, 0.062, 49.7]
     nv8 = [-0.062, 0.128, 49.6]
     nv9 = [-0.162, 0.082, 49.7]
@@ -203,7 +224,8 @@ if __name__ == '__main__':
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_resonance(name, coords, nd_filter, apd_a_index)
 #            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)
-            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index)
+#            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index)
+            do_t1_measurement_single(name, coords, nd_filter, apd_a_index, apd_b_index)
     finally:
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
