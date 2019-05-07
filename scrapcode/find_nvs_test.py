@@ -39,7 +39,9 @@ import json
 #directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
 directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
 
-file_name = '2019-04-29_16-37-06_ayrton12.txt'
+file_name = '2019-04-30_14-45-29_ayrton12.svg'
+
+#file_name = '2019-04-29_16-37-06_ayrton12.txt'
 #file_name = '2019-04-29_16-37-56_ayrton12.txt'
 
 #file_name = '2019-04-29_16-19-11_ayrton12.txt'
