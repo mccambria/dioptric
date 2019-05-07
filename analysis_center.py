@@ -12,26 +12,29 @@ Script to run various analysis techniques on the data.
 
 # User modules
 #import Utils.tool_belt as tool_belt
-import image_sample as image_sample
-import t1_measurement as t1_measurement
+import majorroutines.image_sample as image_sample
+import majorroutines.t1_measurement as t1_measurement
 
 
 # %% Analysis Routines
 
-def recreate_image_sample():
+def create_scan_image_in_position_space():
+    # This fucntion  takes the data from an image sample and plots it with 
+    # position instead of voltage
     
     # Function specific parameters
     colorMap = 'inferno'
-    saveAs = 'png'
+    save_file_type = 'png'
     
     # Run the function
-    image_sample.recreate_scan_image(colorMap, saveAs)
+    image_sample.reformat_plot(colorMap, save_file_type)
     
-def fit_exponential_decay(fileName):
+def fit_exponential_decay(open_file_name):
+    # This function fits an exponential decay to a t1 measurement
     
-    saveAs = 'png'
+    save_file_type = 'png'
     
-    t1_measurement.t1_exponential_decay(fileName, saveAs)
+    t1_measurement.t1_exponential_decay(open_file_name, save_file_type)
 
 # %% Script Code
 

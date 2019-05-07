@@ -276,12 +276,12 @@ def decayExp(t, offset, amplitude, decay):
     
 # %% Fitting the data
     
-def t1_exponential_decay(fileName, saveAs):
+def t1_exponential_decay(open_file_name, save_file_type):
     
     directory = 'G:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
    
     # Open the specified file
-    with open(directory + fileName + '.txt') as json_file:
+    with open(directory + open_file_name + '.txt') as json_file:
         
         # Load the data from the file
         data = json.load(json_file)
@@ -331,6 +331,6 @@ def t1_exponential_decay(fileName, saveAs):
     fig.canvas.draw()
     fig.canvas.flush_events()
     
-    fig.savefig(fileName + 'replot.' + saveAs)
+    fig.savefig(open_file_name + 'replot.' + save_file_type)
 
     
