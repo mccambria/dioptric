@@ -21,15 +21,11 @@ import matplotlib.pyplot as plt
 # %% Main
 
 
-def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
+def main(cxn, coords, nd_filter, apd_index, expected_counts, freq_center, freq_range,
          num_steps, num_runs, uwave_power, name='untitled'):
 
-    # %% Get the starting time of the function
-    
-#    timestamp_start = tool_belt.get_time_stamp()
-    
     # %% Initial calculations and setup
-    
+
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
     readout = 100 * 10**6  # 0.1 s
@@ -59,30 +55,38 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
     ref_counts = numpy.empty([num_runs, num_steps])
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
+        
+    # %% Make some lists and variables to save at the end
     
     passed_coords = coords.tolist()
     
     opti_coords_list = []
+    optimize_failed_list = []
 
     # %% Collect the data
 
 #    tool_belt.set_xyz(cxn, coords)
     
-    optimize_failed = False
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
-        print(run_ind)
+        print('Run index: {}'. format(run_ind))
 
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
-
-        coords = optimize.main(cxn, coords, nd_filter, apd_index)
+        
+        # Optimize
+        optimize_failed = False
+        coords = optimize.main(cxn, coords, nd_filter, apd_index, 
+                               expected_counts = expected_counts)
         if None in coords:
             optimize_failed = True
+        
+        # Save the coords found and if it failed
+        optimize_failed_list.append(optimize_failed)
         opti_coords_list.append(coords)
 
         # Load the APD task with two samples for each frequency step
@@ -159,7 +163,7 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
                'passed_coords': passed_coords,
                'opti_coords_list': opti_coords_list,
                'coords-units': 'V',
-               'optimize_failed': optimize_failed,
+               'optimize_failed_list': optimize_failed_list,
                'nd_filter': nd_filter,
                'freq_center': freq_center,
                'freq_center-units': 'GHz',

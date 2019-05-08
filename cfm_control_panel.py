@@ -52,11 +52,11 @@ def do_image_sample(name, coords, nd_filter, scan_range, num_steps, apd_index):
                           num_steps, readout, apd_index, name=name)
 
 
-def do_optimize(name, coords, nd_filter, apd_index, prev_max_counts):
+def do_optimize(name, coords, nd_filter, apd_index, expected_counts):
 
     with labrad.connect() as cxn:
         optimize.main(cxn, coords, nd_filter, apd_index, name,
-                      prev_max_counts, set_to_opti_centers=False,
+                      expected_counts, set_to_opti_centers=False,
                       save_data=True, plot_data=True)
 
 
@@ -82,7 +82,7 @@ def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
                             apd_a_index, apd_b_index, name=name)
 
 
-def do_resonance(name, coords, nd_filter, apd_index):
+def do_resonance(name, coords, nd_filter, apd_index, expected_counts):
 
     freq_center = 2.87
     freq_range = 0.2
@@ -92,11 +92,11 @@ def do_resonance(name, coords, nd_filter, apd_index):
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 
     with labrad.connect() as cxn:
-        resonance.main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
+        resonance.main(cxn, coords, nd_filter, apd_index, expected_counts, freq_center, freq_range,
                        num_steps, num_runs, uwave_power, name=name)
 
 
-def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index):
+def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts):
 
     uwave_freq = 2.882
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation 
@@ -110,14 +110,14 @@ def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index):
 #    num_runs = 8
 
     with labrad.connect() as cxn:
-        rabi.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
-                  uwave_freq, uwave_power, uwave_time_range,
+        rabi.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, 
+                  expected_counts, uwave_freq, uwave_power, uwave_time_range,
                   num_steps, num_reps, num_runs, name=name)
 
 
 def do_t1_measurement(name, coords, nd_filter,
                       sig_shrt_apd_index, ref_shrt_apd_index,
-                      sig_long_apd_index, ref_long_apd_index):
+                      sig_long_apd_index, ref_long_apd_index, expected_counts):
     
     uwave_freq = 2.851
     uwave_power = 9
@@ -135,12 +135,13 @@ def do_t1_measurement(name, coords, nd_filter,
          t1_measurement.main(cxn, coords, nd_filter,
                      sig_shrt_apd_index, ref_shrt_apd_index,
                      sig_long_apd_index, ref_long_apd_index,
+                     expected_counts,
                      uwave_freq, uwave_power, uwave_pi_pulse,
                      relaxation_time_range, num_steps, num_reps, num_runs, 
                      name, measure_spin_0)
          
 def do_t1_measurement_single(name, coords, nd_filter,
-                             sig_apd_index, ref_apd_index):
+                             sig_apd_index, ref_apd_index, expected_counts):
     
     uwave_freq = 2.888
     uwave_power = 9
@@ -153,7 +154,7 @@ def do_t1_measurement_single(name, coords, nd_filter,
     
     
     with labrad.connect() as cxn:
-        t1_measurement_single.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
+        t1_measurement_single.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
                         uwave_freq, uwave_power, uwave_pi_pulse, relaxation_time_range,
                         num_steps, num_reps, num_runs, 
                         name, measure_spin_0)
@@ -178,8 +179,7 @@ if __name__ == '__main__':
 #    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
 #    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
     
-#    nv2 = [-0.065, 0.037, 48.1]
-    nv2 = [-0.1, 0.1, 49.1]
+    nv2 = [-0.065, 0.037, 48.1]
     nv_list = [nv2]
     
     # Coords from 5/6
@@ -219,7 +219,9 @@ if __name__ == '__main__':
     scan_range = 0.1
     num_scan_steps = 60
      
-    prev_max_counts = None
+    # based on the current nv, what kcounts/s do we expect?
+    # If not know, set to None
+    expected_counts = 50
 
     # %% Functions to run
 
@@ -230,13 +232,13 @@ if __name__ == '__main__':
             
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
-            do_optimize(name, coords, nd_filter, apd_a_index, prev_max_counts)
+#            do_optimize(name, coords, nd_filter, apd_a_index, expected_counts)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
-#            do_resonance(name, coords, nd_filter, apd_a_index)
-#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)
-#            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index)
-#            do_t1_measurement_single(name, coords, nd_filter, apd_a_index, apd_b_index)
+            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
+#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts)
+#            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index, expected_counts)
+#            do_t1_measurement_single(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts)
     finally:
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():

@@ -22,7 +22,7 @@ from scipy.optimize import curve_fit
 # %% Main
 
 
-def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
+def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
          uwave_freq, uwave_power, uwave_time_range,
          num_steps, num_reps, num_runs, name='untitled'):
 
@@ -68,9 +68,12 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     ref_counts = numpy.copy(sig_counts)
     # norm_avg_sig = numpy.empty([num_runs, num_steps])
     
+    # %% Make some lists and variables to save at the end
+    
     passed_coords = coords.tolist()
     
     opti_coords_list = []
+    optimize_failed_list = []
 
     # %% Set up the microwaves
 
@@ -82,7 +85,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
 #    tool_belt.set_xyz(cxn, coords)
 
-    optimize_failed = False
+
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -94,10 +97,16 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
-
-        coords = optimize.main(cxn, coords, nd_filter, sig_apd_index)
+        
+        # Optimize
+        optimize_failed = False
+        coords = optimize.main(cxn, coords, nd_filter, sig_apd_index, 
+                               expected_counts = expected_counts)
         if None in coords:
             optimize_failed = True
+        
+        # Save the coords found and if it failed
+        optimize_failed_list.append(optimize_failed)
         opti_coords_list.append(coords)
 
         # Load the APD tasks
@@ -214,7 +223,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
                 'passed_coords': passed_coords,
                 'opti_coords_list': opti_coords_list,
                 'coords-units': 'V',
-                'optimize_failed': optimize_failed,
+                'optimize_failed_list': optimize_failed_list,
                 'nd_filter': nd_filter,
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',

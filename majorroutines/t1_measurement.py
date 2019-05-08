@@ -26,15 +26,10 @@ from scipy import asarray as ar,exp
 # %% Main
 
 def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
-         sig_long_apd_index, ref_long_apd_index,
+         sig_long_apd_index, ref_long_apd_index, expected_counts,
          uwave_freq, uwave_power, uwave_pi_pulse, relaxation_time_range,
          num_steps, num_reps, num_runs, 
          name='untitled', measure_spin_0=True):
-    
-    print('num_reps: {}'.format(num_reps))
-    print('num_steps: {}'.format(num_steps))
-    print('num_runs: {}'.format(num_runs))
-
     
     # %% Defiene the times to be used in the sequence
 
@@ -74,13 +69,6 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
                           num=num_steps, dtype=numpy.int32)
-    
-    # Remove taus that are in the range (0, 1 us) exclusive
-#    taus_temp = []
-#    for tau in taus:
-#        if (tau == 0) or (tau >= 1 * 10**3):
-#            taus_temp.append(tau)
-#    taus = numpy.array(taus_temp, dtype=numpy.int32)
      
     # %% Fix the length of the sequence to account for odd amount of elements
      
@@ -109,9 +97,12 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     
+    # %% Make some lists and variables to save at the end
+    
     passed_coords = coords.tolist()
     
     opti_coords_list = []
+    optimize_failed_list = []
     
     # %% Analyze the sequence
     
@@ -153,8 +144,6 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Collect the data
     
-    optimize_failed = False
-    
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
     
@@ -166,9 +155,15 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
         if tool_belt.safe_stop():
             break
         
-        coords = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index)
+        # Optimize
+        optimize_failed = False
+        coords = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index, 
+                               expected_counts = expected_counts)
         if None in coords:
             optimize_failed = True
+        
+        # Save the coords found and if it failed
+        optimize_failed_list.append(optimize_failed)
         opti_coords_list.append(coords)
             
         # Load the APD tasks
@@ -265,7 +260,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             'passed_coords': passed_coords,
             'opti_coords_list': opti_coords_list,
             'coords-units': 'V',
-            'optimize_failed': optimize_failed,
+            'optimize_failed_list': optimize_failed_list,
             'nd_filter': nd_filter,
             'uwave_freq': uwave_freq,
             'uwave_freq-units': 'GHz',

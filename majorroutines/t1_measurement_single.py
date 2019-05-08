@@ -25,7 +25,7 @@ from scipy import asarray as ar,exp
 
 # %% Main
 
-def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
+def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
          uwave_freq, uwave_power, uwave_pi_pulse, relaxation_time_range,
          num_steps, num_reps, num_runs, 
          name='untitled', measure_spin_0=True):
@@ -80,9 +80,12 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     
+    # %% Make some lists and variables to save at the end
+    
     passed_coords = coords.tolist()
     
     opti_coords_list = []
+    optimize_failed_list = []
     
     
     # %% Analyze the sequence
@@ -123,8 +126,6 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     
     # %% Collect the data
     
-    optimize_failed = False
-    
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
     
@@ -136,9 +137,15 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
         if tool_belt.safe_stop():
             break
         
-        coords = optimize.main(cxn, coords, nd_filter, sig_apd_index)
+        # Optimize
+        optimize_failed = False
+        coords = optimize.main(cxn, coords, nd_filter, sig_apd_index, 
+                               expected_counts = expected_counts)
         if None in coords:
             optimize_failed = True
+        
+        # Save the coords found and if it failed
+        optimize_failed_list.append(optimize_failed)
         opti_coords_list.append(coords)
         
         # Load the APD tasks
@@ -223,7 +230,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
             'passed_coords': passed_coords,
             'opti_coords_list': opti_coords_list,
             'coords-units': 'V',
-            'optimize_failed': optimize_failed,
+            'optimize_failed_list': optimize_failed_list,
             'nd_filter': nd_filter,
             'uwave_freq': uwave_freq,
             'uwave_freq-units': 'GHz',
