@@ -25,8 +25,7 @@ from scipy import asarray as ar,exp
 
 # %% Main
 
-def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
-         sig_long_apd_index, ref_long_apd_index,
+def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
          uwave_freq, uwave_power, uwave_pi_pulse, relaxation_time_range,
          num_steps, num_reps, num_runs, 
          name='untitled', measure_spin_0=True):
@@ -63,33 +62,11 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
     
-    min_relaxation_time = relaxation_time_range[0]
-    max_relaxation_time = relaxation_time_range[1]
+    min_relaxation_time = int( relaxation_time_range[0] )
+    max_relaxation_time = int( relaxation_time_range[1] )
     
     taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
                           num=num_steps, dtype=numpy.int32)
-    
-    # Remove taus that are in the range (0, 1 us) exclusive
-#    taus_temp = []
-#    for tau in taus:
-#        if (tau == 0) or (tau >= 1 * 10**3):
-#            taus_temp.append(tau)
-#    taus = numpy.array(taus_temp, dtype=numpy.int32)
-     
-    # %% Fix the length of the sequence to account for odd amount of elements
-     
-    # Our sequence pairs the longest time with the shortest time, and steps 
-    # toward the middle. This means we only step through half of the length
-    # of the time array. 
-    
-    # That is a problem if the number of elements is odd. To fix this, we add 
-    # one to the length of the array. When this number is halfed and turned 
-    # into an integer, it will step through the middle element.
-    
-    if len(taus) % 2 == 0:
-        half_length_taus = int( len(taus) / 2 )
-    elif len(taus) % 2 == 1:
-        half_length_taus = int( (len(taus) + 1) / 2 )
         
     # %% Create data structure to save the counts
     
@@ -111,8 +88,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                     gate_time, uwave_pi_pulse, max_relaxation_time,
-                    sig_shrt_apd_index, ref_shrt_apd_index,
-                    sig_long_apd_index, ref_long_apd_index]
+                    sig_apd_index, ref_apd_index]
     ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
     seq_time = ret_vals[0]
     print(sequence_args)
@@ -120,15 +96,15 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Ask user if they wish to run experiment based on run time
     
-#    seq_time_s = seq_time / (10**9)  # s
-#    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
-#    expected_run_time_m = expected_run_time / 60 # s
-#
-#    
-#    msg = 'Expected run time: {} minutes. ' \
-#        'Enter \'y\' to continue: '.format(expected_run_time_m)
-#    if input(msg) != 'y':
-#        return
+    seq_time_s = seq_time / (10**9)  # s
+    expected_run_time = num_steps * num_reps * num_runs * seq_time_s  # s
+    expected_run_time_m = expected_run_time / 60 # s
+
+    
+    msg = 'Expected run time: {} minutes. ' \
+        'Enter \'y\' to continue: '.format(expected_run_time_m)
+    if input(msg) != 'y':
+        return
     
     # %% Get the starting time of the function, to be used to calculate run time
 
@@ -155,19 +131,16 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
         if tool_belt.safe_stop():
             break
         
-        xyz_centers = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index)
+        xyz_centers = optimize.main(cxn, coords, nd_filter, sig_apd_index)
         if None in xyz_centers:
             optimize_failed = True
             
         # Load the APD tasks
-        cxn.apd_counter.load_stream_reader(2, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(3, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(0, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(1, seq_time, half_length_taus)    
+        cxn.apd_counter.load_stream_reader(sig_apd_index, seq_time, num_steps)
+        cxn.apd_counter.load_stream_reader(ref_apd_index, seq_time, num_steps)   
                 
-        for tau_ind in range(half_length_taus):
-            print(taus[tau_ind])
-            print(taus[-tau_ind - 1])
+        for tau_ind in range(len(taus)):
+            
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break  
@@ -176,27 +149,18 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             args = [taus[tau_ind], polarization_time, signal_time, reference_time, 
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_pulse, taus[-tau_ind - 1],
-                    2, 3,
-                    0, 1]
+                    gate_time, uwave_pi_pulse, max_relaxation_time,
+                    sig_apd_index, ref_apd_index]
             
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)
     
-            count = cxn.apd_counter.read_stream(0, 1)
+            count = cxn.apd_counter.read_stream(sig_apd_index, 1)
             sig_counts[run_ind, tau_ind] = count
-            print('sig_shrt = ' + str(count))
+#            print('sig = ' + str(count))
             
-            count = cxn.apd_counter.read_stream(1, 1)
+            count = cxn.apd_counter.read_stream(ref_apd_index, 1)
             ref_counts[run_ind, tau_ind] = count  
-            print('ref_shrt = ' + str(count))
-            
-            count = cxn.apd_counter.read_stream(2, 1)
-            sig_counts[run_ind, -tau_ind - 1] = count
-            print('sig_long = ' + str(count))
-
-            count = cxn.apd_counter.read_stream(3, 1)
-            ref_counts[run_ind, -tau_ind - 1] = count
-            print('ref_long = ' + str(count))
+#            print('ref = ' + str(count))
 
     # %% Turn off the signal generator
 

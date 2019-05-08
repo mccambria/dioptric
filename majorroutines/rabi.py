@@ -85,6 +85,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
 
     for run_ind in range(num_runs):
 
+        print(run_ind)
+        
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break

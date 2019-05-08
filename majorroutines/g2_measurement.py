@@ -150,7 +150,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
             ax.set_xlabel('Time (ns)')
             ax.set_ylabel('Differences')
             ax.set_title(r'$g^{(2)}(\tau)$')
-            fig.tight_layout()
+            fig.set_tight_layout(True)
             fig.canvas.draw()
             fig.canvas.flush_events()
         elif collection_index > 1:
