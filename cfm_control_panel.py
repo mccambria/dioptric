@@ -52,18 +52,18 @@ def do_image_sample(name, coords, nd_filter, scan_range, num_steps, apd_index):
                           num_steps, readout, apd_index, name=name)
 
 
-def do_optimize(name, coords, nd_filter, apd_index):
+def do_optimize(name, coords, nd_filter, apd_index, prev_max_counts):
 
     with labrad.connect() as cxn:
         optimize.main(cxn, coords, nd_filter, apd_index, name,
-                      set_to_opti_centers=False,
+                      prev_max_counts, set_to_opti_centers=False,
                       save_data=True, plot_data=True)
 
 
 def do_stationary_count(name, coords, nd_filter, apd_index):
 
     # In nanoseconds
-    run_time = 20 * 10**9
+    run_time = 2 * 10**9
     readout = 100 * 10**6
 
     with labrad.connect() as cxn:
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     #  Coords from 4/30
 #    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
 #    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
-    nv2 = [-0.066, 0.040, 47.8]
+    nv2 = [-0.067, 0.039, 47.9]
     nv_list = [nv2]
     
     # Coords from 5/6
@@ -216,7 +216,8 @@ if __name__ == '__main__':
 
     scan_range = 0.1
     num_scan_steps = 60
-       
+     
+    prev_max_counts = 50
 
     # %% Functions to run
 
@@ -227,8 +228,8 @@ if __name__ == '__main__':
             
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
-            do_optimize(name, coords, nd_filter, apd_a_index)
-#            do_stationary_count(name, coords, nd_filter, apd_a_index)
+#            do_optimize(name, coords, nd_filter, apd_a_index, prev_max_counts)
+            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_resonance(name, coords, nd_filter, apd_a_index)
 #            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)

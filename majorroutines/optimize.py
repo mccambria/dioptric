@@ -251,8 +251,8 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=Non
         
     # %% Read out the counts at the nv to check if we are still on it
     
-    ret_val = stationary_count(cxn, coords, nd_filter, 10**9, readout, apd_index) 
-    live_counts = ret_val[0] #in kcounts/ sec
+    values = stationary_count.main(cxn, coords, nd_filter, 10**9, readout, apd_index) 
+    live_counts = values[0] #in kcounts/ sec
     print(live_counts)
 
     # %% Save the data
