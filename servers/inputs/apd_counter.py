@@ -177,11 +177,6 @@ class ApdCounter(LabradServer):
             if num_new_samples != num_to_read:
                 raise Warning('Read more/less samples than specified.')
 
-        if num_new_samples >= buffer_size:
-            raise Warning('The DAQ buffer contained more samples than '
-                          'expected. Validate your parameters and '
-                          'increase bufferSize if necessary.')
-
         # Check if we collected more samples than we need, which may happen
         # if the pulser runs longer than necessary. If so, just to throw out
         # excess samples.

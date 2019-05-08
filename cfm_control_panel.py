@@ -177,7 +177,9 @@ if __name__ == '__main__':
     #  Coords from 4/30
 #    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
 #    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
-    nv2 = [-0.067, 0.039, 47.9]
+    
+    nv2 = [-0.065, 0.037, 48.1]
+#    nv2 = [-0.1, 0.1, 49.1]
     nv_list = [nv2]
     
     # Coords from 5/6
@@ -228,8 +230,8 @@ if __name__ == '__main__':
             
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
-#            do_optimize(name, coords, nd_filter, apd_a_index, prev_max_counts)
-            do_stationary_count(name, coords, nd_filter, apd_a_index)
+            do_optimize(name, coords, nd_filter, apd_a_index, prev_max_counts)
+#            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_resonance(name, coords, nd_filter, apd_a_index)
 #            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)

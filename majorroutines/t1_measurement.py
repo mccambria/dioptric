@@ -31,11 +31,6 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
          num_steps, num_reps, num_runs, 
          name='untitled', measure_spin_0=True):
     
-    print('num_reps: {}'.format(num_reps))
-    print('num_steps: {}'.format(num_steps))
-    print('num_runs: {}'.format(num_runs))
-
-    
     # %% Defiene the times to be used in the sequence
 
     # Define some times (in ns)

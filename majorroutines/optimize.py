@@ -12,7 +12,6 @@ Created on Thu Apr 11 11:19:56 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.stationary_count as stationary_count
 import numpy
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
@@ -87,12 +86,13 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
     fig.canvas.draw()
     fig.canvas.flush_events()
     
-def stationary_count_lite(cxn, coords, nd_filter, run_time, readout, apd_index):
+def stationary_count_lite(cxn, coords, nd_filter, readout, apd_index):
     
     #  Some initial calculations
 
     x_center, y_center, z_center = coords
-    readout_sec = readout / 10**9
+
+    readout = readout // 2
 
     # Load the PulseStreamer
 
@@ -100,12 +100,9 @@ def stationary_count_lite(cxn, coords, nd_filter, run_time, readout, apd_index):
                                               [0, readout, apd_index])
     period = ret_vals[0]
 
-    total_num_samples = int(run_time / period)
 
-    # Create a list to put the values in
-    
-    counts = numpy.empty([1, total_num_samples])
-    
+    total_num_samples = 2
+
     # Set x, y, and z
 
     cxn.galvo.write(x_center, y_center)
@@ -119,22 +116,15 @@ def stationary_count_lite(cxn, coords, nd_filter, run_time, readout, apd_index):
 
     cxn.pulse_streamer.stream_start(total_num_samples)
     
-    timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
-    timeout_inst = time.time() + timeout_duration
     
-    num_read_so_far = 0
+    new_samples = cxn.apd_counter.read_stream(apd_index, total_num_samples)
     
-    new_samples = cxn.apd_counter.read_stream(apd_index)
+    new_samples_avg = numpy.average(new_samples)
     
-    counts[1, num_read_so_far] = new_samples
     
-    num_new_samples = len(new_samples)
-  
-    num_read_so_far += num_new_samples
+    counts_kcps = (new_samples_avg / 1000) / (readout / 10**9)
     
-    average_counts = numoy.average(counts, axis = 1)
-
-    return average_counts
+    return counts_kcps
     
 
 # %% Main
@@ -143,17 +133,18 @@ def stationary_count_lite(cxn, coords, nd_filter, run_time, readout, apd_index):
 def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=None,
          set_to_opti_centers=True, save_data=False, plot_data=False):
     
-    readout = 10**6
-    lower_threshold = prev_max_counts * 2/3
-    upper_threshold = prev_max_counts * 4/3
+    readout = 1 * 10**9
+    lower_threshold = prev_max_counts * 3/4
+    upper_threshold = prev_max_counts * 5/4
+    x_center, y_center, z_center = coords
     
     optimization_success = False
     
     # Try to optimize twice
     for ind in range(2):
         
-        opti_centers = do_optimize(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=None,
-         set_to_opti_centers, save_data, plot_data)
+        opti_centers = do_optimize(cxn, coords, nd_filter, apd_index, name, 
+                                   set_to_opti_centers, save_data, plot_data)
         
         # If optimization succeeds, go on
         if None not in opti_centers:
@@ -162,24 +153,28 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=Non
             if prev_max_counts != None:
                 
                 # check the counts
-                opti_counts = stationary_count_lite(cxn, coords, nd_filter, run_time, readout, apd_index)
-                                
+                opti_counts = stationary_count_lite(cxn, coords, nd_filter,  readout, apd_index)
+                print('opti_counts: {}'.format(opti_counts)) 
+                print('expected counts: {}'.format(prev_max_counts))  
+                print(' ')
+                
                 # If the counts are close to what we expect, we succeeded!
                 if lower_threshold <= opti_counts and opti_counts <= upper_threshold:
-                    print("optimization success and counts within threshold!")
+                    print("optimization success and counts within threshold! \n ")
                     optimization_success = True
+                    break
                 else:
-                    print("optimization success, but counts outside of threshold")
+                    print("optimization success, but counts outside of threshold \n ")
                     
-             # If the threshold is not set, we succeed based only on optimize       
-             else:
-                print("opimization success, no threshold set")
+            # If the threshold is not set, we succeed based only on optimize       
+            else:
+                print("opimization success, no threshold set \n ")
                 optimization_success = True
         # Optimize fails    
         else:
-            print("optimization failed")
+            print("optimization failed  \n ")
  
-    if optimization_success:
+    if optimization_success == True:
         if set_to_opti_centers:
             cxn.galvo.write(opti_centers[0], opti_centers[1])
             cxn.objective_piezo.write_voltage(opti_centers[2])
@@ -212,8 +207,8 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=Non
     
     
     
-def do_optimize(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=None,
-         set_to_opti_centers=True, save_data=False, plot_data=False):
+def do_optimize(cxn, coords, nd_filter, apd_index, name, 
+         set_to_opti_centers, save_data, plot_data):
 
     # %% Initial set up
 
@@ -371,11 +366,6 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_cou
         do_plot_data(fig, axes_pack[2], 'Z Axis', z_voltages, k_counts_per_sec, 
                      optimizationFailed, optiParams)
         
-    # %% Read out the counts at the nv to check if we are still on it
-    
-    values = stationary_count.main(cxn, coords, nd_filter, 10**9, readout, apd_index) 
-    live_counts = values[0] #in kcounts/ sec
-    print(live_counts)
 
     # %% Save the data
 
