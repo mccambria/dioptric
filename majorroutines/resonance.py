@@ -152,7 +152,7 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
 
     rawData = {'timestamp': timestamp,
                'name': name,
-               'coords': coords,
+               'coords': coords.tolist(),
                'coords-units': 'V',
                'optimize_failed': optimize_failed,
                'nd_filter': nd_filter,

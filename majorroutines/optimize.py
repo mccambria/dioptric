@@ -12,11 +12,13 @@ Created on Thu Apr 11 11:19:56 2019
 
 
 import utils.tool_belt as tool_belt
+import majorroutines.stationary_count as stationary_count
 import numpy
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
 from twisted.logger import Logger
+
 log = Logger()
 
 
@@ -85,11 +87,10 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
     fig.canvas.draw()
     fig.canvas.flush_events()
 
-
 # %% Main
 
 
-def main(cxn, coords, nd_filter, apd_index, name='untitled',
+def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=None,
          set_to_opti_centers=True, save_data=False, plot_data=False):
 
     # %% Initial set up
@@ -145,6 +146,7 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled',
     try:
         optiParams, cov_arr = curve_fit(tool_belt.gaussian, x_voltages,
                                         k_counts_per_sec, p0=init_fit)
+        
         optimizationFailed = False
     except Exception:
         optimizationFailed = True
@@ -174,6 +176,8 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled',
     try:
         optiParams, cov_arr = curve_fit(tool_belt.gaussian, y_voltages,
                                         k_counts_per_sec, p0=init_fit)
+        
+                
         optimizationFailed = False
     except Exception:
         optimizationFailed = True
@@ -230,6 +234,9 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled',
     try:
         optiParams, cov_arr = curve_fit(tool_belt.gaussian, z_voltages,
                                         k_counts_per_sec, p0=init_fit)
+        
+
+        
         optimizationFailed = False
     except Exception:
         optimizationFailed = True
@@ -241,6 +248,12 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled',
     if plot_data:
         do_plot_data(fig, axes_pack[2], 'Z Axis', z_voltages, k_counts_per_sec, 
                      optimizationFailed, optiParams)
+        
+    # %% Read out the counts at the nv to check if we are still on it
+    
+    ret_val = stationary_count(cxn, coords, nd_filter, 10**9, readout, apd_index) 
+    live_counts = ret_val[0] #in kcounts/ sec
+    print(live_counts)
 
     # %% Save the data
 
@@ -252,7 +265,7 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled',
 
         rawData = {'timestamp': timestamp,
                    'name': name,
-                   'coords': coords,
+                   'coords': coords.tolist(),
                    'coords-units': 'V',
                    'nd_filter': nd_filter,
                    'xy_range': xy_range,
@@ -289,7 +302,9 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled',
             cxn.galvo.write(opti_centers[0], opti_centers[1])
             cxn.objective_piezo.write_voltage(opti_centers[2])
         else:
-            print('{:.3f}, {:.3f}, {:.1f}'.format(*opti_centers))
+            print('centers: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*opti_centers))
+            drift = numpy.array(opti_centers) - numpy.array(coords)
+            print('drift: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*drift))
     else:
         # Let the user know something went wrong and reset to what was passed
         print('Centers could not be located.')
@@ -311,4 +326,5 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled',
             print(opti_centers)
             print(', '.join(center_texts))
 
-    return opti_centers
+    return 
+

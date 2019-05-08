@@ -122,6 +122,8 @@ def get_seq(pulser_wiring, args):
 if __name__ == '__main__':
     wiring = {'do_apd_gate_0': 0,
               'do_apd_gate_1': 1,
+              'do_apd_gate_2': 6,
+              'do_apd_gate_3': 7,
               'do_aom': 2,
               'do_uwave_gate': 3}
 

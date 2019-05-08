@@ -14,6 +14,7 @@ Created on Sun Nov 25 14:00:28 2018
 # %% Imports
 
 import labrad
+import numpy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
 import majorroutines.optimize as optimize
@@ -124,10 +125,10 @@ def do_t1_measurement(name, coords, nd_filter,
 #    relaxation_time_range = [0, 100 * 10**3]
 #    relaxation_time_range = [0, 1000 * 10**3]
 #    relaxation_time_range = [0, 500 * 10**3]
-    relaxation_time_range = [0, 100 * 10**3]
+    relaxation_time_range = [0, 100 * 10**4]
     num_steps = 26
-    num_reps = 3 * 10**4
-    num_runs = 3   
+    num_reps = 3 * 10**3
+    num_runs = 10 
     measure_spin_0 = False
     
     with labrad.connect() as cxn:
@@ -146,7 +147,7 @@ def do_t1_measurement_single(name, coords, nd_filter,
     uwave_pi_pulse = round( 0 / 2)
     relaxation_time_range = [0, 1.5 * 10**6]
     num_steps = 101
-    num_reps = 3 * 10**4
+    num_reps = 3 * 10**3
     num_runs = 10  
     measure_spin_0 = True
     
@@ -174,7 +175,9 @@ if __name__ == '__main__':
     name = 'ayrton12'
     
     #  Coords from 4/30
-    nv2 = [-0.044, 0.043, 49.1] ## these coordinates have been updated
+#    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
+#    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
+    nv2 = [-0.066, 0.040, 47.8]
     nv_list = [nv2]
     
     # Coords from 5/6
@@ -184,7 +187,7 @@ if __name__ == '__main__':
     nv3 = [-0.027, -0.041, 49.8]
     nv4 = [-0.070, -0.035, 49.9]
     nv5 = [-0.101, -0.032, 49.7]
-    nv6 = [-0.055, 0.086, 47.8] ## these coordinates have been updated
+    nv6 = [-0.055, 0.086, 47.8] ## these coordinates have been updated 5/7
     nv7 = [-0.067, 0.062, 49.7]
     nv8 = [-0.062, 0.128, 49.6]
     nv9 = [-0.162, 0.082, 49.7]
@@ -202,6 +205,8 @@ if __name__ == '__main__':
 #    other_coords = [-0.05, 0.05, 49.6]
 #    nv_list = [other_coords]
     
+#    global_drift = numpy.array([0, 0, 0])
+    
     nd_filter = 1.5
 
     apd_a_index = 0
@@ -217,16 +222,18 @@ if __name__ == '__main__':
 
     try:
         for nv in nv_list:
-            coords = nv
+#            coords = numpy.array(nv) + global_drift
+            coords = numpy.array(nv)
+            
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
-#            do_optimize(name, coords, nd_filter, apd_a_index)
+            do_optimize(name, coords, nd_filter, apd_a_index)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_resonance(name, coords, nd_filter, apd_a_index)
 #            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index)
-            do_t1_measurement_single(name, coords, nd_filter, apd_a_index, apd_b_index)
+#            do_t1_measurement_single(name, coords, nd_filter, apd_a_index, apd_b_index)
     finally:
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():

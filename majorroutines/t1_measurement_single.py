@@ -80,6 +80,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     
+    coords_used = numpy.array(coords)
+    
     # %% Analyze the sequence
     
     # pulls the file of the sequence from serves/timing/sequencelibrary
@@ -131,10 +133,11 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
         if tool_belt.safe_stop():
             break
         
-        xyz_centers = optimize.main(cxn, coords, nd_filter, sig_apd_index)
-        if None in xyz_centers:
+        coords = optimize.main(cxn, coords, nd_filter, sig_apd_index)
+        if None in coords:
             optimize_failed = True
-            
+        coords_used = numpy.vstack([coords_used, numpy.array(coords)])
+        
         # Load the APD tasks
         cxn.apd_counter.load_stream_reader(sig_apd_index, seq_time, num_steps)
         cxn.apd_counter.load_stream_reader(ref_apd_index, seq_time, num_steps)   
@@ -214,7 +217,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
             'timeElapsed': timeElapsed,
             'name': name,
             'spin_measured?': spin,
-            'coords': coords,
+            'coords': coords.tolist(),
+            'coords_used': coords_used.tolist(),
             'coords-units': 'V',
             'optimize_failed': optimize_failed,
             'nd_filter': nd_filter,

@@ -15,12 +15,6 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
     
     # %% Parse wiring and args
-    pulser_wiring = {'do_apd_gate_0': 0,
-              'do_apd_gate_1': 1,
-              'do_apd_gate_2': 6,
-              'do_apd_gate_3': 7,
-              'do_aom': 2,
-              'do_uwave_gate': 3}
     
     # The first 11 args are ns durations and we need them as int64s
     durations = []
@@ -150,7 +144,6 @@ def get_seq(pulser_wiring, args):
              (sig_to_ref_wait_time, LOW),
              (reference_time + aom_delay_time, HIGH)]
     seq.setDigital(pulser_do_aom, train)   
-
     
     # Pulse the microwave for tau
     pre_duration = aom_delay_time + polarization_time + pre_uwave_exp_wait_time
@@ -176,7 +169,7 @@ if __name__ == '__main__':
               'do_aom': 2,
               'do_uwave_gate': 3}
 
-    args = [12000, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 300, 55, 88000, 0, 1, 2, 3]
+    args = [2000, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 300, 55, 88000, 0, 1, 2, 3]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()    
         

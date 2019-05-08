@@ -31,6 +31,11 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
          num_steps, num_reps, num_runs, 
          name='untitled', measure_spin_0=True):
     
+    print('num_reps: {}'.format(num_reps))
+    print('num_steps: {}'.format(num_steps))
+    print('num_runs: {}'.format(num_runs))
+
+    
     # %% Defiene the times to be used in the sequence
 
     # Define some times (in ns)
@@ -52,6 +57,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
     gate_time = 300  
+#    gate_time = 10**3
             
     # %% Conditional rf on or off depending on which type of t1 to meassure
     
@@ -103,10 +109,13 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     
+    coords_used = numpy.array(coords)
+    
     # %% Analyze the sequence
     
     # pulls the file of the sequence from serves/timing/sequencelibrary
     file_name = os.path.basename(__file__)
+    
     sequence_args = [min_relaxation_time, polarization_time, signal_time, reference_time, 
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
@@ -120,15 +129,15 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Ask user if they wish to run experiment based on run time
     
-#    seq_time_s = seq_time / (10**9)  # s
-#    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
-#    expected_run_time_m = expected_run_time / 60 # s
-#
-#    
-#    msg = 'Expected run time: {} minutes. ' \
-#        'Enter \'y\' to continue: '.format(expected_run_time_m)
-#    if input(msg) != 'y':
-#        return
+    seq_time_s = seq_time / (10**9)  # s
+    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
+    expected_run_time_m = expected_run_time / 60 # s
+
+    
+    msg = 'Expected run time: {} minutes. ' \
+        'Enter \'y\' to continue: '.format(expected_run_time_m)
+    if input(msg) != 'y':
+        return
     
     # %% Get the starting time of the function, to be used to calculate run time
 
@@ -155,15 +164,16 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
         if tool_belt.safe_stop():
             break
         
-        xyz_centers = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index)
-        if None in xyz_centers:
+        coords = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index)
+        if None in coords:
             optimize_failed = True
+        coords_used = numpy.vstack([coords_used, numpy.array(coords)])
             
         # Load the APD tasks
-        cxn.apd_counter.load_stream_reader(2, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(3, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(0, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(1, seq_time, half_length_taus)    
+        cxn.apd_counter.load_stream_reader(sig_shrt_apd_index, seq_time, half_length_taus)
+        cxn.apd_counter.load_stream_reader(ref_shrt_apd_index, seq_time, half_length_taus)
+        cxn.apd_counter.load_stream_reader(sig_long_apd_index, seq_time, half_length_taus)
+        cxn.apd_counter.load_stream_reader(ref_long_apd_index, seq_time, half_length_taus)    
                 
         for tau_ind in range(half_length_taus):
             print(taus[tau_ind])
@@ -177,24 +187,24 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                     gate_time, uwave_pi_pulse, taus[-tau_ind - 1],
-                    2, 3,
-                    0, 1]
+                    sig_shrt_apd_index, ref_shrt_apd_index,
+                    sig_long_apd_index, ref_long_apd_index]
             
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)
-    
-            count = cxn.apd_counter.read_stream(0, 1)
+            cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)        
+            
+            count = cxn.apd_counter.read_stream(sig_shrt_apd_index, 1)
             sig_counts[run_ind, tau_ind] = count
             print('sig_shrt = ' + str(count))
             
-            count = cxn.apd_counter.read_stream(1, 1)
+            count = cxn.apd_counter.read_stream(ref_shrt_apd_index, 1)
             ref_counts[run_ind, tau_ind] = count  
             print('ref_shrt = ' + str(count))
             
-            count = cxn.apd_counter.read_stream(2, 1)
+            count = cxn.apd_counter.read_stream(sig_long_apd_index, 1)
             sig_counts[run_ind, -tau_ind - 1] = count
             print('sig_long = ' + str(count))
 
-            count = cxn.apd_counter.read_stream(3, 1)
+            count = cxn.apd_counter.read_stream(ref_long_apd_index, 1)
             ref_counts[run_ind, -tau_ind - 1] = count
             print('ref_long = ' + str(count))
 
@@ -251,6 +261,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             'name': name,
             'spin_measured?': spin,
             'coords': coords,
+            'coords_used': coords_used.tolist(),
             'coords-units': 'V',
             'optimize_failed': optimize_failed,
             'nd_filter': nd_filter,

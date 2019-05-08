@@ -312,7 +312,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
     rawData = {'timestamp': timestamp,
                'name': name,
-               'coords': coords,
+               'coords': coords.tolist(),
                'coords-units': 'V',
                'nd_filter': nd_filter,
                'x_range': x_range,
