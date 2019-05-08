@@ -178,8 +178,8 @@ if __name__ == '__main__':
 #    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
 #    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
     
-    nv2 = [-0.065, 0.037, 48.1]
-#    nv2 = [-0.1, 0.1, 49.1]
+#    nv2 = [-0.065, 0.037, 48.1]
+    nv2 = [-0.1, 0.1, 49.1]
     nv_list = [nv2]
     
     # Coords from 5/6
@@ -219,7 +219,7 @@ if __name__ == '__main__':
     scan_range = 0.1
     num_scan_steps = 60
      
-    prev_max_counts = 50
+    prev_max_counts = None
 
     # %% Functions to run
 

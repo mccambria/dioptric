@@ -134,8 +134,6 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=Non
          set_to_opti_centers=True, save_data=False, plot_data=False):
     
     readout = 1 * 10**9
-    lower_threshold = prev_max_counts * 3/4
-    upper_threshold = prev_max_counts * 5/4
     x_center, y_center, z_center = coords
     
     optimization_success = False
@@ -152,9 +150,12 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=Non
             # If there is a threshold set, go on
             if prev_max_counts != None:
                 
+                lower_threshold = prev_max_counts * 3/4
+                upper_threshold = prev_max_counts * 5/4
+                
                 # check the counts
                 opti_counts = stationary_count_lite(cxn, coords, nd_filter,  readout, apd_index)
-                print('opti_counts: {}'.format(opti_counts)) 
+                print('counts from optimization: {}'.format(opti_counts)) 
                 print('expected counts: {}'.format(prev_max_counts))  
                 print(' ')
                 
@@ -170,6 +171,8 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=Non
             else:
                 print("opimization success, no threshold set \n ")
                 optimization_success = True
+                break
+            
         # Optimize fails    
         else:
             print("optimization failed  \n ")
