@@ -67,6 +67,10 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     # norm_avg_sig = numpy.empty([num_runs, num_steps])
+    
+    passed_coords = coords.tolist()
+    
+    opti_coords_list = []
 
     # %% Set up the microwaves
 
@@ -91,9 +95,10 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
         if tool_belt.safe_stop():
             break
 
-        xyz_centers = optimize.main(cxn, coords, nd_filter, sig_apd_index)
-        if None in xyz_centers:
+        coords = optimize.main(cxn, coords, nd_filter, sig_apd_index)
+        if None in coords:
             optimize_failed = True
+        opti_coords_list.append(coords)
 
         # Load the APD tasks
         cxn.apd_counter.load_stream_reader(sig_apd_index, period, num_steps)
@@ -206,7 +211,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     raw_data = {'timestamp': timestamp,
                 'timeElapsed': timeElapsed,
                 'name': name,
-                'coords': coords.tolist(),
+                'passed_coords': passed_coords,
+                'opti_coords_list': opti_coords_list,
                 'coords-units': 'V',
                 'optimize_failed': optimize_failed,
                 'nd_filter': nd_filter,

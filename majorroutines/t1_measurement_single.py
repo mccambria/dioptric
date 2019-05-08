@@ -80,7 +80,10 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     
-    coords_used = numpy.array(coords)
+    passed_coords = coords.tolist()
+    
+    opti_coords_list = []
+    
     
     # %% Analyze the sequence
     
@@ -136,7 +139,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
         coords = optimize.main(cxn, coords, nd_filter, sig_apd_index)
         if None in coords:
             optimize_failed = True
-        coords_used = numpy.vstack([coords_used, numpy.array(coords)])
+        opti_coords_list.append(coords)
         
         # Load the APD tasks
         cxn.apd_counter.load_stream_reader(sig_apd_index, seq_time, num_steps)
@@ -217,8 +220,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index,
             'timeElapsed': timeElapsed,
             'name': name,
             'spin_measured?': spin,
-            'coords': coords.tolist(),
-            'coords_used': coords_used.tolist(),
+            'passed_coords': passed_coords,
+            'opti_coords_list': opti_coords_list,
             'coords-units': 'V',
             'optimize_failed': optimize_failed,
             'nd_filter': nd_filter,
