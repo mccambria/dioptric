@@ -59,7 +59,10 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
     ref_counts = numpy.empty([num_runs, num_steps])
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
-    norm_counts = numpy.empty([num_runs, num_steps])
+    
+    passed_coords = coords.tolist()
+    
+    opti_coords_list = []
 
     # %% Collect the data
 
@@ -77,9 +80,10 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
         if tool_belt.safe_stop():
             break
 
-        xyz_centers = optimize.main(cxn, coords, nd_filter, apd_index)
-        if None in xyz_centers:
+        coords = optimize.main(cxn, coords, nd_filter, apd_index)
+        if None in coords:
             optimize_failed = True
+        opti_coords_list.append(coords)
 
         # Load the APD task with two samples for each frequency step
         ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args)
@@ -152,7 +156,8 @@ def main(cxn, coords, nd_filter, apd_index, freq_center, freq_range,
 
     rawData = {'timestamp': timestamp,
                'name': name,
-               'coords': coords.tolist(),
+               'passed_coords': passed_coords,
+               'opti_coords_list': opti_coords_list,
                'coords-units': 'V',
                'optimize_failed': optimize_failed,
                'nd_filter': nd_filter,
