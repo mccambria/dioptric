@@ -86,6 +86,56 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
 
     fig.canvas.draw()
     fig.canvas.flush_events()
+    
+def stationary_count_lite(cxn, coords, nd_filter, run_time, readout, apd_index):
+    
+    #  Some initial calculations
+
+    x_center, y_center, z_center = coords
+    readout_sec = readout / 10**9
+
+    # Load the PulseStreamer
+
+    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+                                              [0, readout, apd_index])
+    period = ret_vals[0]
+
+    total_num_samples = int(run_time / period)
+
+    # Create a list to put the values in
+    
+    counts = numpy.empty([1, total_num_samples])
+    
+    # Set x, y, and z
+
+    cxn.galvo.write(x_center, y_center)
+    cxn.objective_piezo.write_voltage(z_center)
+
+    # Set up the APD
+
+    cxn.apd_counter.load_stream_reader(apd_index, period, total_num_samples)
+    
+    # Collect the data
+
+    cxn.pulse_streamer.stream_start(total_num_samples)
+    
+    timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
+    timeout_inst = time.time() + timeout_duration
+    
+    num_read_so_far = 0
+    
+    new_samples = cxn.apd_counter.read_stream(apd_index)
+    
+    counts[1, num_read_so_far] = new_samples
+    
+    num_new_samples = len(new_samples)
+  
+    num_read_so_far += num_new_samples
+    
+    average_counts = numoy.average(counts, axis = 1)
+
+    return average_counts
+    
 
 # %% Main
 
@@ -112,9 +162,8 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=Non
             if prev_max_counts != None:
                 
                 # check the counts
-                values = stationary_counts.main(cxn, coords, nd_filter, run_time, readout, apd_index, name)
-                opti_counts = values[0]
-                
+                opti_counts = stationary_count_lite(cxn, coords, nd_filter, run_time, readout, apd_index)
+                                
                 # If the counts are close to what we expect, we succeeded!
                 if lower_threshold <= opti_counts and opti_counts <= upper_threshold:
                     print("optimization success and counts within threshold!")
@@ -124,8 +173,8 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=Non
                     
              # If the threshold is not set, we succeed based only on optimize       
              else:
-                 print("opimization success, no threshold set")
-                 optimization_success = True
+                print("opimization success, no threshold set")
+                optimization_success = True
         # Optimize fails    
         else:
             print("optimization failed")
