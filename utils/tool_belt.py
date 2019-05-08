@@ -248,10 +248,10 @@ def gaussian(x, *params):
             Input value
         params: tuple
             The parameters that define the Gaussian
-            1: coefficient that defines the peak height
-            2: mean, defines the center of the Gaussian
-            3: standard deviation, defines the width of the Gaussian
-            4: constant y value to account for background
+            0: coefficient that defines the peak height
+            1: mean, defines the center of the Gaussian
+            2: standard deviation, defines the width of the Gaussian
+            3: constant y value to account for background
     """
 
     coeff, mean, stdev, offset = params
