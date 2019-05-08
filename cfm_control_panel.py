@@ -98,15 +98,15 @@ def do_resonance(name, coords, nd_filter, apd_index, expected_counts):
 
 def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts):
 
-    uwave_freq = 2.882
+    uwave_freq = 2.880
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation 
     # ND 1.5 is a good starting point
-    uwave_time_range = [0, 200]
+    uwave_time_range = [0, 400]
     num_steps = 51
     
     num_reps = 10**5
 #    num_reps = 100
-    num_runs = 6
+    num_runs = 4
 #    num_runs = 8
 
     with labrad.connect() as cxn:
@@ -179,7 +179,7 @@ if __name__ == '__main__':
 #    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
 #    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
     
-    nv2 = [-0.065, 0.037, 48.1]
+    nv2 = [-0.065, 0.037, 48.1] # 2019-04-30-NV2
     nv_list = [nv2]
     
     # Coords from 5/6
@@ -235,8 +235,8 @@ if __name__ == '__main__':
 #            do_optimize(name, coords, nd_filter, apd_a_index, expected_counts)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
-            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
-#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts)
+#            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
+            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts)
 #            do_t1_measurement(name, coords, nd_filter, apd_a_index, apd_b_index, apd_c_index, apd_d_index, expected_counts)
 #            do_t1_measurement_single(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts)
     finally:

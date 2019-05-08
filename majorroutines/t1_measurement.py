@@ -149,7 +149,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     for run_ind in range(num_runs):
 
-        print(str(run_ind))
+        print('Run index: {}'. format(run_ind))
         
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
@@ -261,6 +261,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             'opti_coords_list': opti_coords_list,
             'coords-units': 'V',
             'optimize_failed_list': optimize_failed_list,
+            'expected_counts': expected_counts,
+            'expected_counts-units': 'kcps',
             'nd_filter': nd_filter,
             'uwave_freq': uwave_freq,
             'uwave_freq-units': 'GHz',

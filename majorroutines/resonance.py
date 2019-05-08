@@ -164,6 +164,8 @@ def main(cxn, coords, nd_filter, apd_index, expected_counts, freq_center, freq_r
                'opti_coords_list': opti_coords_list,
                'coords-units': 'V',
                'optimize_failed_list': optimize_failed_list,
+               'expected_counts': expected_counts,
+               'expected_counts-units': 'kcps',
                'nd_filter': nd_filter,
                'freq_center': freq_center,
                'freq_center-units': 'GHz',
