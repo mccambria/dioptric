@@ -92,6 +92,79 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
 
 def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=None,
          set_to_opti_centers=True, save_data=False, plot_data=False):
+    
+    readout = 10**6
+    lower_threshold = prev_max_counts * 2/3
+    upper_threshold = prev_max_counts * 4/3
+    
+    optimization_success = False
+    
+    # Try to optimize twice
+    for ind in range(2):
+        
+        opti_centers = do_optimize(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=None,
+         set_to_opti_centers, save_data, plot_data)
+        
+        # If optimization succeeds, go on
+        if None not in opti_centers:
+            
+            # If there is a threshold set, go on
+            if prev_max_counts != None:
+                
+                # check the counts
+                values = stationary_counts.main(cxn, coords, nd_filter, run_time, readout, apd_index, name)
+                opti_counts = values[0]
+                
+                # If the counts are close to what we expect, we succeeded!
+                if lower_threshold <= opti_counts and opti_counts <= upper_threshold:
+                    print("optimization success and counts within threshold!")
+                    optimization_success = True
+                else:
+                    print("optimization success, but counts outside of threshold")
+                    
+             # If the threshold is not set, we succeed based only on optimize       
+             else:
+                 print("opimization success, no threshold set")
+                 optimization_success = True
+        # Optimize fails    
+        else:
+            print("optimization failed")
+ 
+    if optimization_success:
+        if set_to_opti_centers:
+            cxn.galvo.write(opti_centers[0], opti_centers[1])
+            cxn.objective_piezo.write_voltage(opti_centers[2])
+        else:
+            print('centers: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*opti_centers))
+            drift = numpy.array(opti_centers) - numpy.array(coords)
+            print('drift: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*drift))
+    else:
+        # Let the user know something went wrong and reset to what was passed
+        print('Centers could not be located.')
+        if set_to_opti_centers:
+            cxn.galvo.write(x_center, y_center)
+            cxn.objective_piezo.write_voltage(z_center)
+        else:
+            center_texts = []
+            for center_ind in range(len(opti_centers)):
+                center = opti_centers[center_ind]
+                center_text = 'None'
+                if center is not None:
+                    if center_ind == 3:
+                        center_text = '{:.1f}'
+                    else:
+                        center_text = '{:.3f}'
+                    center_text = center_text.format(center)
+                center_texts.append(center_text)
+            print(opti_centers)
+            print(', '.join(center_texts))                               
+    
+    
+    
+    
+    
+def do_optimize(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=None,
+         set_to_opti_centers=True, save_data=False, plot_data=False):
 
     # %% Initial set up
 
@@ -294,37 +367,41 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', prev_max_counts=Non
         tool_belt.save_raw_data(rawData, filePath)
         if plot_data:
             tool_belt.save_figure(fig, filePath)
+            
+    # %% Return opticenters
+    
+    return opti_centers
 
-    # %% Set and return the optimized centers
-
-    if None not in opti_centers:
-        if set_to_opti_centers:
-            cxn.galvo.write(opti_centers[0], opti_centers[1])
-            cxn.objective_piezo.write_voltage(opti_centers[2])
-        else:
-            print('centers: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*opti_centers))
-            drift = numpy.array(opti_centers) - numpy.array(coords)
-            print('drift: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*drift))
-    else:
-        # Let the user know something went wrong and reset to what was passed
-        print('Centers could not be located.')
-        if set_to_opti_centers:
-            cxn.galvo.write(x_center, y_center)
-            cxn.objective_piezo.write_voltage(z_center)
-        else:
-            center_texts = []
-            for center_ind in range(len(opti_centers)):
-                center = opti_centers[center_ind]
-                center_text = 'None'
-                if center is not None:
-                    if center_ind == 3:
-                        center_text = '{:.1f}'
-                    else:
-                        center_text = '{:.3f}'
-                    center_text = center_text.format(center)
-                center_texts.append(center_text)
-            print(opti_centers)
-            print(', '.join(center_texts))
-
-    return 
+#    # %% Set and return the optimized centers
+#
+#    if None not in opti_centers:
+#        if set_to_opti_centers:
+#            cxn.galvo.write(opti_centers[0], opti_centers[1])
+#            cxn.objective_piezo.write_voltage(opti_centers[2])
+#        else:
+#            print('centers: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*opti_centers))
+#            drift = numpy.array(opti_centers) - numpy.array(coords)
+#            print('drift: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*drift))
+#    else:
+#        # Let the user know something went wrong and reset to what was passed
+#        print('Centers could not be located.')
+#        if set_to_opti_centers:
+#            cxn.galvo.write(x_center, y_center)
+#            cxn.objective_piezo.write_voltage(z_center)
+#        else:
+#            center_texts = []
+#            for center_ind in range(len(opti_centers)):
+#                center = opti_centers[center_ind]
+#                center_text = 'None'
+#                if center is not None:
+#                    if center_ind == 3:
+#                        center_text = '{:.1f}'
+#                    else:
+#                        center_text = '{:.3f}'
+#                    center_text = center_text.format(center)
+#                center_texts.append(center_text)
+#            print(opti_centers)
+#            print(', '.join(center_texts))
+#
+#    return 
 
