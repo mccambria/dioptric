@@ -142,11 +142,11 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
     # Try to optimize twice
     for ind in range(2):
         
-        opti_centers = do_optimize(cxn, coords, nd_filter, apd_index, name, 
+        opti_coords = do_optimize(cxn, coords, nd_filter, apd_index, name, 
                                    set_to_opti_centers, save_data, plot_data)
 
         # If optimization succeeds, go on
-        if None not in opti_centers:
+        if None not in opti_coords:
             
             # If there is a threshold set, go on
             if expected_counts != None:
@@ -180,11 +180,11 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
  
     if optimization_success == True:
         if set_to_opti_centers:
-            cxn.galvo.write(opti_centers[0], opti_centers[1])
-            cxn.objective_piezo.write_voltage(opti_centers[2])
+            cxn.galvo.write(opti_coords[0], opti_coords[1])
+            cxn.objective_piezo.write_voltage(opti_coords[2])
         else:
-            print('centers: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*opti_centers))
-            drift = numpy.array(opti_centers) - numpy.array(coords)
+            print('centers: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*opti_coords))
+            drift = numpy.array(opti_coords) - numpy.array(coords)
             print('drift: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*drift))
     else:
         # Let the user know something went wrong and reset to what was passed
@@ -194,8 +194,8 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
             cxn.objective_piezo.write_voltage(z_center)
         else:
             center_texts = []
-            for center_ind in range(len(opti_centers)):
-                center = opti_centers[center_ind]
+            for center_ind in range(len(opti_coords)):
+                center = opti_coords[center_ind]
                 center_text = 'None'
                 if center is not None:
                     if center_ind == 3:
@@ -204,11 +204,11 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
                         center_text = '{:.3f}'
                     center_text = center_text.format(center)
                 center_texts.append(center_text)
-            print(opti_centers)
+            print(opti_coords)
             print(', '.join(center_texts))                               
     
     
-    return opti_centers
+    return opti_coords, optimization_success
     
     
 def do_optimize(cxn, coords, nd_filter, apd_index, name, 
@@ -381,7 +381,7 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
 
         rawData = {'timestamp': timestamp,
                    'name': name,
-                   'coords': coords.tolist(),
+                   'coords': coords,
                    'coords-units': 'V',
                    'nd_filter': nd_filter,
                    'xy_range': xy_range,

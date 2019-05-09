@@ -31,6 +31,9 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
          num_steps, num_reps, num_runs, 
          name='untitled', measure_spin_0=True):
     
+    
+#    print(coords)
+    
     # %% Defiene the times to be used in the sequence
 
     # Define some times (in ns)
@@ -101,10 +104,10 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Make some lists and variables to save at the end
     
-    passed_coords = coords.tolist()
+    passed_coords = coords
     
     opti_coords_list = []
-    optimize_failed_list = []
+    optimization_success_list = []
     
     # %% Analyze the sequence
     
@@ -158,14 +161,19 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             break
         
         # Optimize
-        optimize_failed = False
-        coords = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index, 
+#        optimization_success = False
+        ret_val = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index, 
                                expected_counts = expected_counts)
-        if None in coords:
-            optimize_failed = True
+        
+        coords = ret_val[0]
+        optimization_success = ret_val[1]
+        
+#        print(coords)
+#        if optimization_success:
+#            optimize_failed = True
         
         # Save the coords found and if it failed
-        optimize_failed_list.append(optimize_failed)
+        optimization_success_list.append(optimization_success)
         opti_coords_list.append(coords)
             
         # Load the APD tasks
@@ -262,7 +270,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             'passed_coords': passed_coords,
             'opti_coords_list': opti_coords_list,
             'coords-units': 'V',
-            'optimize_failed_list': optimize_failed_list,
+            'optimization_success_list': optimization_success_list,
             'expected_counts': expected_counts,
             'expected_counts-units': 'kcps',
             'nd_filter': nd_filter,
@@ -287,9 +295,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     file_path = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
-    
-#    print(coords)
-#    return coords
+       
+    return coords
     
 # %%    
     

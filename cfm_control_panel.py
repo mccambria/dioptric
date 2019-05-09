@@ -56,8 +56,8 @@ def do_optimize(name, coords, nd_filter, apd_index):
 
     with labrad.connect() as cxn:
         optimize.main(cxn, coords, nd_filter, apd_index, name,
-                      expected_counts, set_to_opti_centers=False,
-                      save_data=True, plot_data=True)
+                      expected_counts=None, set_to_opti_centers=False,
+                      save_data=True, plot_data=True, )
 
 
 def do_stationary_count(name, coords, nd_filter, apd_index):
@@ -88,7 +88,7 @@ def do_resonance(name, coords, nd_filter, apd_index, expected_counts):
     freq_range = 0.2
 #    freq_range = 0.05
     num_steps = 101
-    num_runs = 3
+    num_runs = 6
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 
     with labrad.connect() as cxn:
@@ -98,10 +98,10 @@ def do_resonance(name, coords, nd_filter, apd_index, expected_counts):
 
 def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts):
 
-    uwave_freq = 2.880
+    uwave_freq = 2.881
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation 
     # ND 1.5 is a good starting point
-    uwave_time_range = [0, 400]
+    uwave_time_range = [0, 200]
     num_steps = 51
     
     num_reps = 10**5
@@ -128,19 +128,21 @@ def do_t1_measurement(name, coords, nd_filter,
 #    relaxation_time_range = [0, 1000 * 10**3]
 #    relaxation_time_range = [0, 500 * 10**3]
 #    relaxation_time_range = [0, 100 * 10**4]
-    num_steps = 101
+    num_steps = 26
     num_reps = 10**4
-    num_runs = 15
+    num_runs = 2
 #    measure_spin_0 = False
     
     with labrad.connect() as cxn:
-         t1_measurement.main(cxn, coords, nd_filter,
+         new_coords = t1_measurement.main(cxn, coords, nd_filter,
                      sig_shrt_apd_index, ref_shrt_apd_index,
                      sig_long_apd_index, ref_long_apd_index,
                      expected_counts,
                      uwave_freq, uwave_power, uwave_pi_pulse,
                      relaxation_time_range, num_steps, num_reps, num_runs, 
                      name, measure_spin_0)
+         
+    return new_coords
          
 def do_t1_measurement_single(name, coords, nd_filter,
                              sig_apd_index, ref_apd_index, expected_counts):
@@ -181,8 +183,8 @@ if __name__ == '__main__':
 #    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
 #    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
     
-    nv2 = [-0.087, 0.034, 47.6] # 2019-04-30-NV2
-    nv_list = [nv2]
+    nv2 = [-0.079, 0.0331, 48.484] # 2019-04-30-NV2
+#    nv_list = [nv2]
     
     # Coords from 5/6
     nv0 = [0.005, 0.017, 49.6]
@@ -191,7 +193,7 @@ if __name__ == '__main__':
     nv3 = [-0.027, -0.041, 49.8]
     nv4 = [-0.070, -0.035, 49.9]
     nv5 = [-0.101, -0.032, 49.7]
-    nv6 = [-0.055, 0.086, 47.8] ## these coordinates have been updated 5/7
+    nv6 = [-0.074, 0.078, 49.4] ##
     nv7 = [-0.067, 0.062, 49.7]
     nv8 = [-0.062, 0.128, 49.6]
     nv9 = [-0.162, 0.082, 49.7]
@@ -204,7 +206,7 @@ if __name__ == '__main__':
 #    nv_list = [nv0, nv1, nv2, nv3, nv4, nv5, nv6, nv7, nv8,
 #               nv9, nv10, nv11, nv12, nv13, nv14, nv15]
 #    nv_list = [nv2, nv3, nv4, nv6, nv8]
-#    nv_list = [nv6]
+    nv_list = [nv6]
 
 #    other_coords = [-0.05, 0.05, 49.6]
 #    nv_list = [other_coords]
@@ -218,26 +220,32 @@ if __name__ == '__main__':
     apd_c_index = 2
     apd_d_index = 3
 
-    scan_range = 0.1
+    scan_range = 0.15
     num_scan_steps = 60
      
-    # based on the current nv, what kcounts/s do we expect?
+    # Based on the current nv, what kcounts/s do we expect?
     # If not know, set to None
     expected_counts = 50
     
     # arrays for the t1 measuremnt info
+    
+    # 2019-04-30-NV2
+    m_plus_one = [[0, 2 * 10**3], 2.852, 99.55, False]
+    m_minus_one = [[0, 2 * 10**3], 2.880, 126.85, False]
     m_zero = [[0, 1.2 * 10**6], 2.87, 0, True]
-    m_plus_one = [[0, 150 * 10**3], 2.852, 99.55, False]
-    m_minus_one = [[0, 150 * 10**3], 2.880, 126.85, False]
+    
+    # 2019-05-07-NV6
+    m_plus_one = [[0, 100 * 10**3], 2.850, 56.25, False]
+    m_minus_one = [[0, 100 * 10**3], 2.881, 42.9, False]
+    m_zero = [[0, 1.5 * 10**6], 2.87, 0, True]
 
     t1_array = numpy.array([m_plus_one, m_minus_one, m_zero])
 
     # %% Functions to run
-
     try:
 #        for nv in nv_list:
 #            coords = numpy.array(nv) + global_drift
-#            coords = numpy.array(nv)
+#            coords = nv
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
 #            do_optimize(name, coords, nd_filter, apd_a_index)
@@ -250,19 +258,24 @@ if __name__ == '__main__':
 #                              uwave_freq, uwave_pi_pulse, relaxation_time_range, measure_spin_0)
 #            do_t1_measurement_single(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts)
             
-        for nv in nv_list: 
             
-            for t1_ind in [2]:
-                coords = numpy.array(nv)
+        
+        for nv in nv_list: 
+            coords = nv
+            
+            for t1_ind in [1]:
+                
                 relaxation_time_range = t1_array[t1_ind,0]
                 uwave_freq = t1_array[t1_ind, 1]
                 uwave_pi_pulse = t1_array[t1_ind, 2]
                 measure_spin_0 = t1_array[t1_ind, 3]
             
-                coords = do_t1_measurement(name, coords, nd_filter, apd_a_index, 
+                ret_val = do_t1_measurement(name, coords, nd_filter, apd_a_index, 
                                   apd_b_index, apd_c_index, apd_d_index, expected_counts,
                                   uwave_freq, uwave_pi_pulse, relaxation_time_range, measure_spin_0)
-            
+                
+                print("new coordinates:" + str(ret_val)) 
+                coords = ret_val
     finally:
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
