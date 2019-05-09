@@ -52,7 +52,9 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
     gate_time = 300  
-#    gate_time = 10**3
+    
+    # Convert pi_pulse to integer
+    uwave_pi_pulse = round(uwave_pi_pulse)
             
     # %% Conditional rf on or off depending on which type of t1 to meassure
     
@@ -64,8 +66,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
     
-    min_relaxation_time = relaxation_time_range[0]
-    max_relaxation_time = relaxation_time_range[1]
+    min_relaxation_time = int( relaxation_time_range[0] )
+    max_relaxation_time = int( relaxation_time_range[1] )
     
     taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
                           num=num_steps, dtype=numpy.int32)
@@ -117,8 +119,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_long_apd_index, ref_long_apd_index]
     ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
     seq_time = ret_vals[0]
-    print(sequence_args)
-    print(seq_time)
+#    print(sequence_args)
+#    print(seq_time)
     
     # %% Ask user if they wish to run experiment based on run time
     
