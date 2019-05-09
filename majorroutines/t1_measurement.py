@@ -151,7 +151,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     for run_ind in range(num_runs):
 
-        print('Run index: {}'. format(run_ind))
+        print('Run index: {}'.format(run_ind))
         
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
@@ -287,6 +287,9 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     file_path = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
+    
+#    print(coords)
+#    return coords
     
 # %%    
     

@@ -130,7 +130,7 @@ def do_t1_measurement(name, coords, nd_filter,
 #    relaxation_time_range = [0, 100 * 10**4]
     num_steps = 101
     num_reps = 10**4
-    num_runs = 1
+    num_runs = 15
 #    measure_spin_0 = False
     
     with labrad.connect() as cxn:
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 #    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
 #    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
     
-    nv2 = [-0.069, 0.038, 47.9] # 2019-04-30-NV2
+    nv2 = [-0.087, 0.034, 47.6] # 2019-04-30-NV2
     nv_list = [nv2]
     
     # Coords from 5/6
@@ -226,18 +226,18 @@ if __name__ == '__main__':
     expected_counts = 50
     
     # arrays for the t1 measuremnt info
-    m_zero = [[0, 1.5 * 10**6], 2.87, 0, True]
-    m_plus_one = [[0, 100 * 10**3], 2.852, 99.55, False]
-    m_minus_one = [[0, 100 * 10**3], 2.880, 126.85, False]
+    m_zero = [[0, 1.2 * 10**6], 2.87, 0, True]
+    m_plus_one = [[0, 150 * 10**3], 2.852, 99.55, False]
+    m_minus_one = [[0, 150 * 10**3], 2.880, 126.85, False]
 
-    t1_array = numpy.array([m_zero, m_plus_one, m_minus_one])
+    t1_array = numpy.array([m_plus_one, m_minus_one, m_zero])
 
     # %% Functions to run
 
     try:
-        for nv in nv_list:
+#        for nv in nv_list:
 #            coords = numpy.array(nv) + global_drift
-            coords = numpy.array(nv)
+#            coords = numpy.array(nv)
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
 #            do_optimize(name, coords, nd_filter, apd_a_index)
@@ -250,14 +250,16 @@ if __name__ == '__main__':
 #                              uwave_freq, uwave_pi_pulse, relaxation_time_range, measure_spin_0)
 #            do_t1_measurement_single(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts)
             
-        for nv in nv_list:    
-            for t1_ind in range(1):
+        for nv in nv_list: 
+            
+            for t1_ind in [2]:
+                coords = numpy.array(nv)
                 relaxation_time_range = t1_array[t1_ind,0]
                 uwave_freq = t1_array[t1_ind, 1]
                 uwave_pi_pulse = t1_array[t1_ind, 2]
                 measure_spin_0 = t1_array[t1_ind, 3]
             
-                do_t1_measurement(name, coords, nd_filter, apd_a_index, 
+                coords = do_t1_measurement(name, coords, nd_filter, apd_a_index, 
                                   apd_b_index, apd_c_index, apd_d_index, expected_counts,
                                   uwave_freq, uwave_pi_pulse, relaxation_time_range, measure_spin_0)
             
