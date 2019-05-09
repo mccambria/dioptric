@@ -155,7 +155,7 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
                 upper_threshold = expected_counts * 5/4
                 
                 # check the counts
-                opti_counts = stationary_count_lite(cxn, coords, nd_filter,  readout, apd_index)
+                opti_counts = stationary_count_lite(cxn, opti_coords, nd_filter,  readout, apd_index)
                 print('Counts from optimization: {}'.format(opti_counts)) 
                 print('Expected counts: {}'.format(expected_counts))  
                 print(' ')

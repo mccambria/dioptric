@@ -128,9 +128,9 @@ def do_t1_measurement(name, coords, nd_filter,
 #    relaxation_time_range = [0, 1000 * 10**3]
 #    relaxation_time_range = [0, 500 * 10**3]
 #    relaxation_time_range = [0, 100 * 10**4]
-    num_steps = 26
-    num_reps = 10**4
-    num_runs = 2
+    num_steps = 101
+    num_reps =  6 * 10**3
+    num_runs = 30
 #    measure_spin_0 = False
     
     with labrad.connect() as cxn:
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     nv3 = [-0.027, -0.041, 49.8]
     nv4 = [-0.070, -0.035, 49.9]
     nv5 = [-0.101, -0.032, 49.7]
-    nv6 = [-0.074, 0.078, 49.4] ##
+    nv6 = [-0.073, 0.080, 48.9] ##
     nv7 = [-0.067, 0.062, 49.7]
     nv8 = [-0.062, 0.128, 49.6]
     nv9 = [-0.162, 0.082, 49.7]
@@ -230,13 +230,13 @@ if __name__ == '__main__':
     # arrays for the t1 measuremnt info
     
     # 2019-04-30-NV2
-    m_plus_one = [[0, 2 * 10**3], 2.852, 99.55, False]
-    m_minus_one = [[0, 2 * 10**3], 2.880, 126.85, False]
-    m_zero = [[0, 1.2 * 10**6], 2.87, 0, True]
+#    m_plus_one = [[0, 2 * 10**3], 2.852, 99.55, False]
+#    m_minus_one = [[0, 2 * 10**3], 2.880, 126.85, False]
+#    m_zero = [[0, 1.2 * 10**6], 2.87, 0, True]
     
     # 2019-05-07-NV6
-    m_plus_one = [[0, 100 * 10**3], 2.850, 56.25, False]
-    m_minus_one = [[0, 100 * 10**3], 2.881, 42.9, False]
+    m_plus_one = [[0, 500 * 10**3], 2.850, 56.25, False]
+    m_minus_one = [[0, 500 * 10**3], 2.881, 42.9, False]
     m_zero = [[0, 1.5 * 10**6], 2.87, 0, True]
 
     t1_array = numpy.array([m_plus_one, m_minus_one, m_zero])
@@ -263,7 +263,7 @@ if __name__ == '__main__':
         for nv in nv_list: 
             coords = nv
             
-            for t1_ind in [1]:
+            for t1_ind in [0,1,2]:
                 
                 relaxation_time_range = t1_array[t1_ind,0]
                 uwave_freq = t1_array[t1_ind, 1]
