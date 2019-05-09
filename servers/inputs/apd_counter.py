@@ -85,11 +85,11 @@ class ApdCounter(LabradServer):
             self.daq_ctr_apd[apd_index] = wiring[wiring_index]
             self.daq_ci_apd[apd_index] = wiring[wiring_index+1]
             self.daq_di_apd_gate[apd_index] = wiring[wiring_index+2]
-            
+
     def stopServer(self):
         for apd_index in self.tasks:
             self.close_task_internal(apd_index)
-            
+
     def close_task_internal(self, apd_index):
         task = self.tasks[apd_index]
         task.close()
@@ -97,7 +97,7 @@ class ApdCounter(LabradServer):
         self.stream_reader_state.pop(apd_index)
 
     def try_load_stream_reader(self, c, apd_index, period, total_num_to_read):
-        
+
         # Close the stream task if it exists
         # This can happen if we quit out early
         if apd_index in self.tasks:
@@ -148,10 +148,37 @@ class ApdCounter(LabradServer):
 
     @setting(0, apd_index='i', period='i', total_num_to_read='i')
     def load_stream_reader(self, c, apd_index, period, total_num_to_read):
+        """Open a stream to count clicks from the specified APD. The
+        stream can be read with read_stream.
+
+        Params
+            apd_index: int
+                Index of the APD to use
+            period: int
+                Expected between sample clocks in ns
+            total_num_to_read: int
+                Total number of samples that the stream will record. Due to a
+                bug this value must currently be > 1.
+        """
         self.try_load_stream_reader(c, apd_index, period, total_num_to_read)
 
     @setting(1, apd_index='i', num_to_read='i', returns='*w')
     def read_stream(self, c, apd_index, num_to_read=None):
+        """Read the stream loaded by load_stream_reader.
+
+        Params
+            apd_index: int
+                Index of the APD to use
+            num_to_read: int
+                Number of samples to read. This will not return until there
+                are num_to_read samples available. Default is None, in which
+                case we simply read what is available. This is useful for
+                polling on a loop.
+
+        Returns
+            list(int)
+                The samples that were read
+        """
 
         # Unpack the state dictionary
         state_dict = self.stream_reader_state[apd_index]

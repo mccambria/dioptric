@@ -54,11 +54,25 @@ class ObjectivePiezo(LabradServer):
 
     @setting(0, voltage='v[]')
     def write_voltage(self, c, voltage):
+        """Write a voltage to the piezo.
+
+        Params:
+            voltage: float
+                The voltage to write
+        """
+
         self.piezo.SVO(self.axis, False)  # Turn off the feedback servo
         self.piezo.SVA(self.axis, voltage)  # Write the voltage
 
     @setting(1, returns='v[]')
     def read_position(self, c):
+        """Read the position of the piezo.
+
+        Returns
+            float
+                The current position of the piezo in microns
+        """
+
         return self.piezo.qPOS()[self.axis]
 
 
