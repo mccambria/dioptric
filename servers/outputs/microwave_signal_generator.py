@@ -54,27 +54,49 @@ class MicrowaveSignalGenerator(LabradServer):
         self.sig_gen = resource_manager.open_resource(config[0])
         self.daq_di_pulser_clock = config[1]
         self.daq_ao_sig_gen_mod = config[2]
-        
+
     def stopServer(self):
         if self.task is not None:
             self.task.close()
 
     @setting(0)
     def uwave_on(self, c):
+        """Turn on the signal. This is like opening an internal gate on
+        the signal generator.
+        """
+
         self.sig_gen.write('ENBR 1')
 
     @setting(1)
     def uwave_off(self, c):
+        """Turn off the signal. This is like closing an internal gate on
+        the signal generator.
+        """
+
         self.sig_gen.write('ENBR 0')
 
     @setting(2, freq='v[]')
     def set_freq(self, c, freq):
+        """Set the frequency of the signal.
+
+        Params
+            freq: float
+                The frequency of the signal in GHz
+        """
+
         # Determine how many decimal places we need
         precision = len(str(freq).split('.')[1])
         self.sig_gen.write('FREQ {0:.{1}f}GHZ'.format(freq, precision))
 
     @setting(3, amp='v[]')
     def set_amp(self, c, amp):
+        """Set the amplitude of the signal.
+
+        Params
+            amp: float
+                The amplitude of the signal in dBm
+        """
+
         # Determine how many decimal places we need
         precision = len(str(amp).split('.')[1])
         self.sig_gen.write('AMPR {0:.{1}f}DBM'.format(amp, precision))
@@ -110,6 +132,10 @@ class MicrowaveSignalGenerator(LabradServer):
 
     @setting(4, fm_range='v[]', voltages='*v[]', period='i')
     def load_fm(self, c, fm_range, voltages, period):
+        """Set up frequency modulation via an external voltage. This has never
+        been used or tested and needs work.
+        """
+
         # Set up the DAQ AO that will control the modulation
         self.load_stream_writer('UwaveSigGen-load_fm', voltages, period)
         # Simple FM is type 1, subtype 0
@@ -125,6 +151,8 @@ class MicrowaveSignalGenerator(LabradServer):
 
     @setting(5)
     def mod_off(self, c):
+        """Turn off the modulation."""
+
         self.sig_gen.write('MODL 0')
         task = self.stream_task
         if task is not None:

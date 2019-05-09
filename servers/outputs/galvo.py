@@ -28,7 +28,6 @@ from twisted.internet.defer import ensureDeferred
 import nidaqmx
 import nidaqmx.stream_writers as stream_writers
 import numpy
-import time
 
 
 class Galvo(LabradServer):
@@ -55,9 +54,6 @@ class Galvo(LabradServer):
         self.daq_ao_galvo_x = config[0]
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
-
-    def stopServer(self):
-        self.close_task_internal()
 
     def stopServer(self):
         self.close_task_internal()
@@ -151,6 +147,14 @@ class Galvo(LabradServer):
 
     @setting(0, xVoltage='v[]', yVoltage='v[]')
     def write(self, c, xVoltage, yVoltage):
+        """Write the specified voltages to the galvo.
+
+        Params
+            xVoltage: float
+                Voltage to write to the x channel
+            yVoltage: float
+                Voltage to write to the y channel
+        """
 
         # Close the stream task if it exists
         # This can happen if we quit out early
@@ -167,6 +171,13 @@ class Galvo(LabradServer):
 
     @setting(1, returns='*v[]')
     def read(self, c):
+        """Return the current voltages on the x and y channels.
+
+        Returns
+            list(float)
+                Current voltages on the x and y channels
+
+        """
         with nidaqmx.Task() as task:
             # Set up the internal channels - to do: actual parsing...
             if self.daq_ao_galvo_x == 'dev1/AO0':
@@ -186,6 +197,30 @@ class Galvo(LabradServer):
              returns='*v[]*v[]')
     def load_sweep_scan(self, c, x_center, y_center,
                         x_range, y_range, num_steps, period):
+        """Load a scan that will wind through the grid defined by the passed
+        parameters. Samples are advanced by the clock. Currently x_range
+        must equal y_range.
+
+        Params
+            x_center: float
+                Center x voltage of the scan
+            y_center: float
+                Center y voltage of the scan
+            x_range: float
+                Full scan range in x
+            y_range: float
+                Full scan range in y
+            num_steps: int
+                Number of steps the break the ranges into
+            period: int
+                Expected period between clock signals in ns
+
+        Returns
+            list(float)
+                The x voltages that make up the scan
+            list(float)
+                The y voltages that make up the scan
+        """
 
         ######### Assumes x_range == y_range #########
 
@@ -241,6 +276,28 @@ class Galvo(LabradServer):
              num_steps='i', period='i', returns='*v[]*v[]')
     def load_cross_scan(self, c, x_center, y_center,
                         xy_range, num_steps, period):
+        """Load a scan that will first step through xy_range in x keeping y
+        constant at its center, then step through xy_range in y keeping x
+        constant at its center.
+
+        Params
+            x_center: float
+                Center x voltage of the scan
+            y_center: float
+                Center y voltage of the scan
+            xy_range: float
+                Full scan range in x/y
+            num_steps: int
+                Number of steps the break the x/y range into
+            period: int
+                Expected period between clock signals in ns
+
+        Returns
+            list(float)
+                The x voltages that make up the scan
+            list(float)
+                The y voltages that make up the scan
+        """
 
         half_xy_range = xy_range / 2
 
@@ -267,6 +324,25 @@ class Galvo(LabradServer):
              num_steps='i', period='i', returns='*v[]')
     def load_x_scan(self, c, x_center, y_center,
                     scan_range, num_steps, period):
+        """Load a scan that will step through scan_range in x keeping y
+        constant at its center.
+
+        Params
+            x_center: float
+                Center x voltage of the scan
+            y_center: float
+                Center y voltage of the scan
+            scan_range: float
+                Full scan range in x/y
+            num_steps: int
+                Number of steps the break the x/y range into
+            period: int
+                Expected period between clock signals in ns
+
+        Returns
+            list(float)
+                The x voltages that make up the scan
+        """
 
         half_scan_range = scan_range / 2
 
@@ -286,6 +362,25 @@ class Galvo(LabradServer):
              num_steps='i', period='i', returns='*v[]')
     def load_y_scan(self, c, x_center, y_center,
                     scan_range, num_steps, period):
+        """Load a scan that will step through scan_range in y keeping x
+        constant at its center.
+
+        Params
+            x_center: float
+                Center x voltage of the scan
+            y_center: float
+                Center y voltage of the scan
+            scan_range: float
+                Full scan range in x/y
+            num_steps: int
+                Number of steps the break the x/y range into
+            period: int
+                Expected period between clock signals in ns
+
+        Returns
+            list(float)
+                The y voltages that make up the scan
+        """
 
         half_scan_range = scan_range / 2
 
