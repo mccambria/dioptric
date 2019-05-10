@@ -80,7 +80,7 @@ def main(cxn, coords, nd_filter, apd_index, expected_counts, freq_center, freq_r
         
         # Optimize
         ret_val = optimize.main(cxn, coords, nd_filter, apd_index, 
-                               expected_counts = expected_counts)
+                               expected_counts = expected_counts, plot_data=True)
         
         coords = ret_val[0]
         optimization_success = ret_val[1]

@@ -59,6 +59,13 @@ def do_optimize(name, coords, nd_filter, apd_index):
         optimize.main(cxn, coords, nd_filter, apd_index, name,
                       expected_counts=None, set_to_opti_centers=False,
                       save_data=True, plot_data=True, )
+        
+def do_optimize_list(name, coords, nd_filter, apd_index):
+
+    with labrad.connect() as cxn:
+        optimize.optimize_list(cxn, coords, nd_filter, apd_index, name,
+                      expected_counts=None, set_to_opti_centers=False,
+                      save_data=True, plot_data=True, )
 
 
 def do_stationary_count(name, coords, nd_filter, apd_index):
@@ -74,7 +81,8 @@ def do_stationary_count(name, coords, nd_filter, apd_index):
 
 def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 
-    run_time = 60 * 10
+    run_time = 60 * 5
+#    run_time = 2
 #    run_time = 30
     diff_window = 150 * 10**3  # 100 ns in ps
     
@@ -148,25 +156,27 @@ def do_t1_measurement(name, coords, nd_filter,
 def do_t1_init_read_control(name, coords, nd_filter,
                       sig_shrt_apd_index, ref_shrt_apd_index,
                       sig_long_apd_index, ref_long_apd_index, expected_counts,
+                      uwave_freq_plus, uwave_freq_minus, 
+                      uwave_pi_pulse_plus, uwave_pi_pulse_minus,
                       init_state, read_state):
     
     # Set right now for 2019-04-30-NV2
     
-    uwave_freq_plus = 2.851
-    uwave_pi_pulse_plus = 104
-    uwave_freq_minus = 2.880
-    uwave_pi_pulse_minus = 126
+#    uwave_freq_plus = 2.851
+#    uwave_pi_pulse_plus = 104
+#    uwave_freq_minus = 2.880
+#    uwave_pi_pulse_minus = 126
     
     uwave_power = 9
     relaxation_time_range = [0, 1.5 * 10**6]
 #    relaxation_time_range = [0, 1.5 * 10**3]
     
     num_steps = 101
-#    num_steps = 15
+#    num_steps = 5
     
     num_reps =  5 * 10**3
     
-    num_runs = 20
+    num_runs = 25
 #    num_runs = 1
     
     with labrad.connect() as cxn:
@@ -220,7 +230,7 @@ if __name__ == '__main__':
 #    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
 #    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
     
-    nv2 = [-0.074, 0.040, 48.7] # 2019-04-30-NV2
+    nv2_2019_04_30 = [-0.076, 0.039, 48.4] # 2019-04-30-NV2
 #    nv_list = [nv2]
     
     # 2019-05-07-NV6
@@ -229,11 +239,57 @@ if __name__ == '__main__':
 #    nv_list = [nv6]
     
     # 2019-05-10
+#    nv_list = [[0.257, 0.234, 48.5],
+#        [0.285, 0.218, 48.8],
+#        [0.347, 0.206, 48.8],
+##        [0.331, 0.213, 48.5],
+#        [0.446, 0.150, 48.6],
+#        [0.313, 0.143, 48.9],
+#        [0.189, 0.149, 48.8],
+#        [0.462, 0.099, 48.7],
+#        [0.370, 0.111, 48.6],
+#        [0.393, 0.071, 48.7],
+#        [0.261, 0.084, 48.8],
+#        [0.183, 0.099, 48.7],
+#        [0.283, 0.029, 48.8],
+#        [0.301, 0.011, 48.7],
+#        [0.458, 0.050, 48.8],
+#        [0.463, 0.039, 48.8],
+#        [0.268, -0.032, 48.7],
+#        [0.124, -0.032, 48.8],
+##        [0.211, -0.079, 48.9],
+#        [0.301, -0.120, 48.7],
+#        [0.289, -0.128, 48.7],
+#        [0.235, -0.122, 48.9],
+#        [0.189, -0.133, 48.6],
+#        [0.125, -0.159, 48.7],
+#        [0.292, -0.158, 48.7]]
     
+    nv1 = [0.257, 0.234, 48.3] # Great nv!
+    nv2 = [0.370, 0.111, 48.6]
+    nv3 = [0.235, -0.122, 48.9]
+    nv4 = [0.292, -0.158, 48.4] # Good nv
+    
+    # Decent g2    
+    nv5 = [0.285, 0.218, 48.8]
+    nv6 = [0.313, 0.143, 48.9]
+    nv7 = [0.189, 0.149, 48.8]
+    nv8 = [0.283, 0.029, 48.8]
+    nv9 = [0.268, -0.032, 48.7]
+    
+    
+#    nv_list = [[0.257, 0.234, 48.5],
+#        [0.370, 0.111, 48.6],
+#        [0.235, -0.122, 48.9],
+#        [0.292, -0.158, 48.7]]
 #    other_coords = [0.25 ,0.0,48.7]
-    other_coords = [0.0 ,0.0, 48.7]
     
-    nv_list = [other_coords]
+    other_coords = [0.35 ,0.0, 48.7]
+    
+    
+    nv_list = [nv1, nv2_2019_04_30, nv4]
+#    nv_list = [nv2_2019_04_30]
+    
     
     nd_filter = 1.5
 
@@ -242,12 +298,12 @@ if __name__ == '__main__':
     apd_c_index = 2
     apd_d_index = 3
 
-    scan_range = 0.4
+    scan_range = 0.5
     num_scan_steps = 200
      
     # Based on the current nv, what kcounts/s do we expect?
     # If not know, set to None
-    expected_counts = 50
+    expected_counts = None
     
     # arrays for the t1 measuremnt info
     
@@ -257,6 +313,9 @@ if __name__ == '__main__':
 #    m_zero = [[0, 1.2 * 10**6], 2.87, 0, True]
     
     # 2019-04-30-NV2 
+    zero_to_zero = [0,0]
+    plus_to_plus = [1,1]
+    minus_to_minus = [-1,-1]
     plus_to_zero = [1,0]
     minus_to_zero = [-1,0]
     zero_to_plus = [0,1]
@@ -266,18 +325,27 @@ if __name__ == '__main__':
 #    m_plus_one = [[0, 25 * 10**3], 2.850, 56.25, False]
 #    m_minus_one = [[0, 25 * 10**3], 2.881, 42.9, False]
 #    m_zero = [[0, 1.5 * 10**6], 2.87, 0, True]
-
-
+#
+#
 #    t1_array = numpy.array([m_plus_one, m_minus_one, m_zero])
-    t1_array = numpy.array([plus_to_zero, minus_to_zero, zero_to_plus, zero_to_minus])
+    t1_exp_array = numpy.array([zero_to_zero, plus_to_plus, minus_to_minus, 
+                                 plus_to_zero, minus_to_zero, zero_to_plus, 
+                                 zero_to_minus])
+    params_array = numpy.array([[nv1, 2.851, 89, 2.880, 82, 35],
+                                [nv2_2019_04_30, 2.854, 104, 2.880, 126, 50],
+                                [nv4, 2.856, 94, 2.880, 82, 50]])
 
     # %% Functions to run
     try:
-        for nv in nv_list:
-            coords = nv
+        # Start 'Press enter to stop...'
+#        tool_belt.init_safe_stop()
+        
+#        for nv in nv_list:
+#            coords = nv
 #            set_xyz_zero()
-            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
+#            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
 #            do_optimize(name, coords, nd_filter, apd_a_index)
+#            do_optimize_list(name, coords, nd_filter, apd_a_index)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
@@ -291,20 +359,34 @@ if __name__ == '__main__':
 #                              init_state = -1, read_state = 0)
           
         # full control t1
-        
-#        for nv in nv_list:
-#            coords = nv
-#            
-#            for t1_ind in [0,1,2,3]:
-#                init_state = t1_array[t1_ind, 0]
-#                read_state = t1_array[t1_ind, 1]
-#                
-#                ret_val = do_t1_init_read_control(name, coords, nd_filter, apd_a_index, 
-#                              apd_b_index, apd_c_index, apd_d_index, expected_counts,
-#                              init_state, read_state)
-#                
-#                print("new coordinates:" + str(ret_val)) 
-#                coords = ret_val                
+
+        for nv_ind in range(len(params_array)):
+#            if tool_belt.safe_stop():
+#                break
+            
+            coords = params_array[nv_ind, 0]
+            
+            uwave_freq_plus = params_array[nv_ind, 1]
+            uwave_pi_pulse_plus = params_array[nv_ind, 2]
+            uwave_freq_minus = params_array[nv_ind, 3]
+            uwave_pi_pulse_minus = params_array[nv_ind, 4]
+            expected_counts = params_array[nv_ind, 5]
+            
+            for exp_ind in range(len(t1_exp_array)):
+#                if tool_belt.safe_stop():
+#                    break
+                
+                init_state = t1_exp_array[exp_ind, 0]
+                read_state = t1_exp_array[exp_ind, 1]
+                
+                ret_val = do_t1_init_read_control(name, coords, nd_filter, apd_a_index, 
+                              apd_b_index, apd_c_index, apd_d_index, expected_counts,
+                              uwave_freq_plus, uwave_freq_minus, 
+                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                              init_state, read_state)
+                
+                print("new coordinates:" + str(ret_val)) 
+                coords = ret_val                
             
             
         # t1 measurement
@@ -318,6 +400,7 @@ if __name__ == '__main__':
 #                uwave_freq = t1_array[t1_ind, 1]
 #                uwave_pi_pulse = t1_array[t1_ind, 2]
 #                measure_spin_0 = t1_array[t1_ind, 3]
+#                expected_counts = t1_array[t1_ind, 4]
 #            
 #                ret_val = do_t1_measurement(name, coords, nd_filter, apd_a_index, 
 #                                  apd_b_index, apd_c_index, apd_d_index, expected_counts,

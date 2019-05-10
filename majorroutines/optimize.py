@@ -209,6 +209,91 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
     
     
     return opti_coords, optimization_success
+
+# %% Main
+
+
+def optimize_list(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=None,
+         set_to_opti_centers=True, save_data=False, plot_data=False):
+    
+    
+    readout = 1 * 10**9
+    x_center, y_center, z_center = coords
+    
+    optimization_success = False
+    
+    # Try to optimize twice
+    for ind in range(2):
+        
+        opti_coords = do_optimize(cxn, coords, nd_filter, apd_index, name, 
+                                   set_to_opti_centers, save_data, plot_data)
+
+        # If optimization succeeds, go on
+        if None not in opti_coords:
+            
+            # If there is a threshold set, go on
+            if expected_counts != None:
+                
+                lower_threshold = expected_counts * 3/4
+                upper_threshold = expected_counts * 5/4
+                
+                # check the counts
+                opti_counts = stationary_count_lite(cxn, opti_coords, nd_filter,  readout, apd_index)
+#                print('Counts from optimization: {}'.format(opti_counts)) 
+#                print('Expected counts: {}'.format(expected_counts))  
+#                print(' ')
+                
+                # If the counts are close to what we expect, we succeeded!
+                if lower_threshold <= opti_counts and opti_counts <= upper_threshold:
+#                    print("Optimization success and counts within threshold! \n ")
+                    optimization_success = True
+                    break
+                else:
+                    pass
+#                    print("Optimization success, but counts outside of threshold \n ")
+                    
+            # If the threshold is not set, we succeed based only on optimize       
+            else:
+#                print("Opimization success, no threshold set \n ")
+                optimization_success = True
+                break
+            
+        # Optimize fails    
+        else:
+            pass
+#            print("Cptimization failed  \n ")
+ 
+    if optimization_success == True:
+        if set_to_opti_centers:
+            cxn.galvo.write(opti_coords[0], opti_coords[1])
+            cxn.objective_piezo.write_voltage(opti_coords[2])
+        else:
+            print('[{:.3f}, {:.3f}, {:.1f}],'.format(*opti_coords))
+#            drift = numpy.array(opti_coords) - numpy.array(coords)
+#            print('drift: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*drift))
+    else:
+        # Let the user know something went wrong and reset to what was passed
+        print('Centers could not be located.')
+        if set_to_opti_centers:
+            cxn.galvo.write(x_center, y_center)
+            cxn.objective_piezo.write_voltage(z_center)
+        else:
+            center_texts = []
+            for center_ind in range(len(opti_coords)):
+                center = opti_coords[center_ind]
+                center_text = 'None'
+                if center is not None:
+                    if center_ind == 3:
+                        center_text = '{:.1f}'
+                    else:
+                        center_text = '{:.3f}'
+                    center_text = center_text.format(center)
+                center_texts.append(center_text)
+            print(opti_coords)
+            print(', '.join(center_texts))                               
+    
+    
+    return opti_coords, optimization_success
     
     
 def do_optimize(cxn, coords, nd_filter, apd_index, name, 

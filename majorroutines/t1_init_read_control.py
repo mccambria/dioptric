@@ -150,15 +150,15 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Ask user if they wish to run experiment based on run time
     
-    seq_time_s = seq_time / (10**9)  # s
-    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
-    expected_run_time_m = expected_run_time / 60 # s
-
-    
-    msg = 'Expected run time: {} minutes. ' \
-        'Enter \'y\' to continue: '.format(expected_run_time_m)
-    if input(msg) != 'y':
-        return
+#    seq_time_s = seq_time / (10**9)  # s
+#    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
+#    expected_run_time_m = expected_run_time / 60 # s
+#
+#    
+#    msg = 'Expected run time: {} minutes. ' \
+#        'Enter \'y\' to continue: '.format(expected_run_time_m)
+#    if input(msg) != 'y':
+#        return
     
     # %% Get the starting time of the function, to be used to calculate run time
 
