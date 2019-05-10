@@ -229,11 +229,9 @@ if __name__ == '__main__':
 #    nv_list = [nv6]
     
     # 2019-05-10
-    nv1 = []
-    nv2 = []
     
 #    other_coords = [0.25 ,0.0,48.7]
-    other_coords = [0.0 ,0.0,48.7]
+    other_coords = [0.0 ,0.0, 48.7]
     
     nv_list = [other_coords]
     
