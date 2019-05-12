@@ -168,7 +168,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
 
     raw_data = {'name': name,
                 'timestamp': timestamp,
-                'coords': coords.tolist(),
+                'coords': coords,
                 'coords-units': 'V',
                 'nd_filter': nd_filter,
                 'run_time': run_time,
