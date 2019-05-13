@@ -100,8 +100,11 @@ class PulseStreamer(LabradServer):
         elif output_state == 1:  # DAQ clock on
             pulser_do_daq_clock = self.pulser_wiring['do_daq_clock']
             self.output_state = OutputState([pulser_do_daq_clock], 0, 0)
-        elif output_state == 2:  # Uwave gate open
-            pulser_do_daq_clock = self.pulser_wiring['do_uwave_gate']
+        elif output_state == 2:  # Tektroniz uwave gate open
+            pulser_do_daq_clock = self.pulser_wiring['do_uwave_gate_0']
+            self.output_state = OutputState([pulser_do_daq_clock], 0, 0)
+        elif output_state == 3:  # HP uwave gate open
+            pulser_do_daq_clock = self.pulser_wiring['do_uwave_gate_1']
             self.output_state = OutputState([pulser_do_daq_clock], 0, 0)
 
     @setting(0, seq_file='s', num_repeat='i',

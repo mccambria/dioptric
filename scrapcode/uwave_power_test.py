@@ -176,6 +176,6 @@ def plot_data():
 
 
 if __name__ == '__main__':
-    # check_power()
-    # check_freq()
-    plot_data()
+     check_power()
+#     check_freq()
+#    plot_data()
