@@ -168,13 +168,13 @@ def do_t1_init_read_control(name, coords, nd_filter,
 #    uwave_pi_pulse_minus = 126
     
     uwave_power = 9
-    relaxation_time_range = [0, 1.5 * 10**6]
+    relaxation_time_range = [0, 0.1 * 10**6]
 #    relaxation_time_range = [0, 1.5 * 10**3]
     
-    num_steps = 101
+    num_steps = 201
 #    num_steps = 5
     
-    num_reps =  5 * 10**3
+    num_reps =  5 * 10**4
     
     num_runs = 25
 #    num_runs = 1
@@ -230,7 +230,7 @@ if __name__ == '__main__':
 #    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
 #    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
     
-    nv2_2019_04_30 = [-0.076, 0.039, 48.4] # 2019-04-30-NV2
+    nv2_2019_04_30 = [-0.080, 0.041, 48.3] # 2019-04-30-NV2
 #    nv_list = [nv2]
     
     # 2019-05-07-NV6
@@ -265,10 +265,10 @@ if __name__ == '__main__':
 #        [0.125, -0.159, 48.7],
 #        [0.292, -0.158, 48.7]]
     
-    nv1 = [0.257, 0.234, 48.3] # Great nv!
+    nv1 = [0.252, 0.237, 48.3] # Great nv!
     nv2 = [0.370, 0.111, 48.6]
     nv3 = [0.235, -0.122, 48.9]
-    nv4 = [0.292, -0.158, 48.4] # Good nv
+    nv4 = [0.288, -0.156, 48.4] # Good nv
     
     # Decent g2    
     nv5 = [0.285, 0.218, 48.8]
@@ -328,9 +328,10 @@ if __name__ == '__main__':
 #
 #
 #    t1_array = numpy.array([m_plus_one, m_minus_one, m_zero])
-    t1_exp_array = numpy.array([zero_to_zero, plus_to_plus, minus_to_minus, 
-                                 plus_to_zero, minus_to_zero, zero_to_plus, 
-                                 zero_to_minus])
+#    t1_exp_array = numpy.array([zero_to_zero, plus_to_plus, minus_to_minus, 
+#                                 plus_to_zero, minus_to_zero, zero_to_plus, 
+#                                 zero_to_minus])
+    t1_exp_array = numpy.array([plus_to_plus, minus_to_minus])
     params_array = numpy.array([[nv1, 2.851, 89, 2.880, 82, 35],
                                 [nv2_2019_04_30, 2.854, 104, 2.880, 126, 50],
                                 [nv4, 2.856, 94, 2.880, 82, 50]])
