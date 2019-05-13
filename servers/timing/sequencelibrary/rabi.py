@@ -28,13 +28,19 @@ def get_seq(pulser_wiring, args):
 
     # Get the APD indices
     sig_apd_index, ref_apd_index = args[9:11]
+    
+    #Signify which signal generator to use
+    do_uwave_gate = args[11]
 
     # Get what we need out of the wiring dictionary
     key = 'do_apd_gate_{}'.format(sig_apd_index)
     pulser_do_sig_apd_gate = pulser_wiring[key]
     key = 'do_apd_gate_{}'.format(ref_apd_index)
     pulser_do_ref_apd_gate = pulser_wiring[key]
-    pulser_do_uwave = pulser_wiring['do_uwave_gate']
+    if do_uwave_gate == 0:
+        pulser_do_uwave = pulser_wiring['do_uwave_gate_0']
+    if do_uwave_gate == 1:
+        pulser_do_uwave = pulser_wiring['do_uwave_gate_1']
     pulser_do_aom = pulser_wiring['do_aom']
 
     # %% Couple calculated values

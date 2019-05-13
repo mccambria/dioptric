@@ -2,12 +2,14 @@
 """
 T1 measurement routine.
 
-This version of t1 allows the the readout and measurement of two different 
-states. This version allows (initial, readout): (0,0), (1,1), (-1,-1), (0,1),
-(1,0), (0,-1), (-1,0).
+This version of t1 allows the the readout and measurement of the initial and 
+readout states of (1,-1) and (-1,1). 
+
+The rf frequency takes the initial state to set on our signal generator. The 
+readout frequence must be set on the other signal generator.
 
 To specify the initial and readout states, pass int othe function the variables 
-init_state and read_state as either 1, 0, or -1. 
+init_state and read_state as either 1, or -1. 
 
 Created on Wed Apr 24 15:01:04 2019
 
@@ -72,26 +74,32 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
 
     if read_state == 0:
         uwave_pi_pulse_read = 0
-        uwave_freq = 2.87
     elif read_state == 1:
         uwave_pi_pulse_read =round(uwave_pi_pulse_plus)
     elif read_state == -1:
         uwave_pi_pulse_read = round(uwave_pi_pulse_minus)
- 
-    # This will have to change once we impliment +1 <--> -1
-    if init_state == 1 or read_state == 1:
-        uwave_freq = uwave_freq_plus
         
-    if init_state == -1 or read_state == -1:
-        uwave_freq = uwave_freq_minus
+    if init_state == 0:
+        uwave_freq_init = 2.87 
+    if init_state == 1:
+        uwave_freq_init = uwave_freq_plus
+    if init_state == -1:
+        uwave_freq_init = uwave_freq_minus
+
         
-    if init_state ==0 and read_state == 0:
-        uwave_freq = 2.87
-        
+    if read_state == 0:
+        uwave_freq_read = 2.87    
+    if read_state == 1:
+        uwave_freq_read = uwave_freq_plus
+    if read_state == -1:
+        uwave_freq_read = uwave_freq_minus        
+
 
     print('Initial pi pulse: {} ns'.format(uwave_pi_pulse_init))
+    print('Initial frequency: {} GHz'.format(uwave_freq_init))
     print('Readout pi pulse: {} ns'.format(uwave_pi_pulse_read))
-    print('Frequency: {} GHz'.format(uwave_freq))
+    print('Readout frequency: {} GHz'.format(uwave_freq_read))
+
     # %% Create the array of relaxation times
     
     # Array of times to sweep through
@@ -147,7 +155,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                     gate_time, uwave_pi_pulse_init, uwave_pi_pulse_read, max_relaxation_time,
                     sig_shrt_apd_index, ref_shrt_apd_index,
-                    sig_long_apd_index, ref_long_apd_index]
+                    sig_long_apd_index, ref_long_apd_index,
+                    init_state, read_state]
     ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
     seq_time = ret_vals[0]
 #    print(sequence_args)
@@ -155,23 +164,27 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Ask user if they wish to run experiment based on run time
     
-    seq_time_s = seq_time / (10**9)  # s
-    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
-    expected_run_time_m = expected_run_time / 60 # s
-
-    
-    msg = 'Expected run time: {} minutes. ' \
-        'Enter \'y\' to continue: '.format(expected_run_time_m)
-    if input(msg) != 'y':
-        return
+#    seq_time_s = seq_time / (10**9)  # s
+#    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
+#    expected_run_time_m = expected_run_time / 60 # s
+#
+#    
+#    msg = 'Expected run time: {} minutes. ' \
+#        'Enter \'y\' to continue: '.format(expected_run_time_m)
+#    if input(msg) != 'y':
+#        return
     
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
     
      # %% Set up the microwaves
-
-    cxn.microwave_signal_generator.set_freq(uwave_freq)
+     
+    cxn.microwave_signal_generator.set_freq(uwave_freq_plus)
+    # hardwire in this specil case
+    if init_state == -1 and read_state == -1:
+        cxn.microwave_signal_generator.set_freq(uwave_freq_minus)
+        
     cxn.microwave_signal_generator.set_amp(uwave_power)
     cxn.microwave_signal_generator.uwave_on()
     
@@ -218,7 +231,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                     gate_time, uwave_pi_pulse_init, uwave_pi_pulse_read, taus[-tau_ind - 1],
                     sig_shrt_apd_index, ref_shrt_apd_index,
-                    sig_long_apd_index, ref_long_apd_index]
+                    sig_long_apd_index, ref_long_apd_index,
+                    init_state, read_state]
             
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)        
             
@@ -292,8 +306,10 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             'expected_counts': expected_counts,
             'expected_counts-units': 'kcps',
             'nd_filter': nd_filter,
-            'uwave_freq': uwave_freq,
-            'uwave_freq-units': 'GHz',
+            'uwave_freq_init': uwave_freq_init,
+            'uwave_freq_init-units': 'GHz',
+            'uwave_freq_read': uwave_freq_read,
+            'uwave_freq_read-units': 'GHz',
             'uwave_power': uwave_power,
             'uwave_power-units': 'dBm',
             'uwave_pi_pulse_init': uwave_pi_pulse_init,

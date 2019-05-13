@@ -31,7 +31,15 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     startFunctionTime = time.time()
 
     # %% Initial calculations and setup
-
+    
+    # Set which signal generator to use. 0 is the tektronix, 1 is HP
+    do_uwave_gate = 1
+    
+    if do_uwave_gate == 0:
+        do_uwave_gen = 'Tektronix'
+    elif do_uwave_gate == 1:
+        do_uwave_gen = 'HP'
+    
     # Define some times (in ns)
     polarization_time = 3 * 10**3
     reference_time = 1 * 10**3
@@ -54,7 +62,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
                     signal_wait_time, reference_wait_time,
                     background_wait_time, aom_delay_time,
                     gate_time, max_uwave_time,
-                    sig_apd_index, ref_apd_index]
+                    sig_apd_index, ref_apd_index, do_uwave_gate]
     ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
     period = ret_vals[0]
 
@@ -124,7 +132,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
                     signal_wait_time, reference_wait_time,
                     background_wait_time, aom_delay_time,
                     gate_time, max_uwave_time,
-                    sig_apd_index, ref_apd_index]
+                    sig_apd_index, ref_apd_index, do_uwave_gate]
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)
 
             count = cxn.apd_counter.read_stream(sig_apd_index, 1)
@@ -233,6 +241,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
                 'uwave_power-units': 'dBm',
                 'uwave_time_range': uwave_time_range,
                 'uwave_time_range-units': 'ns',
+                'do_uwave_gen': do_uwave_gen,
                 'num_steps': num_steps,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
