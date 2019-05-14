@@ -305,7 +305,7 @@ if __name__ == '__main__':
 #        [0.125, -0.159, 48.7],
 #        [0.292, -0.158, 48.7]]
     
-    nv1 = [0.255, 0.241, 48.4] # Great nv!
+    nv1 = [0.252, 0.237, 48.4] # Great nv!
     nv2 = [0.370, 0.111, 48.6]
     nv3 = [0.235, -0.122, 48.9]
     nv4 = [0.288, -0.156, 48.4] # Good nv
@@ -392,12 +392,12 @@ if __name__ == '__main__':
             coords = nv
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
-#            do_optimize(name, coords, nd_filter, apd_a_index)
+            do_optimize(name, coords, nd_filter, apd_a_index)
 #            do_optimize_list(name, coords, nd_filter, apd_a_index)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
-            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts)
+#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts)
 #            do_t1_measurement(name, coords, nd_filter, apd_a_index, 
 #                              apd_b_index, apd_c_index, apd_d_index, expected_counts,
 #                              uwave_freq, uwave_pi_pulse, relaxation_time_range, measure_spin_0)

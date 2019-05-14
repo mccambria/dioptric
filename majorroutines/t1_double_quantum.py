@@ -24,6 +24,7 @@ import majorroutines.optimize as optimize
 import numpy
 import os
 import time
+from random import shuffle
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
@@ -126,6 +127,11 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     elif len(taus) % 2 == 1:
         half_length_taus = int( (len(taus) + 1) / 2 )
         
+    # Then we must use this half length to calculate the list of integers to be
+    # shuffled for each run
+    
+    tau_ind_list = list(range(0, half_length_taus))
+        
     # %% Create data structure to save the counts
     
     # We create an array of NaNs that we'll fill
@@ -217,19 +223,35 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
         cxn.apd_counter.load_stream_reader(ref_shrt_apd_index, seq_time, half_length_taus)
         cxn.apd_counter.load_stream_reader(sig_long_apd_index, seq_time, half_length_taus)
         cxn.apd_counter.load_stream_reader(ref_long_apd_index, seq_time, half_length_taus)    
+        
+        # Shuffle the list of tau indices so that it steps thru them randomly
+        shuffle(tau_ind_list)
+        
+        for tau_ind in tau_ind_list:
+            
+            # 'Flip a coin' to determine if the short or the long tau is used 
+            # first
+            rand_boolean = numpy.random.randint(0, high=2)
+            
+            if rand_boolean == 1:
+                tau_first = taus[tau_ind]
+                tau_second = taus[-tau_ind - 1]
+            elif rand_boolean == 0:
+                tau_first = taus[-tau_ind - 1]
+                tau_second = taus[tau_ind]
                 
-        for tau_ind in range(half_length_taus):
-            print(taus[tau_ind])
-            print(taus[-tau_ind - 1])
+            print(tau_first)
+            print(tau_second)
+            
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break  
             
             # Stream the sequence
-            args = [taus[tau_ind], polarization_time, signal_time, reference_time, 
+            args = [tau_first, polarization_time, signal_time, reference_time, 
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_pulse_init, uwave_pi_pulse_read, taus[-tau_ind - 1],
+                    gate_time, uwave_pi_pulse_init, uwave_pi_pulse_read, tau_second,
                     sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_long_apd_index, ref_long_apd_index,
                     init_state, read_state]
