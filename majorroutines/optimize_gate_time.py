@@ -197,6 +197,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     raw_data = {'timestamp': timestamp,
                 'timeElapsed': timeElapsed,
                 'name': name,
+                'gate_time': gate_time,
+                'gate_time-unite': 'ns',
                 'passed_coords': passed_coords,
                 'opti_coords_list': opti_coords_list,
                 'coords-units': 'V',
@@ -231,12 +233,12 @@ if __name__ == '__main__':
     import labrad
     
     name = 'Ayrton 12'
-    coords = [0.252, 0.237, 48.1]
-    nd_filter = 1.5
+    coords = [0.251, 0.238, 48.2]
+    nd_filter = 0.5
 
     apd_a_index = 0
     apd_b_index = 1
-    expected_counts = 30
+    expected_counts = None
     
     uwave_freq = 2.851
     uwave_power = 9
@@ -246,29 +248,36 @@ if __name__ == '__main__':
     num_reps = 10**5
     num_runs = 1
     
-    snr_list = []
-    min_delay_time = 250
-    max_delay_time = 400
-    num_delay_steps = int((max_delay_time - min_delay_time) / 10 + 1)
-    delay_time_list = numpy.linspace(min_delay_time, max_delay_time, num = num_delay_steps).astype(int)
+    count_gate_time = 350
     
-    for gate_ind in delay_time_list:
-        count_gate_time = gate_ind
+    with labrad.connect() as cxn:
+        SNR = main(cxn, coords, nd_filter, apd_a_index, apd_b_index, expected_counts,
+             uwave_freq, uwave_power, uwave_pi_pulse, count_gate_time,
+             num_steps, num_reps, num_runs, name)
+        
+#    snr_list = []
+#    min_delay_time = 250
+#    max_delay_time = 400
+#    num_delay_steps = int((max_delay_time - min_delay_time) / 10 + 1)
+#    delay_time_list = numpy.linspace(min_delay_time, max_delay_time, num = num_delay_steps).astype(int)
     
-        with labrad.connect() as cxn:
-            SNR = main(cxn, coords, nd_filter, apd_a_index, apd_b_index, expected_counts,
-                 uwave_freq, uwave_power, uwave_pi_pulse, count_gate_time,
-                 num_steps, num_reps, num_runs, name)
+#    for gate_ind in delay_time_list:
+#        count_gate_time = gate_ind
+#    
+#        with labrad.connect() as cxn:
+#            SNR = main(cxn, coords, nd_filter, apd_a_index, apd_b_index, expected_counts,
+#                 uwave_freq, uwave_power, uwave_pi_pulse, count_gate_time,
+#                 num_steps, num_reps, num_runs, name)
+#            
+#            snr_list.append(SNR)
             
-            snr_list.append(SNR)
-            
-    print(snr_list)
-    
-    fig, ax = plt.subplots(1, 1, figsize=(12, 10))
-    ax.plot(delay_time_list, snr_list, 'r-')
-    ax.set_xlabel('Gate time (ns)')
-    ax.set_ylabel('Signal-to-noise ratio')  
-    
-    fig.canvas.draw()
-    fig.canvas.flush_events()
+#    print(snr_list)
+#    
+#    fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+#    ax.plot(delay_time_list, snr_list, 'r-')
+#    ax.set_xlabel('Gate time (ns)')
+#    ax.set_ylabel('Signal-to-noise ratio')  
+#    
+#    fig.canvas.draw()
+#    fig.canvas.flush_events()
             
