@@ -86,7 +86,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     
     # Shuffle the list of indices to step throug the time with
     
-    tau_ind_list_rand = shuffle(numpy.linspace(0, len(taus)-1, num = num_steps))
+    tau_ind_list = numpy.linspace(0, len(taus)-1, num = num_steps)
+    print('Initial tau index: {}'.format(tau_ind_list))
 
     # %% Set up the microwaves
 
@@ -125,8 +126,11 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
         # Load the APD tasks
         cxn.apd_counter.load_stream_reader(sig_apd_index, period, num_steps)
         cxn.apd_counter.load_stream_reader(ref_apd_index, period, num_steps)
-
-        for tau_ind in tau_ind_list_rand:
+        
+        shuffle(tau_ind_list)
+        print('Randomized tau index: {}'.format(tau_ind_list))       
+        
+        for tau_ind in tau_ind_list.astype(int):
 
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
