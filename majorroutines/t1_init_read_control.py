@@ -325,9 +325,9 @@ def decayExp(t, offset, amplitude, decay):
     
 # %% Fitting the data
     
-def t1_exponential_decay(open_file_name, save_file_type):
+def t1_exponential_decay_edit(open_file_name, save_file_type):
     
-    directory = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
+    directory = 'G:/Team Drives/Kolkowitz Lab Group/nvdata/t1_init_read_control/'
    
     # Open the specified file
     with open(directory + open_file_name + '.txt') as json_file:
@@ -337,7 +337,8 @@ def t1_exponential_decay(open_file_name, save_file_type):
         countsT1 = data["norm_avg_sig"]
         relaxation_time_range = data["relaxation_time_range"]
         num_steps = data["num_steps"]
-        spin = data["spin_measured?"]
+        init_state = data["init_state"]
+        read_state = data["read_state"]
         
     min_relaxation_time = relaxation_time_range[0] 
     max_relaxation_time = relaxation_time_range[1]
@@ -345,7 +346,7 @@ def t1_exponential_decay(open_file_name, save_file_type):
     timeArray = numpy.linspace(min_relaxation_time, max_relaxation_time,
                               num=num_steps, dtype=numpy.int32)
     
-    offset = 0.8
+    offset = 0.75
     amplitude = 0.1
     decay = 1/10000 # inverse ns
 
@@ -364,13 +365,13 @@ def t1_exponential_decay(open_file_name, save_file_type):
     ax.plot(linspaceTime / 10**6, decayExp(linspaceTime,*popt),'r-',label='fit')
     ax.set_xlabel('Dark Time (ms)')
     ax.set_ylabel('Contrast (arb. units)')
-    ax.set_title('T1 of ' + str(spin))
+    ax.set_title('T1 Measurement. Initial state: {}, readout state: {}'.format(init_state, read_state))
     ax.legend()
     
     text = "\n".join((r'$C + A_0 e^{-t / d}$',
                       r'$C = $' + '%.1f'%(popt[0]),
                       r'$A_0 = $' + '%.1f'%(popt[1]),
-                      r'$d = $' + "%.3f"%(decay_time / 10**6) + " ms"))
+                      r'$d = $' + "%.2f"%(decay_time / 10**3) + " us"))
     
     
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
@@ -381,5 +382,13 @@ def t1_exponential_decay(open_file_name, save_file_type):
     fig.canvas.flush_events()
     
     fig.savefig(open_file_name + 'replot.' + save_file_type)
+    
+if __name__ == "__main__":
+
+
+    # %% Functions to run
+    
+#    recreate_image_sample()
+    t1_exponential_decay_edit('2019-05-11_19-53-32_ayrton12', 'png')
 
     

@@ -313,7 +313,7 @@ def decayExp(t, offset, amplitude, decay):
     
 def t1_exponential_decay(open_file_name, save_file_type):
     
-    directory = 'G:/Team Drives/Kolkowitz Lab Group/nvdata/t1_init_read_control/'
+    directory = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
    
     # Open the specified file
     with open(directory + open_file_name + '.txt') as json_file:
@@ -367,13 +367,6 @@ def t1_exponential_decay(open_file_name, save_file_type):
     fig.canvas.flush_events()
     
     fig.savefig(open_file_name + 'replot.' + save_file_type)
-    
-if __name__ == "__main__":
 
-
-    # %% Functions to run
-    
-#    recreate_image_sample()
-    t1_exponential_decay('2019-05-11_19-53-32_ayrton12', 'svg')
 
     
