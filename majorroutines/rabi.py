@@ -17,6 +17,7 @@ import numpy
 import os
 import time
 import matplotlib.pyplot as plt
+from random import shuffle
 from scipy.optimize import curve_fit
 
 # %% Main
@@ -33,7 +34,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     # %% Initial calculations and setup
     
     # Set which signal generator to use. 0 is the tektronix, 1 is HP
-    do_uwave_gate = 1
+    do_uwave_gate = 0
     
     if do_uwave_gate == 0:
         do_uwave_gen = 'Tektronix'
@@ -82,6 +83,10 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     
     opti_coords_list = []
     optimization_success_list = []
+    
+    # Shuffle the list of indices to step throug the time with
+    
+    tau_ind_list_rand = shuffle(numpy.linspace(0, len(taus)-1, num = num_steps))
 
     # %% Set up the microwaves
 
@@ -121,7 +126,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
         cxn.apd_counter.load_stream_reader(sig_apd_index, period, num_steps)
         cxn.apd_counter.load_stream_reader(ref_apd_index, period, num_steps)
 
-        for tau_ind in range(len(taus)):
+        for tau_ind in tau_ind_list_rand:
 
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
