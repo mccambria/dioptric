@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Allows the gate time to be changed, and calculates the signal and noise with
-a measurement. The signal is based on the ratio of the high and low signal
-and the noise is based on the standard deviation of the difference of the two.
+a measurement. The signal is based on the contrast of the high and low signal
+and the noise is based on the standard deviation of that contrast.
 
 Created on Tue Apr 23 11:49:23 2019
 
-@author: mccambria
+@author: gardill
 """
 
 
@@ -157,7 +157,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
 
     norm_avg_sig = avg_sig_counts / avg_ref_counts
     
-    sig_stat = numpy.average(norm_avg_sig)
+    sig_stat = 1 - numpy.average(norm_avg_sig)
     
     st_dev_stat = numpy.std(norm_avg_sig)
     
@@ -199,6 +199,9 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
                 'name': name,
                 'gate_time': gate_time,
                 'gate_time-unite': 'ns',
+                'sig_stat': sig_stat,
+                'st_dev_stat': st_dev_stat,
+                'sig_to_noise_ratio': sig_to_noise_ratio,
                 'passed_coords': passed_coords,
                 'opti_coords_list': opti_coords_list,
                 'coords-units': 'V',
