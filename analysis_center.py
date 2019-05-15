@@ -12,7 +12,7 @@ Script to run various analysis techniques on the data.
 
 # User modules
 #import Utils.tool_belt as tool_belt
-import majorroutines.image_sample_tmp_tmp as image_sample
+import majorroutines.image_sample_tmp as image_sample
 import majorroutines.t1_measurement as t1_measurement
 
 
