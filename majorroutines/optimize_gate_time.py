@@ -234,7 +234,7 @@ if __name__ == '__main__':
     
     name = 'Ayrton 12'
     coords = [0.251, 0.238, 48.2]
-    nd_filter = 0.5
+    nd_filter = 2.0
 
     apd_a_index = 0
     apd_b_index = 1

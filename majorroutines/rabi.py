@@ -34,7 +34,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     # %% Initial calculations and setup
     
     # Set which signal generator to use. 0 is the tektronix, 1 is HP
-    do_uwave_gate = 0
+    do_uwave_gate = 1
     
     if do_uwave_gate == 0:
         do_uwave_gen = 'Tektronix'
@@ -106,7 +106,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
 
     for run_ind in range(num_runs):
 
-#        print('Run index: {}'. format(run_ind))
+        print('Run index: {}'. format(run_ind))
         
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():

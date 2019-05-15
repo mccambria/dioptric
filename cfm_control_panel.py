@@ -108,7 +108,7 @@ def do_resonance(name, coords, nd_filter, apd_index, expected_counts):
 
 def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts):
 
-    uwave_freq = 2.851
+    uwave_freq = 2.880
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation 
     # ND 1.5 is a good starting point
     uwave_time_range = [0, 400]
@@ -116,7 +116,7 @@ def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index, expected_coun
     
     num_reps = 10**5
 #    num_reps = 100
-    num_runs = 2
+    num_runs = 3
 #    num_runs = 8
 
     with labrad.connect() as cxn:
@@ -270,7 +270,7 @@ if __name__ == '__main__':
 #    nv2 = [-0.044, 0.043, 49.1] ## coordinates 5/7 18:00
 #    nv2 = [-0.072, 0.039, 47.7] ## coordinates 5/8 9:00
     
-    nv2_2019_04_30 = [-0.080, 0.041, 48.3] # 2019-04-30-NV2
+    nv2_2019_04_30 = [-0.087, 0.044, 48.3] # 2019-04-30-NV2
 #    nv_list = [nv2]
     
     # 2019-05-07-NV6
@@ -328,7 +328,7 @@ if __name__ == '__main__':
     
     
     nv_list = [nv1, nv2_2019_04_30, nv4]
-    nv_list = [nv1]
+    nv_list = [nv2_2019_04_30]
         
     nd_filter = 1.5
 
@@ -342,7 +342,7 @@ if __name__ == '__main__':
      
     # Based on the current nv, what kcounts/s do we expect?
     # If not know, set to None
-    expected_counts = 30
+    expected_counts = 50
     
     # arrays for the t1 measuremnt info
     
@@ -351,7 +351,8 @@ if __name__ == '__main__':
 #    m_minus_one = [[0, 2 * 10**3], 2.880, 126.85, False]
 #    m_zero = [[0, 1.2 * 10**6], 2.87, 0, True]
     
-    # 2019-04-30-NV2 
+    # t1 measurements, initial population and readout population.
+    # (-1,1) and (1,-1) require the double quantum routine
     zero_to_zero = [0,0]
     plus_to_plus = [1,1]
     minus_to_minus = [-1,-1]
@@ -379,8 +380,8 @@ if __name__ == '__main__':
 #                                [plus_to_minus,  [0, 500*10**3],  201],
 #                                [minus_to_plus,  [0, 500*10**3],  201]])
     
-    t1_exp_array = numpy.array([[plus_to_minus,  [0, 50*10**3],   101],
-                                [minus_to_plus,  [0, 50*10**3],   101],
+    t1_exp_array = numpy.array([[plus_to_minus,  [0, 80*10**3],   101],
+                                [minus_to_plus,  [0, 80*10**3],   101],
                                 [plus_to_minus,  [0, 500*10**3],  201],
                                 [minus_to_plus,  [0, 500*10**3],  201]])
     
@@ -388,7 +389,8 @@ if __name__ == '__main__':
 #                                [nv2_2019_04_30, 2.854, 104, 2.880, 126, 50],
 #                                [nv4, 2.856, 94, 2.880, 82, 50]])
     
-    params_array = numpy.array([[nv1, 2.851, 80.5, 2.880, 88.3, 35]])
+    params_array = numpy.array([[nv1, 2.851, 80.5, 2.880, 88.3, 35],
+                                [nv2_2019_04_30, 2.852, 100, 2.880, 135, 50]])
 
     # %% Functions to run
     try:
@@ -413,7 +415,7 @@ if __name__ == '__main__':
             
         # Double Quantum t1
 
-        for nv_ind in range(len(params_array)):
+        for nv_ind in [1]:
             
             coords = params_array[nv_ind, 0]
             
@@ -423,7 +425,7 @@ if __name__ == '__main__':
             uwave_pi_pulse_minus = params_array[nv_ind, 4]
             expected_counts = params_array[nv_ind, 5]
             
-            for exp_ind in range(len(t1_exp_array)):
+            for exp_ind in [0,1]:
                 
                 states = t1_exp_array[exp_ind, 0]
                 init_state = states[0]
