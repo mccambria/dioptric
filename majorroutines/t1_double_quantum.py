@@ -24,6 +24,7 @@ import majorroutines.optimize as optimize
 import numpy
 import os
 import time
+from random import shuffle
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
@@ -60,7 +61,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
-    gate_time = 300  
+    gate_time = 350  
     
             
     # %% Setting initialize and readout states
@@ -126,6 +127,11 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     elif len(taus) % 2 == 1:
         half_length_taus = int( (len(taus) + 1) / 2 )
         
+    # Then we must use this half length to calculate the list of integers to be
+    # shuffled for each run
+    
+    tau_ind_list = list(range(0, half_length_taus))
+        
     # %% Create data structure to save the counts
     
     # We create an array of NaNs that we'll fill
@@ -159,8 +165,6 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     init_state, read_state]
     ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
     seq_time = ret_vals[0]
-#    print(sequence_args)
-#    print(seq_time)
     
     # %% Ask user if they wish to run experiment based on run time
     
@@ -184,7 +188,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # hardwire in this specil case
     if init_state == -1 and read_state == -1:
         cxn.microwave_signal_generator.set_freq(uwave_freq_minus)
-        
+        uwave_pi_pulse_init = round(82.65)
     cxn.microwave_signal_generator.set_amp(uwave_power)
     cxn.microwave_signal_generator.uwave_on()
     
@@ -217,40 +221,56 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
         cxn.apd_counter.load_stream_reader(ref_shrt_apd_index, seq_time, half_length_taus)
         cxn.apd_counter.load_stream_reader(sig_long_apd_index, seq_time, half_length_taus)
         cxn.apd_counter.load_stream_reader(ref_long_apd_index, seq_time, half_length_taus)    
+        
+        # Shuffle the list of tau indices so that it steps thru them randomly
+        shuffle(tau_ind_list)
+        
+        for tau_ind in tau_ind_list:
+            
+            # 'Flip a coin' to determine which tau (long/shrt) is used first
+            rand_boolean = numpy.random.randint(0, high=2)
+            
+            if rand_boolean == 1:
+                tau_ind_first = tau_ind
+                tau_ind_second = -tau_ind - 1
+            elif rand_boolean == 0:
+                tau_ind_first = -tau_ind - 1
+                tau_ind_second = tau_ind
                 
-        for tau_ind in range(half_length_taus):
-            print(taus[tau_ind])
-            print(taus[-tau_ind - 1])
+            
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break  
             
             # Stream the sequence
-            args = [taus[tau_ind], polarization_time, signal_time, reference_time, 
+            args = [taus[tau_ind_first], polarization_time, signal_time, reference_time, 
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_pulse_init, uwave_pi_pulse_read, taus[-tau_ind - 1],
+                    gate_time, uwave_pi_pulse_init, uwave_pi_pulse_read, taus[tau_ind_second],
                     sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_long_apd_index, ref_long_apd_index,
                     init_state, read_state]
+
+            print(' \n First relaxation time: {}'.format(taus[tau_ind_first]))
+            print('Second relaxation time: {}'.format(taus[tau_ind_second]))  
             
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)        
             
             count = cxn.apd_counter.read_stream(sig_shrt_apd_index, 1)
-            sig_counts[run_ind, tau_ind] = count
-            print('sig_shrt = ' + str(count))
+            sig_counts[run_ind, tau_ind_first] = count
+            print('First signal = ' + str(count))
             
             count = cxn.apd_counter.read_stream(ref_shrt_apd_index, 1)
-            ref_counts[run_ind, tau_ind] = count  
-            print('ref_shrt = ' + str(count))
+            ref_counts[run_ind, tau_ind_first] = count  
+            print('First Reference = ' + str(count))
             
             count = cxn.apd_counter.read_stream(sig_long_apd_index, 1)
-            sig_counts[run_ind, -tau_ind - 1] = count
-            print('sig_long = ' + str(count))
+            sig_counts[run_ind, tau_ind_second] = count
+            print('Second Signal = ' + str(count))
 
             count = cxn.apd_counter.read_stream(ref_long_apd_index, 1)
-            ref_counts[run_ind, -tau_ind - 1] = count
-            print('ref_long = ' + str(count))
+            ref_counts[run_ind, tau_ind_second] = count
+            print('Second Reference = ' + str(count))
 
     # %% Turn off the signal generator
 

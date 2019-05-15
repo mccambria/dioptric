@@ -15,23 +15,23 @@ Created on Fri Nov 23 14:57:08 2018
 
 
 # User modules
-#import PulseStreamer.pulse_streamer_jrpc
-#from PulseStreamer.pulse_streamer_jrpc import PulseStreamer
-#from PulseStreamer.pulse_streamer_jrpc import Start
-#from PulseStreamer.pulse_streamer_jrpc import Mode
-#from PulseStreamer.Sequence import Sequence
+import PulseStreamer.pulse_streamer_jrpc
+from PulseStreamer.pulse_streamer_jrpc import PulseStreamer
+from PulseStreamer.pulse_streamer_jrpc import Start
+from PulseStreamer.pulse_streamer_jrpc import Mode
+from PulseStreamer.Sequence import Sequence
 
 # Library modules
-#import nidaqmx
+import nidaqmx
 import matplotlib.pyplot as plt
-#import visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
+import visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 import threading
 import os
 import datetime
 import numpy
 import json
 import time
-#import labrad
+import labrad
 from scipy import asarray as ar,exp
 
 # %% xyz sets
