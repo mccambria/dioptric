@@ -47,7 +47,7 @@ def get_seq(pulser_wiring, args):
     print(pulser_do_ref_long_apd_gate)
     
     
-    pulser_do_uwave = pulser_wiring['do_uwave_gate']
+    pulser_do_uwave = pulser_wiring['do_uwave_gate_0']
     pulser_do_aom = pulser_wiring['do_aom']
     
     # %% Write the microwave sequence to be used.
@@ -167,7 +167,7 @@ if __name__ == '__main__':
               'do_apd_gate_2': 6,
               'do_apd_gate_3': 7,
               'do_aom': 2,
-              'do_uwave_gate': 3}
+              'do_uwave_gate_0': 3}
 
     args = [2000, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 300, 0, 1000, 4000, 0, 1, 2, 3]
     seq, ret_vals = get_seq(wiring, args)

@@ -38,7 +38,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
          uwave_freq_plus, uwave_freq_minus, uwave_power, 
          uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
          num_steps, num_reps, num_runs, 
-         init_state, read_state, name='untitled'):
+         init_read_state, name='untitled'):
     
     
     # %% Defiene the times to be used in the sequence
@@ -61,9 +61,13 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
-    gate_time = 350  
+    gate_time = 328 
     
-            
+    # %% Unpack the initial and read state
+    
+    init_state = init_read_state[0]
+    read_state = init_read_state[1]  
+    
     # %% Setting initialize and readout states
     
     if init_state == 0:
@@ -173,7 +177,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
 #    expected_run_time_m = expected_run_time / 60 # s
 #
 #    
-#    msg = 'Expected run time: {} minutes. ' \
+#    msg = 'Expected run time: {:.1f} minutes. ' \
 #        'Enter \'y\' to continue: '.format(expected_run_time_m)
 #    if input(msg) != 'y':
 #        return
@@ -251,7 +255,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_long_apd_index, ref_long_apd_index,
                     init_state, read_state]
 
-            print(' \n First relaxation time: {}'.format(taus[tau_ind_first]))
+            print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
             print('Second relaxation time: {}'.format(taus[tau_ind_second]))  
             
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)        
