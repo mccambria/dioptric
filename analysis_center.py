@@ -12,7 +12,7 @@ Script to run various analysis techniques on the data.
 
 # User modules
 #import Utils.tool_belt as tool_belt
-import majorroutines.image_sample as image_sample
+import majorroutines.image_sample_tmp_tmp as image_sample
 import majorroutines.t1_measurement as t1_measurement
 
 
@@ -29,7 +29,7 @@ def create_scan_image_in_position_space():
     # Run the function
     image_sample.reformat_plot(colorMap, save_file_type)
     
-def fit_exponential_decay(open_file_name):
+def fit_exponential_decay_from_basic_t1(open_file_name):
     # This function fits an exponential decay to a t1 measurement
     
     save_file_type = 'png'
@@ -49,8 +49,8 @@ if __name__ == "__main__":
 
     # %% Functions to run
     
-#    recreate_image_sample()
-    fit_exponential_decay('2019-05-11_19-53-32_ayrton12')
+    create_scan_image_in_position_space()
+#    fit_exponential_decay_from_basic_t1('2019-05-11_19-53-32_ayrton12')
     
     
     

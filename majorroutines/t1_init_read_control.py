@@ -389,6 +389,6 @@ if __name__ == "__main__":
     # %% Functions to run
     
 #    recreate_image_sample()
-    t1_exponential_decay_edit('2019-05-11_19-53-32_ayrton12', 'png')
+    t1_exponential_decay_edit('2019-05-10_19-48-36_ayrton12', 'png')
 
     
