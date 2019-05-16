@@ -381,13 +381,20 @@ if __name__ == '__main__':
 #                                [plus_to_minus,  [0, 500*10**3],  201],
 #                                [minus_to_plus,  [0, 500*10**3],  201]])
     
-    t1_exp_array = numpy.array([[plus_to_zero,   [0, 500*10**3], 51, 2 * 10**4],
-                                [minus_to_zero,  [0, 500*10**3], 51, 2 * 10**4],
+    t1_exp_array = numpy.array([
                                 [plus_to_plus,   [0, 500*10**3],  26, 2 * 10**4],
                                 [minus_to_minus, [0, 500*10**3],  26, 2 * 10**4],
                                 [zero_to_plus,   [0, 500*10**3], 51, 2 * 10**4],
                                 [zero_to_minus,  [0, 500*10**3], 51, 2 * 10**4],
-                                [zero_to_zero,   [0, 1000*10**3], 26, 2 * 10**4]])
+                                [zero_to_zero,   [0, 1000*10**3], 26, 2 * 10**4],
+                                [plus_to_plus,   [0, 50*10**3],  101, 5 * 10**4],
+                                [minus_to_minus, [0, 50*10**3],  101, 5 * 10**4]])
+    
+    t1_exp_double_array = numpy.array([
+                                        [plus_to_minus, [0, 50*10**3], 101, 5 * 10**4],
+                                        [minus_to_plus, [0, 50*10**3], 101, 5 * 10**4],
+                                        [plus_to_minus, [0, 500*10**3], 51, 2 * 10**4],
+                                        [minus_to_plus, [0, 500*10**3], 51, 2 * 10**4]])
     
 #    params_array = numpy.array([[nv1, 2.851, 89, 2.880, 82, 35],
 #                                [nv2_2019_04_30, 2.854, 104, 2.880, 126, 50],
