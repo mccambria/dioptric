@@ -186,6 +186,8 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
             print('centers: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*opti_coords))
             drift = numpy.array(opti_coords) - numpy.array(coords)
             print('drift: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*drift))
+            
+        return opti_coords, optimization_success
     else:
         # Let the user know something went wrong and reset to what was passed
         print('Centers could not be located.')
@@ -205,10 +207,11 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
                     center_text = center_text.format(center)
                 center_texts.append(center_text)
             print(opti_coords)
-            print(', '.join(center_texts))                               
+            print(', '.join(center_texts))
+                               
+        return coords, optimization_success
     
     
-    return opti_coords, optimization_success
 
 # %% Main
 
@@ -308,7 +311,7 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
 
     num_steps = 51
 
-    xy_range = 0.02
+    xy_range = 0.015
     z_range = 5.0
 
     # The galvo's small angle step response is 400 us

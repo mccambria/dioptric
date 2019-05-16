@@ -59,7 +59,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
-    gate_time = 328  
+    gate_time = 450  
     
     # %% Unpack the initial and read state
     

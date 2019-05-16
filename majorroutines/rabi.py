@@ -48,7 +48,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     reference_wait_time = 2 * 10**3
     background_wait_time = 1 * 10**3
     aom_delay_time = 750
-    gate_time = 328
+    gate_time = 450
 
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s

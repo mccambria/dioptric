@@ -21,7 +21,7 @@ snr_list = []
 #min_delay_time = 250
 #max_delay_time = 400
 #num_delay_steps = int((max_delay_time - min_delay_time) / 10 + 1)
-#delay_time_list = numpy.linspace(min_delay_time, max_delay_time, num = num_delay_steps).astype(int)
+#delay_time_array = numpy.linspace(min_delay_time, max_delay_time, num = num_delay_steps).astype(int)
 
 nd_list = [0.5, 1.0, 1.5, 2.0]
     
@@ -31,10 +31,18 @@ for file in file_list:
         
         data = json.load(json_file)
         
+        sig_counts = numpy.array(data['sig_counts'])
+        ref_counts = numpy.array(data['ref_counts'])
         norm_avg_sig = data['norm_avg_sig']
         
-    sig_stat = 1 - numpy.average(norm_avg_sig)# calculate the contrast between the two
-    st_dev_stat = numpy.std(norm_avg_sig)    
+    # using contrast to define signal
+#    sig_stat = 1 - numpy.average(norm_avg_sig)# calculate the contrast between the two
+#    st_dev_stat = numpy.std(norm_avg_sig)    
+    
+    # using high - low counts to define signal
+    
+    sig_stat = numpy.average(ref_counts - sig_counts)
+    st_dev_stat = numpy.std(ref_counts - sig_counts)
     sig_to_noise_ratio = sig_stat / st_dev_stat
     
     snr_list.append(sig_to_noise_ratio)
@@ -55,11 +63,11 @@ linspace_time = numpy.linspace(0.5, 2.0, num = 1000)
 fig, ax = plt.subplots(1, 1, figsize=(12, 10))
 ax.plot(nd_list, snr_list, 'ro', label = 'data')
 ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
-ax.set_xlabel('ND filter')
+ax.set_xlabel('ND Filter')
 ax.set_ylabel('Signal-to-noise ratio') 
 ax.legend() 
 
-text = ('Optimal ND filter = {:.1f}'.format(popt[2]))
+text = ('Optimal ND filter = {:.2f}'.format(popt[2]))
 
 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
 ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,

@@ -155,9 +155,9 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
 
     # %% Calculate the statistics of the run
 
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    norm_avg_sig = avg_ref_counts - avg_sig_counts  
     
-    sig_stat = 1 - numpy.average(norm_avg_sig)
+    sig_stat = numpy.average(norm_avg_sig)
     
     st_dev_stat = numpy.std(norm_avg_sig)
     
@@ -229,58 +229,97 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
     
-    return sig_to_noise_ratio
+    return sig_to_noise_ratio, coords
+
+# %%
     
 if __name__ == '__main__':
     
     import labrad
+    from scipy.optimize import curve_fit
     
     name = 'Ayrton 12'
-    coords = [0.251, 0.238, 48.2]
-    nd_filter = 2.0
+    coords = [0.246, 0.235, 49.4]
+    nd_filter = 1.5
 
     apd_a_index = 0
     apd_b_index = 1
-    expected_counts = None
+    expected_counts = 30
     
     uwave_freq = 2.851
     uwave_power = 9
-    uwave_pi_pulse = 80.5
+    uwave_pi_pulse = 60.45
 
     num_steps = 101
-    num_reps = 10**5
+    num_reps = 10 * 10**4
     num_runs = 1
     
-    count_gate_time = 350
+#    count_gate_time = 350
     
-    with labrad.connect() as cxn:
-        SNR = main(cxn, coords, nd_filter, apd_a_index, apd_b_index, expected_counts,
-             uwave_freq, uwave_power, uwave_pi_pulse, count_gate_time,
-             num_steps, num_reps, num_runs, name)
+#    with labrad.connect() as cxn:
+#        SNR = main(cxn, coords, nd_filter, apd_a_index, apd_b_index, expected_counts,
+#             uwave_freq, uwave_power, uwave_pi_pulse, count_gate_time,
+#             num_steps, num_reps, num_runs, name)
         
-#    snr_list = []
-#    min_delay_time = 250
-#    max_delay_time = 400
-#    num_delay_steps = int((max_delay_time - min_delay_time) / 10 + 1)
-#    delay_time_list = numpy.linspace(min_delay_time, max_delay_time, num = num_delay_steps).astype(int)
+    snr_list = []
+    min_delay_time = 400
+    max_delay_time = 500
+
+#    min_delay_time = 500
+#    max_delay_time = 520    
     
-#    for gate_ind in delay_time_list:
-#        count_gate_time = gate_ind
-#    
-#        with labrad.connect() as cxn:
-#            SNR = main(cxn, coords, nd_filter, apd_a_index, apd_b_index, expected_counts,
-#                 uwave_freq, uwave_power, uwave_pi_pulse, count_gate_time,
-#                 num_steps, num_reps, num_runs, name)
-#            
-#            snr_list.append(SNR)
+    num_delay_steps = int((max_delay_time - min_delay_time) / 25 + 1)
+    delay_time_list = numpy.linspace(min_delay_time, max_delay_time, num = num_delay_steps).astype(int)
+    
+    for gate_ind in delay_time_list:
+        count_gate_time = gate_ind
+    
+        with labrad.connect() as cxn:
+            ret_vals = main(cxn, coords, nd_filter, apd_a_index, apd_b_index, expected_counts,
+                 uwave_freq, uwave_power, uwave_pi_pulse, count_gate_time,
+                 num_steps, num_reps, num_runs, name)
             
-#    print(snr_list)
-#    
-#    fig, ax = plt.subplots(1, 1, figsize=(12, 10))
-#    ax.plot(delay_time_list, snr_list, 'r-')
-#    ax.set_xlabel('Gate time (ns)')
-#    ax.set_ylabel('Signal-to-noise ratio')  
-#    
-#    fig.canvas.draw()
-#    fig.canvas.flush_events()
+            snr_value = ret_vals[0]
+            snr_list.append(snr_value)
+            coords = ret_vals[1]
+            
+    print(snr_list)
+    
+    def parabola(t, offset, amplitude, delay_time):
+        return offset + amplitude * (t - delay_time)**2  
+    
+    offset = 10
+    amplitude = 100
+    delay_time = 300
+    
+    popt,pcov = curve_fit(parabola, delay_time_list, snr_list, 
+                              p0=[offset, amplitude, delay_time]) 
+    
+    linspace_time = numpy.linspace(min_delay_time, max_delay_time, num = 1000)
+    
+    fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+    ax.plot(delay_time_list, snr_list, 'ro', label = 'data')
+    ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
+    ax.set_xlabel('Gate time (ns)')
+    ax.set_ylabel('Signal-to-noise ratio') 
+    ax.legend() 
+    
+    text = ('Optimal gate time = {:.1f} ns'.format(popt[2]))
+    
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
+                                verticalalignment="top", bbox=props)
+    
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'snr_list': snr_list,
+            'delay_time_list': delay_time_list.tolist()}
+    
+    file_path = tool_belt.get_file_path(__file__, timestamp, 'Ayrton12_SNR_fit')
+    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(raw_data, file_path)
+    
             
