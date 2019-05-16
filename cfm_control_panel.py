@@ -25,6 +25,7 @@ import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_measurement as t1_measurement
 import majorroutines.t1_init_read_control as t1_init_read_control
 import majorroutines.t1_double_quantum as t1_double_quantum
+import majorroutines.ramsey as ramsey
 #import majorroutines.t1_measurement_single as t1_measurement_single
 
 
@@ -198,7 +199,7 @@ def do_t1_double_quantum(name, coords, nd_filter,
                       sig_long_apd_index, ref_long_apd_index, expected_counts,
                       uwave_freq_plus, uwave_freq_minus, 
                       uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                      relaxation_time_range, num_steps,
+                      relaxation_time_range, num_steps, num_reps,
                       init_read_state):
     
     # Set right now for 2019-04-30-NV2
@@ -215,7 +216,7 @@ def do_t1_double_quantum(name, coords, nd_filter,
 #    num_steps = 201
 #    num_steps = 5
     
-    num_reps =  2 * 10**4
+#    num_reps =  2 * 10**4
     
     num_runs = 20
 #    num_runs = 1
@@ -231,6 +232,27 @@ def do_t1_double_quantum(name, coords, nd_filter,
                      init_read_state, name)
          
     return new_coords
+
+def do_ramsey_measurement(name, coords, nd_filter, 
+                      sig_shrt_apd_index, ref_shrt_apd_index,
+                      sig_long_apd_index, ref_long_apd_index, expected_counts):
+    
+    uwave_power = 9
+    uwave_freq = 2.852
+    uwave_pi_half_pulse = 32
+    precession_time_range = [0, 1 * 10**3]
+    
+    num_steps = 21
+    num_reps = 10**5
+    num_runs = 3
+    
+    
+    with labrad.connect() as cxn:
+            ramsey.main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
+                        sig_long_apd_index, ref_long_apd_index, expected_counts,
+                        uwave_freq, uwave_power, uwave_pi_half_pulse, precession_time_range,
+                        num_steps, num_reps, num_runs, 
+                        name)
          
 #def do_t1_measurement_single(name, coords, nd_filter,
 #                             sig_apd_index, ref_apd_index, expected_counts):
@@ -306,7 +328,7 @@ if __name__ == '__main__':
 #        [0.125, -0.159, 48.7],
 #        [0.292, -0.158, 48.7]]
     
-    nv1 = [0.245, 0.234, 49.2] # Great nv!
+    nv1 = [0.242, 0.233, 49.3] # Great nv!
     nv2 = [0.370, 0.111, 48.6]
     nv3 = [0.235, -0.122, 48.9]
     nv4 = [0.288, -0.156, 48.4] # Good nv
@@ -381,8 +403,7 @@ if __name__ == '__main__':
 #                                [plus_to_minus,  [0, 500*10**3],  201],
 #                                [minus_to_plus,  [0, 500*10**3],  201]])
     
-    t1_exp_array = numpy.array([
-                                [plus_to_plus,   [0, 500*10**3],  26, 2 * 10**4],
+    t1_exp_array = numpy.array([[plus_to_plus,   [0, 500*10**3],  26, 2 * 10**4],
                                 [minus_to_minus, [0, 500*10**3],  26, 2 * 10**4],
                                 [zero_to_plus,   [0, 500*10**3], 51, 2 * 10**4],
                                 [zero_to_minus,  [0, 500*10**3], 51, 2 * 10**4],
@@ -390,11 +411,11 @@ if __name__ == '__main__':
                                 [plus_to_plus,   [0, 50*10**3],  101, 5 * 10**4],
                                 [minus_to_minus, [0, 50*10**3],  101, 5 * 10**4]])
     
-    t1_exp_double_array = numpy.array([
-                                        [plus_to_minus, [0, 50*10**3], 101, 5 * 10**4],
-                                        [minus_to_plus, [0, 50*10**3], 101, 5 * 10**4],
-                                        [plus_to_minus, [0, 500*10**3], 51, 2 * 10**4],
-                                        [minus_to_plus, [0, 500*10**3], 51, 2 * 10**4]])
+    t1_exp_double_array = numpy.array([[plus_to_minus, [0, 50*10**3], 101, 5 * 10**4],
+                                       [minus_to_plus, [0, 50*10**3], 101, 5 * 10**4],
+                                       [plus_to_minus, [0, 500*10**3], 51, 2 * 10**4],
+                                       [minus_to_plus, [0, 500*10**3], 51, 2 * 10**4]])
+
     
 #    params_array = numpy.array([[nv1, 2.851, 89, 2.880, 82, 35],
 #                                [nv2_2019_04_30, 2.854, 104, 2.880, 126, 50],
@@ -418,6 +439,8 @@ if __name__ == '__main__':
 #            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
 #            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.852)
 #            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.880)
+#            do_ramsey_measurement(name, coords, nd_filter, apd_a_index, 
+#                              apd_b_index, apd_c_index, apd_d_index, expected_counts)
 #            do_t1_measurement(name, coords, nd_filter, apd_a_index, 
 #                              apd_b_index, apd_c_index, apd_d_index, expected_counts,
 #                              uwave_freq, uwave_pi_pulse, relaxation_time_range, measure_spin_0)
@@ -482,8 +505,29 @@ if __name__ == '__main__':
                               init_read_state)
                 
                 print("new coordinates:" + str(ret_val)) 
-                coords = ret_val                
+                coords = ret_val       
             
+            # now run the double quantum measurements
+            
+            uwave_pi_pulse_minus = 95
+            
+            for exp_ind_2 in range(len(t1_exp_double_array)):
+                
+                init_read_state = t1_exp_double_array[exp_ind_2, 0]
+                relaxation_time_range = t1_exp_double_array[exp_ind_2, 1]
+                num_steps = t1_exp_double_array[exp_ind_2, 2]
+                num_reps = t1_exp_double_array[exp_ind_2, 3]
+                
+                ret_val = do_t1_double_quantum(name, coords, nd_filter, apd_a_index, 
+                              apd_b_index, apd_c_index, apd_d_index, expected_counts,
+                              uwave_freq_plus, uwave_freq_minus, 
+                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                              relaxation_time_range, num_steps, num_reps,
+                              init_read_state)
+                
+                print("new coordinates:" + str(ret_val)) 
+                coords = ret_val 
+                
             
         # t1 measurement
         

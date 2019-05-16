@@ -5,10 +5,10 @@ T1 measurement routine.
 This version of t1 allows the the readout and measurement of the initial and 
 readout states of (1,-1) and (-1,1). 
 
-The rf frequency takes the initial state to set on our signal generator. The 
-readout frequence must be set on the other signal generator.
+The rf frequency takes the +1 state to set on our signal generator. The 
+-1 frequency must be set on the other signal generator.
 
-To specify the initial and readout states, pass int othe function the variables 
+To specify the initial and readout states, pass into the function the variables 
 init_state and read_state as either 1, or -1. 
 
 Created on Wed Apr 24 15:01:04 2019
@@ -61,7 +61,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
-    gate_time = 328 
+    gate_time = 450
     
     # %% Unpack the initial and read state
     
@@ -187,12 +187,12 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     startFunctionTime = time.time()
     
      # %% Set up the microwaves
-     
+     # hardwire the tektronix sig gen to use the ms = +1 frequency
     cxn.microwave_signal_generator.set_freq(uwave_freq_plus)
-    # hardwire in this specil case
-    if init_state == -1 and read_state == -1:
-        cxn.microwave_signal_generator.set_freq(uwave_freq_minus)
-        uwave_pi_pulse_init = round(82.65)
+    # hardwire in this special case
+#    if init_state == -1 and read_state == -1:
+#        cxn.microwave_signal_generator.set_freq(uwave_freq_minus)
+#        uwave_pi_pulse_init = round(82.65)
     cxn.microwave_signal_generator.set_amp(uwave_power)
     cxn.microwave_signal_generator.uwave_on()
     
@@ -330,6 +330,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             'expected_counts': expected_counts,
             'expected_counts-units': 'kcps',
             'nd_filter': nd_filter,
+            'gate_time': gate_time,
+            'gate_time-units': 'ns',
             'uwave_freq_init': uwave_freq_init,
             'uwave_freq_init-units': 'GHz',
             'uwave_freq_read': uwave_freq_read,
