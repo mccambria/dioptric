@@ -9,7 +9,7 @@ Created on Tue Apr  9 15:18:53 2019
 """
 
 import numpy
-import utils.tool_belt as tool_belt
+#import utils.tool_belt as tool_belt
 import time
 
 import json
@@ -181,7 +181,7 @@ def reformat_plot(colorMap, save_file_type):
         # x and y axes labels
         # add title
         # add colorbar
-        from matplotlib_scalebar.scalebar import ScaleBar
+
         
         plt.xlabel('Position ($\mu$m)')
         plt.ylabel('Position ($\mu$m)')
@@ -194,8 +194,9 @@ def reformat_plot(colorMap, save_file_type):
         cbar = plt.colorbar(img)
         cbar.ax.set_title('kcts/sec')
         
-        scalebar = ScaleBar(0.2) # 1 pixel = 0.2 meter
-        plt.gca().add_artist(scalebar)
+#        from matplotlib_scalebar.scalebar import ScaleBar       
+#        scalebar = ScaleBar(0.2) # 1 pixel = 0.2 meter
+#        plt.gca().add_artist(scalebar)
                
         fig.canvas.draw()
         fig.canvas.flush_events()
