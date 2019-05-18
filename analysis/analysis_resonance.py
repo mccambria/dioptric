@@ -139,11 +139,11 @@ def fit_resonance(save_file_type):
     ax.plot(freqs, gaus(freqs,*popt),'r-',label='fit')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
-    ax.set_title('ESR (60\N{DEGREE SIGN})')
+#    ax.set_title('ESR (60\N{DEGREE SIGN})')
     ax.legend()
     text1 = "\n".join(("Fluorescent Contrast=" + "%.3f"%(popt[1]),
-                      "Center Frequency=" + "%.3f"%(popt[2]) + " GHz",
-                      "Std Deviation=" + "%.3f"%(popt[3]) + " GHz"))
+                      "Center Frequency=" + "%.4f"%(popt[2]) + " GHz",
+                      "Std Deviation=" + "%.4f"%(popt[3]) + " GHz"))
     text2 = "\n".join(("Fluorescent Contrast=" + "%.3f"%(popt[4]),
                       "Center Frequency=" + "%.3f"%(popt[5]) + " GHz",
                       "Std Deviation=" + "%.3f"%(popt[6]) + " GHz"))
@@ -160,7 +160,7 @@ def fit_resonance(save_file_type):
     fig.canvas.flush_events()
     
     # Save the file in the same file directory
-#    fig.savefig(open_file_name + 'replot' + save_file_type)
+    fig.savefig(open_file_name + 'replot' + save_file_type)
     
 # %%
     
