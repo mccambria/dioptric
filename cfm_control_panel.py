@@ -477,34 +477,7 @@ if __name__ == '__main__':
 #                              apd_b_index, apd_c_index, apd_d_index, expected_counts,
 #                              init_state = -1, read_state = 0)
             
-        # Double Quantum t1
-
-#        for nv_ind in [0]:
-#            
-#            coords = params_array[nv_ind, 0]
-#            
-#            uwave_freq_plus = params_array[nv_ind, 1]
-#            uwave_pi_pulse_plus = params_array[nv_ind, 2]
-#            uwave_freq_minus = params_array[nv_ind, 3]
-#            uwave_pi_pulse_minus = params_array[nv_ind, 4]
-#            expected_counts = params_array[nv_ind, 5]
-#            
-#            for exp_ind in [0,1]:
-#                
-#                init_read_state = t1_exp_array[exp_ind, 0]
-#                relaxation_time_range = t1_exp_array[exp_ind, 1]
-#                num_steps = t1_exp_array[exp_ind, 2]
-#                
-#                ret_val = do_t1_double_quantum(name, coords, nd_filter, apd_a_index, 
-#                              apd_b_index, apd_c_index, apd_d_index, expected_counts,
-#                              uwave_freq_plus, uwave_freq_minus, 
-#                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-#                              relaxation_time_range, num_steps,
-#                              init_read_state)
-#                
-#                print("new coordinates:" + str(ret_val)) 
-#                coords = ret_val  
-          
+        
           
         # %% FULL CONTROL T1
 
@@ -533,51 +506,11 @@ if __name__ == '__main__':
 #                              relaxation_time_range, num_steps, num_reps,
 #                              init_read_state)                
 #                
-#                print("new coordinates:" + str(ret_val)) 
+#                print('new coords: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*ret_val)) 
 #                coords = ret_val       
-            
-        # %%
-#            # now run the double quantum measurements
-#            
-#            # uwave_pi_pulse_minus = 95
-#            
-#            for exp_ind_2 in range(len(t1_exp_array)):
-#                
-#                init_read_state = t1_exp_array[exp_ind_2, 0]
-#                relaxation_time_range = t1_exp_array[exp_ind_2, 1]
-#                num_steps = t1_exp_array[exp_ind_2, 2]
-#                num_reps = t1_exp_array[exp_ind_2, 3]
-        
-#                ret_val = do_t1_init_read_control(name, coords, nd_filter, apd_a_index, 
-#                              apd_b_index, apd_c_index, apd_d_index, expected_counts,
-#                              uwave_freq_plus, uwave_freq_minus, 
-#                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-#                              relaxation_time_range, num_steps, num_reps,
-#                              init_read_state)             
-#                
-#                print("new coordinates:" + str(ret_val)) 
-#                coords = ret_val 
                 
 # %%            
-        # t1 measurement
-        
-#        for nv in nv_list: 
-#            coords = nv
-#            
-#            for t1_ind in [0,1]:
-#                
-#                relaxation_time_range = t1_array[t1_ind,0]
-#                uwave_freq = t1_array[t1_ind, 1]
-#                uwave_pi_pulse = t1_array[t1_ind, 2]
-#                measure_spin_0 = t1_array[t1_ind, 3]
-#                expected_counts = t1_array[t1_ind, 4]
-#            
-#                ret_val = do_t1_measurement(name, coords, nd_filter, apd_a_index, 
-#                                  apd_b_index, apd_c_index, apd_d_index, expected_counts,
-#                                  uwave_freq, uwave_pi_pulse, relaxation_time_range, measure_spin_0)
-#                
-#                print("new coordinates:" + str(ret_val)) 
-#                coords = ret_val
+
     finally:
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
