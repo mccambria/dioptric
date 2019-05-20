@@ -24,7 +24,7 @@ from scipy.optimize import curve_fit
 
 
 def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
-         uwave_freq, uwave_power, uwave_time_range,
+         uwave_freq, uwave_power, uwave_time_range, do_uwave_gate_number,
          num_steps, num_reps, num_runs, name='untitled'):
 
     # %% Get the starting time of the function
@@ -34,7 +34,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     # %% Initial calculations and setup
     
     # Set which signal generator to use. 0 is the tektronix, 1 is HP
-    do_uwave_gate = 1
+    do_uwave_gate = do_uwave_gate_number
     
     if do_uwave_gate == 0:
         do_uwave_gen = 'Tektronix'

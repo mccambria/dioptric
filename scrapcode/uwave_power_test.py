@@ -17,7 +17,7 @@ def check_power():
         cxn.microwave_signal_generator.set_amp(9.0)
         cxn.microwave_signal_generator.uwave_on()
         # 2 is the tektronix sig gen, 3 is the HP sig gen
-        cxn.pulse_streamer.constant(2)
+        cxn.pulse_streamer.constant(3)
 
         while True:
             power = input('Enter a power or nothing to stop: ')

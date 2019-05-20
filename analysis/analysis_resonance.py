@@ -145,7 +145,7 @@ def fit_resonance(save_file_type):
                       "Center Frequency=" + "%.4f"%(popt[2]) + " GHz",
                       "Std Deviation=" + "%.4f"%(popt[3]) + " GHz"))
     text2 = "\n".join(("Fluorescent Contrast=" + "%.3f"%(popt[4]),
-                      "Center Frequency=" + "%.3f"%(popt[5]) + " GHz",
+                      "Center Frequency=" + "%.4f"%(popt[5]) + " GHz",
                       "Std Deviation=" + "%.3f"%(popt[6]) + " GHz"))
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     
