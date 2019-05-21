@@ -2,14 +2,16 @@
 """
 T1 measurement routine.
 
-This version of t1 allows the the readout and measurement of the initial and 
-readout states of (1,-1) and (-1,1). 
+This version of t1 allows the the readout and measurement of all nine possible
+combinations of the preparation and readout of the states in relaxation 
+measurements.
 
-The rf frequency takes the +1 state to set on our signal generator. The 
--1 frequency must be set on the other signal generator.
+With the current HP signal generator we have, we write the +1 frequency to the
+Tektronix signal generator, and must set the HP signal generator to the -1 freq
 
-To specify the initial and readout states, pass into the function the variables 
-init_state and read_state as either 1, or -1. 
+To specify the preparation and readout states, pass into the function a list in 
+the form [preparation state, readout state]. That is passed in as 
+init_read_state.
 
 Created on Wed Apr 24 15:01:04 2019
 
@@ -38,7 +40,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
          uwave_freq_plus, uwave_freq_minus, uwave_power, 
          uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
          num_steps, num_reps, num_runs, 
-         init_read_state, name='untitled'):
+         init_read_list, name='untitled'):
     
     
     # %% Defiene the times to be used in the sequence
@@ -65,8 +67,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Unpack the initial and read state
     
-    init_state = init_read_state[0]
-    read_state = init_read_state[1]  
+    init_state = init_read_list[0]
+    read_state = init_read_list[1]  
     
     # %% Setting initialize and readout states
     
@@ -172,15 +174,18 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Ask user if they wish to run experiment based on run time
     
-#    seq_time_s = seq_time / (10**9)  # s
-#    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
-#    expected_run_time_m = expected_run_time / 60 # s
-#
-#    
+    seq_time_s = seq_time / (10**9)  # s
+    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
+    expected_run_time_m = expected_run_time / 60 # m
+
+    
 #    msg = 'Expected run time: {:.1f} minutes. ' \
 #        'Enter \'y\' to continue: '.format(expected_run_time_m)
 #    if input(msg) != 'y':
 #        return
+    
+    
+    print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
     
     # %% Get the starting time of the function, to be used to calculate run time
 

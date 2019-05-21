@@ -22,12 +22,6 @@ from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
-# %% Call in file and pass in data
-
-# %% Call the file and define the file format for saving in the end
-open_file_name = '2019-05-08_17-59-41_ayrton12.txt'
-save_file_type = ".png"
-
 # %% Open the file with JSON
 
 
@@ -74,8 +68,16 @@ def fit_resonance(save_file_type):
        
 # %% Define the gaussian function
     
-    def gaus(x,offset,a1,center1,sigma1, a2, center2, sigma2):
+    def double_gaus(x,offset,a1,center1,sigma1, a2, center2, sigma2):
             return offset - a1*exp(-(x-center1)**2/(2*sigma1**2)) - a2*exp(-(x-center2)**2/(2*sigma2**2))
+        
+    def single_gaus(x,offset,a1,center1,sigma1):
+        return offset - a1*exp(-(x-center1)**2/(2*sigma1**2))
+    
+    # Guess the st dev, contrast, and veritcal offset for the fitting           
+    sigma = 0.01
+    contrast = 0.1
+    offset = 1
         
 ## %% Guess the locations of the minimums
 #            
@@ -104,67 +106,88 @@ def fit_resonance(save_file_type):
     minFreqGuess = numpy.empty([2])
 
     msg_first_resonance = 'Need two init params for resonance centers.  ' \
-        'First resoancne = '
+        'First resonance = '
     minFreqGuess[0] = input(msg_first_resonance)
     
     msg_second_resonance = '(if one resonance, input \'n\')  ' \
-        'Second resoancne = '
-    if input(msg_second_resonance) == 'n':
-        minFreqGuess[1] = minFreqGuess[0]
+        'Second resonance = '
+        
+    second_freq_guess = input(msg_second_resonance)
+    
+    if second_freq_guess == 'n':
+        minFreqGuess[1] = minFreqGuess[0]  
+        
+        popt,pcov = curve_fit(single_gaus, freqs, norm_avg_counts, 
+                      p0=[offset, contrast, minFreqGuess[0], sigma])
+
+    
+        fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+        ax.plot(freqs, norm_avg_counts,'b',label='data')
+        ax.plot(freqs, single_gaus(freqs,*popt),'r-',label='fit')
+        ax.set_xlabel('Frequency (GHz)')
+        ax.set_ylabel('Contrast (arb. units)')
+    #    ax.set_title('ESR (60\N{DEGREE SIGN})')
+        ax.legend()
+        text1 = "\n".join(("Fluorescent Contrast=" + "%.3f"%(popt[1]),
+                          "Center Frequency=" + "%.4f"%(popt[2]) + " GHz",
+                          "Std Deviation=" + "%.4f"%(popt[3]) + " GHz"))
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        
+        ax.text(0.05, 0.15, text1, transform=ax.transAxes, fontsize=12,
+                                verticalalignment="top", bbox=props)
+        
     else:
-        minFreqGuess[1] = input(msg_second_resonance)
+        minFreqGuess[1] = second_freq_guess
+        
+        popt,pcov = curve_fit(double_gaus, freqs, norm_avg_counts, 
+                      p0=[offset, contrast, minFreqGuess[0], sigma,
+                          contrast, minFreqGuess[1], sigma])
+
+    
+        fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+        ax.plot(freqs, norm_avg_counts,'b',label='data')
+        ax.plot(freqs, double_gaus(freqs,*popt),'r-',label='fit')
+        ax.set_xlabel('Frequency (GHz)')
+        ax.set_ylabel('Contrast (arb. units)')
+    #    ax.set_title('ESR (60\N{DEGREE SIGN})')
+        ax.legend()
+        text1 = "\n".join(("Fluorescent Contrast=" + "%.3f"%(popt[1]),
+                          "Center Frequency=" + "%.4f"%(popt[2]) + " GHz",
+                          "Std Deviation=" + "%.4f"%(popt[3]) + " GHz"))
+        text2 = "\n".join(("Fluorescent Contrast=" + "%.3f"%(popt[4]),
+                          "Center Frequency=" + "%.4f"%(popt[5]) + " GHz",
+                          "Std Deviation=" + "%.3f"%(popt[6]) + " GHz"))
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        
+        ax.text(0.05, 0.15, text1, transform=ax.transAxes, fontsize=12,
+                                verticalalignment="top", bbox=props)
+        ax.text(0.55, 0.15, text2, transform=ax.transAxes, fontsize=12,
+                                verticalalignment="top", bbox=props)
+    
     
 # %% If there are 1 or 2 guesses for the minimum, then fit a curve
         
-    # Guess the st dev, contrast, and veritcal offset for the fitting           
-    sigma = 0.01
-    contrast = 0.1
-    offset = 1
-
         
 #    if len(minGuess) == 1:
 #        popt,pcov = curve_fit(gaus, freq, norm_avg_counts, 
 #                      p0=[offset, contrast, minFreqGuess[0], sigma,
 #                          contrast, minFreqGuess[0], sigma])
 #    elif len(minGuess) == 2:
-    popt,pcov = curve_fit(gaus, freqs, norm_avg_counts, 
-                      p0=[offset, contrast, minFreqGuess[0], sigma,
-                          contrast, minFreqGuess[1], sigma])
+
    
         
 # %% Plot the data itself and the fitted curve
-    
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(freqs, norm_avg_counts,'b',label='data')
-    ax.plot(freqs, gaus(freqs,*popt),'r-',label='fit')
-    ax.set_xlabel('Frequency (GHz)')
-    ax.set_ylabel('Contrast (arb. units)')
-#    ax.set_title('ESR (60\N{DEGREE SIGN})')
-    ax.legend()
-    text1 = "\n".join(("Fluorescent Contrast=" + "%.3f"%(popt[1]),
-                      "Center Frequency=" + "%.4f"%(popt[2]) + " GHz",
-                      "Std Deviation=" + "%.4f"%(popt[3]) + " GHz"))
-    text2 = "\n".join(("Fluorescent Contrast=" + "%.3f"%(popt[4]),
-                      "Center Frequency=" + "%.4f"%(popt[5]) + " GHz",
-                      "Std Deviation=" + "%.3f"%(popt[6]) + " GHz"))
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    
-    ax.text(0.05, 0.15, text1, transform=ax.transAxes, fontsize=12,
-                            verticalalignment="top", bbox=props)
-    ax.text(0.55, 0.15, text2, transform=ax.transAxes, fontsize=12,
-                            verticalalignment="top", bbox=props)
-
     
     fig.canvas.draw()
     fig.set_tight_layout(True)
     fig.canvas.flush_events()
     
     # Save the file in the same file directory
-    fig.savefig(open_file_name + 'replot' + save_file_type)
+    fig.savefig(open_file_name + 'replot.' + save_file_type)
     
 # %%
     
 if __name__ == "__main__":
     
-    fit_resonance('png')
+    fit_resonance('svg')
     
