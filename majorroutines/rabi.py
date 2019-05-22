@@ -131,7 +131,6 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
         shuffle(tau_ind_list)     
         
         for tau_ind in tau_ind_list:
-
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
