@@ -131,6 +131,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
         shuffle(tau_ind_list)     
         
         for tau_ind in tau_ind_list:
+#        for tau_ind in range(len(taus)):
+#            print('Tau: {} ns'. format(taus[tau_ind]))
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
@@ -267,4 +269,4 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
 
     # %% Return value for pi pulse
 
-    return numpy.int64(rabi_period)
+    return coords
