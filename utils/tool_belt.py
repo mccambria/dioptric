@@ -32,6 +32,7 @@ import numpy
 import json
 import time
 import labrad
+import csv
 from scipy import asarray as ar,exp
 
 # %% xyz sets
@@ -351,7 +352,7 @@ def save_raw_data(rawData, filePath):
 
     with open(filePath + '.txt', 'w') as file:
         json.dump(rawData, file, indent=2)
-
+        
 
 # %% Safe stop (TM mccambria)
 
