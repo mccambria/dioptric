@@ -9,12 +9,12 @@ Created on Tue Apr  9 15:18:53 2019
 """
 
 import numpy
-import utils.tool_belt as tool_belt
+#import utils.tool_belt as tool_belt
 import time
 
 import json
 import matplotlib.pyplot as plt
-import numpy
+import math
 from tkinter import Tk
 from tkinter import filedialog
 
@@ -169,24 +169,6 @@ def reformat_plot(colorMap, save_file_type):
         yImgStepSize = yScanRange / yImgResolution
         yMin = yCenter - yScanCenterPlusMinus
         yMax = yCenter + yScanCenterPlusMinus
-        
-        # Generate the X and Y arrays for positions. The position refers to the 
-        # bottom left corner of a pixel
-        X = []
-        X.append(xMin)
-        i = 1
-        while i < (xImgResolution + 1):
-            xNextPoint = X[i - 1] + xImgStepSize
-            X.append(xNextPoint)
-            i += 1
-            
-        Y = []
-        Y.append(yMin)
-        i = 1
-        while i < (yImgResolution + 1):
-            yNextPoint = Y[i - 1] + yImgStepSize
-            Y.append(yNextPoint)
-            i += 1
             
         # Calculate the aspect ratio between y and x , to be used in the figsize
         aspRatio = yImgResolution / xImgResolution
@@ -199,6 +181,7 @@ def reformat_plot(colorMap, save_file_type):
         # x and y axes labels
         # add title
         # add colorbar
+
         
         plt.xlabel('Position ($\mu$m)')
         plt.ylabel('Position ($\mu$m)')
@@ -210,13 +193,17 @@ def reformat_plot(colorMap, save_file_type):
 
         cbar = plt.colorbar(img)
         cbar.ax.set_title('kcts/sec')
+        
+#        from matplotlib_scalebar.scalebar import ScaleBar       
+#        scalebar = ScaleBar(0.2) # 1 pixel = 0.2 meter
+#        plt.gca().add_artist(scalebar)
                
         fig.canvas.draw()
         fig.canvas.flush_events()
         
         # Save the file in the same file directory
-        fig.savefig(directory + '/' + fileName + '_replot.' + save_file_type)
-        
+#        fig.savefig(directory + '/' + fileName + '_replot.' + save_file_type)
+
     # %%
 
 def main(cxn, coords, nd_filter, x_range, y_range,

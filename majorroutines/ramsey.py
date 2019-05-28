@@ -25,6 +25,7 @@ import os
 import time
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from random import shuffle
 
 import json
 from scipy import asarray as ar,exp
@@ -33,9 +34,9 @@ from scipy import asarray as ar,exp
 
 def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
          sig_long_apd_index, ref_long_apd_index, expected_counts,
-         uwave_freq, uwave_power, uwave_pi_pulse, relaxation_time_range,
+         uwave_freq, uwave_power, uwave_pi_half_pulse, precession_time_range,
          num_steps, num_reps, num_runs, 
-         name='untitled', measure_spin_0=True):
+         name='untitled'):
     
     
 #    print(coords)
@@ -60,25 +61,21 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
-    gate_time = 300  
+    gate_time = 450  
     
     # Convert pi_pulse to integer
-    uwave_pi_pulse = round(uwave_pi_pulse)
-            
-    # %% Conditional rf on or off depending on which type of t1 to meassure
+    uwave_pi_half_pulse = round(uwave_pi_half_pulse)
     
-    if measure_spin_0 == True:
-        uwave_pi_pulse = 0
 
     # %% Create the array of relaxation times
     
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
     
-    min_relaxation_time = int( relaxation_time_range[0] )
-    max_relaxation_time = int( relaxation_time_range[1] )
+    min_precession_time = int( precession_time_range[0] )
+    max_precession_time = int( precession_time_range[1] )
     
-    taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
+    taus = numpy.linspace(min_precession_time, max_precession_time,
                           num=num_steps, dtype=numpy.int32)
      
     # %% Fix the length of the sequence to account for odd amount of elements
@@ -95,6 +92,11 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
         half_length_taus = int( len(taus) / 2 )
     elif len(taus) % 2 == 1:
         half_length_taus = int( (len(taus) + 1) / 2 )
+        
+    # Then we must use this half length to calculate the list of integers to be
+    # shuffled for each run
+    
+    tau_ind_list = list(range(0, half_length_taus))
         
     # %% Create data structure to save the counts
     
@@ -120,10 +122,10 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # pulls the file of the sequence from serves/timing/sequencelibrary
     file_name = os.path.basename(__file__)
     
-    sequence_args = [min_relaxation_time, polarization_time, signal_time, reference_time, 
+    sequence_args = [min_precession_time, polarization_time, signal_time, reference_time, 
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_pulse, max_relaxation_time,
+                    gate_time, uwave_pi_half_pulse, max_precession_time,
                     sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_long_apd_index, ref_long_apd_index]
     ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
@@ -167,16 +169,11 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             break
         
         # Optimize
-#        optimization_success = False
         ret_val = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index, 
                                expected_counts = expected_counts)
         
         coords = ret_val[0]
         optimization_success = ret_val[1]
-        
-#        print(coords)
-#        if optimization_success:
-#            optimize_failed = True
         
         # Save the coords found and if it failed
         optimization_success_list.append(optimization_success)
@@ -186,39 +183,54 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
         cxn.apd_counter.load_stream_reader(sig_shrt_apd_index, seq_time, half_length_taus)
         cxn.apd_counter.load_stream_reader(ref_shrt_apd_index, seq_time, half_length_taus)
         cxn.apd_counter.load_stream_reader(sig_long_apd_index, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(ref_long_apd_index, seq_time, half_length_taus)    
+        cxn.apd_counter.load_stream_reader(ref_long_apd_index, seq_time, half_length_taus) 
+        
+        # Shuffle the list of tau indices so that it steps thru them randomly
+        shuffle(tau_ind_list)
                 
-        for tau_ind in range(half_length_taus):
-            print(taus[tau_ind])
-            print(taus[-tau_ind - 1])
+        for tau_ind in tau_ind_list:
+            
+            # 'Flip a coin' to determine which tau (long/shrt) is used first
+            rand_boolean = numpy.random.randint(0, high=2)
+            
+            if rand_boolean == 1:
+                tau_ind_first = tau_ind
+                tau_ind_second = -tau_ind - 1
+            elif rand_boolean == 0:
+                tau_ind_first = -tau_ind - 1
+                tau_ind_second = tau_ind
+
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break  
             
             # Stream the sequence
-            args = [taus[tau_ind], polarization_time, signal_time, reference_time, 
+            args = [taus[tau_ind_first], polarization_time, signal_time, reference_time, 
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_pulse, taus[-tau_ind - 1],
+                    gate_time, uwave_pi_half_pulse, taus[tau_ind_second],
                     sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_long_apd_index, ref_long_apd_index]
+            
+            print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
+            print('Second relaxation time: {}'.format(taus[tau_ind_second])) 
             
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)        
             
             count = cxn.apd_counter.read_stream(sig_shrt_apd_index, 1)
-            sig_counts[run_ind, tau_ind] = count
+            sig_counts[run_ind, tau_ind_first] = count
             print('sig_shrt = ' + str(count))
             
             count = cxn.apd_counter.read_stream(ref_shrt_apd_index, 1)
-            ref_counts[run_ind, tau_ind] = count  
+            ref_counts[run_ind, tau_ind_first] = count  
             print('ref_shrt = ' + str(count))
             
             count = cxn.apd_counter.read_stream(sig_long_apd_index, 1)
-            sig_counts[run_ind, -tau_ind - 1] = count
+            sig_counts[run_ind, tau_ind_second] = count
             print('sig_long = ' + str(count))
 
             count = cxn.apd_counter.read_stream(ref_long_apd_index, 1)
-            ref_counts[run_ind, -tau_ind - 1] = count
+            ref_counts[run_ind, tau_ind_second] = count
             print('ref_long = ' + str(count))
 
     # %% Turn off the signal generator
@@ -236,25 +248,19 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Plot the t1 signal
 
-    # Different title for the plot based on the measurement
-    if measure_spin_0 == True:
-        spin = 'ms = 0'
-    else:
-        spin = 'ms = +/- 1'
-
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
-    ax.plot(taus / 10**6, avg_sig_counts, 'r-', label = 'signal')
-    ax.plot(taus / 10**6, avg_ref_counts, 'g-', label = 'reference')
-    ax.set_xlabel('Relaxation time (ms)')
+    ax.plot(taus / 10**3, avg_sig_counts, 'r-', label = 'signal')
+    ax.plot(taus / 10**3, avg_ref_counts, 'g-', label = 'reference')
+    ax.set_xlabel('Precession time (us)')
     ax.set_ylabel('Counts')
     ax.legend()
 
     ax = axes_pack[1]
-    ax.plot(taus / 10**6, norm_avg_sig, 'b-')
-    ax.set_title('T1 Measurement of ' + spin)
-    ax.set_xlabel('Relaxation time (ms)')
+    ax.plot(taus / 10**3, norm_avg_sig, 'b-')
+    ax.set_title('Ramsey Measurement')
+    ax.set_xlabel('Precession time (us)')
     ax.set_ylabel('Contrast (arb. units)')
 
     raw_fig.canvas.draw()
@@ -272,7 +278,6 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     raw_data = {'timestamp': timestamp,
             'timeElapsed': timeElapsed,
             'name': name,
-            'spin_measured?': spin,
             'passed_coords': passed_coords,
             'opti_coords_list': opti_coords_list,
             'coords-units': 'V',
@@ -284,10 +289,10 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             'uwave_freq-units': 'GHz',
             'uwave_power': uwave_power,
             'uwave_power-units': 'dBm',
-            'uwave_pi_pulse': uwave_pi_pulse,
-            'uwave_pi_pulse-units': 'ns',
-            'relaxation_time_range': relaxation_time_range,
-            'relaxation_time_range-units': 'ns',
+            'uwave_pi_half_pulse': uwave_pi_half_pulse,
+            'uwave_pi_half_pulse-units': 'ns',
+            'precession_time_range': precession_time_range,
+            'precession_time_range-units': 'ns',
             'num_steps': num_steps,
             'num_reps': num_reps,
             'num_runs': num_runs,

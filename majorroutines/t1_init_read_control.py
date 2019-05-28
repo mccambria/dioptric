@@ -2,13 +2,12 @@
 """
 T1 measurement routine.
 
-This version of t1 measures the t1 of (intiial state, readout state): (0,0),
-(1,1), (-1,-1).
+This version of t1 allows the the readout and measurement of two different 
+states. This version allows (initial, readout): (0,0), (1,1), (-1,-1), (0,1),
+(1,0), (0,-1), (-1,0).
 
-It uses a symmeterized pulse sequence, meaning two "experiments" occur during
-one run: a nexperiment with the shorter relaxation time and the second with the
-longer relaxation time. That was, the total seuqnce is always the same time, 
-which keeps the laser and rf power relatively constant.
+To specify the initial and readout states, pass int othe function the variables 
+init_state and read_state as either 1, 0, or -1. 
 
 Created on Wed Apr 24 15:01:04 2019
 
@@ -23,6 +22,7 @@ import majorroutines.optimize as optimize
 import numpy
 import os
 import time
+from random import shuffle
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
@@ -33,12 +33,11 @@ from scipy import asarray as ar,exp
 
 def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
          sig_long_apd_index, ref_long_apd_index, expected_counts,
-         uwave_freq, uwave_power, uwave_pi_pulse, relaxation_time_range,
+         uwave_freq_plus, uwave_freq_minus, uwave_power, 
+         uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
          num_steps, num_reps, num_runs, 
-         name='untitled', measure_spin_0=True):
+         init_read_state, name='untitled'):
     
-    
-#    print(coords)
     
     # %% Defiene the times to be used in the sequence
 
@@ -60,16 +59,44 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
-    gate_time = 300  
+    gate_time = 450  
     
-    # Convert pi_pulse to integer
-    uwave_pi_pulse = round(uwave_pi_pulse)
-            
-    # %% Conditional rf on or off depending on which type of t1 to meassure
+    # %% Unpack the initial and read state
     
-    if measure_spin_0 == True:
-        uwave_pi_pulse = 0
+    init_state = init_read_state[0]
+    read_state = init_read_state[1]
+    
+    # %% Setting initialize and readout states
+    
+    if init_state == 0:
+        uwave_pi_pulse_init = 0
+    elif init_state == 1:
+        uwave_pi_pulse_init = round(uwave_pi_pulse_plus)
+    elif init_state == -1:
+        uwave_pi_pulse_init = round(uwave_pi_pulse_minus)
 
+    if read_state == 0:
+        uwave_pi_pulse_read = 0
+#        uwave_freq = 2.87
+    elif read_state == 1:
+        uwave_pi_pulse_read =round(uwave_pi_pulse_plus)
+    elif read_state == -1:
+        uwave_pi_pulse_read = round(uwave_pi_pulse_minus)
+ 
+    # This will have to change once we impliment +1 <--> -1
+    if init_state == 1 or read_state == 1:
+        uwave_freq = uwave_freq_plus
+        
+    if init_state == -1 or read_state == -1:
+        uwave_freq = uwave_freq_minus
+        
+    if init_state == 0 and read_state == 0:
+        uwave_freq = 2.87
+        
+
+    print('Initial pi pulse: {} ns'.format(uwave_pi_pulse_init))
+    print('Readout pi pulse: {} ns'.format(uwave_pi_pulse_read))
+    print('Frequency: {} GHz'.format(uwave_freq))
     # %% Create the array of relaxation times
     
     # Array of times to sweep through
@@ -95,6 +122,11 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
         half_length_taus = int( len(taus) / 2 )
     elif len(taus) % 2 == 1:
         half_length_taus = int( (len(taus) + 1) / 2 )
+        
+    # Then we must use this half length to calculate the list of integers to be
+    # shuffled for each run
+    
+    tau_ind_list = list(range(0, half_length_taus))
         
     # %% Create data structure to save the counts
     
@@ -123,13 +155,11 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     sequence_args = [min_relaxation_time, polarization_time, signal_time, reference_time, 
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_pulse, max_relaxation_time,
+                    gate_time, uwave_pi_pulse_init, uwave_pi_pulse_read, max_relaxation_time,
                     sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_long_apd_index, ref_long_apd_index]
     ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
     seq_time = ret_vals[0]
-#    print(sequence_args)
-#    print(seq_time)
     
     # %% Ask user if they wish to run experiment based on run time
     
@@ -138,7 +168,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
 #    expected_run_time_m = expected_run_time / 60 # s
 #
 #    
-#    msg = 'Expected run time: {} minutes. ' \
+#    msg = 'Expected run time: {:.1f} minutes. ' \
 #        'Enter \'y\' to continue: '.format(expected_run_time_m)
 #    if input(msg) != 'y':
 #        return
@@ -167,16 +197,11 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             break
         
         # Optimize
-#        optimization_success = False
         ret_val = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index, 
                                expected_counts = expected_counts)
         
         coords = ret_val[0]
         optimization_success = ret_val[1]
-        
-#        print(coords)
-#        if optimization_success:
-#            optimize_failed = True
         
         # Save the coords found and if it failed
         optimization_success_list.append(optimization_success)
@@ -186,40 +211,56 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
         cxn.apd_counter.load_stream_reader(sig_shrt_apd_index, seq_time, half_length_taus)
         cxn.apd_counter.load_stream_reader(ref_shrt_apd_index, seq_time, half_length_taus)
         cxn.apd_counter.load_stream_reader(sig_long_apd_index, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(ref_long_apd_index, seq_time, half_length_taus)    
-                
-        for tau_ind in range(half_length_taus):
-            print(taus[tau_ind])
-            print(taus[-tau_ind - 1])
+        cxn.apd_counter.load_stream_reader(ref_long_apd_index, seq_time, half_length_taus) 
+        
+        # Shuffle the list of tau indices so that it steps thru them randomly
+        shuffle(tau_ind_list)
+        
+        for tau_ind in tau_ind_list:
+            
+            # 'Flip a coin' to determine which tau (long/shrt) is used first
+            rand_boolean = numpy.random.randint(0, high=2)
+            
+            if rand_boolean == 1:
+                tau_ind_first = tau_ind
+                tau_ind_second = -tau_ind - 1
+            elif rand_boolean == 0:
+                tau_ind_first = -tau_ind - 1
+                tau_ind_second = tau_ind
+
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break  
             
             # Stream the sequence
-            args = [taus[tau_ind], polarization_time, signal_time, reference_time, 
+            args = [taus[tau_ind_first], polarization_time, signal_time, reference_time, 
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_pulse, taus[-tau_ind - 1],
+                    gate_time, uwave_pi_pulse_init, uwave_pi_pulse_read, taus[tau_ind_second],
                     sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_long_apd_index, ref_long_apd_index]
+                            
+   
+            print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
+            print('Second relaxation time: {}'.format(taus[tau_ind_second]))  
             
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)        
             
             count = cxn.apd_counter.read_stream(sig_shrt_apd_index, 1)
-            sig_counts[run_ind, tau_ind] = count
-            print('sig_shrt = ' + str(count))
+            sig_counts[run_ind, tau_ind_first] = count
+            print('First signal = ' + str(count))
             
             count = cxn.apd_counter.read_stream(ref_shrt_apd_index, 1)
-            ref_counts[run_ind, tau_ind] = count  
-            print('ref_shrt = ' + str(count))
+            ref_counts[run_ind, tau_ind_first] = count  
+            print('First Reference = ' + str(count))
             
             count = cxn.apd_counter.read_stream(sig_long_apd_index, 1)
-            sig_counts[run_ind, -tau_ind - 1] = count
-            print('sig_long = ' + str(count))
+            sig_counts[run_ind, tau_ind_second] = count
+            print('Second Signal = ' + str(count))
 
             count = cxn.apd_counter.read_stream(ref_long_apd_index, 1)
-            ref_counts[run_ind, -tau_ind - 1] = count
-            print('ref_long = ' + str(count))
+            ref_counts[run_ind, tau_ind_second] = count
+            print('Second Reference = ' + str(count))
 
     # %% Turn off the signal generator
 
@@ -236,12 +277,6 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Plot the t1 signal
 
-    # Different title for the plot based on the measurement
-    if measure_spin_0 == True:
-        spin = 'ms = 0'
-    else:
-        spin = 'ms = +/- 1'
-
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
@@ -253,7 +288,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
 
     ax = axes_pack[1]
     ax.plot(taus / 10**6, norm_avg_sig, 'b-')
-    ax.set_title('T1 Measurement of ' + spin)
+    ax.set_title('T1 Measurement. Initial state: {}, readout state: {}'.format(init_state, read_state))
     ax.set_xlabel('Relaxation time (ms)')
     ax.set_ylabel('Contrast (arb. units)')
 
@@ -272,7 +307,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     raw_data = {'timestamp': timestamp,
             'timeElapsed': timeElapsed,
             'name': name,
-            'spin_measured?': spin,
+            'init_state': int(init_state),
+            'read_state': int(read_state),
             'passed_coords': passed_coords,
             'opti_coords_list': opti_coords_list,
             'coords-units': 'V',
@@ -280,12 +316,16 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             'expected_counts': expected_counts,
             'expected_counts-units': 'kcps',
             'nd_filter': nd_filter,
+            'gate_time': gate_time,
+            'gate_time-units': 'ns',
             'uwave_freq': uwave_freq,
             'uwave_freq-units': 'GHz',
             'uwave_power': uwave_power,
             'uwave_power-units': 'dBm',
-            'uwave_pi_pulse': uwave_pi_pulse,
-            'uwave_pi_pulse-units': 'ns',
+            'uwave_pi_pulse_init': uwave_pi_pulse_init,
+            'uwave_pi_pulse_init-units': 'ns',
+            'uwave_pi_pulse_read': uwave_pi_pulse_read,
+            'uwave_pi_pulse_read-units': 'ns',
             'relaxation_time_range': relaxation_time_range,
             'relaxation_time_range-units': 'ns',
             'num_steps': num_steps,
@@ -311,9 +351,9 @@ def decayExp(t, offset, amplitude, decay):
     
 # %% Fitting the data
     
-def t1_exponential_decay(open_file_name, save_file_type):
+def t1_exponential_decay_edit(open_file_name, save_file_type):
     
-    directory = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
+    directory = 'G:/Team Drives/Kolkowitz Lab Group/nvdata/t1_init_read_control/'
    
     # Open the specified file
     with open(directory + open_file_name + '.txt') as json_file:
@@ -323,7 +363,8 @@ def t1_exponential_decay(open_file_name, save_file_type):
         countsT1 = data["norm_avg_sig"]
         relaxation_time_range = data["relaxation_time_range"]
         num_steps = data["num_steps"]
-        spin = data["spin_measured?"]
+        init_state = data["init_state"]
+        read_state = data["read_state"]
         
     min_relaxation_time = relaxation_time_range[0] 
     max_relaxation_time = relaxation_time_range[1]
@@ -331,7 +372,7 @@ def t1_exponential_decay(open_file_name, save_file_type):
     timeArray = numpy.linspace(min_relaxation_time, max_relaxation_time,
                               num=num_steps, dtype=numpy.int32)
     
-    offset = 0.8
+    offset = 0.75
     amplitude = 0.1
     decay = 1/10000 # inverse ns
 
@@ -350,13 +391,13 @@ def t1_exponential_decay(open_file_name, save_file_type):
     ax.plot(linspaceTime / 10**6, decayExp(linspaceTime,*popt),'r-',label='fit')
     ax.set_xlabel('Dark Time (ms)')
     ax.set_ylabel('Contrast (arb. units)')
-    ax.set_title('T1 of ' + str(spin))
+    ax.set_title('T1 Measurement. Initial state: {}, readout state: {}'.format(init_state, read_state))
     ax.legend()
     
     text = "\n".join((r'$C + A_0 e^{-t / d}$',
                       r'$C = $' + '%.1f'%(popt[0]),
                       r'$A_0 = $' + '%.1f'%(popt[1]),
-                      r'$d = $' + "%.3f"%(decay_time / 10**6) + " ms"))
+                      r'$d = $' + "%.2f"%(decay_time / 10**3) + " us"))
     
     
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
@@ -367,6 +408,13 @@ def t1_exponential_decay(open_file_name, save_file_type):
     fig.canvas.flush_events()
     
     fig.savefig(open_file_name + 'replot.' + save_file_type)
+    
+if __name__ == "__main__":
 
+
+    # %% Functions to run
+    
+#    recreate_image_sample()
+    t1_exponential_decay_edit('2019-05-10_19-48-36_ayrton12', 'png')
 
     

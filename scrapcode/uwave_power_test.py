@@ -13,10 +13,11 @@ import matplotlib.pyplot as plt
 
 def check_power():
     with labrad.connect() as cxn:
-        cxn.microwave_signal_generator.set_freq(2.87)
-        cxn.microwave_signal_generator.set_amp(5.0)
+        cxn.microwave_signal_generator.set_freq(2.88)
+        cxn.microwave_signal_generator.set_amp(9.0)
         cxn.microwave_signal_generator.uwave_on()
-        cxn.pulse_streamer.constant(2)
+        # 2 is the tektronix sig gen, 3 is the HP sig gen
+        cxn.pulse_streamer.constant(3)
 
         while True:
             power = input('Enter a power or nothing to stop: ')
@@ -176,6 +177,6 @@ def plot_data():
 
 
 if __name__ == '__main__':
-    # check_power()
-    # check_freq()
-    plot_data()
+     check_power()
+#     check_freq()
+#    plot_data()
