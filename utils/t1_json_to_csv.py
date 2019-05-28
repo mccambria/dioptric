@@ -14,7 +14,7 @@ import numpy
 import csv
 
 folder_name = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/' \
-    '2019-04-30-NV2_70MHzSplitting_important_data'
+    '2019-04-30-NV2_45MHzSplitting_important_data'
     
 folder_items = os.listdir(folder_name)
 
@@ -49,7 +49,13 @@ for json_file_name in folder_items:
         row.append(norm_avg_sig[tau_ind])
         csv_data.append(row)
     
-    csv_file_name = str(init_state) + '_to_' + str(read_state)
+    time_scale = ''
+    if relaxation_time_range[1] < 200 * 10**3:
+        time_scale = 'short'
+    else:
+        time_scale = 'long'
+    
+    csv_file_name = '{}_to_{}_{}'.format(init_state, read_state, time_scale)
     
     with open('{}/{}.csv'.format(folder_name, csv_file_name),
               'w', newline='') as csv_file:
