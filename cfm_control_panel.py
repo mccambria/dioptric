@@ -364,7 +364,8 @@ if __name__ == '__main__':
     
 #    nv2_2019_04_30 = [-0.045, 0.072, 56.5] # 5/30
 #    nv2_2019_04_30 = [-0.036, 0.071, 56.6]  # 5/30 after installing new magnet mount
-    nv2_2019_04_30 = [-0.049, 0.081, 55.2]  # 5/31 after reinstalling new magnet mount
+#    nv2_2019_04_30 = [-0.049, 0.081, 55.2]  # 5/31 after reinstalling new magnet mount
+    nv2_2019_04_30 = [-0.048, 0.077, 55.9]  # 5/31 11am
 #    nv1_2019_05_10 = [0.286, 0.266, 56.5]
     
 #    nv_list = [center]
