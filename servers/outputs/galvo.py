@@ -35,9 +35,6 @@ class Galvo(LabradServer):
 
     def initServer(self):
         self.task = None
-        self.stream_writer = None
-        self.stream_voltages = None
-        self.stream_buffer_pos = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -75,11 +72,6 @@ class Galvo(LabradServer):
         task = nidaqmx.Task(task_name)
         self.task = task
 
-        # Clear other existing stream state attributes
-        self.stream_writer = None
-        self.stream_voltages = None
-        self.stream_buffer_pos = None
-
         # Set up the output channels
         task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_x,
                                              min_val=-10.0, max_val=10.0)
@@ -97,42 +89,12 @@ class Galvo(LabradServer):
         task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_clock,
                                         samps_per_chan=num_stream_voltages)
 
-        # We'll write incrementally if there are more than 4000 samples
-        # per channel since the DAQ buffer supports 8191 samples max
-        if False: # num_stream_voltages > 4000:
-            buffer_voltages = numpy.ascontiguousarray(stream_voltages[:,
-                                                                      0:4000])
-            # Set up the stream state attributes
-            self.stream_writer = writer
-            self.stream_voltages = stream_voltages
-            self.stream_buffer_pos = 4000
-            # Refill the buffer every 3000 samples
-            writer.write_many_sample(buffer_voltages)
-            task.register_every_n_samples_transferred_from_buffer_event(3000,
-                                                            self.fill_buffer)
-        else:
-            # Just write all the samples
-            writer.write_many_sample(stream_voltages)
+        writer.write_many_sample(stream_voltages)
 
         # Close the task once we've written all the samples
         task.register_done_event(self.close_task_internal)
 
         task.start()
-
-    def fill_buffer(self, task_handle=None, every_n_samples_event_type=None,
-                    number_of_samples=None, callback_data=None):
-        # Check if there are more than 3000 samples left to write
-        voltages = self.stream_voltages
-        buffer_pos = self.stream_buffer_pos
-        num_left_to_write = voltages.shape[1] - buffer_pos
-        if num_left_to_write > 3000:
-            next_buffer_pos = buffer_pos + 3000
-            buffer_voltages = voltages[:, buffer_pos:next_buffer_pos]
-            self.stream_buffer_pos = next_buffer_pos
-        else:
-            buffer_voltages = voltages[:, buffer_pos:]
-        cont_buffer_voltages = numpy.ascontiguousarray(buffer_voltages)
-        self.stream_writer.write_many_sample(cont_buffer_voltages)
 
     def close_task_internal(self, task_handle=None, status=None,
                             callback_data=None):
@@ -140,9 +102,6 @@ class Galvo(LabradServer):
         if task is not None:
             task.close()
             self.task = None
-            self.stream_writer = None
-            self.stream_voltages = None
-            self.stream_buffer_pos = None
         return 0
 
     @setting(0, xVoltage='v[]', yVoltage='v[]')
