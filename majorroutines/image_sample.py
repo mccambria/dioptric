@@ -249,7 +249,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
-
+    
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]
     x_high = x_voltages[x_num_steps-1]
@@ -317,6 +317,14 @@ def main(cxn, coords, nd_filter, x_range, y_range,
             tool_belt.update_image_figure(fig, img_array_kcps)
             num_read_so_far += num_new_samples
 
+    # %% Clean up
+    
+    # Stop the pulse streamer
+    cxn.pulse_streamer.force_final()
+
+    # Return to center
+    cxn.galvo.write(x_center, y_center)
+
     # %% Save the data
 
     timestamp = tool_belt.get_time_stamp()
@@ -343,8 +351,3 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
-
-    # %% Clean up
-
-    # Return to center
-    cxn.galvo.write(x_center, y_center)

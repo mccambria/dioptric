@@ -28,10 +28,15 @@ from twisted.internet.defer import ensureDeferred
 import nidaqmx
 import nidaqmx.stream_writers as stream_writers
 import numpy
+import logging
 
 
 class Galvo(LabradServer):
     name = 'galvo'
+    logging.basicConfig(level=logging.DEBUG, 
+                format='%(asctime)s %(levelname)-8s %(message)s',
+                datefmt='%y-%m-%d_%H-%M-%S',
+                filename='E:/Team Drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
 
     def initServer(self):
         self.task = None
