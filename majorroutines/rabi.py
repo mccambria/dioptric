@@ -167,15 +167,14 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     # %% Fit the data and extract piPulse
 
     # Estimated fit parameters
-    offset = 0.9
-    amplitude = 0.10
+    offset = 0.85
+    amplitude = 0.15
     frequency = 1/100
-#    phase = 1.57
     decay = 0.01
 
     init_params = [offset, amplitude, frequency, decay]
 
-    opti_params, cov_arr = curve_fit(tool_belt.sinexp, taus, norm_avg_sig,
+    opti_params, cov_arr = curve_fit(tool_belt.cosexp, taus, norm_avg_sig,
                                      p0=init_params)
 
     rabi_period = 1 / opti_params[2]
