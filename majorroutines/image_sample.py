@@ -88,109 +88,109 @@ def on_click_image(event):
     except TypeError:
         # Ignore TypeError if you click in the figure but out of the image
         pass
-    
+
 def reformat_plot(colorMap, save_file_type):
     """
-    Recreates the scan from an image_sample file. The plot will have axes in 
+    Recreates the scan from an image_sample file. The plot will have axes in
     microns
-    
-    The function will open a window to select the file. This window may appear 
+
+    The function will open a window to select the file. This window may appear
     behind Spyder, so just minimize Spyder to select a file.
-    
+
     """
     # Prompt the user to select a file
     print('Select file \n...')
-    
+
     # Select a file
-    fileName = tool_belt.ask_open_file("nvdata/image_sample") 
+    fileName = tool_belt.ask_open_file("nvdata/image_sample")
 
     if fileName == '':
         print('No file selected')
-    else: 
-        
+    else:
+
         # remove the extension
         fileNameBase = fileName[:-4]
-        
+
         # Add the .txt extension to the file naem base
-        fileName = fileNameBase + '.txt'  
+        fileName = fileNameBase + '.txt'
         print('File selected: ' + fileNameBase + '.svg')
-    
+
         # Open the specified file
         with open(fileName) as json_file:
-            
+
             # Load the data from the file
             data = json.load(json_file)
-            
+
             # Build the image array from the data
             imgArray = []
-            
+
             for line in data["img_array"]:
                 imgArray.append(line)
-                
+
             counts_array = numpy.array(imgArray)
 #            counts_array = numpy.flip(numpy.flip(imgArray, 0),1)
-            
+
             # Get the readout
             readout = data['readout']
-            
+
             # Read in the arrays of Center and Image Reoslution
             xyzCenters = data["coords"]
             imgResolution = data["num_steps"]
-            
+
             # Read in the values for the scan ranges, centers, and resolution
             yScanRange = data["y_range"]
             yCenter = xyzCenters[1]
             yImgResolution = imgResolution
-            
+
             xScanRange = data["x_range"]
             xCenter = xyzCenters[0]
-            xImgResolution = imgResolution  
-        
+            xImgResolution = imgResolution
+
         # define the readout in seconds
         readout_sec = float(readout) / 10**9
-        
+
         # Define the scale from the voltso on the Galvo to microns
         # Currently using 35 microns per volt
         scale = 35
-        
+
         # Calculate various values pertaining to the positions in the image
         xScanCenterPlusMinus = xScanRange / 2
         xImgStepSize = xScanRange / xImgResolution
         xMin = xCenter - xScanCenterPlusMinus
         xMax = xCenter + xScanCenterPlusMinus
-        
+
         yScanCenterPlusMinus = yScanRange / 2
         yImgStepSize = yScanRange / yImgResolution
         yMin = yCenter - yScanCenterPlusMinus
         yMax = yCenter + yScanCenterPlusMinus
-            
+
         # Calculate the aspect ratio between y and x , to be used in the figsize
         aspRatio = yImgResolution / xImgResolution
-        
+
         # Create the figure, specifying only one plot. x and y label inputs are self-
         # explanatory. cmap allows a choice of color mapping.
         fig, ax = plt.subplots(figsize=(8, 8 * aspRatio))
-        
-        
+
+
         plt.xlabel('Position ($\mu$m)')
         plt.ylabel('Position ($\mu$m)')
 #        plt.set_title('WeS2')
-    
+
         # Telling matplotlib what to plot, and what color map to include
-        img = ax.imshow(counts_array / 1000 / readout_sec, cmap=colorMap, interpolation='none', 
-                        extent = (scale*xMin, scale*xMax, scale*yMin, scale*yMax)) 
+        img = ax.imshow(counts_array / 1000 / readout_sec, cmap=colorMap, interpolation='none',
+                        extent = (scale*xMin, scale*xMax, scale*yMin, scale*yMax))
 
         # Add the color bar
         cbar = plt.colorbar(img)
         cbar.ax.set_title('kcts/sec')
-         
+
         # Create the image
         fig.canvas.draw()
         fig.canvas.flush_events()
-        
+
         # Save the file in the same file directory
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
-        
+
     # %%
 
 def main(cxn, coords, nd_filter, x_range, y_range,
@@ -200,7 +200,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     # %% Some initial calculations
 
     x_center, y_center, z_center = coords
-    
+
     readout_sec = float(readout) / 10**9
 
     if x_range != y_range:
@@ -223,7 +223,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
-    
+
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]
     x_high = x_voltages[x_num_steps-1]
@@ -292,7 +292,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
             num_read_so_far += num_new_samples
 
     # %% Clean up
-    
+
     # Stop the pulse streamer
     cxn.pulse_streamer.force_final()
 
@@ -325,3 +325,47 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
+
+    # %% Clean up
+
+    # Return to center
+    cxn.galvo.write(x_center, y_center)
+
+
+# %% Re-display an image if you run the file
+
+
+if __name__ == '__main__':
+    folder_name = 'C:/Users/Matt/Desktop/lost_nvs'
+    # file_name = '2019-04-29_16-39-18_ayrton12.txt'
+    file_name = '2019-05-28_16-37-29_ayrton12.txt'
+
+    with open('{}/{}'.format(folder_name, file_name)) as file:
+        data = json.load(file)
+        x_range = data['x_range']
+        y_range = data['y_range']
+        coords = data['coords']
+        num_steps = data['num_steps']
+        img_array = numpy.array(data['img_array'])
+        readout = data['readout']
+
+    x_coord = coords[0]
+    half_x_range = x_range / 2
+    x_low = x_coord - half_x_range
+    x_high = x_coord + half_x_range
+    y_coord = coords[1]
+    half_y_range = y_range / 2
+    y_low = y_coord - half_y_range
+    y_high = y_coord + half_y_range
+
+    img_array_kcps = (img_array / 1000) / (readout / 10**9)
+
+    pixel_size = x_voltages[1] - x_voltages[0]
+    half_pixel_size = pixel_size / 2
+    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                  y_low - half_pixel_size, y_high + half_pixel_size]
+
+    fig = tool_belt.create_image_figure(img_array_kcps, img_extent)
+    # Redraw the canvas and flush the changes to the backend
+    fig.canvas.draw()
+    fig.canvas.flush_events()
