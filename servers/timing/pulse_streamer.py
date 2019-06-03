@@ -203,6 +203,14 @@ class PulseStreamer(LabradServer):
         self.set_output_state(output_state)
         self.pulser.constant(self.output_state)
 
+    @setting(4)
+    def force_final(self, c):
+        """Force the PulseStreamer its current final output state.
+        Essentially a stop command.
+        """
+
+        self.pulser.forceFinal()
+
 
 __server__ = PulseStreamer()
 
