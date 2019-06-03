@@ -317,6 +317,14 @@ def main(cxn, coords, nd_filter, x_range, y_range,
             tool_belt.update_image_figure(fig, img_array_kcps)
             num_read_so_far += num_new_samples
 
+    # %% Clean up
+
+    # Stop the pulse streamer
+    cxn.pulse_streamer.force_final()
+
+    # Return to center
+    cxn.galvo.write(x_center, y_center)
+
     # %% Save the data
 
     timestamp = tool_belt.get_time_stamp()
