@@ -88,89 +88,89 @@ def on_click_image(event):
     except TypeError:
         # Ignore TypeError if you click in the figure but out of the image
         pass
-    
+
 def reformat_plot(colorMap, save_file_type):
     """
     Creates a figure of a scan from the find_nvs function originally saved as a
     JSON .txt file. The created figure has axes plotted in microns and colorplot changes
-    
-    The function will open a window to select the file. This window may appear 
+
+    The function will open a window to select the file. This window may appear
     behind Spyder, so just minimize Spyder to select a file.
-    
+
     """
     print('Select file \n...')
-    
-    
+
+
     root = Tk()
     root.withdraw()
     root.focus_force()
     directory = "G:/Team Drives/Kolkowitz Lab Group/nvdata/image_sample"
     fileName = filedialog.askopenfilename(initialdir = directory,
-                                          title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) ) 
-    
+                                          title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) )
+
 
     if fileName == '':
         print('No file selected')
-    else: 
-    
+    else:
+
         fileNameBase = fileName[:-4]
-        
-        fileName = fileNameBase + '.txt'  
+
+        fileName = fileNameBase + '.txt'
         print('File selected: ' + fileNameBase + '.svg')
-    
+
         # Open the specified file
         with open(fileName) as json_file:
-            
+
             # Load the data from the file
             data = json.load(json_file)
-            
+
             # Read in the imgArray data into an array to be used as z-values. The last
             # line flips the matrix of values along the y axis (0) and then x axis (1)
             imgArray = []
-            
+
             for line in data["img_array"]:
                 imgArray.append(line)
-                
+
             counts_array = numpy.flip(numpy.flip(imgArray, 0),1)
-            
+
             # Get the readout
             readout = data['readout']
-            
+
             # Read in the arrays of Center and Image Reoslution
             xyzCenters = data["coords"]
             imgResolution = data["num_steps"]
-            
+
             # Read in the floating values for the scan ranges, centers, and resolution
             yScanRange = data["y_range"]
             yCenter = xyzCenters[1]
             yImgResolution = imgResolution
-            
+
             xScanRange = data["x_range"]
             xCenter = xyzCenters[0]
             xImgResolution = imgResolution
-        
+
         # Remove the file suffix on the file
-        fileName = fileName[:-4]    
-        
+        fileName = fileName[:-4]
+
         # define the readout in seconds
         readout_sec = float(readout) / 10**9
-        
+
         # Define the scale from the voltso on the Galvo to microns
         # Currently using 35 microns per volt
         scale = 35
-        
+
         # Calculate various values pertaining to the positions in the image
         xScanCenterPlusMinus = xScanRange / 2
         xImgStepSize = xScanRange / xImgResolution
         xMin = xCenter - xScanCenterPlusMinus
         xMax = xCenter + xScanCenterPlusMinus
-        
+
         yScanCenterPlusMinus = yScanRange / 2
         yImgStepSize = yScanRange / yImgResolution
         yMin = yCenter - yScanCenterPlusMinus
         yMax = yCenter + yScanCenterPlusMinus
-        
-        # Generate the X and Y arrays for positions. The position refers to the 
+
+        # Generate the X and Y arrays for positions. The position refers to the
         # bottom left corner of a pixel
         X = []
         X.append(xMin)
@@ -179,7 +179,7 @@ def reformat_plot(colorMap, save_file_type):
             xNextPoint = X[i - 1] + xImgStepSize
             X.append(xNextPoint)
             i += 1
-            
+
         Y = []
         Y.append(yMin)
         i = 1
@@ -187,36 +187,36 @@ def reformat_plot(colorMap, save_file_type):
             yNextPoint = Y[i - 1] + yImgStepSize
             Y.append(yNextPoint)
             i += 1
-            
+
         # Calculate the aspect ratio between y and x , to be used in the figsize
         aspRatio = yImgResolution / xImgResolution
-        
+
         # Create the figure, specifying only one plot. x and y label inputs are self-
         # explanatory. cmap allows a choice of color mapping.
         fig, ax = plt.subplots(figsize=(8, 8 * aspRatio))
-        
+
         # Specifying various parameters of the plot, add or comment out as needed:
         # x and y axes labels
         # add title
         # add colorbar
-        
+
         plt.xlabel('Position ($\mu$m)')
         plt.ylabel('Position ($\mu$m)')
     #        plt.set_title('WeS2')
-    
+
         # Telling matplotlib what to plot, and what color map to include
-        img = ax.imshow(counts_array / 1000 / readout_sec, cmap=colorMap, interpolation='none', 
-                        extent = (scale*xMin, scale*xMax, scale*yMin, scale*yMax)) 
+        img = ax.imshow(counts_array / 1000 / readout_sec, cmap=colorMap, interpolation='none',
+                        extent = (scale*xMin, scale*xMax, scale*yMin, scale*yMax))
 
         cbar = plt.colorbar(img)
         cbar.ax.set_title('kcts/sec')
-               
+
         fig.canvas.draw()
         fig.canvas.flush_events()
-        
+
         # Save the file in the same file directory
         fig.savefig(directory + '/' + fileName + '_replot.' + save_file_type)
-        
+
     # %%
 
 def main(cxn, coords, nd_filter, x_range, y_range,
@@ -226,7 +226,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     # %% Some initial calculations
 
     x_center, y_center, z_center = coords
-    
+
     readout_sec = float(readout) / 10**9
 
     if x_range != y_range:
@@ -348,3 +348,42 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
     # Return to center
     cxn.galvo.write(x_center, y_center)
+
+
+# %% Re-display an image if you run the file
+
+
+if __name__ == '__main__':
+    folder_name = 'C:/Users/Matt/Desktop/lost_nvs'
+    # file_name = '2019-04-29_16-39-18_ayrton12.txt'
+    file_name = '2019-05-28_16-37-29_ayrton12.txt'
+
+    with open('{}/{}'.format(folder_name, file_name)) as file:
+        data = json.load(file)
+        x_range = data['x_range']
+        y_range = data['y_range']
+        coords = data['coords']
+        num_steps = data['num_steps']
+        img_array = numpy.array(data['img_array'])
+        readout = data['readout']
+
+    x_coord = coords[0]
+    half_x_range = x_range / 2
+    x_low = x_coord - half_x_range
+    x_high = x_coord + half_x_range
+    y_coord = coords[1]
+    half_y_range = y_range / 2
+    y_low = y_coord - half_y_range
+    y_high = y_coord + half_y_range
+
+    img_array_kcps = (img_array / 1000) / (readout / 10**9)
+
+    pixel_size = x_voltages[1] - x_voltages[0]
+    half_pixel_size = pixel_size / 2
+    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                  y_low - half_pixel_size, y_high + half_pixel_size]
+
+    fig = tool_belt.create_image_figure(img_array_kcps, img_extent)
+    # Redraw the canvas and flush the changes to the backend
+    fig.canvas.draw()
+    fig.canvas.flush_events()
