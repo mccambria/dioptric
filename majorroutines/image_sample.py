@@ -3,6 +3,8 @@
 Scan the galvos over the designated area, collecting counts at each point.
 Generate an image of the sample.
 
+Includes a replotting routine to show the data with axes in um instead of V.
+
 Created on Tue Apr  9 15:18:53 2019
 
 @author: Matt
@@ -15,8 +17,6 @@ import time
 import json
 import matplotlib.pyplot as plt
 import numpy
-from tkinter import Tk
-from tkinter import filedialog
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -91,30 +91,27 @@ def on_click_image(event):
     
 def reformat_plot(colorMap, save_file_type):
     """
-    Creates a figure of a scan from the find_nvs function originally saved as a
-    JSON .txt file. The created figure has axes plotted in microns and colorplot changes
+    Recreates the scan from an image_sample file. The plot will have axes in 
+    microns
     
     The function will open a window to select the file. This window may appear 
     behind Spyder, so just minimize Spyder to select a file.
     
     """
+    # Prompt the user to select a file
     print('Select file \n...')
     
-    
-    root = Tk()
-    root.withdraw()
-    root.focus_force()
-    directory = "G:/Team Drives/Kolkowitz Lab Group/nvdata/image_sample"
-    fileName = filedialog.askopenfilename(initialdir = directory,
-                                          title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) ) 
-    
+    # Select a file
+    fileName = tool_belt.ask_open_file("nvdata/image_sample") 
 
     if fileName == '':
         print('No file selected')
     else: 
-    
+        
+        # remove the extension
         fileNameBase = fileName[:-4]
         
+        # Add the .txt extension to the file naem base
         fileName = fileNameBase + '.txt'  
         print('File selected: ' + fileNameBase + '.svg')
     
@@ -124,14 +121,14 @@ def reformat_plot(colorMap, save_file_type):
             # Load the data from the file
             data = json.load(json_file)
             
-            # Read in the imgArray data into an array to be used as z-values. The last
-            # line flips the matrix of values along the y axis (0) and then x axis (1)
+            # Build the image array from the data
             imgArray = []
             
             for line in data["img_array"]:
                 imgArray.append(line)
                 
-            counts_array = numpy.flip(numpy.flip(imgArray, 0),1)
+            counts_array = numpy.array(imgArray)
+#            counts_array = numpy.flip(numpy.flip(imgArray, 0),1)
             
             # Get the readout
             readout = data['readout']
@@ -140,17 +137,14 @@ def reformat_plot(colorMap, save_file_type):
             xyzCenters = data["coords"]
             imgResolution = data["num_steps"]
             
-            # Read in the floating values for the scan ranges, centers, and resolution
+            # Read in the values for the scan ranges, centers, and resolution
             yScanRange = data["y_range"]
             yCenter = xyzCenters[1]
             yImgResolution = imgResolution
             
             xScanRange = data["x_range"]
             xCenter = xyzCenters[0]
-            xImgResolution = imgResolution
-        
-        # Remove the file suffix on the file
-        fileName = fileName[:-4]    
+            xImgResolution = imgResolution  
         
         # define the readout in seconds
         readout_sec = float(readout) / 10**9
@@ -169,24 +163,6 @@ def reformat_plot(colorMap, save_file_type):
         yImgStepSize = yScanRange / yImgResolution
         yMin = yCenter - yScanCenterPlusMinus
         yMax = yCenter + yScanCenterPlusMinus
-        
-        # Generate the X and Y arrays for positions. The position refers to the 
-        # bottom left corner of a pixel
-        X = []
-        X.append(xMin)
-        i = 1
-        while i < (xImgResolution + 1):
-            xNextPoint = X[i - 1] + xImgStepSize
-            X.append(xNextPoint)
-            i += 1
-            
-        Y = []
-        Y.append(yMin)
-        i = 1
-        while i < (yImgResolution + 1):
-            yNextPoint = Y[i - 1] + yImgStepSize
-            Y.append(yNextPoint)
-            i += 1
             
         # Calculate the aspect ratio between y and x , to be used in the figsize
         aspRatio = yImgResolution / xImgResolution
@@ -195,27 +171,25 @@ def reformat_plot(colorMap, save_file_type):
         # explanatory. cmap allows a choice of color mapping.
         fig, ax = plt.subplots(figsize=(8, 8 * aspRatio))
         
-        # Specifying various parameters of the plot, add or comment out as needed:
-        # x and y axes labels
-        # add title
-        # add colorbar
         
         plt.xlabel('Position ($\mu$m)')
         plt.ylabel('Position ($\mu$m)')
-    #        plt.set_title('WeS2')
+#        plt.set_title('WeS2')
     
         # Telling matplotlib what to plot, and what color map to include
         img = ax.imshow(counts_array / 1000 / readout_sec, cmap=colorMap, interpolation='none', 
                         extent = (scale*xMin, scale*xMax, scale*yMin, scale*yMax)) 
 
+        # Add the color bar
         cbar = plt.colorbar(img)
         cbar.ax.set_title('kcts/sec')
-               
+         
+        # Create the image
         fig.canvas.draw()
         fig.canvas.flush_events()
         
         # Save the file in the same file directory
-        fig.savefig(directory + '/' + fileName + '_replot.' + save_file_type)
+        fig.savefig(fileNameBase + '_replot.' + save_file_type)
         
     # %%
 

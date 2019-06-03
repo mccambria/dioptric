@@ -34,6 +34,8 @@ import time
 import labrad
 import csv
 from scipy import asarray as ar, exp
+from tkinter import Tk
+from tkinter import filedialog
 
 # %% xyz sets
 
@@ -276,7 +278,28 @@ def cosexp(t, offset, amp, freq, decay):
     two_pi = 2*numpy.pi
     return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
 
-
+# %% File Open utils
+    
+def ask_open_file(file_path):
+    """
+    Open a file by selecting it through a file window. File window usually 
+    opens behind Spyder, may need to minimize Spyder to see file number
+    
+    file_path: input the file path to the folder of the data, starting after
+    the Kolkowitz Lab Group folder
+    
+    Returns:
+        string: file name of the file to use in program
+    """
+    
+    root = Tk()
+    root.withdraw()
+    root.focus_force()
+    directory = str("E:/Team Drives/Kolkowitz Lab Group/" + file_path)
+    file_name = filedialog.askopenfilename(initialdir = directory,
+                                          title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) ) 
+    return file_name
+    
 # %%  Save utils
 
 
