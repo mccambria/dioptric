@@ -22,11 +22,8 @@ import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
 import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
-import majorroutines.t1_measurement as t1_measurement
-import majorroutines.t1_init_read_control as t1_init_read_control
 import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.ramsey as ramsey
-#import majorroutines.t1_measurement_single as t1_measurement_single
 
 
 # %% Minor Routines
@@ -113,7 +110,6 @@ def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index,
             expected_counts, uwave_freq, do_uwave_gate_number):
 
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation 
-    # ND 1.5 is a good starting point
     uwave_time_range = [0, 400]
     num_steps = 51
     
@@ -364,8 +360,10 @@ if __name__ == '__main__':
     
 #    nv2_2019_04_30 = [-0.045, 0.072, 56.5] # 5/30
 #    nv2_2019_04_30 = [-0.036, 0.071, 56.6]  # 5/30 after installing new magnet mount
-#    nv2_2019_04_30 = [-0.049, 0.081, 55.2]  # 5/31 after reinstalling new magnet mount
-    nv2_2019_04_30 = [-0.048, 0.077, 55.9]  # 5/31 11am
+#    nv2_2019_04_30 = [-0.046, 0.079, 56.3]  # 5/31 after reinstalling new magnet mount
+#    nv2_2019_04_30 = [-0.055, 0.076, 56.0]  # 6/1 noon
+#    nv2_2019_04_30 = [-0.053, 0.078, 56.2]  # 6/1 1:15pm
+    nv2_2019_04_30 = [-0.055, 0.077, 56.1]  # 6/2
 #    nv1_2019_05_10 = [0.286, 0.266, 56.5]
     
 #    nv_list = [center]
@@ -398,6 +396,10 @@ if __name__ == '__main__':
     num_scan_steps = 60
     
 #    scan_range = 0.05
+#    num_scan_steps = 60
+#    num_scan_steps = 30
+    
+#    scan_range = 0.01
 #    num_scan_steps = 60
      
     # %% Optimization parameters
@@ -440,24 +442,38 @@ if __name__ == '__main__':
 #                                [zero_to_zero,   [0, 1000*10**3], 26, 2 * 10**4]])
 
 
-    t1_exp_array = numpy.array([                                
-#                                [plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
+    # For splittings < 75 MHz
+    
+    # ~13 hours
+    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
                                 [plus_to_minus,  [0, 500*10**3], 41,  1 * 10**4],
-#                                [plus_to_plus,   [0, 100*10**3], 51, 2 * 10**4],
+                                [plus_to_plus,   [0, 100*10**3], 51, 2 * 10**4],
                                 [plus_to_plus,   [0, 500*10**3], 41,  1 * 10**4],
                                 [plus_to_zero,   [0, 500*10**3], 41, 1 * 10**4],
                                 [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
                                 [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
 
-
-
+    # For splittings > 75 MHz
+    
+    # ~18 hours
+#    t1_exp_array = numpy.array([[plus_to_minus,  [0, 1500*10**3], 41, 1 * 10**4],
+#                                [plus_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
+#                                [plus_to_zero,   [0, 1500*10**3], 41, 1 * 10**4],
+#                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
+#                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
+    
+    # ~18 hours
+#    t1_exp_array = numpy.array([[plus_to_minus,  [0, 1500*10**3], 41, 1 * 10**4],
+#                                [plus_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
+#                                [plus_to_zero,   [0, 2000*10**3], 31, 1 * 10**4],
+#                                [zero_to_plus,   [0, 2000*10**3], 31, 1 * 10**4],
+#                                [zero_to_zero,   [0, 2000*10**3], 31, 1 * 10**4]])
     
     # Array for the parameters of a given NV, formatted:
     # [nv coordinates, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus,
     #                            uwave_pi_pulse_minus, expected_counts]
     #   uwave_MINUS should be associated with the HP signal generator
-    
-    params_array = numpy.array([[nv2_2019_04_30, 2.8228, 90, 2.9079, 97, 62]])
+    params_array = numpy.array([[nv2_2019_04_30, 2.8380, 96, 2.8942, 102, 62]])
 
     # %% Functions to run
     
@@ -466,16 +482,16 @@ if __name__ == '__main__':
         for nv in nv_list:
             coords = nv
 #            set_xyz_zero()
-#            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
+            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
 #            do_optimize(name, coords, nd_filter, apd_a_index)
 #            do_optimize_list(name, coords, nd_filter, apd_a_index)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
-            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
+#            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
 #            ret_val = do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.8554, 0)
 #            coords = ret_val 
-#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.8228, 0)
-#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.9079, 1)
+#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.8380, 0)
+#            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.8942, 1)
 #            do_ramsey_measurement(name, coords, nd_filter, apd_a_index, 
 #                              apd_b_index, apd_c_index, apd_d_index, expected_counts)
 #            do_t1_measurement(name, coords, nd_filter, apd_a_index, 
@@ -488,7 +504,7 @@ if __name__ == '__main__':
 
         
           
-##         %% FULL CONTROL T1
+#         %% FULL CONTROL T1
 
 #        for nv_ind in range(len(params_array)):
 #            
