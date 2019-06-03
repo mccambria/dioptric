@@ -24,7 +24,7 @@ import time
 # %% Functions
 
 
-def process_raw_buffer(timestamps, apd_indices, buffer_size,
+def process_raw_buffer(timestamps, apd_indices,
                        diff_window, afterpulse_window,
                        differences_append, apd_a_index, apd_b_index):
 
@@ -32,27 +32,27 @@ def process_raw_buffer(timestamps, apd_indices, buffer_size,
     indices_to_delete_append = indices_to_delete.append
 
     # Throw out probable afterpulses
-    for click_index in range(buffer_size):
+    num_vals = timestamps.size
+    for click_index in range(num_vals):
 
         click_time = timestamps[click_index]
 
         # Determine the afterpulse channel
-        click_channel = timestamps[click_index]
+        click_channel = apd_indices[click_index]
 
         # Calculate relevant differences
         next_index = click_index + 1
-        while next_index < buffer_size:
+        while next_index < num_vals:
             diff = timestamps[next_index] - click_time
             if diff > afterpulse_window:
                 break
-            if timestamps[next_index] == click_channel:
+            if apd_indices[next_index] == click_channel:
                 indices_to_delete_append(next_index)
             next_index += 1
 
     timestamps = numpy.delete(timestamps, indices_to_delete)
 
     # Calculate differences
-    num_vals = timestamps.size
     for click_index in range(num_vals):
 
         click_time = timestamps[click_index]
@@ -123,7 +123,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
         time.sleep(max(sleep_time - calc_time_elapsed, 0))
         # Read the stream and convert from strings to int64s
         ret_vals = cxn.apd_tagger.read_tag_stream()
-        buffer_timetags, buffer_apd_indices, buffer_size = ret_vals
+        buffer_timetags, buffer_apd_indices = ret_vals
         buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
 
         # Check if we should stop
@@ -135,7 +135,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
 
         # Process data
         start_calc_time = time.time()
-        process_raw_buffer(buffer_timetags, buffer_apd_indices, buffer_size,
+        process_raw_buffer(buffer_timetags, buffer_apd_indices,
                            diff_window, afterpulse_window,
                            differences_append, apd_a_index, apd_b_index)
 
@@ -158,7 +158,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
             tool_belt.update_line_plot_figure(fig, hist)
 
         collection_index += 1
-        num_tags += buffer_size
+        num_tags += len(buffer_timetags)
         
     cxn.apd_tagger.stop_tag_stream()
 

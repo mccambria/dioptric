@@ -95,7 +95,7 @@ class ApdTagger(LabradServer):
         channels = buffer.getChannels()
         indices = list(map(lambda x: self.inverted_tagger_di_apd[x], channels))
         
-        return timestamps, indices, buffer.size
+        return timestamps, indices
     
     @setting(2)
     def stop_tag_stream(self, c):
