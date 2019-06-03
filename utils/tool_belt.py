@@ -291,6 +291,8 @@ def ask_open_file(file_path):
     Returns:
         string: file name of the file to use in program
     """
+    # Prompt the user to select a file
+    print('Select file \n...')
     
     root = Tk()
     root.withdraw()

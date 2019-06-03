@@ -10,5 +10,20 @@ deviation.
 
 @author: Aedan
 """
+import os
+import numpy
+import json
+from scipy import asarray as ar,exp
+from scipy.optimize import curve_fit
 
-import 
+def relaxation_rate_analysis(folder_name)
+    
+    os.system("ls *.txt")
+    # import arrays to work with
+    # import data, reading in the readout out states to sort them
+    # subreact the relative data to get the two functions
+    
+    # split up the num_runs into various amounts
+    # fit each bin
+    # average and st dev
+    

@@ -98,8 +98,6 @@ def reformat_plot(colorMap, save_file_type):
     behind Spyder, so just minimize Spyder to select a file.
 
     """
-    # Prompt the user to select a file
-    print('Select file \n...')
 
     # Select a file
     fileName = tool_belt.ask_open_file("nvdata/image_sample")
