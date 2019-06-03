@@ -32,27 +32,30 @@ def process_raw_buffer(timestamps, apd_indices,
     indices_to_delete_append = indices_to_delete.append
 
     # Throw out probable afterpulses
-    num_vals = timestamps.size
-    for click_index in range(num_vals):
-
-        click_time = timestamps[click_index]
-
-        # Determine the afterpulse channel
-        click_channel = apd_indices[click_index]
-
-        # Calculate relevant differences
-        next_index = click_index + 1
-        while next_index < num_vals:
-            diff = timestamps[next_index] - click_time
-            if diff > afterpulse_window:
-                break
-            if apd_indices[next_index] == click_channel:
-                indices_to_delete_append(next_index)
-            next_index += 1
-
-    timestamps = numpy.delete(timestamps, indices_to_delete)
+    # Something is wrong with this... see 2019-06-03_17-05-01_ayrton12
+    if False:
+        num_vals = timestamps.size
+        for click_index in range(num_vals):
+    
+            click_time = timestamps[click_index]
+    
+            # Determine the afterpulse channel
+            click_channel = apd_indices[click_index]
+    
+            # Calculate relevant differences
+            next_index = click_index + 1
+            while next_index < num_vals:
+                diff = timestamps[next_index] - click_time
+                if diff > afterpulse_window:
+                    break
+                if apd_indices[next_index] == click_channel:
+                    indices_to_delete_append(next_index)
+                next_index += 1
+    
+        timestamps = numpy.delete(timestamps, indices_to_delete)
 
     # Calculate differences
+    num_vals = timestamps.size
     for click_index in range(num_vals):
 
         click_time = timestamps[click_index]

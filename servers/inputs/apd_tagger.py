@@ -86,7 +86,7 @@ class ApdTagger(LabradServer):
             apd_chans.append(self.tagger_di_apd[ind])
         self.stream = TimeTagger.TimeTagStream(self.tagger, buffer_size, apd_chans)
 
-    @setting(1, returns='*s*ii')
+    @setting(1, returns='*s*i')
     def read_tag_stream(self, c):
         buffer = self.stream.getData()
         # Convert to strings since labrad does not support int64s

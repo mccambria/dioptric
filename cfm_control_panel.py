@@ -80,7 +80,8 @@ def do_stationary_count(name, coords, nd_filter, apd_index):
 
 def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 
-    run_time = 60 * 5
+#    run_time = 60 * 5  # in s
+    run_time = 60 * 20  # in s
 #    run_time = 2
 #    run_time = 30
     diff_window = 150 * 10**3  # 100 ns in ps
@@ -124,74 +125,6 @@ def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index,
                   do_uwave_gate_number,
                   num_steps, num_reps, num_runs, name=name)
         
-    return new_coords
-
-def do_t1_measurement(name, coords, nd_filter,
-                      sig_shrt_apd_index, ref_shrt_apd_index,
-                      sig_long_apd_index, ref_long_apd_index, expected_counts,
-                      uwave_freq, uwave_pi_pulse, relaxation_time_range, 
-                      measure_spin_0):
-    
-#    uwave_freq = 2.851
-    uwave_power = 9
-#    uwave_pi_pulse = round(110.3 / 2)
-#    relaxation_time_range = [0, 100 * 10**3]
-#    relaxation_time_range = [0, 1000 * 10**3]
-#    relaxation_time_range = [0, 500 * 10**3]
-#    relaxation_time_range = [0, 100 * 10**4]
-    num_steps = 101
-    num_reps =  6 * 10**3
-    num_runs = 20
-#    measure_spin_0 = False
-    
-    with labrad.connect() as cxn:
-         new_coords = t1_measurement.main(cxn, coords, nd_filter,
-                     sig_shrt_apd_index, ref_shrt_apd_index,
-                     sig_long_apd_index, ref_long_apd_index,
-                     expected_counts,
-                     uwave_freq, uwave_power, uwave_pi_pulse,
-                     relaxation_time_range, num_steps, num_reps, num_runs, 
-                     name, measure_spin_0)
-         
-    return new_coords
-
-def do_t1_init_read_control(name, coords, nd_filter,
-                      sig_shrt_apd_index, ref_shrt_apd_index,
-                      sig_long_apd_index, ref_long_apd_index, expected_counts,
-                      uwave_freq_plus, uwave_freq_minus, 
-                      uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                      relaxation_time_range, num_steps, num_reps,
-                      init_read_state):
-    
-    # Set right now for 2019-04-30-NV2
-    
-#    uwave_freq_plus = 2.851
-#    uwave_pi_pulse_plus = 104
-#    uwave_freq_minus = 2.880
-#    uwave_pi_pulse_minus = 126
-    
-    uwave_power = 9
-#    relaxation_time_range = [0, 0.1 * 10**6]
-#    relaxation_time_range = [0, 1.5 * 10**3]
-    
-#    num_steps = 201
-#    num_steps = 5
-    
-#    num_reps =  5 * 10**4
-    
-    num_runs = 20
-#    num_runs = 1
-    
-    with labrad.connect() as cxn:
-         new_coords = t1_init_read_control.main(cxn, coords, nd_filter,
-                     sig_shrt_apd_index, ref_shrt_apd_index,
-                     sig_long_apd_index, ref_long_apd_index,
-                     expected_counts,
-                     uwave_freq_plus, uwave_freq_minus, uwave_power, 
-                     uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                     relaxation_time_range, num_steps, num_reps, num_runs, 
-                     init_read_state, name)
-         
     return new_coords
 
 def do_t1_double_quantum(name, coords, nd_filter,
@@ -357,18 +290,87 @@ if __name__ == '__main__':
 #    nv_list = [nv1, nv2_2019_04_30, nv4]
     
     ############### Post 5/28 ###############
+    # micrometer coords 203.1, 277.1
     
 #    nv2_2019_04_30 = [-0.045, 0.072, 56.5] # 5/30
 #    nv2_2019_04_30 = [-0.036, 0.071, 56.6]  # 5/30 after installing new magnet mount
 #    nv2_2019_04_30 = [-0.046, 0.079, 56.3]  # 5/31 after reinstalling new magnet mount
 #    nv2_2019_04_30 = [-0.055, 0.076, 56.0]  # 6/1 noon
 #    nv2_2019_04_30 = [-0.053, 0.078, 56.2]  # 6/1 1:15pm
-    nv2_2019_04_30 = [-0.055, 0.077, 56.1]  # 6/2
+#    nv2_2019_04_30 = [-0.055, 0.077, 56.1]  # 6/2
 #    nv1_2019_05_10 = [0.286, 0.266, 56.5]
     
+    ############### 6/3 ###############
+    # micrometer coords 208.3, 277.1
+    
+    nv1_2019_06_03 = [0.0, 0.0, 52.0]
+    
+#    nv_list = [[0.188, 0.236, 52.0],
+#               [0.158, 0.223, 52.0],
+#               [0.097, 0.236, 52.0],
+#               [0.079, 0.197, 52.0],
+#               [0.012, 0.231, 52.0],
+#               [0.024, 0.203, 52.0],
+#               [0.078, 0.196, 52.0],
+#               [0.019, 0.160, 52.0],
+#               [-0.033, -0.078, 52.0],
+#               [-0.050, -0.053, 52.0],
+#               [-0.238, 0.161, 52.0],
+#               [-0.224, 0.135, 52.0],
+#               [-0.237, 0.123, 52.0],
+#               [-0.231, 0.088, 52.0],
+#               [-0.226, 0.068, 52.0],
+#               [-0.242, 0.076, 52.0],
+#               [-0.236, 0.029, 52.0],
+#               [0.046, -0.144, 52.0],
+#               [0.039, -0.125, 52.0],
+#               [-0.023, 0.030, 52.0],
+#               [0.001, -0.003, 52.0],
+#               [0.126, -0.068, 52.0],
+#               [0.120, -0.094, 52.0],
+#               [0.110, -0.106, 52.0],
+#               [0.125, 0.116, 52.0],
+#               [-0.139, -0.127, 52.0],
+#               [-0.162, -0.127, 52.0],
+#               [-0.181, -0.111, 52.0],
+#               [-0.154, -0.149, 52.0],
+#               [-0.137, -0.057, 52.0],
+#               [-0.219, -0.022, 52.0]]
+    
+    nv_list = [[0.189, 0.233, 51.8],
+               [0.159, 0.219, 51.5],
+               [0.095, 0.233, 49.8],
+               [0.078, 0.194, 51.5],
+               [0.012, 0.228, 51.6],
+               [0.024, 0.193, 51.7],
+               [0.078, 0.194, 51.6],
+               [0.019, 0.158, 51.7],
+               [-0.035, -0.080, 51.7],
+               [-0.050, -0.054, 51.7],
+               [-0.239, 0.160, 51.6],
+               [-0.226, 0.134, 50.3],
+               [-0.237, 0.120, 51.6],
+               [-0.232, 0.086, 51.5],
+               [-0.227, 0.083, 51.7],
+               [-0.252, 0.075, 51.8],
+               [-0.236, 0.027, 51.6],
+               [0.046, -0.126, 48.8],
+               [0.039, -0.125, 49.8],
+               [-0.024, 0.029, 51.8],
+               [0.001, -0.001, 51.8],
+               [0.124, -0.069, 51.9],
+               [0.119, -0.094, 51.7],
+               [0.109, -0.106, 51.8],
+               [0.165, 0.111, 54.5],
+               [-0.140, -0.127, 51.9],
+               [-0.163, -0.125, 51.8],
+               [-0.182, -0.123, 51.8],
+               [-0.154, -0.151, 51.6],
+               [-0.138, -0.056, 51.7],
+               [-0.221, -0.023, 51.6]]
+    
 #    nv_list = [center]
-    nv_list = [nv2_2019_04_30]
-#    nv_list = [nv1_2019_05_10]
+#    nv_list = [nv1_2019_06_03]
 
     # %% Image_sample scan ranges
     
@@ -385,15 +387,15 @@ if __name__ == '__main__':
 #    scan_range = 1.0
 #    num_scan_steps = 300
     
-#    scan_range = 0.5
-#    num_scan_steps = 150
+    scan_range = 0.5
+    num_scan_steps = 150
 #    num_scan_steps = 200
     
 #    scan_range = 0.3
 #    num_scan_steps = 90
     
-    scan_range = 0.2
-    num_scan_steps = 60
+#    scan_range = 0.2
+#    num_scan_steps = 60
     
 #    scan_range = 0.05
 #    num_scan_steps = 60
@@ -473,7 +475,7 @@ if __name__ == '__main__':
     # [nv coordinates, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus,
     #                            uwave_pi_pulse_minus, expected_counts]
     #   uwave_MINUS should be associated with the HP signal generator
-    params_array = numpy.array([[nv2_2019_04_30, 2.8380, 96, 2.8942, 102, 62]])
+#    params_array = numpy.array([[nv2_2019_04_30, 2.8380, 96, 2.8942, 102, 62]])
 
     # %% Functions to run
     
@@ -482,11 +484,11 @@ if __name__ == '__main__':
         for nv in nv_list:
             coords = nv
 #            set_xyz_zero()
-            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
+#            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
 #            do_optimize(name, coords, nd_filter, apd_a_index)
 #            do_optimize_list(name, coords, nd_filter, apd_a_index)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
-#            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
+            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
 #            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
 #            ret_val = do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.8554, 0)
 #            coords = ret_val 
