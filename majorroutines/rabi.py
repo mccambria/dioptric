@@ -165,20 +165,23 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
     norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # %% Fit the data and extract piPulse
+    
+    fit_func = tool_belt.cosexp
 
     # Estimated fit parameters
     offset = 0.85
     amplitude = 0.15
     frequency = 1/100
-    decay = 0.01
+#    phase = 0
+    decay = 1000
 
+#    init_params = [offset, amplitude, frequency, phase, decay]
     init_params = [offset, amplitude, frequency, decay]
 
-    opti_params, cov_arr = curve_fit(tool_belt.cosexp, taus, norm_avg_sig,
+    opti_params, cov_arr = curve_fit(fit_func, taus, norm_avg_sig,
                                      p0=init_params)
 
     rabi_period = 1 / opti_params[2]
-    decay = opti_params[3]**2
 
     # %% Plot the Rabi signal
 
@@ -207,15 +210,16 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
 
     fit_fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ax.plot(taus, norm_avg_sig,'bo',label='data')
-    ax.plot(linspaceTau, tool_belt.sinexp(linspaceTau, *opti_params), 'r-', label='fit')
+    ax.plot(linspaceTau, fit_func(linspaceTau, *opti_params), 'r-', label='fit')
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
     ax.legend()
-    text = '\n'.join((r'$C + A_0 \mathrm{sin}(\nu * 2 \pi * t + \phi) e^{-d * t}$',
-                      r'$\frac{1}{\nu} = $' + '%.1f'%(rabi_period) + ' ns',
+    text = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
+                      r'$C = $' + '%.3f'%(opti_params[0]),
                       r'$A_0 = $' + '%.3f'%(opti_params[1]),
-                      r'$d = $' + '%.4f'%(decay) + ' ' + r'$ ns^{-1}$'))
+                      r'$\frac{1}{\nu} = $' + '%.1f'%(rabi_period) + ' ns',
+                      r'$d = $' + '%i'%(opti_params[3]) + ' ' + r'$ ns$'))
 
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)

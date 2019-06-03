@@ -33,7 +33,7 @@ import json
 import time
 import labrad
 import csv
-from scipy import asarray as ar,exp
+from scipy import asarray as ar, exp
 
 # %% xyz sets
 
@@ -266,12 +266,15 @@ def sinexp(t, offset, amp, freq, decay):
     half_pi = numpy.pi / 2
     return offset + (amp * numpy.sin((two_pi * freq * t) + half_pi)) * exp(-decay**2 * t)
 
+# This cosexp includes a phase that will be 0 in the ideal case. 
+#def cosexp(t, offset, amp, freq, phase, decay):
+#    two_pi = 2*numpy.pi
+#    return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t) + phase))
+
 
 def cosexp(t, offset, amp, freq, decay):
     two_pi = 2*numpy.pi
-    half_pi = numpy.pi / 2
-    return offset + (amp * numpy.cos((two_pi * freq * t) + half_pi)) * exp(-decay**2 * t)
-
+    return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
 
 
 # %%  Save utils
