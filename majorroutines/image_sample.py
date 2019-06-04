@@ -5,6 +5,8 @@ Generate an image of the sample.
 
 Includes a replotting routine to show the data with axes in um instead of V.
 
+Includes a replotting routine to replot rw data to manipulate again.
+
 Created on Tue Apr  9 15:18:53 2019
 
 @author: Matt
@@ -88,7 +90,9 @@ def on_click_image(event):
     except TypeError:
         # Ignore TypeError if you click in the figure but out of the image
         pass
-
+        
+        # %%
+        
 def reformat_plot(colorMap, save_file_type):
     """
     Recreates the scan from an image_sample file. The plot will have axes in
@@ -153,12 +157,10 @@ def reformat_plot(colorMap, save_file_type):
 
         # Calculate various values pertaining to the positions in the image
         xScanCenterPlusMinus = xScanRange / 2
-        xImgStepSize = xScanRange / xImgResolution
         xMin = xCenter - xScanCenterPlusMinus
         xMax = xCenter + xScanCenterPlusMinus
 
         yScanCenterPlusMinus = yScanRange / 2
-        yImgStepSize = yScanRange / yImgResolution
         yMin = yCenter - yScanCenterPlusMinus
         yMax = yCenter + yScanCenterPlusMinus
 
@@ -334,14 +336,16 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
 
 if __name__ == '__main__':
-    folder_name = 'C:/Users/Matt/Desktop/lost_nvs'
+    folder_name = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/image_sample'
     # file_name = '2019-04-29_16-39-18_ayrton12.txt'
-    file_name = '2019-05-28_16-37-29_ayrton12.txt'
+    file_name = '2019-06-04_09-58-38_ayrton12.txt'
 
     with open('{}/{}'.format(folder_name, file_name)) as file:
         data = json.load(file)
         x_range = data['x_range']
         y_range = data['y_range']
+        x_voltages = data['x_voltages']
+        y_voltages = data['y_voltages']
         coords = data['coords']
         num_steps = data['num_steps']
         img_array = numpy.array(data['img_array'])

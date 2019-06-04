@@ -80,8 +80,9 @@ def do_stationary_count(name, coords, nd_filter, apd_index):
 
 def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 
+    run_time = 60 * 3  # in s
 #    run_time = 60 * 5  # in s
-    run_time = 60 * 20  # in s
+#    run_time = 60 * 20  # in s
 #    run_time = 2
 #    run_time = 30
     diff_window = 150 * 10**3  # 100 ns in ps
@@ -99,7 +100,7 @@ def do_resonance(name, coords, nd_filter, apd_index, expected_counts, freq_cente
 #    freq_range = 0.03
     
     num_steps = 101
-    num_runs = 1
+    num_runs = 2
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 
     with labrad.connect() as cxn:
@@ -217,7 +218,7 @@ if __name__ == '__main__':
     
     # %% NV coordinates
     
-    center = [0.0, 0.0, 51.8]
+    center = [0.0, 0.0, 53.6]
     
     ############### Pre 5/28 ###############
     # The below coordinates are shifted by ~[]
@@ -369,44 +370,44 @@ if __name__ == '__main__':
 #               [-0.138, -0.056, 51.7],
 #               [-0.221, -0.023, 51.6]]
     
-#    nv_list = [[0.189, 0.233, 51.8],
-#               [0.159, 0.219, 51.5],
-#               [0.095, 0.233, 49.8],
-#               [0.078, 0.194, 51.5],
-#               [0.012, 0.228, 51.6],
-#               [0.024, 0.193, 51.7],
-#               [0.078, 0.194, 51.6], #
-#               [0.019, 0.158, 51.7],
-#               [-0.035, -0.080, 51.7],
-#               [-0.050, -0.054, 51.7],
-#               [-0.239, 0.160, 51.6],
-#               [-0.226, 0.134, 50.3],
-#               [-0.237, 0.120, 51.6],
-#               [-0.232, 0.086, 51.5],
-#               [-0.227, 0.083, 51.7],
-#               [-0.252, 0.075, 51.8],
-#               [-0.236, 0.027, 51.6],
-#               [0.046, -0.126, 48.8],
-#               [0.039, -0.125, 49.8],
-#               [-0.024, 0.029, 51.8],
-#               [0.001, -0.001, 51.8],
-#               [0.124, -0.069, 51.9],
-#               [0.119, -0.094, 51.7],
-#               [0.109, -0.106, 51.8],
-#               [0.165, 0.111, 54.5],
-#               [-0.140, -0.127, 51.9],
-#               [-0.163, -0.125, 51.8],
-#               [-0.182, -0.123, 51.8],
-#               [-0.154, -0.151, 51.6],
-#               [-0.138, -0.056, 51.7],
-#               [-0.221, -0.023, 51.6]]    
+    nv_list = [[0.249, 0.238, 53.3], # new list 6/4
+               [0.234, 0.241, 53.3],
+               [0.150, 0.221, 53.1],
+               [0.004, 0.229, 52.8],
+#               [-0.032, 0.221, 53.2],
+                [0.207, 0.194, 53.1],
+                [0.118, 0.192, 53.0],
+                [0.070, 0.195, 53.0],
+                [0.220, 0.158, 52.8],
+                [0.093, 0.148, 53.1],
+                [0.011, 0.160, 53.1],
+                [-0.247, 0.161, 53.0],
+                [0.143, 0.143, 53.2],
+                [-0.245, 0.121, 53.1],
+                [0.129, 0.102, 53.1],
+                [0.146, 0.070, 53.2],
+                [-0.099, 0.061, 53.0],
+                [0.139, 0.055, 53.1],
+                [-0.098, 0.037, 53.1],
+                [-0.244, 0.028, 53.1],
+                [0.115, 0.004, 53.1],
+                [-0.033, 0.030, 53.2],
+                [-0.080, 0.022, 53.1],
+                [-0.043, -0.079, 53.1],
+                [0.032, -0.123, 53.1],
+                [-0.178, -0.075, 53.3],
+                [-0.188, -0.110, 53.2],
+                [-0.171, -0.124, 53.2],
+                [-0.109, -0.161, 53.1],
+                [-0.034, -0.136, 53.2]]
+     
     
 #    nv_list = [center]
 #    nv_list = [[-0.083, 0.018, 51.6]]
-#    nv_list = [[0.068, 0.193, 51.6]]
+#    nv_list = [[0.247, 0.236, 53.2]]
 #    nv_list = [nv1_2019_06_03]
     
-    drift = numpy.array([-0.02, -0.001, 0])
+    drift = numpy.array([0.0, 0.0, 0.0])
 
     # %% Image_sample scan ranges
     
@@ -444,7 +445,7 @@ if __name__ == '__main__':
     
     # Based on the current nv, what kcounts/s do we expect?
     # If not known, set to None
-    expected_counts = 62
+    expected_counts = None
     
     # %% t1 measurements, preparation population and readout population.
     
@@ -523,10 +524,10 @@ if __name__ == '__main__':
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
 #            do_optimize(name, coords, nd_filter, apd_a_index)
-            do_optimize_list(name, coords, nd_filter, apd_a_index)
+#            do_optimize_list(name, coords, nd_filter, apd_a_index)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
 #            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
-#            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
+            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
 #            ret_val = do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.8554, 0)
 #            coords = ret_val 
 #            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.8380, 0)
