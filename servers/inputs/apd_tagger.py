@@ -78,29 +78,101 @@ class ApdTagger(LabradServer):
             self.tagger_di_apd[apd_index] = wire
             self.inverted_tagger_di_apd[wire] = apd_index
 
+    def read_raw_stream():
+        buffer = self.stream.getData()
+        timestamps = buffer.getTimestamps()
+        channels = buffer.getChannels()
+        return timestamps, channels
+
     @setting(0, apd_indices='*i')
     def start_tag_stream(self, c, apd_indices):
+        """Expose a raw tag stream which can be read with read_tag_stream and
+        closed with stop_tag_stream.
+        """
         buffer_size = int(10**6 / len(apd_indices))  # A million total
-        apd_chans = []
+        channels = []
         for ind in apd_indices:
-            apd_chans.append(self.tagger_di_apd[ind])
+            channels.append(self.tagger_di_apd[ind])
+            channels.append(self.tagger_di_apd_gate[ind])
+        channels.append(self.tagger_di_clock)
         self.stream = TimeTagger.TimeTagStream(self.tagger, buffer_size, apd_chans)
 
     @setting(1, returns='*s*i')
     def read_tag_stream(self, c):
-        buffer = self.stream.getData()
-        # Convert to strings since labrad does not support int64s
+        """Read the stream started with start_tag_stream. Returns two lists,
+        each as long as the number of counts that have occurred since the
+        buffer was refreshed. First list is timestamps in ps, second is apd
+        indices.
+        """
+        timestamps, channels = self.read_raw_stream()
+        # Convert timestamps to strings since labrad does not support int64s
         timestamps = buffer.getTimestamps().astype(str).tolist()
         # Convert channels to APD indices
-        channels = buffer.getChannels()
         indices = list(map(lambda x: self.inverted_tagger_di_apd[x], channels))
-        
         return timestamps, indices
-    
+
     @setting(2)
     def stop_tag_stream(self, c):
+        """Closes the stream started with start_tag_stream."""
         self.stream.stop()
 
+    @setting(3, apd_index='i', returns='*w')
+    def read_counter(self, c, apd_index):
+        timestamps, channels = self.read_raw_stream()
+
+        # There will be 4 channels: APD, clock, gate open, and gate close
+        apd_channel = self.tagger_di_apd[apd_index]
+        clock_channel = self.tagger_di_clock
+        gate_open_channel = self.tagger_di_apd_gate[apd_index]
+        gate_close_channel = -gate_open_channel
+
+        # Find clock clicks (sample breaks)
+        result = numpy.nonzero(channels == clock_channel)
+        clock_click_inds = result[0].aslist()
+
+        previous_sample_end_ind = None
+
+        counts = []
+
+        for clock_click_ind in clock_click_inds:
+
+            # Clock clicks end samples, so they should be included with the
+            # sample itself
+            sample_end_ind = clock_click_ind + 1
+
+            if previous_sample_end_ind == None:
+                sample_timestamps = self.leftover_timestamps
+                sample_timestamps.extend(timestamps[0:sample_end_ind])
+                sample_channels = self.leftover_channels
+                sample_channels.extend(channels[0:sample_end_ind])
+            else:
+                sample_timestamps = timestamps[previous_sample_end_ind:
+                    sample_end_ind]
+                sample_channels = channels[previous_sample_end_ind:
+                    sample_end_ind]
+
+            # Find gate open clicks
+            result = numpy.nonzero(sample_channels == gate_open_channel)
+            gate_open_click_inds = result[0].aslist()
+
+            # Find gate close clicks
+            # Gate close channel is negative of gate open channel,
+            # signifying the falling edge
+            result = numpy.nonzero(sample_channels == gate_close_channel)
+            gate_close_click_inds = result[0].aslist()
+
+            # The number of APD clicks is simply the number of items in the
+            # buffer between gate open and gate close clicks
+            count = 0
+            for ind in range(len(gate_open_click_inds)):
+                gate_open_click_ind = gate_open_click_inds[ind]
+                gate_close_click_ind = gate_close_click_inds[ind]
+                count += sample_channels.count(apd_channel)
+            counts.extend(count)
+
+            previous_sample_end_ind = sample_end_ind
+
+        return counts
 
 __server__ = ApdTagger()
 

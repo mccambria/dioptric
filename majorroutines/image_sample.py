@@ -239,7 +239,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
     # %% Set up the APD
 
-    cxn.apd_counter.load_stream_reader(apd_index, period, total_num_samples)
+    cxn.apd_tagger.start_tag_stream([apd_index])
 
     # %% Set up the image display
 
@@ -280,7 +280,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_counter.read_stream(apd_index)
+        new_samples = cxn.apd_tagger.read_counter(apd_index)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             populate_img_array(new_samples, img_array, img_write_pos)
@@ -298,6 +298,9 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
     # Return to center
     cxn.galvo.write(x_center, y_center)
+
+    # Close the tagger stream
+    cxn.apd_tagger.stop_tag_stream()
 
     # %% Save the data
 
