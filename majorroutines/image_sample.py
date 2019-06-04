@@ -5,6 +5,8 @@ Generate an image of the sample.
 
 Includes a replotting routine to show the data with axes in um instead of V.
 
+Includes a replotting routine to replot rw data to manipulate again.
+
 Created on Tue Apr  9 15:18:53 2019
 
 @author: Matt
@@ -89,6 +91,8 @@ def on_click_image(event):
         # Ignore TypeError if you click in the figure but out of the image
         pass
 
+        # %%
+
 def reformat_plot(colorMap, save_file_type):
     """
     Recreates the scan from an image_sample file. The plot will have axes in
@@ -153,12 +157,10 @@ def reformat_plot(colorMap, save_file_type):
 
         # Calculate various values pertaining to the positions in the image
         xScanCenterPlusMinus = xScanRange / 2
-        xImgStepSize = xScanRange / xImgResolution
         xMin = xCenter - xScanCenterPlusMinus
         xMax = xCenter + xScanCenterPlusMinus
 
         yScanCenterPlusMinus = yScanRange / 2
-        yImgStepSize = yScanRange / yImgResolution
         yMin = yCenter - yScanCenterPlusMinus
         yMax = yCenter + yScanCenterPlusMinus
 
