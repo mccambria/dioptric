@@ -77,7 +77,7 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
         # sigma: standard deviation, defines the width of the Gaussian
         # offset: constant y value to account for background
         text = 'a={:.3f}\n $\mu$={:.3f}\n ' \
-            '$\sigma$={:.3f}\n offset={:.3f}'.format(*optiParams)
+            '$\sigma^2$={:.6f}\n offset={:.3f}'.format(*optiParams)
 
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.05, 0.95, text, transform=ax.transAxes, fontsize=12,
@@ -351,10 +351,13 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
 
     # Fit
     k_counts_per_sec = (x_counts / 1000) / readout_sec
-    init_fit = ((23. / readout) * 10**6, x_center, xy_range / 3, 50.)
+    init_fit = ((100. / readout) * 10**6, x_center, (xy_range / 3)**2, 50.)
+    fit_param_bounds = (((-100. / readout) * 10**6, -5., 0., -50.), 
+                        ((1500. / readout) * 10**6, 5., 0.01, 80.))
     try:
         optiParams, cov_arr = curve_fit(tool_belt.gaussian, x_voltages,
-                                        k_counts_per_sec, p0=init_fit)
+                                        k_counts_per_sec, p0=init_fit, 
+                                        bounds = fit_param_bounds)
         
         optimizationFailed = False
     except Exception:
@@ -381,10 +384,14 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
 
     # Fit
     k_counts_per_sec = (y_counts / 1000) / readout_sec
-    init_fit = ((23. / readout) * 10**6, y_center, xy_range / 3, 50.)
+    init_fit = ((100. / readout) * 10**6, y_center, (xy_range / 3)**2, 50.)
+    fit_param_bounds = (((-100. / readout) * 10**6, -5., 0., -50.), 
+                        ((1500. / readout) * 10**6, 5., 0.01, 80.))
     try:
         optiParams, cov_arr = curve_fit(tool_belt.gaussian, y_voltages,
-                                        k_counts_per_sec, p0=init_fit)
+                                        k_counts_per_sec, p0=init_fit,
+                                        bounds = fit_param_bounds
+                                        )
         
                 
         optimizationFailed = False
@@ -439,10 +446,13 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
 
     # Fit
     k_counts_per_sec = (z_counts / 1000) / readout_sec
-    init_fit = ((23. / readout) * 10**6, z_center, z_range / 2, 0.)
+    init_fit = ((23. / readout) * 10**6, z_center, (z_range / 2)**2, 0.)
+    fit_param_bounds = (((2. / readout) * 10**6, 40., 0., 0.6), 
+                        ((1500. / readout) * 10**6, 60., 0.10, 1.2))
     try:
         optiParams, cov_arr = curve_fit(tool_belt.gaussian, z_voltages,
-                                        k_counts_per_sec, p0=init_fit)
+                                        k_counts_per_sec, p0=init_fit,
+                                        bounds = fit_param_bounds)
         
 
         

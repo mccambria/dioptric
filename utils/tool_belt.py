@@ -257,10 +257,10 @@ def gaussian(x, *params):
             3: constant y value to account for background
     """
 
-    coeff, mean, stdev, offset = params
-    var = stdev**2  # variance
+    coeff, mean, var, offset = params
+#    var = stdev**2  # variance
     centDist = x-mean  # distance from the center
-    return offset + coeff**2*numpy.exp(-(centDist**2)/(2*var))
+    return offset + coeff*numpy.exp(-(centDist**2)/(2*var))
 
 
 def sinexp(t, offset, amp, freq, decay):
