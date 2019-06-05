@@ -336,7 +336,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
 
 if __name__ == '__main__':
-    folder_name = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/image_sample'
+    folder_name = 'G:/Team Drives/Kolkowitz Lab Group/nvdata/image_sample'
     # file_name = '2019-04-29_16-39-18_ayrton12.txt'
     file_name = '2019-06-03_16-25-40_ayrton12.txt'
 

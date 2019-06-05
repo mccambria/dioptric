@@ -2,6 +2,8 @@
 """
 Optimize on an NV
 
+If the file is run itself, it will replot the data and fit again to the raw data.
+
 Created on Thu Apr 11 11:19:56 2019
 
 @author: mccambria
@@ -77,7 +79,7 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
         # sigma: standard deviation, defines the width of the Gaussian
         # offset: constant y value to account for background
         text = 'a={:.3f}\n $\mu$={:.3f}\n ' \
-            '$\sigma^2$={:.6f}\n offset={:.3f}'.format(*optiParams)
+            '$\sigma$={:.4f}\n offset={:.3f}'.format(*optiParams)
 
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.05, 0.95, text, transform=ax.transAxes, fontsize=12,
@@ -512,4 +514,109 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
     # %% Return opticenters
     
     return opti_centers
+
+#%%
+import json
+
+if __name__ == '__main__':
+    folder_name = 'G:/Team Drives/Kolkowitz Lab Group/nvdata/optimize'
+    file_name = '2019-06-04_14-21-59_ayrton12.txt'
+    
+    
+    with open('{}/{}'.format(folder_name, file_name)) as file:
+        data = json.load(file)
+        x_voltages = data['x_voltages']
+        y_voltages = data['y_voltages']
+        z_voltages = data['z_voltages']
+        
+        x_counts = numpy.array(data['x_counts'])
+        y_counts = numpy.array(data['y_counts'])
+        z_counts = numpy.array(data['z_counts'])
+        
+        x_center, y_center, z_center = data['coords']
+        xy_range = data['xy_range']
+        z_range = data['z_range']
+        
+        readout = data['readout']
+        
+        
+    readout_sec = readout / 10**9  
+    
+    # List to store the optimized centers
+    opti_centers = [None, None, None]
+    
+    fig, axes_pack = plt.subplots(1, 3, figsize=(17, 8.5))
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    
+    # X Fit
+    k_counts_per_sec = (x_counts / 1000) / readout_sec
+    init_fit = ((100. / readout) * 10**6, x_center, (xy_range / 3), 50.)
+    fit_param_bounds = ((-100, -5., 0., -50.), 
+                        (1500, 5., 0.1, 80.))
+    try:
+        optiParams, cov_arr = curve_fit(tool_belt.gaussian, x_voltages,
+                                        k_counts_per_sec, p0=init_fit, 
+                                        bounds = fit_param_bounds)      
+        optimizationFailed = False
+    except Exception:
+        optimizationFailed = True
+
+    if not optimizationFailed:
+        opti_centers[0] = optiParams[1]
+        
+    # X Plot
+    do_plot_data(fig, axes_pack[0], 'X Axis', x_voltages, k_counts_per_sec, 
+                 optimizationFailed, optiParams)
+    
+    # Y Fit
+    k_counts_per_sec = (y_counts / 1000) / readout_sec
+    init_fit = ((100. / readout) * 10**6, y_center, (xy_range / 3), 50.)
+#    fit_param_bounds = ((-1000., -5., -10, -100.), 
+#                        (1500., 5., 10, 100.))
+    fit_param_bounds = ((-numpy.inf, -numpy.inf, -0.1, -numpy.inf), 
+                        (numpy.inf, numpy.inf, 10, numpy.inf))
+    try:
+        optiParams, cov_arr = curve_fit(tool_belt.gaussian, y_voltages,
+                                        k_counts_per_sec, p0=init_fit,
+                                        bounds = fit_param_bounds)
+        print(optiParams)
+                
+        optimizationFailed = False
+    except Exception:
+        optimizationFailed = True
+
+    if not optimizationFailed:
+        opti_centers[1] = optiParams[1]
+    
+    # Plot
+    do_plot_data(fig, axes_pack[1], 'Y Axis', y_voltages, k_counts_per_sec, 
+                     optimizationFailed, optiParams)
+    
+
+    # Z Fit
+    k_counts_per_sec = (z_counts / 1000) / readout_sec
+    init_fit = ((23. / readout) * 10**6, z_center, (z_range / 2), 0.)
+    fit_param_bounds = (((2. / readout) * 10**6, 40., 0., 0.6), 
+                        ((1500. / readout) * 10**6, 60., 0.1, 1.2))
+    try:
+        optiParams, cov_arr = curve_fit(tool_belt.gaussian, z_voltages,
+                                        k_counts_per_sec, p0=init_fit,
+                                        bounds = fit_param_bounds)
+        
+
+        
+        optimizationFailed = False
+    except Exception:
+        optimizationFailed = True
+
+    if not optimizationFailed:
+        opti_centers[2] = optiParams[1]
+    
+    # Plot
+    do_plot_data(fig, axes_pack[2], 'Z Axis', z_voltages, k_counts_per_sec, 
+                 optimizationFailed, optiParams)
+        
+        
+        
 
