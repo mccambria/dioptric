@@ -25,12 +25,12 @@ def get_seq(pulser_wiring, args):
     LOW = args[2]
     HIGH = args[3]
 
-    pulser_ao = 7
+    pulser_ao = 0
         
     seq = Sequence()
 
     train = [(aom_on_time, HIGH), (aom_on_time, LOW)]
-    seq.setDigital(pulser_ao, train)
+    seq.setAnalog(pulser_ao, train)
     
 
     return seq, [period]
@@ -41,7 +41,7 @@ def get_seq(pulser_wiring, args):
 
 
 if __name__ == '__main__':
-    wiring = {'pulser_ao': 7}
-    args = [100, 100, 0, 1]
+    wiring = {'pulser_ao': 0}
+    args = [100, 100, 0, 0.5]
     seq = get_seq(wiring, args)
     seq.plot()   
