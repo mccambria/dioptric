@@ -519,7 +519,7 @@ if __name__ == '__main__':
     
     try:
         coords = [0.263, 0.257, 53.6]
-        do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
+        do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, [apd_a_index, apd_b_index])
 #        do_optimize(name, coords, nd_filter, apd_a_index)
 #        for nv in nv_list:
 #            original_coords = numpy.array(nv)

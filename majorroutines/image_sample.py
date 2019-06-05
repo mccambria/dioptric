@@ -194,7 +194,7 @@ def reformat_plot(colorMap, save_file_type):
     # %%
 
 def main(cxn, coords, nd_filter, x_range, y_range,
-         num_steps, readout, apd_index,
+         num_steps, readout, apd_indices,
          name='untitled', continuous=False):
 
     # %% Some initial calculations
@@ -215,7 +215,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     # %% Load the PulseStreamer
 
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                              [delay, readout, apd_index])
+                                              [delay, readout, apd_indices[0]])
     period = ret_vals[0]
 
     # %% Set up the galvo
@@ -239,7 +239,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
     # %% Set up the APD
 
-    cxn.apd_tagger.start_tag_stream([apd_index])
+    cxn.apd_tagger.start_tag_stream(apd_indices)
 
     # %% Set up the image display
 
@@ -280,7 +280,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter(apd_index)
+        new_samples = cxn.apd_tagger.read_counter_simple()
         num_new_samples = len(new_samples)
         # new_samples will be a list of lists with one value in them.
         # We just want a list of the values
