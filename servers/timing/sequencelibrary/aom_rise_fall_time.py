@@ -12,7 +12,7 @@ LOW = 0
 HIGH = 1
 
 
-def get_seq(args):
+def get_seq(pulser_wiring, args):
 
     # %% Parse wiring and args
 
@@ -26,14 +26,17 @@ def get_seq(args):
     
     driver_bool = args[2]
 
-    pulser_do_aom_driver = 3
-    pulser_do_switch = 4
+    pulser_do_aom_driver = pulser_wiring['do_aom']
+    pulser_do_switch = pulser_wiring['do_uwave_gate_1']
+    
+    period = aom_on_time + aom_off_time
 
+    #%%
     if driver_bool == True:
-        
+    
         seq = Sequence()
-
-        train = [(aom_on_time, HIGH), (aom_on_time, LOW)]
+    
+        train = [(aom_on_time, HIGH), (aom_off_time, LOW)]
         seq.setDigital(pulser_do_aom_driver, train)
 
     else:
@@ -46,7 +49,7 @@ def get_seq(args):
         train = [(aom_on_time + aom_off_time, HIGH)]
         seq.setDigital(pulser_do_aom_driver, train)
 
-    return seq
+    return seq, [period]
 
     # %% Define the sequence
 
@@ -54,12 +57,12 @@ def get_seq(args):
 
 
 if __name__ == '__main__':
-#    wiring = {'do_daq_clock': 0,
-#              'do_apd_gate_0': 1,
-#              'do_apd_gate_1': 2,
-#              'do_aom': 3,
-#              'do_uwave_gate_0': 4,
-#              'do_uwave_gate_1': 5}
-    args = [100, 100, 0]
-    seq = get_seq(args)
+    wiring = {'do_daq_clock': 0,
+              'do_apd_gate_0': 1,
+              'do_apd_gate_1': 2,
+              'do_aom': 3,
+              'do_uwave_gate_0': 4,
+              'do_uwave_gate_1': 5}
+    args = [100, 100, 1]
+    seq = get_seq(wiring, args)
     seq.plot()   
