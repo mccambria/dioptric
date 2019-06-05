@@ -13,6 +13,7 @@ Created on Wed Jun 5 14:49:23 2019
 
 import os
 import labrad
+import numpy
 import utils.tool_belt as tool_belt
 
 # %% Main
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     try:
         
         with labrad.connect() as cxn:
-            main(cxn, 100, 100, 0, 1)
+            main(cxn, 100, 100, 0 ,1)
         
     finally:
         # Kill safe stop

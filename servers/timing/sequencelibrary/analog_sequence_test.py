@@ -20,17 +20,20 @@ def get_seq(pulser_wiring, args):
     # Unpack the durations
     aom_on_time, aom_off_time = durations
     
+    period = aom_on_time + aom_off_time
+    
     LOW = args[2]
     HIGH = args[3]
 
-    pulser_ao = 0
+    pulser_ao = 7
         
     seq = Sequence()
 
     train = [(aom_on_time, HIGH), (aom_on_time, LOW)]
-    seq.setAnalog(pulser_ao, train)
+    seq.setDigital(pulser_ao, train)
+    
 
-    return seq
+    return seq, [period]
 
     # %% Define the sequence
 
@@ -38,7 +41,7 @@ def get_seq(pulser_wiring, args):
 
 
 if __name__ == '__main__':
-    wiring = {'pulser_ao': 0}
+    wiring = {'pulser_ao': 7}
     args = [100, 100, 0, 1]
-    seq = get_seq(args)
+    seq = get_seq(wiring, args)
     seq.plot()   
