@@ -13,6 +13,7 @@ Created on Wed Jun 5 14:49:23 2019
 
 import os
 import labrad
+import utils.tool_belt as tool_belt
 
 # %% Main
 
@@ -30,13 +31,21 @@ def main(cxn, aom_on_time, aom_off_time, low_voltage, high_voltage):
     file_name = os.path.basename(__file__)    
     args = [aom_on_time, aom_off_time, low_voltage, high_voltage]
     
-    cxn.pulse_streamer.stream_immediate(file_name, args, 0)
+    cxn.pulse_streamer.stream_immediate(file_name, 1 * 10**8, args, 1)
+#    cxn.pulse_streamer.stream_immediate(file_name, 3, args, 1)
     
     # %%
     
 if __name__ == '__main__':
-    
-    with labrad.connect() as cxn:
-        main(1000, 1000, 0, 1)
+    try:
+        
+        with labrad.connect() as cxn:
+            main(cxn, 100, 100, 0, 1)
+        
+    finally:
+        # Kill safe stop
+        if tool_belt.check_safe_stop_alive():
+            print("\n\nRoutine complete. Press enter to exit.")
+            tool_belt.poll_safe_stop()
     
             
