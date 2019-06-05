@@ -80,8 +80,8 @@ def do_stationary_count(name, coords, nd_filter, apd_index):
 
 def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 
-    run_time = 60 * 3  # in s
-#    run_time = 60 * 5  # in s
+#    run_time = 60 * 3  # in s
+    run_time = 60 * 5  # in s
 #    run_time = 60 * 20  # in s
 #    run_time = 2
 #    run_time = 30
@@ -370,36 +370,36 @@ if __name__ == '__main__':
 #               [-0.138, -0.056, 51.7],
 #               [-0.221, -0.023, 51.6]]
     
-    nv_list = [[0.249, 0.238, 53.3], # new list 6/4
-               [0.234, 0.241, 53.3],
-               [0.150, 0.221, 53.1],
-               [0.004, 0.229, 52.8],
+    nv_list = [[0.249, 0.238, 53.6], # new list 6/4
+               [0.234, 0.241, 53.6],
+               [0.150, 0.221, 53.6],
+               [0.004, 0.229, 53.6],
 #               [-0.032, 0.221, 53.2],
-                [0.207, 0.194, 53.1],
-                [0.118, 0.192, 53.0],
-                [0.070, 0.195, 53.0],
-                [0.220, 0.158, 52.8],
-                [0.093, 0.148, 53.1],
-                [0.011, 0.160, 53.1],
-                [-0.247, 0.161, 53.0],
-                [0.143, 0.143, 53.2],
-                [-0.245, 0.121, 53.1],
-                [0.129, 0.102, 53.1],
-                [0.146, 0.070, 53.2],
-                [-0.099, 0.061, 53.0],
-                [0.139, 0.055, 53.1],
-                [-0.098, 0.037, 53.1],
-                [-0.244, 0.028, 53.1],
-                [0.115, 0.004, 53.1],
-                [-0.033, 0.030, 53.2],
-                [-0.080, 0.022, 53.1],
-                [-0.043, -0.079, 53.1],
-                [0.032, -0.123, 53.1],
-                [-0.178, -0.075, 53.3],
-                [-0.188, -0.110, 53.2],
-                [-0.171, -0.124, 53.2],
-                [-0.109, -0.161, 53.1],
-                [-0.034, -0.136, 53.2]]
+                [0.207, 0.194, 53.6],
+                [0.118, 0.192, 53.6],
+                [0.070, 0.195, 53.6],
+                [0.220, 0.158, 53.6],
+                [0.093, 0.148, 53.6],
+                [0.011, 0.160, 53.6],
+                [-0.247, 0.161, 53.6],
+                [0.143, 0.143, 53.6],
+                [-0.245, 0.121, 53.6],
+                [0.129, 0.102, 53.6],
+                [0.146, 0.070, 53.6],
+                [-0.099, 0.061, 53.6],
+                [0.139, 0.055, 53.6],
+                [-0.098, 0.037, 53.6],
+                [-0.244, 0.028, 53.6],
+                [0.115, 0.004, 53.6],
+                [-0.033, 0.030, 53.6],
+                [-0.080, 0.022, 53.6],
+                [-0.043, -0.079, 53.6],
+                [0.032, -0.123, 53.6],
+                [-0.178, -0.075, 53.6],
+                [-0.188, -0.110, 53.6],
+                [-0.171, -0.124, 53.6],
+                [-0.109, -0.161, 53.6],
+                [-0.034, -0.136, 53.6]]
      
     
 #    nv_list = [center]
@@ -424,19 +424,20 @@ if __name__ == '__main__':
 #    scan_range = 1.0
 #    num_scan_steps = 300
     
-    scan_range = 0.5
-    num_scan_steps = 150
+#    scan_range = 0.5
+#    num_scan_steps = 150
 #    num_scan_steps = 200
     
 #    scan_range = 0.3
 #    num_scan_steps = 90
     
-#    scan_range = 0.2
-#    num_scan_steps = 60
+    scan_range = 0.2
+    num_scan_steps = 60
     
 #    scan_range = 0.05
 #    num_scan_steps = 60
 #    num_scan_steps = 30
+#    num_scan_steps = 15
     
 #    scan_range = 0.01
 #    num_scan_steps = 60
@@ -517,17 +518,20 @@ if __name__ == '__main__':
     # %% Functions to run
     
     try:
-        
+#        coords = [0.263, 0.257, 53.6]
+#        do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
+#        do_optimize(name, coords, nd_filter, apd_a_index)
         for nv in nv_list:
-            original_coords = numpy.array(nv)
-            coords = (original_coords + drift).tolist()
+#            original_coords = numpy.array(nv)
+#            coords = (original_coords + drift).tolist()
+            coords = nv
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_a_index)
 #            do_optimize(name, coords, nd_filter, apd_a_index)
 #            do_optimize_list(name, coords, nd_filter, apd_a_index)
 #            do_stationary_count(name, coords, nd_filter, apd_a_index)
-#            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
-            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
+            do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
+#            do_resonance(name, coords, nd_filter, apd_a_index, expected_counts)
 #            ret_val = do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.8554, 0)
 #            coords = ret_val 
 #            do_rabi(name, coords, nd_filter, apd_a_index, apd_b_index, expected_counts, 2.8380, 0)

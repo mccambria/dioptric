@@ -16,6 +16,7 @@ Created on Wed Apr 24 17:33:26 2019
 
 
 import utils.tool_belt as tool_belt
+import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import time
@@ -95,7 +96,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     sleep_time = 2
 
     # Set xyz and open the AOM
-    tool_belt.set_xyz(cxn, coords)
+    optimize.main(cxn, coords, nd_filter, apd_a_index)
     cxn.pulse_streamer.constant()
 
     num_tags = 0
@@ -126,7 +127,9 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
         time.sleep(max(sleep_time - calc_time_elapsed, 0))
         # Read the stream and convert from strings to int64s
         ret_vals = cxn.apd_tagger.read_tag_stream()
-        buffer_timetags, buffer_apd_indices = ret_vals
+        buffer_timetags, buffer_channels = ret_vals
+        buffer_apd_indices = [int(val.split('_')[1]) for val 
+                              in buffer_channels]
         buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
 
         # Check if we should stop

@@ -282,15 +282,18 @@ def main(cxn, coords, nd_filter, x_range, y_range,
         # Read the samples and update the image
         new_samples = cxn.apd_tagger.read_counter(apd_index)
         num_new_samples = len(new_samples)
+        # new_samples will be a list of lists with one value in them.
+        # We just want a list of the values
+        new_samples_values = [sample[0] for sample in new_samples]
         if num_new_samples > 0:
-            populate_img_array(new_samples, img_array, img_write_pos)
+            populate_img_array(new_samples_values, img_array, img_write_pos)
             # This is a horribly inefficient way of getting kcps, but it
             # is easy and readable and probably fine up to some resolution
             # we likely will never try
             img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
             tool_belt.update_image_figure(fig, img_array_kcps)
             num_read_so_far += num_new_samples
-
+            
     # %% Clean up
 
     # Stop the pulse streamer
@@ -308,7 +311,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
     rawData = {'timestamp': timestamp,
                'name': name,
-               'coords': coords,
+               'coords': list(coords),
                'coords-units': 'V',
                'nd_filter': nd_filter,
                'x_range': x_range,
@@ -328,11 +331,6 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
-
-    # %% Clean up
-
-    # Return to center
-    cxn.galvo.write(x_center, y_center)
 
 
 # %% Re-display an image if you run the file

@@ -26,7 +26,7 @@ log = Logger()
 
 def read_timed_counts(cxn, num_steps, period, apd_index):
 
-    cxn.apd_counter.load_stream_reader(apd_index, period, num_steps)
+    cxn.apd_tagger.start_tag_stream([apd_index])
     
     num_read_so_far = 0
     counts = []
@@ -47,12 +47,14 @@ def read_timed_counts(cxn, num_steps, period, apd_index):
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_counter.read_stream(apd_index)
+        new_samples = cxn.apd_tagger.read_counter(apd_index)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             counts.extend(new_samples)
             num_read_so_far += num_new_samples
 
+    cxn.apd_tagger.stop_tag_stream()
+    
     return numpy.array(counts, dtype=int)
     
     
@@ -110,17 +112,18 @@ def stationary_count_lite(cxn, coords, nd_filter, readout, apd_index):
 
     # Set up the APD
 
-    cxn.apd_counter.load_stream_reader(apd_index, period, total_num_samples)
+    cxn.apd_tagger.start_tag_stream([apd_index])
     
     # Collect the data
 
     cxn.pulse_streamer.stream_start(total_num_samples)
     
     
-    new_samples = cxn.apd_counter.read_stream(apd_index, total_num_samples)
+    new_samples = cxn.apd_tagger.read_counter(apd_index, total_num_samples)
     
     new_samples_avg = numpy.average(new_samples)
     
+    cxn.apd_tagger.stop_tag_stream()
     
     counts_kcps = (new_samples_avg / 1000) / (readout / 10**9)
     
@@ -418,7 +421,7 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
     period = ret_vals[0]
 
     # Set up the APD
-    cxn.apd_counter.load_stream_reader(apd_index, period, num_steps)
+    cxn.apd_tagger.start_tag_stream([apd_index])
 
     z_counts = numpy.zeros(num_steps, dtype=int)
 
@@ -435,7 +438,9 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
         # Start the timing stream
         cxn.pulse_streamer.stream_start()
 
-        z_counts[ind] = int(cxn.apd_counter.read_stream(apd_index, 1)[0])
+        z_counts[ind] = int(cxn.apd_tagger.read_counter(apd_index, 1)[0])
+
+    cxn.apd_tagger.stop_tag_stream()
 
     # Fit
     k_counts_per_sec = (z_counts / 1000) / readout_sec
