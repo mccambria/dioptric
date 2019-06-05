@@ -61,7 +61,7 @@ class ApdTagger(LabradServer):
         self.tagger.reset()
         # The APDs share a clock, but everything else is distinct
         self.tagger_di_clock = get_result[1]
-        # Create a mapping from tagger channels to semantic channels
+        # Create a mapping from tagger channels to semantic channel names
         self.channel_mapping = {self.tagger_di_clock: 'di_clock'}
         # Determine how many APDs we're supposed to set up
         apd_sub_dirs = []
@@ -226,6 +226,12 @@ class ApdTagger(LabradServer):
         self.leftover_timestamps = []
         self.leftover_channels = []
 
+    @setting(7, apd_indices='*i', returns='*s')
+    def get_apd_chan_names(self, c, apd_indices):
+            
+        return [self.channel_mapping(self.tagger_di_apd[ind]) for ind
+                in apd_indices]
+
     @setting(0, apd_indices='*i')
     def start_tag_stream(self, c, apd_indices):
         """Expose a raw tag stream which can be read with read_tag_stream and
@@ -252,8 +258,6 @@ class ApdTagger(LabradServer):
         self.stream = TimeTagger.TimeTagStream(self.tagger,
                                                buffer_size, channels)
         self.stream_apd_indices = apd_indices
-        self.leftover_timestamps = []
-        self.leftover_channels = []
         
     @setting(2)
     def stop_tag_stream(self, c):

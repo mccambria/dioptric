@@ -516,9 +516,11 @@ if __name__ == '__main__':
     # %% Functions to run
     
     try:
-        coords = [0.263, 0.257, 53.6]
-        do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, [apd_b_index])
-#        do_optimize(name, coords, nd_filter, apd_a_index)
+#        coords = [0.263, 0.257, 53.6]
+        coords = [0.035, -0.123, 53.6]
+        apd_indices = [apd_a_index, apd_b_index]
+#        do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
+        do_optimize(name, coords, nd_filter, apd_indices)
 #        for nv in nv_list:
 #            original_coords = numpy.array(nv)
 #            coords = (original_coords + drift).tolist()

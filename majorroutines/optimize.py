@@ -16,30 +16,33 @@ import numpy
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
-from twisted.logger import Logger
-
-log = Logger()
+import logging
 
 
 # %% Functions
 
 
-def read_timed_counts(cxn, num_steps, period, apd_index):
+def read_timed_counts(cxn, num_steps, period, apd_indices):
+    logging.basicConfig(level=logging.DEBUG, 
+                format='%(asctime)s %(levelname)-8s %(message)s',
+                datefmt='%y-%m-%d_%H-%M-%S',
+                filename='E:/Team Drives/Kolkowitz Lab Group/nvdata/labrad_logging/apd_tagger.log')
 
-    cxn.apd_tagger.start_tag_stream([apd_index])
-    
+    cxn.apd_tagger.start_tag_stream(apd_indices)
     num_read_so_far = 0
     counts = []
+#    time.sleep(1)
 
     timeout_duration = ((period*(10**-9)) * num_steps) + 10
     timeout_inst = time.time() + timeout_duration
 
+
+    logging.debug('streaming!')
     cxn.pulse_streamer.stream_start(num_steps)
-
+    logging.debug('streaming return!')
     while num_read_so_far < num_steps:
-
+        
         if time.time() > timeout_inst:
-            log.failure('Timed out before all samples were collected.')
             break
         
         # Break out of the while if the user says stop
@@ -47,7 +50,7 @@ def read_timed_counts(cxn, num_steps, period, apd_index):
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter(apd_index)
+        new_samples = cxn.apd_tagger.read_counter_simple()
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             counts.extend(new_samples)
@@ -88,7 +91,7 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
     fig.canvas.draw()
     fig.canvas.flush_events()
     
-def stationary_count_lite(cxn, coords, nd_filter, readout, apd_index):
+def stationary_count_lite(cxn, coords, nd_filter, readout, apd_indices):
     
     #  Some initial calculations
 
@@ -98,10 +101,8 @@ def stationary_count_lite(cxn, coords, nd_filter, readout, apd_index):
 
     # Load the PulseStreamer
 
-    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                              [0, readout, apd_index])
-    period = ret_vals[0]
-
+    cxn.pulse_streamer.stream_load('simple_readout.py',
+                                   [0, readout, apd_indices[0]])
 
     total_num_samples = 2
 
@@ -112,14 +113,14 @@ def stationary_count_lite(cxn, coords, nd_filter, readout, apd_index):
 
     # Set up the APD
 
-    cxn.apd_tagger.start_tag_stream([apd_index])
+    cxn.apd_tagger.start_tag_stream(apd_indices)
     
     # Collect the data
 
     cxn.pulse_streamer.stream_start(total_num_samples)
     
     
-    new_samples = cxn.apd_tagger.read_counter(apd_index, total_num_samples)
+    new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
     
     new_samples_avg = numpy.average(new_samples)
     
@@ -133,7 +134,7 @@ def stationary_count_lite(cxn, coords, nd_filter, readout, apd_index):
 # %% Main
 
 
-def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=None,
+def main(cxn, coords, nd_filter, apd_indices, name='untitled', expected_counts=None,
          set_to_opti_centers=True, save_data=False, plot_data=False):
     
     
@@ -145,7 +146,7 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
     # Try to optimize twice
     for ind in range(2):
         
-        opti_coords = do_optimize(cxn, coords, nd_filter, apd_index, name, 
+        opti_coords = do_optimize(cxn, coords, nd_filter, apd_indices, name, 
                                    set_to_opti_centers, save_data, plot_data)
 
         # If optimization succeeds, go on
@@ -158,7 +159,7 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
                 upper_threshold = expected_counts * 5/4
                 
                 # check the counts
-                opti_counts = stationary_count_lite(cxn, opti_coords, nd_filter,  readout, apd_index)
+                opti_counts = stationary_count_lite(cxn, opti_coords, nd_filter, readout, apd_indices)
                 print('Counts from optimization: {}'.format(opti_counts)) 
                 print('Expected counts: {}'.format(expected_counts))  
                 print(' ')
@@ -179,7 +180,7 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
             
         # Optimize fails    
         else:
-            print("Cptimization failed  \n ")
+            print("Optimization failed  \n ")
  
     if optimization_success == True:
         if set_to_opti_centers:
@@ -219,7 +220,7 @@ def main(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=Non
 # %% Main
 
 
-def optimize_list(cxn, coords, nd_filter, apd_index, name='untitled', expected_counts=None,
+def optimize_list(cxn, coords, nd_filter, apd_indices, name='untitled', expected_counts=None,
          set_to_opti_centers=True, save_data=False, plot_data=False):
     
     
@@ -231,7 +232,7 @@ def optimize_list(cxn, coords, nd_filter, apd_index, name='untitled', expected_c
     # Try to optimize twice
     for ind in range(2):
         
-        opti_coords = do_optimize(cxn, coords, nd_filter, apd_index, name, 
+        opti_coords = do_optimize(cxn, coords, nd_filter, apd_indices, name, 
                                    set_to_opti_centers, save_data, plot_data)
 
         # If optimization succeeds, go on
@@ -244,7 +245,7 @@ def optimize_list(cxn, coords, nd_filter, apd_index, name='untitled', expected_c
                 upper_threshold = expected_counts * 5/4
                 
                 # check the counts
-                opti_counts = stationary_count_lite(cxn, opti_coords, nd_filter,  readout, apd_index)
+                opti_counts = stationary_count_lite(cxn, opti_coords, nd_filter, readout, apd_indices)
 #                print('Counts from optimization: {}'.format(opti_counts)) 
 #                print('Expected counts: {}'.format(expected_counts))  
 #                print(' ')
@@ -302,7 +303,7 @@ def optimize_list(cxn, coords, nd_filter, apd_index, name='untitled', expected_c
     return opti_coords, optimization_success
     
     
-def do_optimize(cxn, coords, nd_filter, apd_index, name, 
+def do_optimize(cxn, coords, nd_filter, apd_indices, name, 
          set_to_opti_centers, save_data, plot_data):
 
     # %% Initial set up
@@ -336,7 +337,7 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
     # %% Shared x/y setup
 
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                              [delay, readout, apd_index])
+                                              [delay, readout, apd_indices[0]])
     period = ret_vals[0]
     
     cxn.objective_piezo.write_voltage(z_center)
@@ -347,7 +348,7 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
                                        num_steps, period)
     
     # Collect the data
-    x_counts = read_timed_counts(cxn, num_steps, period, apd_index)
+    x_counts = read_timed_counts(cxn, num_steps, period, apd_indices)
 
     if tool_belt.safe_stop():
         return opti_centers
@@ -377,7 +378,7 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
                                        num_steps, period)
     
     # Collect the data
-    y_counts = read_timed_counts(cxn, num_steps, period, apd_index)
+    y_counts = read_timed_counts(cxn, num_steps, period, apd_indices)
 
     if tool_belt.safe_stop():
         return opti_centers
@@ -417,11 +418,11 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
 
     # Set up the stream
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                              [delay, readout, apd_index])
+                                              [delay, readout, apd_indices[0]])
     period = ret_vals[0]
 
     # Set up the APD
-    cxn.apd_tagger.start_tag_stream([apd_index])
+    cxn.apd_tagger.start_tag_stream(apd_indices)
 
     z_counts = numpy.zeros(num_steps, dtype=int)
 
@@ -438,7 +439,7 @@ def do_optimize(cxn, coords, nd_filter, apd_index, name,
         # Start the timing stream
         cxn.pulse_streamer.stream_start()
 
-        z_counts[ind] = int(cxn.apd_tagger.read_counter(apd_index, 1)[0])
+        z_counts[ind] = int(cxn.apd_tagger.read_counter_simple(1)[0])
 
     cxn.apd_tagger.stop_tag_stream()
 
