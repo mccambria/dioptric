@@ -130,7 +130,7 @@ class ApdTagger(LabradServer):
         
     def read_counter_internal(self, num_to_read):
         if self.stream is None:
-            logging.error('read_counter_internal attempted while stream ' /
+            logging.error('read_counter_internal attempted while stream ' \
                           'is None.')
             return
         
@@ -214,7 +214,7 @@ class ApdTagger(LabradServer):
     
     def stop_tag_stream_internal(self):
         if self.stream is None:
-            logging.error('stop_tag_stream_internal attempted while stream ' /
+            logging.error('stop_tag_stream_internal attempted while stream ' \
                           'is None.')
         else:
             self.stream.stop()
@@ -231,12 +231,14 @@ class ApdTagger(LabradServer):
         """Expose a raw tag stream which can be read with read_tag_stream and
         closed with stop_tag_stream.
         """
-        if self.stream is not None:
-            logging.warning('New stream started before existing stream was ' /
-                            'stopped. Stopping existing stream.')
-            
+        
         # Make sure the existing stream is stopped and we have fresh state
-        self.stop_tag_stream_internal()
+        if self.stream is not None:
+            logging.warning('New stream started before existing stream was ' \
+                            'stopped. Stopping existing stream.')
+            self.stop_tag_stream_internal()
+        else:
+            self.reset_tag_stream_state()
         
         # Hardware-limited max buffer is a million total samples
         buffer_size = int(10**6 / len(apd_indices))  
@@ -288,14 +290,45 @@ class ApdTagger(LabradServer):
         complete_counts = self.read_counter_setting_internal(num_to_read)
         
         # To combine APDs we assume all the APDs have the same gate
-        gate_channels = self.tagger_di_gate.values()
+        gate_channels = list(self.tagger_di_gate.values())
         first_gate_channel = gate_channels[0]
         if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical('Combined counts from APDs with ' /
+            logging.critical('Combined counts from APDs with ' \
                              'different gates.')
         
         # Just find the sum of each sample in complete_counts
-        return_counts = [numpy.sum(sample) for sample in complete_counts]
+        return_counts = [numpy.sum(sample, dtype=int) for sample
+                         in complete_counts]
+            
+        return return_counts
+
+    @setting(5, num_to_read='i', returns='*2w')
+    def read_counter_separate_gates(self, c, num_to_read=None):
+        
+        complete_counts = self.read_counter_setting_internal(num_to_read)
+        
+        # To combine APDs we assume all the APDs have the same gate
+        gate_channels = list(self.tagger_di_gate.values())
+        first_gate_channel = gate_channels[0]
+        if not all(val == first_gate_channel for val in gate_channels):
+            logging.critical('Combined counts from APDs with ' \
+                             'different gates.')
+        
+        # Add the APD counts as vectors for each sample in complete_counts
+        return_counts = [numpy.sum(sample, 0, dtype=int).tolist() for sample
+                         in complete_counts]
+            
+        return return_counts
+
+    @setting(6, num_to_read='i', returns='*2w')
+    def read_counter_separate_apds(self, c, num_to_read=None):
+        
+        complete_counts = self.read_counter_setting_internal(num_to_read)
+        
+        # Just find the sum of the counts for each APD for each
+        # sample in complete_counts
+        return_counts = [[numpy.sum(apd_counts, dtype=int) for apd_counts
+                          in sample] for sample in complete_counts]
             
         return return_counts
 

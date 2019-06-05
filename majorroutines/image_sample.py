@@ -278,15 +278,12 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
         if tool_belt.safe_stop():
             break
-
+    
         # Read the samples and update the image
         new_samples = cxn.apd_tagger.read_counter_simple()
         num_new_samples = len(new_samples)
-        # new_samples will be a list of lists with one value in them.
-        # We just want a list of the values
-        new_samples_values = [sample[0] for sample in new_samples]
         if num_new_samples > 0:
-            populate_img_array(new_samples_values, img_array, img_write_pos)
+            populate_img_array(new_samples, img_array, img_write_pos)
             # This is a horribly inefficient way of getting kcps, but it
             # is easy and readable and probably fine up to some resolution
             # we likely will never try
