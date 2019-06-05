@@ -28,11 +28,12 @@ from twisted.internet.defer import ensureDeferred
 import TimeTagger
 import numpy
 import logging
+import re
 
 
 class ApdTagger(LabradServer):
     name = 'apd_tagger'
-    logging.basicConfig(level=logging.error, 
+    logging.basicConfig(level=logging.DEBUG, 
                 format='%(asctime)s %(levelname)-8s %(message)s',
                 datefmt='%y-%m-%d_%H-%M-%S',
                 filename='E:/Team Drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
@@ -70,7 +71,8 @@ class ApdTagger(LabradServer):
         apd_indices = []
         keys = config['dir'][1]
         for key in keys:
-            if key.startswith('di_apd_'):
+            # Regular expression for keys of the form di_apd_1
+            if re.fullmatch(r'di_apd_[0-9]+', key) is not None:
                 apd_keys.append(key)
                 apd_indices.append(int(key.split('_')[2]))
         if len(apd_keys) > 0:
@@ -92,7 +94,7 @@ class ApdTagger(LabradServer):
             channel = wiring[loop_index]
             self.tagger_di_apd[apd_index] = channel
             self.channel_mapping[channel] = 'apd_{}'.format(apd_index)
-        logging.error('init complete')
+        logging.debug('init complete')
 
     def read_raw_stream(self):
         if self.stream is None:
@@ -170,7 +172,8 @@ class ApdTagger(LabradServer):
                 gate_window = sample_channels[gate_open_click_ind:
                     gate_close_click_ind]
                 gate_window = gate_window.tolist()
-                sample_counts.append(gate_window.count(apd_channel))
+                gate_counts = gate_window.count(apd_channel)
+                sample_counts.append(gate_counts)
             counts.append(sample_counts)
 
             previous_sample_end_ind = sample_end_ind
@@ -205,9 +208,8 @@ class ApdTagger(LabradServer):
         channels = []
         for ind in apd_indices:
             channels.append(self.tagger_di_apd[ind])
-            gate_channel = self.tagger_di_apd_gate[ind]
-            channels.append(gate_channel)
-            channels.append(-gate_channel)
+        channels.append(self.tagger_di_apd_gate)  # rising edge
+        channels.append(-self.tagger_di_apd_gate)  # falling edge
         channels.append(self.tagger_di_clock)
         self.stream = TimeTagger.TimeTagStream(self.tagger,
                                                buffer_size, channels)
@@ -237,7 +239,7 @@ class ApdTagger(LabradServer):
         semantic_channels = [self.channel_mapping[chan] for chan in channels]
         return timestamps, semantic_channels
 
-    @setting(3, apd_index='i', num_to_read='i', returns='*2w')
+    @setting(3, apd_index='i', num_to_read='i', returns='*w')
     def read_counter(self, c, apd_index, num_to_read=None):
         if self.stream is None:
             logging.error('read_counter attempted while stream is None.')
