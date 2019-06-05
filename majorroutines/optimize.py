@@ -37,9 +37,7 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
     timeout_inst = time.time() + timeout_duration
 
 
-    logging.debug('streaming!')
     cxn.pulse_streamer.stream_start(num_steps)
-    logging.debug('streaming return!')
     while num_read_so_far < num_steps:
         
         if time.time() > timeout_inst:
