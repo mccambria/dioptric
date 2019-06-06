@@ -33,21 +33,6 @@ def get_seq(pulser_wiring, args):
     # Specify the initial and readout states
     init_state = args[14]
     read_state = args[15]
-        
-    # Get what we need out of the wiring dictionary
-    key = 'do_apd_gate_{}'.format(sig_shrt_apd_index)
-    pulser_do_sig_shrt_apd_gate = pulser_wiring[key]
-    print(pulser_do_sig_shrt_apd_gate)
-    key = 'do_apd_gate_{}'.format(ref_shrt_apd_index)
-    pulser_do_ref_shrt_apd_gate = pulser_wiring[key]
-    print(pulser_do_ref_shrt_apd_gate)
-    
-    key = 'do_apd_gate_{}'.format(sig_long_apd_index)
-    pulser_do_sig_long_apd_gate = pulser_wiring[key]
-    print(pulser_do_sig_long_apd_gate)
-    key = 'do_apd_gate_{}'.format(ref_long_apd_index)
-    pulser_do_ref_long_apd_gate = pulser_wiring[key]
-    print(pulser_do_ref_long_apd_gate)
     
     pulser_do_apd_gate = pulser_wiring['do_apd_gate_{}'.format(apd_index)]
     
@@ -226,7 +211,7 @@ if __name__ == '__main__':
               'do_uwave_gate_0': 4,
               'do_uwave_gate_1': 1}
 
-    args = [2000, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 300, 2000, 200, 4000, 0, 1, 2, 3, 0, 0]
+    args = [32000, 3000, 3000, 3000, 2000, 1000, 1000, 750, 40, 450, 34, 48, 68000, 0, 1, -1]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()    
         

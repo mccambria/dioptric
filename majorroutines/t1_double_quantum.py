@@ -212,7 +212,7 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
             break
         
         # Optimize
-        ret_val = optimize.main(cxn, coords, nd_filter, apd_indices[0], 
+        ret_val = optimize.main(cxn, coords, nd_filter, apd_indices, 
                                expected_counts = expected_counts)
         
         coords = ret_val[0]
