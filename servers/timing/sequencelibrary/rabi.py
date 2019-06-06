@@ -28,7 +28,7 @@ def get_seq(pulser_wiring, args):
 
     # Get the APD indices
     sig_apd_index, ref_apd_index = args[9:11]
-    
+
     #Signify which signal generator to use
     do_uwave_gate = args[11]
 
@@ -101,11 +101,11 @@ def get_seq(pulser_wiring, args):
 
 if __name__ == '__main__':
     wiring = {'do_daq_clock': 0,
-              'do_apd_gate_0': 1,
-              'do_apd_gate_1': 2,
+              'do_apd_gate_0': 5,
+              'do_apd_gate_1': 6,
               'do_aom': 3,
               'do_uwave_gate_0': 4,
-              'do_uwave_gate_1': 5}
-    args = [10 , 1000 , 1000, 500, 500, 500, 0, 20, 1000, 0, 1, 0]
-    seq = get_seq(wiring, args)
+              'do_uwave_gate_1': 1}
+    args = [120, 3000, 1000, 1000, 2000, 1000, 750, 450, 400, 0, 1, 0]
+    seq = get_seq(wiring, args)[0]
     seq.plot()
