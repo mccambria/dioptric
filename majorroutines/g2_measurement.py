@@ -107,11 +107,12 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     differences_append = differences.append  # Skip unnecessary lookup
     num_bins = int((2 * diff_window) / 1000) + 1  # 1 ns bins in ps
     
-    # Map the apd indices to the channel names that the tagger will return
+    # Expose the stream
+    cxn.apd_tagger.start_tag_stream(apd_indices, [], False)  
+    
+    # Get the APD channel names that the tagger will return
     ret_vals = cxn.apd_tagger.get_channel_mapping()
-    apd_a_chan_name = ret_vals[1]
-    apd_b_chan_name = ret_vals[4]
-    print(ret_vals)
+    apd_a_chan_name, apd_b_chan_name = ret_vals
 
     # %% Collect the data
 
@@ -121,7 +122,6 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
 
     # Python does not have do-while loops so we will use something like
     # a while True
-    cxn.apd_tagger.start_tag_stream(apd_indices)  # Expose an initial stream
     stop = False
     start_calc_time = start_time
     while not stop:
@@ -133,8 +133,6 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
         # Read the stream and convert from strings to int64s
         ret_vals = cxn.apd_tagger.read_tag_stream()
         buffer_timetags, buffer_channels = ret_vals
-        buffer_apd_indices = [int(val.split('_')[1]) for val 
-                              in buffer_channels]
         buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
 
         # Check if we should stop
@@ -146,7 +144,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
 
         # Process data
         start_calc_time = time.time()
-        process_raw_buffer(buffer_timetags, buffer_apd_indices,
+        process_raw_buffer(buffer_timetags, buffer_channels,
                            diff_window, afterpulse_window,
                            differences_append,
                            apd_a_chan_name, apd_b_chan_name)
@@ -159,6 +157,8 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
             bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
             bin_centers = bin_edges[0: num_bins] + bin_center_offset
             ax.plot(bin_centers, hist)
+            xlim = int(1.1 * diff_window / 1000)
+            ax.set_xlim(-xlim, xlim)
             ax.set_xlabel('Time (ns)')
             ax.set_ylabel('Differences')
             ax.set_title(r'$g^{(2)}(\tau)$')

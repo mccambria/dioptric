@@ -85,7 +85,7 @@ class ApdTagger(LabradServer):
     def on_get_wiring(self, wiring, apd_indices):
         self.tagger_di_apd = {}
         self.tagger_di_gate = {}
-        # Loop through the possible counters
+        # Loop through the available APDs
         for loop_index in range(len(apd_indices)):
             apd_index = apd_indices[loop_index]
             wiring_index = 2 * loop_index
@@ -94,7 +94,19 @@ class ApdTagger(LabradServer):
             self.channel_mapping[di_apd] = 'di_apd_{}'.format(apd_index)
             di_gate = wiring[wiring_index+1]
             self.tagger_di_gate[apd_index] = di_gate
-            self.channel_mapping[di_gate] = 'di_gate_{}'.format(apd_index)
+            # APDs can share gates so make that apparent in the channel mapping
+            if di_gate in self.channel_mapping:
+                prev_val = self.channel_mapping[di_gate]
+                new_val = '{}-{}'.format(prev_val, apd_index)
+                self.channel_mapping[di_gate] = new_val
+                prev_val = self.channel_mapping[-di_gate]
+                new_val = '{}-{}'.format(prev_val, apd_index)
+                self.channel_mapping[-di_gate] = new_val
+            else:
+                val = 'di_gate_open_{}'.format(apd_index)
+                self.channel_mapping[di_gate] = val
+                val = 'di_gate_close_{}'.format(apd_index)
+                self.channel_mapping[-di_gate] = val
         logging.debug('init complete')
 
     def read_raw_stream(self):
@@ -226,30 +238,23 @@ class ApdTagger(LabradServer):
     def reset_tag_stream_state(self):
         self.stream = None
         self.stream_apd_indices = []
+        self.stream_channels = []
         self.leftover_timestamps = []
         self.leftover_channels = []
 
     @setting(7, returns='*s')
     def get_channel_mapping(self, c):
-        """The order is [clock, *(APD, gate open, gate close)] where each
-        APD in the apd_indices passed to start_tag_stream will contribute 
-        a (APD, gate open, gate close). The order of apd_indices is
-        preserved.
+        """As a regexp, the order is:
+        [+APD, *[gate open, gate close], ?clock]
+        Whether certain channels will be present/how many channels of a given
+        type will be present is based on the channels passed to
+        start_tag_stream.
         """
         
-        mapping_list = [self.channel_mapping(self.tagger_di_clock)]
-        
-        for ind in self.stream_apd_indices:
-            apd_chans = [self.tagger_di_apd[ind],
-                         self.tagger_di_gate[ind],
-                         -self.tagger_di_gate[ind]]
-            apd_mapping_list = [self.channel_mapping(el) for el in apd_chans]
-            mapping_list.extend(apd_mapping_list)
-            
-        return mapping_list
+        return [self.channel_mapping[chan] for chan in self.stream_channels]
 
-    @setting(0, apd_indices='*i')
-    def start_tag_stream(self, c, apd_indices):
+    @setting(0, apd_indices='*i', gate_indices='*i', clock='b')
+    def start_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
         """Expose a raw tag stream which can be read with read_tag_stream and
         closed with stop_tag_stream.
         """
@@ -262,17 +267,25 @@ class ApdTagger(LabradServer):
         else:
             self.reset_tag_stream_state()
         
-        # Hardware-limited max buffer is a million total samples
-        buffer_size = int(10**6 / len(apd_indices))  
         channels = []
         for ind in apd_indices:
             channels.append(self.tagger_di_apd[ind])
+        # If gate_indices is unspecified, add gates for all the 
+        # passed APDs by default
+        if gate_indices is None:
+            gate_indices = apd_indices
+        for ind in gate_indices:
             gate_channel = self.tagger_di_gate[ind]
             channels.append(gate_channel)  # rising edge
             channels.append(-gate_channel)  # falling edge
-        channels.append(self.tagger_di_clock)
+        if clock:
+            channels.append(self.tagger_di_clock)
+        # Store in state before de-duplication to preserve order
+        self.stream_channels = channels
         # De-duplicate the channels list
         channels = list(set(channels))
+        # Hardware-limited max buffer is a million total samples
+        buffer_size = int(10**6 / len(channels))  
         self.stream = TimeTagger.TimeTagStream(self.tagger,
                                                buffer_size, channels)
         # When you set up a measurement, it will not start recording data

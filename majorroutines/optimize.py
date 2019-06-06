@@ -26,7 +26,6 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
     cxn.apd_tagger.start_tag_stream(apd_indices)
     num_read_so_far = 0
     counts = []
-#    time.sleep(1)
 
     timeout_duration = ((period*(10**-9)) * num_steps) + 10
     timeout_inst = time.time() + timeout_duration

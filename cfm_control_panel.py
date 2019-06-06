@@ -80,11 +80,14 @@ def do_stationary_count(name, coords, nd_filter, apd_index):
 
 def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 
-#    run_time = 60 * 3  # in s
-    run_time = 60 * 5  # in s
-#    run_time = 60 * 20  # in s
+    # Run times are in seconds
 #    run_time = 2
 #    run_time = 30
+#    run_time = 60 * 3
+    run_time = 60 * 5
+#    run_time = 60 * 10
+#    run_time = 60 * 20
+    
     diff_window = 150 * 10**3  # 100 ns in ps
     
     with labrad.connect() as cxn:
@@ -516,11 +519,11 @@ if __name__ == '__main__':
     # %% Functions to run
     
     try:
-#        coords = [0.263, 0.257, 53.6]
-        coords = [0.035, -0.123, 53.6]
+        coords = [0.032, -0.126, 53.9]
         apd_indices = [apd_a_index, apd_b_index]
-        do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
+#        do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
 #        do_optimize(name, coords, nd_filter, apd_indices)
+        do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
 #        for nv in nv_list:
 #            original_coords = numpy.array(nv)
 #            coords = (original_coords + drift).tolist()
