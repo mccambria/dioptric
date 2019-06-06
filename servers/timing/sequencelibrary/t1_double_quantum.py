@@ -206,12 +206,13 @@ def get_seq(pulser_wiring, args):
     
 if __name__ == '__main__':
     wiring = {'do_daq_clock': 0,
-              'do_apd_gate_0': 5,
-              'do_aom': 3,
-              'do_uwave_gate_0': 4,
-              'do_uwave_gate_1': 1}
+              'do_apd_gate_0': 4,
+              'do_aom': 1,
+              'do_uwave_gate_0': 2,
+              'do_uwave_gate_1': 3}
 
-    args = [32000, 3000, 3000, 3000, 2000, 1000, 1000, 750, 40, 450, 34, 48, 68000, 0, 1, -1]
+    args = [32000, 3000, 3000, 3000, 2000, 1000, 1000,
+            750, 40, 450, 34, 48, 68000, 0, 1, -1]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()    
         

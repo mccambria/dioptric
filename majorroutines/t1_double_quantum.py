@@ -251,9 +251,6 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                     gate_time, uwave_pi_pulse_plus, uwave_pi_pulse_minus, taus[tau_ind_second],
                     apd_indices[0], init_state, read_state]
-            
-            print(args)
-            break
 
             print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
             print('Second relaxation time: {}'.format(taus[tau_ind_second]))  
@@ -291,8 +288,6 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
 
     cxn.apd_tagger.stop_tag_stream()
     cxn.microwave_signal_generator.uwave_off()
-    
-    return
     
     # %% Average the counts over the iterations
 
