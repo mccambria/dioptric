@@ -298,7 +298,7 @@ def ask_open_file(file_path):
     root = Tk()
     root.withdraw()
     root.focus_force()
-    directory = str("E:/Team Drives/Kolkowitz Lab Group/" + file_path)
+    directory = str("E:/Shared drives/Kolkowitz Lab Group/" + file_path)
     file_name = filedialog.askopenfilename(initialdir = directory,
                                           title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) ) 
     return file_name
@@ -355,12 +355,12 @@ def get_file_path(caller_file, timeStamp, name=''):
     # Check where we should save to
     if branch_name == 'master':
         # master should save without a branch sub-folder
-        joined_path = os.path.join('E:/Team Drives/Kolkowitz Lab Group/nvdata',
+        joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
                                    sub_dir_name)
     else:
         # Otherwise we want a branch sub-folder so that we know this data was
         # produced by code that's under development
-        joined_path = os.path.join('E:/Team Drives/Kolkowitz Lab Group/nvdata',
+        joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
                                    sub_dir_name,
                                    'branch_{}'.format(branch_name))
         

@@ -36,14 +36,12 @@ class ApdTagger(LabradServer):
     logging.basicConfig(level=logging.DEBUG, 
                 format='%(asctime)s %(levelname)-8s %(message)s',
                 datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Team Drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
+                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
 
     def initServer(self):
+        self.reset_tag_stream_state()
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
-        self.stream = None
-        self.leftover_timestamps = []
-        self.leftover_channels = []
     
     async def get_config(self):
         p = self.client.registry.packet()
@@ -206,7 +204,12 @@ class ApdTagger(LabradServer):
             return_counts.append(sample_counts)
             previous_sample_end_ind = sample_end_ind
         
-        if sample_end_ind is not None:
+        if sample_end_ind is None:
+            # No samples were clocked - add everything to leftovers
+            self.leftover_timestamps.extend(timestamps.tolist())
+            self.leftover_channels.extend(channels.tolist())
+        else:
+            # Reset leftovers from the last sample clock
             self.leftover_timestamps = timestamps[sample_end_ind:].tolist()
             self.leftover_channels = channels[sample_end_ind:].tolist()
 
@@ -226,11 +229,24 @@ class ApdTagger(LabradServer):
         self.leftover_timestamps = []
         self.leftover_channels = []
 
-    @setting(7, apd_indices='*i', returns='*s')
-    def get_apd_chan_names(self, c, apd_indices):
+    @setting(7, returns='*s')
+    def get_channel_mapping(self, c):
+        """The order is [clock, *(APD, gate open, gate close)] where each
+        APD in the apd_indices passed to start_tag_stream will contribute 
+        a (APD, gate open, gate close). The order of apd_indices is
+        preserved.
+        """
+        
+        mapping_list = [self.channel_mapping(self.tagger_di_clock)]
+        
+        for ind in self.stream_apd_indices:
+            apd_chans = [self.tagger_di_apd[ind],
+                         self.tagger_di_gate[ind],
+                         -self.tagger_di_gate[ind]]
+            apd_mapping_list = [self.channel_mapping(el) for el in apd_chans]
+            mapping_list.extend(apd_mapping_list)
             
-        return [self.channel_mapping(self.tagger_di_apd[ind]) for ind
-                in apd_indices]
+        return mapping_list
 
     @setting(0, apd_indices='*i')
     def start_tag_stream(self, c, apd_indices):
@@ -255,8 +271,14 @@ class ApdTagger(LabradServer):
             channels.append(gate_channel)  # rising edge
             channels.append(-gate_channel)  # falling edge
         channels.append(self.tagger_di_clock)
+        # De-duplicate the channels list
+        channels = list(set(channels))
         self.stream = TimeTagger.TimeTagStream(self.tagger,
                                                buffer_size, channels)
+        # When you set up a measurement, it will not start recording data
+        # immediately. It takes some time for the tagger to configure the fpga,
+        # etc. The sync call waits until this process is complete. 
+        self.tagger.sync()
         self.stream_apd_indices = apd_indices
         
     @setting(2)

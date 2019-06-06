@@ -16,17 +16,12 @@ import numpy
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
-import logging
 
 
 # %% Functions
 
 
 def read_timed_counts(cxn, num_steps, period, apd_indices):
-    logging.basicConfig(level=logging.DEBUG, 
-                format='%(asctime)s %(levelname)-8s %(message)s',
-                datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Team Drives/Kolkowitz Lab Group/nvdata/labrad_logging/apd_tagger.log')
 
     cxn.apd_tagger.start_tag_stream(apd_indices)
     num_read_so_far = 0
@@ -35,7 +30,6 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
 
     timeout_duration = ((period*(10**-9)) * num_steps) + 10
     timeout_inst = time.time() + timeout_duration
-
 
     cxn.pulse_streamer.stream_start(num_steps)
     while num_read_so_far < num_steps:

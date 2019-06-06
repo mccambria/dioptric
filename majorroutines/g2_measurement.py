@@ -108,8 +108,9 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     num_bins = int((2 * diff_window) / 1000) + 1  # 1 ns bins in ps
     
     # Map the apd indices to the channel names that the tagger will return
-    ret_vals = cxn.apd_tagger.get_apd_chan_names(apd_indices)
-    apd_a_chan_name, apd_b_chan_name = ret_vals
+    ret_vals = cxn.apd_tagger.get_channel_mapping()
+    apd_a_chan_name = ret_vals[1]
+    apd_b_chan_name = ret_vals[4]
     print(ret_vals)
 
     # %% Collect the data
