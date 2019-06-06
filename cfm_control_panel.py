@@ -103,7 +103,7 @@ def do_resonance(name, coords, nd_filter, apd_index, expected_counts, freq_cente
 #    freq_range = 0.03
     
     num_steps = 101
-    num_runs = 2
+    num_runs = 5
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 
     with labrad.connect() as cxn:
@@ -111,7 +111,7 @@ def do_resonance(name, coords, nd_filter, apd_index, expected_counts, freq_cente
                        num_steps, num_runs, uwave_power, name=name)
 
 
-def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index, 
+def do_rabi(name, coords, nd_filter, apd_indices, 
             expected_counts, uwave_freq, do_uwave_gate_number):
 
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation 
@@ -124,7 +124,7 @@ def do_rabi(name, coords, nd_filter, sig_apd_index, ref_apd_index,
 #    num_runs = 6
 
     with labrad.connect() as cxn:
-        new_coords = rabi.main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, 
+        new_coords = rabi.main(cxn, coords, nd_filter, apd_indices, 
                   expected_counts, uwave_freq, uwave_power, uwave_time_range,
                   do_uwave_gate_number,
                   num_steps, num_reps, num_runs, name=name)
@@ -448,6 +448,7 @@ if __name__ == '__main__':
     # Based on the current nv, what kcounts/s do we expect?
     # If not known, set to None
     expected_counts = None
+#    expected_counts = 40
     
     # %% t1 measurements, preparation population and readout population.
     
@@ -518,12 +519,29 @@ if __name__ == '__main__':
 
     # %% Functions to run
     
+    apd_indices = [apd_a_index, apd_b_index]
+    
+    # 6/6 12:45
+#    nv_list = [[0.251, 0.235, 54.0],
+#               [0.005, 0.226, 53.9],
+#               [0.140, 0.052, 54.1],
+#               [0.032, -0.126, 54.1],
+#               [-0.176, -0.077, 54.1],
+#               [-0.188, -0.112, 53.9]]
+    
+    nv0_2019_06_06 = [0.251, 0.236, 54.3]
+    
+    nv_list = [nv0_2019_06_06]
+    
     try:
-        coords = [0.032, -0.126, 53.9]
-        apd_indices = [apd_a_index, apd_b_index]
-#        do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
-#        do_optimize(name, coords, nd_filter, apd_indices)
-        do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index)
+        for nv in nv_list:
+#            do_image_sample(name, nv, nd_filter, scan_range, num_scan_steps, apd_indices)
+#            do_optimize(name, nv, nd_filter, apd_indices)
+#            do_g2_measurement(name, nv, nd_filter, apd_indices[0], apd_indices[1])
+#            do_resonance(name, nv, nd_filter, apd_indices, expected_counts)
+#            do_stationary_count(name, nv, nd_filter, apd_indices)
+            do_rabi(name, nv, nd_filter, apd_indices, expected_counts, 2.8431, 0)
+#            do_rabi(name, nv, nd_filter, apd_indices, expected_counts, 2.8911 , 1)
 #        for nv in nv_list:
 #            original_coords = numpy.array(nv)
 #            coords = (original_coords + drift).tolist()

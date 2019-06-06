@@ -228,10 +228,7 @@ class ApdTagger(LabradServer):
         return return_counts
     
     def stop_tag_stream_internal(self):
-        if self.stream is None:
-            logging.error('stop_tag_stream_internal attempted while stream ' \
-                          'is None.')
-        else:
+        if self.stream is not None:
             self.stream.stop()
         self.reset_tag_stream_state()
     

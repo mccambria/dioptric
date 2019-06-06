@@ -31,7 +31,7 @@ def get_seq(pulser_wiring, args):
 
     # The clock signal will be high for 100 ns with buffers of 100 ns on
     # either side. During the buffers, everything should be low. The buffers
-    #  account for any timing jitters/delays and ensure that everything we
+    # account for any timing jitters/delays and ensure that everything we
     # expect to be on one side of the clock signal is indeed on that side.
     train = [(delay + readout + 100, LOW), (100, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_daq_clock, train)

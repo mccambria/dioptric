@@ -35,7 +35,7 @@ def fit_resonance(save_file_type):
     root = Tk()
     root.withdraw()
     root.focus_force()
-    open_file_name = filedialog.askopenfilename(initialdir = "G:/Team Drives/Kolkowitz Lab Group/nvdata/resonance", 
+    open_file_name = filedialog.askopenfilename(initialdir = "E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance", 
                 title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) ) 
     
     if open_file_name == '':
@@ -183,7 +183,8 @@ def fit_resonance(save_file_type):
     fig.canvas.flush_events()
     
     # Save the file in the same file directory
-    fig.savefig(open_file_name + 'replot.' + save_file_type)
+    no_ext = open_file_name.split('.')[0]
+    fig.savefig('{}_fit.{}'.format(no_ext, save_file_type))
     
 # %%
     
