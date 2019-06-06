@@ -2,6 +2,8 @@
 """
 Optimize on an NV
 
+Currently written to fit the optimize plot to a parabola
+
 If the file is run itself, it will replot the data and fit again to the raw data.
 
 Created on Thu Apr 11 11:19:56 2019
