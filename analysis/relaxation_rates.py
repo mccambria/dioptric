@@ -26,6 +26,14 @@ def relaxation_rate_analysis(folder_name):
             file_list.append(file)
 
 #    print(file_list)
+    zero_plus_counts = []   
+    plus_plus_counts = [] 
+    plus_minus_counts = []
+    
+    zero_zero_time = []  
+    zero_plus_time = []   
+    plus_plus_time = [] 
+    plus_minus_time = []
     
     for file in file_list:
         with open('{}/{}/{}'.format(directory, folder_name, file)) as json_file:
@@ -33,11 +41,16 @@ def relaxation_rate_analysis(folder_name):
             init_state = data['init_state']
             read_state = data['read_state']
             
+            sig_counts = data['sig_counts']
+            ref_counts = data['ref_counts']
+            
             relaxation_time_range = data['relaxation_time_range']
             num_steps = data['num_steps']
             num_runs = data['num_runs']
-            
-            if 
+                
+            if init_state == 0 and read_state == 0:
+                zero_zero_sig_counts = sig_counts
+                zero_zero_ref_counts = ref_counts
             print('({}, {})'.format(init_state, read_state))
             
             # numpy.concatenate((a, b), axis=1)
