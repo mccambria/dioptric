@@ -70,7 +70,7 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
         first = voltages[0]
         last = voltages[len(voltages)-1]
         linspaceVoltages = numpy.linspace(first, last, num=1000)
-        gaussianFit = tool_belt.gaussian(linspaceVoltages, *optiParams)
+        gaussianFit = tool_belt.parabola(linspaceVoltages, *optiParams)
         ax.plot(linspaceVoltages, gaussianFit)
 
         # Add info to the axes
@@ -78,8 +78,8 @@ def do_plot_data(fig, ax, title, voltages, k_counts_per_sec,
         # mu: mean, defines the center of the Gaussian
         # sigma: standard deviation, defines the width of the Gaussian
         # offset: constant y value to account for background
-        text = 'a={:.3f}\n $\mu$={:.3f}\n ' \
-            '$\sigma$={:.4f}\n offset={:.3f}'.format(*optiParams)
+        text = 'peak height={:.3f}\n ' \
+            'center={:.4f}'.format(optiParams[0], optiParams[2])
 
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.05, 0.95, text, transform=ax.transAxes, fontsize=12,
@@ -520,7 +520,7 @@ import json
 
 if __name__ == '__main__':
     folder_name = 'G:/Team Drives/Kolkowitz Lab Group/nvdata/optimize'
-    file_name = '2019-06-04_14-21-59_ayrton12.txt'
+    file_name = '2019-06-04_13-28-18_ayrton12.txt'
     
     
     with open('{}/{}'.format(folder_name, file_name)) as file:
@@ -551,19 +551,21 @@ if __name__ == '__main__':
     
     # X Fit
     k_counts_per_sec = (x_counts / 1000) / readout_sec
-    init_fit = ((100. / readout) * 10**6, x_center, (xy_range / 3), 50.)
-    fit_param_bounds = ((-100, -5., 0., -50.), 
-                        (1500, 5., 0.1, 80.))
+    width_guess = abs(xy_range / 4)**(-2) * 50
+    init_fit = ((100 / readout_sec) / 10**3, width_guess, x_center)
+    fit_param_bounds = ([(0 / readout_sec) / 10**3, -numpy.inf, -1], 
+                        [(1500 / readout_sec) / 10**3, numpy.inf, 1])
     try:
-        optiParams, cov_arr = curve_fit(tool_belt.gaussian, x_voltages,
+        optiParams, cov_arr = curve_fit(tool_belt.parabola, x_voltages,
                                         k_counts_per_sec, p0=init_fit, 
-                                        bounds = fit_param_bounds)      
+                                        bounds = fit_param_bounds
+                                        )      
         optimizationFailed = False
     except Exception:
         optimizationFailed = True
 
     if not optimizationFailed:
-        opti_centers[0] = optiParams[1]
+        opti_centers[0] = optiParams[2]
         
     # X Plot
     do_plot_data(fig, axes_pack[0], 'X Axis', x_voltages, k_counts_per_sec, 
@@ -571,23 +573,22 @@ if __name__ == '__main__':
     
     # Y Fit
     k_counts_per_sec = (y_counts / 1000) / readout_sec
-    init_fit = ((100. / readout) * 10**6, y_center, (xy_range / 3), 50.)
-#    fit_param_bounds = ((-1000., -5., -10, -100.), 
-#                        (1500., 5., 10, 100.))
-    fit_param_bounds = ((-numpy.inf, -numpy.inf, -0.1, -numpy.inf), 
-                        (numpy.inf, numpy.inf, 10, numpy.inf))
+    width_guess = abs(xy_range / 4)**(-2) * 50
+    init_fit = ((100 / readout_sec) / 10**3, width_guess, y_center)
+    fit_param_bounds = ([(0 / readout_sec) / 10**3, -numpy.inf, -1], 
+                        [(1500 / readout_sec) / 10**3, numpy.inf, 1])
     try:
-        optiParams, cov_arr = curve_fit(tool_belt.gaussian, y_voltages,
+        optiParams, cov_arr = curve_fit(tool_belt.parabola, y_voltages,
                                         k_counts_per_sec, p0=init_fit,
-                                        bounds = fit_param_bounds)
-        print(optiParams)
+                                        bounds = fit_param_bounds
+                                        )
                 
         optimizationFailed = False
     except Exception:
         optimizationFailed = True
 
     if not optimizationFailed:
-        opti_centers[1] = optiParams[1]
+        opti_centers[1] = optiParams[2]
     
     # Plot
     do_plot_data(fig, axes_pack[1], 'Y Axis', y_voltages, k_counts_per_sec, 
@@ -596,13 +597,15 @@ if __name__ == '__main__':
 
     # Z Fit
     k_counts_per_sec = (z_counts / 1000) / readout_sec
-    init_fit = ((23. / readout) * 10**6, z_center, (z_range / 2), 0.)
-    fit_param_bounds = (((2. / readout) * 10**6, 40., 0., 0.6), 
-                        ((1500. / readout) * 10**6, 60., 0.1, 1.2))
+    width_guess = abs(z_range / 4)**(-2) * 50
+    init_fit = ((100 / readout_sec) / 10**3, width_guess, z_center)
+    fit_param_bounds = ([(0 / readout_sec) / 10**3, -numpy.inf, -40], 
+                        [(1500 / readout_sec) / 10**3, numpy.inf, 60])
     try:
-        optiParams, cov_arr = curve_fit(tool_belt.gaussian, z_voltages,
+        optiParams, cov_arr = curve_fit(tool_belt.parabola, z_voltages,
                                         k_counts_per_sec, p0=init_fit,
-                                        bounds = fit_param_bounds)
+                                        bounds = fit_param_bounds
+                                        )
         
 
         
@@ -611,11 +614,13 @@ if __name__ == '__main__':
         optimizationFailed = True
 
     if not optimizationFailed:
-        opti_centers[2] = optiParams[1]
+        opti_centers[2] = optiParams[2]
     
     # Plot
     do_plot_data(fig, axes_pack[2], 'Z Axis', z_voltages, k_counts_per_sec, 
                  optimizationFailed, optiParams)
+    
+    print(opti_centers)
         
         
         

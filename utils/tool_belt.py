@@ -264,8 +264,8 @@ def gaussian(x, *params):
 
 def parabola(x, *params):
     
-    coeff, center, width, offset = params
-    return offset + coeff*(x - center)**2
+    peak_height, width, center = params
+    return peak_height - width*(x - center)**2
 
 
 def sinexp(t, offset, amp, freq, decay):
