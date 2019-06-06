@@ -239,13 +239,13 @@ def get_seq(pulser_wiring, args):
     return seq, [period]
 
 if __name__ == '__main__':
-    wiring = {'do_apd_gate_0': 5,
-              'do_apd_gate_1': 6,
-              'do_apd_gate_2': 7,
-              'do_apd_gate_3': 8,
-              'do_aom': 3,
-              'do_uwave_gate_0': 4,
-              'do_uwave_gate_1': 1}
+    wiring = {'do_apd_gate_0': 4,
+              'do_apd_gate_1': 5,
+              'do_apd_gate_2': 6,
+              'do_apd_gate_3': 7,
+              'do_aom': 1,
+              'do_uwave_gate_0': 2,
+              'do_uwave_gate_1': 3}
 
     args = [2000, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 300, 2000, 200, 4000, 0, 1, 2, 3, 0, 0]
     seq, ret_vals = get_seq(wiring, args)
