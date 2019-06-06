@@ -35,8 +35,7 @@ from scipy import asarray as ar,exp
 
 # %% Main
 
-def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
-         sig_long_apd_index, ref_long_apd_index, expected_counts,
+def main(cxn, coords, nd_filter, apd_indices, expected_counts,
          uwave_freq_plus, uwave_freq_minus, uwave_power, 
          uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
          num_steps, num_reps, num_runs, 
@@ -166,9 +165,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                     gate_time, uwave_pi_pulse_plus, uwave_pi_pulse_minus, max_relaxation_time,
-                    sig_shrt_apd_index, ref_shrt_apd_index,
-                    sig_long_apd_index, ref_long_apd_index,
-                    init_state, read_state]
+                    apd_indices[0], init_state, read_state]
     ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
     seq_time = ret_vals[0]
     
@@ -215,7 +212,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
             break
         
         # Optimize
-        ret_val = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index, 
+        ret_val = optimize.main(cxn, coords, nd_filter, apd_indices[0], 
                                expected_counts = expected_counts)
         
         coords = ret_val[0]
@@ -225,11 +222,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
         optimization_success_list.append(optimization_success)
         opti_coords_list.append(coords)
             
-        # Load the APD tasks
-        cxn.apd_counter.load_stream_reader(sig_shrt_apd_index, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(ref_shrt_apd_index, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(sig_long_apd_index, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(ref_long_apd_index, seq_time, half_length_taus)    
+        # Load the APD
+        cxn.apd_tagger.start_tag_stream(apd_indices)  
         
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(tau_ind_list)
@@ -256,34 +250,49 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                     gate_time, uwave_pi_pulse_plus, uwave_pi_pulse_minus, taus[tau_ind_second],
-                    sig_shrt_apd_index, ref_shrt_apd_index,
-                    sig_long_apd_index, ref_long_apd_index,
-                    init_state, read_state]
+                    apd_indices[0], init_state, read_state]
+            
+            print(args)
+            break
 
             print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
             print('Second relaxation time: {}'.format(taus[tau_ind_second]))  
             
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)        
             
-            count = cxn.apd_counter.read_stream(sig_shrt_apd_index, 1)
+            # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
+            # So we can sum on the values for similar index modulus 4 to
+            # parse the returned list into what we want.
+            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            sample_counts = new_counts[0]
+            
+            sig_gate_counts = sample_counts[::4]
+            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
+            
+            count = sum(sample_counts[0::4])
             sig_counts[run_ind, tau_ind_first] = count
             print('First signal = ' + str(count))
             
-            count = cxn.apd_counter.read_stream(ref_shrt_apd_index, 1)
+            count = sum(sample_counts[1::4])
             ref_counts[run_ind, tau_ind_first] = count  
             print('First Reference = ' + str(count))
             
-            count = cxn.apd_counter.read_stream(sig_long_apd_index, 1)
+            count = sum(sample_counts[2::4])
             sig_counts[run_ind, tau_ind_second] = count
             print('Second Signal = ' + str(count))
 
-            count = cxn.apd_counter.read_stream(ref_long_apd_index, 1)
+            count = sum(sample_counts[3::4])
             ref_counts[run_ind, tau_ind_second] = count
             print('Second Reference = ' + str(count))
+            
+        cxn.apd_tagger.stop_tag_stream()
 
-    # %% Turn off the signal generator
+    # %% Hardware clean up
 
+    cxn.apd_tagger.stop_tag_stream()
     cxn.microwave_signal_generator.uwave_off()
+    
+    return
     
     # %% Average the counts over the iterations
 

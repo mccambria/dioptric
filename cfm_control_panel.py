@@ -120,7 +120,8 @@ def do_rabi(name, coords, nd_filter, apd_indices,
     
     num_reps = 10**5
     
-    num_runs = 1
+#    num_runs = 1
+    num_runs = 2
 #    num_runs = 6
 
     with labrad.connect() as cxn:
@@ -487,13 +488,16 @@ if __name__ == '__main__':
     # For splittings < 75 MHz
     
     # ~13 hours
-    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
-                                [plus_to_minus,  [0, 500*10**3], 41,  1 * 10**4],
-                                [plus_to_plus,   [0, 100*10**3], 51, 2 * 10**4],
-                                [plus_to_plus,   [0, 500*10**3], 41,  1 * 10**4],
-                                [plus_to_zero,   [0, 500*10**3], 41, 1 * 10**4],
-                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
-                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
+#    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
+#                                [plus_to_minus,  [0, 500*10**3], 41,  1 * 10**4],
+#                                [plus_to_plus,   [0, 100*10**3], 51, 2 * 10**4],
+#                                [plus_to_plus,   [0, 500*10**3], 41,  1 * 10**4],
+#                                [plus_to_zero,   [0, 500*10**3], 41, 1 * 10**4],
+#                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
+#                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
+    
+    # Test
+    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4]])
 
     # For splittings > 75 MHz
     
@@ -529,7 +533,9 @@ if __name__ == '__main__':
 #               [-0.176, -0.077, 54.1],
 #               [-0.188, -0.112, 53.9]]
     
-    nv0_2019_06_06 = [0.251, 0.236, 54.3]
+#    nv0_2019_06_06 = [0.251, 0.236, 54.3]  # 6/6 noon
+#    nv0_2019_06_06 = [0.249, 0.235, 53.8]  # 6/6 2:21
+    nv0_2019_06_06 = [0.252, 0.238, 54.1]  # 6/6 3:00
     
     nv_list = [nv0_2019_06_06]
     
@@ -540,8 +546,10 @@ if __name__ == '__main__':
 #            do_g2_measurement(name, nv, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, nv, nd_filter, apd_indices, expected_counts)
 #            do_stationary_count(name, nv, nd_filter, apd_indices)
-            do_rabi(name, nv, nd_filter, apd_indices, expected_counts, 2.8431, 0)
-#            do_rabi(name, nv, nd_filter, apd_indices, expected_counts, 2.8911 , 1)
+#            do_rabi(name, nv, nd_filter, apd_indices, expected_counts, 2.8431, 0)
+            do_rabi(name, nv, nd_filter, apd_indices, expected_counts, 2.8911 , 1)
+#            do_t1_measurement(name, coords, nd_filter, apd_indices, expected_counts,
+#                              uwave_freq, uwave_pi_pulse, relaxation_time_range, measure_spin_0)
 #        for nv in nv_list:
 #            original_coords = numpy.array(nv)
 #            coords = (original_coords + drift).tolist()

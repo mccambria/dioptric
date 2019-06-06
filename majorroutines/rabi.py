@@ -141,30 +141,20 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
                     background_wait_time, aom_delay_time,
                     gate_time, max_uwave_time,
                     apd_indices[0], do_uwave_gate]
-            if tau_ind == 15:
-                print(args)
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
             
-            print(len(new_counts))
-            
             sample_counts = new_counts[0]
             
-            print(len(sample_counts))
-            
             # signal counts are even - get every second element starting from 0
-            sig_gate_counts = sample_counts[::2]
+            sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
             
-            print(sum(sig_gate_counts))
-
             # ref counts are odd - sample_counts every second element starting from 1
-            ref_gate_counts = new_counts[1::2]  
+            ref_gate_counts = sample_counts[1::2]  
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
-            
-            print(sum(ref_gate_counts))
             
         cxn.apd_tagger.stop_tag_stream()
 
@@ -179,9 +169,6 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
     avg_ref_counts = numpy.average(ref_counts, axis=0)
 
     # %% Calculate the Rabi data, signal / reference over different Tau
-    
-    print(avg_sig_counts)
-    print(avg_ref_counts)
 
     norm_avg_sig = avg_sig_counts / avg_ref_counts
 
@@ -199,8 +186,12 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
 #    init_params = [offset, amplitude, frequency, phase, decay]
     init_params = [offset, amplitude, frequency, decay]
 
-    opti_params, cov_arr = curve_fit(fit_func, taus, norm_avg_sig,
-                                     p0=init_params)
+    try:
+        opti_params, cov_arr = curve_fit(fit_func, taus, norm_avg_sig,
+                                         p0=init_params)
+    except Exception:
+        print('Rabi fit failed - using guess parameters.')
+        opti_params = init_params
 
     rabi_period = 1 / opti_params[2]
 
@@ -288,7 +279,7 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
 
     file_path = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(raw_fig, file_path)
-    tool_belt.save_figure(fit_fig, file_path + '_fitting')
+    tool_belt.save_figure(fit_fig, file_path + '_fit')
     tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Return value for pi pulse
