@@ -57,11 +57,12 @@ def get_seq(pulser_wiring, args):
 
     seq = Sequence()
 
-    # APD gating - first is for signal, second is for reference
+    # APD gating - first high is for signal, second high is for reference
     pre_duration = aom_delay_time + prep_time
     post_duration = reference_time - gate_time + \
         background_wait_time + end_rest_time 
-    mid_duration = period - (pre_duration + (2 * gate_time) + post_duration)
+#    mid_duration = period - (pre_duration + (2 * gate_time) + post_duration)
+    mid_duration = polarization_time + reference_wait_time - gate_time
     train = [(pre_duration, LOW),
              (gate_time, HIGH),
              (mid_duration, LOW),
