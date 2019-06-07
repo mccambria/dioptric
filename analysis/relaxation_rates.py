@@ -296,7 +296,7 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                     'gamma_offset_list': gamma_offset_list,
                     'gamma_offset_list-units': 'arb'}
         
-        file_name = time_stamp + '_' str(num_bins) + '_num_bins' + str('%.1f'%splitting_MHz) + '_MHz_splitting'
+        file_name = time_stamp + '_' + str(num_bins) + '_bins_' + str('%.1f'%splitting_MHz) + '_MHz_splitting'
         file_path = '{}/{}/{}'.format(directory, folder_name, file_name)
         print(file_path)
         # tool_belt.save_raw_data(raw_data, file_path)
