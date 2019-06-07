@@ -123,7 +123,7 @@ class PulseStreamer(LabradServer):
             args: list(any)
                 Arbitrary list used to modulate a sequence from the sequence
                 library - see simple_readout.py for an example. Default is
-                None
+                None. All values in list must have same type.
             output_state: int
                 The final output state of the PulseStreamer after the sequence
                 stream for the specified number of repitions - see

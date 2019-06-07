@@ -16,6 +16,7 @@ Created on Wed Apr 24 17:33:26 2019
 
 
 import utils.tool_belt as tool_belt
+import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import time
@@ -24,9 +25,9 @@ import time
 # %% Functions
 
 
-def process_raw_buffer(timestamps, apd_indices,
+def process_raw_buffer(timestamps, channels,
                        diff_window, afterpulse_window,
-                       differences_append, apd_a_index, apd_b_index):
+                       differences_append, apd_a_chan_name, apd_b_chan_name):
 
     indices_to_delete = []
     indices_to_delete_append = indices_to_delete.append
@@ -40,7 +41,7 @@ def process_raw_buffer(timestamps, apd_indices,
             click_time = timestamps[click_index]
     
             # Determine the afterpulse channel
-            click_channel = apd_indices[click_index]
+            click_channel = channels[click_index]
     
             # Calculate relevant differences
             next_index = click_index + 1
@@ -48,7 +49,7 @@ def process_raw_buffer(timestamps, apd_indices,
                 diff = timestamps[next_index] - click_time
                 if diff > afterpulse_window:
                     break
-                if apd_indices[next_index] == click_channel:
+                if channels[next_index] == click_channel:
                     indices_to_delete_append(next_index)
                 next_index += 1
     
@@ -61,11 +62,11 @@ def process_raw_buffer(timestamps, apd_indices,
         click_time = timestamps[click_index]
 
         # Determine the channel to take the difference with
-        click_channel = apd_indices[click_index]
-        if click_channel == apd_a_index:
-            diff_channel = apd_b_index
+        click_channel = channels[click_index]
+        if click_channel == apd_a_chan_name:
+            diff_channel = apd_b_chan_name
         else:
-            diff_channel = apd_a_index
+            diff_channel = apd_a_chan_name
 
         # Calculate relevant differences
         next_index = click_index + 1
@@ -75,9 +76,9 @@ def process_raw_buffer(timestamps, apd_indices,
             if diff > diff_window:
                 break
             # Only record the diff between opposite chanels
-            if apd_indices[next_index] == diff_channel:
+            if channels[next_index] == diff_channel:
                 # Flip the sign for diffs relative to channel 2
-                if click_channel == apd_b_index:
+                if click_channel == apd_b_chan_name:
                     diff = -diff
                 differences_append(int(diff))
             next_index += 1
@@ -93,19 +94,25 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     
     afterpulse_window = 50 * 10**3
     sleep_time = 2
+    apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
-    tool_belt.set_xyz(cxn, coords)
+    optimize.main(cxn, coords, nd_filter, apd_indices)
     cxn.pulse_streamer.constant()
 
     num_tags = 0
     collection_index = 0
 
-    apd_indices = [apd_a_index, apd_b_index]
-
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
     num_bins = int((2 * diff_window) / 1000) + 1  # 1 ns bins in ps
+    
+    # Expose the stream
+    cxn.apd_tagger.start_tag_stream(apd_indices, [], False)  
+    
+    # Get the APD channel names that the tagger will return
+    ret_vals = cxn.apd_tagger.get_channel_mapping()
+    apd_a_chan_name, apd_b_chan_name = ret_vals
 
     # %% Collect the data
 
@@ -115,7 +122,6 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
 
     # Python does not have do-while loops so we will use something like
     # a while True
-    cxn.apd_tagger.start_tag_stream(apd_indices)  # Expose an initial stream
     stop = False
     start_calc_time = start_time
     while not stop:
@@ -126,7 +132,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
         time.sleep(max(sleep_time - calc_time_elapsed, 0))
         # Read the stream and convert from strings to int64s
         ret_vals = cxn.apd_tagger.read_tag_stream()
-        buffer_timetags, buffer_apd_indices = ret_vals
+        buffer_timetags, buffer_channels = ret_vals
         buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
 
         # Check if we should stop
@@ -138,9 +144,10 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
 
         # Process data
         start_calc_time = time.time()
-        process_raw_buffer(buffer_timetags, buffer_apd_indices,
+        process_raw_buffer(buffer_timetags, buffer_channels,
                            diff_window, afterpulse_window,
-                           differences_append, apd_a_index, apd_b_index)
+                           differences_append,
+                           apd_a_chan_name, apd_b_chan_name)
 
         # Create/update the histogram
         if collection_index == 0:
@@ -150,6 +157,8 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
             bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
             bin_centers = bin_edges[0: num_bins] + bin_center_offset
             ax.plot(bin_centers, hist)
+            xlim = int(1.1 * diff_window / 1000)
+            ax.set_xlim(-xlim, xlim)
             ax.set_xlabel('Time (ns)')
             ax.set_ylabel('Differences')
             ax.set_title(r'$g^{(2)}(\tau)$')

@@ -39,7 +39,7 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(cxn, coords, nd_filter, run_time, readout, apd_index,
+def main(cxn, coords, nd_filter, run_time, readout, apd_indices,
          name='untitled', continuous=False):
 
     # %% Some initial calculations
@@ -50,7 +50,7 @@ def main(cxn, coords, nd_filter, run_time, readout, apd_index,
     # %% Load the PulseStreamer
 
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                              [0, readout, apd_index])
+                                              [0, readout, apd_indices[0]])
     period = ret_vals[0]
 
     total_num_samples = int(run_time / period)
@@ -62,7 +62,7 @@ def main(cxn, coords, nd_filter, run_time, readout, apd_index,
 
     # %% Set up the APD
 
-    cxn.apd_counter.load_stream_reader(apd_index, period, total_num_samples)
+    cxn.apd_tagger.start_tag_stream(apd_indices)
 
     # %% Initialize the figure
 
@@ -111,13 +111,15 @@ def main(cxn, coords, nd_filter, run_time, readout, apd_index,
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_counter.read_stream(apd_index)
+        new_samples = cxn.apd_tagger.read_counter_simple()
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             update_line_plot(new_samples, num_read_so_far, *args)
             num_read_so_far += num_new_samples
 
-    # %% Report the data
+    # %% Clean up and report the data
+
+    cxn.apd_tagger.stop_tag_stream()
 
     average = numpy.mean(samples[0:write_pos[0]]) / (10**3 * readout_sec)
     print('average: {0:d}'.format(int(average)))

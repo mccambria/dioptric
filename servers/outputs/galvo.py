@@ -36,7 +36,7 @@ class Galvo(LabradServer):
     logging.basicConfig(level=logging.DEBUG, 
                 format='%(asctime)s %(levelname)-8s %(message)s',
                 datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Team Drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
+                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
 
     def initServer(self):
         self.task = None

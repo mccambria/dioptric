@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 # %% Main
 
 
-def main(cxn, coords, nd_filter, apd_index, expected_counts, freq_center, freq_range,
+def main(cxn, coords, nd_filter, apd_indices, expected_counts, freq_center, freq_range,
          num_steps, num_runs, uwave_power, name='untitled'):
 
     # %% Initial calculations and setup
@@ -31,7 +31,7 @@ def main(cxn, coords, nd_filter, apd_index, expected_counts, freq_center, freq_r
     readout = 100 * 10**6  # 0.1 s
     readout_sec = readout / (10**9)
     uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
-    sequence_args = [readout, uwave_switch_delay, apd_index]
+    sequence_args = [readout, uwave_switch_delay, apd_indices[0]]
 
     file_name = os.path.basename(__file__)
 
@@ -79,7 +79,7 @@ def main(cxn, coords, nd_filter, apd_index, expected_counts, freq_center, freq_r
             break
         
         # Optimize
-        ret_val = optimize.main(cxn, coords, nd_filter, apd_index, 
+        ret_val = optimize.main(cxn, coords, nd_filter, apd_indices, 
                                expected_counts = expected_counts)
         
         coords = ret_val[0]
@@ -90,9 +90,8 @@ def main(cxn, coords, nd_filter, apd_index, expected_counts, freq_center, freq_r
         opti_coords_list.append(coords)
 
         # Load the APD task with two samples for each frequency step
-        ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args)
-        period = ret_vals[0]
-        cxn.apd_counter.load_stream_reader(apd_index, period, 2 * num_steps)
+        cxn.pulse_streamer.stream_load(file_name, sequence_args)
+        cxn.apd_tagger.start_tag_stream(apd_indices)
 
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):
@@ -111,12 +110,14 @@ def main(cxn, coords, nd_filter, apd_index, expected_counts, freq_center, freq_r
             # Start the timing stream
             cxn.pulse_streamer.stream_start()
 
-            new_counts = cxn.apd_counter.read_stream(apd_index, 2)
+            new_counts = cxn.apd_tagger.read_counter_simple(2)
             if len(new_counts) != 2:
                 raise RuntimeError('There should be exactly 2 samples per freq.')
 
             ref_counts[run_ind, step_ind] = new_counts[0]
             sig_counts[run_ind, step_ind] = new_counts[1]
+            
+        cxn.apd_tagger.stop_tag_stream()
 
     # %% Process and plot the data
 
@@ -152,9 +153,10 @@ def main(cxn, coords, nd_filter, apd_index, expected_counts, freq_center, freq_r
     fig.tight_layout()
     fig.canvas.flush_events()
 
-    # %% Turn off the RF and save the data
+    # %% Clean up and save the data
 
     cxn.microwave_signal_generator.uwave_off()
+    cxn.apd_tagger.stop_tag_stream()
 
     timestamp = tool_belt.get_time_stamp()
 

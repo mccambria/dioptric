@@ -28,28 +28,13 @@ def get_seq(pulser_wiring, args):
             gate_time, pi_pulse_plus, pi_pulse_minus, tau_long = durations
 
     # Get the APD indices
-    sig_shrt_apd_index, ref_shrt_apd_index, \
-        sig_long_apd_index, ref_long_apd_index = args[13:17]
+    apd_index = args[13]
 
     # Specify the initial and readout states
-    init_state = args[17]
-    read_state = args[18]
+    init_state = args[14]
+    read_state = args[15]
 
-    # Get what we need out of the wiring dictionary
-    key = 'do_apd_gate_{}'.format(sig_shrt_apd_index)
-    pulser_do_sig_shrt_apd_gate = pulser_wiring[key]
-    print(pulser_do_sig_shrt_apd_gate)
-    key = 'do_apd_gate_{}'.format(ref_shrt_apd_index)
-    pulser_do_ref_shrt_apd_gate = pulser_wiring[key]
-    print(pulser_do_ref_shrt_apd_gate)
-
-    key = 'do_apd_gate_{}'.format(sig_long_apd_index)
-    pulser_do_sig_long_apd_gate = pulser_wiring[key]
-    print(pulser_do_sig_long_apd_gate)
-    key = 'do_apd_gate_{}'.format(ref_long_apd_index)
-    pulser_do_ref_long_apd_gate = pulser_wiring[key]
-    print(pulser_do_ref_long_apd_gate)
-
+    pulser_do_apd_gate = pulser_wiring['do_apd_gate_{}'.format(apd_index)]
 
     pulser_do_uwave_plus = pulser_wiring['do_uwave_gate_0']
     pulser_do_uwave_minus = pulser_wiring['do_uwave_gate_1']
@@ -134,10 +119,6 @@ def get_seq(pulser_wiring, args):
         reference_time + pre_uwave_exp_wait_time + \
         uwave_experiment_long + post_uwave_exp_wait_time
 
-    after_short_gates = pre_uwave_exp_wait_time + \
-        uwave_experiment_long + post_uwave_exp_wait_time + \
-        signal_time + sig_to_ref_wait_time + reference_time
-
     # %% Calclate total period. This is fixed for each tau index
 
     # The period is independent of the particular tau, but it must be long
@@ -152,37 +133,22 @@ def get_seq(pulser_wiring, args):
 
     seq = Sequence()
 
-    # right now, we will just use one signal and one reference, the 'shrt' ones
-
-    # Short Signal APD gate
+    # APD gating
     pre_duration = prep_time
-    post_duration = signal_time - gate_time + sig_to_ref_wait_time + \
-        reference_time + after_short_gates
-
-    train = [(pre_duration, LOW), (gate_time, HIGH), (post_duration, LOW)]
-    seq.setDigital(pulser_do_sig_shrt_apd_gate, train)
-
-    # Short Reference APD gate
-    pre_duration = prep_time + signal_time + sig_to_ref_wait_time
-    post_duration = reference_time - gate_time + after_short_gates
-
-    train = [(pre_duration, LOW), (gate_time, HIGH), (post_duration, LOW)]
-    seq.setDigital(pulser_do_ref_shrt_apd_gate, train)
-
-    # Long Signal APD gate
-    pre_duration = up_to_long_gates
-    post_duration = signal_time - gate_time + sig_to_ref_wait_time + \
-        reference_time
-
-    train = [(pre_duration, LOW), (gate_time, HIGH), (post_duration, LOW)]
-    seq.setDigital(pulser_do_sig_long_apd_gate, train)
-
-    # Long Reference APD gate
-    pre_duration = up_to_long_gates + signal_time + sig_to_ref_wait_time
+    short_sig_to_short_ref = signal_time + sig_to_ref_wait_time - gate_time
+    short_ref_to_long_sig = up_to_long_gates - (prep_time + signal_time + sig_to_ref_wait_time + gate_time)
+    long_sig_to_long_ref = signal_time + sig_to_ref_wait_time - gate_time
     post_duration = reference_time - gate_time
-
-    train = [(pre_duration, LOW), (gate_time, HIGH), (post_duration, LOW)]
-    seq.setDigital(pulser_do_ref_long_apd_gate, train)
+    train = [(pre_duration, LOW),
+             (gate_time, HIGH),
+             (short_sig_to_short_ref, LOW),
+             (gate_time, HIGH),
+             (short_ref_to_long_sig, LOW),
+             (gate_time, HIGH),
+             (long_sig_to_long_ref, LOW),
+             (gate_time, HIGH),
+             (post_duration, LOW)]
+    seq.setDigital(pulser_do_apd_gate, train)
 
     # Pulse the laser with the AOM for polarization and readout
     train = [(rf_delay_time + polarization_time, HIGH),
@@ -239,15 +205,13 @@ def get_seq(pulser_wiring, args):
     return seq, [period]
 
 if __name__ == '__main__':
-    wiring = {'do_apd_gate_0': 4,
-              'do_apd_gate_1': 5,
-              'do_apd_gate_2': 6,
-              'do_apd_gate_3': 7,
+    wiring = {'do_daq_clock': 0,
+              'do_apd_gate_0': 4,
               'do_aom': 1,
               'do_uwave_gate_0': 2,
               'do_uwave_gate_1': 3}
 
     args = [32000, 3000, 3000, 3000, 2000, 1000, 1000,
-            750, 40, 450, 34, 48, 68000, 0, 1, 2 ,3, 1, -1]
+            750, 40, 450, 34, 48, 68000, 0, 1, -1]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()
