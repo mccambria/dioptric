@@ -18,6 +18,7 @@ import numpy
 import json
 from scipy import asarray as ar,exp
 from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
 
 #%%
 
@@ -27,7 +28,7 @@ def zero_relaxation_eq(t, omega, amp, offset):
 #%%
     
 def plus_relaxation_eq(t, gamma, omega, amp, offset):
-    return offset + amp * exp(-(omega + 2 + gamma) * t)
+    return offset + amp * exp(-(omega + gamma * 2) * t)
 
 # %%
 
@@ -63,7 +64,17 @@ def relaxation_rate_analysis(folder_name):
     zero_plus_time = numpy.copy(zero_zero_time)
     plus_plus_time = numpy.copy(zero_zero_time)
     plus_minus_time = numpy.copy(zero_zero_time)
- 
+    
+    # Create lists to store the omega and gamma rates
+    omega_rate_list = []
+    omega_amp_list = []
+    omega_offset_list = []
+    gamma_list = []
+    gamma_amp_list = []
+    gamma_offset_list = []
+    
+    # %% Unpack the data
+    
     # Unpack the data and sort into arrays. This allows multiple experiments of 
     # the same type (ie (1,-1) to be correctly sorted into one array
     for file in file_list:
@@ -76,12 +87,13 @@ def relaxation_rate_analysis(folder_name):
             sig_counts = numpy.array(data['sig_counts'])
             ref_counts = numpy.array(data['ref_counts'])
             
-            relaxation_time_range = data['relaxation_time_range']
-            min_relaxation_time, max_relaxation_time = relaxation_time_range
+            relaxation_time_range = numpy.array(data['relaxation_time_range'])
+            min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             num_steps = data['num_steps']
 
+            # time should be in microseconds
             time_array = numpy.linspace(min_relaxation_time, max_relaxation_time,
-                          num=num_steps)
+                          num=num_steps) 
             
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
@@ -91,6 +103,9 @@ def relaxation_rate_analysis(folder_name):
                 zero_zero_ref_counts = numpy.append(zero_zero_ref_counts, 
                                                     ref_counts, axis = 1)
                 zero_zero_time = numpy.append(zero_zero_time, time_array)
+                
+                zero_zero_time_linspace = numpy.linspace(min_relaxation_time, 
+                                             max_relaxation_time, num=1000)
                 
             if init_state == 0 and read_state == 1:
                 zero_plus_sig_counts = numpy.append(zero_plus_sig_counts, 
@@ -105,6 +120,9 @@ def relaxation_rate_analysis(folder_name):
                 plus_plus_ref_counts = numpy.append(plus_plus_ref_counts, 
                                                     ref_counts, axis = 1)
                 plus_plus_time = numpy.append(plus_plus_time, time_array)
+                
+                plus_plus_time_linspace = numpy.linspace(min_relaxation_time, 
+                                             max_relaxation_time, num=1000)
                 
             if init_state == 1 and read_state == -1:
                 plus_minus_sig_counts = numpy.append(plus_minus_sig_counts, 
@@ -131,6 +149,7 @@ def relaxation_rate_analysis(folder_name):
     plus_minus_ref_counts = numpy.delete(plus_minus_ref_counts, 0, axis = 1)
     plus_minus_time = numpy.delete(plus_minus_time, 0)
 
+# %% Fit to the (0,0) - (0,1) data to find Omega
 
     # let's first just try finding the relaxation rate for all the data together.
     
@@ -147,14 +166,24 @@ def relaxation_rate_analysis(folder_name):
     # Define the counts for the zero relaxation equation
     zero_relaxation_counts =  zero_zero_norm_avg_sig - zero_plus_norm_avg_sig
     
-    init_params = (1.2 * 10**-6, 0.36, 0)
+    init_params = (1.2, 0.36, 0)
     opti_params, cov_arr = curve_fit(zero_relaxation_eq, zero_zero_time,
                                         zero_relaxation_counts, p0 = init_params)
-    
-    print('omega = {} Hz'.format(opti_params[0] * 10**9))
+
+    omega_rate_list.append(opti_params[0])
+    omega_amp_list.append(opti_params[1])
+    omega_offset_list.append(opti_params[2])
     omega = opti_params[0]
     
-    # Now fit for the plus relaxation
+    fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
+    ax = axes_pack[0]
+    ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
+    ax.plot(zero_zero_time_linspace, 
+            zero_relaxation_eq(zero_zero_time_linspace, *opti_params), 
+            'r', label = 'fit')  
+    
+# %% Fit to the (1,1) - (1,-1) data to find Gamma
+    
     plus_plus_avg_sig_counts = numpy.average(plus_plus_sig_counts, axis=0)
     plus_plus_avg_ref_counts = numpy.average(plus_plus_ref_counts, axis=0)
     
@@ -169,16 +198,26 @@ def relaxation_rate_analysis(folder_name):
     plus_relaxation_counts =  plus_plus_norm_avg_sig - plus_minus_norm_avg_sig
     
     
-    init_params = (100 * 10**-6, 0.50, 0)
-    opti_params, cov_arr = curve_fit(lambda t, gamma, amp, offset: plus_relaxation_eq(t, gamma, omega, amp, offset), 
+    init_params = (100, 0.50, 0)
+    # create a temporary fitting equation that passes in the omega value just found
+    plus_relaxation_tmp = lambda t, gamma, amp, offset: plus_relaxation_eq(t, gamma, omega, amp, offset)
+    opti_params, cov_arr = curve_fit(plus_relaxation_tmp, 
                                      plus_plus_time, plus_relaxation_counts, p0 = init_params)
     
-    print('gamma = {} Hz'.format(opti_params[0] * 10**9))
-    # subreact the relative data to get the two functions
+    gamma_rate_list.append(opti_params[0])
+    gamma_amp_list.append(opti_params[2])
+    gamma_offset_list.append(opti_params[3])
     
-    # split up the num_runs into various amounts
-    # fit each bin
-    # average and st dev
+    ax = axes_pack[1]
+    ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
+    ax.plot(plus_plus_time_linspace, 
+            plus_relaxation_tmp(plus_plus_time_linspace, *opti_params), 
+            'r', label = 'fit')   
+
+    fig.canvas.draw()
+
+# %%
+    
 if __name__ == '__main__':
     
     relaxation_rate_analysis('2019-05-10-NV1_32MHzSplitting_important_data')
