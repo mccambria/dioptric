@@ -44,7 +44,7 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     # Create a list of all the files in the folder for one experiment
     file_list = []
     for file in os.listdir('{}/{}'.format(directory, folder_name)):
-        if file.endswith(".txt"):
+        if file.endswith(".txt") and not file.endswith("MHz_splitting.txt"):
             file_list.append(file)
             
     print(file_list)
@@ -139,7 +139,7 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                 plus_minus_ref_counts = numpy.append(plus_minus_ref_counts, 
                                                     ref_counts, axis = 1)
                 
-                splitting_MHz = abs(uwave_freq_init - uwave_freq_read)
+                splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
                 
                 
     
@@ -265,6 +265,8 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     print('Omega list: {} \nGamma list: {}'.format(omega_rate_list, gamma_rate_list))
     
 # %% Saving data
+    
+    num_bins = int(num_runs / bin_size)
     if save_data: 
         time_stamp = tool_belt.get_time_stamp()
         raw_data = {'time_stamp': time_stamp,
@@ -272,6 +274,7 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                     'level_splitting-units': 'MHz',
                     'num_runs': num_runs,
                     'bin_size': bin_size,
+                    'num_bins': num_bins,
                     'omega_average': omega_average,
                     'omega_average-units': 'kHz',
                     'omega_stdev': omega_stdev,
@@ -293,7 +296,7 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                     'gamma_offset_list': gamma_offset_list,
                     'gamma_offset_list-units': 'arb'}
         
-        file_name = time_stamp + '_' + str('%.1f'%splitting_MHz) + '_MHz_splitting'
+        file_name = time_stamp + '_' str(num_bins) + '_num_bins' + str('%.1f'%splitting_MHz) + '_MHz_splitting'
         file_path = '{}/{}/{}'.format(directory, folder_name, file_name)
         print(file_path)
         # tool_belt.save_raw_data(raw_data, file_path)
