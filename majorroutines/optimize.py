@@ -353,6 +353,8 @@ def do_optimize(cxn, coords, nd_filter, apd_indices, name,
         
         optimizationFailed = False
     except Exception:
+        print('Optimization failed')
+        optiParams = None
         optimizationFailed = True
 
     if not optimizationFailed:

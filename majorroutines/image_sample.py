@@ -334,8 +334,8 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
 
 if __name__ == '__main__':
-    folder_name = 'G:/Team Drives/Kolkowitz Lab Group/nvdata/image_sample'
-    file_name = '2019-06-03_16-25-40_ayrton12.txt'
+    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/image_sample'
+    file_name = '2019-06-07_14-20-27_ayrton12.txt'
 
     with open('{}/{}'.format(folder_name, file_name)) as file:
         data = json.load(file)
