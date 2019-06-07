@@ -146,7 +146,8 @@ def fit_resonance(save_file_type):
     
         fig, ax = plt.subplots(1, 1, figsize=(10, 8))
         ax.plot(freqs, norm_avg_counts,'b',label='data')
-        ax.plot(freqs, double_gaus(freqs,*popt),'r-',label='fit')
+        smooth_freqs = numpy.linspace(freqs[0], freqs[-1], 1000)
+        ax.plot(smooth_freqs, double_gaus(freqs,*popt),'r-',label='fit')
         ax.set_xlabel('Frequency (GHz)')
         ax.set_ylabel('Contrast (arb. units)')
     #    ax.set_title('ESR (60\N{DEGREE SIGN})')
