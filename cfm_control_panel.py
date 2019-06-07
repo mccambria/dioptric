@@ -84,8 +84,8 @@ def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
 #    run_time = 2
 #    run_time = 30
 #    run_time = 60 * 3
-    run_time = 60 * 5
-#    run_time = 60 * 10
+#    run_time = 60 * 5
+    run_time = 60 * 10
 #    run_time = 60 * 20
     
     diff_window = 150 * 10**3  # 100 ns in ps
@@ -516,8 +516,8 @@ if __name__ == '__main__':
 
     # %% Functions to run
     
-    apd_indices = [apd_a_index]
-#    apd_indices = [apd_a_index, apd_b_index]
+#    apd_indices = [apd_a_index]
+    apd_indices = [apd_a_index, apd_b_index]
     
     # 6/6 12:45
 #    nv_list = [[0.251, 0.235, 54.0],
@@ -532,18 +532,22 @@ if __name__ == '__main__':
 #    nv0_2019_06_06 = [0.252, 0.238, 54.1]  # 6/6 3:00
     nv0_2019_06_06 = [0.251, 0.235, 54.1]  # 6/6 5:00
     
-    nv_list = [nv0_2019_06_06]
-    params_array = numpy.array([[nv0_2019_06_06, 2.8430, 34, 2.8911, 48, expected_counts]])
+    nv1_2019_06_06 = [0.208, 0.195, 54.0]  # 6/7 am
+    
+    nv2_2019_06_06 = [0.131, 0.102, 54.0]  # 6/7 am
+    
+    nv_list = [nv1_2019_06_06, nv2_2019_06_06]
+    params_array = numpy.array([[nv_list[0], 2.8430, 34, 2.8911, 48, expected_counts]])
     
     try:
-#        for nv in nv_list:
-#            coords = nv
+        for nv in nv_list:
+            coords = nv
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
 #            do_optimize(name, coords, nd_filter, apd_indices)
 #            do_optimize_list(name, coords, nd_filter, apd_indices)
 #            do_stationary_count(name, coords, nd_filter, apd_indices)
-#            do_g2_measurement(name, coords, nd_filter, apd_indices[0], apd_indices[1])
+            do_g2_measurement(name, coords, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, coords, nd_filter, apd_indices, expected_counts)
 #            do_resonance(name, coords, nd_filter, apd_indices, expected_counts, freq_center=2.843, freq_range=0.05)
 #            do_resonance(name, coords, nd_filter, apd_indices, expected_counts, freq_center=2.892, freq_range=0.05)
@@ -562,33 +566,33 @@ if __name__ == '__main__':
           
 #         %% FULL CONTROL T1
 
-        for nv_ind in range(len(params_array)):
-            
-            coords = params_array[nv_ind, 0]
-            
-            uwave_freq_plus = params_array[nv_ind, 1]
-            uwave_pi_pulse_plus = params_array[nv_ind, 2]
-            uwave_freq_minus = params_array[nv_ind, 3]
-            uwave_pi_pulse_minus = params_array[nv_ind, 4]
-            expected_counts = params_array[nv_ind, 5]
-            
-            for exp_ind in range(len(t1_exp_array)):
-#            for exp_ind in [2,3,4,5,6,7]:
-            
-                init_read_list = t1_exp_array[exp_ind, 0]
-                relaxation_time_range = t1_exp_array[exp_ind, 1]
-                num_steps = t1_exp_array[exp_ind, 2]
-                num_reps = t1_exp_array[exp_ind, 3]
-        
-                ret_val = do_t1_double_quantum(name, coords, nd_filter,
-                              apd_indices, expected_counts,
-                              uwave_freq_plus, uwave_freq_minus, 
-                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                              relaxation_time_range, num_steps, num_reps,
-                              init_read_list)                
-                
-                print('new coords: \n' + '[{:.3f}, {:.3f}, {:.1f}]'.format(*ret_val)) 
-                coords = ret_val       
+#        for nv_ind in range(len(params_array)):
+#            
+#            coords = params_array[nv_ind, 0]
+#            
+#            uwave_freq_plus = params_array[nv_ind, 1]
+#            uwave_pi_pulse_plus = params_array[nv_ind, 2]
+#            uwave_freq_minus = params_array[nv_ind, 3]
+#            uwave_pi_pulse_minus = params_array[nv_ind, 4]
+#            expected_counts = params_array[nv_ind, 5]
+#            
+#            for exp_ind in range(len(t1_exp_array)):
+##            for exp_ind in [2,3,4,5,6,7]:
+#            
+#                init_read_list = t1_exp_array[exp_ind, 0]
+#                relaxation_time_range = t1_exp_array[exp_ind, 1]
+#                num_steps = t1_exp_array[exp_ind, 2]
+#                num_reps = t1_exp_array[exp_ind, 3]
+#        
+#                ret_val = do_t1_double_quantum(name, coords, nd_filter,
+#                              apd_indices, expected_counts,
+#                              uwave_freq_plus, uwave_freq_minus, 
+#                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+#                              relaxation_time_range, num_steps, num_reps,
+#                              init_read_list)                
+#                
+#                print('new coords: \n' + '[{:.3f}, {:.3f}, {:.1f}]'.format(*ret_val)) 
+#                coords = ret_val       
 #                
 ## %%            
 
