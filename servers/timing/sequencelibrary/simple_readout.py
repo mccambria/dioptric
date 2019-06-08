@@ -25,14 +25,18 @@ def get_seq(pulser_wiring, args):
     # Convert the 32 bit ints into 64 bit ints
     delay = numpy.int64(delay)
     readout = numpy.int64(readout)
-    period = numpy.int64(delay + readout + 100)
+    period = numpy.int64(delay + readout + 300)
 
     seq = Sequence()
 
-    train = [(delay+readout, LOW), (100, HIGH)]
+    # The clock signal will be high for 100 ns with buffers of 100 ns on
+    # either side. During the buffers, everything should be low. The buffers
+    # account for any timing jitters/delays and ensure that everything we
+    # expect to be on one side of the clock signal is indeed on that side.
+    train = [(delay + readout + 100, LOW), (100, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_daq_clock, train)
 
-    train = [(delay, LOW), (readout, HIGH), (100, LOW)]
+    train = [(delay, LOW), (readout, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
 
     train = [(period, HIGH)]
@@ -45,6 +49,6 @@ if __name__ == '__main__':
     wiring = {'do_daq_clock': 0,
               'do_apd_gate_0': 1,
               'do_aom': 2}
-    args = [11 * 10**6, 10 * 10**6, 0]
+    args = [250, 500, 0]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()

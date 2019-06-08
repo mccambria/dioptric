@@ -23,7 +23,7 @@ from scipy.optimize import curve_fit
 # %% Main
 
 
-def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
+def main(cxn, coords, nd_filter, apd_indices, expected_counts,
          uwave_freq, uwave_power, uwave_time_range, do_uwave_gate_number,
          num_steps, num_reps, num_runs, name='untitled'):
 
@@ -63,9 +63,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
                     signal_wait_time, reference_wait_time,
                     background_wait_time, aom_delay_time,
                     gate_time, max_uwave_time,
-                    sig_apd_index, ref_apd_index, do_uwave_gate]
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
-    period = ret_vals[0]
+                    apd_indices[0], do_uwave_gate]
+    cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
@@ -113,7 +112,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
             break
         
         # Optimize
-        ret_val = optimize.main(cxn, coords, nd_filter, sig_apd_index, 
+        ret_val = optimize.main(cxn, coords, nd_filter, apd_indices, 
                                expected_counts = expected_counts)
         
         coords = ret_val[0]
@@ -123,9 +122,8 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
         optimization_success_list.append(optimization_success)
         opti_coords_list.append(coords)
 
-        # Load the APD tasks
-        cxn.apd_counter.load_stream_reader(sig_apd_index, period, num_steps)
-        cxn.apd_counter.load_stream_reader(ref_apd_index, period, num_steps)
+        # Load the APD
+        cxn.apd_tagger.start_tag_stream(apd_indices)
         
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)     
@@ -142,18 +140,28 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
                     signal_wait_time, reference_wait_time,
                     background_wait_time, aom_delay_time,
                     gate_time, max_uwave_time,
-                    sig_apd_index, ref_apd_index, do_uwave_gate]
+                    apd_indices[0], do_uwave_gate]
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)
 
-            count = cxn.apd_counter.read_stream(sig_apd_index, 1)
-            sig_counts[run_ind, tau_ind] = count
+            # Get the counts
+            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            
+            sample_counts = new_counts[0]
+            
+            # signal counts are even - get every second element starting from 0
+            sig_gate_counts = sample_counts[0::2]
+            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
+            
+            # ref counts are odd - sample_counts every second element starting from 1
+            ref_gate_counts = sample_counts[1::2]  
+            ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
+            
+        cxn.apd_tagger.stop_tag_stream()
 
-            count = cxn.apd_counter.read_stream(ref_apd_index, 1)
-            ref_counts[run_ind, tau_ind] = count
-
-    # %% Turn off the signal generator
+    # %% Hardware clean up
 
     cxn.microwave_signal_generator.uwave_off()
+    cxn.apd_tagger.stop_tag_stream()
 
     # %% Average the counts over the iterations
 
@@ -178,8 +186,12 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
 #    init_params = [offset, amplitude, frequency, phase, decay]
     init_params = [offset, amplitude, frequency, decay]
 
-    opti_params, cov_arr = curve_fit(fit_func, taus, norm_avg_sig,
-                                     p0=init_params)
+    try:
+        opti_params, cov_arr = curve_fit(fit_func, taus, norm_avg_sig,
+                                         p0=init_params)
+    except Exception:
+        print('Rabi fit failed - using guess parameters.')
+        opti_params = init_params
 
     rabi_period = 1 / opti_params[2]
 
@@ -267,7 +279,7 @@ def main(cxn, coords, nd_filter, sig_apd_index, ref_apd_index, expected_counts,
 
     file_path = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(raw_fig, file_path)
-    tool_belt.save_figure(fit_fig, file_path + '_fitting')
+    tool_belt.save_figure(fit_fig, file_path + '_fit')
     tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Return value for pi pulse

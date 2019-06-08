@@ -194,7 +194,7 @@ def reformat_plot(colorMap, save_file_type):
     # %%
 
 def main(cxn, coords, nd_filter, x_range, y_range,
-         num_steps, readout, apd_index,
+         num_steps, readout, apd_indices,
          name='untitled', continuous=False):
 
     # %% Some initial calculations
@@ -215,7 +215,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     # %% Load the PulseStreamer
 
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                              [delay, readout, apd_index])
+                                              [delay, readout, apd_indices[0]])
     period = ret_vals[0]
 
     # %% Set up the galvo
@@ -239,7 +239,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
     # %% Set up the APD
 
-    cxn.apd_counter.load_stream_reader(apd_index, period, total_num_samples)
+    cxn.apd_tagger.start_tag_stream(apd_indices)
 
     # %% Set up the image display
 
@@ -278,9 +278,9 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
         if tool_belt.safe_stop():
             break
-
+    
         # Read the samples and update the image
-        new_samples = cxn.apd_counter.read_stream(apd_index)
+        new_samples = cxn.apd_tagger.read_counter_simple()
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             populate_img_array(new_samples, img_array, img_write_pos)
@@ -290,7 +290,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
             img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
             tool_belt.update_image_figure(fig, img_array_kcps)
             num_read_so_far += num_new_samples
-
+            
     # %% Clean up
 
     # Stop the pulse streamer
@@ -299,13 +299,16 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     # Return to center
     cxn.galvo.write(x_center, y_center)
 
+    # Close the tagger stream
+    cxn.apd_tagger.stop_tag_stream()
+
     # %% Save the data
 
     timestamp = tool_belt.get_time_stamp()
 
     rawData = {'timestamp': timestamp,
                'name': name,
-               'coords': coords,
+               'coords': list(coords),
                'coords-units': 'V',
                'nd_filter': nd_filter,
                'x_range': x_range,
@@ -325,11 +328,6 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
-
-    # %% Clean up
-
-    # Return to center
-    cxn.galvo.write(x_center, y_center)
 
 
 # %% Re-display an image if you run the file
