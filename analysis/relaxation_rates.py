@@ -44,10 +44,8 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     # Create a list of all the files in the folder for one experiment
     file_list = []
     for file in os.listdir('{}/{}'.format(directory, folder_name)):
-        if file.endswith(".txt") and not file.endswith("MHz_splitting.txt"):
+        if file.endswith(".txt") and not file.endswith("bins.txt"):
             file_list.append(file)
-            
-    print(file_list)
       
     # Get the number of runs to create the empty arrays from the first file in 
     # the list. This requires all the relaxation measurements to have the same
@@ -55,10 +53,10 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     file = file_list[0]
     with open('{}/{}/{}'.format(directory, folder_name, file)) as json_file:
         data = json.load(json_file)
-        num_runs = data['num_runs']
+        num_runs_set = data['num_runs']
         
     # Prepare the arrays to fill with data. NaN will be first value
-    zero_zero_sig_counts = numpy.ones((num_runs, 1)) * numpy.nan
+    zero_zero_sig_counts = numpy.ones((num_runs_set, 1)) * numpy.nan
     zero_zero_ref_counts = numpy.copy(zero_zero_sig_counts)
     zero_plus_sig_counts = numpy.copy(zero_zero_sig_counts)
     zero_plus_ref_counts = numpy.copy(zero_zero_sig_counts)
@@ -68,9 +66,9 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     plus_minus_ref_counts = numpy.copy(zero_zero_sig_counts)
     
     zero_zero_time = numpy.ones(1) * numpy.nan
-    zero_plus_time = numpy.copy(zero_zero_time)
+#    zero_plus_time = numpy.copy(zero_zero_time)
     plus_plus_time = numpy.copy(zero_zero_time)
-    plus_minus_time = numpy.copy(zero_zero_time)
+#    plus_minus_time = numpy.copy(zero_zero_time)
     
     # Create lists to store the omega and gamma rates
     omega_rate_list = []
@@ -97,13 +95,20 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             num_steps = data['num_steps']
+            num_runs = data['num_runs']
 
             # time should be in microseconds
             time_array = numpy.linspace(min_relaxation_time, max_relaxation_time,
                           num=num_steps) 
             
+            # We will want to put the MHz splitting in the file metadata
             uwave_freq_init = data['uwave_freq_init']
             uwave_freq_read = data['uwave_freq_read']
+            
+            # Check that the num_runs is consistent. If not, raise an error
+            if num_runs_set != num_runs:
+                print('Error, num_runs not consistent in file {}'.format(file))
+                break
             
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
@@ -140,9 +145,15 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                                                     ref_counts, axis = 1)
                 
                 splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
-                
-                
     
+# Some error handeling if the count arras don't match up            
+    if len(zero_zero_sig_counts) != len(zero_plus_sig_counts): 
+                    
+         print('Error: length of zero_zero_sig_counts and zero_plus_sig_counts do not match')
+       
+    if len(plus_plus_sig_counts) != len(plus_minus_sig_counts):
+        print('Error: length of plus_plus_sig_counts and plus_minus_sig_counts do not match')
+        
     # Delete the NaNs from all the arrays. There might be a better way to fill
     # the arrays, but this should work for now
     zero_zero_sig_counts = numpy.delete(zero_zero_sig_counts, 0, axis = 1)
@@ -296,7 +307,7 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                     'gamma_offset_list': gamma_offset_list,
                     'gamma_offset_list-units': 'arb'}
         
-        file_name = time_stamp + '_' + str(num_bins) + '_bins_' + str('%.1f'%splitting_MHz) + '_MHz_splitting'
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_' + str(num_bins) + '_bins' 
         file_path = '{}/{}/{}'.format(directory, folder_name, file_name)
         print(file_path)
         # tool_belt.save_raw_data(raw_data, file_path)
@@ -310,5 +321,5 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     
 if __name__ == '__main__':
     
-    relaxation_rate_analysis('2019-05-10-NV1_32MHzSplitting_important_data', 20,
+    relaxation_rate_analysis('2019-05-10-NV1_32MHzSplitting_important_data', 2,
                             False)
