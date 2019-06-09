@@ -27,25 +27,30 @@ import matplotlib.pyplot as plt
 
 def fit_resonance(save_file_type):
         
-    print('Select file \n...')
-    
-    from tkinter import Tk
-    from tkinter import filedialog 
-    
-    root = Tk()
-    root.withdraw()
-    root.focus_force()
-    open_file_name = filedialog.askopenfilename(initialdir = "E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance", 
-                title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) ) 
-    
-    if open_file_name == '':
-        print('No file selected')
-    else: 
-        file_name_base = open_file_name[:-4]
+#    print('Select file \n...')
+#    
+#    from tkinter import Tk
+#    from tkinter import filedialog 
+#    
+#    root = Tk()
+#    root.withdraw()
+#    root.focus_force()
+#    open_file_name = filedialog.askopenfilename(initialdir = "E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance", 
+#                title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) ) 
+#    
+#    if open_file_name == '':
+#        print('No file selected')
+#    else: 
+#        file_name_base = open_file_name[:-4]
+#        
+#        open_file_name = file_name_base + '.txt'  
+#        print('File selected: ' + file_name_base + '.svg')
         
-        open_file_name = file_name_base + '.txt'  
-        print('File selected: ' + file_name_base + '.svg')
-        
+    
+    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance'
+#    file_name = '2019-06-07_16-24-57_ayrton12.txt'
+    file_name = '2019-06-07_16-28-40_ayrton12.txt'
+    open_file_name = '{}/{}'.format(folder_name, file_name)
     
     with open(open_file_name) as json_file:
         data = json.load(json_file)
