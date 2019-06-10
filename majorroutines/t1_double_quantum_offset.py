@@ -35,7 +35,7 @@ from scipy import asarray as ar,exp
 
 # %% Main
 
-def main(cxn, coords, nd_filter, apd_indices, expected_counts,
+def main(cxn, coords, offsetxy, nd_filter, apd_indices, expected_counts,
          uwave_freq_plus, uwave_freq_minus, uwave_power, 
          uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
          num_steps, num_reps, num_runs, 
@@ -221,6 +221,17 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
         # Save the coords found and if it failed
         optimization_success_list.append(optimization_success)
         opti_coords_list.append(coords)
+        
+        print('coords: {}'. format(coords))
+        
+        print('offset: {}'. format(offsetxy))
+        
+        x_center= coords[0]+offsetxy[0]
+        y_center=coords[1]+offsetxy[1]
+        
+        print('set coords: {}'. format([x_center,y_center]))
+        
+        cxn.galvo.write(x_center, y_center)
             
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)  
@@ -334,6 +345,7 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
             'read_state': int(read_state),
             'passed_coords': passed_coords,
             'opti_coords_list': opti_coords_list,
+            'offsets': offsetxy,
             'coords-units': 'V',
             'optimization_success_list': optimization_success_list,
             'expected_counts': expected_counts,

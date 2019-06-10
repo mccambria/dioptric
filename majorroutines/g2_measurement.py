@@ -231,7 +231,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     return g2_zero
 
 
-# %% Re-display an image if you run the file
+# %% Run the file
 
 
 if __name__ == '__main__':
