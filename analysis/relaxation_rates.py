@@ -38,6 +38,7 @@ def plus_relaxation_eq(t, gamma, omega, amp, offset):
 
 def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                              save_data = True):
+    print(bin_size)
     
     directory = 'G:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/' 
     
@@ -176,7 +177,6 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     
     while i < (num_runs - 1):
         #Fit to the (0,0) - (0,1) data to find Omega
-     
         zero_zero_avg_sig_counts = numpy.average(zero_zero_sig_counts[i:i+bin_size, ::], axis=0)
         zero_zero_avg_ref_counts = numpy.average(zero_zero_ref_counts[i:i+bin_size, ::], axis=0)
         
@@ -273,11 +273,12 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     gamma_average = numpy.average(gamma_rate_list)
     gamma_stdev = numpy.std(gamma_rate_list)
     
-    print('Omega list: {} \nGamma list: {}'.format(omega_rate_list, gamma_rate_list))
+#    print('Omega list: {} \nGamma list: {}'.format(omega_rate_list, gamma_rate_list))
     
 # %% Saving data
     
     num_bins = int(num_runs / bin_size)
+    
     if save_data: 
         time_stamp = tool_belt.get_time_stamp()
         raw_data = {'time_stamp': time_stamp,
@@ -314,33 +315,58 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         
         with open(file_path + '.txt', 'w') as file:
             json.dump(raw_data, file, indent=2)
-      
-        return num_bins, omega_average, omega_stdev, gamma_average, gamma_stdev
+
+    return num_bins, omega_average, omega_stdev, gamma_average, gamma_stdev
     
 # %%
     
 if __name__ == '__main__':
     
-    bin_size_list =  numpy.append(numpy.array([1]), numpy.linspace(2,40,20)).tolist()
+    relaxation_rate_analysis('2019-04-30-NV2_45MHzSplitting_important_data', 40,
+                            True, True)
     
-    num_bins_list = []
-    omega_value_list = []
-    omega_stdev_list = []
-    gamma_value_list = []
-    gamma_stdev_list = []
+#    bin_size_list = [ 4,  8, 10, 20, 40]
+#    
+#    num_bins_list = []
+#    omega_value_list = []
+#    omega_stdev_list = []
+#    gamma_value_list = []
+#    gamma_stdev_list = []
+#    
+#    
+#    for bin_size in bin_size_list:
+#        retvals = relaxation_rate_analysis('2019-04-30-NV2_57MHzSplitting_important_data', bin_size,
+#                            False, False)
+#        num_bins_list.append(retvals[0])
+#        omega_value_list.append(retvals[1])
+#        omega_stdev_list.append(retvals[2])
+#        gamma_value_list.append(retvals[3])
+#        gamma_stdev_list.append(retvals[4])
+#        
+##    fig, axes_pack = plt.subplots(1, 2, figsize=(14, 8))
+#    
+##    ax = axes_pack[0]
+##    ax.plot(num_bins_list, omega_value_list, 'bo', label = 'omega average')
+##    ax.plot(num_bins_list, gamma_value_list, 'go', label = 'gamma average')
+##    ax.legend()
+#    
+##    ax = axes_pack[1]
+#    plt.loglog(num_bins_list, omega_stdev_list, 'bo', label = 'omega standard deviation')
+#    plt.loglog(num_bins_list, gamma_stdev_list, 'go', label = 'gamma standard deviation')
+#    x = numpy.linspace(1,50,1000)
+#    plt.loglog(x, 0.7*x**0.5)
+#    plt.loglog(x, 0.02*x**0.5)
+#    plt.xlabel('number of bins for num_runs')
+#    plt.ylabel('Standard Deviation (kHz)')
+#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+#    plt.text(-0.8, -0.01, 'lines are f^(1/2)', transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    plt.legend()
+#    
+##    fig.canvas.draw()
+##    fig.canvas.flush_events()
     
     
-    for bin_size in bin_size_list:
-        retvals = relaxation_rate_analysis('2019-05-10-NV1_32MHzSplitting_important_data', bin_size,
-                            False, False)
-        num_bins_list.append(retvals[0])
-        omega_value_list.append(retvals[1])
-        omega_stdev_list.append(retvals[2])
-        gamma_value_list.append(retvals[3])
-        gamma_stdev_list.append(retvals[4])
-        
-    fig, ax = plt.subplots(1, 2, figsize=(14, 8))
-    ax.plot(num_bins_list, omega_value_list, 'bo')
         
         
         
