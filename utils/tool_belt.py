@@ -258,10 +258,15 @@ def gaussian(x, *params):
             3: constant y value to account for background
     """
 
-    coeff, mean, stdev, offset = params
-    var = stdev**2  # variance
+    coeff, mean, stdev = params
+    std_abs = abs(stdev)  # variance
     centDist = x-mean  # distance from the center
-    return offset + coeff**2*numpy.exp(-(centDist**2)/(2*var))
+    return 4 + coeff*numpy.exp(-(centDist**2)/(2*std_abs**2))
+
+def parabola(x, *params):
+    
+    peak_height, width, center = params
+    return peak_height - width*(x - center)**2
 
 
 def sinexp(t, offset, amp, freq, decay):
