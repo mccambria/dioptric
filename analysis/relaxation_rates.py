@@ -315,11 +315,32 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         with open(file_path + '.txt', 'w') as file:
             json.dump(raw_data, file, indent=2)
       
-                
+        return num_bins, omega_average, omega_stdev, gamma_average, gamma_stdev
     
 # %%
     
 if __name__ == '__main__':
     
-    relaxation_rate_analysis('2019-05-10-NV1_32MHzSplitting_important_data', 2,
-                            False)
+    bin_size_list =  numpy.append(numpy.array([1]), numpy.linspace(2,40,20)).tolist()
+    
+    num_bins_list = []
+    omega_value_list = []
+    omega_stdev_list = []
+    gamma_value_list = []
+    gamma_stdev_list = []
+    
+    
+    for bin_size in bin_size_list:
+        retvals = relaxation_rate_analysis('2019-05-10-NV1_32MHzSplitting_important_data', bin_size,
+                            False, False)
+        num_bins_list.append(retvals[0])
+        omega_value_list.append(retvals[1])
+        omega_stdev_list.append(retvals[2])
+        gamma_value_list.append(retvals[3])
+        gamma_stdev_list.append(retvals[4])
+        
+    fig, ax = plt.subplots(1, 2, figsize=(14, 8))
+    ax.plot(num_bins_list, omega_value_list, 'bo')
+        
+        
+        
