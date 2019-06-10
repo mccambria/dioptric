@@ -308,6 +308,8 @@ def do_optimize(cxn, coords, nd_filter, apd_indices, name,
 
     xy_range = 0.015
     z_range = 5.0
+#    xy_range = 0.020
+#    z_range = 8.0
 
     # The galvo's small angle step response is 400 us
     # Let's give ourselves a buffer of 500 us (500000 ns)

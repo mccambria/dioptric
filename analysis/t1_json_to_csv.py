@@ -3,6 +3,9 @@
 Specify folder_name and run to produce csv files containing the taus and
 norm_avg_sigs within each json-formatted text file in the folder.
 
+The csv files are named as:
+<init state>_to_<read state>_<max relaxation time in us>.csv
+
 Created on Mon May 27 11:26:49 2019
 
 @author: mccambria
@@ -14,7 +17,7 @@ import numpy
 import csv
 
 folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/' \
-    'nv0_2019_06_06 _48MHz'
+    'nv4_2019_06_06_28MHz'
 
 folder_items = os.listdir(folder_name)
 
