@@ -65,6 +65,6 @@ for branch in archived_branches:
 
 # Delete local branches
 for branch in archived_branches:
-    out('git branch -d {}', branch)
+    out('git branch -D {}', branch)
     
 input('Press enter to close.')
