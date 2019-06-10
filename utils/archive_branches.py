@@ -38,6 +38,7 @@ local_branches  = [branch for branch in local_branches
 
 # Confirm that the branch should be deleted
 archived_branches = []
+tagged_branches = []
 for branch in input_branches:
     if branch == 'master':
         print("I'm sorry Dave. I'm afraid I can't archive the master branch.")
@@ -50,15 +51,18 @@ for branch in input_branches:
     else:
         msg = 'Archive branch {}?'
     if confirm(msg, branch):
+        # Add a timestamp to the tagged branch
         inst = int(time.time())
-        out('git tag archive/{}-{} {}', branch, inst, branch)
+        tagged_name = '{}-{}'.format(branch, inst)
+        out('git tag archive/{} {}', tagged_name, branch)
         archived_branches.append(branch)
+        tagged_branches.append(tagged_name)
         
 if archived_branches == []:
     exit('No branches archived.')
 
 # Push archive tags to remote
-for branch in archived_branches:
+for branch in tagged_branches:
     out('git push origin archive/{}', branch)
 
 # Delete remote branches
