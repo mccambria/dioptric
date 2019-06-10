@@ -14,6 +14,7 @@ Created on Mon Jun 10 08:02:12 2019
 """
 
 from pyshellout import get, out, confirm
+import time
 
 input_branches = []
 
@@ -49,7 +50,8 @@ for branch in input_branches:
     else:
         msg = 'Archive branch {}?'
     if confirm(msg, branch):
-        out('git tag archive/{} {}', branch, branch)
+        inst = int(time.time())
+        out('git tag archive/{}-{} {}', branch, inst, branch)
         archived_branches.append(branch)
         
 if archived_branches == []:
