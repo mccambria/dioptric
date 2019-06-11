@@ -57,14 +57,14 @@ def do_optimize(name, coords, nd_filter, apd_index):
     with labrad.connect() as cxn:
         optimize.main(cxn, coords, nd_filter, apd_index, name,
                       expected_counts=None, set_to_opti_centers=False,
-                      save_data=True, plot_data=True, )
+                      save_data=True, plot_data=True)
         
 def do_optimize_list(name, coords, nd_filter, apd_index):
 
     with labrad.connect() as cxn:
         optimize.optimize_list(cxn, coords, nd_filter, apd_index, name,
                       expected_counts=None, set_to_opti_centers=False,
-                      save_data=True, plot_data=True, )
+                      save_data=True, plot_data=False)
 
 
 def do_stationary_count(name, coords, nd_filter, apd_index):
@@ -88,7 +88,7 @@ def do_g2_measurement(name, coords, nd_filter, apd_a_index, apd_b_index):
     run_time = 60 * 10
 #    run_time = 60 * 20
     
-    diff_window = 150 * 10**3  # 100 ns in ps
+    diff_window = 150 * 10**3  # 150 ns in ps
     
     with labrad.connect() as cxn:
         g2_measurement.main(cxn, coords, nd_filter, run_time, diff_window,
@@ -195,6 +195,32 @@ def do_ramsey_measurement(name, coords, nd_filter,
 #                        uwave_freq, uwave_power, uwave_pi_pulse, relaxation_time_range,
 #                        num_steps, num_reps, num_runs, 
 #                        name, measure_spin_0)
+            
+def do_sample_nvs(name, nv_list, nd_filter, apd_indices):
+    
+    # g2 parameters
+    run_time = 60 * 5
+    diff_window = 150 * 10**3  # 150 ns in ps
+    
+    # ESR parameters
+    num_steps = 101
+    num_runs = 5
+    uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
+    
+    for nv in nv_list:
+        
+        coords = nv[0: 3]
+        expected_counts = nv[3]
+    
+        with labrad.connect() as cxn:
+            g2_zero = g2_measurement.main(cxn, coords, nd_filter, run_time,
+                                          diff_window, apd_indices[0],
+                                          apd_indices[1], name=name,
+                                          expected_counts=expected_counts)
+            if g2_zero < 0.4:
+                resonance.main(cxn, coords, nd_filter, apd_indices,
+                               expected_counts, 2.87, 0.1,
+                               num_steps, num_runs, uwave_power, name=name)
     
 
 
@@ -212,7 +238,7 @@ if __name__ == '__main__':
 
     name = 'ayrton12'  # Sample name
     
-    nd_filter = 2.0
+    nd_filter = 1.5
 
     apd_a_index = 0
     apd_b_index = 1
@@ -242,9 +268,9 @@ if __name__ == '__main__':
     
 #    scan_range = 1.0
 #    num_scan_steps = 300
-    
-    scan_range = 0.5
-    num_scan_steps = 150
+#    
+#    scan_range = 0.5
+#    num_scan_steps = 150
 #    num_scan_steps = 200
     
 #    scan_range = 0.3
@@ -253,8 +279,8 @@ if __name__ == '__main__':
 #    scan_range = 0.2
 #    num_scan_steps = 60
     
-#    scan_range = 0.1
-#    num_scan_steps = 60
+    scan_range = 0.1
+    num_scan_steps = 60
 #    num_scan_steps = 30
 #    num_scan_steps = 15
     
@@ -340,10 +366,38 @@ if __name__ == '__main__':
 #    apd_indices = [apd_a_index]
     apd_indices = [apd_a_index, apd_b_index]
     
-    coords = [-0.3, 0.3, 50.0]
-    zero_coords = [0.0, 0.0, 50.0]
+#    coords = [-0.3, 0.3, 55.7]
+#    background = [-0.273, 0.331, 54.0]
+#    nv = [-0.237, 0.318, 56.0]
+#    zero_coords = [0.0, 0.0, 50.0]
     
-    nv_list = [coords]
+    nv_list = [
+#               [-0.142, 0.501, 55.8, 53],
+#               [-0.133, 0.420, 55.8, 45],
+#               [-0.141, 0.269, 55.8, 92],
+#               [-0.224, 0.070, 55.8, 49],
+#               [-0.234, 0.123, 55.8, 83],
+#               [-0.236, 0.163, 55.7, 78],
+#               [-0.269, 0.184, 55.8, 40],
+#               [-0.306, 0.160, 55.8, 64],
+#               [-0.269, 0.184, 55.8, 40],
+#               [-0.287, 0.260, 55.7, 66],
+               [-0.308, 0.270, 50, 45],
+               [-0.335, 0.280, 50, 74],
+               [-0.324, 0.325, 50, 65],
+               [-0.379, 0.280, 50, 43],
+               [-0.388, 0.294, 50, 31],
+               [-0.389, 0.264, 50, 85],
+               [-0.375, 0.183, 50, 42],
+               [-0.416, 0.398, 50, 48],
+               [-0.397, 0.383, 50, 91],
+               [-0.397, 0.337, 50, 85],
+               [-0.456, 0.152, 50, 63],
+               [-0.415, 0.398, 50, 43],
+               [-0.393, 0.484, 50, 60]]
+    
+#    nv_list = [coords]
+#    nv_list =    [ [-0.308, 0.270, 50, 45]]
     
 #    offsetxy=nv4_2019_06_06_offset # this adds an offset to the XY galvo values for certain functions 
 #                                   # (currently resonance or T1_double_quantum) - SK 6/8/19     
@@ -353,8 +407,9 @@ if __name__ == '__main__':
 #    params_array = numpy.array([[nv4_2019_06_06_ref, 2.8501, 66, 2.8786, 62, expected_counts]])
     
     try:
-        for nv in nv_list:
-            coords = nv
+        do_sample_nvs(name, nv_list, nd_filter, apd_indices)
+#        for nv in nv_list:
+#            coords = nv[0:3]
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
 #            do_optimize(name, coords, nd_filter, apd_indices)
@@ -374,7 +429,7 @@ if __name__ == '__main__':
 #            do_t1_measurement_single(name, coords, nd_filter, apd_indices, expected_counts)
 #            do_t1_init_read_control(name, coords, nd_filter, apd_indices, expected_counts,
 #                              init_state = -1, read_state = 0)
-
+#            do_sample_nvs(name, nv_list, nd_filter, apd_indices)
         
           
 #         %% FULL CONTROL T1

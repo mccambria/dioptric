@@ -87,6 +87,7 @@ def on_click_image(event):
 
     try:
         print('{:.3f}, {:.3f}'.format(event.xdata, event.ydata))
+#        print('[{:.3f}, {:.3f}, 50.0],'.format(event.xdata, event.ydata))
     except TypeError:
         # Ignore TypeError if you click in the figure but out of the image
         pass

@@ -114,7 +114,7 @@ def process_raw_buffer(timestamps, channels,
 
 
 def main(cxn, coords, nd_filter, run_time, diff_window,
-         apd_a_index, apd_b_index, name='untitled'):
+         apd_a_index, apd_b_index, name='untitled', expected_counts=None):
 
     # %% Initial calculations and setup
     
@@ -123,7 +123,8 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
-    optimize.main(cxn, coords, nd_filter, apd_indices)
+    optimize.main(cxn, coords, nd_filter, apd_indices,
+                  expected_counts=expected_counts)
     cxn.pulse_streamer.constant()
 
     num_tags = 0
@@ -202,7 +203,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     
     # %% Calculate a relative value for g2(0)
     
-    g2_zero = calculate_relative_g2_zero(differences, num_bins)
+    g2_zero = calculate_relative_g2_zero(hist)
 
     # %% Save the data
 

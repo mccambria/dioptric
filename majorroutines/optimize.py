@@ -266,7 +266,8 @@ def optimize_list(cxn, coords, nd_filter, apd_indices, name='untitled', expected
             cxn.galvo.write(opti_coords[0], opti_coords[1])
             cxn.objective_piezo.write_voltage(opti_coords[2])
         else:
-            print('[{:.3f}, {:.3f}, {:.1f}],'.format(*opti_coords))
+            opti_counts = int(stationary_count_lite(cxn, opti_coords, nd_filter, readout, apd_indices))
+            print('[{:.3f}, {:.3f}, {:.1f}, {}],'.format(*opti_coords, opti_counts))
 #            drift = numpy.array(opti_coords) - numpy.array(coords)
 #            print('drift: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*drift))
     else:
