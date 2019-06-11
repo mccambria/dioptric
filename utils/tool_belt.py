@@ -49,6 +49,11 @@ def set_xyz(cxn, coords):
 def set_xyz_zero(cxn):
     cxn.galvo.write(0.0, 0.0)
     cxn.objective_piezo.write_voltage(50.0)
+    
+
+def set_xyz_on_nv(cxn, nv_sig):
+    cxn.galvo.write(nv_sig[0], nv_sig[1])
+    cxn.objective_piezo.write_voltage(nv_sig[2])
 
 
 # %% Matplotlib plotting utils
@@ -279,7 +284,24 @@ def cosexp(t, offset, amp, freq, decay):
     two_pi = 2*numpy.pi
     return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
 
+
+# %% LabRAD utils
+    
+
+def get_shared_parameters_dict(cxn):
+    
+    # Get what we need out of the registry
+    cxn.registry.cd(['', 'SharedParameters'])
+    keys = cxn.registry.dir()
+    
+    vals = cxn.registry.get(keys)
+    reg_dict = {}
+    for ind in len(keys):
+        reg_dict[keys[ind]] = vals[ind]
+
+
 # %% File Open utils
+
 
 def ask_open_file(file_path):
     """
