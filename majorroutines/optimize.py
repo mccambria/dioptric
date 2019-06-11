@@ -18,6 +18,11 @@ from scipy.optimize import curve_fit
 import time
 
 
+# %% Define a few parameters
+
+num_steps = 51
+
+
 # %% Plotting functions
 
 
@@ -35,33 +40,15 @@ def create_figure():
     return fig
     
     
-def update_figure_raw_data(fig, axis_ind, voltages, count_rates):
+def update_figure(fig, axis_ind, voltages, count_rates, text=None):
     axes = fig.get_axes()
     ax = axes[axis_ind]
     ax.plot(voltages, count_rates)
-    
-    
-def update_figure_fit(fig, axis_ind, voltages, opti_params):
-    axes = fig.get_axes()
-    ax = axes[axis_ind]
-    # Plot the fit
-    first = voltages[0]
-    last = voltages[-1]
-    linspace_voltages = numpy.linspace(first, last, num=1000)
-    fit = tool_belt.gaussian(linspace_voltages, *opti_params)
-    ax.plot(linspace_voltages, fit)
 
-    # Add info to the axes
-    # a: coefficient that defines the peak height
-    # mu: mean, defines the center of the Gaussian
-    # sigma: standard deviation, defines the width of the Gaussian
-    # offset: constant y value to account for background
-    text = 'a={:.3f}\n $\mu$={:.3f}\n ' \
-        '$\sigma$={:.3f}\n offset={:.3f}'.format(*opti_params)
-
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.05, 0.95, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
+    if text is not None:
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.05, 0.95, text, transform=ax.transAxes, fontsize=12,
+                verticalalignment='top', bbox=props)
 
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -143,8 +130,6 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     scan_range_nm = 3 * shared_params['airy_radius_nm']
     readout = shared_params['continuous_readout_ns']
     
-    num_steps = 51
-    
     tool_belt.init_safe_stop()
     
     # x/y
@@ -211,9 +196,11 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     count_rates = (counts / 1000) / (readout / 10**9)
     
     if fig is not None:
-        update_figure_raw_data(fig, axis_ind, voltages, count_rates)
+        update_figure(fig, axis_ind, voltages, count_rates)
         
-    return fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig)
+    opti_coord = fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig)
+        
+    return opti_coord, voltages, counts, 
     
     
 def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
@@ -225,7 +212,9 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
     # 3: constant y value to account for background
     expected_counts = nv_sig[3]
     background_counts = nv_sig[4]
-    scan_range = voltages[-1] - voltages[0]
+    first_voltage = voltages[0]
+    last_voltage = voltages[-1]
+    scan_range = last_voltage - first_voltage
     init_fit = (expected_counts - background_counts,
                 nv_sig[axis_ind],
                 scan_range / 3,
@@ -238,107 +227,126 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
         opti_params = None
         
     # Plot
-    if fig is not None:
-        update_figure_fit(fig, axis_ind, voltages, opti_params)
+    if (fig is not None) and (opti_params is not None):
+        # Plot the fit
+        linspace_voltages = numpy.linspace(first_voltage, last_voltage,
+                                           num=1000)
+        fit_count_rates = tool_belt.gaussian(linspace_voltages, *opti_params)
+        # Add info to the axes
+        # a: coefficient that defines the peak height
+        # mu: mean, defines the center of the Gaussian
+        # sigma: standard deviation, defines the width of the Gaussian
+        # offset: constant y value to account for background
+        text = 'a={:.3f}\n $\mu$={:.3f}\n ' \
+            '$\sigma$={:.3f}\n offset={:.3f}'.format(*opti_params)
+        update_figure(fig, axis_ind, linspace_voltages,
+                      fit_count_rates, text)
+    
+    center = None
+    if opti_params is not None:
+        center = opti_params[1]
         
-    return opti_params
+    return center
+
+
+# %% User functions
+    
+
+def optimize_list(cxn, nv_sig_list, apd_indices):
+    opti_nv_sig_list = []
+    for nv_sig in nv_sig_list:
+        opti_coords = main(cxn, nv_sig, apd_indices, set_to_opti_coords=False)
+        opti_nv_sig_list.append([*opti_coords, *nv_sig[3: ]])
+    
+    for nv_sig in opti_nv_sig_list:
+        print('[{:.3f}, {:.3f}, {:.1f}, {}, {}],'.format(*nv_sig))
     
 
 # %% Main
 
 
 def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled', 
-         set_to_opti_centers=True, save_data=False, plot_data=False):
+         set_to_opti_coords=True, save_data=False, plot_data=False):
     
     # Get the shared parameters from the registry
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     
-    # Create 3 plots in the figure, one for each axis
-    fig = None
-    if plot_data:
-        fig = create_figure()
-    
     x_center, y_center, z_center = nv_sig[0:3]
-    expected_counts = nv_sig[3]
-    background_counts = nv_sig[4]
+    expected_count_rate = nv_sig[3]
+    background_count_rate = nv_sig[4]
     
     opti_succeeded = False
     
-    # Try to optimize twice
+    # %% Try to optimize
+    
     for ind in range(2):
         
-        # Optimize on each axis
-        opti_params = []
-        for axis_ind in range(3):
-            opti_params.append(optimize_on_axis(cxn, nv_sig, axis_ind,
-                                                shared_params, apd_indices, fig))
+        # Create 3 plots in the figure, one for each axis
+        fig = None
+        if plot_data:
+            fig = create_figure()
         
-        # Get just the coordinates out of the returned parameters
-        opti_coords = [None, None, None]
+        # Optimize on each axis
+        opti_coords = []
+        voltages_by_axis = []
+        counts_by_axis = []
         for axis_ind in range(3):
-            params = opti_params[axis_ind]
-            if params is not None:
-                opti_coords[axis_ind] = params[1]
+            ret_vals = optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
+                                        apd_indices, fig)
+            opti_coords.append(ret_vals[0])
+            voltages_by_axis.append(ret_vals[1])
+            counts_by_axis.append(ret_vals[2])
             
-        # If there is a threshold set, go on
-        if expected_counts != None:
             
-            lower_threshold = expected_counts * 3/4
-            upper_threshold = expected_counts * 5/4
+        # Verify that our optimization found a reasonable spot by checking
+        # the count rate at the center against the expected count rate
+        if (expected_count_rate is not None) and (None not in opti_coords):
+            
+            lower_threshold = expected_count_rate * 3/4
+            upper_threshold = expected_count_rate * 5/4
             
             # check the counts
-            opti_counts = stationary_count_lite(cxn, opti_coords,
-                                                shared_params, apd_indices)
-            print('Counts from optimization: {}'.format(opti_counts)) 
-            print('Expected counts: {}'.format(expected_counts))  
-            print(' ')
+            opti_count_rate = stationary_count_lite(cxn, opti_coords,
+                                                    shared_params, apd_indices)
+            print('Counts from optimization: {}'.format(opti_count_rate))
+            print('Expected counts: {}'.format(background_count_rate))
             
-            # If the counts are close to what we expect, we succeeded!
-            if lower_threshold <= opti_counts and opti_counts <= upper_threshold:
-                print("Optimization success and counts within threshold! \n ")
-                optimization_success = True
-                break
+            # If the count rate close to what we expect, we succeeded!
+            if lower_threshold <= opti_count_rate <= upper_threshold:
+                print('Optimization succeeded!')
+                opti_succeeded = True
             else:
-                print("Optimization success, but counts outside of threshold \n ")
+                print('Count rate at optimized coordinates out of bounds. ' \
+                      'Trying again.')
                 
         # If the threshold is not set, we succeed based only on optimize       
         else:
-            print("Opimization success, no threshold set \n ")
-            optimization_success = True
+            print('Optimization succeeded! (No expected count rate passed.)')
+            opti_succeeded = True
+        # Break out of the loop if optimization succeeded
+        if opti_succeeded:
             break
+    
+    # %% Set to the optimized coordinates, or just tell the user what they are
             
-    if optimization_success == True:
-        if set_to_opti_centers:
-            cxn.galvo.write(opti_coords[0], opti_coords[1])
-            cxn.objective_piezo.write_voltage(opti_coords[2])
+    if set_to_opti_coords:
+        if opti_succeeded:
+            tool_belt.set_xyz(cxn, opti_coords)
         else:
-            print('centers: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*opti_coords))
-            drift = numpy.array(opti_coords) - numpy.array(coords)
-            print('drift: \n' + '{:.3f}, {:.3f}, {:.1f}'.format(*drift))
-            
-        return opti_coords, optimization_success
+            # Let the user know something went wrong
+            print('Centers could not be located. Resetting to coordinates ' \
+                  'about which we attempted to optimize.')
+            tool_belt.set_xyz(cxn, nv_sig[0:3])
     else:
-        # Let the user know something went wrong and reset to what was passed
-        print('Centers could not be located.')
-        if set_to_opti_centers:
-            tool_belt.set_xyz_on_nv(cxn, nv_sig)
+        if opti_succeeded:
+            print('centers: ')
+            print('{:.3f}, {:.3f}, {:.1f}'.format(*opti_coords))
+            diff = numpy.array(opti_coords) - numpy.array(nv_sig[0:3])
+            print('difference: ')
+            print('{:.3f}, {:.3f}, {:.1f}'.format(*diff))
         else:
-            center_texts = []
-            for center_ind in range(len(opti_coords)):
-                center = opti_coords[center_ind]
-                center_text = 'None'
-                if center is not None:
-                    if center_ind == 3:
-                        center_text = '{:.1f}'
-                    else:
-                        center_text = '{:.3f}'
-                    center_text = center_text.format(center)
-                center_texts.append(center_text)
-            print(opti_coords)
-            print(', '.join(center_texts))
+            print('Optimization failed.')
                                
-        return coords, optimization_success
-        
     # %% Save the data
 
     # Don't bother saving the data if we're just using this to find the
@@ -349,37 +357,33 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
 
         rawData = {'timestamp': timestamp,
                    'name': name,
-                   'coords': coords,
-                   'coords-units': 'V',
+                   'nv_sig': nv_sig,
+                   'nv_sig-units': '[V, V, V, kcps, kcps]',
                    'nd_filter': nd_filter,
-                   'xy_range': xy_range,
-                   'xy_range-units': 'V',
-                   'z_range': z_range,
-                   'xy_range-units': 'V',
                    'num_steps': num_steps,
-                   'readout': readout,
+                   'readout': shared_params['continuous_readout_ns'],
                    'readout-units': 'ns',
-                   'x_voltages': x_voltages.tolist(),
+                   'opti_coords': opti_coords,
+                   'opti_coords-units': 'V',
+                   'x_voltages': voltages_by_axis[0].tolist(),
                    'x_voltages-units': 'V',
-                   'y_voltages': y_voltages.tolist(),
+                   'y_voltages': voltages_by_axis[1].tolist(),
                    'y_voltages-units': 'V',
-                   'z_voltages': z_voltages.tolist(),
+                   'z_voltages': voltages_by_axis[2].tolist(),
                    'z_voltages-units': 'V',
-                   'xyz_centers': [x_center, y_center, z_center],
-                   'xyz_centers-units': 'V',
-                   'x_counts': x_counts.tolist(),
-                   'x_counts-units': 'counts',
-                   'y_counts': y_counts.tolist(),
-                   'y_counts-units': 'counts',
-                   'z_counts': z_counts.tolist(),
-                   'z_counts-units': 'counts'}
+                   'x_counts': counts_by_axis[0].tolist(),
+                   'x_counts-units': 'number',
+                   'y_counts': counts_by_axis[1].tolist(),
+                   'y_counts-units': 'number',
+                   'z_counts': counts_by_axis[2].tolist(),
+                   'z_counts-units': 'number'}
 
         filePath = tool_belt.get_file_path(__file__, timestamp, name)
         tool_belt.save_raw_data(rawData, filePath)
-        if plot_data:
+        
+        if fig is not None:
             tool_belt.save_figure(fig, filePath)
             
-    # %% Return opticenters
+    # %% Return the optimized coordinates we found
     
-    return opti_centers
-
+    return opti_coords
