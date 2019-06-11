@@ -56,7 +56,7 @@ def do_optimize(name, coords, nd_filter, apd_index):
 
     with labrad.connect() as cxn:
         optimize.main(cxn, coords, nd_filter, apd_index, name,
-                      expected_counts=None, set_to_opti_centers=False,
+                      set_to_opti_coords=False,
                       save_data=True, plot_data=True)
         
 def do_optimize_list(name, coords, nd_filter, apd_index):
@@ -217,7 +217,7 @@ def do_sample_nvs(name, nv_list, nd_filter, apd_indices):
                                           diff_window, apd_indices[0],
                                           apd_indices[1], name=name,
                                           expected_counts=expected_counts)
-            if g2_zero < 0.4:
+            if g2_zero < 0.5:
                 resonance.main(cxn, coords, nd_filter, apd_indices,
                                expected_counts, 2.87, 0.1,
                                num_steps, num_runs, uwave_power, name=name)
@@ -276,11 +276,11 @@ if __name__ == '__main__':
 #    scan_range = 0.3
 #    num_scan_steps = 90
     
-#    scan_range = 0.2
-#    num_scan_steps = 60
-    
-    scan_range = 0.1
+    scan_range = 0.2
     num_scan_steps = 60
+    
+#    scan_range = 0.1
+#    num_scan_steps = 60
 #    num_scan_steps = 30
 #    num_scan_steps = 15
     
@@ -395,6 +395,14 @@ if __name__ == '__main__':
                [-0.456, 0.152, 50, 63],
                [-0.415, 0.398, 50, 43],
                [-0.393, 0.484, 50, 60]]
+
+
+    z_voltage = 50.2
+    background_count_rate = 3
+
+    nv_sig_list = [[-0.137, 0.427, z_voltage, 45, background_count_rate],
+                   [-0.132, 0.481, z_voltage, 95, background_count_rate],
+                   [-0.145, 0.506, z_voltage, 45, background_count_rate]]
     
 #    nv_list = [coords]
 #    nv_list =    [ [-0.308, 0.270, 50, 45]]
@@ -407,7 +415,16 @@ if __name__ == '__main__':
 #    params_array = numpy.array([[nv4_2019_06_06_ref, 2.8501, 66, 2.8786, 62, expected_counts]])
     
     try:
-        do_sample_nvs(name, nv_list, nd_filter, apd_indices)
+#        test_nv_sig = [-0.140, 0.502, 50.3, 53, 3]
+#        test_nv_sig = [-0.142, 0.500, 50.2, 53, 3]
+        
+#        do_optimize(name, test_nv_sig, nd_filter, apd_indices)
+#        do_image_sample(name, test_nv_sig[0: 3], nd_filter, scan_range, num_scan_steps, apd_indices)
+        
+        with labrad.connect() as cxn:
+            optimize.optimize_list(cxn, nv_sig_list, nd_filter, apd_indices)
+        
+#        do_sample_nvs(name, nv_list, nd_filter, apd_indices)
 #        for nv in nv_list:
 #            coords = nv[0:3]
 #            set_xyz_zero()
@@ -465,7 +482,9 @@ if __name__ == '__main__':
 ## %%            
 
     finally:
+        tool_belt.reset_state()
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
             print("\n\nRoutine complete. Press enter to exit.")
             tool_belt.poll_safe_stop()
+            

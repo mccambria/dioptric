@@ -205,33 +205,50 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     
 def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
         
+    fit_func = tool_belt.gaussian
+    
     # The order of parameters is 
     # 0: coefficient that defines the peak height
     # 1: mean, defines the center of the Gaussian
     # 2: standard deviation, defines the width of the Gaussian
     # 3: constant y value to account for background
-    expected_counts = nv_sig[3]
-    background_counts = nv_sig[4]
-    first_voltage = voltages[0]
-    last_voltage = voltages[-1]
-    scan_range = last_voltage - first_voltage
-    init_fit = (expected_counts - background_counts,
+    expected_count_rate = float(nv_sig[3])
+    background_count_rate = nv_sig[4]
+    if background_count_rate is None:
+        background_count_rate = 0
+    background_count_rate = float(background_count_rate)
+    low_voltage = voltages[0]
+    high_voltage = voltages[-1]
+    scan_range = high_voltage - low_voltage
+    init_fit = (expected_count_rate - background_count_rate,
                 nv_sig[axis_ind],
                 scan_range / 3,
-                background_counts)
+                background_count_rate)
+    opti_params = None
     try:
-        opti_params, cov_arr = curve_fit(tool_belt.gaussian, voltages,
-                                        count_rates, p0=init_fit)
+        inf = numpy.inf
+        low_bounds = [0, low_voltage, 0, 0]
+        high_bounds = [inf, high_voltage, inf, inf]
+        opti_params, cov_arr = curve_fit(fit_func, voltages,
+                                         count_rates, p0=init_fit,
+                                         bounds=(low_bounds, high_bounds))
+        # Consider it a failure if we railed
+        for ind in range(len(opti_params)):
+            param = opti_params[ind]
+            if (param == low_bounds[ind]) or (param == high_bounds[ind]):
+                opti_params = None
     except Exception:
+        pass
+        
+    if opti_params is None:
         print('Optimization failed for axis {}'.format(axis_ind))
-        opti_params = None
         
     # Plot
     if (fig is not None) and (opti_params is not None):
         # Plot the fit
-        linspace_voltages = numpy.linspace(first_voltage, last_voltage,
+        linspace_voltages = numpy.linspace(low_voltage, high_voltage,
                                            num=1000)
-        fit_count_rates = tool_belt.gaussian(linspace_voltages, *opti_params)
+        fit_count_rates = fit_func(linspace_voltages, *opti_params)
         # Add info to the axes
         # a: coefficient that defines the peak height
         # mu: mean, defines the center of the Gaussian
@@ -252,10 +269,11 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
 # %% User functions
     
 
-def optimize_list(cxn, nv_sig_list, apd_indices):
+def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
     opti_nv_sig_list = []
     for nv_sig in nv_sig_list:
-        opti_coords = main(cxn, nv_sig, apd_indices, set_to_opti_coords=False)
+        opti_coords = main(cxn, nv_sig, nd_filter, apd_indices, set_to_opti_coords=False,
+                           plot_data=True)
         opti_nv_sig_list.append([*opti_coords, *nv_sig[3: ]])
     
     for nv_sig in opti_nv_sig_list:
@@ -268,12 +286,16 @@ def optimize_list(cxn, nv_sig_list, apd_indices):
 def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled', 
          set_to_opti_coords=True, save_data=False, plot_data=False):
     
+    # Adjust the sig we use for drift
+    drift = tool_belt.get_drift()
+    passed_coords = nv_sig[0: 3]
+    drift_adjusted_coords = numpy.sum([passed_coords, drift], axis=0).tolist()
+    drift_adjusted_nv_sig = [*drift_adjusted_coords, *nv_sig[3:]]
+    
     # Get the shared parameters from the registry
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     
-    x_center, y_center, z_center = nv_sig[0:3]
     expected_count_rate = nv_sig[3]
-    background_count_rate = nv_sig[4]
     
     opti_succeeded = False
     
@@ -291,25 +313,29 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
         voltages_by_axis = []
         counts_by_axis = []
         for axis_ind in range(3):
-            ret_vals = optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
-                                        apd_indices, fig)
+            ret_vals = optimize_on_axis(cxn, drift_adjusted_nv_sig, axis_ind,
+                                        shared_params, apd_indices, fig)
             opti_coords.append(ret_vals[0])
             voltages_by_axis.append(ret_vals[1])
             counts_by_axis.append(ret_vals[2])
             
+        # We failed to get optimized coordinates, try again
+        if None in opti_coords:
+            continue
             
+        # Check the count rate
+        opti_count_rate = stationary_count_lite(cxn, opti_coords,
+                                                shared_params, apd_indices)
+        print('Count rate at optimized coordinates: {:.0f}'.format(opti_count_rate))
+        
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate
-        if (expected_count_rate is not None) and (None not in opti_coords):
+        if expected_count_rate is not None:
             
             lower_threshold = expected_count_rate * 3/4
             upper_threshold = expected_count_rate * 5/4
             
-            # check the counts
-            opti_count_rate = stationary_count_lite(cxn, opti_coords,
-                                                    shared_params, apd_indices)
-            print('Counts from optimization: {}'.format(opti_count_rate))
-            print('Expected counts: {}'.format(background_count_rate))
+            print('Expected count rate: {}'.format(expected_count_rate))
             
             # If the count rate close to what we expect, we succeeded!
             if lower_threshold <= opti_count_rate <= upper_threshold:
@@ -326,6 +352,12 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
         # Break out of the loop if optimization succeeded
         if opti_succeeded:
             break
+        
+    # %% Calculate the drift relative to the passed coordinates
+    
+    if opti_succeeded:
+        drift = (numpy.array(opti_coords) - numpy.array(passed_coords)).tolist()
+        tool_belt.set_drift(drift)
     
     # %% Set to the optimized coordinates, or just tell the user what they are
             
@@ -334,16 +366,15 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
             tool_belt.set_xyz(cxn, opti_coords)
         else:
             # Let the user know something went wrong
-            print('Centers could not be located. Resetting to coordinates ' \
+            print('Optimization failed. Resetting to coordinates ' \
                   'about which we attempted to optimize.')
-            tool_belt.set_xyz(cxn, nv_sig[0:3])
+            tool_belt.set_xyz(cxn, drift_adjusted_coords)
     else:
         if opti_succeeded:
-            print('centers: ')
+            print('Optimized coordinates: ')
             print('{:.3f}, {:.3f}, {:.1f}'.format(*opti_coords))
-            diff = numpy.array(opti_coords) - numpy.array(nv_sig[0:3])
-            print('difference: ')
-            print('{:.3f}, {:.3f}, {:.1f}'.format(*diff))
+            print('Drift: ')
+            print('{:.3f}, {:.3f}, {:.1f}'.format(*drift))
         else:
             print('Optimization failed.')
                                

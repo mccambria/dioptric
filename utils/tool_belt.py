@@ -292,12 +292,22 @@ def get_shared_parameters_dict(cxn):
     
     # Get what we need out of the registry
     cxn.registry.cd(['', 'SharedParameters'])
-    keys = cxn.registry.dir()
+    sub_folders, keys = cxn.registry.dir()
+    if keys == []:
+        return {}
     
-    vals = cxn.registry.get(keys)
+    p = cxn.registry.packet()
+    for key in keys:
+        p.get(key)
+    vals = p.send()['get']
+
     reg_dict = {}
-    for ind in len(keys):
-        reg_dict[keys[ind]] = vals[ind]
+    for ind in range(len(keys)):
+        key = keys[ind]
+        val = vals[ind]
+        reg_dict[key] = val
+        
+    return reg_dict
 
 
 # %% File Open utils
@@ -525,6 +535,41 @@ def poll_safe_stop():
         time.sleep(0.1)
         if safe_stop():
             break
+        
+
+# %% Singletons
+          
+            
+# This isn't really that scary - our client is and should be mostly stateless 
+# but in some cases it's just easier to share some state across the life of an
+# experiment (ie from the time you press F5 to the time we hit the finally
+# at the end of cfm_control_panel). To do this safely and easily we use 
+# singletons that are implemented with global variables. They get cleaned up 
+# in reset_state, which is called in cfm_control_panel's finally. The 
+# singletons should only be accessed with the getters and setters here so that
+# we can be sure they're implemented properly. 
 
 
-# %% Resets and clean up
+def get_drift():
+    global DRIFT
+    try:
+        DRIFT
+    except NameError:
+        reset_drift()
+    # Don't let the user have a reference to the global
+    return numpy.copy(DRIFT).tolist()
+    
+
+def set_drift(drift_to_set):
+    global DRIFT
+    DRIFT = drift_to_set
+    
+    
+def reset_drift():
+    global DRIFT
+    DRIFT = [0.0, 0.0, 0.0]
+    
+
+def reset_state():
+    reset_drift()
+
