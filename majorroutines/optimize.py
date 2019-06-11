@@ -272,8 +272,8 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
 def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
     opti_nv_sig_list = []
     for nv_sig in nv_sig_list:
-        opti_coords = main(cxn, nv_sig, nd_filter, apd_indices, set_to_opti_coords=False,
-                           plot_data=True)
+        opti_coords = main(cxn, nv_sig, nd_filter, apd_indices,
+                           set_to_opti_coords=False)
         opti_nv_sig_list.append([*opti_coords, *nv_sig[3: ]])
     
     for nv_sig in opti_nv_sig_list:
@@ -289,7 +289,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
     passed_coords = nv_sig[0: 3]
-    drift_adjusted_coords = numpy.sum([passed_coords, drift], axis=0).tolist()
+    drift_adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
     drift_adjusted_nv_sig = [*drift_adjusted_coords, *nv_sig[3:]]
     
     # Get the shared parameters from the registry
