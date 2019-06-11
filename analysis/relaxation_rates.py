@@ -9,7 +9,16 @@ then allow us to average the value for the relaxation rate and take a standard
 deviation.
 
 This file only works if all the experiments in a folder have the same number
-of num_runs
+of num_runs, and can only handle two data sets of the same experiment.
+
+The main of this file takes a list of bin sizes to calculate the average and 
+standard deviations with different amounts of bins. It uses the 
+relaxation_rate_analysis to caluclate the average and standard deviation of the
+gamma and omega values. It then fits the standard deviation values vs number of
+bins to a square root fit to extract the standard deviation of one single bin. 
+It will also report the values found for the omega and gamma for one of the 
+bin sizes (it will pick the last in the passed list, which should be set up to
+be one bin, I should automate this later)
 
 
 
@@ -45,7 +54,8 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     # Create a list of all the files in the folder for one experiment
     file_list = []
     for file in os.listdir('{}/{}'.format(directory, folder_name)):
-        if file.endswith(".txt") and not file.endswith("bins.txt"):
+        if file.endswith(".txt") and not file.endswith("bins.txt") \
+                                    and not file.endswith("analysis.txt"):
             file_list.append(file)
       
     # Get the number of runs to create the empty arrays from the first file in 
@@ -57,18 +67,23 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         num_runs_set = data['num_runs']
         
     # Prepare the arrays to fill with data. NaN will be first value
-    zero_zero_sig_counts = numpy.ones((num_runs_set, 1)) * numpy.nan
-    zero_zero_ref_counts = numpy.copy(zero_zero_sig_counts)
-    zero_plus_sig_counts = numpy.copy(zero_zero_sig_counts)
-    zero_plus_ref_counts = numpy.copy(zero_zero_sig_counts)
-    plus_plus_sig_counts = numpy.copy(zero_zero_sig_counts)
-    plus_plus_ref_counts = numpy.copy(zero_zero_sig_counts)
-    plus_minus_sig_counts = numpy.copy(zero_zero_sig_counts)
-    plus_minus_ref_counts = numpy.copy(zero_zero_sig_counts)
+#    zero_zero_sig_counts = numpy.ones((num_runs_set, 1)) * numpy.nan
+#    zero_zero_ref_counts = numpy.copy(zero_zero_sig_counts)
+#    zero_plus_sig_counts = numpy.copy(zero_zero_sig_counts)
+#    zero_plus_ref_counts = numpy.copy(zero_zero_sig_counts)
+#    plus_plus_sig_counts = numpy.copy(zero_zero_sig_counts)
+#    plus_plus_ref_counts = numpy.copy(zero_zero_sig_counts)
+#    plus_minus_sig_counts = numpy.copy(zero_zero_sig_counts)
+#    plus_minus_ref_counts = numpy.copy(zero_zero_sig_counts)
     
-    zero_zero_time = numpy.ones(1) * numpy.nan
+    zero_zero_bool = False
+    zero_plus_bool = False
+    plus_plus_bool = False
+    plus_minus_bool = False
+    
+#    zero_zero_time = numpy.ones(1) * numpy.nan
 #    zero_plus_time = numpy.copy(zero_zero_time)
-    plus_plus_time = numpy.copy(zero_zero_time)
+#    plus_plus_time = numpy.copy(zero_zero_time)
 #    plus_minus_time = numpy.copy(zero_zero_time)
     
     # Create lists to store the omega and gamma rates
@@ -82,7 +97,7 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     # %% Unpack the data
     
     # Unpack the data and sort into arrays. This allows multiple experiments of 
-    # the same type (ie (1,-1) to be correctly sorted into one array
+    # the same type (ie (1,-1)) to be correctly sorted into one array
     for file in file_list:
         with open('{}/{}/{}'.format(directory, folder_name, file)) as json_file:
             data = json.load(json_file)
@@ -114,36 +129,114 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
             if init_state == 0 and read_state == 0:
-                zero_zero_sig_counts = numpy.append(zero_zero_sig_counts, 
-                                                    sig_counts, axis = 1)
-                zero_zero_ref_counts = numpy.append(zero_zero_ref_counts, 
-                                                    ref_counts, axis = 1)
-                zero_zero_time = numpy.append(zero_zero_time, time_array)
-                
-                zero_zero_time_linspace = numpy.linspace(min_relaxation_time, 
-                                             max_relaxation_time, num=1000)
+                # Check to see if data has already been taken of this experiment
+                # If it hasn't, then create arrays of the data.
+                if zero_zero_bool == False:
+                    zero_zero_sig_counts = sig_counts
+                    zero_zero_ref_counts = ref_counts
+                    zero_zero_time = time_array
+                    
+                    zero_zero_ref_max_time = max_relaxation_time
+                    zero_zero_bool = True
+                # If data has already been taken for this experiment, then check
+                # to see if this current data is the shorter or longer measurement,
+                # and either append before or after the prexisting data
+                else:
+                    
+                    if max_relaxation_time > zero_zero_ref_max_time:
+                        zero_zero_sig_counts = numpy.concatenate((zero_zero_sig_counts, 
+                                                            sig_counts), axis = 1)
+                        zero_zero_ref_counts = numpy.concatenate((zero_zero_ref_counts, 
+                                                            ref_counts), axis = 1)
+                        zero_zero_time = numpy.concatenate((zero_zero_time, time_array))
+                        
+                    elif max_relaxation_time < zero_zero_ref_max_time:
+                        zero_zero_sig_counts = numpy.concatenate((sig_counts, 
+                                                          zero_zero_sig_counts), axis = 1)
+                        zero_zero_ref_counts = numpy.concatenate((ref_counts, 
+                                                          zero_zero_ref_counts), axis = 1)
+                        zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
                 
             if init_state == 0 and read_state == 1:
-                zero_plus_sig_counts = numpy.append(zero_plus_sig_counts, 
-                                                    sig_counts, axis = 1)
-                zero_plus_ref_counts = numpy.append(zero_plus_ref_counts, 
-                                                    ref_counts, axis = 1)
+                # Check to see if data has already been taken of this experiment
+                # If it hasn't, then create arrays of the data.
+                if zero_plus_bool == False:
+                    zero_plus_sig_counts = sig_counts
+                    zero_plus_ref_counts = ref_counts
+                    
+                    zero_plus_ref_max_time = max_relaxation_time
+                    zero_plus_bool = True
+                # If data has already been taken for this experiment, then check
+                # to see if this current data is the shorter or longer measurement,
+                # and either append before or after the prexisting data
+                else:
+                    
+                    if max_relaxation_time > zero_plus_ref_max_time:
+                        zero_plus_sig_counts = numpy.concatenate((zero_plus_sig_counts, 
+                                                            sig_counts), axis = 1)
+                        zero_plus_ref_counts = numpy.concatenate((zero_plus_ref_counts, 
+                                                            ref_counts), axis = 1)
+                        
+                    elif max_relaxation_time < zero_plus_ref_max_time:
+                        zero_plus_sig_counts = numpy.concatenate((sig_counts, 
+                                                          zero_plus_sig_counts), axis = 1)
+                        zero_plus_ref_counts = numpy.concatenate((ref_counts, 
+                                                          zero_plus_ref_counts), axis = 1)
 
-            if init_state == 1 and read_state == 1:
-                plus_plus_sig_counts = numpy.append(plus_plus_sig_counts, 
-                                                    sig_counts, axis = 1)
-                plus_plus_ref_counts = numpy.append(plus_plus_ref_counts, 
-                                                    ref_counts, axis = 1)
-                plus_plus_time = numpy.append(plus_plus_time, time_array)
-                
-                plus_plus_time_linspace = numpy.linspace(min_relaxation_time, 
-                                             max_relaxation_time, num=1000)
+            if init_state == 1 and read_state == 1:              
+                # Check to see if data has already been taken of this experiment
+                # If it hasn't, then create arrays of the data.
+                if plus_plus_bool == False:
+                    plus_plus_sig_counts = sig_counts
+                    plus_plus_ref_counts = ref_counts
+                    plus_plus_time = time_array
+                    
+                    plus_plus_ref_max_time = max_relaxation_time
+                    plus_plus_bool = True
+                # If data has already been taken for this experiment, then check
+                # to see if this current data is the shorter or longer measurement,
+                # and either append before or after the prexisting data
+                else:
+                    
+                    if max_relaxation_time > plus_plus_ref_max_time:
+                        plus_plus_sig_counts = numpy.concatenate((plus_plus_sig_counts, 
+                                                            sig_counts), axis = 1)
+                        plus_plus_ref_counts = numpy.concatenate((plus_plus_ref_counts, 
+                                                            ref_counts), axis = 1)
+                        plus_plus_time = numpy.concatenate((plus_plus_time, time_array))
+                        
+                    elif max_relaxation_time < plus_plus_ref_max_time:
+                        plus_plus_sig_counts = numpy.concatenate((sig_counts, 
+                                                          plus_plus_sig_counts), axis = 1)
+                        plus_plus_ref_counts = numpy.concatenate((ref_counts, 
+                                                          plus_plus_ref_counts), axis = 1)
+                        plus_plus_time = numpy.concatenate((time_array, plus_plus_time))
                 
             if init_state == 1 and read_state == -1:
-                plus_minus_sig_counts = numpy.append(plus_minus_sig_counts, 
-                                                    sig_counts, axis = 1)
-                plus_minus_ref_counts = numpy.append(plus_minus_ref_counts, 
-                                                    ref_counts, axis = 1)
+                # Check to see if data has already been taken of this experiment
+                # If it hasn't, then create arrays of the data.
+                if plus_minus_bool == False:
+                    plus_minus_sig_counts = sig_counts
+                    plus_minus_ref_counts = ref_counts
+                    
+                    plus_minus_ref_max_time = max_relaxation_time
+                    plus_minus_bool = True
+                # If data has already been taken for this experiment, then check
+                # to see if this current data is the shorter or longer measurement,
+                # and either append before or after the prexisting data
+                else:
+                    
+                    if max_relaxation_time > plus_minus_ref_max_time:
+                        plus_minus_sig_counts = numpy.concatenate((plus_minus_sig_counts, 
+                                                            sig_counts), axis = 1)
+                        plus_minus_ref_counts = numpy.concatenate((plus_minus_ref_counts, 
+                                                            ref_counts), axis = 1)
+                        
+                    elif max_relaxation_time < plus_minus_ref_max_time:
+                        plus_minus_sig_counts = numpy.concatenate((sig_counts, 
+                                                          plus_minus_sig_counts), axis = 1)
+                        plus_minus_ref_counts = numpy.concatenate((ref_counts, 
+                                                          plus_minus_ref_counts), axis = 1)
                 
                 splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
     
@@ -157,19 +250,19 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         
     # Delete the NaNs from all the arrays. There might be a better way to fill
     # the arrays, but this should work for now
-    zero_zero_sig_counts = numpy.delete(zero_zero_sig_counts, 0, axis = 1)
-    zero_zero_ref_counts = numpy.delete(zero_zero_ref_counts, 0, axis = 1)
-    zero_zero_time = numpy.delete(zero_zero_time, 0)
+#    zero_zero_sig_counts = numpy.delete(zero_zero_sig_counts, 0, axis = 1)
+#    zero_zero_ref_counts = numpy.delete(zero_zero_ref_counts, 0, axis = 1)
+#    zero_zero_time = numpy.delete(zero_zero_time, 0)
+#    
+#    zero_plus_sig_counts = numpy.delete(zero_plus_sig_counts, 0, axis = 1)
+#    zero_plus_ref_counts = numpy.delete(zero_plus_ref_counts, 0, axis = 1)
     
-    zero_plus_sig_counts = numpy.delete(zero_plus_sig_counts, 0, axis = 1)
-    zero_plus_ref_counts = numpy.delete(zero_plus_ref_counts, 0, axis = 1)
+#    plus_plus_sig_counts = numpy.delete(plus_plus_sig_counts, 0, axis = 1)
+#    plus_plus_ref_counts = numpy.delete(plus_plus_ref_counts, 0, axis = 1)
+#    plus_plus_time = numpy.delete(plus_plus_time, 0)
     
-    plus_plus_sig_counts = numpy.delete(plus_plus_sig_counts, 0, axis = 1)
-    plus_plus_ref_counts = numpy.delete(plus_plus_ref_counts, 0, axis = 1)
-    plus_plus_time = numpy.delete(plus_plus_time, 0)
-    
-    plus_minus_sig_counts = numpy.delete(plus_minus_sig_counts, 0, axis = 1)
-    plus_minus_ref_counts = numpy.delete(plus_minus_ref_counts, 0, axis = 1)
+#    plus_minus_sig_counts = numpy.delete(plus_minus_sig_counts, 0, axis = 1)
+#    plus_minus_ref_counts = numpy.delete(plus_minus_ref_counts, 0, axis = 1)
 
 # %% Fit the data based on the bin size
     
@@ -201,11 +294,12 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         
         # Plotting the data
         if doPlot:
+            time_linspace = numpy.linspace(0, 2, num=1000)
             fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
             ax = axes_pack[0]
             ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
-            ax.plot(zero_zero_time_linspace, 
-                    zero_relaxation_eq(zero_zero_time_linspace, *opti_params), 
+            ax.plot(time_linspace, 
+                    zero_relaxation_eq(time_linspace, *opti_params), 
                     'r', label = 'fit') 
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
@@ -251,8 +345,8 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         if doPlot:
             ax = axes_pack[1]
             ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
-            ax.plot(plus_plus_time_linspace, 
-                    plus_relaxation_tmp(plus_plus_time_linspace, *opti_params), 
+            ax.plot(time_linspace, 
+                    plus_relaxation_tmp(time_linspace, *opti_params), 
                     'r', label = 'fit')   
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
@@ -316,55 +410,107 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         with open(file_path + '.txt', 'w') as file:
             json.dump(raw_data, file, indent=2)
 
-    return num_bins, omega_average, omega_stdev, gamma_average, gamma_stdev
+    return num_bins, omega_average, omega_stdev, gamma_average, gamma_stdev, \
+                  splitting_MHz  
+# %% Main function to determine value and standard deviation of our 
+        # measurements
     
+def main(folder_name, bin_size_list):
+        
+    directory = 'G:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/' 
+    
+    # Set up lists to save relavent data to
+    num_bins_list = []
+    omega_value_list = []
+    omega_stdev_list = []
+    gamma_value_list = []
+    gamma_stdev_list = []
+    
+    # Step through the various bin sizes and compute the average and standard
+    # deviation
+    for bin_size in bin_size_list:
+        retvals = relaxation_rate_analysis('nv2_2019_04_30_57MHz', bin_size,
+                        False, False)
+        
+        num_bins= retvals[0]
+        
+        # Save the data to the lists
+        num_bins_list.append(num_bins)
+        omega_value_list.append(retvals[1])
+        omega_stdev_list.append(retvals[2])
+        gamma_value_list.append(retvals[3])
+        gamma_stdev_list.append(retvals[4])
+        splitting_MHz = retvals[5]
+        
+        # Save the calculated value of omega and gamma for the data for one bin
+        if num_bins == 1:
+            omega_value = retvals[1]
+            gamma_value = retvals[3]
+    
+        
+     
+    # Plot the data to visualize it. THis plot is not saved
+    plt.loglog(num_bins_list, gamma_stdev_list, 'go', label = 'gamma standard deviation')
+    plt.loglog(num_bins_list, omega_stdev_list, 'bo', label = 'omega standard deviation')
+    plt.xlabel('Number of bins for num_runs')
+    plt.ylabel('Standard Deviation (kHz)')
+    plt.legend()
+    
+    # Fit the data to sqrt and extract the standadr deviation value for one bin
+    def sqrt_root(x, amp):
+        return amp * (x)**(1/2)
+    
+    opti_params, cov_arr = curve_fit(sqrt_root, num_bins_list, 
+                                     omega_stdev_list, p0 = (0.1))
+    omega_stdev = sqrt_root(1, opti_params[0])
+    print('Value = {}, std dev = {}'.format(omega_value, omega_stdev))
+    
+    opti_params, cov_arr = curve_fit(sqrt_root, num_bins_list, 
+                                     gamma_stdev_list, p0 = (1))
+    gamma_stdev = sqrt_root(1, opti_params[0])
+    print('Value = {}, std dev = {}'.format(gamma_value, gamma_stdev))
+    
+    time_stamp = tool_belt.get_time_stamp()
+    raw_data = {'time_stamp': time_stamp,
+                'splitting_MHz': splitting_MHz,
+                'splitting_MHz-units': 'MHz',
+                'omega_value': omega_value,
+                'omega_value-units': 'kHz',
+                'omega_stdev': omega_stdev,
+                'omega_stdev-units': 'kHz',
+                'gamma_value': gamma_value,
+                'gamma_value-units': 'kHz',
+                'gamma_stdev': gamma_stdev,
+                'gammastdev-units': 'kHz',
+                'num_bins_list': num_bins_list,
+                'omega_value_list': omega_value_list,
+                'omega_value_list-units': 'kHz',
+                'omega_stdev_list': omega_stdev_list,
+                'omega_stdev_list-units': 'kHz',
+                'gamma_value_list': gamma_value_list,
+                'gamma_value_list-units': 'kHz',
+                'gamma_stdev_list': gamma_stdev_list,
+                'gamma_stdev_list-units': 'kHz'
+                }
+    
+    file_name = time_stamp + '_' + str('%.1f'%splitting_MHz) + \
+                '_MHz_splitting_rate_analysis' 
+    file_path = '{}/{}/{}'.format(directory, folder_name, file_name)
+    
+    with open(file_path + '.txt', 'w') as file:
+        json.dump(raw_data, file, indent=2)
+        
+        
 # %%
     
 if __name__ == '__main__':
     
-    relaxation_rate_analysis('2019-04-30-NV2_45MHzSplitting_important_data', 40,
-                            True, True)
+    relaxation_rate_analysis('nv1_2019_05_10_32MHz', 40,
+                            True, False)
     
-#    bin_size_list = [ 4,  8, 10, 20, 40]
-#    
-#    num_bins_list = []
-#    omega_value_list = []
-#    omega_stdev_list = []
-#    gamma_value_list = []
-#    gamma_stdev_list = []
-#    
-#    
-#    for bin_size in bin_size_list:
-#        retvals = relaxation_rate_analysis('2019-04-30-NV2_57MHzSplitting_important_data', bin_size,
-#                            False, False)
-#        num_bins_list.append(retvals[0])
-#        omega_value_list.append(retvals[1])
-#        omega_stdev_list.append(retvals[2])
-#        gamma_value_list.append(retvals[3])
-#        gamma_stdev_list.append(retvals[4])
-#        
-##    fig, axes_pack = plt.subplots(1, 2, figsize=(14, 8))
-#    
-##    ax = axes_pack[0]
-##    ax.plot(num_bins_list, omega_value_list, 'bo', label = 'omega average')
-##    ax.plot(num_bins_list, gamma_value_list, 'go', label = 'gamma average')
-##    ax.legend()
-#    
-##    ax = axes_pack[1]
-#    plt.loglog(num_bins_list, omega_stdev_list, 'bo', label = 'omega standard deviation')
-#    plt.loglog(num_bins_list, gamma_stdev_list, 'go', label = 'gamma standard deviation')
-#    x = numpy.linspace(1,50,1000)
-#    plt.loglog(x, 0.7*x**0.5)
-#    plt.loglog(x, 0.02*x**0.5)
-#    plt.xlabel('number of bins for num_runs')
-#    plt.ylabel('Standard Deviation (kHz)')
-#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#    plt.text(-0.8, -0.01, 'lines are f^(1/2)', transform=ax.transAxes, fontsize=12,
-#            verticalalignment='top', bbox=props)
-#    plt.legend()
-#    
-##    fig.canvas.draw()
-##    fig.canvas.flush_events()
+#    bin_size_list = [  4,  8, 10, 20, 40]
+#    main('nv2_2019_04_30_57MHz', bin_size_list)
+
     
     
         
