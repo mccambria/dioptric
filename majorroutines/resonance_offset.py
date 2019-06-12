@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 # %% Main
 
 
-def main(cxn, coords, nd_filter, apd_indices, expected_counts, freq_center, freq_range,
+def main(cxn, coords, xyoffset, nd_filter, apd_indices, expected_counts, freq_center, freq_range,
          num_steps, num_runs, uwave_power, name='untitled'):
 
     # %% Initial calculations and setup
@@ -88,6 +88,17 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts, freq_center, freq
         # Save the coords found and if it failed
         optimization_success_list.append(optimization_success)
         opti_coords_list.append(coords)
+        
+        print('coords: {}'. format(coords))
+        
+        print('offset: {}'. format(xyoffset))
+        
+        x_center= coords[0]+xyoffset[0]
+        y_center=coords[1]+xyoffset[1]
+        
+        print('set coords: {}'. format([x_center,y_center]))
+        
+        cxn.galvo.write(x_center, y_center)
 
         # Load the APD task with two samples for each frequency step
         cxn.pulse_streamer.stream_load(file_name, sequence_args)

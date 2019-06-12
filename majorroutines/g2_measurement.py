@@ -20,9 +20,35 @@ import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import time
+import json
 
 
 # %% Functions
+
+
+def calculate_relative_g2_zero(hist):
+    
+    # We take the values on the wings to be representatives for g2(inf)
+    # We take the wings to be the first and last 1/6 of collected data
+    num_bins = len(hist)
+    wing_length = num_bins // 12
+    neg_wing = hist[0: wing_length]
+    pos_wing = hist[num_bins - wing_length: ]
+    inf_delay_differences = numpy.average([neg_wing, pos_wing])
+    
+    # Use the parity of num_bins to determine differences at 0 ns
+    if num_bins % 2 == 0:
+        # As an example, say there are 6 bins. Then we want the differences
+        # from bins 2 and 3 (indexing starts from 0).
+        midpoint_high = num_bins // 2
+        zero_delay_differences = numpy.average(hist[midpoint_high - 1,
+                                                    midpoint_high])
+    else:
+        # Now say there are 7 bins. We'd like bin 3. 
+        midpoint = int(numpy.floor(num_bins / 2))
+        zero_delay_differences = hist[midpoint]
+        
+    return zero_delay_differences / inf_delay_differences
 
 
 def process_raw_buffer(timestamps, channels,
@@ -88,7 +114,7 @@ def process_raw_buffer(timestamps, channels,
 
 
 def main(cxn, coords, nd_filter, run_time, diff_window,
-         apd_a_index, apd_b_index, name='untitled'):
+         apd_a_index, apd_b_index, name='untitled', expected_counts=None):
 
     # %% Initial calculations and setup
     
@@ -97,7 +123,8 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
-    optimize.main(cxn, coords, nd_filter, apd_indices)
+    optimize.main(cxn, coords, nd_filter, apd_indices,
+                  expected_counts=expected_counts)
     cxn.pulse_streamer.constant()
 
     num_tags = 0
@@ -173,6 +200,10 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
         num_tags += len(buffer_timetags)
         
     cxn.apd_tagger.stop_tag_stream()
+    
+    # %% Calculate a relative value for g2(0)
+    
+    g2_zero = calculate_relative_g2_zero(hist)
 
     # %% Save the data
 
@@ -195,3 +226,24 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(raw_data, filePath)
+    
+    print('g2(0) = {}'.format(g2_zero))
+    
+    return g2_zero
+
+
+# %% Run the file
+
+
+if __name__ == '__main__':
+    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/g2_measurement'
+    file_name = '2019-05-10_14-08-47_ayrton12.txt'
+
+    with open('{}/{}'.format(folder_name, file_name)) as file:
+        data = json.load(file)
+        differences = data['differences']
+        num_bins = data['num_bins']
+    
+    hist, bin_edges = numpy.histogram(differences, num_bins)
+    g2_zero = calculate_relative_g2_zero(hist)
+    print(g2_zero)

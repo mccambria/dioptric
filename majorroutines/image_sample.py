@@ -87,6 +87,7 @@ def on_click_image(event):
 
     try:
         print('{:.3f}, {:.3f}'.format(event.xdata, event.ydata))
+#        print('[{:.3f}, {:.3f}, 50.0],'.format(event.xdata, event.ydata))
     except TypeError:
         # Ignore TypeError if you click in the figure but out of the image
         pass
@@ -190,6 +191,41 @@ def reformat_plot(colorMap, save_file_type):
 
         # Save the file in the same file directory
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
+        
+def create_figure(file_name, folder_name='E:/Shared drives/Kolkowitz Lab Group/nvdata/image_sample'):
+    
+    with open('{}/{}'.format(folder_name, file_name)) as file:
+        data = json.load(file)
+        x_range = data['x_range']
+        y_range = data['y_range']
+        x_voltages = data['x_voltages']
+        coords = data['coords']
+        img_array = numpy.array(data['img_array'])
+        readout = data['readout']
+
+    x_coord = coords[0]
+    half_x_range = x_range / 2
+    x_low = x_coord - half_x_range
+    x_high = x_coord + half_x_range
+    y_coord = coords[1]
+    half_y_range = y_range / 2
+    y_low = y_coord - half_y_range
+    y_high = y_coord + half_y_range
+
+    img_array_kcps = (img_array / 1000) / (readout / 10**9)
+
+    pixel_size = x_voltages[1] - x_voltages[0]
+    half_pixel_size = pixel_size / 2
+    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                  y_low - half_pixel_size, y_high + half_pixel_size]
+
+    fig = tool_belt.create_image_figure(img_array_kcps, img_extent)
+    # Redraw the canvas and flush the changes to the backend
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    
+    return fig
+    
 
     # %%
 
@@ -330,41 +366,9 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     tool_belt.save_raw_data(rawData, filePath)
 
 
-# %% Re-display an image if you run the file
+# %% Run the file
 
 
 if __name__ == '__main__':
-    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/image_sample'
     file_name = '2019-06-07_14-20-27_ayrton12.txt'
-
-    with open('{}/{}'.format(folder_name, file_name)) as file:
-        data = json.load(file)
-        x_range = data['x_range']
-        y_range = data['y_range']
-        x_voltages = data['x_voltages']
-        y_voltages = data['y_voltages']
-        coords = data['coords']
-        num_steps = data['num_steps']
-        img_array = numpy.array(data['img_array'])
-        readout = data['readout']
-
-    x_coord = coords[0]
-    half_x_range = x_range / 2
-    x_low = x_coord - half_x_range
-    x_high = x_coord + half_x_range
-    y_coord = coords[1]
-    half_y_range = y_range / 2
-    y_low = y_coord - half_y_range
-    y_high = y_coord + half_y_range
-
-    img_array_kcps = (img_array / 1000) / (readout / 10**9)
-
-    pixel_size = x_voltages[1] - x_voltages[0]
-    half_pixel_size = pixel_size / 2
-    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                  y_low - half_pixel_size, y_high + half_pixel_size]
-
-    fig = tool_belt.create_image_figure(img_array_kcps, img_extent)
-    # Redraw the canvas and flush the changes to the backend
-    fig.canvas.draw()
-    fig.canvas.flush_events()
+    create_figure(file_name)
