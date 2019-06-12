@@ -35,7 +35,7 @@ from scipy import asarray as ar,exp
 
 # %% Main
 
-def main(cxn, nv_sig, nd_filter, apd_indices, expected_counts,
+def main(cxn, nv_sig, nd_filter, apd_indices,
          uwave_freq_plus, uwave_freq_minus, uwave_power, 
          uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
          num_steps, num_reps, num_runs, 

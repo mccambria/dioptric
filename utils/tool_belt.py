@@ -581,4 +581,8 @@ def reset_drift():
 
 def reset_state():
     reset_drift()
+    # Kill safe stop
+    if check_safe_stop_alive():
+        print("\n\nRoutine complete. Press enter to exit.")
+        poll_safe_stop()
 

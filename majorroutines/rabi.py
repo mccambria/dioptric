@@ -23,7 +23,7 @@ from scipy.optimize import curve_fit
 # %% Main
 
 
-def main(cxn, nv_sig, nd_filter, apd_indices, expected_counts,
+def main(cxn, nv_sig, nd_filter, apd_indices,
          uwave_freq, uwave_power, uwave_time_range, do_uwave_gate_number,
          num_steps, num_reps, num_runs, name='untitled'):
 

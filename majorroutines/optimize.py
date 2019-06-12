@@ -314,7 +314,12 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
     
     # %% Try to optimize
     
-    for ind in range(2):
+    num_attempts = 2
+    
+    for ind in range(num_attempts):
+        
+        if ind > 0:
+            print('Trying again...')
         
         # Create 3 plots in the figure, one for each axis
         fig = None
@@ -357,8 +362,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
                 print('Optimization succeeded!')
                 opti_succeeded = True
             else:
-                print('Count rate at optimized coordinates out of bounds. ' \
-                      'Trying again.')
+                print('Count rate at optimized coordinates out of bounds.')
                 
         # If the threshold is not set, we succeed based only on optimize       
         else:
