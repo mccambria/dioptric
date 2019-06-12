@@ -361,27 +361,11 @@ def get_time_stamp():
     return timestamp
 
 
-def get_file_path(caller_file, timeStamp, name=''):
-    """
-    Get the file path to save to. This will be in a subdirectory of Data.
-
-    Params:
-        caller_file: file object
-            __file__ of the caller - parsed to get the name of
-            the subdirectory we will write to
-        timeStamp: string
-            Formatted timestamp to include in the file name
-        name: string
-            The file names consist of <timestamp>_<name>.<ext>
-            Ext is supplied by the save functions
-    """
+def get_folder_dir(caller_file):
 
     caller_file_name = os.path.basename(caller_file)
     sub_dir_name = os.path.splitext(caller_file_name)[0]
-
-    # Set up a timestamp
-    fileName = timeStamp + '_' + name
-
+    
     branch_name = get_branch_name()
 
     # Check where we should save to
@@ -401,6 +385,29 @@ def get_file_path(caller_file, timeStamp, name=''):
     # Make the required directory if it doesn't exist already
     if not os.path.isdir(folderDir):
         os.makedirs(folderDir)
+        
+    return folderDir
+
+
+def get_file_path(caller_file, timeStamp, name=''):
+    """
+    Get the file path to save to. This will be in a subdirectory of nvdata.
+
+    Params:
+        caller_file: file object
+            __file__ of the caller - parsed to get the name of
+            the subdirectory we will write to
+        timeStamp: string
+            Formatted timestamp to include in the file name
+        name: string
+            The file names consist of <timestamp>_<name>.<ext>
+            Ext is supplied by the save functions
+    """
+
+    # Set up a timestamp
+    fileName = timeStamp + '_' + name
+
+    folderDir = get_folder_dir(caller_file)
 
     fileDir = os.path.abspath(os.path.join(folderDir, fileName))
 
