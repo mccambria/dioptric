@@ -4,12 +4,14 @@ Created on Fri May 31 11:06:46 2019
 
 This routine takes the sets of data we take for relaxation measurments (prepare
 in +1, readout in -1, etc) and calculates the relaxation rates, omega and
-gamma. It calculates the values for each run of the data (num_runs). It will
-then allow us to average the value for the relaxation rate and take a standard
-deviation.
+gamma, via the modified functions used in the Myer's paper ([0,0] - [0,1] and 
+[1,1] - [1,-1]). It calculates the values for each run of the data (num_runs). 
+It then allows us to average the value for the relaxation rate and take a 
+standard deviation.
 
 This file only works if all the experiments in a folder have the same number
-of num_runs, and can only handle two data sets of the same experiment.
+of num_runs, and can only handle two data sets of the same experiment (ie +1 to
++1, a short and a long run).
 
 The main of this file takes a list of bin sizes to calculate the average and 
 standard deviations with different amounts of bins. It uses the 
@@ -20,18 +22,19 @@ It will also report the values found for the omega and gamma for one of the
 bin sizes (it will pick the last in the passed list, which should be set up to
 be one bin, I should automate this later)
 
-
-
 @author: Aedan
 """
 import os
 import numpy
 import json
-from scipy import asarray as ar,exp
+from scipy import asarray as ar, exp
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
 import utils.tool_belt as tool_belt
+
+# Define the directory to get the folders from
+directory = 'G:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/' 
 
 #%%
 
@@ -44,12 +47,17 @@ def plus_relaxation_eq(t, gamma, omega, amp, offset):
     return offset + amp * exp(-(omega + gamma * 2) * t)
 
 # %%
-
-def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
-                             save_data = True):
-    print(bin_size)
     
-    directory = 'G:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/' 
+def factors(number):
+    factor_list = []
+    for n in range(1, number + 1):
+        if number % n == 0:
+            factor_list.append(n)
+       
+    return factor_list
+# %%
+    
+def get_file_list(folder_name):
     
     # Create a list of all the files in the folder for one experiment
     file_list = []
@@ -57,6 +65,19 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         if file.endswith(".txt") and not file.endswith("bins.txt") \
                                     and not file.endswith("analysis.txt"):
             file_list.append(file)
+      
+    return file_list
+    
+
+# %%
+
+def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
+                             save_data = True):
+    
+    print('Number of bins: {}'.format(num_bins))
+
+    # Get the file list from this folder
+    file_list = get_file_list(folder_name)
       
     # Get the number of runs to create the empty arrays from the first file in 
     # the list. This requires all the relaxation measurements to have the same
@@ -66,25 +87,16 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         data = json.load(json_file)
         num_runs_set = data['num_runs']
         
-    # Prepare the arrays to fill with data. NaN will be first value
-#    zero_zero_sig_counts = numpy.ones((num_runs_set, 1)) * numpy.nan
-#    zero_zero_ref_counts = numpy.copy(zero_zero_sig_counts)
-#    zero_plus_sig_counts = numpy.copy(zero_zero_sig_counts)
-#    zero_plus_ref_counts = numpy.copy(zero_zero_sig_counts)
-#    plus_plus_sig_counts = numpy.copy(zero_zero_sig_counts)
-#    plus_plus_ref_counts = numpy.copy(zero_zero_sig_counts)
-#    plus_minus_sig_counts = numpy.copy(zero_zero_sig_counts)
-#    plus_minus_ref_counts = numpy.copy(zero_zero_sig_counts)
-    
+    bin_size = int(num_runs_set / num_bins)
+        
+    # Define booleans to be used later in putting data into usable arrays
     zero_zero_bool = False
     zero_plus_bool = False
     plus_plus_bool = False
     plus_minus_bool = False
     
-#    zero_zero_time = numpy.ones(1) * numpy.nan
-#    zero_plus_time = numpy.copy(zero_zero_time)
-#    plus_plus_time = numpy.copy(zero_zero_time)
-#    plus_minus_time = numpy.copy(zero_zero_time)
+    omega_fitting_failed = True
+    gamma_fitting_failed = True
     
     # Create lists to store the omega and gamma rates
     omega_rate_list = []
@@ -109,13 +121,13 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
             ref_counts = numpy.array(data['ref_counts'])
             
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
+            # time is in microseconds
             min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             num_steps = data['num_steps']
             num_runs = data['num_runs']
 
-            # time should be in microseconds
-            time_array = numpy.linspace(min_relaxation_time, max_relaxation_time,
-                          num=num_steps) 
+            time_array = numpy.linspace(min_relaxation_time, 
+                                        max_relaxation_time, num=num_steps) 
             
             # We will want to put the MHz splitting in the file metadata
             uwave_freq_init = data['uwave_freq_init']
@@ -145,16 +157,16 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                     
                     if max_relaxation_time > zero_zero_ref_max_time:
                         zero_zero_sig_counts = numpy.concatenate((zero_zero_sig_counts, 
-                                                            sig_counts), axis = 1)
+                                                        sig_counts), axis = 1)
                         zero_zero_ref_counts = numpy.concatenate((zero_zero_ref_counts, 
-                                                            ref_counts), axis = 1)
+                                                        ref_counts), axis = 1)
                         zero_zero_time = numpy.concatenate((zero_zero_time, time_array))
                         
                     elif max_relaxation_time < zero_zero_ref_max_time:
                         zero_zero_sig_counts = numpy.concatenate((sig_counts, 
-                                                          zero_zero_sig_counts), axis = 1)
+                                              zero_zero_sig_counts), axis = 1)
                         zero_zero_ref_counts = numpy.concatenate((ref_counts, 
-                                                          zero_zero_ref_counts), axis = 1)
+                                              zero_zero_ref_counts), axis = 1)
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
                 
             if init_state == 0 and read_state == 1:
@@ -173,15 +185,15 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                     
                     if max_relaxation_time > zero_plus_ref_max_time:
                         zero_plus_sig_counts = numpy.concatenate((zero_plus_sig_counts, 
-                                                            sig_counts), axis = 1)
+                                                        sig_counts), axis = 1)
                         zero_plus_ref_counts = numpy.concatenate((zero_plus_ref_counts, 
-                                                            ref_counts), axis = 1)
+                                                        ref_counts), axis = 1)
                         
                     elif max_relaxation_time < zero_plus_ref_max_time:
                         zero_plus_sig_counts = numpy.concatenate((sig_counts, 
-                                                          zero_plus_sig_counts), axis = 1)
+                                              zero_plus_sig_counts), axis = 1)
                         zero_plus_ref_counts = numpy.concatenate((ref_counts, 
-                                                          zero_plus_ref_counts), axis = 1)
+                                              zero_plus_ref_counts), axis = 1)
 
             if init_state == 1 and read_state == 1:              
                 # Check to see if data has already been taken of this experiment
@@ -200,9 +212,9 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                     
                     if max_relaxation_time > plus_plus_ref_max_time:
                         plus_plus_sig_counts = numpy.concatenate((plus_plus_sig_counts, 
-                                                            sig_counts), axis = 1)
+                                                        sig_counts), axis = 1)
                         plus_plus_ref_counts = numpy.concatenate((plus_plus_ref_counts, 
-                                                            ref_counts), axis = 1)
+                                                        ref_counts), axis = 1)
                         plus_plus_time = numpy.concatenate((plus_plus_time, time_array))
                         
                     elif max_relaxation_time < plus_plus_ref_max_time:
@@ -228,15 +240,15 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
                     
                     if max_relaxation_time > plus_minus_ref_max_time:
                         plus_minus_sig_counts = numpy.concatenate((plus_minus_sig_counts, 
-                                                            sig_counts), axis = 1)
+                                                        sig_counts), axis = 1)
                         plus_minus_ref_counts = numpy.concatenate((plus_minus_ref_counts, 
-                                                            ref_counts), axis = 1)
+                                                        ref_counts), axis = 1)
                         
                     elif max_relaxation_time < plus_minus_ref_max_time:
                         plus_minus_sig_counts = numpy.concatenate((sig_counts, 
-                                                          plus_minus_sig_counts), axis = 1)
+                                              plus_minus_sig_counts), axis = 1)
                         plus_minus_ref_counts = numpy.concatenate((ref_counts, 
-                                                          plus_minus_ref_counts), axis = 1)
+                                              plus_minus_ref_counts), axis = 1)
                 
                 splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
     
@@ -247,23 +259,7 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
        
     if len(plus_plus_sig_counts) != len(plus_minus_sig_counts):
         print('Error: length of plus_plus_sig_counts and plus_minus_sig_counts do not match')
-        
-    # Delete the NaNs from all the arrays. There might be a better way to fill
-    # the arrays, but this should work for now
-#    zero_zero_sig_counts = numpy.delete(zero_zero_sig_counts, 0, axis = 1)
-#    zero_zero_ref_counts = numpy.delete(zero_zero_ref_counts, 0, axis = 1)
-#    zero_zero_time = numpy.delete(zero_zero_time, 0)
-#    
-#    zero_plus_sig_counts = numpy.delete(zero_plus_sig_counts, 0, axis = 1)
-#    zero_plus_ref_counts = numpy.delete(zero_plus_ref_counts, 0, axis = 1)
     
-#    plus_plus_sig_counts = numpy.delete(plus_plus_sig_counts, 0, axis = 1)
-#    plus_plus_ref_counts = numpy.delete(plus_plus_ref_counts, 0, axis = 1)
-#    plus_plus_time = numpy.delete(plus_plus_time, 0)
-    
-#    plus_minus_sig_counts = numpy.delete(plus_minus_sig_counts, 0, axis = 1)
-#    plus_minus_ref_counts = numpy.delete(plus_minus_ref_counts, 0, axis = 1)
-
 # %% Fit the data based on the bin size
     
     i = 0
@@ -283,83 +279,98 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         # Define the counts for the zero relaxation equation
         zero_relaxation_counts =  zero_zero_norm_avg_sig - zero_plus_norm_avg_sig
         
-        init_params = (1.0, 0.4, 0)
-        opti_params, cov_arr = curve_fit(zero_relaxation_eq, zero_zero_time,
-                                            zero_relaxation_counts, p0 = init_params)
-
-        omega_rate_list.append(opti_params[0])
-        omega_amp_list.append(opti_params[1])
-        omega_offset_list.append(opti_params[2])
-        omega = opti_params[0]
-        
-        # Plotting the data
-        if doPlot:
-            time_linspace = numpy.linspace(0, 2, num=1000)
-            fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
-            ax = axes_pack[0]
-            ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
-            ax.plot(time_linspace, 
-                    zero_relaxation_eq(time_linspace, *opti_params), 
-                    'r', label = 'fit') 
-            ax.set_xlabel('Relaxation time (ms)')
-            ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(0,0) - (0,+1)')
-            ax.legend()
-            text = r'$\Omega = $ {} kHz'.format('%.2f'%opti_params[0])
-
-            props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-            ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
-                    verticalalignment='top', bbox=props)
-    
-    # %% Fit to the (1,1) - (1,-1) data to find Gamma
-        
-        plus_plus_avg_sig_counts = numpy.average(plus_plus_sig_counts[i:i+bin_size, ::], axis=0)
-        plus_plus_avg_ref_counts = numpy.average(plus_plus_ref_counts[i:i+bin_size, ::], axis=0)
-        
-        plus_plus_norm_avg_sig = plus_plus_avg_sig_counts / plus_plus_avg_ref_counts
-               
-        plus_minus_avg_sig_counts = numpy.average(plus_minus_sig_counts[i:i+bin_size, ::], axis=0)
-        plus_minus_avg_ref_counts = numpy.average(plus_minus_ref_counts[i:i+bin_size, ::], axis=0)
-        
-        plus_minus_norm_avg_sig = plus_minus_avg_sig_counts / plus_minus_avg_ref_counts
-        
-        # Define the counts for the plus relaxation equation
-        plus_relaxation_counts =  plus_plus_norm_avg_sig - plus_minus_norm_avg_sig
-        
-        
-        init_params = (100, 0.40, 0)
-        
-        # create a temporary fitting equation that passes in the omega value just found
-        plus_relaxation_tmp = lambda t, gamma, amp, offset: plus_relaxation_eq(t, gamma, omega, amp, offset)
-        opti_params, cov_arr = curve_fit(plus_relaxation_tmp, 
-                                         plus_plus_time, plus_relaxation_counts, p0 = init_params)
-        
-        gamma_rate_list.append(opti_params[0])
-        gamma_amp_list.append(opti_params[1])
-        gamma_offset_list.append(opti_params[2])
-        
-        # Advance the index
-        i = i + bin_size
-        
-        # Plotting
-        if doPlot:
-            ax = axes_pack[1]
-            ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
-            ax.plot(time_linspace, 
-                    plus_relaxation_tmp(time_linspace, *opti_params), 
-                    'r', label = 'fit')   
-            ax.set_xlabel('Relaxation time (ms)')
-            ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(+1,+1) - (+1,-1)')
-            ax.legend()
-            text = r'$\gamma = $ {} kHz'.format('%.2f'%opti_params[0])
-
-            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
-                    verticalalignment='top', bbox=props)
+        try:
+            init_params = (1.0, 0.4, 0)
+            opti_params, cov_arr = curve_fit(zero_relaxation_eq, zero_zero_time,
+                                         zero_relaxation_counts, p0 = init_params)
+           
+            omega_fitting_failed = False
             
-            fig.canvas.draw()
-            fig.canvas.flush_events()
+        except Exception:
+            
+            omega_fitting_failed = True
+            
+        if not omega_fitting_failed:
+            omega_rate_list.append(opti_params[0])
+            omega_amp_list.append(opti_params[1])
+            omega_offset_list.append(opti_params[2])
+            omega = opti_params[0]
+        
+            # Plotting the data
+            if doPlot:
+                zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
+                
+                fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
+                ax = axes_pack[0]
+                ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
+                ax.plot(zero_time_linspace, 
+                        zero_relaxation_eq(zero_time_linspace, *opti_params), 
+                        'r', label = 'fit') 
+                ax.set_xlabel('Relaxation time (ms)')
+                ax.set_ylabel('Normalized signal Counts')
+                ax.set_title('(0,0) - (0,+1)')
+                ax.legend()
+                text = r'$\Omega = $ {} kHz'.format('%.2f'%opti_params[0])
+    
+                props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+                ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+                        verticalalignment='top', bbox=props)
+    
+    # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
+    # to fit
+        
+            plus_plus_avg_sig_counts = numpy.average(plus_plus_sig_counts[i:i+bin_size, ::], axis=0)
+            plus_plus_avg_ref_counts = numpy.average(plus_plus_ref_counts[i:i+bin_size, ::], axis=0)
+            
+            plus_plus_norm_avg_sig = plus_plus_avg_sig_counts / plus_plus_avg_ref_counts
+                   
+            plus_minus_avg_sig_counts = numpy.average(plus_minus_sig_counts[i:i+bin_size, ::], axis=0)
+            plus_minus_avg_ref_counts = numpy.average(plus_minus_ref_counts[i:i+bin_size, ::], axis=0)
+            
+            plus_minus_norm_avg_sig = plus_minus_avg_sig_counts / plus_minus_avg_ref_counts
+            
+            # Define the counts for the plus relaxation equation
+            plus_relaxation_counts =  plus_plus_norm_avg_sig - plus_minus_norm_avg_sig
+
+            # create a temporary fitting equation that passes in the omega value just found
+            try:
+                init_params = (100, 0.40, 0)
+                plus_relaxation_tmp = lambda t, gamma, amp, offset: plus_relaxation_eq(t, gamma, omega, amp, offset)
+                opti_params, cov_arr = curve_fit(plus_relaxation_tmp, 
+                                             plus_plus_time, plus_relaxation_counts, p0 = init_params)
+                gamma_fitting_failed = False
+            except Exception:
+                gamma_fitting_failed = True
+                
+            if not gamma_fitting_failed:
+                gamma_rate_list.append(opti_params[0])
+                gamma_amp_list.append(opti_params[1])
+                gamma_offset_list.append(opti_params[2])
+            
+           
+                # Plotting
+                if doPlot:
+                    plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
+                    ax = axes_pack[1]
+                    ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
+                    ax.plot(plus_time_linspace, 
+                            plus_relaxation_tmp(plus_time_linspace, *opti_params), 
+                            'r', label = 'fit')   
+                    ax.set_xlabel('Relaxation time (ms)')
+                    ax.set_ylabel('Normalized signal Counts')
+                    ax.set_title('(+1,+1) - (+1,-1)')
+                    ax.legend()
+                    text = r'$\gamma = $ {} kHz'.format('%.2f'%opti_params[0])
+        
+                    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+                    ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+                            verticalalignment='top', bbox=props)
+                    
+                    fig.canvas.draw()
+                    fig.canvas.flush_events()
+                    
+        # Advance_ the index
+        i = i + bin_size
     
     omega_average = numpy.average(omega_rate_list)
     omega_stdev = numpy.std(omega_rate_list)
@@ -371,16 +382,16 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
     
 # %% Saving data
     
-    num_bins = int(num_runs / bin_size)
-    
     if save_data: 
         time_stamp = tool_belt.get_time_stamp()
         raw_data = {'time_stamp': time_stamp,
                     'level_splitting': splitting_MHz,
                     'level_splitting-units': 'MHz',
                     'num_runs': num_runs,
-                    'bin_size': bin_size,
                     'num_bins': num_bins,
+                    'bin_size': bin_size,
+                    'omega_fitting_failed': omega_fitting_failed,
+                    'gamma_fitting_failed': gamma_fitting_failed,
                     'omega_average': omega_average,
                     'omega_average-units': 'kHz',
                     'omega_stdev': omega_stdev,
@@ -410,42 +421,58 @@ def relaxation_rate_analysis(folder_name, bin_size, doPlot = False,
         with open(file_path + '.txt', 'w') as file:
             json.dump(raw_data, file, indent=2)
 
-    return num_bins, omega_average, omega_stdev, gamma_average, gamma_stdev, \
-                  splitting_MHz  
+    return omega_average, omega_stdev, gamma_average, gamma_stdev, \
+                  splitting_MHz, omega_fitting_failed, gamma_fitting_failed
 # %% Main function to determine value and standard deviation of our 
         # measurements
     
-def main(folder_name, bin_size_list):
-        
-    directory = 'G:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/' 
+def main(folder_name):
+    
+    
+    # Get the file list from this folder
+    file_list = get_file_list(folder_name)
+      
+    # Get the number of runs to create the empty arrays from the first file in 
+    # the list. This requires all the relaxation measurements to have the same
+    # num_runs
+    file = file_list[0]
+    with open('{}/{}/{}'.format(directory, folder_name, file)) as json_file:
+        data = json.load(json_file)
+        num_runs = data['num_runs']
+    
+    # Get the num_bins to use based on the factors of the number of runs
+    
+    num_bins_list = factors(num_runs)
+#    num_bins_list = [1,2,4]
     
     # Set up lists to save relavent data to
-    num_bins_list = []
+    omega_fitting_failed_list = []
     omega_value_list = []
     omega_stdev_list = []
+    gamma_fitting_failed_list = []
     gamma_value_list = []
     gamma_stdev_list = []
     
     # Step through the various bin sizes and compute the average and standard
     # deviation
-    for bin_size in bin_size_list:
-        retvals = relaxation_rate_analysis('nv2_2019_04_30_57MHz', bin_size,
+    for num_bins in num_bins_list:
+        retvals = relaxation_rate_analysis(folder_name, num_bins,
                         False, False)
         
-        num_bins= retvals[0]
-        
         # Save the data to the lists
-        num_bins_list.append(num_bins)
-        omega_value_list.append(retvals[1])
-        omega_stdev_list.append(retvals[2])
-        gamma_value_list.append(retvals[3])
-        gamma_stdev_list.append(retvals[4])
-        splitting_MHz = retvals[5]
+        omega_value_list.append(retvals[0])
+        omega_stdev_list.append(retvals[1])
+        gamma_value_list.append(retvals[2])
+        gamma_stdev_list.append(retvals[3])
+        splitting_MHz = retvals[4]
+        omega_fitting_failed_list.append(retvals[5])
+        gamma_fitting_failed_list.append(retvals[6])
+
         
         # Save the calculated value of omega and gamma for the data for one bin
         if num_bins == 1:
-            omega_value = retvals[1]
-            gamma_value = retvals[3]
+            omega_value = retvals[0]
+            gamma_value = retvals[2]
     
         
      
@@ -482,6 +509,8 @@ def main(folder_name, bin_size_list):
                 'gamma_value-units': 'kHz',
                 'gamma_stdev': gamma_stdev,
                 'gammastdev-units': 'kHz',
+                'omega_fitting_failed_list': omega_fitting_failed_list,
+                'gamma_fitting_failed_list': gamma_fitting_failed_list,
                 'num_bins_list': num_bins_list,
                 'omega_value_list': omega_value_list,
                 'omega_value_list-units': 'kHz',
@@ -504,13 +533,14 @@ def main(folder_name, bin_size_list):
 # %%
     
 if __name__ == '__main__':
+    # spit out average of multiple bins to check if problem with fitting
     
-    relaxation_rate_analysis('nv1_2019_05_10_32MHz', 40,
-                            True, False)
+#    relaxation_rate_analysis('nv2_2019_04_30_101MHz', 4, True, True)
     
-#    bin_size_list = [  4,  8, 10, 20, 40]
-#    main('nv2_2019_04_30_57MHz', bin_size_list)
-
+    relaxation_rate_analysis('nv2_2019_04_30_101MHz', 8, True, True)
+    
+#    num_bins_list = [  1, 2, 4, 5, 10]
+#    main('nv2_2019_04_30_101MHz')
     
     
         
