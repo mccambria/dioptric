@@ -15,8 +15,6 @@ import utils.tool_belt as tool_belt
 import numpy
 import matplotlib.pyplot as plt
 import time
-from twisted.logger import Logger
-log = Logger()
 
 
 # %% Functions
@@ -104,7 +102,6 @@ def main(cxn, coords, nd_filter, run_time, readout, apd_indices,
     while num_read_so_far < total_num_samples:
 
         if time.time() > timeout_inst:
-            log.failure('Timed out before all samples were collected.')
             break
 
         if tool_belt.safe_stop():

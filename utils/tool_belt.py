@@ -49,6 +49,11 @@ def set_xyz(cxn, coords):
 def set_xyz_zero(cxn):
     cxn.galvo.write(0.0, 0.0)
     cxn.objective_piezo.write_voltage(50.0)
+    
+
+def set_xyz_on_nv(cxn, nv_sig):
+    cxn.galvo.write(nv_sig[0], nv_sig[1])
+    cxn.objective_piezo.write_voltage(nv_sig[2])
 
 
 # %% Matplotlib plotting utils
@@ -279,7 +284,34 @@ def cosexp(t, offset, amp, freq, decay):
     two_pi = 2*numpy.pi
     return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
 
+
+# %% LabRAD utils
+    
+
+def get_shared_parameters_dict(cxn):
+    
+    # Get what we need out of the registry
+    cxn.registry.cd(['', 'SharedParameters'])
+    sub_folders, keys = cxn.registry.dir()
+    if keys == []:
+        return {}
+    
+    p = cxn.registry.packet()
+    for key in keys:
+        p.get(key)
+    vals = p.send()['get']
+
+    reg_dict = {}
+    for ind in range(len(keys)):
+        key = keys[ind]
+        val = vals[ind]
+        reg_dict[key] = val
+        
+    return reg_dict
+
+
 # %% File Open utils
+
 
 def ask_open_file(file_path):
     """
@@ -405,6 +437,15 @@ def save_raw_data(rawData, filePath):
 
     with open(filePath + '.txt', 'w') as file:
         json.dump(rawData, file, indent=2)
+        
+
+def get_nv_sig_units():
+    return '[V, V, V, kcps, kcps]'
+
+
+def get_nv_sig_format():
+    return '[x_coord, y_coord, z_coord, ' \
+        'expected_count_rate, background_count_rate]'
 
 
 # %% Safe stop (TM mccambria)
@@ -503,6 +544,45 @@ def poll_safe_stop():
         time.sleep(0.1)
         if safe_stop():
             break
+        
+
+# %% Singletons
+          
+            
+# This isn't really that scary - our client is and should be mostly stateless 
+# but in some cases it's just easier to share some state across the life of an
+# experiment (ie from the time you press F5 to the time we hit the finally
+# at the end of cfm_control_panel). To do this safely and easily we use 
+# singletons that are implemented with global variables. They get cleaned up 
+# in reset_state, which is called in cfm_control_panel's finally. The 
+# singletons should only be accessed with the getters and setters here so that
+# we can be sure they're implemented properly. 
 
 
-# %% Resets and clean up
+def get_drift():
+    global DRIFT
+    try:
+        DRIFT
+    except NameError:
+        reset_drift()
+    # Don't let the user have a reference to the global
+    return numpy.copy(DRIFT).tolist()
+    
+
+def set_drift(drift_to_set):
+    global DRIFT
+    DRIFT = drift_to_set
+    
+    
+def reset_drift():
+    global DRIFT
+    DRIFT = [0.0, 0.0, 0.0]
+    
+
+def reset_state():
+    reset_drift()
+    # Kill safe stop
+    if check_safe_stop_alive():
+        print("\n\nRoutine complete. Press enter to exit.")
+        poll_safe_stop()
+
