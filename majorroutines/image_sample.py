@@ -9,7 +9,7 @@ Includes a replotting routine to replot rw data to manipulate again.
 
 Created on Tue Apr  9 15:18:53 2019
 
-@author: Matt
+@author: mccambria
 """
 
 import numpy
@@ -230,10 +230,13 @@ def create_figure(file_name, folder_name='E:/Shared drives/Kolkowitz Lab Group/n
     # %%
 
 def main(cxn, coords, nd_filter, x_range, y_range,
-         num_steps, readout, apd_indices,
+         num_steps, apd_indices,
          name='untitled', continuous=False):
 
     # %% Some initial calculations
+    
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    readout = shared_params['continuous_readout_ns']
 
     x_center, y_center, z_center = coords
 
