@@ -95,8 +95,8 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
     plus_plus_bool = False
     plus_minus_bool = False
     
-    omega_fitting_failed = True
-    gamma_fitting_failed = True
+    omega_fit_failed_list = []
+    gamma_fit_failed_list = []
     
     # Create lists to store the omega and gamma rates
     omega_rate_list = []
@@ -261,36 +261,58 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
         print('Error: length of plus_plus_sig_counts and plus_minus_sig_counts do not match')
     
 # %% Fit the data based on the bin size
-    
+        
     i = 0
     
-    while i < (num_runs - 1):
+    while i < (num_runs):
+        if doPlot:
+            fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
+        
         #Fit to the (0,0) - (0,1) data to find Omega
-        zero_zero_avg_sig_counts = numpy.average(zero_zero_sig_counts[i:i+bin_size, ::], axis=0)
-        zero_zero_avg_ref_counts = numpy.average(zero_zero_ref_counts[i:i+bin_size, ::], axis=0)
+        zero_zero_avg_sig_counts =  \
+            numpy.average(zero_zero_sig_counts[i:i+bin_size - 1, ::], axis=0)
+        zero_zero_avg_ref_counts =  \
+            numpy.average(zero_zero_ref_counts[i:i+bin_size- 1, ::], axis=0)
         
         zero_zero_norm_avg_sig = zero_zero_avg_sig_counts / zero_zero_avg_ref_counts
                
-        zero_plus_avg_sig_counts = numpy.average(zero_plus_sig_counts[i:i+bin_size, ::], axis=0)
-        zero_plus_avg_ref_counts = numpy.average(zero_plus_ref_counts[i:i+bin_size, ::], axis=0)
+        zero_plus_avg_sig_counts = \
+            numpy.average(zero_plus_sig_counts[i:i+bin_size - 1, ::], axis=0)
+        zero_plus_avg_ref_counts = \
+            numpy.average(zero_plus_ref_counts[i:i+bin_size - 1, ::], axis=0)
         
         zero_plus_norm_avg_sig = zero_plus_avg_sig_counts / zero_plus_avg_ref_counts 
     
         # Define the counts for the zero relaxation equation
         zero_relaxation_counts =  zero_zero_norm_avg_sig - zero_plus_norm_avg_sig
         
+        omega_fit_failed = False
+        gamma_fit_failed = False
+    
         try:
-            init_params = (1.0, 0.4, 0)
+
+            init_params = (0.33, 0.4, 0)
             opti_params, cov_arr = curve_fit(zero_relaxation_eq, zero_zero_time,
                                          zero_relaxation_counts, p0 = init_params)
            
-            omega_fitting_failed = False
+
             
         except Exception:
             
-            omega_fitting_failed = True
+            omega_fit_failed = True
+            omega_fit_failed_list.append(omega_fit_failed)
             
-        if not omega_fitting_failed:
+            if doPlot:
+                ax = axes_pack[0]
+                ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
+                ax.set_xlabel('Relaxation time (ms)')
+                ax.set_ylabel('Normalized signal Counts')
+                ax.set_title('(0,0) - (0,+1)')
+                ax.legend()
+
+        if not omega_fit_failed:
+            omega_fit_failed_list.append(omega_fit_failed)
+            
             omega_rate_list.append(opti_params[0])
             omega_amp_list.append(opti_params[1])
             omega_offset_list.append(opti_params[2])
@@ -299,8 +321,6 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
             # Plotting the data
             if doPlot:
                 zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
-                
-                fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
                 ax = axes_pack[0]
                 ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
                 ax.plot(zero_time_linspace, 
@@ -315,34 +335,62 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
                 ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
-    
-    # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
-    # to fit
-        
-            plus_plus_avg_sig_counts = numpy.average(plus_plus_sig_counts[i:i+bin_size, ::], axis=0)
-            plus_plus_avg_ref_counts = numpy.average(plus_plus_ref_counts[i:i+bin_size, ::], axis=0)
-            
-            plus_plus_norm_avg_sig = plus_plus_avg_sig_counts / plus_plus_avg_ref_counts
-                   
-            plus_minus_avg_sig_counts = numpy.average(plus_minus_sig_counts[i:i+bin_size, ::], axis=0)
-            plus_minus_avg_ref_counts = numpy.average(plus_minus_ref_counts[i:i+bin_size, ::], axis=0)
-            
-            plus_minus_norm_avg_sig = plus_minus_avg_sig_counts / plus_minus_avg_ref_counts
-            
-            # Define the counts for the plus relaxation equation
-            plus_relaxation_counts =  plus_plus_norm_avg_sig - plus_minus_norm_avg_sig
 
+# %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
+# to fit
+        
+        plus_plus_avg_sig_counts = \
+            numpy.average(plus_plus_sig_counts[i:i+bin_size - 1, ::], axis=0)
+        plus_plus_avg_ref_counts = \
+            numpy.average(plus_plus_ref_counts[i:i+bin_size - 1, ::], axis=0)
+        
+        plus_plus_norm_avg_sig = plus_plus_avg_sig_counts / plus_plus_avg_ref_counts
+               
+        plus_minus_avg_sig_counts = \
+            numpy.average(plus_minus_sig_counts[i:i+bin_size - 1, ::], axis=0)
+        plus_minus_avg_ref_counts = \
+            numpy.average(plus_minus_ref_counts[i:i+bin_size - 1, ::], axis=0)
+        
+        plus_minus_norm_avg_sig = plus_minus_avg_sig_counts / plus_minus_avg_ref_counts
+        
+        # Define the counts for the plus relaxation equation
+        plus_relaxation_counts =  plus_plus_norm_avg_sig - plus_minus_norm_avg_sig
+        
+        # If omega failed, we can't fit gamma to this data, so we will set the
+        # gamma fail to True and just plot the points
+        if omega_fit_failed:
+            gamma_fit_failed = True
+            gamma_fit_failed_list.append(gamma_fit_failed)
+            
+            if doPlot:
+                ax = axes_pack[1]
+                ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
+                ax.set_xlabel('Relaxation time (ms)')
+                ax.set_ylabel('Normalized signal Counts')
+                ax.set_title('(+1,+1) - (+1,-1)')
+                
+        else:
             # create a temporary fitting equation that passes in the omega value just found
             try:
                 init_params = (100, 0.40, 0)
                 plus_relaxation_tmp = lambda t, gamma, amp, offset: plus_relaxation_eq(t, gamma, omega, amp, offset)
                 opti_params, cov_arr = curve_fit(plus_relaxation_tmp, 
                                              plus_plus_time, plus_relaxation_counts, p0 = init_params)
-                gamma_fitting_failed = False
+    
             except Exception:
-                gamma_fitting_failed = True
+                gamma_fit_failed = True
+                gamma_fit_failed_list.append(gamma_fit_failed)
                 
-            if not gamma_fitting_failed:
+                if doPlot:
+                    ax = axes_pack[1]
+                    ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
+                    ax.set_xlabel('Relaxation time (ms)')
+                    ax.set_ylabel('Normalized signal Counts')
+                    ax.set_title('(+1,+1) - (+1,-1)')
+                
+            if not gamma_fit_failed:
+                gamma_fit_failed_list.append(gamma_fit_failed)
+                
                 gamma_rate_list.append(opti_params[0])
                 gamma_amp_list.append(opti_params[1])
                 gamma_offset_list.append(opti_params[2])
@@ -365,9 +413,9 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
                     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
                     ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
                             verticalalignment='top', bbox=props)
-                    
-                    fig.canvas.draw()
-                    fig.canvas.flush_events()
+            if doPlot:
+                fig.canvas.draw()
+                fig.canvas.flush_events()
                     
         # Advance_ the index
         i = i + bin_size
@@ -390,8 +438,8 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
                     'num_runs': num_runs,
                     'num_bins': num_bins,
                     'bin_size': bin_size,
-                    'omega_fitting_failed': omega_fitting_failed,
-                    'gamma_fitting_failed': gamma_fitting_failed,
+                    'omega_fit_failed_list': omega_fit_failed_list,
+                    'gamma_fit_failed_list': gamma_fit_failed_list,
                     'omega_average': omega_average,
                     'omega_average-units': 'kHz',
                     'omega_stdev': omega_stdev,
@@ -422,40 +470,48 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
             json.dump(raw_data, file, indent=2)
 
     return omega_average, omega_stdev, gamma_average, gamma_stdev, \
-                  splitting_MHz, omega_fitting_failed, gamma_fitting_failed
+                  splitting_MHz, omega_fit_failed_list, gamma_fit_failed_list
 # %% Main function to determine value and standard deviation of our 
         # measurements
     
-def main(folder_name):
+def main(folder_name, num_bins_list = None):
     
-    
-    # Get the file list from this folder
-    file_list = get_file_list(folder_name)
-      
-    # Get the number of runs to create the empty arrays from the first file in 
-    # the list. This requires all the relaxation measurements to have the same
-    # num_runs
-    file = file_list[0]
-    with open('{}/{}/{}'.format(directory, folder_name, file)) as json_file:
-        data = json.load(json_file)
-        num_runs = data['num_runs']
-    
-    # Get the num_bins to use based on the factors of the number of runs
-    
-    num_bins_list = factors(num_runs)
-#    num_bins_list = [1,2,4]
+    # If the list for number of bins is not passed through, use the factors of 
+    # the num_runs
+    if num_bins_list == None:
+        
+        # Get the file list from this folder
+        file_list = get_file_list(folder_name)
+          
+        # Get the number of runs to create the empty arrays from the first file in 
+        # the list. This requires all the relaxation measurements to have the same
+        # num_runs
+        file = file_list[0]
+        with open('{}/{}/{}'.format(directory, folder_name, file)) as json_file:
+            data = json.load(json_file)
+            num_runs = data['num_runs']
+        
+        # Get the num_bins to use based on the factors of the number of runs
+        
+        num_bins_list = factors(num_runs)
     
     # Set up lists to save relavent data to
-    omega_fitting_failed_list = []
+    
     omega_value_list = []
     omega_stdev_list = []
-    gamma_fitting_failed_list = []
     gamma_value_list = []
     gamma_stdev_list = []
     
+    # Create lists to put the fit_failed information in. We will fill each
+    # element of the list with the list given by the analysis routine
+    omega_fit_failed_list = [None] * len(num_bins_list)
+    gamma_fit_failed_list = [None] * len(num_bins_list)
+    
+    
     # Step through the various bin sizes and compute the average and standard
     # deviation
-    for num_bins in num_bins_list:
+    for num_bins_ind in range(len(num_bins_list)):
+        num_bins = num_bins_list[num_bins_ind]
         retvals = relaxation_rate_analysis(folder_name, num_bins,
                         False, False)
         
@@ -465,16 +521,20 @@ def main(folder_name):
         gamma_value_list.append(retvals[2])
         gamma_stdev_list.append(retvals[3])
         splitting_MHz = retvals[4]
-        omega_fitting_failed_list.append(retvals[5])
-        gamma_fitting_failed_list.append(retvals[6])
+            
+        omega_fit_failed_list[num_bins_ind] = retvals[5]
+        gamma_fit_failed_list[num_bins_ind] = retvals[6]
 
         
         # Save the calculated value of omega and gamma for the data for one bin
         if num_bins == 1:
-            omega_value = retvals[0]
-            gamma_value = retvals[2]
+            omega_value_one_bin = retvals[0]
+            gamma_value_one_bin = retvals[2]
     
-        
+    # Take the average over the different values found using the different bin
+    # sizes to compare to the value found using one bin        
+    omega_value_avg = numpy.average(omega_value_list)
+    gamma_value_avg = numpy.average(gamma_value_list)
      
     # Plot the data to visualize it. THis plot is not saved
     plt.loglog(num_bins_list, gamma_stdev_list, 'go', label = 'gamma standard deviation')
@@ -486,31 +546,35 @@ def main(folder_name):
     # Fit the data to sqrt and extract the standadr deviation value for one bin
     def sqrt_root(x, amp):
         return amp * (x)**(1/2)
-    
+    print(omega_stdev_list)
     opti_params, cov_arr = curve_fit(sqrt_root, num_bins_list, 
                                      omega_stdev_list, p0 = (0.1))
     omega_stdev = sqrt_root(1, opti_params[0])
-    print('Value = {}, std dev = {}'.format(omega_value, omega_stdev))
+    print('Value = {}, std dev = {}'.format(omega_value_one_bin, omega_stdev))
     
     opti_params, cov_arr = curve_fit(sqrt_root, num_bins_list, 
                                      gamma_stdev_list, p0 = (1))
     gamma_stdev = sqrt_root(1, opti_params[0])
-    print('Value = {}, std dev = {}'.format(gamma_value, gamma_stdev))
+    print('Value = {}, std dev = {}'.format(gamma_value_one_bin, gamma_stdev))
     
     time_stamp = tool_belt.get_time_stamp()
     raw_data = {'time_stamp': time_stamp,
                 'splitting_MHz': splitting_MHz,
                 'splitting_MHz-units': 'MHz',
-                'omega_value': omega_value,
+                'omega_value_one_bin': omega_value_one_bin,
                 'omega_value-units': 'kHz',
                 'omega_stdev': omega_stdev,
                 'omega_stdev-units': 'kHz',
-                'gamma_value': gamma_value,
+                'gamma_value_one_bin': gamma_value_one_bin,
                 'gamma_value-units': 'kHz',
                 'gamma_stdev': gamma_stdev,
-                'gammastdev-units': 'kHz',
-                'omega_fitting_failed_list': omega_fitting_failed_list,
-                'gamma_fitting_failed_list': gamma_fitting_failed_list,
+                'gamma_stdev-units': 'kHz',
+                'omega_value_avg': omega_value_avg,
+                'omega_value_avg-units': 'kHz',
+                'gamma_value_avg': gamma_value_avg,
+                'gamma_value_avg-units': 'kHz',               
+                'omega_fit_failed_list': omega_fit_failed_list,
+                'gamma_fit_failed_list': gamma_fit_failed_list,
                 'num_bins_list': num_bins_list,
                 'omega_value_list': omega_value_list,
                 'omega_value_list-units': 'kHz',
@@ -533,14 +597,18 @@ def main(folder_name):
 # %%
     
 if __name__ == '__main__':
+    
+    folder = 'nv2_2019_04_30_101MHz'
     # spit out average of multiple bins to check if problem with fitting
     
-#    relaxation_rate_analysis('nv2_2019_04_30_101MHz', 4, True, True)
+#    relaxation_rate_analysis(folder, 1, True, True)
     
-    relaxation_rate_analysis('nv2_2019_04_30_101MHz', 8, True, True)
+#    # Specify the number of bins
+    num_bins_list = [1,2,4, 5, 8, 10]
+    main(folder, num_bins_list)
     
-#    num_bins_list = [  1, 2, 4, 5, 10]
-#    main('nv2_2019_04_30_101MHz')
+    # Use the factors of the num_runs for the num_bins
+#    main(folder)
     
     
         
