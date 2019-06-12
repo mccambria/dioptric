@@ -270,14 +270,27 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
     
 
 def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
+    
+    tool_belt.init_safe_stop()
+    
     opti_nv_sig_list = []
-    for nv_sig in nv_sig_list:
+    for ind in range(len(nv_sig_list)):
+        
+        print('Optimizing on NV {}...'.format(ind))
+        
+        if tool_belt.safe_stop():
+            break
+        
+        nv_sig = nv_sig_list[ind]
         opti_coords = main(cxn, nv_sig, nd_filter, apd_indices,
                            set_to_opti_coords=False)
-        opti_nv_sig_list.append([*opti_coords, *nv_sig[3: ]])
+        if opti_coords is not None:
+            opti_nv_sig_list.append('[{:.3f}, {:.3f}, {:.1f}, {}, {}],'.format(*opti_coords, *nv_sig[3: ]))
+        else:
+            opti_nv_sig_list.append('Optimization failed for NV {}.'.format(ind))
     
     for nv_sig in opti_nv_sig_list:
-        print('[{:.3f}, {:.3f}, {:.1f}, {}, {}],'.format(*nv_sig))
+        print(nv_sig)
     
 
 # %% Main
@@ -326,7 +339,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
         # Check the count rate
         opti_count_rate = stationary_count_lite(cxn, opti_coords,
                                                 shared_params, apd_indices)
-        print('Count rate at optimized coordinates: {:.0f}'.format(opti_count_rate))
         
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate
@@ -335,7 +347,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
             lower_threshold = expected_count_rate * 3/4
             upper_threshold = expected_count_rate * 5/4
             
-            print('Expected count rate: {}'.format(expected_count_rate))
+            if ind == 0:
+                print('Expected count rate: {}'.format(expected_count_rate))
+                
+            print('Count rate at optimized coordinates: {:.0f}'.format(opti_count_rate))
             
             # If the count rate close to what we expect, we succeeded!
             if lower_threshold <= opti_count_rate <= upper_threshold:
@@ -347,11 +362,15 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
                 
         # If the threshold is not set, we succeed based only on optimize       
         else:
+            print('Count rate at optimized coordinates: {:.0f}'.format(opti_count_rate))
             print('Optimization succeeded! (No expected count rate passed.)')
             opti_succeeded = True
         # Break out of the loop if optimization succeeded
         if opti_succeeded:
             break
+        
+    if not opti_succeeded:
+        opti_coords = None
         
     # %% Calculate the drift relative to the passed coordinates
     
@@ -377,6 +396,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
             print('{:.3f}, {:.3f}, {:.1f}'.format(*drift))
         else:
             print('Optimization failed.')
+            
+    print('\n')
                                
     # %% Save the data
 
@@ -389,7 +410,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
         rawData = {'timestamp': timestamp,
                    'name': name,
                    'nv_sig': nv_sig,
-                   'nv_sig-units': '[V, V, V, kcps, kcps]',
+                   'nv_sig-units': tool_belt.get_nv_sig_units(),
+                   'nv_sig-format': tool_belt.get_nv_sig_format(),
                    'nd_filter': nd_filter,
                    'num_steps': num_steps,
                    'readout': shared_params['continuous_readout_ns'],

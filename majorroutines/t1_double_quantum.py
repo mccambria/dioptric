@@ -35,7 +35,7 @@ from scipy import asarray as ar,exp
 
 # %% Main
 
-def main(cxn, coords, nd_filter, apd_indices, expected_counts,
+def main(cxn, nv_sig, nd_filter, apd_indices, expected_counts,
          uwave_freq_plus, uwave_freq_minus, uwave_power, 
          uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
          num_steps, num_reps, num_runs, 
@@ -151,10 +151,7 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
     
     # %% Make some lists and variables to save at the end
     
-    passed_coords = coords
-    
     opti_coords_list = []
-    optimization_success_list = []
     
     # %% Analyze the sequence
     
@@ -212,15 +209,8 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
             break
         
         # Optimize
-        ret_val = optimize.main(cxn, coords, nd_filter, apd_indices, 
-                               expected_counts = expected_counts)
-        
-        coords = ret_val[0]
-        optimization_success = ret_val[1]
-        
-        # Save the coords found and if it failed
-        optimization_success_list.append(optimization_success)
-        opti_coords_list.append(coords)
+        opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+        opti_coords_list.append(opti_coords)
             
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)  
@@ -332,10 +322,11 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
             'name': name,
             'init_state': int(init_state),
             'read_state': int(read_state),
-            'passed_coords': passed_coords,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'nv_sig-format': tool_belt.get_nv_sig_format(),
             'opti_coords_list': opti_coords_list,
-            'coords-units': 'V',
-            'optimization_success_list': optimization_success_list,
+            'opti_coords_list-units': 'V',
             'expected_counts': expected_counts,
             'expected_counts-units': 'kcps',
             'nd_filter': nd_filter,
@@ -366,8 +357,6 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
     file_path = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
-    
-    return coords
     
 # %%    
     

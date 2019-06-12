@@ -113,7 +113,7 @@ def process_raw_buffer(timestamps, channels,
 # %% Main
 
 
-def main(cxn, coords, nd_filter, run_time, diff_window,
+def main(cxn, nv_sig, nd_filter, run_time, diff_window,
          apd_a_index, apd_b_index, name='untitled', expected_counts=None):
 
     # %% Initial calculations and setup
@@ -123,8 +123,8 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
-    optimize.main(cxn, coords, nd_filter, apd_indices,
-                  expected_counts=expected_counts)
+    opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+    
     cxn.pulse_streamer.constant()
 
     num_tags = 0
@@ -140,7 +140,7 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
     # Get the APD channel names that the tagger will return
     ret_vals = cxn.apd_tagger.get_channel_mapping()
     apd_a_chan_name, apd_b_chan_name = ret_vals
-
+    
     # %% Collect the data
 
     start_time = time.time()
@@ -211,8 +211,13 @@ def main(cxn, coords, nd_filter, run_time, diff_window,
 
     raw_data = {'name': name,
                 'timestamp': timestamp,
-                'coords': coords,
-                'coords-units': 'V',
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'nv_sig-format': tool_belt.get_nv_sig_format(),
+                'g2_zero': g2_zero,
+                'g2_zero-units': 'ratio',
+                'opti_coords': opti_coords,
+                'opti_coords-units': 'V',
                 'nd_filter': nd_filter,
                 'run_time': run_time,
                 'run_time-units': 's',

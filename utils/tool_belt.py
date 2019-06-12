@@ -437,6 +437,15 @@ def save_raw_data(rawData, filePath):
 
     with open(filePath + '.txt', 'w') as file:
         json.dump(rawData, file, indent=2)
+        
+
+def get_nv_sig_units():
+    return '[V, V, V, kcps, kcps]'
+
+
+def get_nv_sig_format():
+    return '[x_coord, y_coord, z_coord, ' \
+        'expected_count_rate, background_count_rate]'
 
 
 # %% Safe stop (TM mccambria)

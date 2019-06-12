@@ -23,7 +23,7 @@ from scipy.optimize import curve_fit
 # %% Main
 
 
-def main(cxn, coords, nd_filter, apd_indices, expected_counts,
+def main(cxn, nv_sig, nd_filter, apd_indices, expected_counts,
          uwave_freq, uwave_power, uwave_time_range, do_uwave_gate_number,
          num_steps, num_reps, num_runs, name='untitled'):
 
@@ -78,14 +78,9 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
     
     # %% Make some lists and variables to save at the end
     
-    passed_coords = coords
-    
     opti_coords_list = []
-    optimization_success_list = []
-    
     
     # Create a list of indices to step through the taus. This will be shuffled
-    
     tau_ind_list = list(range(0, num_steps))
 
     # %% Set up the microwaves
@@ -95,10 +90,6 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
     cxn.microwave_signal_generator.uwave_on()
 
     # %% Collect the data
-
-#    tool_belt.set_xyz(cxn, coords)
-
-
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -112,15 +103,8 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
             break
         
         # Optimize
-        ret_val = optimize.main(cxn, coords, nd_filter, apd_indices, 
-                               expected_counts = expected_counts)
-        
-        coords = ret_val[0]
-        optimization_success = ret_val[1]
-        
-        # Save the coords found and if it failed
-        optimization_success_list.append(optimization_success)
-        opti_coords_list.append(coords)
+        opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+        opti_coords_list.append(opti_coords)
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -252,13 +236,13 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
 
     raw_data = {'timestamp': timestamp,
                 'timeElapsed': timeElapsed,
+                'timeElapsed-units': 's',
                 'name': name,
-                'passed_coords': passed_coords,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'nv_sig-format': tool_belt.get_nv_sig_format(),
                 'opti_coords_list': opti_coords_list,
-                'coords-units': 'V',
-                'optimization_success_list': optimization_success_list,
-                'expected_counts': expected_counts,
-                'expected_counts-units': 'kcps',
+                'opti_coords_list-units': 'V',
                 'nd_filter': nd_filter,
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
@@ -282,6 +266,6 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts,
     tool_belt.save_figure(fit_fig, file_path + '_fit')
     tool_belt.save_raw_data(raw_data, file_path)
 
-    # %% Return value for pi pulse
+    # %% Return integer value for pi pulse
 
-    return coords
+    return rabi_period // 2

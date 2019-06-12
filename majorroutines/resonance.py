@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 # %% Main
 
 
-def main(cxn, coords, nd_filter, apd_indices, expected_counts, freq_center, freq_range,
+def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
          num_steps, num_runs, uwave_power, name='untitled'):
 
     # %% Initial calculations and setup
@@ -58,10 +58,10 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts, freq_center, freq
         
     # %% Make some lists and variables to save at the end
     
-    passed_coords = coords
+#    passed_coords = coords
     
     opti_coords_list = []
-    optimization_success_list = []
+#    optimization_success_list = []
 
     # %% Collect the data
 
@@ -78,16 +78,9 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts, freq_center, freq
         if tool_belt.safe_stop():
             break
         
-        # Optimize
-        ret_val = optimize.main(cxn, coords, nd_filter, apd_indices, 
-                               expected_counts = expected_counts)
-        
-        coords = ret_val[0]
-        optimization_success = ret_val[1]
-        
-        # Save the coords found and if it failed
-        optimization_success_list.append(optimization_success)
-        opti_coords_list.append(coords)
+        # Optimize and save the coords we found
+        opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+        opti_coords_list.append(opti_coords)
 
         # Load the APD task with two samples for each frequency step
         cxn.pulse_streamer.stream_load(file_name, sequence_args)
@@ -162,12 +155,11 @@ def main(cxn, coords, nd_filter, apd_indices, expected_counts, freq_center, freq
 
     rawData = {'timestamp': timestamp,
                'name': name,
-               'passed_coords': passed_coords,
+               'nv_sig': nv_sig,
+               'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'nv_sig-format': tool_belt.get_nv_sig_format(),
                'opti_coords_list': opti_coords_list,
-               'coords-units': 'V',
-               'optimization_success_list': optimization_success_list,
-               'expected_counts': expected_counts,
-               'expected_counts-units': 'kcps',
+               'opti_coords_list-units': 'V',
                'nd_filter': nd_filter,
                'freq_center': freq_center,
                'freq_center-units': 'GHz',
