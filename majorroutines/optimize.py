@@ -232,10 +232,10 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
         opti_params, cov_arr = curve_fit(fit_func, voltages,
                                          count_rates, p0=init_fit,
                                          bounds=(low_bounds, high_bounds))
-        # Consider it a failure if we railed
+        # Consider it a failure if we railed or somehow got out of bounds
         for ind in range(len(opti_params)):
             param = opti_params[ind]
-            if (param == low_bounds[ind]) or (param == high_bounds[ind]):
+            if not (low_bounds[ind] < param < high_bounds[ind]):
                 opti_params = None
     except Exception:
         pass

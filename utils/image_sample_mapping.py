@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Illustrates a mapping from an NV list to an image_sample.
+Saves the data necessary to relocate specific NVs.
+
+Also can probably (?) illustrate a mapping from an NV list to an image_sample.
 
 Created on Mon Jun 10 13:54:07 2019
 
