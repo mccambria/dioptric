@@ -109,6 +109,7 @@ def do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_ra
     num_steps = 101
     num_runs = 4
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
+#    uwave_power = -10.0
     
     with labrad.connect() as cxn:
         resonance.main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
@@ -213,21 +214,54 @@ if __name__ == '__main__':
 
     name = 'ayrton12'  # Sample name
     
+#    nd_filter = 2.0
     nd_filter = 1.5
 
 #    apd_indices = [0]
     apd_indices = [0, 1]
     
-    # %% NV coordinates
+    # %% NV sigs
     
-    center = [0.0, 0.0, 53.6]
-     
-#    nv_list = [center]
-#    nv_list = [[-0.083, 0.018, 51.6]]
-#    nv_list = [[0.247, 0.236, 53.2]]
-#    nv_list = [nv1_2019_06_03]
+    z_voltage = 50.3
+    z_voltage = 50.8  # 6/12 3:41
     
-    drift = numpy.array([0.0, 0.0, 0.0])
+    # ND 1.5
+    background_count_rate = 3
+    nv_sig_list = [
+               [-0.142, 0.501, z_voltage, 53, background_count_rate],
+               [-0.133, 0.420, z_voltage, 45, background_count_rate],
+               [-0.141, 0.269, z_voltage, 92, background_count_rate],
+               [-0.224, 0.070, z_voltage, 49, background_count_rate],
+               [-0.234, 0.123, z_voltage, 83, background_count_rate],
+               [-0.236, 0.163, z_voltage, 78, background_count_rate],
+               [-0.269, 0.184, z_voltage, 40, background_count_rate],
+               [-0.306, 0.160, z_voltage, 64, background_count_rate],
+               [-0.269, 0.184, z_voltage, 40, background_count_rate],
+               [-0.287, 0.260, z_voltage, 66, background_count_rate],
+               [-0.308, 0.270, z_voltage, 30, background_count_rate],
+               [-0.335, 0.280, z_voltage, 74, background_count_rate],
+               [-0.324, 0.325, z_voltage, 90, background_count_rate],
+               [-0.379, 0.280, z_voltage, 43, background_count_rate],
+               [-0.388, 0.294, z_voltage, 31, background_count_rate],
+               [-0.389, 0.264, z_voltage, 85, background_count_rate],
+               [-0.375, 0.183, z_voltage, 45, background_count_rate],
+               [-0.416, 0.398, z_voltage, 35, background_count_rate],
+               [-0.397, 0.383, z_voltage, 100, background_count_rate],
+               [-0.397, 0.337, z_voltage, 85, background_count_rate],
+               [-0.456, 0.152, z_voltage, 63, background_count_rate],
+               [-0.415, 0.398, z_voltage, 33, background_count_rate],
+               [-0.393, 0.484, z_voltage, 60, background_count_rate]]
+    
+#    nv13_2019_06_10 = nv_sig_list[13]
+#    nv13_2019_06_10 = [-0.373, 0.279, z_voltage, 44, background_count_rate]  # 6/12 3:41
+    nv13_2019_06_10 = [-0.376, 0.280, 51.1, 40, background_count_rate]  # 6/12 4:29
+    
+    # For ND 2.0
+#    nv12_2019_06_10 = [*nv_sig_list[12][0:3], 20, 2]
+#    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 18, 2]
+#    nv21_2019_06_10 = [*nv_sig_list[21][0:3], 15, 2]
+    
+    nv_sig_list = [nv13_2019_06_10]
     
     # %% t1 measurements, preparation population and readout population.
     
@@ -295,55 +329,9 @@ if __name__ == '__main__':
     #                            uwave_pi_pulse_minus]
     #   uwave_MINUS should be associated with the HP signal generator
 #    params_array = numpy.array([[nv2_2019_04_30, 2.8380, 96, 2.8942, 102, 62]])
+#    params_array = numpy.array([[nv4_2019_06_06_ref, 2.8501, 66, 2.8786, 62]])
 
     # %% Functions to run
-    
-    
-#    nv_sig = [-0.3, 0.3, 55.7]
-#    background = [-0.273, 0.331, 54.0]
-#    nv = [-0.237, 0.318, 56.0]
-#    zero_coords = [0.0, 0.0, 50.0]
-    
-    z_voltage = 50.2
-    background_count_rate = 3
-    
-#    nv_sig_list = [
-#               [-0.142, 0.501, z_voltage, 53, background_count_rate],
-#               [-0.133, 0.420, z_voltage, 45, background_count_rate],
-#               [-0.141, 0.269, z_voltage, 92, background_count_rate],
-#               [-0.224, 0.070, z_voltage, 49, background_count_rate],
-#               [-0.234, 0.123, z_voltage, 83, background_count_rate],
-#               [-0.236, 0.163, z_voltage, 78, background_count_rate],
-#               [-0.269, 0.184, z_voltage, 40, background_count_rate],
-#               [-0.306, 0.160, z_voltage, 64, background_count_rate],
-#               [-0.269, 0.184, z_voltage, 40, background_count_rate],
-#               [-0.287, 0.260, z_voltage, 66, background_count_rate],
-#               [-0.308, 0.270, z_voltage, 30, background_count_rate],
-#               [-0.335, 0.280, z_voltage, 74, background_count_rate],
-#               [-0.324, 0.325, z_voltage, 90, background_count_rate],
-#               [-0.379, 0.280, z_voltage, 43, background_count_rate],
-#               [-0.388, 0.294, z_voltage, 31, background_count_rate],
-#               [-0.389, 0.264, z_voltage, 85, background_count_rate],
-#               [-0.375, 0.183, z_voltage, 45, background_count_rate],
-#               [-0.416, 0.398, z_voltage, 35, background_count_rate],
-#               [-0.397, 0.383, z_voltage, 100, background_count_rate],
-#               [-0.397, 0.337, z_voltage, 85, background_count_rate],
-#               [-0.456, 0.152, z_voltage, 63, background_count_rate],
-#               [-0.415, 0.398, z_voltage, 33, background_count_rate],
-#               [-0.393, 0.484, z_voltage, 60, background_count_rate]]
-#    
-    nv_sig_list = [
-               [-0.324, 0.325, z_voltage, 90, background_count_rate]]
-    
-#    nv_list = [nv_sig]
-#    nv_list =    [ [-0.308, 0.270, 50, 45]]
-    
-#    offsetxy=nv4_2019_06_06_offset # this adds an offset to the XY galvo values for certain functions 
-#                                   # (currently resonance or T1_double_quantum) - SK 6/8/19     
-   
-#    offsetxy = [0,0]
-    
-#    params_array = numpy.array([[nv4_2019_06_06_ref, 2.8501, 66, 2.8786, 62]])
     
     try:
         
@@ -360,9 +348,9 @@ if __name__ == '__main__':
 #            do_stationary_count(name, nv_sig, nd_filter, apd_indices)
 #            do_g2_measurement(name, nv_sig, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, nv_sig, nd_filter, apd_indices)
-#            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.82, freq_range=0.1)
+            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.839, freq_range=0.1)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.878, freq_range=0.05)
-            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8501, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8501, 0)
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8786, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
         
@@ -395,8 +383,6 @@ if __name__ == '__main__':
 #                
 #                print('new nv_sig: \n' + '[{:.3f}, {:.3f}, {:.1f}]'.format(*ret_val)) 
 #                nv_sig = ret_val       
-                
-## %%            
 
     finally:
         tool_belt.reset_state()

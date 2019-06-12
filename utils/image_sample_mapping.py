@@ -67,6 +67,7 @@ def generate_mapping_files(sample_name, micrometer_coords,
             'micrometer_coords': micrometer_coords,
             'micrometer_coords-units': 'mm',
             'image_sample_file_name': image_sample_file_name,
+            'nd_filter': nd_filter,
             'nv_sig_list': nv_sig_list,
             'nv_sig_list-units': tool_belt.get_nv_sig_units(),
             'nv_sig_list-format': tool_belt.get_nv_sig_format(),
@@ -99,6 +100,7 @@ if __name__ == '__main__':
     sample_name = 'ayrton12'
     micrometer_coords = [208.3, 277.3, 146.8]
     image_sample_file_name = ''
+    nd_filter = 1.5
     z_voltage = 50.0
     background_count_rate = None
     nv_sig_list = [
