@@ -202,7 +202,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     
     for run_ind in range(num_runs):
 
-        print('Run index: {}'.format(run_ind))
+        print(' \nRun index: {}'.format(run_ind))
         
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
@@ -329,8 +329,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'nv_sig-format': tool_belt.get_nv_sig_format(),
             'opti_coords_list': opti_coords_list,
             'opti_coords_list-units': 'V',
-            'expected_counts': expected_counts,
-            'expected_counts-units': 'kcps',
             'nd_filter': nd_filter,
             'gate_time': gate_time,
             'gate_time-units': 'ns',

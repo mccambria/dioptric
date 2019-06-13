@@ -553,37 +553,58 @@ def poll_safe_stop():
             break
         
 
-# %% Singletons
+# %% State/globals
           
             
 # This isn't really that scary - our client is and should be mostly stateless 
 # but in some cases it's just easier to share some state across the life of an
-# experiment (ie from the time you press F5 to the time we hit the finally
-# at the end of cfm_control_panel). To do this safely and easily we use 
-# singletons that are implemented with global variables. They get cleaned up 
-# in reset_state, which is called in cfm_control_panel's finally. The 
-# singletons should only be accessed with the getters and setters here so that
-# we can be sure they're implemented properly. 
+# experiment/across experiments. To do this safely and easily we store global
+# variables on our LabRAD registry. The globals should only be accessed with
+# the getters and setters here so that we can be sure they're implemented
+# properly. 
 
 
 def get_drift():
-    global DRIFT
-    try:
-        DRIFT
-    except NameError:
-        reset_drift()
-    # Don't let the user have a reference to the global
-    return numpy.copy(DRIFT).tolist()
+    with labrad.connect() as cxn:
+        cxn.registry.cd(['', 'State'])
+        drift = cxn.registry.get('DRIFT')
+    len_drift = len(drift)
+    if len_drift != 3:
+        print('Got drift of length {}.'.format(len_drift))
+        print('Setting to length 3.')
+        if len_drift < 3:
+            for ind in range(3 - len_drift):
+                drift.append(0.0)
+        elif len_drift > 3:
+            drift = drift[0:3]
+    drift_to_return = []
+    for el in drift:
+        type_el = type(el)
+        if type_el not in [float, numpy.float64]:
+            print('Got drift element of type {}.'.format(type_el))
+            print('Casting to float.')
+            el = float(el)
+        drift_to_return.append(el)
+    return drift_to_return
     
 
-def set_drift(drift_to_set):
-    global DRIFT
-    DRIFT = drift_to_set
+def set_drift(drift):
+    len_drift = len(drift)
+    if len_drift != 3:
+        print('Attempted to set drift of length {}.'.format(len_drift))
+        print('Set drift unsuccessful.')
+    for el in drift:
+        type_el = type(el)
+        if type_el is not float:
+            print('Attempted to set drift element of type {}.'.format(type_el))
+            print('Set drift unsuccessful.')
+    with labrad.connect() as cxn:
+        cxn.registry.cd(['', 'State'])
+        return cxn.registry.set('DRIFT', drift)
     
     
 def reset_drift():
-    global DRIFT
-    DRIFT = [0.0, 0.0, 0.0]
+    set_drift([0.0, 0.0, 0.0])
     
 
 def reset_state():

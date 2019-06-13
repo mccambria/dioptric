@@ -398,7 +398,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
             # Let the user know something went wrong
             print('Optimization failed. Resetting to coordinates ' \
                   'about which we attempted to optimize.')
-            tool_belt.set_xyz(cxn, drift_adjusted_coords)
+            tool_belt.set_xyz(cxn, adjusted_coords)
     else:
         if opti_succeeded:
             print('Optimized coordinates: ')

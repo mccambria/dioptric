@@ -148,11 +148,12 @@ def do_t1_double_quantum(name, nv_sig, nd_filter, apd_indices,
 #    num_runs = 1  # Pick this one for the best noise to signal ratio
     
     with labrad.connect() as cxn:
-         t1_double_quantum.main(cxn, nv_sig, nd_filter, apd_indices,
+        t1_double_quantum.main(cxn, nv_sig, nd_filter, apd_indices,
                      uwave_freq_plus, uwave_freq_minus, uwave_power, 
                      uwave_pi_pulse_plus, uwave_pi_pulse_minus,
                      relaxation_time_range, num_steps, num_reps, num_runs, 
                      init_read_list, name)
+         
 
 
 def do_ramsey_measurement(name, nv_sig, nd_filter, 
@@ -302,13 +303,21 @@ if __name__ == '__main__':
     # For splittings < 75 MHz
     
     # ~13 hours
-    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
-                                [plus_to_minus,  [0, 500*10**3], 41,  1 * 10**4],
-                                [plus_to_plus,   [0, 100*10**3], 51, 2 * 10**4],
-                                [plus_to_plus,   [0, 500*10**3], 41,  1 * 10**4],
-                                [plus_to_zero,   [0, 500*10**3], 41, 1 * 10**4],
-                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
-                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
+#    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
+#                                [plus_to_minus,  [0, 500*10**3], 41,  1 * 10**4],
+#                                [plus_to_plus,   [0, 100*10**3], 51, 2 * 10**4],
+#                                [plus_to_plus,   [0, 500*10**3], 41,  1 * 10**4],
+#                                [plus_to_zero,   [0, 500*10**3], 41, 1 * 10**4],
+#                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
+#                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
+    
+    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 3, 2 * 10**3],
+                                [plus_to_minus,  [0, 500*10**3], 3,  1 * 10**3],
+                                [plus_to_plus,   [0, 100*10**3], 3, 2 * 10**3],
+                                [plus_to_plus,   [0, 500*10**3], 3,  1 * 10**3],
+                                [plus_to_zero,   [0, 500*10**3], 3, 1 * 10**3],
+                                [zero_to_plus,   [0, 100*10**3], 3, 1 * 10**3],
+                                [zero_to_zero,   [0, 100*10**3], 3, 1 * 10**3]])
 
     # For splittings > 75 MHz
     
@@ -337,6 +346,13 @@ if __name__ == '__main__':
     
     try:
         
+        # Routines that don't need an NV
+#        set_xyz_zero()
+#        set_xyz()
+#        tool_belt.set_drift([0.0, 0.0, 0.0])
+#        tool_belt.set_drift([-0.004, -0.001, -0.3])
+#        print(tool_belt.get_drift())
+        
         # Routines that expect lists
 #        optimize_list(name, cxn, nv_sig_list, nd_filter, apd_indices)
 #        do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices)
@@ -344,7 +360,6 @@ if __name__ == '__main__':
         # Routines that expect single NVs
 #        for nv_sig in nv_sig_list:
 #            coords = nv_sig[0:3]
-#            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
 #            do_optimize(name, nv_sig, nd_filter, apd_indices)
 #            do_stationary_count(name, nv_sig, nd_filter, apd_indices)
@@ -359,33 +374,34 @@ if __name__ == '__main__':
           
 #         %% FULL CONTROL T1
 
-        for nv_ind in range(len(params_array)):
-            
-            nv_sig = params_array[nv_ind, 0]
-            
-            uwave_freq_plus = params_array[nv_ind, 1]
-            uwave_pi_pulse_plus = params_array[nv_ind, 2]
-            uwave_freq_minus = params_array[nv_ind, 3]
-            uwave_pi_pulse_minus = params_array[nv_ind, 4]
-            
-            for exp_ind in range(len(t1_exp_array)):
-#            for exp_ind in [2,3,4,5,6,7]:
-            
-                init_read_list = t1_exp_array[exp_ind, 0]
-                relaxation_time_range = t1_exp_array[exp_ind, 1]
-                num_steps = t1_exp_array[exp_ind, 2]
-                num_reps = t1_exp_array[exp_ind, 3]
-        
-                ret_val = do_t1_double_quantum(name, nv_sig, nd_filter,
-                              apd_indices, 
-                              uwave_freq_plus, uwave_freq_minus, 
-                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                              relaxation_time_range, num_steps, num_reps,
-                              init_read_list)                
-                
-                print('new nv_sig: \n' + '[{:.3f}, {:.3f}, {:.1f}]'.format(*ret_val)) 
-                nv_sig = ret_val       
+#        for nv_ind in range(len(params_array)):
+#            
+#            nv_sig = params_array[nv_ind, 0]
+#            
+#            uwave_freq_plus = params_array[nv_ind, 1]
+#            uwave_pi_pulse_plus = params_array[nv_ind, 2]
+#            uwave_freq_minus = params_array[nv_ind, 3]
+#            uwave_pi_pulse_minus = params_array[nv_ind, 4]
+#            
+#            for exp_ind in range(len(t1_exp_array)):
+##            for exp_ind in [2,3,4,5,6,7]:
+#            
+#                init_read_list = t1_exp_array[exp_ind, 0]
+#                relaxation_time_range = t1_exp_array[exp_ind, 1]
+#                num_steps = t1_exp_array[exp_ind, 2]
+#                num_reps = t1_exp_array[exp_ind, 3]
+#        
+#                do_t1_double_quantum(name, nv_sig, nd_filter,
+#                              apd_indices, 
+#                              uwave_freq_plus, uwave_freq_minus, 
+#                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+#                              relaxation_time_range, num_steps, num_reps,
+#                              init_read_list)                
+                       
 
     finally:
-        tool_belt.reset_state()
+        # Kill safe stop
+        if tool_belt.check_safe_stop_alive():
+            print("\n\nRoutine complete. Press enter to exit.")
+            tool_belt.poll_safe_stop()
             
