@@ -52,7 +52,7 @@ def calculate_relative_g2_zero(hist):
 
 
 def process_raw_buffer(timestamps, channels,
-                       diff_window, afterpulse_window,
+                       diff_window_ps, afterpulse_window,
                        differences_append, apd_a_chan_name, apd_b_chan_name):
 
     indices_to_delete = []
@@ -99,7 +99,7 @@ def process_raw_buffer(timestamps, channels,
         while next_index < num_vals:  # Don't go past the buffer end
             # Stop taking differences past the diff window
             diff = timestamps[next_index] - click_time
-            if diff > diff_window:
+            if diff > diff_window_ps:
                 break
             # Only record the diff between opposite chanels
             if channels[next_index] == diff_channel:
@@ -130,9 +130,10 @@ def main(cxn, nv_sig, nd_filter, run_time, diff_window,
     num_tags = 0
     collection_index = 0
 
+    diff_window_ps = diff_window * 1000
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
-    num_bins = int((2 * diff_window) / 1000) + 1  # 1 ns bins in ps
+    num_bins = int(2 * diff_window) + 1  # 1 ns bins in ps
     
     # Expose the stream
     cxn.apd_tagger.start_tag_stream(apd_indices, [], False)  
@@ -172,7 +173,7 @@ def main(cxn, nv_sig, nd_filter, run_time, diff_window,
         # Process data
         start_calc_time = time.time()
         process_raw_buffer(buffer_timetags, buffer_channels,
-                           diff_window, afterpulse_window,
+                           diff_window_ps, afterpulse_window,
                            differences_append,
                            apd_a_chan_name, apd_b_chan_name)
 
@@ -184,7 +185,7 @@ def main(cxn, nv_sig, nd_filter, run_time, diff_window,
             bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
             bin_centers = bin_edges[0: num_bins] + bin_center_offset
             ax.plot(bin_centers, hist)
-            xlim = int(1.1 * diff_window / 1000)
+            xlim = int(1.1 * diff_window)
             ax.set_xlim(-xlim, xlim)
             ax.set_xlabel('Time (ns)')
             ax.set_ylabel('Differences')

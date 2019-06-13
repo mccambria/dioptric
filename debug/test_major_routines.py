@@ -25,30 +25,35 @@ def main(name, nv_sig, nd_filter, apd_indices):
     with labrad.connect() as cxn:
         
         # g2_measurement
+        print('\nTesting g2_measurement...\n')
         run_time = 5
         diff_window = 150
         g2_measurement.main(cxn, nv_sig, nd_filter, run_time,
                             diff_window, apd_indices[0], apd_indices[1], name=name)
         
         # image_sample
+        print('\nTesting image_sample...\n')
         scan_range = 0.01
         num_scan_steps = 5
         # For now we only support square scans so pass scan_range twice
-        image_sample.main(cxn, nv_sig, nd_filter, scan_range, scan_range,
+        image_sample.main(cxn, nv_sig[0:3], nd_filter, scan_range, scan_range,
                           num_scan_steps, apd_indices, name=name)
         
         # optimize
+        print('\nTesting optimize...\n')
         optimize.main(cxn, nv_sig, nd_filter, apd_indices, name,
                       set_to_opti_coords=False,
                       save_data=True, plot_data=True)
         
         # stationary_count
+        print('\nTesting stationary_count...\n')
         run_time = 5
         readout = 100 * 10**6
         stationary_count.main(cxn, nv_sig, nd_filter, run_time, readout,
                               apd_indices, name=name)
         
         # resonance
+        print('\nTesting resonance...\n')
         freq_center = 2.87
         freq_range = 0.05
         num_steps = 5
@@ -58,6 +63,7 @@ def main(name, nv_sig, nd_filter, apd_indices):
                        freq_range, num_steps, num_runs, uwave_power, name=name)
         
         # rabi
+        print('\nTesting rabi...\n')
         uwave_freq = 2.87
         uwave_power = 9.0
         uwave_time_range = [0, 100]
@@ -71,6 +77,7 @@ def main(name, nv_sig, nd_filter, apd_indices):
                   num_steps, num_reps, num_runs, name=name)
         
         # t1_double_quantum
+        print('\nTesting t1_double_quantum...\n')
         uwave_freq_plus = 2.86
         uwave_freq_minus = 2.88
         uwave_power = 9

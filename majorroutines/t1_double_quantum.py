@@ -288,7 +288,12 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     
     # %% Calculate the t1 data, signal / reference over different relaxation times
 
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    # Replace x/0=inf with 0
+    try:
+        norm_avg_sig = avg_sig_counts / avg_ref_counts
+    except RuntimeWarning as e:
+        print(e)
+        numpy.nan_to_num(norm_avg_sig)
     
     # %% Plot the t1 signal
 

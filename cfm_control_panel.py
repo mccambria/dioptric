@@ -97,7 +97,7 @@ def do_g2_measurement(name, nv_sig, nd_filter, apd_a_index, apd_b_index):
     run_time = 60 * 10
 #    run_time = 60 * 20
     
-    diff_window = 150 * 10**3  # 150 ns in ps
+    diff_window = 150  # ns
     
     with labrad.connect() as cxn:
         g2_measurement.main(cxn, nv_sig, nd_filter, run_time, diff_window,
@@ -201,7 +201,7 @@ def do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices):
                                num_steps, num_runs, uwave_power, name=name)
                 
                 
-def do_debug(name, nv_sig, nd_filter, apd_indices):
+def do_test_major_routines(name, nv_sig, nd_filter, apd_indices):
     """Run this whenver you make a significant code change. It'll make sure
     you didn't break anything in the major routines.
     """
@@ -369,7 +369,7 @@ if __name__ == '__main__':
         for nv_sig in nv_sig_list:
 #            coords = nv_sig[0:3]
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
-            do_optimize(name, nv_sig, nd_filter, apd_indices)
+#            do_optimize(name, nv_sig, nd_filter, apd_indices)
 #            do_stationary_count(name, nv_sig, nd_filter, apd_indices)
 #            do_g2_measurement(name, nv_sig, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, nv_sig, nd_filter, apd_indices)
@@ -378,9 +378,8 @@ if __name__ == '__main__':
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8241, 0)
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8552, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
-#            do_debug(name, nv_sig, nd_filter, apd_indices)
+            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
         
-          
 #         %% FULL CONTROL T1
 
 #        for nv_ind in range(len(params_array)):
