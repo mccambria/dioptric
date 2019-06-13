@@ -94,3 +94,6 @@ def main(name, nv_sig, nd_filter, apd_indices):
                      relaxation_time_range, num_steps, num_reps, num_runs, 
                      init_read_list, name)
         
+        # Success!
+        print('No crashes went unhandled. Success!')
+    

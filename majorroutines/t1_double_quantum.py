@@ -293,7 +293,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         norm_avg_sig = avg_sig_counts / avg_ref_counts
     except RuntimeWarning as e:
         print(e)
-        numpy.nan_to_num(norm_avg_sig)
+        inf_mask = numpy.isinf(norm_avg_sig)
+        # Assign to 0 based on the passed conditional array
+        norm_avg_sig[inf_mask] = 0
     
     # %% Plot the t1 signal
 
