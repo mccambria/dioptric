@@ -107,7 +107,7 @@ def do_g2_measurement(name, nv_sig, nd_filter, apd_a_index, apd_b_index):
 def do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_range=0.2):
     
     num_steps = 101
-    num_runs = 4
+    num_runs = 8
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 #    uwave_power = -10.0
     
@@ -126,7 +126,7 @@ def do_rabi(name, nv_sig, nd_filter, apd_indices,
     
 #    num_runs = 1
 #    num_runs = 2
-    num_runs = 5
+    num_runs = 4
 #    num_runs = 6
 
     with labrad.connect() as cxn:
@@ -142,10 +142,10 @@ def do_t1_double_quantum(name, nv_sig, nd_filter, apd_indices,
                          init_read_list):
     
     uwave_power = 9
-    num_runs = 80  # This'll double the expected duration listed below!!
-#    num_runs = 40
-#    num_runs = 20
-#    num_runs = 1
+#    num_runs = 80  # This'll double the expected duration listed below!!
+    num_runs = 40
+#    num_runs = 20  # This'll halve the expected duration listed below
+#    num_runs = 1  # Pick this one for the best noise to signal ratio
     
     with labrad.connect() as cxn:
          t1_double_quantum.main(cxn, nv_sig, nd_filter, apd_indices,
@@ -222,8 +222,9 @@ if __name__ == '__main__':
     
     # %% NV sigs
     
-    z_voltage = 50.3
-    z_voltage = 50.8  # 6/12 3:41
+#    z_voltage = 50.3
+#    z_voltage = 50.8  # 6/12 3:41
+    z_voltage = 50.5  # 6/12 17:27 before starting T1
     
     # ND 1.5
     background_count_rate = 3
@@ -254,7 +255,8 @@ if __name__ == '__main__':
     
 #    nv13_2019_06_10 = nv_sig_list[13]
 #    nv13_2019_06_10 = [-0.373, 0.279, z_voltage, 44, background_count_rate]  # 6/12 3:41
-    nv13_2019_06_10 = [-0.376, 0.280, 51.1, 40, background_count_rate]  # 6/12 4:29
+#    nv13_2019_06_10 = [-0.376, 0.280, 51.1, 40, background_count_rate]  # 6/12 4:29
+    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 40, background_count_rate]  # 6/12 17:27 before starting T1
     
     # For ND 2.0
 #    nv12_2019_06_10 = [*nv_sig_list[12][0:3], 20, 2]
@@ -329,7 +331,7 @@ if __name__ == '__main__':
     #                            uwave_pi_pulse_minus]
     #   uwave_MINUS should be associated with the HP signal generator
 #    params_array = numpy.array([[nv2_2019_04_30, 2.8380, 96, 2.8942, 102, 62]])
-#    params_array = numpy.array([[nv4_2019_06_06_ref, 2.8501, 66, 2.8786, 62]])
+    params_array = numpy.array([[nv13_2019_06_10, 2.8241, 96, 2.8552, 142]])
 
     # %% Functions to run
     
@@ -340,7 +342,7 @@ if __name__ == '__main__':
 #        do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices)
             
         # Routines that expect single NVs
-        for nv_sig in nv_sig_list:
+#        for nv_sig in nv_sig_list:
 #            coords = nv_sig[0:3]
 #            set_xyz_zero()
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
@@ -348,41 +350,41 @@ if __name__ == '__main__':
 #            do_stationary_count(name, nv_sig, nd_filter, apd_indices)
 #            do_g2_measurement(name, nv_sig, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, nv_sig, nd_filter, apd_indices)
-            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.839, freq_range=0.1)
+#            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.839, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.878, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8501, 0)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8786, 1)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8241, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8552, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
         
           
 #         %% FULL CONTROL T1
 
-#        for nv_ind in range(len(params_array)):
-#            
-#            nv_sig = params_array[nv_ind, 0]
-#            
-#            uwave_freq_plus = params_array[nv_ind, 1]
-#            uwave_pi_pulse_plus = params_array[nv_ind, 2]
-#            uwave_freq_minus = params_array[nv_ind, 3]
-#            uwave_pi_pulse_minus = params_array[nv_ind, 4]
-#            
-#            for exp_ind in range(len(t1_exp_array)):
-##            for exp_ind in [2,3,4,5,6,7]:
-#            
-#                init_read_list = t1_exp_array[exp_ind, 0]
-#                relaxation_time_range = t1_exp_array[exp_ind, 1]
-#                num_steps = t1_exp_array[exp_ind, 2]
-#                num_reps = t1_exp_array[exp_ind, 3]
-#        
-#                ret_val = do_t1_double_quantum(name, nv_sig, nd_filter,
-#                              apd_indices, 
-#                              uwave_freq_plus, uwave_freq_minus, 
-#                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-#                              relaxation_time_range, num_steps, num_reps,
-#                              init_read_list)                
-#                
-#                print('new nv_sig: \n' + '[{:.3f}, {:.3f}, {:.1f}]'.format(*ret_val)) 
-#                nv_sig = ret_val       
+        for nv_ind in range(len(params_array)):
+            
+            nv_sig = params_array[nv_ind, 0]
+            
+            uwave_freq_plus = params_array[nv_ind, 1]
+            uwave_pi_pulse_plus = params_array[nv_ind, 2]
+            uwave_freq_minus = params_array[nv_ind, 3]
+            uwave_pi_pulse_minus = params_array[nv_ind, 4]
+            
+            for exp_ind in range(len(t1_exp_array)):
+#            for exp_ind in [2,3,4,5,6,7]:
+            
+                init_read_list = t1_exp_array[exp_ind, 0]
+                relaxation_time_range = t1_exp_array[exp_ind, 1]
+                num_steps = t1_exp_array[exp_ind, 2]
+                num_reps = t1_exp_array[exp_ind, 3]
+        
+                ret_val = do_t1_double_quantum(name, nv_sig, nd_filter,
+                              apd_indices, 
+                              uwave_freq_plus, uwave_freq_minus, 
+                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                              relaxation_time_range, num_steps, num_reps,
+                              init_read_list)                
+                
+                print('new nv_sig: \n' + '[{:.3f}, {:.3f}, {:.1f}]'.format(*ret_val)) 
+                nv_sig = ret_val       
 
     finally:
         tool_belt.reset_state()

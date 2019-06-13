@@ -211,6 +211,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         # Optimize
         opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
         opti_coords_list.append(opti_coords)
+        
+        
             
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)  

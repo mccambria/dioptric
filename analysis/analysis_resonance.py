@@ -49,7 +49,7 @@ def fit_resonance(save_file_type):
     
     folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance'
 #    file_name = '2019-06-07_16-24-57_ayrton12.txt'
-    file_name = '2019-06-07_16-28-40_ayrton12.txt'
+    file_name = '2019-06-12_16-43-58_ayrton12.txt'
     open_file_name = '{}/{}'.format(folder_name, file_name)
     
     with open(open_file_name) as json_file:
@@ -152,7 +152,7 @@ def fit_resonance(save_file_type):
         fig, ax = plt.subplots(1, 1, figsize=(10, 8))
         ax.plot(freqs, norm_avg_counts,'b',label='data')
         smooth_freqs = numpy.linspace(freqs[0], freqs[-1], 1000)
-        ax.plot(smooth_freqs, double_gaus(freqs,*popt),'r-',label='fit')
+        ax.plot(smooth_freqs, double_gaus(smooth_freqs,*popt),'r-',label='fit')
         ax.set_xlabel('Frequency (GHz)')
         ax.set_ylabel('Contrast (arb. units)')
     #    ax.set_title('ESR (60\N{DEGREE SIGN})')
