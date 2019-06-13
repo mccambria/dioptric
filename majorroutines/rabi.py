@@ -161,8 +161,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     fit_func = tool_belt.cosexp
 
     # Estimated fit parameters
-    offset = 0.85
-    amplitude = 0.15
+    offset = 0.90
+    amplitude = 0.10
     frequency = 1/100
 #    phase = 0
     decay = 1000

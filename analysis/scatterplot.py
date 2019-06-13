@@ -18,8 +18,8 @@ def AbsCos(angle, offset, amp, phase):
 
 # %% Scatter raw data
 
-angles = [336, 0, 30, 60, 90, 120, 150]
-splittings = [55, 46, 24, 8, 38, 57, 60]
+angles = [0, 30, 60, 90, 120, 150, 170]
+splittings = [29, 26, 14, 8, 22, 34, 39]
 
 fig, ax = plt.subplots()
 
@@ -40,7 +40,7 @@ popt, pcov = curve_fit(AbsCos, angles, splittings,
 
 print(popt)
 
-x_vals = numpy.linspace(min(angles), max(angles), 1000)
+x_vals = numpy.linspace(min(angles), 360, 1000)
 y_vals = AbsCos(x_vals, *popt)
 
 ax.plot(x_vals, y_vals)

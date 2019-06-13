@@ -42,7 +42,7 @@ def main(cxn, coords, nd_filter, run_time, readout, apd_indices,
 
     # %% Some initial calculations
 
-    x_center, y_center, z_center = coords
+    x_center, y_center, z_center = coords[0:3]
     readout_sec = readout / 10**9
 
     # %% Load the PulseStreamer

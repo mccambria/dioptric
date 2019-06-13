@@ -302,8 +302,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
     passed_coords = nv_sig[0: 3]
-    drift_adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
-    drift_adjusted_nv_sig = [*drift_adjusted_coords, *nv_sig[3:]]
+    adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
+    adjusted_nv_sig = [*adjusted_coords, *nv_sig[3:]]
     
     # Get the shared parameters from the registry
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -331,7 +331,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
         voltages_by_axis = []
         counts_by_axis = []
         for axis_ind in range(3):
-            ret_vals = optimize_on_axis(cxn, drift_adjusted_nv_sig, axis_ind,
+            ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
                                         shared_params, apd_indices, fig)
             opti_coords.append(ret_vals[0])
             voltages_by_axis.append(ret_vals[1])
@@ -363,6 +363,13 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
                 opti_succeeded = True
             else:
                 print('Count rate at optimized coordinates out of bounds.')
+                # If we failed by expected counts, try again with the
+                # coordinates we found. If x/y are off initially, then
+                # z will give a false optimized coordinate. x/y will give
+                # true optimized coordinates regardless of the other initial
+                # coordinates, however. So we might succeed by trying z again 
+                # at the optimized x/y. 
+                adjusted_nv_sig = [*opti_coords, *nv_sig[3:]]
                 
         # If the threshold is not set, we succeed based only on optimize       
         else:
