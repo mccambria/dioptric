@@ -349,7 +349,8 @@ if __name__ == '__main__':
         # Routines that don't need an NV
 #        set_xyz_zero()
 #        set_xyz()
-        tool_belt.set_drift([-0.004, -0.001, -0.3])
+#        tool_belt.set_drift([0.0, 0.0, 0.0])
+#        tool_belt.set_drift([-0.004, -0.001, -0.3])
 #        print(tool_belt.get_drift())
         
         # Routines that expect lists
