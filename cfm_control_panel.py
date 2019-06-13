@@ -24,6 +24,7 @@ import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.ramsey as ramsey
+import debug.test_major_routines as test_major_routines
 
 
 # %% Minor Routines
@@ -198,7 +199,14 @@ def do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices):
             if g2_zero < 0.5:
                 resonance.main(cxn, nv_sig, nd_filter, apd_indices, 2.87, 0.1,
                                num_steps, num_runs, uwave_power, name=name)
+                
+                
+def do_debug(name, nv_sig, nd_filter, apd_indices):
+    """Run this whenver you make a significant code change. It'll make sure
+    you didn't break anything in the major routines.
+    """
     
+    test_major_routines.main(name, nv_sig, nd_filter, apd_indices)
 
 
 # %% Script Code
@@ -358,10 +366,10 @@ if __name__ == '__main__':
 #        do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices)
             
         # Routines that expect single NVs
-#        for nv_sig in nv_sig_list:
+        for nv_sig in nv_sig_list:
 #            coords = nv_sig[0:3]
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
-#            do_optimize(name, nv_sig, nd_filter, apd_indices)
+            do_optimize(name, nv_sig, nd_filter, apd_indices)
 #            do_stationary_count(name, nv_sig, nd_filter, apd_indices)
 #            do_g2_measurement(name, nv_sig, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, nv_sig, nd_filter, apd_indices)
@@ -370,6 +378,7 @@ if __name__ == '__main__':
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8241, 0)
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8552, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
+#            do_debug(name, nv_sig, nd_filter, apd_indices)
         
           
 #         %% FULL CONTROL T1
