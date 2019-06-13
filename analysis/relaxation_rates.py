@@ -463,8 +463,6 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
         
         file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_' + str(num_bins) + '_bins' 
         file_path = '{}/{}/{}'.format(directory, folder_name, file_name)
-        print(file_path)
-        # tool_belt.save_raw_data(raw_data, file_path)
         
         with open(file_path + '.txt', 'w') as file:
             json.dump(raw_data, file, indent=2)
