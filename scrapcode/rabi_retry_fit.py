@@ -5,6 +5,10 @@ Created on Wed Jun 12 17:11:03 2019
 @author: mccambria
 """
 
+
+# %% Imports
+
+
 import json
 import numpy
 import matplotlib.pyplot as plt
@@ -12,8 +16,21 @@ from scipy.optimize import curve_fit
 import utils.tool_belt as tool_belt
 
 
+# %% Input parameters
+
+
 folder_dir = 'E:\\Shared drives\\Kolkowitz Lab Group\\nvdata\\rabi\\'
-file_name = '2019-06-12_17-08-47_ayrton12.txt'
+file_name = '2019-06-13_17-18-17_ayrton12.txt'
+
+# Estimated fit parameters
+offset = 0.95
+amplitude = 0.05
+frequency = 1/200
+decay = 1000
+
+
+# %% Run the file
+
 
 with open('{}{}'.format(folder_dir, file_name)) as file:
     data = json.load(file)
@@ -27,13 +44,6 @@ taus = numpy.linspace(min_uwave_time, max_uwave_time,
                       num=num_steps, dtype=numpy.int32)
 
 fit_func = tool_belt.cosexp
-
-# Estimated fit parameters
-offset = 0.92
-amplitude = 0.08
-frequency = 1/200
-#    phase = 0
-decay = 1000
 
 #    init_params = [offset, amplitude, frequency, phase, decay]
 init_params = [offset, amplitude, frequency, decay]
