@@ -24,10 +24,10 @@ from git import Repo
 # %% Input parameters
 
 # Repo path
-# repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
-#     'GitHub\\kolkowitz-nv-experiment-v1.0'
-repo_path = 'C:\\Users\\Matt\\' \
-    'GitHub\\kolkowitz-nv-experiment-v1.0'
+repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
+     'GitHub\\kolkowitz-nv-experiment-v1.0'
+#repo_path = 'C:\\Users\\Matt\\' \
+#    'GitHub\\kolkowitz-nv-experiment-v1.0'
 
 # List of branch names
 branches_to_archive = ['debug-function']
@@ -100,7 +100,7 @@ for branch in branches_to_archive:
         # Add a timestamp to the tagged branch
         inst = int(time.time())
         tagged_name = '{}-{}'.format(branch, inst)
-        repo_git.tag('archive/{}'.format(tagged_name), branch)
+        repo_git.tag(r'archive/{}'.format(tagged_name), branch)
         archived_branches.append(branch)
         tagged_branches.append(tagged_name)
 
@@ -110,20 +110,26 @@ if archived_branches == []:
 # Push archive tags to remote
 for branch in tagged_branches:
     try:
-        origin.push('archive/{}'.format(branch))
+        print('tagging')
+        origin.push(r'archive/{}'.format(branch))
+        print('tagged')
     except Exception as e:
         print(e)
 
 # Delete remote branches
 for branch in archived_branches:
     try:
+        print('deleting remote')
         origin.push(':{}'.format(branch))
+        print('deleted remote')
     except Exception as e:
         print(e)
 
 # Delete local branches
 for branch in archived_branches:
     try:
+        print('deleting local')
         repo_git.branch('-D', branch)
+        print('deleted local')
     except Exception as e:
         print(e)
