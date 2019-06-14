@@ -30,7 +30,7 @@ repo_path = 'C:\\Users\\Matt\\' \
     'GitHub\\kolkowitz-nv-experiment-v1.0'
 
 # List of branch names
-branches_to_archive = ['time-tagger-counter']
+branches_to_archive = ['debug-function']
 
 
 # %% Functions
