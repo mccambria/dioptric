@@ -67,6 +67,14 @@ def get_file_list(folder_name):
             file_list.append(file)
       
     return file_list
+
+def get_odds(max_number):
+    odd_numbers_list = []
+    for number in range(max_number):
+        if number % 2 != 0:
+            odd_numbers_list.append(number)
+    
+    return odd_numbers_list
     
 
 # %%
@@ -225,7 +233,18 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']
+                print(max_relaxation_time)
                 
+                # The data sets do not match up for the 800 us run of the (1,1)
+                # and (1,-1). The (1,-1) has twice the time steps as the (1,1).
+                # Thus, we will delete the time steps that do match up: ei all
+                # the odd indexed runs
+                if max_relaxation_time == 0.8:
+                    print(sig_counts)
+                    odds = get_odds(50)
+                    sig_counts = numpy.delete(sig_counts,(odds), axis = 1)
+                    ref_counts = numpy.delete(ref_counts,(odds), axis = 1)
+                    print(sig_counts)
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if plus_minus_bool == False:
@@ -234,6 +253,7 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
                     
                     plus_minus_ref_max_time = max_relaxation_time
                     plus_minus_bool = True
+                            
                 # If data has already been taken for this experiment, then check
                 # to see if this current data is the shorter or longer measurement,
                 # and either append before or after the prexisting data
@@ -607,17 +627,19 @@ def main(folder_name, num_bins_list = None):
     
 if __name__ == '__main__':
     
-    folder = 'nv4_2019_06_06_28MHz'
+#    folder = 'nv1_2019_05_10_28MHz'
+#    folder = 'nv1_2019_05_10_30MHz'
+    folder = 'nv1_2019_05_10_116MHz/up_to_date_files'
     # spit out average of multiple bins to check if problem with fitting
     
-#    relaxation_rate_analysis(folder, 5, True, True)
+#    relaxation_rate_analysis(folder, 1, True, True)
     
 #    # Specify the number of bins
-    num_bins_list = [1,2,4]
-    main(folder, num_bins_list)
+#    num_bins_list = [1,2,4, 5, 8, 10, 20]
+#    main(folder, num_bins_list)
     
     # Use the factors of the num_runs for the num_bins
-#    main(folder)
+    main(folder)
     
     
         
