@@ -14,6 +14,9 @@ the y-axis. A 1/f**2 line is also fit to the gamma rates to show the behavior.
 nv1_2019_05_10
 
 files used:
+    
+    
+2019-06-14_09-48-56_116.0_MHz_splitting_rate_analysis
 
 '''
 # %%
@@ -28,15 +31,15 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-splitting_list = [19.8, 32.7, 51.8, 97.8]
+splitting_list = [19.8, 28, 32.7, 51.8, 97.8, 116]
 
-omega_avg_list = [1.3, 1.50, 2.3, 1.7]
+omega_avg_list = [1.3, 1.7, 1.50, 2.3, 1.7, 1.21]
 
-omega_error_list = [0.3, 0.11, 0.5, 0.2]
+omega_error_list = [0.3, 0.4, 0.11, 0.5, 0.2, 0.13]
 
-gamma_avg_list = [135, 50, 13.1, 3.5]
+gamma_avg_list = [135, 71, 50, 13.1, 3.5, 4.6]
 
-gamma_error_list = [11, 3, 0.7, 0.2]
+gamma_error_list = [11, 7, 3, 0.7, 0.2, 0.3]
 
 # Try to fit the gamma to a 1/f^2
 
