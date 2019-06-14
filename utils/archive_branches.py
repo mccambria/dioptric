@@ -23,8 +23,14 @@ from git import Repo
 
 # %% Input parameters
 
+# Repo path
+# repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
+#     'GitHub\\kolkowitz-nv-experiment-v1.0'
+repo_path = 'C:\\Users\\Matt\\' \
+    'GitHub\\kolkowitz-nv-experiment-v1.0'
+
 # List of branch names
-branches_to_archive = ['debug-function']
+branches_to_archive = ['time-tagger-counter']
 
 
 # %% Functions
@@ -53,11 +59,10 @@ def parse_string_array(string_array):
 # %% Run the file
 
 
-# Get the repo
-repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
-    'GitHub\\kolkowitz-nv-experiment-v1.0'
+# Get the repo and the remote origin
 repo = Repo(repo_path)
 repo_git = repo.git
+origin = repo.remotes.origin
 
 
 # Get fully merged branches
@@ -78,39 +83,47 @@ print(local_branches)
 archived_branches = []
 tagged_branches = []
 for branch in branches_to_archive:
+    archive = True
     if branch == 'master':
         print("I'm sorry Dave. I'm afraid I can't archive the master branch.")
-        continue
+        archive = False
     elif branch not in local_branches:
         print('Branch {} does not exist locally for this repo. Skipping.'.format(branch))
-        continue
+        archive = False
     elif branch not in merged_branches:
         msg = 'Branch {} is not fully merged with master. Archive anyway? '
     else:
         msg = 'Archive branch {}? '
-    if input(msg.format(branch)).startswith('y'):
+    if not input(msg.format(branch)).startswith('y'):
+        archive = False
+    if archive:  # Change to if True to override checks
         # Add a timestamp to the tagged branch
         inst = int(time.time())
         tagged_name = '{}-{}'.format(branch, inst)
         repo_git.tag('archive/{}'.format(tagged_name), branch)
         archived_branches.append(branch)
         tagged_branches.append(tagged_name)
-        print('tagged')
-print('out of loop')
+
 if archived_branches == []:
     print('No branches archived.')
 
 # Push archive tags to remote
 for branch in tagged_branches:
-    print('tag pushing')
-    repo_git.push('origin', 'archive/{}'.format(branch))
+    try:
+        origin.push('archive/{}'.format(branch))
+    except Exception as e:
+        print(e)
 
 # Delete remote branches
 for branch in archived_branches:
-    print('remote branch deleting')
-    repo_git.push('origin', ':{}'.format(branch))
+    try:
+        origin.push(':{}'.format(branch))
+    except Exception as e:
+        print(e)
 
 # Delete local branches
 for branch in archived_branches:
-    print('local branch deleting')
-    repo_git.push('branch', '-D', branch)
+    try:
+        repo_git.branch('-D', branch)
+    except Exception as e:
+        print(e)
