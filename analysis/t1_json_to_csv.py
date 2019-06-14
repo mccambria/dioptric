@@ -85,6 +85,8 @@ if __name__ == '__main__':
                         'nv2_2019_04_30_101MHz',
                         'nv4_2019_06_06_28MHz']
     
-    for el in sub_folder_names:
+#    for el in sub_folder_names:
+#        
+#        convert(top_folder_name.format(el))
         
-        convert(top_folder_name.format(el))
+    convert(top_folder_name.format('nv13_2019_06_10_29.8MHz'))
