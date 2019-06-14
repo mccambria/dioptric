@@ -2,6 +2,11 @@
 """
 Created on Wed Jun 12 14:36:23 2019
 
+This file plots the relaxation rate data collected for the nv2_2019_04_30.
+
+The data is input manually, and plotted on a loglog plot with error bars along
+the y-axis. A 1/f**2 line is also fit to the gamma rates to show the behavior.
+
 @author: Aedan
 """
 
@@ -9,10 +14,10 @@ Created on Wed Jun 12 14:36:23 2019
 nv2_2019_04_30
 
 files used:
-    2019-06-12_11-05-18_29.1_MHz_splitting_rate_analysis
-    2019-06-12_11-10-31_44.8_MHz_splitting_rate_analysis
-    2019-06-12_11-26-16_56.2_MHz_splitting_rate_analysis
-    2019-06-12_11-24-34_56.9_MHz_splitting_rate_analysis
+    2019-06-13_15-45-15_29.1_MHz_splitting_rate_analysis
+    2019-06-13_15-46-41_44.8_MHz_splitting_rate_analysis
+    2019-06-13_15-47-36_56.2_MHz_splitting_rate_analysis
+    2019-06-13_15-48-16_56.9_MHz_splitting_rate_analysis
     2019-06-12_12-46-44_69.8_MHz_splitting_rate_analysis
     2019-06-12_12-49-10_85.1_MHz_splitting_rate_analysis
     2019-06-12_12-50-06_101.6_MHz_splitting_rate_analysis
@@ -33,11 +38,11 @@ splitting_list = [29.1, 44.8, 56.2, 56.9, 69.8, 85.1, 101.6]
 
 omega_avg_list = [0.39, 0.51, 0.32, 0.41, 0.33, 0.33, 0.27]
 
-omega_error_list = [0.09, 0.13, 0.08, 0.09, 0.06, 0.06, 0.04]
+omega_error_list = [0.09, 0.12, 0.08, 0.09, 0.06, 0.06, 0.04]
 
 gamma_avg_list = [20.5, 7.2, 3.9, 3.9, 2.48, 3.0, 1.6]
 
-gamma_error_list = [0.9, 0.4, 0.3, 0.3, 0.17, 0.3, 0.3]
+gamma_error_list = [0.9, 0.4, 0.3, 0.2, 0.17, 0.3, 0.3]
 
 # Try to fit the gamma to a 1/f^2
 

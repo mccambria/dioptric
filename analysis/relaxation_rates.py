@@ -264,22 +264,31 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
         
     i = 0
     
+    # For any number of bins except the maximum amount, we want to slice the
+    # arrays from [i:i+bin_size-1]. However, this doesn't work for the maximum
+    # amount of bins, when the bin_size is 1. In that case, we do want to take
+    # slices [i:i+bin_size]
+    if num_bins == num_runs:
+        slice_size = bin_size
+    else:
+        slice_size = bin_size - 1
+    
     while i < (num_runs):
         if doPlot:
             fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
         
         #Fit to the (0,0) - (0,1) data to find Omega
         zero_zero_avg_sig_counts =  \
-            numpy.average(zero_zero_sig_counts[i:i+bin_size - 1, ::], axis=0)
+            numpy.average(zero_zero_sig_counts[i:i+slice_size, ::], axis=0)
         zero_zero_avg_ref_counts =  \
-            numpy.average(zero_zero_ref_counts[i:i+bin_size- 1, ::], axis=0)
+            numpy.average(zero_zero_ref_counts[i:i+slice_size, ::], axis=0)
         
         zero_zero_norm_avg_sig = zero_zero_avg_sig_counts / zero_zero_avg_ref_counts
                
         zero_plus_avg_sig_counts = \
-            numpy.average(zero_plus_sig_counts[i:i+bin_size - 1, ::], axis=0)
+            numpy.average(zero_plus_sig_counts[i:i+slice_size, ::], axis=0)
         zero_plus_avg_ref_counts = \
-            numpy.average(zero_plus_ref_counts[i:i+bin_size - 1, ::], axis=0)
+            numpy.average(zero_plus_ref_counts[i:i+slice_size, ::], axis=0)
         
         zero_plus_norm_avg_sig = zero_plus_avg_sig_counts / zero_plus_avg_ref_counts 
     
@@ -340,16 +349,16 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
 # to fit
         
         plus_plus_avg_sig_counts = \
-            numpy.average(plus_plus_sig_counts[i:i+bin_size - 1, ::], axis=0)
+            numpy.average(plus_plus_sig_counts[i:i+slice_size, ::], axis=0)
         plus_plus_avg_ref_counts = \
-            numpy.average(plus_plus_ref_counts[i:i+bin_size - 1, ::], axis=0)
+            numpy.average(plus_plus_ref_counts[i:i+slice_size, ::], axis=0)
         
         plus_plus_norm_avg_sig = plus_plus_avg_sig_counts / plus_plus_avg_ref_counts
                
         plus_minus_avg_sig_counts = \
-            numpy.average(plus_minus_sig_counts[i:i+bin_size - 1, ::], axis=0)
+            numpy.average(plus_minus_sig_counts[i:i+slice_size, ::], axis=0)
         plus_minus_avg_ref_counts = \
-            numpy.average(plus_minus_ref_counts[i:i+bin_size - 1, ::], axis=0)
+            numpy.average(plus_minus_ref_counts[i:i+slice_size, ::], axis=0)
         
         plus_minus_norm_avg_sig = plus_minus_avg_sig_counts / plus_minus_avg_ref_counts
         
@@ -596,17 +605,19 @@ def main(folder_name, num_bins_list = None):
     
 if __name__ == '__main__':
     
-    folder = 'nv2_2019_04_30_101MHz'
+    folder = 'nv1_2019_05_10_28MHz'
+#    folder = 'nv1_2019_05_10_30MHz'
+#    folder = 'nv1_2019_05_10_116MHz'
     # spit out average of multiple bins to check if problem with fitting
     
 #    relaxation_rate_analysis(folder, 1, True, True)
     
 #    # Specify the number of bins
-    num_bins_list = [1,2,4, 5, 8, 10]
-    main(folder, num_bins_list)
+#    num_bins_list = [1,2,4, 5, 8, 10, 20]
+#    main(folder, num_bins_list)
     
     # Use the factors of the num_runs for the num_bins
-#    main(folder)
+    main(folder)
     
     
         
