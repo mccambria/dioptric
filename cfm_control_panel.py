@@ -24,6 +24,7 @@ import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.ramsey as ramsey
+import debug.test_major_routines as test_major_routines
 
 
 # %% Minor Routines
@@ -96,7 +97,7 @@ def do_g2_measurement(name, nv_sig, nd_filter, apd_a_index, apd_b_index):
     run_time = 60 * 10
 #    run_time = 60 * 20
     
-    diff_window = 150 * 10**3  # 150 ns in ps
+    diff_window = 150  # ns
     
     with labrad.connect() as cxn:
         g2_measurement.main(cxn, nv_sig, nd_filter, run_time, diff_window,
@@ -198,7 +199,14 @@ def do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices):
             if g2_zero < 0.5:
                 resonance.main(cxn, nv_sig, nd_filter, apd_indices, 2.87, 0.1,
                                num_steps, num_runs, uwave_power, name=name)
+                
+                
+def do_test_major_routines(name, nv_sig, nd_filter, apd_indices):
+    """Run this whenver you make a significant code change. It'll make sure
+    you didn't break anything in the major routines.
+    """
     
+    test_major_routines.main(name, nv_sig, nd_filter, apd_indices)
 
 
 # %% Script Code
@@ -215,8 +223,9 @@ if __name__ == '__main__':
 
     name = 'ayrton12'  # Sample name
     
-#    nd_filter = 2.0
-    nd_filter = 1.5
+    nd_filter = 2.0
+#    nd_filter = 1.5
+#    nd_filter = 1.0
 
 #    apd_indices = [0]
     apd_indices = [0, 1]
@@ -257,7 +266,9 @@ if __name__ == '__main__':
 #    nv13_2019_06_10 = nv_sig_list[13]
 #    nv13_2019_06_10 = [-0.373, 0.279, z_voltage, 44, background_count_rate]  # 6/12 3:41
 #    nv13_2019_06_10 = [-0.376, 0.280, 51.1, 40, background_count_rate]  # 6/12 4:29
-    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 40, background_count_rate]  # 6/12 17:27 before starting T1
+#    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 40, background_count_rate]  # 6/12 17:27 before starting T1
+#    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 71, background_count_rate]  # ND 1.0
+    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 15, background_count_rate]  # ND 2.0
     
     # For ND 2.0
 #    nv12_2019_06_10 = [*nv_sig_list[12][0:3], 20, 2]
@@ -303,22 +314,14 @@ if __name__ == '__main__':
     # For splittings < 75 MHz
     
     # ~13 hours
-#    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
-#                                [plus_to_minus,  [0, 500*10**3], 41,  1 * 10**4],
-#                                [plus_to_plus,   [0, 100*10**3], 51, 2 * 10**4],
-#                                [plus_to_plus,   [0, 500*10**3], 41,  1 * 10**4],
-#                                [plus_to_zero,   [0, 500*10**3], 41, 1 * 10**4],
-#                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
-#                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
+    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
+                                [plus_to_minus,  [0, 500*10**3], 41,  1 * 10**4],
+                                [plus_to_plus,   [0, 100*10**3], 51, 2 * 10**4],
+                                [plus_to_plus,   [0, 500*10**3], 41,  1 * 10**4],
+                                [plus_to_zero,   [0, 500*10**3], 41, 1 * 10**4],
+                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
+                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
     
-    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 3, 2 * 10**3],
-                                [plus_to_minus,  [0, 500*10**3], 3,  1 * 10**3],
-                                [plus_to_plus,   [0, 100*10**3], 3, 2 * 10**3],
-                                [plus_to_plus,   [0, 500*10**3], 3,  1 * 10**3],
-                                [plus_to_zero,   [0, 500*10**3], 3, 1 * 10**3],
-                                [zero_to_plus,   [0, 100*10**3], 3, 1 * 10**3],
-                                [zero_to_zero,   [0, 100*10**3], 3, 1 * 10**3]])
-
     # For splittings > 75 MHz
     
     # ~18 hours
@@ -336,11 +339,9 @@ if __name__ == '__main__':
 #                                [zero_to_zero,   [0, 2000*10**3], 31, 1 * 10**4]])
     
     # Array for the parameters of a given NV, formatted:
-    # [nv coordinates, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus,
-    #                            uwave_pi_pulse_minus]
-    #   uwave_MINUS should be associated with the HP signal generator
-#    params_array = numpy.array([[nv2_2019_04_30, 2.8380, 96, 2.8942, 102, 62]])
-    params_array = numpy.array([[nv13_2019_06_10, 2.8241, 96, 2.8552, 142]])
+    # [nv_sig, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus, uwave_pi_pulse_minus]
+    # uwave_MINUS should be associated with the HP signal generator
+    params_array = numpy.array([[nv13_2019_06_10, 2.8247, 96, 2.8545, 135]])
 
     # %% Functions to run
     
@@ -367,36 +368,36 @@ if __name__ == '__main__':
 #            do_resonance(name, nv_sig, nd_filter, apd_indices)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.839, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.878, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8241, 0)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8552, 1)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8247, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8545, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
+#            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
         
-          
 #         %% FULL CONTROL T1
 
-#        for nv_ind in range(len(params_array)):
-#            
-#            nv_sig = params_array[nv_ind, 0]
-#            
-#            uwave_freq_plus = params_array[nv_ind, 1]
-#            uwave_pi_pulse_plus = params_array[nv_ind, 2]
-#            uwave_freq_minus = params_array[nv_ind, 3]
-#            uwave_pi_pulse_minus = params_array[nv_ind, 4]
-#            
-#            for exp_ind in range(len(t1_exp_array)):
-##            for exp_ind in [2,3,4,5,6,7]:
-#            
-#                init_read_list = t1_exp_array[exp_ind, 0]
-#                relaxation_time_range = t1_exp_array[exp_ind, 1]
-#                num_steps = t1_exp_array[exp_ind, 2]
-#                num_reps = t1_exp_array[exp_ind, 3]
-#        
-#                do_t1_double_quantum(name, nv_sig, nd_filter,
-#                              apd_indices, 
-#                              uwave_freq_plus, uwave_freq_minus, 
-#                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-#                              relaxation_time_range, num_steps, num_reps,
-#                              init_read_list)                
+        for nv_ind in range(len(params_array)):
+            
+            nv_sig = params_array[nv_ind, 0]
+            
+            uwave_freq_plus = params_array[nv_ind, 1]
+            uwave_pi_pulse_plus = params_array[nv_ind, 2]
+            uwave_freq_minus = params_array[nv_ind, 3]
+            uwave_pi_pulse_minus = params_array[nv_ind, 4]
+            
+            for exp_ind in range(len(t1_exp_array)):
+#            for exp_ind in [2,3,4,5,6,7]:
+            
+                init_read_list = t1_exp_array[exp_ind, 0]
+                relaxation_time_range = t1_exp_array[exp_ind, 1]
+                num_steps = t1_exp_array[exp_ind, 2]
+                num_reps = t1_exp_array[exp_ind, 3]
+        
+                do_t1_double_quantum(name, nv_sig, nd_filter,
+                              apd_indices, 
+                              uwave_freq_plus, uwave_freq_minus, 
+                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                              relaxation_time_range, num_steps, num_reps,
+                              init_read_list)                
                        
 
     finally:

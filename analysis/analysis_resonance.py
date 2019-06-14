@@ -49,7 +49,7 @@ def fit_resonance(save_file_type):
     
     folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance'
 #    file_name = '2019-06-07_16-24-57_ayrton12.txt'
-    file_name = '2019-06-12_16-43-58_ayrton12.txt'
+    file_name = '2019-06-13_16-29-22_ayrton12.txt'
     open_file_name = '{}/{}'.format(folder_name, file_name)
     
     with open(open_file_name) as json_file:

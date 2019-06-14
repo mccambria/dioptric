@@ -117,10 +117,23 @@ def main(cxn, coords, nd_filter, run_time, readout, apd_indices,
     # %% Clean up and report the data
 
     cxn.apd_tagger.stop_tag_stream()
-
-    average = numpy.mean(samples[0:write_pos[0]]) / (10**3 * readout_sec)
-    print('average: {0:d}'.format(int(average)))
-    st_dev = numpy.std(samples[0:write_pos[0]]) / (10**3 * readout_sec)
-    print('standard deviation: {0:.3f}'.format(st_dev))
+    
+    
+    # Replace x/0=inf with 0
+    try:
+        average = numpy.mean(samples[0:write_pos[0]]) / (10**3 * readout_sec)
+    except RuntimeWarning as e:
+        print(e)
+        inf_mask = numpy.isinf(average)
+        # Assign to 0 based on the passed conditional array
+        average[inf_mask] = 0
+        
+    try:
+        st_dev = numpy.std(samples[0:write_pos[0]]) / (10**3 * readout_sec)
+    except RuntimeWarning as e:
+        print(e)
+        inf_mask = numpy.isinf(st_dev)
+        # Assign to 0 based on the passed conditional array
+        st_dev[inf_mask] = 0
 
     return average, st_dev
