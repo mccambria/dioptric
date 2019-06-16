@@ -559,12 +559,12 @@ def main(folder_name, num_bins_list = None):
     opti_params, cov_arr = curve_fit(sqrt_root, num_bins_list, 
                                      omega_stdev_list, p0 = (0.1))
     omega_stdev = sqrt_root(1, opti_params[0])
-    print('Value = {}, std dev = {}'.format(omega_value_one_bin, omega_stdev))
+    print('Omega Value = {}, std dev = {}'.format(omega_value_one_bin, omega_stdev))
     
     opti_params, cov_arr = curve_fit(sqrt_root, num_bins_list, 
                                      gamma_stdev_list, p0 = (1))
     gamma_stdev = sqrt_root(1, opti_params[0])
-    print('Value = {}, std dev = {}'.format(gamma_value_one_bin, gamma_stdev))
+    print('Gamma Value = {}, std dev = {}'.format(gamma_value_one_bin, gamma_stdev))
     
     time_stamp = tool_belt.get_time_stamp()
     raw_data = {'time_stamp': time_stamp,
