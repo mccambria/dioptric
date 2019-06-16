@@ -24,10 +24,10 @@ from git import Repo
 # %% Input parameters
 
 # Repo path
-repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
-     'GitHub\\kolkowitz-nv-experiment-v1.0'
-#repo_path = 'C:\\Users\\Matt\\' \
-#    'GitHub\\kolkowitz-nv-experiment-v1.0'
+# repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
+#      'GitHub\\kolkowitz-nv-experiment-v1.0'
+repo_path = 'C:\\Users\\Matt\\' \
+    'GitHub\\kolkowitz-nv-experiment-v1.0'
 
 # List of branch names
 branches_to_archive = ['debug-function']
