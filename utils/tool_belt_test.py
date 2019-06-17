@@ -326,22 +326,9 @@ def ask_open_file(file_path):
                                           title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) )
     return file_name
 
-def get_file_list(directory, folder_name, file_ends_with):
-    '''
-    Creates a list of all the files in the folder for one experiment, based on
-    the ending file name
-    '''
-
-    file_list = []
-
-    for file in os.listdir('{}/{}'.format(directory, folder_name)):
-        if file.endswith(file_ends_with):
-            file_list.append(file)
-
-    return file_list
 
 def get_raw_data(source_name, file_name, sub_folder_name=None,
-                 data_dir='E:\Shared drives\Kolkowitz Lab Group\nvdata'):
+                 data_dir='E://Shared drives//Kolkowitz Lab Group//nvdata'):
     """Returns a dictionary containing the json object from the specified
     raw data file.
     """
@@ -359,7 +346,8 @@ def get_raw_data(source_name, file_name, sub_folder_name=None,
     with open(file_path) as file:
         return json.load(file)
 
-# %%  Save utils
+
+# %% Save utils
 
 
 def get_branch_name():
@@ -637,3 +625,4 @@ def reset_state():
     if check_safe_stop_alive():
         print("\n\nRoutine complete. Press enter to exit.")
         poll_safe_stop()
+
