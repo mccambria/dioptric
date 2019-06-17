@@ -22,7 +22,7 @@ Created on Sun Jun 16 11:38:17 2019
 
 import majorroutines.image_sample as image_sample
 import majorroutines.optimize as optimize
-import utils.tool_belt_test as tool_belt
+import utils.tool_belt as tool_belt
 import cv2
 import utils.image_processing as image_processing
 from matplotlib import pyplot as plt

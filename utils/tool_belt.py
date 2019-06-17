@@ -340,6 +340,7 @@ def get_file_list(directory, folder_name, file_ends_with):
 
     return file_list
 
+
 def get_raw_data(source_name, file_name, sub_folder_name=None,
                  data_dir='E:\Shared drives\Kolkowitz Lab Group\nvdata'):
     """Returns a dictionary containing the json object from the specified
@@ -358,6 +359,7 @@ def get_raw_data(source_name, file_name, sub_folder_name=None,
 
     with open(file_path) as file:
         return json.load(file)
+    
 
 # %%  Save utils
 
