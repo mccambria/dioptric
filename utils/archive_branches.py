@@ -30,7 +30,7 @@ repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
 #    'GitHub\\kolkowitz-nv-experiment-v1.0'
 
 # List of branch names
-branches_to_archive = ['drift-from-reference-image']
+branches_to_archive = ['debug-function']
 
 
 # %% Functions
