@@ -12,10 +12,11 @@ Created on Sun Jun 16 11:38:17 2019
 
 
 import majorroutines.image_sample as image_sample
-import utils.tool_belt as tool_belt
+import utils.tool_belt_test as tool_belt
 import cv2
 import utils.image_processing as image_processing
 from matplotlib import pyplot as plt
+import numpy
 
 
 # %% Main
@@ -45,8 +46,8 @@ def main(cxn, ref_file_name, nd_filter, apd_indices):
     # %% Calculate the shift
 
     # Get the image arrays
-    ref_img_array = ref_data['img_array']
-    new_img_array = new_data['img_array']
+    ref_img_array = numpy.array(ref_data['img_array'])
+    new_img_array = numpy.array(new_data['img_array'])
 
     # convert to 8 bit
     ref_img_array = image_processing.convert_to_8bit(ref_img_array)

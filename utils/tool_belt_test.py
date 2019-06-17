@@ -328,7 +328,7 @@ def ask_open_file(file_path):
 
 
 def get_raw_data(source_name, file_name, sub_folder_name=None,
-                 data_dir='E:\Shared drives\Kolkowitz Lab Group\nvdata'):
+                 data_dir='E://Shared drives//Kolkowitz Lab Group//nvdata'):
     """Returns a dictionary containing the json object from the specified
     raw data file.
     """
