@@ -27,7 +27,6 @@ of num_runs, and can only handle two data sets of the same experiment (ie +1 to
 # %% Imports
 
 import numpy
-import json
 from scipy import asarray as ar, exp
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
@@ -64,15 +63,13 @@ def main(folder_name, num_bins_list = None):
         # Get the number of runs to create the empty arrays from the first file in 
         # the list. This requires all the relaxation measurements to have the same
         # num_runs
-        file = file_list[0]
         for file in file_list:
-            with open('{}/{}/{}'.format(directory, folder_name, file)) as json_file:
-                try:
-                    data = json.load(json_file)
-                    num_runs = data['num_runs']
-                    
-                except Exception:
-                    continue
+            data = tool_belt.get_raw_data(data_folder, file[:-4], folder_name)
+    
+            try:
+                num_runs = data['num_runs']
+            except Exception:
+                continue
         
         # Get the num_bins to use based on the factors of the number of runs
         
@@ -169,12 +166,16 @@ def main(folder_name, num_bins_list = None):
                 'gamma_stdev_list-units': 'kHz'
                 }
     
+    data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
+    
     file_name = time_stamp + '_' + str('%.1f'%splitting_MHz) + \
                 '_MHz_splitting_rate_analysis' 
-    file_path = '{}/{}/{}'.format(directory, folder_name, file_name)
+    file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
+                                                         file_name)
     
-    with open(file_path + '.txt', 'w') as file:
-        json.dump(raw_data, file, indent=2)
+    tool_belt.save_raw_data(raw_data, file_path)
+#    with open(file_path + '.txt', 'w') as file:
+#        json.dump(raw_data, file, indent=2)
         
         
 # %% Run the file
