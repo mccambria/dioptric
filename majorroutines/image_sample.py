@@ -279,17 +279,20 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     # %% Set up the APD
 
     cxn.apd_tagger.start_tag_stream(apd_indices)
+    
+    # %% Set up our raw data objects
+    
+    # Initialize imgArray and set all values to NaN so that unset values
+    # are not interpreted as 0 by matplotlib's colobar
+    img_array = numpy.empty((x_num_steps, y_num_steps))
+    img_array[:] = numpy.nan
+    img_write_pos = []
 
     # %% Set up the image display
 
     if plot_data:
 
-        # Initialize imgArray and set all values to NaN so that unset values
-        # are not interpreted as 0 by matplotlib's colobar
-        img_array = numpy.empty((x_num_steps, y_num_steps))
-        img_array[:] = numpy.nan
         img_array_kcps = numpy.copy(img_array)
-        img_write_pos = []
 
         # For the image extent, we need to bump out the min/max x/y by half the
         # pixel size in each direction so that the center of each pixel properly
@@ -328,8 +331,8 @@ def main(cxn, coords, nd_filter, x_range, y_range,
             # This is a horribly inefficient way of getting kcps, but it
             # is easy and readable and probably fine up to some resolution
             # we likely will never try
-            img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
             if plot_data:
+                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
                 tool_belt.update_image_figure(fig, img_array_kcps)
             num_read_so_far += num_new_samples
 
@@ -345,6 +348,8 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     cxn.apd_tagger.stop_tag_stream()
 
     # %% Save the data
+
+    timestamp = tool_belt.get_time_stamp()
 
     rawData = {'timestamp': timestamp,
                'name': name,
@@ -366,8 +371,6 @@ def main(cxn, coords, nd_filter, x_range, y_range,
                'img_array-units': 'counts'}
 
     if save_data:
-
-        timestamp = tool_belt.get_time_stamp()
 
         filePath = tool_belt.get_file_path(__file__, timestamp, name)
         tool_belt.save_raw_data(rawData, filePath)

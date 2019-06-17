@@ -24,6 +24,7 @@ import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.ramsey as ramsey
+import minorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 
 
@@ -201,6 +202,15 @@ def do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices):
                                num_steps, num_runs, uwave_power, name=name)
                 
                 
+def do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices):
+    
+#    ref_file_name = '2019-06-10_15-26-39_ayrton12'  # 150 x 150
+    ref_file_name = '2019-06-10_15-22-25_ayrton12'  # 60 x 60
+    
+    with labrad.connect() as cxn:
+        set_drift_from_reference_image.main(cxn, ref_file_name, nv_sig, nd_filter, apd_indices)
+                
+                
 def do_test_major_routines(name, nv_sig, nd_filter, apd_indices):
     """Run this whenver you make a significant code change. It'll make sure
     you didn't break anything in the major routines.
@@ -269,7 +279,8 @@ if __name__ == '__main__':
 #    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 40, background_count_rate]  # 6/12 17:27 before starting T1
 #    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 71, background_count_rate]  # ND 1.0
 #    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 40, background_count_rate]  # ND 1.5
-    nv13_2019_06_10 = nv_sig_list[13]  # ND 1.5
+#    nv13_2019_06_10 = nv_sig_list[13]  # ND 1.5
+    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 32, 3]  # ND 1.5
 #    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 15, background_count_rate]  # ND 2.0
     
     # For ND 2.0
@@ -361,7 +372,7 @@ if __name__ == '__main__':
 #        do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices)
             
         # Routines that expect single NVs
-#        for nv_sig in nv_sig_list:
+        for nv_sig in nv_sig_list:
 #            coords = nv_sig[0:3]
 #            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
 #            do_optimize(name, nv_sig, nd_filter, apd_indices)
@@ -373,33 +384,34 @@ if __name__ == '__main__':
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8247, 0)
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8545, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
+            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
         
 #         %% FULL CONTROL T1
 
-        for nv_ind in range(len(params_array)):
-            
-            nv_sig = params_array[nv_ind, 0]
-            
-            uwave_freq_plus = params_array[nv_ind, 1]
-            uwave_pi_pulse_plus = params_array[nv_ind, 2]
-            uwave_freq_minus = params_array[nv_ind, 3]
-            uwave_pi_pulse_minus = params_array[nv_ind, 4]
-            
-            for exp_ind in range(len(t1_exp_array)):
-#            for exp_ind in [2,3,4,5,6,7]:
-            
-                init_read_list = t1_exp_array[exp_ind, 0]
-                relaxation_time_range = t1_exp_array[exp_ind, 1]
-                num_steps = t1_exp_array[exp_ind, 2]
-                num_reps = t1_exp_array[exp_ind, 3]
-        
-                do_t1_double_quantum(name, nv_sig, nd_filter,
-                              apd_indices, 
-                              uwave_freq_plus, uwave_freq_minus, 
-                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                              relaxation_time_range, num_steps, num_reps,
-                              init_read_list)                
+#        for nv_ind in range(len(params_array)):
+#            
+#            nv_sig = params_array[nv_ind, 0]
+#            
+#            uwave_freq_plus = params_array[nv_ind, 1]
+#            uwave_pi_pulse_plus = params_array[nv_ind, 2]
+#            uwave_freq_minus = params_array[nv_ind, 3]
+#            uwave_pi_pulse_minus = params_array[nv_ind, 4]
+#            
+#            for exp_ind in range(len(t1_exp_array)):
+##            for exp_ind in [2,3,4,5,6,7]:
+#            
+#                init_read_list = t1_exp_array[exp_ind, 0]
+#                relaxation_time_range = t1_exp_array[exp_ind, 1]
+#                num_steps = t1_exp_array[exp_ind, 2]
+#                num_reps = t1_exp_array[exp_ind, 3]
+#        
+#                do_t1_double_quantum(name, nv_sig, nd_filter,
+#                              apd_indices, 
+#                              uwave_freq_plus, uwave_freq_minus, 
+#                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+#                              relaxation_time_range, num_steps, num_reps,
+#                              init_read_list)                
                        
 
     finally:
