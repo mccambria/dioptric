@@ -51,8 +51,11 @@ def do_image_sample(name, nv_sig, nd_filter, apd_indices):
 #    num_scan_steps = 150
 #    num_scan_steps = 200
     
-    scan_range = 0.2
-    num_scan_steps = 60
+#    scan_range = 0.2
+#    num_scan_steps = 60
+    
+    scan_range = 0.10
+    num_scan_steps = 30
 
     with labrad.connect() as cxn:
         # For now we only support square scans so pass scan_range twice
@@ -223,8 +226,8 @@ if __name__ == '__main__':
 
     name = 'ayrton12'  # Sample name
     
-    nd_filter = 2.0
-#    nd_filter = 1.5
+#    nd_filter = 2.0
+    nd_filter = 1.5
 #    nd_filter = 1.0
 
     apd_indices = [0]
@@ -263,14 +266,18 @@ if __name__ == '__main__':
                [-0.415, 0.398, z_voltage, 33, background_count_rate],
                [-0.393, 0.484, z_voltage, 60, background_count_rate]]
     
+    # Before 6/13
 #    nv13_2019_06_10 = nv_sig_list[13]
 #    nv13_2019_06_10 = [-0.373, 0.279, z_voltage, 44, background_count_rate]  # 6/12 3:41
 #    nv13_2019_06_10 = [-0.376, 0.280, 51.1, 40, background_count_rate]  # 6/12 4:29
 #    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 40, background_count_rate]  # 6/12 17:27 before starting T1
 #    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 71, background_count_rate]  # ND 1.0
 #    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 40, background_count_rate]  # ND 1.5
-    nv13_2019_06_10 = nv_sig_list[13]  # ND 1.5
 #    nv13_2019_06_10 = [-0.379, 0.278, 50.5, 15, background_count_rate]  # ND 2.0
+    
+    # After 6/13
+    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 32, 3]  # ND 1.5
+#    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 12, 3]  # ND 2.0
     
     # For ND 2.0
 #    nv12_2019_06_10 = [*nv_sig_list[12][0:3], 20, 2]
@@ -343,7 +350,7 @@ if __name__ == '__main__':
     # Array for the parameters of a given NV, formatted:
     # [nv_sig, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus, uwave_pi_pulse_minus]
     # uwave_MINUS should be associated with the HP signal generator
-    params_array = numpy.array([[nv13_2019_06_10, 2.8247, 96, 2.8545, 135]])
+    params_array = numpy.array([[nv13_2019_06_10, 2.8082, 121, 2.8806, 96]])
 
     # %% Functions to run
     
@@ -352,26 +359,27 @@ if __name__ == '__main__':
         # Routines that don't need an NV
 #        set_xyz_zero()
 #        set_xyz()
-#        tool_belt.set_drift([0.0, 0.0, 0.0])
-#        tool_belt.set_drift([-0.004, -0.001, -0.3])
-#        print(tool_belt.get_drift())
+#        tool_belt.set_drift([-0.006, 0.002, 0.0])
         
-        # Routines that expect lists
+        # Routines that expect listss
 #        optimize_list(name, cxn, nv_sig_list, nd_filter, apd_indices)
 #        do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices)
             
         # Routines that expect single NVs
 #        for nv_sig in nv_sig_list:
-#            coords = nv_sig[0:3]
-#            do_image_sample(name, coords, nd_filter, scan_range, num_scan_steps, apd_indices)
+#            coords = [-0.3, 0.3, z_voltage]
+#            coords = (numpy.array(nv_sig[0:3]) + numpy.array(tool_belt.get_drift())).tolist()
+#            nv_sig = [*coords, *nv_sig[3:]]
+#            do_image_sample(name, coords, nd_filter, apd_indices)
 #            do_optimize(name, nv_sig, nd_filter, apd_indices)
 #            do_stationary_count(name, nv_sig, nd_filter, apd_indices)
 #            do_g2_measurement(name, nv_sig, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, nv_sig, nd_filter, apd_indices)
+#            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.845, freq_range=0.12)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.839, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.878, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8247, 0)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8545, 1)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8082, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8806, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
         

@@ -14,37 +14,25 @@ frequency range
 """
 # %% Imports
 
-import os
 import numpy
 import json
-from scipy import asarray as ar,exp
-from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
+from numpy import exp
 
 # %% Open the file with JSON
 
 
 def fit_resonance(save_file_type):
-        
-    print('Select file \n...')
     
-    from tkinter import Tk
-    from tkinter import filedialog 
+    minFreqGuess = numpy.empty([2])
     
-    root = Tk()
-    root.withdraw()
-    root.focus_force()
-    open_file_name = filedialog.askopenfilename(initialdir = "E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance", 
-                title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) ) 
+    minFreqGuess[0] = 2.809
+    second_freq_guess = 2.882
     
-    if open_file_name == '':
-        print('No file selected')
-    else: 
-        file_name_base = open_file_name[:-4]
-        
-        open_file_name = file_name_base + '.txt'  
-        print('File selected: ' + file_name_base + '.svg')
+    folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance/'
+    file_name = '2019-06-15_11-29-18_ayrton12.txt'
+    open_file_name = '{}{}'.format(folder_dir, file_name)
     
     with open(open_file_name) as json_file:
         data = json.load(json_file)
@@ -102,16 +90,15 @@ def fit_resonance(save_file_type):
 #        print(minFreqGuess)
     
 # %% Ask user input for guesses on the two resonances. 
-    minFreqGuess = numpy.empty([2])
 
-    msg_first_resonance = 'Need two init params for resonance centers.  ' \
-        'First resonance = '
-    minFreqGuess[0] = input(msg_first_resonance)
-    
-    msg_second_resonance = '(if one resonance, input \'n\')  ' \
-        'Second resonance = '
-        
-    second_freq_guess = input(msg_second_resonance)
+#    msg_first_resonance = 'Need two init params for resonance centers.  ' \
+#        'First resonance = '
+#    minFreqGuess[0] = input(msg_first_resonance)
+#    
+#    msg_second_resonance = '(if one resonance, input \'n\')  ' \
+#        'Second resonance = '
+#        
+#    second_freq_guess = input(msg_second_resonance)
     
     if second_freq_guess == 'n':
         minFreqGuess[1] = minFreqGuess[0]  

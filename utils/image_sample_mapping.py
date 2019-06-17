@@ -81,6 +81,7 @@ def generate_mapping_files(sample_name, micrometer_coords,
     
     file_name_ext = '{}.txt'.format(file_name)
     fig = illustrate_mapping(file_name_ext)
+    
     tool_belt.save_figure(fig, file_path)
 
 
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     # Generate the mapping files
     sample_name = 'ayrton12'
     micrometer_coords = [208.3, 277.3, 146.8]
-    image_sample_file_name = ''
+    image_sample_file_name = '2019-06-10_15-26-39_ayrton12.txt'
     nd_filter = 1.5
     z_voltage = 50.0
     background_count_rate = None
@@ -129,6 +130,7 @@ if __name__ == '__main__':
                [-0.393, 0.484, z_voltage, 60, background_count_rate]]
     
 #    nv_sig_list = [[*nv, None, None] for nv in nv_list]
+#    nv_sig_list = [nv_sig_list[13]]
     
-    generate_mapping_files(sample_name, micrometer_coords,
-                           image_sample_file_name, nv_sig_list)
+#    generate_mapping_files(sample_name, micrometer_coords,
+#                           image_sample_file_name, nv_sig_list)

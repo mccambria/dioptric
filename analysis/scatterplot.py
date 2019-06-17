@@ -18,12 +18,13 @@ def AbsCos(angle, offset, amp, phase):
 
 # %% Scatter raw data
 
-angles = [0, 30, 60, 90, 120, 150, 170]
-splittings = [29, 26, 14, 8, 22, 34, 39]
+angles = [180, 216, 240, 270, 300, 260]
+splittings = [16, 52, 66, 70, 68, 69]
 
 fig, ax = plt.subplots()
 
 ax.set_title('ESR splitting versus magnet angle')
+
 ax.set_xlabel('Angle (deg)')
 ax.set_ylabel('Splitting (MHz)')
 
@@ -32,15 +33,15 @@ ax.scatter(angles, splittings, c='r')
 # %% Fitting
 
 offset = 0
-amp = 110
-phase = 10
+amp = 70
+phase = 90
 
 popt, pcov = curve_fit(AbsCos, angles, splittings, 
                        p0=[offset, amp, phase])
 
 print(popt)
 
-x_vals = numpy.linspace(min(angles), 360, 1000)
+x_vals = numpy.linspace(0, 360, 1000)
 y_vals = AbsCos(x_vals, *popt)
 
 ax.plot(x_vals, y_vals)

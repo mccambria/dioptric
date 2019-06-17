@@ -373,5 +373,5 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
 
 if __name__ == '__main__':
-    file_name = '2019-06-07_14-20-27_ayrton12.txt'
+    file_name = '2019-06-10_15-26-39_ayrton12.txt'
     create_figure(file_name)

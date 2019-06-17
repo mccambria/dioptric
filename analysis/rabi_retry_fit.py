@@ -20,11 +20,11 @@ import utils.tool_belt as tool_belt
 
 
 folder_dir = 'E:\\Shared drives\\Kolkowitz Lab Group\\nvdata\\rabi\\'
-file_name = '2019-06-13_17-18-17_ayrton12.txt'
+file_name = '2019-06-15_11-51-32_ayrton12.txt'
 
 # Estimated fit parameters
-offset = 0.95
-amplitude = 0.05
+offset = 0.90
+amplitude = 0.10
 frequency = 1/200
 decay = 1000
 
