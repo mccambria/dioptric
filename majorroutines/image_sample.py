@@ -191,9 +191,9 @@ def reformat_plot(colorMap, save_file_type):
 
         # Save the file in the same file directory
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
-        
+
 def create_figure(file_name, folder_name='E:/Shared drives/Kolkowitz Lab Group/nvdata/image_sample'):
-    
+
     with open('{}/{}'.format(folder_name, file_name)) as file:
         data = json.load(file)
         x_range = data['x_range']
@@ -223,18 +223,18 @@ def create_figure(file_name, folder_name='E:/Shared drives/Kolkowitz Lab Group/n
     # Redraw the canvas and flush the changes to the backend
     fig.canvas.draw()
     fig.canvas.flush_events()
-    
+
     return fig
-    
+
 
     # %%
 
 def main(cxn, coords, nd_filter, x_range, y_range,
          num_steps, apd_indices,
-         name='untitled', continuous=False):
+         name='untitled', continuous=False, save_data=True, plot_data=True):
 
     # %% Some initial calculations
-    
+
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_params['continuous_readout_ns']
 
@@ -282,22 +282,24 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
     # %% Set up the image display
 
-    # Initialize imgArray and set all values to NaN so that unset values
-    # are not interpreted as 0 by matplotlib's colobar
-    img_array = numpy.empty((x_num_steps, y_num_steps))
-    img_array[:] = numpy.nan
-    img_array_kcps = numpy.copy(img_array)
-    img_write_pos = []
+    if plot_data:
 
-    # For the image extent, we need to bump out the min/max x/y by half the
-    # pixel size in each direction so that the center of each pixel properly
-    # lies at its x/y voltages.
-    half_pixel_size = pixel_size / 2
-    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                  y_low - half_pixel_size, y_high + half_pixel_size]
+        # Initialize imgArray and set all values to NaN so that unset values
+        # are not interpreted as 0 by matplotlib's colobar
+        img_array = numpy.empty((x_num_steps, y_num_steps))
+        img_array[:] = numpy.nan
+        img_array_kcps = numpy.copy(img_array)
+        img_write_pos = []
 
-    fig = tool_belt.create_image_figure(img_array, img_extent,
-                                        clickHandler=on_click_image)
+        # For the image extent, we need to bump out the min/max x/y by half the
+        # pixel size in each direction so that the center of each pixel properly
+        # lies at its x/y voltages.
+        half_pixel_size = pixel_size / 2
+        img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                      y_low - half_pixel_size, y_high + half_pixel_size]
+
+        fig = tool_belt.create_image_figure(img_array, img_extent,
+                                            clickHandler=on_click_image)
 
     # %% Collect the data
 
@@ -317,7 +319,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
         if tool_belt.safe_stop():
             break
-    
+
         # Read the samples and update the image
         new_samples = cxn.apd_tagger.read_counter_simple()
         num_new_samples = len(new_samples)
@@ -327,9 +329,10 @@ def main(cxn, coords, nd_filter, x_range, y_range,
             # is easy and readable and probably fine up to some resolution
             # we likely will never try
             img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-            tool_belt.update_image_figure(fig, img_array_kcps)
+            if plot_data:
+                tool_belt.update_image_figure(fig, img_array_kcps)
             num_read_so_far += num_new_samples
-            
+
     # %% Clean up
 
     # Stop the pulse streamer
@@ -342,8 +345,6 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     cxn.apd_tagger.stop_tag_stream()
 
     # %% Save the data
-
-    timestamp = tool_belt.get_time_stamp()
 
     rawData = {'timestamp': timestamp,
                'name': name,
@@ -364,9 +365,18 @@ def main(cxn, coords, nd_filter, x_range, y_range,
                'img_array': img_array.astype(int).tolist(),
                'img_array-units': 'counts'}
 
-    filePath = tool_belt.get_file_path(__file__, timestamp, name)
-    tool_belt.save_figure(fig, filePath)
-    tool_belt.save_raw_data(rawData, filePath)
+    if save_data:
+
+        timestamp = tool_belt.get_time_stamp()
+
+        filePath = tool_belt.get_file_path(__file__, timestamp, name)
+        tool_belt.save_raw_data(rawData, filePath)
+
+        if plot_data:
+
+            tool_belt.save_figure(fig, filePath)
+
+    return rawData
 
 
 # %% Run the file

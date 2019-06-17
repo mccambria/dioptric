@@ -311,7 +311,7 @@ def get_shared_parameters_dict(cxn):
     return reg_dict
 
 
-# %% File Open utils
+# %% Open utils
 
 
 def ask_open_file(file_path):
@@ -336,7 +336,27 @@ def ask_open_file(file_path):
                                           title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) )
     return file_name
 
-# %%  Save utils
+
+def get_raw_data(source_name, file_name, sub_folder_name=None,
+                 data_dir='E:\Shared drives\Kolkowitz Lab Group\nvdata'):
+    """Returns a dictionary containing the json object from the specified
+    raw data file.
+    """
+
+    # Parse the source_name if __file__ was passed
+    source_name = os.path.splitext(os.path.basename(source_name))[0]
+
+    data_dir = Path(data_dir)
+    if sub_folder_name is None:
+        file_path = data_dir \ source_name \ '{}.txt'.format(file_name)
+    else:
+        file_path = data_dir \ source_name \ sub_folder_name \ '{}.txt'.format(file_name)
+
+    with open(file_path) as file:
+        return json.load(file)
+
+
+# %% Save utils
 
 
 def get_branch_name():
@@ -362,10 +382,10 @@ def get_time_stamp():
     return timestamp
 
 
-def get_folder_dir(caller_file):
+def get_folder_dir(source_name):
 
-    caller_file_name = os.path.basename(caller_file)
-    sub_dir_name = os.path.splitext(caller_file_name)[0]
+    source_name = os.path.basename(source_name)
+    source_name = os.path.splitext(source_name)[0]
 
     branch_name = get_branch_name()
 
@@ -373,12 +393,12 @@ def get_folder_dir(caller_file):
     if branch_name == 'master':
         # master should save without a branch sub-folder
         joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
-                                   sub_dir_name)
+                                   source_name)
     else:
         # Otherwise we want a branch sub-folder so that we know this data was
         # produced by code that's under development
         joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
-                                   sub_dir_name,
+                                   source_name,
                                    'branch_{}'.format(branch_name))
 
     folderDir = os.path.abspath(joined_path)
@@ -390,14 +410,14 @@ def get_folder_dir(caller_file):
     return folderDir
 
 
-def get_file_path(caller_file, timeStamp, name=''):
+def get_file_path(source_name, timeStamp, name=''):
     """
     Get the file path to save to. This will be in a subdirectory of nvdata.
 
     Params:
-        caller_file: file object
-            __file__ of the caller - parsed to get the name of
-            the subdirectory we will write to
+        source_name: string
+            Source file name - alternatively, __file__ of the caller which will
+            be parsed to get the name of the subdirectory we will write to
         timeStamp: string
             Formatted timestamp to include in the file name
         name: string
@@ -454,25 +474,6 @@ def get_nv_sig_units():
 def get_nv_sig_format():
     return '[x_coord, y_coord, z_coord, ' \
         'expected_count_rate, background_count_rate]'
-
-
-# %% Open utils
-
-
-def get_raw_data(caller_file, file_name, sub_folder_name=None,
-                 data_dir='E:\Shared drives\Kolkowitz Lab Group\nvdata'):
-    """Returns a dictionary containing the json object from the specified
-    raw data file.
-    """
-
-    data_dir = Path(data_dir)
-    if sub_folder_name is None:
-        file_path = data_dir \ folder_name \ '{}.txt'.format(file_name)
-    else:
-        file_path = data_dir \ folder_name \ sub_folder_name \ '{}.txt'.format(file_name)
-
-    with open(file_path) as file:
-        return json.load(file)
 
 
 # %% Safe stop (TM mccambria)
