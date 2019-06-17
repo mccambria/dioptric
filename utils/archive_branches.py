@@ -24,10 +24,10 @@ from git import Repo
 # %% Input parameters
 
 # Repo path
-# repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
-#      'GitHub\\kolkowitz-nv-experiment-v1.0'
-repo_path = 'C:\\Users\\Matt\\' \
-    'GitHub\\kolkowitz-nv-experiment-v1.0'
+repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
+      'GitHub\\kolkowitz-nv-experiment-v1.0'
+#repo_path = 'C:\\Users\\Matt\\' \
+#    'GitHub\\kolkowitz-nv-experiment-v1.0'
 
 # List of branch names
 branches_to_archive = ['debug-function']
@@ -94,7 +94,7 @@ for branch in branches_to_archive:
         msg = 'Branch {} is not fully merged with master. Archive anyway? '
     else:
         msg = 'Archive branch {}? '
-    if not input(msg.format(branch)).startswith('y'):
+    if archive and not input(msg.format(branch)).startswith('y'):
         archive = False
     if archive:  # Change to if True to override checks
         # Add a timestamp to the tagged branch
