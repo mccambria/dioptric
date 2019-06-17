@@ -336,6 +336,20 @@ def ask_open_file(file_path):
                                           title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) )
     return file_name
 
+def get_file_list(directory, folder_name, file_ends_with):
+    ''' 
+    Creates a list of all the files in the folder for one experiment, based on
+    the ending file name
+    '''
+   
+    file_list = []
+    
+    for file in os.listdir('{}/{}'.format(directory, folder_name)):
+        if file.endswith(file_ends_with):
+            file_list.append(file)
+      
+    return file_list
+
 # %%  Save utils
 
 
@@ -467,13 +481,12 @@ def get_raw_data(caller_file, file_name, sub_folder_name=None,
 
     data_dir = Path(data_dir)
     if sub_folder_name is None:
-        file_path = data_dir \ folder_name \ '{}.txt'.format(file_name)
+        file_path = data_dir / folder_name / '{}.txt'.format(file_name)
     else:
-        file_path = data_dir \ folder_name \ sub_folder_name \ '{}.txt'.format(file_name)
+        file_path = data_dir / folder_name / sub_folder_name / '{}.txt'.format(file_name)
 
     with open(file_path) as file:
         return json.load(file)
-
 
 # %% Safe stop (TM mccambria)
 

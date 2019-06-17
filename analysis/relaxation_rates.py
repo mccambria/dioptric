@@ -35,19 +35,20 @@ import utils.tool_belt as tool_belt
 
 # Define the directory to get the folders from
 directory = 'G:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/' 
-
-#%%
-
-def zero_relaxation_eq(t, omega, amp, offset):
-    return offset + amp * exp(-3 * omega * t)
-
-#%%
-    
-def plus_relaxation_eq(t, gamma, omega, amp, offset):
-    return offset + amp * exp(-(omega + gamma * 2) * t)
+#
+##%%
+#
+#def zero_relaxation_eq(t, omega, amp, offset):
+#    return offset + amp * exp(-3 * omega * t)
+#
+##%%
+#    
+#def plus_relaxation_eq(t, gamma, omega, amp, offset):
+#    return offset + amp * exp(-(omega + gamma * 2) * t)
 
 # %%
     
+# Calculate the functions 
 def factors(number):
     factor_list = []
     for n in range(1, number + 1):
@@ -55,6 +56,7 @@ def factors(number):
             factor_list.append(n)
        
     return factor_list
+
 # %%
     
 def get_file_list(folder_name):
@@ -62,13 +64,13 @@ def get_file_list(folder_name):
     # Create a list of all the files in the folder for one experiment
     file_list = []
     for file in os.listdir('{}/{}'.format(directory, folder_name)):
-        if file.endswith(".txt") and not file.endswith("bins.txt") \
-                                    and not file.endswith("analysis.txt"):
+        if file.endswith(".txt"):
+#        and not file.endswith("bins.txt") \
+#                                    and not file.endswith("analysis.txt"):
             file_list.append(file)
       
     return file_list
     
-
 # %%
 
 def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
@@ -79,13 +81,16 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
     # Get the file list from this folder
     file_list = get_file_list(folder_name)
       
-    # Get the number of runs to create the empty arrays from the first file in 
+    # Get the number of runs to create the empty arrays from the last file in 
     # the list. This requires all the relaxation measurements to have the same
     # num_runs
-    file = file_list[0]
-    with open('{}/{}/{}'.format(directory, folder_name, file)) as json_file:
-        data = json.load(json_file)
-        num_runs_set = data['num_runs']
+    for file in file_list:
+        with open('{}/{}/{}'.format(directory, folder_name, file)) as json_file:
+            try:
+                data = json.load(json_file)
+                num_runs_set = data['num_runs']
+            except Exception:
+                continue
         
     bin_size = int(num_runs_set / num_bins)
         
@@ -112,146 +117,150 @@ def relaxation_rate_analysis(folder_name, num_bins, doPlot = False,
     # the same type (ie (1,-1)) to be correctly sorted into one array
     for file in file_list:
         with open('{}/{}/{}'.format(directory, folder_name, file)) as json_file:
-            data = json.load(json_file)
-            
-            init_state = data['init_state']
-            read_state = data['read_state']
-            
-            sig_counts = numpy.array(data['sig_counts'])
-            ref_counts = numpy.array(data['ref_counts'])
-            
-            relaxation_time_range = numpy.array(data['relaxation_time_range'])
-            # time is in microseconds
-            min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
-            num_steps = data['num_steps']
-            num_runs = data['num_runs']
-
-            time_array = numpy.linspace(min_relaxation_time, 
-                                        max_relaxation_time, num=num_steps) 
-            
-            
-            # Check that the num_runs is consistent. If not, raise an error
-            if num_runs_set != num_runs:
-                print('Error, num_runs not consistent in file {}'.format(file))
-                break
-            
-            # Check to see which data set the file is for, and append the data
-            # to the corresponding array
-            if init_state == 0 and read_state == 0:
-                # Check to see if data has already been taken of this experiment
-                # If it hasn't, then create arrays of the data.
-                if zero_zero_bool == False:
-                    zero_zero_sig_counts = sig_counts
-                    zero_zero_ref_counts = ref_counts
-                    zero_zero_time = time_array
-                    
-                    zero_zero_ref_max_time = max_relaxation_time
-                    zero_zero_bool = True
-                # If data has already been taken for this experiment, then check
-                # to see if this current data is the shorter or longer measurement,
-                # and either append before or after the prexisting data
-                else:
-                    
-                    if max_relaxation_time > zero_zero_ref_max_time:
-                        zero_zero_sig_counts = numpy.concatenate((zero_zero_sig_counts, 
-                                                        sig_counts), axis = 1)
-                        zero_zero_ref_counts = numpy.concatenate((zero_zero_ref_counts, 
-                                                        ref_counts), axis = 1)
-                        zero_zero_time = numpy.concatenate((zero_zero_time, time_array))
-                        
-                    elif max_relaxation_time < zero_zero_ref_max_time:
-                        zero_zero_sig_counts = numpy.concatenate((sig_counts, 
-                                              zero_zero_sig_counts), axis = 1)
-                        zero_zero_ref_counts = numpy.concatenate((ref_counts, 
-                                              zero_zero_ref_counts), axis = 1)
-                        zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
+            try:
+                data = json.load(json_file)
                 
-            if init_state == 0 and read_state == 1:
-                # Check to see if data has already been taken of this experiment
-                # If it hasn't, then create arrays of the data.
-                if zero_plus_bool == False:
-                    zero_plus_sig_counts = sig_counts
-                    zero_plus_ref_counts = ref_counts
-                    
-                    zero_plus_ref_max_time = max_relaxation_time
-                    zero_plus_bool = True
-                # If data has already been taken for this experiment, then check
-                # to see if this current data is the shorter or longer measurement,
-                # and either append before or after the prexisting data
-                else:
-                    
-                    if max_relaxation_time > zero_plus_ref_max_time:
-                        zero_plus_sig_counts = numpy.concatenate((zero_plus_sig_counts, 
-                                                        sig_counts), axis = 1)
-                        zero_plus_ref_counts = numpy.concatenate((zero_plus_ref_counts, 
-                                                        ref_counts), axis = 1)
-                        
-                    elif max_relaxation_time < zero_plus_ref_max_time:
-                        zero_plus_sig_counts = numpy.concatenate((sig_counts, 
-                                              zero_plus_sig_counts), axis = 1)
-                        zero_plus_ref_counts = numpy.concatenate((ref_counts, 
-                                              zero_plus_ref_counts), axis = 1)
-
-            if init_state == 1 and read_state == 1:              
-                # Check to see if data has already been taken of this experiment
-                # If it hasn't, then create arrays of the data.
-                if plus_plus_bool == False:
-                    plus_plus_sig_counts = sig_counts
-                    plus_plus_ref_counts = ref_counts
-                    plus_plus_time = time_array
-                    
-                    plus_plus_ref_max_time = max_relaxation_time
-                    plus_plus_bool = True
-                # If data has already been taken for this experiment, then check
-                # to see if this current data is the shorter or longer measurement,
-                # and either append before or after the prexisting data
-                else:
-                    
-                    if max_relaxation_time > plus_plus_ref_max_time:
-                        plus_plus_sig_counts = numpy.concatenate((plus_plus_sig_counts, 
-                                                        sig_counts), axis = 1)
-                        plus_plus_ref_counts = numpy.concatenate((plus_plus_ref_counts, 
-                                                        ref_counts), axis = 1)
-                        plus_plus_time = numpy.concatenate((plus_plus_time, time_array))
-                        
-                    elif max_relaxation_time < plus_plus_ref_max_time:
-                        plus_plus_sig_counts = numpy.concatenate((sig_counts, 
-                                                          plus_plus_sig_counts), axis = 1)
-                        plus_plus_ref_counts = numpy.concatenate((ref_counts, 
-                                                          plus_plus_ref_counts), axis = 1)
-                        plus_plus_time = numpy.concatenate((time_array, plus_plus_time))
+                init_state = data['init_state']
+                read_state = data['read_state']
                 
-            if init_state == 1 and read_state == -1:
-                # We will want to put the MHz splitting in the file metadata
-                uwave_freq_init = data['uwave_freq_init']
-                uwave_freq_read = data['uwave_freq_read']
+                sig_counts = numpy.array(data['sig_counts'])
+                ref_counts = numpy.array(data['ref_counts'])
                 
-                # Check to see if data has already been taken of this experiment
-                # If it hasn't, then create arrays of the data.
-                if plus_minus_bool == False:
-                    plus_minus_sig_counts = sig_counts
-                    plus_minus_ref_counts = ref_counts
-                    
-                    plus_minus_ref_max_time = max_relaxation_time
-                    plus_minus_bool = True
-                # If data has already been taken for this experiment, then check
-                # to see if this current data is the shorter or longer measurement,
-                # and either append before or after the prexisting data
-                else:
-                    
-                    if max_relaxation_time > plus_minus_ref_max_time:
-                        plus_minus_sig_counts = numpy.concatenate((plus_minus_sig_counts, 
-                                                        sig_counts), axis = 1)
-                        plus_minus_ref_counts = numpy.concatenate((plus_minus_ref_counts, 
-                                                        ref_counts), axis = 1)
+                relaxation_time_range = numpy.array(data['relaxation_time_range'])
+                # time is in microseconds
+                min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
+                num_steps = data['num_steps']
+                num_runs = data['num_runs']
+    
+                time_array = numpy.linspace(min_relaxation_time, 
+                                            max_relaxation_time, num=num_steps) 
+                
+                
+                # Check that the num_runs is consistent. If not, raise an error
+                if num_runs_set != num_runs:
+                    print('Error, num_runs not consistent in file {}'.format(file))
+                    break
+                
+                # Check to see which data set the file is for, and append the data
+                # to the corresponding array
+                if init_state == 0 and read_state == 0:
+                    # Check to see if data has already been taken of this experiment
+                    # If it hasn't, then create arrays of the data.
+                    if zero_zero_bool == False:
+                        zero_zero_sig_counts = sig_counts
+                        zero_zero_ref_counts = ref_counts
+                        zero_zero_time = time_array
                         
-                    elif max_relaxation_time < plus_minus_ref_max_time:
-                        plus_minus_sig_counts = numpy.concatenate((sig_counts, 
-                                              plus_minus_sig_counts), axis = 1)
-                        plus_minus_ref_counts = numpy.concatenate((ref_counts, 
-                                              plus_minus_ref_counts), axis = 1)
-                
-                splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
+                        zero_zero_ref_max_time = max_relaxation_time
+                        zero_zero_bool = True
+                    # If data has already been taken for this experiment, then check
+                    # to see if this current data is the shorter or longer measurement,
+                    # and either append before or after the prexisting data
+                    else:
+                        
+                        if max_relaxation_time > zero_zero_ref_max_time:
+                            zero_zero_sig_counts = numpy.concatenate((zero_zero_sig_counts, 
+                                                            sig_counts), axis = 1)
+                            zero_zero_ref_counts = numpy.concatenate((zero_zero_ref_counts, 
+                                                            ref_counts), axis = 1)
+                            zero_zero_time = numpy.concatenate((zero_zero_time, time_array))
+                            
+                        elif max_relaxation_time < zero_zero_ref_max_time:
+                            zero_zero_sig_counts = numpy.concatenate((sig_counts, 
+                                                  zero_zero_sig_counts), axis = 1)
+                            zero_zero_ref_counts = numpy.concatenate((ref_counts, 
+                                                  zero_zero_ref_counts), axis = 1)
+                            zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
+                    
+                if init_state == 0 and read_state == 1:
+                    # Check to see if data has already been taken of this experiment
+                    # If it hasn't, then create arrays of the data.
+                    if zero_plus_bool == False:
+                        zero_plus_sig_counts = sig_counts
+                        zero_plus_ref_counts = ref_counts
+                        
+                        zero_plus_ref_max_time = max_relaxation_time
+                        zero_plus_bool = True
+                    # If data has already been taken for this experiment, then check
+                    # to see if this current data is the shorter or longer measurement,
+                    # and either append before or after the prexisting data
+                    else:
+                        
+                        if max_relaxation_time > zero_plus_ref_max_time:
+                            zero_plus_sig_counts = numpy.concatenate((zero_plus_sig_counts, 
+                                                            sig_counts), axis = 1)
+                            zero_plus_ref_counts = numpy.concatenate((zero_plus_ref_counts, 
+                                                            ref_counts), axis = 1)
+                            
+                        elif max_relaxation_time < zero_plus_ref_max_time:
+                            zero_plus_sig_counts = numpy.concatenate((sig_counts, 
+                                                  zero_plus_sig_counts), axis = 1)
+                            zero_plus_ref_counts = numpy.concatenate((ref_counts, 
+                                                  zero_plus_ref_counts), axis = 1)
+    
+                if init_state == 1 and read_state == 1:              
+                    # Check to see if data has already been taken of this experiment
+                    # If it hasn't, then create arrays of the data.
+                    if plus_plus_bool == False:
+                        plus_plus_sig_counts = sig_counts
+                        plus_plus_ref_counts = ref_counts
+                        plus_plus_time = time_array
+                        
+                        plus_plus_ref_max_time = max_relaxation_time
+                        plus_plus_bool = True
+                    # If data has already been taken for this experiment, then check
+                    # to see if this current data is the shorter or longer measurement,
+                    # and either append before or after the prexisting data
+                    else:
+                        
+                        if max_relaxation_time > plus_plus_ref_max_time:
+                            plus_plus_sig_counts = numpy.concatenate((plus_plus_sig_counts, 
+                                                            sig_counts), axis = 1)
+                            plus_plus_ref_counts = numpy.concatenate((plus_plus_ref_counts, 
+                                                            ref_counts), axis = 1)
+                            plus_plus_time = numpy.concatenate((plus_plus_time, time_array))
+                            
+                        elif max_relaxation_time < plus_plus_ref_max_time:
+                            plus_plus_sig_counts = numpy.concatenate((sig_counts, 
+                                                              plus_plus_sig_counts), axis = 1)
+                            plus_plus_ref_counts = numpy.concatenate((ref_counts, 
+                                                              plus_plus_ref_counts), axis = 1)
+                            plus_plus_time = numpy.concatenate((time_array, plus_plus_time))
+                    
+                if init_state == 1 and read_state == -1:
+                    # We will want to put the MHz splitting in the file metadata
+                    uwave_freq_init = data['uwave_freq_init']
+                    uwave_freq_read = data['uwave_freq_read']
+                    
+                    # Check to see if data has already been taken of this experiment
+                    # If it hasn't, then create arrays of the data.
+                    if plus_minus_bool == False:
+                        plus_minus_sig_counts = sig_counts
+                        plus_minus_ref_counts = ref_counts
+                        
+                        plus_minus_ref_max_time = max_relaxation_time
+                        plus_minus_bool = True
+                    # If data has already been taken for this experiment, then check
+                    # to see if this current data is the shorter or longer measurement,
+                    # and either append before or after the prexisting data
+                    else:
+                        
+                        if max_relaxation_time > plus_minus_ref_max_time:
+                            plus_minus_sig_counts = numpy.concatenate((plus_minus_sig_counts, 
+                                                            sig_counts), axis = 1)
+                            plus_minus_ref_counts = numpy.concatenate((plus_minus_ref_counts, 
+                                                            ref_counts), axis = 1)
+                            
+                        elif max_relaxation_time < plus_minus_ref_max_time:
+                            plus_minus_sig_counts = numpy.concatenate((sig_counts, 
+                                                  plus_minus_sig_counts), axis = 1)
+                            plus_minus_ref_counts = numpy.concatenate((ref_counts, 
+                                                  plus_minus_ref_counts), axis = 1)
+                    
+                    splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
+                    
+            except Exception:
+                continue
     
 # Some error handeling if the count arras don't match up            
     if len(zero_zero_sig_counts) != len(zero_plus_sig_counts): 
