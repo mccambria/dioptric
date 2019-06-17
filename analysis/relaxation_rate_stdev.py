@@ -37,9 +37,7 @@ import analysis.relaxation_rate_binning as relaxation_rate_binning
 
 # %% Constants
 
-# Define the directory to get the folders from
-directory = 'G:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/' 
-
+data_folder = 't1_double_quantum'
 
 # %% Functions
     
@@ -61,7 +59,7 @@ def main(folder_name, num_bins_list = None):
     if num_bins_list == None:
         
         # Get the file list from this folder
-        file_list = tool_belt.get_file_list(directory, folder_name, '.txt')
+        file_list = tool_belt.get_file_list(data_folder, '.txt', folder_name)
           
         # Get the number of runs to create the empty arrays from the first file in 
         # the list. This requires all the relaxation measurements to have the same
