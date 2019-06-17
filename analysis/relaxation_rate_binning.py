@@ -27,8 +27,7 @@ import utils.tool_belt as tool_belt
 
 # %% Constants
 
-# Define the directory to get the folders from
-directory = 'G:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/' 
+data_folder = 't1_double_quantum'
 
 # %% Functions
 
@@ -48,7 +47,7 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
     print('Number of bins: {}'.format(num_bins))
 
     # Get the file list from this folder
-    file_list = tool_belt.get_file_list(directory, folder_name, '.txt')
+    file_list = tool_belt.get_file_list(data_folder, '.txt', folder_name)
       
     # Get the number of runs to create the empty arrays from the last file in 
     # the list. This requires all the relaxation measurements to have the same
