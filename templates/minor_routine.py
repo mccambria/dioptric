@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Template for scripts that should be run directly from the files themselves
-(as opposed to from the control panel, for example).
+"""Template for minor routines. Minor routines are routines for which we will
+probabyl not want to save the data.
 
-Created on Sun Jun 16 11:22:40 2019
+Created on Sun Jun 16 11:38:17 2019
 
 @author: mccambria
 """
@@ -17,15 +17,26 @@ Created on Sun Jun 16 11:22:40 2019
 # %% Functions
 
 
+def clean_up(cxn):
+
+    pass
+
+
 # %% Main
 
 
 def main():
     """When you run the file, we'll call into main, which should contain the
-    body of the script.
+    body of the routine.
     """
 
-    pass
+    # %% Initial set up here
+
+    # %% Collect the data
+
+    # %% Wrap up
+
+    clean_up(cxn)
 
 
 # %% Run the file
@@ -36,7 +47,4 @@ def main():
 # the script that you set up here.
 if __name__ == '__main__':
 
-    # Set up your parameters to be passed to main here
-
-    # Run the script
-    main()
+    pass

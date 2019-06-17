@@ -37,6 +37,7 @@ from scipy import asarray as ar, exp
 from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
+from pathlib import Path
 
 # %% xyz sets
 
@@ -49,7 +50,7 @@ def set_xyz(cxn, coords):
 def set_xyz_zero(cxn):
     cxn.galvo.write(0.0, 0.0)
     cxn.objective_piezo.write_voltage(50.0)
-    
+
 
 def set_xyz_on_nv(cxn, nv_sig):
     cxn.galvo.write(nv_sig[0], nv_sig[1])
@@ -286,16 +287,16 @@ def cosexp(t, offset, amp, freq, decay):
 
 
 # %% LabRAD utils
-    
+
 
 def get_shared_parameters_dict(cxn):
-    
+
     # Get what we need out of the registry
     cxn.registry.cd(['', 'SharedParameters'])
     sub_folders, keys = cxn.registry.dir()
     if keys == []:
         return {}
-    
+
     p = cxn.registry.packet()
     for key in keys:
         p.get(key)
@@ -306,7 +307,7 @@ def get_shared_parameters_dict(cxn):
         key = keys[ind]
         val = vals[ind]
         reg_dict[key] = val
-        
+
     return reg_dict
 
 
@@ -365,7 +366,7 @@ def get_folder_dir(caller_file):
 
     caller_file_name = os.path.basename(caller_file)
     sub_dir_name = os.path.splitext(caller_file_name)[0]
-    
+
     branch_name = get_branch_name()
 
     # Check where we should save to
@@ -385,7 +386,7 @@ def get_folder_dir(caller_file):
     # Make the required directory if it doesn't exist already
     if not os.path.isdir(folderDir):
         os.makedirs(folderDir)
-        
+
     return folderDir
 
 
@@ -444,7 +445,7 @@ def save_raw_data(rawData, filePath):
 
     with open(filePath + '.txt', 'w') as file:
         json.dump(rawData, file, indent=2)
-        
+
 
 def get_nv_sig_units():
     return '[V, V, V, kcps, kcps]'
@@ -453,6 +454,25 @@ def get_nv_sig_units():
 def get_nv_sig_format():
     return '[x_coord, y_coord, z_coord, ' \
         'expected_count_rate, background_count_rate]'
+
+
+# %% Open utils
+
+
+def get_raw_data(caller_file, file_name, sub_folder_name=None,
+                 data_dir='E:\Shared drives\Kolkowitz Lab Group\nvdata'):
+    """Returns a dictionary containing the json object from the specified
+    raw data file.
+    """
+
+    data_dir = Path(data_dir)
+    if sub_folder_name is None:
+        file_path = data_dir \ folder_name \ '{}.txt'.format(file_name)
+    else:
+        file_path = data_dir \ folder_name \ sub_folder_name \ '{}.txt'.format(file_name)
+
+    with open(file_path) as file:
+        return json.load(file)
 
 
 # %% Safe stop (TM mccambria)
@@ -551,17 +571,17 @@ def poll_safe_stop():
         time.sleep(0.1)
         if safe_stop():
             break
-        
+
 
 # %% State/globals
-          
-            
-# This isn't really that scary - our client is and should be mostly stateless 
+
+
+# This isn't really that scary - our client is and should be mostly stateless
 # but in some cases it's just easier to share some state across the life of an
 # experiment/across experiments. To do this safely and easily we store global
 # variables on our LabRAD registry. The globals should only be accessed with
 # the getters and setters here so that we can be sure they're implemented
-# properly. 
+# properly.
 
 
 def get_drift():
@@ -586,7 +606,7 @@ def get_drift():
             el = float(el)
         drift_to_return.append(el)
     return drift_to_return
-    
+
 
 def set_drift(drift):
     len_drift = len(drift)
@@ -601,11 +621,11 @@ def set_drift(drift):
     with labrad.connect() as cxn:
         cxn.registry.cd(['', 'State'])
         return cxn.registry.set('DRIFT', drift)
-    
-    
+
+
 def reset_drift():
     set_drift([0.0, 0.0, 0.0])
-    
+
 
 def reset_state():
     reset_drift()
