@@ -376,11 +376,11 @@ if __name__ == '__main__':
 #        do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices)
 
         # Routines that expect single NVs
-#        for nv_sig in nv_sig_list:
+        for nv_sig in nv_sig_list:
 #            coords = [-0.3, 0.3, z_voltage]
-#            coords = (numpy.array(nv_sig[0:3]) + numpy.array(tool_belt.get_drift())).tolist()
+            coords = (numpy.array(nv_sig[0:3]) + numpy.array(tool_belt.get_drift())).tolist()
 #            nv_sig = [*coords, *nv_sig[3:]]
-#            do_image_sample(name, coords, nd_filter, apd_indices)
+            do_image_sample(name, coords, nd_filter, apd_indices)
 #            do_optimize(name, nv_sig, nd_filter, apd_indices)
 #            do_stationary_count(name, nv_sig, nd_filter, apd_indices)
 #            do_g2_measurement(name, nv_sig, nd_filter, apd_indices[0], apd_indices[1])
@@ -391,7 +391,7 @@ if __name__ == '__main__':
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8082, 0)
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8806, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
-            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
+#            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
 
 #         %% FULL CONTROL T1
