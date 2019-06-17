@@ -606,14 +606,31 @@ def main(folder_name, num_bins_list = None):
 # %%
     
 if __name__ == '__main__':
+ 
     
-    folder = 'nv4_2019_06_06_28MHz'
-    # spit out average of multiple bins to check if problem with fitting
+    # Set the file to pull data from here. These should be files in our 
+    # Double_Quantum nvdata folder, filled with the 6 relevant experiments
+    folder = 'nv13_2019_06_10_72MHz'
+
+    # Not the main of this file, but this function will split the data into
+    # number of num_run bins to calculate an average omega and gamma and stdev
+#    relaxation_rate_analysis(folder, 1, True, True)
     
-#    relaxation_rate_analysis(folder, 5, True, True)
+    '''
+    MAIN: this will calculate the value and standard deviation of gamma and
+        omega for the whole data set. 
+        
+        It's important to check that the values
+        make sense: occaionally when the bins get too small the data is too noisy
+        to accurately fit. Both check that the standard deviation is smaller than
+        than the value (we've been seeing a stdev ~ 20-5%), and check the saved 
+        txt file for the list of values. If need be, the bins to run through
+        can be specified
+        
+    '''
     
 #    # Specify the number of bins
-    num_bins_list = [1,2,4]
+    num_bins_list = [1,2,4, 5, 8, 10]
     main(folder, num_bins_list)
     
     # Use the factors of the num_runs for the num_bins

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Template for minor routines. Minor routines are routines for which we will
-probabyl not want to save the data.
+probably not want to save the data or routines that are used infrequently.
 
 Created on Sun Jun 16 11:38:17 2019
 

@@ -31,11 +31,11 @@ from scipy.optimize import curve_fit
 import numpy
 
 # nv1_2019_05_10
-nv1_splitting_list = [19.8, 28, 32.7, 51.8, 97.8, 116]
-nv1_omega_avg_list = [1.3, 1.7, 1.50, 2.3, 1.7, 1.21]
-nv1_omega_error_list = [0.3, 0.4, 0.11, 0.5, 0.2, 0.13]
-nv1_gamma_avg_list = [135, 71, 50, 13.1, 3.5, 4.6]
-nv1_gamma_error_list = [11, 7, 3, 0.7, 0.2, 0.3]
+nv1_splitting_list = [19.8, 28, 30.5, 32.7, 51.8, 97.8, 116]
+nv1_omega_avg_list = [1.3, 1.7, 1.62, 1.50, 2.3, 1.7, 1.21]
+nv1_omega_error_list = [0.3, 0.4, 0, 0.11, 0.5, 0.2, 0.13]
+nv1_gamma_avg_list = [135, 71, 39, 50, 13.1, 3.5, 4.6]
+nv1_gamma_error_list = [11, 7, 13, 3, 0.7, 0.2, 0.3]
 
 # nv2_2019_04_30
 nv2_splitting_list = [29.1, 44.8, 56.2, 56.9, 69.8, 85.1, 101.6]
@@ -45,11 +45,11 @@ nv2_gamma_avg_list = [20.5, 7.2, 3.9, 3.9, 2.48, 3.0, 1.6]
 nv2_gamma_error_list = [0.9, 0.4, 0.3, 0.2, 0.17, 0.3, 0.2]
 
 # nv13_2019_06_10
-nv13_splitting_list = [29.8]
-nv13_omega_avg_list = [0.88]
-nv13_omega_error_list = [0.16]
-nv13_gamma_avg_list = [27]
-nv13_gamma_error_list = [4]
+nv13_splitting_list = [29.8, 72.4]
+nv13_omega_avg_list = [0.88, 0.8]
+nv13_omega_error_list = [0.16, 0.6]
+nv13_gamma_avg_list = [27, 21]
+nv13_gamma_error_list = [4, 2]
 
 # nv0_2019_06_06
 nv0_splitting_list = [48.1]

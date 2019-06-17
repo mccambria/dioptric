@@ -31,15 +31,15 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-splitting_list = [19.8, 28, 30, 32.7, 51.8, 97.8, 116]
+splitting_list = [29.8, 72.4]
 
-omega_avg_list = [1.3, 1.7, 1.62, 1.50, 2.3, 1.7, 1.21]
+omega_avg_list = [0.88, 0.8]
 
-omega_error_list = [0.3, 0.4, 0, 0.11, 0.5, 0.2, 0.13]
+omega_error_list = [0.16, 0.6]
 
-gamma_avg_list = [135, 71, 39, 50, 13.1, 3.5, 4.6]
+gamma_avg_list = [27, 21]
 
-gamma_error_list = [11, 7, 13, 3, 0.7, 0.2, 0.3]
+gamma_error_list = [4, 2]
 
 # Try to fit the gamma to a 1/f^2
 
@@ -65,5 +65,5 @@ ax.grid()
 
 ax.set_xlabel('Splitting (MHz)')
 ax.set_ylabel('Relaxation Rate (kHz)')
-ax.set_title('NV1_2019_05_10')
+ax.set_title('NV13_2019_06_10')
 ax.legend()
