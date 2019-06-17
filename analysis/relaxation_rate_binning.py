@@ -279,8 +279,6 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
             opti_params, cov_arr = curve_fit(zero_relaxation_eq, zero_zero_time,
                                          zero_relaxation_counts, p0 = init_params)
            
-
-            
         except Exception:
             
             omega_fit_failed = True
