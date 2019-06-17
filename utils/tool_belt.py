@@ -327,7 +327,7 @@ def ask_open_file(file_path):
     return file_name
 
 def get_file_list(source_name, file_ends_with, sub_folder_name = None,
-                 data_dir='E:\Shared drives\Kolkowitz Lab Group\nvdata'):
+                 data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
     '''
     Creates a list of all the files in the folder for one experiment, based on
     the ending file name
@@ -343,7 +343,7 @@ def get_file_list(source_name, file_ends_with, sub_folder_name = None,
         file_path = data_dir / source_name / sub_folder_name
     
     file_list = []
-    print(file_path)
+    
     for file in os.listdir(file_path):
         if file.endswith(file_ends_with):
             file_list.append(file)
@@ -352,7 +352,7 @@ def get_file_list(source_name, file_ends_with, sub_folder_name = None,
 
 
 def get_raw_data(source_name, file_name, sub_folder_name=None,
-                 data_dir='E:\Shared drives\Kolkowitz Lab Group\nvdata'):
+                 data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
     """Returns a dictionary containing the json object from the specified
     raw data file.
     """

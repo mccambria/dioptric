@@ -300,7 +300,9 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
             omega_rate_list.append(opti_params[0])
             omega_amp_list.append(opti_params[1])
             omega_offset_list.append(opti_params[2])
+            
             omega = opti_params[0]
+            omega_unc= cov_arr[0,0]
         
             # Plotting the data
             if doPlot:
@@ -354,12 +356,18 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
                 ax.set_title('(+1,+1) - (+1,-1)')
                 
         else:
-            # create a temporary fitting equation that passes in the omega value just found
+            # we will use the omega found to fit to, and add bounds to the 
+            # omega param given by +/- the covariance of the fit.
+            
+            omega_max = omega + omega_unc
+            omega_min = omega - omega_unc
             try:
-                init_params = (100, 0.40, 0)
-                plus_relaxation_tmp = lambda t, gamma, amp, offset: plus_relaxation_eq(t, gamma, omega, amp, offset)
-                opti_params, cov_arr = curve_fit(plus_relaxation_tmp, 
-                                             plus_plus_time, plus_relaxation_counts, p0 = init_params)
+                init_params = (100, omega, 0.40, 0)
+                bound_params = ((-numpy.inf, omega_min, -numpy.inf, -numpy.inf),
+                          (numpy.inf, omega_max, numpy.inf, numpy.inf))
+                opti_params, cov_arr = curve_fit(plus_relaxation_eq, 
+                                 plus_plus_time, plus_relaxation_counts, 
+                                 p0 = init_params, bounds = bound_params)
     
             except Exception:
                 gamma_fit_failed = True
@@ -386,7 +394,7 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
                     ax = axes_pack[1]
                     ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
                     ax.plot(plus_time_linspace, 
-                            plus_relaxation_tmp(plus_time_linspace, *opti_params), 
+                            plus_relaxation_eq(plus_time_linspace, *opti_params), 
                             'r', label = 'fit')   
 #                    ax.set_xlim(0,0.1)
                     ax.set_xlabel('Relaxation time (ms)')
@@ -461,7 +469,7 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
                   
 if __name__ == '__main__':
     
-    folder = 'nv13_2019_06_10_72MHz'
+    folder = 'nv2_2019_04_30_56MHz'
     
     main(folder, 1, True, True)
 

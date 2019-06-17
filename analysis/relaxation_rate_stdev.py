@@ -126,7 +126,6 @@ def main(folder_name, num_bins_list = None):
     # Fit the data to sqrt and extract the standadr deviation value for one bin
     def sqrt_root(x, amp):
         return amp * (x)**(1/2)
-    print(omega_stdev_list)
     opti_params, cov_arr = curve_fit(sqrt_root, num_bins_list, 
                                      omega_stdev_list, p0 = (0.1))
     omega_stdev = sqrt_root(1, opti_params[0])
@@ -202,11 +201,11 @@ if __name__ == '__main__':
     '''
     
 #    # Specify the number of bins
-    num_bins_list = [1,2,4, 5, 8, 10]
-    main(folder, num_bins_list)
+#    num_bins_list = [1,2,4, 5, 8, 10]
+#    main(folder, num_bins_list)
     
     # Use the factors of the num_runs for the num_bins
-#    main(folder)
+    main(folder)
     
     
         
