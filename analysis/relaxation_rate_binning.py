@@ -227,7 +227,7 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
         except Exception:
             continue
     
-# Some error handeling if the count arras don't match up            
+    # Some error handeling if the count arras don't match up            
     if len(zero_zero_sig_counts) != len(zero_plus_sig_counts): 
                     
          print('Error: length of zero_zero_sig_counts and zero_plus_sig_counts do not match')
@@ -235,7 +235,7 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
     if len(plus_plus_sig_counts) != len(plus_minus_sig_counts):
         print('Error: length of plus_plus_sig_counts and plus_minus_sig_counts do not match')
     
-# %% Fit the data based on the bin size
+    # %% Fit the data based on the bin size
         
     i = 0
     
@@ -467,7 +467,7 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
                   
 if __name__ == '__main__':
     
-    folder = 'nv2_2019_04_30_56MHz'
+    folder = 'nv13_2019_06_10_113MHz'
     
     main(folder, 1, True, True)
 

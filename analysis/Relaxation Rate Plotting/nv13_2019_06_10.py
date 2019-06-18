@@ -31,15 +31,15 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-splitting_list = [29.8, 72.4]
+splitting_list = [29.8, 72.4, 112.9]
 
-omega_avg_list = [0.88, 0.8]
+omega_avg_list = [0.88, 0.8, 1.4]
 
-omega_error_list = [0.16, 0.6]
+omega_error_list = [0.16, 0.6, 0.4]
 
-gamma_avg_list = [27, 21]
+gamma_avg_list = [27, 21, 15.6]
 
-gamma_error_list = [4, 2]
+gamma_error_list = [4, 2, 2.4]
 
 # Try to fit the gamma to a 1/f^2
 

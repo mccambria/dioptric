@@ -14,7 +14,6 @@ Created on Thu Apr 11 15:39:23 2019
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-import os
 import matplotlib.pyplot as plt
 
 
@@ -33,8 +32,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
     sequence_args = [readout, uwave_switch_delay, apd_indices[0]]
 
-    file_name = os.path.basename(__file__)
-
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
     freq_low = freq_center - half_freq_range
@@ -44,18 +41,27 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
-    counts = numpy.empty(num_steps)
-    counts[:] = numpy.nan
-
-    # Set up our data structure, an array of NaNs that we'll fill
-    # incrementally. NaNs are ignored by matplotlib, which is why they're
-    # useful for us here.
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
     ref_counts = numpy.empty([num_runs, num_steps])
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
-        
+    
+    # Define some times (in ns)
+    pi_pulse = 100
+    polarization_time = 3 * 10**3
+    reference_time = 1 * 10**3
+    signal_wait_time = 1 * 10**3
+    reference_wait_time = 2 * 10**3
+    background_wait_time = 1 * 10**3
+    aom_delay_time = 750
+    gate_time = 450
+    sequence_args = [pi_pulse, polarization_time, reference_time,
+                    signal_wait_time, reference_wait_time,
+                    background_wait_time, aom_delay_time,
+                    gate_time, pi_pulse,
+                    apd_indices[0], 0]
+    
     # %% Make some lists and variables to save at the end
     
 #    passed_coords = coords
@@ -81,9 +87,12 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
         # Optimize and save the coords we found
         opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
         opti_coords_list.append(opti_coords)
+        
+        # Load the pulse streamer (must happen after optimize since optimize
+        # loads its own sequence)
+        cxn.pulse_streamer.stream_load('rabi.py', sequence_args, 1)
 
-        # Load the APD task with two samples for each frequency step
-        cxn.pulse_streamer.stream_load(file_name, sequence_args)
+        # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
         # Take a sample and increment the frequency
@@ -101,15 +110,21 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
                 cxn.microwave_signal_generator.uwave_on()
 
             # Start the timing stream
-            cxn.pulse_streamer.stream_start()
+            cxn.pulse_streamer.stream_start(10**5)
 
-            new_counts = cxn.apd_tagger.read_counter_simple(2)
-            if len(new_counts) != 2:
-                raise RuntimeError('There should be exactly 2 samples per freq.')
-
-            ref_counts[run_ind, step_ind] = new_counts[0]
-            sig_counts[run_ind, step_ind] = new_counts[1]
+            # Get the counts
+            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
             
+            sample_counts = new_counts[0]
+            
+            # signal counts are even - get every second element starting from 0
+            sig_gate_counts = sample_counts[0::2]
+            sig_counts[run_ind, step_ind] = sum(sig_gate_counts)
+            
+            # ref counts are odd - sample_counts every second element starting from 1
+            ref_gate_counts = sample_counts[1::2]
+            ref_counts[run_ind, step_ind] = sum(ref_gate_counts)
+
         cxn.apd_tagger.stop_tag_stream()
 
     # %% Process and plot the data
