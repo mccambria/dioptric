@@ -47,7 +47,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
     
-    # Define some times (in ns)
+    # Define some times for the sequence (in ns)
     pi_pulse = 100
     polarization_time = 3 * 10**3
     reference_time = 1 * 10**3
@@ -62,17 +62,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
                     gate_time, pi_pulse,
                     apd_indices[0], 0]
     
-    # %% Make some lists and variables to save at the end
-    
-#    passed_coords = coords
-    
     opti_coords_list = []
-#    optimization_success_list = []
 
     # %% Collect the data
-
-#    tool_belt.set_xyz(cxn, coords)
-    
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()

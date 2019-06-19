@@ -17,7 +17,7 @@ changes over the course of the experiment.
 # %% Imports
 
 import numpy
-from scipy import asarray as ar, exp
+from scipy import exp
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
@@ -467,7 +467,7 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
                   
 if __name__ == '__main__':
     
-    folder = 'nv13_2019_06_10_113MHz'
+    folder = 'nv13_2019_06_10_164MHz'
     
-    main(folder, 1, True, True)
+    main(folder, 10, False, True)
 

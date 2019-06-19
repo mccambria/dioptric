@@ -21,25 +21,24 @@ files used:
 '''
 # %%
 def fit_eq(f, amp):
-    return amp*f**(-2)
+    return amp*f**(-1)
 
 # %%
 
 import matplotlib.pyplot as plt
-from scipy import asarray as ar, exp
 from scipy.optimize import curve_fit
 import numpy
 
 # The data
-splitting_list = [29.8, 72.4, 112.9]
+splitting_list = [29.8, 72.4, 112.9, 164.1]
 
-omega_avg_list = [0.88, 0.8, 1.4]
+omega_avg_list = [0.88, 0.8, 1.4, 1.0]
 
-omega_error_list = [0.16, 0.6, 0.4]
+omega_error_list = [0.16, 0.6, 0.4, 0.3]
 
-gamma_avg_list = [27, 21, 15.6]
+gamma_avg_list = [27, 21, 15.6, 6]
 
-gamma_error_list = [4, 2, 2.4]
+gamma_error_list = [4, 2, 2.4, 0.9]
 
 # Try to fit the gamma to a 1/f^2
 
@@ -60,7 +59,7 @@ ax.errorbar(splitting_list, gamma_avg_list, yerr = gamma_error_list,
 ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list, 
             label = 'Omega', fmt='o', color='red')
 ax.plot(splitting_linspace, fit_eq(splitting_linspace, *fit_params), 
-            label = '1/f^2')
+            label = '1/f')
 ax.grid()
 
 ax.set_xlabel('Splitting (MHz)')
