@@ -20,7 +20,7 @@ import utils.tool_belt as tool_belt
 
 
 folder_dir = 'E:\\Shared drives\\Kolkowitz Lab Group\\nvdata\\rabi\\'
-file_name = '2019-06-18_09-45-28_ayrton12.txt'
+file_name = '2019-06-19_16-54-57_ayrton12.txt'
 
 # Estimated fit parameters
 offset = 0.94

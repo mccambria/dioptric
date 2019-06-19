@@ -27,13 +27,13 @@ def fit_resonance(save_file_type):
     
     minFreqGuess = numpy.empty([2])
     
-    minFreqGuess[0] = 2.787
-#    minFreqGuess[0] = 2.908
+#    minFreqGuess[0] = 2.825
+    minFreqGuess[0] = 2.875
     second_freq_guess = 'n'  # 'n' if none
     
     folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance/'
-    file_name = '2019-06-18_17-03-36_ayrton12.txt'
-#    file_name = '2019-06-18_17-10-31_ayrton12.txt'
+#    file_name = '2019-06-19_16-33-48_ayrton12.txt'
+    file_name = '2019-06-19_16-40-10_ayrton12.txt'
     open_file_name = '{}{}'.format(folder_dir, file_name)
     
     with open(open_file_name) as json_file:
