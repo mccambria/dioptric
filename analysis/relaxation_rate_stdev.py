@@ -46,7 +46,7 @@ data_folder = 't1_double_quantum'
 
 # %% Functions
     
-# Calculate the functions 
+# Calculate the factors
 def factors(number):
     factor_list = []
     for n in range(1, number + 1):
@@ -98,8 +98,7 @@ def main(folder_name, num_bins_list = None):
     # deviation
     for num_bins_ind in range(len(num_bins_list)):
         num_bins = num_bins_list[num_bins_ind]
-        retvals = relaxation_rate_binning.main(folder_name, num_bins,
-                        False, False)
+        retvals = relaxation_rate_binning.main(folder_name, num_bins, False)
         
         # Save the data to the lists
         o_value_list.append(retvals[0])
@@ -223,8 +222,8 @@ if __name__ == '__main__':
     
 #    # Specify the number of bins
 
-#    num_bins_list = [1,2,4, 5]
-#    main(folder, num_bins_list)
+    num_bins_list = [1,2,4, 8]
+    main(folder, num_bins_list)
 
     
     # Use the factors of the num_runs for the num_bins
@@ -246,8 +245,9 @@ if __name__ == '__main__':
                    'nv13_2019_06_10_72MHz',
                    'nv13_2019_06_10_113MHz',
                    'nv13_2019_06_10_164MHz']
-    for folder in folder_list:
-        main(folder)
+#    for folder in folder_list:
+    
+#    main(folder)
     
     
         

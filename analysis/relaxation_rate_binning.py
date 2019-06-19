@@ -17,7 +17,6 @@ basic rates onto the stdev analysis file.
 import numpy
 from scipy import exp
 from scipy.optimize import curve_fit
-import matplotlib.pyplot as plt
 
 import utils.tool_belt as tool_belt
 
@@ -32,16 +31,9 @@ data_folder = 't1_double_quantum'
 def exp_eq(t, rate, amp, offset):
     return offset + amp * exp(- rate * t)
 
-#def zero_relaxation_eq(t, omega, amp, offset):
-#    return offset + amp * exp(-3 * omega * t)
-#
-#    
-#def plus_relaxation_eq(t, gamma, omega, amp, offset):
-#    return offset + amp * exp(-(omega + gamma * 2) * t)
-
 # %% Main
     
-def main(folder_name, num_bins, doPlot = False, save_data = True):
+def main(folder_name, num_bins, save_data = True):
     
     print('Number of bins: {}'.format(num_bins))
 
@@ -72,11 +64,10 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
     
     # Create lists to store the omega and gamma rates
     o_rate_list = []
-#    omega_unc_list = []
     o_amp_list = []
     o_offset_list = []
+    
     g_rate_list = []
-#    gamma_unc_list = []
     g_amp_list = []
     g_offset_list = []
     
@@ -252,8 +243,6 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
         slice_size = bin_size - 1
     
     while i < (num_runs):
-        if doPlot:
-            fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
         
         #Fit to the (0,0) - (0,1) data to find Omega
         zero_zero_avg_sig_counts =  \
@@ -286,45 +275,13 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
             
             o_fit_failed = True
             o_fit_failed_list.append(o_fit_failed)
-            
-#            if doPlot:
-#                ax = axes_pack[0]
-#                ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
-#                ax.set_xlabel('Relaxation time (ms)')
-#                ax.set_ylabel('Normalized signal Counts')
-#                ax.set_title('(0,0) - (0,+1)')
-#                ax.legend()
 
         if not o_fit_failed:
             o_fit_failed_list.append(o_fit_failed)
             
-#            o_rate = opti_params[0] / 3.0
-#            omega_unc= cov_arr[0,0] / 3.0
-            
             o_rate_list.append(opti_params[0])
-#            omega_unc_list.append(omega_unc)
             o_amp_list.append(opti_params[1])
             o_offset_list.append(opti_params[2])
-            
-
-        
-#            # Plotting the data
-#            if doPlot:
-#                zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
-#                ax = axes_pack[0]
-#                ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
-#                ax.plot(zero_time_linspace, 
-#                        exp_eq(zero_time_linspace, *opti_params), 
-#                        'r', label = 'fit') 
-#                ax.set_xlabel('Relaxation time (ms)')
-#                ax.set_ylabel('Normalized signal Counts')
-#                ax.set_title('(0,0) - (0,+1)')
-#                ax.legend()
-#                text = r'$\Omega = $ {} kHz'.format('%.2f'%omega)
-#    
-#                props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-#                ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
-#                        verticalalignment='top', bbox=props)
 
 # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
 # to fit
@@ -345,25 +302,7 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
         
         # Define the counts for the plus relaxation equation
         plus_relaxation_counts =  plus_plus_norm_avg_sig - plus_minus_norm_avg_sig
-        
-#        # If omega failed, we can't fit gamma to this data, so we will set the
-#        # gamma fail to True and just plot the points
-#        if omega_fit_failed:
-#            gamma_fit_failed = True
-#            gamma_fit_failed_list.append(gamma_fit_failed)
-            
-#            if doPlot:
-#                ax = axes_pack[1]
-#                ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
-#                ax.set_xlabel('Relaxation time (ms)')
-#                ax.set_ylabel('Normalized signal Counts')
-#                ax.set_title('(+1,+1) - (+1,-1)')
-                
-        # we will use the omega found to fit to, and add bounds to the 
-        # omega param given by +/- the covariance of the fit.
-        
-#            omega_max = omega + omega_unc
-#            omega_min = omega - omega_unc
+
         try:
             init_params = (200, 0.40, 0)
             opti_params, cov_arr = curve_fit(exp_eq, 
@@ -374,46 +313,12 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
             g_fit_failed = True
             g_fit_failed_list.append(g_fit_failed)
             
-#            if doPlot:
-#                ax = axes_pack[1]
-#                ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
-#                ax.set_xlabel('Relaxation time (ms)')
-#                ax.set_ylabel('Normalized signal Counts')
-#                ax.set_title('(+1,+1) - (+1,-1)')
-            
         if not g_fit_failed:
             g_fit_failed_list.append(g_fit_failed)
-            
-#            gamma = (opti_params[0] - omega)/2
-#            gamma_unc = numpy.sqrt((cov_arr[0,0])**2 + (omega_unc)**2)/2.0
-            
+              
             g_rate_list.append(opti_params[0])
-#            gamma_unc_list.append(gamma_unc) 
             g_amp_list.append(opti_params[1])
             g_offset_list.append(opti_params[2])
-        
-       
-#            # Plotting
-#            if doPlot:
-#                plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
-#                ax = axes_pack[1]
-#                ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
-#                ax.plot(plus_time_linspace, 
-#                        exp_eq(plus_time_linspace, *opti_params), 
-#                        'r', label = 'fit')   
-##                    ax.set_xlim(0,0.1)
-#                ax.set_xlabel('Relaxation time (ms)')
-#                ax.set_ylabel('Normalized signal Counts')
-#                ax.set_title('(+1,+1) - (+1,-1)')
-#                ax.legend()
-#                text = r'$\gamma = $ {} kHz'.format('%.2f'%gamma)
-#    
-#                props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#                ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
-#                        verticalalignment='top', bbox=props)
-#        if doPlot:
-#            fig.canvas.draw()
-#            fig.canvas.flush_events()
                     
         # Advance_ the index
         i = i + bin_size
@@ -423,9 +328,7 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
     
     g_average = numpy.average(g_rate_list)
     g_stdev = numpy.std(g_rate_list)
-    
-#    print('Omega list: {} \nGamma list: {}'.format(omega_rate_list, gamma_rate_list))
-    
+      
 # %% Saving data
     
     if save_data: 
@@ -448,16 +351,12 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
                     'g_stdev-units': 'kHz',
                     'o_rate_list': o_rate_list,
                     'o_rate_list-units': 'kHz',
-#                    'omega_unc_list': omega_unc_list,
-#                    'omega_unc_list-units': 'kHz',
                     'o_amp_list': o_amp_list,
                     'o_amp_list-units': 'arb',
                     'o_offset_list': o_offset_list,
                     'o_offset_list-units': 'arb',
                     'g_rate_list': g_rate_list,
                     'g_rate_list-units': 'kHz',
-#                    'gamma_unc_list': gamma_unc_list,
-#                    'gamma_unc_list-units': 'kHz',
                     'g_amp_list': g_amp_list,
                     'g_amp_list-units': 'arb',
                     'g_offset_list': g_offset_list,
@@ -481,5 +380,5 @@ if __name__ == '__main__':
     folder = 'nv2_2019_04_30_57MHz'
 
     
-    main(folder, 10, False, True)
+    main(folder, 12,  True)
 
