@@ -479,6 +479,7 @@ def main(folder_name, num_bins, doPlot = False, save_data = True):
 if __name__ == '__main__':
     
     folder = 'nv2_2019_04_30_57MHz'
+
     
-    main(folder, 1, True, True)
+    main(folder, 10, False, True)
 

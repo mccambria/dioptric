@@ -130,6 +130,7 @@ def main(folder_name, num_bins_list = None):
 #    plt.legend()
     
     
+    
     # Fit the data to sqrt and extract the standadr deviation value for one bin
     def sqrt_root(x, amp):
         return amp * (x)**(1/2)
@@ -204,7 +205,8 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our 
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
     
-    folder = 'nv2_2019_04_30_57MHz'
+    folder = 'nv13_2019_06_10_164MHz'
+
     
     '''
     MAIN: this will calculate the value and standard deviation of gamma and
@@ -220,8 +222,10 @@ if __name__ == '__main__':
     '''
     
 #    # Specify the number of bins
+
 #    num_bins_list = [1,2,4, 5]
 #    main(folder, num_bins_list)
+
     
     # Use the factors of the num_runs for the num_bins
     
