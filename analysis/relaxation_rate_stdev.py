@@ -33,6 +33,7 @@ of num_runs, and can only handle two data sets of the same experiment (ie +1 to
 
 # %% Imports
 
+import time
 import numpy
 from scipy.optimize import curve_fit
 #import matplotlib.pyplot as plt
@@ -145,6 +146,7 @@ def main(folder_name, num_bins_list = None):
     # NOW we finally calculate what omega nad gamma are, and their uncertainty
     
     omega_value_one_bin = o_value_one_bin / 3.0
+    print(omega_value_one_bin)
     gamma_value_one_bin = (g_value_one_bin - omega_value_one_bin) / 2.0
     
     omega_value_avg = o_value_avg / 3.0
@@ -220,10 +222,13 @@ if __name__ == '__main__':
         
     '''
     
+    
+    main(folder)
+        
 #    # Specify the number of bins
 
-    num_bins_list = [1,2,4, 8]
-    main(folder, num_bins_list)
+#    num_bins_list = [1,2,4]
+#    main(folder, num_bins_list)
 
     
     # Use the factors of the num_runs for the num_bins
@@ -237,17 +242,14 @@ if __name__ == '__main__':
                    'nv2_2019_04_30_45MHz',
                    'nv2_2019_04_30_56MHz',
                    'nv2_2019_04_30_57MHz',
-                   'nv2_2019_04_30_70MHz',
-                   'nv2_2019_04_30_85MHz',
-                   'nv2_2019_04_30_101MHz',
-                   'nv4_2019_06_06_28MHz',
-                   'nv13_2019_06_10_30MHz',
-                   'nv13_2019_06_10_72MHz',
-                   'nv13_2019_06_10_113MHz',
-                   'nv13_2019_06_10_164MHz']
+#                   'nv2_2019_04_30_70MHz',
+#                   'nv2_2019_04_30_85MHz',
+                   'nv2_2019_04_30_101MHz']
+#                   'nv4_2019_06_06_28MHz']
+                   
 #    for folder in folder_list:
     
-#    main(folder)
+
     
     
         

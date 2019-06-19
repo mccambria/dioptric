@@ -211,6 +211,7 @@ def main(folder_name, doPlot = False):
 
     if not omega_fit_failed:
         
+        print(opti_params[0])
         omega = opti_params[0] / 3.0
 
         # Plotting the data
@@ -255,7 +256,7 @@ def main(folder_name, doPlot = False):
         
     if not gamma_fit_failed:
         
-        gamma = (opti_params[0] - omega)/2
+        gamma = (opti_params[0] - omega)/ 2.0
    
         # Plotting
         if doPlot:
@@ -295,7 +296,7 @@ def main(folder_name, doPlot = False):
                   
 if __name__ == '__main__':
     
-    folder = 'nv4_2019_06_06_28MHz'
+    folder = 'nv2_2019_04_30_57MHz'
     
     folder_list = ['nv0_2019_06_06 _48MHz',
                    'nv1_2019_05_10_20MHz',

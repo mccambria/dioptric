@@ -50,8 +50,13 @@ def main(folder_name, num_bins, save_data = True):
             num_runs_set = data['num_runs']
         except Exception:
             continue
+    if num_bins > num_runs_set:
+        print('num_bins > num_runs. bin_size will be set to 1')
         
-    bin_size = int(num_runs_set / num_bins)
+        bin_size = 1
+        
+    else: 
+        bin_size = int(num_runs_set / num_bins)
         
     # Define booleans to be used later in putting data into usable arrays
     zero_zero_bool = False
@@ -233,14 +238,9 @@ def main(folder_name, num_bins, save_data = True):
         
     i = 0
     
-    # For any number of bins except the maximum amount, we want to slice the
-    # arrays from [i:i+bin_size-1]. However, this doesn't work for the maximum
-    # amount of bins, when the bin_size is 1. In that case, we do want to take
-    # slices [i:i+bin_size]
-    if num_bins == num_runs:
-        slice_size = bin_size
-    else:
-        slice_size = bin_size - 1
+    # We want to slice the arrays using [i:i+bin_size].
+    
+    slice_size = bin_size
     
     while i < (num_runs):
         
@@ -369,7 +369,7 @@ def main(folder_name, num_bins, save_data = True):
                                                          file_name)
     
         tool_belt.save_raw_data(raw_data, file_path)
-
+    
     return o_average, o_stdev, g_average, g_stdev, \
                   splitting_MHz, o_fit_failed_list, g_fit_failed_list
                   
@@ -380,5 +380,5 @@ if __name__ == '__main__':
     folder = 'nv2_2019_04_30_57MHz'
 
     
-    main(folder, 12,  True)
+    main(folder, 40,  False)
 
