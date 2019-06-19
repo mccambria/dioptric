@@ -27,7 +27,6 @@ of num_runs, and can only handle two data sets of the same experiment (ie +1 to
 # %% Imports
 
 import numpy
-from scipy import exp
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
