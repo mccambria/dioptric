@@ -172,8 +172,7 @@ def main(folder_name, doPlot = False):
             continue
     
     # Some error handeling if the count arras don't match up            
-    if len(zero_zero_counts) != len(zero_plus_counts): 
-                    
+    if len(zero_zero_counts) != len(zero_plus_counts):            
          print('Error: length of zero_zero_sig_counts and zero_plus_sig_counts do not match')
        
     if len(plus_plus_counts) != len(plus_minus_counts):
@@ -232,8 +231,8 @@ def main(folder_name, doPlot = False):
             ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
                     verticalalignment='top', bbox=props)
 
-# %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
-# to fit
+    # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
+    # to fit
     
     # Define the counts for the plus relaxation equation
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
@@ -282,56 +281,40 @@ def main(folder_name, doPlot = False):
     
 #    print('Omega list: {} \nGamma list: {}'.format(omega_rate_list, gamma_rate_list))
     
-# %% Saving the figure
-    
-#    if save_data: 
-#        time_stamp = tool_belt.get_time_stamp()
-#        raw_data = {'time_stamp': time_stamp,
-#                    'level_splitting': splitting_MHz,
-#                    'level_splitting-units': 'MHz',
-#                    'num_runs': num_runs,
-#                    'num_bins': num_bins,
-#                    'bin_size': bin_size,
-#                    'omega_fit_failed_list': omega_fit_failed_list,
-#                    'gamma_fit_failed_list': gamma_fit_failed_list,
-#                    'omega_average': omega_average,
-#                    'omega_average-units': 'kHz',
-#                    'omega_stdev': omega_stdev,
-#                    'omega_stdev-units': 'kHz',
-#                    'gamma_average': gamma_average,
-#                    'gamma_average-units': 'kHz',
-#                    'gamma_stdev': gamma_stdev,
-#                    'gamma_stdev-units': 'kHz',
-#                    'omega_rate_list': omega_rate_list,
-#                    'omega_rate_list-units': 'kHz',
-#                    'omega_unc_list': omega_unc_list,
-#                    'omega_unc_list-units': 'kHz',
-#                    'omega_amp_list': omega_rate_list,
-#                    'omega_amp_list-units': 'arb',
-#                    'omega_offset_list': omega_offset_list,
-#                    'omega_offset_list-units': 'arb',
-#                    'gamma_rate_list': gamma_rate_list,
-#                    'gamma_rate_list-units': 'kHz',
-#                    'gamma_unc_list': gamma_unc_list,
-#                    'gamma_unc_list-units': 'kHz',
-#                    'gamma_amp_list': gamma_rate_list,
-#                    'gamma_amp_list-units': 'arb',
-#                    'gamma_offset_list': gamma_offset_list,
-#                    'gamma_offset_list-units': 'arb'}
-        
+    # %% Saving the figure
+            
         data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
         
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_v2' 
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins' 
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
-                                                         file_name)
+                                                             file_name)
     
-#        tool_belt.save_figure(fig, file_path)
+        tool_belt.save_figure(fig, file_path)
                   
 # %% Run the file
                   
 if __name__ == '__main__':
     
-    folder = 'nv2_2019_04_30_57MHz'
+    folder = 'nv4_2019_06_06_28MHz'
     
+    folder_list = ['nv0_2019_06_06 _48MHz',
+                   'nv1_2019_05_10_20MHz',
+                   'nv1_2019_05_10_32MHz',
+                   'nv1_2019_05_10_52MHz',
+                   'nv1_2019_05_10_98MHz',
+                   'nv2_2019_04_30_29MHz',
+                   'nv2_2019_04_30_45MHz',
+                   'nv2_2019_04_30_56MHz',
+                   'nv2_2019_04_30_57MHz',
+                   'nv2_2019_04_30_70MHz',
+                   'nv2_2019_04_30_85MHz',
+                   'nv2_2019_04_30_101MHz',
+                   'nv4_2019_06_06_28MHz',
+                   'nv13_2019_06_10_30MHz',
+                   'nv13_2019_06_10_72MHz',
+                   'nv13_2019_06_10_113MHz',
+                   'nv13_2019_06_10_164MHz']
+    
+#    for folder in folder_list:
     main(folder, True)
 
