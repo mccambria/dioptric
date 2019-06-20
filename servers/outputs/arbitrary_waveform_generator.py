@@ -46,7 +46,7 @@ class ArbitraryWaveformGenerator(LabradServer):
     def on_get_config(self, config):
         resource_manager = visa.ResourceManager()
         self.wave_gen = resource_manager.open_resource(config)
-        self.reset()
+        self.reset(None)
         
     @setting(4)
     def test_sin(self, c):
@@ -66,7 +66,7 @@ class ArbitraryWaveformGenerator(LabradServer):
         self.wave_gen.write('OUTP2 OFF')
         
     @setting(6)
-    def reset(self, c=None):
+    def reset(self, c):
         pass
 
 
