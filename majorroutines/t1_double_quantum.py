@@ -187,16 +187,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
 
     startFunctionTime = time.time()
     
-     # %% Set up the microwaves
-     # hardwire the tektronix sig gen to use the ms = +1 frequency
-    cxn.microwave_signal_generator.set_freq(uwave_freq_plus)
-    # hardwire in this special case
-#    if init_state == -1 and read_state == -1:
-#        cxn.microwave_signal_generator.set_freq(uwave_freq_minus)
-#        uwave_pi_pulse_init = round(82.65)
-    cxn.microwave_signal_generator.set_amp(uwave_power)
-    cxn.microwave_signal_generator.uwave_on()
-    
     # %% Collect the data
     
     # Start 'Press enter to stop...'
@@ -214,7 +204,15 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
         opti_coords_list.append(opti_coords)
         
-        
+        # Set up the microwaves
+        # hardwire the tektronix sig gen to use the ms = +1 frequency
+        cxn.microwave_signal_generator.set_freq(uwave_freq_plus)
+        # hardwire in this special case
+#        if init_state == -1 and read_state == -1:
+#            cxn.microwave_signal_generator.set_freq(uwave_freq_minus)
+#            uwave_pi_pulse_init = round(82.65)
+        cxn.microwave_signal_generator.set_amp(uwave_power)
+        cxn.microwave_signal_generator.uwave_on()
             
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)  
