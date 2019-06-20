@@ -32,8 +32,8 @@ def fit_resonance(save_file_type):
     second_freq_guess = 'n'  # 'n' if none
     
     folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance/'
-#    file_name = '2019-06-19_16-33-48_ayrton12.txt'
-    file_name = '2019-06-19_16-40-10_ayrton12.txt'
+#    file_name = '2019-06-19_18-38-08_ayrton12.txt'
+    file_name = '2019-06-19_18-41-28_ayrton12.txt'
     open_file_name = '{}{}'.format(folder_dir, file_name)
     
     with open(open_file_name) as json_file:

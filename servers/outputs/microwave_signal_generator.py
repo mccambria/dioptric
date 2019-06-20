@@ -52,6 +52,11 @@ class MicrowaveSignalGenerator(LabradServer):
     def on_get_config(self, config):
         resource_manager = visa.ResourceManager()
         self.sig_gen = resource_manager.open_resource(config[0])
+        # Set the VISA read and write termination. This is specific to the
+        # instrument - you can find it in the instrument's programming manual
+        self.sig_gen.read_termination = '\r\n'
+        self.sig_gen.write_termination = '\r\n'
+        # Set our channels for FM
         self.daq_di_pulser_clock = config[1]
         self.daq_ao_sig_gen_mod = config[2]
 

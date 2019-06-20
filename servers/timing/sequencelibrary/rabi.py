@@ -102,6 +102,6 @@ if __name__ == '__main__':
               'do_aom': 3,
               'do_uwave_gate_0': 4,
               'do_uwave_gate_1': 1}
-    args = [120, 3000, 1000, 1000, 2000, 1000, 750, 450, 400, 0, 0]
+    args = [120, 3000, 1000, 1000, 2000, 1000, 750, 450, 400, 0, 1]
     seq = get_seq(wiring, args)[0]
     seq.plot()
