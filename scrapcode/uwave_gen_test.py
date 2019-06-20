@@ -12,6 +12,7 @@ Created on Sun Jun 16 11:22:40 2019
 
 
 import visa
+import nidaqmx
 
 
 # %% Constants
@@ -28,17 +29,23 @@ def main():
     body of the script.
     """
     
+    # %% Sig gen tests
+    
     resource_manager = visa.ResourceManager()
     sig_gen_address = 'TCPIP0::128.104.160.112::5025::SOCKET'
     sig_gen = resource_manager.open_resource(sig_gen_address)
     sig_gen.read_termination = '\r\n'
     sig_gen.write_termination = '\r\n'
-    freq = sig_gen.query('MODL?')
-    print(freq)
-#    sig_gen.write('*IDN?')
-#    idn = sig_gen.read_raw()
-#    idn = sig_gen.query('*IDN?')
-#    print(idn)
+    
+    print(sig_gen.query('FDEV?'))
+    
+    # %% DAQ tests
+    
+#    with nidaqmx.Task() as task:
+#        chan_name = 'dev1/_ao3_vs_aognd'
+#        task.ai_channels.add_ai_voltage_chan(chan_name,
+#                                             min_val=-10.0, max_val=10.0)
+#        print(task.read())
 
 
 # %% Run the file
