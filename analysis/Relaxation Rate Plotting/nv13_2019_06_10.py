@@ -13,10 +13,6 @@ the y-axis. A 1/f**2 line is also fit to the gamma rates to show the behavior.
 '''
 nv1_2019_05_10
 
-files used:
-    
-    
-2019-06-14_09-48-56_116.0_MHz_splitting_rate_analysis
 
 '''
 # %%
@@ -30,22 +26,18 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-splitting_list = [29.8, 72.4, 112.9, 164.1]
-
-omega_avg_list = [0.88, 0.8, 1.4, 1.0]
-
-omega_error_list = [0.16, 0.6, 0.4, 0.3]
-
-gamma_avg_list = [27, 21, 15.6, 6]
-
-gamma_error_list = [4, 2, 2.4, 0.9]
+nv13_splitting_list = [29.8, 51.9, 72.4, 112.9, 164.1]
+nv13_omega_avg_list = [0.9, 1.2, 0.8, 1.4, 1.2]
+nv13_omega_error_list = [0.4, 0.6, 0.4, 0.3, 0.2]
+nv13_gamma_avg_list = [25, 30, 22, 13, 5.8]
+nv13_gamma_error_list = [5, 5, 3, 3, 0.5]
 
 # Try to fit the gamma to a 1/f^2
 
-fit_params, cov_arr = curve_fit(fit_eq, splitting_list, gamma_avg_list, 
+fit_params, cov_arr = curve_fit(fit_eq, nv13_splitting_list, nv13_gamma_avg_list, 
                                 p0 = 100)
 
-splitting_linspace = numpy.linspace(splitting_list[0], splitting_list[-1],
+splitting_linspace = numpy.linspace(nv13_splitting_list[0], nv13_splitting_list[-1],
                                     1000)
 
 
@@ -54,9 +46,9 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 #ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list)
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
-ax.errorbar(splitting_list, gamma_avg_list, yerr = gamma_error_list, 
+ax.errorbar(nv13_splitting_list, nv13_gamma_avg_list, yerr = nv13_gamma_error_list, 
             label = 'Gamma', fmt='o', color='blue')
-ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list, 
+ax.errorbar(nv13_splitting_list, nv13_omega_avg_list, yerr = nv13_omega_error_list, 
             label = 'Omega', fmt='o', color='red')
 ax.plot(splitting_linspace, fit_eq(splitting_linspace, *fit_params), 
             label = '1/f')

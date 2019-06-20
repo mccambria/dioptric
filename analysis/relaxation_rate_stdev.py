@@ -33,6 +33,7 @@ of num_runs, and can only handle two data sets of the same experiment (ie +1 to
 
 # %% Imports
 
+import time
 import numpy
 from scipy.optimize import curve_fit
 #import matplotlib.pyplot as plt
@@ -204,7 +205,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our 
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
     
-    folder = 'nv13_2019_06_10_164MHz'
+    folder = 'nv13_2019_06_10_52MHz'
 
     
     '''
@@ -220,9 +221,12 @@ if __name__ == '__main__':
         
     '''
     
+    
+#    main(folder)
+        
 #    # Specify the number of bins
 
-    num_bins_list = [1,2,4, 8]
+    num_bins_list = [1,2,4, 5, 8]
     main(folder, num_bins_list)
 
     
@@ -237,17 +241,14 @@ if __name__ == '__main__':
                    'nv2_2019_04_30_45MHz',
                    'nv2_2019_04_30_56MHz',
                    'nv2_2019_04_30_57MHz',
-                   'nv2_2019_04_30_70MHz',
-                   'nv2_2019_04_30_85MHz',
-                   'nv2_2019_04_30_101MHz',
-                   'nv4_2019_06_06_28MHz',
-                   'nv13_2019_06_10_30MHz',
-                   'nv13_2019_06_10_72MHz',
-                   'nv13_2019_06_10_113MHz',
-                   'nv13_2019_06_10_164MHz']
+#                   'nv2_2019_04_30_70MHz',
+#                   'nv2_2019_04_30_85MHz',
+                   'nv2_2019_04_30_101MHz']
+#                   'nv4_2019_06_06_28MHz']
+                   
 #    for folder in folder_list:
     
-#    main(folder)
+
     
     
         
