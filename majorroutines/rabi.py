@@ -26,6 +26,8 @@ from scipy.optimize import curve_fit
 def main(cxn, nv_sig, nd_filter, apd_indices,
          uwave_freq, uwave_power, uwave_time_range, do_uwave_gate_number,
          num_steps, num_reps, num_runs, name='untitled'):
+    
+    tool_belt.reset_cfm(cxn)
 
     # %% Get the starting time of the function
 
@@ -226,7 +228,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # fig.set_tight_layout(True)
     fit_fig.canvas.flush_events()
 
-    # %% Save the data
+    # %% Clean up and save the data
+    
+    tool_belt.reset_cfm(cxn)
 
     endFunctionTime = time.time()
 

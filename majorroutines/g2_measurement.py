@@ -118,6 +118,8 @@ def main(cxn, nv_sig, nd_filter, run_time, diff_window,
 
     # %% Initial calculations and setup
     
+    tool_belt.reset_cfm(cxn)
+    
     afterpulse_window = 50 * 10**3
     sleep_time = 2
     apd_indices = [apd_a_index, apd_b_index]
@@ -206,7 +208,9 @@ def main(cxn, nv_sig, nd_filter, run_time, diff_window,
     
     g2_zero = calculate_relative_g2_zero(hist)
 
-    # %% Save the data
+    # %% Clean up and save the data
+    
+    tool_belt.reset_cfm(cxn)
 
     timestamp = tool_belt.get_time_stamp()
 

@@ -37,7 +37,6 @@ class MicrowaveSignalGenerator(LabradServer):
     def initServer(self):
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
-        self.task = None
 
     async def get_config(self):
         p = self.client.registry.packet()
@@ -59,10 +58,8 @@ class MicrowaveSignalGenerator(LabradServer):
         # Set our channels for FM
         self.daq_di_pulser_clock = config[1]
         self.daq_ao_sig_gen_mod = config[2]
-
-    def stopServer(self):
-        if self.task is not None:
-            self.task.close()
+        self.task = None    # Initialize state variable
+        self.reset(None)
 
     @setting(0)
     def uwave_on(self, c):
@@ -159,9 +156,23 @@ class MicrowaveSignalGenerator(LabradServer):
         """Turn off the modulation."""
 
         self.sig_gen.write('MODL 0')
-        task = self.stream_task
+        task = self.task
         if task is not None:
             task.close()
+
+    @setting(6)
+    def reset(self, c):
+        self.uwave_off(c)
+        self.mod_off(c)
+        # Clean up the DAQ task!
+        if self.task is not None:
+            crash = 1/0
+        # Set the DAQ AO to 0
+        with nidaqmx.Task() as task:
+            # Set up the output channels
+            task.ao_channels.add_ao_voltage_chan(self.daq_ao_sig_gen_mod,
+                                                 min_val=-1.0, max_val=1.0)
+            task.write(0.0)
 
 
 __server__ = MicrowaveSignalGenerator()

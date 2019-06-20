@@ -39,8 +39,6 @@ class PulseStreamer(LabradServer):
     def initServer(self):
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
-        self.seq = None
-        self.loaded_seq_streamed = False
 
     async def get_config(self):
         p = self.client.registry.packet()
@@ -71,9 +69,10 @@ class PulseStreamer(LabradServer):
         self.pulser_wiring = {}
         for reg_key in reg_keys:
             self.pulser_wiring[reg_key] = wiring[reg_key]
-
-    def stopServer(self):
-        self.constant()
+        # Initialize state variables and reset
+        self.seq = None
+        self.loaded_seq_streamed = False
+        self.reset(None)
 
     def get_seq(self, seq_file, args):
         seq = None
@@ -210,6 +209,14 @@ class PulseStreamer(LabradServer):
         """
 
         self.pulser.forceFinal()
+        
+    @setting(6)
+    def reset(self, c):
+        # Probably don't need to force_final right before constant but...
+        self.force_final(c)
+        self.constant(c, 0)
+        self.seq = None
+        self.loaded_seq_streamed = False
 
 
 __server__ = PulseStreamer()

@@ -95,5 +95,5 @@ def main(name, nv_sig, nd_filter, apd_indices):
                      init_read_list, name)
         
         # Success!
-        print('No crashes went unhandled. Success!')
+        print('\nNo crashes went unhandled. Success!')
     

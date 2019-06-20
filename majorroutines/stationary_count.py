@@ -40,7 +40,9 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 def main(cxn, coords, nd_filter, run_time, readout, apd_indices,
          name='untitled', continuous=False):
 
-    # %% Some initial calculations
+    # %% Some initial setup
+    
+    tool_belt.reset_cfm(cxn)
 
     x_center, y_center, z_center = coords[0:3]
     readout_sec = readout / 10**9
@@ -115,9 +117,8 @@ def main(cxn, coords, nd_filter, run_time, readout, apd_indices,
             num_read_so_far += num_new_samples
 
     # %% Clean up and report the data
-
-    cxn.apd_tagger.stop_tag_stream()
     
+    tool_belt.reset_cfm(cxn)
     
     # Replace x/0=inf with 0
     try:

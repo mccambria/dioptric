@@ -233,7 +233,9 @@ def main(cxn, coords, nd_filter, x_range, y_range,
          num_steps, apd_indices,
          name='untitled', continuous=False, save_data=True, plot_data=True):
 
-    # %% Some initial calculations
+    # %% Some initial setup
+    
+    tool_belt.reset_cfm(cxn)
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_params['continuous_readout_ns']
@@ -337,15 +339,11 @@ def main(cxn, coords, nd_filter, x_range, y_range,
             num_read_so_far += num_new_samples
 
     # %% Clean up
-
-    # Stop the pulse streamer
-    cxn.pulse_streamer.force_final()
+    
+    tool_belt.reset_cfm(cxn)
 
     # Return to center
     cxn.galvo.write(x_center, y_center)
-
-    # Close the tagger stream
-    cxn.apd_tagger.stop_tag_stream()
 
     # %% Save the data
 
