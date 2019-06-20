@@ -470,6 +470,9 @@ if __name__ == '__main__':
 
 
     finally:
+        # Reset our hardware - this should be done in each routine, but
+        # let's double check here
+        tool_belt.reset_cfm()
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
             print("\n\nRoutine complete. Press enter to exit.")

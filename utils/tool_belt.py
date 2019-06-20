@@ -649,3 +649,27 @@ def reset_state():
     if check_safe_stop_alive():
         print("\n\nRoutine complete. Press enter to exit.")
         poll_safe_stop()
+
+
+# %% Reset hardware
+        
+
+def reset_cfm(cxn=None):
+    """Reset our cfm so that it's ready to go for a new experiment. Avoids
+    unnecessarily resetting components that may suffer hysteresis (ie the 
+    components that control xyz since these need to be reset in any
+    routine where they matter anyway).
+    """
+    
+    if cxn == None:
+        with labrad.connect() as cxn:
+            reset_cfm_with_cxn(cxn)
+    else:
+        reset_cfm_with_cxn(cxn)
+        
+            
+def reset_cfm_with_cxn(cxn):
+        cxn.pulse_streamer.reset()
+        cxn.apd_tagger.reset()
+        cxn.arbitrary_waveform_generator.reset()
+        cxn.microwave_signal_generator.reset()

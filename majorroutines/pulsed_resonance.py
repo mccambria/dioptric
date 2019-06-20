@@ -24,6 +24,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
          num_steps, num_runs, uwave_power, name='untitled'):
 
     # %% Initial calculations and setup
+    
+    tool_belt.reset_cfm(cxn)
 
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
@@ -154,9 +156,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     fig.canvas.flush_events()
 
     # %% Clean up and save the data
-
-    cxn.microwave_signal_generator.uwave_off()
-    cxn.apd_tagger.stop_tag_stream()
+    
+    tool_belt.reset_cfm(cxn)
 
     timestamp = tool_belt.get_time_stamp()
 

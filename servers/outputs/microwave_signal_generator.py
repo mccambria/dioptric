@@ -59,10 +59,7 @@ class MicrowaveSignalGenerator(LabradServer):
         # Set our channels for FM
         self.daq_di_pulser_clock = config[1]
         self.daq_ao_sig_gen_mod = config[2]
-
-    def stopServer(self):
-        if self.task is not None:
-            self.task.close()
+        self.reset()
 
     @setting(0)
     def uwave_on(self, c):
@@ -162,6 +159,14 @@ class MicrowaveSignalGenerator(LabradServer):
         task = self.stream_task
         if task is not None:
             task.close()
+
+    @setting(6)
+    def reset(self, c=None):
+        self.uwave_off(c)
+        self.mod_off(c)
+        # Clean up the DAQ!
+        if self.task is not None:
+            crash = 1/0
 
 
 __server__ = MicrowaveSignalGenerator()

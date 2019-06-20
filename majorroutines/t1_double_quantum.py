@@ -41,6 +41,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
          num_steps, num_reps, num_runs, 
          init_read_list, name='untitled'):
     
+    tool_belt.reset_cfm(cxn)
+    
     
     # %% Defiene the times to be used in the sequence
 
@@ -277,9 +279,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         cxn.apd_tagger.stop_tag_stream()
 
     # %% Hardware clean up
-
-    cxn.apd_tagger.stop_tag_stream()
-    cxn.microwave_signal_generator.uwave_off()
+    
+    tool_belt.reset_cfm(cxn)
     
     # %% Average the counts over the iterations
 

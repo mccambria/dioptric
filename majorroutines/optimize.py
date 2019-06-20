@@ -299,6 +299,8 @@ def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
 def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled', 
          set_to_opti_coords=True, save_data=False, plot_data=False):
     
+    tool_belt.reset_cfm(cxn)
+    
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
     passed_coords = nv_sig[0: 3]
@@ -410,7 +412,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
             
     print('\n')
                                
-    # %% Save the data
+    # %% Clean up and save the data
+    
+    tool_belt.reset_cfm(cxn)
 
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates

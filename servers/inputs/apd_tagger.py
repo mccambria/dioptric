@@ -107,6 +107,7 @@ class ApdTagger(LabradServer):
                 self.channel_mapping[di_gate] = val
                 val = 'di_gate_close_{}'.format(apd_index)
                 self.channel_mapping[-di_gate] = val
+        self.reset()
         logging.debug('init complete')
 
     def read_raw_stream(self):
@@ -367,6 +368,10 @@ class ApdTagger(LabradServer):
                           in sample] for sample in complete_counts]
             
         return return_counts
+
+    @setting(7)
+    def reset(self, c=None):
+        self.stop_tag_stream_internal()
 
 __server__ = ApdTagger()
 
