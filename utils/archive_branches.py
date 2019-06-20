@@ -30,7 +30,7 @@ repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
 #    'GitHub\\kolkowitz-nv-experiment-v1.0'
 
 # List of branch names
-branches_to_archive = ['debug-function']
+branches_to_archive = ['reset-hardware']
 
 
 # %% Functions
