@@ -114,6 +114,7 @@ def do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_ra
     num_steps = 101
     num_runs = 4
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
+#    uwave_power = -11.0
 #    uwave_power = -10.0
 
     with labrad.connect() as cxn:
@@ -125,7 +126,7 @@ def do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices,
                         freq_center=2.87, freq_range=0.2):
 
     num_steps = 101
-    num_runs = 1
+    num_runs = 4
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation
 
     with labrad.connect() as cxn:
@@ -144,8 +145,8 @@ def do_rabi(name, nv_sig, nd_filter, apd_indices,
     num_reps = 10**5
 
 #    num_runs = 1
-#    num_runs = 2
-    num_runs = 4
+    num_runs = 2
+#    num_runs = 4
 #    num_runs = 6
 
     with labrad.connect() as cxn:
@@ -249,8 +250,8 @@ if __name__ == '__main__':
 
     name = 'ayrton12'  # Sample name
 
-#    nd_filter = 2.0
-    nd_filter = 1.5
+    nd_filter = 2.0
+#    nd_filter = 1.5
 #    nd_filter = 1.0
 
     apd_indices = [0]
@@ -300,9 +301,10 @@ if __name__ == '__main__':
 
     # After 6/13
 #    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 32, 3]  # ND 1.5
-    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 30, 3]  # ND 1.5 6/17
+#    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 30, 3]  # ND 1.5 6/17
 #    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 12, 3]  # ND 2.0
 #    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 11, 3]  # ND 2.0 6/18
+    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 10, 3]  # ND 2.0 6/18
 
     # For ND 2.0
 #    nv12_2019_06_10 = [*nv_sig_list[12][0:3], 20, 2]
@@ -434,13 +436,13 @@ if __name__ == '__main__':
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.76, freq_range=0.10)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.825, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.878, freq_range=0.05)
-#            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.78, freq_range=0.05)
+            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.84, freq_range=0.05)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.95, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8174 , 0)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8693, 1)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8525, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8525, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
-            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
+#            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
 
 #         %% FULL CONTROL T1
 

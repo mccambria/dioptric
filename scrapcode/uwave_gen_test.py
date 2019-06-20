@@ -37,15 +37,18 @@ def main():
     sig_gen.read_termination = '\r\n'
     sig_gen.write_termination = '\r\n'
     
+    print(sig_gen.query('FREQ?'))
+    print(sig_gen.query('AMPR?'))
     print(sig_gen.query('FDEV?'))
+    print(sig_gen.query('MODL?'))
     
     # %% DAQ tests
     
-#    with nidaqmx.Task() as task:
-#        chan_name = 'dev1/_ao3_vs_aognd'
-#        task.ai_channels.add_ai_voltage_chan(chan_name,
-#                                             min_val=-10.0, max_val=10.0)
-#        print(task.read())
+    with nidaqmx.Task() as task:
+        chan_name = 'dev1/_ao3_vs_aognd'
+        task.ai_channels.add_ai_voltage_chan(chan_name,
+                                             min_val=-10.0, max_val=10.0)
+        print(task.read())
 
 
 # %% Run the file

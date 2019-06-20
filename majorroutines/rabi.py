@@ -85,12 +85,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # Create a list of indices to step through the taus. This will be shuffled
     tau_ind_list = list(range(0, num_steps))
 
-    # %% Set up the microwaves
-
-    cxn.microwave_signal_generator.set_freq(uwave_freq)
-    cxn.microwave_signal_generator.set_amp(uwave_power)
-    cxn.microwave_signal_generator.uwave_on()
-
     # %% Collect the data
 
     # Start 'Press enter to stop...'
@@ -107,6 +101,11 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         # Optimize
         opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
         opti_coords_list.append(opti_coords)
+        
+        # Apply the microwaves
+        cxn.microwave_signal_generator.set_freq(uwave_freq)
+        cxn.microwave_signal_generator.set_amp(uwave_power)
+        cxn.microwave_signal_generator.uwave_on()
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -143,11 +142,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
             
         cxn.apd_tagger.stop_tag_stream()
-
-    # %% Hardware clean up
-
-    cxn.microwave_signal_generator.uwave_off()
-    cxn.apd_tagger.stop_tag_stream()
 
     # %% Average the counts over the iterations
 

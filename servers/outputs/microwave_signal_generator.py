@@ -162,6 +162,7 @@ class MicrowaveSignalGenerator(LabradServer):
 
     @setting(6)
     def reset(self, c):
+        self.sig_gen.write('FDEV 0')
         self.uwave_off(c)
         self.mod_off(c)
         # Clean up the DAQ task!

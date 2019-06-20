@@ -29,10 +29,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
 
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
-    readout = 100 * 10**6  # 0.1 s
-    readout_sec = readout / (10**9)
     uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
-    sequence_args = [readout, uwave_switch_delay, apd_indices[0]]
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -50,7 +47,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     sig_counts = numpy.copy(ref_counts)
     
     # Define some times for the sequence (in ns)
-    pi_pulse = 100
+    pi_pulse = 120
     polarization_time = 3 * 10**3
     reference_time = 1 * 10**3
     signal_wait_time = 1 * 10**3
@@ -58,6 +55,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     background_wait_time = 1 * 10**3
     aom_delay_time = 750
     gate_time = 450
+    readout = gate_time
+    readout_sec = readout / (10**9)
     sequence_args = [pi_pulse, polarization_time, reference_time,
                     signal_wait_time, reference_wait_time,
                     background_wait_time, aom_delay_time,
@@ -97,11 +96,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
                 break
 
             cxn.microwave_signal_generator.set_freq(freqs[step_ind])
-
-            # If this is the first sample then we have to enable the signal
-            if (run_ind == 0) and (step_ind == 0):
-                cxn.microwave_signal_generator.set_amp(uwave_power)
-                cxn.microwave_signal_generator.uwave_on()
+            cxn.microwave_signal_generator.set_amp(uwave_power)
+            cxn.microwave_signal_generator.uwave_on()
 
             # Start the timing stream
             cxn.pulse_streamer.stream_start(10**5)
@@ -129,6 +125,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # Convert to kilocounts per second
+    
     kcps_uwave_off_avg = (avg_ref_counts / (10**3)) / readout_sec
     kcpsc_uwave_on_avg = (avg_sig_counts / (10**3)) / readout_sec
 

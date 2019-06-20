@@ -27,13 +27,14 @@ def fit_resonance(save_file_type):
     
     minFreqGuess = numpy.empty([2])
     
-#    minFreqGuess[0] = 2.825
-    minFreqGuess[0] = 2.875
-    second_freq_guess = 'n'  # 'n' if none
+    minFreqGuess[0] = 2.83
+#    minFreqGuess[0] = 2.85
+    second_freq_guess = 2.85  # 'n' if none
     
-    folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance/'
-#    file_name = '2019-06-19_18-38-08_ayrton12.txt'
-    file_name = '2019-06-19_18-41-28_ayrton12.txt'
+#    folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance/'
+    folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pulsed_resonance/'
+    file_name = '2019-06-20_15-36-48_ayrton12.txt'
+#    file_name = '2019-06-19_18-41-28_ayrton12.txt'
     open_file_name = '{}{}'.format(folder_dir, file_name)
     
     with open(open_file_name) as json_file:
@@ -45,7 +46,10 @@ def fit_resonance(save_file_type):
         num_steps = data["num_steps"]
         
         # Get the averaged, normalized counts from the ESR 
-        norm_avg_counts = numpy.array(data["norm_avg_sig"])    
+#        norm_avg_counts = numpy.array(data["norm_avg_sig"])  
+        sig_counts = numpy.array(data['sig_counts'])
+        ref_counts = numpy.array(data['ref_counts'])
+        norm_avg_counts = sig_counts[1,:] / ref_counts[1,:]  
        
 # %% Frequency array
     
@@ -103,12 +107,15 @@ def fit_resonance(save_file_type):
 #    second_freq_guess = input(msg_second_resonance)
     
     if second_freq_guess == 'n':
+        guess_params = [offset, contrast, minFreqGuess[0], sigma]
         minFreqGuess[1] = minFreqGuess[0]  
         
-        popt,pcov = curve_fit(single_gaus, freqs, norm_avg_counts, 
-                      p0=[offset, contrast, minFreqGuess[0], sigma])
-
-    
+        try:
+            popt,pcov = curve_fit(single_gaus, freqs, norm_avg_counts, 
+                          p0=guess_params)
+        except Exception: 
+            popt = guess_params
+            
         fig, ax = plt.subplots(1, 1, figsize=(10, 8))
         ax.plot(freqs, norm_avg_counts,'b',label='data')
         ax.plot(freqs, single_gaus(freqs,*popt),'r-',label='fit')
@@ -125,12 +132,15 @@ def fit_resonance(save_file_type):
                                 verticalalignment="top", bbox=props)
         
     else:
+        guess_params=[offset, contrast, minFreqGuess[0], sigma,
+                              contrast, minFreqGuess[1], sigma]
         minFreqGuess[1] = second_freq_guess
         
-        popt,pcov = curve_fit(double_gaus, freqs, norm_avg_counts, 
-                      p0=[offset, contrast, minFreqGuess[0], sigma,
-                          contrast, minFreqGuess[1], sigma])
-
+        try:
+            popt,pcov = curve_fit(double_gaus, freqs, norm_avg_counts, 
+                          p0=guess_params)
+        except Exception: 
+            popt = guess_params
     
         fig, ax = plt.subplots(1, 1, figsize=(10, 8))
         ax.plot(freqs, norm_avg_counts,'b',label='data')
