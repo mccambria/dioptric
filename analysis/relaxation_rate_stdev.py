@@ -146,7 +146,6 @@ def main(folder_name, num_bins_list = None):
     # NOW we finally calculate what omega nad gamma are, and their uncertainty
     
     omega_value_one_bin = o_value_one_bin / 3.0
-    print(omega_value_one_bin)
     gamma_value_one_bin = (g_value_one_bin - omega_value_one_bin) / 2.0
     
     omega_value_avg = o_value_avg / 3.0
@@ -206,7 +205,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our 
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
     
-    folder = 'nv13_2019_06_10_164MHz'
+    folder = 'nv13_2019_06_10_52MHz'
 
     
     '''
@@ -223,12 +222,12 @@ if __name__ == '__main__':
     '''
     
     
-    main(folder)
+#    main(folder)
         
 #    # Specify the number of bins
 
-#    num_bins_list = [1,2,4]
-#    main(folder, num_bins_list)
+    num_bins_list = [1,2,4, 5, 8]
+    main(folder, num_bins_list)
 
     
     # Use the factors of the num_runs for the num_bins
