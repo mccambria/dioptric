@@ -45,11 +45,11 @@ nv2_gamma_avg_list = [20.8, 7.2, 3.9, 3.9, 2.46, 2.9, 1.6]
 nv2_gamma_error_list = [0.9, 0.3, 0.2, 0.2, 0.14, 0.2, 0.2]
 
 # nv13_2019_06_10
-nv13_splitting_list = [29.8, 51.9, 72.4, 112.9, 164.1]
-nv13_omega_avg_list = [0.9, 1.2, 0.8, 1.4, 1.2]
-nv13_omega_error_list = [0.4, 0.6, 0.4, 0.3, 0.2]
-nv13_gamma_avg_list = [25, 30, 22, 13, 5.8]
-nv13_gamma_error_list = [5, 5, 3, 3, 0.5]
+nv13_splitting_list = [23.1, 29.8, 51.9, 72.4, 112.9, 164.1]
+nv13_omega_avg_list = [0.42, 0.9, 1.2, 0.8, 1.4, 1.2]
+nv13_omega_error_list = [0.12, 0.4, 0.6, 0.4, 0.3, 0.2]
+nv13_gamma_avg_list = [90, 25, 30, 22, 13, 5.8]
+nv13_gamma_error_list = [30, 5, 5, 3, 3, 0.5]
 
 # nv0_2019_06_06
 nv0_splitting_list = [48.1]
