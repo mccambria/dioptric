@@ -250,8 +250,8 @@ if __name__ == '__main__':
 
     name = 'ayrton12'  # Sample name
 
-    nd_filter = 2.0
-#    nd_filter = 1.5
+#    nd_filter = 2.0
+    nd_filter = 1.5
 #    nd_filter = 1.0
 
     apd_indices = [0]
@@ -301,10 +301,10 @@ if __name__ == '__main__':
 
     # After 6/13
 #    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 32, 3]  # ND 1.5
-#    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 30, 3]  # ND 1.5 6/17
+    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 30, 3]  # ND 1.5 6/17
 #    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 12, 3]  # ND 2.0
 #    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 11, 3]  # ND 2.0 6/18
-    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 10, 3]  # ND 2.0 6/18
+#    nv13_2019_06_10 = [*nv_sig_list[13][0:3], 10, 3]  # ND 2.0 6/18
 
     # For ND 2.0
 #    nv12_2019_06_10 = [*nv_sig_list[12][0:3], 20, 2]
@@ -394,13 +394,16 @@ if __name__ == '__main__':
 #                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
 #                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
     
-    # nv13_2019_06_10 50 MHz ~12 hours
-    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
-                                [plus_to_minus,   [0, 500*10**3], 41, 1 * 10**4],
-                                [plus_to_plus,  [0, 100*10**3], 51, 2 * 10**4],
-                                [plus_to_plus,   [0, 500*10**3], 41, 1 * 10**4],
-                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
-                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
+    # nv13_2019_06_10 50/20 MHz ~12 hours
+#    t1_exp_array = numpy.array([[plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
+#                                [plus_to_minus,   [0, 500*10**3], 41, 1 * 10**4],
+#                                [plus_to_plus,  [0, 100*10**3], 51, 2 * 10**4],
+#                                [plus_to_plus,   [0, 500*10**3], 41, 1 * 10**4],
+#                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
+#                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
+    
+    t1_exp_array = numpy.array([[plus_to_minus,  [0, 50*10**3], 51, 2 * 10**4],
+                                [plus_to_plus,  [0, 50*10**3], 51, 2 * 10**4]])
     
 
     # Array for the parameters of a given NV, formatted:

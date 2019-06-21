@@ -12,18 +12,18 @@ from scipy.optimize import curve_fit
 import numpy
 
 # %%
-def fit_eq(f, offset, amp, power):
-    return offset + amp * f**(power)
+def fit_eq(f, offset, amp):
+    return offset + amp * f**(2)
 
 # %%
 
-splitting_list = [29.8, 51.9, 72.4, 112.9, 164.1]
+splitting_list = [23.1, 29.8, 51.9, 72.4, 112.9, 164.1]
 
-cent_freq = [2.8396, 2.84335, 2.8444, 2.85125, 2.86775 ]
+cent_freq = [2.84045, 2.8396, 2.84335, 2.8444, 2.85125, 2.86775 ]
 
 
 fit_params, cov_arr = curve_fit(fit_eq, splitting_list, cent_freq, 
-                                p0 = (2.7, 0.1, 1))
+                                p0 = (2.7, 0.1))
 
 splitting_linspace = numpy.linspace(splitting_list[0], splitting_list[-1], 1000)
 
@@ -34,8 +34,9 @@ ax.plot(splitting_linspace, fit_eq(splitting_linspace, *fit_params), 'r', label 
 
 text = '\n'.join((r'$f_0 + A_0 f^{a}$',
                   r'$f_0 = $' + '%.2f'%(fit_params[0]) + ' GHz',
-                  r'$A_0 = $' + '%.4f'%(fit_params[1] * 10**6) + ' kHz',
-                  r'$a = $' + '%.2f'%(fit_params[2])))
+                  r'$A_0 = $' + '%.4f'%(fit_params[1] * 10**6) + ' kHz'
+#                  ,r'$a = $' + '%.2f'%(fit_params[2])
+                  ))
 
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)

@@ -205,7 +205,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our 
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
     
-    folder = 'nv13_2019_06_10_52MHz'
+    folder = 'nv13_2019_06_10_23MHz'
 
     
     '''
@@ -232,19 +232,19 @@ if __name__ == '__main__':
     
     # Use the factors of the num_runs for the num_bins
     
-    folder_list = ['nv0_2019_06_06 _48MHz',
-                   'nv1_2019_05_10_20MHz',
-                   'nv1_2019_05_10_32MHz',
-                   'nv1_2019_05_10_52MHz',
-                   'nv1_2019_05_10_98MHz',
-                   'nv2_2019_04_30_29MHz',
-                   'nv2_2019_04_30_45MHz',
-                   'nv2_2019_04_30_56MHz',
-                   'nv2_2019_04_30_57MHz',
-#                   'nv2_2019_04_30_70MHz',
-#                   'nv2_2019_04_30_85MHz',
-                   'nv2_2019_04_30_101MHz']
-#                   'nv4_2019_06_06_28MHz']
+#    folder_list = ['nv0_2019_06_06 _48MHz',
+#                   'nv1_2019_05_10_20MHz',
+#                   'nv1_2019_05_10_32MHz',
+#                   'nv1_2019_05_10_52MHz',
+#                   'nv1_2019_05_10_98MHz',
+#                   'nv2_2019_04_30_29MHz',
+#                   'nv2_2019_04_30_45MHz',
+#                   'nv2_2019_04_30_56MHz',
+#                   'nv2_2019_04_30_57MHz',
+##                   'nv2_2019_04_30_70MHz',
+##                   'nv2_2019_04_30_85MHz',
+#                   'nv2_2019_04_30_101MHz']
+##                   'nv4_2019_06_06_28MHz']
                    
 #    for folder in folder_list:
     
