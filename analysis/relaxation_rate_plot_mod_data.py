@@ -101,6 +101,7 @@ def main(folder_name, doPlot = False):
                 # If it hasn't, then create arrays of the data.
                 if zero_plus_bool == False:
                     zero_plus_counts = norm_avg_sig
+                    zero_plus_time = time_array
                     
                     zero_plus_ref_max_time = max_relaxation_time
                     zero_plus_bool = True
@@ -113,9 +114,13 @@ def main(folder_name, doPlot = False):
                         zero_plus_counts = numpy.concatenate((zero_plus_counts, 
                                                         norm_avg_sig))
                         
+                        zero_plus_time = numpy.concatenate((zero_plus_time, time_array))
+                        
                     elif max_relaxation_time < zero_plus_ref_max_time:
                         zero_plus_counts = numpy.concatenate((norm_avg_sig, 
                                               zero_plus_counts))
+                        
+                        zero_plus_time = numpy.concatenate(time_array, zero_plus_time)
 
             if init_state == 1 and read_state == 1:              
                 # Check to see if data has already been taken of this experiment
@@ -150,6 +155,7 @@ def main(folder_name, doPlot = False):
                 # If it hasn't, then create arrays of the data.
                 if plus_minus_bool == False:
                     plus_minus_counts = norm_avg_sig
+                    plus_minus_time = time_array
                     
                     plus_minus_ref_max_time = max_relaxation_time
                     plus_minus_bool = True
@@ -161,10 +167,14 @@ def main(folder_name, doPlot = False):
                     if max_relaxation_time > plus_minus_ref_max_time:
                         plus_minus_counts = numpy.concatenate((plus_minus_counts, 
                                                         norm_avg_sig))
+                        plus_minus_time = numpy.concatenate((plus_minus_time, time_array))
+                        
                         
                     elif max_relaxation_time < plus_minus_ref_max_time:
                         plus_minus_counts = numpy.concatenate((norm_avg_sig, 
                                               plus_minus_counts))
+                        plus_minus_time = numpy.concatenate((time_array, plus_minus_time))
+                
                 
                 splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
                 
@@ -178,6 +188,9 @@ def main(folder_name, doPlot = False):
     if len(plus_plus_counts) != len(plus_minus_counts):
         print('Error: length of plus_plus_sig_counts and plus_minus_sig_counts do not match')
     
+    
+    print('(1,1)' + str(plus_plus_time))
+    print('(1,-1)' + str(plus_minus_time))
     # %% Fit the data
 
     if doPlot:
@@ -286,7 +299,7 @@ def main(folder_name, doPlot = False):
             
         data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
         
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins' 
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data' 
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
     
@@ -296,7 +309,7 @@ def main(folder_name, doPlot = False):
                   
 if __name__ == '__main__':
     
-    folder = 'nv13_2019_06_10_23MHz'
+    folder = 'nv13_2019_06_10_29MHz'
     
 #    folder_list = ['nv0_2019_06_06 _48MHz',
 #                   'nv1_2019_05_10_20MHz',

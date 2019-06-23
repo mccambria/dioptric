@@ -16,8 +16,8 @@ nv1_2019_05_10
 
 '''
 # %%
-def fit_eq(f, amp):
-    return amp*f**(-1)
+def fit_eq(f, amp, alpha):
+    return amp*f**(-alpha)
 
 # %%
 
@@ -26,16 +26,16 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-nv13_splitting_list = [23.1, 29.8, 51.9, 72.4, 112.9, 164.1]
-nv13_omega_avg_list = [0.42, 0.9, 1.2, 0.8, 1.4, 1.2]
-nv13_omega_error_list = [0.12, 0.4, 0.6, 0.4, 0.3, 0.2]
-nv13_gamma_avg_list = [90, 25, 30, 22, 13, 5.8]
-nv13_gamma_error_list = [30, 5, 5, 3, 3, 0.5]
+nv13_splitting_list = [23.1, 29.4, 29.8, 51.9, 72.4, 112.9, 164.1]
+nv13_omega_avg_list = [0.42, 1.2, 0.9, 1.2, 0.8, 1.4, 1.2]
+nv13_omega_error_list = [0.12, 0.2, 0.4, 0.6, 0.4, 0.3, 0.2]
+nv13_gamma_avg_list = [90, 74, 25, 30, 22, 13, 5.8]
+nv13_gamma_error_list = [30, 16, 5, 5, 3, 3, 0.5]
 
 # Try to fit the gamma to a 1/f^2
 
 fit_params, cov_arr = curve_fit(fit_eq, nv13_splitting_list, nv13_gamma_avg_list, 
-                                p0 = 100)
+                                p0 = (100, 1))
 
 splitting_linspace = numpy.linspace(nv13_splitting_list[0], nv13_splitting_list[-1],
                                     1000)
@@ -51,7 +51,19 @@ ax.errorbar(nv13_splitting_list, nv13_gamma_avg_list, yerr = nv13_gamma_error_li
 ax.errorbar(nv13_splitting_list, nv13_omega_avg_list, yerr = nv13_omega_error_list, 
             label = 'Omega', fmt='o', color='red')
 ax.plot(splitting_linspace, fit_eq(splitting_linspace, *fit_params), 
-            label = '1/f')
+            label = '1/f^a')
+
+text = '\n'.join((r'$1/f^{a}$',
+                  r'$a = $' + '%.2f'%(fit_params[1])
+#                  r'$A_0 = $' + '%.4f'%(fit_params[1] * 10**6) + ' kHz'
+#                  ,r'$a = $' + '%.2f'%(fit_params[2])
+                  ))
+
+
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+ax.text(0.75, 0.40, text, transform=ax.transAxes, fontsize=12,
+        verticalalignment='top', bbox=props)
+
 ax.grid()
 
 ax.set_xlabel('Splitting (MHz)')
