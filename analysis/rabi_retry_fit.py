@@ -20,7 +20,7 @@ import utils.tool_belt as tool_belt
 
 
 folder_dir = 'E:\\Shared drives\\Kolkowitz Lab Group\\nvdata\\rabi\\'
-file_name = '2019-06-20_17-55-20_ayrton12.txt'
+file_name = '2019-06-21_14-37-40_ayrton12.txt'
 
 # Estimated fit parameters
 offset = 0.92
@@ -34,14 +34,8 @@ decay = 1000
 
 with open('{}{}'.format(folder_dir, file_name)) as file:
     data = json.load(file)
-#    norm_avg_sig = data['norm_avg_sig']
-    sig_counts = numpy.array(data['sig_counts'])
-    ref_counts = numpy.array(data['ref_counts'])
-    norm_avg_sig = sig_counts[1,:] / ref_counts[1,:]
+    norm_avg_sig = data['norm_avg_sig']
     uwave_time_range = data['uwave_time_range']
-#    freq_center = data['freq_center']
-#    freq_dev = data['freq_range'] / 2
-#    uwave_time_range = [freq_center - freq_dev, freq_center + freq_dev]
     min_uwave_time = uwave_time_range[0]
     max_uwave_time = uwave_time_range[1]
     num_steps = data['num_steps']

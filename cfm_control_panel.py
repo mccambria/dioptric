@@ -139,6 +139,7 @@ def do_rabi(name, nv_sig, nd_filter, apd_indices,
 
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation
     uwave_time_range = [0, 500]
+#    uwave_time_range = [0, 400]
 #    uwave_time_range = [0, 300]
     num_steps = 51
 
@@ -402,14 +403,24 @@ if __name__ == '__main__':
 #                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
 #                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
     
+    # nv13_2019_06_10 30 MHz ~13 hours
     t1_exp_array = numpy.array([[plus_to_minus,  [0, 50*10**3], 51, 2 * 10**4],
-                                [plus_to_plus,  [0, 50*10**3], 51, 2 * 10**4]])
+                                [plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
+                                [plus_to_minus,   [0, 500*10**3], 41, 1 * 10**4],
+                                [plus_to_plus,  [0, 50*10**3], 51, 2 * 10**4],
+                                [plus_to_plus,  [0, 100*10**3], 51, 2 * 10**4],
+                                [plus_to_plus,   [0, 500*10**3], 41, 1 * 10**4],
+                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
+                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
+    
+#    t1_exp_array = numpy.array([[plus_to_minus,  [0, 50*10**3], 51, 2 * 10**4],
+#                                [plus_to_plus,  [0, 50*10**3], 51, 2 * 10**4]])
     
 
     # Array for the parameters of a given NV, formatted:
     # [nv_sig, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus, uwave_pi_pulse_minus]
     # uwave_MINUS should be associated with the HP signal generator
-    params_array = numpy.array([[nv13_2019_06_10, 2.8289, 105, 2.8520, 139]])
+    params_array = numpy.array([[nv13_2019_06_10, 2.8262, 103, 2.8556, 137]])
 
     # %% Functions to run
 
@@ -441,8 +452,8 @@ if __name__ == '__main__':
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.878, freq_range=0.05)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.84, freq_range=0.05)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.95, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8289, 0)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8520, 1)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8262, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8556, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
