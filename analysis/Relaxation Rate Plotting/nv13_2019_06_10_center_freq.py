@@ -17,9 +17,9 @@ def fit_eq(f, offset, amp):
 
 # %%
 
-splitting_list = [23.1, 29.8, 51.9, 72.4, 112.9, 164.1]
+splitting_list = [23.1, 29.4, 29.8, 51.9, 72.4, 112.9, 164.1]
 
-cent_freq = [2.84045, 2.8396, 2.84335, 2.8444, 2.85125, 2.86775 ]
+cent_freq = [2.84045, 2.8409, 2.8396, 2.84335, 2.8444, 2.85125, 2.86775 ]
 
 
 fit_params, cov_arr = curve_fit(fit_eq, splitting_list, cent_freq, 
@@ -32,7 +32,7 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 ax.plot(splitting_list, cent_freq, 'bo', label = 'data')
 ax.plot(splitting_linspace, fit_eq(splitting_linspace, *fit_params), 'r', label = 'fit')
 
-text = '\n'.join((r'$f_0 + A_0 f^{a}$',
+text = '\n'.join((r'$f_0 + A_0 f^{2}$',
                   r'$f_0 = $' + '%.2f'%(fit_params[0]) + ' GHz',
                   r'$A_0 = $' + '%.4f'%(fit_params[1] * 10**6) + ' kHz'
 #                  ,r'$a = $' + '%.2f'%(fit_params[2])
