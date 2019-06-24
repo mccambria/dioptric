@@ -112,7 +112,7 @@ def do_g2_measurement(name, nv_sig, nd_filter, apd_a_index, apd_b_index):
 def do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 101
-    num_runs = 4
+    num_runs = 1
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 #    uwave_power = -11.0
 #    uwave_power = -10.0
@@ -139,6 +139,7 @@ def do_rabi(name, nv_sig, nd_filter, apd_indices,
 
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation
     uwave_time_range = [0, 500]
+#    uwave_time_range = [0, 400]
 #    uwave_time_range = [0, 300]
     num_steps = 51
 
@@ -402,14 +403,24 @@ if __name__ == '__main__':
 #                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
 #                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
     
+    # nv13_2019_06_10 30 MHz ~13 hours
     t1_exp_array = numpy.array([[plus_to_minus,  [0, 50*10**3], 51, 2 * 10**4],
-                                [plus_to_plus,  [0, 50*10**3], 51, 2 * 10**4]])
+                                [plus_to_minus,  [0, 100*10**3], 51, 2 * 10**4],
+                                [plus_to_minus,   [0, 500*10**3], 41, 1 * 10**4],
+                                [plus_to_plus,  [0, 50*10**3], 51, 2 * 10**4],
+                                [plus_to_plus,  [0, 100*10**3], 51, 2 * 10**4],
+                                [plus_to_plus,   [0, 500*10**3], 41, 1 * 10**4],
+                                [zero_to_plus,   [0, 1500*10**3], 41, 1 * 10**4],
+                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
+    
+#    t1_exp_array = numpy.array([[plus_to_minus,  [0, 50*10**3], 51, 2 * 10**4],
+#                                [plus_to_plus,  [0, 50*10**3], 51, 2 * 10**4]])
     
 
     # Array for the parameters of a given NV, formatted:
     # [nv_sig, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus, uwave_pi_pulse_minus]
     # uwave_MINUS should be associated with the HP signal generator
-    params_array = numpy.array([[nv13_2019_06_10, 2.8289, 105, 2.8520, 139]])
+    params_array = numpy.array([[nv13_2019_06_10, 2.8262, 103, 2.8556, 137]])
 
     # %% Functions to run
 
@@ -425,7 +436,7 @@ if __name__ == '__main__':
 #        do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices)
 
         # Routines that expect single NVs
-#        for nv_sig in nv_sig_list:
+        for nv_sig in nv_sig_list:
 #            coords = [-0.3, 0.3, z_voltage]
 #            coords = (numpy.array(nv_sig[0:3]) + numpy.array(tool_belt.get_drift())).tolist()
 #            nv_sig = [*coords, *nv_sig[3:]]
@@ -435,43 +446,43 @@ if __name__ == '__main__':
 #            do_g2_measurement(name, nv_sig, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, nv_sig, nd_filter, apd_indices)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices)
-#            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.85, freq_range=0.10)
+            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.84, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.76, freq_range=0.10)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.825, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.878, freq_range=0.05)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.84, freq_range=0.05)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.95, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8289, 0)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8520, 1)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8262, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8556, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
 
 #         %% FULL CONTROL T1
 
-        for nv_ind in range(len(params_array)):
-
-            nv_sig = params_array[nv_ind, 0]
-
-            uwave_freq_plus = params_array[nv_ind, 1]
-            uwave_pi_pulse_plus = params_array[nv_ind, 2]
-            uwave_freq_minus = params_array[nv_ind, 3]
-            uwave_pi_pulse_minus = params_array[nv_ind, 4]
-
-            for exp_ind in range(len(t1_exp_array)):
-#            for exp_ind in [2,3,4,5,6,7]:
-
-                init_read_list = t1_exp_array[exp_ind, 0]
-                relaxation_time_range = t1_exp_array[exp_ind, 1]
-                num_steps = t1_exp_array[exp_ind, 2]
-                num_reps = t1_exp_array[exp_ind, 3]
-
-                do_t1_double_quantum(name, nv_sig, nd_filter,
-                              apd_indices,
-                              uwave_freq_plus, uwave_freq_minus,
-                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                              relaxation_time_range, num_steps, num_reps,
-                              init_read_list)
+#        for nv_ind in range(len(params_array)):
+#
+#            nv_sig = params_array[nv_ind, 0]
+#
+#            uwave_freq_plus = params_array[nv_ind, 1]
+#            uwave_pi_pulse_plus = params_array[nv_ind, 2]
+#            uwave_freq_minus = params_array[nv_ind, 3]
+#            uwave_pi_pulse_minus = params_array[nv_ind, 4]
+#
+#            for exp_ind in range(len(t1_exp_array)):
+##            for exp_ind in [2,3,4,5,6,7]:
+#
+#                init_read_list = t1_exp_array[exp_ind, 0]
+#                relaxation_time_range = t1_exp_array[exp_ind, 1]
+#                num_steps = t1_exp_array[exp_ind, 2]
+#                num_reps = t1_exp_array[exp_ind, 3]
+#
+#                do_t1_double_quantum(name, nv_sig, nd_filter,
+#                              apd_indices,
+#                              uwave_freq_plus, uwave_freq_minus,
+#                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+#                              relaxation_time_range, num_steps, num_reps,
+#                              init_read_list)
 
 
     finally:

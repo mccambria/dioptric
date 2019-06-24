@@ -22,10 +22,10 @@ import numpy
 from numpy import exp
 import json
 import time
-#import labrad
+import labrad
 from tkinter import Tk
 from tkinter import filedialog
-#from git import Repo
+from git import Repo
 from pathlib import Path
 
 
@@ -665,4 +665,3 @@ def reset_cfm_with_cxn(cxn):
     cxn.apd_tagger.reset()
     cxn.arbitrary_waveform_generator.reset()
     cxn.microwave_signal_generator.reset()
-    print('CFM reset!')
