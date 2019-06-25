@@ -309,7 +309,7 @@ def main(folder_name, doPlot = False):
                   
 if __name__ == '__main__':
     
-    folder = 'nv13_2019_06_10_29MHz'
+    folder = 'nv13_2019_06_10_28MHz'
     
 #    folder_list = ['nv0_2019_06_06 _48MHz',
 #                   'nv1_2019_05_10_20MHz',

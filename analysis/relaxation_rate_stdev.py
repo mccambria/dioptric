@@ -205,48 +205,38 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our 
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
     
-    folder = 'nv13_2019_06_10_29MHz'
+    folder = 'nv13_2019_06_10_28MHz'
 
     
     '''
     MAIN: this will calculate the value and standard deviation of gamma and
-        omega for the whole data set. 
+        omega for the whole data set.
         
-        It's important to check that the values
-        make sense: occaionally when the bins get too small the data is too noisy
-        to accurately fit. Both check that the standard deviation is smaller than
-        than the value (we've been seeing a stdev ~ 20-5%), and check the saved 
-        txt file for the list of values. If need be, the bins to run through
-        can be specified
+        First try to run main(folder)
+        
+        It's important to check that the values make sense: occaionally when 
+        the bins get too small the data is too noisy to accurately fit. 
+        Check that the standard deviation is reasonable (we've been seeing a 
+        stdev ~ 20-5%), in the saved txt file, compare the values found from 
+        averaging all the data (one bin) and averaging the bins seperately 
+        (average value). 
+        If those seem off, check the bottom of the saved txt file for the list 
+        of values. If some of the values are orders of magnitude larger, 
+        exclude those bin numbers from the bin list, and run this file with a 
+        set bin list.
         
     '''
     
     
 #    main(folder)
+    
         
 #    # Specify the number of bins
 
-    num_bins_list = [1,2,4, 5, 8,10]
+    num_bins_list = [1,2,4, 5, 8]
     main(folder, num_bins_list)
 
     
-    # Use the factors of the num_runs for the num_bins
-    
-#    folder_list = ['nv0_2019_06_06 _48MHz',
-#                   'nv1_2019_05_10_20MHz',
-#                   'nv1_2019_05_10_32MHz',
-#                   'nv1_2019_05_10_52MHz',
-#                   'nv1_2019_05_10_98MHz',
-#                   'nv2_2019_04_30_29MHz',
-#                   'nv2_2019_04_30_45MHz',
-#                   'nv2_2019_04_30_56MHz',
-#                   'nv2_2019_04_30_57MHz',
-##                   'nv2_2019_04_30_70MHz',
-##                   'nv2_2019_04_30_85MHz',
-#                   'nv2_2019_04_30_101MHz']
-##                   'nv4_2019_06_06_28MHz']
-                   
-#    for folder in folder_list:
     
 
     

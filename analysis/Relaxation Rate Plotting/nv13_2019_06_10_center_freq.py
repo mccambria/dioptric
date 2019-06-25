@@ -17,9 +17,9 @@ def fit_eq(f, offset, amp):
 
 # %%
 
-splitting_list = [23.1, 29.4, 29.8, 51.9, 72.4, 112.9, 164.1]
+splitting_list = [23.1, 28.0, 29.4, 29.8, 51.9, 72.4, 112.9, 164.1]
 
-cent_freq = [2.84045, 2.8409, 2.8396, 2.84335, 2.8444, 2.85125, 2.86775 ]
+cent_freq = [2.84045, 2.8396, 2.8409, 2.8396, 2.84335, 2.8444, 2.85125, 2.86775 ]
 
 
 fit_params, cov_arr = curve_fit(fit_eq, splitting_list, cent_freq, 
