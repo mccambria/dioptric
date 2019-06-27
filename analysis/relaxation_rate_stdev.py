@@ -228,13 +228,13 @@ if __name__ == '__main__':
     '''
     
     
-#    main(folder)
+    main(folder)
     
         
 #    # Specify the number of bins
 
-    num_bins_list = [1,2,4, 5, 8]
-    main(folder, num_bins_list)
+#    num_bins_list = [1,2,4, 5, 8]
+#    main(folder, num_bins_list)
 
     
     
