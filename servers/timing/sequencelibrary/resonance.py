@@ -56,20 +56,6 @@ def get_seq(pulser_wiring, args):
     # The AOM should always be on
     train = [(period, HIGH)]
     seq.setDigital(pulser_do_aom, train)
-    
-    step_time = 1 * 10**6
-    train = [(step_time, -1.0),
-             (step_time, -0.75),
-             (step_time, -0.5),
-             (step_time, -0.25),
-             (step_time, 0.0),
-             (step_time, 0.25),
-             (step_time, 0.5),
-             (step_time, 0.75),
-             (step_time, 1.0),
-             (step_time, 0.0)]
-    
-    seq.setAnalog(0, train)
 
     return seq, [period]
 

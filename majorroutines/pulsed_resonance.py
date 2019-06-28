@@ -47,7 +47,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     sig_counts = numpy.copy(ref_counts)
     
     # Define some times for the sequence (in ns)
-    pi_pulse = 120
+    pi_pulse = 60
     polarization_time = 3 * 10**3
     reference_time = 1 * 10**3
     signal_wait_time = 1 * 10**3
@@ -100,7 +100,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
             cxn.microwave_signal_generator.uwave_on()
 
             # Start the timing stream
-            cxn.pulse_streamer.stream_start(10**5)
+            cxn.pulse_streamer.stream_start(5*10**4)
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)

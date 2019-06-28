@@ -37,14 +37,14 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(cxn, coords, nd_filter, run_time, readout, apd_indices,
+def main(cxn, nv_sig, nd_filter, run_time, readout, apd_indices,
          name='untitled', continuous=False):
 
     # %% Some initial setup
     
     tool_belt.reset_cfm(cxn)
 
-    x_center, y_center, z_center = coords[0:3]
+    coords = numpy.array(nv_sig[0:3]) + tool_belt.get_drift()
     readout_sec = readout / 10**9
 
     # %% Load the PulseStreamer
@@ -57,8 +57,8 @@ def main(cxn, coords, nd_filter, run_time, readout, apd_indices,
 
     # %% Set x, y, and z
 
-    cxn.galvo.write(x_center, y_center)
-    cxn.objective_piezo.write_voltage(z_center)
+    cxn.galvo.write(coords[0], coords[1])
+    cxn.objective_piezo.write_voltage(coords[2])
 
     # %% Set up the APD
 

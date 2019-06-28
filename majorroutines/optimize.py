@@ -212,10 +212,13 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
     # 1: mean, defines the center of the Gaussian
     # 2: standard deviation, defines the width of the Gaussian
     # 3: constant y value to account for background
-    expected_count_rate = float(nv_sig[3])
+    expected_count_rate = nv_sig[3]
+    if expected_count_rate is None:
+        expected_count_rate = 50  # Guess 50
+    expected_count_rate = float(expected_count_rate)
     background_count_rate = nv_sig[4]
     if background_count_rate is None:
-        background_count_rate = 0
+        background_count_rate = 0  # Guess 0
     background_count_rate = float(background_count_rate)
     low_voltage = voltages[0]
     high_voltage = voltages[-1]
