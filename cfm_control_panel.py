@@ -178,8 +178,9 @@ def do_t1_double_quantum(name, nv_sig, nd_filter, apd_indices,
                          init_read_list):
 
     uwave_power = 9
+    num_runs = 120  # This'll quadruple the expected duration listed below!!
 #    num_runs = 80  # This'll double the expected duration listed below!!
-    num_runs = 40
+#    num_runs = 40
 #    num_runs = 20  # This'll halve the expected duration listed below
 #    num_runs = 1  # Pick this one for the best noise to signal ratio
 
@@ -444,10 +445,17 @@ if __name__ == '__main__':
 #                                [zero_to_zero,   [0, 1500*10**3], 41, 1 * 10**4]])
     
     # nv0_2019_06_27 30 MHz ~13 hours
-    t1_exp_array = numpy.array([[plus_to_minus,   [0, 5000*10**3], 21, 5000],
-                                [plus_to_plus,   [0, 5000*10**3], 21, 5000],
-                                [zero_to_plus,   [0, 5000*10**3], 21, 5000],
-                                [zero_to_zero,   [0, 5000*10**3], 21, 5000]])
+#    t1_exp_array = numpy.array([[plus_to_minus,   [0, 5000*10**3], 21, 5000],
+#                                [plus_to_plus,   [0, 5000*10**3], 21, 5000],
+#                                [zero_to_plus,   [0, 5000*10**3], 21, 5000],
+#                                [zero_to_zero,   [0, 5000*10**3], 21, 5000]])
+    
+    # nv0_2019_06_27 30 MHz ~16 hours
+    t1_exp_array = numpy.array([[plus_to_minus,   [0, 10*10**6], 11, 5000],
+                                [plus_to_plus,   [0, 10*10**6], 11, 5000],
+                                [zero_to_plus,   [0, 10*10**6], 11, 5000],
+                                [zero_to_minus,   [0, 10*10**6], 11, 5000],
+                                [zero_to_zero,   [0, 10*10**6], 11, 5000]])
     
 #    t1_exp_array = numpy.array([[plus_to_minus,  [0, 50*10**3], 51, 2 * 10**4],
 #                                [plus_to_plus,  [0, 50*10**3], 51, 2 * 10**4]])
