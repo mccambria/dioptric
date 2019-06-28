@@ -45,6 +45,8 @@ def get_seq(pulser_wiring, args):
     half_exp_dur = exp_dur // 2
     exp_dur = half_exp_dur * 2  # This will prevent any rounding errors
     
+    half_clock_pulse = numpy.int64(50)
+    
     if pi_pulse % 2 == 0:
         half_pi_pulse_short = pi_pulse // 2
         half_pi_pulse_long = half_pi_pulse_short
@@ -52,7 +54,7 @@ def get_seq(pulser_wiring, args):
         half_pi_pulse_short = pi_pulse // 2
         half_pi_pulse_long = half_pi_pulse_short + 1
     
-    period = (3 * polarization_dur) + (2 * exp_dur)
+    period = (2 * polarization_dur) + (2 * exp_dur) + half_clock_pulse
 
     # %% Define the sequence
 
@@ -65,7 +67,7 @@ def get_seq(pulser_wiring, args):
              (polarization_dur - readout_dur, LOW),
              (exp_dur, LOW),
              (readout_dur, HIGH),
-             (polarization_dur - readout_dur, LOW)]
+             (half_clock_pulse, LOW)]
     seq.setDigital(apd_index, train)
 
     # Pulse the laser with the AOM for polarization and readout
@@ -73,7 +75,7 @@ def get_seq(pulser_wiring, args):
              (exp_dur, LOW),
              (polarization_dur, HIGH),
              (exp_dur, LOW),
-             (polarization_dur + aom_delay, HIGH)]
+             (half_clock_pulse + aom_delay, HIGH)]
     seq.setDigital(pulser_do_aom, train)
 
     # Pulse the microwave for tau
@@ -83,7 +85,7 @@ def get_seq(pulser_wiring, args):
              (half_exp_dur - half_pi_pulse_long, LOW),
              (polarization_dur, LOW),
              (exp_dur, LOW),
-             (polarization_dur + rf_delay, LOW)]
+             (half_clock_pulse + rf_delay, LOW)]
     seq.setDigital(pulser_do_uwave, train)
 
     return seq, [period]
@@ -99,7 +101,7 @@ if __name__ == '__main__':
     
     # polarization_dur, exp_dur, aom_delay, rf_delay, 
     # readout_dur, pi_pulse, apd_index, uwave_gate_index
-    args = [3000, 3000, 500, 200, 
+    args = [3000, 3000, 0, 0, 
             300, 100, 0, 0]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()   

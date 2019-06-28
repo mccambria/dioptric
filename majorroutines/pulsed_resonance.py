@@ -54,7 +54,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     reference_wait_time = 2 * 10**3
     background_wait_time = 1 * 10**3
     aom_delay_time = 750
-    gate_time = 450
+    gate_time = 320
     readout = gate_time
     readout_sec = readout / (10**9)
     sequence_args = [pi_pulse, polarization_time, reference_time,

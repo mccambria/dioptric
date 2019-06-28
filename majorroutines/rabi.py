@@ -50,7 +50,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     reference_wait_time = 2 * 10**3
     background_wait_time = 1 * 10**3
     aom_delay_time = 750
-    gate_time = 450
+    gate_time = 320
 
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
@@ -159,7 +159,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # Estimated fit parameters
     offset = 0.90
     amplitude = 0.10
-    frequency = 1/100
+    frequency = 1/150
 #    phase = 0
     decay = 1000
 

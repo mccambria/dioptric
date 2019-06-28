@@ -43,8 +43,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         do_uwave_gen = 'HP'
     
     # Define some times (in ns)
-    polarization_dur = 3 * 10**3
-    exp_dur = 3 * 10**3
+    polarization_dur = 5 * 10**3
+    exp_dur = 5 * 10**3
     aom_delay = 750
     uwave_delay = 40
     gate_time = int(count_gate_time)
@@ -68,9 +68,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     ind_list = list(range(0, num_steps))
 
     # %% Collect the data
-
-    # Start 'Press enter to stop...'
-    tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
 
@@ -97,7 +94,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
 
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
-                break
+                break 
 
             # Stream the sequence
             # polarization_dur, exp_dur, aom_delay, uwave_delay, 
@@ -129,7 +126,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
 
     # %% Calculate the statistics of the run
 
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    norm_avg_sig = avg_ref_counts - avg_sig_counts
     
     sig_stat = numpy.average(norm_avg_sig)
     
@@ -140,7 +137,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     print('Gate Time: {} ns \nSignal: {:.3f} \nNoise: {:.3f} \nSNR: {:.1f}'.format(gate_time, \
           sig_stat, st_dev_stat, sig_to_noise_ratio))
     
-    # %% Plot the Rabi signal
+    # %% Plot the counts
 
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
@@ -210,17 +207,24 @@ if __name__ == '__main__':
     from scipy.optimize import curve_fit
     
     name = 'Johnson1'
-    nv_sig = [-0.241, -0.335, 47.7, 40, 2]  # nv0_2019_06_27
+    # nv0_2019_06_27
+#    nv_sig = [-0.241, -0.335, 47.7, 40, 2]  # nd 0.5
+    nv_sig = [-0.241, -0.335, 47.7, 20, 2]  # nd 1.0
+    nv_sig = [-0.241, -0.335, 47.7, 10, 2]  # nd 1.5
+    nv_sig = [-0.241, -0.335, 47.7, 3, 2]  # nd 2.0
     nd_filter = 0.5
 
     apd_indices = [0]
     
-    uwave_freq = 2.7631
+    uwave_freq = 2.7628
     uwave_power = 9
-    uwave_pi_pulse = 57
+    uwave_pi_pulse = 58
 
+    # num_steps should be high and num_reps low so that we can actually
+    # analyze the noise - if num_steps = 0, then st_dev = 0 too!
+#    num_steps = 101
     num_steps = 51
-    num_reps = 10 * 10**4
+    num_reps = 10**5
     num_runs = 1
     
 #    count_gate_time = 350
@@ -230,17 +234,21 @@ if __name__ == '__main__':
 #             uwave_freq, uwave_power, uwave_pi_pulse, count_gate_time,
 #             num_steps, num_reps, num_runs, name)
         
+#    delay_range = [100, 600]
+    delay_range = [200, 600]
+    
+    delay_time_list = numpy.linspace(delay_range[0], delay_range[1], num=9).astype(int)
+    
+    # Start 'Press enter to stop...'
+    tool_belt.init_safe_stop()
+    
     snr_list = []
-    min_delay_time = 400
-    max_delay_time = 500
-
-#    min_delay_time = 500
-#    max_delay_time = 520    
-    
-    num_delay_steps = int((max_delay_time - min_delay_time) / 25 + 1)
-    delay_time_list = numpy.linspace(min_delay_time, max_delay_time, num = num_delay_steps).astype(int)
-    
     for gate_ind in delay_time_list:
+        
+        # Break out of the while if the user says stop
+        if tool_belt.safe_stop():
+            break
+        
         count_gate_time = gate_ind
     
         with labrad.connect() as cxn:
@@ -255,14 +263,14 @@ if __name__ == '__main__':
     def parabola(t, offset, amplitude, delay_time):
         return offset + amplitude * (t - delay_time)**2  
     
-    offset = 10
+    offset = 130
     amplitude = 100
-    delay_time = 300
+    delay_time = numpy.average(delay_range)
     
-    popt,pcov = curve_fit(parabola, delay_time_list, snr_list, 
-                              p0=[offset, amplitude, delay_time]) 
+    popt,pcov = curve_fit(parabola, delay_time_list, snr_list,
+                          p0=[offset, amplitude, delay_time]) 
     
-    linspace_time = numpy.linspace(min_delay_time, max_delay_time, num = 1000)
+    linspace_time = numpy.linspace(delay_range[0], delay_range[1], num=1000)
     
     fig, ax = plt.subplots(1, 1, figsize=(12, 10))
     ax.plot(delay_time_list, snr_list, 'ro', label = 'data')
@@ -289,4 +297,7 @@ if __name__ == '__main__':
     tool_belt.save_figure(fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
     
+    if tool_belt.check_safe_stop_alive():
+        print("\n\nRoutine complete. Press enter to exit.")
+        tool_belt.poll_safe_stop()
             

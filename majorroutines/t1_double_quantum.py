@@ -64,7 +64,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
-    gate_time = 450
+    gate_time = 320
     
     # %% Unpack the initial and read state
     
@@ -275,6 +275,45 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             print('Second Reference = ' + str(count))
             
         cxn.apd_tagger.stop_tag_stream()
+        
+        # %% Save the data we have incrementally for long T1s
+    
+        timestamp = tool_belt.get_time_stamp()
+    
+        raw_data = {'timestamp': timestamp,
+                    'name': name,
+                    'init_state': int(init_state),
+                    'read_state': int(read_state),
+                    'nv_sig': nv_sig,
+                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'nv_sig-format': tool_belt.get_nv_sig_format(),
+                    'opti_coords_list': opti_coords_list,
+                    'opti_coords_list-units': 'V',
+                    'nd_filter': nd_filter,
+                    'gate_time': gate_time,
+                    'gate_time-units': 'ns',
+                    'uwave_freq_init': uwave_freq_init,
+                    'uwave_freq_init-units': 'GHz',
+                    'uwave_freq_read': uwave_freq_read,
+                    'uwave_freq_read-units': 'GHz',
+                    'uwave_power': uwave_power,
+                    'uwave_power-units': 'dBm',
+                    'uwave_pi_pulse_init': uwave_pi_pulse_init,
+                    'uwave_pi_pulse_init-units': 'ns',
+                    'uwave_pi_pulse_read': uwave_pi_pulse_read,
+                    'uwave_pi_pulse_read-units': 'ns',
+                    'relaxation_time_range': relaxation_time_range,
+                    'relaxation_time_range-units': 'ns',
+                    'num_steps': num_steps,
+                    'num_reps': num_reps,
+                    'run_ind': run_ind,
+                    'sig_counts': sig_counts.astype(int).tolist(),
+                    'sig_counts-units': 'counts',
+                    'ref_counts': ref_counts.astype(int).tolist(),
+                    'ref_counts-units': 'counts'}
+        
+        file_path = tool_belt.get_file_path(__file__, timestamp, '{}_incremental'.format(name))
+        tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Hardware clean up
     

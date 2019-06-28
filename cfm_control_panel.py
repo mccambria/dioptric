@@ -264,15 +264,15 @@ if __name__ == '__main__':
 
     # %% General
 
-    name = 'Johnson1'  # Sample name
+    name = 'johnson1'  # Sample name
 
 #    nd_filter = 2.0
 #    nd_filter = 1.5
 #    nd_filter = 1.0
     nd_filter = 0.5
 
-    apd_indices = [0]
-#    apd_indices = [0, 1]
+#    apd_indices = [0]
+    apd_indices = [0, 1]
 
     # %% NV sigs
 
@@ -453,6 +453,7 @@ if __name__ == '__main__':
     # nv0_2019_06_27 30 MHz ~16 hours
     t1_exp_array = numpy.array([[plus_to_minus,   [0, 10*10**6], 11, 5000],
                                 [plus_to_plus,   [0, 10*10**6], 11, 5000],
+                                [minus_to_minus,   [0, 10*10**6], 11, 5000],
                                 [zero_to_plus,   [0, 10*10**6], 11, 5000],
                                 [zero_to_minus,   [0, 10*10**6], 11, 5000],
                                 [zero_to_zero,   [0, 10*10**6], 11, 5000]])
@@ -464,7 +465,7 @@ if __name__ == '__main__':
     # Array for the parameters of a given NV, formatted:
     # [nv_sig, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus, uwave_pi_pulse_minus]
     # uwave_MINUS should be associated with the HP signal generator
-    params_array = numpy.array([[nv0_2019_06_27, 2.7631, 57, 2.9859, 84]])
+    params_array = numpy.array([[nv0_2019_06_27, 2.7602, 57, 2.9882, 84]])
 
     # %% Functions to run
 
@@ -488,19 +489,19 @@ if __name__ == '__main__':
 #            nv_sig = [*coords, *nv_sig[3:]]
 #            do_image_sample(name, coords, nd_filter, apd_indices)
 #            set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
-            do_optimize(name, nv_sig, nd_filter, apd_indices)
+#            do_optimize(name, nv_sig, nd_filter, apd_indices)
 #            do_stationary_count(name, nv_sig, nd_filter, apd_indices)
 #            do_g2_measurement(name, nv_sig, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_range=0.2)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.84, freq_range=0.05)
-#            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.76, freq_range=0.10)
+#            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.7631, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.825, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.878, freq_range=0.05)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.76, freq_range=0.05)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.98, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.7631, 0)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.9859, 1)
+            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.7602, 0)
+            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.9882, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
