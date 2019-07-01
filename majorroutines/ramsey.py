@@ -22,20 +22,20 @@ import numpy
 import os
 import time
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
+#from scipy.optimize import curve_fit
 from random import shuffle
 
-import json
-from scipy import asarray as ar,exp
+#import json
+#from scipy import asarray as ar,exp
 
 # %% Main
 
-def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
-         sig_long_apd_index, ref_long_apd_index, expected_counts,
+def main(cxn, nv_sig, nd_filter, apd_indices,
          uwave_freq, uwave_power, uwave_pi_half_pulse, precession_time_range,
          num_steps, num_reps, num_runs, 
          name='untitled'):
     
+    tool_belt.reset_cfm(cxn)
     
 #    print(coords)
     
@@ -110,10 +110,8 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Make some lists and variables to save at the end
     
-    passed_coords = coords
-    
     opti_coords_list = []
-    optimization_success_list = []
+    
     
     # %% Analyze the sequence
     
@@ -124,8 +122,7 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                     gate_time, uwave_pi_half_pulse, max_precession_time,
-                    sig_shrt_apd_index, ref_shrt_apd_index,
-                    sig_long_apd_index, ref_long_apd_index]
+                    apd_indices[0]]
     ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
     seq_time = ret_vals[0]
 #    print(sequence_args)
@@ -133,15 +130,17 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     # %% Ask user if they wish to run experiment based on run time
     
-#    seq_time_s = seq_time / (10**9)  # s
-#    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
-#    expected_run_time_m = expected_run_time / 60 # s
+    seq_time_s = seq_time / (10**9)  # s
+    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
+    expected_run_time_m = expected_run_time / 60 # s
 #
 #    
 #    msg = 'Expected run time: {} minutes. ' \
 #        'Enter \'y\' to continue: '.format(expected_run_time_m)
 #    if input(msg) != 'y':
 #        return
+    
+    print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
     
     # %% Get the starting time of the function, to be used to calculate run time
 
@@ -160,28 +159,23 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     
     for run_ind in range(num_runs):
 
-        print('Run index: {}'.format(run_ind))
+        print(' \nRun index: {}'.format(run_ind))
         
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
         
         # Optimize
-        ret_val = optimize.main(cxn, coords, nd_filter, sig_shrt_apd_index, 
-                               expected_counts = expected_counts)
+        opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+        opti_coords_list.append(opti_coords)
         
-        coords = ret_val[0]
-        optimization_success = ret_val[1]
-        
-        # Save the coords found and if it failed
-        optimization_success_list.append(optimization_success)
-        opti_coords_list.append(coords)
+        # Set up the microwaves
+        cxn.microwave_signal_generator.set_freq(uwave_freq)
+        cxn.microwave_signal_generator.set_amp(uwave_power)
+        cxn.microwave_signal_generator.uwave_on()
             
-        # Load the APD tasks
-        cxn.apd_counter.load_stream_reader(sig_shrt_apd_index, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(ref_shrt_apd_index, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(sig_long_apd_index, seq_time, half_length_taus)
-        cxn.apd_counter.load_stream_reader(ref_long_apd_index, seq_time, half_length_taus) 
+        # Load the APD
+        cxn.apd_tagger.start_tag_stream(apd_indices)  
         
         # Shuffle the list of tau indices so that it steps thru them randomly
         shuffle(tau_ind_list)
@@ -207,42 +201,60 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                     gate_time, uwave_pi_half_pulse, taus[tau_ind_second],
-                    sig_shrt_apd_index, ref_shrt_apd_index,
-                    sig_long_apd_index, ref_long_apd_index]
+                    apd_indices[0]]
             
             print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
             print('Second relaxation time: {}'.format(taus[tau_ind_second])) 
             
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)        
             
-            count = cxn.apd_counter.read_stream(sig_shrt_apd_index, 1)
+            # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
+            # So we can sum on the values for similar index modulus 4 to
+            # parse the returned list into what we want.
+            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            sample_counts = new_counts[0]
+            
+            sig_gate_counts = sample_counts[::4]
+            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
+            
+            count = sum(sample_counts[0::4])
             sig_counts[run_ind, tau_ind_first] = count
-            print('sig_shrt = ' + str(count))
+            print('First signal = ' + str(count))
             
-            count = cxn.apd_counter.read_stream(ref_shrt_apd_index, 1)
+            count = sum(sample_counts[1::4])
             ref_counts[run_ind, tau_ind_first] = count  
-            print('ref_shrt = ' + str(count))
+            print('First Reference = ' + str(count))
             
-            count = cxn.apd_counter.read_stream(sig_long_apd_index, 1)
+            count = sum(sample_counts[2::4])
             sig_counts[run_ind, tau_ind_second] = count
-            print('sig_long = ' + str(count))
+            print('Second Signal = ' + str(count))
 
-            count = cxn.apd_counter.read_stream(ref_long_apd_index, 1)
+            count = sum(sample_counts[3::4])
             ref_counts[run_ind, tau_ind_second] = count
-            print('ref_long = ' + str(count))
+            print('Second Reference = ' + str(count))
+            
+        cxn.apd_tagger.stop_tag_stream()
 
-    # %% Turn off the signal generator
-
-    cxn.microwave_signal_generator.uwave_off()
+    # %% Hardware clean up
+    
+    tool_belt.reset_cfm(cxn)
     
     # %% Average the counts over the iterations
 
     avg_sig_counts = numpy.average(sig_counts, axis=0)
     avg_ref_counts = numpy.average(ref_counts, axis=0)
     
-    # %% Calculate the t1 data, signal / reference over different relaxation times
+    # %% Calculate the ramsey data, signal / reference over different 
+    # relaxation times
 
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    # Replace x/0=inf with 0
+    try:
+        norm_avg_sig = avg_sig_counts / avg_ref_counts
+    except RuntimeWarning as e:
+        print(e)
+        inf_mask = numpy.isinf(norm_avg_sig)
+        # Assign to 0 based on the passed conditional array
+        norm_avg_sig[inf_mask] = 0
     
     # %% Plot the t1 signal
 
@@ -276,13 +288,14 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     raw_data = {'timestamp': timestamp,
             'timeElapsed': timeElapsed,
             'name': name,
-            'passed_coords': passed_coords,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'nv_sig-format': tool_belt.get_nv_sig_format(),
             'opti_coords_list': opti_coords_list,
-            'coords-units': 'V',
-            'optimization_success_list': optimization_success_list,
-            'expected_counts': expected_counts,
-            'expected_counts-units': 'kcps',
+            'opti_coords_list-units': 'V',
             'nd_filter': nd_filter,
+            'gate_time': gate_time,
+            'gate_time-units': 'ns',
             'uwave_freq': uwave_freq,
             'uwave_freq-units': 'GHz',
             'uwave_power': uwave_power,
@@ -305,71 +318,70 @@ def main(cxn, coords, nd_filter, sig_shrt_apd_index, ref_shrt_apd_index,
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
        
-    return coords
     
 # %%    
-    
-def decayExp(t, offset, amplitude, decay):
-    return offset + amplitude * exp(-decay * t)    
-    
-# %% Fitting the data
-    
-def t1_exponential_decay(open_file_name, save_file_type):
-    
-    directory = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
-   
-    # Open the specified file
-    with open(directory + open_file_name + '.txt') as json_file:
-        
-        # Load the data from the file
-        data = json.load(json_file)
-        countsT1 = data["norm_avg_sig"]
-        relaxation_time_range = data["relaxation_time_range"]
-        num_steps = data["num_steps"]
-        spin = data["spin_measured?"]
-        
-    min_relaxation_time = relaxation_time_range[0] 
-    max_relaxation_time = relaxation_time_range[1]
-        
-    timeArray = numpy.linspace(min_relaxation_time, max_relaxation_time,
-                              num=num_steps, dtype=numpy.int32)
-    
-    offset = 0.8
-    amplitude = 0.1
-    decay = 1/10000 # inverse ns
-
-    popt,pcov = curve_fit(decayExp, timeArray, countsT1, 
-                              p0=[offset, amplitude, decay])
-    
-    decay_time = 1 / popt[2]
-            
-    first = timeArray[0]
-    last = timeArray[len(timeArray)-1]
-    linspaceTime = numpy.linspace(first, last, num=1000)
-    
-    
-    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(timeArray / 10**6, countsT1,'bo',label='data')
-    ax.plot(linspaceTime / 10**6, decayExp(linspaceTime,*popt),'r-',label='fit')
-    ax.set_xlabel('Dark Time (ms)')
-    ax.set_ylabel('Contrast (arb. units)')
-    ax.set_title('T1 of ' + str(spin))
-    ax.legend()
-    
-    text = "\n".join((r'$C + A_0 e^{-t / d}$',
-                      r'$C = $' + '%.1f'%(popt[0]),
-                      r'$A_0 = $' + '%.1f'%(popt[1]),
-                      r'$d = $' + "%.3f"%(decay_time / 10**6) + " ms"))
-    
-    
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(0.70, 0.95, text, transform=ax.transAxes, fontsize=12,
-                            verticalalignment="top", bbox=props)
-    
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-    
-    fig.savefig(open_file_name + 'replot.' + save_file_type)
+#    
+#def decayExp(t, offset, amplitude, decay):
+#    return offset + amplitude * exp(-decay * t)    
+#    
+## %% Fitting the data
+#    
+#def t1_exponential_decay(open_file_name, save_file_type):
+#    
+#    directory = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
+#   
+#    # Open the specified file
+#    with open(directory + open_file_name + '.txt') as json_file:
+#        
+#        # Load the data from the file
+#        data = json.load(json_file)
+#        countsT1 = data["norm_avg_sig"]
+#        relaxation_time_range = data["relaxation_time_range"]
+#        num_steps = data["num_steps"]
+#        spin = data["spin_measured?"]
+#        
+#    min_relaxation_time = relaxation_time_range[0] 
+#    max_relaxation_time = relaxation_time_range[1]
+#        
+#    timeArray = numpy.linspace(min_relaxation_time, max_relaxation_time,
+#                              num=num_steps, dtype=numpy.int32)
+#    
+#    offset = 0.8
+#    amplitude = 0.1
+#    decay = 1/10000 # inverse ns
+#
+#    popt,pcov = curve_fit(decayExp, timeArray, countsT1, 
+#                              p0=[offset, amplitude, decay])
+#    
+#    decay_time = 1 / popt[2]
+#            
+#    first = timeArray[0]
+#    last = timeArray[len(timeArray)-1]
+#    linspaceTime = numpy.linspace(first, last, num=1000)
+#    
+#    
+#    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
+#    ax.plot(timeArray / 10**6, countsT1,'bo',label='data')
+#    ax.plot(linspaceTime / 10**6, decayExp(linspaceTime,*popt),'r-',label='fit')
+#    ax.set_xlabel('Dark Time (ms)')
+#    ax.set_ylabel('Contrast (arb. units)')
+#    ax.set_title('T1 of ' + str(spin))
+#    ax.legend()
+#    
+#    text = "\n".join((r'$C + A_0 e^{-t / d}$',
+#                      r'$C = $' + '%.1f'%(popt[0]),
+#                      r'$A_0 = $' + '%.1f'%(popt[1]),
+#                      r'$d = $' + "%.3f"%(decay_time / 10**6) + " ms"))
+#    
+#    
+#    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+#    ax.text(0.70, 0.95, text, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    
+#    fig.canvas.draw()
+#    fig.canvas.flush_events()
+#    
+#    fig.savefig(open_file_name + 'replot.' + save_file_type)
 
 
     

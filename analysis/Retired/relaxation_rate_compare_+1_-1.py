@@ -346,18 +346,37 @@ def main(folder_name, doPlot = False):
         fig.canvas.draw()
         fig.canvas.flush_events()
         
+    temp_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
+    
+    ax = axes_pack[0]
+    ax.plot(zero_plus_time, zero_plus_counts, label = '(0,+1)')
+    ax.plot(zero_minus_time, zero_minus_counts, label = '(0,-1)')
+    ax.set_xlabel('Relaxation time (ms)')
+    ax.set_ylabel('Normalized signal Counts')
+    ax.legend()
+    
+    ax = axes_pack[1]
+    ax.plot(plus_plus_time, plus_plus_counts, label = '(+1,+1)')
+    ax.plot(minus_minus_time, minus_minus_counts, label = '(-1,-1)')
+    ax.set_xlabel('Relaxation time (ms)')
+    ax.set_ylabel('Normalized signal Counts')
+    ax.legend()
+    
+    temp_fig.canvas.draw()
+    temp_fig.canvas.flush_events()
+
 #    print('Omega list: {} \nGamma list: {}'.format(omega_rate_list, gamma_rate_list))
 
     
     # %% Saving the figure
 
-        data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
-    
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data'
-        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
-                                                             file_name)
+    data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
 
-        tool_belt.save_figure(fig, file_path)
+    file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data'
+    file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
+                                                         file_name)
+
+#        tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 

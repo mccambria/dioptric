@@ -123,11 +123,11 @@ def main(folder_name, num_bins_list = None):
     g_value_avg = numpy.average(g_value_list)
      
 #    # Plot the data to visualize it. This plot is not saved
-#    plt.loglog(num_bins_list, g_stdev_list, 'go', label = 'g rate standard deviation')
-#    plt.loglog(num_bins_list, o_stdev_list, 'bo', label = 'o rate standard deviation')
-#    plt.xlabel('Number of bins for num_runs')
-#    plt.ylabel('Standard Deviation (kHz)')
-#    plt.legend()
+    plt.loglog(num_bins_list, g_stdev_list, 'go', label = 'g rate standard deviation')
+    plt.loglog(num_bins_list, o_stdev_list, 'bo', label = 'o rate standard deviation')
+    plt.xlabel('Number of bins for num_runs')
+    plt.ylabel('Standard Deviation (kHz)')
+    plt.legend()
     
     
     
@@ -205,7 +205,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our 
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
     
-    folder = 'nv13_2019_06_10_28MHz'
+    folder = 'nv0_2019_06_27_222MHz'
 
     
     '''
@@ -233,7 +233,7 @@ if __name__ == '__main__':
         
 #    # Specify the number of bins
 
-#    num_bins_list = [1,2,4, 5, 8]
+#    num_bins_list = [1,2,4, 5]
 #    main(folder, num_bins_list)
 
     

@@ -267,7 +267,7 @@ def main(folder_name, num_bins, save_data = True):
     
         try:
 
-            init_params = (1.0, 0.4, 0)
+            init_params = (0.01, 0.4, 0)
             opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
                                          zero_relaxation_counts, p0 = init_params)
            
@@ -304,7 +304,7 @@ def main(folder_name, num_bins, save_data = True):
         plus_relaxation_counts =  plus_plus_norm_avg_sig - plus_minus_norm_avg_sig
 
         try:
-            init_params = (200, 0.40, 0)
+            init_params = (0.1, 0.40, 0)
             opti_params, cov_arr = curve_fit(exp_eq, 
                              plus_plus_time, plus_relaxation_counts, 
                              p0 = init_params)

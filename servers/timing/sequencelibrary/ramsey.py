@@ -22,29 +22,30 @@ def get_seq(pulser_wiring, args):
         durations.append(numpy.int64(args[ind]))        
         
     # Unpack the durations
-    tau_shrt, polarization_time, signal_time, reference_time,  \
+    tau_frst, polarization_time, signal_time, reference_time,  \
             sig_to_ref_wait_time, pre_uwave_exp_wait_time,  \
             post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,  \
-            gate_time, pi_pulse, tau_long = durations
+            gate_time, uwave_pi_half_pulse, tau_scnd = durations
         
     # Get the APD indices
-    sig_shrt_apd_index, ref_shrt_apd_index, \
-        sig_long_apd_index, ref_long_apd_index = args[12:16]
+    apd_index = args[13]
         
-    # Get what we need out of the wiring dictionary
-    key = 'do_apd_gate_{}'.format(sig_shrt_apd_index)
-    pulser_do_sig_shrt_apd_gate = pulser_wiring[key]
-    print(pulser_do_sig_shrt_apd_gate)
-    key = 'do_apd_gate_{}'.format(ref_shrt_apd_index)
-    pulser_do_ref_shrt_apd_gate = pulser_wiring[key]
-    print(pulser_do_ref_shrt_apd_gate)
+    pulser_do_apd_gate = pulser_wiring['do_apd_gate_{}'.format(apd_index)]
     
-    key = 'do_apd_gate_{}'.format(sig_long_apd_index)
-    pulser_do_sig_long_apd_gate = pulser_wiring[key]
-    print(pulser_do_sig_long_apd_gate)
-    key = 'do_apd_gate_{}'.format(ref_long_apd_index)
-    pulser_do_ref_long_apd_gate = pulser_wiring[key]
-    print(pulser_do_ref_long_apd_gate)
+#    # Get what we need out of the wiring dictionary
+#    key = 'do_apd_gate_{}'.format(sig_shrt_apd_index)
+#    pulser_do_sig_shrt_apd_gate = pulser_wiring[key]
+#    print(pulser_do_sig_shrt_apd_gate)
+#    key = 'do_apd_gate_{}'.format(ref_shrt_apd_index)
+#    pulser_do_ref_shrt_apd_gate = pulser_wiring[key]
+#    print(pulser_do_ref_shrt_apd_gate)
+#    
+#    key = 'do_apd_gate_{}'.format(sig_long_apd_index)
+#    pulser_do_sig_long_apd_gate = pulser_wiring[key]
+#    print(pulser_do_sig_long_apd_gate)
+#    key = 'do_apd_gate_{}'.format(ref_long_apd_index)
+#    pulser_do_ref_long_apd_gate = pulser_wiring[key]
+#    print(pulser_do_ref_long_apd_gate)
     
     
     pulser_do_uwave = pulser_wiring['do_uwave_gate_0']
@@ -52,94 +53,64 @@ def get_seq(pulser_wiring, args):
     
     # %% Write the microwave sequence to be used.
     
-    # In t1, the sequence is just a pi pulse, wait for a relaxation time, then
-    # then a second pi pulse
+    uwave_experiment_frst = uwave_pi_half_pulse + tau_frst + uwave_pi_half_pulse
     
-    # I define both the time of this experiment, which is useful for the AOM 
-    # and gate sequences to dictate the time for them to be LOW
-    # And I define the actual uwave experiement to be plugged into the rf
-    # sequence. I hope that this formatting works.
+    uwave_experiment_seq_frst = [(uwave_pi_half_pulse, HIGH), (tau_frst, LOW), 
+                                     (uwave_pi_half_pulse, HIGH)]
     
-    # With future protocols--ramsey, spin echo, etc--it will be easy to use 
-    # this format of sequence building and just change this secion of the file
+    uwave_experiment_scnd = uwave_pi_half_pulse + tau_scnd + uwave_pi_half_pulse
     
-    uwave_experiment_shrt = pi_pulse + tau_shrt + pi_pulse
-    
-    uwave_experiment_seq_shrt = [(pi_pulse, HIGH), (tau_shrt, LOW), 
-                                     (pi_pulse, HIGH)]
-    
-    uwave_experiment_long = pi_pulse + tau_long + pi_pulse
-    
-    uwave_experiment_seq_long = [(pi_pulse, HIGH), (tau_long, LOW), 
-                                     (pi_pulse, HIGH)]
+    uwave_experiment_seq_scnd = [(uwave_pi_half_pulse, HIGH), (tau_scnd, LOW), 
+                                     (uwave_pi_half_pulse, HIGH)]
     
     # %% Couple calculated values
 
     prep_time = aom_delay_time + rf_delay_time + \
         polarization_time + pre_uwave_exp_wait_time + \
-        uwave_experiment_shrt + post_uwave_exp_wait_time
+        uwave_experiment_frst + post_uwave_exp_wait_time
         
-    up_to_long_gates = prep_time + signal_time + sig_to_ref_wait_time + \
+    up_to_scnd_gates = prep_time + signal_time + sig_to_ref_wait_time + \
         reference_time + pre_uwave_exp_wait_time + \
-        uwave_experiment_long + post_uwave_exp_wait_time
-    
-    after_short_gates = pre_uwave_exp_wait_time + \
-        uwave_experiment_long + post_uwave_exp_wait_time + \
-        signal_time + sig_to_ref_wait_time + reference_time
+        uwave_experiment_scnd + post_uwave_exp_wait_time
 
     # %% Calclate total period. This is fixed for each tau index
         
     # The period is independent of the particular tau, but it must be long
     # enough to accomodate the longest tau
     period = aom_delay_time + rf_delay_time + polarization_time + \
-        pre_uwave_exp_wait_time + uwave_experiment_shrt + post_uwave_exp_wait_time + \
+        pre_uwave_exp_wait_time + uwave_experiment_frst + post_uwave_exp_wait_time + \
         signal_time + sig_to_ref_wait_time + reference_time + pre_uwave_exp_wait_time + \
-        uwave_experiment_long + post_uwave_exp_wait_time + \
+        uwave_experiment_scnd + post_uwave_exp_wait_time + \
         signal_time + sig_to_ref_wait_time + reference_time
         
     # %% Define the sequence
 
     seq = Sequence()
-
-    # right now, we will just use one signal and one reference, the 'shrt' ones
     
-    # Short Signal APD gate
+    # APD gate
     pre_duration = prep_time
-    post_duration = signal_time - gate_time + sig_to_ref_wait_time + \
-        reference_time + after_short_gates
-        
-    train = [(pre_duration, LOW), (gate_time, HIGH), (post_duration, LOW)]
-    seq.setDigital(pulser_do_sig_shrt_apd_gate, train)
-        
-    # Short Reference APD gate
-    pre_duration = prep_time + signal_time + sig_to_ref_wait_time
-    post_duration = reference_time - gate_time + after_short_gates
-    
-    train = [(pre_duration, LOW), (gate_time, HIGH), (post_duration, LOW)]
-    seq.setDigital(pulser_do_ref_shrt_apd_gate, train)  
-    
-    # Long Signal APD gate
-    pre_duration = up_to_long_gates
-    post_duration = signal_time - gate_time + sig_to_ref_wait_time + \
-        reference_time
-        
-    train = [(pre_duration, LOW), (gate_time, HIGH), (post_duration, LOW)]
-    seq.setDigital(pulser_do_sig_long_apd_gate, train)
-        
-    # Long Reference APD gate
-    pre_duration = up_to_long_gates + signal_time + sig_to_ref_wait_time
+    frst_sig_to_frst_ref = signal_time + sig_to_ref_wait_time - gate_time
+    frst_ref_to_scnd_sig = up_to_scnd_gates - (prep_time + signal_time + sig_to_ref_wait_time + gate_time)
+    scnd_sig_to_scnd_ref = signal_time + sig_to_ref_wait_time - gate_time
     post_duration = reference_time - gate_time
-    
-    train = [(pre_duration, LOW), (gate_time, HIGH), (post_duration, LOW)]
-    seq.setDigital(pulser_do_ref_long_apd_gate, train)  
+    train = [(pre_duration, LOW),
+             (gate_time, HIGH),
+             (frst_sig_to_frst_ref, LOW),
+             (gate_time, HIGH),
+             (frst_ref_to_scnd_sig, LOW),
+             (gate_time, HIGH),
+             (scnd_sig_to_scnd_ref, LOW),
+             (gate_time, HIGH),
+             (post_duration, LOW)]
+    seq.setDigital(pulser_do_apd_gate, train)
 
     # Pulse the laser with the AOM for polarization and readout
     train = [(rf_delay_time + polarization_time, HIGH),
-             (pre_uwave_exp_wait_time + uwave_experiment_shrt + post_uwave_exp_wait_time, LOW),
+             (pre_uwave_exp_wait_time + uwave_experiment_frst + post_uwave_exp_wait_time, LOW),
              (signal_time, HIGH),
              (sig_to_ref_wait_time, LOW),
              (reference_time, HIGH),
-             (pre_uwave_exp_wait_time + uwave_experiment_long + post_uwave_exp_wait_time, LOW),
+             (pre_uwave_exp_wait_time + uwave_experiment_scnd + post_uwave_exp_wait_time, LOW),
              (signal_time, HIGH),
              (sig_to_ref_wait_time, LOW),
              (reference_time + aom_delay_time, HIGH)]
@@ -153,9 +124,9 @@ def get_seq(pulser_wiring, args):
         sig_to_ref_wait_time + reference_time + rf_delay_time
         
     train = [(pre_duration, LOW)]
-    train.extend(uwave_experiment_seq_shrt)
+    train.extend(uwave_experiment_seq_frst)
     train.extend([(mid_duration, LOW)])
-    train.extend(uwave_experiment_seq_long)
+    train.extend(uwave_experiment_seq_scnd)
     train.extend([(post_duration, LOW)])
     seq.setDigital(pulser_do_uwave, train)
     
@@ -163,13 +134,10 @@ def get_seq(pulser_wiring, args):
     
 if __name__ == '__main__':
     wiring = {'do_apd_gate_0': 0,
-              'do_apd_gate_1': 1,
-              'do_apd_gate_2': 6,
-              'do_apd_gate_3': 7,
               'do_aom': 2,
               'do_uwave_gate': 3}
 
-    args = [2000, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 300, 55, 88000, 0, 1, 2, 3]
+    args = [2000, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 300, 55, 88000, 0]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()    
         
