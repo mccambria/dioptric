@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-T1 measurement routine.
+Ramsey measruement.
 
-This version of t1 measures the t1 of (intiial state, readout state): (0,0),
-(1,1), (-1,-1).
-
-It uses a symmeterized pulse sequence, meaning two "experiments" occur during
-one run: a nexperiment with the shorter relaxation time and the second with the
-longer relaxation time. That was, the total seuqnce is always the same time, 
-which keeps the laser and rf power relatively constant.
+This routine puts polarizes the nv state into 0, then applies a pi/2 pulse to 
+put the state into a superposition between the 0 and + or - 1 state. The state
+then evolves for a time, tau, of free precesion, and then a second pi/s pulse
+is applied. The amount of population in 0 is read out by collecting the 
+fluorescence during a readout.
 
 Created on Wed Apr 24 15:01:04 2019
 
