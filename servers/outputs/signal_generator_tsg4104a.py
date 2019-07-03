@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the microwave signal generator.
+Output server for the Tektronix TSG4104A microwave signal generator.
 
 Created on Wed Apr 10 12:53:38 2019
 
@@ -8,7 +8,7 @@ Created on Wed Apr 10 12:53:38 2019
 
 ### BEGIN NODE INFO
 [info]
-name = microwave_signal_generator
+name = signal_generator_tsg4104a
 version = 1.0
 description =
 
@@ -31,8 +31,8 @@ import nidaqmx.stream_writers as stream_writers
 from nidaqmx.constants import AcquisitionType
 
 
-class MicrowaveSignalGenerator(LabradServer):
-    name = 'microwave_signal_generator'
+class SignalGeneratorTsg4104a(LabradServer):
+    name = 'signal_generator_tsg4104a'
 
     def initServer(self):
         config = ensureDeferred(self.get_config())
@@ -41,7 +41,7 @@ class MicrowaveSignalGenerator(LabradServer):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd('Config')
-        p.get('uwave_sig_gen_visa_address')
+        p.get('signal_generator_tsg4104a_visa_address')
         p.cd(['Wiring', 'Daq'])
         p.get('di_clock')
         p.get('ao_uwave_sig_gen_mod')
@@ -176,7 +176,7 @@ class MicrowaveSignalGenerator(LabradServer):
             task.write(0.0)
 
 
-__server__ = MicrowaveSignalGenerator()
+__server__ = SignalGeneratorTsg4104a()
 
 if __name__ == '__main__':
     from labrad import util
