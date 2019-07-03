@@ -242,6 +242,7 @@ def main(folder_name, doPlot = False):
         print('Error: length of plus_plus_sig_counts and plus_minus_sig_counts do not match')
 
 
+#    print('(1,1)' + str(plus_plus_time))
 #    print('(1,-1)' + str(plus_minus_time))
     # %% Fit the data
 
