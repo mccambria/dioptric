@@ -62,7 +62,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
                     signal_wait_time, reference_wait_time,
                     background_wait_time, aom_delay_time,
                     gate_time, pi_pulse,
-                    apd_indices[0], 0]
+                    apd_indices[0], 1]
     
     opti_coords_list = []
 
@@ -84,7 +84,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
         
         # Load the pulse streamer (must happen after optimize since optimize
         # loads its own sequence)
-        cxn.pulse_streamer.stream_load('pulsed_resonance.py', sequence_args, 1)
+        cxn.pulse_streamer.stream_load('rabi.py', sequence_args, 1)
 
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -99,17 +99,14 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
             cxn.signal_generator_bnc835.set_freq(freqs[step_ind])
             cxn.signal_generator_bnc835.set_amp(uwave_power)
             cxn.signal_generator_bnc835.uwave_on()
-#            cxn.signal_generator_tsg4104a.set_freq(freqs[step_ind])
-#            cxn.signal_generator_tsg4104a.set_amp(uwave_power)
-#            cxn.signal_generator_tsg4104a.uwave_on()
             
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total
             time.sleep(0.001)
 
             # Start the timing stream
-#            cxn.pulse_streamer.stream_start(10**5)
-            cxn.pulse_streamer.stream_start(5*10**4)
+            cxn.pulse_streamer.stream_start(10**5)
+#            cxn.pulse_streamer.stream_start(5*10**4)
 #            cxn.pulse_streamer.stream_start(2*10**4)
 
             # Get the counts

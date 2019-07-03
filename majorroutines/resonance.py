@@ -32,7 +32,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     # optimize runs since optimize loads its own sequence
     readout = 100 * 10**6  # 0.1 s
     readout_sec = readout / (10**9)
-    uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
+    uwave_switch_delay = 1 * 10**6  # 1 ms to open the gate
     sequence_args = [readout, uwave_switch_delay, apd_indices[0]]
 
     file_name = os.path.basename(__file__)
