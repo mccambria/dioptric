@@ -39,9 +39,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     do_uwave_gate = do_uwave_gate_number
     
     if do_uwave_gate == 0:
-        do_uwave_gen = 'Tektronix'
+        sig_gen = 'signal_generator_tsg4104a'
     elif do_uwave_gate == 1:
-        do_uwave_gen = 'HP'
+        sig_gen = 'signal_generator_bnc835'
     
     # Define some times (in ns)
     polarization_time = 3 * 10**3
@@ -103,9 +103,14 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         opti_coords_list.append(opti_coords)
         
         # Apply the microwaves
-        cxn.microwave_signal_generator.set_freq(uwave_freq)
-        cxn.microwave_signal_generator.set_amp(uwave_power)
-        cxn.microwave_signal_generator.uwave_on()
+        if sig_gen == 'signal_generator_tsg4104a':
+            cxn.signal_generator_tsg4104a.set_freq(uwave_freq)
+            cxn.signal_generator_tsg4104a.set_amp(uwave_power)
+            cxn.signal_generator_tsg4104a.uwave_on()
+        elif sig_gen == 'signal_generator_bnc835':
+            cxn.signal_generator_bnc835.set_freq(uwave_freq)
+            cxn.signal_generator_bnc835.set_amp(uwave_power)
+            cxn.signal_generator_bnc835.uwave_on()
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -248,7 +253,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
                 'uwave_power-units': 'dBm',
                 'uwave_time_range': uwave_time_range,
                 'uwave_time_range-units': 'ns',
-                'do_uwave_gen': do_uwave_gen,
+                'sig_gen': sig_gen,
                 'num_steps': num_steps,
                 'num_reps': num_reps,
                 'num_runs': num_runs,

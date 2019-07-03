@@ -14,6 +14,11 @@ Created on Sun Jun 16 11:22:40 2019
 import visa
 import nidaqmx
 import labrad
+import time
+import numpy
+from pulsestreamer import PulseStreamer as Pulser
+from pulsestreamer import TriggerStart
+from pulsestreamer import OutputState
 
 
 # %% Constants
@@ -30,9 +35,29 @@ def main(cxn):
     body of the script.
     """
     
-    cxn.signal_generator_bnc835.set_freq(2.87)
-    cxn.signal_generator_bnc835.set_amp(1.0)
+    cxn.signal_generator_bnc835.reset()
+            
+    num_steps = 11
+    cxn.signal_generator_bnc835.set_amp(5.0)
+#    cxn.signal_generator_bnc835.set_freq(2.85)
+    cxn.signal_generator_bnc835.load_freq_list(numpy.linspace(2.82, 2.92, num_steps))
+#    cxn.signal_generator_bnc835.load_freq_list([2.87])
+#    cxn.signal_generator_bnc835.load_freq_sweep(2.82, 2.92, num_steps)
     cxn.signal_generator_bnc835.uwave_on()
+    
+    pulser = Pulser('128.104.160.111')
+    
+    while True:
+        if input('Enter "q" to stop or nothing to continue: ')=='q':
+            break
+        else:
+#            pass
+            # Send out a pulse to channel 7 for a tenth of a second
+            pulser.constant(OutputState([7]))
+            time.sleep(0.1)
+            pulser.constant(OutputState([]))
+            # Measure the peak within 200 MHz about 2.87 GHz
+    #        print(cxn.spectrum_analyzer.measure_peak(2.87, 0.2))
     
     # %% Sig gen tests
     
@@ -74,4 +99,4 @@ if __name__ == '__main__':
         try:
             main(cxn)
         finally:
-            cxn.signal_generator_bnc835.uwave_off()
+            cxn.signal_generator_bnc835.reset()

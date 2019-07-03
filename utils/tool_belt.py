@@ -669,4 +669,5 @@ def reset_cfm_with_cxn(cxn):
     cxn.pulse_streamer.reset()
     cxn.apd_tagger.reset()
     cxn.arbitrary_waveform_generator.reset()
-    cxn.microwave_signal_generator.reset()
+    cxn.signal_generator_tsg4104a.reset()
+    cxn.signal_generator_bnc835.reset()

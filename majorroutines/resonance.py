@@ -67,9 +67,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
 
     # %% Collect the data
 
-#    tool_belt.set_xyz(cxn, coords)
-    
-
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
 
@@ -95,12 +92,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
             if tool_belt.safe_stop():
                 break
 
-            cxn.microwave_signal_generator.set_freq(freqs[step_ind])
-
-            # If this is the first sample then we have to enable the signal
-            if (run_ind == 0) and (step_ind == 0):
-                cxn.microwave_signal_generator.set_amp(uwave_power)
-                cxn.microwave_signal_generator.uwave_on()
+            cxn.signal_generator_bnc835.set_freq(freqs[step_ind])
+            cxn.signal_generator_bnc835.set_amp(uwave_power)
+            cxn.signal_generator_bnc835.uwave_on()
 
             # Start the timing stream
             cxn.pulse_streamer.stream_start()

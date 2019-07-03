@@ -13,49 +13,63 @@ HIGH = 1
 
 
 def get_seq(pulser_wiring, args):
-
-    # Unpack the args
-    readout, uwave_switch_delay, apd_index = args
     
-    readout = numpy.int64(readout)
-    readout = numpy.int64(readout)
-    uwave_switch_delay = numpy.int64(uwave_switch_delay)
-    clock_pulse = numpy.int64(100)
+    # Unpack the args
+    durations = args[0:2]
+    durations = [numpy.int64(el) for el in durations]
+    readout_dur, uwave_switch_delay_dur, pi_pulse_dur = durations
+    apd_index = args[2]
+    
+    clock_pulse_dur = numpy.int64(100)
     clock_buffer = 3 * clock_pulse
-    period = readout + clock_pulse + uwave_switch_delay + readout + clock_pulse
+    period = readout_dur + clock_pulse_dur + uwave_switch_delay_dur + readout_dur + clock_pulse_dur
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_daq_clock']
     pulser_do_apd_gate = pulser_wiring['do_apd_gate_{}'.format(apd_index)]
-    pulser_do_uwave = pulser_wiring['do_uwave_gate_1']
+    pulser_do_uwave = pulser_wiring['do_uwave_gate_0']
     pulser_do_aom = pulser_wiring['do_aom']
 
     seq = Sequence()
 
     # Collect two samples
-    train = [(readout + clock_pulse, LOW),
+    train = [(readout_dur + clock_pulse, LOW),
              (clock_pulse, HIGH),
              (clock_pulse, LOW),
-             (uwave_switch_delay + readout + clock_pulse, LOW),
+             (uwave_switch_delay_dur + readout_dur + clock_pulse, LOW),
              (clock_pulse, HIGH),
              (clock_pulse, LOW)]
     seq.setDigital(pulser_do_daq_clock, train)
     
-    # Ungate the APD channel for the readouts
-    train = [(readout, HIGH), (clock_buffer, LOW),
-             (uwave_switch_delay, LOW),
-             (readout, HIGH), (clock_buffer, LOW)]
+    # Ungate the APD channel for the readout_durs
+    train = [(readout_dur, HIGH), (clock_buffer, LOW),
+             (uwave_switch_delay_dur, LOW),
+             (readout_dur, HIGH), (clock_buffer, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
 
     # Uwave should be on for the first measurement and off for the second
-    train = [(readout, LOW), (clock_buffer, LOW),
-             (uwave_switch_delay, HIGH),
-             (readout, HIGH), (clock_buffer, LOW)]
+    train = [(readout_dur, LOW), (clock_buffer, LOW),
+             (uwave_switch_delay_dur, HIGH),
+             (readout_dur, HIGH), (clock_buffer, LOW)]
     seq.setDigital(pulser_do_uwave, train)
 
     # The AOM should always be on
     train = [(period, HIGH)]
     seq.setDigital(pulser_do_aom, train)
+    
+    step_time = 1 * 10**6
+    train = [(step_time, -1.0),
+             (step_time, -0.75),
+             (step_time, -0.5),
+             (step_time, -0.25),
+             (step_time, 0.0),
+             (step_time, 0.25),
+             (step_time, 0.5),
+             (step_time, 0.75),
+             (step_time, 1.0),
+             (step_time, 0.0)]
+    
+    seq.setAnalog(0, train)
 
     return seq, [period]
 

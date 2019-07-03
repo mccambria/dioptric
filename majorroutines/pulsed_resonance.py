@@ -83,7 +83,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
         
         # Load the pulse streamer (must happen after optimize since optimize
         # loads its own sequence)
-        cxn.pulse_streamer.stream_load('rabi.py', sequence_args, 1)
+        cxn.pulse_streamer.stream_load('pulsed_resonance.py', sequence_args, 1)
 
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -95,9 +95,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
             if tool_belt.safe_stop():
                 break
 
-            cxn.microwave_signal_generator.set_freq(freqs[step_ind])
-            cxn.microwave_signal_generator.set_amp(uwave_power)
-            cxn.microwave_signal_generator.uwave_on()
+            cxn.signal_generator_bnc835.set_freq(freqs[step_ind])
+            cxn.signal_generator_bnc835.set_amp(uwave_power)
+            cxn.signal_generator_bnc835.uwave_on()
 
             # Start the timing stream
             cxn.pulse_streamer.stream_start(10**5)

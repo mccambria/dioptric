@@ -29,14 +29,16 @@ import time
 from random import shuffle
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-
 import json
-from scipy import asarray as ar,exp
+import numpy.exp as exp
+
 
 # %% Main
 
+
 def main(cxn, nv_sig, nd_filter, apd_indices,
-         uwave_freq_plus, uwave_freq_minus, uwave_power, 
+         uwave_freq_plus, uwave_freq_minus,
+         uwave_power_plus, uwave_power_minus,
          uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
          num_steps, num_reps, num_runs, 
          init_read_list, name='untitled'):
@@ -206,14 +208,14 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         opti_coords_list.append(opti_coords)
         
         # Set up the microwaves
-        # hardwire the tektronix sig gen to use the ms = +1 frequency
-        cxn.microwave_signal_generator.set_freq(uwave_freq_plus)
-        # hardwire in this special case
-#        if init_state == -1 and read_state == -1:
-#            cxn.microwave_signal_generator.set_freq(uwave_freq_minus)
-#            uwave_pi_pulse_init = round(82.65)
-        cxn.microwave_signal_generator.set_amp(uwave_power)
-        cxn.microwave_signal_generator.uwave_on()
+        # Tektronix controls +
+        cxn.signal_generator_tsg4104a.set_freq(uwave_freq_plus)
+        cxn.signal_generator_tsg4104a.set_amp(uwave_power_plus)
+        cxn.signal_generator_tsg4104a.uwave_on()
+        # Berkeley controls -
+        cxn.signal_generator_bnc835.set_freq(uwave_freq_minus)
+        cxn.signal_generator_bnc835.set_amp(uwave_power_minus)
+        cxn.signal_generator_bnc835.uwave_on()
             
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)  
@@ -295,8 +297,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
                     'uwave_freq_init-units': 'GHz',
                     'uwave_freq_read': uwave_freq_read,
                     'uwave_freq_read-units': 'GHz',
-                    'uwave_power': uwave_power,
-                    'uwave_power-units': 'dBm',
+                    'uwave_power_plus': uwave_power_plus,
+                    'uwave_power_plus-units': 'dBm',
+                    'uwave_power_minus': uwave_power_minus,
+                    'uwave_power_minus-units': 'dBm',
                     'uwave_pi_pulse_init': uwave_pi_pulse_init,
                     'uwave_pi_pulse_init-units': 'ns',
                     'uwave_pi_pulse_read': uwave_pi_pulse_read,
@@ -384,8 +388,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'uwave_freq_init-units': 'GHz',
             'uwave_freq_read': uwave_freq_read,
             'uwave_freq_read-units': 'GHz',
-            'uwave_power': uwave_power,
-            'uwave_power-units': 'dBm',
+            'uwave_power_plus': uwave_power_plus,
+            'uwave_power_plus-units': 'dBm',
+            'uwave_power_minus': uwave_power_minus,
+            'uwave_power_minus-units': 'dBm',
             'uwave_pi_pulse_init': uwave_pi_pulse_init,
             'uwave_pi_pulse_init-units': 'ns',
             'uwave_pi_pulse_read': uwave_pi_pulse_read,

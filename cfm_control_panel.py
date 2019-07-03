@@ -507,7 +507,7 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_range=0.06)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.98, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8595, 0)
+            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8595, 0)
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8824, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
