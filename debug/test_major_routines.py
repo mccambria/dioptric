@@ -89,7 +89,8 @@ def main(name, nv_sig, nd_filter, apd_indices):
         num_runs = 2
         init_read_list = [-1, +1]
         t1_double_quantum.main(cxn, nv_sig, nd_filter, apd_indices,
-                     uwave_freq_plus, uwave_freq_minus, uwave_power, 
+                     uwave_freq_plus, uwave_freq_minus,
+                     uwave_power, uwave_power,
                      uwave_pi_pulse_plus, uwave_pi_pulse_minus,
                      relaxation_time_range, num_steps, num_reps, num_runs, 
                      init_read_list, name)

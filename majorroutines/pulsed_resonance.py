@@ -15,6 +15,7 @@ import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
+import time
 
 
 # %% Main
@@ -98,10 +99,17 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
             cxn.signal_generator_bnc835.set_freq(freqs[step_ind])
             cxn.signal_generator_bnc835.set_amp(uwave_power)
             cxn.signal_generator_bnc835.uwave_on()
+#            cxn.signal_generator_tsg4104a.set_freq(freqs[step_ind])
+#            cxn.signal_generator_tsg4104a.set_amp(uwave_power)
+#            cxn.signal_generator_tsg4104a.uwave_on()
+            
+            # It takes 400 us from receipt of the command to
+            # switch frequencies so allow 1 ms total
+            time.sleep(0.001)
 
             # Start the timing stream
-            cxn.pulse_streamer.stream_start(10**5)
-#            cxn.pulse_streamer.stream_start(5*10**4)
+#            cxn.pulse_streamer.stream_start(10**5)
+            cxn.pulse_streamer.stream_start(5*10**4)
 #            cxn.pulse_streamer.stream_start(2*10**4)
 
             # Get the counts

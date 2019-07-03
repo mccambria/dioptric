@@ -30,7 +30,6 @@ from random import shuffle
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import json
-import numpy.exp as exp
 
 
 # %% Main
@@ -415,7 +414,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
 # %%    
     
 def decayExp(t, offset, amplitude, decay):
-    return offset + amplitude * exp(-decay * t)    
+    return offset + amplitude * numpy.exp(-decay * t)    
     
 # %% Fitting the data
     
