@@ -11,6 +11,8 @@ bins
 This file will automatically save the figure created in the folder of the data
 used.
 
+The time used is in milliseconds
+
 @author: Aedan
 """
 
@@ -62,15 +64,23 @@ def main(folder_name, doPlot = False):
             init_state = data['init_state']
             read_state = data['read_state']
 
-            norm_avg_sig = numpy.array(data['norm_avg_sig'])
+            sig_counts  = numpy.array(data['sig_counts'])
+            ref_counts = numpy.array(data['ref_counts'])
 
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
-            # time is in microseconds
-            min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             num_steps = data['num_steps']
 
+            # Calculate some arrays
+            min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             time_array = numpy.linspace(min_relaxation_time,
                                         max_relaxation_time, num=num_steps)
+            
+            avg_sig_counts = numpy.average(sig_counts, axis=0)
+            
+            avg_ref = numpy.average(ref_counts)
+            
+            norm_avg_sig = avg_sig_counts / avg_ref
+            # take the average of the reference for 
 
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
@@ -242,6 +252,7 @@ def main(folder_name, doPlot = False):
         print('Error: length of plus_plus_sig_counts and plus_minus_sig_counts do not match')
 
 
+#    print('(1,1)' + str(plus_plus_time))
 #    print('(1,-1)' + str(plus_minus_time))
     # %% Fit the data
 
@@ -259,7 +270,7 @@ def main(folder_name, doPlot = False):
     try:
 
         init_params = (1.0, 0.4, 0)
-        opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
+        omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
                                      zero_relaxation_counts, p0 = init_params)
 
     except Exception:
@@ -277,7 +288,7 @@ def main(folder_name, doPlot = False):
     if not omega_fit_failed:
 
 #        print(opti_params[0])
-        omega = opti_params[0] / 3.0
+        omega = omega_opti_params[0] / 3.0
 
         # Plotting the data
         if doPlot:
@@ -285,7 +296,7 @@ def main(folder_name, doPlot = False):
             ax = axes_pack[0]
             ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
             ax.plot(zero_time_linspace,
-                    exp_eq(zero_time_linspace, *opti_params),
+                    exp_eq(zero_time_linspace, *omega_opti_params),
                     'r', label = 'fit')
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
@@ -305,7 +316,7 @@ def main(folder_name, doPlot = False):
 
     try:
         init_params = (0.1, 0.40, 0)
-        opti_params, cov_arr = curve_fit(exp_eq,
+        gamma_opti_params, cov_arr = curve_fit(exp_eq,
                          plus_plus_time, plus_relaxation_counts,
                          p0 = init_params)
 
@@ -321,7 +332,7 @@ def main(folder_name, doPlot = False):
 
     if not gamma_fit_failed:
 
-        gamma = (opti_params[0] - omega)/ 2.0
+        gamma = (gamma_opti_params[0] - omega)/ 2.0
 
         # Plotting
         if doPlot:
@@ -329,7 +340,7 @@ def main(folder_name, doPlot = False):
             ax = axes_pack[1]
             ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
             ax.plot(plus_time_linspace,
-                    exp_eq(plus_time_linspace, *opti_params),
+                    exp_eq(plus_time_linspace, *gamma_opti_params),
                     'r', label = 'fit')
 #                    ax.set_xlim(0,0.1)
             ax.set_xlabel('Relaxation time (ms)')
@@ -347,12 +358,39 @@ def main(folder_name, doPlot = False):
         
 #    print('Omega list: {} \nGamma list: {}'.format(omega_rate_list, gamma_rate_list))
 
+        # %% Saving the data 
+        
+        data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
+                
+                
+        time_stamp = tool_belt.get_time_stamp()
+        raw_data = {'time_stamp': time_stamp,
+                    'splitting_MHz': splitting_MHz,
+                    'splitting_MHz-units': 'MHz',
+                    'zero_relaxation_counts': zero_relaxation_counts.tolist(),
+                    'zero_relaxation_counts-units': 'counts',
+                    'zero_zero_time': zero_zero_time.tolist(),
+                    'zero_zero_time-units': 'ms',
+                    'plus_relaxation_counts': plus_relaxation_counts.tolist(),
+                    'plus_relaxation_counts-units': 'counts',
+                    'plus_plus_time': plus_plus_time.tolist(),
+                    'plus_plus_time-units': 'ms',
+                    'omega_opti_params': omega_opti_params.tolist(),
+                    'gamma_opti_params': gamma_opti_params.tolist()
+                    }
+        
+
+        
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data_alt' 
+        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
+                                                             file_name)
+        
+        tool_belt.save_raw_data(raw_data, file_path)
     
     # %% Saving the figure
 
-        data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
-    
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data'
+   
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data_alt'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 

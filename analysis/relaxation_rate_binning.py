@@ -247,17 +247,17 @@ def main(folder_name, num_bins, save_data = True):
         #Fit to the (0,0) - (0,1) data to find Omega
         zero_zero_avg_sig_counts =  \
             numpy.average(zero_zero_sig_counts[i:i+slice_size, ::], axis=0)
-        zero_zero_avg_ref_counts =  \
-            numpy.average(zero_zero_ref_counts[i:i+slice_size, ::], axis=0)
+        zero_zero_avg_ref =  \
+            numpy.average(zero_zero_ref_counts[i:i+slice_size, ::])
         
-        zero_zero_norm_avg_sig = zero_zero_avg_sig_counts / zero_zero_avg_ref_counts
+        zero_zero_norm_avg_sig = zero_zero_avg_sig_counts / zero_zero_avg_ref
                
         zero_plus_avg_sig_counts = \
             numpy.average(zero_plus_sig_counts[i:i+slice_size, ::], axis=0)
-        zero_plus_avg_ref_counts = \
-            numpy.average(zero_plus_ref_counts[i:i+slice_size, ::], axis=0)
+        zero_plus_avg_ref = \
+            numpy.average(zero_plus_ref_counts[i:i+slice_size, ::])
         
-        zero_plus_norm_avg_sig = zero_plus_avg_sig_counts / zero_plus_avg_ref_counts 
+        zero_plus_norm_avg_sig = zero_plus_avg_sig_counts / zero_plus_avg_ref 
     
         # Define the counts for the zero relaxation equation
         zero_relaxation_counts =  zero_zero_norm_avg_sig - zero_plus_norm_avg_sig
@@ -288,17 +288,17 @@ def main(folder_name, num_bins, save_data = True):
         
         plus_plus_avg_sig_counts = \
             numpy.average(plus_plus_sig_counts[i:i+slice_size, ::], axis=0)
-        plus_plus_avg_ref_counts = \
-            numpy.average(plus_plus_ref_counts[i:i+slice_size, ::], axis=0)
+        plus_plus_avg_ref = \
+            numpy.average(plus_plus_ref_counts[i:i+slice_size, ::])
         
-        plus_plus_norm_avg_sig = plus_plus_avg_sig_counts / plus_plus_avg_ref_counts
+        plus_plus_norm_avg_sig = plus_plus_avg_sig_counts / plus_plus_avg_ref
                
         plus_minus_avg_sig_counts = \
             numpy.average(plus_minus_sig_counts[i:i+slice_size, ::], axis=0)
-        plus_minus_avg_ref_counts = \
-            numpy.average(plus_minus_ref_counts[i:i+slice_size, ::], axis=0)
+        plus_minus_avg_ref = \
+            numpy.average(plus_minus_ref_counts[i:i+slice_size, ::])
         
-        plus_minus_norm_avg_sig = plus_minus_avg_sig_counts / plus_minus_avg_ref_counts
+        plus_minus_norm_avg_sig = plus_minus_avg_sig_counts / plus_minus_avg_ref
         
         # Define the counts for the plus relaxation equation
         plus_relaxation_counts =  plus_plus_norm_avg_sig - plus_minus_norm_avg_sig
@@ -377,8 +377,8 @@ def main(folder_name, num_bins, save_data = True):
                   
 if __name__ == '__main__':
     
-    folder = 'nv2_2019_04_30_57MHz'
+    folder = 'nv0_2019_06_27_228MHz'
 
     
-    main(folder, 40,  False)
+    main(folder, 1,  False)
 
