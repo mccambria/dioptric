@@ -33,8 +33,8 @@ data_folder = 't1_double_quantum'
 
 # The exponential function used to fit the data
 
-def exp_eq(t, rate, amp, offset):
-    return offset + amp * exp(- rate * t)
+def exp_eq(t, rate, amp):
+    return  amp * exp(- rate * t)
 
 
 # %% Main
@@ -269,7 +269,7 @@ def main(folder_name, doPlot = False):
 
     try:
 
-        init_params = (1.0, 0.4, 0)
+        init_params = (1.0, 0.4)
         omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
                                      zero_relaxation_counts, p0 = init_params)
 
@@ -315,7 +315,7 @@ def main(folder_name, doPlot = False):
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
 
     try:
-        init_params = (0.1, 0.40, 0)
+        init_params = (0.1, 0.40)
         gamma_opti_params, cov_arr = curve_fit(exp_eq,
                          plus_plus_time, plus_relaxation_counts,
                          p0 = init_params)
@@ -400,7 +400,7 @@ def main(folder_name, doPlot = False):
 
 if __name__ == '__main__':
 
-    folder = 'nv0_2019_06_27_23MHz'
+    folder = 'nv0_2019_06_27_228MHz'
 
 #    folder_list = ['nv0_2019_06_06 _48MHz',
 #                   'nv1_2019_05_10_20MHz',
