@@ -238,7 +238,7 @@ if __name__ == '__main__':
         
 #    # Specify the number of bins
 
-    num_bins_list = [1, 2, 4, 5, 6, 8]
+    num_bins_list = [1, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 40]
     main(folder, num_bins_list)
 
     
