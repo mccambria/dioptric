@@ -100,7 +100,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
             cxn.microwave_signal_generator.uwave_on()
 
             # Start the timing stream
-            cxn.pulse_streamer.stream_start(5*10**4)
+            cxn.pulse_streamer.stream_start(10**5)
+#            cxn.pulse_streamer.stream_start(5*10**4)
+#            cxn.pulse_streamer.stream_start(2*10**4)
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)

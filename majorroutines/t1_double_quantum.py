@@ -186,6 +186,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
+    start_timestamp = tool_belt.get_time_stamp()
     
     # %% Collect the data
     
@@ -278,9 +279,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         
         # %% Save the data we have incrementally for long T1s
     
-        timestamp = tool_belt.get_time_stamp()
-    
-        raw_data = {'timestamp': timestamp,
+        raw_data = {'start_timestamp': start_timestamp,
                     'name': name,
                     'init_state': int(init_state),
                     'read_state': int(read_state),
@@ -305,6 +304,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
                     'relaxation_time_range': relaxation_time_range,
                     'relaxation_time_range-units': 'ns',
                     'num_steps': num_steps,
+                    'num_runs': num_runs,
                     'num_reps': num_reps,
                     'run_ind': run_ind,
                     'sig_counts': sig_counts.astype(int).tolist(),
@@ -312,7 +312,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
                     'ref_counts': ref_counts.astype(int).tolist(),
                     'ref_counts-units': 'counts'}
         
-        file_path = tool_belt.get_file_path(__file__, timestamp, '{}_incremental'.format(name))
+        # This will continuously be the same file path so we will overwrite
+        # the existing file with the latest version
+        file_path = tool_belt.get_file_path(__file__, start_timestamp,
+                                            name, 'incremental')
         tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Hardware clean up

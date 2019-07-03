@@ -18,8 +18,8 @@ def AbsCos(angle, offset, amp, phase):
 
 # %% Scatter raw data
 
-angles = [80, 100, 120, 140]
-splittings = [222, 228, 201, 151]
+angles = [93, 120, 150, 60, 80]
+splittings = [26, 23, 12, 22, 25]
 
 fig, ax = plt.subplots()
 

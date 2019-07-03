@@ -137,11 +137,12 @@ def do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_ra
 
 
 def do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices,
-                        freq_center=2.87, freq_range=0.4):
+                        freq_center=2.87, freq_range=0.2):
 
     num_steps = 101
     num_runs = 2
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation
+#    uwave_power = 5.0
 
     with labrad.connect() as cxn:
         pulsed_resonance.main(cxn, nv_sig, nd_filter, apd_indices,
@@ -160,8 +161,8 @@ def do_rabi(name, nv_sig, nd_filter, apd_indices,
     num_reps = 10**5
 
 #    num_runs = 1
-#    num_runs = 2
-    num_runs = 4
+    num_runs = 2
+#    num_runs = 4
 #    num_runs = 6
 
     with labrad.connect() as cxn:
@@ -178,7 +179,7 @@ def do_t1_double_quantum(name, nv_sig, nd_filter, apd_indices,
                          init_read_list):
 
     uwave_power = 9
-    num_runs = 120  # This'll quadruple the expected duration listed below!!
+    num_runs = 120  # This'll triple the expected duration listed below!!
 #    num_runs = 80  # This'll double the expected duration listed below!!
 #    num_runs = 40
 #    num_runs = 20  # This'll halve the expected duration listed below
@@ -450,12 +451,18 @@ if __name__ == '__main__':
 #                                [zero_to_plus,   [0, 5000*10**3], 21, 5000],
 #                                [zero_to_zero,   [0, 5000*10**3], 21, 5000]])
     
-    # nv0_2019_06_27 30 MHz ~16 hours
+    # nv0_2019_06_27 228 MHz ~14 hours
+#    t1_exp_array = numpy.array([[plus_to_minus,   [0, 10*10**6], 11, 5000],
+#                                [plus_to_plus,   [0, 10*10**6], 11, 5000],
+#                                [minus_to_minus,   [0, 10*10**6], 11, 5000],
+#                                [zero_to_plus,   [0, 10*10**6], 11, 5000],
+#                                [zero_to_minus,   [0, 10*10**6], 11, 5000],
+#                                [zero_to_zero,   [0, 10*10**6], 11, 5000]])
+    
+    # nv0_2019_06_27 ~12 hours 15 minutes
     t1_exp_array = numpy.array([[plus_to_minus,   [0, 10*10**6], 11, 5000],
                                 [plus_to_plus,   [0, 10*10**6], 11, 5000],
-                                [minus_to_minus,   [0, 10*10**6], 11, 5000],
                                 [zero_to_plus,   [0, 10*10**6], 11, 5000],
-                                [zero_to_minus,   [0, 10*10**6], 11, 5000],
                                 [zero_to_zero,   [0, 10*10**6], 11, 5000]])
     
 #    t1_exp_array = numpy.array([[plus_to_minus,  [0, 50*10**3], 51, 2 * 10**4],
@@ -465,7 +472,7 @@ if __name__ == '__main__':
     # Array for the parameters of a given NV, formatted:
     # [nv_sig, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus, uwave_pi_pulse_minus]
     # uwave_MINUS should be associated with the HP signal generator
-    params_array = numpy.array([[nv0_2019_06_27, 2.7602, 57, 2.9882, 84]])
+    params_array = numpy.array([[nv0_2019_06_27, 2.8595, 71, 2.8824, 83]])
 
     # %% Functions to run
 
@@ -482,7 +489,7 @@ if __name__ == '__main__':
 #        drift = tool_belt.get_drift()
 
         # Routines that expect single NVs
-        for nv_sig in nv_sig_list:
+#        for nv_sig in nv_sig_list:
 #            coords = [*nv_sig[:3]]
 #            coords = [-0.3 + drift[0], 0.3 + drift[1], z_voltage + drift[2]]
 #            coords = (numpy.array(nv_sig[0:3]) + numpy.array(tool_belt.get_drift())).tolist()
@@ -493,44 +500,44 @@ if __name__ == '__main__':
 #            do_stationary_count(name, nv_sig, nd_filter, apd_indices)
 #            do_g2_measurement(name, nv_sig, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_range=0.2)
-#            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.84, freq_range=0.05)
+#            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.875, freq_range=0.1)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.7631, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.825, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.878, freq_range=0.05)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices)
-#            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.76, freq_range=0.05)
+#            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_range=0.06)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.98, freq_range=0.05)
-            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.7602, 0)
-            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.9882, 1)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8595, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8824, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
 
 #         %% FULL CONTROL T1
 
-#        for nv_ind in range(len(params_array)):
-#
-#            nv_sig = params_array[nv_ind, 0]
-#
-#            uwave_freq_plus = params_array[nv_ind, 1]
-#            uwave_pi_pulse_plus = params_array[nv_ind, 2]
-#            uwave_freq_minus = params_array[nv_ind, 3]
-#            uwave_pi_pulse_minus = params_array[nv_ind, 4]
-#
-#            for exp_ind in range(len(t1_exp_array)):
-##            for exp_ind in [2,3,4,5,6,7]:
-#
-#                init_read_list = t1_exp_array[exp_ind, 0]
-#                relaxation_time_range = t1_exp_array[exp_ind, 1]
-#                num_steps = t1_exp_array[exp_ind, 2]
-#                num_reps = t1_exp_array[exp_ind, 3]
-#
-#                do_t1_double_quantum(name, nv_sig, nd_filter,
-#                              apd_indices,
-#                              uwave_freq_plus, uwave_freq_minus,
-#                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-#                              relaxation_time_range, num_steps, num_reps,
-#                              init_read_list)
+        for nv_ind in range(len(params_array)):
+
+            nv_sig = params_array[nv_ind, 0]
+
+            uwave_freq_plus = params_array[nv_ind, 1]
+            uwave_pi_pulse_plus = params_array[nv_ind, 2]
+            uwave_freq_minus = params_array[nv_ind, 3]
+            uwave_pi_pulse_minus = params_array[nv_ind, 4]
+
+            for exp_ind in range(len(t1_exp_array)):
+#            for exp_ind in [2,3,4,5,6,7]:
+
+                init_read_list = t1_exp_array[exp_ind, 0]
+                relaxation_time_range = t1_exp_array[exp_ind, 1]
+                num_steps = t1_exp_array[exp_ind, 2]
+                num_reps = t1_exp_array[exp_ind, 3]
+
+                do_t1_double_quantum(name, nv_sig, nd_filter,
+                              apd_indices,
+                              uwave_freq_plus, uwave_freq_minus,
+                              uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                              relaxation_time_range, num_steps, num_reps,
+                              init_read_list)
 
 
     finally:

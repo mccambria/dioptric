@@ -397,7 +397,7 @@ def get_time_stamp():
     return timestamp
 
 
-def get_folder_dir(source_name):
+def get_folder_dir(source_name, subfolder):
 
     source_name = os.path.basename(source_name)
     source_name = os.path.splitext(source_name)[0]
@@ -415,6 +415,9 @@ def get_folder_dir(source_name):
         joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
                                    source_name,
                                    'branch_{}'.format(branch_name))
+    
+    if subfolder is not None:
+        joined_path = os.path.join(joined_path, subfolder)
 
     folderDir = os.path.abspath(joined_path)
 
@@ -425,7 +428,7 @@ def get_folder_dir(source_name):
     return folderDir
 
 
-def get_file_path(source_name, timeStamp, name=''):
+def get_file_path(source_name, timeStamp, name='', subfolder=None):
     """
     Get the file path to save to. This will be in a subdirectory of nvdata.
 
@@ -438,12 +441,14 @@ def get_file_path(source_name, timeStamp, name=''):
         name: string
             The file names consist of <timestamp>_<name>.<ext>
             Ext is supplied by the save functions
+        subfolder: string
+            Subfolder to save to under file name
     """
 
     # Set up a timestamp
     fileName = timeStamp + '_' + name
 
-    folderDir = get_folder_dir(source_name)
+    folderDir = get_folder_dir(source_name, subfolder)
 
     fileDir = os.path.abspath(os.path.join(folderDir, fileName))
 
