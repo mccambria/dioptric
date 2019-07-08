@@ -9,6 +9,11 @@ split into different bins, which is used for the analysis of stdev. This file
 does not convert these rates into omega and gamma, this function passes these 
 basic rates onto the stdev analysis file.
 
+This file averages the reference counts in a bin and uses the single value as 
+the reference.
+
+THis file also allows the user to specify if the offset shoudl be a free param
+
 @author: Aedan
 """
 
@@ -28,12 +33,15 @@ data_folder = 't1_double_quantum'
 
 # The exponential function used to fit the data
 
-def exp_eq(t, rate, amp, offset):
+def exp_eq(t, rate, amp):
+    return amp * exp(- rate * t)
+
+def exp_eq_offset(t, rate, amp, offset):
     return offset + amp * exp(- rate * t)
 
 # %% Main
     
-def main(folder_name, num_bins, save_data = True):
+def main(folder_name, num_bins, save_data = True, offset = True):
     
     print('Number of bins: {}'.format(num_bins))
 
@@ -264,12 +272,20 @@ def main(folder_name, num_bins, save_data = True):
         
         o_fit_failed = False
         g_fit_failed = False
-    
+        
+        init_params_list = [1.0, 0.4]
+        
         try:
-
-            init_params = (0.01, 0.4, 0)
-            opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
-                                         zero_relaxation_counts, p0 = init_params)
+            if offset:
+                init_params_list.append(0)
+                init_params = tuple(init_params_list)
+                omega_opti_params, cov_arr = curve_fit(exp_eq_offset, zero_zero_time,
+                                             zero_relaxation_counts, p0 = init_params)
+                
+            else: 
+                init_params = tuple(init_params_list)
+                omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
+                                             zero_relaxation_counts, p0 = init_params)
            
         except Exception:
             
@@ -279,9 +295,10 @@ def main(folder_name, num_bins, save_data = True):
         if not o_fit_failed:
             o_fit_failed_list.append(o_fit_failed)
             
-            o_rate_list.append(opti_params[0])
-            o_amp_list.append(opti_params[1])
-            o_offset_list.append(opti_params[2])
+            o_rate_list.append(omega_opti_params[0])
+            o_amp_list.append(omega_opti_params[1])
+            if offset:
+                o_offset_list.append(omega_opti_params[2])
 
 # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
 # to fit
@@ -303,11 +320,20 @@ def main(folder_name, num_bins, save_data = True):
         # Define the counts for the plus relaxation equation
         plus_relaxation_counts =  plus_plus_norm_avg_sig - plus_minus_norm_avg_sig
 
+        init_params_list = [0.1, 0.40]
         try:
-            init_params = (0.1, 0.40, 0)
-            opti_params, cov_arr = curve_fit(exp_eq, 
-                             plus_plus_time, plus_relaxation_counts, 
-                             p0 = init_params)
+            if offset:
+                init_params_list.append(0)
+                init_params = tuple(init_params_list)
+                gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
+                                 plus_plus_time, plus_relaxation_counts,
+                                 p0 = init_params)
+                
+            else:
+                init_params = tuple(init_params_list)
+                gamma_opti_params, cov_arr = curve_fit(exp_eq,
+                                 plus_plus_time, plus_relaxation_counts,
+                                 p0 = init_params)
 
         except Exception:
             g_fit_failed = True
@@ -316,9 +342,10 @@ def main(folder_name, num_bins, save_data = True):
         if not g_fit_failed:
             g_fit_failed_list.append(g_fit_failed)
               
-            g_rate_list.append(opti_params[0])
-            g_amp_list.append(opti_params[1])
-            g_offset_list.append(opti_params[2])
+            g_rate_list.append(gamma_opti_params[0])
+            g_amp_list.append(gamma_opti_params[1])
+            if offset:
+                g_offset_list.append(gamma_opti_params[2])
                     
         # Advance_ the index
         i = i + bin_size
@@ -336,6 +363,7 @@ def main(folder_name, num_bins, save_data = True):
         raw_data = {'time_stamp': time_stamp,
                     'level_splitting': splitting_MHz,
                     'level_splitting-units': 'MHz',
+                    'offset_free_param?': offset,
                     'num_runs': num_runs,
                     'num_bins': num_bins,
                     'bin_size': bin_size,

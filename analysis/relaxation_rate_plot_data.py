@@ -11,6 +11,9 @@ bins
 This file will automatically save the figure created in the folder of the data
 used.
 
+This file allows the user to specify if the offset should be a free parameter
+or if it should be set to 0.
+
 The time used is in milliseconds
 
 @author: Aedan
@@ -36,10 +39,12 @@ data_folder = 't1_double_quantum'
 def exp_eq(t, rate, amp):
     return  amp * exp(- rate * t)
 
+def exp_eq_offset(t, rate, amp, offset):
+    return  offset + amp * exp(- rate * t)
 
 # %% Main
 
-def main(folder_name, doPlot = False):
+def main(folder_name, doPlot = False, offset = True):
 
     # Get the file list from this folder
     file_list = tool_belt.get_file_list(data_folder, '.txt', folder_name)
@@ -267,11 +272,19 @@ def main(folder_name, doPlot = False):
     omega_fit_failed = False
     gamma_fit_failed = False
 
+    init_params_list = [1.0, 0.4]
+    
     try:
-
-        init_params = (1.0, 0.4)
-        omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
-                                     zero_relaxation_counts, p0 = init_params)
+        if offset:
+            init_params_list.append(0)
+            init_params = tuple(init_params_list)
+            omega_opti_params, cov_arr = curve_fit(exp_eq_offset, zero_zero_time,
+                                         zero_relaxation_counts, p0 = init_params)
+            
+        else: 
+            init_params = tuple(init_params_list)
+            omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
+                                         zero_relaxation_counts, p0 = init_params)
 
     except Exception:
 
@@ -295,7 +308,12 @@ def main(folder_name, doPlot = False):
             zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
             ax = axes_pack[0]
             ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
-            ax.plot(zero_time_linspace,
+            if offset:
+                ax.plot(zero_time_linspace,
+                    exp_eq_offset(zero_time_linspace, *omega_opti_params),
+                    'r', label = 'fit')
+            else:
+                ax.plot(zero_time_linspace,
                     exp_eq(zero_time_linspace, *omega_opti_params),
                     'r', label = 'fit')
             ax.set_xlabel('Relaxation time (ms)')
@@ -314,11 +332,20 @@ def main(folder_name, doPlot = False):
     # Define the counts for the plus relaxation equation
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
 
+    init_params_list = [0.1, 0.40]
     try:
-        init_params = (0.1, 0.40)
-        gamma_opti_params, cov_arr = curve_fit(exp_eq,
-                         plus_plus_time, plus_relaxation_counts,
-                         p0 = init_params)
+        if offset:
+            init_params_list.append(0)
+            init_params = tuple(init_params_list)
+            gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
+                             plus_plus_time, plus_relaxation_counts,
+                             p0 = init_params)
+            
+        else:
+            init_params = tuple(init_params_list)
+            gamma_opti_params, cov_arr = curve_fit(exp_eq,
+                             plus_plus_time, plus_relaxation_counts,
+                             p0 = init_params)
 
     except Exception:
         gamma_fit_failed = True
@@ -339,10 +366,14 @@ def main(folder_name, doPlot = False):
             plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
             ax = axes_pack[1]
             ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
-            ax.plot(plus_time_linspace,
+            if offset:
+                ax.plot(plus_time_linspace,
+                    exp_eq_offset(plus_time_linspace, *gamma_opti_params),
+                    'r', label = 'fit')
+            else:
+                ax.plot(plus_time_linspace,
                     exp_eq(plus_time_linspace, *gamma_opti_params),
                     'r', label = 'fit')
-#                    ax.set_xlim(0,0.1)
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
             ax.set_title('(+1,+1) - (+1,-1)')
@@ -367,6 +398,7 @@ def main(folder_name, doPlot = False):
         raw_data = {'time_stamp': time_stamp,
                     'splitting_MHz': splitting_MHz,
                     'splitting_MHz-units': 'MHz',
+                    'offset_free_param?': offset,
                     'zero_relaxation_counts': zero_relaxation_counts.tolist(),
                     'zero_relaxation_counts-units': 'counts',
                     'zero_zero_time': zero_zero_time.tolist(),
@@ -381,7 +413,7 @@ def main(folder_name, doPlot = False):
         
 
         
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data_alt' 
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data' 
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
@@ -390,7 +422,7 @@ def main(folder_name, doPlot = False):
     # %% Saving the figure
 
    
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data_alt'
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
@@ -400,7 +432,7 @@ def main(folder_name, doPlot = False):
 
 if __name__ == '__main__':
 
-    folder = 'nv0_2019_06_27_228MHz'
+    folder = 'nv0_2019_06_27_23MHz'
 
 #    folder_list = ['nv0_2019_06_06 _48MHz',
 #                   'nv1_2019_05_10_20MHz',
@@ -422,4 +454,4 @@ if __name__ == '__main__':
 
 #    for folder in folder_list:
 #    main(folder, True)
-    main(folder, True)
+    main(folder, True, offset = False)

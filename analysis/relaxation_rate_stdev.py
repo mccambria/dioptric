@@ -61,7 +61,7 @@ def sqrt_eq(x, amp):
 
 # %% Main 
     
-def main(folder_name, num_bins_list = None):
+def main(folder_name, num_bins_list = None, offset = True):
     
     # If the list for number of bins is not passed through, use the factors of 
     # the num_runs
@@ -102,7 +102,7 @@ def main(folder_name, num_bins_list = None):
     # deviation
     for num_bins_ind in range(len(num_bins_list)):
         num_bins = num_bins_list[num_bins_ind]
-        retvals = relaxation_rate_binning.main(folder_name, num_bins, False)
+        retvals = relaxation_rate_binning.main(folder_name, num_bins, False, True)
         
         # Save the data to the lists
         o_value_list.append(retvals[0])
@@ -165,6 +165,7 @@ def main(folder_name, num_bins_list = None):
     raw_data = {'time_stamp': time_stamp,
                 'splitting_MHz': splitting_MHz,
                 'splitting_MHz-units': 'MHz',
+                'offset_free_param?': offset,
                 'omega_value_one_bin': omega_value_one_bin,
                 'omega_value-units': 'kHz',
                 'omega_stdev': omega_stdev,
@@ -198,8 +199,6 @@ def main(folder_name, num_bins_list = None):
                                                          file_name)
     
     tool_belt.save_raw_data(raw_data, file_path)
-#    with open(file_path + '.txt', 'w') as file:
-#        json.dump(raw_data, file, indent=2)
         
         
 # %% Run the file
@@ -233,13 +232,13 @@ if __name__ == '__main__':
     '''
     
     
-#    main(folder)
+#    main(folder, offset= true)
     
         
 #    # Specify the number of bins
 
     num_bins_list = [1, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 40]
-    main(folder, num_bins_list)
+    main(folder, num_bins_list, offset = True)
 
     
     
