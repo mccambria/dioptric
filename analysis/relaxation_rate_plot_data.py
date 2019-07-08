@@ -250,11 +250,11 @@ def main(folder_name, doPlot = False, offset = True):
             continue
 
     # Some error handeling if the count arras don't match up
-    if len(zero_zero_counts) != len(zero_plus_counts):
-         print('Error: length of zero_zero_sig_counts and zero_plus_sig_counts do not match')
-
-    if len(plus_plus_counts) != len(plus_minus_counts):
-        print('Error: length of plus_plus_sig_counts and plus_minus_sig_counts do not match')
+#    if len(zero_zero_counts) != len(zero_plus_counts):
+#         print('Error: length of zero_zero_sig_counts and zero_plus_sig_counts do not match')
+#
+#    if len(plus_plus_counts) != len(plus_minus_counts):
+#        print('Error: length of plus_plus_sig_counts and plus_minus_sig_counts do not match')
 
 
 #    print('(1,1)' + str(plus_plus_time))
@@ -302,7 +302,6 @@ def main(folder_name, doPlot = False, offset = True):
 
 #        print(opti_params[0])
         omega = omega_opti_params[0] / 3.0
-
         # Plotting the data
         if doPlot:
             zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
@@ -413,7 +412,7 @@ def main(folder_name, doPlot = False, offset = True):
         
 
         
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data' 
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data_3' 
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
@@ -422,7 +421,7 @@ def main(folder_name, doPlot = False, offset = True):
     # %% Saving the figure
 
    
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data'
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data_3'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
@@ -432,7 +431,7 @@ def main(folder_name, doPlot = False, offset = True):
 
 if __name__ == '__main__':
 
-    folder = 'nv0_2019_06_27_23MHz'
+    folder = 'nv0_2019_06_27_23MHz_tmp'
 
 #    folder_list = ['nv0_2019_06_06 _48MHz',
 #                   'nv1_2019_05_10_20MHz',
@@ -454,4 +453,4 @@ if __name__ == '__main__':
 
 #    for folder in folder_list:
 #    main(folder, True)
-    main(folder, True, offset = False)
+    main(folder, True, offset = True)

@@ -408,5 +408,5 @@ if __name__ == '__main__':
     folder = 'nv0_2019_06_27_228MHz'
 
     
-    main(folder, 1,  False)
+    main(folder, 1,  False, True)
 
