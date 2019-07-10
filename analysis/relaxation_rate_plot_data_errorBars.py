@@ -91,16 +91,17 @@ def main(folder_name, doPlot = False, offset = True):
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             num_steps = data['num_steps']
             num_runs = data['num_runs']
+            num_runs = 112
 
             # Calculate some arrays
             min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             time_array = numpy.linspace(min_relaxation_time,
                                         max_relaxation_time, num=num_steps)
             
-            avg_sig_counts = numpy.average(sig_counts, axis=0)
-            std_sig_counts = numpy.std(sig_counts, axis=0)
+            avg_sig_counts = numpy.average(sig_counts[:112, ::], axis=0)
+            std_sig_counts = numpy.std(sig_counts[:112, ::], axis=0)
             
-            avg_ref = numpy.average(ref_counts)
+            avg_ref = numpy.average(ref_counts[:112, ::])
 #            std_ref = numpy.std(ref_counts)
             std_ref = 0
             
@@ -358,7 +359,6 @@ def main(folder_name, doPlot = False, offset = True):
             ax.errorbar(zero_zero_time, zero_relaxation_counts, 
                         yerr = zero_relaxation_error / numpy.sqrt(num_runs), 
                         label = 'data', fmt = 'o', color = 'blue')
-            ax.set_ylim(0)
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
             ax.set_title('(0,0) - (0,-1)')
@@ -375,7 +375,6 @@ def main(folder_name, doPlot = False, offset = True):
             ax.errorbar(zero_zero_time, zero_relaxation_counts, 
                         yerr = zero_relaxation_error / numpy.sqrt(num_runs), 
                         label = 'data', fmt = 'o', color = 'blue')
-#            ax.set_ylim(0)
             if offset:
                 ax.plot(zero_time_linspace,
                     exp_eq_offset(zero_time_linspace, *omega_opti_params),
@@ -428,7 +427,6 @@ def main(folder_name, doPlot = False, offset = True):
             ax.errorbar(plus_plus_time, plus_relaxation_counts,                         
                     yerr = plus_relaxation_error/ numpy.sqrt(num_runs), 
                     label = 'data', fmt = 'o', color = 'blue')
-            ax.set_ylim(0)
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
             ax.set_title('(-1,-1) - (-1,+1)')
@@ -444,7 +442,6 @@ def main(folder_name, doPlot = False, offset = True):
             ax.errorbar(plus_plus_time, plus_relaxation_counts,                         
                     yerr = plus_relaxation_error / numpy.sqrt(num_runs), 
                     label = 'data', fmt = 'o', color = 'blue')
-            ax.set_ylim(0)
             if offset:
                 ax.plot(plus_time_linspace,
                     exp_eq_offset(plus_time_linspace, *gamma_opti_params),
@@ -511,7 +508,7 @@ def main(folder_name, doPlot = False, offset = True):
 
 if __name__ == '__main__':
 
-    folder = 'nv0_2019_06_27_222MHz'
+    folder = 'nv0_2019_06_27_23MHz'
 
 #    folder_list = ['nv0_2019_06_06 _48MHz',
 #                   'nv1_2019_05_10_20MHz',
