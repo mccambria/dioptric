@@ -25,7 +25,7 @@ import time
 #import labrad
 from tkinter import Tk
 from tkinter import filedialog
-#from git import Repo
+from git import Repo
 from pathlib import Path
 
 
