@@ -36,7 +36,7 @@ of num_runs, and can only handle two data sets of the same experiment (ie +1 to
 import time
 import numpy
 from scipy.optimize import curve_fit
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 import utils.tool_belt as tool_belt
 import analysis.relaxation_rate_binning as relaxation_rate_binning
@@ -56,9 +56,12 @@ def factors(number):
        
     return factor_list
 
+def sqrt_eq(x, amp):
+    return amp * (x)**(1/2)
+
 # %% Main 
     
-def main(folder_name, num_bins_list = None):
+def main(folder_name, num_bins_list = None, offset = True):
     
     # If the list for number of bins is not passed through, use the factors of 
     # the num_runs
@@ -99,7 +102,7 @@ def main(folder_name, num_bins_list = None):
     # deviation
     for num_bins_ind in range(len(num_bins_list)):
         num_bins = num_bins_list[num_bins_ind]
-        retvals = relaxation_rate_binning.main(folder_name, num_bins, False)
+        retvals = relaxation_rate_binning.main(folder_name, num_bins, False, True)
         
         # Save the data to the lists
         o_value_list.append(retvals[0])
@@ -121,26 +124,28 @@ def main(folder_name, num_bins_list = None):
     # sizes to compare to the value found using one bin        
     o_value_avg = numpy.average(o_value_list)
     g_value_avg = numpy.average(g_value_list)
-     
-#    # Plot the data to visualize it. This plot is not saved
-#    plt.loglog(num_bins_list, g_stdev_list, 'go', label = 'g rate standard deviation')
-#    plt.loglog(num_bins_list, o_stdev_list, 'bo', label = 'o rate standard deviation')
-#    plt.xlabel('Number of bins for num_runs')
-#    plt.ylabel('Standard Deviation (kHz)')
-#    plt.legend()
+         
     
-    
-    
-    # Fit the data to sqrt and extract the standadr deviation value for one bin
-    def sqrt_root(x, amp):
-        return amp * (x)**(1/2)
-    opti_params, cov_arr = curve_fit(sqrt_root, num_bins_list, 
+    # Fit the data to sqrt and extract the standard deviation value for one bin
+
+    opti_params, cov_arr = curve_fit(sqrt_eq, num_bins_list, 
                                      o_stdev_list, p0 = (0.1))
-    o_stdev = sqrt_root(1, opti_params[0])
+    o_stdev = sqrt_eq(1, opti_params[0])
     
-    opti_params, cov_arr = curve_fit(sqrt_root, num_bins_list, 
+    opti_params, cov_arr = curve_fit(sqrt_eq, num_bins_list, 
                                      g_stdev_list, p0 = (1))
-    g_stdev = sqrt_root(1, opti_params[0])
+    g_stdev = sqrt_eq(1, opti_params[0])
+    
+
+    # Plot the data to visualize it. This plot is not saved
+    bin_linspace = numpy.linspace(num_bins_list[0], num_bins_list[-1], 1000
+                                  )
+    plt.loglog(num_bins_list, g_stdev_list, 'go', label = 'g rate standard deviation')
+    plt.loglog(bin_linspace, sqrt_eq(bin_linspace, opti_params), 'teal', label = 'Sqrt[bin_size]')
+    plt.loglog(num_bins_list, o_stdev_list, 'bo', label = 'o rate standard deviation')
+    plt.xlabel('Number of bins for num_runs')
+    plt.ylabel('Standard Deviation (kHz)')
+    plt.legend()
     
     # We have calculated the average rate for the two fits and their stdev, and
     # NOW we finally calculate what omega nad gamma are, and their uncertainty
@@ -160,6 +165,7 @@ def main(folder_name, num_bins_list = None):
     raw_data = {'time_stamp': time_stamp,
                 'splitting_MHz': splitting_MHz,
                 'splitting_MHz-units': 'MHz',
+                'offset_free_param?': offset,
                 'omega_value_one_bin': omega_value_one_bin,
                 'omega_value-units': 'kHz',
                 'omega_stdev': omega_stdev,
@@ -188,13 +194,11 @@ def main(folder_name, num_bins_list = None):
     data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
     
     file_name = time_stamp + '_' + str('%.1f'%splitting_MHz) + \
-                '_MHz_splitting_rate_analysis' 
+                '_MHz_splitting_rate_analysis_alt' 
     file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                          file_name)
     
     tool_belt.save_raw_data(raw_data, file_path)
-#    with open(file_path + '.txt', 'w') as file:
-#        json.dump(raw_data, file, indent=2)
         
         
 # %% Run the file
@@ -205,7 +209,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our 
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
     
-    folder = 'nv13_2019_06_10_28MHz'
+    folder = 'nv0_2019_06_27_23MHz'
 
     
     '''
@@ -228,13 +232,13 @@ if __name__ == '__main__':
     '''
     
     
-    main(folder)
+#    main(folder, offset= True)
     
         
 #    # Specify the number of bins
 
-#    num_bins_list = [1,2,4, 5, 8]
-#    main(folder, num_bins_list)
+    num_bins_list = [1, 2, 3, 4, 5]
+    main(folder, num_bins_list, offset = True)
 
     
     
