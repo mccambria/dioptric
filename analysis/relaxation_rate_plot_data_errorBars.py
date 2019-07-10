@@ -349,6 +349,8 @@ def main(folder_name, doPlot = False, offset = True):
                                          zero_relaxation_counts, p0 = init_params,
                                          sigma = zero_relaxation_error, 
                                          absolute_sigma=True)
+            
+
 
     except Exception:
 
@@ -368,6 +370,10 @@ def main(folder_name, doPlot = False, offset = True):
 
 #        print(opti_params[0])
         omega = omega_opti_params[0] / 3.0
+        omega_std = numpy.sqrt(cov_arr[0,0]) / 3.0
+        
+        print('Omega: {} +/- {} kHz'.format('%.3f'%omega, 
+                  '%.3f'%omega_std))
         # Plotting the data
         if doPlot:
             zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
@@ -434,6 +440,10 @@ def main(folder_name, doPlot = False, offset = True):
     if not gamma_fit_failed:
 
         gamma = (gamma_opti_params[0] - omega)/ 2.0
+        gamma_std = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_std**2)
+        
+        print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma, 
+                  '%.3f'%gamma_std))
 
         # Plotting
         if doPlot:
