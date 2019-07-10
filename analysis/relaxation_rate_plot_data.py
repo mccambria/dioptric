@@ -93,6 +93,11 @@ def main(folder_name, doPlot = False, offset = True):
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_zero_bool == False:
+#                    ###
+#                    avg_sig_counts = numpy.average(sig_counts[:112,::], axis=0)
+#                    avg_ref = numpy.average(ref_counts[:112,::])
+#                    norm_avg_sig = avg_sig_counts / avg_ref
+#                    ###
                     zero_zero_counts = norm_avg_sig
                     zero_zero_time = time_array
 
@@ -412,26 +417,26 @@ def main(folder_name, doPlot = False, offset = True):
         
 
         
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data_3' 
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins' 
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-        tool_belt.save_raw_data(raw_data, file_path)
+#        tool_belt.save_raw_data(raw_data, file_path)
     
     # %% Saving the figure
 
    
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins_all_data_3'
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
-        tool_belt.save_figure(fig, file_path)
+#        tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 
 if __name__ == '__main__':
 
-    folder = 'nv0_2019_06_27_23MHz_tmp'
+    folder = 'nv0_2019_06_27_23MHz'
 
 #    folder_list = ['nv0_2019_06_06 _48MHz',
 #                   'nv1_2019_05_10_20MHz',

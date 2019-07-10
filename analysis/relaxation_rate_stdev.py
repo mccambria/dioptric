@@ -232,12 +232,12 @@ if __name__ == '__main__':
     '''
     
     
-#    main(folder, offset= true)
+#    main(folder, offset= True)
     
         
 #    # Specify the number of bins
 
-    num_bins_list = [1, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 40]
+    num_bins_list = [1, 2, 3, 4, 5]
     main(folder, num_bins_list, offset = True)
 
     
