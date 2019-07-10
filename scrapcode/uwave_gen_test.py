@@ -30,50 +30,49 @@ from pulsestreamer import OutputState
 # %% Main
 
 
-def main(cxn):
+def main(cxn=None):
     """When you run the file, we'll call into main, which should contain the
     body of the script.
     """
     
-    cxn.signal_generator_bnc835.reset()
-            
-    num_steps = 11
-    cxn.signal_generator_bnc835.set_amp(5.0)
-#    cxn.signal_generator_bnc835.set_freq(2.85)
-    cxn.signal_generator_bnc835.load_freq_list(numpy.linspace(2.82, 2.92, num_steps))
-#    cxn.signal_generator_bnc835.load_freq_list([2.87])
-#    cxn.signal_generator_bnc835.load_freq_sweep(2.82, 2.92, num_steps)
-    cxn.signal_generator_bnc835.uwave_on()
-    
-    pulser = Pulser('128.104.160.111')
-    
-    while True:
-        if input('Enter "q" to stop or nothing to continue: ')=='q':
-            break
-        else:
-#            pass
-            # Send out a pulse to channel 7 for a tenth of a second
-            pulser.constant(OutputState([7]))
-            time.sleep(0.1)
-            pulser.constant(OutputState([]))
-            # Measure the peak within 200 MHz about 2.87 GHz
-    #        print(cxn.spectrum_analyzer.measure_peak(2.87, 0.2))
+#    cxn.signal_generator_bnc835.reset()
+#            
+#    num_steps = 11
+#    cxn.signal_generator_bnc835.set_amp(5.0)
+##    cxn.signal_generator_bnc835.set_freq(2.85)
+#    cxn.signal_generator_bnc835.load_freq_list(numpy.linspace(2.82, 2.92, num_steps))
+##    cxn.signal_generator_bnc835.load_freq_list([2.87])
+##    cxn.signal_generator_bnc835.load_freq_sweep(2.82, 2.92, num_steps)
+#    cxn.signal_generator_bnc835.uwave_on()
+#    
+#    pulser = Pulser('128.104.160.111')
+#    
+#    while True:
+#        if input('Enter "q" to stop or nothing to continue: ')=='q':
+#            break
+#        else:
+##            pass
+#            # Send out a pulse to channel 7 for a tenth of a second
+#            pulser.constant(OutputState([7]))
+#            time.sleep(0.1)
+#            pulser.constant(OutputState([]))
+#            # Measure the peak within 200 MHz about 2.87 GHz
+#    #        print(cxn.spectrum_analyzer.measure_peak(2.87, 0.2))
     
     # %% Sig gen tests
     
-#    resource_manager = visa.ResourceManager()
-#    sig_gen_address = 'TCPIP::10.128.226.175::inst0::INSTR'
-#    sig_gen = resource_manager.open_resource(sig_gen_address)
-#    #    sig_gen.read_termination = '\n'
-#    #    sig_gen.write_termination = '\n'
-#    
-#    print(sig_gen.query('FREQ?'))
-#    print(sig_gen.query('*IDN?'))
-#    #    print(sig_gen.write('FREQ?'))
-#    #    print(sig_gen.read_raw())  # Use this to determine the termination
-#    print(sig_gen.query('AMPR?'))
-#    print(sig_gen.query('FDEV?'))
-#    print(sig_gen.query('MODL?'))
+    resource_manager = visa.ResourceManager()
+    sig_gen_address = 'TCPIP::128.104.160.114::inst0::INSTR'
+    sig_gen = resource_manager.open_resource(sig_gen_address)
+    #    sig_gen.read_termination = '\n'
+    #    sig_gen.write_termination = '\n'
+    print(sig_gen.query('FREQ?'))
+    print(sig_gen.query('*IDN?'))
+    print(sig_gen.write('FREQ?'))
+    print(sig_gen.read_raw())  # Use this to determine the termination
+    print(sig_gen.query('AMPR?'))
+    print(sig_gen.query('FDEV?'))
+    print(sig_gen.query('MODL?'))
     
     # %% DAQ tests
     
@@ -93,10 +92,12 @@ def main(cxn):
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here
-
+    
+    main()
+    
     # Run the script
-    with labrad.connect() as cxn:
-        try:
-            main(cxn)
-        finally:
-            cxn.signal_generator_bnc835.reset()
+#    with labrad.connect() as cxn:
+#        try:
+#            main(cxn)
+#        finally:
+#            cxn.signal_generator_bnc835.reset()

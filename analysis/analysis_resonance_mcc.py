@@ -33,7 +33,7 @@ def fit_resonance(save_file_type):
     
 #    folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance/'
     folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pulsed_resonance/'
-    file_name = '2019-07-03_18-15-33_johnson1.txt'
+    file_name = '2019-07-08_17-21-38_johnson1.txt'
 #    file_name = '2019-06-19_18-41-28_ayrton12.txt'
     open_file_name = '{}{}'.format(folder_dir, file_name)
     

@@ -192,6 +192,8 @@ def main(folder_name, num_bins_list = None):
     file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                          file_name)
     
+    print(file_path)
+    
     tool_belt.save_raw_data(raw_data, file_path)
 #    with open(file_path + '.txt', 'w') as file:
 #        json.dump(raw_data, file, indent=2)
@@ -205,7 +207,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our 
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
     
-    folder = 'nv13_2019_06_10_28MHz'
+    folder = 'nv0_2019_06_27_23MHz'
 
     
     '''
@@ -228,13 +230,13 @@ if __name__ == '__main__':
     '''
     
     
-    main(folder)
+#    main(folder)
     
         
-#    # Specify the number of bins
+    # Specify the number of bins
 
-#    num_bins_list = [1,2,4, 5, 8]
-#    main(folder, num_bins_list)
+    num_bins_list = [1, 2, 4, 5, 8, 10, 20, 40]
+    main(folder, num_bins_list)
 
     
     

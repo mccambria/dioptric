@@ -67,11 +67,11 @@ def do_image_sample(name, nv_sig, nd_filter, apd_indices):
 #    scan_range = 0.2
 #    num_scan_steps = 60
 
-#    scan_range = 0.10
-#    num_scan_steps = 30
-
-    scan_range = 0.05
+    scan_range = 0.10
     num_scan_steps = 60
+
+#    scan_range = 0.05
+#    num_scan_steps = 60
 
     with labrad.connect() as cxn:
         # For now we only support square scans so pass scan_range twice
@@ -241,6 +241,7 @@ def do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices):
 def do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices):
 
     ref_file_name = '2019-06-10_15-22-25_ayrton12'  # 60 x 60
+    ref_file_name = '2019-06-27_16-37-18_johnson1' # bulk nv, first one we saw
 
     with labrad.connect() as cxn:
         set_drift_from_reference_image.main(cxn, ref_file_name, nv_sig, nd_filter, apd_indices)
@@ -343,7 +344,8 @@ if __name__ == '__main__':
     feature2 = [-0.379, -0.254, 48.5, None, 10]
     
     # After putting in magnet
-    nv0_2019_06_27 = [-0.241, -0.335, 47.7, 40, 2]
+#    nv0_2019_06_27 = [-0.241, -0.335, 47.7, 40, 2]
+    nv0_2019_06_27 = [-0.169, -0.306, 38.74, 40, 2]
 
     nv_sig_list = [nv0_2019_06_27]
 
@@ -467,9 +469,13 @@ if __name__ == '__main__':
 #                                [zero_to_zero,   [0, 10*10**6], 11, 5000]])
     
     # nv0_2019_06_27 ~9 hours
-    t1_exp_array = numpy.array([[zero_to_plus,   [0, 15*10**6], 11, 5000],
-                                [zero_to_zero,   [0, 15*10**6], 11, 5000]])
-    
+#    t1_exp_array = numpy.array([[zero_to_plus,   [0, 15*10**6], 11, 5000],
+#                                [zero_to_zero,   [0, 15*10**6], 11, 5000]])
+# 
+    # ~ 18 hours
+    t1_exp_array = numpy.array([[plus_to_minus,   [0, 15*10**6], 11, 5000],
+                                [plus_to_plus,    [0, 15*10**6], 11, 5000]])
+     
 #    t1_exp_array = numpy.array([[plus_to_minus,  [0, 50*10**3], 51, 2 * 10**4],
 #                                [plus_to_plus,  [0, 50*10**3], 51, 2 * 10**4]])
     
@@ -477,7 +483,7 @@ if __name__ == '__main__':
     # Array for the parameters of a given NV, formatted:
     # [nv_sig, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus, uwave_pi_pulse_minus]
     # uwave_MINUS should be associated with the HP signal generator
-    params_array = numpy.array([[nv0_2019_06_27, 2.8594, 73, 2.8834, 92]])
+    params_array = numpy.array([[nv0_2019_06_27, 2.8586, 72, 2.8825, 93]])
 
     # %% Functions to run
 
@@ -512,8 +518,8 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_range=0.06)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.98, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8594, 0)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8834, 1)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8586, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8825, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)

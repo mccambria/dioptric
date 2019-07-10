@@ -377,7 +377,7 @@ def main(folder_name, num_bins, save_data = True):
                   
 if __name__ == '__main__':
     
-    folder = 'nv2_2019_04_30_57MHz'
+    folder = 'nv0_2019_06_27_23MHz'
 
     
     main(folder, 40,  False)
