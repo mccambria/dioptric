@@ -16,6 +16,10 @@ or if it should be set to 0.
 
 The time used is in milliseconds
 
+This version of the file calculates the standard deviation of the measurmenets and
+plots the standard error. It also uses those standard errors in the curve_fit, 
+which changes how the data is weighted.
+
 @author: Aedan
 """
 
@@ -42,17 +46,17 @@ def exp_eq(t, rate, amp):
 def exp_eq_offset(t, rate, amp, offset):
     return  offset + amp * exp(- rate * t)
 
-def error_prop(norm_avg_signal_array, sig_array, sig_err_array, ref, ref_err):
-    norm_avg_signal_err_array = []
-    ref_frac_unc = ref_err / ref
-    for ind in range(len(norm_avg_signal_array)):
-        sig_frac_unc = sig_err_array[ind] / sig_array[ind]
-        error_prop = norm_avg_signal_array[ind] \
-                * numpy.sqrt(sig_frac_unc**2 + ref_frac_unc**2)
-                    
-        norm_avg_signal_err_array.append(error_prop) 
-    
-    return numpy.array(norm_avg_signal_err_array)
+#def error_prop(norm_avg_signal_array, sig_array, sig_err_array, ref, ref_err):
+#    norm_avg_signal_err_array = []
+#    ref_frac_unc = ref_err / ref
+#    for ind in range(len(norm_avg_signal_array)):
+#        sig_frac_unc = sig_err_array[ind] / sig_array[ind]
+#        error_prop = norm_avg_signal_array[ind] \
+#                * numpy.sqrt(sig_frac_unc**2 + ref_frac_unc**2)
+#                    
+#        norm_avg_signal_err_array.append(error_prop) 
+#    
+#    return numpy.array(norm_avg_signal_err_array)
 
 # %% Main
 
@@ -86,6 +90,7 @@ def main(folder_name, doPlot = False, offset = True):
 
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             num_steps = data['num_steps']
+            num_runs = data['num_runs']
 
             # Calculate some arrays
             min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
@@ -96,14 +101,14 @@ def main(folder_name, doPlot = False, offset = True):
             std_sig_counts = numpy.std(sig_counts, axis=0)
             
             avg_ref = numpy.average(ref_counts)
-            std_ref = numpy.std(ref_counts)
+#            std_ref = numpy.std(ref_counts)
+            std_ref = 0
             
             norm_avg_sig = avg_sig_counts / avg_ref
-            norm_avg_err = norm_avg_sig * \
-                    numpy.sqrt((std_sig_counts/avg_sig_counts)**2 + \
-                    (std_ref/avg_ref)**2)
-#                            error_prop(norm_avg_sig, avg_sig_counts, \
-#                                      std_sig_counts, avg_ref, std_ref)
+#            norm_avg_err_0 = norm_avg_sig * \
+#                    numpy.sqrt((std_sig_counts/avg_sig_counts)**2 + \
+#                    (std_ref/avg_ref)**2)
+            norm_avg_err = std_sig_counts / avg_ref
             
             # take the average of the reference for 
 
@@ -116,13 +121,6 @@ def main(folder_name, doPlot = False, offset = True):
                     zero_zero_counts = norm_avg_sig
                     zero_zero_err = norm_avg_err
                     zero_zero_time = time_array
-                    
-#                    print(avg_sig_counts)
-#                    print(std_sig_counts)
-#                    print(avg_ref)
-#                    print(std_ref)
-#                    print(norm_avg_sig)
-#                    print(norm_avg_err)
                     
                     zero_zero_ref_max_time = max_relaxation_time
                     zero_zero_bool = True
@@ -327,6 +325,8 @@ def main(folder_name, doPlot = False, offset = True):
     
     zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
     zero_relaxation_error = numpy.sqrt(zero_zero_err**2 + zero_plus_err**2)
+    
+#    print(zero_relaxation_error)
 
     omega_fit_failed = False
     gamma_fit_failed = False
@@ -339,13 +339,15 @@ def main(folder_name, doPlot = False, offset = True):
             init_params = tuple(init_params_list)
             omega_opti_params, cov_arr = curve_fit(exp_eq_offset, zero_zero_time,
                                          zero_relaxation_counts, p0 = init_params,
-                                         sigma = zero_relaxation_error, absolute_sigma=True)
+                                         sigma = zero_relaxation_error, 
+                                         absolute_sigma=True)
             
         else: 
             init_params = tuple(init_params_list)
             omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
                                          zero_relaxation_counts, p0 = init_params,
-                                         sigma = zero_relaxation_error, absolute_sigma=True)
+                                         sigma = zero_relaxation_error, 
+                                         absolute_sigma=True)
 
     except Exception:
 
@@ -354,8 +356,8 @@ def main(folder_name, doPlot = False, offset = True):
         if doPlot:
             ax = axes_pack[0]
             ax.errorbar(zero_zero_time, zero_relaxation_counts, 
-                        yerr = zero_relaxation_error, label = 'data', 
-                        fmt = 'o', color = 'blue')
+                        yerr = zero_relaxation_error / numpy.sqrt(num_runs), 
+                        label = 'data', fmt = 'o', color = 'blue')
             ax.set_ylim(0)
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
@@ -371,9 +373,9 @@ def main(folder_name, doPlot = False, offset = True):
             zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
             ax = axes_pack[0]
             ax.errorbar(zero_zero_time, zero_relaxation_counts, 
-                        yerr = zero_relaxation_error, label = 'data', 
-                        fmt = 'o', color = 'blue')
-            ax.set_ylim(0)
+                        yerr = zero_relaxation_error / numpy.sqrt(num_runs), 
+                        label = 'data', fmt = 'o', color = 'blue')
+#            ax.set_ylim(0)
             if offset:
                 ax.plot(zero_time_linspace,
                     exp_eq_offset(zero_time_linspace, *omega_opti_params),
@@ -424,8 +426,8 @@ def main(folder_name, doPlot = False, offset = True):
         if doPlot:
             ax = axes_pack[1]
             ax.errorbar(plus_plus_time, plus_relaxation_counts,                         
-                    yerr = plus_relaxation_error, label = 'data', 
-                    fmt = 'o', color = 'blue')
+                    yerr = plus_relaxation_error/ numpy.sqrt(num_runs), 
+                    label = 'data', fmt = 'o', color = 'blue')
             ax.set_ylim(0)
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
@@ -440,8 +442,8 @@ def main(folder_name, doPlot = False, offset = True):
             plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
             ax = axes_pack[1]
             ax.errorbar(plus_plus_time, plus_relaxation_counts,                         
-                    yerr = plus_relaxation_error, label = 'data', 
-                    fmt = 'o', color = 'blue')
+                    yerr = plus_relaxation_error / numpy.sqrt(num_runs), 
+                    label = 'data', fmt = 'o', color = 'blue')
             ax.set_ylim(0)
             if offset:
                 ax.plot(plus_time_linspace,
