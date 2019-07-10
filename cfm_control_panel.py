@@ -472,7 +472,7 @@ if __name__ == '__main__':
 #    t1_exp_array = numpy.array([[zero_to_plus,   [0, 15*10**6], 11, 5000],
 #                                [zero_to_zero,   [0, 15*10**6], 11, 5000]])
 # 
-    # ~ 18 hours
+    # ~ 26 hours
     t1_exp_array = numpy.array([[plus_to_minus,   [0, 15*10**6], 11, 5000],
                                 [plus_to_plus,    [0, 15*10**6], 11, 5000]])
      
