@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul 11 9:33:00 2019
+Created on Sat May  4 08:34:08 2019
 
-@author: mccambria
+@author: Aedan
 """
 
 from pulsestreamer import Sequence
@@ -27,18 +27,28 @@ def get_seq(pulser_wiring, args):
             post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,  \
             gate_time, uwave_pi_half_pulse, tau_scnd = durations
         
-    # Get the APD index (if more than one APD is to be used, then they must
-    # share a gate channel)
+    # Get the APD indices
     apd_index = args[13]
-
-    # Get what we need out of the wiring dictionary
-    key = 'do_apd_gate_{}'.format(apd_index)
-    pulser_do_apd_gate = pulser_wiring[key]
-    do_uwave_gate = 0
-    if do_uwave_gate == 0:
-        pulser_do_uwave = pulser_wiring['do_uwave_gate_0']
-    if do_uwave_gate == 1:
-        pulser_do_uwave = pulser_wiring['do_uwave_gate_1']
+        
+    pulser_do_apd_gate = pulser_wiring['do_apd_gate_{}'.format(apd_index)]
+    
+#    # Get what we need out of the wiring dictionary
+#    key = 'do_apd_gate_{}'.format(sig_shrt_apd_index)
+#    pulser_do_sig_shrt_apd_gate = pulser_wiring[key]
+#    print(pulser_do_sig_shrt_apd_gate)
+#    key = 'do_apd_gate_{}'.format(ref_shrt_apd_index)
+#    pulser_do_ref_shrt_apd_gate = pulser_wiring[key]
+#    print(pulser_do_ref_shrt_apd_gate)
+#    
+#    key = 'do_apd_gate_{}'.format(sig_long_apd_index)
+#    pulser_do_sig_long_apd_gate = pulser_wiring[key]
+#    print(pulser_do_sig_long_apd_gate)
+#    key = 'do_apd_gate_{}'.format(ref_long_apd_index)
+#    pulser_do_ref_long_apd_gate = pulser_wiring[key]
+#    print(pulser_do_ref_long_apd_gate)
+    
+    
+    pulser_do_uwave = pulser_wiring['do_uwave_gate_0']
     pulser_do_aom = pulser_wiring['do_aom']
     
     # %% Write the microwave sequence to be used.
@@ -52,8 +62,18 @@ def get_seq(pulser_wiring, args):
     
     uwave_experiment_seq_scnd = [(uwave_pi_half_pulse, HIGH), (tau_scnd, LOW), 
                                      (uwave_pi_half_pulse, HIGH)]
+    
+    # %% Couple calculated values
 
-    # %% Calculate total period. This is the same for any pair of taus
+    prep_time = aom_delay_time + rf_delay_time + \
+        polarization_time + pre_uwave_exp_wait_time + \
+        uwave_experiment_frst + post_uwave_exp_wait_time
+        
+    up_to_scnd_gates = prep_time + signal_time + sig_to_ref_wait_time + \
+        reference_time + pre_uwave_exp_wait_time + \
+        uwave_experiment_scnd + post_uwave_exp_wait_time
+
+    # %% Calclate total period. This is fixed for each tau index
         
     # The period is independent of the particular tau, but it must be long
     # enough to accomodate the longest tau

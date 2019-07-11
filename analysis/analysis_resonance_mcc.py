@@ -32,8 +32,8 @@ def fit_resonance(save_file_type):
     second_freq_guess = 2.89  # 'n' if none
     
 #    folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/resonance/'
-    folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pulsed_resonance/'
-    file_name = '2019-07-08_17-21-38_johnson1.txt'
+    folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pulsed_resonance/branch_ramsey2/'
+    file_name = '2019-07-11_13-02-42_johnson1.txt'
 #    file_name = '2019-06-19_18-41-28_ayrton12.txt'
     open_file_name = '{}{}'.format(folder_dir, file_name)
     

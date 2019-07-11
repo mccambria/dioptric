@@ -59,10 +59,12 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40
     # the length of time the gate will be open to count photons
-    gate_time = 450  
+    gate_time = 320
     
     # Convert pi_pulse to integer
     uwave_pi_half_pulse = round(uwave_pi_half_pulse)
+    
+    seq_file_name = 't1_double_quantum.py'
     
 
     # %% Create the array of relaxation times
@@ -70,8 +72,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
     
-    min_precession_time = int( precession_time_range[0] )
-    max_precession_time = int( precession_time_range[1] )
+    min_precession_time = int(precession_time_range[0])
+    max_precession_time = int(precession_time_range[1])
     
     taus = numpy.linspace(min_precession_time, max_precession_time,
                           num=num_steps, dtype=numpy.int32)
@@ -115,42 +117,29 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     
     # %% Analyze the sequence
     
-    # pulls the file of the sequence from serves/timing/sequencelibrary
-    file_name = os.path.basename(__file__)
-    
-    sequence_args = [min_precession_time, polarization_time, signal_time, reference_time, 
-                    sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
-                    post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_half_pulse, max_precession_time,
-                    apd_indices[0]]
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
+    # We can simply reuse t1_double_quantum for this if we pass a pi/2 pulse
+    # instead of a pi pulse and use the same states for init/readout
+    seq_args = [min_precession_time, polarization_time, signal_time, reference_time, 
+                sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
+                post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
+                gate_time, uwave_pi_half_pulse, 0,
+                max_precession_time, apd_indices[0], 1, 1]
+    ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args, 1)
     seq_time = ret_vals[0]
 #    print(sequence_args)
 #    print(seq_time)
     
-    # %% Ask user if they wish to run experiment based on run time
+    # %% Let the user know how long this will take
     
     seq_time_s = seq_time / (10**9)  # s
     expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
     expected_run_time_m = expected_run_time / 60 # s
-#
-#    
-#    msg = 'Expected run time: {} minutes. ' \
-#        'Enter \'y\' to continue: '.format(expected_run_time_m)
-#    if input(msg) != 'y':
-#        return
     
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
     
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
-    
-     # %% Set up the microwaves
-
-    cxn.microwave_signal_generator.set_freq(uwave_freq)
-    cxn.microwave_signal_generator.set_amp(uwave_power)
-    cxn.microwave_signal_generator.uwave_on()
     
     # %% Collect the data
     
@@ -169,10 +158,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
         opti_coords_list.append(opti_coords)
         
-        # Set up the microwaves
-        cxn.microwave_signal_generator.set_freq(uwave_freq)
-        cxn.microwave_signal_generator.set_amp(uwave_power)
-        cxn.microwave_signal_generator.uwave_on()
+        # Set up the microwaves - just use the Tektronix
+        cxn.signal_generator_tsg4104a.set_freq(uwave_freq)
+        cxn.signal_generator_tsg4104a.set_amp(uwave_power)
+        cxn.signal_generator_tsg4104a.uwave_on()
             
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)  
@@ -194,28 +183,25 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
 
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
-                break  
-            
-            # Stream the sequence
-            args = [taus[tau_ind_first], polarization_time, signal_time, reference_time, 
-                    sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
-                    post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                    gate_time, uwave_pi_half_pulse, taus[tau_ind_second],
-                    apd_indices[0]]
+                break
             
             print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
             print('Second relaxation time: {}'.format(taus[tau_ind_second])) 
             
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)        
+            seq_args = [taus[tau_ind_first], polarization_time, signal_time, reference_time, 
+                            sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
+                            post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
+                            gate_time, uwave_pi_half_pulse, 0,
+                            taus[tau_ind_second], apd_indices[0], 1, 1]
+            
+            cxn.pulse_streamer.stream_immediate(seq_file_name, num_reps,
+                                                seq_args, 1)   
             
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
             # parse the returned list into what we want.
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
             sample_counts = new_counts[0]
-            
-            sig_gate_counts = sample_counts[::4]
-            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
             
             count = sum(sample_counts[0::4])
             sig_counts[run_ind, tau_ind_first] = count
