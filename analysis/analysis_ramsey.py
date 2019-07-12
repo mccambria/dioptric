@@ -33,7 +33,7 @@ def fit_ramsey(save_file_type):
     FreqParams = numpy.empty([3])   
     
     folder_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/ramsey/branch_ramsey2/'
-    file_name = '2019-07-11_18-25-13_johnson1.txt'
+    file_name = '2019-07-12_16-32-47_johnson1.txt'
     
     open_file_name = '{}{}'.format(folder_dir, file_name)
     
@@ -145,8 +145,8 @@ def fit_ramsey(save_file_type):
     fig.canvas.flush_events()
     
     # Save the file in the same file directory
-#    no_ext = open_file_name.split('.')[0]
-#    fig.savefig('{}_fit.{}'.format(no_ext, save_file_type))
+    no_ext = open_file_name.split('.')[0]
+    fig.savefig('{}_fit.{}'.format(no_ext, save_file_type))
     
 # %%
     

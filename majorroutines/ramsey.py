@@ -308,6 +308,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'uwave_pi_half_pulse-units': 'ns',
             'precession_time_range': precession_time_range,
             'precession_time_range-units': 'ns',
+            'tau_ind_list': tau_ind_list,
             'num_steps': num_steps,
             'num_reps': num_reps,
             'num_runs': num_runs,
@@ -324,28 +325,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
 
 
 # %% Fitting the data
-
-#    open_file_name = '{}{}'.format(folder_dir, file_name)
-#
-#    with open(open_file_name) as json_file:
-#        data = json.load(json_file)
-
-        # Get information about the frequency
-#        precession_time_range = data["precession_time_range"]
-#        num_steps = data["num_steps"]
-
-        # Get the averaged, normalized counts from the ESR
-#        norm_avg_sig = numpy.array(data["norm_avg_sig"])
-#        sig_counts = numpy.array(data['sig_counts'])
-#        ref_counts = numpy.array(data['ref_counts'])
-#        norm_avg_counts = sig_counts[1,:] / ref_counts[1,:]
-
-    # Calculate some of the necessary values about the frequency scanned
-#    min_precession_time = precession_time_range[0] / 10**3
-#    max_precession_time = precession_time_range[1] / 10**3
-#
-#    taus = numpy.linspace(min_precession_time, max_precession_time,
-#                          num=num_steps)
 
     # Create an empty array for the frequency arrays
     FreqParams = numpy.empty([3])
