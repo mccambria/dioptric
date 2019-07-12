@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Ramsey measruement.
+Spin echo.
 
-This routine puts polarizes the nv state into 0, then applies a pi/2 pulse to 
-put the state into a superposition between the 0 and + or - 1 state. The state
-then evolves for a time, tau, of free precesion, and then a second pi/s pulse
-is applied. The amount of population in 0 is read out by collecting the 
-fluorescence during a readout.
+Polarize the nv to 0, then applies a pi/2 pulse to send the state to the
+equator. Allow to precess for some time, then apply a pi pulse and allow to
+precess for the same amount of time, cancelling the previous precession and
+resulting in an echo. Finally readout after a second pi/s pulse.
 
 Created on Wed Apr 24 15:01:04 2019
 
-@author: agardill
+@author: mccambria
 """
 
 # %% Imports
@@ -19,19 +18,15 @@ Created on Wed Apr 24 15:01:04 2019
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-import os
 import time
 import matplotlib.pyplot as plt
-#from scipy.optimize import curve_fit
 from random import shuffle
 
-#import json
-#from scipy import asarray as ar,exp
 
 # %% Main
 
 def main(cxn, nv_sig, nd_filter, apd_indices,
-         uwave_freq, uwave_power, uwave_pi_half_pulse, precession_time_range,
+         uwave_freq, uwave_power, rabi_period, precession_time_range,
          num_steps, num_reps, num_runs, 
          name='untitled'):
     
@@ -61,22 +56,25 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # the length of time the gate will be open to count photons
     gate_time = 320
     
-    # Convert pi_pulse to integer
-    uwave_pi_half_pulse = round(uwave_pi_half_pulse)
+    # Get pulse frequencies
+    uwave_pi_pulse = round(rabi_period / 2)
+    uwave_pi_on_2_pulse = round(rabi_period / 4)
     
-    seq_file_name = 't1_double_quantum.py'
-    
+    seq_file_name = 'spin_echo.py'
 
     # %% Create the array of relaxation times
     
     # Array of times to sweep through
-    # Must be ints since the pulse streamer only works with int64s
-    
+    # Must be ints
     min_precession_time = int(precession_time_range[0])
     max_precession_time = int(precession_time_range[1])
     
     taus = numpy.linspace(min_precession_time, max_precession_time,
                           num=num_steps, dtype=numpy.int32)
+    taus_mod_2 = taus % 2
+    if numpy.any(taus_mod_2):
+        print('The passed taus must be divisible by 2.')
+        return
      
     # %% Fix the length of the sequence to account for odd amount of elements
      
@@ -114,7 +112,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     
     opti_coords_list = []
     
-    
     # %% Analyze the sequence
     
     # We can simply reuse t1_double_quantum for this if we pass a pi/2 pulse
@@ -122,8 +119,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     seq_args = [min_precession_time, polarization_time, signal_time, reference_time, 
                 sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                 post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                gate_time, uwave_pi_half_pulse, 0,
-                max_precession_time, apd_indices[0], 1, 1]
+                gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
+                max_precession_time, apd_indices[0]]
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args, 1)
     seq_time = ret_vals[0]
 #    print(sequence_args)
@@ -189,10 +186,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             print('Second relaxation time: {}'.format(taus[tau_ind_second])) 
             
             seq_args = [taus[tau_ind_first], polarization_time, signal_time, reference_time, 
-                            sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
-                            post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
-                            gate_time, uwave_pi_half_pulse, 0,
-                            taus[tau_ind_second], apd_indices[0], 1, 1]
+                        sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
+                        post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
+                        gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
+                        taus[tau_ind_second], apd_indices[0]]
             
             cxn.pulse_streamer.stream_immediate(seq_file_name, num_reps,
                                                 seq_args, 1)   
@@ -242,7 +239,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         # Assign to 0 based on the passed conditional array
         norm_avg_sig[inf_mask] = 0
     
-    # %% Plot the signal
+    # %% Plot the t1 signal
 
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
@@ -286,8 +283,12 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'uwave_freq-units': 'GHz',
             'uwave_power': uwave_power,
             'uwave_power-units': 'dBm',
-            'uwave_pi_half_pulse': uwave_pi_half_pulse,
-            'uwave_pi_half_pulse-units': 'ns',
+            'rabi_period': rabi_period,
+            'rabi_period-units': 'ns',
+            'uwave_pi_pulse': uwave_pi_pulse,
+            'uwave_pi_pulse-units': 'ns',
+            'uwave_pi_on_2_pulse': rabi_period,
+            'uwave_pi_on_2_pulse-units': 'ns',
             'precession_time_range': precession_time_range,
             'precession_time_range-units': 'ns',
             'num_steps': num_steps,

@@ -25,6 +25,7 @@ import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.ramsey as ramsey
+import majorroutines.spin_echo as spin_echo
 import minorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 
@@ -197,25 +198,49 @@ def do_t1_double_quantum(name, nv_sig, nd_filter, apd_indices,
 def do_ramsey(name, nv_sig, nd_filter, apd_indices):
 
     uwave_power = 9
-    uwave_freq = 2.8617  # 2.8587
+    uwave_freq = 2.8612  # 2.5 MHz off 2.8587
     uwave_pi_half_pulse = 36
-#    uwave_pi_half_pulse = 0
 #    precession_time_range = [0, 15 * 10**3]
 #    precession_time_range = [0, 2 * 10**3]
 #    precession_time_range = [0, 4 * 10**3]
     precession_time_range = [0, 8 * 10**3]
 
+    num_steps = 151
+#    num_steps = 101
+#    num_steps = 51
+    num_reps = 3 * 10**5
+#    num_reps = 10**6
+#    num_runs = 6
+    num_runs = 4
+#    num_runs = 2
+#    num_runs = 1
+
+    with labrad.connect() as cxn:
+            ramsey.main(cxn, nv_sig, nd_filter, apd_indices,
+                        uwave_freq, uwave_power, uwave_pi_half_pulse,
+                        precession_time_range, num_steps, num_reps, num_runs,
+                        name)
+
+
+def do_spin_echo(name, nv_sig, nd_filter, apd_indices):
+
+    uwave_power = 9
+    uwave_freq = 2.8587
+    rabi_period = 145.1
+    precession_time_range = [0, 2 * 10**6]
+
     num_steps = 101
 #    num_steps = 51
-    num_reps = 1 * 10**5
+#    num_reps = 10**4
+    num_reps = 5000
 #    num_reps = 10**6
 #    num_runs = 4
     num_runs = 2
 #    num_runs = 1
 
     with labrad.connect() as cxn:
-            ramsey.main(cxn, nv_sig, nd_filter, apd_indices,
-                        uwave_freq, uwave_power, uwave_pi_half_pulse,
+            spin_echo.main(cxn, nv_sig, nd_filter, apd_indices,
+                        uwave_freq, uwave_power, rabi_period,
                         precession_time_range, num_steps, num_reps, num_runs,
                         name)
 
@@ -244,7 +269,7 @@ def do_sample_nvs(name, nv_sig_list, nd_filter, apd_indices):
 
 def do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices):
 
-    ref_file_name = '2019-06-10_15-22-25_ayrton12'  # 60 x 60
+#    ref_file_name = '2019-06-10_15-22-25_ayrton12'  # 60 x 60
     ref_file_name = '2019-06-27_16-37-18_johnson1' # bulk nv, first one we saw
 
     with labrad.connect() as cxn:
@@ -525,6 +550,7 @@ if __name__ == '__main__':
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8587, 0)
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8825, 1)
             do_ramsey(name, nv_sig, nd_filter, apd_indices)
+#            do_spin_echo(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
 
