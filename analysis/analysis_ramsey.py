@@ -14,16 +14,17 @@ import json
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
+import utils.tool_belt as tool_belt
 
-# %% Define the fitting function
-    
-def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
-    two_pi = 2*numpy.pi
-    
-    return offset + numpy.exp(-t / abs(decay)) * (
-                amp_1 * numpy.cos(two_pi * freq_1 * t) +
-                amp_2 * numpy.cos(two_pi * freq_2 * t) +
-                amp_3 * numpy.cos(two_pi * freq_3 * t))
+## %% Define the fitting function
+#    
+#def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
+#    two_pi = 2*numpy.pi
+#    
+#    return offset + numpy.exp(-t / abs(decay)) * (
+#                amp_1 * numpy.cos(two_pi * freq_1 * t) +
+#                amp_2 * numpy.cos(two_pi * freq_2 * t) +
+#                amp_3 * numpy.cos(two_pi * freq_3 * t))
 
 # %%
         
@@ -74,12 +75,12 @@ def fit_ramsey(save_file_type):
     
     freq_step = freqs[1] - freqs[0]
     
-    freq_guesses_ind = find_peaks(transform_mag[2:]
-                                  , prominence = 0.3
-                                  , height = 0.8
-                                  , distance = 2.2 / freq_step
+    freq_guesses_ind = find_peaks(transform_mag[1:]
+                                  , prominence = 0.5
+#                                  , height = 0.8
+#                                  , distance = 2.2 / freq_step
                                   )
-    print(freq_guesses_ind[0])
+#    print(freq_guesses_ind[0])
     if len(freq_guesses_ind[0]) != 3:
         print('Number of frequencies found is not 3')
         detuning = int(input('Please input the detuning from resonance, in MHz: '))
@@ -108,9 +109,8 @@ def fit_ramsey(save_file_type):
                         amp_2, FreqParams[1], 
                         amp_3, FreqParams[2])
     
-    
     try:
-        popt,pcov = curve_fit(cosine_sum, taus, norm_avg_counts, 
+        popt,pcov = curve_fit(tool_belt.cosine_sum, taus, norm_avg_counts, 
                       p0=guess_params)
     except Exception: 
         print('Something went wrong!')
@@ -121,7 +121,7 @@ def fit_ramsey(save_file_type):
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ax.plot(taus, norm_avg_counts,'b',label='data')
-    ax.plot(taus_linspace, cosine_sum(taus_linspace,*popt),'r',label='fit')
+    ax.plot(taus_linspace, tool_belt.cosine_sum(taus_linspace,*popt),'r',label='fit')
     ax.set_xlabel('Free precesion time (us)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.legend()

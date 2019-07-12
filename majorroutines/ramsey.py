@@ -8,6 +8,16 @@ then evolves for a time, tau, of free precesion, and then a second pi/s pulse
 is applied. The amount of population in 0 is read out by collecting the 
 fluorescence during a readout.
 
+It then takes a fast fourier transform of the time data to attempt to extract 
+the frequencies in the ramsey experiment. If the funtion can't determine the 
+peaks in the fft, then a detuning is used. 
+
+We could change this file so that we input a detuning and the actual transition
+frequency, and then that detuning can be used in the fft.
+
+Lastly, this file curve_fits the data to a triple sum of cosines using the 
+found frequencies.
+
 Created on Wed Apr 24 15:01:04 2019
 
 @author: agardill
@@ -24,6 +34,8 @@ import time
 import matplotlib.pyplot as plt
 #from scipy.optimize import curve_fit
 from random import shuffle
+from scipy.optimize import curve_fit
+from scipy.signal import find_peaks
 
 #import json
 #from scipy import asarray as ar,exp
@@ -305,69 +317,130 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     tool_belt.save_raw_data(raw_data, file_path)
        
     
-# %%    
+# %% Fitting the data
+        
+#    open_file_name = '{}{}'.format(folder_dir, file_name)
 #    
-#def decayExp(t, offset, amplitude, decay):
-#    return offset + amplitude * exp(-decay * t)    
-#    
-## %% Fitting the data
-#    
-#def t1_exponential_decay(open_file_name, save_file_type):
-#    
-#    directory = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
-#   
-#    # Open the specified file
-#    with open(directory + open_file_name + '.txt') as json_file:
-#        
-#        # Load the data from the file
+#    with open(open_file_name) as json_file:
 #        data = json.load(json_file)
-#        countsT1 = data["norm_avg_sig"]
-#        relaxation_time_range = data["relaxation_time_range"]
+        
+        # Get information about the frequency
+#        precession_time_range = data["precession_time_range"]
 #        num_steps = data["num_steps"]
-#        spin = data["spin_measured?"]
-#        
-#    min_relaxation_time = relaxation_time_range[0] 
-#    max_relaxation_time = relaxation_time_range[1]
-#        
-#    timeArray = numpy.linspace(min_relaxation_time, max_relaxation_time,
-#                              num=num_steps, dtype=numpy.int32)
+        
+        # Get the averaged, normalized counts from the ESR 
+#        norm_avg_sig = numpy.array(data["norm_avg_sig"])  
+#        sig_counts = numpy.array(data['sig_counts'])
+#        ref_counts = numpy.array(data['ref_counts'])
+#        norm_avg_counts = sig_counts[1,:] / ref_counts[1,:]  
+        
+    # Calculate some of the necessary values about the frequency scanned 
+#    min_precession_time = precession_time_range[0] / 10**3
+#    max_precession_time = precession_time_range[1] / 10**3
 #    
-#    offset = 0.8
-#    amplitude = 0.1
-#    decay = 1/10000 # inverse ns
-#
-#    popt,pcov = curve_fit(decayExp, timeArray, countsT1, 
-#                              p0=[offset, amplitude, decay])
-#    
-#    decay_time = 1 / popt[2]
-#            
-#    first = timeArray[0]
-#    last = timeArray[len(timeArray)-1]
-#    linspaceTime = numpy.linspace(first, last, num=1000)
-#    
-#    
-#    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
-#    ax.plot(timeArray / 10**6, countsT1,'bo',label='data')
-#    ax.plot(linspaceTime / 10**6, decayExp(linspaceTime,*popt),'r-',label='fit')
-#    ax.set_xlabel('Dark Time (ms)')
-#    ax.set_ylabel('Contrast (arb. units)')
-#    ax.set_title('T1 of ' + str(spin))
-#    ax.legend()
-#    
-#    text = "\n".join((r'$C + A_0 e^{-t / d}$',
-#                      r'$C = $' + '%.1f'%(popt[0]),
-#                      r'$A_0 = $' + '%.1f'%(popt[1]),
-#                      r'$d = $' + "%.3f"%(decay_time / 10**6) + " ms"))
-#    
-#    
-#    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-#    ax.text(0.70, 0.95, text, transform=ax.transAxes, fontsize=12,
-#                            verticalalignment="top", bbox=props)
-#    
-#    fig.canvas.draw()
-#    fig.canvas.flush_events()
-#    
-#    fig.savefig(open_file_name + 'replot.' + save_file_type)
+#    taus = numpy.linspace(min_precession_time, max_precession_time,
+#                          num=num_steps)
+    
+    # Create an empty array for the frequency arrays
+    FreqParams = numpy.empty([3]) 
+    
+    # Perform the fft
+    time_step = (max_precession_time - min_precession_time) / (num_steps - 1)
+
+    transform = numpy.fft.rfft(norm_avg_sig)
+#    window = max_precession_time - min_precession_time
+    freqs = numpy.fft.rfftfreq(num_steps, d=time_step)
+    transform_mag = numpy.absolute(transform)
+    
+    # Plot the fft
+    fig_fft, ax= plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(freqs[1:], transform_mag[1:])  # [1:] excludes frequency 0 (DC component)
+    ax.set_xlabel('Frequency (MHz)')
+    ax.set_ylabel('FFT magnitude')
+    ax.set_title('Ramsey FFT')
+    fig_fft.canvas.draw()
+    fig_fft.canvas.flush_events()
+    
+    # Save the fft figure
+    tool_belt.save_figure(fig_fft, file_path + '_fft')
+    
+    freq_step = freqs[1] - freqs[0]
+    
+    # Guess the peaks in the fft. There are parameters that can be used to make
+    # this more efficient
+    freq_guesses_ind = find_peaks(transform_mag[1:]
+                                  , prominence = 0.5
+#                                  , height = 0.8
+#                                  , distance = 2.2 / freq_step
+                                  )
+    
+#    print(freq_guesses_ind[0])
+    
+    # Check to see if there are three peaks. If not, try a detuning of 3
+    if len(freq_guesses_ind[0]) != 3:
+        print('Number of frequencies found: {}'.fromat(len(freq_guesses_ind[0])))
+        detuning = 3 # MHz
+    
+        FreqParams[0] = detuning - 2.2
+        FreqParams[1] = detuning
+        FreqParams[2] = detuning + 2.2
+    else:
+        FreqParams[0] = freqs[freq_guesses_ind[0][0]]
+        FreqParams[1] = freqs[freq_guesses_ind[0][1]]
+        FreqParams[2] = freqs[freq_guesses_ind[0][2]]
+              
+    
+    # Guess the other params for fitting           
+    amp_1 = 0.3
+    amp_2 = amp_1
+    amp_3 = amp_1
+    decay = 1
+    offset = 1
+    
+    guess_params = (offset, decay, amp_1, FreqParams[0], 
+                        amp_2, FreqParams[1], 
+                        amp_3, FreqParams[2])
+    
+    # Try the fit to a sum of three cosines
+    
+    try:
+        popt,pcov = curve_fit(tool_belt.cosine_sum, taus, norm_avg_sig, 
+                      p0=guess_params)
+    except Exception: 
+        print('Something went wrong!')
+        popt = guess_params
+    
+    taus_linspace = numpy.linspace(min_precession_time, max_precession_time,
+                          num=1000)
+    
+    fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(taus, norm_avg_sig,'b',label='data')
+    ax.plot(taus_linspace, tool_belt.cosine_sum(taus_linspace,*popt),'r',label='fit')
+    ax.set_xlabel('Free precesion time (us)')
+    ax.set_ylabel('Contrast (arb. units)')
+    ax.legend()
+    text1 = "\n".join((r'$C + e^{-t/d} [a_1 \mathrm{cos}(2 \pi \nu_1 t) + a_2 \mathrm{cos}(2 \pi \nu_2 t) + a_3 \mathrm{cos}(2 \pi \nu_3 t)]$',
+                       r'$d = $' + '%.2f'%(popt[1]) + ' us',
+                       r'$\nu_1 = $' + '%.2f'%(popt[3]) + ' MHz',
+                       r'$\nu_2 = $' + '%.2f'%(popt[5]) + ' MHz',
+                       r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
+                       ))
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    
+    ax.text(0.40, 0.25, text1, transform=ax.transAxes, fontsize=12,
+                            verticalalignment="top", bbox=props)
+        
+   
+        
+# %% Plot the data itself and the fitted curve
+    
+    fig_fit.canvas.draw()
+#    fig.set_tight_layout(True)
+    fig_fit.canvas.flush_events()
+    
+    # Save the file in the same file directory
+    tool_belt.save_figure(fig_fit, file_path + '_fit')
+
 
 
     
