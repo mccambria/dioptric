@@ -67,7 +67,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
     # the amount of time the AOM delays behind the gate and rf
-    aom_delay_time = 750
+    aom_delay_time = 1000
     # the amount of time the rf delays behind the AOM and rf
     rf_delay_time = 40
     # the length of time the gate will be open to count photons

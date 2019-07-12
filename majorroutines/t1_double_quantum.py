@@ -249,7 +249,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
             print('Second relaxation time: {}'.format(taus[tau_ind_second]))  
             
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)        
+            cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)
             
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
