@@ -198,13 +198,13 @@ def do_t1_double_quantum(name, nv_sig, nd_filter, apd_indices,
 def do_ramsey(name, nv_sig, nd_filter, apd_indices):
 
     uwave_power = 9
-    uwave_freq = 2.8612  # 2.5 MHz off 2.8587
-    detuning = 3 # MHz
+    uwave_freq = 2.8587  
+    detuning = 2.5 # MHz
     uwave_pi_half_pulse = 36
 #    precession_time_range = [0, 15 * 10**3]
 #    precession_time_range = [0, 2 * 10**3]
-#    precession_time_range = [0, 4 * 10**3]
-    precession_time_range = [0, 8 * 10**3]
+    precession_time_range = [0, 4 * 10**3]
+#    precession_time_range = [0, 8 * 10**3]
 
     num_steps = 151
 #    num_steps = 101
@@ -212,9 +212,9 @@ def do_ramsey(name, nv_sig, nd_filter, apd_indices):
     num_reps = 3 * 10**5
 #    num_reps = 10**6
 #    num_runs = 6
-    num_runs = 4
+#    num_runs = 4
 #    num_runs = 2
-#    num_runs = 1
+    num_runs = 1
 
     with labrad.connect() as cxn:
             ramsey.main(cxn, nv_sig, nd_filter, apd_indices,
@@ -555,8 +555,8 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.98, freq_range=0.05)
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8589, 0)
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8825, 1)
-#            do_ramsey(name, nv_sig, nd_filter, apd_indices)
-            do_spin_echo(name, nv_sig, nd_filter, apd_indices)
+            do_ramsey(name, nv_sig, nd_filter, apd_indices)
+#            do_spin_echo(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
 

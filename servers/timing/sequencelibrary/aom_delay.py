@@ -55,7 +55,6 @@ def get_seq(pulser_wiring, args):
     # Vary the position of the first readout AOM high and leave the AOM high
     # for the duration of the reference experiment so that the actual delay
     # doesn't matter
-    # The AOM is on for less time than the 
     readout_on_5 = readout // 5
     readout_rem = readout - readout_on_5
     train = [(readout-delay, LOW)]
