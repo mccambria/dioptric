@@ -225,14 +225,19 @@ def do_ramsey(name, nv_sig, nd_filter, apd_indices):
 def do_spin_echo(name, nv_sig, nd_filter, apd_indices):
 
     uwave_power = 9
-    uwave_freq = 2.8587
-    rabi_period = 145.1
-    precession_time_range = [0, 2 * 10**6]
+    uwave_freq = 2.8589
+    rabi_period = 144.4
+    precession_time_range = [0, 200 * 10**3]
+#    precession_time_range = [0, 2 * 10**6]
+#    precession_time_range = [0, 10 * 10**6]
 
-    num_steps = 101
+#    num_steps = 101
 #    num_steps = 51
+    num_steps = 21
+#    num_steps = 11
+#    num_steps = 6
 #    num_reps = 10**4
-    num_reps = 5000
+    num_reps = 5 * 10**5
 #    num_reps = 10**6
 #    num_runs = 4
     num_runs = 2
@@ -547,10 +552,10 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_range=0.06)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.98, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8587, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8589, 0)
 #            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8825, 1)
-            do_ramsey(name, nv_sig, nd_filter, apd_indices)
-#            do_spin_echo(name, nv_sig, nd_filter, apd_indices)
+#            do_ramsey(name, nv_sig, nd_filter, apd_indices)
+            do_spin_echo(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
 

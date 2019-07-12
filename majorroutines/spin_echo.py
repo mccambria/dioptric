@@ -133,7 +133,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     expected_run_time_m = expected_run_time / 60 # s
     
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
-    
+#    return
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
