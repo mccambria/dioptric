@@ -31,8 +31,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
     uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
-    num_reps = 2*10**4
-#    num_reps = 5*10**5
+    num_reps = 10**5
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -50,7 +49,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     sig_counts = numpy.copy(ref_counts)
     
     # Define some times for the sequence (in ns)
-    pi_pulse = 60
+    pi_pulse = 70
     polarization_time = 3 * 10**3
     reference_time = 1 * 10**3
     signal_wait_time = 1 * 10**3

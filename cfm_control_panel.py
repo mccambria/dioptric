@@ -126,7 +126,7 @@ def do_g2_measurement(name, nv_sig, nd_filter, apd_a_index, apd_b_index):
 def do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 101
-    num_runs = 1
+    num_runs = 2
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 #    uwave_power = -11.0
 #    uwave_power = -10.0
@@ -139,8 +139,9 @@ def do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_ra
 def do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices,
                         freq_center=2.87, freq_range=0.2):
 
-    num_steps = 101
-    num_runs = 1
+    num_steps = 51
+#    num_steps = 101
+    num_runs = 2
     uwave_power = 9.0  # 9.0 is the highest reasonable value, accounting for saturation
 #    uwave_power = 5.0
 
@@ -468,13 +469,19 @@ if __name__ == '__main__':
 #                                [zero_to_plus,   [0, 10*10**6], 11, 5000],
 #                                [zero_to_zero,   [0, 10*10**6], 11, 5000]])
     
+    # nv0_2019_06_27 ~18 hours 
+    t1_exp_array = numpy.array([[plus_to_minus, [0, 15*10**6], 11, 5000],
+                                [plus_to_plus, [0, 15*10**6], 11, 5000],
+                                [zero_to_plus, [0, 15*10**6], 11, 5000],
+                                [zero_to_zero, [0, 15*10**6], 11, 5000]])
+    
     # nv0_2019_06_27 ~9 hours
 #    t1_exp_array = numpy.array([[zero_to_plus,   [0, 15*10**6], 11, 5000],
 #                                [zero_to_zero,   [0, 15*10**6], 11, 5000]])
 # 
     # ~ 26 hours
-    t1_exp_array = numpy.array([[plus_to_minus,   [0, 15*10**6], 11, 5000],
-                                [plus_to_plus,    [0, 15*10**6], 11, 5000]])
+#    t1_exp_array = numpy.array([[plus_to_minus,   [0, 15*10**6], 11, 5000],
+#                                [plus_to_plus,    [0, 15*10**6], 11, 5000]])
      
 #    t1_exp_array = numpy.array([[plus_to_minus,  [0, 50*10**3], 51, 2 * 10**4],
 #                                [plus_to_plus,  [0, 50*10**3], 51, 2 * 10**4]])
@@ -483,7 +490,7 @@ if __name__ == '__main__':
     # Array for the parameters of a given NV, formatted:
     # [nv_sig, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus, uwave_pi_pulse_minus]
     # uwave_MINUS should be associated with the HP signal generator
-    params_array = numpy.array([[nv0_2019_06_27, 2.8586, 72, 2.8825, 93]])
+    params_array = numpy.array([[nv0_2019_06_27, 2.8086, 65, 2.9345, 105]])
 
     # %% Functions to run
 
@@ -515,11 +522,11 @@ if __name__ == '__main__':
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.7631, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.825, freq_range=0.05)
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.878, freq_range=0.05)
-            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices)
-#            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.87, freq_range=0.06)
-#            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.98, freq_range=0.05)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8586, 0)
-#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8825, 1)
+#            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices)
+#            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.810, freq_range=0.06)
+#            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.935, freq_range=0.06)
+            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8086, 0)
+            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.9345, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
