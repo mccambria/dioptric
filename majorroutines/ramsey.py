@@ -43,7 +43,7 @@ from scipy.signal import find_peaks
 # %% Main
 
 def main(cxn, nv_sig, nd_filter, apd_indices,
-         uwave_freq, uwave_power, uwave_pi_half_pulse, precession_time_range,
+         uwave_freq, detuning, uwave_power, uwave_pi_half_pulse, precession_time_range,
          num_steps, num_reps, num_runs,
          name='untitled'):
 
@@ -75,6 +75,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
 
     # Convert pi_pulse to integer
     uwave_pi_half_pulse = round(uwave_pi_half_pulse)
+    
+    # Detune the pi/2 pulse frequency
+    uwave_freq_detuned = uwave_freq + detuning / 10**3
+    
 
     seq_file_name = 't1_double_quantum.py'
 
@@ -171,7 +175,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves - just use the Tektronix
-        cxn.signal_generator_tsg4104a.set_freq(uwave_freq)
+        cxn.signal_generator_tsg4104a.set_freq(uwave_freq_detuned)
         cxn.signal_generator_tsg4104a.set_amp(uwave_power)
         cxn.signal_generator_tsg4104a.uwave_on()
 
@@ -296,6 +300,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'gate_time-units': 'ns',
             'uwave_freq': uwave_freq,
             'uwave_freq-units': 'GHz',
+            'detuning': detuning,
+            'detuning-units': 'MHz',
             'uwave_power': uwave_power,
             'uwave_power-units': 'dBm',
             'uwave_pi_half_pulse': uwave_pi_half_pulse,
@@ -376,10 +382,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
 
 #    print(freq_guesses_ind[0])
 
-    # Check to see if there are three peaks. If not, try a detuning of 3
+    # Check to see if there are three peaks. If not, try the detuning passed in
     if len(freq_guesses_ind[0]) != 3:
         print('Number of frequencies found: {}'.fromat(len(freq_guesses_ind[0])))
-        detuning = 3 # MHz
+#        detuning = 3 # MHz
 
         FreqParams[0] = detuning - 2.2
         FreqParams[1] = detuning

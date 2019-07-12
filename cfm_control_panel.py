@@ -199,6 +199,7 @@ def do_ramsey(name, nv_sig, nd_filter, apd_indices):
 
     uwave_power = 9
     uwave_freq = 2.8612  # 2.5 MHz off 2.8587
+    detuning = 3 # MHz
     uwave_pi_half_pulse = 36
 #    precession_time_range = [0, 15 * 10**3]
 #    precession_time_range = [0, 2 * 10**3]
@@ -217,7 +218,7 @@ def do_ramsey(name, nv_sig, nd_filter, apd_indices):
 
     with labrad.connect() as cxn:
             ramsey.main(cxn, nv_sig, nd_filter, apd_indices,
-                        uwave_freq, uwave_power, uwave_pi_half_pulse,
+                        uwave_freq, detuning, uwave_power, uwave_pi_half_pulse,
                         precession_time_range, num_steps, num_reps, num_runs,
                         name)
 
