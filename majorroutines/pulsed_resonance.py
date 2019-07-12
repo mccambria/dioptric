@@ -31,6 +31,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
     uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
+    num_reps = 2*10**4
+#    num_reps = 5*10**5
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -54,7 +56,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     signal_wait_time = 1 * 10**3
     reference_wait_time = 2 * 10**3
     background_wait_time = 1 * 10**3
-    aom_delay_time = 750
+    aom_delay_time = 1000
     gate_time = 320
     readout = gate_time
     readout_sec = readout / (10**9)
@@ -105,9 +107,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
             time.sleep(0.001)
 
             # Start the timing stream
-            cxn.pulse_streamer.stream_start(10**5)
-#            cxn.pulse_streamer.stream_start(5*10**4)
-#            cxn.pulse_streamer.stream_start(2*10**4)
+            cxn.pulse_streamer.stream_start(num_reps)
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
@@ -133,8 +133,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
 
     # Convert to kilocounts per second
     
-    kcps_uwave_off_avg = (avg_ref_counts / (10**3)) / readout_sec
-    kcpsc_uwave_on_avg = (avg_sig_counts / (10**3)) / readout_sec
+    kcps_uwave_off_avg = (avg_ref_counts / (num_reps * 1000)) / readout_sec
+    kcpsc_uwave_on_avg = (avg_sig_counts / (num_reps * 1000)) / readout_sec
 
     # Create an image with 2 plots on one row, with a specified size
     # Then draw the canvas and flush all the previous plots from the canvas

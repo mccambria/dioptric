@@ -14,12 +14,12 @@ from scipy.optimize import curve_fit
 # %% Fitting functions
 
 def AbsCos(angle, offset, amp, phase):
-    return offset + abs(amp * numpy.cos(angle * numpy.pi / 180 + phase * numpy.pi / 180))
+    return offset - offset + abs(amp * numpy.cos(angle * numpy.pi / 180 + phase * numpy.pi / 180))
 
 # %% Scatter raw data
 
-angles = [93, 120, 150, 60, 80]
-splittings = [26, 23, 12, 22, 25]
+angles = [100, 120, 140, 60, 80]
+splittings = [108, 95, 72, 82, 101]
 
 fig, ax = plt.subplots()
 

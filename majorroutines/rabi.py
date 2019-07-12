@@ -49,7 +49,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     signal_wait_time = 1 * 10**3
     reference_wait_time = 2 * 10**3
     background_wait_time = 1 * 10**3
-    aom_delay_time = 750
+    aom_delay_time = 1000
     gate_time = 320
 
     # Array of times to sweep through
