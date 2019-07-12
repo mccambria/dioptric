@@ -198,9 +198,9 @@ def do_t1_double_quantum(name, nv_sig, nd_filter, apd_indices,
 def do_ramsey(name, nv_sig, nd_filter, apd_indices):
 
     uwave_power = 9
-    uwave_freq = 2.8587  
+    uwave_freq = 2.8086  
     detuning = 2.5 # MHz
-    uwave_pi_half_pulse = 36
+    uwave_pi_half_pulse = 32
 #    precession_time_range = [0, 15 * 10**3]
 #    precession_time_range = [0, 2 * 10**3]
     precession_time_range = [0, 4 * 10**3]

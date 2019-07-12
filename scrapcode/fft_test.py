@@ -9,7 +9,7 @@ import utils.tool_belt as tool_belt
 import numpy
 import matplotlib.pyplot as plt
 
-data = tool_belt.get_raw_data('ramsey', '2019-07-11_16-29-09_johnson1', 'branch_ramsey2')
+data = tool_belt.get_raw_data('ramsey', '2019-07-12_18-29-39_johnson1', 'branch_ramsey2')
 
 sig_counts = data['sig_counts']
 ref_counts = data['ref_counts']
@@ -33,7 +33,7 @@ taus = numpy.linspace(min_tau, max_tau, num_steps)
 time_step = (max_tau - min_tau) / (num_steps - 1)
 time_step /= 1000  # to us
 
-transform = numpy.fft.rfft(norm_avg_sig)
+transform = numpy.fft.rfft(ref_counts[0])
 window = max_tau - min_tau
 freqs = numpy.fft.rfftfreq(num_steps, d=time_step)
 
