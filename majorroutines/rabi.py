@@ -81,6 +81,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # %% Make some lists and variables to save at the end
     
     opti_coords_list = []
+    tau_index_master_list = [[] for i in range(num_runs)]
     
     # Create a list of indices to step through the taus. This will be shuffled
     tau_ind_list = list(range(0, num_steps))
@@ -124,6 +125,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
+            
+            # add the tau indexxes used to a list to save at the end
+            tau_index_master_list[run_ind].append(tau_ind)
 
             # Stream the sequence
             args = [taus[tau_ind], polarization_time, reference_time,
@@ -244,8 +248,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 'nv_sig-format': tool_belt.get_nv_sig_format(),
-                'opti_coords_list': opti_coords_list,
-                'opti_coords_list-units': 'V',
                 'nd_filter': nd_filter,
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
@@ -257,6 +259,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
                 'num_steps': num_steps,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
+                'tau_index_master_list':tau_index_master_list,
+                'opti_coords_list': opti_coords_list,
+                'opti_coords_list-units': 'V',
                 'sig_counts': sig_counts.astype(int).tolist(),
                 'sig_counts-units': 'counts',
                 'ref_counts': ref_counts.astype(int).tolist(),

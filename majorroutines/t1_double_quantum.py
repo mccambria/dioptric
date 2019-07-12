@@ -155,6 +155,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # %% Make some lists and variables to save at the end
     
     opti_coords_list = []
+    tau_index_master_list = [[] for i in range(num_runs)]
     
     # %% Analyze the sequence
     
@@ -234,6 +235,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
                 tau_ind_first = -tau_ind - 1
                 tau_ind_second = tau_ind
                 
+            # add the tau indexxes used to a list to save at the end
+            tau_index_master_list[run_ind].append(tau_ind_first)
+            tau_index_master_list[run_ind].append(tau_ind_second)
+                
             
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
@@ -287,8 +292,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
                     'nv_sig-format': tool_belt.get_nv_sig_format(),
-                    'opti_coords_list': opti_coords_list,
-                    'opti_coords_list-units': 'V',
                     'nd_filter': nd_filter,
                     'gate_time': gate_time,
                     'gate_time-units': 'ns',
@@ -309,6 +312,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
                     'num_steps': num_steps,
                     'num_runs': num_runs,
                     'num_reps': num_reps,
+                    'tau_index_master_list': tau_index_master_list,
+                    'opti_coords_list': opti_coords_list,
+                    'opti_coords_list-units': 'V',
                     'run_ind': run_ind,
                     'sig_counts': sig_counts.astype(int).tolist(),
                     'sig_counts-units': 'counts',
@@ -378,8 +384,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'nv_sig-format': tool_belt.get_nv_sig_format(),
-            'opti_coords_list': opti_coords_list,
-            'opti_coords_list-units': 'V',
             'nd_filter': nd_filter,
             'gate_time': gate_time,
             'gate_time-units': 'ns',
@@ -400,6 +404,9 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'num_steps': num_steps,
             'num_reps': num_reps,
             'num_runs': num_runs,
+            'tau_index_master_list': tau_index_master_list,
+            'opti_coords_list': opti_coords_list,
+            'opti_coords_list-units': 'V',
             'sig_counts': sig_counts.astype(int).tolist(),
             'sig_counts-units': 'counts',
             'ref_counts': ref_counts.astype(int).tolist(),
