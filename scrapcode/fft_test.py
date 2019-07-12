@@ -24,7 +24,7 @@ min_tau = precession_time_range[0]
 max_tau = precession_time_range[1]
 taus = numpy.linspace(min_tau, max_tau, num_steps)
 
-# Fake 
+# Fake
 #min_tau = precession_time_range[0]
 #max_tau = precession_time_range[1]
 #max_tau *= 2
@@ -54,6 +54,7 @@ ax.set_ylabel('Contrast (arb. units)')
 raw_fig.canvas.draw()
 # fig.set_tight_layout(True)
 raw_fig.canvas.flush_events()
+
 
 fig, ax= plt.subplots(1, 1, figsize=(10, 8))
 fig.set_tight_layout(True)
