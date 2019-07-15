@@ -65,7 +65,7 @@ nv4_omega_error_list = [0.3]
 nv4_gamma_avg_list = [201]
 nv4_gamma_error_list = [16]
 
-fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+fig, ax = plt.subplots(1, 1, figsize=(8, 6))
 
 #ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list)
 ax.set_xscale("log", nonposx='clip')
@@ -97,7 +97,22 @@ ax.errorbar(nv4_splitting_list, nv4_gamma_avg_list, yerr = nv4_gamma_error_list,
 
 ax.grid()
 
+#SMALL_SIZE = 8
+#MEDIUM_SIZE = 10
+#BIGGER_SIZE = 12
+#
+#plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+#plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+#plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+#plt.rc('xtick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
+#plt.rc('ytick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
+#plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+#plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
 ax.set_xlabel('Splitting (MHz)')
 ax.set_ylabel('Relaxation Rate (kHz)')
 ax.set_title('Double quantum relaxation rates')
 ax.legend()
+
+fig.canvas.draw()
+fig.canvas.flush_events()
