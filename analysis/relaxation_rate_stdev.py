@@ -194,7 +194,7 @@ def main(folder_name, num_bins_list = None, offset = True):
     data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
 
     file_name = time_stamp + '_' + str('%.1f'%splitting_MHz) + \
-                '_MHz_splitting_rate_analysis_alt'
+                '_MHz_splitting_rate_analysis'
     file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                          file_name)
 
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
 
-    folder = 'nv0_2019_06_27_23MHz'
+    folder = 'nv0_2019_06_27_126MHz'
 
 
     '''
@@ -239,5 +239,5 @@ if __name__ == '__main__':
 
     # Specify the number of bins
 
-    num_bins_list = [1, 2, 3, 4, 5]
+    num_bins_list = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20]
     main(folder, num_bins_list, offset = True)
