@@ -275,8 +275,8 @@ if __name__ == '__main__':
 #    nd_filter = 1.0
     nd_filter = 0.5
 
-#    apd_indices = [0]
-    apd_indices = [0, 1]
+    apd_indices = [0]
+#    apd_indices = [0, 1]
 
     # %% NV sigs
 
@@ -514,7 +514,7 @@ if __name__ == '__main__':
 #            nv_sig = [*coords, *nv_sig[3:]]
 #            do_image_sample(name, coords, nd_filter, apd_indices)
 #            set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
-#            do_optimize(name, nv_sig, nd_filter, apd_indices)
+            do_optimize(name, nv_sig, nd_filter, apd_indices)
 #            do_stationary_count(name, nv_sig, nd_filter, apd_indices)
 #            do_g2_measurement(name, nv_sig, nd_filter, apd_indices[0], apd_indices[1])
 #            do_resonance(name, nv_sig, nd_filter, apd_indices, freq_range=0.2)
@@ -525,8 +525,8 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.810, freq_range=0.06)
 #            do_pulsed_resonance(name, nv_sig, nd_filter, apd_indices, freq_center=2.935, freq_range=0.06)
-            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8086, 0)
-            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.9345, 1)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.8086, 0)
+#            do_rabi(name, nv_sig, nd_filter, apd_indices, 2.9345, 1)
 #            do_ramsey_measurement(name, nv_sig, nd_filter, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, nd_filter, apd_indices)
 #            do_test_major_routines(name, nv_sig, nd_filter, apd_indices)
