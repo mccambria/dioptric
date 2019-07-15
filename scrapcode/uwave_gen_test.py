@@ -62,17 +62,19 @@ def main(cxn=None):
     # %% Sig gen tests
     
     resource_manager = visa.ResourceManager()
-    sig_gen_address = 'TCPIP::128.104.160.114::inst0::INSTR'
+    sig_gen_address = 'TCPIP0::128.104.160.112::5025::SOCKET'
     sig_gen = resource_manager.open_resource(sig_gen_address)
-    #    sig_gen.read_termination = '\n'
-    #    sig_gen.write_termination = '\n'
-    print(sig_gen.query('FREQ?'))
-    print(sig_gen.query('*IDN?'))
-    print(sig_gen.write('FREQ?'))
-    print(sig_gen.read_raw())  # Use this to determine the termination
-    print(sig_gen.query('AMPR?'))
-    print(sig_gen.query('FDEV?'))
-    print(sig_gen.query('MODL?'))
+    sig_gen.read_termination = '\r\n'
+    sig_gen.write_termination = '\r\n'
+    
+    sig_gen.write('ENBR 1')
+    sig_gen.write('NPWR -10.0')
+    sig_gen.write('AWGN 2')
+    
+    input('Press enter to stop...')
+    
+    sig_gen.write('ENBR 0')
+    sig_gen.write('AWGN 0')
     
     # %% DAQ tests
     

@@ -66,6 +66,6 @@ def get_seq(pulser_wiring, args):
 
 if __name__ == '__main__':
     wiring = {'do_aom': 0, 'do_apd_gate_0': 1}
-    args = [3 * 10**3, 2 * 10**3, 320, 1000, 0]
+    args = [3 * 10**3, 2 * 10**3, 320, 0, 0]
     seq = get_seq(wiring, args)[0]
     seq.plot()
