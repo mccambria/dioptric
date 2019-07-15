@@ -148,8 +148,8 @@ def main(folder_name, num_bins, save_data = True, offset = True):
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_plus_bool == False:
-                    zero_plus_sig_counts = sig_counts[:112,::]
-                    zero_plus_ref_counts = ref_counts[:112,::]
+                    zero_plus_sig_counts = sig_counts
+                    zero_plus_ref_counts = ref_counts
                     
                     zero_plus_ref_max_time = max_relaxation_time
                     zero_plus_bool = True
