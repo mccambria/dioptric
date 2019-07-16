@@ -94,24 +94,23 @@ def stationary_count_lite(cxn, coords, shared_params, apd_indices):
     readout = shared_params['continuous_readout_ns']
     
     #  Some initial calculations
-    x_center, y_center, z_center = coords
-    readout = readout // 2
-
-    # Load the PulseStreamer
-    cxn.pulse_streamer.stream_load('simple_readout.py',
-                                   [0, readout, apd_indices[0]])
     total_num_samples = 2
+    x_center, y_center, z_center = coords
+    readout = readout // total_num_samples
 
-    # Set x, y, and z
-    cxn.galvo.write(x_center, y_center)
-    cxn.objective_piezo.write_voltage(z_center)
+    # Load the PulseStreamer - 2000 ns delay accounts for whatever the AOM
+    # delay is - the actual value doesn't matter since we're just measuring
+    # the steady state
+    cxn.pulse_streamer.stream_load('simple_readout.py',
+                                   [2000, readout, apd_indices[0]])
 
-    # Set up the APD
-    cxn.apd_tagger.start_tag_stream(apd_indices)
-    
+    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+
     # Collect the data
+    cxn.apd_tagger.start_tag_stream(apd_indices)
     cxn.pulse_streamer.stream_start(total_num_samples)
     new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
+    print(new_samples)
     new_samples_avg = numpy.average(new_samples)
     cxn.apd_tagger.stop_tag_stream()
     counts_kcps = (new_samples_avg / 1000) / (readout / 10**9)
@@ -360,7 +359,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
             if ind == 0:
                 print('Expected count rate: {}'.format(expected_count_rate))
                 
-            print('Count rate at optimized coordinates: {:.0f}'.format(opti_count_rate))
+            print('Count rate at optimized coordinates: {:.1f}'.format(opti_count_rate))
             
             # If the count rate close to what we expect, we succeeded!
             if lower_threshold <= opti_count_rate <= upper_threshold:
