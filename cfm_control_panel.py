@@ -270,10 +270,7 @@ if __name__ == '__main__':
 
     name = 'johnson1'  # Sample name
 
-#    nd_filter = 2.0
-#    nd_filter = 1.5
-#    nd_filter = 1.0
-    nd_filter = 0.5
+    nd_filter = 'nd_0.5'
 
     apd_indices = [0]
 #    apd_indices = [0, 1]
@@ -347,7 +344,7 @@ if __name__ == '__main__':
     # After putting in magnet
 #    nv0_2019_06_27 = [-0.241, -0.335, 47.7, 40, 2]
 #    nv0_2019_06_27 = [-0.169, -0.306, 38.74, 40, 2]
-    nv0_2019_06_27 = [-0.169, -0.306, 38.74, 45, 2]  # 7/16 fix optimize's stationary_count_lite
+    nv0_2019_06_27 = [-0.169, -0.306, 38.74, 45, 2]  # 7/16 work on optimize's stationary_count_lite
 
     nv_sig_list = [nv0_2019_06_27]
 

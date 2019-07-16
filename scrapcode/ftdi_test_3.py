@@ -27,7 +27,7 @@ def main(cxn):
     body of the script.
     """
     
-    cxn.filter_slider_ell9k.set_filter('nd_0')
+    cxn.filter_slider_ell9k.set_filter('nd_0.5')
 
 
 # %% Run the file

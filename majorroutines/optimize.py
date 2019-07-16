@@ -301,7 +301,9 @@ def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
 def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled', 
          set_to_opti_coords=True, save_data=False, plot_data=False):
     
+    # Reset the microscope and make sure we're at the right ND
     tool_belt.reset_cfm(cxn)
+    cxn.filter_slider_ell9k.set_filter(nd_filter)
     
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
