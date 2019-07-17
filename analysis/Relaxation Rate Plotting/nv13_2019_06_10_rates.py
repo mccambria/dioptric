@@ -16,8 +16,11 @@ nv1_2019_05_10
 
 '''
 # %%
-def fit_eq(f, amp, alpha):
-    return amp*f**(-alpha)
+def fit_eq_1(f, amp):
+    return amp*f**(-1)
+
+def fit_eq_2(f, amp):
+    return amp*f**(-2)
 
 # %%
 
@@ -34,8 +37,11 @@ nv13_gamma_error_list = [30, 8, 16, 5, 5, 3, 3, 0.5]
 
 # Try to fit the gamma to a 1/f^2
 
-fit_params, cov_arr = curve_fit(fit_eq, nv13_splitting_list, nv13_gamma_avg_list, 
-                                p0 = (100, 1))
+fit_1_params, cov_arr = curve_fit(fit_eq_1, nv13_splitting_list, nv13_gamma_avg_list, 
+                                p0 = 10)
+
+fit_2_params, cov_arr = curve_fit(fit_eq_2, nv13_splitting_list, nv13_gamma_avg_list, 
+                                p0 = 100)
 
 splitting_linspace = numpy.linspace(nv13_splitting_list[0], nv13_splitting_list[-1],
                                     1000)
@@ -50,23 +56,33 @@ ax.errorbar(nv13_splitting_list, nv13_gamma_avg_list, yerr = nv13_gamma_error_li
             label = 'Gamma', fmt='o', color='blue')
 ax.errorbar(nv13_splitting_list, nv13_omega_avg_list, yerr = nv13_omega_error_list, 
             label = 'Omega', fmt='o', color='red')
-ax.plot(splitting_linspace, fit_eq(splitting_linspace, *fit_params), 
-            label = '1/f^a')
+#ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
+#            label = r'$f^{-2}$', color ='teal')
+ax.plot(splitting_linspace, fit_eq_1(splitting_linspace, *fit_1_params), 
+            label = r'$f^{-1}$', color = 'orange')
 
-text = '\n'.join((r'$1/f^{a}$',
-                  r'$a = $' + '%.2f'%(fit_params[1])
-#                  r'$A_0 = $' + '%.4f'%(fit_params[1] * 10**6) + ' kHz'
-#                  ,r'$a = $' + '%.2f'%(fit_params[2])
-                  ))
+# %%
+#ax.plot(splitting_linspace, fit_eq(splitting_linspace, *fit_params), 
+#            label = '1/f^a')
+#
+#text = '\n'.join((r'$1/f^{a}$',
+#                  r'$a = $' + '%.2f'%(fit_params[1])
+##                  r'$A_0 = $' + '%.4f'%(fit_params[1] * 10**6) + ' kHz'
+##                  ,r'$a = $' + '%.2f'%(fit_params[2])
+#                  ))
+#props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+#ax.text(0.75, 0.40, text, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
+# %%
 
+ax.tick_params(which = 'both', length=6, width=2, colors='k',
+                grid_alpha=0.7, labelsize = 18)
 
-props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.75, 0.40, text, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+ax.tick_params(which = 'major', length=12, width=2)
 
 ax.grid()
 
-ax.set_xlabel('Splitting (MHz)')
-ax.set_ylabel('Relaxation Rate (kHz)')
-ax.set_title('NV13_2019_06_10')
-ax.legend()
+plt.xlabel('Splitting (MHz)', fontsize=18)
+plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
+plt.title('NV 13', fontsize=18)
+ax.legend(fontsize=18)

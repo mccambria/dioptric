@@ -16,7 +16,10 @@ nv1_2019_05_10
 
 '''
 # %%
-def fit_eq(f, amp):
+def fit_eq_1(f, amp):
+    return amp*f**(-1)
+
+def fit_eq_2(f, amp):
     return amp*f**(-2)
 
 # %%
@@ -35,7 +38,10 @@ nv1_gamma_error_list = [10, 7, 6, 3, 0.6, 0.2, 0.3]
 
 # Try to fit the gamma to a 1/f^2
 
-fit_params, cov_arr = curve_fit(fit_eq, nv1_splitting_list, nv1_gamma_avg_list, 
+fit_1_params, cov_arr = curve_fit(fit_eq_1, nv1_splitting_list, nv1_gamma_avg_list, 
+                                p0 = 100)
+
+fit_2_params, cov_arr = curve_fit(fit_eq_2, nv1_splitting_list, nv1_gamma_avg_list, 
                                 p0 = 100)
 
 splitting_linspace = numpy.linspace(nv1_splitting_list[0], nv1_splitting_list[-1],
@@ -45,17 +51,28 @@ splitting_linspace = numpy.linspace(nv1_splitting_list[0], nv1_splitting_list[-1
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 
 #ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list)
+
+axis_font = {'size':'14'}
+
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv1_splitting_list, nv1_gamma_avg_list, yerr = nv1_gamma_error_list, 
-            label = 'Gamma', fmt='o', color='blue')
-ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
-            label = 'Omega', fmt='o', color='red')
-ax.plot(splitting_linspace, fit_eq(splitting_linspace, *fit_params), 
-            label = '1/f^2')
+            label = r'$\gamma$', fmt='o', color='blue')
+#ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
+#            label = r'$\Omega$', fmt='o', color='red')
+#ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
+#            label = r'$f^{-2}$', color ='teal')
+ax.plot(splitting_linspace, fit_eq_1(splitting_linspace, *fit_1_params), 
+            label = r'$f^{-1}$', color = 'orange')
+
+ax.tick_params(which = 'both', length=6, width=2, colors='k',
+                grid_alpha=0.7, labelsize = 18)
+
+ax.tick_params(which = 'major', length=12, width=2)
+
 ax.grid()
 
-ax.set_xlabel('Splitting (MHz)')
-ax.set_ylabel('Relaxation Rate (kHz)')
-ax.set_title('NV1_2019_05_10')
-ax.legend()
+plt.xlabel('Splitting (MHz)', fontsize=18)
+plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
+plt.title('NV 1', fontsize=18)
+ax.legend(fontsize=18)
