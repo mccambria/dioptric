@@ -497,12 +497,8 @@ def save_raw_data(rawData, filePath):
 
 
 def get_nv_sig_units():
-    return '[V, V, V, kcps, kcps]'
-
-
-def get_nv_sig_format():
-    return '[x_coord, y_coord, z_coord, ' \
-        'expected_count_rate, background_count_rate]'
+    return {'coords': 'V', 'expected_count_rate': 'kcps',
+            'magnet_angle': 'deg'}
 
 
 # %% Safe stop (TM mccambria)

@@ -16,6 +16,7 @@ import numpy
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
+import copy
 
 
 # %% Define a few parameters
@@ -123,8 +124,9 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     
     seq_file_name = 'simple_readout.py'
     
-    axis_center = nv_sig[axis_ind]
-    x_center, y_center, z_center = nv_sig[0: 3]
+    coords = nv_sig['coords']
+    axis_center = coords[axis_ind]
+    x_center, y_center, z_center = coords
     
     scan_range_nm = 3 * shared_params['airy_radius_nm']
     readout = shared_params['continuous_readout_ns']
@@ -211,19 +213,21 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
     # 1: mean, defines the center of the Gaussian
     # 2: standard deviation, defines the width of the Gaussian
     # 3: constant y value to account for background
-    expected_count_rate = nv_sig[3]
+    expected_count_rate = nv_sig['expected_count_rate']
     if expected_count_rate is None:
         expected_count_rate = 50  # Guess 50
     expected_count_rate = float(expected_count_rate)
-    background_count_rate = nv_sig[4]
-    if background_count_rate is None:
-        background_count_rate = 0  # Guess 0
-    background_count_rate = float(background_count_rate)
+#    background_count_rate = nv_sig[4]
+#    if background_count_rate is None:
+#        background_count_rate = 0  # Guess 0
+#    background_count_rate = float(background_count_rate)
+    background_count_rate = 0.0  # Guess 0
     low_voltage = voltages[0]
     high_voltage = voltages[-1]
     scan_range = high_voltage - low_voltage
+    coords = nv_sig['coords']
     init_fit = (expected_count_rate - background_count_rate,
-                nv_sig[axis_ind],
+                coords[axis_ind],
                 scan_range / 3,
                 background_count_rate)
     opti_params = None
@@ -275,7 +279,7 @@ def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
     
     tool_belt.init_safe_stop()
     
-    opti_nv_sig_list = []
+    opti_coords_list = []
     for ind in range(len(nv_sig_list)):
         
         print('Optimizing on NV {}...'.format(ind))
@@ -287,34 +291,40 @@ def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
         opti_coords = main(cxn, nv_sig, nd_filter, apd_indices,
                            set_to_opti_coords=False)
         if opti_coords is not None:
-            opti_nv_sig_list.append('[{:.3f}, {:.3f}, {:.1f}, {}, {}],'.format(*opti_coords, *nv_sig[3: ]))
+            opti_coords_list.append('[{:.3f}, {:.3f}, {:.1f}],'.format(*opti_coords))
         else:
-            opti_nv_sig_list.append('Optimization failed for NV {}.'.format(ind))
+            opti_coords_list.append('Optimization failed for NV {}.'.format(ind))
     
-    for nv_sig in opti_nv_sig_list:
-        print(nv_sig)
+    for coords in opti_coords_list:
+        print(coords)
     
 
 # %% Main
 
 
-def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled', 
+def main(cxn, nv_sig, apd_indices,
          set_to_opti_coords=True, save_data=False, plot_data=False):
     
     # Reset the microscope and make sure we're at the right ND
     tool_belt.reset_cfm(cxn)
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
+    
+    # Be sure the right ND is in place and the magnet aligned
+    cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
+    magnet_angle = nv_sig['magnet_angle']
+    if magnet_angle is not None:
+        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
     
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
-    passed_coords = nv_sig[0: 3]
+    passed_coords = nv_sig['coords']
     adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
-    adjusted_nv_sig = [*adjusted_coords, *nv_sig[3:]]
+    adjusted_nv_sig = copy.deepcopy(nv_sig)
+    adjusted_nv_sig['coords'] = adjusted_coords
     
     # Get the shared parameters from the registry
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     
-    expected_count_rate = nv_sig[3]
+    expected_count_rate = adjusted_nv_sig['expected_count_rate']
     
     opti_succeeded = False
     
@@ -375,7 +385,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
                 # true optimized coordinates regardless of the other initial
                 # coordinates, however. So we might succeed by trying z again 
                 # at the optimized x/y. 
-                adjusted_nv_sig = [*opti_coords, *nv_sig[3:]]
+                adjusted_nv_sig['coords'] = opti_coords
                 
         # If the threshold is not set, we succeed based only on optimize       
         else:
@@ -427,11 +437,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
         timestamp = tool_belt.get_time_stamp()
 
         rawData = {'timestamp': timestamp,
-                   'name': name,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
-                   'nv_sig-format': tool_belt.get_nv_sig_format(),
-                   'nd_filter': nd_filter,
                    'num_steps': num_steps,
                    'readout': shared_params['continuous_readout_ns'],
                    'readout-units': 'ns',
@@ -450,7 +457,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices, name='untitled',
                    'z_counts': counts_by_axis[2].tolist(),
                    'z_counts-units': 'number'}
 
-        filePath = tool_belt.get_file_path(__file__, timestamp, name)
+        filePath = tool_belt.get_file_path(__file__, timestamp,
+                                           nv_sig['sample_name'])
         tool_belt.save_raw_data(rawData, filePath)
         
         if fig is not None:
