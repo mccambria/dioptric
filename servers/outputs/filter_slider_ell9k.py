@@ -80,10 +80,10 @@ class FilterSliderEll9k(LabradServer):
             pos = mapping[key_ind]
             self.slider_positions[key] = pos
         # Set up the mapping from filter position to move command
-        self.move_commands = {0: b'0ma00000000',
-                              1: b'0ma00000020',
-                              2: b'0ma00000040',
-                              3: b'0ma00000060'}
+        self.move_commands = {0: '0ma00000000'.encode(),
+                              1: '0ma00000020'.encode(),
+                              2: '0ma00000040'.encode(),
+                              3: '0ma00000060'.encode()}
         logging.debug('Init complete')
 
     @setting(0, filter_name='s')
@@ -91,6 +91,7 @@ class FilterSliderEll9k(LabradServer):
         pos = self.slider_positions[filter_name]
         cmd = self.move_commands[pos]
         self.slider.write(cmd)
+        self.slider.readline()
 
 
 __server__ = FilterSliderEll9k()

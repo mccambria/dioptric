@@ -21,8 +21,8 @@ import matplotlib.pyplot as plt
 # %% Main
 
 
-def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
-         num_steps, num_runs, uwave_power, name='untitled'):
+def main(cxn, nv_sig, apd_indices, freq_center, freq_range,
+         num_steps, num_runs, uwave_power):
 
     # %% Initial calculations and setup
     
@@ -78,7 +78,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
             break
         
         # Optimize and save the coords we found
-        opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+        opti_coords = optimize.main(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Load the APD task with two samples for each frequency step
@@ -149,13 +149,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
     timestamp = tool_belt.get_time_stamp()
 
     rawData = {'timestamp': timestamp,
-               'name': name,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
-               'nv_sig-format': tool_belt.get_nv_sig_format(),
                'opti_coords_list': opti_coords_list,
                'opti_coords_list-units': 'V',
-               'nd_filter': nd_filter,
                'freq_center': freq_center,
                'freq_center-units': 'GHz',
                'freq_range': freq_range,
@@ -175,6 +172,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices, freq_center, freq_range,
                'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
                'norm_avg_sig-units': 'arb'}
 
-    filePath = tool_belt.get_file_path(__file__, timestamp, name)
+    filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)

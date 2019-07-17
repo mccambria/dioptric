@@ -35,12 +35,12 @@ import json
 # %% Main
 
 
-def main(cxn, nv_sig, nd_filter, apd_indices,
+def main(cxn, nv_sig, apd_indices,
          uwave_freq_plus, uwave_freq_minus,
          uwave_power_plus, uwave_power_minus,
          uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
          num_steps, num_reps, num_runs, 
-         init_read_list, name='untitled'):
+         init_read_list):
     
     tool_belt.reset_cfm(cxn)
     
@@ -204,7 +204,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             break
         
         # Optimize
-        opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+        opti_coords = optimize.main(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
         
         # Set up the microwaves
@@ -286,13 +286,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         # %% Save the data we have incrementally for long T1s
     
         raw_data = {'start_timestamp': start_timestamp,
-                    'name': name,
                     'init_state': int(init_state),
                     'read_state': int(read_state),
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'nv_sig-format': tool_belt.get_nv_sig_format(),
-                    'nd_filter': nd_filter,
                     'gate_time': gate_time,
                     'gate_time-units': 'ns',
                     'uwave_freq_init': uwave_freq_init,
@@ -324,7 +321,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
         # This will continuously be the same file path so we will overwrite
         # the existing file with the latest version
         file_path = tool_belt.get_file_path(__file__, start_timestamp,
-                                            name, 'incremental')
+                                            nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Hardware clean up
@@ -378,13 +375,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     
     raw_data = {'timestamp': timestamp,
             'timeElapsed': timeElapsed,
-            'name': name,
             'init_state': int(init_state),
             'read_state': int(read_state),
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'nv_sig-format': tool_belt.get_nv_sig_format(),
-            'nd_filter': nd_filter,
             'gate_time': gate_time,
             'gate_time-units': 'ns',
             'uwave_freq_init': uwave_freq_init,
@@ -414,7 +408,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
             'norm_avg_sig-units': 'arb'}
     
-    file_path = tool_belt.get_file_path(__file__, timestamp, name)
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
     

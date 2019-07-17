@@ -113,8 +113,8 @@ def process_raw_buffer(timestamps, channels,
 # %% Main
 
 
-def main(cxn, nv_sig, nd_filter, run_time, diff_window,
-         apd_a_index, apd_b_index, name='untitled', expected_counts=None):
+def main(cxn, nv_sig, run_time, diff_window,
+         apd_a_index, apd_b_index):
 
     # %% Initial calculations and setup
     
@@ -125,7 +125,7 @@ def main(cxn, nv_sig, nd_filter, run_time, diff_window,
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
-    opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+    opti_coords = optimize.main(cxn, nv_sig, apd_indices)
     
     cxn.pulse_streamer.constant()
 
@@ -214,16 +214,13 @@ def main(cxn, nv_sig, nd_filter, run_time, diff_window,
 
     timestamp = tool_belt.get_time_stamp()
 
-    raw_data = {'name': name,
-                'timestamp': timestamp,
+    raw_data = {'timestamp': timestamp,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'nv_sig-format': tool_belt.get_nv_sig_format(),
                 'g2_zero': g2_zero,
                 'g2_zero-units': 'ratio',
                 'opti_coords': opti_coords,
                 'opti_coords-units': 'V',
-                'nd_filter': nd_filter,
                 'run_time': run_time,
                 'run_time-units': 's',
                 'diff_window': diff_window,
@@ -233,7 +230,7 @@ def main(cxn, nv_sig, nd_filter, run_time, diff_window,
                 'differences': differences,
                 'differences-units': 'ps'}
 
-    filePath = tool_belt.get_file_path(__file__, timestamp, name)
+    filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(raw_data, filePath)
     

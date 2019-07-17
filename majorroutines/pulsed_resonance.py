@@ -95,16 +95,16 @@ def fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig):
     
     # Convert to index space
     fwhm_ind = fwhm * (num_steps / freq_range)
+    if fwhm_ind < 1:
+        fwhm_ind = 1
     
     inverted_norm_avg_sig = 1 - norm_avg_sig
     
     # Peaks must be separated from each other by a ~FWHM (rayleigh criteria),
     # have at least 75% of our estimated contrast, and be more than a single
     # point wide
-    peak_inds, details = find_peaks(inverted_norm_avg_sig,
-                                    distance=fwhm_ind,
-                                    height=(0.75 * contrast, None),
-                                    width=(2,None))
+    peak_inds, details = find_peaks(inverted_norm_avg_sig, distance=fwhm_ind,
+                                    height=0.75*contrast, width=2)
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
     
@@ -305,6 +305,8 @@ def main(cxn, nv_sig, apd_indices, freq_center, freq_range,
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
                                     norm_avg_sig, fit_func, popt)
+    else:
+        fit_fig = None
 
     # %% Clean up and save the data
     
@@ -336,10 +338,41 @@ def main(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
                'norm_avg_sig-units': 'arb'}
 
-    filePath = tool_belt.get_file_path(__file__, timestamp,
-                                       nv_sig['sample_name'])
+    name = nv_sig['name']
+    filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
-    filePath = tool_belt.get_file_path(__file__, timestamp,
-                                       nv_sig['sample_name'] + '_fit')
-    tool_belt.save_figure(fit_fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
+    filePath = tool_belt.get_file_path(__file__, timestamp, name + '_fit')
+    if fit_fig is not None:
+        tool_belt.save_figure(fit_fig, filePath)
+    
+    # %% Return 
+    
+    if fit_func == single_gaussian_dip:
+        return popt[2], None
+    elif fit_func == double_gaussian_dip:
+        return popt[2], popt[5]
+    else:
+        return None, None
+
+
+# %% Run the file
+        
+
+if __name__ == '__main__':
+    
+    file = '2019-07-17_15-01-42_johnson1'
+    
+    data = tool_belt.get_raw_data('pulsed_resonance.py', file, 'branch_filter_slider')
+        
+    # Get information about the frequency
+    freq_center = data['freq_center']
+    freq_range = data['freq_range']
+    num_steps = data['num_steps']
+    
+    # Get the averaged, normalized counts from the ESR 
+    norm_avg_sig = numpy.array(data['norm_avg_sig'])
+    
+    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig)
+    create_fit_figure(freq_range, freq_center, num_steps, norm_avg_sig, fit_func, popt)
+    

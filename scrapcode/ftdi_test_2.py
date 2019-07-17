@@ -35,11 +35,18 @@ def main(dev):
     # Reset - not supported by pyftdi apparently
     
     print('writing...')
-    print(dev.write(b'0in'))
+    print(dev.write('0in'.encode()))
     print('written')
-    print(dev.read(33))
+    print(dev.readline().decode())
     
-    print(dev.write(b'0ma00000020'))
+    dev.write('0gp'.encode())
+    ret = dev.readline()
+    ret = ret.decode()
+    # First 3 characters are header so skip those
+    print(ret)
+    angle_hex = ret[3:]
+    print((int(angle_hex, 16)))
+    return int(angle_hex, 16)
 
 
 # %% Run the file
@@ -54,7 +61,7 @@ if __name__ == '__main__':
 
     # Run the script
     try:
-        dev = serial.Serial('COM5', 9600, serial.EIGHTBITS,
+        dev = serial.Serial('COM6', 9600, serial.EIGHTBITS,
                             serial.PARITY_NONE, serial.STOPBITS_ONE)
         main(dev)
     except Exception as e:

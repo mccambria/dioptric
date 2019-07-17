@@ -22,6 +22,7 @@ timeout = 5
 ### END NODE INFO
 """
 
+
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
@@ -44,7 +45,7 @@ class RotationStageEll18k(LabradServer):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd('Config')
-        p.get('filter_slider_ell9k_address')
+        p.get('rotation_stage_ell18k_address')
         p.cd('FilterSliderEll9kFilterMapping')
         p.dir()
         result = await p.send()
@@ -62,14 +63,36 @@ class RotationStageEll18k(LabradServer):
         self.stage.flush()
         time.sleep(0.1)
         logging.debug('Init complete')
-
+        
+    def get_angle(self):
+        self.stage.write('0gp'.encode())
+        ret = self.stage.readline().decode()
+        # First 3 characters are header so skip those
+        digi_angle_hex = ret[3:]
+        digi_angle = int(digi_angle_hex, 16)
+        # If we get a giant value, then the device has just overshot 0 -
+        # we can consider this as a negative value and take two's complement
+        if digi_angle > int('F0000000', 16):
+            digi_angle -= 2**32
+        angle = digi_angle * (360 / 143360)
+        return angle
+        
     @setting(0, angle='v[]')
     def set_angle(self, c, angle):
+        current_angle = self.get_angle()
+        # Max speed is 430 deg/s
+        min_response_time = abs(angle - current_angle) / 430
         # Convert the angle to a command - angles are digitized at a
         # resolution of 143360/rev
-        digi_angle = angle * (143360 / 360)
+        digi_angle = int(angle * (143360 / 360))
         cmd = '0ma{:08X}'.format(digi_angle)
+        cmd = cmd.encode()  # Convert to bytes
         self.stage.write(cmd)
+        # Always read after every write to clear the buffer
+        self.stage.readline()
+        # Allow double the minimum possible response time and tack on another
+#         tenth of a second for rise and fall
+        time.sleep((2 * min_response_time) + 0.1)
 
 
 __server__ = RotationStageEll18k()

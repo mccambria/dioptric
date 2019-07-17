@@ -111,7 +111,6 @@ def stationary_count_lite(cxn, coords, shared_params, apd_indices):
     cxn.apd_tagger.start_tag_stream(apd_indices)
     cxn.pulse_streamer.stream_start(total_num_samples)
     new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
-    print(new_samples)
     new_samples_avg = numpy.average(new_samples)
     cxn.apd_tagger.stop_tag_stream()
     counts_kcps = (new_samples_avg / 1000) / (readout / 10**9)
@@ -458,7 +457,7 @@ def main(cxn, nv_sig, apd_indices,
                    'z_counts-units': 'number'}
 
         filePath = tool_belt.get_file_path(__file__, timestamp,
-                                           nv_sig['sample_name'])
+                                           nv_sig['name'])
         tool_belt.save_raw_data(rawData, filePath)
         
         if fig is not None:

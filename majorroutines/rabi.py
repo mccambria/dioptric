@@ -23,9 +23,9 @@ from scipy.optimize import curve_fit
 # %% Main
 
 
-def main(cxn, nv_sig, nd_filter, apd_indices,
+def main(cxn, nv_sig, apd_indices,
          uwave_freq, uwave_power, uwave_time_range, do_uwave_gate_number,
-         num_steps, num_reps, num_runs, name='untitled'):
+         num_steps, num_reps, num_runs):
     
     tool_belt.reset_cfm(cxn)
 
@@ -100,7 +100,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             break
         
         # Optimize
-        opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+        opti_coords = optimize.main(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
         
         # Apply the microwaves
@@ -244,11 +244,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     raw_data = {'timestamp': timestamp,
                 'timeElapsed': timeElapsed,
                 'timeElapsed-units': 's',
-                'name': name,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'nv_sig-format': tool_belt.get_nv_sig_format(),
-                'nd_filter': nd_filter,
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
                 'uwave_power': uwave_power,
@@ -269,7 +266,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
                 'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
                 'norm_avg_sig-units': 'arb'}
 
-    file_path = tool_belt.get_file_path(__file__, timestamp, name)
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_figure(fit_fig, file_path + '_fit')
     tool_belt.save_raw_data(raw_data, file_path)

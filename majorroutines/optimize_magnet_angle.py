@@ -32,9 +32,13 @@ def create_fit_figure(splittings, angles, fit_func, popt):
     ax.set_ylabel('Splitting (MHz)')
     ax.scatter(angles, splittings, c='r')
 
-    x_vals = numpy.linspace(0, 360, 1000)
+    x_vals = numpy.linspace(0, 180, 1000)
     y_vals = fit_func(x_vals, *popt)
     ax.plot(x_vals, y_vals)
+
+    fig.canvas.draw()
+    fig.set_tight_layout(True)
+    fig.canvas.flush_events()
     
     return fig
 
@@ -88,18 +92,18 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     # %% Initial set up here
     
     angles = numpy.linspace(angle_range[0], angle_range[1], num_angle_steps)
-    angle_inds = numpy.linspace(0, num_angle_steps-1, num_angle_steps)
+    angle_inds = numpy.linspace(0, num_angle_steps-1, num_angle_steps, dtype=int)
     shuffle(angle_inds)
     resonances = numpy.empty((num_angle_steps, 2))  # Expect 2 resonances
     resonances[:] = numpy.nan
     splittings = numpy.empty(num_angle_steps)
     splittings[:] = numpy.nan
-
+    
     # %% Collect the data
     
     nv_sig_copy = copy.deepcopy(nv_sig)
     
-    for ind in range(angle_inds):
+    for ind in angle_inds:
         
         angle = angles[ind]
         nv_sig_copy['magnet_angle'] = angle
@@ -109,10 +113,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                                              num_freq_steps, num_freq_runs,
                                              uwave_power)
         resonances[ind, :] = angle_resonances
-        if not (any(angle_resonances == None)):
+        # Check if all the returned values are truthy (no Nones)
+        if all(angle_resonances):
             splittings[ind] = angle_resonances[1] - angle_resonances[0]
-        else:
-            splittings[ind] = None
             
     # %% Analyze the data
     
@@ -120,20 +123,25 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     amp = 200
     phase = 0
     guess_params = [amp, phase]
-    popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
-    # Find the angle at the peak within [0, 360]
-    opti_angle = (-popt[1]) % 360 
-    
-    fig = create_fit_figure(splittings, angles, fit_func, popt)
+    # Check if we have any undefined splittings
+    if any(numpy.isnan(splittings)):
+        opti_angle = None
+        fig = None
+    else:
+        popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
+        # Find the angle at the peak within [0, 360]
+        opti_angle = (-popt[1]) % 360 
+        fig = create_fit_figure(splittings, angles, fit_func, popt)
 
     # %% Wrap up
 
-    cxn.rotation_stage_ell18k.set_angle(opti_angle)
+    if opti_angle is not None:
+        cxn.rotation_stage_ell18k.set_angle(opti_angle)
+        print('Optimized angle: {}'.format(opti_angle))
 
     # Set up the raw data dictionary
     raw_data = {'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'nv_sig-format': tool_belt.get_nv_sig_format(),
                 'apd_indices': apd_indices,
                 'angle_range': angle_range,
                 'angle_range-units': 'deg',
@@ -146,11 +154,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                 'num_freq_runs': num_freq_runs,
                 'uwave_power': uwave_power,
                 'uwave_power-units': 'dBm',
+                'resonances': resonances.tolist(),
+                'resonances-units': 'GHz',
+                'splittings': splittings.tolist(),
+                'splittings-units': 'GHz',
                 'opti_angle': opti_angle,
                 'opti_angle-units': 'deg'}
 
     # Save the data and the figures from this run
-    save_data(nv_sig['sample_name'], raw_data, [fig])
+    if fig is not None:
+        save_data(nv_sig['name'], raw_data, [fig])
 
 
 # %% Run the file

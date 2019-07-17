@@ -229,9 +229,8 @@ def create_figure(file_name, folder_name='E:/Shared drives/Kolkowitz Lab Group/n
 
     # %%
 
-def main(cxn, coords, nd_filter, x_range, y_range,
-         num_steps, apd_indices,
-         name='untitled', continuous=False, save_data=True, plot_data=True):
+def main(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
+         continuous=False, save_data=True, plot_data=True):
 
     # %% Some initial setup
     
@@ -240,7 +239,9 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_params['continuous_readout_ns']
 
-    x_center, y_center, z_center = coords
+    adj_coords = (numpy.array(nv_sig['coords']) + \
+                  numpy.array(tool_belt.get_drift())).tolist()
+    x_center, y_center, z_center = adj_coords
 
     readout_sec = float(readout) / 10**9
 
@@ -350,10 +351,8 @@ def main(cxn, coords, nd_filter, x_range, y_range,
     timestamp = tool_belt.get_time_stamp()
 
     rawData = {'timestamp': timestamp,
-               'name': name,
-               'coords': list(coords),
-               'coords-units': 'V',
-               'nd_filter': nd_filter,
+               'nv_sig': nv_sig,
+               'nv_sig-units': tool_belt.get_nv_sig_units(),
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,
@@ -370,7 +369,7 @@ def main(cxn, coords, nd_filter, x_range, y_range,
 
     if save_data:
 
-        filePath = tool_belt.get_file_path(__file__, timestamp, name)
+        filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
         tool_belt.save_raw_data(rawData, filePath)
 
         if plot_data:

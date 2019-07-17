@@ -27,7 +27,7 @@ def main(cxn):
     body of the script.
     """
     
-    cxn.filter_slider_ell9k.set_filter('nd_0.5')
+    cxn.rotation_stage_ell18k.set_angle(30.0)
 
 
 # %% Run the file
