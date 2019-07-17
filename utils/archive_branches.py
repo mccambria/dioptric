@@ -31,7 +31,7 @@ repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
 #repo_path = 'C:\\Users\\Aedan\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
 
 # List of branch names
-branches_to_archive = ['filter_slider']
+branches_to_archive = ['uwave-delay']
 
 
 # %% Functions
