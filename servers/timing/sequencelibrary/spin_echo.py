@@ -25,39 +25,15 @@ def get_seq(pulser_wiring, args):
     tau_shrt, polarization_time, signal_time, reference_time,  \
             sig_to_ref_wait_time, pre_uwave_exp_wait_time,  \
             post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,  \
-            gate_time, pi_pulse_plus, pi_pulse_minus, tau_long = durations
+            gate_time, pi_pulse, pi_on_2_pulse, tau_long = durations
 
     # Get the APD indices
     apd_index = args[13]
 
-    # Specify the initial and readout states
-    init_state = args[14]
-    read_state = args[15]
-
     pulser_do_apd_gate = pulser_wiring['do_apd_gate_{}'.format(apd_index)]
 
-    pulser_do_uwave_plus = pulser_wiring['do_uwave_gate_0']
-    pulser_do_uwave_minus = pulser_wiring['do_uwave_gate_1']
-
-    if init_state == 1:
-        init_pi_plus = pi_pulse_plus
-        init_pi_minus = 0
-    elif init_state == -1:
-        init_pi_plus = 0
-        init_pi_minus = pi_pulse_minus
-    else:
-        init_pi_plus = 0
-        init_pi_minus = 0
-
-    if read_state == 1:
-        read_pi_plus = pi_pulse_plus
-        read_pi_minus = 0
-    elif read_state == -1:
-        read_pi_plus = 0
-        read_pi_minus = pi_pulse_minus
-    else:
-        read_pi_plus = 0
-        read_pi_minus = 0
+    # Use the Tektronix
+    pulser_do_uwave = pulser_wiring['do_uwave_gate_0']
 
     # specify the sig gen to give the initial state
 #    if init_state == 1:
@@ -97,17 +73,17 @@ def get_seq(pulser_wiring, args):
     # sequence. I hope that this formatting works.
 
     # With future protocols--ramsey, spin echo, etc--it will be easy to use
-    # this format of sequence building and just change this secion of the file
+    # this format of sequence building and just change this section of the file
 
-    uwave_experiment_shrt = init_pi_plus +init_pi_minus + tau_shrt + read_pi_plus +read_pi_minus
+    if (tau_shrt % 2 != 0) or (tau_long % 2 != 0):
+        raise ValueError('The passed taus must be divisible by 2.')
+    tau_shrt_half = tau_shrt // 2
+    tau_long_half = tau_long // 2
 
-#    uwave_experiment_seq_shrt = [(pi_pulse_init, HIGH), (tau_shrt, LOW),
-#                                     (pi_pulse_read, HIGH)]
-
-    uwave_experiment_long = init_pi_plus +init_pi_minus + tau_long + read_pi_plus +read_pi_minus
-
-#    uwave_experiment_seq_long = [(pi_pulse_init, HIGH), (tau_long, LOW),
-#                                     (pi_pulse_read, HIGH)]
+    uwave_experiment_shrt = pi_on_2_pulse + tau_shrt_half + pi_pulse + \
+                            tau_shrt_half + pi_on_2_pulse
+    uwave_experiment_long = pi_on_2_pulse + tau_long_half + pi_pulse + \
+                            tau_long_half + pi_on_2_pulse
 
     # %% Couple calculated values
 
@@ -170,18 +146,15 @@ def get_seq(pulser_wiring, args):
         sig_to_ref_wait_time + reference_time + rf_delay_time
 
     train = [(pre_duration, LOW)]
-    train.extend([(init_pi_plus, HIGH), (tau_shrt + init_pi_minus, LOW), (read_pi_plus, HIGH)])
-    train.extend([(read_pi_minus + mid_duration, LOW)])
-    train.extend([(init_pi_plus, HIGH), (tau_long + init_pi_minus, LOW), (read_pi_plus, HIGH)])
-    train.extend([(read_pi_minus + post_duration, LOW)])
-    seq.setDigital(pulser_do_uwave_plus, train)
-
-    train = [(pre_duration, LOW)]
-    train.extend([(init_pi_minus, HIGH), (tau_shrt + init_pi_plus, LOW), (read_pi_minus, HIGH)])
-    train.extend([(read_pi_plus + mid_duration, LOW)])
-    train.extend([(init_pi_minus, HIGH), (tau_long + init_pi_plus, LOW), (read_pi_minus, HIGH)])
-    train.extend([(read_pi_plus + post_duration, LOW)])
-    seq.setDigital(pulser_do_uwave_minus, train)
+    train.extend([(pi_on_2_pulse, HIGH), (tau_shrt_half, LOW)])
+    train.extend([(pi_pulse, HIGH)])
+    train.extend([(tau_shrt_half, LOW), (pi_on_2_pulse, HIGH)])
+    train.extend([(mid_duration, LOW)])
+    train.extend([(pi_on_2_pulse, HIGH), (tau_long_half, LOW)])
+    train.extend([(pi_pulse, HIGH)])
+    train.extend([(tau_long_half, LOW), (pi_on_2_pulse, HIGH)])
+    train.extend([(post_duration, LOW)])
+    seq.setDigital(pulser_do_uwave, train)
 
 #    if init_state == 1 and read_state == 1:
 #        pulser_do_uwave = pulser_do_uwave_read
@@ -211,12 +184,10 @@ if __name__ == '__main__':
               'do_uwave_gate_0': 2,
               'do_uwave_gate_1': 3}
 
-#    args = [32000, 3000, 3000, 3000, 2000, 1000, 1000,
-#            750, 40, 450, 34, 48, 68000, 0, 1, -1]
-#    args = [6240, 3000, 3000, 3000, 2000, 1000, 1000,
-#            750, 40, 320, 36, 0, 1760, 0, 1, 1]
-    # no delay
-    args = [6240, 3000, 3000, 3000, 2000, 1000, 1000,
-            0, 0, 320, 36, 0, 1760, 0, 1, 1]
+#    args = [0, 3000, 3000, 3000, 2000, 1000, 1000,
+#            750, 40, 320, 72, 36, 2000, 0]
+    # no delays
+    args = [500, 3000, 3000, 3000, 2000, 1000, 1000,
+            0, 0, 320, 72, 36, 2500, 0]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()

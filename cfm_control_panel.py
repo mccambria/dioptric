@@ -26,6 +26,7 @@ import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.ramsey as ramsey
+import majorroutines.spin_echo as spin_echo
 import minorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 
@@ -190,24 +191,60 @@ def do_t1_double_quantum(nv_sig, apd_indices,
                      init_read_list)
 
 
-def do_ramsey_measurement(nv_sig, sig_shrt_apd_index, ref_shrt_apd_index,
-                          sig_long_apd_index, ref_long_apd_index):
+def do_ramsey(name, nv_sig, nd_filter, apd_indices):
 
     uwave_power = 9
-    uwave_freq = 2.852
+    uwave_freq = 2.8086
+    detuning = 2.5 # MHz
     uwave_pi_half_pulse = 32
-    precession_time_range = [0, 1 * 10**3]
+#    precession_time_range = [0, 15 * 10**3]
+#    precession_time_range = [0, 2 * 10**3]
+    precession_time_range = [0, 4 * 10**3]
+#    precession_time_range = [0, 8 * 10**3]
 
-    num_steps = 21
-    num_reps = 10**5
-    num_runs = 3
-
+    num_steps = 151
+#    num_steps = 101
+#    num_steps = 51
+    num_reps = 3 * 10**5
+#    num_reps = 10**6
+#    num_runs = 6
+#    num_runs = 4
+#    num_runs = 2
+    num_runs = 1
 
     with labrad.connect() as cxn:
-            ramsey.main(cxn, nv_sig, sig_shrt_apd_index, ref_shrt_apd_index,
-                        sig_long_apd_index, ref_long_apd_index,
-                        uwave_freq, uwave_power, uwave_pi_half_pulse, precession_time_range,
-                        num_steps, num_reps, num_runs)
+            ramsey.main(cxn, nv_sig, nd_filter, apd_indices,
+                        uwave_freq, detuning, uwave_power, uwave_pi_half_pulse,
+                        precession_time_range, num_steps, num_reps, num_runs,
+                        name)
+
+
+def do_spin_echo(name, nv_sig, nd_filter, apd_indices):
+
+    uwave_power = 9
+    uwave_freq = 2.8589
+    rabi_period = 144.4
+    precession_time_range = [0, 200 * 10**3]
+#    precession_time_range = [0, 2 * 10**6]
+#    precession_time_range = [0, 10 * 10**6]
+
+#    num_steps = 101
+#    num_steps = 51
+    num_steps = 21
+#    num_steps = 11
+#    num_steps = 6
+#    num_reps = 10**4
+    num_reps = 5 * 10**5
+#    num_reps = 10**6
+#    num_runs = 4
+    num_runs = 2
+#    num_runs = 1
+
+    with labrad.connect() as cxn:
+            spin_echo.main(cxn, nv_sig, nd_filter, apd_indices,
+                        uwave_freq, uwave_power, rabi_period,
+                        precession_time_range, num_steps, num_reps, num_runs,
+                        name)
 
 
 def do_sample_nvs(nv_sig_list, apd_indices):
@@ -234,7 +271,7 @@ def do_sample_nvs(nv_sig_list, apd_indices):
 
 def do_set_drift_from_reference_image(nv_sig, apd_indices):
 
-    ref_file_name = '2019-06-10_15-22-25_ayrton12'  # 60 x 60
+#    ref_file_name = '2019-06-10_15-22-25_ayrton12'  # 60 x 60
     ref_file_name = '2019-06-27_16-37-18_johnson1' # bulk nv, first one we saw
 
     with labrad.connect() as cxn:
@@ -265,9 +302,9 @@ if __name__ == '__main__':
 
 #    apd_indices = [0]
     apd_indices = [0, 1]
-    
+
     sample_name = 'johnson1'
-    
+
     nv0_2019_06_27 = {'coords': [-0.169, -0.306, 38.74], 'nd_filter': 'nd_0.5',
                       'expected_count_rate': 45, 'magnet_angle': 41.8,
                       'name': sample_name}
@@ -282,7 +319,7 @@ if __name__ == '__main__':
                                 [[1,1], [0, 15*10**6], 11, 5000],
                                 [[0,1], [0, 15*10**6], 11, 5000],
                                 [[0,0], [0, 15*10**6], 11, 5000]])
-    
+
     # Array for the parameters of a given NV, formatted:
     # [nv_sig, uwave_freq_plus, uwave_pi_pulse_plus, uwave_freq_minus, uwave_pi_pulse_minus]
     # Tektronix controls plus, Berkeley controls minus
@@ -320,7 +357,7 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_rabi(nv_sig, apd_indices, 2.8086, 0)
 #            do_rabi(nv_sig, apd_indices, 2.9345, 1)
-#            do_ramsey_measurement(nv_sig, apd_indices)
+            do_ramsey(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
             do_test_major_routines(nv_sig, apd_indices)
 

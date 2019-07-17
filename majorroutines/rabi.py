@@ -26,7 +26,7 @@ from scipy.optimize import curve_fit
 def main(cxn, nv_sig, apd_indices,
          uwave_freq, uwave_power, uwave_time_range, do_uwave_gate_number,
          num_steps, num_reps, num_runs):
-    
+
     tool_belt.reset_cfm(cxn)
 
     # %% Get the starting time of the function
@@ -34,15 +34,15 @@ def main(cxn, nv_sig, apd_indices,
     startFunctionTime = time.time()
 
     # %% Initial calculations and setup
-    
+
     # Set which signal generator to use. 0 is the tektronix, 1 is HP
     do_uwave_gate = do_uwave_gate_number
-    
+
     if do_uwave_gate == 0:
         sig_gen = 'signal_generator_tsg4104a'
     elif do_uwave_gate == 1:
         sig_gen = 'signal_generator_bnc835'
-    
+
     # Define some times (in ns)
     polarization_time = 3 * 10**3
     reference_time = 1 * 10**3
@@ -77,12 +77,12 @@ def main(cxn, nv_sig, apd_indices,
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     # norm_avg_sig = numpy.empty([num_runs, num_steps])
-    
+
     # %% Make some lists and variables to save at the end
-    
+
     opti_coords_list = []
     tau_index_master_list = [[] for i in range(num_runs)]
-    
+
     # Create a list of indices to step through the taus. This will be shuffled
     tau_ind_list = list(range(0, num_steps))
 
@@ -94,15 +94,15 @@ def main(cxn, nv_sig, apd_indices,
     for run_ind in range(num_runs):
 
         print('Run index: {}'. format(run_ind))
-        
+
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
-        
+
         # Optimize
         opti_coords = optimize.main(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
-        
+
         # Apply the microwaves
         if sig_gen == 'signal_generator_tsg4104a':
             cxn.signal_generator_tsg4104a.set_freq(uwave_freq)
@@ -115,17 +115,17 @@ def main(cxn, nv_sig, apd_indices,
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
-        
+
         # Shuffle the list of indices to use for stepping through the taus
-        shuffle(tau_ind_list)     
-        
+        shuffle(tau_ind_list)
+
         for tau_ind in tau_ind_list:
 #        for tau_ind in range(len(taus)):
 #            print('Tau: {} ns'. format(taus[tau_ind]))
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
-            
+
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
 
@@ -139,17 +139,17 @@ def main(cxn, nv_sig, apd_indices,
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-            
+
             sample_counts = new_counts[0]
-            
+
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
-            
+
             # ref counts are odd - sample_counts every second element starting from 1
-            ref_gate_counts = sample_counts[1::2]  
+            ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
-            
+
         cxn.apd_tagger.stop_tag_stream()
 
     # %% Average the counts over the iterations
@@ -162,7 +162,7 @@ def main(cxn, nv_sig, apd_indices,
     norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # %% Fit the data and extract piPulse
-    
+
     fit_func = tool_belt.cosexp
 
     # Estimated fit parameters
@@ -232,7 +232,7 @@ def main(cxn, nv_sig, apd_indices,
     fit_fig.canvas.flush_events()
 
     # %% Clean up and save the data
-    
+
     tool_belt.reset_cfm(cxn)
 
     endFunctionTime = time.time()
