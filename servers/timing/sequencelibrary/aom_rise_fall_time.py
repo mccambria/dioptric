@@ -13,8 +13,7 @@ def get_seq(pulser_wiring, args):
     # %% Parse wiring and args
 
     # Get the aom name
-    aom_name = args[0]
-    
+    aom_state = args[0]
     
     durations = []
     for ind in (1,2):
@@ -30,7 +29,7 @@ def get_seq(pulser_wiring, args):
     
     seq = Sequence()
     
-    if aom_name == '532_aom':
+    if aom_state == 0:
         LOW = 0
         HIGH = 1
         
@@ -39,7 +38,7 @@ def get_seq(pulser_wiring, args):
         train = [(aom_on_time, HIGH), (aom_off_time, LOW)]
         seq.setDigital(pulser_do_aom_driver, train)
 
-    if aom_name == '589_aom':
+    if aom_state == 1:
         
         LOW = args[3]
         HIGH = args[4]
@@ -49,7 +48,7 @@ def get_seq(pulser_wiring, args):
         train = [(aom_on_time, HIGH), (aom_off_time, LOW)]
         seq.setAnalog(pulser_ao_aom_driver, train)
         
-    if aom_name == '638_aom':
+    if aom_state == 2:
         
         LOW = args[3]
         HIGH = args[4]
@@ -72,7 +71,9 @@ if __name__ == '__main__':
               'do_apd_gate_1': 2,
               'do_aom': 3,
               'do_uwave_gate_0': 4,
-              'do_uwave_gate_1': 5}
-    args = [100, 100, 1]
-    seq = get_seq(wiring, args)
+              'do_uwave_gate_1': 5,
+              'ao_638_aom': 0,
+              'ao_589_aom': 1}
+    args = ['638_aom', 100, 100, 0, 1]
+    seq = get_seq(wiring, args)[0]
     seq.plot()   

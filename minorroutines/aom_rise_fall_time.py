@@ -28,23 +28,36 @@ def main(cxn, aom_name, aom_on_time, aom_off_time, voltage_tuple):
 
     # %% Initial set up
     
-    if (aom_name != '532aom') or (aom_name != '589aom') or (aom_name != '638aom'):
-        print('AOM name not accepted, please use one of the given names:\n532aom \n589aom \n638aom')
-    else:
+    if (aom_name == '532_aom') or (aom_name == '589_aom')  \
+        or (aom_name == '638_aom'):
+        
+        if aom_name == '532_aom':
+            aom_state = 0
+            
+        if aom_name == '589_aom':
+            aom_state = 1
+            
+        if aom_name == '638_aom':
+            aom_state = 2
+            
+        # Extract the voltages
         low_voltage, high_voltage = voltage_tuple
         
         # Define some times (in ns)
         aom_on_time = int(aom_on_time)
         aom_off_time = int(aom_off_time)        
         
-        # %% Run the sequence
-        
+        # Run the sequence
         file_name = os.path.basename(__file__)    
-        args = [aom_name, aom_on_time, aom_off_time, 
+        args = [aom_state, aom_on_time, aom_off_time, 
                 low_voltage, high_voltage]
         
-        cxn.pulse_streamer.stream_immediate(file_name, 1 * 10**8, args, 1)
-#        cxn.pulse_streamer.stream_immediate(file_name, 3, args, 1)
+#        cxn.pulse_streamer.stream_immediate(file_name, 1 * 10**8, args, 1)
+        cxn.pulse_streamer.stream_immediate(file_name, 3, args, 1)
+        
+    else:
+        print('AOM name not accepted, please use one of the given names:' \
+            '\n532_aom \n589_aom \n638_aom')
     
     # %%
     
@@ -57,7 +70,7 @@ if __name__ == '__main__':
     try:
         
         with labrad.connect() as cxn:
-            main(cxn, '532aom', 200, 50, (0, 1.0), True, True)
+            main(cxn, '638_aom', 10**9, 10**9, (0, 1))
         
     finally:
         # Kill safe stop
