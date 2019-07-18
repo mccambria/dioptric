@@ -22,6 +22,9 @@ def fit_eq_1(f, amp):
 def fit_eq_2(f, amp):
     return amp*f**(-2)
 
+def fit_eq_alpha(f, amp, alpha):
+    return amp*f**(-alpha)
+
 # %%
 
 import matplotlib.pyplot as plt
@@ -43,6 +46,9 @@ fit_1_params, cov_arr = curve_fit(fit_eq_1, nv13_splitting_list, nv13_gamma_avg_
 fit_2_params, cov_arr = curve_fit(fit_eq_2, nv13_splitting_list, nv13_gamma_avg_list, 
                                 p0 = 100)
 
+fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv13_splitting_list, nv13_gamma_avg_list, 
+                                p0 = (100, 1))
+
 splitting_linspace = numpy.linspace(nv13_splitting_list[0], nv13_splitting_list[-1],
                                     1000)
 
@@ -53,26 +59,26 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv13_splitting_list, nv13_gamma_avg_list, yerr = nv13_gamma_error_list, 
-            label = 'Gamma', fmt='o', color='blue')
-ax.errorbar(nv13_splitting_list, nv13_omega_avg_list, yerr = nv13_omega_error_list, 
-            label = 'Omega', fmt='o', color='red')
+            label = r'$\gamma$', fmt='o', color='blue')
+#ax.errorbar(nv13_splitting_list, nv13_omega_avg_list, yerr = nv13_omega_error_list, 
+#            label = 'Omega', fmt='o', color='red')
 #ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
 #            label = r'$f^{-2}$', color ='teal')
-ax.plot(splitting_linspace, fit_eq_1(splitting_linspace, *fit_1_params), 
-            label = r'$f^{-1}$', color = 'orange')
+#ax.plot(splitting_linspace, fit_eq_1(splitting_linspace, *fit_1_params), 
+#            label = r'$f^{-1}$', color = 'orange')
 
 # %%
-#ax.plot(splitting_linspace, fit_eq(splitting_linspace, *fit_params), 
-#            label = '1/f^a')
-#
-#text = '\n'.join((r'$1/f^{a}$',
-#                  r'$a = $' + '%.2f'%(fit_params[1])
-##                  r'$A_0 = $' + '%.4f'%(fit_params[1] * 10**6) + ' kHz'
-##                  ,r'$a = $' + '%.2f'%(fit_params[2])
-#                  ))
-#props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#ax.text(0.75, 0.40, text, transform=ax.transAxes, fontsize=12,
-#        verticalalignment='top', bbox=props)
+ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
+            label = r'$1/f^\alpha$')
+
+text = '\n'.join((r'$1/f^{\alpha}$ fit:',
+                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1])
+#                  r'$A_0 = $' + '%.4f'%(fit_params[1] * 10**6) + ' kHz'
+#                  ,r'$a = $' + '%.2f'%(fit_params[2])
+                  ))
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+ax.text(0.85, 0.8, text, transform=ax.transAxes, fontsize=12,
+        verticalalignment='top', bbox=props)
 # %%
 
 ax.tick_params(which = 'both', length=6, width=2, colors='k',
