@@ -41,44 +41,39 @@ import labrad
 
 
 def main(nv_sig, apd_indices, uwave_freq, detuning,
-         uwave_power, uwave_pi_half_pulse, precession_time_range,
+         uwave_power, rabi_period, precession_time_range,
          num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
-                      uwave_power, uwave_pi_half_pulse, precession_time_range,
+                      uwave_power, rabi_period, precession_time_range,
                       num_steps, num_reps, num_runs)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
-                  uwave_power, uwave_pi_half_pulse, precession_time_range,
+                  uwave_power, rabi_period, precession_time_range,
                   num_steps, num_reps, num_runs):
 
     tool_belt.reset_cfm(cxn)
 
     # %% Define the times to be used in the sequence
 
-    # Define some times (in ns)
-    # time to intially polarize the nv
-    polarization_time = 3 * 10**3
+    shared_params = tool_belt.get_shared_parameters_dict()
+
+    polarization_time = shared_params['polarization_dur']
     # time of illumination during which signal readout occurs
-    signal_time = 3 * 10**3
+    signal_time = polarization_time
     # time of illumination during which reference readout occurs
-    reference_time = 3 * 10**3
-    # time between polarization and experiment without illumination
-    pre_uwave_exp_wait_time = 1 * 10**3
-    # time between the end of the experiment and signal without illumination
-    post_uwave_exp_wait_time = 1 * 10**3
+    reference_time = polarization_time
+    pre_uwave_exp_wait_time = shared_params['post_polarization_wait_dur']
+    post_uwave_exp_wait_time = shared_params['pre_readout_wait_dur']
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    # the amount of time the AOM delays behind the gate and rf
-    aom_delay_time = 1000
-    # the amount of time the rf delays behind the AOM and rf
-    rf_delay_time = 40
-    # the length of time the gate will be open to count photons
-    gate_time = 320
+    aom_delay_time = shared_params['aom_delay']
+    rf_delay_time = shared_params['uwave_delay']
+    gate_time = shared_params['pulsed_readout_dur']
 
     # Convert pi_pulse to integer
-    uwave_pi_half_pulse = round(uwave_pi_half_pulse)
+    uwave_pi_half_pulse = round(rabi_period / 4)
 
     # Detune the pi/2 pulse frequency
     uwave_freq_detuned = uwave_freq + detuning / 10**3
@@ -307,6 +302,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
             'detuning-units': 'MHz',
             'uwave_power': uwave_power,
             'uwave_power-units': 'dBm',
+            'rabi_period': rabi_period,
+            'rabi_period-units': 'ns',
             'uwave_pi_half_pulse': uwave_pi_half_pulse,
             'uwave_pi_half_pulse-units': 'ns',
             'precession_time_range': precession_time_range,

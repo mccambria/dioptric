@@ -291,7 +291,8 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
                 amp_1 * numpy.cos(two_pi * freq_1 * t) +
                 amp_2 * numpy.cos(two_pi * freq_2 * t) +
                 amp_3 * numpy.cos(two_pi * freq_3 * t))
-    
+
+
 # %% LabRAD utils
 
 
@@ -305,13 +306,19 @@ def get_shared_parameters_dict(cxn):
     frequently (eg apd_indices).
     
     We currently have the following parameters:
-        polarization_dur: 
-        polarization_to_uwave_dur: 
-        uwave_to_readout_dur: 
-        aom_delay: 
-        uwave_delay: 
-        pulsed_readout_dur: 
-        continuous_readout_dur: 
+        polarization_dur: Duration to illuminate for polarization
+        post_polarization_wait_dur: Duration to wait after polarization to
+            allow the NV metastable state to decay
+        pre_readout_wait_dur: Duration to wait before readout - functionally
+            I think this is just for symmetry with post_polarization_wait_dur
+        aom_delay: Delay between signal to AOM and the AOM actually opening
+        uwave_delay: Delay between signal to uwave switch and the switch
+            actually opening
+        pulsed_readout_dur: Readout duration if we're looking to determine
+            the state
+        continuous_readout_dur: Readout duration if we're just looking to
+            see how bright something is
+    """
 
     # Get what we need out of the registry
     cxn.registry.cd(['', 'SharedParameters'])
