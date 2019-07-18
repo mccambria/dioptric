@@ -8,46 +8,55 @@ Created on Mon Jun 3 11:49:23 2019
 from pulsestreamer import Sequence
 import numpy
 
-LOW = 0
-HIGH = 1
-
-
 def get_seq(pulser_wiring, args):
 
     # %% Parse wiring and args
 
-    # The first 9 args are ns durations and we need them as int64s
+    # Get the aom name
+    aom_state = args[0]
+    
     durations = []
-    for ind in range(2):
+    for ind in (1,2):
         durations.append(numpy.int64(args[ind]))
-
+ 
     # Unpack the durations
     aom_on_time, aom_off_time = durations
     
-    driver_bool = args[2]
-
-    pulser_do_aom_driver = pulser_wiring['do_aom']
-    pulser_do_switch = pulser_wiring['do_uwave_gate_1']
-    
+    # Define the period
     period = aom_on_time + aom_off_time
-
-    #%%
-    if driver_bool == True:
     
-        seq = Sequence()
+    #%% Based on the aom to use, set up the sequence
     
+    seq = Sequence()
+    
+    if aom_state == 0:
+        LOW = 0
+        HIGH = 1
+        
+        pulser_do_aom_driver = pulser_wiring['do_aom']
+       
         train = [(aom_on_time, HIGH), (aom_off_time, LOW)]
         seq.setDigital(pulser_do_aom_driver, train)
 
-    else:
+    if aom_state == 1:
         
-        seq = Sequence()
-
+        LOW = args[3]
+        HIGH = args[4]
+        
+        pulser_ao_aom_driver = pulser_wiring['ao_589_aom']
+        
         train = [(aom_on_time, HIGH), (aom_off_time, LOW)]
-        seq.setDigital(pulser_do_switch, train)
+        seq.setAnalog(pulser_ao_aom_driver, train)
         
-        train = [(aom_on_time + aom_off_time, HIGH)]
-        seq.setDigital(pulser_do_aom_driver, train)
+    if aom_state == 2:
+        
+        LOW = args[3]
+        HIGH = args[4]
+        
+        pulser_ao_aom_driver = pulser_wiring['ao_638_aom']
+        
+        train = [(aom_on_time, HIGH), (aom_off_time, LOW)]
+        seq.setAnalog(pulser_ao_aom_driver, train)
 
     return seq, [period]
 
@@ -62,7 +71,9 @@ if __name__ == '__main__':
               'do_apd_gate_1': 2,
               'do_aom': 3,
               'do_uwave_gate_0': 4,
-              'do_uwave_gate_1': 5}
-    args = [100, 100, 1]
-    seq = get_seq(wiring, args)
+              'do_uwave_gate_1': 5,
+              'ao_638_aom': 0,
+              'ao_589_aom': 1}
+    args = ['638_aom', 100, 100, 0, 1]
+    seq = get_seq(wiring, args)[0]
     seq.plot()   

@@ -22,7 +22,7 @@ import numpy
 from numpy import exp
 import json
 import time
-#import labrad
+import labrad
 from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
@@ -35,16 +35,25 @@ from pathlib import Path
 def set_xyz(cxn, coords):
     cxn.galvo.write(coords[0], coords[1])
     cxn.objective_piezo.write_voltage(coords[2])
+    # Force some delay before proceeding to account 
+    # for the effective write time
+    time.sleep(0.1)
 
 
 def set_xyz_zero(cxn):
     cxn.galvo.write(0.0, 0.0)
     cxn.objective_piezo.write_voltage(50.0)
+    # Force some delay before proceeding to account 
+    # for the effective write time
+    time.sleep(0.1)
 
 
 def set_xyz_on_nv(cxn, nv_sig):
     cxn.galvo.write(nv_sig[0], nv_sig[1])
     cxn.objective_piezo.write_voltage(nv_sig[2])
+    # Force some delay before proceeding to account 
+    # for the effective write time
+    time.sleep(0.1)
 
 
 # %% Matplotlib plotting utils
@@ -275,7 +284,14 @@ def cosexp(t, offset, amp, freq, decay):
     two_pi = 2*numpy.pi
     return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
 
-
+def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
+    two_pi = 2*numpy.pi
+    
+    return offset + numpy.exp(-t / abs(decay)) * (
+                amp_1 * numpy.cos(two_pi * freq_1 * t) +
+                amp_2 * numpy.cos(two_pi * freq_2 * t) +
+                amp_3 * numpy.cos(two_pi * freq_3 * t))
+    
 # %% LabRAD utils
 
 
@@ -488,12 +504,8 @@ def save_raw_data(rawData, filePath):
 
 
 def get_nv_sig_units():
-    return '[V, V, V, kcps, kcps]'
-
-
-def get_nv_sig_format():
-    return '[x_coord, y_coord, z_coord, ' \
-        'expected_count_rate, background_count_rate]'
+    return {'coords': 'V', 'expected_count_rate': 'kcps',
+            'magnet_angle': 'deg'}
 
 
 # %% Safe stop (TM mccambria)

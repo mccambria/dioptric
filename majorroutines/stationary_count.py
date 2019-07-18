@@ -37,14 +37,14 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(cxn, nv_sig, nd_filter, run_time, readout, apd_indices,
+def main(cxn, nv_sig, run_time, readout, apd_indices,
          name='untitled', continuous=False):
 
     # %% Some initial setup
     
     tool_belt.reset_cfm(cxn)
 
-    coords = numpy.array(nv_sig[0:3]) + tool_belt.get_drift()
+    coords = numpy.array(nv_sig['coords']) + tool_belt.get_drift()
     readout_sec = readout / 10**9
 
     # %% Load the PulseStreamer

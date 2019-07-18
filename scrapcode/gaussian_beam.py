@@ -14,17 +14,30 @@ from scipy.optimize import curve_fit
 def beam_waist_eq(z, w_0, z_offset):
     return w_0*numpy.sqrt(1 + ( ((z + z_offset) * 0.589) / (numpy.pi * w_0**2) )**2 )
 
-z = (0, 76.2*10**3, 101.6*10**3, 127*10**3, 152.4*10**3, 177.8*10**3 ) #  um
+# %%
+    
+#z = (0, 76.2*10**3, 101.6*10**3, 127*10**3, 152.4*10**3, 177.8*10**3 ) #  um
+#
+#w = (2900 / 2, 1440 / 2, 900 / 2, 430 / 2, 100 / 2, 390 / 2) # um
+    
+z = (3 * 10**3, 18*10**3, 25*10**3, 33*10**3) # um
 
-w = (2900 / 2, 1440 / 2, 900 / 2, 430 / 2, 100 / 2, 390 / 2) # um
+w = (570 / 2, 500 / 2, 560 / 2, 590 / 2) # um
 
-init_params = (40, 150000)
-opti_params, cov_arr = curve_fit(beam_waist_eq, z, w, init_params)
+init_params = (300, 1800)
 
-z_linspace = numpy.linspace(0, 200000, 1000)
 
-print('Beam waist at focus: '+ str(opti_params[0]) + ' um')
+try:
+    opti_params, cov_arr = curve_fit(beam_waist_eq, z, w, init_params)
 
+    print('Beam waist at focus: '+ str(opti_params[0]) + ' um')
+    print('Beam focus: '+ str(opti_params[1]) + ' um')
+    
+except Exception:
+    opti_params = init_params
+
+z_linspace = numpy.linspace(0, z[-1], 1000)
+#z_linspace = numpy.linspace(- 150000, 150000, 1000)
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 

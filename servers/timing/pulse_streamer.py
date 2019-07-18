@@ -105,6 +105,10 @@ class PulseStreamer(LabradServer):
         elif output_state == 3:  # HP uwave gate open
             pulser_do_daq_clock = self.pulser_wiring['do_uwave_gate_1']
             self.output_state = OutputState([pulser_do_daq_clock], 0, 0)
+        elif output_state == 4:  # 638 nm AOM on at 1.0 V
+            self.output_state = OutputState([], 1, 0)
+        elif output_state == 5:  # 589 nm AOM on at 1.0 V
+            self.output_state = OutputState([], 0, 1)
 
     @setting(0, seq_file='s', num_repeat='i',
              args='*?', output_state='i', returns='*?')

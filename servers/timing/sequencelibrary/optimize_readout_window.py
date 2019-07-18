@@ -28,7 +28,7 @@ def get_seq(pulser_wiring, args):
     # Get the APD index
     apd_index = args[6]
     
-    #Signify which signal generator to use
+    # Signify which signal generator to use
     do_uwave_gate = args[7]
 
     # Get what we need out of the wiring dictionary
