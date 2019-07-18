@@ -19,6 +19,8 @@ import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
+import majorroutines.ramsey as ramsey
+import majorroutines.spin_echo as spin_echo
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 
 
@@ -105,7 +107,45 @@ def main(nv_sig, apd_indices):
                      relaxation_time_range, num_steps, num_reps, num_runs, 
                      init_read_list)
         
-        # optimize_magnet_angle
+        # t1_double_quantum
+        print('\nTesting t1_double_quantum...\n')
+        uwave_freq_plus = 2.86
+        uwave_freq_minus = 2.88
+        uwave_power = 9
+        uwave_pi_pulse_plus = 65
+        uwave_pi_pulse_minus = 75
+        relaxation_time_range = [0, 10*10**3]
+        num_steps = 10
+        num_reps = 10
+        num_runs = 2
+        init_read_list = [-1, +1]
+        t1_double_quantum.main(cxn, nv_sig, apd_indices,
+                     uwave_freq_plus, uwave_freq_minus,
+                     uwave_power, uwave_power,
+                     uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                     relaxation_time_range, num_steps, num_reps, num_runs, 
+                     init_read_list)
+        
+        # ramsey
+        print('\nTesting t1_double_quantum...\n')
+        uwave_freq_plus = 2.86
+        uwave_freq_minus = 2.88
+        uwave_power = 9
+        uwave_pi_pulse_plus = 65
+        uwave_pi_pulse_minus = 75
+        relaxation_time_range = [0, 10*10**3]
+        num_steps = 10
+        num_reps = 10
+        num_runs = 2
+        init_read_list = [-1, +1]
+        ramsey.main(cxn, nv_sig, apd_indices,
+                     uwave_freq_plus, uwave_freq_minus,
+                     uwave_power, uwave_power,
+                     uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                     relaxation_time_range, num_steps, num_reps, num_runs, 
+                     init_read_list)
+        
+        # spin_echo
         print('\nTesting optimize_magnet_angle...\n')
         angle_range = [0, 45]
         num_angle_steps = 2
@@ -114,7 +154,7 @@ def main(nv_sig, apd_indices):
         num_freq_steps = 3
         num_freq_runs = 1
         uwave_power = 9.0
-        optimize_magnet_angle.main(nv_sig, apd_indices,
+        spin_echo.main(nv_sig, apd_indices,
                                angle_range, num_angle_steps,
                                freq_center, freq_range,
                                num_freq_steps, num_freq_runs, uwave_power)

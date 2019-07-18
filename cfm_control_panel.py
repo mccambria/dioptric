@@ -357,7 +357,7 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_rabi(nv_sig, apd_indices, 2.8086, 0)
 #            do_rabi(nv_sig, apd_indices, 2.9345, 1)
-            do_ramsey(nv_sig, apd_indices)
+#            do_ramsey(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
             do_test_major_routines(nv_sig, apd_indices)
 

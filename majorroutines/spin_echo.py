@@ -25,14 +25,10 @@ from random import shuffle
 
 # %% Main
 
-def main(cxn, nv_sig, nd_filter, apd_indices,
-         uwave_freq, uwave_power, rabi_period, precession_time_range,
-         num_steps, num_reps, num_runs, 
-         name='untitled'):
+def main(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
+         rabi_period, precession_time_range, num_steps, num_reps, num_runs):
     
     tool_belt.reset_cfm(cxn)
-    
-#    print(coords)
     
     # %% Defiene the times to be used in the sequence
 
@@ -152,7 +148,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             break
         
         # Optimize
-        opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+        opti_coords = optimize.main(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
         
         # Set up the microwaves - just use the Tektronix
@@ -270,13 +266,11 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     
     raw_data = {'timestamp': timestamp,
             'timeElapsed': timeElapsed,
-            'name': name,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'nv_sig-format': tool_belt.get_nv_sig_format(),
             'opti_coords_list': opti_coords_list,
             'opti_coords_list-units': 'V',
-            'nd_filter': nd_filter,
             'gate_time': gate_time,
             'gate_time-units': 'ns',
             'uwave_freq': uwave_freq,
@@ -287,7 +281,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'rabi_period-units': 'ns',
             'uwave_pi_pulse': uwave_pi_pulse,
             'uwave_pi_pulse-units': 'ns',
-            'uwave_pi_on_2_pulse': rabi_period,
+            'uwave_pi_on_2_pulse': uwave_pi_on_2_pulse,
             'uwave_pi_on_2_pulse-units': 'ns',
             'precession_time_range': precession_time_range,
             'precession_time_range-units': 'ns',
@@ -301,7 +295,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
             'norm_avg_sig-units': 'arb'}
     
-    file_path = tool_belt.get_file_path(__file__, timestamp, name)
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
     

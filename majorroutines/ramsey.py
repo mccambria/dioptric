@@ -29,7 +29,6 @@ Created on Wed Apr 24 15:01:04 2019
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-import os
 import time
 import matplotlib.pyplot as plt
 #from scipy.optimize import curve_fit
@@ -37,15 +36,12 @@ from random import shuffle
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
-#import json
-#from scipy import asarray as ar,exp
 
 # %% Main
 
-def main(cxn, nv_sig, nd_filter, apd_indices,
-         uwave_freq, detuning, uwave_power, uwave_pi_half_pulse, precession_time_range,
-         num_steps, num_reps, num_runs,
-         name='untitled'):
+def main(cxn, nv_sig, apd_indices, uwave_freq, detuning,
+         uwave_power, uwave_pi_half_pulse, precession_time_range,
+         num_steps, num_reps, num_runs):
 
     tool_belt.reset_cfm(cxn)
 
@@ -79,9 +75,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     # Detune the pi/2 pulse frequency
     uwave_freq_detuned = uwave_freq + detuning / 10**3
 
-
     seq_file_name = 't1_double_quantum.py'
-
 
     # %% Create the array of relaxation times
 
@@ -173,7 +167,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             break
 
         # Optimize
-        opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+        opti_coords = optimize.main(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves - just use the Tektronix
@@ -295,10 +289,8 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
 
     raw_data = {'timestamp': timestamp,
             'timeElapsed': timeElapsed,
-            'name': name,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'nd_filter': nd_filter,
             'gate_time': gate_time,
             'gate_time-units': 'ns',
             'uwave_freq': uwave_freq,
@@ -311,7 +303,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'uwave_pi_half_pulse-units': 'ns',
             'precession_time_range': precession_time_range,
             'precession_time_range-units': 'ns',
-            'tau_index_list': tau_index_list,
             'num_steps': num_steps,
             'num_reps': num_reps,
             'num_runs': num_runs,
@@ -325,7 +316,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
             'norm_avg_sig-units': 'arb'}
 
-    file_path = tool_belt.get_file_path(__file__, timestamp, name)
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
 
