@@ -296,6 +296,22 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
 
 
 def get_shared_parameters_dict(cxn):
+    """Get the shared parameters from the registry. These parameters are not
+    specific to any experiment, but are instead used across experiments. They
+    may depend on the current alignment (eg aom_delay) or they may just be
+    parameters that are referenced by many sequences (eg polarization_dur).
+    Generally, they should need to be updated infrequently, unlike the
+    shared parameters defined in cfm_control_panel, which change more
+    frequently (eg apd_indices).
+    
+    We currently have the following parameters:
+        polarization_dur: 
+        polarization_to_uwave_dur: 
+        uwave_to_readout_dur: 
+        aom_delay: 
+        uwave_delay: 
+        pulsed_readout_dur: 
+        continuous_readout_dur: 
 
     # Get what we need out of the registry
     cxn.registry.cd(['', 'SharedParameters'])

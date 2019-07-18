@@ -173,7 +173,7 @@ def do_ramsey(nv_sig, apd_indices):
     detuning = 2.5  # MHz
     uwave_pi_half_pulse = 32
     precession_time_range = [0, 4 * 10**3]
-    
+
     num_steps = 151
     num_reps = 3 * 10**5
     num_runs = 1

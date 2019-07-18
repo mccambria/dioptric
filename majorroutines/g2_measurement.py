@@ -134,7 +134,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
-    opti_coords = optimize.main(cxn, nv_sig, apd_indices)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     
     cxn.pulse_streamer.constant()
 

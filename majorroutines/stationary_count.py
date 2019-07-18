@@ -16,6 +16,7 @@ import numpy
 import matplotlib.pyplot as plt
 import time
 import labrad
+import majorroutines.optimize as optimize
 
 
 # %% Functions
@@ -52,7 +53,6 @@ def main_with_cxn(cxn, nv_sig, run_time, readout, apd_indices,
     
     tool_belt.reset_cfm(cxn)
 
-    coords = numpy.array(nv_sig['coords']) + tool_belt.get_drift()
     readout_sec = readout / 10**9
 
     # %% Load the PulseStreamer
@@ -63,10 +63,9 @@ def main_with_cxn(cxn, nv_sig, run_time, readout, apd_indices,
 
     total_num_samples = int(run_time / period)
 
-    # %% Set x, y, and z
+    # %% Optimize
 
-    cxn.galvo.write(coords[0], coords[1])
-    cxn.objective_piezo.write_voltage(coords[2])
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
     # %% Set up the APD
 

@@ -293,7 +293,7 @@ def optimize_list_with_cxn(cxn, nv_sig_list, nd_filter, apd_indices):
             break
         
         nv_sig = nv_sig_list[ind]
-        opti_coords = main(cxn, nv_sig, nd_filter, apd_indices,
+        opti_coords = main_with_cxn(cxn, nv_sig, nd_filter, apd_indices,
                            set_to_opti_coords=False)
         if opti_coords is not None:
             opti_coords_list.append('[{:.3f}, {:.3f}, {:.1f}],'.format(*opti_coords))
@@ -313,7 +313,6 @@ def main(nv_sig, apd_indices,
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices,
                       set_to_opti_coords, save_data, plot_data)
-
 
 def main_with_cxn(cxn, nv_sig, apd_indices,
                   set_to_opti_coords=True, save_data=False, plot_data=False):
