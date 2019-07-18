@@ -80,9 +80,7 @@ def do_stationary_count(nv_sig, apd_indices):
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-
     run_time = 60 * 10  # s
-
     diff_window = 150  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
@@ -93,8 +91,6 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
     num_steps = 101
     num_runs = 2
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
-#    uwave_power = -11.0
-#    uwave_power = -10.0
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                    num_steps, num_runs, uwave_power)
@@ -132,31 +128,10 @@ def do_rabi(nv_sig, apd_indices,
     uwave_time_range = [0, 300]
     num_steps = 51
     num_reps = 10**5
-
     num_runs = 2
 
     rabi.main(nv_sig, apd_indices, uwave_freq, uwave_power, uwave_time_range,
               do_uwave_gate_number, num_steps, num_reps, num_runs)
-
-def do_t1_double_quantum(nv_sig, apd_indices,
-                         uwave_freq_plus, uwave_freq_minus,
-                         uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                         relaxation_time_range, num_steps, num_reps,
-                         init_read_list):
-
-    uwave_power = 9
-    num_runs = 120  # This'll triple the expected duration listed below!!
-#    num_runs = 80  # This'll double the expected duration listed below!!
-#    num_runs = 40
-#    num_runs = 20  # This'll halve the expected duration listed below
-#    num_runs = 1  # Pick this one for the best noise to signal ratio
-
-    t1_double_quantum.main(nv_sig, apd_indices,
-                     uwave_freq_plus, uwave_freq_minus,
-                     uwave_power, uwave_power,
-                     uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                     relaxation_time_range, num_steps, num_reps, num_runs,
-                     init_read_list)
 
 def do_t1_battery(nv_sig, apd_indices):
 
@@ -176,6 +151,7 @@ def do_t1_battery(nv_sig, apd_indices):
                                 [[0,1], [0, 15*10**6], 11, 5000],
                                 [[0,0], [0, 15*10**6], 11, 5000]])
 
+    # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
 
         init_read_states = t1_exp_array[exp_ind, 0]
@@ -183,11 +159,12 @@ def do_t1_battery(nv_sig, apd_indices):
         num_steps = t1_exp_array[exp_ind, 2]
         num_reps = t1_exp_array[exp_ind, 3]
 
-        do_t1_double_quantum(nv_sig, apd_indices,
-                      uwave_freq_plus, uwave_freq_minus,
-                      uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                      relaxation_time_range, num_steps, num_reps,
-                      init_read_states)
+        t1_double_quantum.main(nv_sig, apd_indices,
+                     uwave_freq_plus, uwave_freq_minus,
+                     uwave_power, uwave_power,
+                     uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                     relaxation_time_range, num_steps, num_reps, num_runs,
+                     init_read_states)
 
 def do_ramsey(nv_sig, apd_indices):
 
@@ -196,7 +173,7 @@ def do_ramsey(nv_sig, apd_indices):
     detuning = 2.5  # MHz
     uwave_pi_half_pulse = 32
     precession_time_range = [0, 4 * 10**3]
-
+    
     num_steps = 151
     num_reps = 3 * 10**5
     num_runs = 1
@@ -204,7 +181,6 @@ def do_ramsey(nv_sig, apd_indices):
     ramsey.main(nv_sig, apd_indices,
                 uwave_freq, detuning, uwave_power, uwave_pi_half_pulse,
                 precession_time_range, num_steps, num_reps, num_runs)
-
 
 def do_spin_echo(nv_sig, apd_indices):
 
@@ -220,7 +196,6 @@ def do_spin_echo(nv_sig, apd_indices):
     spin_echo.main(nv_sig, apd_indices,
                    uwave_freq, uwave_power, rabi_period,
                    precession_time_range, num_steps, num_reps, num_runs)
-
 
 def do_sample_nvs(nv_sig_list, apd_indices):
 
@@ -244,14 +219,12 @@ def do_sample_nvs(nv_sig_list, apd_indices):
                 pesr(cxn, nv_sig, apd_indices, 2.87, 0.1,
                      num_steps, num_runs, uwave_power)
 
-
 def do_set_drift_from_reference_image(nv_sig, apd_indices):
 
-#    ref_file_name = '2019-06-10_15-22-25_ayrton12'  # 60 x 60
+    # ref_file_name = '2019-06-10_15-22-25_ayrton12'  # 60 x 60
     ref_file_name = '2019-06-27_16-37-18_johnson1' # bulk nv, first one we saw
 
     set_drift_from_reference_image.main(ref_file_name, nv_sig, apd_indices)
-
 
 def do_test_major_routines(nv_sig, apd_indices):
     """Run this whenver you make a significant code change. It'll make sure
@@ -261,19 +234,14 @@ def do_test_major_routines(nv_sig, apd_indices):
     test_major_routines.main(nv_sig, apd_indices)
 
 
-# %% Script Code
+# %% Run the file
 
 
-# Functions only run when called. Since this part of the script is not in a
-# function, it will run when the script is run.
-# __name__ will only be __main__ if we're running the file as a program.
-# The below pattern enables us to import this file as a module without
-# running it as a program.
 if __name__ == '__main__':
 
     # %% Shared parameters
 
-#    apd_indices = [0]
+    # apd_indices = [0]
     apd_indices = [0, 1]
 
     sample_name = 'johnson1'
