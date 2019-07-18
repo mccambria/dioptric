@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
 import copy
+import labrad
 
 
 # %% Define a few parameters
@@ -274,7 +275,12 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
 # %% User functions
     
 
-def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
+def optimize_list(nv_sig_list, nd_filter, apd_indices):
+
+    with labrad.connect() as cxn:
+        optimize_list_with_cxn(cxn, nv_sig_list, nd_filter, apd_indices)
+
+def optimize_list_with_cxn(cxn, nv_sig_list, nd_filter, apd_indices):
     
     tool_belt.init_safe_stop()
     
@@ -301,8 +307,16 @@ def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
 # %% Main
 
 
-def main(cxn, nv_sig, apd_indices,
+def main(nv_sig, apd_indices,
          set_to_opti_coords=True, save_data=False, plot_data=False):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices,
+                      set_to_opti_coords, save_data, plot_data)
+
+
+def main_with_cxn(cxn, nv_sig, apd_indices,
+                  set_to_opti_coords=True, save_data=False, plot_data=False):
     
     # Reset the microscope and make sure we're at the right ND
     tool_belt.reset_cfm(cxn)

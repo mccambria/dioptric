@@ -18,7 +18,7 @@ import time
 
 import json
 import matplotlib.pyplot as plt
-import numpy
+import labrad
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -227,10 +227,18 @@ def create_figure(file_name, folder_name='E:/Shared drives/Kolkowitz Lab Group/n
     return fig
 
 
-    # %%
+# %% Mains
 
-def main(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
+
+def main(nv_sig, x_range, y_range, num_steps, apd_indices,
          continuous=False, save_data=True, plot_data=True):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
+                      continuous, save_data, plot_data)
+
+def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
+                  continuous=False, save_data=True, plot_data=True):
 
     # %% Some initial setup
     

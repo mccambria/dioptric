@@ -30,17 +30,32 @@ from random import shuffle
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import json
+import labrad
 
 
 # %% Main
 
 
-def main(cxn, nv_sig, apd_indices,
-         uwave_freq_plus, uwave_freq_minus,
+def main(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
          uwave_power_plus, uwave_power_minus,
-         uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
-         num_steps, num_reps, num_runs,
+         uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+         relaxation_time_range, num_steps, num_reps, num_runs,
          init_read_list):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices,
+                      uwave_freq_plus, uwave_freq_minus,
+                      uwave_power_plus, uwave_power_minus,
+                      uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                      relaxation_time_range, num_steps, num_reps, num_runs,
+                      init_read_list)
+
+
+def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
+                  uwave_power_plus, uwave_power_minus,
+                  uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                  relaxation_time_range, num_steps, num_reps, num_runs,
+                  init_read_list):
 
     tool_belt.reset_cfm(cxn)
 

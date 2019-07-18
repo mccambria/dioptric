@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import time
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
+import labrad
 
 
 # %% Figure functions
@@ -161,8 +162,15 @@ def fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig):
 # %% Main
 
 
-def main(cxn, nv_sig, apd_indices, freq_center, freq_range,
+def main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_runs, uwave_power):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
+                      num_steps, num_runs, uwave_power)
+
+def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
+                  num_steps, num_runs, uwave_power):
 
     # %% Initial calculations and setup
     

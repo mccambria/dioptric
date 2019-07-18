@@ -8,6 +8,7 @@ Created on Thu Apr 11 15:39:23 2019
 @author: mccambria
 """
 
+
 # %% Imports
 
 
@@ -16,13 +17,21 @@ import majorroutines.optimize as optimize
 import numpy
 import os
 import matplotlib.pyplot as plt
+import labrad
 
 
 # %% Main
 
 
-def main(cxn, nv_sig, apd_indices, freq_center, freq_range,
+def main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_runs, uwave_power):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
+                      num_steps, num_runs, uwave_power)
+
+def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
+                  num_steps, num_runs, uwave_power):
 
     # %% Initial calculations and setup
     

@@ -15,6 +15,7 @@ import utils.tool_belt as tool_belt
 import numpy
 import matplotlib.pyplot as plt
 import time
+import labrad
 
 
 # %% Functions
@@ -37,8 +38,15 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(cxn, nv_sig, run_time, readout, apd_indices,
-         name='untitled', continuous=False):
+def main(nv_sig, run_time, readout, apd_indices,
+         continuous=False):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, run_time, readout, apd_indices,
+                  continuous)
+
+def main_with_cxn(cxn, nv_sig, run_time, readout, apd_indices,
+                  continuous=False):
 
     # %% Some initial setup
     

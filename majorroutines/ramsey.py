@@ -31,23 +31,31 @@ import majorroutines.optimize as optimize
 import numpy
 import time
 import matplotlib.pyplot as plt
-#from scipy.optimize import curve_fit
 from random import shuffle
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
+import labrad
 
 
 # %% Main
 
-def main(cxn, nv_sig, apd_indices, uwave_freq, detuning,
+
+def main(nv_sig, apd_indices, uwave_freq, detuning,
          uwave_power, uwave_pi_half_pulse, precession_time_range,
          num_steps, num_reps, num_runs):
 
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
+                      uwave_power, uwave_pi_half_pulse, precession_time_range,
+                      num_steps, num_reps, num_runs)
+
+def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
+                  uwave_power, uwave_pi_half_pulse, precession_time_range,
+                  num_steps, num_reps, num_runs):
+
     tool_belt.reset_cfm(cxn)
 
-#    print(coords)
-
-    # %% Defiene the times to be used in the sequence
+    # %% Define the times to be used in the sequence
 
     # Define some times (in ns)
     # time to intially polarize the nv

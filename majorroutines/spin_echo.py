@@ -21,12 +21,23 @@ import numpy
 import time
 import matplotlib.pyplot as plt
 from random import shuffle
+import labrad
 
 
 # %% Main
 
 def main(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
-         rabi_period, precession_time_range, num_steps, num_reps, num_runs):
+         rabi_period, precession_time_range,
+         num_steps, num_reps, num_runs):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
+                  rabi_period, precession_time_range,
+                  num_steps, num_reps, num_runs)
+
+def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
+                  rabi_period, precession_time_range,
+                  num_steps, num_reps, num_runs):
     
     tool_belt.reset_cfm(cxn)
     

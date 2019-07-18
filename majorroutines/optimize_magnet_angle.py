@@ -102,16 +102,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     # %% Collect the data
     
     nv_sig_copy = copy.deepcopy(nv_sig)
+    pesr = pulsed_resonance.main_with_cxn
     
     for ind in angle_inds:
         
         angle = angles[ind]
         nv_sig_copy['magnet_angle'] = angle
         
-        angle_resonances = pulsed_resonance.main(cxn, nv_sig_copy, apd_indices,
-                                             freq_center, freq_range,
-                                             num_freq_steps, num_freq_runs,
-                                             uwave_power)
+        angle_resonances = pesr(cxn, nv_sig_copy, apd_indices,
+                                freq_center, freq_range,
+                                num_freq_steps, num_freq_runs, uwave_power)
         resonances[ind, :] = angle_resonances
         # Check if all the returned values are truthy (no Nones)
         if all(angle_resonances):
