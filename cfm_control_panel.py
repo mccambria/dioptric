@@ -279,9 +279,9 @@ if __name__ == '__main__':
             # do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
             # do_rabi(nv_sig, apd_indices, 2.8086, 0)
             # do_rabi(nv_sig, apd_indices, 2.9345, 1)
-            do_t1_battery(nv_sig, apd_indices)
+            # do_t1_battery(nv_sig, apd_indices)
             # do_ramsey(nv_sig, apd_indices)
-            # do_spin_echo(nv_sig, apd_indices)
+            do_spin_echo(nv_sig, apd_indices)
             # do_set_drift_from_reference_image(nv_sig, apd_indices)
             # do_test_major_routines(nv_sig, apd_indices)
 

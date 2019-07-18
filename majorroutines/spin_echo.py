@@ -26,7 +26,7 @@ import labrad
 
 # %% Main
 
-def main(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
+def main(nv_sig, apd_indices, uwave_freq, uwave_power,
          rabi_period, precession_time_range,
          num_steps, num_reps, num_runs):
 
