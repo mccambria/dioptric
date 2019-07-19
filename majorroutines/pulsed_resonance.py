@@ -211,6 +211,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                     apd_indices[0], 1]
     
     opti_coords_list = []
+    
+    # %% Get the starting time of the function
+
+    start_timestamp = tool_belt.get_time_stamp()
 
     # %% Collect the data
 
@@ -267,6 +271,37 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             ref_counts[run_ind, step_ind] = sum(ref_gate_counts)
 
         cxn.apd_tagger.stop_tag_stream()
+        
+        # %% Save the data we have incrementally for long measurements
+
+        rawData = {'start_timestamp': start_timestamp,
+                   'nv_sig': nv_sig,
+                   'nv_sig-units': tool_belt.get_nv_sig_units(),
+                   'freq_center': freq_center,
+                   'freq_center-units': 'GHz',
+                   'freq_range': freq_range,
+                   'freq_range-units': 'GHz',
+                   'uwave_pulse_dur': uwave_pulse_dur,
+                   'uwave_pulse_dur-units': 'ns',
+                   'num_steps': num_steps,
+                   'run_ind': run_ind,
+                   'uwave_power': uwave_power,
+                   'uwave_power-units': 'dBm',
+                   'readout': readout,
+                   'readout-units': 'ns',
+                   'opti_coords_list': opti_coords_list,
+                   'opti_coords_list-units': 'V',
+                   'sig_counts': sig_counts.astype(int).tolist(),
+                   'sig_counts-units': 'counts',
+                   'ref_counts': ref_counts.astype(int).tolist(),
+                   'ref_counts-units': 'counts'}
+
+        # This will continuously be the same file path so we will overwrite
+        # the existing file with the latest version
+        file_path = tool_belt.get_file_path(__file__, start_timestamp,
+                                            nv_sig['name'], 'incremental')
+        tool_belt.save_raw_data(rawData, file_path)
+
 
     # %% Process and plot the data
 
