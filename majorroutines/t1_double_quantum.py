@@ -30,42 +30,52 @@ from random import shuffle
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import json
+import labrad
 
 
 # %% Main
 
 
-def main(cxn, nv_sig, apd_indices,
-         uwave_freq_plus, uwave_freq_minus,
+def main(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
          uwave_power_plus, uwave_power_minus,
-         uwave_pi_pulse_plus, uwave_pi_pulse_minus, relaxation_time_range,
-         num_steps, num_reps, num_runs,
+         uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+         relaxation_time_range, num_steps, num_reps, num_runs,
          init_read_list):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices,
+                      uwave_freq_plus, uwave_freq_minus,
+                      uwave_power_plus, uwave_power_minus,
+                      uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                      relaxation_time_range, num_steps, num_reps, num_runs,
+                      init_read_list)
+
+
+def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
+                  uwave_power_plus, uwave_power_minus,
+                  uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                  relaxation_time_range, num_steps, num_reps, num_runs,
+                  init_read_list):
 
     tool_belt.reset_cfm(cxn)
 
 
-    # %% Defiene the times to be used in the sequence
+    # %% Define the times to be used in the sequence
+    
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
-    # Define some times (in ns)
-    # time to intially polarize the nv
-    polarization_time = 3 * 10**3
+    polarization_time = shared_params['polarization_dur']
     # time of illumination during which signal readout occurs
-    signal_time = 3 * 10**3
+    signal_time = polarization_time
     # time of illumination during which reference readout occurs
-    reference_time = 3 * 10**3
-    # time between polarization and experiment without illumination
-    pre_uwave_exp_wait_time = 1 * 10**3
-    # time between the end of the experiment and signal without illumination
-    post_uwave_exp_wait_time = 1 * 10**3
+    reference_time = polarization_time
+    pre_uwave_exp_wait_time = shared_params['post_polarization_wait_dur']
+    post_uwave_exp_wait_time = shared_params['pre_readout_wait_dur']
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    # the amount of time the AOM delays behind the gate and rf
-    aom_delay_time = 1000
-    # the amount of time the rf delays behind the AOM and rf
-    rf_delay_time = 40
-    # the length of time the gate will be open to count photons
-    gate_time = 320
+    aom_delay_time = shared_params['532_aom_delay']
+    rf_delay_time = shared_params['uwave_delay']
+    gate_time = shared_params['pulsed_readout_dur']
 
     # %% Unpack the initial and read state
 
@@ -184,7 +194,7 @@ def main(cxn, nv_sig, apd_indices,
 
 
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
-
+    return
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
@@ -204,7 +214,7 @@ def main(cxn, nv_sig, apd_indices,
             break
 
         # Optimize
-        opti_coords = optimize.main(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves

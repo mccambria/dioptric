@@ -75,15 +75,10 @@ def get_seq(pulser_wiring, args):
     # With future protocols--ramsey, spin echo, etc--it will be easy to use
     # this format of sequence building and just change this section of the file
 
-    if (tau_shrt % 2 != 0) or (tau_long % 2 != 0):
-        raise ValueError('The passed taus must be divisible by 2.')
-    tau_shrt_half = tau_shrt // 2
-    tau_long_half = tau_long // 2
-
-    uwave_experiment_shrt = pi_on_2_pulse + tau_shrt_half + pi_pulse + \
-                            tau_shrt_half + pi_on_2_pulse
-    uwave_experiment_long = pi_on_2_pulse + tau_long_half + pi_pulse + \
-                            tau_long_half + pi_on_2_pulse
+    uwave_experiment_shrt = pi_on_2_pulse + tau_shrt + pi_pulse + \
+                            tau_shrt + pi_on_2_pulse
+    uwave_experiment_long = pi_on_2_pulse + tau_long + pi_pulse + \
+                            tau_long + pi_on_2_pulse
 
     # %% Couple calculated values
 
@@ -146,13 +141,13 @@ def get_seq(pulser_wiring, args):
         sig_to_ref_wait_time + reference_time + rf_delay_time
 
     train = [(pre_duration, LOW)]
-    train.extend([(pi_on_2_pulse, HIGH), (tau_shrt_half, LOW)])
+    train.extend([(pi_on_2_pulse, HIGH), (tau_shrt, LOW)])
     train.extend([(pi_pulse, HIGH)])
-    train.extend([(tau_shrt_half, LOW), (pi_on_2_pulse, HIGH)])
+    train.extend([(tau_shrt, LOW), (pi_on_2_pulse, HIGH)])
     train.extend([(mid_duration, LOW)])
-    train.extend([(pi_on_2_pulse, HIGH), (tau_long_half, LOW)])
+    train.extend([(pi_on_2_pulse, HIGH), (tau_long, LOW)])
     train.extend([(pi_pulse, HIGH)])
-    train.extend([(tau_long_half, LOW), (pi_on_2_pulse, HIGH)])
+    train.extend([(tau_long, LOW), (pi_on_2_pulse, HIGH)])
     train.extend([(post_duration, LOW)])
     seq.setDigital(pulser_do_uwave, train)
 

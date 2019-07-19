@@ -21,41 +21,43 @@ import numpy
 import time
 import matplotlib.pyplot as plt
 from random import shuffle
+import labrad
 
 
 # %% Main
 
-def main(cxn, nv_sig, nd_filter, apd_indices,
-         uwave_freq, uwave_power, rabi_period, precession_time_range,
-         num_steps, num_reps, num_runs, 
-         name='untitled'):
+def main(nv_sig, apd_indices, uwave_freq, uwave_power,
+         rabi_period, precession_time_range,
+         num_steps, num_reps, num_runs):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
+                  rabi_period, precession_time_range,
+                  num_steps, num_reps, num_runs)
+
+def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
+                  rabi_period, precession_time_range,
+                  num_steps, num_reps, num_runs):
     
     tool_belt.reset_cfm(cxn)
     
-#    print(coords)
-    
-    # %% Defiene the times to be used in the sequence
+    # %% Define the times to be used in the sequence
 
-    # Define some times (in ns)
-    # time to intially polarize the nv
-    polarization_time = 3 * 10**3
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+
+    polarization_time = shared_params['polarization_dur']
     # time of illumination during which signal readout occurs
-    signal_time = 3 * 10**3
+    signal_time = polarization_time
     # time of illumination during which reference readout occurs
-    reference_time = 3 * 10**3
-    # time between polarization and experiment without illumination
-    pre_uwave_exp_wait_time = 1 * 10**3
-    # time between the end of the experiment and signal without illumination
-    post_uwave_exp_wait_time = 1 * 10**3
+    reference_time = polarization_time
+    pre_uwave_exp_wait_time = shared_params['post_polarization_wait_dur']
+    post_uwave_exp_wait_time = shared_params['pre_readout_wait_dur']
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    # the amount of time the AOM delays behind the gate and rf
-    aom_delay_time = 750
-    # the amount of time the rf delays behind the AOM and rf
-    rf_delay_time = 40
-    # the length of time the gate will be open to count photons
-    gate_time = 320
-    
+    aom_delay_time = shared_params['532_aom_delay']
+    rf_delay_time = shared_params['uwave_delay']
+    gate_time = shared_params['pulsed_readout_dur']
+
     # Get pulse frequencies
     uwave_pi_pulse = round(rabi_period / 2)
     uwave_pi_on_2_pulse = round(rabi_period / 4)
@@ -71,10 +73,6 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     
     taus = numpy.linspace(min_precession_time, max_precession_time,
                           num=num_steps, dtype=numpy.int32)
-    taus_mod_2 = taus % 2
-    if numpy.any(taus_mod_2):
-        print('The passed taus must be divisible by 2.')
-        return
      
     # %% Fix the length of the sequence to account for odd amount of elements
      
@@ -152,7 +150,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             break
         
         # Optimize
-        opti_coords = optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
         
         # Set up the microwaves - just use the Tektronix
@@ -246,7 +244,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     ax = axes_pack[0]
     ax.plot(taus / 10**3, avg_sig_counts, 'r-', label = 'signal')
     ax.plot(taus / 10**3, avg_ref_counts, 'g-', label = 'reference')
-    ax.set_xlabel('Precession time (us)')
+    ax.set_xlabel('\u03C4 (us)')  # tau = \u03C4 in unicode
     ax.set_ylabel('Counts')
     ax.legend()
 
@@ -270,13 +268,10 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
     
     raw_data = {'timestamp': timestamp,
             'timeElapsed': timeElapsed,
-            'name': name,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'nv_sig-format': tool_belt.get_nv_sig_format(),
             'opti_coords_list': opti_coords_list,
             'opti_coords_list-units': 'V',
-            'nd_filter': nd_filter,
             'gate_time': gate_time,
             'gate_time-units': 'ns',
             'uwave_freq': uwave_freq,
@@ -287,7 +282,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'rabi_period-units': 'ns',
             'uwave_pi_pulse': uwave_pi_pulse,
             'uwave_pi_pulse-units': 'ns',
-            'uwave_pi_on_2_pulse': rabi_period,
+            'uwave_pi_on_2_pulse': uwave_pi_on_2_pulse,
             'uwave_pi_on_2_pulse-units': 'ns',
             'precession_time_range': precession_time_range,
             'precession_time_range-units': 'ns',
@@ -301,7 +296,7 @@ def main(cxn, nv_sig, nd_filter, apd_indices,
             'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
             'norm_avg_sig-units': 'arb'}
     
-    file_path = tool_belt.get_file_path(__file__, timestamp, name)
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
     

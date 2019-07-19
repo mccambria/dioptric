@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
 import copy
+import labrad
 
 
 # %% Define a few parameters
@@ -92,7 +93,7 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
     
 def stationary_count_lite(cxn, coords, shared_params, apd_indices):
     
-    readout = shared_params['continuous_readout_ns']
+    readout = shared_params['continuous_readout_dur']
     
     #  Some initial calculations
     total_num_samples = 2
@@ -127,8 +128,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     axis_center = coords[axis_ind]
     x_center, y_center, z_center = coords
     
-    scan_range_nm = 3 * shared_params['airy_radius_nm']
-    readout = shared_params['continuous_readout_ns']
+    scan_range_nm = 3 * shared_params['airy_radius']
+    readout = shared_params['continuous_readout_dur']
     
     tool_belt.init_safe_stop()
     
@@ -137,7 +138,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         
         scan_range = scan_range_nm / shared_params['galvo_nm_per_volt']
         
-        seq_params = [shared_params['galvo_delay_ns'],
+        seq_params = [shared_params['galvo_delay'],
                       readout,
                       apd_indices[0]]
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
@@ -168,7 +169,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         cxn.galvo.write(x_center, y_center)
     
         # Set up the stream
-        seq_params = [shared_params['piezo_delay_ns'],
+        seq_params = [shared_params['piezo_delay'],
                       readout,
                       apd_indices[0]]
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
@@ -274,7 +275,12 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
 # %% User functions
     
 
-def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
+def optimize_list(nv_sig_list, nd_filter, apd_indices):
+
+    with labrad.connect() as cxn:
+        optimize_list_with_cxn(cxn, nv_sig_list, nd_filter, apd_indices)
+
+def optimize_list_with_cxn(cxn, nv_sig_list, nd_filter, apd_indices):
     
     tool_belt.init_safe_stop()
     
@@ -287,7 +293,7 @@ def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
             break
         
         nv_sig = nv_sig_list[ind]
-        opti_coords = main(cxn, nv_sig, nd_filter, apd_indices,
+        opti_coords = main_with_cxn(cxn, nv_sig, nd_filter, apd_indices,
                            set_to_opti_coords=False)
         if opti_coords is not None:
             opti_coords_list.append('[{:.3f}, {:.3f}, {:.1f}],'.format(*opti_coords))
@@ -301,8 +307,15 @@ def optimize_list(cxn, nv_sig_list, nd_filter, apd_indices):
 # %% Main
 
 
-def main(cxn, nv_sig, apd_indices,
+def main(nv_sig, apd_indices,
          set_to_opti_coords=True, save_data=False, plot_data=False):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices,
+                      set_to_opti_coords, save_data, plot_data)
+
+def main_with_cxn(cxn, nv_sig, apd_indices,
+                  set_to_opti_coords=True, save_data=False, plot_data=False):
     
     # Reset the microscope and make sure we're at the right ND
     tool_belt.reset_cfm(cxn)
@@ -439,7 +452,7 @@ def main(cxn, nv_sig, apd_indices,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
                    'num_steps': num_steps,
-                   'readout': shared_params['continuous_readout_ns'],
+                   'readout': shared_params['continuous_readout_dur'],
                    'readout-units': 'ns',
                    'opti_coords': opti_coords,
                    'opti_coords-units': 'V',

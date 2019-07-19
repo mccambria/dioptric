@@ -291,11 +291,47 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
                 amp_1 * numpy.cos(two_pi * freq_1 * t) +
                 amp_2 * numpy.cos(two_pi * freq_2 * t) +
                 amp_3 * numpy.cos(two_pi * freq_3 * t))
-    
+
+
 # %% LabRAD utils
 
 
 def get_shared_parameters_dict(cxn):
+    """Get the shared parameters from the registry. These parameters are not
+    specific to any experiment, but are instead used across experiments. They
+    may depend on the current alignment (eg aom_delay) or they may just be
+    parameters that are referenced by many sequences (eg polarization_dur).
+    Generally, they should need to be updated infrequently, unlike the
+    shared parameters defined in cfm_control_panel, which change more
+    frequently (eg apd_indices).
+    
+    We currently have the parameters listed below. All durations (ending in
+    _delay or _dur) have units of ns.
+        airy_radius: Standard deviation of the Gaussian approximation to
+            the Airy disk in nm
+        polarization_dur: Duration to illuminate for polarization
+        post_polarization_wait_dur: Duration to wait after polarization to
+            allow the NV metastable state to decay
+        pre_readout_wait_dur: Duration to wait before readout - functionally
+            I think this is just for symmetry with post_polarization_wait_dur
+        532_aom_delay: Delay between signal to the 532 nm laser AOM and the
+            AOM actually opening
+        uwave_delay: Delay between signal to uwave switch and the switch
+            actually opening - should probably be different for different
+            signal generators...
+        pulsed_readout_dur: Readout duration if we're looking to determine
+            the state directly dorm fluorescence
+        continuous_readout_dur: Readout duration if we're just looking to
+            see how bright something is
+        galvo_delay: Delay between signal to galvo and the galvo settling to
+            its new position
+        galvo_nm_per_volt: Conversion factor between galvo voltage and xy
+            position
+        piezo_delay: Delay between signal to objective piezo and the piezo
+            settling to its new position
+        piezo_nm_per_volt: Conversion factor between objective piezo voltage
+            and z position
+    """
 
     # Get what we need out of the registry
     cxn.registry.cd(['', 'SharedParameters'])
