@@ -41,6 +41,9 @@ def on_589(cxn):
 def on_638(cxn):
     cxn.pulse_streamer.constant(4)
     
+def on_638_589(cxn):
+    cxn.pulse_streamer.constant(6)
+    
 def off(cxn):
     cxn.pulse_streamer.constant(1)
     
@@ -55,12 +58,13 @@ if __name__ == '__main__':
     try:
         
         with labrad.connect() as cxn:
-            main(cxn, 500, 500, 0, 0, 1)
+#            main(cxn, 500, 500, 0, 0, 1)
             
+            on_638_589(cxn)
             
 #            on_589(cxn)
             
-#            on_638(cxn)
+            #on_638(cxn)
             
 #            off(cxn)
         
