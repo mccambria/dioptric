@@ -64,7 +64,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # useful for us here.
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
-    ref_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
+    ref_counts = numpy.empty([num_runs, num_steps])
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
         

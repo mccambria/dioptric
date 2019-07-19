@@ -109,8 +109,6 @@ class PulseStreamer(LabradServer):
             self.output_state = OutputState([], 1, 0)
         elif output_state == 5:  # 589 nm AOM on at 1.0 V
             self.output_state = OutputState([], 0, 1)
-        elif output_state == 6:  # 589 nm and 638nm AOM on at 1.0 V
-            self.output_state = OutputState([], 1, 1)
 
     @setting(0, seq_file='s', num_repeat='i',
              args='*?', output_state='i', returns='*?')

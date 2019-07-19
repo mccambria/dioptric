@@ -52,8 +52,8 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
 
-#    scan_range = 0.2
-#    num_steps = 60
+    scan_range = 0.2
+    num_steps = 60
 
     scan_range = 0.10
     num_steps = 60
@@ -100,8 +100,8 @@ def do_pulsed_resonance(nv_sig, apd_indices,
                         freq_center=2.87, freq_range=0.2):
 
 #    num_steps = 51
-#    num_steps = 76
-    num_steps = 101
+    num_steps = 76
+#    num_steps = 101
 #    num_reps = 10**5
     num_reps = 5 * 10**4
     num_runs = 2
@@ -142,30 +142,23 @@ def do_rabi(nv_sig, apd_indices,
     rabi.main(nv_sig, apd_indices, uwave_freq, uwave_power, uwave_time_range,
               do_uwave_gate_number, num_steps, num_reps, num_runs)
 
-def do_t1_battery(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
-                     uwave_pi_pulse_plus, uwave_pi_pulse_minus,):
+def do_t1_battery(nv_sig, apd_indices):
 
     uwave_power = 9
     num_runs = 120
 
     # Tektronix controls plus, Berkeley controls minus
-#    uwave_freq_plus = 2.8086
-#    uwave_pi_pulse_plus = 65
-#    uwave_freq_minus = 2.9345
-#    uwave_pi_pulse_minus = 105
+    uwave_freq_plus = 2.8086
+    uwave_pi_pulse_plus = 65
+    uwave_freq_minus = 2.9345
+    uwave_pi_pulse_minus = 105
 
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-#    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**6], 11, 5000],
-#                                [[1,1], [0, 15*10**6], 11, 5000],
-#                                [[0,1], [0, 15*10**6], 11, 5000],
-#                                [[0,0], [0, 15*10**6], 11, 5000]])
-    
-    # With the increased count rate, we should be able to half the num_reps and still get good data
-    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**6], 11, 2500],
-                                [[1,1], [0, 15*10**6], 11, 2500],
-                                [[0,1], [0, 15*10**6], 11, 2500],
-                                [[0,0], [0, 15*10**6], 11, 2500]])
+    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**6], 11, 5000],
+                                [[1,1], [0, 15*10**6], 11, 5000],
+                                [[0,1], [0, 15*10**6], 11, 5000],
+                                [[0,0], [0, 15*10**6], 11, 5000]])
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -267,14 +260,14 @@ if __name__ == '__main__':
 
     sample_name = 'johnson1'
 
-    nv0_2019_06_27 = {'coords': [-0.148, -0.337, 38.74], 'nd_filter': 'nd_0.5',
+    nv0_2019_06_27 = {'coords': [-0.169, -0.306, 38.74], 'nd_filter': 'nd_0.5',
                       'expected_count_rate': 45, 'magnet_angle': 41.8,
                       'name': sample_name}
     
     nv0_2019_06_27_off_axis = copy.deepcopy(nv0_2019_06_27)
     nv0_2019_06_27_off_axis['magnet_angle'] = 99.0  # Splitting of 125 MHz
 
-    nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]
+    nv_sig_list = [nv0_2019_06_27_off_axis]
 
     # %% Functions to run
 
@@ -283,9 +276,7 @@ if __name__ == '__main__':
         # Operations that don't need an NV
         # set_xyz_zero()
         # set_xyz([0.229, 0.163, 50.0])
-        # tool_belt.set_drift([-0.12, 0.10, 0.0]) # This is the second nv we found, and is a good check if we're still looking at the original
-        # tool_belt.set_drift([0.0, 0.0, 0.0])
-        
+#         tool_belt.set_drift([0.023, -0.004, -3.22])
 #         drift = tool_belt.get_drift()
         # set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
 
@@ -294,19 +285,14 @@ if __name__ == '__main__':
         # do_sample_nvs(nv_sig_list, apd_indices)
 
         # Routines that expect single NVs
-        for ind in range(len(nv_sig_list)):
-            nv_sig = nv_sig_list[ind]
-            if ind == 0:
-                do_t1_battery(nv_sig, apd_indices, 2.8127, 2.9408, 64, 105)
-            if ind == 1:
-                do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
+        for nv_sig in nv_sig_list:
 #            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.3)
+            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
 #            do_rabi(nv_sig, apd_indices, 2.8151, 0)  # 128.0
 #            do_rabi(nv_sig, apd_indices, 2.9414, 1)  # 209.7
