@@ -39,21 +39,24 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(nv_sig, run_time, readout, apd_indices,
-         continuous=False):
+def main(nv_sig, run_time, apd_indices, continuous=False):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, run_time, readout, apd_indices,
-                  continuous)
+        main_with_cxn(cxn, nv_sig, run_time, apd_indices, continuous)
 
-def main_with_cxn(cxn, nv_sig, run_time, readout, apd_indices,
-                  continuous=False):
+def main_with_cxn(cxn, nv_sig, run_time, apd_indices, continuous=False):
 
     # %% Some initial setup
     
     tool_belt.reset_cfm(cxn)
 
+    shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
+    readout = shared_parameters['continuous_readout_dur']
     readout_sec = readout / 10**9
+
+    # %% Optimize
+
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
     # %% Load the PulseStreamer
 
@@ -62,10 +65,6 @@ def main_with_cxn(cxn, nv_sig, run_time, readout, apd_indices,
     period = ret_vals[0]
 
     total_num_samples = int(run_time / period)
-
-    # %% Optimize
-
-    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
     # %% Set up the APD
 

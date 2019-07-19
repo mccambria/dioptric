@@ -28,6 +28,12 @@ HIGH = 1
 # %% Functions
 
 
+def constant(output_state):
+    
+    pulser = Pulser('128.104.160.111')
+    pulser.constant(output_state)
+
+
 # %% Main
 
 
@@ -69,4 +75,5 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     # Run the script
-    main()
+#    main()
+    constant(OutputState([], 0.0, 1.0))

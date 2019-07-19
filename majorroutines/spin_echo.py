@@ -43,7 +43,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     
     # %% Define the times to be used in the sequence
 
-    shared_params = tool_belt.get_shared_parameters_dict()
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     polarization_time = shared_params['polarization_dur']
     # time of illumination during which signal readout occurs
@@ -54,7 +54,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     post_uwave_exp_wait_time = shared_params['pre_readout_wait_dur']
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    aom_delay_time = shared_params['aom_delay']
+    aom_delay_time = shared_params['532_aom_delay']
     rf_delay_time = shared_params['uwave_delay']
     gate_time = shared_params['pulsed_readout_dur']
 
@@ -73,10 +73,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     
     taus = numpy.linspace(min_precession_time, max_precession_time,
                           num=num_steps, dtype=numpy.int32)
-    taus_mod_2 = taus % 2
-    if numpy.any(taus_mod_2):
-        print('The passed taus must be divisible by 2.')
-        return
      
     # %% Fix the length of the sequence to account for odd amount of elements
      
@@ -248,7 +244,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     ax = axes_pack[0]
     ax.plot(taus / 10**3, avg_sig_counts, 'r-', label = 'signal')
     ax.plot(taus / 10**3, avg_ref_counts, 'g-', label = 'reference')
-    ax.set_xlabel('Precession time (us)')
+    ax.set_xlabel('\u03C4 (us)')  # tau = \u03C4 in unicode
     ax.set_ylabel('Counts')
     ax.legend()
 
@@ -274,7 +270,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
             'timeElapsed': timeElapsed,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'nv_sig-format': tool_belt.get_nv_sig_format(),
             'opti_coords_list': opti_coords_list,
             'opti_coords_list-units': 'V',
             'gate_time': gate_time,

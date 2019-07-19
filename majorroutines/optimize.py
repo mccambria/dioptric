@@ -93,7 +93,7 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
     
 def stationary_count_lite(cxn, coords, shared_params, apd_indices):
     
-    readout = shared_params['continuous_readout_ns']
+    readout = shared_params['continuous_readout_dur']
     
     #  Some initial calculations
     total_num_samples = 2
@@ -128,8 +128,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     axis_center = coords[axis_ind]
     x_center, y_center, z_center = coords
     
-    scan_range_nm = 3 * shared_params['airy_radius_nm']
-    readout = shared_params['continuous_readout_ns']
+    scan_range_nm = 3 * shared_params['airy_radius']
+    readout = shared_params['continuous_readout_dur']
     
     tool_belt.init_safe_stop()
     
@@ -138,7 +138,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         
         scan_range = scan_range_nm / shared_params['galvo_nm_per_volt']
         
-        seq_params = [shared_params['galvo_delay_ns'],
+        seq_params = [shared_params['galvo_delay'],
                       readout,
                       apd_indices[0]]
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
@@ -169,7 +169,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         cxn.galvo.write(x_center, y_center)
     
         # Set up the stream
-        seq_params = [shared_params['piezo_delay_ns'],
+        seq_params = [shared_params['piezo_delay'],
                       readout,
                       apd_indices[0]]
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
@@ -452,7 +452,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
                    'num_steps': num_steps,
-                   'readout': shared_params['continuous_readout_ns'],
+                   'readout': shared_params['continuous_readout_dur'],
                    'readout-units': 'ns',
                    'opti_coords': opti_coords,
                    'opti_coords-units': 'V',

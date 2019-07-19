@@ -245,7 +245,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
     tool_belt.reset_cfm(cxn)
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    readout = shared_params['continuous_readout_ns']
+    readout = shared_params['continuous_readout_dur']
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()

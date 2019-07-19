@@ -75,19 +75,23 @@ def AbsCosNoOff(angle, amp, phase):
 
 
 def main(nv_sig, apd_indices, angle_range, num_angle_steps,
-         freq_center, freq_range, num_freq_steps, num_freq_runs, uwave_power):
+         freq_center, freq_range,
+         num_freq_steps, num_freq_reps, num_freq_runs,
+         uwave_power, uwave_pulse_dur):
     """When you run the file, we'll call into main, which should contain the
     body of the routine.
     """
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices,
-              angle_range, num_angle_steps, freq_center, freq_range,
-              num_freq_steps, num_freq_runs, uwave_power)
+        main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
+                      freq_center, freq_range,
+                      num_freq_steps, num_freq_reps, num_freq_runs,
+                      uwave_power, uwave_pulse_dur)
     
-def main_with_cxn(cxn, nv_sig, apd_indices,
-              angle_range, num_angle_steps, freq_center, freq_range,
-              num_freq_steps, num_freq_runs, uwave_power):
+def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
+                  freq_center, freq_range,
+                  num_freq_steps, num_freq_reps, num_freq_runs,
+                  uwave_power, uwave_pulse_dur):
 
     # %% Initial set up here
     
@@ -111,11 +115,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         
         angle_resonances = pesr(cxn, nv_sig_copy, apd_indices,
                                 freq_center, freq_range,
-                                num_freq_steps, num_freq_runs, uwave_power)
+                                num_freq_steps, num_freq_reps, num_freq_runs,
+                                uwave_power, uwave_pulse_dur)
         resonances[ind, :] = angle_resonances
         # Check if all the returned values are truthy (no Nones)
         if all(angle_resonances):
-            splittings[ind] = angle_resonances[1] - angle_resonances[0]
+            splittings[ind] = (angle_resonances[1] - angle_resonances[0]) * 1000
             
     # %% Analyze the data
     
@@ -157,7 +162,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                 'resonances': resonances.tolist(),
                 'resonances-units': 'GHz',
                 'splittings': splittings.tolist(),
-                'splittings-units': 'GHz',
+                'splittings-units': 'MHz',
                 'opti_angle': opti_angle,
                 'opti_angle-units': 'deg'}
 

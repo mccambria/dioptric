@@ -48,8 +48,7 @@ def main(nv_sig, apd_indices):
     # stationary_count
     print('\nTesting stationary_count...\n')
     run_time = 5
-    readout = 100 * 10**6
-    stationary_count.main(nv_sig, run_time, readout, apd_indices)
+    stationary_count.main(nv_sig, run_time, apd_indices)
     
     # resonance
     print('\nTesting resonance...\n')
@@ -66,10 +65,13 @@ def main(nv_sig, apd_indices):
     freq_center = 2.87
     freq_range = 0.05
     num_steps = 5
+    num_reps = 10
     num_runs = 2
     uwave_power = -13.0
+    uwave_pulse_dur = 70
     pulsed_resonance.main(nv_sig, apd_indices, freq_center,
-                          freq_range, num_steps, num_runs, uwave_power)
+                          freq_range, num_steps, num_reps, num_runs,
+                          uwave_power, uwave_pulse_dur)
     
     # rabi
     print('\nTesting rabi...\n')
@@ -104,57 +106,49 @@ def main(nv_sig, apd_indices):
                  relaxation_time_range, num_steps, num_reps, num_runs, 
                  init_read_list)
     
-    # t1_double_quantum
-    print('\nTesting t1_double_quantum...\n')
-    uwave_freq_plus = 2.86
-    uwave_freq_minus = 2.88
-    uwave_power = 9
-    uwave_pi_pulse_plus = 65
-    uwave_pi_pulse_minus = 75
-    relaxation_time_range = [0, 10*10**3]
-    num_steps = 10
-    num_reps = 10
-    num_runs = 2
-    init_read_list = [-1, +1]
-    t1_double_quantum.main(nv_sig, apd_indices,
-                 uwave_freq_plus, uwave_freq_minus,
-                 uwave_power, uwave_power,
-                 uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                 relaxation_time_range, num_steps, num_reps, num_runs, 
-                 init_read_list)
-    
     # ramsey
-    print('\nTesting t1_double_quantum...\n')
-    uwave_freq_plus = 2.86
-    uwave_freq_minus = 2.88
+    print('\nTesting ramsey...\n')
     uwave_power = 9
-    uwave_pi_pulse_plus = 65
-    uwave_pi_pulse_minus = 75
-    relaxation_time_range = [0, 10*10**3]
-    num_steps = 10
+    uwave_freq = 2.8086
+    detuning = 2.5  # MHz
+    uwave_pi_half_pulse = 33
+    precession_time_range = [0, 4 * 10**3]
+    num_steps = 6
     num_reps = 10
     num_runs = 2
-    init_read_list = [-1, +1]
     ramsey.main(nv_sig, apd_indices,
-                 uwave_freq_plus, uwave_freq_minus,
-                 uwave_power, uwave_power,
-                 uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                 relaxation_time_range, num_steps, num_reps, num_runs, 
-                 init_read_list)
+                uwave_freq, detuning, uwave_power, uwave_pi_half_pulse,
+                precession_time_range, num_steps, num_reps, num_runs)
     
     # spin_echo
+    print('\nTesting spin_echo...\n')
+    uwave_power = 9
+    uwave_freq = 2.8086
+    rabi_period = 123
+    precession_time_range = [0, 4 * 10**3]
+    num_steps = 6
+    num_reps = 10
+    num_runs = 2
+    spin_echo.main(nv_sig, apd_indices,
+                   uwave_freq, uwave_power, rabi_period,
+                   precession_time_range, num_steps, num_reps, num_runs)
+    
+    # optimize_magnet_angle
     print('\nTesting optimize_magnet_angle...\n')
-    angle_range = [0, 45]
+    angle_range = [45, 65]
     num_angle_steps = 2
     freq_center = 2.87
-    freq_range = 0.2
+    freq_range = 0.05
     num_freq_steps = 3
+    num_freq_reps = 10
     num_freq_runs = 1
     uwave_power = 9.0
-    spin_echo.main(nv_sig, apd_indices,
-                           angle_range, num_angle_steps,
-                           freq_center, freq_range,
-                           num_freq_steps, num_freq_runs, uwave_power)
+    uwave_pulse_dur = 70
+    optimize_magnet_angle.main(nv_sig, apd_indices,
+                               angle_range, num_angle_steps,
+                               freq_center, freq_range,
+                               num_freq_steps, num_freq_reps, num_freq_runs,
+                               uwave_power, uwave_pulse_dur)
     
     # Success!
     print('\nNo crashes went unhandled. Success!')

@@ -39,9 +39,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
-    readout = 100 * 10**6  # 0.1 s
+    shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
+    readout = shared_parameters['continuous_readout_dur']
     readout_sec = readout / (10**9)
-    uwave_switch_delay = 1 * 10**6  # 1 ms to open the gate
+    uwave_switch_delay = 1 * 10**6  # 1 ms to switch frequencies
     sequence_args = [readout, uwave_switch_delay, apd_indices[0]]
 
     file_name = os.path.basename(__file__)

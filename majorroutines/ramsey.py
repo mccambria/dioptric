@@ -57,7 +57,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
 
     # %% Define the times to be used in the sequence
 
-    shared_params = tool_belt.get_shared_parameters_dict()
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     polarization_time = shared_params['polarization_dur']
     # time of illumination during which signal readout occurs
@@ -68,7 +68,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
     post_uwave_exp_wait_time = shared_params['pre_readout_wait_dur']
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    aom_delay_time = shared_params['aom_delay']
+    aom_delay_time = shared_params['532_aom_delay']
     rf_delay_time = shared_params['uwave_delay']
     gate_time = shared_params['pulsed_readout_dur']
 
@@ -351,8 +351,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
     # Save the fft figure
     tool_belt.save_figure(fig_fft, file_path + '_fft')
 
-    freq_step = freqs[1] - freqs[0]
-
     # Guess the peaks in the fft. There are parameters that can be used to make
     # this more efficient
     freq_guesses_ind = find_peaks(transform_mag[1:]
@@ -365,7 +363,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
 
     # Check to see if there are three peaks. If not, try the detuning passed in
     if len(freq_guesses_ind[0]) != 3:
-        print('Number of frequencies found: {}'.fromat(len(freq_guesses_ind[0])))
+        print('Number of frequencies found: {}'.format(len(freq_guesses_ind[0])))
 #        detuning = 3 # MHz
 
         FreqParams[0] = detuning - 2.2

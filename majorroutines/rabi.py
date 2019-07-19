@@ -54,14 +54,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     elif do_uwave_gate == 1:
         sig_gen = 'signal_generator_bnc835'
 
-    # Define some times (in ns)
-    polarization_time = 3 * 10**3
-    reference_time = 1 * 10**3
-    signal_wait_time = 1 * 10**3
-    reference_wait_time = 2 * 10**3
-    background_wait_time = 1 * 10**3
-    aom_delay_time = 1000
-    gate_time = 320
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+
+    polarization_time = shared_params['polarization_dur']
+    # time of illumination during which reference readout occurs
+    signal_wait_time = shared_params['post_polarization_wait_dur']
+    reference_time = signal_wait_time  # not sure what this is
+    background_wait_time = signal_wait_time  # not sure what this is
+    reference_wait_time = 2 * signal_wait_time  # not sure what this is
+    aom_delay_time = shared_params['532_aom_delay']
+    gate_time = shared_params['pulsed_readout_dur']
 
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s

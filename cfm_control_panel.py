@@ -15,6 +15,7 @@ Created on Sun Nov 25 14:00:28 2018
 
 import labrad
 import numpy
+import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
 import majorroutines.optimize as optimize
@@ -98,28 +99,36 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 def do_pulsed_resonance(nv_sig, apd_indices,
                         freq_center=2.87, freq_range=0.2):
 
-    num_steps = 51
-    num_runs = 1
+#    num_steps = 51
+    num_steps = 76
+#    num_steps = 101
+#    num_reps = 10**5
+    num_reps = 5 * 10**4
+    num_runs = 2
     # 9.0 dBm is the highest reasonable value, accounting for saturation
     uwave_power = 9.0
+    uwave_pulse_dur = 70
 
-    pulsed_resonance.main(nv_sig, apd_indices, freq_center,
-                          freq_range, num_steps, num_runs, uwave_power)
+    pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
+                          num_steps, num_reps, num_runs,
+                          uwave_power, uwave_pulse_dur)
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
 
     angle_range = [0, 150]
     num_angle_steps = 6
     freq_center = 2.87
-    freq_range = 0.2
-    num_freq_steps = 51
+    freq_range = 0.3
+    num_freq_steps = 76
+    num_freq_reps = 5 * 10**4
     num_freq_runs = 1
     uwave_power = 9.0
+    uwave_pulse_dur = 70
 
     optimize_magnet_angle.main(nv_sig, apd_indices,
-                               angle_range, num_angle_steps,
-                               freq_center, freq_range,
-                               num_freq_steps, num_freq_runs, uwave_power)
+                       angle_range, num_angle_steps, freq_center, freq_range,
+                       num_freq_steps, num_freq_reps, num_freq_runs,
+                       uwave_power, uwave_pulse_dur)
 
 def do_rabi(nv_sig, apd_indices,
             uwave_freq, do_uwave_gate_number):
@@ -185,13 +194,18 @@ def do_ramsey(nv_sig, apd_indices):
 def do_spin_echo(nv_sig, apd_indices):
 
     uwave_power = 9
-    uwave_freq = 2.8589
-    rabi_period = 144.4
-    precession_time_range = [0, 200 * 10**3]
+    uwave_freq = 2.8151
+    rabi_period = 128.0
+#    precession_time_range = [0, 200 * 10**3]
+    precession_time_range = [0, 100 * 10**3]
+#    precession_time_range = [0, 50 * 10**3]
 
-    num_steps = 21
-    num_reps = 5 * 10**5
-    num_runs = 2
+    num_steps = 101
+    num_reps = 1 * 10**5
+    num_runs = 35
+#    num_steps = 51
+#    num_reps = 10**5
+#    num_runs = 1
 
     spin_echo.main(nv_sig, apd_indices,
                    uwave_freq, uwave_power, rabi_period,
@@ -241,7 +255,7 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-    # apd_indices = [0]
+#    apd_indices = [0]
     apd_indices = [0, 1]
 
     sample_name = 'johnson1'
@@ -249,8 +263,11 @@ if __name__ == '__main__':
     nv0_2019_06_27 = {'coords': [-0.169, -0.306, 38.74], 'nd_filter': 'nd_0.5',
                       'expected_count_rate': 45, 'magnet_angle': 41.8,
                       'name': sample_name}
+    
+    nv0_2019_06_27_off_axis = copy.deepcopy(nv0_2019_06_27)
+    nv0_2019_06_27_off_axis['magnet_angle'] = 99.0  # Splitting of 125 MHz
 
-    nv_sig_list = [nv0_2019_06_27]
+    nv_sig_list = [nv0_2019_06_27_off_axis]
 
     # %% Functions to run
 
@@ -269,21 +286,21 @@ if __name__ == '__main__':
 
         # Routines that expect single NVs
         for nv_sig in nv_sig_list:
-            # do_image_sample(nv_sig, apd_indices)
-            # do_optimize(nv_sig, apd_indices)
-            # do_stationary_count(nv_sig, apd_indices)
-            # do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
-            # do_optimize_magnet_angle(nv_sig, apd_indices)
-            # do_pulsed_resonance(nv_sig, apd_indices)
-            # do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.810, freq_range=0.06)
-            # do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
-            # do_rabi(nv_sig, apd_indices, 2.8086, 0)
-            # do_rabi(nv_sig, apd_indices, 2.9345, 1)
-            # do_t1_battery(nv_sig, apd_indices)
-            # do_ramsey(nv_sig, apd_indices)
+#            do_image_sample(nv_sig, apd_indices)
+#            do_optimize(nv_sig, apd_indices)
+#            do_stationary_count(nv_sig, apd_indices)
+#            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
+#            do_optimize_magnet_angle(nv_sig, apd_indices)
+#            do_pulsed_resonance(nv_sig, apd_indices)
+#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.06)
+#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
+#            do_rabi(nv_sig, apd_indices, 2.8151, 0)  # 128.0
+#            do_rabi(nv_sig, apd_indices, 2.9414, 1)  # 209.7
+#            do_t1_battery(nv_sig, apd_indices)
+#            do_ramsey(nv_sig, apd_indices)
             do_spin_echo(nv_sig, apd_indices)
-            # do_set_drift_from_reference_image(nv_sig, apd_indices)
-            # do_test_major_routines(nv_sig, apd_indices)
+#            do_set_drift_from_reference_image(nv_sig, apd_indices)
+#            do_test_major_routines(nv_sig, apd_indices)
 
     finally:
         # Reset our hardware - this should be done in each routine, but
