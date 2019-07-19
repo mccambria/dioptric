@@ -293,7 +293,7 @@ if __name__ == '__main__':
 #            if ind == 1:
 #                do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
 #            do_image_sample(nv_sig, apd_indices)
-#            do_optimize(nv_sig, apd_indices)
+            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
