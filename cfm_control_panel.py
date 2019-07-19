@@ -277,7 +277,7 @@ if __name__ == '__main__':
         # set_xyz_zero()
         # set_xyz([0.229, 0.163, 50.0])
         # tool_belt.set_drift([0.0, 0.0, 0.0])
-        # drift = tool_belt.get_drift()
+        drift = tool_belt.get_drift()
         # set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
 
         # Routines that expect lists of NVs
@@ -287,7 +287,7 @@ if __name__ == '__main__':
         # Routines that expect single NVs
         for nv_sig in nv_sig_list:
 #            do_image_sample(nv_sig, apd_indices)
-#            do_optimize(nv_sig, apd_indices)
+            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
@@ -298,7 +298,7 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, 2.9414, 1)  # 209.7
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
-            do_spin_echo(nv_sig, apd_indices)
+#            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
 #            do_test_major_routines(nv_sig, apd_indices)
 
