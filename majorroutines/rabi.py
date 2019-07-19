@@ -40,9 +40,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
 
     tool_belt.reset_cfm(cxn)
 
-    # %% Get the starting time of the function
+    # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
+    start_timestamp = tool_belt.get_time_stamp()
 
     # %% Initial calculations and setup
 
@@ -164,6 +165,35 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
 
         cxn.apd_tagger.stop_tag_stream()
+        
+        # %% Save the data we have incrementally for long measurements
+
+        raw_data = {'start_timestamp': start_timestamp,
+                    'nv_sig': nv_sig,
+                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'uwave_freq': uwave_freq,
+                    'uwave_freq-units': 'GHz',
+                    'uwave_power': uwave_power,
+                    'uwave_power-units': 'dBm',
+                    'uwave_time_range': uwave_time_range,
+                    'uwave_time_range-units': 'ns',
+                    'sig_gen': sig_gen,
+                    'num_steps': num_steps,
+                    'num_reps': num_reps,
+                    'num_runs': num_runs,
+                    'tau_index_master_list':tau_index_master_list,
+                    'opti_coords_list': opti_coords_list,
+                    'opti_coords_list-units': 'V',
+                    'sig_counts': sig_counts.astype(int).tolist(),
+                    'sig_counts-units': 'counts',
+                    'ref_counts': ref_counts.astype(int).tolist(),
+                    'ref_counts-units': 'counts'}
+
+        # This will continuously be the same file path so we will overwrite
+        # the existing file with the latest version
+        file_path = tool_belt.get_file_path(__file__, start_timestamp,
+                                            nv_sig['name'], 'incremental')
+        tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Average the counts over the iterations
 

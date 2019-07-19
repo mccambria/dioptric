@@ -6,8 +6,8 @@ This version of t1 allows the the readout and measurement of all nine possible
 combinations of the preparation and readout of the states in relaxation
 measurements.
 
-With the current HP signal generator we have, we write the +1 frequency to the
-Tektronix signal generator, and must set the HP signal generator to the -1 freq
+We write the +1 frequency to the Tektronix signal generator, 
+and set the BNC signal generator to the -1 freq
 
 To specify the preparation and readout states, pass into the function a list in
 the form [preparation state, readout state]. That is passed in as
@@ -293,7 +293,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
 
         cxn.apd_tagger.stop_tag_stream()
 
-        # %% Save the data we have incrementally for long T1s
+        # %% Save the data we have incrementally for long measurements
 
         raw_data = {'start_timestamp': start_timestamp,
                     'init_state': int(init_state),
@@ -317,12 +317,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
                     'relaxation_time_range': relaxation_time_range,
                     'relaxation_time_range-units': 'ns',
                     'num_steps': num_steps,
-                    'num_runs': num_runs,
                     'num_reps': num_reps,
+                    'run_ind': run_ind,
                     'tau_index_master_list': tau_index_master_list,
                     'opti_coords_list': opti_coords_list,
                     'opti_coords_list-units': 'V',
-                    'run_ind': run_ind,
                     'sig_counts': sig_counts.astype(int).tolist(),
                     'sig_counts-units': 'counts',
                     'ref_counts': ref_counts.astype(int).tolist(),

@@ -109,6 +109,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     # %% Make some lists and variables to save at the end
     
     opti_coords_list = []
+    tau_index_master_list = [[] for i in range(num_runs)]
     
     # %% Analyze the sequence
     
@@ -132,9 +133,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
 #    return
+    
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
+    start_timestamp = tool_belt.get_time_stamp()
     
     # %% Collect the data
     
@@ -175,6 +178,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
             elif rand_boolean == 0:
                 tau_ind_first = -tau_ind - 1
                 tau_ind_second = tau_ind
+                
+            # add the tau indexxes used to a list to save at the end
+            tau_index_master_list[run_ind].append(tau_ind_first)
+            tau_index_master_list[run_ind].append(tau_ind_second)
 
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
@@ -215,6 +222,42 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
             print('Second Reference = ' + str(count))
             
         cxn.apd_tagger.stop_tag_stream()
+        
+        # %% Save the data we have incrementally for long T1s
+
+        raw_data = {'start_timestamp': start_timestamp,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'gate_time': gate_time,
+                'gate_time-units': 'ns',
+                'uwave_freq': uwave_freq,
+                'uwave_freq-units': 'GHz',
+                'uwave_power': uwave_power,
+                'uwave_power-units': 'dBm',
+                'rabi_period': rabi_period,
+                'rabi_period-units': 'ns',
+                'uwave_pi_pulse': uwave_pi_pulse,
+                'uwave_pi_pulse-units': 'ns',
+                'uwave_pi_on_2_pulse': uwave_pi_on_2_pulse,
+                'uwave_pi_on_2_pulse-units': 'ns',
+                'precession_time_range': precession_time_range,
+                'precession_time_range-units': 'ns',
+                'num_steps': num_steps,
+                'num_reps': num_reps,
+                'run_ind': run_ind,
+                'tau_index_master_list': tau_index_master_list,
+                'opti_coords_list': opti_coords_list,
+                'opti_coords_list-units': 'V',
+                'sig_counts': sig_counts.astype(int).tolist(),
+                'sig_counts-units': 'counts',
+                'ref_counts': ref_counts.astype(int).tolist(),
+                'ref_counts-units': 'counts'}
+
+        # This will continuously be the same file path so we will overwrite
+        # the existing file with the latest version
+        file_path = tool_belt.get_file_path(__file__, start_timestamp,
+                                            nv_sig['name'], 'incremental')
+        tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Hardware clean up
     
@@ -270,8 +313,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
             'timeElapsed': timeElapsed,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'opti_coords_list': opti_coords_list,
-            'opti_coords_list-units': 'V',
             'gate_time': gate_time,
             'gate_time-units': 'ns',
             'uwave_freq': uwave_freq,
@@ -289,6 +330,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
             'num_steps': num_steps,
             'num_reps': num_reps,
             'num_runs': num_runs,
+            'tau_index_master_list': tau_index_master_list,
+            'opti_coords_list': opti_coords_list,
+            'opti_coords_list-units': 'V',
             'sig_counts': sig_counts.astype(int).tolist(),
             'sig_counts-units': 'counts',
             'ref_counts': ref_counts.astype(int).tolist(),

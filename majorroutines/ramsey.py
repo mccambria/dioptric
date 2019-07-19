@@ -12,9 +12,6 @@ It then takes a fast fourier transform of the time data to attempt to extract
 the frequencies in the ramsey experiment. If the funtion can't determine the
 peaks in the fft, then a detuning is used.
 
-We could change this file so that we input a detuning and the actual transition
-frequency, and then that detuning can be used in the fft.
-
 Lastly, this file curve_fits the data to a triple sum of cosines using the
 found frequencies.
 
@@ -155,6 +152,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
+    start_timestamp = tool_belt.get_time_stamp()
 
     # %% Collect the data
 
@@ -239,6 +237,42 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, detuning,
             print('Second Reference = ' + str(count))
 
         cxn.apd_tagger.stop_tag_stream()
+        
+        # %% Save the data we have incrementally for long measurements
+
+        raw_data = {'start_timestamp': start_timestamp,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'gate_time': gate_time,
+                'gate_time-units': 'ns',
+                'uwave_freq': uwave_freq,
+                'uwave_freq-units': 'GHz',
+                'detuning': detuning,
+                'detuning-units': 'MHz',
+                'uwave_power': uwave_power,
+                'uwave_power-units': 'dBm',
+                'rabi_period': rabi_period,
+                'rabi_period-units': 'ns',
+                'uwave_pi_half_pulse': uwave_pi_half_pulse,
+                'uwave_pi_half_pulse-units': 'ns',
+                'precession_time_range': precession_time_range,
+                'precession_time_range-units': 'ns',
+                'num_steps': num_steps,
+                'num_reps': num_reps,
+                'run_ind': run_ind,
+                'tau_index_master_list': tau_index_master_list,
+                'opti_coords_list': opti_coords_list,
+                'opti_coords_list-units': 'V',
+                'sig_counts': sig_counts.astype(int).tolist(),
+                'sig_counts-units': 'counts',
+                'ref_counts': ref_counts.astype(int).tolist(),
+                'ref_counts-units': 'counts'}
+
+        # This will continuously be the same file path so we will overwrite
+        # the existing file with the latest version
+        file_path = tool_belt.get_file_path(__file__, start_timestamp,
+                                            nv_sig['name'], 'incremental')
+        tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Hardware clean up
 
