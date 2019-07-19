@@ -29,7 +29,7 @@ def create_fit_figure(splittings, angles, fit_func, popt):
 
     ax.set_title('ESR Splitting Versus Magnet Angle')
     ax.set_xlabel('Angle (deg)')
-    ax.set_ylabel('Splitting (MHz)')
+    ax.set_ylabel('Splitting (GHz)')
     ax.scatter(angles, splittings, c='r')
 
     x_vals = numpy.linspace(0, 180, 1000)
