@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import time
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
+import labrad
 
 
 # %% Figure functions
@@ -161,17 +162,19 @@ def fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig):
 # %% Main
 
 
-def main(cxn, nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_runs, uwave_power):
+def main(nv_sig, apd_indices, freq_center, freq_range,
+         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+
+def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
+              num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur):
 
     # %% Initial calculations and setup
     
     tool_belt.reset_cfm(cxn)
-
-    # Set up for the pulser - we can't load the sequence yet until after 
-    # optimize runs since optimize loads its own sequence
-    uwave_switch_delay = 100 * 10**6  # 0.1 s to open the gate
-    num_reps = 10**5
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -189,20 +192,22 @@ def main(cxn, nv_sig, apd_indices, freq_center, freq_range,
     sig_counts = numpy.copy(ref_counts)
     
     # Define some times for the sequence (in ns)
-    pi_pulse = 70
-    polarization_time = 3 * 10**3
-    reference_time = 1 * 10**3
-    signal_wait_time = 1 * 10**3
-    reference_wait_time = 2 * 10**3
-    background_wait_time = 1 * 10**3
-    aom_delay_time = 1000
-    gate_time = 320
-    readout = gate_time
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+
+    polarization_time = shared_params['polarization_dur']
+    # time of illumination during which reference readout occurs
+    signal_wait_time = shared_params['post_polarization_wait_dur']
+    reference_time = signal_wait_time  # not sure what this is
+    background_wait_time = signal_wait_time  # not sure what this is
+    reference_wait_time = 2 * signal_wait_time  # not sure what this is
+    aom_delay_time = shared_params['532_aom_delay']
+    readout = shared_params['pulsed_readout_dur']
+    gate_time = readout
     readout_sec = readout / (10**9)
-    sequence_args = [pi_pulse, polarization_time, reference_time,
+    sequence_args = [uwave_pulse_dur, polarization_time, reference_time,
                     signal_wait_time, reference_wait_time,
                     background_wait_time, aom_delay_time,
-                    gate_time, pi_pulse,
+                    gate_time, uwave_pulse_dur,
                     apd_indices[0], 1]
     
     opti_coords_list = []
@@ -220,7 +225,7 @@ def main(cxn, nv_sig, apd_indices, freq_center, freq_range,
             break
         
         # Optimize and save the coords we found
-        opti_coords = optimize.main(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
         
         # Load the pulse streamer (must happen after optimize since optimize
@@ -323,14 +328,14 @@ def main(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'freq_center-units': 'GHz',
                'freq_range': freq_range,
                'freq_range-units': 'GHz',
+               'uwave_pulse_dur': uwave_pulse_dur,
+               'uwave_pulse_dur-units': 'ns',
                'num_steps': num_steps,
                'num_runs': num_runs,
                'uwave_power': uwave_power,
                'uwave_power-units': 'dBm',
                'readout': readout,
                'readout-units': 'ns',
-               'uwave_switch_delay': uwave_switch_delay,
-               'uwave_switch_delay-units': 'ns',
                'sig_counts': sig_counts.astype(int).tolist(),
                'sig_counts-units': 'counts',
                'ref_counts': ref_counts.astype(int).tolist(),
@@ -349,10 +354,17 @@ def main(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # %% Return 
     
     if fit_func == single_gaussian_dip:
+        print('Single resonance at {:.4f} GHz'.format(popt[2]))
+        print('\n')
         return popt[2], None
     elif fit_func == double_gaussian_dip:
+        print('Resonances at {:.4f} GHz and {:.4f} GHz'.format(popt[2], popt[5]))
+        print('Splitting of {:d} MHz'.format(int((popt[5] - popt[2]) * 1000)))
+        print('\n')
         return popt[2], popt[5]
     else:
+        print('No resonances found')
+        print('\n')
         return None, None
 
 

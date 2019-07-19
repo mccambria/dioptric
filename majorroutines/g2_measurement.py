@@ -12,6 +12,7 @@ Created on Wed Apr 24 17:33:26 2019
 @author: mccambria
 """
 
+
 # %% Imports
 
 
@@ -21,6 +22,7 @@ import numpy
 import matplotlib.pyplot as plt
 import time
 import json
+import labrad
 
 
 # %% Functions
@@ -113,8 +115,15 @@ def process_raw_buffer(timestamps, channels,
 # %% Main
 
 
-def main(cxn, nv_sig, run_time, diff_window,
+def main(nv_sig, run_time, diff_window,
          apd_a_index, apd_b_index):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, run_time, diff_window,
+                      apd_a_index, apd_b_index)
+
+def main_with_cxn(cxn, nv_sig, run_time, diff_window,
+                  apd_a_index, apd_b_index):
 
     # %% Initial calculations and setup
     
@@ -125,7 +134,7 @@ def main(cxn, nv_sig, run_time, diff_window,
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
-    opti_coords = optimize.main(cxn, nv_sig, apd_indices)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     
     cxn.pulse_streamer.constant()
 

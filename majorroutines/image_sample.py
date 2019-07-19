@@ -18,7 +18,7 @@ import time
 
 import json
 import matplotlib.pyplot as plt
-import numpy
+import labrad
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -227,17 +227,25 @@ def create_figure(file_name, folder_name='E:/Shared drives/Kolkowitz Lab Group/n
     return fig
 
 
-    # %%
+# %% Mains
 
-def main(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
+
+def main(nv_sig, x_range, y_range, num_steps, apd_indices,
          continuous=False, save_data=True, plot_data=True):
+
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
+                      continuous, save_data, plot_data)
+
+def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
+                  continuous=False, save_data=True, plot_data=True):
 
     # %% Some initial setup
     
     tool_belt.reset_cfm(cxn)
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    readout = shared_params['continuous_readout_ns']
+    readout = shared_params['continuous_readout_dur']
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
