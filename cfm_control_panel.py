@@ -137,7 +137,7 @@ def do_rabi(nv_sig, apd_indices,
     uwave_time_range = [0, 300]
     num_steps = 51
     num_reps = 10**5
-    num_runs = 2
+    num_runs = 1
 
     rabi.main(nv_sig, apd_indices, uwave_freq, uwave_power, uwave_time_range,
               do_uwave_gate_number, num_steps, num_reps, num_runs)
@@ -146,7 +146,8 @@ def do_t1_battery(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
                   uwave_pi_pulse_plus, uwave_pi_pulse_minus):
 
     uwave_power = 9
-    num_runs = 120
+#    num_runs = 120
+    num_runs = 2
 
     # Tektronix controls plus, Berkeley controls minus
 #    uwave_freq_plus = 2.8086
@@ -154,27 +155,35 @@ def do_t1_battery(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
 #    uwave_freq_minus = 2.9345
 #    uwave_pi_pulse_minus = 105
 
+
+# !! This isn't working for some reason, but i want to go home !!
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**6], 11, 2000],
-                                [[1,1], [0, 15*10**6], 11, 2000],
-                                [[0,1], [0, 15*10**6], 11, 2000],
-                                [[0,0], [0, 15*10**6], 11, 2000]])
-
+    
+#    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**6], 11, 2000],
+#                                [[1,1], [0, 15*10**6], 11, 2000],
+#                                [[0,1], [0, 15*10**6], 11, 2000],
+#                                [[0,0], [0, 15*10**6], 11, 2000]])
+    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**2], 11, 2000],
+                                [[1,1], [0, 15*10**2], 11, 2000],
+                                [[0,1], [0, 15*10**2], 11, 2000],
+                                [[0,0], [0, 15*10**2], 11, 2000]])
+    
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
-
+            
         init_read_states = t1_exp_array[exp_ind, 0]
         relaxation_time_range = t1_exp_array[exp_ind, 1]
         num_steps = t1_exp_array[exp_ind, 2]
         num_reps = t1_exp_array[exp_ind, 3]
 
+
         t1_double_quantum.main(nv_sig, apd_indices,
-                     uwave_freq_plus, uwave_freq_minus,
-                     uwave_power, uwave_power,
-                     uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                     relaxation_time_range, num_steps, num_reps, num_runs,
-                     init_read_states)
+                 uwave_freq_plus, uwave_freq_minus,
+                 uwave_power, uwave_power,
+                 uwave_pi_pulse_plus, uwave_pi_pulse_minus,
+                 relaxation_time_range, num_steps, num_reps, num_runs,
+                 init_read_states)
 
 def do_ramsey(nv_sig, apd_indices):
 
@@ -268,8 +277,9 @@ if __name__ == '__main__':
     nv0_2019_06_27_off_axis = copy.deepcopy(nv0_2019_06_27)
     nv0_2019_06_27_off_axis['magnet_angle'] = 99.0  # Splitting of 125 MHz
 
-    nv_sig_list = [nv0_2019_06_27_off_axis]
+    nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]    
 
+    
     # %% Functions to run
 
     try:
@@ -278,7 +288,7 @@ if __name__ == '__main__':
         # set_xyz_zero()
         # set_xyz([0.229, 0.163, 50.0])
 #        tool_belt.set_drift([-0.12, 0.10, 0.0])
-        tool_belt.set_drift([0.0, 0.0, 0.0])
+#        tool_belt.set_drift([0.0, 0.0, 0.0])
 #         drift = tool_belt.get_drift()
         # set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
 
@@ -289,12 +299,15 @@ if __name__ == '__main__':
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]
-#            if ind == 0:
-#                do_t1_battery(nv_sig, apd_indices, 2.8127, 2.9408, 64, 105)
-#            if ind == 1:
-#                do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
+            if ind == 0:
+                    
+                do_t1_battery(nv_sig, apd_indices, 2.8127, 2.9408, 64, 105)
+            if ind == 1:
+
+                do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
+                    
 #            do_image_sample(nv_sig, apd_indices)
-            do_optimize(nv_sig, apd_indices)
+#            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
