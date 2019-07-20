@@ -20,12 +20,15 @@ Created on Fri Jul 19 15:44:48 2019
 
 import numpy
 import matplotlib.pyplot as plt
+import json
 import utils.tool_belt as tool_belt
 
 
 # %% File to use
 
-file = open('E:/Shared drives/Kolkowitz Lab Group/iPython_console/2019-07-18_ipython.txt', 'r')
+directory_path = 'E:/Shared drives/Kolkowitz Lab Group/iPython_console/'
+file_name = '2019-07-18_ipython.txt'
+file = open(directory_path + file_name, 'r')
 
 # %% Create some lists to fill
 
@@ -89,7 +92,7 @@ for line in file:
 # Sort the data based on the time
 for ind in range(num_runs):
     data[ind] = numpy.array(sorted(data[ind], key=lambda x: x[0]))
-    print(data[ind])
+#    print(data[ind])
 #    print(len(data[ind]))
 #    data[ind] = numpy.delete(data[ind], 0, axis = 0)
     
@@ -180,7 +183,7 @@ raw_data = {
             'uwave_pi_on_2_pulse-units': 'ns',
             'precession_time_range': [0, 100 * 10**3],
             'precession_time_range-units': 'ns',
-            'taus': taus,
+            'taus': taus.tolist(),
             'taus-units': 'ns',
             'num_steps': num_steps,
             'num_reps': 1 * 10**5,
@@ -192,9 +195,10 @@ raw_data = {
             'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
             'norm_avg_sig-units': 'arb'}
     
-file_path = tool_belt.get_file_path(__file__, 'attempt_1', nv_sig['name'])
-tool_belt.save_figure(raw_fig, file_path)
-tool_belt.save_raw_data(raw_data, file_path)
+with open(directory_path + 'attempt1.txt', 'w') as file:
+        json.dump(raw_data, file, indent=2)
+        
+raw_fig.savefig(directory_path + 'attempt1.svg')
 
 
 
