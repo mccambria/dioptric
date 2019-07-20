@@ -261,7 +261,7 @@ if __name__ == '__main__':
 
     sample_name = 'johnson1'
 
-    nv0_2019_06_27 = {'coords': [-0.169, -0.306, 38.74], 'nd_filter': 'nd_0.5',
+    nv0_2019_06_27 = {'coords': [-0.151, -0.338, 37.74], 'nd_filter': 'nd_0.5',
                       'expected_count_rate': 45, 'magnet_angle': 41.8,
                       'name': sample_name}
     
@@ -277,7 +277,8 @@ if __name__ == '__main__':
         # Operations that don't need an NV
         # set_xyz_zero()
         # set_xyz([0.229, 0.163, 50.0])
-#         tool_belt.set_drift([0.023, -0.004, -3.22])
+#        tool_belt.set_drift([-0.12, 0.10, 0.0])
+        tool_belt.set_drift([0.0, 0.0, 0.0])
 #         drift = tool_belt.get_drift()
         # set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
 
