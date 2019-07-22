@@ -37,6 +37,7 @@ def main():
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here
-
+    file = ''
+    
     # Run the script
-    main()
+    main(file)
