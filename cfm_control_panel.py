@@ -54,8 +54,8 @@ def do_image_sample(nv_sig, apd_indices):
     scan_range = 0.2
     num_steps = 60
 
-    scan_range = 0.10
-    num_steps = 60
+#    scan_range = 0.10
+#    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -257,26 +257,23 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-#    apd_indices = [0]
-    apd_indices = [0, 1]
-
+    apd_indices = [0]
+#    apd_indices = [0, 1]
+    
     sample_name = 'johnson1'
 
-    nv0_2019_06_27 = {'coords': [-0.151, -0.338, 37.74], 'nd_filter': 'nd_0.5',
-                      'expected_count_rate': 45, 'magnet_angle': 41.8,
-                      'name': sample_name}
-
-    nv0_2019_06_27_off_axis = copy.deepcopy(nv0_2019_06_27)
-    nv0_2019_06_27_off_axis['magnet_angle'] = 99.0  # Splitting of 125 MHz
-
-    nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]
-
-    nv0_2019_06_27 = {'coords': [-0.154, -0.333, 5.4], 'nd_filter': 'nd_0.5',
+    nv0_2019_06_27 = {'coords': [-0.154, -0.333, 5.40], 'nd_filter': 'nd_0.5',
                       'expected_count_rate': 47, 'magnet_angle': 41.8,
                       'name': sample_name}
-    
-    nv_sig_list = [nv0_2019_06_27]
+    nv1_2019_06_27 = {'coords': [-0.330, -0.342, 6.40], 'nd_filter': 'nd_0.5',
+                      'expected_count_rate': 53, 'magnet_angle': 41.8,
+                      'name': sample_name}
 
+#    nv0_2019_06_27_off_axis = copy.deepcopy(nv0_2019_06_27)
+#    nv0_2019_06_27_off_axis['magnet_angle'] = 99.0  # Splitting of 125 MHz
+#
+#    nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]
+    nv_sig_list = [nv1_2019_06_27]
 
     # %% Functions to run
 
@@ -302,12 +299,12 @@ if __name__ == '__main__':
 #                do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
 
 #            do_image_sample(nv_sig, apd_indices)
-            do_optimize(nv_sig, apd_indices)
+#            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2)
+            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.3)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
 #            do_rabi(nv_sig, apd_indices, 2.8151, 0)  # 128.0
 #            do_rabi(nv_sig, apd_indices, 2.9414, 1)  # 209.7

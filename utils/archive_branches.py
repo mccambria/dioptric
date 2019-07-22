@@ -29,7 +29,7 @@ repo_path = 'C:\\Users\\kolkowitz\\Documents\\GitHub\\kolkowitz-nv-experiment-v1
 #repo_path = 'C:\\Users\\Aedan\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
 
 # List of branch names
-branches_to_archive = ['ramsey3']
+branches_to_archive = ['optimize-speed-up']
 
 
 # %% Functions
