@@ -280,7 +280,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
         # Assign to 0 based on the passed conditional array
         norm_avg_sig[inf_mask] = 0
     
-    # %% Plot the t1 signal
+    # %% Plot the data
 
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
@@ -293,7 +293,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
 
     ax = axes_pack[1]
     ax.plot(taus / 10**3, norm_avg_sig, 'b-')
-    ax.set_title('Ramsey Measurement')
+    ax.set_title('Spin Echo Measurement')
     ax.set_xlabel('Precession time (us)')
     ax.set_ylabel('Contrast (arb. units)')
 
