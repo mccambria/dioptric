@@ -268,6 +268,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
                                               [delay, readout, apd_indices[0]])
     period = ret_vals[0]
 
+    # %% Initialize at the passed coordinates
+
+    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+
     # %% Set up the galvo
 
     x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
@@ -282,10 +286,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
     y_high = y_voltages[y_num_steps-1]
 
     pixel_size = x_voltages[1] - x_voltages[0]
-
-    # %% Set the piezo
-
-    cxn.objective_piezo.write_voltage(z_center)
 
     # %% Set up the APD
 

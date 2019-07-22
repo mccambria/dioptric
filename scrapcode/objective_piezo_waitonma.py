@@ -29,7 +29,9 @@ def main():
     """
 
     with labrad.connect() as cxn:
-        cxn.objective_piezo.write_voltage(38.0)
+        cxn.objective_piezo.write(5.5)
+        print(cxn.objective_piezo.read())
+        print(cxn.objective_piezo.read_position())
 
 
 # %% Run the file

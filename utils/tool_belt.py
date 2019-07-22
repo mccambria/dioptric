@@ -34,26 +34,27 @@ from pathlib import Path
 
 def set_xyz(cxn, coords):
     cxn.galvo.write(coords[0], coords[1])
-    cxn.objective_piezo.write_voltage(coords[2])
+    cxn.objective_piezo.write(coords[2])
     # Force some delay before proceeding to account 
     # for the effective write time
-    time.sleep(0.1)
+    time.sleep(0.001)
 
 
 def set_xyz_zero(cxn):
     cxn.galvo.write(0.0, 0.0)
-    cxn.objective_piezo.write_voltage(50.0)
+    cxn.objective_piezo.write(50.0)
     # Force some delay before proceeding to account 
     # for the effective write time
-    time.sleep(0.1)
+    time.sleep(0.001)
 
 
 def set_xyz_on_nv(cxn, nv_sig):
-    cxn.galvo.write(nv_sig[0], nv_sig[1])
-    cxn.objective_piezo.write_voltage(nv_sig[2])
+    coords = nv_sig['coords']
+    cxn.galvo.write(coords[0], coords[1])
+    cxn.objective_piezo.write(coords[2])
     # Force some delay before proceeding to account 
     # for the effective write time
-    time.sleep(0.1)
+    time.sleep(0.001)
 
 
 # %% Matplotlib plotting utils

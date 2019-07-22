@@ -32,7 +32,6 @@ import minorroutines.set_drift_from_reference_image as set_drift_from_reference_
 import debug.test_major_routines as test_major_routines
 
 
-
 # %% Minor Routines
 
 
@@ -272,6 +271,12 @@ if __name__ == '__main__':
 
     nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]
 
+    nv0_2019_06_27 = {'coords': [-0.154, -0.333, 5.4], 'nd_filter': 'nd_0.5',
+                      'expected_count_rate': 47, 'magnet_angle': 41.8,
+                      'name': sample_name}
+    
+    nv_sig_list = [nv0_2019_06_27]
+
 
     # %% Functions to run
 
@@ -280,9 +285,9 @@ if __name__ == '__main__':
         # Operations that don't need an NV
         # set_xyz_zero()
         # set_xyz([0.229, 0.163, 50.0])
-        # tool_belt.set_drift([0.0, 0.0, 0.0])
-        drift = tool_belt.get_drift()
-        # set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
+#        tool_belt.set_drift([0.0, 0.0, 0.0])
+#        drift = tool_belt.get_drift()
+#        set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
 
         # Routines that expect lists of NVs
         # optimize_list(cxn, nv_sig_list, apd_indices)
@@ -291,10 +296,10 @@ if __name__ == '__main__':
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]
-            if ind == 0:
-                do_t1_battery(nv_sig, apd_indices, 2.8127, 2.9408, 64, 105)
-            if ind == 1:
-                do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
+#            if ind == 0:
+#                do_t1_battery(nv_sig, apd_indices, 2.8127, 2.9408, 64, 105)
+#            if ind == 1:
+#                do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
 
 #            do_image_sample(nv_sig, apd_indices)
             do_optimize(nv_sig, apd_indices)
@@ -311,6 +316,8 @@ if __name__ == '__main__':
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
 #            do_test_major_routines(nv_sig, apd_indices)
+#            with labrad.connect() as cxn:
+#                tool_belt.set_xyz_on_nv(cxn, nv_sig)
 
     finally:
         # Reset our hardware - this should be done in each routine, but

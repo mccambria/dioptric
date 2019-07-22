@@ -18,7 +18,7 @@ timeout = 20
 
 [shutdown]
 message = 987654321
-timeout = 5
+timeout = 
 ### END NODE INFO
 """
 
@@ -26,8 +26,6 @@ from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 from pipython import GCSDevice
-from pipython import pitools 
-import time
 import nidaqmx
 import logging
 import numpy
@@ -42,6 +40,7 @@ class ObjectivePiezo(LabradServer):
                 filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
 
     def initServer(self):
+        self.task = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -64,6 +63,7 @@ class ObjectivePiezo(LabradServer):
         self.piezo.ConnectUSB(config[2])
         # Just one axis for this device
         self.axis = self.piezo.axes[0]
+        self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
         self.daq_ao_objective_piezo = config[3]
         self.daq_di_clock = config[4]
         logging.debug('Init complete')
@@ -75,9 +75,9 @@ class ObjectivePiezo(LabradServer):
             self.close_task_internal()
 
         # Write the initial voltages and stream the rest
-        num_voltages = voltages.shape[1]
-        self.write(c, voltages[0, 0], voltages[1, 0])
-        stream_voltages = voltages[:, 1:num_voltages]
+        num_voltages = len(voltages)
+        self.write(c, voltages[0])
+        stream_voltages = voltages[1:num_voltages]
         stream_voltages = numpy.ascontiguousarray(stream_voltages)
         num_stream_voltages = num_voltages - 1
 
@@ -91,7 +91,7 @@ class ObjectivePiezo(LabradServer):
 
         # Set up the output stream
         output_stream = nidaqmx.task.OutStream(task)
-        writer = stream_writers.AnalogMultiChannelWriter(output_stream)
+        writer = stream_writers.AnalogSingleChannelWriter(output_stream)
 
         # Configure the sample to advance on the rising edge of the PFI input.
         # The frequency specified is just the max expected rate in this case.
@@ -114,36 +114,10 @@ class ObjectivePiezo(LabradServer):
             task.close()
             self.task = None
         return 0
-        
-    def waitonoma(self, pidevice, axes=None, timeout=300, predelay=0, postdelay=0):
-        """This is ripped from the pitools module and adapted for Python 3
-        (ie I changed xrange to range...). It hangs until the device completes
-        an absolute open-piezo motion.
-        """
-        axes = pitools.getaxeslist(pidevice, axes)
-        numsamples = 5
-        positions = []
-        maxtime = time.time() + timeout
-        pitools.waitonready(pidevice, timeout, predelay)
-        while True:
-            positions.append(pidevice.qPOS(axes).values())
-            positions = positions[-numsamples:]
-            if len(positions) < numsamples:
-                continue
-            isontarget = True
-            for vals in zip(*positions):
-                isontarget &= 0.01 > sum([abs(vals[i] - vals[i + 1]) for i in range(len(vals) - 1)])
-            if isontarget:
-                return
-            if time.time() > maxtime:
-                pitools.stopall(pidevice)
-                raise SystemError('waitonoma() timed out after %.1f seconds' % timeout)
-            time.sleep(0.01)
-        time.sleep(postdelay)
 
     @setting(2, voltage='v[]')
     def write(self, c, voltage):
-        """Write the specified voltages to the piezo"""
+        """Write the specified voltage to the piezo"""
 
         # Close the stream task if it exists
         # This can happen if we quit out early
@@ -156,9 +130,9 @@ class ObjectivePiezo(LabradServer):
                                                  min_val=0.0, max_val=10.0)
             task.write(voltage)
 
-    @setting(1, returns='*v[]')
+    @setting(1, returns='v[]')
     def read(self, c):
-        """Return the current voltages on the x and y channels."""
+        """Return the current voltages on the piezo's DAQ channel"""
         with nidaqmx.Task() as task:
             # Set up the internal channels - to do: actual parsing...
             if self.daq_ao_objective_piezo == 'dev1/AO2':
@@ -171,44 +145,15 @@ class ObjectivePiezo(LabradServer):
     @setting(3, center='v[]', scan_range='v[]',
              num_steps='i', period='i', returns='*v[]')
     def load_z_scan(self, c, center, scan_range, num_steps, period):
+        """Load a linear sweep with the DAQ"""
 
         half_scan_range = scan_range / 2
         low = center - half_scan_range
         high = center + half_scan_range
         voltages = numpy.linspace(low, high, num_steps)
-        self.load_stream_writer(c, 'ObjectivePiezo-load_z_scan', voltages, period)
+        self.load_stream_writer(c, 'ObjectivePiezo-load_z_scan',
+                                voltages, period)
         return voltages
-
-    @setting(0, voltage='v[]')
-    def write_voltage(self, c, voltage):
-        """Write a voltage to the piezo.
-
-        Params:
-            voltage: float
-                The voltage to write
-        """
-
-        self.piezo.SVO(self.axis, False)  # Turn off the feedback servo
-        self.piezo.SVA(self.axis, voltage)  # Write the voltage
-        # Wait until the device completes the motion
-        logging.debug('Began motion at {}'.format(time.time()))
-#        self.waitonoma(self.piezo, timeout=5)
-        try:
-            self.waitonoma(self.piezo, timeout=5)
-        except Exception as e:
-            logging.error(e)
-        logging.debug('Completed motion at {}'.format(time.time()))
-
-    @setting(1, returns='v[]')
-    def read_position(self, c):
-        """Read the position of the piezo.
-
-        Returns
-            float
-                The current position of the piezo in microns
-        """
-
-        return self.piezo.qPOS()[self.axis]
 
 
 __server__ = ObjectivePiezo()

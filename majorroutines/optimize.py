@@ -94,7 +94,7 @@ def stationary_count_lite(cxn, coords, shared_params, apd_indices):
     x_center, y_center, z_center = coords
 
     cxn.pulse_streamer.stream_load('simple_readout.py',
-                       [shared_params['aom_delay'], readout, apd_indices[0]])
+                       [shared_params['532_aom_delay'], readout, apd_indices[0]])
 
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
 
@@ -115,7 +115,6 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     seq_file_name = 'simple_readout.py'
     num_steps = 31
     coords = nv_sig['coords']
-    axis_center = coords[axis_ind]
     x_center, y_center, z_center = coords
     scan_range_nm = 2 * shared_params['airy_radius']
     readout = shared_params['continuous_readout_dur']
@@ -127,14 +126,12 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         
         scan_range = scan_range_nm / shared_params['galvo_nm_per_volt']
         
-        seq_params = [shared_params['galvo_delay'],
-                      readout,
-                      apd_indices[0]]
+        seq_params = [shared_params['objective_piezo_delay'], readout, apd_indices[0]]
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
         period = ret_vals[0]
         
-        # Fix the piezo
-        cxn.objective_piezo.write_voltage(z_center)
+        # Reset to centers
+        tool_belt.set_xyz(cxn, coords)
         
         # Get the proper scan function
         if axis_ind == 0:
@@ -149,39 +146,16 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     elif axis_ind == 2:
         
         scan_range = scan_range_nm / shared_params['piezo_nm_per_volt']
-        half_scan_range = scan_range / 2
-        low_voltage = axis_center - half_scan_range
-        high_voltage = axis_center + half_scan_range
-        voltages = numpy.linspace(low_voltage, high_voltage, num_steps)
-    
-        # Fix the galvo
-        cxn.galvo.write(x_center, y_center)
-    
-        # Set up the stream
-        seq_params = [shared_params['aom_delay'],
-                      readout,
-                      apd_indices[0]]
+        seq_params = [20*10**6, readout, apd_indices[0]]
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
         period = ret_vals[0]
-    
-        # Set up the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
-    
-        counts = numpy.zeros(num_steps, dtype=int)
-    
-        for ind in range(num_steps):
+        
+        # Reset to centers
+        tool_belt.set_xyz(cxn, coords)
             
-            if tool_belt.safe_stop():
-                break
-    
-            cxn.objective_piezo.write_voltage(voltages[ind])
-    
-            # Start the timing stream
-            cxn.pulse_streamer.stream_start()
-    
-            counts[ind] = int(cxn.apd_tagger.read_counter_simple(1)[0])
-    
-        cxn.apd_tagger.stop_tag_stream()
+        voltages = cxn.objective_piezo.load_z_scan(z_center, scan_range,
+                                                   num_steps, period)
+        counts = read_timed_counts(cxn, num_steps, period, apd_indices)
         
     count_rates = (counts / 1000) / (readout / 10**9)
     
@@ -190,7 +164,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         
     opti_coord = fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig)
         
-    return opti_coord, voltages, counts, 
+    return opti_coord, voltages, counts
     
     
 def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
@@ -285,7 +259,7 @@ def optimize_list_with_cxn(cxn, nv_sig_list, nd_filter, apd_indices):
         opti_coords = main_with_cxn(cxn, nv_sig, nd_filter, apd_indices,
                            set_to_opti_coords=False)
         if opti_coords is not None:
-            opti_coords_list.append('[{:.3f}, {:.3f}, {:.1f}],'.format(*opti_coords))
+            opti_coords_list.append('[{:.3f}, {:.3f}, {:.2f}],'.format(*opti_coords))
         else:
             opti_coords_list.append('Optimization failed for NV {}.'.format(ind))
     
@@ -419,9 +393,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     else:
         if opti_succeeded:
             print('Optimized coordinates: ')
-            print('{:.3f}, {:.3f}, {:.1f}'.format(*opti_coords))
+            print('{:.3f}, {:.3f}, {:.2f}'.format(*opti_coords))
             print('Drift: ')
-            print('{:.3f}, {:.3f}, {:.1f}'.format(*drift))
+            print('{:.3f}, {:.3f}, {:.2f}'.format(*drift))
         else:
             print('Optimization failed.')
             
