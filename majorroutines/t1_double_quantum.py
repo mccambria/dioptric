@@ -195,6 +195,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
 
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
 #    return
+    
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()

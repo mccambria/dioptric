@@ -146,8 +146,7 @@ def do_t1_battery(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
                   uwave_pi_pulse_plus, uwave_pi_pulse_minus):
 
     uwave_power = 9
-#    num_runs = 120
-    num_runs = 2
+    num_runs = 120
 
     # Tektronix controls plus, Berkeley controls minus
 #    uwave_freq_plus = 2.8086
@@ -156,18 +155,12 @@ def do_t1_battery(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
 #    uwave_pi_pulse_minus = 105
 
 
-# !! This isn't working for some reason, but i want to go home !!
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    
-#    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**6], 11, 2000],
-#                                [[1,1], [0, 15*10**6], 11, 2000],
-#                                [[0,1], [0, 15*10**6], 11, 2000],
-#                                [[0,0], [0, 15*10**6], 11, 2000]])
-    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**2], 11, 2000],
-                                [[1,1], [0, 15*10**2], 11, 2000],
-                                [[0,1], [0, 15*10**2], 11, 2000],
-                                [[0,0], [0, 15*10**2], 11, 2000]])
+    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**6], 11, 2000],
+                                [[1,1], [0, 15*10**6], 11, 2000],
+                                [[0,1], [0, 15*10**6], 11, 2000],
+                                [[0,0], [0, 15*10**6], 11, 2000]])
     
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -300,10 +293,8 @@ if __name__ == '__main__':
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]
             if ind == 0:
-                    
                 do_t1_battery(nv_sig, apd_indices, 2.8127, 2.9408, 64, 105)
             if ind == 1:
-
                 do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
                     
 #            do_image_sample(nv_sig, apd_indices)
