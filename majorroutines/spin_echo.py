@@ -298,7 +298,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     ax.set_ylabel('Contrast (arb. units)')
 
     raw_fig.canvas.draw()
-    # fig.set_tight_layout(True)
+#     fig.set_tight_layout(True)
     raw_fig.canvas.flush_events()
     
     # %% Save the data
