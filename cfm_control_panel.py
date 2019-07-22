@@ -161,10 +161,10 @@ def do_t1_battery(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
                                 [[1,1], [0, 15*10**6], 11, 2000],
                                 [[0,1], [0, 15*10**6], 11, 2000],
                                 [[0,0], [0, 15*10**6], 11, 2000]])
-    
+
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
-            
+
         init_read_states = t1_exp_array[exp_ind, 0]
         relaxation_time_range = t1_exp_array[exp_ind, 1]
         num_steps = t1_exp_array[exp_ind, 2]
@@ -266,13 +266,13 @@ if __name__ == '__main__':
     nv0_2019_06_27 = {'coords': [-0.151, -0.338, 37.74], 'nd_filter': 'nd_0.5',
                       'expected_count_rate': 45, 'magnet_angle': 41.8,
                       'name': sample_name}
-    
+
     nv0_2019_06_27_off_axis = copy.deepcopy(nv0_2019_06_27)
     nv0_2019_06_27_off_axis['magnet_angle'] = 99.0  # Splitting of 125 MHz
 
-    nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]    
+    nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]
 
-    
+
     # %% Functions to run
 
     try:
@@ -280,9 +280,8 @@ if __name__ == '__main__':
         # Operations that don't need an NV
         # set_xyz_zero()
         # set_xyz([0.229, 0.163, 50.0])
-#        tool_belt.set_drift([-0.12, 0.10, 0.0])
-#        tool_belt.set_drift([0.0, 0.0, 0.0])
-#         drift = tool_belt.get_drift()
+        # tool_belt.set_drift([0.0, 0.0, 0.0])
+        drift = tool_belt.get_drift()
         # set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
 
         # Routines that expect lists of NVs
@@ -296,9 +295,9 @@ if __name__ == '__main__':
                 do_t1_battery(nv_sig, apd_indices, 2.8127, 2.9408, 64, 105)
             if ind == 1:
                 do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
-                    
+
 #            do_image_sample(nv_sig, apd_indices)
-#            do_optimize(nv_sig, apd_indices)
+            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
