@@ -20,11 +20,6 @@ import copy
 import labrad
 
 
-# %% Define a few parameters
-
-num_steps = 51
-
-
 # %% Plotting functions
 
 
@@ -93,12 +88,10 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
     
 def stationary_count_lite(cxn, coords, shared_params, apd_indices):
     
+    # Some initial values
     readout = shared_params['continuous_readout_dur']
-    
-    #  Some initial calculations
     total_num_samples = 2
     x_center, y_center, z_center = coords
-    readout = readout // total_num_samples
 
     # Load the PulseStreamer - 2000 ns delay accounts for whatever the AOM
     # delay is - the actual value doesn't matter since we're just measuring
@@ -123,12 +116,11 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
                      apd_indices, fig=None):
     
     seq_file_name = 'simple_readout.py'
-    
+    num_steps = 31
     coords = nv_sig['coords']
     axis_center = coords[axis_ind]
     x_center, y_center, z_center = coords
-    
-    scan_range_nm = 3 * shared_params['airy_radius']
+    scan_range_nm = 2 * shared_params['airy_radius']
     readout = shared_params['continuous_readout_dur']
     
     tool_belt.init_safe_stop()
@@ -169,7 +161,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         cxn.galvo.write(x_center, y_center)
     
         # Set up the stream
-        seq_params = [shared_params['piezo_delay'],
+        seq_params = [0,
                       readout,
                       apd_indices[0]]
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
@@ -377,8 +369,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         # the count rate at the center against the expected count rate
         if expected_count_rate is not None:
             
-            lower_threshold = expected_count_rate * 3/4
-            upper_threshold = expected_count_rate * 5/4
+            lower_threshold = expected_count_rate * 4/5
+            upper_threshold = expected_count_rate * 6/5
             
             if ind == 0:
                 print('Expected count rate: {}'.format(expected_count_rate))
@@ -451,7 +443,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         rawData = {'timestamp': timestamp,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
-                   'num_steps': num_steps,
                    'readout': shared_params['continuous_readout_dur'],
                    'readout-units': 'ns',
                    'opti_coords': opti_coords,

@@ -76,4 +76,4 @@ if __name__ == '__main__':
 
     # Run the script
 #    main()
-    constant(OutputState([], 1.0, 1.0))
+    constant(OutputState([3], 1.0, 1.0))
