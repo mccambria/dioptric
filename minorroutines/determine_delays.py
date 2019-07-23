@@ -23,8 +23,8 @@ import matplotlib.pyplot as plt
 # %% Functions
 
 
-def measure_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
-              delay_range, num_steps, num_reps, name, seq_file,
+def measure_delay(cxn, nv_sig, readout, apd_indices,
+              delay_range, num_steps, num_reps, seq_file,
               sig_gen=None, uwave_freq=None, uwave_power=None,
               rabi_period=None, aom_delay=None):
     
@@ -37,7 +37,7 @@ def measure_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     
-    optimize.main(cxn, nv_sig, nd_filter, apd_indices)
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     
     tool_belt.reset_cfm(cxn)
     # Turn on the microwaves for determining microwave delay
@@ -65,7 +65,10 @@ def measure_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
             seq_args = [tau, readout, apd_indices[0]]
         elif seq_file == 'uwave_delay.py':
             seq_args = [tau, readout, apd_indices[0]]
-        cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args, 1)
+        seq_args = [int(el) for el in seq_args]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.pulse_streamer.stream_immediate(seq_file, num_reps,
+                                            seq_args_string)
         
         new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
         sample_counts = new_counts[0]
@@ -76,14 +79,14 @@ def measure_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
     tool_belt.reset_cfm(cxn)
     
     # kcps
-    sig_count_rates = (sig_counts / (num_reps * 1000)) / (readout / (10**9))
-    ref_count_rates = (ref_counts / (num_reps * 1000)) / (readout / (10**9))
+#    sig_count_rates = (sig_counts / (num_reps * 1000)) / (readout / (10**9))
+#    ref_count_rates = (ref_counts / (num_reps * 1000)) / (readout / (10**9))
     norm_avg_sig = sig_counts / ref_counts
 
     fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
     ax = axes_pack[0]
-    ax.plot(taus, sig_count_rates, 'r-', label = 'signal')
-    ax.plot(taus, ref_count_rates, 'g-', label = 'reference')
+    ax.plot(taus, sig_counts, 'r-', label = 'signal')
+    ax.plot(taus, ref_counts, 'g-', label = 'reference')
     ax.set_title('Counts vs Delay Time')
     ax.set_xlabel('Delay time (ns)')
     ax.set_ylabel('Count rate (kcps)')
@@ -101,8 +104,6 @@ def measure_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
             'sequence': seq_file,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'nv_sig-format': tool_belt.get_nv_sig_format(),
-            'nd_filter': nd_filter,
             'readout': readout,
             'readout-units': 'ns',
             'delay_range': delay_range,
@@ -116,7 +117,7 @@ def measure_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
             'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
             'norm_avg_sig-units': 'arb'}
     
-    file_path = tool_belt.get_file_path(__file__, timestamp, name)
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
 
@@ -124,26 +125,22 @@ def measure_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
 # %% Mains
 
 
-def aom_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
-              delay_range, num_steps, num_reps, 
-              name='untitled'):
+def aom_delay(cxn, nv_sig, readout, apd_indices,
+              delay_range, num_steps, num_reps):
     
     seq_file = 'aom_delay.py'
     
-    measure_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
-              delay_range, num_steps, num_reps, 
-              name='untitled', seq_file)
+    measure_delay(cxn, nv_sig, readout, apd_indices,
+              delay_range, num_steps, num_reps, seq_file)
 
-def uwave_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
+def uwave_delay(cxn, nv_sig, readout, apd_indices,
               sig_gen, uwave_freq, uwave_power, rabi_period, aom_delay,
-              delay_range, num_steps, num_reps, 
-              name='untitled'):
+              delay_range, num_steps, num_reps):
     
     seq_file = 'uwave_delay.py'
     
-    measure_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
-              delay_range, num_steps, num_reps, 
-              name='untitled', seq_file,
+    measure_delay(cxn, nv_sig, readout, apd_indices,
+              delay_range, num_steps, num_reps, seq_file,
               sig_gen, uwave_freq, uwave_power, rabi_period, aom_delay)
 
 
@@ -156,29 +153,31 @@ def uwave_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here
-    name = 'johnson1'
-    nv_sig = [-0.169, -0.306, 38.74, 40, 2]
-    nd_filter = 0.5
+    sample_name = 'johnson1'
+    nv0_2019_06_27 = {'coords': [-0.148, -0.340, 5.46], 'nd_filter': 'nd_0.5',
+                      'expected_count_rate': 47, 'magnet_angle': 41.8,
+                      'name': sample_name}
     apd_indices = [0]
     num_reps = 10**5
     readout = 2000
+    nv_sig = nv0_2019_06_27
 
     # aom_delay
-#    delay_range = [900, 1500]
-#    num_steps = 51
-#    with labrad.connect() as cxn:
-#        aom_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
-#                  delay_range, num_steps, num_reps, name)
+    delay_range = [900, 1500]
+    num_steps = 51
+    with labrad.connect() as cxn:
+        aom_delay(cxn, nv_sig, readout, apd_indices,
+                  delay_range, num_steps, num_reps)
 
     # uwave_delay
-    delay_range = [0, 100]
-    num_steps = 21
-    sig_gen = 'tsg4104a'
-    uwave_freq = 2.8587  
-    uwave_power = 9
-    rabi_period = 144.4
-    aom_delay = 1000
-    with labrad.connect() as cxn:
-        uwave_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
-              sig_gen, uwave_freq, uwave_power, rabi_period, aom_delay,
-              delay_range, num_steps, num_reps, name)
+#    delay_range = [0, 100]
+#    num_steps = 21
+#    sig_gen = 'tsg4104a'
+#    uwave_freq = 2.8587  
+#    uwave_power = 9
+#    rabi_period = 144.4
+#    aom_delay = 1000
+#    with labrad.connect() as cxn:
+#        uwave_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
+#              sig_gen, uwave_freq, uwave_power, rabi_period, aom_delay,
+#              delay_range, num_steps, num_reps, name)

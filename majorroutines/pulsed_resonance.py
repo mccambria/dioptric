@@ -82,7 +82,8 @@ def double_gaussian_dip(freq, low_constrast, low_sigma, low_center,
 def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
 
-def fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig):
+def fit_resonance(freq_range, freq_center, num_steps,
+                  norm_avg_sig, ref_counts):
     
     # %% Calculate freqs
     
@@ -99,12 +100,18 @@ def fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig):
     if fwhm_ind < 1:
         fwhm_ind = 1
     
+    # Bit of processing
     inverted_norm_avg_sig = 1 - norm_avg_sig
+    ref_std = numpy.std(ref_counts)
+    rel_ref_std = ref_std / numpy.average(ref_counts)
+    print(rel_ref_std)
+    height = max(3*rel_ref_std, 0.05)
     
-    # Peaks must be separated from each other by a ~FWHM (rayleigh criteria)
-    # and have at least 5% contrast
+    # Peaks must be separated from each other by a ~FWHM (rayleigh criteria),
+    # have a contrast of at least three times the noise or 5%
+    # (whichever is greater), and have a width of at least two points
     peak_inds, details = find_peaks(inverted_norm_avg_sig, distance=fwhm_ind,
-                                    height=0.05)  # , width=2
+                                    height=height, width=2)
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
     
@@ -341,7 +348,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # %% Fit the data
     
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig)
+                                   norm_avg_sig, ref_counts)
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
                                     norm_avg_sig, fit_func, popt)
@@ -366,6 +373,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'uwave_pulse_dur': uwave_pulse_dur,
                'uwave_pulse_dur-units': 'ns',
                'num_steps': num_steps,
+               'num_reps': num_reps,
                'num_runs': num_runs,
                'uwave_power': uwave_power,
                'uwave_power-units': 'dBm',
@@ -408,18 +416,23 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-    file = '2019-07-22_19-21-08_johnson1'
+#    file = '2019-07-22_19-21-08_johnson1'
+#    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
     
-    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
+#    file = '2019-07-23_12-36-49_johnson1'
+    file = '2019-07-23_13-00-08_johnson1'
+    data = tool_belt.get_raw_data('pulsed_resonance.py', file,
+                                  'branch_optimize-z-work')
         
-    # Get information about the frequency
     freq_center = data['freq_center']
     freq_range = data['freq_range']
     num_steps = data['num_steps']
-    
-    # Get the averaged, normalized counts from the ESR 
     norm_avg_sig = numpy.array(data['norm_avg_sig'])
+    ref_counts = numpy.array(data['ref_counts'])
     
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig)
-    create_fit_figure(freq_range, freq_center, num_steps, norm_avg_sig, fit_func, popt)
+    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
+                                   norm_avg_sig, ref_counts)
+    if (fit_func is not None) and (popt is not None):
+        create_fit_figure(freq_range, freq_center, num_steps,
+                          norm_avg_sig, fit_func, popt)
     

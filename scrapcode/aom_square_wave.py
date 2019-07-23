@@ -16,6 +16,7 @@ from pulsestreamer import TriggerStart
 from pulsestreamer import OutputState
 import numpy
 from pulsestreamer import Sequence
+import labrad
 
 
 # %% Constants
@@ -30,8 +31,8 @@ HIGH = 1
 
 def constant(output_state):
     
-    pulser = Pulser('128.104.160.111')
-    pulser.constant(output_state)
+    with labrad.connect() as cxn:
+        cxn.pulse_streamer.constant([], -0.019, -0.019)
 
 
 # %% Main

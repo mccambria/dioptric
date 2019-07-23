@@ -97,15 +97,15 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 def do_pulsed_resonance(nv_sig, apd_indices,
                         freq_center=2.87, freq_range=0.2):
 
-#    num_steps = 51
-    num_steps = 76
+    num_steps = 51
+#    num_steps = 76
 #    num_steps = 101
-#    num_reps = 10**5
-    num_reps = 5 * 10**4
-    num_runs = 2
+    num_reps = 10**5
+#    num_reps = 5 * 10**4
+    num_runs = 1
     # 9.0 dBm is the highest reasonable value, accounting for saturation
     uwave_power = 9.0
-    uwave_pulse_dur = 180
+    uwave_pulse_dur = 80
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -271,23 +271,23 @@ if __name__ == '__main__':
 #                      'name': sample_name}
     
     # Reset drift 7/23, 11:46
-
     nv0_2019_06_27 = {'coords': [-0.148, -0.340, 5.46], 'nd_filter': 'nd_0.5',
-                      'expected_count_rate': 47, 'magnet_angle': None,
+                      'expected_count_rate': 47, 'magnet_angle': 41.8,
                       'name': sample_name}
     nv1_2019_06_27 = {'coords': [-0.331, -0.353, 6.41], 'nd_filter': 'nd_0.5',
                       'expected_count_rate': 56, 'magnet_angle': 41.8,
                       'name': sample_name}
 
     nv0_2019_06_27_off_axis = copy.deepcopy(nv0_2019_06_27)
-    nv0_2019_06_27_off_axis['magnet_angle'] = 99.0  # Splitting of 125 MHz
+#    nv0_2019_06_27_off_axis['magnet_angle'] = 99.0  # Splitting of 125 MHz
+    nv0_2019_06_27_off_axis['magnet_angle'] = 41.8  # Temp
 
     nv1_2019_06_27_off_axis = copy.deepcopy(nv1_2019_06_27)
     nv1_2019_06_27_off_axis['magnet_angle'] = 93.0  # Splitting of 125 MHz
-#
+
 #    nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]
-    nv_sig_list = [nv1_2019_06_27_off_axis]
-#    nv_sig_list = [nv0_2019_06_27]
+#    nv_sig_list = [nv1_2019_06_27_off_axis]
+    nv_sig_list = [nv0_2019_06_27]
 
     # %% Functions to run
 
@@ -315,13 +315,13 @@ if __name__ == '__main__':
 #                do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
 
 #            do_image_sample(nv_sig, apd_indices)
-            do_optimize(nv_sig, apd_indices)
+#            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.76, freq_range=0.05)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.98, freq_range=0.05)
+            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.76, freq_range=0.1)
+            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.98, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.3)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
 #            do_rabi(nv_sig, apd_indices, 2.8146, 0)  # 128.0
