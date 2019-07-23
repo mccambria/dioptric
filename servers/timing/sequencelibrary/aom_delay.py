@@ -39,8 +39,8 @@ def get_seq(pulser_wiring, args):
     delay, readout = durations[0:2]
     
     apd_index = args[2]
-    do_apd_gate = pulser_wiring['do_apd_gate_{}'.format(apd_index)]
-    do_aom = pulser_wiring['do_aom']
+    do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
+    do_aom = pulser_wiring['do_532_aom']
     
     period = 6 * readout
 
@@ -63,16 +63,10 @@ def get_seq(pulser_wiring, args):
     train.extend([(3*readout, HIGH)])
     seq.setDigital(do_aom, train)
 
-    return seq, [period]
-
-
-def get_final(pulser_wiring):
-    """This is called along with get_seq to get the final output state that
-    the Pulse Streamer will enter when sequence has finished running.
-    """
-
-    do_sample_clock = pulser_wiring['do_daq_clock']
-    return OutputState([do_sample_clock], 0.0, 0.0)
+    final_digital = [pulser_wiring['do_532_aom'],
+                     pulser_wiring['do_sample_clock']]
+    final = OutputState(final_digital, 0.0, 0.0)
+    return seq, final, [period]
 
 
 # %% Run the file
@@ -88,7 +82,7 @@ if __name__ == '__main__':
     # go through that here.
 
     # Set up a dummy pulser wiring dictionary
-    pulser_wiring = {'do_apd_gate_0': 0, 'do_aom': 1}
+    pulser_wiring = {'do_apd_0_gate': 0, 'do_532_aom': 1}
 
     # Set up a dummy args list
     args = [0, 2000, 0]

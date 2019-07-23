@@ -6,6 +6,7 @@ Created on Tue Apr 23 17:39:27 2019
 """
 
 from pulsestreamer import Sequence
+from pulsestreamer import OutputState
 import numpy
 
 LOW = 0
@@ -33,9 +34,9 @@ def get_seq(pulser_wiring, args):
     apd_index = args[4]
 
     # Get what we need out of the wiring dictionary
-    key = 'do_apd_gate_{}'.format(apd_index)
+    key = 'do_apd_{}_gate'.format(apd_index)
     pulser_do_apd_gate = pulser_wiring[key]
-    pulser_do_aom = pulser_wiring['do_aom']
+    pulser_do_aom = pulser_wiring['do_532_aom']
 
     # %% Couple calculated values
 
@@ -61,11 +62,14 @@ def get_seq(pulser_wiring, args):
     train = [(period, HIGH)]  # Always on to completely negate transient brightness
     seq.setDigital(pulser_do_aom, train)
 
-    return seq, [period]
+    final_digital = [pulser_wiring['do_532_aom'],
+                     pulser_wiring['do_sample_clock']]
+    final = OutputState(final_digital, 0.0, 0.0)
+    return seq, final, [period]
 
 
 if __name__ == '__main__':
-    wiring = {'do_aom': 0, 'do_apd_gate_0': 1}
+    wiring = {'do_532_aom': 0, 'do_apd_0_gate': 1}
     args = [3 * 10**3, 2 * 10**3, 320, 0, 0]
     seq = get_seq(wiring, args)[0]
     seq.plot()

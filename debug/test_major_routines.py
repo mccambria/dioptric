@@ -27,10 +27,15 @@ def main(nv_sig, apd_indices):
     
     # g2_measurement
     print('\nTesting g2_measurement...\n')
+    if len(apd_indices) < 2:
+        # Setting apd_indices to [0, 1] for g2_measurement
+        apd_indices_temp = [0, 1]
+    else:
+        apd_indices_temp = apd_indices
     run_time = 5
     diff_window = 150
-    g2_measurement.main(nv_sig, run_time,
-                        diff_window, apd_indices[0], apd_indices[1])
+    g2_measurement.main(nv_sig, run_time, diff_window,
+                        apd_indices_temp[0], apd_indices_temp[1])
     
     # image_sample
     print('\nTesting image_sample...\n')

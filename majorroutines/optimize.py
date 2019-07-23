@@ -93,8 +93,9 @@ def stationary_count_lite(cxn, coords, shared_params, apd_indices):
     total_num_samples = 2
     x_center, y_center, z_center = coords
 
-    cxn.pulse_streamer.stream_load('simple_readout.py',
-                       [shared_params['532_aom_delay'], readout, apd_indices[0]])
+    seq_args = [shared_params['532_aom_delay'], readout, apd_indices[0]]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)
 
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
 
@@ -128,9 +129,10 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     if axis_ind in [0, 1]:
         
         scan_range = scan_range_nm / shared_params['galvo_nm_per_volt']
-        seq_params = [shared_params['galvo_delay'],
-                      readout, apd_indices[0]]
-        ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
+        seq_args = [shared_params['galvo_delay'], readout, apd_indices[0]]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
+                                                  seq_args_string)
         period = ret_vals[0]
 
         # Get the proper scan function
@@ -146,9 +148,12 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     elif axis_ind == 2:
         
         scan_range = scan_range_nm / shared_params['piezo_nm_per_volt']
-        seq_params = [shared_params['objective_piezo_delay'],
-                      readout, apd_indices[0]]
-        ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
+        seq_args = [20*10**6, readout, apd_indices[0]]
+#        seq_args = [shared_params['objective_piezo_delay'],
+#                    readout, apd_indices[0]]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
+                                                  seq_args_string)
         period = ret_vals[0]
 
         voltages = cxn.objective_piezo.load_z_scan(z_center, scan_range,

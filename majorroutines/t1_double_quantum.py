@@ -172,12 +172,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
     # pulls the file of the sequence from serves/timing/sequencelibrary
     file_name = os.path.basename(__file__)
 
-    sequence_args = [min_relaxation_time, polarization_time, signal_time, reference_time,
-                    sig_to_ref_wait_time, pre_uwave_exp_wait_time,
-                    post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
-                    gate_time, uwave_pi_pulse_plus, uwave_pi_pulse_minus, max_relaxation_time,
-                    apd_indices[0], init_state, read_state]
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
+    seq_args = [min_relaxation_time, polarization_time, signal_time, reference_time,
+                sig_to_ref_wait_time, pre_uwave_exp_wait_time,
+                post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
+                gate_time, uwave_pi_pulse_plus, uwave_pi_pulse_minus, max_relaxation_time,
+                apd_indices[0], init_state, read_state]
+    seq_args = [int(el) for el in seq_args]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
 
     # %% Ask user if they wish to run experiment based on run time
@@ -255,17 +257,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
             if tool_belt.safe_stop():
                 break
 
-            # Stream the sequence
-            args = [taus[tau_ind_first], polarization_time, signal_time, reference_time,
-                    sig_to_ref_wait_time, pre_uwave_exp_wait_time,
-                    post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
-                    gate_time, uwave_pi_pulse_plus, uwave_pi_pulse_minus, taus[tau_ind_second],
-                    apd_indices[0], init_state, read_state]
-
             print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
             print('Second relaxation time: {}'.format(taus[tau_ind_second]))
 
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)
+            # Stream the sequence
+            seq_args = [taus[tau_ind_first], polarization_time, signal_time, reference_time,
+                        sig_to_ref_wait_time, pre_uwave_exp_wait_time,
+                        post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
+                        gate_time, uwave_pi_pulse_plus, uwave_pi_pulse_minus, taus[tau_ind_second],
+                        apd_indices[0], init_state, read_state]
+            seq_args = [int(el) for el in seq_args]
+            seq_args_string = tool_belt.encode_seq_args(seq_args)
+            cxn.pulse_streamer.stream_immediate(file_name, num_reps,
+                                                seq_args_string)
 
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to

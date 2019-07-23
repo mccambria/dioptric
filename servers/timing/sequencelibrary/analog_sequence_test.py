@@ -6,6 +6,7 @@ Created on Wed Jun 5 14:49:23 2019
 """
 
 from pulsestreamer import Sequence
+from pulsestreamer import OutputState
 import numpy
 
 def get_seq(pulser_wiring, args):
@@ -49,15 +50,13 @@ def get_seq(pulser_wiring, args):
 #    seq.setAnalog(pulser_ao, train)
     
 
-    return seq, [period]
+    return seq, OutputState(pulser_wiring['do_532_aom'], 0.0, 0.0), [period]
 
     # %% Define the sequence
-
-
 
 
 if __name__ == '__main__':
     wiring = {'pulser_ao': 0}
     args = [100, 100, 0, 0.5, 1.0]
-    seq = get_seq(wiring, args)[0]
+    seq, _, _ = get_seq(wiring, args)[0]
     seq.plot()   

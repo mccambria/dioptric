@@ -6,6 +6,7 @@ Created on Mon Jun 3 11:49:23 2019
 """
 
 from pulsestreamer import Sequence
+from pulsestreamer import OutputState
 import numpy
 
 def get_seq(pulser_wiring, args):
@@ -33,7 +34,7 @@ def get_seq(pulser_wiring, args):
         LOW = 0
         HIGH = 1
         
-        pulser_do_aom_driver = pulser_wiring['do_aom']
+        pulser_do_aom_driver = pulser_wiring['do_532_aom']
        
         train = [(aom_on_time, HIGH), (aom_off_time, LOW)]
         seq.setDigital(pulser_do_aom_driver, train)
@@ -58,7 +59,11 @@ def get_seq(pulser_wiring, args):
         train = [(aom_on_time, HIGH), (aom_off_time, LOW)]
         seq.setAnalog(pulser_ao_aom_driver, train)
 
-    return seq, [period]
+    final_digital = [pulser_wiring['do_532_aom'],
+                     pulser_wiring['do_sample_clock']]
+    final = OutputState(final_digital, 0.0, 0.0)
+
+    return seq, final, [period]
 
     # %% Define the sequence
 

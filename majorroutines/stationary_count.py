@@ -60,8 +60,10 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, continuous=False):
 
     # %% Load the PulseStreamer
 
+    seq_args = [0, readout, apd_indices[0]]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                              [0, readout, apd_indices[0]])
+                                              seq_args_string)
     period = ret_vals[0]
 
     total_num_samples = int(run_time / period)

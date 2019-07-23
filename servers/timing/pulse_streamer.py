@@ -31,10 +31,16 @@ from pulsestreamer import OutputState
 import importlib
 import os
 import sys
+import utils.tool_belt as tool_belt
+import logging
 
 
 class PulseStreamer(LabradServer):
     name = 'pulse_streamer'
+    logging.basicConfig(level=logging.DEBUG, 
+                format='%(asctime)s %(levelname)-8s %(message)s',
+                datefmt='%y-%m-%d_%H-%M-%S',
+                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
 
     def initServer(self):
         config = ensureDeferred(self.get_config())
@@ -73,47 +79,20 @@ class PulseStreamer(LabradServer):
         self.seq = None
         self.loaded_seq_streamed = False
         self.reset(None)
+        logging.debug('Init complete')
 
-    def get_seq(self, seq_file, args):
+    def get_seq(self, seq_file, seq_args_string):
         seq = None
         file_name, file_ext = os.path.splitext(seq_file)
         if file_ext == '.py':  # py: import as a module
             seq_module = importlib.import_module(file_name)
-            seq, ret_vals = seq_module.get_seq(self.pulser_wiring, args)
-        return seq, ret_vals
-
-    def set_output_state(self, output_state):
-        """Set the final output state that the PulseStreamer will move to
-        after completing its stream.
-
-        Params:
-            output_state (int)
-                0 (default): AOM open, everything else low
-                1: clock high, everything else low
-                2: microwave gate open, everything else low
-        """
-
-        if output_state == 0:  # Default, AOM on
-            pulser_do_aom = self.pulser_wiring['do_aom']
-            self.output_state = OutputState([pulser_do_aom], 0, 0)
-        elif output_state == 1:  # DAQ clock on
-            pulser_do_daq_clock = self.pulser_wiring['do_daq_clock']
-            self.output_state = OutputState([pulser_do_daq_clock], 0, 0)
-        elif output_state == 2:  # Tektroniz uwave gate open
-            pulser_do_daq_clock = self.pulser_wiring['do_uwave_gate_0']
-            self.output_state = OutputState([pulser_do_daq_clock], 0, 0)
-        elif output_state == 3:  # HP uwave gate open
-            pulser_do_daq_clock = self.pulser_wiring['do_uwave_gate_1']
-            self.output_state = OutputState([pulser_do_daq_clock], 0, 0)
-        elif output_state == 4:  # 638 nm AOM on at 1.0 V
-            self.output_state = OutputState([], 1, 0)
-        elif output_state == 5:  # 589 nm AOM on at 1.0 V
-            self.output_state = OutputState([], 0, 1)
+            args = tool_belt.decode_seq_args(seq_args_string)
+            seq, final, ret_vals = seq_module.get_seq(self.pulser_wiring, args)
+        return seq, final, ret_vals
 
     @setting(0, seq_file='s', num_repeat='i',
-             args='*?', output_state='i', returns='*?')
-    def stream_immediate(self, c, seq_file, num_repeat=1,
-                         args=None, output_state=0):
+             seq_args_string='s', returns='*?')
+    def stream_immediate(self, c, seq_file, num_repeat=1, seq_args_string=''):
         """Load the sequence from seq_file and immediately run it for
         the specified number of repitions. End in the specified
         final output state.
@@ -127,23 +106,18 @@ class PulseStreamer(LabradServer):
                 Arbitrary list used to modulate a sequence from the sequence
                 library - see simple_readout.py for an example. Default is
                 None. All values in list must have same type.
-            output_state: int
-                The final output state of the PulseStreamer after the sequence
-                stream for the specified number of repitions - see
-                set_output_state for the available options. Default is 0 (AOM
-                open, everything else low)
 
         Returns
             list(any)
                 Arbitrary list returned by the sequence file
         """
 
-        ret_vals = self.stream_load(c, seq_file, args, output_state)
+        ret_vals = self.stream_load(c, seq_file, seq_args_string)
         self.stream_start(c, num_repeat)
         return ret_vals
 
-    @setting(1, seq_file='s', args='*?', output_state='i', returns='*?')
-    def stream_load(self, c, seq_file, args=None, output_state=0):
+    @setting(1, seq_file='s', seq_args_string='s', returns='*?')
+    def stream_load(self, c, seq_file, seq_args_string=''):
         """Load the sequence from seq_file. Set it to end in the specified
         final output state. The sequence will not run until you call
         stream_start.
@@ -155,11 +129,6 @@ class PulseStreamer(LabradServer):
                 Arbitrary list used to modulate a sequence from the sequence
                 library - see simple_readout.py for an example. Default is
                 None
-            output_state: int
-                The final output state of the PulseStreamer after the sequence
-                stream for the specified number of repitions - see
-                set_output_state for the available options. Default is 0 (AOM
-                open, everything else low)
 
         Returns
             list(any)
@@ -167,11 +136,11 @@ class PulseStreamer(LabradServer):
         """
 
         self.pulser.setTrigger(start=TriggerStart.SOFTWARE)
-        self.set_output_state(output_state)
-        seq, ret_vals = self.get_seq(seq_file, args)
+        seq, final, ret_vals = self.get_seq(seq_file, seq_args_string)
         if seq is not None:
             self.seq = seq
             self.loaded_seq_streamed = False
+            self.final = final
         return ret_vals
 
     @setting(2, num_repeat='i')
@@ -187,24 +156,20 @@ class PulseStreamer(LabradServer):
         if self.seq == None:
             raise RuntimeError('Stream started with no sequence.')
         if not self.loaded_seq_streamed:
-            self.pulser.stream(self.seq, num_repeat, self.output_state)
+            self.pulser.stream(self.seq, num_repeat, self.final)
             self.loaded_seq_streamed = True
         self.pulser.startNow()
 
-    @setting(3, output_state='i')
-    def constant(self, c, output_state=0):
-        """Set the PulseStreamer to a constant output state.
+    @setting(3, digital_channels='*i',
+             analog_0_voltage='v[]', analog_1_voltage='v[]')
+    def constant(self, c, digital_channels=[],
+                 analog_0_voltage=0.0, analog_1_voltage=0.0):
+        """Set the PulseStreamer to a constant output state."""
 
-        Params
-            output_state: int
-                The final output state of the PulseStreamer after the sequence
-                stream for the specified number of repitions - see
-                set_output_state for the available options. Default is 0 (AOM
-                open, everything else low)
-        """
-
-        self.set_output_state(output_state)
-        self.pulser.constant(self.output_state)
+        digital_channels = [int(el) for el in digital_channels]
+        state = OutputState(digital_channels,
+                            analog_0_voltage, analog_1_voltage)
+        self.pulser.constant(state)
 
     @setting(4)
     def force_final(self, c):
@@ -218,7 +183,7 @@ class PulseStreamer(LabradServer):
     def reset(self, c):
         # Probably don't need to force_final right before constant but...
         self.force_final(c)
-        self.constant(c, 0)
+        self.constant(c, [self.pulser_wiring['do_532_aom']])
         self.seq = None
         self.loaded_seq_streamed = False
 

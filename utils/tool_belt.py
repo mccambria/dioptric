@@ -55,6 +55,30 @@ def set_xyz_on_nv(cxn, nv_sig):
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
+    
+
+# %% Pulse Streamer utils
+
+
+def encode_seq_args(seq_args):
+    return json.dumps(seq_args)
+
+def decode_seq_args(seq_args_string):
+    return json.loads(seq_args_string)
+
+def get_pulse_streamer_wiring(cxn):
+    cxn.registry.cd(['', 'Config', 'Wiring', 'Pulser'])
+    sub_folders, keys = cxn.registry.dir()
+    if keys == []:
+        return {}
+    p = cxn.registry.packet()
+    for key in keys:
+        p.get(key, key=key)  # Return as a dictionary
+    wiring = p.send()
+    pulse_streamer_wiring = {}
+    for key in keys:
+        pulse_streamer_wiring[key] = wiring[key]
+    return pulse_streamer_wiring
 
 
 # %% Matplotlib plotting utils

@@ -43,7 +43,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     readout = shared_parameters['continuous_readout_dur']
     readout_sec = readout / (10**9)
     uwave_switch_delay = 1 * 10**6  # 1 ms to switch frequencies
-    sequence_args = [readout, uwave_switch_delay, apd_indices[0]]
+    seq_args = [readout, uwave_switch_delay, apd_indices[0]]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
 
     file_name = os.path.basename(__file__)
 
@@ -96,7 +97,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         opti_coords_list.append(opti_coords)
 
         # Load the APD task with two samples for each frequency step
-        cxn.pulse_streamer.stream_load(file_name, sequence_args)
+        cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
         # Take a sample and increment the frequency

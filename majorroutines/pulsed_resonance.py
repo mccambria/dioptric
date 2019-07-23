@@ -203,11 +203,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     readout = shared_params['pulsed_readout_dur']
     gate_time = readout
     readout_sec = readout / (10**9)
-    sequence_args = [uwave_pulse_dur, polarization_time, reference_time,
-                    signal_wait_time, reference_wait_time,
-                    background_wait_time, aom_delay_time,
-                    gate_time, uwave_pulse_dur,
-                    apd_indices[0], 1]
+    seq_args = [uwave_pulse_dur, polarization_time, reference_time,
+                signal_wait_time, reference_wait_time,
+                background_wait_time, aom_delay_time,
+                gate_time, uwave_pulse_dur,
+                apd_indices[0], 1]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
     
     opti_coords_list = []
     
@@ -233,7 +234,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         
         # Load the pulse streamer (must happen after optimize since optimize
         # loads its own sequence)
-        cxn.pulse_streamer.stream_load('rabi.py', sequence_args, 1)
+        cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
 
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)

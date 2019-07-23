@@ -6,6 +6,7 @@ Created on Tue Apr 23 17:39:27 2019
 """
 
 from pulsestreamer import Sequence
+from pulsestreamer import OutputState
 import numpy
 
 LOW = 0

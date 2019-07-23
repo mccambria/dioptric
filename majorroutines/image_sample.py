@@ -264,8 +264,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
     # %% Load the PulseStreamer
 
+    seq_args = [delay, readout, apd_indices[0]]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                              [delay, readout, apd_indices[0]])
+                                              seq_args_string)
     period = ret_vals[0]
 
     # %% Initialize at the passed coordinates

@@ -136,7 +136,8 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     # Set xyz and open the AOM
     opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     
-    cxn.pulse_streamer.constant()
+    wiring = tool_belt.get_pulse_streamer_wiring(cxn)
+    cxn.pulse_streamer.constant([wiring['do_532_aom']])
 
     num_tags = 0
     collection_index = 0

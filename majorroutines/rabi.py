@@ -75,12 +75,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
 
     # Analyze the sequence
     file_name = os.path.basename(__file__)
-    sequence_args = [taus[0], polarization_time, reference_time,
-                    signal_wait_time, reference_wait_time,
-                    background_wait_time, aom_delay_time,
-                    gate_time, max_uwave_time,
-                    apd_indices[0], do_uwave_gate]
-    cxn.pulse_streamer.stream_load(file_name, sequence_args, 1)
+    seq_args = [taus[0], polarization_time, reference_time,
+                signal_wait_time, reference_wait_time,
+                background_wait_time, aom_delay_time,
+                gate_time, max_uwave_time,
+                apd_indices[0], do_uwave_gate]
+    seq_args = [int(el) for el in seq_args]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_load(file_name, seq_args_string)
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
@@ -144,12 +146,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
             tau_index_master_list[run_ind].append(tau_ind)
 
             # Stream the sequence
-            args = [taus[tau_ind], polarization_time, reference_time,
-                    signal_wait_time, reference_wait_time,
-                    background_wait_time, aom_delay_time,
-                    gate_time, max_uwave_time,
-                    apd_indices[0], do_uwave_gate]
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)
+            seq_args = [taus[tau_ind], polarization_time, reference_time,
+                        signal_wait_time, reference_wait_time,
+                        background_wait_time, aom_delay_time,
+                        gate_time, max_uwave_time,
+                        apd_indices[0], do_uwave_gate]
+            seq_args = [int(el) for el in seq_args]
+            seq_args_string = tool_belt.encode_seq_args(seq_args)
+            cxn.pulse_streamer.stream_immediate(file_name, num_reps,
+                                                seq_args_string)
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)

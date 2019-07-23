@@ -120,7 +120,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
                 post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                 gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                 max_precession_time, apd_indices[0]]
-    ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args, 1)
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    seq_args = [int(el) for el in seq_args]
+    ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
 #    print(sequence_args)
 #    print(seq_time)
@@ -195,9 +197,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
                         post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                         taus[tau_ind_second], apd_indices[0]]
-            
+            seq_args = [int(el) for el in seq_args]
+            seq_args_string = tool_belt.encode_seq_args(seq_args)
             cxn.pulse_streamer.stream_immediate(seq_file_name, num_reps,
-                                                seq_args, 1)   
+                                                seq_args_string)   
             
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
