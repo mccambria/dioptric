@@ -101,11 +101,10 @@ def fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig):
     
     inverted_norm_avg_sig = 1 - norm_avg_sig
     
-    # Peaks must be separated from each other by a ~FWHM (rayleigh criteria),
-    # have at least 75% of our estimated contrast, and be more than a single
-    # point wide
+    # Peaks must be separated from each other by a ~FWHM (rayleigh criteria)
+    # and have at least 5% contrast
     peak_inds, details = find_peaks(inverted_norm_avg_sig, distance=fwhm_ind,
-                                    height=0.5*contrast, width=2)
+                                    height=0.05)  # , width=2
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
     
@@ -408,9 +407,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-    file = '2019-07-17_15-01-42_johnson1'
+    file = '2019-07-22_19-21-08_johnson1'
     
-    data = tool_belt.get_raw_data('pulsed_resonance.py', file, 'branch_filter_slider')
+    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
         
     # Get information about the frequency
     freq_center = data['freq_center']
