@@ -262,6 +262,7 @@ if __name__ == '__main__':
     
     sample_name = 'johnson1'
 
+    # drift = [-0.00583, -0.00100, 0.06564]
 #    nv0_2019_06_27 = {'coords': [-0.154, -0.333, 5.40], 'nd_filter': 'nd_0.5',
 #                      'expected_count_rate': 47, 'magnet_angle': 41.8,
 #                      'name': sample_name}
@@ -271,10 +272,10 @@ if __name__ == '__main__':
     
     # Reset drift 7/23, 11:46
 
-    nv0_2019_06_27 = {'coords': [-0.169, -0.306, 5.40], 'nd_filter': 'nd_0.5',
-                      'expected_count_rate': 47, 'magnet_angle': 41.8,
+    nv0_2019_06_27 = {'coords': [-0.148, -0.340, 5.46], 'nd_filter': 'nd_0.5',
+                      'expected_count_rate': 47, 'magnet_angle': None,
                       'name': sample_name}
-    nv1_2019_06_27 = {'coords': [-0.331, -0.352, 6.54], 'nd_filter': 'nd_0.5',
+    nv1_2019_06_27 = {'coords': [-0.331, -0.353, 6.41], 'nd_filter': 'nd_0.5',
                       'expected_count_rate': 56, 'magnet_angle': 41.8,
                       'name': sample_name}
 
@@ -286,6 +287,7 @@ if __name__ == '__main__':
 #
 #    nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]
     nv_sig_list = [nv1_2019_06_27_off_axis]
+#    nv_sig_list = [nv0_2019_06_27]
 
     # %% Functions to run
 
@@ -297,7 +299,7 @@ if __name__ == '__main__':
 #        drift = tool_belt.get_drift()
 #        tool_belt.set_drift([float(drift[0])+0.02, float(drift[1])-0.02, 0.15])
 #        tool_belt.set_drift([0.0, 0.0, 0.0])
-        # [-0.005830897419784042, -0.001009178281898615, 0.06564021889455596]
+        # 
 #        set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
 
         # Routines that expect lists of NVs
@@ -313,7 +315,7 @@ if __name__ == '__main__':
 #                do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
 
 #            do_image_sample(nv_sig, apd_indices)
-#            do_optimize(nv_sig, apd_indices)
+            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
