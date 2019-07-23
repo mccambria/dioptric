@@ -211,7 +211,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     # Estimated fit parameters
     offset = 0.90
     amplitude = 0.10
-    frequency = 1/150
+    frequency = 1/400
 #    phase = 0
     decay = 1000
 

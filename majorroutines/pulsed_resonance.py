@@ -105,7 +105,7 @@ def fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig):
     # have at least 75% of our estimated contrast, and be more than a single
     # point wide
     peak_inds, details = find_peaks(inverted_norm_avg_sig, distance=fwhm_ind,
-                                    height=0.75*contrast, width=2)
+                                    height=0.5*contrast, width=2)
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
     
