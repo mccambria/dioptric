@@ -105,7 +105,7 @@ def fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig):
     # have at least 75% of our estimated contrast, and be more than a single
     # point wide
     peak_inds, details = find_peaks(inverted_norm_avg_sig, distance=fwhm_ind,
-                                    height=0.75*contrast, width=2)
+                                    height=0.5*contrast, width=2)
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
     
@@ -246,9 +246,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             if tool_belt.safe_stop():
                 break
 
-            cxn.signal_generator_bnc835.set_freq(freqs[step_ind])
-            cxn.signal_generator_bnc835.set_amp(uwave_power)
-            cxn.signal_generator_bnc835.uwave_on()
+            cxn.signal_generator_tsg4104a.set_freq(freqs[step_ind])
+            cxn.signal_generator_tsg4104a.set_amp(uwave_power)
+            cxn.signal_generator_tsg4104a.uwave_on()
             
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total

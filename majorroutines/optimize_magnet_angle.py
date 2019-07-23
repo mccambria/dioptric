@@ -183,8 +183,20 @@ if __name__ == '__main__':
     # run a file so we'll do that as an example here
 
     # Get the data
-    file_name = ''  # eg '2019-06-07_14-20-27_ayrton12.txt'
-    data = tool_belt.get_raw_data(__file__, file_name)
-
+    
+#    file_name = ''  # eg '2019-06-07_14-20-27_ayrton12.txt'
+#    data = tool_belt.get_raw_data(__file__, file_name)
+    splittings = [170, 140, 80, 201, 223, 30]
+    angles = [0.0, 90.0, 150.0, 60.0, 30.0, 120.0]
+    
+    fit_func = AbsCosNoOff
+    amp = 200
+    phase = 0
+    guess_params = [amp, phase]
+    popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
+    # Find the angle at the peak within [0, 360]
+    opti_angle = (-popt[1]) % 360
+    print(opti_angle)
+        
     # Replot
-    create_fit_figure()
+    create_fit_figure(splittings, angles, fit_func, popt)
