@@ -118,6 +118,9 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     x_center, y_center, z_center = coords
     scan_range_nm = 2 * shared_params['airy_radius']
     readout = shared_params['continuous_readout_dur']
+
+    # Reset to centers
+    tool_belt.set_xyz(cxn, coords)
     
     tool_belt.init_safe_stop()
     
@@ -125,38 +128,33 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     if axis_ind in [0, 1]:
         
         scan_range = scan_range_nm / shared_params['galvo_nm_per_volt']
-        
-        seq_params = [shared_params['objective_piezo_delay'], readout, apd_indices[0]]
+        seq_params = [shared_params['galvo_delay'],
+                      readout, apd_indices[0]]
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
         period = ret_vals[0]
-        
-        # Reset to centers
-        tool_belt.set_xyz(cxn, coords)
-        
+
         # Get the proper scan function
         if axis_ind == 0:
             scan_func = cxn.galvo.load_x_scan
         elif axis_ind == 1:
             scan_func = cxn.galvo.load_y_scan
             
-        voltages = scan_func(x_center, y_center, scan_range, num_steps, period)
-        counts = read_timed_counts(cxn, num_steps, period, apd_indices)
-        
+        voltages = scan_func(x_center, y_center, scan_range,
+                             num_steps, period)
+
     # z
     elif axis_ind == 2:
         
         scan_range = scan_range_nm / shared_params['piezo_nm_per_volt']
-        seq_params = [20*10**6, readout, apd_indices[0]]
+        seq_params = [shared_params['objective_piezo_delay'],
+                      readout, apd_indices[0]]
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_params)
         period = ret_vals[0]
-        
-        # Reset to centers
-        tool_belt.set_xyz(cxn, coords)
-            
+
         voltages = cxn.objective_piezo.load_z_scan(z_center, scan_range,
                                                    num_steps, period)
-        counts = read_timed_counts(cxn, num_steps, period, apd_indices)
-        
+
+    counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     count_rates = (counts / 1000) / (readout / 10**9)
     
     if fig is not None:
