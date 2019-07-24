@@ -22,9 +22,9 @@ def fit_eq_alpha(f, amp, alpha):
 # %%
 
 import matplotlib.pyplot as plt
-from scipy import asarray as ar, exp
-from scipy.optimize import curve_fit
-import numpy
+#from scipy import asarray as ar, exp
+#from scipy.optimize import curve_fit
+#import numpy
 
 # The data
 nv0_splitting_list = [23.9, 125.9, 128.1, 233.2]
