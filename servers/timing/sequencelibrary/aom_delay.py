@@ -82,7 +82,7 @@ if __name__ == '__main__':
     # go through that here.
 
     # Set up a dummy pulser wiring dictionary
-    pulser_wiring = {'do_apd_0_gate': 0, 'do_532_aom': 1}
+    pulser_wiring = {'do_apd_0_gate': 0, 'do_532_aom': 1, 'do_sample_clock': 2}
 
     # Set up a dummy args list
     args = [0, 2000, 0]
