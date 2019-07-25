@@ -199,7 +199,8 @@ def create_figure(file_name, folder_name='E:/Shared drives/Kolkowitz Lab Group/n
         x_range = data['x_range']
         y_range = data['y_range']
         x_voltages = data['x_voltages']
-        coords = data['coords']
+        nv_sig = data['nv_sig']
+        coords = nv_sig['coords']
         img_array = numpy.array(data['img_array'])
         readout = data['readout']
 
@@ -219,7 +220,8 @@ def create_figure(file_name, folder_name='E:/Shared drives/Kolkowitz Lab Group/n
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
 
-    fig = tool_belt.create_image_figure(img_array_kcps, img_extent)
+    fig = tool_belt.create_image_figure(img_array_kcps, img_extent,
+                                        clickHandler=on_click_image)
     # Redraw the canvas and flush the changes to the backend
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -393,5 +395,5 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
 
 if __name__ == '__main__':
-    file_name = '2019-06-27_16-02-37_ayrton14.txt'
+    file_name = '2019-07-23_17-39-48_johnson1.txt'
     create_figure(file_name)

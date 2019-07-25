@@ -50,12 +50,18 @@ def set_xyz_zero():
 
 
 def do_image_sample(nv_sig, apd_indices):
+    
+#    scan_range = 0.5
+#    num_steps = 100
+    
+#    scan_range = 0.75
+#    num_steps = 125
 
 #    scan_range = 0.2
 #    num_steps = 60
 
     scan_range = 0.10
-    num_steps = 60
+    num_steps = 30
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -87,8 +93,8 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
-    num_steps = 101
-    num_runs = 2
+    num_steps = 51
+    num_runs = 1
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
@@ -98,14 +104,13 @@ def do_pulsed_resonance(nv_sig, apd_indices,
                         freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
-#    num_steps = 76
-#    num_steps = 101
-    num_reps = 10**5
-#    num_reps = 5 * 10**4
+    num_reps = 5 * 10**4
     num_runs = 1
     # 9.0 dBm is the highest reasonable value, accounting for saturation
     uwave_power = 9.0
     uwave_pulse_dur = 80
+#    uwave_pulse_dur = 250
+#    uwave_pulse_dur = 0
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -116,13 +121,12 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     angle_range = [0, 150]
     num_angle_steps = 6
     freq_center = 2.87
-    freq_range = 0.3
-    num_freq_steps = 76
-#    num_freq_reps = 5 * 10**4
-    num_freq_reps = 10**5
+    freq_range = 0.2
+    num_freq_steps = 51
+    num_freq_reps = 5 * 10**4
     num_freq_runs = 1
     uwave_power = 9.0
-    uwave_pulse_dur = 250
+    uwave_pulse_dur = 80
 
     optimize_magnet_angle.main(nv_sig, apd_indices,
                        angle_range, num_angle_steps, freq_center, freq_range,
@@ -133,33 +137,32 @@ def do_rabi(nv_sig, apd_indices,
             uwave_freq, do_uwave_gate_number):
 
     uwave_power = 9.0
-    uwave_time_range = [0, 700]
+#    uwave_time_range = [0, 700]
+    uwave_time_range = [0, 300]
     num_steps = 51
-    num_reps = 5 * 10**4
+    num_reps = 10**5
     num_runs = 2
 
     rabi.main(nv_sig, apd_indices, uwave_freq, uwave_power, uwave_time_range,
               do_uwave_gate_number, num_steps, num_reps, num_runs)
 
-def do_t1_battery(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
-                  uwave_pi_pulse_plus, uwave_pi_pulse_minus):
+def do_t1_battery(nv_sig, apd_indices):
 
     uwave_power = 9
-    num_runs = 120
+    num_runs = 420
 
     # Tektronix controls plus, Berkeley controls minus
-#    uwave_freq_plus = 2.8086
-#    uwave_pi_pulse_plus = 65
-#    uwave_freq_minus = 2.9345
-#    uwave_pi_pulse_minus = 105
-
+    uwave_freq_plus = 2.8067
+    uwave_pi_pulse_plus = 72
+    uwave_freq_minus = 2.9364
+    uwave_pi_pulse_minus = 116
 
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**6], 11, 2000],
-                                [[1,1], [0, 15*10**6], 11, 2000],
-                                [[0,1], [0, 15*10**6], 11, 2000],
-                                [[0,0], [0, 15*10**6], 11, 2000]])
+    t1_exp_array = numpy.array([[[1,-1], [0, 15*10**6], 11, 900],
+                                [[1,1], [0, 15*10**6], 11, 900],
+                                [[0,1], [0, 15*10**6], 11, 900],
+                                [[0,0], [0, 15*10**6], 11, 900]])
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -168,7 +171,6 @@ def do_t1_battery(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
         relaxation_time_range = t1_exp_array[exp_ind, 1]
         num_steps = t1_exp_array[exp_ind, 2]
         num_reps = t1_exp_array[exp_ind, 3]
-
 
         t1_double_quantum.main(nv_sig, apd_indices,
                  uwave_freq_plus, uwave_freq_minus,
@@ -196,15 +198,15 @@ def do_ramsey(nv_sig, apd_indices):
 def do_spin_echo(nv_sig, apd_indices):
 
     uwave_power = 9
-    uwave_freq = 2.8146
-    rabi_period = 410.5
+    uwave_freq = 2.7569
+    rabi_period = 116.0
 #    precession_time_range = [0, 200 * 10**3]
-    precession_time_range = [0, 100 * 10**3]
-#    precession_time_range = [0, 50 * 10**3]
+#    precession_time_range = [0, 100 * 10**3]
+    precession_time_range = [0, 50 * 10**3]
 
     num_steps = 101
     num_reps = 3 * 10**4
-    num_runs = 100
+    num_runs = 20
 #    num_steps = 51
 #    num_reps = 10**5
 #    num_runs = 1
@@ -271,11 +273,24 @@ if __name__ == '__main__':
 #                      'name': sample_name}
     
     # Reset drift 7/23, 11:46
+#    search = {'coords': [-0.1, 0.0, 6.36], 'name': sample_name}
+    search = {'coords': [0.2, 0.2, 6.0], 'name': sample_name}
     nv0_2019_06_27 = {'coords': [-0.148, -0.340, 5.46], 'nd_filter': 'nd_0.5',
                       'expected_count_rate': 47, 'magnet_angle': 41.8,
                       'name': sample_name}
     nv1_2019_06_27 = {'coords': [-0.331, -0.353, 6.41], 'nd_filter': 'nd_0.5',
                       'expected_count_rate': 56, 'magnet_angle': 41.8,
+                      'name': sample_name}
+    nv0_2019_07_23 = {'coords': [0.233, -0.147, 5.76], 'nd_filter': 'nd_0.5',
+                      'expected_count_rate': 57, 'magnet_angle': 131.8,
+                      'name': sample_name}
+    nv2_2019_07_23 = {'coords': [0.388, 0.399, 6.36], 'nd_filter': 'nd_0.5',
+                      'expected_count_rate': 68, 'magnet_angle': 41.8,
+                      'name': sample_name}
+    
+    # Reset drift 7/23, 17:50
+    nv3_2019_07_23 = {'coords': [0.443, 0.080, 6.69], 'nd_filter': 'nd_0.5',
+                      'expected_count_rate': 55, 'magnet_angle': 131.2,
                       'name': sample_name}
 
     nv0_2019_06_27_off_axis = copy.deepcopy(nv0_2019_06_27)
@@ -287,7 +302,9 @@ if __name__ == '__main__':
 
 #    nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]
 #    nv_sig_list = [nv1_2019_06_27_off_axis]
-    nv_sig_list = [nv0_2019_06_27]
+#    nv_sig_list = [nv0_2019_06_27]
+    nv_sig_list = [nv3_2019_07_23]
+#    nv_sig_list = [search]
 
     # %% Functions to run
 
@@ -309,24 +326,25 @@ if __name__ == '__main__':
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]
-#            if ind == 0:
-#                do_t1_battery(nv_sig, apd_indices, 2.8127, 2.9408, 64, 105)
-#            if ind == 1:
-#                do_t1_battery(nv_sig, apd_indices, 2.7567, 2.9899, 58, 105)
-
+#            for z in numpy.linspace(5.5, 6.5, 6):
+#                nv_sig_copy = copy.deepcopy(nv_sig)
+#                coords = nv_sig_copy['coords']
+#                nv_sig_copy['coords'] = [coords[0], coords[1], z]
+#                do_image_sample(nv_sig_copy, apd_indices)
 #            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
+#            do_resonance(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices)
-            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.76, freq_range=0.1)
-            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.98, freq_range=0.1)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.3)
+#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.76, freq_range=0.1)
+#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.98, freq_range=0.1)
+#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.05)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
-#            do_rabi(nv_sig, apd_indices, 2.8146, 0)  # 128.0
-#            do_rabi(nv_sig, apd_indices, 2.986, 1)  # 209.7
-#            do_t1_battery(nv_sig, apd_indices)
+#            do_rabi(nv_sig, apd_indices, 2.8067, 0)  # 143.1
+#            do_rabi(nv_sig, apd_indices, 2.9364, 1)  # 231.5
+            do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)

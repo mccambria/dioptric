@@ -104,7 +104,6 @@ def fit_resonance(freq_range, freq_center, num_steps,
     inverted_norm_avg_sig = 1 - norm_avg_sig
     ref_std = numpy.std(ref_counts)
     rel_ref_std = ref_std / numpy.average(ref_counts)
-    print(rel_ref_std)
     height = max(3*rel_ref_std, 0.05)
     
     # Peaks must be separated from each other by a ~FWHM (rayleigh criteria),
@@ -214,7 +213,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                 signal_wait_time, reference_wait_time,
                 background_wait_time, aom_delay_time,
                 gate_time, uwave_pulse_dur,
-                apd_indices[0], 1]
+                apd_indices[0], 0]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
     opti_coords_list = []

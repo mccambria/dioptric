@@ -32,7 +32,11 @@ HIGH = 1
 def constant(output_state):
     
     with labrad.connect() as cxn:
-        cxn.pulse_streamer.constant([], -0.019, -0.019)
+        val = 1.0
+#        cxn.pulse_streamer.constant([], 0.0, 0.0)
+#        cxn.pulse_streamer.constant([], val, 0.0)
+        cxn.pulse_streamer.constant([], 0.0, val)
+#        cxn.pulse_streamer.constant([], val, val)
 
 
 # %% Main

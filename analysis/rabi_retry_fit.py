@@ -20,12 +20,12 @@ import utils.tool_belt as tool_belt
 
 
 folder_dir = 'E:\\Shared drives\\Kolkowitz Lab Group\\nvdata\\rabi\\'
-file_name = '2019-06-27_18-04-33_johnson1.txt'
+file_name = '2019-07-23_14-32-13_johnson1.txt'
 
 # Estimated fit parameters
 offset = 0.92
 amplitude = 0.08
-frequency = 1/250
+frequency = 1/150
 decay = 1000
 
 

@@ -30,10 +30,13 @@ def main(cxn, aom_on_time, aom_off_time, low_voltage, mid_voltage, high_voltage)
     # %% Run the sequence
     
     file_name = os.path.basename(__file__)    
-    args = [aom_on_time, aom_off_time, low_voltage, mid_voltage, high_voltage]
+    seq_args = [aom_on_time, aom_off_time, low_voltage, mid_voltage, high_voltage]
     
-    cxn.pulse_streamer.stream_immediate(file_name, 1 * 10**8, args, 1)
-#    cxn.pulse_streamer.stream_immediate(file_name, 3, args, 1)
+
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    
+    cxn.pulse_streamer.stream_immediate(file_name, 1 * 10**8, seq_args_string)
+#    cxn.pulse_streamer.stream_immediate(file_name, 3, seq_args_string)
     
 def on_589(cxn):
     cxn.pulse_streamer.constant(5)
@@ -55,7 +58,7 @@ if __name__ == '__main__':
     try:
         
         with labrad.connect() as cxn:
-            main(cxn, 500, 500, 0, 0, 1)
+            main(cxn, 500, 500, 0.0, 0.0, 0.3)
             
             
 #            on_589(cxn)
