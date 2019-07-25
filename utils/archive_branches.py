@@ -24,12 +24,12 @@ from git import Repo
 # %% Input parameters
 
 # Repo path
-repo_path = 'C:\\Users\\kolkowitz\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
-#repo_path = 'C:\\Users\\matth\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
+# repo_path = 'C:\\Users\\kolkowitz\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
+repo_path = 'C:\\Users\\matth\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
 #repo_path = 'C:\\Users\\Aedan\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
 
 # List of branch names
-branches_to_archive = ['pulse-streamer-enhancements']
+branches_to_archive = ['ramsey3']
 
 
 # %% Functions
@@ -67,14 +67,14 @@ origin = repo.remotes.origin
 # Get fully merged branches
 merged_branches = parse_string_array(repo_git.branch('--merged', 'master'))
 merged_branches = [branch for branch in merged_branches
-                   if branch != '' and not '*' in branch and not branch == 'master']
+                    if branch != '' and not '*' in branch and not branch == 'master']
 print('Merged branches:')
 print(merged_branches)
 
 # Get all local branches
 local_branches = parse_string_array(repo_git.branch('-l'))
 local_branches  = [branch for branch in local_branches
-                   if branch != '' and not '*' in branch and not branch == 'master']
+                    if branch != '' and not '*' in branch and not branch == 'master']
 print('\nLocal branches:')
 print(local_branches)
 
