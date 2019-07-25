@@ -130,11 +130,11 @@ if __name__ == '__main__':
 
     
     # Path to your local checkout of the repo
-    # repo_path = 'C:\\Users\\kolkowitz\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
-    repo_path = 'C:\\Users\\matth\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
+    repo_path = 'C:\\Users\\kolkowitz\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
+#    repo_path = 'C:\\Users\\matth\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
     #repo_path = 'C:\\Users\\Aedan\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
     
     # List of branches to archive
-    branches_to_archive = ['ramsey3']
+    branches_to_archive = ['ramsey3', 'optimize-z-work', 'optimize-z-investigation']
 
     main(repo_path, branches_to_archive)
