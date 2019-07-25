@@ -29,13 +29,15 @@ HIGH = 1
 # %% Functions
 
 
-def constant(output_state):
+def constant(digital_channels, analog_0_voltage, analog_1_voltage):
     
     with labrad.connect() as cxn:
-        val = 1.0
+        cxn.pulse_streamer.constant(digital_channels,
+                                    analog_0_voltage, analog_1_voltage)
+#        val = 0.0
 #        cxn.pulse_streamer.constant([], 0.0, 0.0)
 #        cxn.pulse_streamer.constant([], val, 0.0)
-        cxn.pulse_streamer.constant([], 0.0, val)
+#        cxn.pulse_streamer.constant([7], 0.0, val)
 #        cxn.pulse_streamer.constant([], val, val)
 
 
@@ -48,7 +50,7 @@ def main():
     """
     
 #    period = numpy.int64(100)
-    period = numpy.int64(500)
+    period = numpy.int64(300)
 #    period = numpy.int64(10**9)
     half_period = period // 2
     
@@ -56,12 +58,12 @@ def main():
 
 #    train = [(half_period, HIGH), (half_period, HIGH)]
     train = [(half_period, HIGH), (half_period, LOW)]
-    seq.setDigital(3, train)
+    seq.setDigital(7, train)
     
     pulser = Pulser('128.104.160.111')
     pulser.constant(OutputState([]))
     pulser.setTrigger(start=TriggerStart.SOFTWARE)
-    pulser.stream(seq, -1, OutputState([3]))
+    pulser.stream(seq, -1, OutputState([7]))
     pulser.startNow()
     
     input('Press enter to stop...')
@@ -81,6 +83,4 @@ if __name__ == '__main__':
 
     # Run the script
 #    main()
-#    constant(OutputState([], 1.0, 1.0))
-#    constant(OutputState([], -0.019, 0.0))
-    constant(OutputState([], 0.0, 0.0))
+    constant([7], 0.2, 0.0)

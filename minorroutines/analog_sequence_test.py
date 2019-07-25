@@ -19,7 +19,7 @@ import utils.tool_belt as tool_belt
 # %% Main
 
 
-def main(cxn, aom_on_time, aom_off_time, low_voltage, mid_voltage, high_voltage):
+def main(cxn, aom_on_time, aom_off_time, laser_pwr_voltage):
 
     # %% Initial set up
     
@@ -30,12 +30,12 @@ def main(cxn, aom_on_time, aom_off_time, low_voltage, mid_voltage, high_voltage)
     # %% Run the sequence
     
     file_name = os.path.basename(__file__)    
-    seq_args = [aom_on_time, aom_off_time, low_voltage, mid_voltage, high_voltage]
+    seq_args = [aom_on_time, aom_off_time, laser_pwr_voltage]
     
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
-    cxn.pulse_streamer.stream_immediate(file_name, 1 * 10**8, seq_args_string)
+    cxn.pulse_streamer.stream_immediate(file_name, 2 * 10**8, seq_args_string)
 #    cxn.pulse_streamer.stream_immediate(file_name, 3, seq_args_string)
     
 def on_589(cxn):
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     try:
         
         with labrad.connect() as cxn:
-            main(cxn, 500, 500, 0.0, 0.0, 0.3)
+            main(cxn, 1000, 1000, 1.0)
             
             
 #            on_589(cxn)
