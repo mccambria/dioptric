@@ -104,8 +104,10 @@ def fit_resonance(freq_range, freq_center, num_steps,
     inverted_norm_avg_sig = 1 - norm_avg_sig
     ref_std = numpy.std(ref_counts)
     rel_ref_std = ref_std / numpy.average(ref_counts)
-    height = max(3*rel_ref_std, 0.05)
-    
+    print(rel_ref_std)
+    height = max(3*rel_ref_std, contrast/4)
+    height = 0.097
+
     # Peaks must be separated from each other by a ~FWHM (rayleigh criteria),
     # have a contrast of at least three times the noise or 5%
     # (whichever is greater), and have a width of at least two points
@@ -415,14 +417,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-#    file = '2019-07-22_19-21-08_johnson1'
-#    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
-    
-#    file = '2019-07-23_12-36-49_johnson1'
-    file = '2019-07-23_13-00-08_johnson1'
-    data = tool_belt.get_raw_data('pulsed_resonance.py', file,
-                                  'branch_optimize-z-work')
-        
+    file = '2019-07-26_13-57-03_ayrton12_nv4_2019_07_25'
+    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
+
     freq_center = data['freq_center']
     freq_range = data['freq_range']
     num_steps = data['num_steps']
