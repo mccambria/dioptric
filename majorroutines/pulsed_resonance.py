@@ -389,7 +389,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
-    filePath = tool_belt.get_file_path(__file__, timestamp, name + '_fit')
+    filePath = tool_belt.get_file_path(__file__, timestamp, name + '-fit')
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
     

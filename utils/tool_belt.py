@@ -566,7 +566,8 @@ def save_raw_data(rawData, filePath):
 
 def get_nv_sig_units():
     return {'coords': 'V', 'expected_count_rate': 'kcps',
-            'magnet_angle': 'deg'}
+            'magnet_angle': 'deg', 'resonance': 'GHz',
+            'rabi': 'ns', 'uwave_power': 'dBm'}
 
 
 # %% Safe stop (TM mccambria)
