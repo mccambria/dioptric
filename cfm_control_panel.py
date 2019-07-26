@@ -336,7 +336,7 @@ if __name__ == '__main__':
     for ind in [1]:
         coords = pESR_list[ind]
         nv_sig = {'coords': coords,
-                  'name': '{}_nv{}_2019_07_25'.format(sample_name, ind),
+                  'name': '{}-nv{}_2019_07_25'.format(sample_name, ind),
                   'expected_count_rate': None,
                   'nd_filter': 'nd_1.5', 'magnet_angle': None}
         nv_sig_list.append(nv_sig)
