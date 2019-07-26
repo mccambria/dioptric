@@ -92,7 +92,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
     # %% Guess the locations of the minimums
             
     contrast = 0.2
-    sigma = 0.005
+    sigma = 0.006
     fwhm = 2.355 * sigma
     
     # Convert to index space
@@ -104,9 +104,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
     inverted_norm_avg_sig = 1 - norm_avg_sig
     ref_std = numpy.std(ref_counts)
     rel_ref_std = ref_std / numpy.average(ref_counts)
-    print(rel_ref_std)
-    height = max(3*rel_ref_std, contrast/4)
-    height = 0.097
+    height = max(2*rel_ref_std, contrast/4)
 
     # Peaks must be separated from each other by a ~FWHM (rayleigh criteria),
     # have a contrast of at least three times the noise or 5%
@@ -417,7 +415,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-    file = '2019-07-26_13-57-03_ayrton12_nv4_2019_07_25'
+    file = '2019-07-26_14-48-08_ayrton12_nv7_2019_07_25'
     data = tool_belt.get_raw_data('pulsed_resonance.py', file)
 
     freq_center = data['freq_center']
