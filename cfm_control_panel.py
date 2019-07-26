@@ -92,8 +92,8 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
-    num_steps = 51
-    num_runs = 1
+    num_steps = 101
+    num_runs = 4
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
@@ -333,7 +333,7 @@ if __name__ == '__main__':
 #    optimize_list = [[0.061, 0.164, 5.03]]
     
     nv_sig_list = []
-    for ind in range(len(pESR_list)):
+    for ind in [1]:
         coords = pESR_list[ind]
         nv_sig = {'coords': coords,
                   'name': '{}_nv{}_2019_07_25'.format(sample_name, ind),
@@ -375,8 +375,8 @@ if __name__ == '__main__':
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices)
-            do_pulsed_resonance(nv_sig, apd_indices)
+            do_resonance(nv_sig, apd_indices)
+#            do_pulsed_resonance(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.76, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.98, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.05)
