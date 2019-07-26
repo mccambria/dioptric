@@ -133,10 +133,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
         opti_angle = None
         fig = None
     else:
-        popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
-        # Find the angle at the peak within [0, 360]
-        opti_angle = (-popt[1]) % 360 
-        fig = create_fit_figure(splittings, angles, fit_func, popt)
+        try:
+            popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
+            # Find the angle at the peak within [0, 360]
+            opti_angle = (-popt[1]) % 360 
+            fig = create_fit_figure(splittings, angles, fit_func, popt)
+        except Exception:
+            opti_angle = None
 
     # %% Wrap up
 
