@@ -51,8 +51,8 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-#    scan_range = 0.5
-#    num_steps = 100
+    scan_range = 0.5
+    num_steps = 100
     
 #    scan_range = 0.75
 #    num_steps = 125
@@ -60,8 +60,8 @@ def do_image_sample(nv_sig, apd_indices):
 #    scan_range = 0.2
 #    num_steps = 60
 
-    scan_range = 0.10
-    num_steps = 30
+#    scan_range = 0.10
+#    num_steps = 30
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -73,8 +73,7 @@ def do_optimize(nv_sig, apd_indices):
 
 def do_optimize_list(nv_sig_list, apd_indices):
 
-    optimize.optimize_list(nv_sig_list, apd_indices,
-               set_to_opti_coords=False, save_data=True, plot_data=False)
+    optimize.optimize_list(nv_sig_list, apd_indices)
 
 def do_stationary_count(nv_sig, apd_indices):
 
@@ -103,14 +102,20 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 def do_pulsed_resonance(nv_sig, apd_indices,
                         freq_center=2.87, freq_range=0.2):
 
-    num_steps = 51
-    num_reps = 5 * 10**4
-    num_runs = 1
-    # 9.0 dBm is the highest reasonable value, accounting for saturation
+#    num_steps = 51
+#    num_reps = 5 * 10**4
+#    num_runs = 5
+#    # 9.0 dBm is the highest reasonable value, accounting for saturation
+#    uwave_power = 9.0
+#    uwave_pulse_dur = 80
+##    uwave_pulse_dur = 250
+##    uwave_pulse_dur = 0
+    
+    num_steps = 101
+    num_reps = 10**5
+    num_runs = 4
     uwave_power = 9.0
-    uwave_pulse_dur = 80
-#    uwave_pulse_dur = 250
-#    uwave_pulse_dur = 0
+    uwave_pulse_dur = 120
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -219,7 +224,7 @@ def do_sample_nvs(nv_sig_list, apd_indices):
 
     # g2 parameters
     run_time = 60 * 5
-    diff_window = 150 * 10**3  # 150 ns in ps
+    diff_window = 150
 
     # PESR parameters
     num_steps = 101
@@ -261,14 +266,83 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-    apd_indices = [0]
-#    apd_indices = [0, 1]
+#    apd_indices = [0]
+    apd_indices = [0, 1]
     
-    sample_name = 'johnson1'
+    sample_name = 'ayrton12'
     
     # 7/25/2019
-    search = {'coords': [0.0, 0.0, 5.0], 'name': sample_name}
-    nv_sig_list = [search]
+    z_voltage = 5.03
+    search = {'coords': [0.0, 0.0, z_voltage],
+              'name': '{}_search'.format(sample_name),
+              'nd_filter': 'nd_1.5', 'magnet_angle': None}
+    nv0_2019_07_25 = {'coords': [0.047, -0.041, z_voltage],
+                      'name': '{}_nv0_2019_07_25'.format(sample_name),
+                      'expected_count_rate': None,
+                      'nd_filter': 'nd_1.5', 'magnet_angle': None}
+    
+    coords_list = [   [0.225, 0.142, 5.03], 
+                      [0.180, 0.190, 5.02],
+                      [0.016, 0.242, 5.03],
+                      [-0.038, 0.231, 5.01],
+                      [0.003, 0.216, 5.02], # take g(2) again
+                      [0.061, 0.164, 5.03],  #  great!
+                      [0.006, 0.187, 5.03],  # take g(2) again
+                      [0.003, 0.170, 5.03],  
+                      [-0.010, 0.145, 5.01],
+                      [-0.080, 0.162, 5.01],
+                      [-0.169, 0.161, 5.03], # great!
+                      [-0.148, 0.111, 5.03],
+                      [-0.221, 0.154, 5.03],
+                      [-0.235, 0.140, 5.03],
+                      [-0.229, 0.116, 5.02],
+                      [-0.128, 0.049, 5.02], # possibly
+                      [-0.191, 0.041, 5.04], # great!
+                      [-0.101, 0.048, 5.02],
+                      [0.032, 0.006, 5.03],  # great! low counts
+                      [-0.075, 0.042, 5.02],
+                      [-0.085, -0.006, 5.04],
+                      [-0.012, -0.032, 5.03],
+                      [0.045, -0.042, 5.01],
+                      [0.026, -0.068, 5.01], # take g(2) again
+                      [0.036, -0.188, 5.03],
+                      [0.122, -0.219, 5.02], # great!
+                      [-0.101, -0.082, 5.00],
+                      [-0.229, -0.052, 5.03], # great!
+                      [-0.209, -0.105, 5.05],
+                      [-0.222, -0.121, 5.03], # possibly
+                      [-0.056, -0.015, 5.02],
+                      [-0.137, -0.046, 5.03],
+                      [0.242, -0.018, 5.03],
+                      [0.229, -0.024, 5.07]] # take g(2) again
+    
+    coords_g2_retake = [[0.003, 0.216, 5.02],
+                        [0.006, 0.187, 5.03],
+                        [0.026, -0.068, 5.01],
+                        [0.229, -0.024, 5.07]]
+    
+    pESR_list = [[0.061, 0.164, 5.03],
+                 [-0.169, 0.161, 5.03],
+                 [-0.128, 0.049, 5.02],
+                 [-0.191, 0.041, 5.04],
+                 [0.032, 0.006, 5.03],
+                 [0.122, -0.219, 5.02],
+                 [-0.229, -0.052, 5.03],
+                 [-0.222, -0.121, 5.03]]
+
+#    optimize_list = [[0.061, 0.164, 5.03]]
+    
+    nv_sig_list = []
+    for ind in range(len(pESR_list)):
+        coords = pESR_list[ind]
+        nv_sig = {'coords': coords,
+                  'name': '{}_nv{}_2019_07_25'.format(sample_name, ind),
+                  'expected_count_rate': None,
+                  'nd_filter': 'nd_1.5', 'magnet_angle': None}
+        nv_sig_list.append(nv_sig)
+    
+#    nv_sig_list = [search]
+#    nv_sig_list = [nv0_2019_07_25]
 
     # %% Functions to run
 
@@ -276,16 +350,17 @@ if __name__ == '__main__':
 
         # Operations that don't need an NV
         # set_xyz_zero()
-        # set_xyz([0.229, 0.163, 50.0])
+#         set_xyz([0.0, 0.0, 5.0])
 #        drift = tool_belt.get_drift()
 #        tool_belt.set_drift([float(drift[0])+0.02, float(drift[1])-0.02, 0.15])
-#        tool_belt.set_drift([0.0, 0.0, 0.0])
+#        tool_belt.set_drift([-0.012, 0.0, -0.02])
         # 
 #        set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
 
         # Routines that expect lists of NVs
-        # optimize_list(cxn, nv_sig_list, apd_indices)
-        # do_sample_nvs(nv_sig_list, apd_indices)
+#        do_optimize_list(nv_sig_list, apd_indices)
+#        do_sample_nvs(nv_sig_list, apd_indices)
+#        do_g2_measurement(nv_sig_list[0], apd_indices[0], apd_indices[1])
 
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
@@ -295,13 +370,13 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-            do_image_sample(nv_sig, apd_indices)
+#            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
-#            do_pulsed_resonance(nv_sig, apd_indices)
+            do_pulsed_resonance(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.76, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.98, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.05)

@@ -240,12 +240,12 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
 # %% User functions
     
 
-def optimize_list(nv_sig_list, nd_filter, apd_indices):
+def optimize_list(nv_sig_list, apd_indices):
 
     with labrad.connect() as cxn:
-        optimize_list_with_cxn(cxn, nv_sig_list, nd_filter, apd_indices)
+        optimize_list_with_cxn(cxn, nv_sig_list, apd_indices)
 
-def optimize_list_with_cxn(cxn, nv_sig_list, nd_filter, apd_indices):
+def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices):
     
     tool_belt.init_safe_stop()
     
@@ -258,8 +258,8 @@ def optimize_list_with_cxn(cxn, nv_sig_list, nd_filter, apd_indices):
             break
         
         nv_sig = nv_sig_list[ind]
-        opti_coords = main_with_cxn(cxn, nv_sig, nd_filter, apd_indices,
-                           set_to_opti_coords=False)
+        opti_coords = main_with_cxn(cxn, nv_sig, apd_indices,
+                           set_to_opti_coords=False, set_drift=False)
         if opti_coords is not None:
             opti_coords_list.append('[{:.3f}, {:.3f}, {:.2f}],'.format(*opti_coords))
         else:
@@ -280,7 +280,8 @@ def main(nv_sig, apd_indices,
                       set_to_opti_coords, save_data, plot_data)
 
 def main_with_cxn(cxn, nv_sig, apd_indices,
-                  set_to_opti_coords=True, save_data=False, plot_data=False):
+                  set_to_opti_coords=True, save_data=False,
+                  plot_data=False, set_drift=True):
     
     # Reset the microscope and make sure we're at the right ND
     tool_belt.reset_cfm(cxn)
@@ -378,7 +379,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         
     # %% Calculate the drift relative to the passed coordinates
     
-    if opti_succeeded:
+    if opti_succeeded and set_drift:
         drift = (numpy.array(opti_coords) - numpy.array(passed_coords)).tolist()
         tool_belt.set_drift(drift)
     
