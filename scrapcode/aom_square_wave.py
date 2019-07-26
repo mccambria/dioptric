@@ -83,4 +83,4 @@ if __name__ == '__main__':
 
     # Run the script
 #    main()
-    constant([7], 0.2, 0.0)
+    constant([], 0.0, 0.0)

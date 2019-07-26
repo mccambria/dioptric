@@ -223,8 +223,10 @@ def do_sample_nvs(nv_sig_list, apd_indices):
 
     # PESR parameters
     num_steps = 101
+    num_reps = 10**5
     num_runs = 5
     uwave_power = 9.0
+    uwave_pulse_dur = 120
 
     g2 = g2_measurement.main_with_cxn
     pesr = pulsed_resonance.main_with_cxn
@@ -234,8 +236,8 @@ def do_sample_nvs(nv_sig_list, apd_indices):
             g2_zero = g2(cxn, nv_sig, run_time, diff_window,
                          apd_indices[0], apd_indices[1])
             if g2_zero < 0.5:
-                pesr(cxn, nv_sig, apd_indices, 2.87, 0.1,
-                     num_steps, num_runs, uwave_power)
+                pesr(cxn, nv_sig, apd_indices, 2.87, 0.2, num_steps,
+                     num_reps, num_runs, uwave_power, uwave_pulse_dur)
 
 def do_set_drift_from_reference_image(nv_sig, apd_indices):
 
@@ -263,48 +265,10 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     sample_name = 'johnson1'
-
-    # drift = [-0.00583, -0.00100, 0.06564]
-#    nv0_2019_06_27 = {'coords': [-0.154, -0.333, 5.40], 'nd_filter': 'nd_0.5',
-#                      'expected_count_rate': 47, 'magnet_angle': 41.8,
-#                      'name': sample_name}
-#    nv1_2019_06_27 = {'coords': [-0.330, -0.342, 6.40], 'nd_filter': 'nd_0.5',
-#                      'expected_count_rate': 56, 'magnet_angle': 41.8,
-#                      'name': sample_name}
     
-    # Reset drift 7/23, 11:46
-#    search = {'coords': [-0.1, 0.0, 6.36], 'name': sample_name}
-    search = {'coords': [0.2, 0.2, 6.0], 'name': sample_name}
-    nv0_2019_06_27 = {'coords': [-0.148, -0.340, 5.46], 'nd_filter': 'nd_0.5',
-                      'expected_count_rate': 47, 'magnet_angle': 41.8,
-                      'name': sample_name}
-    nv1_2019_06_27 = {'coords': [-0.331, -0.353, 6.41], 'nd_filter': 'nd_0.5',
-                      'expected_count_rate': 56, 'magnet_angle': 41.8,
-                      'name': sample_name}
-    nv0_2019_07_23 = {'coords': [0.233, -0.147, 5.76], 'nd_filter': 'nd_0.5',
-                      'expected_count_rate': 57, 'magnet_angle': 131.8,
-                      'name': sample_name}
-    nv2_2019_07_23 = {'coords': [0.388, 0.399, 6.36], 'nd_filter': 'nd_0.5',
-                      'expected_count_rate': 68, 'magnet_angle': 41.8,
-                      'name': sample_name}
-    
-    # Reset drift 7/23, 17:50
-    nv3_2019_07_23 = {'coords': [0.443, 0.080, 6.69], 'nd_filter': 'nd_0.5',
-                      'expected_count_rate': 55, 'magnet_angle': 131.2,
-                      'name': sample_name}
-
-    nv0_2019_06_27_off_axis = copy.deepcopy(nv0_2019_06_27)
-#    nv0_2019_06_27_off_axis['magnet_angle'] = 99.0  # Splitting of 125 MHz
-    nv0_2019_06_27_off_axis['magnet_angle'] = 41.8  # Temp
-
-    nv1_2019_06_27_off_axis = copy.deepcopy(nv1_2019_06_27)
-    nv1_2019_06_27_off_axis['magnet_angle'] = 93.0  # Splitting of 125 MHz
-
-#    nv_sig_list = [nv0_2019_06_27_off_axis, nv0_2019_06_27]
-#    nv_sig_list = [nv1_2019_06_27_off_axis]
-#    nv_sig_list = [nv0_2019_06_27]
-    nv_sig_list = [nv3_2019_07_23]
-#    nv_sig_list = [search]
+    # 7/25/2019
+    search = {'coords': [0.0, 0.0, 5.0], 'name': sample_name}
+    nv_sig_list = [search]
 
     # %% Functions to run
 
@@ -331,7 +295,7 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-#            do_image_sample(nv_sig, apd_indices)
+            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
@@ -344,7 +308,7 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
 #            do_rabi(nv_sig, apd_indices, 2.8067, 0)  # 143.1
 #            do_rabi(nv_sig, apd_indices, 2.9364, 1)  # 231.5
-            do_t1_battery(nv_sig, apd_indices)
+#            do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
