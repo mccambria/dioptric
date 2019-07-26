@@ -28,7 +28,7 @@ import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
-import minorroutines.set_drift_from_reference_image as set_drift_from_reference_image
+import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 
 
@@ -321,8 +321,8 @@ if __name__ == '__main__':
                         [0.026, -0.068, 5.01],
                         [0.229, -0.024, 5.07]]
     
-    pESR_list = [[0.061, 0.164, 5.03],
-                 [-0.169, 0.161, 5.03],
+    pESR_list = [[0.061, 0.164, 5.03], #
+                 [-0.169, 0.161, 5.03], 
                  [-0.128, 0.049, 5.02],
                  [-0.191, 0.041, 5.04],
                  [0.032, 0.006, 5.03],
@@ -333,7 +333,7 @@ if __name__ == '__main__':
 #    optimize_list = [[0.061, 0.164, 5.03]]
     
     nv_sig_list = []
-    for ind in [1]:
+    for ind in [2]:
         coords = pESR_list[ind]
         nv_sig = {'coords': coords,
                   'name': '{}-nv{}_2019_07_25'.format(sample_name, ind),
