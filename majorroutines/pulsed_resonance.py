@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import time
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
-import labrad
+#import labrad
 
 
 # %% Figure functions

@@ -184,7 +184,7 @@ def fit_resonance(save_file_type):
     
     # Save the file in the same file directory
     no_ext = open_file_name.split('.')[0]
-    fig.savefig('{}_fit.{}'.format(no_ext, save_file_type))
+    fig.savefig('{}-fit.{}'.format(no_ext, save_file_type))
     
 # %%
     
