@@ -23,13 +23,10 @@ import labrad
 
 
 def illustrate_mapping(file_name):
-    
-    folder_dir = tool_belt.get_folder_dir(__file__)
-    file_path = os.path.abspath(os.path.join(folder_dir, file_name))
-    with open(file_path) as file:
-        data = json.load(file)
-        image_sample_file_name = data['image_sample_file_name']
-        nv_sig_list = data['nv_sig_list']
+
+    data = tool_belt.get_raw_data(file_name, 'image_sample_mapping')
+    image_sample_file_name = data['image_sample_file_name']
+    nv_sig_list = data['nv_sig_list']
         
     fig = image_sample.create_figure(image_sample_file_name)
     axes = fig.get_axes()
@@ -38,20 +35,20 @@ def illustrate_mapping(file_name):
     im = images[0]
     im.set_clim(0, 100)
     fig.set_size_inches(8.5, 8.5)
-    
+
     # Get the expected radius of an NV
     try:
         with labrad.connect() as cxn:
             shared_params = tool_belt.get_shared_parameters_dict(cxn)
-        airy_radius_nm = shared_params['airy_radius_nm']
+        airy_radius_nm = shared_params['airy_radius']
         galvo_nm_per_volt = shared_params['galvo_nm_per_volt']
         airy_radius_volts = airy_radius_nm / galvo_nm_per_volt
     except Exception:
         airy_radius_volts = 0.004
 
     for ind in range(len(nv_sig_list)):
-        nv_sig = nv_sig_list[ind]
-        circle = plt.Circle(tuple(nv_sig[0:2]), 2*airy_radius_volts,
+        coords = nv_sig_list[ind]['coords']
+        circle = plt.Circle(tuple(coords[0:2]), 2*airy_radius_volts,
                             ec='g', fill=False, lw=2.0)
         ax.add_patch(circle)
         
@@ -76,7 +73,7 @@ def generate_mapping_files(sample_name, micrometer_coords,
     tool_belt.save_raw_data(raw_data, file_path)
     
     file_name_ext = '{}.txt'.format(file_name)
-    fig = illustrate_mapping(file_name_ext)
+    fig = illustrate_mapping(file_name)
     
     tool_belt.save_figure(fig, file_path)
 
@@ -94,9 +91,9 @@ if __name__ == '__main__':
 #    else:
     
     # Generate the mapping files
-    sample_name = 'johnson1'
+    sample_name = 'ayrton12'
     micrometer_coords = [208.3, 277.3, 146.8]
-    image_sample_file_name = '2019-07-23_17-37-01_johnson1'
+    image_sample_file_name = '2019-07-25_18-37-46_ayrton12_search'
     
-#    generate_mapping_files(sample_name, micrometer_coords,
-#                           image_sample_file_name, nv_sig_list)
+    generate_mapping_files(sample_name, micrometer_coords,
+                          image_sample_file_name, nv_sig_list)

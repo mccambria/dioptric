@@ -468,9 +468,9 @@ def get_time_stamp():
     """
 
     timestamp = str(datetime.datetime.now())
-    timestamp = timestamp.split('.')[0]  # Ditch microseconds
-    timestamp = timestamp.replace(':', '-')  # Replace colon with dash
-    timestamp = timestamp.replace(' ', '_')  # Replace space with underscore
+    timestamp = timestamp.split('.')[0]  # Keep up to seconds
+    timestamp = timestamp.replace(':', '_')  # Replace colon with dash
+    timestamp = timestamp.replace(' ', '-')  # Replace space with underscore
     return timestamp
 
 
@@ -523,7 +523,7 @@ def get_file_path(source_name, timeStamp, name='', subfolder=None):
     """
 
     # Set up a timestamp
-    fileName = timeStamp + '_' + name
+    fileName = timeStamp + '-' + name
 
     folderDir = get_folder_dir(source_name, subfolder)
 
@@ -566,7 +566,8 @@ def save_raw_data(rawData, filePath):
 
 def get_nv_sig_units():
     return {'coords': 'V', 'expected_count_rate': 'kcps',
-            'magnet_angle': 'deg'}
+            'magnet_angle': 'deg', 'resonance': 'GHz',
+            'rabi': 'ns', 'uwave_power': 'dBm'}
 
 
 # %% Safe stop (TM mccambria)

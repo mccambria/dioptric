@@ -50,7 +50,7 @@ def clean_up(cxn):
 
     tool_belt.reset_cfm()
 
-def save_data(name, raw_data, figs):
+def save_data(name, raw_data, fig):
     """Save the raw data to a txt file as a json object. Save the figures as
     svgs.
     """
@@ -61,7 +61,7 @@ def save_data(name, raw_data, figs):
 
     tool_belt.save_raw_data(raw_data, file_path)
 
-    for fig in figs:
+    if fig is not None:
         tool_belt.save_figure(fig, file_path)
 
 def AbsCos(angle, offset, amp, phase):
@@ -167,8 +167,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
                 'opti_angle-units': 'deg'}
 
     # Save the data and the figures from this run
-    if fig is not None:
-        save_data(nv_sig['name'], raw_data, [fig])
+    save_data(nv_sig['name'], raw_data, fig)
 
 
 # %% Run the file

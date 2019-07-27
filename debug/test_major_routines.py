@@ -80,62 +80,41 @@ def main(nv_sig, apd_indices):
     
     # rabi
     print('\nTesting rabi...\n')
-    uwave_freq = 2.87
-    uwave_power = 9.0
     uwave_time_range = [0, 100]
     do_uwave_gate_number = 0
     num_steps = 10
     num_reps = 10
     num_runs = 2
-    rabi.main(nv_sig, apd_indices, 
-              uwave_freq, uwave_power, uwave_time_range,
-              do_uwave_gate_number,
+    rabi.main(nv_sig, apd_indices, uwave_time_range, do_uwave_gate_number,
               num_steps, num_reps, num_runs)
     
     # t1_double_quantum
     print('\nTesting t1_double_quantum...\n')
-    uwave_freq_plus = 2.86
-    uwave_freq_minus = 2.88
-    uwave_power = 9
-    uwave_pi_pulse_plus = 65
-    uwave_pi_pulse_minus = 75
     relaxation_time_range = [0, 10*10**3]
     num_steps = 10
     num_reps = 10
     num_runs = 2
     init_read_list = [-1, +1]
-    t1_double_quantum.main(nv_sig, apd_indices,
-                 uwave_freq_plus, uwave_freq_minus,
-                 uwave_power, uwave_power,
-                 uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                 relaxation_time_range, num_steps, num_reps, num_runs, 
-                 init_read_list)
+    t1_double_quantum.main(nv_sig, apd_indices, relaxation_time_range,
+                           num_steps, num_reps, num_runs, init_read_list)
     
     # ramsey
     print('\nTesting ramsey...\n')
-    uwave_power = 9
-    uwave_freq = 2.8086
     detuning = 2.5  # MHz
-    uwave_pi_half_pulse = 33
     precession_time_range = [0, 4 * 10**3]
     num_steps = 6
     num_reps = 10
     num_runs = 2
-    ramsey.main(nv_sig, apd_indices,
-                uwave_freq, detuning, uwave_power, uwave_pi_half_pulse,
+    ramsey.main(nv_sig, apd_indices, detuning,
                 precession_time_range, num_steps, num_reps, num_runs)
     
     # spin_echo
     print('\nTesting spin_echo...\n')
-    uwave_power = 9
-    uwave_freq = 2.8086
-    rabi_period = 123
     precession_time_range = [0, 4 * 10**3]
     num_steps = 6
     num_reps = 10
     num_runs = 2
     spin_echo.main(nv_sig, apd_indices,
-                   uwave_freq, uwave_power, rabi_period,
                    precession_time_range, num_steps, num_reps, num_runs)
     
     # optimize_magnet_angle

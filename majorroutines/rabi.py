@@ -22,19 +22,80 @@ from scipy.optimize import curve_fit
 import labrad
 
 
+# %% Functions
+
+
+def fit_data(uwave_time_range, num_steps, norm_avg_sig):
+
+    min_uwave_time = uwave_time_range[0]
+    max_uwave_time = uwave_time_range[1]
+    taus = numpy.linspace(min_uwave_time, max_uwave_time,
+                          num=num_steps, dtype=numpy.int32)
+
+    fit_func = tool_belt.cosexp
+
+    # Estimated fit parameters
+    offset = numpy.average(norm_avg_sig)
+    amplitude = 1.0 - offset
+    frequency = 1/150  # Could take Fourier transform
+    decay = 1000
+
+    init_params = [offset, amplitude, frequency, decay]
+
+    try:
+        popt, pcov = curve_fit(fit_func, taus, norm_avg_sig,
+                               p0=init_params)
+    except Exception as e:
+        print(e)
+        popt = None
+        pcov = None
+
+    return fit_func, popt
+
+def create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
+                      fit_func, popt):
+
+    min_uwave_time = uwave_time_range[0]
+    max_uwave_time = uwave_time_range[1]
+    taus = numpy.linspace(min_uwave_time, max_uwave_time,
+                          num=num_steps, dtype=numpy.int32)
+    linspaceTau = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
+
+    fit_fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(taus, norm_avg_sig,'bo',label='data')
+    ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', label='fit')
+    ax.set_xlabel('Microwave duration (ns)')
+    ax.set_ylabel('Contrast (arb. units)')
+    ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
+    ax.legend()
+    text = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
+                      r'$C = $' + '%.3f'%(popt[0]),
+                      r'$A_0 = $' + '%.3f'%(popt[1]),
+                      r'$\frac{1}{\nu} = $' + '%.1f'%(1/popt[2]) + ' ns',
+                      r'$d = $' + '%i'%(popt[3]) + ' ' + r'$ ns$'))
+
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.55, 0.25, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+
+    fit_fig.canvas.draw()
+    fit_fig.set_tight_layout(True)
+    fit_fig.canvas.flush_events()
+
+
 # %% Main
 
 
-def main(nv_sig, apd_indices, uwave_freq, uwave_power,
+def main(nv_sig, apd_indices,
          uwave_time_range, do_uwave_gate_number,
          num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
+        main_with_cxn(cxn, nv_sig, apd_indices,
                   uwave_time_range, do_uwave_gate_number,
                   num_steps, num_reps, num_runs)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
+def main_with_cxn(cxn, nv_sig, apd_indices,
                   uwave_time_range, do_uwave_gate_number,
                   num_steps, num_reps, num_runs):
 
@@ -51,8 +112,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     do_uwave_gate = do_uwave_gate_number
 
     if do_uwave_gate == 0:
+        uwave_freq = nv_sig['resonance_low']
+        uwave_power = nv_sig['uwave_power_low']
         sig_gen = 'signal_generator_tsg4104a'
     elif do_uwave_gate == 1:
+        uwave_freq = nv_sig['resonance_high']
+        uwave_power = nv_sig['uwave_power_high']
         sig_gen = 'signal_generator_bnc835'
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -211,26 +276,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
 
     # %% Fit the data and extract piPulse
 
-    fit_func = tool_belt.cosexp
-
-    # Estimated fit parameters
-    offset = 0.90
-    amplitude = 0.10
-    frequency = 1/150
-#    phase = 0
-    decay = 1000
-
-#    init_params = [offset, amplitude, frequency, phase, decay]
-    init_params = [offset, amplitude, frequency, decay]
-
-    try:
-        opti_params, cov_arr = curve_fit(fit_func, taus, norm_avg_sig,
-                                         p0=init_params)
-    except Exception:
-        print('Rabi fit failed - using guess parameters.')
-        opti_params = init_params
-
-    rabi_period = 1 / opti_params[2]
+    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
 
     # %% Plot the Rabi signal
 
@@ -250,34 +296,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     ax.set_ylabel('Contrast (arb. units)')
 
     raw_fig.canvas.draw()
-    # fig.set_tight_layout(True)
+    raw_fig.set_tight_layout(True)
     raw_fig.canvas.flush_events()
 
     # %% Plot the data itself and the fitted curve
 
-    linspaceTau = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
-
-    fit_fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(taus, norm_avg_sig,'bo',label='data')
-    ax.plot(linspaceTau, fit_func(linspaceTau, *opti_params), 'r-', label='fit')
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Contrast (arb. units)')
-    ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
-    ax.legend()
-    text = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
-                      r'$C = $' + '%.3f'%(opti_params[0]),
-                      r'$A_0 = $' + '%.3f'%(opti_params[1]),
-                      r'$\frac{1}{\nu} = $' + '%.1f'%(rabi_period) + ' ns',
-                      r'$d = $' + '%i'%(opti_params[3]) + ' ' + r'$ ns$'))
-
-
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.55, 0.25, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-
-    fit_fig.canvas.draw()
-    # fig.set_tight_layout(True)
-    fit_fig.canvas.flush_events()
+    fit_fig = None
+    if (fit_func is not None) and (popt is not None):
+        fit_fig = create_fit_figure(uwave_time_range, num_steps,
+                                    norm_avg_sig, fit_func, popt)
 
     # %% Clean up and save the data
 
@@ -316,9 +343,24 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
-    tool_belt.save_figure(fit_fig, file_path + '_fit')
+    if fit_fig is not None:
+        tool_belt.save_figure(fit_fig, file_path + '-fit')
     tool_belt.save_raw_data(raw_data, file_path)
 
-    # %% Return integer value for pi pulse
 
-    return rabi_period // 2
+# %% Run the file
+
+
+if __name__ == '__main__':
+    
+    file = '2019-07-23_18-15-36_johnson1'
+    data = tool_belt.get_raw_data('rabi.py', file)
+
+    norm_avg_sig = data['norm_avg_sig']
+    uwave_time_range = data['uwave_time_range']
+    num_steps = data['num_steps']
+
+    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    if (fit_func is not None) and (popt is not None):
+        create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
+                          fit_func, popt)

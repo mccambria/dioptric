@@ -36,29 +36,18 @@ import labrad
 # %% Main
 
 
-def main(nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
-         uwave_power_plus, uwave_power_minus,
-         uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-         relaxation_time_range, num_steps, num_reps, num_runs,
-         init_read_list):
+def main(nv_sig, apd_indices, relaxation_time_range,
+         num_steps, num_reps, num_runs, init_read_list):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices,
-                      uwave_freq_plus, uwave_freq_minus,
-                      uwave_power_plus, uwave_power_minus,
-                      uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                      relaxation_time_range, num_steps, num_reps, num_runs,
-                      init_read_list)
+        main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
+                      num_steps, num_reps, num_runs, init_read_list)
 
 
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
-                  uwave_power_plus, uwave_power_minus,
-                  uwave_pi_pulse_plus, uwave_pi_pulse_minus,
-                  relaxation_time_range, num_steps, num_reps, num_runs,
-                  init_read_list):
+def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
+                  num_steps, num_reps, num_runs, init_read_list):
 
     tool_belt.reset_cfm(cxn)
-
 
     # %% Define the times to be used in the sequence
     
@@ -84,19 +73,26 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
 
     # %% Setting initialize and readout states
 
+    uwave_pi_pulse_plus = round(nv_sig['rabi_high'] / 2)
+    uwave_pi_pulse_minus = round(nv_sig['rabi_low'] / 2)
+    uwave_freq_plus = nv_sig['resonance_high']
+    uwave_freq_minus = nv_sig['resonance_low']
+    uwave_power_plus = nv_sig['uwave_power_high']
+    uwave_power_minus = nv_sig['uwave_power_low']
+
     if init_state == 0:
         uwave_pi_pulse_init = 0
     elif init_state == 1:
-        uwave_pi_pulse_init = round(uwave_pi_pulse_plus)
+        uwave_pi_pulse_init = uwave_pi_pulse_plus
     elif init_state == -1:
-        uwave_pi_pulse_init = round(uwave_pi_pulse_minus)
+        uwave_pi_pulse_init = uwave_pi_pulse_minus
 
     if read_state == 0:
         uwave_pi_pulse_read = 0
     elif read_state == 1:
-        uwave_pi_pulse_read =round(uwave_pi_pulse_plus)
+        uwave_pi_pulse_read = uwave_pi_pulse_plus
     elif read_state == -1:
-        uwave_pi_pulse_read = round(uwave_pi_pulse_minus)
+        uwave_pi_pulse_read = uwave_pi_pulse_minus
 
     if init_state == 0:
         uwave_freq_init = 2.87
@@ -105,14 +101,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq_plus, uwave_freq_minus,
     if init_state == -1:
         uwave_freq_init = uwave_freq_minus
 
-
     if read_state == 0:
         uwave_freq_read = 2.87
     if read_state == 1:
         uwave_freq_read = uwave_freq_plus
     if read_state == -1:
         uwave_freq_read = uwave_freq_minus
-
 
     print('Initial pi pulse: {} ns'.format(uwave_pi_pulse_init))
     print('Initial frequency: {} GHz'.format(uwave_freq_init))
