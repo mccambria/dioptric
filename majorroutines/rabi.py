@@ -86,16 +86,16 @@ def create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
 # %% Main
 
 
-def main(nv_sig, apd_indices, uwave_freq, uwave_power,
+def main(nv_sig, apd_indices,
          uwave_time_range, do_uwave_gate_number,
          num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
+        main_with_cxn(cxn, nv_sig, apd_indices,
                   uwave_time_range, do_uwave_gate_number,
                   num_steps, num_reps, num_runs)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
+def main_with_cxn(cxn, nv_sig, apd_indices,
                   uwave_time_range, do_uwave_gate_number,
                   num_steps, num_reps, num_runs):
 
@@ -112,8 +112,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     do_uwave_gate = do_uwave_gate_number
 
     if do_uwave_gate == 0:
+        uwave_freq = nv_sig['resonance_low']
+        uwave_power = nv_sig['uwave_power_low']
         sig_gen = 'signal_generator_tsg4104a'
     elif do_uwave_gate == 1:
+        uwave_freq = nv_sig['resonance_high']
+        uwave_power = nv_sig['uwave_power_high']
         sig_gen = 'signal_generator_bnc835'
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -273,8 +277,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     # %% Fit the data and extract piPulse
 
     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    if popt is not None:
-        rabi_period = 1 / popt[2]
 
     # %% Plot the Rabi signal
 
@@ -341,7 +343,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
-    tool_belt.save_figure(fit_fig, file_path + '-fit')
+    if fit_fig is not None:
+        tool_belt.save_figure(fit_fig, file_path + '-fit')
     tool_belt.save_raw_data(raw_data, file_path)
 
 

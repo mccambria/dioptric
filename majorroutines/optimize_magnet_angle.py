@@ -29,7 +29,7 @@ def create_fit_figure(splittings, angles, fit_func, popt):
 
     ax.set_title('ESR Splitting Versus Magnet Angle')
     ax.set_xlabel('Angle (deg)')
-    ax.set_ylabel('Splitting (GHz)')
+    ax.set_ylabel('Splitting (MHz)')
     ax.scatter(angles, splittings, c='r')
 
     x_vals = numpy.linspace(0, 180, 1000)
@@ -50,7 +50,7 @@ def clean_up(cxn):
 
     tool_belt.reset_cfm()
 
-def save_data(name, raw_data, figs):
+def save_data(name, raw_data, fig):
     """Save the raw data to a txt file as a json object. Save the figures as
     svgs.
     """
@@ -61,7 +61,7 @@ def save_data(name, raw_data, figs):
 
     tool_belt.save_raw_data(raw_data, file_path)
 
-    for fig in figs:
+    if fig is not None:
         tool_belt.save_figure(fig, file_path)
 
 def AbsCos(angle, offset, amp, phase):
@@ -167,8 +167,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
                 'opti_angle-units': 'deg'}
 
     # Save the data and the figures from this run
-    if fig is not None:
-        save_data(nv_sig['name'], raw_data, [fig])
+    save_data(nv_sig['name'], raw_data, fig)
 
 
 # %% Run the file
@@ -186,12 +185,12 @@ if __name__ == '__main__':
     
 #    file_name = ''  # eg '2019-06-07_14-20-27_ayrton12.txt'
 #    data = tool_belt.get_raw_data(__file__, file_name)
-    splittings = [170, 140, 80, 201, 223, 30]
-    angles = [0.0, 90.0, 150.0, 60.0, 30.0, 120.0]
+    splittings = [77.9, 74.4, 48.6, 0, 0, 52.1]
+    angles = [0.0, 30, 60, 90, 120, 150]
     
     fit_func = AbsCosNoOff
     amp = 200
-    phase = 0
+    phase = 90
     guess_params = [amp, phase]
     popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
     # Find the angle at the peak within [0, 360]

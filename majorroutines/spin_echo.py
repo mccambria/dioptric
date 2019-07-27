@@ -26,17 +26,15 @@ import labrad
 
 # %% Main
 
-def main(nv_sig, apd_indices, uwave_freq, uwave_power,
-         rabi_period, precession_time_range,
-         num_steps, num_reps, num_runs):
+def main(nv_sig, apd_indices,
+         precession_time_range, num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
-                  rabi_period, precession_time_range,
-                  num_steps, num_reps, num_runs)
+        main_with_cxn(cxn, nv_sig, apd_indices,
+                  precession_time_range, num_steps, num_reps, num_runs)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
-                  rabi_period, precession_time_range,
+def main_with_cxn(cxn, nv_sig, apd_indices,
+                  precession_time_range,
                   num_steps, num_reps, num_runs):
     
     tool_belt.reset_cfm(cxn)
@@ -57,6 +55,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_freq, uwave_power,
     aom_delay_time = shared_params['532_aom_delay']
     rf_delay_time = shared_params['uwave_delay']
     gate_time = shared_params['pulsed_readout_dur']
+    
+    # Default to the low resonance (Tektronix) for now
+    rabi_period = nv_sig['rabi_low']
+    uwave_freq = nv_sig['resonance_low']
+    uwave_power = nv_sig['uwave_power_low']
 
     # Get pulse frequencies
     uwave_pi_pulse = round(rabi_period / 2)

@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import time
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
-import labrad
+#import labrad
 
 
 # %% Figure functions
@@ -104,10 +104,10 @@ def fit_resonance(freq_range, freq_center, num_steps,
     inverted_norm_avg_sig = 1 - norm_avg_sig
     ref_std = numpy.std(ref_counts)
     rel_ref_std = ref_std / numpy.average(ref_counts)
-    height = max(2*rel_ref_std, contrast/4)
+    height = max(1.5*rel_ref_std, contrast/4)
 
     # Peaks must be separated from each other by a ~FWHM (rayleigh criteria),
-    # have a contrast of at least three times the noise or 5%
+    # have a contrast of at least 1.5x the noise or 5%
     # (whichever is greater), and have a width of at least two points
     peak_inds, details = find_peaks(inverted_norm_avg_sig, distance=fwhm_ind,
                                     height=height, width=2)
@@ -389,7 +389,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
-    filePath = tool_belt.get_file_path(__file__, timestamp, name + '_fit')
+    filePath = tool_belt.get_file_path(__file__, timestamp, name + '-fit')
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
     
@@ -415,7 +415,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-    file = '2019-07-26_14-48-08_ayrton12_nv7_2019_07_25'
+    file = '2019-07-26-16_38_18-ayrton12-nv25_2019_07_25'
     data = tool_belt.get_raw_data('pulsed_resonance.py', file)
 
     freq_center = data['freq_center']
