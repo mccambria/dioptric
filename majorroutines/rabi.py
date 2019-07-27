@@ -37,7 +37,7 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
     # Estimated fit parameters
     offset = numpy.average(norm_avg_sig)
     amplitude = 1.0 - offset
-    frequency = 1/150  # Could take Fourier transform
+    frequency = 1/75  # Could take Fourier transform
     decay = 1000
 
     init_params = [offset, amplitude, frequency, decay]
@@ -353,7 +353,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 if __name__ == '__main__':
     
-    file = '2019-07-23_18-15-36_johnson1'
+    file = '2019-07-27-15_14_27-ayrton12-nv16_2019_07_25'
     data = tool_belt.get_raw_data('rabi.py', file)
 
     norm_avg_sig = data['norm_avg_sig']
