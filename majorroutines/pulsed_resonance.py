@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import time
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
-#import labrad
+import labrad
 
 
 # %% Figure functions
@@ -91,8 +91,8 @@ def fit_resonance(freq_range, freq_center, num_steps,
         
     # %% Guess the locations of the minimums
             
-    contrast = 0.2
-    sigma = 0.006
+    contrast = 0.2  # Arb
+    sigma = 0.005  # MHz
     fwhm = 2.355 * sigma
     
     # Convert to index space
@@ -104,16 +104,16 @@ def fit_resonance(freq_range, freq_center, num_steps,
     inverted_norm_avg_sig = 1 - norm_avg_sig
     ref_std = numpy.std(ref_counts)
     rel_ref_std = ref_std / numpy.average(ref_counts)
-    height = max(1.5*rel_ref_std, contrast/4)
+    height = max(rel_ref_std, contrast/4)
 
-    # Peaks must be separated from each other by a ~FWHM (rayleigh criteria),
-    # have a contrast of at least 1.5x the noise or 5%
-    # (whichever is greater), and have a width of at least two points
+    # Peaks must be separated from each other by the estimated fwhm (rayleigh
+    # criteria), have a contrast of at least the noise or 5% (whichever is
+    # greater), and have a width of at least two points
     peak_inds, details = find_peaks(inverted_norm_avg_sig, distance=fwhm_ind,
                                     height=height, width=2)
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
-    
+
     if len(peak_inds) > 1:
         # Find the location of the highest peak
         max_peak_peak_inds = peak_heights.index(max(peak_heights)) 
@@ -142,10 +142,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
         return None, None
 
     # %% Fit!
-        
-    contrast = 0.2  # Arb
-    sigma = 0.005  # MHz
-    
+
     if high_freq_guess is None:
         fit_func = single_gaussian_dip
         guess_params = [contrast, sigma, low_freq_guess]
@@ -411,11 +408,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 
 # %% Run the file
-        
+
 
 if __name__ == '__main__':
     
-    file = '2019-07-26-16_38_18-ayrton12-nv25_2019_07_25'
+    file = '2019-07-27-03_27_33-ayrton12-nv27_2019_07_25'
     data = tool_belt.get_raw_data('pulsed_resonance.py', file)
 
     freq_center = data['freq_center']

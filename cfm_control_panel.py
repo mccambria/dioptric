@@ -274,13 +274,13 @@ if __name__ == '__main__':
     nv25_2019_07_25 = {'coords': coords_list[25],
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 25),
           'expected_count_rate': 39,
-          'nd_filter': 'nd_1.5', 'magnet_angle': 90.0,
+          'nd_filter': 'nd_1.5', 'magnet_angle': 42.4,
           'resonance_low': None, 'rabi_low': None, 'uwave_power_low': 9.0,
           'resonance_high': None, 'rabi_high': None, 'uwave_power_high': 10.0}
     nv27_2019_07_25 = {'coords': coords_list[27],
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 27),
           'expected_count_rate': 20,
-          'nd_filter': 'nd_1.5', 'magnet_angle': None,
+          'nd_filter': 'nd_1.5', 'magnet_angle': 15.6,
           'resonance_low': None, 'rabi_low': None, 'uwave_power_low': 9.0,
           'resonance_high': None, 'rabi_high': None, 'uwave_power_high': 10.0}
     nv29_2019_07_25 = {'coords': coords_list[29],

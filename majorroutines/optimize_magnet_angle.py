@@ -46,6 +46,21 @@ def create_fit_figure(splittings, angles, fit_func, popt):
 # %% Other functions
 
 
+def fit_data(splittings, angles):
+    
+    fit_func = AbsCosNoOff
+    amp = 200
+    phase = 0
+    guess_params = [amp, phase]
+    # Check if we have any undefined splittings
+    if any(numpy.isnan(splittings)):
+        fit_func = None
+        popt = None
+    else:
+        popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
+
+    return fit_func, popt
+
 def clean_up(cxn):
 
     tool_belt.reset_cfm()
@@ -118,24 +133,25 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
                                 num_freq_steps, num_freq_reps, num_freq_runs,
                                 uwave_power, uwave_pulse_dur)
         resonances[ind, :] = angle_resonances
-        # Check if all the returned values are truthy (no Nones)
         if all(angle_resonances):
+            # We got two resonances so take the difference
             splittings[ind] = (angle_resonances[1] - angle_resonances[0]) * 1000
-            
+        elif any(angle_resonances):
+            # We got one resonance so consider this a splitting of 0
+            splittings[ind] = 0
+        else:
+            # We failed to find any resonances
+            splittings[ind] = None
+
     # %% Analyze the data
     
-    fit_func = AbsCosNoOff
-    amp = 200
-    phase = 0
-    guess_params = [amp, phase]
-    # Check if we have any undefined splittings
-    if any(numpy.isnan(splittings)):
-        opti_angle = None
-        fig = None
-    else:
-        popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
-        # Find the angle at the peak within [0, 360]
-        opti_angle = (-popt[1]) % 360 
+    fit_func, popt = fit_data(splittings, angles)
+
+    opti_angle = None
+    fig = None
+    if (fit_func is not None) and (popt is not None):
+        # Find the angle at the peak within [0, 180]
+        opti_angle = (-popt[1]) % 180
         fig = create_fit_figure(splittings, angles, fit_func, popt)
 
     # %% Wrap up
@@ -178,24 +194,20 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    # You should at least be able to recreate a data set's figures when you
-    # run a file so we'll do that as an example here
+    # nv25_2019_07_25
+    # splittings = [31.4, 11.0, 43.0, 16.3, 33.0, 42.8]
+    # angles = [90, 120, 60, 150, 0, 30]
 
-    # Get the data
-    
-#    file_name = ''  # eg '2019-06-07_14-20-27_ayrton12.txt'
-#    data = tool_belt.get_raw_data(__file__, file_name)
-    splittings = [77.9, 74.4, 48.6, 0, 0, 52.1]
-    angles = [0.0, 30, 60, 90, 120, 150]
-    
-    fit_func = AbsCosNoOff
-    amp = 200
-    phase = 90
-    guess_params = [amp, phase]
-    popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
-    # Find the angle at the peak within [0, 360]
-    opti_angle = (-popt[1]) % 360
-    print(opti_angle)
-        
-    # Replot
-    create_fit_figure(splittings, angles, fit_func, popt)
+    # nv27_2019_07_25
+    splittings = [81.4, 79.8, 29.2, 33.1, 125.8, 128.8]
+    angles = [60, 150, 120, 90, 30, 0]
+
+    fit_func, popt = fit_data(splittings, angles)
+
+    opti_angle = None
+    fig = None
+    if (fit_func is not None) and (popt is not None):
+        fig = create_fit_figure(splittings, angles, fit_func, popt)
+        # Find the angle at the peak within [0, 180]
+        opti_angle = (-popt[1]) % 180
+        print('Optimized angle: {}'.format(opti_angle))
