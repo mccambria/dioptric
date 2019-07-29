@@ -95,6 +95,8 @@ def create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
     fit_fig.set_tight_layout(True)
     fit_fig.canvas.flush_events()
 
+    return fit_fig
+
 
 # %% Main
 
