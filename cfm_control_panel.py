@@ -124,7 +124,7 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 def do_rabi(nv_sig, apd_indices,
             uwave_freq, do_uwave_gate_number):
 
-    uwave_time_range = [0, 500]
+    uwave_time_range = [0, 200]
     num_steps = 51
     num_reps = 10**5
     num_runs = 2
