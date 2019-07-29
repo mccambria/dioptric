@@ -198,7 +198,7 @@ def main(folder_name, num_bins_list = None, offset = True):
     file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                          file_name)
 
-    print(file_path)
+#    print(file_path)
 
     tool_belt.save_raw_data(raw_data, file_path)
 
@@ -239,5 +239,5 @@ if __name__ == '__main__':
 
     # Specify the number of bins
 
-    num_bins_list = [1, 2, 3, 6]
+    num_bins_list = [1,2,3, 4, 6, 12]
     main(folder, num_bins_list, offset = True)
