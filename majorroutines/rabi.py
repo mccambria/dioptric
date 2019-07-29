@@ -37,7 +37,7 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
     # Estimated fit parameters
     offset = numpy.average(norm_avg_sig)
     amplitude = 1.0 - offset
-    frequency = 1/150  # Could take Fourier transform
+    frequency = 1/75  # Could take Fourier transform
     decay = 1000
 
     init_params = [offset, amplitude, frequency, decay]
