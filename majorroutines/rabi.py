@@ -40,6 +40,7 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
 
     offset = numpy.average(norm_avg_sig)
     amplitude = 1.0 - offset
+    frequency = 1/75  # Could take Fourier transform
     decay = 1000
 
     # To estimate the frequency let's find the highest peak in the FFT
@@ -122,7 +123,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     # %% Initial calculations and setup
 
-    # Set which signal generator to use. 0 is the tektronix, 1 is HP
+    # Set which signal generator to use. 0 is the tektronix, 1 is berkely nucleonics
     do_uwave_gate = do_uwave_gate_number
 
     if do_uwave_gate == 0:
@@ -249,7 +250,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
 
         cxn.apd_tagger.stop_tag_stream()
-        
+
         # %% Save the data we have incrementally for long measurements
 
         raw_data = {'start_timestamp': start_timestamp,
@@ -366,7 +367,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 
 if __name__ == '__main__':
-    
+
     file = '2019-06-24_16-56-39_ayrton12'
     data = tool_belt.get_raw_data('rabi.py', file)
 
