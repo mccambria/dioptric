@@ -110,8 +110,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 
     print('Initial pi pulse: {} ns'.format(uwave_pi_pulse_init))
     print('Initial frequency: {} GHz'.format(uwave_freq_init))
+    print('Initial power: {}'.format(uwave_power_plus))
     print('Readout pi pulse: {} ns'.format(uwave_pi_pulse_read))
     print('Readout frequency: {} GHz'.format(uwave_freq_read))
+    print('Readout power: {}'.format(uwave_power_minus))
 
     # %% Create the array of relaxation times
 
@@ -262,6 +264,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                         apd_indices[0], init_state, read_state]
             seq_args = [int(el) for el in seq_args]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
+            print(seq_args_string)
+            return
             cxn.pulse_streamer.stream_immediate(file_name, num_reps,
                                                 seq_args_string)
 

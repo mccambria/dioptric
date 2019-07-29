@@ -94,9 +94,9 @@ def do_pulsed_resonance(nv_sig, apd_indices,
     
     num_steps = 51
     num_reps = 10**5
-    num_runs = 2
+    num_runs = 3
     uwave_power = 9.0
-    uwave_pulse_dur = 32
+    uwave_pulse_dur = 60
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -136,16 +136,17 @@ def do_t1_battery(nv_sig, apd_indices):
 
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    # ~ 11 hours total
+    # ~ 13 hours total
     t1_exp_array = numpy.array([[[1,-1], [0, 50*10**3], 51, 8*10**4], # 50 min, optimize every 2.5 min
-                                [[1,-1], [0, 500*10**3], 26, 3*10**4], # 1.5 hrs, optimize every 3.5 min
+                                [[1,-1], [0, 800*10**3], 26, 3*10**4], # 2.4 hrs, optimize every 7.2 min
                                 [[1,1], [0, 50*10**3], 51, 8*10**4], # 50 min, optimize every 2.5 min
-                                [[1,1], [0, 500*10**3], 26, 3*10**4], # 1.5 hrs, optimize every 3.5 min
+                                [[1,1], [0, 800*10**3], 26, 3*10**4], # 2.4 hrs, optimize every 7.2 min
                                 [[0,1], [0, 2*10**6], 26, 2*10**4], # 3 hrs, optimize every 9 min
                                 [[0,0], [0, 2*10**6], 26, 2*10**4]]) # 3 hrs, optimize every 9 min
 
     # Loop through the experiments
-    for exp_ind in range(len(t1_exp_array)):
+#    for exp_ind in range(len(t1_exp_array)):
+    for exp_ind in [1]:
 
         init_read_states = t1_exp_array[exp_ind, 0]
         relaxation_time_range = t1_exp_array[exp_ind, 1]
@@ -269,9 +270,9 @@ if __name__ == '__main__':
           'resonance_low': 2.7890, 'rabi_low': 76.3, 'uwave_power_low': 9.0,
           'resonance_high': 2.9385, 'rabi_high': 54.5, 'uwave_power_high': 10.0}
     
-    nv5_2019_07_25['resonance_low'] = 2.800
+    nv5_2019_07_25['resonance_low'] = 2.7906
     nv5_2019_07_25['resonance_high'] = 2.9395
-    nv5_2019_07_25['rabi_low'] = 63
+    nv5_2019_07_25['rabi_low'] = 78.7 
     nv5_2019_07_25['rabi_high'] = 55.7
     
     
@@ -310,7 +311,8 @@ if __name__ == '__main__':
     
 #    nv_sig_list = [nv5_2019_07_25, nv16_2019_07_25, nv25_2019_07_25,
 #                   nv27_2019_07_25, nv29_2019_07_25]
-    nv_sig_list = [nv5_2019_07_25]
+#    nv_sig_list = [nv5_2019_07_25]
+    nv_sig_list = [nv27_2019_07_25]
 
     # %% Functions to run
 
@@ -344,8 +346,8 @@ if __name__ == '__main__':
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
-#            do_pulsed_resonance(nv_sig, apd_indices)
-            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.800, freq_range=0.15)
+            do_pulsed_resonance(nv_sig, apd_indices)
+#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.800, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.9398, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
