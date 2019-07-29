@@ -69,8 +69,8 @@ def main(folder_name, doPlot = False, offset = True):
             init_state = data['init_state']
             read_state = data['read_state']
 
-            sig_counts  = numpy.array(data['sig_counts'])
-            ref_counts = numpy.array(data['ref_counts'])
+            sig_counts  = numpy.array(data['sig_counts'][:][:12])
+            ref_counts = numpy.array(data['ref_counts'][:][:12])
 
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             num_steps = data['num_steps']

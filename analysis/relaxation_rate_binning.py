@@ -95,23 +95,23 @@ def main(folder_name, num_bins, save_data = True, offset = True):
             init_state = data['init_state']
             read_state = data['read_state']
             
-            sig_counts = numpy.array(data['sig_counts'])
-            ref_counts = numpy.array(data['ref_counts'])
+            sig_counts = numpy.array(data['sig_counts'][:][:12])
+            ref_counts = numpy.array(data['ref_counts'][:][:12])
             
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             # time is in microseconds
             min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             num_steps = data['num_steps']
-            num_runs = data['num_runs']
+#            num_runs = data['num_runs']
 
             time_array = numpy.linspace(min_relaxation_time, 
                                         max_relaxation_time, num=num_steps) 
             
             
             # Check that the num_runs is consistent. If not, raise an error
-            if num_runs_set != num_runs:
-                print('Error, num_runs not consistent in file {}'.format(file))
-                break
+#            if num_runs_set != num_runs:
+#                print('Error, num_runs not consistent in file {}'.format(file))
+#                break
             
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
@@ -250,7 +250,7 @@ def main(folder_name, num_bins, save_data = True, offset = True):
     
     slice_size = bin_size
     
-    while i < (num_runs):
+    while i < (num_runs_set):
         
         #Fit to the (0,0) - (0,1) data to find Omega
         zero_zero_avg_sig_counts =  \
@@ -320,7 +320,7 @@ def main(folder_name, num_bins, save_data = True, offset = True):
         # Define the counts for the plus relaxation equation
         plus_relaxation_counts =  plus_plus_norm_avg_sig - plus_minus_norm_avg_sig
 
-        init_params_list = [0.1, 0.40]
+        init_params_list = [10, 0.40]
         try:
             if offset:
                 init_params_list.append(0)
@@ -405,7 +405,7 @@ def main(folder_name, num_bins, save_data = True, offset = True):
                   
 if __name__ == '__main__':
     
-    folder = 'nv0_2019_06_27_23MHz'
+    folder = 'nv16_2019_07_25_77MHz'
 
     
     main(folder, 1,  False,  True)
