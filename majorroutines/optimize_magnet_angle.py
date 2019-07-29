@@ -205,7 +205,7 @@ if __name__ == '__main__':
     # nv25_2019_07_25
     # splittings = [31.4, 11.0, 43.0, 16.3, 33.0, 42.8]
     # angles = [90, 120, 60, 150, 0, 30]
-
+    
     # nv27_2019_07_25
     splittings = [81.4, 79.8, 29.2, 33.1, 125.8, 128.8]
     angles = [60, 150, 120, 90, 30, 0]
@@ -219,3 +219,4 @@ if __name__ == '__main__':
         # Find the angle at the peak within [0, 180]
         opti_angle = (-popt[1]) % 180
         print('Optimized angle: {}'.format(opti_angle))
+
