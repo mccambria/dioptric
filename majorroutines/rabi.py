@@ -27,18 +27,31 @@ import labrad
 
 def fit_data(uwave_time_range, num_steps, norm_avg_sig):
 
+    # %% Set up
+
     min_uwave_time = uwave_time_range[0]
     max_uwave_time = uwave_time_range[1]
-    taus = numpy.linspace(min_uwave_time, max_uwave_time,
-                          num=num_steps, dtype=numpy.int32)
+    taus, tau_step = numpy.linspace(min_uwave_time, max_uwave_time,
+                            num=num_steps, dtype=numpy.int32, retstep=True)
 
     fit_func = tool_belt.cosexp
 
-    # Estimated fit parameters
+    # %% Estimated fit parameters
+
     offset = numpy.average(norm_avg_sig)
     amplitude = 1.0 - offset
-    frequency = 1/150  # Could take Fourier transform
+    frequency = 1/75  # Could take Fourier transform
     decay = 1000
+
+    # To estimate the frequency let's find the highest peak in the FFT
+    transform = numpy.fft.rfft(norm_avg_sig)
+    freqs = numpy.fft.rfftfreq(num_steps, d=tau_step)
+    transform_mag = numpy.absolute(transform)
+    # [1:] excludes frequency 0 (DC component)
+    max_ind = numpy.argmax(transform_mag[1:])
+    frequency = freqs[max_ind + 1]
+
+    # %% Fit
 
     init_params = [offset, amplitude, frequency, decay]
 
@@ -61,7 +74,7 @@ def create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
                           num=num_steps, dtype=numpy.int32)
     linspaceTau = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
 
-    fit_fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+    fit_fig, ax = plt.subplots(figsize=(8.5, 8.5))
     ax.plot(taus, norm_avg_sig,'bo',label='data')
     ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', label='fit')
     ax.set_xlabel('Microwave duration (ns)')
@@ -235,7 +248,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
 
         cxn.apd_tagger.stop_tag_stream()
-        
+
         # %% Save the data we have incrementally for long measurements
 
         raw_data = {'start_timestamp': start_timestamp,
@@ -352,8 +365,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 
 if __name__ == '__main__':
-    
-    file = '2019-07-23_18-15-36_johnson1'
+
+    file = '2019-06-24_16-56-39_ayrton12'
     data = tool_belt.get_raw_data('rabi.py', file)
 
     norm_avg_sig = data['norm_avg_sig']
