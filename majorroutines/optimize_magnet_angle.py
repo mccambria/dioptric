@@ -185,12 +185,12 @@ if __name__ == '__main__':
     
 #    file_name = ''  # eg '2019-06-07_14-20-27_ayrton12.txt'
 #    data = tool_belt.get_raw_data(__file__, file_name)
-    splittings = [77.9, 74.4, 48.6, 0, 0, 52.1]
-    angles = [0.0, 30, 60, 90, 120, 150]
+    splittings = [81.4,79.8, 29.2, 33.1, 128.8 ]
+    angles = [60, 150, 120, 90, 0]
     
     fit_func = AbsCosNoOff
     amp = 200
-    phase = 90
+    phase = 20
     guess_params = [amp, phase]
     popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
     # Find the angle at the peak within [0, 360]
