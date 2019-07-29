@@ -121,7 +121,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     # %% Initial calculations and setup
 
-    # Set which signal generator to use. 0 is the tektronix, 1 is HP
+    # Set which signal generator to use. 0 is the tektronix, 1 is berkely nucleonics
     do_uwave_gate = do_uwave_gate_number
 
     if do_uwave_gate == 0:
