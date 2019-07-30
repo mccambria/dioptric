@@ -98,7 +98,7 @@ def get_seq(pulser_wiring, args):
 if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 1,
-              'do_532aom': 3,
+              'do_532_aom': 3,
               'do_uwave_gate_0': 4,
               'do_uwave_gate_1': 5}
     
@@ -106,5 +106,5 @@ if __name__ == '__main__':
     # readout_dur, pi_pulse, apd_index, uwave_gate_index
     args = [3000, 3000, 0, 0, 
             300, 100, 0, 0]
-    seq, ret_vals = get_seq(wiring, args)
+    seq, final, ret_vals = get_seq(wiring, args)
     seq.plot()   

@@ -192,7 +192,7 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
     
     sig_to_noise_ratio = sig_stat / st_dev_stat
 
-    print('Gate Time: {} ns \nSignal: {:.3f} \nNoise: {:.3f} \nSNR: {:.1f}\n '.format(readout_time, \
+    print('Readout Time: {} ns \nSignal: {:.3f} \nNoise: {:.3f} \nSNR: {:.1f}\n '.format(readout_time, \
           sig_stat, st_dev_stat, sig_to_noise_ratio))
     
     # %% Plot the counts
@@ -262,7 +262,10 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
     
     # Step thru the readout times and take a snr measurement
     for readout_ind_time in readout_time_list:
-    
+        
+        # Break out of the while if the user says stop
+        if tool_belt.safe_stop():
+            break
         
         readout_time = readout_ind_time
     
@@ -271,10 +274,6 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
         
         snr_list.append(snr_value)
         
-        # Break out of the while if the user says stop
-        if tool_belt.safe_stop():
-            break
-        
         
     # Prepare the plot:
     snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
@@ -282,7 +281,6 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
     ax.set_xlabel('Readout time (ns)')
     ax.set_ylabel('Signal-to-noise ratio') 
     ax.set_title('Optimize readout window at {}'.format(nd_filter))
-    ax.legend() 
     
     # Fit the data to a parabola
     offset = 130
@@ -303,12 +301,12 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
         ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
                                 verticalalignment="top", bbox=props)
         
-    except Exception:
-        
-        # If the fit didn't work, continue
-        pass
+    except Exception as e:
+        # Just print the error if the fit failed
+        print(e)
     
     # Plot the figure
+    ax.legend() 
     snr_fig.canvas.draw()
     snr_fig.canvas.flush_events()
     
@@ -331,15 +329,39 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
         
 # %%
     
-def main(nv_sig, readout_range, num_readout_steps):
+def main(nv_sig):
     # Step through the nd filters and find the optimized gate time in each one.
     
-    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
+#    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
+    nd_filter_list = ['nd_1.5']
+    
+    # Start 'Press enter to stop...'
+    tool_belt.init_safe_stop()
     
     # Step thru the nd_filters and take snr over range of readout times
     for nd_filter_ind in range(len(nd_filter_list)):
         
+        # Break out of the while if the user says stop
+        if tool_belt.safe_stop():
+            break
+        
         nd_filter = nd_filter_list[nd_filter_ind]
+        
+        if nd_filter == 'nd_0':
+            readout_range = [25, 200]
+            num_readout_steps = 8
+        elif nd_filter == 'nd_0.5':
+            readout_range = [50, 400]
+            num_readout_steps = 8
+        elif nd_filter == 'nd_1.0':
+            readout_range = [100, 500]
+            num_readout_steps = 9
+        elif nd_filter == 'nd_1.5':
+#            readout_range = [200, 600]
+#            num_readout_steps = 9
+            readout_range = [400, 600]
+            num_readout_steps = 5
+        
         print('nd filter set to {}'.format(nd_filter))
         
         optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter)
@@ -347,33 +369,25 @@ def main(nv_sig, readout_range, num_readout_steps):
 # %%
     
 if __name__ == '__main__':
-    
-        
-    # Start 'Press enter to stop...'
-    tool_belt.init_safe_stop()
-
 
     # Define the nv_sig to be used
     nv27_2019_07_25 = {'coords': [-0.229, -0.052, 5.03],
           'name': '{}-nv{}_2019_07_25'.format('ayrton12', 27),
-          'expected_count_rate': 18,
+#          'expected_count_rate': 18,
+          'expected_count_rate': 6,
           'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 400, 'magnet_angle': 15.4,
           'resonance_low': 2.8121, 'rabi_low': 94.6, 'uwave_power_low': 9.0,
           'resonance_high': 2.9249, 'rabi_high': 69.1, 'uwave_power_high': 10.0}
     
-    # Define the readout_range and the number of steps between data points
-    readout_range = [200, 600]
-    num_readout_steps = 9
-    
-
+    # Main parameters
     nv_sig = nv27_2019_07_25
+    
+    ### MAIN ###
+    main(nv_sig)
     
     # The individual functions in this file
 #    snr_measurement(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)
 #    optimize_readout(nv_sig, readout_range, num_readout_steps, 'nd_1.5')
-    
-    ### MAIN ###
-    main(nv_sig, readout_range, num_readout_steps)
 
 # %%
     if tool_belt.check_safe_stop_alive():
