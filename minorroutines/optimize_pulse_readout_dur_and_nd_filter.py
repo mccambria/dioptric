@@ -65,7 +65,7 @@ def snr_measurement(nv_sig, readout_time, nd_filter, num_steps, num_reps, num_ru
                              do_plot, save_raw_data):
 
     with labrad.connect() as cxn:
-        sig_to_noise_ratio = main_with_cxn(cxn, nv_sig, readout_time, nd_filter,
+        sig_to_noise_ratio = snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
                       num_steps, num_reps, num_runs, do_plot, save_raw_data)
         
         return sig_to_noise_ratio
@@ -101,7 +101,6 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
     
     # The two parameters we currently alter
     readout_time = int(readout_time)
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
     
     file_name = os.path.basename(__file__)
 
@@ -133,6 +132,10 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
         
         # Optimize
         opti_coords_list.append(optimize.main(nv_sig, apd_indices))
+        
+        # After optimizing, change the filter to the nd_filter passed
+        cxn.filter_slider_ell9k.set_filter(nd_filter)
+        time.sleep(0.5)
 
         cxn.signal_generator_tsg4104a.set_freq(nv_sig['resonance_high'])
         cxn.signal_generator_tsg4104a.set_amp(nv_sig['uwave_power_high'])
@@ -409,8 +412,9 @@ def main(nv_sig, readout_range, num_readout_steps):
     # Step thru the nd_filters and take snr over range of readout times
     for nd_filter_ind in range(len(nd_filter_list)):
         
-        nd_filter = nd_filter_list(nd_filter_ind)
+        nd_filter = nd_filter_list[nd_filter_ind]
         print('nd filter set to {}'.format(nd_filter))
+        
         optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter)
     
 # %%
