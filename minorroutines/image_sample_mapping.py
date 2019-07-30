@@ -17,6 +17,7 @@ import utils.tool_belt as tool_belt
 import matplotlib.pyplot as plt
 import os
 import labrad
+from pathlib import Path
 
 
 # %% Functions
@@ -24,7 +25,7 @@ import labrad
 
 def illustrate_mapping(file_name):
 
-    data = tool_belt.get_raw_data(file_name, 'image_sample_mapping')
+    data = tool_belt.get_raw_data(__file__, file_name)
     image_sample_file_name = data['image_sample_file_name']
     nv_sig_list = data['nv_sig_list']
         
@@ -66,12 +67,10 @@ def generate_mapping_files(sample_name, micrometer_coords,
             'nv_sig_list-units': tool_belt.get_nv_sig_units(),
             }
     
-    folder_dir = tool_belt.get_folder_dir(__file__)
-    file_name = '{}_mapping'.format(image_sample_file_name.split('.')[0])
-    file_path = os.path.abspath(os.path.join(folder_dir, file_name))
-    
+    file_name = '{}-mapping'.format(image_sample_file_name)
+    file_path = tool_belt.get_file_path(__file__, name=file_name)
+
     tool_belt.save_raw_data(raw_data, file_path)
-    
     fig = illustrate_mapping(file_name)
     
     tool_belt.save_figure(fig, file_path)
@@ -82,6 +81,8 @@ def generate_mapping_files(sample_name, micrometer_coords,
 
 if __name__ == '__main__':
     
+    image_sample_file_name = '2019-07-25_18-37-46_ayrton12_search'
+
     # Ignore this...
 #    if False:
 #        # Circle NVs from an existing mapping
@@ -125,7 +126,7 @@ if __name__ == '__main__':
                       [0.229, -0.024, 5.07]] # take g(2) again
 
     sample_name = 'ayrton12'
-    micrometer_coords = [None, None, None]
+    micrometer_coords = [3.154, 2.193, 11.118, 120.21]
     image_sample_file_name = '2019-07-25_18-37-46_ayrton12_search'
 
     nv_sig_list = []

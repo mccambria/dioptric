@@ -453,8 +453,8 @@ def get_raw_data(source_name, file_name, sub_folder_name=None,
 
 def get_branch_name():
     """Return the name of the active branch of kolkowitz-nv-experiment-v1.0"""
-    repo_path = 'C:\\Users\\kolkowitz\\Documents\\' \
-        'GitHub\\kolkowitz-nv-experiment-v1.0'
+    home_to_repo = Path('Documents/GitHub/kolkowitz-nv-experiment-v1.0')
+    repo_path = Path.home() / home_to_repo
     repo = Repo(repo_path)
     return repo.active_branch.name
 
@@ -505,7 +505,7 @@ def get_folder_dir(source_name, subfolder):
     return folderDir
 
 
-def get_file_path(source_name, timeStamp, name='', subfolder=None):
+def get_file_path(source_name, time_stamp='', name='', subfolder=None):
     """
     Get the file path to save to. This will be in a subdirectory of nvdata.
 
@@ -513,7 +513,7 @@ def get_file_path(source_name, timeStamp, name='', subfolder=None):
         source_name: string
             Source file name - alternatively, __file__ of the caller which will
             be parsed to get the name of the subdirectory we will write to
-        timeStamp: string
+        time_stamp: string
             Formatted timestamp to include in the file name
         name: string
             The file names consist of <timestamp>_<name>.<ext>
@@ -522,8 +522,15 @@ def get_file_path(source_name, timeStamp, name='', subfolder=None):
             Subfolder to save to under file name
     """
 
-    # Set up a timestamp
-    fileName = timeStamp + '-' + name
+    # Set up the file name
+    if (time_stamp != '') and (name != ''):
+        fileName = '{}-{}'.format(time_stamp, name)
+    elif (time_stamp == '') and (name != ''):
+        fileName = name
+    elif (time_stamp != '') and (name == ''):
+        fileName = '{}-{}'.format(time_stamp, 'untitled')
+    else:
+        fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
 
     folderDir = get_folder_dir(source_name, subfolder)
 

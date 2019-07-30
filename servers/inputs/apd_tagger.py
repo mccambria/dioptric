@@ -29,6 +29,7 @@ import TimeTagger
 import numpy
 import logging
 import re
+import time
 
 
 class ApdTagger(LabradServer):
@@ -116,7 +117,7 @@ class ApdTagger(LabradServer):
         if self.stream is None:
             logging.error('read_raw_stream attempted while stream is None.')
             return
-        
+        logging.debug('Overflows: {}'.format(self.tagger.getOverflows()))
         buffer = self.stream.getData()
         timestamps = buffer.getTimestamps()
         channels = buffer.getChannels()
@@ -131,8 +132,16 @@ class ApdTagger(LabradServer):
             counts =  self.read_counter_internal(None)
         else:
             # Poll until we've read the requested number of samples
+            start = time.time()
             counts = []
             while len(counts) < num_to_read:
+                # Timeout after 60 seconds - pad counts with 0s
+                if time.time() > start + 60:
+                    num_remaining = num_to_read - len(counts)
+                    counts.extend(num_remaining * [0])
+                    logging.error('Timed out trying to last {} counts out ' \
+                                  'of {}'.format(num_remaining, num_to_read))
+                    break
                 counts.extend(self.read_counter_internal(num_to_read))
             if len(counts) > num_to_read:
                 msg = 'Read {} samples, only requested {}'.format(len(counts),

@@ -192,17 +192,16 @@ def reformat_plot(colorMap, save_file_type):
         # Save the file in the same file directory
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
 
-def create_figure(file_name, folder_name='E:/Shared drives/Kolkowitz Lab Group/nvdata/image_sample'):
+def create_figure(file_name):
 
-    with open('{}/{}'.format(folder_name, file_name)) as file:
-        data = json.load(file)
-        x_range = data['x_range']
-        y_range = data['y_range']
-        x_voltages = data['x_voltages']
-        nv_sig = data['nv_sig']
-        coords = nv_sig['coords']
-        img_array = numpy.array(data['img_array'])
-        readout = data['readout']
+    data = tool_belt.get_raw_data(__file__, file_name)
+    x_range = data['x_range']
+    y_range = data['y_range']
+    x_voltages = data['x_voltages']
+    nv_sig = data['nv_sig']
+    coords = nv_sig['coords']
+    img_array = numpy.array(data['img_array'])
+    readout = data['readout']
 
     x_coord = coords[0]
     half_x_range = x_range / 2
@@ -395,5 +394,5 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
 
 if __name__ == '__main__':
-    file_name = '2019-07-23_17-39-48_johnson1.txt'
+    file_name = '2019-07-25_18-37-46_ayrton12_search'
     create_figure(file_name)
