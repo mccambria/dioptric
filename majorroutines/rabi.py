@@ -144,7 +144,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     background_wait_time = signal_wait_time  # not sure what this is
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
     aom_delay_time = shared_params['532_aom_delay']
-    gate_time = shared_params['pulsed_readout_dur']
+    gate_time = nv_sig['pulsed_readout_dur']
 
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
