@@ -92,11 +92,12 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 def do_pulsed_resonance(nv_sig, apd_indices,
                         freq_center=2.87, freq_range=0.2):
     
-    num_steps = 76
+#    num_steps = 76
+    num_steps = 51
     num_reps = 10**5
     num_runs = 3
     uwave_power = 9.0
-    uwave_pulse_dur = 30
+    uwave_pulse_dur = 43
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -263,7 +264,7 @@ if __name__ == '__main__':
                       [0.242, -0.018, 5.03],
                       [0.229, -0.024, 5.07]] # take g(2) again
     
-    nv5_2019_07_25 = {'coords': coords_list[5], # check +1/-1 the same
+    nv5_2019_07_25 = {'coords': coords_list[5], # check (0,+1) and (0,-1) the same
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 5),
           'expected_count_rate': 22,
           'nd_filter': 'nd_1.5', 'magnet_angle': 257.4,
@@ -292,7 +293,7 @@ if __name__ == '__main__':
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 27),
           'expected_count_rate': 18,
           'nd_filter': 'nd_1.5', 'magnet_angle': 15.4,
-          'resonance_low': 2.8115, 'rabi_low': 94.6, 'uwave_power_low': 9.0,
+          'resonance_low': 2.8055, 'rabi_low': 94.6, 'uwave_power_low': 9.0,
           'resonance_high': 2.9249, 'rabi_high': 69.1, 'uwave_power_high': 10.0}
     nv29_2019_07_25 = {'coords': coords_list[29], # Multiple NVs
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 29),
@@ -347,13 +348,15 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.8114, freq_range=0.1)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.9249, freq_range=0.15)
+            do_pulsed_resonance(nv_sig, apd_indices,
+                        freq_center=nv_sig['resonance_low'], freq_range=0.1)
+#            do_pulsed_resonance(nv_sig, apd_indices,
+#                        freq_center=nv_sig['resonance_high'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
-#            do_rabi(nv_sig, apd_indices, 0) 
+#            do_rabi(nv_sig, apd_indices, 0)
 #            do_rabi(nv_sig, apd_indices, 1)
-            do_t1_battery(nv_sig, apd_indices)
+#            do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
