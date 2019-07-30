@@ -21,6 +21,7 @@ import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle
+from utils.tool_belt import States
 
 
 def main(nv_sig, apd_indices):
@@ -81,11 +82,11 @@ def main(nv_sig, apd_indices):
     # rabi
     print('\nTesting rabi...\n')
     uwave_time_range = [0, 100]
-    do_uwave_gate_number = 0
+    state = States.HIGH
     num_steps = 10
     num_reps = 10
     num_runs = 2
-    rabi.main(nv_sig, apd_indices, uwave_time_range, do_uwave_gate_number,
+    rabi.main(nv_sig, apd_indices, uwave_time_range, state,
               num_steps, num_reps, num_runs)
     
     # t1_double_quantum
@@ -94,7 +95,7 @@ def main(nv_sig, apd_indices):
     num_steps = 10
     num_reps = 10
     num_runs = 2
-    init_read_list = [-1, +1]
+    init_read_list = [States.LOW, States.ZERO]
     t1_double_quantum.main(nv_sig, apd_indices, relaxation_time_range,
                            num_steps, num_reps, num_runs, init_read_list)
     

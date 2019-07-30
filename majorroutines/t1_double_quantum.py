@@ -31,6 +31,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import json
 import labrad
+from utils.tool_belt import States
 
 
 # %% Main
@@ -73,47 +74,47 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 
     # %% Setting initialize and readout states
 
-    uwave_pi_pulse_plus = round(nv_sig['rabi_high'] / 2)
-    uwave_pi_pulse_minus = round(nv_sig['rabi_low'] / 2)
-    uwave_freq_plus = nv_sig['resonance_high']
-    uwave_freq_minus = nv_sig['resonance_low']
-    uwave_power_plus = nv_sig['uwave_power_high']
-    uwave_power_minus = nv_sig['uwave_power_low']
+    uwave_pi_pulse_high = round(nv_sig['rabi_HIGH'] / 2)
+    uwave_pi_pulse_low = round(nv_sig['rabi_LOW'] / 2)
+    uwave_freq_high = nv_sig['resonance_HIGH']
+    uwave_freq_low = nv_sig['resonance_LOW']
+    uwave_power_high = nv_sig['uwave_power_HIGH']
+    uwave_power_low = nv_sig['uwave_power_LOW']
 
-    if init_state == 0:
+    if init_state.value == States.ZERO.value:
         uwave_pi_pulse_init = 0
-    elif init_state == 1:
-        uwave_pi_pulse_init = uwave_pi_pulse_plus
-    elif init_state == -1:
-        uwave_pi_pulse_init = uwave_pi_pulse_minus
-
-    if read_state == 0:
-        uwave_pi_pulse_read = 0
-    elif read_state == 1:
-        uwave_pi_pulse_read = uwave_pi_pulse_plus
-    elif read_state == -1:
-        uwave_pi_pulse_read = uwave_pi_pulse_minus
-
-    if init_state == 0:
         uwave_freq_init = 2.87
-    if init_state == 1:
-        uwave_freq_init = uwave_freq_plus
-    if init_state == -1:
-        uwave_freq_init = uwave_freq_minus
+        uwave_power_init = 9.0
+    elif init_state.value == States.HIGH.value:
+        uwave_pi_pulse_init = uwave_pi_pulse_high
+        uwave_freq_init = uwave_freq_high
+        uwave_power_init = uwave_power_high
+    elif init_state.value == tool_belt.States.LOW.value:
+        uwave_pi_pulse_init = uwave_pi_pulse_low
+        uwave_freq_init = uwave_freq_low
+        uwave_power_init = uwave_power_low
 
-    if read_state == 0:
+    if read_state.value == States.ZERO.value:
+        uwave_pi_pulse_read = 0
         uwave_freq_read = 2.87
-    if read_state == 1:
-        uwave_freq_read = uwave_freq_plus
-    if read_state == -1:
-        uwave_freq_read = uwave_freq_minus
+        uwave_power_read = 9.0
+    elif read_state.value == States.HIGH.value:
+        uwave_pi_pulse_read = uwave_pi_pulse_high
+        uwave_freq_read = uwave_freq_high
+        uwave_power_read = uwave_power_high
+    elif read_state.value == States.LOW.value:
+        uwave_pi_pulse_read = uwave_pi_pulse_low
+        uwave_freq_read = uwave_freq_low
+        uwave_power_read = uwave_power_low
 
-    print('Initial pi pulse: {} ns'.format(uwave_pi_pulse_init))
-    print('Initial frequency: {} GHz'.format(uwave_freq_init))
-    print('Initial power: {}'.format(uwave_power_plus))
-    print('Readout pi pulse: {} ns'.format(uwave_pi_pulse_read))
-    print('Readout frequency: {} GHz'.format(uwave_freq_read))
-    print('Readout power: {}'.format(uwave_power_minus))
+    print('Init state: {}'.format(init_state.name))
+    print('Init pi pulse: {} ns'.format(uwave_pi_pulse_init))
+    print('Init frequency: {} GHz'.format(uwave_freq_init))
+    print('Init power: {} dBm'.format(uwave_power_init))
+    print('Read state: {}'.format(init_state.name))
+    print('Read pi pulse: {} ns'.format(uwave_pi_pulse_read))
+    print('Read frequency: {} GHz'.format(uwave_freq_read))
+    print('Read power: {} dBm'.format(uwave_power_read))
 
     # %% Create the array of relaxation times
 
@@ -171,8 +172,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     seq_args = [min_relaxation_time, polarization_time, signal_time, reference_time,
                 sig_to_ref_wait_time, pre_uwave_exp_wait_time,
                 post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
-                gate_time, uwave_pi_pulse_plus, uwave_pi_pulse_minus, max_relaxation_time,
-                apd_indices[0], init_state, read_state]
+                gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, max_relaxation_time,
+                apd_indices[0], init_state.value, read_state.value]
     seq_args = [int(el) for el in seq_args]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -184,15 +185,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
     expected_run_time_m = expected_run_time / 60 # m
 
-
-#    msg = 'Expected run time: {:.1f} minutes. ' \
-#        'Enter \'y\' to continue: '.format(expected_run_time_m)
-#    if input(msg) != 'y':
-#        return
-
+    # Ask to continue and timeout if no response in 2 seconds?
 
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
-#    return
+    return
     
     # %% Get the starting time of the function, to be used to calculate run time
 
@@ -216,15 +212,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
-        # Set up the microwaves
-        # Tektronix controls +
-        cxn.signal_generator_tsg4104a.set_freq(uwave_freq_plus)
-        cxn.signal_generator_tsg4104a.set_amp(uwave_power_plus)
-        cxn.signal_generator_tsg4104a.uwave_on()
-        # Berkeley controls -
-        cxn.signal_generator_bnc835.set_freq(uwave_freq_minus)
-        cxn.signal_generator_bnc835.set_amp(uwave_power_minus)
-        cxn.signal_generator_bnc835.uwave_on()
+        # Set up the microwaves for the low and high states
+        low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.LOW)
+        low_sig_gen_cxn.set_freq(uwave_freq_low)
+        low_sig_gen_cxn.set_amp(uwave_power_low)
+        low_sig_gen_cxn.uwave_on()
+        high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)
+        high_sig_gen_cxn.set_freq(uwave_freq_high)
+        high_sig_gen_cxn.set_amp(uwave_power_high)
+        high_sig_gen_cxn.uwave_on()
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -260,8 +256,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
             seq_args = [taus[tau_ind_first], polarization_time, signal_time, reference_time,
                         sig_to_ref_wait_time, pre_uwave_exp_wait_time,
                         post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
-                        gate_time, uwave_pi_pulse_plus, uwave_pi_pulse_minus, taus[tau_ind_second],
-                        apd_indices[0], init_state, read_state]
+                        gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, taus[tau_ind_second],
+                        apd_indices[0], init_state.value, read_state.value]
             seq_args = [int(el) for el in seq_args]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             
@@ -298,8 +294,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
         # %% Save the data we have incrementally for long measurements
 
         raw_data = {'start_timestamp': start_timestamp,
-                    'init_state': int(init_state),
-                    'read_state': int(read_state),
+                    'init_state': init_state.name,
+                    'read_state': read_state.name,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
                     'gate_time': gate_time,
@@ -308,10 +304,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                     'uwave_freq_init-units': 'GHz',
                     'uwave_freq_read': uwave_freq_read,
                     'uwave_freq_read-units': 'GHz',
-                    'uwave_power_plus': uwave_power_plus,
-                    'uwave_power_plus-units': 'dBm',
-                    'uwave_power_minus': uwave_power_minus,
-                    'uwave_power_minus-units': 'dBm',
+                    'uwave_power_high': uwave_power_high,
+                    'uwave_power_high-units': 'dBm',
+                    'uwave_power_low': uwave_power_low,
+                    'uwave_power_low-units': 'dBm',
                     'uwave_pi_pulse_init': uwave_pi_pulse_init,
                     'uwave_pi_pulse_init-units': 'ns',
                     'uwave_pi_pulse_read': uwave_pi_pulse_read,
@@ -368,7 +364,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 
     ax = axes_pack[1]
     ax.plot(taus / 10**6, norm_avg_sig, 'b-')
-    ax.set_title('T1 Measurement. Initial state: {}, readout state: {}'.format(init_state, read_state))
+    ax.set_title('T1 Measurement. Initial state: {}, readout state: {}'.format(init_state.name, read_state.name))
     ax.set_xlabel('Relaxation time (ms)')
     ax.set_ylabel('Contrast (arb. units)')
 
@@ -386,8 +382,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 
     raw_data = {'timestamp': timestamp,
             'timeElapsed': timeElapsed,
-            'init_state': int(init_state),
-            'read_state': int(read_state),
+            'init_state': init_state.name,
+            'read_state': read_state.name,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'gate_time': gate_time,
@@ -396,10 +392,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
             'uwave_freq_init-units': 'GHz',
             'uwave_freq_read': uwave_freq_read,
             'uwave_freq_read-units': 'GHz',
-            'uwave_power_plus': uwave_power_plus,
-            'uwave_power_plus-units': 'dBm',
-            'uwave_power_minus': uwave_power_minus,
-            'uwave_power_minus-units': 'dBm',
+            'uwave_power_high': uwave_power_high,
+            'uwave_power_high-units': 'dBm',
+            'uwave_power_low': uwave_power_low,
+            'uwave_power_low-units': 'dBm',
             'uwave_pi_pulse_init': uwave_pi_pulse_init,
             'uwave_pi_pulse_init-units': 'ns',
             'uwave_pi_pulse_read': uwave_pi_pulse_read,

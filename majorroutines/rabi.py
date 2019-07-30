@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 from random import shuffle
 from scipy.optimize import curve_fit
 import labrad
+from utils.tool_belt import States
 
 
 # %% Functions
@@ -101,17 +102,14 @@ def create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
 # %% Main
 
 
-def main(nv_sig, apd_indices,
-         uwave_time_range, do_uwave_gate_number,
+def main(nv_sig, apd_indices, uwave_time_range, state,
          num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices,
-                  uwave_time_range, do_uwave_gate_number,
-                  num_steps, num_reps, num_runs)
+        main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
+                      num_steps, num_reps, num_runs)
 
-def main_with_cxn(cxn, nv_sig, apd_indices,
-                  uwave_time_range, do_uwave_gate_number,
+def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                   num_steps, num_reps, num_runs):
 
     tool_belt.reset_cfm(cxn)
@@ -123,17 +121,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     # %% Initial calculations and setup
 
-    # Set which signal generator to use. 0 is the tektronix, 1 is berkely nucleonics
-    do_uwave_gate = do_uwave_gate_number
-
-    if do_uwave_gate == 0:
-        uwave_freq = nv_sig['resonance_low']
-        uwave_power = nv_sig['uwave_power_low']
-        sig_gen = 'signal_generator_tsg4104a'
-    elif do_uwave_gate == 1:
-        uwave_freq = nv_sig['resonance_high']
-        uwave_power = nv_sig['uwave_power_high']
-        sig_gen = 'signal_generator_bnc835'
+    uwave_freq = nv_sig['resonance_{}'.format(state.name)]
+    uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
@@ -159,7 +148,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                 signal_wait_time, reference_wait_time,
                 background_wait_time, aom_delay_time,
                 gate_time, max_uwave_time,
-                apd_indices[0], do_uwave_gate]
+                apd_indices[0], state.value]
     seq_args = [int(el) for el in seq_args]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -200,14 +189,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         opti_coords_list.append(opti_coords)
 
         # Apply the microwaves
-        if sig_gen == 'signal_generator_tsg4104a':
-            cxn.signal_generator_tsg4104a.set_freq(uwave_freq)
-            cxn.signal_generator_tsg4104a.set_amp(uwave_power)
-            cxn.signal_generator_tsg4104a.uwave_on()
-        elif sig_gen == 'signal_generator_bnc835':
-            cxn.signal_generator_bnc835.set_freq(uwave_freq)
-            cxn.signal_generator_bnc835.set_amp(uwave_power)
-            cxn.signal_generator_bnc835.uwave_on()
+        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn.set_freq(uwave_freq)
+        sig_gen_cxn.set_amp(uwave_power)
+        sig_gen_cxn.uwave_on()
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -230,7 +215,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                         signal_wait_time, reference_wait_time,
                         background_wait_time, aom_delay_time,
                         gate_time, max_uwave_time,
-                        apd_indices[0], do_uwave_gate]
+                        apd_indices[0], state.value]
             seq_args = [int(el) for el in seq_args]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             cxn.pulse_streamer.stream_immediate(file_name, num_reps,
@@ -262,7 +247,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                     'uwave_power-units': 'dBm',
                     'uwave_time_range': uwave_time_range,
                     'uwave_time_range-units': 'ns',
-                    'sig_gen': sig_gen,
+                    'state': state.name,
                     'num_steps': num_steps,
                     'num_reps': num_reps,
                     'num_runs': num_runs,
@@ -342,7 +327,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                 'uwave_power-units': 'dBm',
                 'uwave_time_range': uwave_time_range,
                 'uwave_time_range-units': 'ns',
-                'sig_gen': sig_gen,
+                'state': state.name,
                 'num_steps': num_steps,
                 'num_reps': num_reps,
                 'num_runs': num_runs,

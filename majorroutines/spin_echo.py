@@ -22,6 +22,7 @@ import time
 import matplotlib.pyplot as plt
 from random import shuffle
 import labrad
+from utils.tool_belt import States
 
 
 # %% Main
@@ -56,10 +57,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     rf_delay_time = shared_params['uwave_delay']
     gate_time = nv_sig['pulsed_readout_dur']
     
-    # Default to the low resonance (Tektronix) for now
-    rabi_period = nv_sig['rabi_low']
-    uwave_freq = nv_sig['resonance_low']
-    uwave_power = nv_sig['uwave_power_low']
+    # Default to the low state
+    state = States.LOW
+    rabi_period = nv_sig['rabi_{}'.format(state.name)]
+    uwave_freq = nv_sig['resonance_{}'.format(state.name)]
+    uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
 
     # Get pulse frequencies
     uwave_pi_pulse = round(rabi_period / 2)
@@ -122,7 +124,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                 sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                 post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                 gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
-                max_precession_time, apd_indices[0]]
+                max_precession_time, apd_indices[0], state.value]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     seq_args = [int(el) for el in seq_args]
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
@@ -161,10 +163,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
         
-        # Set up the microwaves - just use the Tektronix
-        cxn.signal_generator_tsg4104a.set_freq(uwave_freq)
-        cxn.signal_generator_tsg4104a.set_amp(uwave_power)
-        cxn.signal_generator_tsg4104a.uwave_on()
+        # Set up the microwaves
+        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn.set_freq(uwave_freq)
+        sig_gen_cxn.set_amp(uwave_power)
+        sig_gen_cxn.uwave_on()
             
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)  
@@ -199,7 +202,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                         sig_to_ref_wait_time, pre_uwave_exp_wait_time, 
                         post_uwave_exp_wait_time, aom_delay_time, rf_delay_time, 
                         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
-                        taus[tau_ind_second], apd_indices[0]]
+                        taus[tau_ind_second], apd_indices[0], state.value]
             seq_args = [int(el) for el in seq_args]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             cxn.pulse_streamer.stream_immediate(seq_file_name, num_reps,
@@ -248,6 +251,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                 'uwave_pi_on_2_pulse-units': 'ns',
                 'precession_time_range': precession_time_range,
                 'precession_time_range-units': 'ns',
+                'state': state.name,
                 'num_steps': num_steps,
                 'num_reps': num_reps,
                 'run_ind': run_ind,
@@ -333,6 +337,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
             'uwave_pi_on_2_pulse-units': 'ns',
             'precession_time_range': precession_time_range,
             'precession_time_range-units': 'ns',
+            'state': state.name,
             'num_steps': num_steps,
             'num_reps': num_reps,
             'num_runs': num_runs,

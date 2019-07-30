@@ -18,6 +18,7 @@ import numpy
 import os
 import matplotlib.pyplot as plt
 import labrad
+from utils.tool_belt import States
 
 
 # %% Main
@@ -36,6 +37,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # %% Initial calculations and setup
     
     tool_belt.reset_cfm(cxn)
+    
+    # Assume the low state
+    state = States.LOW
 
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
@@ -43,8 +47,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     readout = 10*shared_parameters['continuous_readout_dur']
     readout_sec = readout / (10**9)
     uwave_switch_delay = 1 * 10**6  # 1 ms to switch frequencies
-    seq_args = [readout, uwave_switch_delay, apd_indices[0]]
+    seq_args = [readout, uwave_switch_delay, apd_indices[0], state.value]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    
+    # Assume the low state
+    state = States.LOW
 
     file_name = os.path.basename(__file__)
 
@@ -107,9 +114,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             if tool_belt.safe_stop():
                 break
 
-            cxn.signal_generator_bnc835.set_freq(freqs[step_ind])
-            cxn.signal_generator_bnc835.set_amp(uwave_power)
-            cxn.signal_generator_bnc835.uwave_on()
+            # Just assume the low state
+            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+            sig_gen_cxn.set_freq(freqs[step_ind])
+            sig_gen_cxn.set_amp(uwave_power)
+            sig_gen_cxn.uwave_on()
 
             # Start the timing stream
             cxn.pulse_streamer.stream_start()

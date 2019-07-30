@@ -19,6 +19,7 @@ import time
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import labrad
+from utils.tool_belt import States
 
 
 # %% Figure functions
@@ -105,6 +106,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
     ref_std = numpy.std(ref_counts)
     rel_ref_std = ref_std / numpy.average(ref_counts)
     height = max(rel_ref_std, contrast/4)
+#    height = 0.09
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
@@ -193,6 +195,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
     
+    # Assume the low state
+    state = States.LOW
+    
     # Define some times for the sequence (in ns)
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
@@ -210,7 +215,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                 signal_wait_time, reference_wait_time,
                 background_wait_time, aom_delay_time,
                 gate_time, uwave_pulse_dur,
-                apd_indices[0], 0]
+                apd_indices[0], state.value]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
     opti_coords_list = []
@@ -249,9 +254,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             if tool_belt.safe_stop():
                 break
 
-            cxn.signal_generator_tsg4104a.set_freq(freqs[step_ind])
-            cxn.signal_generator_tsg4104a.set_amp(uwave_power)
-            cxn.signal_generator_tsg4104a.uwave_on()
+            # Just assume the low state
+            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+            sig_gen_cxn.set_freq(freqs[step_ind])
+            sig_gen_cxn.set_amp(uwave_power)
+            sig_gen_cxn.uwave_on()
             
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total
@@ -412,7 +419,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-    file = '2019-07-27-03_27_33-ayrton12-nv27_2019_07_25'
+    file = '2019-07-30-18_41_58-ayrton12-nv27_2019_07_25'
     data = tool_belt.get_raw_data('pulsed_resonance.py', file)
 
     freq_center = data['freq_center']

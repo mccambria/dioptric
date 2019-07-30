@@ -23,8 +23,11 @@ import labrad
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from random import shuffle
+from utils.tool_belt import States
+
 
 # %%
+
 
 def parabola(t, offset, amplitude, parameter):
     return offset + amplitude * (t - parameter)**2  
@@ -81,13 +84,8 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
     
     apd_indices = [0]
     
-    # Set which signal generator to use. 0 is the tektronix, 1 is bnc
-    do_uwave_gate = 0
-    
-    if do_uwave_gate == 0:
-        do_uwave_gen = 'Tektronix'
-    elif do_uwave_gate == 1:
-        do_uwave_gen = 'HP'
+    # Assume the low state
+    state = States.LOW
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     
@@ -156,7 +154,7 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
             # polarization_dur, exp_dur, aom_delay, uwave_delay, 
             # readout_dur, pi_pulse, apd_index, uwave_gate_index
             seq_args = [polarization_dur, exp_dur, aom_delay, uwave_delay, 
-                    readout_time, pi_pulse, apd_indices[0], do_uwave_gate]
+                    readout_time, pi_pulse, apd_indices[0], state.value]
             seq_args = [int(el) for el in seq_args]
             seq_args_string = tool_belt.encode_seq_args(seq_args)            
             
@@ -222,7 +220,7 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
                     'opti_coords_list': opti_coords_list,
                     'coords-units': 'V',
                     'nd_filter_used': nd_filter,
-                    'do_uwave_gen': do_uwave_gen,
+                    'state': state,
                     'num_steps': num_steps,
                     'num_reps': num_reps,
                     'num_runs': num_runs,

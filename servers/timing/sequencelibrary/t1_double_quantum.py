@@ -9,10 +9,10 @@ from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 import numpy
 import utils.tool_belt as tool_belt
+from utils.tool_belt import States
 
 LOW = 0
 HIGH = 1
-
 
 def get_seq(pulser_wiring, args):
 
@@ -27,39 +27,39 @@ def get_seq(pulser_wiring, args):
     tau_shrt, polarization_time, signal_time, reference_time,  \
             sig_to_ref_wait_time, pre_uwave_exp_wait_time,  \
             post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,  \
-            gate_time, pi_pulse_plus, pi_pulse_minus, tau_long = durations
+            gate_time, pi_pulse_low, pi_pulse_high, tau_long = durations
 
     # Get the APD indices
     apd_index = args[13]
 
     # Specify the initial and readout states
-    init_state = args[14]
-    read_state = args[15]
+    init_state_value = args[14]
+    read_state_value = args[15]
 
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
 
-    pulser_do_uwave_plus = pulser_wiring['do_uwave_gate_0']
-    pulser_do_uwave_minus = pulser_wiring['do_uwave_gate_1']
+    low_sig_gen_name = tool_belt.get_signal_generator_name(States.LOW)
+    low_sig_gen_gate_chan_name = 'do_{}_gate'.format(low_sig_gen_name)
+    pulser_do_sig_gen_low_gate = pulser_wiring[low_sig_gen_gate_chan_name]
+    high_sig_gen_name = tool_belt.get_signal_generator_name(States.HIGH)
+    high_sig_gen_gate_chan_name = 'do_{}_gate'.format(high_sig_gen_name)
+    pulser_do_sig_gen_high_gate = pulser_wiring[high_sig_gen_gate_chan_name]
 
-    if init_state == 1:
-        init_pi_plus = pi_pulse_plus
-        init_pi_minus = 0
-    elif init_state == -1:
-        init_pi_plus = 0
-        init_pi_minus = pi_pulse_minus
-    else:
-        init_pi_plus = 0
-        init_pi_minus = 0
+    # Default the pulses to 0
+    init_pi_low = 0
+    init_pi_high = 0
+    read_pi_low = 0
+    read_pi_high = 0
 
-    if read_state == 1:
-        read_pi_plus = pi_pulse_plus
-        read_pi_minus = 0
-    elif read_state == -1:
-        read_pi_plus = 0
-        read_pi_minus = pi_pulse_minus
-    else:
-        read_pi_plus = 0
-        read_pi_minus = 0
+    if init_state_value == States.LOW.value:
+        init_pi_low = pi_pulse_low
+    elif init_state_value == States.HIGH.value:
+        init_pi_high = pi_pulse_high
+
+    if read_state_value == States.LOW.value:
+        read_pi_low = pi_pulse_low
+    elif read_state_value == States.HIGH.value:
+        read_pi_high = pi_pulse_high
 
     # specify the sig gen to give the initial state
 #    if init_state == 1:
@@ -100,13 +100,15 @@ def get_seq(pulser_wiring, args):
 
     # With future protocols--ramsey, spin echo, etc--it will be easy to use
     # this format of sequence building and just change this secion of the file
-
-    uwave_experiment_shrt = init_pi_plus +init_pi_minus + tau_shrt + read_pi_plus +read_pi_minus
+    
+    base_uwave_experiment_dur = init_pi_high + init_pi_low + \
+                    read_pi_high + read_pi_low
+    uwave_experiment_shrt = base_uwave_experiment_dur + tau_shrt
+    uwave_experiment_long = base_uwave_experiment_dur + tau_long
 
 #    uwave_experiment_seq_shrt = [(pi_pulse_init, HIGH), (tau_shrt, LOW),
 #                                     (pi_pulse_read, HIGH)]
 
-    uwave_experiment_long = init_pi_plus +init_pi_minus + tau_long + read_pi_plus +read_pi_minus
 
 #    uwave_experiment_seq_long = [(pi_pulse_init, HIGH), (tau_long, LOW),
 #                                     (pi_pulse_read, HIGH)]
@@ -172,18 +174,18 @@ def get_seq(pulser_wiring, args):
         sig_to_ref_wait_time + reference_time + rf_delay_time
 
     train = [(pre_duration, LOW)]
-    train.extend([(init_pi_plus, HIGH), (tau_shrt + init_pi_minus, LOW), (read_pi_plus, HIGH)])
-    train.extend([(read_pi_minus + mid_duration, LOW)])
-    train.extend([(init_pi_plus, HIGH), (tau_long + init_pi_minus, LOW), (read_pi_plus, HIGH)])
-    train.extend([(read_pi_minus + post_duration, LOW)])
-    seq.setDigital(pulser_do_uwave_plus, train)
+    train.extend([(init_pi_high, HIGH), (tau_shrt + init_pi_low, LOW), (read_pi_high, HIGH)])
+    train.extend([(read_pi_low + mid_duration, LOW)])
+    train.extend([(init_pi_high, HIGH), (tau_long + init_pi_low, LOW), (read_pi_high, HIGH)])
+    train.extend([(read_pi_low + post_duration, LOW)])
+    seq.setDigital(pulser_do_sig_gen_high_gate, train)
 
     train = [(pre_duration, LOW)]
-    train.extend([(init_pi_minus, HIGH), (tau_shrt + init_pi_plus, LOW), (read_pi_minus, HIGH)])
-    train.extend([(read_pi_plus + mid_duration, LOW)])
-    train.extend([(init_pi_minus, HIGH), (tau_long + init_pi_plus, LOW), (read_pi_minus, HIGH)])
-    train.extend([(read_pi_plus + post_duration, LOW)])
-    seq.setDigital(pulser_do_uwave_minus, train)
+    train.extend([(init_pi_low, HIGH), (tau_shrt + init_pi_high, LOW), (read_pi_low, HIGH)])
+    train.extend([(read_pi_high + mid_duration, LOW)])
+    train.extend([(init_pi_low, HIGH), (tau_long + init_pi_high, LOW), (read_pi_low, HIGH)])
+    train.extend([(read_pi_high + post_duration, LOW)])
+    seq.setDigital(pulser_do_sig_gen_low_gate, train)
 
 #    if init_state == 1 and read_state == 1:
 #        pulser_do_uwave = pulser_do_uwave_read
