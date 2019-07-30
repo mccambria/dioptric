@@ -65,12 +65,14 @@ def main(nv_sig, readout_time, nd_filter, num_steps, num_reps, num_runs,
                              do_plot, save_raw_data):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, readout_time, nd_filter,
+        sig_to_noise_ratio = main_with_cxn(cxn, nv_sig, readout_time, nd_filter,
                       num_steps, num_reps, num_runs, do_plot, save_raw_data)
         
+        return sig_to_noise_ratio
 def main_with_cxn(cxn, nv_sig, readout_time, nd_filter,
                  num_steps, num_reps, num_runs,
                  do_plot = False, save_raw_data = False):
+    
 
     # %% Get the starting time of the function
 
@@ -130,12 +132,11 @@ def main_with_cxn(cxn, nv_sig, readout_time, nd_filter,
             break
         
         # Optimize
-        print(nv_sig)
-        opti_coords_list.append(optimize.main(cxn, nv_sig, apd_indices))
+        opti_coords_list.append(optimize.main(nv_sig, apd_indices))
 
-        cxn.microwave_signal_generator.set_freq(nv_sig['resonance_high'])
-        cxn.microwave_signal_generator.set_amp(nv_sig['uwave_power_high'])
-        cxn.microwave_signal_generator.uwave_on()
+        cxn.signal_generator_tsg4104a.set_freq(nv_sig['resonance_high'])
+        cxn.signal_generator_tsg4104a.set_amp(nv_sig['uwave_power_high'])
+        cxn.signal_generator_tsg4104a.uwave_on()
 
         # Load the APD stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -152,10 +153,12 @@ def main_with_cxn(cxn, nv_sig, readout_time, nd_filter,
             # Stream the sequence
             # polarization_dur, exp_dur, aom_delay, uwave_delay, 
             # readout_dur, pi_pulse, apd_index, uwave_gate_index
-            args = [polarization_dur, exp_dur, aom_delay, uwave_delay, 
+            seq_args = [polarization_dur, exp_dur, aom_delay, uwave_delay, 
                     readout_time, pi_pulse, apd_indices[0], do_uwave_gate]
+            seq_args = [int(el) for el in seq_args]
+            seq_args_string = tool_belt.encode_seq_args(seq_args)            
             
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps, args, 1)
+            cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
@@ -187,7 +190,7 @@ def main_with_cxn(cxn, nv_sig, readout_time, nd_filter,
     
     sig_to_noise_ratio = sig_stat / st_dev_stat
 
-    print('Gate Time: {} ns \nSignal: {:.3f} \nNoise: {:.3f} \nSNR: {:.1f}'.format(readout_time, \
+    print('Gate Time: {} ns \nSignal: {:.3f} \nNoise: {:.3f} \nSNR: {:.1f}\n '.format(readout_time, \
           sig_stat, st_dev_stat, sig_to_noise_ratio))
     
     # %% Plot the counts
@@ -244,6 +247,7 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps):
     
     num_steps = 51
     num_reps = 10**5
+#    num_reps = 10**3
     num_runs = 1
     nd_filter = nv_sig['nd_filter']
     
@@ -251,52 +255,57 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps):
     snr_list = []
     
     # make a linspace for the various readout times to test
-    readout_time_list = numpy.linspace(readout_range[0], readout_range[1], 
+    readout_time_list = numpy.linspace(readout_range[0], readout_range[-1], 
                                            num=num_readout_steps).astype(int)
+    
     
     # Step thru the readout times and take a snr measurement
     for readout_ind_time in readout_time_list:
     
-        # Break out of the while if the user says stop
-        if tool_belt.safe_stop():
-            break
         
         readout_time = readout_ind_time
     
         snr_value = main(nv_sig, readout_time, nd_filter,
                  num_steps, num_reps, num_runs, do_plot, save_raw_data)
-            
+        
         snr_list.append(snr_value)
+        
+        # Break out of the while if the user says stop
+        if tool_belt.safe_stop():
+            break
         
     # Fit the data to a parabola
     offset = 130
     amplitude = 100
     readout_time_guess = numpy.average(readout_range)   
-    
+
     init_guess_list = [offset, amplitude, readout_time_guess]
     popt = fit_parabola(readout_time_list, snr_list, init_guess_list)
     
-    # Plot the data
-    linspace_time = numpy.linspace(readout_range[0], readout_range[1], num=1000)
     
-    fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+    # Plot the data
+    linspace_time = numpy.linspace(readout_range[0], readout_range[-1], num=1000)
+    
+    snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
     ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
     ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
-    ax.set_xlabel('Gate time (ns)')
+    ax.set_xlabel('Readout time (ns)')
     ax.set_ylabel('Signal-to-noise ratio') 
+    ax.set_title('Optimize readout window')
     ax.legend() 
     
-    text = ('Optimal gate time = {:.1f} ns'.format(popt[2]))
+    text = ('Optimal readout time = {:.1f} ns'.format(popt[2]))
     
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
                                 verticalalignment="top", bbox=props)
     
-    fig.canvas.draw()
-    fig.canvas.flush_events()
+    snr_fig.canvas.draw()
+    snr_fig.canvas.flush_events()
     
+    # Save the data
     timestamp = tool_belt.get_time_stamp()
-    raw_data = {'timestamp': timestamp,
+    snr_data = {'timestamp': timestamp,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(), 
                 'num_steps': num_steps,
@@ -306,8 +315,8 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps):
                 'readout_time_list': readout_time_list.tolist()}
     
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_figure(fig, file_path)
-    tool_belt.save_raw_data(raw_data, file_path)
+    tool_belt.save_figure(snr_fig, file_path)
+    tool_belt.save_raw_data(snr_data, file_path)
     
     if tool_belt.check_safe_stop_alive():
         print("\n\nRoutine complete. Press enter to exit.")
@@ -315,127 +324,115 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps):
     
 # %%
     
+def optimize_nd_filter(nv_sig, readout_range, num_readout_steps):
+    
+    # don't plot or save each individual raw data of the snr
+    do_plot = False
+    save_raw_data = False
+    
+    num_steps = 51
+    num_reps = 10**5
+    num_runs = 1
+    readout_time = nv_sig['pulsed_readout_dur']
+    
+    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
+    nd_filter_value_list = [0, 0.5, 1.0, 1.5]
+    
+    # Create an empty list to fill with snr
+    snr_list = []
+    
+    
+    # Step thru the readout times and take a snr measurement
+    for nd_filter_ind in range(len(nd_filter_list)):
+        nd_filter = nd_filter_list(nd_filter_ind)
+    
+        snr_value = main(nv_sig, readout_time, nd_filter,
+                 num_steps, num_reps, num_runs, do_plot, save_raw_data)
+        
+        snr_list.append(snr_value)
+        
+        # Break out of the while if the user says stop
+        if tool_belt.safe_stop():
+            break
+        
+    # Fit the data to a parabola
+    offset = 1.5
+    amplitude = 10
+    nd_guess = 1.5   
+
+    init_guess_list = [offset, amplitude, nd_guess]
+    popt = fit_parabola(nd_filter_value_list, snr_list, init_guess_list)
+    
+    
+    # Plot the data
+    linspace_nd = numpy.linspace(nd_filter_value_list[0], nd_filter_value_list[-1], num=1000)
+    
+    snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+    ax.plot(nd_filter_value_list, snr_list, 'ro', label = 'data')
+    ax.plot(linspace_nd, parabola(linspace_nd,*popt), 'b-', label = 'fit')
+    ax.set_xlabel('nd filter')
+    ax.set_ylabel('Signal-to-noise ratio') 
+    ax.set_title('Optimize nd filter')
+    ax.legend() 
+    
+    text = ('Optimal nd filter = {:.2f} ns'.format(popt[2]))
+    
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
+                                verticalalignment="top", bbox=props)
+    
+    snr_fig.canvas.draw()
+    snr_fig.canvas.flush_events()
+    
+    # Save the data
+    timestamp = tool_belt.get_time_stamp()
+    snr_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(), 
+                'num_steps': num_steps,
+                'num_reps': num_reps,
+                'num_runs': num_runs,
+                'snr_list': snr_list,
+                'nd_filter_value_list': nd_filter_value_list}
+    
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_figure(snr_fig, file_path)
+    tool_belt.save_raw_data(snr_data, file_path)
+    
+    if tool_belt.check_safe_stop_alive():
+        print("\n\nRoutine complete. Press enter to exit.")
+        tool_belt.poll_safe_stop()
+        
+# %%
+    
 if __name__ == '__main__':
     
         
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
-    
-#    import labrad
-#    from scipy.optimize import curve_fit
-    
-#    name = 'Johnson1'
-#    # nv0_2019_06_27
-##    nv_sig = [-0.241, -0.335, 47.7, 40, 2]  # nd 0.5
-#    nv_sig = [-0.241, -0.335, 47.7, 20, 2]  # nd 1.0
-#    nv_sig = [-0.241, -0.335, 47.7, 10, 2]  # nd 1.5
-#    nv_sig = [-0.241, -0.335, 47.7, 3, 2]  # nd 2.0
-#    nd_filter = 0.5
+
 
     # Define the nv_sig to be used
     nv27_2019_07_25 = {'coords': [-0.229, -0.052, 5.03],
           'name': '{}-nv{}_2019_07_25'.format('ayrton12', 27),
           'expected_count_rate': 18,
-          'nd_filter': 'nd_1.5', 'magnet_angle': 15.4,
+          'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 320, 'magnet_angle': 15.4,
           'resonance_low': 2.8121, 'rabi_low': 94.6, 'uwave_power_low': 9.0,
           'resonance_high': 2.9249, 'rabi_high': 69.1, 'uwave_power_high': 10.0}
     
     # Define the readout_range and the number of steps between data points
-    readout_range = [200, 500]
-    num_readout_steps = 5
+    readout_range = [200, 600]
+    num_readout_steps = 9
     
 
     nv_sig = nv27_2019_07_25
     
     # Run the program
-#    optimize_readout(nv_sig, readout_range, num_readout_steps)
+    optimize_readout(nv_sig, readout_range, num_readout_steps)
     
     
     # Run just main
     
-    main(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)
-#    apd_indices = [0]
-    
-#    uwave_freq = 2.7628
-#    uwave_power = 9
-#    uwave_pi_pulse = 58
+#    main(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)
 
-    # num_steps should be high and num_reps low so that we can actually
-    # analyze the noise - if num_steps = 0, then st_dev = 0 too!
-#    num_steps = 101
-#    num_steps = 51
-#    num_reps = 10**5
-#    num_runs = 1
-    
-#    count_gate_time = 350
-    
-#    with labrad.connect() as cxn:
-#        SNR = main(cxn, coords, nd_filter, apd_a_index, apd_b_index, expected_counts,
-#             uwave_freq, uwave_power, uwave_pi_pulse, count_gate_time,
-#             num_steps, num_reps, num_runs, name)
-        
-    
-#    readout_time_list = numpy.linspace(readout_range[0], readout_range[1], num=9).astype(int)
-    
-    # Start 'Press enter to stop...'
-#    tool_belt.init_safe_stop()
-#    
-#    snr_list = []
-#    for gate_ind in readout_range:
-#        
-#        # Break out of the while if the user says stop
-#        if tool_belt.safe_stop():
-#            break
-#        
-#        count_gate_time = gate_ind
-#    
-#        with labrad.connect() as cxn:
-#            snr_value = main(cxn, nv_sig, nd_filter, apd_indices,
-#                 uwave_freq, uwave_power, uwave_pi_pulse, count_gate_time,
-#                 num_steps, num_reps, num_runs, name)
-#            
-#            snr_list.append(snr_value)
-#            
-#    print(snr_list)
-    
-#    def parabola(t, offset, amplitude, delay_time):
-#        return offset + amplitude * (t - delay_time)**2  
-    
-#    offset = 130
-#    amplitude = 100
-#    readout_time_guess = numpy.average(readout_range)
-#    
-#    popt,pcov = curve_fit(parabola, readout_time_list, snr_list,
-#                          p0=[offset, amplitude, readout_time_guess]) 
-    
-#    linspace_time = numpy.linspace(readout_range[0], readout_range[1], num=1000)
-#    
-#    fig, ax = plt.subplots(1, 1, figsize=(12, 10))
-#    ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
-#    ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
-#    ax.set_xlabel('Gate time (ns)')
-#    ax.set_ylabel('Signal-to-noise ratio') 
-#    ax.legend() 
-#    
-#    text = ('Optimal gate time = {:.1f} ns'.format(popt[2]))
-#    
-#    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-#    ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
-#                                verticalalignment="top", bbox=props)
-#    
-#    fig.canvas.draw()
-#    fig.canvas.flush_events()
-#    
-#    timestamp = tool_belt.get_time_stamp()
-#    raw_data = {'timestamp': timestamp,
-#            'snr_list': snr_list,
-#            'readout_time_list': readout_time_list.tolist()}
-#    
-#    file_path = tool_belt.get_file_path(__file__, timestamp, 'Johnson1_SNR_fit')
-#    tool_belt.save_figure(fig, file_path)
-#    tool_belt.save_raw_data(raw_data, file_path)
-#    
-#    if tool_belt.check_safe_stop_alive():
-#        print("\n\nRoutine complete. Press enter to exit.")
-#        tool_belt.poll_safe_stop()
             
