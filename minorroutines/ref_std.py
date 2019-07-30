@@ -34,15 +34,15 @@ def main(data):
     num_runs = data['num_runs']
     num_steps = data['num_steps']
     
-    x_low = 3000
-    x_high = 4000
+    x_low = None
+    x_high = None
     
     ref_counts = numpy.array(ref_counts)
     std = numpy.std(ref_counts)
-    print(std)
+    print('standard deviation: {}'.format(std))
     avg = numpy.average(ref_counts)
-    print(avg)
-    print(std / avg)
+    print('average: {}'.format(avg))
+    print('relative standard deviation: {}'.format(std / avg))
     
     tau_inds = data['tau_index_master_list']
     ref_counts = numpy.array(ref_counts)
@@ -61,15 +61,22 @@ def main(data):
             time_ind += 1
     
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    ax.plot(ref_counts_time[x_low: x_high], 'g-', label = 'reference')
+    if (x_low is not None) and (x_high is not None):
+        ref_counts_slice = ref_counts_time[x_low: x_high]
+    else:
+        ref_counts_slice = ref_counts_time
+
+    ax.plot(ref_counts_slice, 'g-', label = 'reference')
     ax.set_xlabel('Time index')
     ax.set_ylabel('Counts')
     ax.legend()
     run_lines = numpy.array(range(num_runs)) * num_steps
     for line in run_lines:
-#        ax.axvline(line)
-        if x_low < line < x_high:
-            ax.axvline(line - x_low)
+        if (x_low is not None) and (x_high is not None):
+            if x_low < line < x_high:
+                ax.axvline(line - x_low)
+        else:
+            ax.axvline(line)
     fig.canvas.draw()
     fig.set_tight_layout(True)
     fig.canvas.flush_events()
@@ -84,17 +91,10 @@ def main(data):
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here
-#     Rabi
-#    file_name = '2019-07-19_17-53-17_johnson1'  # 3.9% std, 1.7 kcps
-#    file_name = '2019-07-19_17-57-43_johnson1'  # 8.8% std, 1.6 kcps
-#    data = tool_belt.get_raw_data('rabi', file_name)
-    
-    # Spin echo
-#    file_name = '2019-07-18_ipython'  # 2.8% std, 1.7 kcps, from console
-#    file_name = '2019-07-18_21-09-10_johnson1'  # 5.3% std, 7.9 kcps
-    file_name = '2019-07-23_06-14-54_johnson1'  # 
-    data = tool_belt.get_raw_data('spin_echo', file_name)
-#    data = tool_belt.get_raw_data('spin_echo', file_name, 'branch_ramsey3')
+    # t1_double_quantum
+    file_name = '2019-07-30-05_03_08-ayrton12-nv27_2019_07_25' # [0,0]
+    # file_name = '2019-07-30-02_04_25-ayrton12-nv27_2019_07_25' # [0,1]
+    data = tool_belt.get_raw_data('t1_double_quantum', file_name)
 
     # Run the script
     main(data)

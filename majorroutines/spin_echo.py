@@ -54,7 +54,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
     aom_delay_time = shared_params['532_aom_delay']
     rf_delay_time = shared_params['uwave_delay']
-    gate_time = shared_params['pulsed_readout_dur']
+    gate_time = nv_sig['pulsed_readout_dur']
     
     # Default to the low resonance (Tektronix) for now
     rabi_period = nv_sig['rabi_low']
