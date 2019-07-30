@@ -31,7 +31,6 @@ def parabola(t, offset, amplitude, parameter):
 
 def fit_parabola(parameter_list, snr_list, init_guess_list):
     
-    
     popt,pcov = curve_fit(parabola, parameter_list, snr_list,
                           p0=init_guess_list) 
     
@@ -276,32 +275,40 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
         if tool_belt.safe_stop():
             break
         
+        
+    # Prepare the plot:
+    snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+    ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
+    ax.set_xlabel('Readout time (ns)')
+    ax.set_ylabel('Signal-to-noise ratio') 
+    ax.set_title('Optimize readout window at {}'.format(nd_filter))
+    ax.legend() 
+    
     # Fit the data to a parabola
     offset = 130
     amplitude = 10
     readout_time_guess = numpy.average(readout_range)   
 
     init_guess_list = [offset, amplitude, readout_time_guess]
-    popt = fit_parabola(readout_time_list, snr_list, init_guess_list)
+    try:
+        popt = fit_parabola(readout_time_list, snr_list, init_guess_list)
+        
+        # If the fit works, plot the fitted curve
+        linspace_time = numpy.linspace(readout_range[0], readout_range[-1], num=1000)
+        ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
+        
+        text = ('Optimal readout time = {:.1f} ns'.format(popt[2]))
     
-    
-    # Plot the data
-    linspace_time = numpy.linspace(readout_range[0], readout_range[-1], num=1000)
-    
-    snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
-    ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
-    ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
-    ax.set_xlabel('Readout time (ns)')
-    ax.set_ylabel('Signal-to-noise ratio') 
-    ax.set_title('Optimize readout window at {}'.format(nd_filter))
-    ax.legend() 
-    
-    text = ('Optimal readout time = {:.1f} ns'.format(popt[2]))
-    
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
                                 verticalalignment="top", bbox=props)
+        
+    except Exception:
+        
+        # If the fit didn't work, continue
+        pass
     
+    # Plot the figure
     snr_fig.canvas.draw()
     snr_fig.canvas.flush_events()
     
@@ -321,86 +328,6 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
     tool_belt.save_figure(snr_fig, file_path)
     tool_belt.save_raw_data(snr_data, file_path)
     
-# %%
-    
-#def optimize_nd_filter(nv_sig):
-#    
-#    # don't plot or save each individual raw data of the snr
-#    do_plot = False
-#    save_raw_data = False
-#    
-#    num_steps = 51
-#    num_reps = 10**5
-#    num_runs = 1
-#    readout_time = nv_sig['pulsed_readout_dur']
-#    
-#    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
-#    nd_filter_value_list = [0, 0.5, 1.0, 1.5]
-#    
-#    # Create an empty list to fill with snr
-#    snr_list = []
-#    
-#    
-#    # Step thru the readout times and take a snr measurement
-#    for nd_filter_ind in range(len(nd_filter_list)):
-#        nd_filter = nd_filter_list(nd_filter_ind)
-#    
-#        snr_value = main(nv_sig, readout_time, nd_filter,
-#                 num_steps, num_reps, num_runs, do_plot, save_raw_data)
-#        
-#        snr_list.append(snr_value)
-#        
-#        # Break out of the while if the user says stop
-#        if tool_belt.safe_stop():
-#            break
-#        
-#    # Fit the data to a parabola
-#    offset = 1.5
-#    amplitude = 10
-#    nd_guess = 1.5   
-#
-#    init_guess_list = [offset, amplitude, nd_guess]
-#    popt = fit_parabola(nd_filter_value_list, snr_list, init_guess_list)
-#    
-#    
-#    # Plot the data
-#    linspace_nd = numpy.linspace(nd_filter_value_list[0], nd_filter_value_list[-1], num=1000)
-#    
-#    snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
-#    ax.plot(nd_filter_value_list, snr_list, 'ro', label = 'data')
-#    ax.plot(linspace_nd, parabola(linspace_nd,*popt), 'b-', label = 'fit')
-#    ax.set_xlabel('nd filter')
-#    ax.set_ylabel('Signal-to-noise ratio') 
-#    ax.set_title('Optimize nd filter')
-#    ax.legend() 
-#    
-#    text = ('Optimal nd filter = {:.2f} ns'.format(popt[2]))
-#    
-#    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-#    ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
-#                                verticalalignment="top", bbox=props)
-#    
-#    snr_fig.canvas.draw()
-#    snr_fig.canvas.flush_events()
-#    
-#    # Save the data
-#    timestamp = tool_belt.get_time_stamp()
-#    snr_data = {'timestamp': timestamp,
-#                'nv_sig': nv_sig,
-#                'nv_sig-units': tool_belt.get_nv_sig_units(), 
-#                'num_steps': num_steps,
-#                'num_reps': num_reps,
-#                'num_runs': num_runs,
-#                'snr_list': snr_list,
-#                'nd_filter_value_list': nd_filter_value_list}
-#    
-#    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-#    tool_belt.save_figure(snr_fig, file_path)
-#    tool_belt.save_raw_data(snr_data, file_path)
-#    
-#    if tool_belt.check_safe_stop_alive():
-#        print("\n\nRoutine complete. Press enter to exit.")
-#        tool_belt.poll_safe_stop()
         
 # %%
     
