@@ -37,10 +37,10 @@ data_folder = 't1_double_quantum'
 # The exponential function used to fit the data
 
 def exp_eq(t, rate, amp):
-    return  amp * exp(- rate * t)
+    return amp * exp(- rate * t)
 
 def exp_eq_offset(t, rate, amp, offset):
-    return  offset + amp * exp(- rate * t)
+    return offset + amp * exp(- rate * t)
 
 # %% Main
 
@@ -83,6 +83,7 @@ def main(folder_name, doPlot = False, offset = True):
             avg_sig_counts = numpy.average(sig_counts, axis=0)
             
             avg_ref = numpy.average(ref_counts)
+#            avg_ref = numpy.average(ref_counts, axis=0)
             
             norm_avg_sig = avg_sig_counts / avg_ref
             # take the average of the reference for 
@@ -335,7 +336,8 @@ def main(folder_name, doPlot = False, offset = True):
 
     # Define the counts for the plus relaxation equation
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
-
+#    print(plus_plus_counts)
+#    print(plus_minus_counts)
     init_params_list = [10, 0.40]
     try:
         if offset:
@@ -421,7 +423,7 @@ def main(folder_name, doPlot = False, offset = True):
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-        tool_belt.save_raw_data(raw_data, file_path)
+#        tool_belt.save_raw_data(raw_data, file_path)
     
     # %% Saving the figure
 
@@ -430,7 +432,7 @@ def main(folder_name, doPlot = False, offset = True):
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
-        tool_belt.save_figure(fig, file_path)
+#        tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 
@@ -438,23 +440,6 @@ if __name__ == '__main__':
 
     folder = 'nv16_2019_07_25_77MHz'
 
-#    folder_list = ['nv0_2019_06_06 _48MHz',
-#                   'nv1_2019_05_10_20MHz',
-#                   'nv1_2019_05_10_32MHz',
-#                   'nv1_2019_05_10_52MHz',
-#                   'nv1_2019_05_10_98MHz',
-#                   'nv2_2019_04_30_29MHz',
-#                   'nv2_2019_04_30_45MHz',
-#                   'nv2_2019_04_30_56MHz',
-#                   'nv2_2019_04_30_57MHz',
-#                   'nv2_2019_04_30_70MHz',
-#                   'nv2_2019_04_30_85MHz',
-#                   'nv2_2019_04_30_101MHz',
-#                   'nv4_2019_06_06_28MHz',
-#                   'nv13_2019_06_10_30MHz',
-#                   'nv13_2019_06_10_72MHz',
-#                   'nv13_2019_06_10_113MHz',
-#                   'nv13_2019_06_10_164MHz']
 
 #    for folder in folder_list:
 #    main(folder, True)
