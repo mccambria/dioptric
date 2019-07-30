@@ -8,6 +8,7 @@ Created on Sat May  4 08:34:08 2019
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 import numpy
+import utils.tool_belt as tool_belt
 
 LOW = 0
 HIGH = 1
@@ -213,15 +214,9 @@ if __name__ == '__main__':
               'do_532_aom': 1,
               'do_uwave_gate_0': 2,
               'do_uwave_gate_1': 3}
+    
+    seq_args_string = '[24000, 3000, 3000, 3000, 2000, 1000, 1000, 1000, 40, 320, 136, 212, 16000, 0, 1, -1]'
+    seq_args = tool_belt.decode_seq_args(seq_args_string)
 
-#    args = [32000, 3000, 3000, 3000, 2000, 1000, 1000,
-#            750, 40, 450, 34, 48, 68000, 0, 1, -1]
-#    args = [6240, 3000, 3000, 3000, 2000, 1000, 1000,
-#            750, 40, 320, 36, 0, 1760, 0, 1, 1]
-    # no delay
-    args = [6240, 3000, 3000, 3000, 2000, 1000, 1000,
-            0, 0, 320, 36, 0, 1760, 0, 1, 1]
-    args = [0, 3000, 3000, 3000, 2000, 1000, 1000,
-            0, 0, 320, 36, 0, 0, 0, 1, 1]
-    seq, ret_vals = get_seq(wiring, args)
+    seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()
