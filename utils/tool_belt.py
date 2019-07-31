@@ -27,6 +27,29 @@ from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
 from pathlib import Path
+from enum import Enum, auto
+
+
+# %% Constants
+
+
+class States(Enum):
+    """Do not update this without also updating get_state_signal_generator!"""
+    LOW = auto()
+    ZERO = auto()
+    HIGH = auto()
+    
+def get_signal_generator_name(state):
+    if state.value == States.LOW.value:
+        signal_generator_name = 'signal_generator_tsg4104a'
+    elif state.value == States.HIGH.value:
+        signal_generator_name = 'signal_generator_bnc835'
+    return signal_generator_name
+    
+def get_signal_generator_cxn(cxn, state):
+    signal_generator_name = get_signal_generator_name(state)
+    signal_generator_cxn = eval('cxn.{}'.format(signal_generator_name))
+    return signal_generator_cxn
 
 
 # %% xyz sets
@@ -572,9 +595,9 @@ def save_raw_data(rawData, filePath):
 
 
 def get_nv_sig_units():
-    return {'coords': 'V', 'expected_count_rate': 'kcps',
-            'magnet_angle': 'deg', 'resonance': 'GHz',
-            'rabi': 'ns', 'uwave_power': 'dBm'}
+    return {'coords': 'V', 'expected_count_rate': 'kcps', 
+        'pulsed_readout_dur': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz',
+        'rabi': 'ns', 'uwave_power': 'dBm'}
 
 
 # %% Safe stop (TM mccambria)

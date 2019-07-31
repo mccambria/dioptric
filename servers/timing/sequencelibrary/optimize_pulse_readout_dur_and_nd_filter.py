@@ -8,6 +8,8 @@ Created on Tue Apr 23 17:39:27 2019
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 import numpy
+import utils.tool_belt as tool_belt
+from utils.tool_belt import States
 
 LOW = 0
 HIGH = 1
@@ -30,15 +32,16 @@ def get_seq(pulser_wiring, args):
     apd_index = args[6]
     
     # Signify which signal generator to use
-    do_uwave_gate = args[7]
+    state_value = args[7]
 
     # Get what we need out of the wiring dictionary
     key = 'do_apd_{}_gate'.format(apd_index)
     apd_index = pulser_wiring[key]
-    if do_uwave_gate == 0:
-        pulser_do_uwave = pulser_wiring['do_uwave_gate_0']
-    if do_uwave_gate == 1:
-        pulser_do_uwave = pulser_wiring['do_uwave_gate_1']
+    
+    sig_gen_name = tool_belt.get_signal_generator_name(States(state_value))
+    sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
+    pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
+    
     pulser_do_aom = pulser_wiring['do_532_aom']
 
     # %% Couple calculated values
@@ -87,7 +90,7 @@ def get_seq(pulser_wiring, args):
              (polarization_dur, LOW),
              (exp_dur, LOW),
              (half_clock_pulse + rf_delay, LOW)]
-    seq.setDigital(pulser_do_uwave, train)
+    seq.setDigital(pulser_do_sig_gen_gate, train)
 
     final_digital = [pulser_wiring['do_532_aom'],
                      pulser_wiring['do_sample_clock']]
@@ -98,7 +101,7 @@ def get_seq(pulser_wiring, args):
 if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 1,
-              'do_532aom': 3,
+              'do_532_aom': 3,
               'do_uwave_gate_0': 4,
               'do_uwave_gate_1': 5}
     
@@ -106,5 +109,5 @@ if __name__ == '__main__':
     # readout_dur, pi_pulse, apd_index, uwave_gate_index
     args = [3000, 3000, 0, 0, 
             300, 100, 0, 0]
-    seq, ret_vals = get_seq(wiring, args)
+    seq, final, ret_vals = get_seq(wiring, args)
     seq.plot()   

@@ -8,6 +8,8 @@ Created on Thu Apr 11 16:19:44 2019
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 import numpy
+import utils.tool_belt as tool_belt
+from utils.tool_belt import States
 
 LOW = 0
 HIGH = 1
@@ -16,7 +18,7 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    readout, uwave_switch_delay, apd_index = args
+    readout, uwave_switch_delay, apd_index, state_value = args
     
     readout = numpy.int64(readout)
     readout = numpy.int64(readout)
@@ -28,8 +30,11 @@ def get_seq(pulser_wiring, args):
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    pulser_do_uwave = pulser_wiring['do_uwave_gate_1']
     pulser_do_aom = pulser_wiring['do_532_aom']
+    
+    sig_gen_name = tool_belt.get_signal_generator_name(States(state_value))
+    sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
+    pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
 
     seq = Sequence()
 
@@ -52,7 +57,7 @@ def get_seq(pulser_wiring, args):
     train = [(readout, LOW), (clock_buffer, LOW),
              (uwave_switch_delay, HIGH),
              (readout, HIGH), (clock_buffer, LOW)]
-    seq.setDigital(pulser_do_uwave, train)
+    seq.setDigital(pulser_do_sig_gen_gate, train)
 
     # The AOM should always be on
     train = [(period, HIGH)]

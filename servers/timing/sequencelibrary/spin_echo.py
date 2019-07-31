@@ -8,6 +8,8 @@ Created on Sat May  4 08:34:08 2019
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 import numpy
+import utils.tool_belt as tool_belt
+from utils.tool_belt import States
 
 LOW = 0
 HIGH = 1
@@ -30,11 +32,13 @@ def get_seq(pulser_wiring, args):
 
     # Get the APD indices
     apd_index = args[13]
+    state_value = args[14]
 
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
 
-    # Use the Tektronix
-    pulser_do_uwave = pulser_wiring['do_uwave_gate_0']
+    sig_gen_name = tool_belt.get_signal_generator_name(States(state_value))
+    sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
+    pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
 
     # specify the sig gen to give the initial state
 #    if init_state == 1:
@@ -150,7 +154,7 @@ def get_seq(pulser_wiring, args):
     train.extend([(pi_pulse, HIGH)])
     train.extend([(tau_long, LOW), (pi_on_2_pulse, HIGH)])
     train.extend([(post_duration, LOW)])
-    seq.setDigital(pulser_do_uwave, train)
+    seq.setDigital(pulser_do_sig_gen_gate, train)
 
 #    if init_state == 1 and read_state == 1:
 #        pulser_do_uwave = pulser_do_uwave_read
