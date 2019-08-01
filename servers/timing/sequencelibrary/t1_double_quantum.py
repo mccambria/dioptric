@@ -214,11 +214,12 @@ if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 4,
               'do_532_aom': 1,
-              'do_uwave_gate_0': 2,
-              'do_uwave_gate_1': 3}
+              'do_signal_generator_tsg4104a_gate': 2,
+              'do_signal_generator_bnc835_gate': 3}
     
-    seq_args_string = '[24000, 3000, 3000, 3000, 2000, 1000, 1000, 1000, 40, 320, 136, 212, 16000, 0, 1, -1]'
-    seq_args = tool_belt.decode_seq_args(seq_args_string)
+    seq_args = [2000, 3000, 3000, 3000, 2000, 1000, 1000, 
+                0, 0,  # 1000, 40
+                450, 55, 83, 1500, 0, States.LOW.value, States.HIGH.value]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()

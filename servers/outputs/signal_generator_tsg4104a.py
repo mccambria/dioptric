@@ -151,6 +151,25 @@ class SignalGeneratorTsg4104a(LabradServer):
         # Turn on FM
         self.sig_gen.write('MODL 1')
 
+    @setting(4)
+    def load_split_freq(self, c, fm_range, voltages, period):
+        """Set up frequency modulation to send the carrier to 0 and maximize
+        the first two sidebands
+        """
+
+        # Set up the DAQ AO that will control the modulation
+        self.load_stream_writer('UwaveSigGen-load_fm', voltages, period)
+        # Simple FM is type 1, subtype 0
+        self.sig_gen.write('TYPE 1')
+        self.sig_gen.write('STYP 0')
+        # Set the range of the modulation
+        precision = len(str(fm_range).split('.')[1])
+        self.sig_gen.write('FDEV {0:.{1}f}GHZ'.format(fm_range, precision))
+        # Set to an external source
+        self.sig_gen.write('MFNC 5')
+        # Turn on FM
+        self.sig_gen.write('MODL 1')
+
     @setting(5)
     def mod_off(self, c):
         """Turn off the modulation."""

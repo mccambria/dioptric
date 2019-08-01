@@ -193,6 +193,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
+    
+        # TEST for split resonance
+#        sig_gen_cxn = cxn.signal_generator_bnc835
+#        sig_gen_cxn.set_freq(uwave_freq + 0.008)
+#        sig_gen_cxn.set_amp(uwave_power)
+#        sig_gen_cxn.uwave_on()
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)

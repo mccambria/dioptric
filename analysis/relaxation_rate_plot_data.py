@@ -67,8 +67,8 @@ def main(folder_name, doPlot = False, offset = True):
         data = tool_belt.get_raw_data(data_folder, file[:-4], folder_name)
         try:
 
-            init_state = data['init_state']
-            read_state = data['read_state']
+            init_state_name = data['init_state']
+            read_state_name = data['read_state']
 
             sig_counts  = numpy.array(data['sig_counts'])
             ref_counts = numpy.array(data['ref_counts'])
@@ -88,21 +88,16 @@ def main(folder_name, doPlot = False, offset = True):
             
             norm_avg_sig = avg_sig_counts / avg_ref
             # take the average of the reference for 
-
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
-            if init_state.value == States.ZERO.value and read_state.value == States.ZERO.value:
+            if init_state_name == States.ZERO.name and read_state_name == States.ZERO.name:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_zero_bool == False:
-#                    ###
-#                    avg_sig_counts = numpy.average(sig_counts[:112,::], axis=0)
-#                    avg_ref = numpy.average(ref_counts[:112,::])
-#                    norm_avg_sig = avg_sig_counts / avg_ref
-#                    ###
+
                     zero_zero_counts = norm_avg_sig
                     zero_zero_time = time_array
-
+                    
                     zero_zero_ref_max_time = max_relaxation_time
                     zero_zero_bool = True
                 # If data has already been taken for this experiment, then check
@@ -120,7 +115,7 @@ def main(folder_name, doPlot = False, offset = True):
                                               zero_zero_counts))
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
-            if init_state.value == States.ZERO.value and read_state.value == States.HIGH.value:
+            if init_state_name == States.ZERO.name and read_state_name == States.HIGH.name:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_plus_bool == False:
@@ -146,7 +141,7 @@ def main(folder_name, doPlot = False, offset = True):
 
                         zero_plus_time = numpy.concatenate(time_array, zero_plus_time)
 
-            if init_state.value == States.ZERO.value and read_state.value == States.LOW.value:
+            if init_state_name == States.ZERO.name and read_state_name == States.LOW.name:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_minus_bool == False:
@@ -173,7 +168,7 @@ def main(folder_name, doPlot = False, offset = True):
                         zero_minus_time = numpy.concatenate(time_array, zero_minus_time)
 
 
-            if init_state.value == States.HIGH.value and read_state.value == States.HIGH.value:
+            if init_state_name == States.HIGH.name and read_state_name == States.HIGH.name:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if plus_plus_bool == False:
@@ -197,7 +192,7 @@ def main(folder_name, doPlot = False, offset = True):
                                                           plus_plus_counts))
                         plus_plus_time = numpy.concatenate((time_array, plus_plus_time))
             
-            if init_state.value == States.LOW.value and read_state.value == States.LOW.value:
+            if init_state_name == States.LOW.name and read_state_name == States.LOW.name:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if minus_minus_bool == False:
@@ -221,7 +216,7 @@ def main(folder_name, doPlot = False, offset = True):
                                                           minus_minus_counts))
                         minus_minus_time = numpy.concatenate((time_array, minus_minus_time))
                         
-            if init_state.value == States.HIGH.value and read_state.value == States.LOW.value:
+            if init_state_name == States.HIGH.name and read_state_name == States.LOW.name:
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']
@@ -334,101 +329,101 @@ def main(folder_name, doPlot = False, offset = True):
 
     # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
     # to fit
-
-    # Define the counts for the plus relaxation equation
-    plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
-#    print(plus_plus_counts)
-#    print(plus_minus_counts)
-    init_params_list = [10, 0.40]
     try:
-        if offset:
-            init_params_list.append(0)
-            init_params = tuple(init_params_list)
-            gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
-                             plus_plus_time, plus_relaxation_counts,
-                             p0 = init_params)
-            
-        else:
-            init_params = tuple(init_params_list)
-            gamma_opti_params, cov_arr = curve_fit(exp_eq,
-                             plus_plus_time, plus_relaxation_counts,
-                             p0 = init_params)
-
-    except Exception:
-        gamma_fit_failed = True
-
-        if doPlot:
-            ax = axes_pack[1]
-            ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
-            ax.set_xlabel('Relaxation time (ms)')
-            ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(-1,-1) - (-1,+1)')
-
-    if not gamma_fit_failed:
-
-        gamma = (gamma_opti_params[0] - omega)/ 2.0
-
-        # Plotting
-        if doPlot:
-            plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
-            ax = axes_pack[1]
-            ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
+        # Define the counts for the plus relaxation equation
+        plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
+    #    print(plus_plus_counts)
+    #    print(plus_minus_counts)
+        init_params_list = [10, 0.40]
+        try:
             if offset:
-                ax.plot(plus_time_linspace,
-                    exp_eq_offset(plus_time_linspace, *gamma_opti_params),
-                    'r', label = 'fit')
+                init_params_list.append(0)
+                init_params = tuple(init_params_list)
+                gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
+                                 plus_plus_time, plus_relaxation_counts,
+                                 p0 = init_params)
+                
             else:
-                ax.plot(plus_time_linspace,
-                    exp_eq(plus_time_linspace, *gamma_opti_params),
-                    'r', label = 'fit')
-            ax.set_xlabel('Relaxation time (ms)')
-            ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(+1,+1) - (+1,-1)')
-            ax.legend()
-            text = r'$\gamma = $ {} kHz'.format('%.2f'%gamma)
-
-            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
-                    verticalalignment='top', bbox=props)
-    if doPlot:
-        fig.canvas.draw()
-        fig.canvas.flush_events()
+                init_params = tuple(init_params_list)
+                gamma_opti_params, cov_arr = curve_fit(exp_eq,
+                                 plus_plus_time, plus_relaxation_counts,
+                                 p0 = init_params)
+    
+        except Exception:
+            gamma_fit_failed = True
+    
+            if doPlot:
+                ax = axes_pack[1]
+                ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
+                ax.set_xlabel('Relaxation time (ms)')
+                ax.set_ylabel('Normalized signal Counts')
+                ax.set_title('(-1,-1) - (-1,+1)')
+    
+        if not gamma_fit_failed:
+    
+            gamma = (gamma_opti_params[0] - omega)/ 2.0
+    
+            # Plotting
+            if doPlot:
+                plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
+                ax = axes_pack[1]
+                ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
+                if offset:
+                    ax.plot(plus_time_linspace,
+                        exp_eq_offset(plus_time_linspace, *gamma_opti_params),
+                        'r', label = 'fit')
+                else:
+                    ax.plot(plus_time_linspace,
+                        exp_eq(plus_time_linspace, *gamma_opti_params),
+                        'r', label = 'fit')
+                ax.set_xlabel('Relaxation time (ms)')
+                ax.set_ylabel('Normalized signal Counts')
+                ax.set_title('(+1,+1) - (+1,-1)')
+                ax.legend()
+                text = r'$\gamma = $ {} kHz'.format('%.2f'%gamma)
+    
+                props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+                ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+                        verticalalignment='top', bbox=props)
+        if doPlot:
+            fig.canvas.draw()
+            fig.canvas.flush_events()
         
 #    print('Omega list: {} \nGamma list: {}'.format(omega_rate_list, gamma_rate_list))
 
         # %% Saving the data 
-        
+    except Exception:        
         data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
-                
-                
-        time_stamp = tool_belt.get_time_stamp()
-        raw_data = {'time_stamp': time_stamp,
-                    'splitting_MHz': splitting_MHz,
-                    'splitting_MHz-units': 'MHz',
-                    'offset_free_param?': offset,
-                    'zero_relaxation_counts': zero_relaxation_counts.tolist(),
-                    'zero_relaxation_counts-units': 'counts',
-                    'zero_zero_time': zero_zero_time.tolist(),
-                    'zero_zero_time-units': 'ms',
-                    'plus_relaxation_counts': plus_relaxation_counts.tolist(),
-                    'plus_relaxation_counts-units': 'counts',
-                    'plus_plus_time': plus_plus_time.tolist(),
-                    'plus_plus_time-units': 'ms',
-                    'omega_opti_params': omega_opti_params.tolist(),
-                    'gamma_opti_params': gamma_opti_params.tolist()
-                    }
-        
-
-        
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins' 
-        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
-                                                             file_name)
-        
-        tool_belt.save_raw_data(raw_data, file_path)
+        splitting_MHz = 130
+#                
+#                
+#        time_stamp = tool_belt.get_time_stamp()
+#        raw_data = {'time_stamp': time_stamp,
+#                    'splitting_MHz': splitting_MHz,
+#                    'splitting_MHz-units': 'MHz',
+#                    'offset_free_param?': offset,
+#                    'zero_relaxation_counts': zero_relaxation_counts.tolist(),
+#                    'zero_relaxation_counts-units': 'counts',
+#                    'zero_zero_time': zero_zero_time.tolist(),
+#                    'zero_zero_time-units': 'ms',
+#                    'plus_relaxation_counts': plus_relaxation_counts.tolist(),
+#                    'plus_relaxation_counts-units': 'counts',
+#                    'plus_plus_time': plus_plus_time.tolist(),
+#                    'plus_plus_time-units': 'ms',
+#                    'omega_opti_params': omega_opti_params.tolist(),
+#                    'gamma_opti_params': gamma_opti_params.tolist()
+#                    }
+#        
+#
+#        
+#        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins' 
+#        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
+#                                                             file_name)
+#        
+#        tool_belt.save_raw_data(raw_data, file_path)
     
     # %% Saving the figure
 
-   
         file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)

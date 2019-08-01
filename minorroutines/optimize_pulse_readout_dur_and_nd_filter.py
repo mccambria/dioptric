@@ -94,7 +94,7 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
     exp_dur = 5 * 10**3
     aom_delay = shared_params['532_aom_delay']
     uwave_delay = shared_params['uwave_delay']
-    pi_pulse = round(nv_sig['rabi_high'] / 2)
+    pi_pulse = round(nv_sig['rabi_LOW'] / 2)
     
     # The two parameters we currently alter
     readout_time = int(readout_time)
@@ -134,8 +134,8 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
         cxn.filter_slider_ell9k.set_filter(nd_filter)
         time.sleep(0.5)
 
-        cxn.signal_generator_tsg4104a.set_freq(nv_sig['resonance_high'])
-        cxn.signal_generator_tsg4104a.set_amp(nv_sig['uwave_power_high'])
+        cxn.signal_generator_tsg4104a.set_freq(nv_sig['resonance_LOW'])
+        cxn.signal_generator_tsg4104a.set_amp(nv_sig['uwave_power_LOW'])
         cxn.signal_generator_tsg4104a.uwave_on()
 
         # Load the APD stream
@@ -357,8 +357,8 @@ def main(nv_sig):
         elif nd_filter == 'nd_1.5':
 #            readout_range = [200, 600]
 #            num_readout_steps = 9
-            readout_range = [400, 600]
-            num_readout_steps = 5
+            readout_range = [250, 600]
+            num_readout_steps = 8
         
         print('nd filter set to {}'.format(nd_filter))
         
@@ -369,24 +369,60 @@ def main(nv_sig):
 if __name__ == '__main__':
 
     # Define the nv_sig to be used
-    nv27_2019_07_25 = {'coords': [-0.229, -0.052, 5.03],
-          'name': '{}-nv{}_2019_07_25'.format('ayrton12', 27),
-#          'expected_count_rate': 18,
-          'expected_count_rate': 6,
-          'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 400, 'magnet_angle': 15.4,
-          'resonance_low': 2.8121, 'rabi_low': 94.6, 'uwave_power_low': 9.0,
-          'resonance_high': 2.9249, 'rabi_high': 69.1, 'uwave_power_high': 10.0}
+    nv16_2019_07_25 = {'coords': [-0.191, 0.041, 5.04],
+          'name': '{}-nv{}_2019_07_25'.format('ayrton12', 16),
+          'expected_count_rate': 30,
+          'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 450, 'magnet_angle': 194.1,
+          'resonance_LOW': 2.8221, 'rabi_LOW': 111.6, 'uwave_power_LOW': 9.0,
+          'resonance_HIGH': 2.8994, 'rabi_HIGH': 115.1, 'uwave_power_HIGH': 10.0}
     
     # Main parameters
-    nv_sig = nv27_2019_07_25
+    nv_sig = nv16_2019_07_25
     
     ### MAIN ###
-    main(nv_sig)
+#    main(nv_sig)
     
     # The individual functions in this file
 #    snr_measurement(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)
 #    optimize_readout(nv_sig, readout_range, num_readout_steps, 'nd_1.5')
 
+# %%
+#    snr_list =     [4.0999188929581365,
+#    3.6510686263146948,
+#    3.8189598302852774,
+#    4.829296777215037,
+#    4.557744344332746,
+#    4.016704434110489]
+#    
+#    readout_time_list = [300,
+#    350,
+#    400,
+#    450,
+#    500,
+#    550,
+#   ]
+#    
+#    init_guess_list = [10, 10, 450]
+#    
+#    popt = fit_parabola(readout_time_list, snr_list, init_guess_list)
+#    
+#    snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+#    ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
+#    ax.set_xlabel('Readout time (ns)')
+#    ax.set_ylabel('Signal-to-noise ratio') 
+#    ax.set_title('Optimize readout window at {}'.format('nd_1.5'))
+#    linspace_time = numpy.linspace(300, 600, num=1000)
+#    ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
+#    
+#    text = ('Optimal readout time = {:.1f} ns'.format(popt[2]))
+#
+#    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+#    ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    ax.legend() 
+#    snr_fig.canvas.draw()
+#    snr_fig.canvas.flush_events()
+    
 # %%
     if tool_belt.check_safe_stop_alive():
         print("\n\nRoutine complete. Press enter to exit.")

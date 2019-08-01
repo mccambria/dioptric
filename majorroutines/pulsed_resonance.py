@@ -94,6 +94,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
             
     contrast = 0.2  # Arb
     sigma = 0.005  # MHz
+#    sigma = 0.010  # MHz
     fwhm = 2.355 * sigma
     
     # Convert to index space
@@ -116,6 +117,9 @@ def fit_resonance(freq_range, freq_center, num_steps,
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
 
+#    low_freq_guess = 2.8164
+#    high_freq_guess = 2.8247
+        
     if len(peak_inds) > 1:
         # Find the location of the highest peak
         max_peak_peak_inds = peak_heights.index(max(peak_heights)) 
@@ -435,8 +439,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-    file = '2019-07-30-18_41_58-ayrton12-nv27_2019_07_25'
-    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
+#    file = '2019-08-01-10_38_53-ayrton12-nv16_2019_07_25'
+#    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
+    
+    file = '2019-08-01-14_58_51-ayrton12-nv16_2019_07_25'
+    data = tool_belt.get_raw_data('resonance.py', file)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']
