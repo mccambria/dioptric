@@ -163,18 +163,35 @@ def fit_resonance(freq_range, freq_center, num_steps,
     return fit_func, popt
 
 
+# %% User functions
+    
+
+def state(nv_sig, apd_indices, state, freq_range,
+          num_steps, num_reps, num_runs):
+    
+    freq_center = nv_sig['resonance_{}'.format(state.name)]
+    uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
+    uwave_pulse_dur = nv_sig['rabi_{}'.format(state.name)] // 2
+    
+    main(nv_sig, apd_indices, freq_center, freq_range,
+         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+
+
 # %% Main
 
 
 def main(nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur):
+         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
+         state=States.LOW):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
+                  state)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-              num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur):
+              num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
+              state=States.LOW):
 
     # %% Initial calculations and setup
     
@@ -194,9 +211,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     ref_counts = numpy.empty([num_runs, num_steps])
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
-    
-    # Assume the low state
-    state = States.LOW
     
     # Define some times for the sequence (in ns)
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -293,6 +307,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                    'freq_range-units': 'GHz',
                    'uwave_pulse_dur': uwave_pulse_dur,
                    'uwave_pulse_dur-units': 'ns',
+                   'state': state.name,
                    'num_steps': num_steps,
                    'run_ind': run_ind,
                    'uwave_power': uwave_power,
@@ -375,6 +390,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'freq_range-units': 'GHz',
                'uwave_pulse_dur': uwave_pulse_dur,
                'uwave_pulse_dur-units': 'ns',
+               'state': state.name,
                'num_steps': num_steps,
                'num_reps': num_reps,
                'num_runs': num_runs,

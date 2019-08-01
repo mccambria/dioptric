@@ -27,6 +27,7 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
 import utils.tool_belt as tool_belt
+from utils.tool_belt import States
 
 # %% Constants
 
@@ -90,7 +91,7 @@ def main(folder_name, doPlot = False, offset = True):
 
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
-            if init_state == 0 and read_state == 0:
+            if init_state.value == States.ZERO.value and read_state.value == States.ZERO.value:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_zero_bool == False:
@@ -119,7 +120,7 @@ def main(folder_name, doPlot = False, offset = True):
                                               zero_zero_counts))
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
-            if init_state == 0 and read_state == 1:
+            if init_state.value == States.ZERO.value and read_state.value == States.HIGH.value:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_plus_bool == False:
@@ -145,7 +146,7 @@ def main(folder_name, doPlot = False, offset = True):
 
                         zero_plus_time = numpy.concatenate(time_array, zero_plus_time)
 
-            if init_state == 0 and read_state == -1:
+            if init_state.value == States.ZERO.value and read_state.value == States.LOW.value:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_minus_bool == False:
@@ -172,7 +173,7 @@ def main(folder_name, doPlot = False, offset = True):
                         zero_minus_time = numpy.concatenate(time_array, zero_minus_time)
 
 
-            if init_state == 1 and read_state == 1:
+            if init_state.value == States.HIGH.value and read_state.value == States.HIGH.value:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if plus_plus_bool == False:
@@ -196,7 +197,7 @@ def main(folder_name, doPlot = False, offset = True):
                                                           plus_plus_counts))
                         plus_plus_time = numpy.concatenate((time_array, plus_plus_time))
             
-            if init_state == -1 and read_state == -1:
+            if init_state.value == States.LOW.value and read_state.value == States.LOW.value:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if minus_minus_bool == False:
@@ -220,7 +221,7 @@ def main(folder_name, doPlot = False, offset = True):
                                                           minus_minus_counts))
                         minus_minus_time = numpy.concatenate((time_array, minus_minus_time))
                         
-            if init_state == 1 and read_state == -1:
+            if init_state.value == States.HIGH.value and read_state.value == States.LOW.value:
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']
@@ -423,7 +424,7 @@ def main(folder_name, doPlot = False, offset = True):
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-#        tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_raw_data(raw_data, file_path)
     
     # %% Saving the figure
 
@@ -438,7 +439,7 @@ def main(folder_name, doPlot = False, offset = True):
 
 if __name__ == '__main__':
 
-    folder = 'nv27_2019_07_25_113MHz'
+    folder = 'nv27_2019_07_25_120MHz'
 
 
 #    for folder in folder_list:
