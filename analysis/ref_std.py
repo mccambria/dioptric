@@ -91,9 +91,7 @@ def main(data):
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here
-    # t1_double_quantum
-    file_name = '2019-07-30-05_03_08-ayrton12-nv27_2019_07_25' # [0,0]
-    # file_name = '2019-07-30-02_04_25-ayrton12-nv27_2019_07_25' # [0,1]
+    file_name = '2019-07-30-02_04_25-ayrton12-nv27_2019_07_25' # [0,1]
     data = tool_belt.get_raw_data('t1_double_quantum', file_name)
 
     # Run the script
