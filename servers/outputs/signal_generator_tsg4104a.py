@@ -151,6 +151,7 @@ class SignalGeneratorTsg4104a(LabradServer):
         # Turn on FM
         self.sig_gen.write('MODL 1')
 
+
     @setting(5)
     def mod_off(self, c):
         """Turn off the modulation."""

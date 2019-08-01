@@ -49,9 +49,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     uwave_switch_delay = 1 * 10**6  # 1 ms to switch frequencies
     seq_args = [readout, uwave_switch_delay, apd_indices[0], state.value]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    
-    # Assume the low state
-    state = States.LOW
 
     file_name = os.path.basename(__file__)
 

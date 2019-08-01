@@ -81,11 +81,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     uwave_power_high = nv_sig['uwave_power_HIGH']
     uwave_power_low = nv_sig['uwave_power_LOW']
 
-    if init_state.value == States.ZERO.value:
-        uwave_pi_pulse_init = 0
-        uwave_freq_init = 2.87
-        uwave_power_init = 9.0
-    elif init_state.value == States.HIGH.value:
+    # Default values
+    uwave_pi_pulse_init = 0
+    uwave_freq_init = 2.87
+    uwave_power_init = 9.0
+    if init_state.value == States.HIGH.value:
         uwave_pi_pulse_init = uwave_pi_pulse_high
         uwave_freq_init = uwave_freq_high
         uwave_power_init = uwave_power_high
@@ -94,11 +94,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
         uwave_freq_init = uwave_freq_low
         uwave_power_init = uwave_power_low
 
-    if read_state.value == States.ZERO.value:
-        uwave_pi_pulse_read = 0
-        uwave_freq_read = 2.87
-        uwave_power_read = 9.0
-    elif read_state.value == States.HIGH.value:
+    # Default values
+    uwave_pi_pulse_read = 0
+    uwave_freq_read = 2.87
+    uwave_power_read = 9.0
+    if read_state.value == States.HIGH.value:
         uwave_pi_pulse_read = uwave_pi_pulse_high
         uwave_freq_read = uwave_freq_high
         uwave_power_read = uwave_power_high
@@ -111,7 +111,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     print('Init pi pulse: {} ns'.format(uwave_pi_pulse_init))
     print('Init frequency: {} GHz'.format(uwave_freq_init))
     print('Init power: {} dBm'.format(uwave_power_init))
-    print('Read state: {}'.format(init_state.name))
+    print('Read state: {}'.format(read_state.name))
     print('Read pi pulse: {} ns'.format(uwave_pi_pulse_read))
     print('Read frequency: {} GHz'.format(uwave_freq_read))
     print('Read power: {} dBm'.format(uwave_power_read))
@@ -188,7 +188,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     # Ask to continue and timeout if no response in 2 seconds?
 
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
-    return
+#    return
     
     # %% Get the starting time of the function, to be used to calculate run time
 
@@ -259,6 +259,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                         gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, taus[tau_ind_second],
                         apd_indices[0], init_state.value, read_state.value]
             seq_args = [int(el) for el in seq_args]
+#            print(seq_args)
+#            return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             
             cxn.pulse_streamer.stream_immediate(file_name, num_reps,
