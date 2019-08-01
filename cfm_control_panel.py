@@ -326,8 +326,8 @@ if __name__ == '__main__':
 #          'name': '{}-nv{}_2019_07_25'.format(sample_name, 16),
 #          'expected_count_rate': 30,
 #          'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 450, 'magnet_angle': 194.1,
-#          'resonance_LOW': 2.8148, 'rabi_LOW': 109.8, 'uwave_power_LOW': 17.0,
-#          'resonance_HIGH': 2.8242, 'rabi_HIGH': 108.4, 'uwave_power_HIGH': 17.0}
+#          'resonance_LOW': 2.8148, 'rabi_LOW': 109.8, 'uwave_power_LOW': 14.5,
+#          'resonance_HIGH': 2.8242, 'rabi_HIGH': 108.4, 'uwave_power_HIGH': 14.5}
     
 #    Debug NV
 #    nv27_2019_07_25 = {'coords': coords_list[27],
