@@ -301,10 +301,10 @@ if __name__ == '__main__':
     
     nv16_2019_07_25 = {'coords': coords_list[16],
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 16),
-          'expected_count_rate': 30,
+          'expected_count_rate': 28,
           'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 450, 'magnet_angle': 194.1,
-          'resonance_LOW': 2.8202, 'rabi_LOW': 108.8, 'uwave_power_LOW': 9.0,
-          'resonance_HIGH': 2.9014, 'rabi_HIGH': 108.4, 'uwave_power_HIGH': 10.0}
+          'resonance_LOW': 2.8202, 'rabi_LOW': 112.0, 'uwave_power_LOW': 9.0,
+          'resonance_HIGH': 2.9014, 'rabi_HIGH': 110.0, 'uwave_power_HIGH': 10.0}
     nv25_2019_07_25 = {'coords': coords_list[25], # Very long and poor rabi oscillations
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 25),
           'expected_count_rate': 38,
@@ -351,7 +351,7 @@ if __name__ == '__main__':
 #        drift = tool_belt.get_drift()
 #        tool_belt.set_drift([float(drift[0])+0.02, float(drift[1])-0.02, 0.15])
 #        tool_belt.set_drift([-0.012, 0.0, -0.02])
-        # 
+         
 #        set_xyz([0.0, 0.0, z_voltage + tool_belt.get_drift()[2]])
 
         # Routines that expect lists of NVs
@@ -383,13 +383,13 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
-            do_rabi(nv_sig, apd_indices, States.LOW)
-            do_rabi(nv_sig, apd_indices, States.HIGH)
+#            do_rabi(nv_sig, apd_indices, States.LOW)
+#            do_rabi(nv_sig, apd_indices, States.HIGH)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
-#            do_test_major_routines(nv_sig, apd_indices)
+            do_test_major_routines(nv_sig, apd_indices)
 #            with labrad.connect() as cxn:
 #                tool_belt.set_xyz_on_nv(cxn, nv_sig)
 
