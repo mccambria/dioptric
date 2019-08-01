@@ -22,6 +22,37 @@ import matplotlib.pyplot as plt
 # %% Functions
 
 
+def st_devs(data):
+    ref_counts = data['ref_counts']
+    num_runs = data['num_runs']
+    num_steps = data['num_steps']
+    ref_counts_trans = numpy.transpose(ref_counts)
+    print('Num cols: {}'.format(len(ref_counts_trans)))
+    # for col in ref_counts_trans:
+    #     avg_col = numpy.average(col)
+    #     print('avg: {}'.format(avg_col))
+    #     print('expected st dev: {}'.format(numpy.sqrt(avg_col)))
+    #     std_col = numpy.std(col)
+    #     print('st dev: {}'.format(std_col))
+        # print('unadjusted st dev: {}'.format(std_col))
+        # # Adjust for binning
+        # print('adjusted st dev: {}'.format(std_col*numpy.sqrt(num_runs)))
+    summed = numpy.sum(ref_counts, axis=0)
+    print(summed)
+    print('expected st dev: {}'.format(numpy.sqrt(numpy.average(summed))))
+    print('st dev: {}'.format(numpy.std(summed)*(num_steps/(num_steps-1))))
+    # print(numpy.std(data['norm_avg_sig']))
+
+
+def expected_st_dev_norm(ref_counts, expected_contrast):
+    sig_counts = expected_contrast * ref_counts
+    rel_std_sig = numpy.sqrt(sig_counts) / sig_counts
+    rel_std_ref = numpy.sqrt(ref_counts) / ref_counts
+    # Propogate the error
+    print(expected_contrast * numpy.sqrt((rel_std_sig**2) + (rel_std_ref**2)))
+
+
+
 # %% Main
 
 
@@ -29,6 +60,9 @@ def main(data):
     """When you run the file, we'll call into main, which should contain the
     body of the script.
     """
+
+    # print(numpy.std(data['norm_avg_sig']))
+    # return
 
     ref_counts = data['ref_counts']
     num_runs = data['num_runs']
@@ -38,10 +72,11 @@ def main(data):
     x_high = None
     
     ref_counts = numpy.array(ref_counts)
-    std = numpy.std(ref_counts)
-    print('standard deviation: {}'.format(std))
     avg = numpy.average(ref_counts)
     print('average: {}'.format(avg))
+    print('expected standard deviation: {}'.format(numpy.sqrt(avg)))
+    std = numpy.std(ref_counts)
+    print('standard deviation: {}'.format(std))
     print('relative standard deviation: {}'.format(std / avg))
     
     tau_inds = data['tau_index_master_list']
@@ -91,8 +126,12 @@ def main(data):
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here
-    file_name = '2019-07-30-02_04_25-ayrton12-nv27_2019_07_25' # [0,1]
+    # file_name = '2019-07-31-15_41_43-ayrton12-nv27_2019_07_25'
+    # file_name = '2019-08-01-09_30_37-ayrton12-nv27_2019_07_25'
+    file_name = '2019-07-29-23_05_39-ayrton12-nv27_2019_07_25'
     data = tool_belt.get_raw_data('t1_double_quantum', file_name)
 
     # Run the script
-    main(data)
+    # main(data)
+    # st_devs(data)
+    expected_st_dev_norm(2600, 0.95)
