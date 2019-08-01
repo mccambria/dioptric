@@ -48,11 +48,15 @@ class SignalGeneratorBnc835(LabradServer):
         return result['get']
 
     def on_get_config(self, visa_address):
+        # Note that this instrument works with pyvisa's default
+        # termination assumptions
         resource_manager = visa.ResourceManager()
         self.sig_gen = resource_manager.open_resource(visa_address)
         logging.debug(self.sig_gen)
-        # Note that this instrument works with pyvisa's default
-        # termination assumptions
+        self.sig_gen.write('*RST')
+        # Set to the external frequency source 
+        self.sig_gen.write('ROSC:EXT:FREQ 10MHZ')
+        self.sig_gen.write('ROSC:SOUR EXT')
         self.reset(None)
         logging.debug('init complete')
 
@@ -137,7 +141,6 @@ class SignalGeneratorBnc835(LabradServer):
 
     @setting(6)
     def reset(self, c):
-        self.sig_gen.write('*RST')
         self.uwave_off(c)
         # Default to a continuous wave at 2.87 GHz and 0.0 dBm
         self.set_freq(c, 2.87)
