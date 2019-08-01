@@ -297,12 +297,12 @@ if __name__ == '__main__':
           'resonance_LOW': 2.7906, 'rabi_LOW': 76.3, 'uwave_power_LOW': 9.0,
           'resonance_HIGH': 2.9385, 'rabi_HIGH': 54.5, 'uwave_power_HIGH': 10.0}
     
-#    nv16_2019_07_25 = {'coords': coords_list[16],
-#          'name': '{}-nv{}_2019_07_25'.format(sample_name, 16),
-#          'expected_count_rate': 30,
-#          'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 450, 'magnet_angle': 194.1,
-#          'resonance_LOW': 2.8202, 'rabi_LOW': 109.8, 'uwave_power_LOW': 9.0,
-#          'resonance_HIGH': 2.9003, 'rabi_HIGH': 108.4, 'uwave_power_HIGH': 10.0}
+    nv16_2019_07_25 = {'coords': coords_list[16],
+          'name': '{}-nv{}_2019_07_25'.format(sample_name, 16),
+          'expected_count_rate': 30,
+          'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 450, 'magnet_angle': 194.1,
+          'resonance_LOW': 2.8202, 'rabi_LOW': 109.8, 'uwave_power_LOW': 9.0,
+          'resonance_HIGH': 2.9003, 'rabi_HIGH': 108.4, 'uwave_power_HIGH': 10.0}
     nv25_2019_07_25 = {'coords': coords_list[25], # Very long and poor rabi oscillations
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 25),
           'expected_count_rate': 38,
