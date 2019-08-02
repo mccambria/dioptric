@@ -112,8 +112,8 @@ def main(folder_name, num_bins, save_data = True, offset = True):
             # time is in microseconds
             min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             num_steps = data['num_steps']
-#            num_runs = data['num_runs']
-            num_runs = 12
+            num_runs = data['num_runs']
+#            num_runs = 12
 
             time_array = numpy.linspace(min_relaxation_time, 
                                         max_relaxation_time, num=num_steps) 
@@ -380,8 +380,8 @@ def main(folder_name, num_bins, save_data = True, offset = True):
     g_average = numpy.average(g_rate_list)
     g_stdev = numpy.std(g_rate_list)
     
-    print(o_average / 3)
-    print((g_average - o_average / 3) / 2)
+#    print(o_average / 3)
+#    print((g_average - o_average / 3) / 2)
 
 #    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 #    plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
@@ -454,7 +454,7 @@ def main(folder_name, num_bins, save_data = True, offset = True):
                   
 if __name__ == '__main__':
     
-    folder = 'nv16_2019_07_25_77MHz'
+    folder = 'nv16_2019_07_25_81MHz'
 
     
     main(folder, 1,  False,  True)
