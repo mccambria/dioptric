@@ -295,10 +295,9 @@ if __name__ == '__main__':
     nv5_2019_07_25 = {'coords': coords_list[5], # check (0,+1) and (0,-1) the same
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 5),
           'expected_count_rate': 33,
-          'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 450, 'magnet_angle': 257.4,
+          'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 300, 'magnet_angle': 257.4,
           'resonance_LOW': 2.7906, 'rabi_LOW': 76.3, 'uwave_power_LOW': 9.0,
           'resonance_HIGH': 2.9385, 'rabi_HIGH': 54.5, 'uwave_power_HIGH': 10.0}
-    
     nv16_2019_07_25 = {'coords': coords_list[16],
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 16),
           'expected_count_rate': 28,
