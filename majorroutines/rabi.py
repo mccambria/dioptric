@@ -359,7 +359,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    file = '2019-06-24_16-56-39_ayrton12'
+    file = '2019-08-01-18_26_45-ayrton12-nv16_2019_07_25'
     data = tool_belt.get_raw_data('rabi.py', file)
 
     norm_avg_sig = data['norm_avg_sig']
