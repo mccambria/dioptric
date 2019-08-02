@@ -121,7 +121,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     
     num_steps = 51
     num_reps = 10**5
-    num_runs = 3
+    num_runs = 4
     freq_range = 0.1
 
     pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
@@ -160,13 +160,13 @@ def do_t1_battery(nv_sig, apd_indices):
     num_runs = 30
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
-    # ~ 14 hours total
-    t1_exp_array = numpy.array([[[States.HIGH, States.LOW],  [0, 50*10**3], 51, 8*10**4, num_runs], # 0.9 hrs, optimize every 1.7 min, expected error 0.7%
-                                [[States.HIGH, States.LOW],  [0, 200*10**3], 26, 8*10**4, num_runs], # 1.7 hrs, optimize every 3.5 min, expected error 0.7%
-                                [[States.HIGH, States.HIGH],  [0, 50*10**3], 51, 8*10**4, num_runs], # 0.9 hrs, optimize every 1.7 min, expected error 0.7%
-                                [[States.HIGH, States.HIGH],  [0, 200*10**3], 26, 8*10**4, num_runs], # 1.7 hrs, optimize every 3.5 min, expected error 0.7%
-                                [[States.ZERO, States.HIGH],  [0, 2*10**6], 26, 2*10**4, num_runs], # 4.3 hrs, optimize every 9 min, expected error 1.3%
-                                [[States.ZERO, States.ZERO],  [0, 2*10**6], 26, 2*10**4, num_runs]]) # 4.3 hrs, optimize every 9 min, expected error 1.3%
+    # ~ 16 hours total
+    t1_exp_array = numpy.array([[[States.HIGH, States.LOW],  [0, 50*10**3], 51, 8*10**4, num_runs], # 1.5 hrs, optimize every 3 min, expected error 0.7%
+                                [[States.HIGH, States.LOW],  [0, 200*10**3], 26, 8*10**4, num_runs], # 2.1 hrs, optimize every 4.2 min, expected error 0.7%
+                                [[States.HIGH, States.HIGH],  [0, 50*10**3], 51, 8*10**4, num_runs], # 1.5 hrs, optimize every 3 min, expected error 0.7%
+                                [[States.HIGH, States.HIGH],  [0, 200*10**3], 26, 8*10**4, num_runs], # 2.1 hrs, optimize every 4.2 min, expected error 0.7%
+                                [[States.ZERO, States.HIGH],  [0, 2*10**6], 26, 2*10**4, num_runs], # 4.5 hrs, optimize every 9 min, expected error 1.3%
+                                [[States.ZERO, States.ZERO],  [0, 2*10**6], 26, 2*10**4, num_runs]]) # 4.5 hrs, optimize every 9 min, expected error 1.3%
 
     # ~42 hours total
 #    t1_exp_array = numpy.array([[[States.HIGH,States.HIGH], [0, 400*10**3], 26, 6*10**4, 20] #5 min optimize, 1.5 hr runtime
@@ -295,7 +295,7 @@ if __name__ == '__main__':
     nv5_2019_07_25 = {'coords': coords_list[5], # check (0,+1) and (0,-1) the same
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 5),
           'expected_count_rate': 33,
-          'nd_filter': 'nd_1.5', 'magnet_angle': 257.4,
+          'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 450, 'magnet_angle': 257.4,
           'resonance_LOW': 2.7906, 'rabi_LOW': 76.3, 'uwave_power_LOW': 9.0,
           'resonance_HIGH': 2.9385, 'rabi_HIGH': 54.5, 'uwave_power_HIGH': 10.0}
     
@@ -303,8 +303,8 @@ if __name__ == '__main__':
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 16),
           'expected_count_rate': 28,
           'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 450, 'magnet_angle': 194.1,
-          'resonance_LOW': 2.8202, 'rabi_LOW': 112.0, 'uwave_power_LOW': 9.0,
-          'resonance_HIGH': 2.9014, 'rabi_HIGH': 110.0, 'uwave_power_HIGH': 10.0}
+          'resonance_LOW': 2.8202, 'rabi_LOW': 108.8, 'uwave_power_LOW': 9.0,
+          'resonance_HIGH': 2.9014, 'rabi_HIGH': 106.6, 'uwave_power_HIGH': 10.0}
     nv25_2019_07_25 = {'coords': coords_list[25], # Very long and poor rabi oscillations
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 25),
           'expected_count_rate': 38,
@@ -339,7 +339,7 @@ if __name__ == '__main__':
 #          'resonance_low': 2.80, 'rabi_low': 122, 'uwave_power_low': 9.0,
 #          'resonance_high': 2.90, 'rabi_high': 155, 'uwave_power_high': 10.0}
     
-    nv_sig_list = [nv16_2019_07_25]
+    nv_sig_list = [nv5_2019_07_25]
 
     # %% Functions to run
 
@@ -368,7 +368,7 @@ if __name__ == '__main__':
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
 #            do_image_sample(nv_sig, apd_indices)
-#            do_optimize(nv_sig, apd_indices)
+            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
@@ -389,7 +389,7 @@ if __name__ == '__main__':
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
-            do_test_major_routines(nv_sig, apd_indices)
+#            do_test_major_routines(nv_sig, apd_indices)
 #            with labrad.connect() as cxn:
 #                tool_belt.set_xyz_on_nv(cxn, nv_sig)
 

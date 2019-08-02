@@ -25,6 +25,7 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
 import utils.tool_belt as tool_belt
+from utils.tool_belt import States
 
 # %% Constants
 
@@ -93,8 +94,8 @@ def main(folder_name, num_bins, save_data = True, offset = True):
         data = tool_belt.get_raw_data(data_folder, file[:-4], folder_name)
         try:
                 
-            init_state = data['init_state']
-            read_state = data['read_state']
+            init_state_name = data['init_state']
+            read_state_name = data['read_state']
             
             sig_counts = numpy.array(data['sig_counts'])
             ref_counts = numpy.array(data['ref_counts'])
@@ -125,7 +126,7 @@ def main(folder_name, num_bins, save_data = True, offset = True):
             
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
-            if init_state == 0 and read_state == 0:
+            if init_state_name == States.ZERO.name and read_state_name == States.ZERO.name:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_zero_bool == False:
@@ -154,7 +155,7 @@ def main(folder_name, num_bins, save_data = True, offset = True):
 #                                              zero_zero_ref_counts), axis = 1)
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
                 
-            if init_state == 0 and read_state == 1:
+            if init_state_name == States.ZERO.name and read_state_name == States.HIGH.name:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_plus_bool == False:
@@ -180,7 +181,7 @@ def main(folder_name, num_bins, save_data = True, offset = True):
 #                        zero_plus_ref_counts = numpy.concatenate((ref_counts, 
 #                                              zero_plus_ref_counts), axis = 1)
 
-            if init_state == 1 and read_state == 1:              
+            if init_state_name == States.HIGH.name and read_state_name == States.HIGH.name:              
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if plus_plus_bool == False:
@@ -210,7 +211,7 @@ def main(folder_name, num_bins, save_data = True, offset = True):
 #                                                          plus_plus_ref_counts), axis = 1)
                         plus_plus_time = numpy.concatenate((time_array, plus_plus_time))
                         
-            if init_state == 1 and read_state == -1:
+            if init_state_name == States.HIGH.name and read_state_name == States.LOW.name:
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']

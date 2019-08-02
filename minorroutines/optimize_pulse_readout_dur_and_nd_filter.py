@@ -369,18 +369,18 @@ def main(nv_sig):
 if __name__ == '__main__':
 
     # Define the nv_sig to be used
-    nv16_2019_07_25 = {'coords': [-0.191, 0.041, 5.04],
-          'name': '{}-nv{}_2019_07_25'.format('ayrton12', 16),
-          'expected_count_rate': 30,
-          'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 450, 'magnet_angle': 194.1,
-          'resonance_LOW': 2.8221, 'rabi_LOW': 111.6, 'uwave_power_LOW': 9.0,
-          'resonance_HIGH': 2.8994, 'rabi_HIGH': 115.1, 'uwave_power_HIGH': 10.0}
+    nv5_2019_07_25 = {'coords': [0.061, 0.164, 5.03], # check (0,+1) and (0,-1) the same
+          'name': '{}-nv{}_2019_07_25'.format('ayrton12', 5),
+          'expected_count_rate': 33,
+          'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 450, 'magnet_angle': 257.4,
+          'resonance_LOW': 2.7906, 'rabi_LOW': 76.3, 'uwave_power_LOW': 9.0,
+          'resonance_HIGH': 2.9385, 'rabi_HIGH': 54.5, 'uwave_power_HIGH': 10.0}
     
     # Main parameters
-    nv_sig = nv16_2019_07_25
+    nv_sig = nv5_2019_07_25
     
     ### MAIN ###
-#    main(nv_sig)
+    main(nv_sig)
     
     # The individual functions in this file
 #    snr_measurement(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)
