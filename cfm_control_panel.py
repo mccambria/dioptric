@@ -251,8 +251,8 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-#    apd_indices = [0]
-    apd_indices = [0, 1]
+    apd_indices = [0]
+#    apd_indices = [0, 1]
     sample_name = 'ayrton12'
     
     # Master list 7/25
@@ -301,8 +301,8 @@ if __name__ == '__main__':
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 16),
           'expected_count_rate': 28,
           'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 450, 'magnet_angle': 194.1,
-          'resonance_LOW': 2.8012, 'rabi_LOW': 113.5, 'uwave_power_LOW': 9.0,
-          'resonance_HIGH': 2.9292, 'rabi_HIGH': 80.1, 'uwave_power_HIGH': 10.0}
+          'resonance_LOW': 2.8012, 'rabi_LOW': 113.8, 'uwave_power_LOW': 9.0,
+          'resonance_HIGH': 2.9292, 'rabi_HIGH': 80.3, 'uwave_power_HIGH': 10.0}
     nv25_2019_07_25 = {'coords': coords_list[25], # Very long and poor rabi oscillations
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 25),
           'expected_count_rate': 38,
@@ -384,9 +384,9 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.86, freq_range=0.11)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.935, freq_range=0.06)
-            do_rabi(nv_sig, apd_indices, States.LOW)
-            do_rabi(nv_sig, apd_indices, States.HIGH)
-#            do_t1_battery(nv_sig, apd_indices)
+#            do_rabi(nv_sig, apd_indices, States.LOW)
+#            do_rabi(nv_sig, apd_indices, States.HIGH)
+            do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
