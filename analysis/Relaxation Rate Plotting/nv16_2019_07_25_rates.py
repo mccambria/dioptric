@@ -27,7 +27,7 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-nv16_splitting_list = [28.6, 81.2, 128.0]
+nv16_splitting_list = [28.6, 81.2, 128.0, 283.7]
 nv16_omega_avg_list = [0.55, 1.75, 0.69]
 nv16_omega_error_list = [0.08, 0.19, 0.10]
 nv16_gamma_avg_list = [94, 18.2, 12.1]
@@ -65,8 +65,8 @@ ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params),
             label = r'$1/f^\alpha$')
 
 text = '\n'.join((r'$1/f^{\alpha}$ fit:',
-                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
-                  r'$A_0 = $' + '%.4f'%(fit_alpha_params[0])
+                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1])
+#                  ,r'$A_0 = $' + '%.4f'%(fit_alpha_params[0])
                   ))
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
