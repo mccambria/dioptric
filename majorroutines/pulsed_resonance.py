@@ -117,8 +117,8 @@ def fit_resonance(freq_range, freq_center, num_steps,
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
 
-    low_freq_guess = 2.8012
-    high_freq_guess = None
+    low_freq_guess = 2.72
+    high_freq_guess = 2.95
         
 #    if len(peak_inds) > 1:
 #        # Find the location of the highest peak
@@ -439,7 +439,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-    file = '2019-08-03-12_46_11-ayrton12-nv16_2019_07_25'
+    file = '2019-08-04-09_06_21-ayrton12-nv16_2019_07_25'
     data = tool_belt.get_raw_data('pulsed_resonance.py', file)
     
 #    file = '2019-08-01-14_58_51-ayrton12-nv16_2019_07_25'

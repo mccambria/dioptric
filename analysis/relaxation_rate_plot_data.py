@@ -329,104 +329,102 @@ def main(folder_name, doPlot = False, offset = True):
 
     # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
     # to fit
+
+    # Define the counts for the plus relaxation equation
+    plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
+#    print(plus_plus_counts)
+#    print(plus_minus_counts)
+    init_params_list = [10, 0.40]
     try:
-        # Define the counts for the plus relaxation equation
-        plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
-    #    print(plus_plus_counts)
-    #    print(plus_minus_counts)
-        init_params_list = [10, 0.40]
-        try:
-            if offset:
-                init_params_list.append(0)
-                init_params = tuple(init_params_list)
-                gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
-                                 plus_plus_time, plus_relaxation_counts,
-                                 p0 = init_params)
-                
-            else:
-                init_params = tuple(init_params_list)
-                gamma_opti_params, cov_arr = curve_fit(exp_eq,
-                                 plus_plus_time, plus_relaxation_counts,
-                                 p0 = init_params)
-    
-        except Exception:
-            gamma_fit_failed = True
-    
-            if doPlot:
-                ax = axes_pack[1]
-                ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
-                ax.set_xlabel('Relaxation time (ms)')
-                ax.set_ylabel('Normalized signal Counts')
-                ax.set_title('(-1,-1) - (-1,+1)')
-    
-        if not gamma_fit_failed:
-    
-            gamma = (gamma_opti_params[0] - omega)/ 2.0
-    
-            # Plotting
-            if doPlot:
-                plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
-                ax = axes_pack[1]
-                ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
-                if offset:
-                    ax.plot(plus_time_linspace,
-                        exp_eq_offset(plus_time_linspace, *gamma_opti_params),
-                        'r', label = 'fit')
-                else:
-                    ax.plot(plus_time_linspace,
-                        exp_eq(plus_time_linspace, *gamma_opti_params),
-                        'r', label = 'fit')
-                ax.set_xlabel('Relaxation time (ms)')
-                ax.set_ylabel('Normalized signal Counts')
-                ax.set_title('(+1,+1) - (+1,-1)')
-                ax.legend()
-                text = r'$\gamma = $ {} kHz'.format('%.2f'%gamma)
-    
-                props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-                ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
-                        verticalalignment='top', bbox=props)
+        if offset:
+            init_params_list.append(0)
+            init_params = tuple(init_params_list)
+            gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
+                             plus_plus_time, plus_relaxation_counts,
+                             p0 = init_params)
+            
+        else:
+            init_params = tuple(init_params_list)
+            gamma_opti_params, cov_arr = curve_fit(exp_eq,
+                             plus_plus_time, plus_relaxation_counts,
+                             p0 = init_params)
+
+    except Exception:
+        gamma_fit_failed = True
+
         if doPlot:
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-        
+            ax = axes_pack[1]
+            ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
+            ax.set_xlabel('Relaxation time (ms)')
+            ax.set_ylabel('Normalized signal Counts')
+            ax.set_title('(-1,-1) - (-1,+1)')
+
+    if not gamma_fit_failed:
+
+        gamma = (gamma_opti_params[0] - omega)/ 2.0
+
+        # Plotting
+        if doPlot:
+            plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
+            ax = axes_pack[1]
+            ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
+            if offset:
+                ax.plot(plus_time_linspace,
+                    exp_eq_offset(plus_time_linspace, *gamma_opti_params),
+                    'r', label = 'fit')
+            else:
+                ax.plot(plus_time_linspace,
+                    exp_eq(plus_time_linspace, *gamma_opti_params),
+                    'r', label = 'fit')
+            ax.set_xlabel('Relaxation time (ms)')
+            ax.set_ylabel('Normalized signal Counts')
+            ax.set_title('(+1,+1) - (+1,-1)')
+            ax.legend()
+            text = r'$\gamma = $ {} kHz'.format('%.2f'%gamma)
+
+            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+            ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+                    verticalalignment='top', bbox=props)
+    if doPlot:
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+    
 #    print('Omega list: {} \nGamma list: {}'.format(omega_rate_list, gamma_rate_list))
 
-        # %% Saving the data 
-    except Exception:        
+    # %% Saving the data 
+     
         data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
-        splitting_MHz = 130
-#                
-#                
-#        time_stamp = tool_belt.get_time_stamp()
-#        raw_data = {'time_stamp': time_stamp,
-#                    'splitting_MHz': splitting_MHz,
-#                    'splitting_MHz-units': 'MHz',
-#                    'offset_free_param?': offset,
-#                    'zero_relaxation_counts': zero_relaxation_counts.tolist(),
-#                    'zero_relaxation_counts-units': 'counts',
-#                    'zero_zero_time': zero_zero_time.tolist(),
-#                    'zero_zero_time-units': 'ms',
-#                    'plus_relaxation_counts': plus_relaxation_counts.tolist(),
-#                    'plus_relaxation_counts-units': 'counts',
-#                    'plus_plus_time': plus_plus_time.tolist(),
-#                    'plus_plus_time-units': 'ms',
-#                    'omega_opti_params': omega_opti_params.tolist(),
-#                    'gamma_opti_params': gamma_opti_params.tolist()
-#                    }
-#        
-#
-#        
-#        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins' 
-#        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
-#                                                             file_name)
-#        
-#        tool_belt.save_raw_data(raw_data, file_path)
+               
+        time_stamp = tool_belt.get_time_stamp()
+        raw_data = {'time_stamp': time_stamp,
+                    'splitting_MHz': splitting_MHz,
+                    'splitting_MHz-units': 'MHz',
+                    'offset_free_param?': offset,
+                    'zero_relaxation_counts': zero_relaxation_counts.tolist(),
+                    'zero_relaxation_counts-units': 'counts',
+                    'zero_zero_time': zero_zero_time.tolist(),
+                    'zero_zero_time-units': 'ms',
+                    'plus_relaxation_counts': plus_relaxation_counts.tolist(),
+                    'plus_relaxation_counts-units': 'counts',
+                    'plus_plus_time': plus_plus_time.tolist(),
+                    'plus_plus_time-units': 'ms',
+                    'omega_opti_params': omega_opti_params.tolist(),
+                    'gamma_opti_params': gamma_opti_params.tolist()
+                    }
+        
     
-    # %% Saving the figure
+        
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins' 
+        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
+                                                             file_name)
+        
+        tool_belt.save_raw_data(raw_data, file_path)
+
+# %% Saving the figure
 
         file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
-                                                             file_name)
+                                                         file_name)
 
         tool_belt.save_figure(fig, file_path)
 
@@ -434,7 +432,7 @@ def main(folder_name, doPlot = False, offset = True):
 
 if __name__ == '__main__':
 
-    folder = 'nv16_2019_07_25_77MHz'
+    folder = 'nv16_2019_07_25_123MHz'
 
 
 #    for folder in folder_list:

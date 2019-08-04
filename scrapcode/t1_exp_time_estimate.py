@@ -56,14 +56,14 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 num_runs = 30
 
 t1_exp_array = numpy.array([[[States.HIGH, States.LOW],  [0, 50*10**3], 51, 8*10**4, num_runs], # 0.9 hrs, optimize every 1.7 min
-                                [[States.HIGH, States.LOW],  [0, 200*10**3], 26, 8*10**4, num_runs], # 1.7 hrs, optimize every 3.5 min
+                                [[States.HIGH, States.LOW],  [0, 700*10**3], 26, 5*10**4, num_runs], # 1.7 hrs, optimize every 3.5 min
                                 [[States.HIGH, States.HIGH],  [0, 50*10**3], 51, 8*10**4, num_runs], # 0.9 hrs, optimize every 1.7 min
-                                [[States.HIGH, States.HIGH],  [0, 200*10**3], 26, 8*10**4, num_runs], # 1.7 hrs, optimize every 3.5 min
+                                [[States.HIGH, States.HIGH],  [0, 700*10**3], 26, 5*10**4, num_runs], # 1.7 hrs, optimize every 3.5 min
                                 [[States.ZERO, States.HIGH],  [0, 2*10**6], 26, 2*10**4, num_runs], # 4.3 hrs, optimize every 9 min
                                 [[States.ZERO, States.ZERO],  [0, 2*10**6], 26, 2*10**4, num_runs]]) # 4.3 hrs, optimize every 9 min
 
-contrast = 0.70
-exp_count_rate = 25 # kcps
+contrast = 0.75
+exp_count_rate = 22 # kcps
 readout_window = 450 # ns
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)

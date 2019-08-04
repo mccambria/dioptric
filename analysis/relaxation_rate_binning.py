@@ -102,27 +102,23 @@ def main(folder_name, num_bins, save_data = True, offset = True):
             
             avg_ref = numpy.average(ref_counts)
             
-#            print(avg_ref)
-            
-            norm_counts = sig_counts / avg_ref
-            
-#            print(norm_counts)
+            norm_counts = sig_counts / avg_ref           
             
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             # time is in microseconds
             min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             num_steps = data['num_steps']
-#            num_runs = data['num_runs']
-            num_runs = 12
+            num_runs = data['num_runs']
+
 
             time_array = numpy.linspace(min_relaxation_time, 
                                         max_relaxation_time, num=num_steps) 
             
             
             # Check that the num_runs is consistent. If not, raise an error
-#            if num_runs_set != num_runs:
-#                print('Error, num_runs not consistent in file {}'.format(file))
-#                break
+            if num_runs_set != num_runs:
+                print('Error, num_runs not consistent in file {}'.format(file))
+                break
             
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
@@ -380,8 +376,8 @@ def main(folder_name, num_bins, save_data = True, offset = True):
     g_average = numpy.average(g_rate_list)
     g_stdev = numpy.std(g_rate_list)
     
-    print(o_average / 3)
-    print((g_average - o_average / 3) / 2)
+#    print(o_average / 3)
+#    print((g_average - o_average / 3) / 2)
 
 #    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 #    plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
