@@ -102,7 +102,7 @@ def main(folder_name, num_bins_list = None, offset = True):
     # deviation
     for num_bins_ind in range(len(num_bins_list)):
         num_bins = num_bins_list[num_bins_ind]
-        retvals = relaxation_rate_binning.main(folder_name, num_bins, False, True)
+        retvals = relaxation_rate_binning.main(folder_name, num_bins, False, offset)
 
         # Save the data to the lists
         o_value_list.append(retvals[0])
@@ -138,14 +138,20 @@ def main(folder_name, num_bins_list = None, offset = True):
 
 
     # Plot the data to visualize it. This plot is not saved
-    bin_linspace = numpy.linspace(num_bins_list[0], num_bins_list[-1], 1000
-                                  )
-    plt.loglog(num_bins_list, g_stdev_list, 'go', label = 'g rate standard deviation')
-    plt.loglog(bin_linspace, sqrt_eq(bin_linspace, opti_params), 'teal', label = 'Sqrt[bin_size]')
-    plt.loglog(num_bins_list, o_stdev_list, 'bo', label = 'o rate standard deviation')
-    plt.xlabel('Number of bins for num_runs')
-    plt.ylabel('Standard Deviation (kHz)')
-    plt.legend()
+    bin_linspace = numpy.linspace(num_bins_list[0], num_bins_list[-1], 1000)
+    
+    log_fig, ax= plt.subplots(1, 1, figsize=(10, 8))
+    ax.set_xscale("log", nonposx='clip')
+    ax.set_yscale("log", nonposy='clip')
+    ax.plot(num_bins_list, g_stdev_list, 'go', label = 'g rate standard deviation')
+    ax.plot(bin_linspace, sqrt_eq(bin_linspace, opti_params), 'teal', label = 'Sqrt[bin_size]')
+    ax.plot(num_bins_list, o_stdev_list, 'bo', label = 'o rate standard deviation')
+    ax.set_xlabel('Number of bins for num_runs')
+    ax.set_ylabel('Standard Deviation (kHz)')
+    ax.legend()
+    log_fig.canvas.draw()
+    log_fig.canvas.flush_events()
+
 
     # We have calculated the average rate for the two fits and their stdev, and
     # NOW we finally calculate what omega nad gamma are, and their uncertainty
@@ -211,7 +217,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
 
-    folder = 'nv16_2019_07_25_77MHz'
+    folder = 'nv16_2019_07_25_123MHz'
 
 
     '''
@@ -234,10 +240,10 @@ if __name__ == '__main__':
     '''
 
 
-#    main(folder, offset= True)
+    main(folder, offset= True)
 
 
     # Specify the number of bins
 
-    num_bins_list = [1,2,3, 4, 6, 12]
-    main(folder, num_bins_list, offset = True)
+#    num_bins_list = [1,2,3, 4, 6, 12, 15]
+#    main(folder, num_bins_list, offset = True)

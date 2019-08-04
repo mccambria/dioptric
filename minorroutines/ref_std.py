@@ -128,8 +128,12 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
     # file_name = '2019-07-31-15_41_43-ayrton12-nv27_2019_07_25'
     # file_name = '2019-08-01-09_30_37-ayrton12-nv27_2019_07_25'
-    file_name = '2019-07-29-23_05_39-ayrton12-nv27_2019_07_25'
-    data = tool_belt.get_raw_data('t1_double_quantum', file_name)
+#    file_name = '2019-07-29-23_05_39-ayrton12-nv27_2019_07_25'
+#    data = tool_belt.get_raw_data('t1_double_quantum', file_name)
+    
+    file_name = '2019-08-02-15_25_31-ayrton12-nv5_2019_07_25'
+#    file_name = '2019-08-02-15_25_31-ayrton12-nv5_2019_07_25'
+    data = tool_belt.get_raw_data('rabi', file_name)
 
     exp_count_rate = 25 # kcps
     readout_window = 450 # ns
@@ -138,6 +142,6 @@ if __name__ == '__main__':
     
     counts = (exp_count_rate * 10 ** 3) * (readout_window * 10**-9) * num_reps * num_runs 
     # Run the script
-    # main(data)
+    main(data)
     # st_devs(data)
-    expected_st_dev_norm(counts, 0.95)
+#    expected_st_dev_norm(counts, 0.95)

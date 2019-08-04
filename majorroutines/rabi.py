@@ -194,6 +194,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                 gate_time, max_uwave_time,
                 apd_indices[0], state.value]
     seq_args = [int(el) for el in seq_args]
+#    print(seq_args)
+#    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
 

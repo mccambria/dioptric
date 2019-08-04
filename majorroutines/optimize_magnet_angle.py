@@ -147,7 +147,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 
     fit_func = AbsCosNoOff
     amp = 200
-    phase = 0
+    phase = 50
     guess_params = [amp, phase]
     # Check if we have any undefined splittings
     if any(numpy.isnan(splittings)):
@@ -207,8 +207,11 @@ if __name__ == '__main__':
     # angles = [90, 120, 60, 150, 0, 30]
     
     # nv27_2019_07_25
-    splittings = [81.4, 79.8, 29.2, 33.1, 125.8, 128.8]
-    angles = [60, 150, 120, 90, 30, 0]
+    splittings = [228.9, None, None, 83.2, 44.5]
+    angles = [0.0, 60.0, 120, 150, 90]
+    
+    splittings = [228.9, 83.2, 44.5, 231.4]
+    angles = [0.0, 150, 90, 30]
 
     fit_func, popt = fit_data(splittings, angles)
 

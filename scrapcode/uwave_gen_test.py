@@ -62,19 +62,28 @@ def main(cxn=None):
     # %% Sig gen tests
     
     resource_manager = visa.ResourceManager()
-    sig_gen_address = 'TCPIP0::128.104.160.112::5025::SOCKET'
-    sig_gen = resource_manager.open_resource(sig_gen_address)
-    sig_gen.read_termination = '\r\n'
-    sig_gen.write_termination = '\r\n'
+    address = 'TCPIP::128.104.160.114::inst0::INSTR'
+    sig_gen = resource_manager.open_resource(address)
+    # Set the VISA read and write termination. This is specific to the
+    # instrument - you can find it in the instrument's programming manual
+#    sig_gen.read_termination = '\r\n'
+#    sig_gen.write_termination = '\r\n'
     
-    sig_gen.write('ENBR 1')
-    sig_gen.write('NPWR -10.0')
-    sig_gen.write('AWGN 2')
+#    print(sig_gen.query('MODL?'))
+#    print(sig_gen.query('FREQ?'))
+#    print(sig_gen.query('AMPR?'))
+#    print(sig_gen.query('FDEV?'))
+#    print(sig_gen.query('ENBR?'))
     
-    input('Press enter to stop...')
+    print(sig_gen.query('OUTP?'))
+    print(sig_gen.query('FREQ?'))
+    print(sig_gen.query('FREQ:MODE?'))
+    print(sig_gen.query('POW?'))
+    print(sig_gen.query('POW:MODE?'))
+    print(sig_gen.query('AM:STAT?'))
+    print(sig_gen.query('FM:STAT?'))
     
-    sig_gen.write('ENBR 0')
-    sig_gen.write('AWGN 0')
+    sig_gen.close()
     
     # %% DAQ tests
     

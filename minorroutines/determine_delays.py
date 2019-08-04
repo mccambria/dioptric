@@ -152,15 +152,18 @@ def uwave_delay(cxn, nv_sig, readout, apd_indices,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    # Set up your parameters to be passed to main here
-    sample_name = 'johnson1'
-    nv0_2019_06_27 = {'coords': [-0.148, -0.340, 5.46], 'nd_filter': 'nd_0.5',
-                      'expected_count_rate': 47, 'magnet_angle': 41.8,
-                      'name': sample_name}
+    # Set up your parameters to be passed to main here 
+    sample_name = 'ayrton12'
+    nv5_2019_07_25 = {'coords': [0.061, 0.164, 5.03], # check (0,+1) and (0,-1) the same
+          'name': '{}-nv{}_2019_07_25'.format(sample_name, 5),
+          'expected_count_rate': 33,
+          'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 300, 'magnet_angle': 257.4,
+          'resonance_LOW': 2.7885, 'rabi_LOW': 76.3, 'uwave_power_LOW': 9.0,
+          'resonance_HIGH': 2.9395, 'rabi_HIGH': 54.5, 'uwave_power_HIGH': 10.0}
     apd_indices = [0]
     num_reps = 10**5
     readout = 2000
-    nv_sig = nv0_2019_06_27
+    nv_sig = nv5_2019_07_25
 
     # aom_delay
     delay_range = [900, 1500]
