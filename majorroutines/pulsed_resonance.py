@@ -166,6 +166,25 @@ def fit_resonance(freq_range, freq_center, num_steps,
     # Return the resonant frequencies
     return fit_func, popt
 
+def simulate(res_freq, freq_range, contrast,
+             rabi_period, uwave_pulse_dur):
+
+    rabi_freq = rabi_period**-1
+
+    smooth_freqs = calculate_freqs(freq_range, res_freq, 1000)
+
+    omega = numpy.sqrt((smooth_freqs-res_freq)**2 + rabi_freq**2)
+    amp = (rabi_freq / omega)**2
+    angle = omega * 2 * numpy.pi * uwave_pulse_dur / 2
+    prob = amp * (numpy.sin(angle))**2
+
+    rel_counts = 1.0 - (contrast * prob)
+
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    ax.plot(smooth_freqs, rel_counts)
+    ax.set_xlabel('Frequency (GHz)')
+    ax.set_ylabel('Contrast (arb. units)')
+
 
 # %% User functions
     
@@ -442,18 +461,19 @@ if __name__ == '__main__':
 #    file = '2019-08-01-10_38_53-ayrton12-nv16_2019_07_25'
 #    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
     
-    file = '2019-08-01-14_58_51-ayrton12-nv16_2019_07_25'
-    data = tool_belt.get_raw_data('resonance.py', file)
+    # file = '2019-08-01-14_58_51-ayrton12-nv16_2019_07_25'
+    # data = tool_belt.get_raw_data('resonance.py', file)
 
-    freq_center = data['freq_center']
-    freq_range = data['freq_range']
-    num_steps = data['num_steps']
-    norm_avg_sig = numpy.array(data['norm_avg_sig'])
-    ref_counts = numpy.array(data['ref_counts'])
+    # freq_center = data['freq_center']
+    # freq_range = data['freq_range']
+    # num_steps = data['num_steps']
+    # norm_avg_sig = numpy.array(data['norm_avg_sig'])
+    # ref_counts = numpy.array(data['ref_counts'])
     
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, ref_counts)
-    if (fit_func is not None) and (popt is not None):
-        create_fit_figure(freq_range, freq_center, num_steps,
-                          norm_avg_sig, fit_func, popt)
-    
+    # fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
+    #                                norm_avg_sig, ref_counts)
+    # if (fit_func is not None) and (popt is not None):
+    #     create_fit_figure(freq_range, freq_center, num_steps,
+    #                       norm_avg_sig, fit_func, popt)
+
+    simulate(2.77, 0.1, 0.2, 100, 50)
