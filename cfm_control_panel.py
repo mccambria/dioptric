@@ -160,16 +160,16 @@ def do_rabi(nv_sig, apd_indices, state):
 
 def do_t1_battery(nv_sig, apd_indices):
     
-    num_runs = 30
+    num_runs = 40
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     # ~ 19 hours total
-    t1_exp_array = numpy.array([[[States.HIGH, States.LOW],  [0, 50*10**3], 51, 8*10**4, num_runs], # 1.5 hrs, optimize every 3 min, expected error 0.7%
-                                [[States.HIGH, States.LOW],  [0, 700*10**3], 26, 5*10**4, num_runs], # 3.8 hrs, optimize every 7.5 min, expected error 0.9%
-                                [[States.HIGH, States.HIGH],  [0, 50*10**3], 51, 8*10**4, num_runs], # 1.5 hrs, optimize every 3 min, expected error 0.7%
-                                [[States.HIGH, States.HIGH],  [0, 700*10**3], 26, 5*10**4, num_runs], # 3.8 hrs, optimize every 7.5 min, expected error 0.9%
-                                [[States.ZERO, States.HIGH],  [0, 2*10**6], 26, 2*10**4, num_runs], # 4.5 hrs, optimize every 9 min, expected error 1.5%
-                                [[States.ZERO, States.ZERO],  [0, 2*10**6], 26, 2*10**4, num_runs]]) # 4.5 hrs, optimize every 9 min, expected error 1.5%
+    t1_exp_array = numpy.array([[[States.HIGH, States.LOW],  [0, 100*10**3], 51, int(6.0*10**4), num_runs], # 2.0 hrs, optimize every 3. min, expected error 0.7%
+                                [[States.HIGH, States.LOW],  [0, 700*10**3], 26, int(3.75*10**4), num_runs], # 3.9 hrs, optimize every 5.9 min, expected error 0.9%
+                                [[States.HIGH, States.HIGH],  [0, 100*10**3], 51, int(6.0*10**4), num_runs], # 2.0 hrs, optimize every 3. min, expected error 0.7%
+                                [[States.HIGH, States.HIGH],  [0, 700*10**3], 26, int(3.75*10**4), num_runs], # 3.8 hrs, optimize every 5.9 min, expected error 0.9%
+                                [[States.ZERO, States.HIGH],  [0, 2*10**6], 26, int(1.5*10**4), num_runs], # 4.4 hrs, optimize every 6.6 min, expected error 1.5%
+                                [[States.ZERO, States.ZERO],  [0, 2*10**6], 26, int(1.5*10**4), num_runs]]) # 4.4 hrs, optimize every 6.6 min, expected error 1.5%
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -301,7 +301,7 @@ if __name__ == '__main__':
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 16),
           'expected_count_rate': 24,
           'nd_filter': 'nd_1.5', 'pulsed_readout_dur': 450, 'magnet_angle': 194.1,
-          'resonance_LOW': 2.7393, 'rabi_LOW': 148.4, 'uwave_power_LOW': 9.0,
+          'resonance_LOW': 2.7393, 'rabi_LOW': 144.2, 'uwave_power_LOW': 9.0,
           'resonance_HIGH': 3.0224, 'rabi_HIGH': 63.4, 'uwave_power_HIGH': 10.0}
     nv25_2019_07_25 = {'coords': coords_list[25], # Very long and poor rabi oscillations
           'name': '{}-nv{}_2019_07_25'.format(sample_name, 25),
@@ -385,9 +385,9 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.7, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
-            do_rabi(nv_sig, apd_indices, States.LOW)
+#            do_rabi(nv_sig, apd_indices, States.LOW)
 #            do_rabi(nv_sig, apd_indices, States.HIGH)
-#            do_t1_battery(nv_sig, apd_indices)
+            do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
