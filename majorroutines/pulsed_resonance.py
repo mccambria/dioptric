@@ -27,17 +27,17 @@ from utils.tool_belt import States
 
 def create_fit_figure(freq_range, freq_center, num_steps,
                       norm_avg_sig, fit_func, popt):
-    
+
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
     smooth_freqs = calculate_freqs(freq_range, freq_center, 1000)
-    
+
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
     ax.plot(freqs, norm_avg_sig, 'b', label='data')
     ax.plot(smooth_freqs, fit_func(smooth_freqs, *popt), 'r-', label='fit')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.legend()
-    
+
     text = '\n'.join(('Contrast = {:.3f}',
                       'Standard deviation = {:.4f} GHz',
                       'Frequency = {:.4f} GHz'))
@@ -47,18 +47,18 @@ def create_fit_figure(freq_range, freq_center, num_steps,
     elif fit_func == double_gaussian_dip:
         low_text = text.format(*popt[0:3])
         high_text = text.format(*popt[3:6])
-        
+
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     ax.text(0.05, 0.15, low_text, transform=ax.transAxes, fontsize=12,
             verticalalignment="top", bbox=props)
     if high_text is not None:
         ax.text(0.55, 0.15, high_text, transform=ax.transAxes, fontsize=12,
                 verticalalignment="top", bbox=props)
-    
+
     fig.canvas.draw()
     fig.set_tight_layout(True)
     fig.canvas.flush_events()
-    
+
     return fig
 
 
@@ -70,7 +70,7 @@ def calculate_freqs(freq_range, freq_center, num_steps):
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
     return numpy.linspace(freq_low, freq_high, num_steps)
-    
+
 def gaussian(freq, constrast, sigma, center):
     return constrast * numpy.exp(-((freq-center)**2) / (2 * (sigma**2)))
 
@@ -79,29 +79,29 @@ def double_gaussian_dip(freq, low_constrast, low_sigma, low_center,
     low_gauss = gaussian(freq, low_constrast, low_sigma, low_center)
     high_gauss = gaussian(freq, high_constrast, high_sigma, high_center)
     return 1.0 - low_gauss - high_gauss
-    
+
 def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
 
 def fit_resonance(freq_range, freq_center, num_steps,
                   norm_avg_sig, ref_counts):
-    
+
     # %% Calculate freqs
-    
+
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
-        
+
     # %% Guess the locations of the minimums
-            
+
     contrast = 0.2  # Arb
     sigma = 0.005  # MHz
 #    sigma = 0.010  # MHz
     fwhm = 2.355 * sigma
-    
+
     # Convert to index space
     fwhm_ind = fwhm * (num_steps / freq_range)
     if fwhm_ind < 1:
         fwhm_ind = 1
-    
+
     # Bit of processing
     inverted_norm_avg_sig = 1 - norm_avg_sig
     ref_std = numpy.std(ref_counts)
@@ -117,35 +117,35 @@ def fit_resonance(freq_range, freq_center, num_steps,
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
 
-    low_freq_guess = 2.8012
-    high_freq_guess = None
-        
-#    if len(peak_inds) > 1:
-#        # Find the location of the highest peak
-#        max_peak_peak_inds = peak_heights.index(max(peak_heights)) 
-#        max_peak_freqs = peak_inds[max_peak_peak_inds]
-#        
-#        # Remove what we just found so we can find the second highest peak
-#        peak_inds.pop(max_peak_peak_inds)
-#        peak_heights.pop(max_peak_peak_inds)
-#        
-#        # Find the location of the next highest peak
-#        next_max_peak_peak_inds = peak_heights.index(max(peak_heights))  # Index in peak_inds
-#        next_max_peak_freqs = peak_inds[next_max_peak_peak_inds]  # Index in freqs
-#    
-#        # Order from smallest to largest
-#        peaks = [max_peak_freqs, next_max_peak_freqs]
-#        peaks.sort()  
-#        
-#        low_freq_guess = freqs[peaks[0]]
-#        high_freq_guess = freqs[peaks[1]]
-#    
-#    elif len(peak_inds) == 1:
-#        low_freq_guess = freqs[peak_inds[0]]
-#        high_freq_guess = None
-#    else:
-#        print('Could not locate peaks')
-#        return None, None
+#    low_freq_guess = 2.8164
+#    high_freq_guess = 2.8247
+
+    if len(peak_inds) > 1:
+        # Find the location of the highest peak
+        max_peak_peak_inds = peak_heights.index(max(peak_heights))
+        max_peak_freqs = peak_inds[max_peak_peak_inds]
+
+        # Remove what we just found so we can find the second highest peak
+        peak_inds.pop(max_peak_peak_inds)
+        peak_heights.pop(max_peak_peak_inds)
+
+        # Find the location of the next highest peak
+        next_max_peak_peak_inds = peak_heights.index(max(peak_heights))  # Index in peak_inds
+        next_max_peak_freqs = peak_inds[next_max_peak_peak_inds]  # Index in freqs
+
+        # Order from smallest to largest
+        peaks = [max_peak_freqs, next_max_peak_freqs]
+        peaks.sort()
+
+        low_freq_guess = freqs[peaks[0]]
+        high_freq_guess = freqs[peaks[1]]
+
+    elif len(peak_inds) == 1:
+        low_freq_guess = freqs[peak_inds[0]]
+        high_freq_guess = None
+    else:
+        print('Could not locate peaks')
+        return None, None
 
     # %% Fit!
 
@@ -156,27 +156,46 @@ def fit_resonance(freq_range, freq_center, num_steps,
         fit_func = double_gaussian_dip
         guess_params=[contrast, sigma, low_freq_guess,
                       contrast, sigma, high_freq_guess]
-        
+
     try:
         popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig, p0=guess_params)
-    except Exception: 
+    except Exception:
         print('Something went wrong!')
         popt = guess_params
-    
+
     # Return the resonant frequencies
     return fit_func, popt
 
+def simulate(res_freq, freq_range, contrast,
+             rabi_period, uwave_pulse_dur):
+
+    rabi_freq = rabi_period**-1
+
+    smooth_freqs = calculate_freqs(freq_range, res_freq, 1000)
+
+    omega = numpy.sqrt((smooth_freqs-res_freq)**2 + rabi_freq**2)
+    amp = (rabi_freq / omega)**2
+    angle = omega * 2 * numpy.pi * uwave_pulse_dur / 2
+    prob = amp * (numpy.sin(angle))**2
+
+    rel_counts = 1.0 - (contrast * prob)
+
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    ax.plot(smooth_freqs, rel_counts)
+    ax.set_xlabel('Frequency (GHz)')
+    ax.set_ylabel('Contrast (arb. units)')
+
 
 # %% User functions
-    
+
 
 def state(nv_sig, apd_indices, state, freq_range,
           num_steps, num_reps, num_runs):
-    
+
     freq_center = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
     uwave_pulse_dur = nv_sig['rabi_{}'.format(state.name)] // 2
-    
+
     main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
 
@@ -198,7 +217,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
               state=States.LOW):
 
     # %% Initial calculations and setup
-    
+
     tool_belt.reset_cfm(cxn)
 
     # Calculate the frequencies we need to set
@@ -215,7 +234,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     ref_counts = numpy.empty([num_runs, num_steps])
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
-    
+
     # Define some times for the sequence (in ns)
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
@@ -235,9 +254,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                 gate_time, uwave_pulse_dur,
                 apd_indices[0], state.value]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    
+
     opti_coords_list = []
-    
+
     # %% Get the starting time of the function
 
     start_timestamp = tool_belt.get_time_stamp()
@@ -253,11 +272,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
-        
+
         # Optimize and save the coords we found
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
-        
+
         # Load the pulse streamer (must happen after optimize since optimize
         # loads its own sequence)
         cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
@@ -277,7 +296,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             sig_gen_cxn.set_freq(freqs[step_ind])
             sig_gen_cxn.set_amp(uwave_power)
             sig_gen_cxn.uwave_on()
-            
+
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total
             time.sleep(0.001)
@@ -287,19 +306,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-            
+
             sample_counts = new_counts[0]
-            
+
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, step_ind] = sum(sig_gate_counts)
-            
+
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, step_ind] = sum(ref_gate_counts)
 
         cxn.apd_tagger.stop_tag_stream()
-        
+
         # %% Save the data we have incrementally for long measurements
 
         rawData = {'start_timestamp': start_timestamp,
@@ -340,7 +359,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # Convert to kilocounts per second
-    
+
     kcps_uwave_off_avg = (avg_ref_counts / (num_reps * 1000)) / readout_sec
     kcpsc_uwave_on_avg = (avg_sig_counts / (num_reps * 1000)) / readout_sec
 
@@ -366,9 +385,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     fig.canvas.draw()
     fig.tight_layout()
     fig.canvas.flush_events()
-    
+
     # %% Fit the data
-    
+
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
                                    norm_avg_sig, ref_counts)
     if (fit_func is not None) and (popt is not None):
@@ -378,7 +397,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         fit_fig = None
 
     # %% Clean up and save the data
-    
+
     tool_belt.reset_cfm(cxn)
 
     timestamp = tool_belt.get_time_stamp()
@@ -416,9 +435,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     filePath = tool_belt.get_file_path(__file__, timestamp, name + '-fit')
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
-    
-    # %% Return 
-    
+
+    # %% Return
+
     if fit_func == single_gaussian_dip:
         print('Single resonance at {:.4f} GHz'.format(popt[2]))
         print('\n')
@@ -438,22 +457,23 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 
 if __name__ == '__main__':
-    
-    file = '2019-08-03-12_46_11-ayrton12-nv16_2019_07_25'
-    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
-    
-#    file = '2019-08-01-14_58_51-ayrton12-nv16_2019_07_25'
-#    data = tool_belt.get_raw_data('resonance.py', file)
 
-    freq_center = data['freq_center']
-    freq_range = data['freq_range']
-    num_steps = data['num_steps']
-    norm_avg_sig = numpy.array(data['norm_avg_sig'])
-    ref_counts = numpy.array(data['ref_counts'])
-    
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, ref_counts)
-    if (fit_func is not None) and (popt is not None):
-        create_fit_figure(freq_range, freq_center, num_steps,
-                          norm_avg_sig, fit_func, popt)
-    
+#    file = '2019-08-01-10_38_53-ayrton12-nv16_2019_07_25'
+#    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
+
+    # file = '2019-08-01-14_58_51-ayrton12-nv16_2019_07_25'
+    # data = tool_belt.get_raw_data('resonance.py', file)
+
+    # freq_center = data['freq_center']
+    # freq_range = data['freq_range']
+    # num_steps = data['num_steps']
+    # norm_avg_sig = numpy.array(data['norm_avg_sig'])
+    # ref_counts = numpy.array(data['ref_counts'])
+
+    # fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
+    #                                norm_avg_sig, ref_counts)
+    # if (fit_func is not None) and (popt is not None):
+    #     create_fit_figure(freq_range, freq_center, num_steps,
+    #                       norm_avg_sig, fit_func, popt)
+
+    simulate(2.77, 0.1, 0.2, 100, 50)

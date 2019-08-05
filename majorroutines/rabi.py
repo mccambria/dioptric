@@ -98,6 +98,50 @@ def create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
 
     return fit_fig
 
+def simulate(uwave_time_range, freq,
+             res_freq, contrast, rabi_period):
+
+    rabi_freq = rabi_period**-1
+
+    min_uwave_time = uwave_time_range[0]
+    max_uwave_time = uwave_time_range[1]
+    smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time,
+                          num=1000, dtype=numpy.int32)
+
+    omega = numpy.sqrt((freq-res_freq)**2 + rabi_freq**2)
+    amp = (rabi_freq / omega)**2
+    angle = omega * 2 * numpy.pi * smooth_taus / 2
+    prob = amp * (numpy.sin(angle))**2
+
+    rel_counts = 1.0 - (contrast * prob)
+
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    ax.plot(smooth_taus, rel_counts)
+    ax.set_xlabel('Tau (ns)')
+    ax.set_ylabel('Contrast (arb. units)')
+
+def simulate_split(uwave_time_range, freq,
+                   res_freq_low, res_freq_high, contrast, rabi_period):
+
+    rabi_freq = rabi_period**-1
+
+    min_uwave_time = uwave_time_range[0]
+    max_uwave_time = uwave_time_range[1]
+    smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time,
+                          num=1000, dtype=numpy.int32)
+
+    omega = numpy.sqrt((freq-res_freq)**2 + rabi_freq**2)
+    amp = (rabi_freq / omega)**2
+    angle = omega * 2 * numpy.pi * smooth_taus / 2
+    prob = amp * (numpy.sin(angle))**2
+
+    rel_counts = 1.0 - (contrast * prob)
+
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    ax.plot(smooth_taus, rel_counts)
+    ax.set_xlabel('Tau (ns)')
+    ax.set_ylabel('Contrast (arb. units)')
+
 
 # %% Main
 
@@ -361,14 +405,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    file = '2019-08-01-18_26_45-ayrton12-nv16_2019_07_25'
-    data = tool_belt.get_raw_data('rabi.py', file)
+    # file = '2019-08-01-18_26_45-ayrton12-nv16_2019_07_25'
+    # data = tool_belt.get_raw_data('rabi.py', file)
 
-    norm_avg_sig = data['norm_avg_sig']
-    uwave_time_range = data['uwave_time_range']
-    num_steps = data['num_steps']
+    # norm_avg_sig = data['norm_avg_sig']
+    # uwave_time_range = data['uwave_time_range']
+    # num_steps = data['num_steps']
 
-    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    if (fit_func is not None) and (popt is not None):
-        create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
-                          fit_func, popt)
+    # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    # if (fit_func is not None) and (popt is not None):
+    #     create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
+    #                       fit_func, popt)
+
+    simulate([0,200], 2.865, 2.87, 0.33, 150)

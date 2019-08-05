@@ -388,42 +388,42 @@ def main(folder_name, doPlot = False, offset = True):
     if doPlot:
         fig.canvas.draw()
         fig.canvas.flush_events()
-        
+    
 #    print('Omega list: {} \nGamma list: {}'.format(omega_rate_list, gamma_rate_list))
 
-        # %% Saving the data      
-
-    data_dir = 'E:/Shared drives/Kolkowitz Lab Group/nvdata'
-                
-    time_stamp = tool_belt.get_time_stamp()
-    raw_data = {'time_stamp': time_stamp,
-                'splitting_MHz': splitting_MHz,
-                'splitting_MHz-units': 'MHz',
-                'offset_free_param?': offset,
-                'zero_relaxation_counts': zero_relaxation_counts.tolist(),
-                'zero_relaxation_counts-units': 'counts',
-                'zero_zero_time': zero_zero_time.tolist(),
-                'zero_zero_time-units': 'ms',
-                'plus_relaxation_counts': plus_relaxation_counts.tolist(),
-                'plus_relaxation_counts-units': 'counts',
-                'plus_plus_time': plus_plus_time.tolist(),
-                'plus_plus_time-units': 'ms',
-                'omega_opti_params': omega_opti_params.tolist(),
-                'gamma_opti_params': gamma_opti_params.tolist()
-                }
+    # %% Saving the data 
+     
+        data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
+               
+        time_stamp = tool_belt.get_time_stamp()
+        raw_data = {'time_stamp': time_stamp,
+                    'splitting_MHz': splitting_MHz,
+                    'splitting_MHz-units': 'MHz',
+                    'offset_free_param?': offset,
+                    'zero_relaxation_counts': zero_relaxation_counts.tolist(),
+                    'zero_relaxation_counts-units': 'counts',
+                    'zero_zero_time': zero_zero_time.tolist(),
+                    'zero_zero_time-units': 'ms',
+                    'plus_relaxation_counts': plus_relaxation_counts.tolist(),
+                    'plus_relaxation_counts-units': 'counts',
+                    'plus_plus_time': plus_plus_time.tolist(),
+                    'plus_plus_time-units': 'ms',
+                    'omega_opti_params': omega_opti_params.tolist(),
+                    'gamma_opti_params': gamma_opti_params.tolist()
+                    }
+        
     
-
-    
-    file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins' 
-    file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
-                                                         file_name)
-    
-    tool_belt.save_raw_data(raw_data, file_path)
+        
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins' 
+        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
+                                                             file_name)
+        
+        tool_belt.save_raw_data(raw_data, file_path)
 
 # %% Saving the figure
 
-    file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins'
-    file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_1_bins'
+        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                          file_name)
 
     tool_belt.save_figure(fig, file_path)
@@ -432,7 +432,8 @@ def main(folder_name, doPlot = False, offset = True):
 
 if __name__ == '__main__':
 
-    folder = 'nv16_2019_07_25_81MHz'
+    folder = 'nv16_2019_07_25_123MHz'
+
 
 
 #    for folder in folder_list:

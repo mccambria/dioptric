@@ -102,27 +102,23 @@ def main(folder_name, num_bins, save_data = True, offset = True):
             
             avg_ref = numpy.average(ref_counts)
             
-#            print(avg_ref)
-            
-            norm_counts = sig_counts / avg_ref
-            
-#            print(norm_counts)
+            norm_counts = sig_counts / avg_ref           
             
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             # time is in microseconds
             min_relaxation_time, max_relaxation_time = relaxation_time_range / 10**6
             num_steps = data['num_steps']
             num_runs = data['num_runs']
-#            num_runs = 12
+
 
             time_array = numpy.linspace(min_relaxation_time, 
                                         max_relaxation_time, num=num_steps) 
             
             
             # Check that the num_runs is consistent. If not, raise an error
-#            if num_runs_set != num_runs:
-#                print('Error, num_runs not consistent in file {}'.format(file))
-#                break
+            if num_runs_set != num_runs:
+                print('Error, num_runs not consistent in file {}'.format(file))
+                break
             
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
