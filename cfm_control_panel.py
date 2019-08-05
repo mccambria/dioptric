@@ -163,10 +163,10 @@ def do_t1_battery(nv_sig, apd_indices):
     num_runs = 40
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
-    # ~ 19 hours total
-    t1_exp_array = numpy.array([[[States.HIGH, States.LOW],  [0, 140*10**3], 51, int(6.0*10**4), num_runs], # 2.7 hrs, optimize every 4 min, expected error 0.7%
+    # ~ 16 hours total
+    t1_exp_array = numpy.array([[[States.HIGH, States.LOW],  [0, 50*10**3], 51, int(6.0*10**4), num_runs], # 1.2 hrs, optimize every 1.8 min, expected error 0.7%
                                 [[States.HIGH, States.LOW],  [0, 400*10**3], 26, int(3.75*10**4), num_runs], # 2.3 hrs, optimize every 3.5 min, expected error 0.9%
-                                [[States.HIGH, States.HIGH],  [0, 140*10**3], 51, int(6.0*10**4), num_runs], # 2.7 hrs, optimize every 4 min, expected error 0.7%
+                                [[States.HIGH, States.HIGH],  [0, 50*10**3], 51, int(6.0*10**4), num_runs], # 1.2 hrs, optimize every 1.8 min, expected error 0.7%
                                 [[States.HIGH, States.HIGH],  [0, 400*10**3], 26, int(3.75*10**4), num_runs], # 2.3 hrs, optimize every 3.5 min, expected error 0.9%
                                 [[States.ZERO, States.HIGH],  [0, 2*10**6], 26, int(1.5*10**4), num_runs], # 4.4 hrs, optimize every 6.6 min, expected error 1.5%
                                 [[States.ZERO, States.ZERO],  [0, 2*10**6], 26, int(1.5*10**4), num_runs]]) # 4.4 hrs, optimize every 6.6 min, expected error 1.5%
