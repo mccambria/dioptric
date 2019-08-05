@@ -28,10 +28,10 @@ import numpy
 
 # The data
 nv16_splitting_list = [28.6, 81.2, 128.0, 283.7]
-nv16_omega_avg_list = [0.55, 1.75, 0.69]
-nv16_omega_error_list = [0.08, 0.19, 0.10]
-nv16_gamma_avg_list = [94, 18.2, 12.1]
-nv16_gamma_error_list = [18, 1.0, 0.8]
+nv16_omega_avg_list = [0.55, 1.75, 0.69, 0.64]
+nv16_omega_error_list = [0.08, 0.19, 0.10, 0.18]
+nv16_gamma_avg_list = [94, 18.2, 12.1, 6.8]
+nv16_gamma_error_list = [18, 1.0, 0.8, 0.4]
 
 # Try to fit the gamma to a 1/f^alpha
 
