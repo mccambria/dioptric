@@ -426,13 +426,14 @@ def main(folder_name, doPlot = False, offset = True):
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                          file_name)
 
-        tool_belt.save_figure(fig, file_path)
+    tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 
 if __name__ == '__main__':
 
     folder = 'nv16_2019_07_25_123MHz'
+
 
 
 #    for folder in folder_list:
