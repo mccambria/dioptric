@@ -22,26 +22,9 @@ import utils.image_processing as image_processing
 
 ####################### Files #######################
 
-# Gaussian tests
-directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
-# directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
 
-# file_name = '2019-04-29_16-37-06_ayrton12.txt'
-# file_name = '2019-04-29_16-37-56_ayrton12.txt'
-
-#file_name = '2019-04-29_16-19-11_ayrton12.txt'
-#file_name = '2019-04-30_14-45-29_ayrton12.txt'
-
-#file_name = '2019-04-29_15-33-39_ayrton12.txt'
-#file_name = '2019-05-01_15-55-20_ayrton12.txt'
-
-# Lost NVs
-# directory = 'C:\\Users\\Matt\\Desktop\\lost_nvs\\'
-# file_name = '2019-05-28_16-37-29_ayrton12.txt'
-# file_name = '2019-05-29_08-56-53_ayrton12.txt'
-# file_name = '2019-05-29_11-38-15_ayrton12.txt'
-# file_name = '2019-05-30_09-39-50_ayrton12.txt'  # 1.0 x 1.0
-file_name = '2019-05-30_12-19-47_ayrton12.txt'  # 1.5 x 1.5
+file_name = '2019-08-06-10_36_52-ayrton12-nvsearch_2019_07_25.txt'
 
 file_path = directory + file_name
 
@@ -105,7 +88,7 @@ for method_ind in [1]:
 
     # Image
     # file_name = '2019-04-29_16-39-18_ayrton12.txt'
-    file_name = '2019-05-10_11-47-17_ayrton12.txt'
+    file_name = '2019-04-29_16-39-18_ayrton12.txt'
     # file_name = '2019-05-07_18-23-21_ayrton12.txt'
     file_path = directory + file_name
     with open(file_path, 'r') as file:
