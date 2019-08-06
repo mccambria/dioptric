@@ -64,7 +64,12 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
         if seq_file == 'aom_delay.py':
             seq_args = [tau, readout, apd_indices[0]]
         elif seq_file == 'uwave_delay.py':
-            seq_args = [tau, readout, apd_indices[0]]
+            pi_pulse = round(rabi_period / 2)
+#            shared_params = tool_belt.get_shared_parameters_dict(cxn)
+            polarization_time = 1000
+            wait_time = 1000
+            seq_args = [tau, readout, pi_pulse, aom_delay, 
+                        polarization_time, wait_time, sig_gen, apd_indices[0]]
         seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate(seq_file, num_reps,
@@ -133,11 +138,19 @@ def aom_delay(cxn, nv_sig, readout, apd_indices,
     measure_delay(cxn, nv_sig, readout, apd_indices,
               delay_range, num_steps, num_reps, seq_file)
 
-def uwave_delay(cxn, nv_sig, readout, apd_indices,
+def uwave_delay(cxn, nv_sig, apd_indices,
               sig_gen, uwave_freq, uwave_power, rabi_period, aom_delay,
               delay_range, num_steps, num_reps):
     
+    '''
+    This will incrementally shift the pi pulse through the sequence, starting 
+    at the beginning of the sequence. A polorization pulse and wait time after
+    of 1000 ns is used. 
+    '''
+    
     seq_file = 'uwave_delay.py'
+    
+    readout = nv_sig['pulsed_readout_dur']
     
     measure_delay(cxn, nv_sig, readout, apd_indices,
               delay_range, num_steps, num_reps, seq_file,
@@ -173,7 +186,7 @@ if __name__ == '__main__':
                   delay_range, num_steps, num_reps)
 
     # uwave_delay
-#    delay_range = [0, 100]
+#    delay_range = [0, 2000]
 #    num_steps = 21
 #    sig_gen = 'tsg4104a'
 #    uwave_freq = 2.8587  
@@ -181,6 +194,6 @@ if __name__ == '__main__':
 #    rabi_period = 144.4
 #    aom_delay = 1000
 #    with labrad.connect() as cxn:
-#        uwave_delay(cxn, nv_sig, nd_filter, readout, apd_indices,
+#        uwave_delay(cxn, nv_sig, nd_filter, apd_indices,
 #              sig_gen, uwave_freq, uwave_power, rabi_period, aom_delay,
 #              delay_range, num_steps, num_reps, name)

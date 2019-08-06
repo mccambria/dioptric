@@ -432,7 +432,7 @@ def main(folder_name, doPlot = False, offset = True):
 
 if __name__ == '__main__':
 
-    folder = 'nv16_2019_07_25_283MHz'
+    folder = 'nv16_2019_07_25_53MHz'
 
 
 
