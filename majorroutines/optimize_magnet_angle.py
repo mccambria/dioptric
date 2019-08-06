@@ -48,10 +48,11 @@ def create_fit_figure(splittings, angles, fit_func, popt):
 
 def fit_data(splittings, angles):
 
-    fit_func = AbsCosNoOff
+    fit_func = AbsCos
     amp = 200
     phase = 0
-    guess_params = [amp, phase]
+    offset = 0
+    guess_params = [offset, amp, phase]
     # Check if we have any undefined splittings
     if any(numpy.isnan(splittings)):
         fit_func = None
@@ -157,7 +158,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
         try:
             popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
             # Find the angle at the peak within [0, 360]
-            opti_angle = (-popt[1]) % 360
+            opti_angle = (-popt[2]) % 180
             fig = create_fit_figure(splittings, angles, fit_func, popt)
         except Exception:
             opti_angle = None
@@ -202,16 +203,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    # nv25_2019_07_25
-    # splittings = [31.4, 11.0, 43.0, 16.3, 33.0, 42.8]
-    # angles = [90, 120, 60, 150, 0, 30]
-    
-    # nv27_2019_07_25
-    splittings = [228.9, None, None, 83.2, 44.5]
-    angles = [0.0, 60.0, 120, 150, 90]
-    
-    splittings = [228.9, 83.2, 44.5, 231.4]
-    angles = [0.0, 150, 90, 30]
+    # nv2_2019_04_30    
+    file = '2019-08-06-11_37_06-ayrton12-nv2_2019_04_30'
+    data = tool_belt.get_raw_data(__file__, file)
+    splittings = data['splittings']
+    angle_range = data['angle_range']
+    num_angle_steps = data['num_angle_steps']
+    angles = numpy.linspace(angle_range[0], angle_range[1], num_angle_steps)
 
     fit_func, popt = fit_data(splittings, angles)
 
@@ -220,6 +218,6 @@ if __name__ == '__main__':
     if (fit_func is not None) and (popt is not None):
         fig = create_fit_figure(splittings, angles, fit_func, popt)
         # Find the angle at the peak within [0, 180]
-        opti_angle = (-popt[1]) % 180
+        opti_angle = (-popt[2]) % 180
         print('Optimized angle: {}'.format(opti_angle))
 
