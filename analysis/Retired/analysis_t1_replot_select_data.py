@@ -2,7 +2,7 @@
 """
 Created on Wed May  8 09:25:44 2019
 
-@author: kolkowitz
+@author: gardill
 """
 
 import json
