@@ -16,8 +16,8 @@ nv16_2019_07_25
 
 '''
 # %%
-def fit_eq_alpha(f, amp, alpha):
-    return amp*f**(-alpha)
+def fit_eq_alpha(f, amp):
+    return amp*f**(-1)
 
 # %%
 
@@ -27,16 +27,17 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-nv16_splitting_list = [28.6, 81.2, 128.0, 283.7]
-nv16_omega_avg_list = [0.55, 1.75, 0.69]
-nv16_omega_error_list = [0.08, 0.19, 0.10]
-nv16_gamma_avg_list = [94, 18.2, 12.1]
-nv16_gamma_error_list = [18, 1.0, 0.8]
+nv16_splitting_list = [28.6, 53.0, 81.2, 128.0, 283.7]
+nv16_omega_avg_list = [0.55, 0.79, 1.75, 0.69, 0.64]
+nv16_omega_error_list = [0.08, 0.11, 0.19, 0.10, 0.18]
+nv16_gamma_avg_list = [94, 32, 18.2, 12.1, 6.8]
+nv16_gamma_error_list = [18, 5, 1.0, 0.8, 0.4]
 
 # Try to fit the gamma to a 1/f^alpha
 
 fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv16_splitting_list, nv16_gamma_avg_list, 
-                                p0 = (100, 1))
+                                p0 = [100], sigma = nv16_gamma_error_list,
+                                absolute_sigma = True)
 
 splitting_linspace = numpy.linspace(nv16_splitting_list[0], nv16_splitting_list[-1],
                                     1000)
@@ -62,16 +63,16 @@ ax.errorbar(nv16_splitting_list, nv16_omega_avg_list, yerr = nv16_omega_error_li
 # %%
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-            label = r'$1/f^\alpha$')
+            label = r'$1/f^1$')
 
-text = '\n'.join((r'$1/f^{\alpha}$ fit:',
-                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1])
+#text = '\n'.join((r'$1/f^{\alpha}$ fit:',
+#                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1])
 #                  ,r'$A_0 = $' + '%.4f'%(fit_alpha_params[0])
-                  ))
+#                  ))
 
-props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+#props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+#ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
 
 # %%
 

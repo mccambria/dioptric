@@ -55,55 +55,56 @@ nv0_gamma_error_list = [0.03, 0.014, 0.02]
 
 # Fig with just the magnet optimized data from NV0
 
-fig_nv0, axes = plt.subplots(1, 2, figsize=(17, 8))
+fig_nv0, ax = plt.subplots(1, 1, figsize=(10, 8))
 
 axis_font = {'size':'14'}
 
-ax = axes[0]
-ax.errorbar(nv0_splitting_list, nv0_gamma_avg_list, yerr = nv0_gamma_error_list, 
-            label = r'$\gamma$', fmt='o', color='blue')
-ax.errorbar(nv0_splitting_list, nv0_omega_avg_list, yerr = nv0_omega_error_list, 
-            label = r'$\Omega$', fmt='o', color='orange')
+#ax = axes[0]
 
-ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                grid_alpha=0.7, labelsize = 18)
+## Data for the single NV at different splittings
+#ax.errorbar(nv0_splitting_list, nv0_gamma_avg_list, yerr = nv0_gamma_error_list, 
+#            label = r'$\gamma$',  markersize = 10, fmt='o', color='blue')
+#ax.errorbar(nv0_splitting_list, nv0_omega_avg_list, yerr = nv0_omega_error_list, 
+#            label = r'$\Omega$',  markersize = 10, fmt='o', color='orange')
+#
+## Formatting
+#ax.tick_params(which = 'both', length=6, width=2, colors='k',
+#                grid_alpha=0.7, labelsize = 18)
+#ax.tick_params(which = 'major', length=12, width=2)
+#ax.grid()
+#ax.set_xlabel('Splitting (MHz)', fontsize=18)
+#ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
+#ax.legend(fontsize=18)
 
-ax.tick_params(which = 'major', length=12, width=2)
 
-ax.grid()
-ax.legend(fontsize=18)
+# %%
+#ax = axes[1]
 
-#ax.errorbar(nv0m_splitting_list, nv0m_gamma_avg_list, yerr = nv0m_gamma_error_list, 
-#            label = r'$\gamma_{NV_1}$, magnet misaligned', markersize = 10, fmt='o', color='blue',  markerfacecolor='none')
-#ax.errorbar(nv0m_splitting_list, nv0m_omega_avg_list, yerr = nv0m_omega_error_list, 
-#            label = r'$\Omega_{NV_1}$, magnet misaligned', markersize = 10, fmt='o', color='orange',  markerfacecolor='none')
-
-ax = axes[1]
+# Data for a second NV
 ax.errorbar(nv1_splitting_list, nv1_gamma_avg_list, yerr = nv1_gamma_error_list, 
             label = r'$\gamma_{NV_2}$', fmt='^', markersize = 10, color='blue')
 ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
             label = r'$\Omega_{NV_2}$', fmt='^', markersize = 10, color='orange')
 
+# Data for the original Nv, with misaligned magnet
 ax.errorbar(NV0_mis_splitting_list, NV0_mis_gamma_avg_list, yerr = NV0_mis_gamma_error_list, 
             label = r'$\gamma_{NV_1}$, misaligned', markersize = 10, fmt='o', color='blue',  markerfacecolor='none')
 ax.errorbar(NV0_mis_splitting_list, NV0_mis_omega_avg_list, yerr = NV0_mis_omega_error_list, 
             label = r'$\Omega_{NV_1}$, misaligned', markersize = 10, fmt='o', color='orange',  markerfacecolor='none')
 
+# Data for original NV, with aligned magnet
 ax.errorbar(NV0_opt_splitting_list, NV0_opt_gamma_avg_list, yerr = NV0_opt_gamma_error_list, 
             label = r'$\gamma_{NV_1}$, optimum magnet', markersize = 10, fmt='o', color='blue')
 ax.errorbar(NV0_opt_splitting_list, NV0_opt_omega_avg_list, yerr = NV0_opt_omega_error_list, 
             label = r'$\Omega_{NV_1}$, optimum magnet', markersize = 10, fmt='o', color='orange')
 
-
+# Formatting
 ax.tick_params(which = 'both', length=6, width=2, colors='k',
                 grid_alpha=0.7, labelsize = 18)
-
 ax.tick_params(which = 'major', length=12, width=2)
-
 ax.grid()
+ax.set_xlabel('Splitting (MHz)', fontsize=18)
+ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
 ax.legend(fontsize=18)
-
-plt.xlabel('Splitting (MHz)', fontsize=18)
-plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-plt.title('Bulk Diamond', fontsize=18)
+##ax.title('Bulk Diamond', fontsize=18)
 

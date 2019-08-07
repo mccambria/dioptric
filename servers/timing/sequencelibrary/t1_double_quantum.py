@@ -219,7 +219,7 @@ if __name__ == '__main__':
     
     seq_args = [2000, 3000, 3000, 3000, 2000, 1000, 1000, 
                 0, 0,  # 1000, 40
-                450, 55, 83, 1500, 0, States.LOW.value, States.HIGH.value]
+                450, 55, 83, 1000, 0, States.HIGH.value, States.HIGH.value]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()
