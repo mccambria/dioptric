@@ -18,6 +18,7 @@ import majorroutines.optimize as optimize
 from random import shuffle
 import numpy
 import matplotlib.pyplot as plt
+from utils.tool_belt import States
 
 
 # %% Functions
@@ -25,8 +26,7 @@ import matplotlib.pyplot as plt
 
 def measure_delay(cxn, nv_sig, readout, apd_indices,
               delay_range, num_steps, num_reps, seq_file,
-              sig_gen=None, uwave_freq=None, uwave_power=None,
-              rabi_period=None, aom_delay=None):
+              state=States.LOW, aom_delay=None):
     
     taus = numpy.linspace(delay_range[0], delay_range[1],
                           num_steps, dtype=numpy.int32)
@@ -40,16 +40,16 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     
     tool_belt.reset_cfm(cxn)
+    
     # Turn on the microwaves for determining microwave delay
+    sig_gen = None
     if seq_file == 'uwave_delay.py':
-        if sig_gen == 'tsg4104a':
-            cxn.signal_generator_tsg4104a.set_freq(uwave_freq)
-            cxn.signal_generator_tsg4104a.set_amp(uwave_power)
-            cxn.signal_generator_tsg4104a.uwave_on()
-        elif sig_gen == 'bnc835':
-            cxn.signal_generator_bnc835.set_freq(uwave_freq)
-            cxn.signal_generator_bnc835.set_amp(uwave_power)
-            cxn.signal_generator_bnc835.uwave_on()
+        sig_gen = tool_belt.get_signal_generator_name(state)
+        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn.set_freq(nv_sig['resonance_{}'.format(state.name)])
+        sig_gen_cxn.set_amp(nv_sig['uwave_power_{}'.format(state.name)])
+        sig_gen_cxn.uwave_on()
+        pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
     cxn.apd_tagger.start_tag_stream(apd_indices)  
     
     tool_belt.init_safe_stop()
@@ -64,12 +64,10 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
         if seq_file == 'aom_delay.py':
             seq_args = [tau, readout, apd_indices[0]]
         elif seq_file == 'uwave_delay.py':
-            pi_pulse = round(rabi_period / 2)
-#            shared_params = tool_belt.get_shared_parameters_dict(cxn)
             polarization_time = 1000
             wait_time = 1000
             seq_args = [tau, readout, pi_pulse, aom_delay, 
-                        polarization_time, wait_time, sig_gen, apd_indices[0]]
+                        polarization_time, wait_time, state.value, apd_indices[0]]
         seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate(seq_file, num_reps,
@@ -94,7 +92,7 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
     ax.plot(taus, ref_counts, 'g-', label = 'reference')
     ax.set_title('Counts vs Delay Time')
     ax.set_xlabel('Delay time (ns)')
-    ax.set_ylabel('Count rate (kcps)')
+    ax.set_ylabel('Count rate (cps)')
     ax = axes_pack[1]
     ax.plot(taus, norm_avg_sig, 'b-')
     ax.set_title('Contrast vs Delay Time')
@@ -107,6 +105,7 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
             'sequence': seq_file,
+            'sig_gen': sig_gen,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'readout': readout,
@@ -138,8 +137,7 @@ def aom_delay(cxn, nv_sig, readout, apd_indices,
     measure_delay(cxn, nv_sig, readout, apd_indices,
               delay_range, num_steps, num_reps, seq_file)
 
-def uwave_delay(cxn, nv_sig, apd_indices,
-              sig_gen, uwave_freq, uwave_power, rabi_period, aom_delay,
+def uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
               delay_range, num_steps, num_reps):
     
     '''
@@ -154,7 +152,7 @@ def uwave_delay(cxn, nv_sig, apd_indices,
     
     measure_delay(cxn, nv_sig, readout, apd_indices,
               delay_range, num_steps, num_reps, seq_file,
-              sig_gen, uwave_freq, uwave_power, rabi_period, aom_delay)
+              state, aom_delay_time)
 
 
 # %% Run the file
@@ -167,33 +165,32 @@ if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here 
     sample_name = 'ayrton12'
-    nv5_2019_07_25 = {'coords': [0.061, 0.164, 5.03], # check (0,+1) and (0,-1) the same
-          'name': '{}-nv{}_2019_07_25'.format(sample_name, 5),
-          'expected_count_rate': 33,
-          'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 300, 'magnet_angle': 257.4,
-          'resonance_LOW': 2.7885, 'rabi_LOW': 76.3, 'uwave_power_LOW': 9.0,
-          'resonance_HIGH': 2.9395, 'rabi_HIGH': 54.5, 'uwave_power_HIGH': 10.0}
+    nv2_2019_04_30 = {'coords': [-0.080, 0.122, 5.06],
+      'name': '{}-nv{}_2019_04_30'.format(sample_name, 2),
+      'expected_count_rate': 57,
+      'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 260, 'magnet_angle': 161.9,
+      'resonance_LOW': 2.8265, 'rabi_LOW': 198.0, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 2.9117, 'rabi_HIGH': 181.7, 'uwave_power_HIGH': 10.0}
     apd_indices = [0]
-    num_reps = 10**5
+    num_reps = 2*10**5
     readout = 2000
-    nv_sig = nv5_2019_07_25
+    nv_sig = nv2_2019_04_30
 
     # aom_delay
-    delay_range = [900, 1500]
-    num_steps = 51
-    with labrad.connect() as cxn:
-        aom_delay(cxn, nv_sig, readout, apd_indices,
-                  delay_range, num_steps, num_reps)
+#    delay_range = [900, 1500]
+#    num_steps = 51
+#    with labrad.connect() as cxn:
+#        aom_delay(cxn, nv_sig, readout, apd_indices,
+#                  delay_range, num_steps, num_reps)
 
     # uwave_delay
-#    delay_range = [0, 2000]
-#    num_steps = 21
-#    sig_gen = 'tsg4104a'
-#    uwave_freq = 2.8587  
-#    uwave_power = 9
-#    rabi_period = 144.4
-#    aom_delay = 1000
-#    with labrad.connect() as cxn:
-#        uwave_delay(cxn, nv_sig, nd_filter, apd_indices,
-#              sig_gen, uwave_freq, uwave_power, rabi_period, aom_delay,
-#              delay_range, num_steps, num_reps, name)
+    delay_range = [500, 2500]
+    num_steps = 101
+    # tsg4104a
+#    state = States.LOW
+    # bnc851
+    state = States.HIGH
+    aom_delay_time = 1000
+    with labrad.connect() as cxn:
+        uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
+              delay_range, num_steps, num_reps)

@@ -15,6 +15,8 @@ Created on Sun Aug 6 11:22:40 2019
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 import numpy
+import utils.tool_belt as tool_belt
+from utils.tool_belt import States
 
 
 # %% Constants
@@ -40,14 +42,16 @@ def get_seq(pulser_wiring, args):
     durations = args[0:6]
     durations = [numpy.int64(el) for el in durations]
     delay, readout, pi_pulse, aom_delay_time, \
-                                polarization, wait_time = durations[0:2]
+                                polarization, wait_time = durations[0:6]
     
-    sig_gen = args[6]
+    state_value = args[6]
+    state = States(state_value)
     apd_index = args[7]
     
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_aom = pulser_wiring['do_532_aom']
-    pulser_do_sig_gen_gate = pulser_wiring['do_signal_generator_{}_gate'.format(sig_gen)]
+    sig_gen = tool_belt.get_signal_generator_name(state)
+    pulser_do_sig_gen_gate = pulser_wiring['do_{}_gate'.format(sig_gen)]
     
     
     sequence = polarization + wait_time + polarization + wait_time + \
@@ -59,13 +63,14 @@ def get_seq(pulser_wiring, args):
     # The readout windows are what everything else is relative to so keep
     # these fixed
     prep_time = aom_delay_time + polarization + wait_time
-    train = [(prep_time, LOW), (readout, HIGH), \
-             (polarization + wait_time - readout, LOW), (readout, HIGH), \
-             (polarization - readout)]
+    train = [(prep_time, LOW), (readout, HIGH)]
+    train.extend([(polarization + wait_time - readout, LOW), (readout, HIGH)])
+    train.extend([(polarization - readout, LOW)])
     seq.setDigital(pulser_do_apd_gate, train)
 
     # Pulse sequence for the AOM
-    train = [(polarization, HIGH), (wait_time, LOW), (polarization, HIGH), (wait_time, LOW), (polarization - aom_delay_time, HIGH)]
+    train = [(polarization, HIGH), (wait_time, LOW), (polarization, HIGH)]
+    train.extend([(wait_time, LOW), (polarization - aom_delay_time, HIGH)])
     seq.setDigital(pulser_do_aom, train)
     
     # Vary the position of the rf pi pulse
@@ -98,7 +103,7 @@ if __name__ == '__main__':
                      'do_signal_generator_bnc835_gate': 4}
 
     # Set up a dummy args list
-    args = [0, 2000, 110, 0, 1000, 1000, 'tsg4104a', 0]
+    args = [1000, 300, 110, 0, 1000, 1000, 1, 0]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.
