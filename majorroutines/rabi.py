@@ -20,7 +20,6 @@ import matplotlib.pyplot as plt
 from random import shuffle
 from scipy.optimize import curve_fit
 import labrad
-from utils.tool_belt import States
 
 
 # %% Functions
@@ -57,12 +56,11 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
     init_params = [offset, amplitude, frequency, decay]
 
     try:
-        popt, pcov = curve_fit(fit_func, taus, norm_avg_sig,
+        popt, _ = curve_fit(fit_func, taus, norm_avg_sig,
                                p0=init_params)
     except Exception as e:
         print(e)
         popt = None
-        pcov = None
 
     return fit_func, popt
 
@@ -98,19 +96,31 @@ def create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
 
     return fit_fig
 
-def simulate(uwave_time_range, freq,
-             res_freq, contrast, rabi_period):
+def simulate(uwave_time_range, freq, resonant_freq, contrast,
+             measured_rabi_period=None, resonant_rabi_period=None):
 
-    rabi_freq = rabi_period**-1
+    if measured_rabi_period is None:
+        resonant_rabi_freq = resonant_rabi_period**-1
+        res_dev = freq-resonant_freq
+        measured_rabi_freq = numpy.sqrt(res_dev**2 + resonant_rabi_freq**2)
+        measured_rabi_period = measured_rabi_freq**-1
+        print('measured_rabi_period: {} ns'.format(measured_rabi_period))
+    elif resonant_rabi_period is None:
+        measured_rabi_freq = measured_rabi_period**-1
+        res_dev = freq-resonant_freq
+        resonant_rabi_freq = numpy.sqrt(measured_rabi_freq**2 - res_dev**2)
+        resonant_rabi_period = resonant_rabi_freq**-1
+        print('resonant_rabi_period: {} ns'.format(resonant_rabi_period))
+    else:
+        raise RuntimeError('Pass either a measured_rabi_period or a ' \
+                           'resonant_rabi_period, not both/neither.')
 
     min_uwave_time = uwave_time_range[0]
     max_uwave_time = uwave_time_range[1]
     smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time,
                           num=1000, dtype=numpy.int32)
-
-    omega = numpy.sqrt((freq-res_freq)**2 + rabi_freq**2)
-    amp = (rabi_freq / omega)**2
-    angle = omega * 2 * numpy.pi * smooth_taus / 2
+    amp = (resonant_rabi_freq / measured_rabi_freq)**2
+    angle = measured_rabi_freq * 2 * numpy.pi * smooth_taus / 2
     prob = amp * (numpy.sin(angle))**2
 
     rel_counts = 1.0 - (contrast * prob)
@@ -120,27 +130,27 @@ def simulate(uwave_time_range, freq,
     ax.set_xlabel('Tau (ns)')
     ax.set_ylabel('Contrast (arb. units)')
 
-def simulate_split(uwave_time_range, freq,
-                   res_freq_low, res_freq_high, contrast, rabi_period):
+# def simulate_split(uwave_time_range, freq,
+#                    res_freq_low, res_freq_high, contrast, rabi_period):
 
-    rabi_freq = rabi_period**-1
+#     rabi_freq = rabi_period**-1
 
-    min_uwave_time = uwave_time_range[0]
-    max_uwave_time = uwave_time_range[1]
-    smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time,
-                          num=1000, dtype=numpy.int32)
+#     min_uwave_time = uwave_time_range[0]
+#     max_uwave_time = uwave_time_range[1]
+#     smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time,
+#                           num=1000, dtype=numpy.int32)
 
-    omega = numpy.sqrt((freq-res_freq)**2 + rabi_freq**2)
-    amp = (rabi_freq / omega)**2
-    angle = omega * 2 * numpy.pi * smooth_taus / 2
-    prob = amp * (numpy.sin(angle))**2
+#     omega = numpy.sqrt((freq-res_freq)**2 + rabi_freq**2)
+#     amp = (rabi_freq / omega)**2
+#     angle = omega * 2 * numpy.pi * smooth_taus / 2
+#     prob = amp * (numpy.sin(angle))**2
 
-    rel_counts = 1.0 - (contrast * prob)
+#     rel_counts = 1.0 - (contrast * prob)
 
-    fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    ax.plot(smooth_taus, rel_counts)
-    ax.set_xlabel('Tau (ns)')
-    ax.set_ylabel('Contrast (arb. units)')
+#     fig, ax = plt.subplots(figsize=(8.5, 8.5))
+#     ax.plot(smooth_taus, rel_counts)
+#     ax.set_xlabel('Tau (ns)')
+#     ax.set_ylabel('Contrast (arb. units)')
 
 
 # %% Main
@@ -239,7 +249,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
-    
+
         # TEST for split resonance
 #        sig_gen_cxn = cxn.signal_generator_bnc835
 #        sig_gen_cxn.set_freq(uwave_freq + 0.008)
