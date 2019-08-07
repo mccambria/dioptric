@@ -438,4 +438,4 @@ if __name__ == '__main__':
 
 #    for folder in folder_list:
 #    main(folder, True)
-    main(folder, True, offset = False)
+    main(folder, True, offset = True)
