@@ -418,7 +418,7 @@ def main(folder_name, doPlot = False, offset = True):
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-        tool_belt.save_raw_data(raw_data, file_path)
+#        tool_belt.save_raw_data(raw_data, file_path)
 
 # %% Saving the figure
 
@@ -426,13 +426,13 @@ def main(folder_name, doPlot = False, offset = True):
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                          file_name)
 
-    tool_belt.save_figure(fig, file_path)
+#    tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_85MHz_2'
+    folder = 'nv2_2019_04_30_45MHz'
 
 
 
