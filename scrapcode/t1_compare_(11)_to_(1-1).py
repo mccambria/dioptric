@@ -48,7 +48,8 @@ def main(folder_name, doPlot = False, offset = True):
 
             init_state_name = data['init_state']
             read_state_name = data['read_state']
-
+            
+            
             sig_counts  = numpy.array(data['sig_counts'])
             ref_counts = numpy.array(data['ref_counts'])
 
@@ -69,7 +70,7 @@ def main(folder_name, doPlot = False, offset = True):
 
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
-            if init_state_name == States.ZERO.name and read_state_name == States.ZERO.name:
+            if init_state_name == 0 and read_state_name == 0:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_zero_bool == False:
@@ -98,7 +99,7 @@ def main(folder_name, doPlot = False, offset = True):
                                               zero_zero_counts))
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
-            if init_state_name == States.ZERO.name and read_state_name == States.HIGH.name:
+            if init_state_name == 0 and read_state_name == 1:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_plus_bool == False:
@@ -124,7 +125,7 @@ def main(folder_name, doPlot = False, offset = True):
 
                         zero_plus_time = numpy.concatenate(time_array, zero_plus_time)
 
-            if init_state_name == States.ZERO.name and read_state_name == States.LOW.name:
+            if init_state_name == 0 and read_state_name == -1:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if zero_minus_bool == False:
@@ -151,13 +152,13 @@ def main(folder_name, doPlot = False, offset = True):
                         zero_minus_time = numpy.concatenate(time_array, zero_minus_time)
 
 
-            if init_state_name == States.HIGH.name and read_state_name == States.HIGH.name:
+            if init_state_name == 1 and read_state_name == 1:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if plus_plus_bool == False:
                     plus_plus_shrt_counts = norm_avg_sig
                     plus_plus_shrt_time = time_array
-
+                    
                     plus_plus_ref_max_time = max_relaxation_time
                     plus_plus_bool = True
                 # If data has already been taken for this experiment, then check
@@ -168,8 +169,8 @@ def main(folder_name, doPlot = False, offset = True):
                     
                     plus_plus_long_counts = norm_avg_sig
                     plus_plus_long_time = time_array
-            
-            if init_state_name == States.LOW.name and read_state_name == States.LOW.name:
+
+            if init_state_name == -1 and read_state_name == -1:
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
                 if minus_minus_bool == False:
@@ -193,7 +194,7 @@ def main(folder_name, doPlot = False, offset = True):
                                                           minus_minus_counts))
                         minus_minus_time = numpy.concatenate((time_array, minus_minus_time))
                         
-            if init_state_name == States.HIGH.name and read_state_name == States.LOW.name:
+            if init_state_name == 1 and read_state_name == -1:
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']
@@ -244,7 +245,7 @@ def main(folder_name, doPlot = False, offset = True):
     ax.set_xlabel('Relaxation time (ms)')    
     ax.set_ylabel('Normalized Counts')
     ax.legend()
-    ax.set_title('nv2_2019_04_30_85MHz_2 comparison of (1,1) and (1,-1) decay, 85 MHz')
+    ax.set_title('nv2_2019_04_30_85MHz_2 comparison of (1,1) and (1,-1) decay, 56 MHz')
         
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -294,7 +295,7 @@ def main(folder_name, doPlot = False, offset = True):
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_85MHz_2'
+    folder = 'nv2_2019_04_30_56MHz'
 
 
 #    for folder in folder_list:
