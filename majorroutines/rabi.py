@@ -427,4 +427,4 @@ if __name__ == '__main__':
     #     create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
     #                       fit_func, popt)
 
-    simulate([0,250], 2.9117, 2.9119, 0.57, 150)
+    simulate([0,250], 2.9117, 2.9119, 0.48, measured_rabi_period=181.0)

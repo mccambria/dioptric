@@ -134,9 +134,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     
     # %% Let the user know how long this will take
     
-    seq_time_s = seq_time / (10**9)  # s
-    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
-    expected_run_time_m = expected_run_time / 60 # s
+    seq_time_s = seq_time / (10**9)  # to seconds
+    expected_run_time_s = (num_steps/2) * num_reps * num_runs * seq_time_s  # s
+    expected_run_time_m = expected_run_time_s / 60  # to minutes
     
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
 #    return
