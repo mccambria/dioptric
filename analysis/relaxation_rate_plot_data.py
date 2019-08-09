@@ -432,10 +432,10 @@ def main(folder_name, doPlot = False, offset = True):
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_85MHz_2'
+    folder = 'nv2_2019_04_30_280MHz_2'
 
 
 
 #    for folder in folder_list:
 #    main(folder, True)
-    main(folder, True, offset = True)
+    main(folder, True, offset = False)

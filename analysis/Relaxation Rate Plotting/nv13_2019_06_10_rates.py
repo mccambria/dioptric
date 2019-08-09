@@ -41,13 +41,16 @@ nv13_gamma_error_list = [30, 8, 16, 5, 5, 3, 3, 0.5]
 # Try to fit the gamma to a 1/f^2
 
 fit_1_params, cov_arr = curve_fit(fit_eq_1, nv13_splitting_list, nv13_gamma_avg_list, 
-                                p0 = 10)
+                                p0 = 10, sigma = nv13_gamma_error_list,
+                                absolute_sigma = True)
 
 fit_2_params, cov_arr = curve_fit(fit_eq_2, nv13_splitting_list, nv13_gamma_avg_list, 
-                                p0 = 100)
+                                p0 = 100, sigma = nv13_gamma_error_list,
+                                absolute_sigma = True)
 
 fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv13_splitting_list, nv13_gamma_avg_list, 
-                                p0 = (100, 1))
+                                p0 = (100, 1), sigma = nv13_gamma_error_list,
+                                absolute_sigma = True)
 
 splitting_linspace = numpy.linspace(nv13_splitting_list[0], nv13_splitting_list[-1],
                                     1000)
@@ -60,8 +63,8 @@ ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv13_splitting_list, nv13_gamma_avg_list, yerr = nv13_gamma_error_list, 
             label = r'$\gamma$', fmt='o', color='blue')
-#ax.errorbar(nv13_splitting_list, nv13_omega_avg_list, yerr = nv13_omega_error_list, 
-#            label = 'Omega', fmt='o', color='red')
+ax.errorbar(nv13_splitting_list, nv13_omega_avg_list, yerr = nv13_omega_error_list, 
+            label = 'Omega', fmt='o', color='red')
 #ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
 #            label = r'$f^{-2}$', color ='teal')
 #ax.plot(splitting_linspace, fit_eq_1(splitting_linspace, *fit_1_params), 
@@ -69,15 +72,15 @@ ax.errorbar(nv13_splitting_list, nv13_gamma_avg_list, yerr = nv13_gamma_error_li
 
 # %%
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-            label = r'$1/f^\alpha$')
+            'b', label = 'fit')
 
-text = '\n'.join((r'$1/f^{\alpha}$ fit:',
-                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1])
-#                  r'$A_0 = $' + '%.4f'%(fit_params[1] * 10**6) + ' kHz'
-#                  ,r'$a = $' + '%.2f'%(fit_params[2])
+text = '\n'.join((r'$1/f^\alpha$ fit:',
+                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
+                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0]),
+#                  r'$\gamma_0 = $' + '%.2f'%(fit_params[2])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.85, 0.8, text, transform=ax.transAxes, fontsize=12,
+ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
         verticalalignment='top', bbox=props)
 # %%
 
