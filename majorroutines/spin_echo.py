@@ -28,15 +28,17 @@ from utils.tool_belt import States
 # %% Main
 
 def main(nv_sig, apd_indices,
-         precession_time_range, num_steps, num_reps, num_runs):
+         precession_time_range, num_steps, num_reps, num_runs,
+         state=States.LOW):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices,
-                  precession_time_range, num_steps, num_reps, num_runs)
+                  precession_time_range, num_steps, num_reps, num_runs,
+                  state)
 
 def main_with_cxn(cxn, nv_sig, apd_indices,
-                  precession_time_range,
-                  num_steps, num_reps, num_runs):
+                  precession_time_range, num_steps, num_reps, num_runs,
+                  state=States.LOW):
     
     tool_belt.reset_cfm(cxn)
     
@@ -58,7 +60,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     gate_time = nv_sig['pulsed_readout_dur']
     
     # Default to the low state
-    state = States.LOW
     rabi_period = nv_sig['rabi_{}'.format(state.name)]
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
