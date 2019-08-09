@@ -38,18 +38,27 @@ nv2_omega_error_list = [0.06, 0.11, 0.07, 0.06, 0.06, 0.04, 0.04]
 nv2_gamma_avg_list = [20.8, 7.2, 3.9, 3.9, 2.46, 2.9, 1.6]
 nv2_gamma_error_list = [0.9, 0.3, 0.2, 0.2, 0.14, 0.2, 0.2]
 
-# Try to fit the gamma to a 1/f^2
+# Data for the second round of measurements
+nv2_splitting_list_2 = [45.5, 85.2, 280.4]
+nv2_omega_avg_list_2 = [0.25, 0.35, 0.275]
+nv2_omega_error_list_2 = [0.03, 0.02, 0.008]
+nv2_gamma_avg_list_2 = [9.7, 3.18, 0.441]
+nv2_gamma_error_list_2 = [0.2, 0.12, 0.015]
 
-fit_1_params, cov_arr = curve_fit(fit_eq_1, nv2_splitting_list, nv2_gamma_avg_list, 
-                                p0 = 10)
-
-fit_2_params, cov_arr = curve_fit(fit_eq_2, nv2_splitting_list, nv2_gamma_avg_list, 
-                                p0 = 100)
+# Fit the gamma to a 1/f^alpha
 
 fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv2_splitting_list, nv2_gamma_avg_list, 
-                                p0 = (100, 1))
+                                p0 = (100, 1), sigma = nv2_gamma_error_list,
+                                absolute_sigma = True)
 
-splitting_linspace = numpy.linspace(nv2_splitting_list[0], nv2_splitting_list[-1],
+fit_alpha_params_2, cov_arr = curve_fit(fit_eq_alpha, nv2_splitting_list_2, nv2_gamma_avg_list_2, 
+                                p0 = (100, 1), sigma = nv2_gamma_error_list_2,
+                                absolute_sigma = True)
+
+splitting_linspace_1 = numpy.linspace(nv2_splitting_list[0], nv2_splitting_list[-1],
+                                    1000)
+
+splitting_linspace_2 = numpy.linspace(nv2_splitting_list_2[0], nv2_splitting_list_2[-1],
                                     1000)
 
 
@@ -58,27 +67,33 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 #ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list)
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
-ax.errorbar(nv2_splitting_list, nv2_gamma_avg_list, yerr = nv2_gamma_error_list, 
-            label = r'$\gamma$', fmt='o', color='blue')
+#ax.errorbar(nv2_splitting_list, nv2_gamma_avg_list, yerr = nv2_gamma_error_list, 
+#            label = r'$\gamma$', fmt='o', markersize = 10, color='blue')
+ax.errorbar(nv2_splitting_list_2, nv2_gamma_avg_list_2, yerr = nv2_gamma_error_list_2, 
+            label =  r'$\gamma$', fmt='v', markersize = 10, color='orange')
 #ax.errorbar(nv2_splitting_list, nv2_omega_avg_list, yerr = nv2_omega_error_list, 
-#            label = 'Omega', fmt='o', color='red')
-#ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
-#            label = r'$f^{-2}$', color ='teal')
-#ax.plot(splitting_linspace, fit_eq_1(splitting_linspace, *fit_1_params), 
-#            label = r'$f^{-1}$', color = 'orange')
+#            label = r'$\Omega$', fmt='o', markersize = 10, color='red')
+ax.errorbar(nv2_splitting_list_2, nv2_omega_avg_list_2, yerr = nv2_omega_error_list_2, 
+            label = r'$\Omega$', fmt='o', markersize = 10, color='purple')
+#ax.plot(splitting_linspace_1, fit_eq_alpha(splitting_linspace_1, *fit_alpha_params), 
+#            label = 'fit', color ='blue')
+
+ax.plot(splitting_linspace_2, fit_eq_alpha(splitting_linspace_2, *fit_alpha_params_2), 
+            label = 'fit', color = 'orange')
 
 # %%
 
-ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-            label = r'$1/f^\alpha$')
-
-text = '\n'.join((r'$1/f^{\alpha}$ fit:',
-                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1])
-#                  r'$A_0 = $' + '%.4f'%(fit_params[1] * 10**6) + ' kHz'
+#ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
+#            label = r'$1/f^\alpha$')
+#
+text_1 = '\n'.join((r'$1/f^{\alpha}$ fit:',
+                  r'$\alpha = $' + '%.2f'%(fit_alpha_params_2[1]),
+#                  r'$\alpha_{recent} = $' + '%.2f'%(fit_alpha_params_2[1])
+                  r'$A_0 = $' + '%.0f'%(fit_alpha_params_2[0])
 #                  ,r'$a = $' + '%.2f'%(fit_params[2])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.85, 0.8, text, transform=ax.transAxes, fontsize=12,
+ax.text(0.85, 0.7, text_1, transform=ax.transAxes, fontsize=12,
         verticalalignment='top', bbox=props)
 
 # %%
@@ -92,5 +107,5 @@ ax.grid()
 
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-plt.title('NV 2', fontsize=18)
+plt.title(r'NV2 (data taken during August, 2019)', fontsize=18)
 ax.legend(fontsize=18)
