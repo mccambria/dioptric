@@ -207,7 +207,7 @@ def do_spin_echo(nv_sig, apd_indices):
     # T2 in nanodiamond NVs without dynamical decoupling is just a couple
     # us so don't bother looking past 10s of us
 #    precession_time_range = [0, 100 * 10**3]
-    precession_time_range = [0, 15 * 10**3]
+    precession_time_range = [0, 10 * 10**3]
     num_steps = 101
     num_reps = int(6.0 * 10**4)
     num_runs = 7
@@ -270,8 +270,8 @@ if __name__ == '__main__':
       'name': '{}-nv{}_2019_04_30'.format(sample_name, 2),
       'expected_count_rate': 36,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 260, 'magnet_angle': 161.9,
-      'resonance_LOW': 2.7738, 'rabi_LOW': 561.1, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 3.4712, 'rabi_HIGH': 235.0, 'uwave_power_HIGH': 10.0}
+      'resonance_LOW': 2.7738, 'rabi_LOW': 629.7, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 3.4712, 'rabi_HIGH': 227.8, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv2_2019_04_30]
 
@@ -323,8 +323,8 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.7, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
 #            do_rabi(nv_sig, apd_indices, States.LOW)
-            do_rabi(nv_sig, apd_indices, States.HIGH)
-#            do_t1_battery(nv_sig, apd_indices)
+#            do_rabi(nv_sig, apd_indices, States.HIGH)
+            do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
