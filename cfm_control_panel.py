@@ -173,10 +173,15 @@ def do_t1_battery(nv_sig, apd_indices):
 #                            [[States.ZERO, States.HIGH], [0, int(3.5*10**6)], 26, 1*10**4, num_runs],
 #                            [[States.ZERO, States.ZERO], [0, int(3.5*10**6)], 26, 1*10**4, num_runs]])
     num_runs = 120
-    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 5*10**6], 26, int(0.5*10**4), num_runs],
-                               [[States.HIGH, States.HIGH], [0, 5*10**6], 26, int(0.5*10**4), num_runs],
-                               [[States.ZERO, States.HIGH], [0, 3.5*10**6], 26, int(0.5*10**4), num_runs],
-                               [[States.ZERO, States.ZERO], [0, 3.5*10**6], 26, int(0.5*10**4), num_runs]])
+    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, int(2.5*10**4), num_runs],
+                                [[States.HIGH, States.LOW], [0, 500*10**3], 26, int(0.75*10**4), num_runs],
+                                [[States.HIGH, States.HIGH], [0, 50*10**3], 51, int(2.5*10**4), num_runs],
+                                [[States.HIGH, States.HIGH], [0, 500*10**3], 26, int(0.75*10**4), num_runs]])
+#    num_runs = 120
+#    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 5*10**6], 26, int(0.5*10**4), num_runs],
+#                               [[States.HIGH, States.HIGH], [0, 5*10**6], 26, int(0.5*10**4), num_runs],
+#                               [[States.ZERO, States.HIGH], [0, int(3.5*10**6)], 26, int(0.5*10**4), num_runs],
+#                               [[States.ZERO, States.ZERO], [0, int(3.5*10**6)], 26, int(0.5*10**4), num_runs]])
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -210,7 +215,7 @@ def do_spin_echo(nv_sig, apd_indices):
     precession_time_range = [0, 10 * 10**3]
     num_steps = 101
     num_reps = int(6.0 * 10**4)
-    num_runs = 7
+    num_runs = 25
     state = States.HIGH
 
     spin_echo.main(nv_sig, apd_indices, precession_time_range,
@@ -270,8 +275,8 @@ if __name__ == '__main__':
       'name': '{}-nv{}_2019_04_30'.format(sample_name, 2),
       'expected_count_rate': 36,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 260, 'magnet_angle': 161.9,
-      'resonance_LOW': 2.7738, 'rabi_LOW': 629.7, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 3.4712, 'rabi_HIGH': 227.8, 'uwave_power_HIGH': 10.0}
+      'resonance_LOW': 2.7732, 'rabi_LOW': 654.6, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 3.4707, 'rabi_HIGH': 234.9, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv2_2019_04_30]
 
