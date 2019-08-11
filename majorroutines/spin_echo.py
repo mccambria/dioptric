@@ -28,15 +28,17 @@ from utils.tool_belt import States
 # %% Main
 
 def main(nv_sig, apd_indices,
-         precession_time_range, num_steps, num_reps, num_runs):
+         precession_time_range, num_steps, num_reps, num_runs,
+         state=States.LOW):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices,
-                  precession_time_range, num_steps, num_reps, num_runs)
+                  precession_time_range, num_steps, num_reps, num_runs,
+                  state)
 
 def main_with_cxn(cxn, nv_sig, apd_indices,
-                  precession_time_range,
-                  num_steps, num_reps, num_runs):
+                  precession_time_range, num_steps, num_reps, num_runs,
+                  state=States.LOW):
     
     tool_belt.reset_cfm(cxn)
     
@@ -58,7 +60,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     gate_time = nv_sig['pulsed_readout_dur']
     
     # Default to the low state
-    state = States.LOW
     rabi_period = nv_sig['rabi_{}'.format(state.name)]
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
@@ -134,9 +135,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     
     # %% Let the user know how long this will take
     
-    seq_time_s = seq_time / (10**9)  # s
-    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
-    expected_run_time_m = expected_run_time / 60 # s
+    seq_time_s = seq_time / (10**9)  # to seconds
+    expected_run_time_s = (num_steps/2) * num_reps * num_runs * seq_time_s  # s
+    expected_run_time_m = expected_run_time_s / 60  # to minutes
     
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
 #    return

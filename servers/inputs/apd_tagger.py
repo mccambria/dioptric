@@ -134,7 +134,7 @@ class ApdTagger(LabradServer):
             start = time.time()
             counts = []
             while len(counts) < num_to_read:
-                # Timeout after 120 seconds - pad counts with 0s
+                # Timeout after 2 minutes - pad counts with 0s
                 if time.time() > start + 120:
                     num_remaining = num_to_read - len(counts)
                     counts.extend(num_remaining * [0])
