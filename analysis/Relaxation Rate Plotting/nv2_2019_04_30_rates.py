@@ -53,69 +53,46 @@ nv2_gamma_error_list_all = nv2_gamma_error_list + nv2_gamma_error_list_2
 
 # %% Seperate analysis of data
 
-#combine all data, omega limited by electri field noise
+#combine all data, omega limited by electric field noise
 
 # Fit the gamma to a 1/f^alpha
 
-fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv2_splitting_list, nv2_gamma_avg_list, 
-                                p0 = (100, 1, 2), sigma = nv2_gamma_error_list,
+fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv2_splitting_list_all, nv2_gamma_avg_list_all, 
+                                p0 = (100, 1, 0.4), sigma = nv2_gamma_error_list_all,
                                 absolute_sigma = True)
 
-fit_alpha_params_2, cov_arr = curve_fit(fit_eq_alpha, nv2_splitting_list_2, nv2_gamma_avg_list_2, 
-                                p0 = (100, 1, 2), sigma = nv2_gamma_error_list_2,
-                                absolute_sigma = True)
 
-splitting_linspace_1 = numpy.linspace(nv2_splitting_list[0], nv2_splitting_list[-1],
+splitting_linspace = numpy.linspace(nv2_splitting_list_all[0], nv2_splitting_list_all[-1],
                                     1000)
-
-splitting_linspace_2 = numpy.linspace(nv2_splitting_list_2[0], nv2_splitting_list_2[-1],
-                                    1000)
-
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 
 #ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list)
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
-#ax.errorbar(nv2_splitting_list, nv2_gamma_avg_list, yerr = nv2_gamma_error_list, 
-#            label = r'$\gamma$ (past)', fmt='o', markersize = 10, color='blue')
-ax.errorbar(nv2_splitting_list_2, nv2_gamma_avg_list_2, yerr = nv2_gamma_error_list_2, 
-            label =  r'$\gamma$ (recent)', fmt='v', markersize = 10, color='blue')
-#ax.errorbar(nv2_splitting_list, nv2_omega_avg_list, yerr = nv2_omega_error_list, 
-#            label = r'$\Omega$ (past)', fmt='o', markersize = 10, color='red')
-ax.errorbar(nv2_splitting_list_2, nv2_omega_avg_list_2, yerr = nv2_omega_error_list_2, 
-            label = r'$\Omega$ (recent)', fmt='v', markersize = 10, color='red')
+ax.errorbar(nv2_splitting_list_all, nv2_gamma_avg_list_all, yerr = nv2_gamma_error_list_all, 
+            label = r'$\gamma$', fmt='o', markersize = 10, color='blue')
+ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
+            label = r'$\Omega$', fmt='o', markersize = 10, color='red')
 
-#ax.plot(splitting_linspace_1, fit_eq_alpha(splitting_linspace_1, *fit_alpha_params), 
-#            label = 'fit (past)', color ='blue')
+ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
+            label = 'fit', color ='blue')
 
-ax.plot(splitting_linspace_2, fit_eq_alpha(splitting_linspace_2, *fit_alpha_params_2), 
-            'b--', label = 'fit (recent)')
 
 # %%
 
-#ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-#            label = r'$1/f^\alpha$')
-#
-#text_1 = '\n'.join((r'$A_0/f^{\alpha}$ fit (past):',
-#                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
-##                  r'$\alpha_{recent} = $' + '%.2f'%(fit_alpha_params_2[1])
-#                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
-##                  ,r'$\gamma_0 = $' + '%.2f'%(fit_alpha_params_2[2])
-#                  ))
 
-text_2 = '\n'.join((r'$A_0/f^{\alpha} + \gamma_\infty$ fit (recent):',
-                  r'$\alpha = $' + '%.2f'%(fit_alpha_params_2[1]),
+text_1 = '\n'.join((r'$A_0/f^{\alpha} + \gamma_\infty$ fit:',
+                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
 #                  r'$\alpha_{recent} = $' + '%.2f'%(fit_alpha_params_2[1])
-                  r'$A_0 = $' + '%.0f'%(fit_alpha_params_2[0])
-                  ,r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params_2[2])
+                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
+                  ,r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[2])
                   ))
-props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#ax.text(0.45, 0.95, text_1, transform=ax.transAxes, fontsize=12,
-#        verticalalignment='top', bbox=props)
 
-ax.text(0.45, 0.80, text_2, transform=ax.transAxes, fontsize=12,
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+ax.text(0.45, 0.95, text_1, transform=ax.transAxes, fontsize=12,
         verticalalignment='top', bbox=props)
+
 # %%
 
 ax.tick_params(which = 'both', length=6, width=2, colors='k',
