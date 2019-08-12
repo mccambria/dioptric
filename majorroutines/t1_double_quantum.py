@@ -263,7 +263,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 #            return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps,
+            cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
                                                 seq_args_string)
 
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
