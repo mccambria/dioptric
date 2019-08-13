@@ -160,9 +160,10 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
          num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
+        rabi_per = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                       num_steps, num_reps, num_runs)
-
+        
+        return rabi_per
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                   num_steps, num_reps, num_runs):
 
@@ -367,6 +368,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(uwave_time_range, num_steps,
                                     norm_avg_sig, fit_func, popt)
+        rabi_period = 1/popt[2]
+        print('Rabi period measured: {} ns'.format('%.1f'%rabi_period))
 
     # %% Clean up and save the data
 
@@ -408,6 +411,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, file_path + '-fit')
     tool_belt.save_raw_data(raw_data, file_path)
+    
+    if (fit_func is not None) and (popt is not None):
+        return rabi_period
+    else:
+        return None
 
 
 # %% Run the file
