@@ -265,7 +265,7 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
             print('Resonance has shifted more than 1 MHz')
             return
         else:
-            nv_sig['resonance_{}'.format(state.name)] = '%.4f'%resonance
+            nv_sig['resonance_{}'.format(state.name)] = float('%.4f'%resonance)
         
         # Run rabi and save the rabi period
         uwave_time_range = [0, 300]
@@ -289,7 +289,7 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
             print('Rabi period has changed more than 50 ns')
             return
         else:
-            nv_sig['rabi_{}'.format(state.name)] = '%.1f'%rabi_per
+            nv_sig['rabi_{}'.format(state.name)] = float('%.1f'%rabi_per)
         
     print(value_list) 
     
