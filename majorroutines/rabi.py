@@ -369,7 +369,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         fit_fig = create_fit_figure(uwave_time_range, num_steps,
                                     norm_avg_sig, fit_func, popt)
         rabi_period = 1/popt[2]
-        print('Rabi period measured: {} ns'.format('%.1f'%rabi_period))
+        print('Rabi period measured: {} ns\n'.format('%.1f'%rabi_period))
 
     # %% Clean up and save the data
 

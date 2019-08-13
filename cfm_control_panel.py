@@ -164,13 +164,13 @@ def do_t1_battery(nv_sig, apd_indices):
     
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
-    # ~ 20 hours total
+    # ~ 4 hours total
     num_runs = 20
     t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
                             [[States.HIGH, States.LOW], [0, 150*10**3], 26, 8*10**4, num_runs],
                             [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
                             [[States.HIGH, States.HIGH], [0, 150*10**3], 26, 8*10**4, num_runs]])
-
+    
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
 #    for exp_ind in [1]:
@@ -246,7 +246,7 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
         num_reps = 10**5
         freq_range = 0.040
         
-        print('Measureing pESR on {}'.format(state.name))
+        print('Measureing pESR on {}\n'.format(state.name))
         resonance_list = pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
                               num_steps, num_reps, num_runs)
         resonance = resonance_list[0]
@@ -265,13 +265,13 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
             print('Resonance has shifted more than 1 MHz')
             return
         else:
-            nv_sig['resonance_{}'.format(state.name)] = resonance
+            nv_sig['resonance_{}'.format(state.name)] = '%.4f'%resonance
         
         # Run rabi and save the rabi period
         uwave_time_range = [0, 300]
         num_reps = 2*10**5
         
-        print('Measureing rabi on {}'.format(state.name))
+        print('Measureing rabi on {}\n'.format(state.name))
         rabi_per = rabi.main(nv_sig, apd_indices, uwave_time_range,
                   state, num_steps, num_reps, num_runs)
         value_list.append('%.1f'%rabi_per)
@@ -286,22 +286,22 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
         limit_low_per =  (nv_sig['rabi_{}'.format(state.name)] - shift_per)
         
         if rabi_per > limit_high_per or rabi_per < limit_low_per:
-            print('Rabi period has shifted more than 50 ns')
+            print('Rabi period has changed more than 50 ns')
             return
         else:
-            nv_sig['rabi_{}'.format(state.name)] = rabi_per
+            nv_sig['rabi_{}'.format(state.name)] = '%.1f'%rabi_per
         
-        print(value_list) 
-        
-        timestamp = tool_belt.get_time_stamp()
-        raw_data = {'nv_sig': nv_sig,
-                    'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'value_list': value_list,
-                    'value_list-units': 'GHz, ns, GHz, ns'
-                    }
-        
-        file_path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/auto_pESR_rabi/' + '{}-{}'.format(timestamp, nv_sig['name'])
-        tool_belt.save_raw_data(raw_data, file_path)
+    print(value_list) 
+    
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'value_list': value_list,
+                'value_list-units': 'GHz, ns, GHz, ns'
+                }
+    
+    file_path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/auto_pESR_rabi/' + '{}-{}'.format(timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path)
        
     
 
@@ -335,8 +335,8 @@ if __name__ == '__main__':
       'name': '{}-nv{}_2019_04_30'.format(sample_name, 2),
       'expected_count_rate': 56,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 260, 'magnet_angle': 161.9,
-      'resonance_LOW': 2.8514, 'rabi_LOW': 200.2, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.8803, 'rabi_HIGH': 257.2, 'uwave_power_HIGH': 10.0}
+      'resonance_LOW': 2.8515, 'rabi_LOW': 200.0, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 2.8802, 'rabi_HIGH': 259.7, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv2_2019_04_30]
 
@@ -389,8 +389,9 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
 #            do_rabi(nv_sig, apd_indices, States.LOW)
 #            do_rabi(nv_sig, apd_indices, States.HIGH)
-            find_resonance_and_rabi(nv_sig, apd_indices)
-#            do_t1_battery(nv_sig, apd_indices)
+            for i in range(6):
+                find_resonance_and_rabi(nv_sig, apd_indices)
+                do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
