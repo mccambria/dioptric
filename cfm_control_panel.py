@@ -15,6 +15,7 @@ Created on Sun Nov 25 14:00:28 2018
 
 import labrad
 import numpy
+import time
 import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
@@ -164,23 +165,13 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     # ~ 20 hours total
-#    num_runs = 36
-#    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
-#                            [[States.HIGH, States.LOW], [0, 5*10**6], 26, 2*10**4, num_runs],
-#                            [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
-#                            [[States.HIGH, States.HIGH], [0, 5*10**6], 26, 2*10**4, num_runs],
-#                            [[States.ZERO, States.HIGH], [0, int(3.5*10**6)], 26, 1*10**4, num_runs],
-#                            [[States.ZERO, States.ZERO], [0, int(3.5*10**6)], 26, 1*10**4, num_runs]])
-    num_runs = 120
-    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, int(2.5*10**4), num_runs],
-                                [[States.HIGH, States.LOW], [0, 500*10**3], 26, int(0.75*10**4), num_runs],
-                                [[States.HIGH, States.HIGH], [0, 50*10**3], 51, int(2.5*10**4), num_runs],
-                                [[States.HIGH, States.HIGH], [0, 500*10**3], 26, int(0.75*10**4), num_runs]])
-#    num_runs = 120
-#    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 5*10**6], 26, int(0.5*10**4), num_runs],
-#                               [[States.HIGH, States.HIGH], [0, 5*10**6], 26, int(0.5*10**4), num_runs],
-#                               [[States.ZERO, States.HIGH], [0, int(3.5*10**6)], 26, int(0.5*10**4), num_runs],
-#                               [[States.ZERO, States.ZERO], [0, int(3.5*10**6)], 26, int(0.5*10**4), num_runs]])
+    num_runs = 40
+    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
+                            [[States.HIGH, States.LOW], [0, 150*10**3], 26, 8*10**4, num_runs],
+                            [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
+                            [[States.HIGH, States.HIGH], [0, 150*10**3], 26, 8*10**4, num_runs],
+                            [[States.ZERO, States.HIGH], [0, 3.5*10**6], 26, 1*10**4, num_runs],
+                            [[States.ZERO, States.ZERO], [0, 3.5*10**6], 26, 1*10**4, num_runs]])
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -274,8 +265,8 @@ if __name__ == '__main__':
       'name': '{}-nv{}_2019_04_30'.format(sample_name, 2),
       'expected_count_rate': 56,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 260, 'magnet_angle': 161.9,
-      'resonance_LOW': 2.8510, 'rabi_LOW': 210.0, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.8804, 'rabi_HIGH': 220.0, 'uwave_power_HIGH': 10.0}
+      'resonance_LOW': 2.8512, 'rabi_LOW': 199.1, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 2.8804, 'rabi_HIGH': 264.6, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv2_2019_04_30]
 
@@ -297,7 +288,7 @@ if __name__ == '__main__':
 #        do_optimize_list(nv_sig_list, apd_indices)
 #        do_sample_nvs(nv_sig_list, apd_indices)
 #        do_g2_measurement(nv_sig_list[0], apd_indices[0], apd_indices[1])
-
+        
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]
@@ -326,9 +317,9 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.7, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
-            do_rabi(nv_sig, apd_indices, States.LOW)
-            do_rabi(nv_sig, apd_indices, States.HIGH)
-#            do_t1_battery(nv_sig, apd_indices)
+#            do_rabi(nv_sig, apd_indices, States.LOW)
+#            do_rabi(nv_sig, apd_indices, States.HIGH)
+            do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
