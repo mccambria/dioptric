@@ -12,7 +12,11 @@ basic rates onto the stdev analysis file.
 This file averages the reference counts in a bin and uses the single value as 
 the reference.
 
-THis file also allows the user to specify if the offset shoudl be a free param
+This file also allows the user to specify if the offset shoudl be a free param
+
+Now allows a value and uncertainty for omega to be passed in. If that is passed 
+in, then the program will use those values instead. Otherwise, it still will
+try to evaluate an omega
 
 @author: Aedan
 """

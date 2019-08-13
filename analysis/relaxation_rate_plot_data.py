@@ -16,6 +16,10 @@ or if it should be set to 0.
 
 The time used is in milliseconds
 
+Now allows a value and uncertainty for omega to be passed in. If that is passed 
+in, then the program will use those values instead. Otherwise, it still will
+try to evaluate an omega
+
 @author: Aedan
 """
 

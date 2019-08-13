@@ -71,9 +71,9 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv2_splitting_list_all, nv2_gamma_avg_list_all, yerr = nv2_gamma_error_list_all, 
-            label = r'$\gamma$', fmt='o', markersize = 10, color='blue')
-ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
-            label = r'$\Omega$', fmt='o', markersize = 10, color='red')
+            label = r'$\gamma$', fmt='o',color='blue')
+#ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
+#            label = r'$\Omega$', fmt='o', markersize = 10, color='red')
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
             label = 'fit', color ='blue')
@@ -104,11 +104,11 @@ ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params),
 # %%
 
 
-text_1 = '\n'.join((r'$A_0/f^{\alpha} + \gamma_\infty$ fit:',
+text_1 = '\n'.join((r'$1/f^{\alpha} + \gamma_\infty$ fit:',
                   r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
 #                  r'$\alpha_{recent} = $' + '%.2f'%(fit_alpha_params_2[1])
-                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
-                  ,r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[2])
+#                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
+                  r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[2])
                   ))
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)

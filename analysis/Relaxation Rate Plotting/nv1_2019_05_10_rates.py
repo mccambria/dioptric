@@ -67,8 +67,8 @@ ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv1_splitting_list, nv1_gamma_avg_list, yerr = nv1_gamma_error_list, 
             label = r'$\gamma$', fmt='o', color='blue')
-ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
-            label = r'$\Omega$', fmt='o', color='red')
+#ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
+#            label = r'$\Omega$', fmt='o', color='red')
 
 #ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
 #            label = r'$f^{-2}$', color ='teal')
@@ -78,11 +78,11 @@ ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list,
 # %%
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-            'b', label = r'$1/f^\alpha$')
+            'b', label = r'fit')
 
-text = '\n'.join((r'$A_0/f^{\alpha}$ fit:',
-                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
-                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0]),
+text = '\n'.join((r'$1/f^{\alpha}$ fit:',
+                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1])
+#                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0]),
 #                  ,r'$a = $' + '%.2f'%(fit_params[2])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -102,5 +102,3 @@ plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
 plt.title('NV 1', fontsize=18)
 ax.legend(fontsize=18)
-
-print(fit_eq_alpha(100, *fit_alpha_params))

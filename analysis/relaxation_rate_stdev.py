@@ -28,6 +28,10 @@ This file only works if all the experiments in a folder have the same number
 of num_runs, and can only handle two data sets of the same experiment (ie +1 to
 +1, a short and a long run).
 
+Now allows a value and uncertainty for omega to be passed in. If that is passed 
+in, then the program will use those values instead. Otherwise, it still will
+try to evaluate an omega
+
 @author: Aedan
 """
 
