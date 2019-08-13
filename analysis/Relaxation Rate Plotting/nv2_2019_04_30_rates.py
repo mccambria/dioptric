@@ -39,11 +39,11 @@ nv2_gamma_avg_list = [20.8, 7.2, 3.9, 3.9, 2.46, 2.9, 1.6]
 nv2_gamma_error_list = [0.9, 0.3, 0.2, 0.2, 0.14, 0.2, 0.2]
 
 # Data for the second round of measurements
-nv2_splitting_list_2 = [45.5, 85.2, 280.4,697.4]
-nv2_omega_avg_list_2 = [0.25, 0.35, 0.30, 0.34]
-nv2_omega_error_list_2 = [0.03, 0.02, 0.03, 0.07]
-nv2_gamma_avg_list_2 = [9.7, 3.18, 0.56, 0.68]
-nv2_gamma_error_list_2 = [0.2, 0.12, 0.06, 0.09]
+nv2_splitting_list_2 = [29.2, 45.5, 85.2, 280.4,697.4]
+nv2_omega_avg_list_2 = [0.34, 0.25, 0.35, 0.30, 0.34]
+nv2_omega_error_list_2 = [0.02, 0.03, 0.02, 0.03, 0.07]
+nv2_gamma_avg_list_2 = [34.3, 9.7, 3.18, 0.56, 0.68]
+nv2_gamma_error_list_2 = [1.0, 0.2, 0.12, 0.06, 0.09]
 
 nv2_splitting_list_all = nv2_splitting_list + nv2_splitting_list_2
 nv2_omega_avg_list_all = nv2_omega_avg_list + nv2_omega_avg_list_2
@@ -67,7 +67,7 @@ splitting_linspace = numpy.linspace(nv2_splitting_list_all[0], nv2_splitting_lis
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 
-#ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list)
+
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv2_splitting_list_all, nv2_gamma_avg_list_all, yerr = nv2_gamma_error_list_all, 
@@ -77,6 +77,28 @@ ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_err
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
             label = 'fit', color ='blue')
+
+#ax.set_xscale("log", nonposx='clip')
+#ax.set_yscale("log", nonposy='clip')
+#ax.errorbar(nv2_splitting_list, nv2_gamma_avg_list, yerr = nv2_gamma_error_list, 
+#            label = r'$\gamma$ (past)', fmt='v', markersize = 10, color='blue')
+#ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
+#            label = r'$\Omega$ (past)', fmt='v', markersize = 10, color='red')
+
+#ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
+#            label = 'fit (past)', color ='blue')
+
+
+#ax.set_xscale("log", nonposx='clip')
+#ax.set_yscale("log", nonposy='clip')
+#ax.errorbar(nv2_splitting_list_2, nv2_gamma_avg_list_2, yerr = nv2_gamma_error_list_2, 
+#            label = r'$\gamma$ (recent)', fmt='o', markersize = 10, color='blue')
+#ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
+#            label = r'$\Omega$ (recent)', fmt='o', markersize = 10, color='red')
+
+#ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
+#            label = 'fit', color ='blue')
+
 
 
 # %%
@@ -90,7 +112,7 @@ text_1 = '\n'.join((r'$A_0/f^{\alpha} + \gamma_\infty$ fit:',
                   ))
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.45, 0.95, text_1, transform=ax.transAxes, fontsize=12,
+ax.text(0.65, 0.95, text_1, transform=ax.transAxes, fontsize=12,
         verticalalignment='top', bbox=props)
 
 # %%

@@ -100,6 +100,7 @@ def main(folder_name, doPlot = False, offset = True):
                     
                     zero_zero_ref_max_time = max_relaxation_time
                     zero_zero_bool = True
+                    
                 # If data has already been taken for this experiment, then check
                 # to see if this current data is the shorter or longer measurement,
                 # and either append before or after the prexisting data
@@ -418,7 +419,7 @@ def main(folder_name, doPlot = False, offset = True):
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-#        tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_raw_data(raw_data, file_path)
 
 # %% Saving the figure
 
@@ -426,13 +427,13 @@ def main(folder_name, doPlot = False, offset = True):
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                          file_name)
 
-#    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_697MHz_2'
+    folder = 'nv2_2019_04_30_29MHz_2'
 
 
 
