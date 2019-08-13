@@ -45,7 +45,7 @@ def exp_eq_offset(t, rate, amp, offset):
 
 # %% Main
 
-def main(folder_name, doPlot = False, offset = True):
+def main(folder_name, omega = None, omega_unc = None, doPlot = False, offset = True):
 
     # Get the file list from this folder
     file_list = tool_belt.get_file_list(data_folder, '.txt', folder_name)
@@ -263,70 +263,79 @@ def main(folder_name, doPlot = False, offset = True):
 #    print('(1,1)' + str(plus_plus_time))
 #    print('(1,-1)' + str(plus_minus_time))
     # %% Fit the data
-
+        
     if doPlot:
         fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
-
-    #Fit to the (0,0) - (0,1) data to find Omega
-
-    # Define the counts for the zero relaxation equation
-    zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
-
+        
     omega_fit_failed = False
     gamma_fit_failed = False
-
-    init_params_list = [1.0, 0.4]
+        
+    # If omega is passed into the function, skip the omega fitting.
+    if omega is not None and omega_unc is not None:
+        omega_opti_params = numpy.array([None])
+        zero_relaxation_counts = numpy.array([None])
+        zero_zero_time = numpy.array([None])
+    else:
+        
+        #Fit to the (0,0) - (0,1) data to find Omega
     
-    try:
-        if offset:
-            init_params_list.append(0)
-            init_params = tuple(init_params_list)
-            omega_opti_params, cov_arr = curve_fit(exp_eq_offset, zero_zero_time,
-                                         zero_relaxation_counts, p0 = init_params)
-            
-        else: 
-            init_params = tuple(init_params_list)
-            omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
-                                         zero_relaxation_counts, p0 = init_params)
-
-    except Exception:
-
-        omega_fit_failed = True
-
-        if doPlot:
-            ax = axes_pack[0]
-            ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
-            ax.set_xlabel('Relaxation time (ms)')
-            ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(0,0) - (0,-1)')
-            ax.legend()
-
-    if not omega_fit_failed:
-
-#        print(opti_params[0])
-        omega = omega_opti_params[0] / 3.0
-        # Plotting the data
-        if doPlot:
-            zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
-            ax = axes_pack[0]
-            ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
+        # Define the counts for the zero relaxation equation
+        zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
+    
+        
+    
+        init_params_list = [1.0, 0.4]
+        
+        try:
             if offset:
-                ax.plot(zero_time_linspace,
-                    exp_eq_offset(zero_time_linspace, *omega_opti_params),
-                    'r', label = 'fit')
-            else:
-                ax.plot(zero_time_linspace,
-                    exp_eq(zero_time_linspace, *omega_opti_params),
-                    'r', label = 'fit')
-            ax.set_xlabel('Relaxation time (ms)')
-            ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(0,0) - (0,+1)')
-            ax.legend()
-            text = r'$\Omega = $ {} kHz'.format('%.2f'%omega)
-
-            props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-            ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
-                    verticalalignment='top', bbox=props)
+                init_params_list.append(0)
+                init_params = tuple(init_params_list)
+                omega_opti_params, cov_arr = curve_fit(exp_eq_offset, zero_zero_time,
+                                             zero_relaxation_counts, p0 = init_params)
+                
+            else: 
+                init_params = tuple(init_params_list)
+                omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
+                                             zero_relaxation_counts, p0 = init_params)
+    
+        except Exception:
+    
+            omega_fit_failed = True
+    
+            if doPlot:
+                ax = axes_pack[0]
+                ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
+                ax.set_xlabel('Relaxation time (ms)')
+                ax.set_ylabel('Normalized signal Counts')
+                ax.set_title('(0,0) - (0,-1)')
+                ax.legend()
+    
+        if not omega_fit_failed:
+    
+    #        print(opti_params[0])
+            omega = omega_opti_params[0] / 3.0
+            # Plotting the data
+            if doPlot:
+                zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
+                ax = axes_pack[0]
+                ax.plot(zero_zero_time, zero_relaxation_counts, 'bo', label = 'data')
+                if offset:
+                    ax.plot(zero_time_linspace,
+                        exp_eq_offset(zero_time_linspace, *omega_opti_params),
+                        'r', label = 'fit')
+                else:
+                    ax.plot(zero_time_linspace,
+                        exp_eq(zero_time_linspace, *omega_opti_params),
+                        'r', label = 'fit')
+                ax.set_xlabel('Relaxation time (ms)')
+                ax.set_ylabel('Normalized signal Counts')
+                ax.set_title('(0,0) - (0,+1)')
+                ax.legend()
+                text = r'$\Omega = $ {} kHz'.format('%.2f'%omega)
+    
+                props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+                ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+                        verticalalignment='top', bbox=props)
 
     # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
     # to fit
@@ -419,7 +428,7 @@ def main(folder_name, doPlot = False, offset = True):
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-        tool_belt.save_raw_data(raw_data, file_path)
+#        tool_belt.save_raw_data(raw_data, file_path)
 
 # %% Saving the figure
 
@@ -427,16 +436,15 @@ def main(folder_name, doPlot = False, offset = True):
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                          file_name)
 
-    tool_belt.save_figure(fig, file_path)
+#    tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_29MHz_2'
-
+    folder = 'nv2_2019_04_30_45MHz_2'
 
 
 #    for folder in folder_list:
 #    main(folder, True)
-    main(folder, True, offset = True)
+    main(folder, 0.34, 0.07, True, offset = True)

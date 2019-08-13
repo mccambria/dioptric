@@ -43,7 +43,7 @@ def exp_eq_offset(t, rate, amp, offset):
 
 # %% Main
     
-def main(folder_name, num_bins, save_data = True, offset = True):
+def main(folder_name, num_bins, omega = None, omega_unc = None, save_data = True, offset = True):
     
     print('Number of bins: {}'.format(num_bins))
 
@@ -260,59 +260,45 @@ def main(folder_name, num_bins, save_data = True, offset = True):
     slice_size = bin_size
     
     while i < (num_runs):
-        
-        #Fit to the (0,0) - (0,1) data to find Omega
-#        zero_zero_avg_sig_counts =  \
-#            numpy.average(zero_zero_sig_counts[i:i+slice_size, ::], axis=0)
-#        zero_zero_avg_ref =  \
-#            numpy.average(zero_zero_ref_counts[i:i+slice_size, ::])
-#        
-#        zero_zero_norm_avg_sig = zero_zero_avg_sig_counts / zero_zero_avg_ref
-#               
-#        zero_plus_avg_sig_counts = \
-#            numpy.average(zero_plus_sig_counts[i:i+slice_size, ::], axis=0)
-#        zero_plus_avg_ref = \
-#            numpy.average(zero_plus_ref_counts[i:i+slice_size, ::])
-#        
-#        zero_plus_norm_avg_sig = zero_plus_avg_sig_counts / zero_plus_avg_ref 
-    
-        zero_zero_counts_slice = \
-            numpy.average(zero_zero_counts[i:i+slice_size, ::], axis = 0)
-        
-        zero_plus_counts_slice = \
-            numpy.average(zero_plus_counts[i:i+slice_size, ::], axis = 0)
-        # Define the counts for the zero relaxation equation
-        zero_relaxation_counts =  zero_zero_counts_slice - zero_plus_counts_slice
-        
         o_fit_failed = False
         g_fit_failed = False
         
-        init_params_list = [1.0, 0.4]
+        #Fit to the (0,0) - (0,1) data to find Omega if we have note passed in an omega value
+        if omega is None and omega_unc is None:
+            zero_zero_counts_slice = \
+                numpy.average(zero_zero_counts[i:i+slice_size, ::], axis = 0)
+            
+            zero_plus_counts_slice = \
+                numpy.average(zero_plus_counts[i:i+slice_size, ::], axis = 0)
+            # Define the counts for the zero relaxation equation
+            zero_relaxation_counts =  zero_zero_counts_slice - zero_plus_counts_slice
+            
+            init_params_list = [1.0, 0.4]
         
-        try:
-            if offset:
-                init_params_list.append(0)
-                init_params = tuple(init_params_list)
-                omega_opti_params, cov_arr = curve_fit(exp_eq_offset, zero_zero_time,
-                                             zero_relaxation_counts, p0 = init_params)
+            try:
+                if offset:
+                    init_params_list.append(0)
+                    init_params = tuple(init_params_list)
+                    omega_opti_params, cov_arr = curve_fit(exp_eq_offset, zero_zero_time,
+                                                 zero_relaxation_counts, p0 = init_params)
+                    
+                else: 
+                    init_params = tuple(init_params_list)
+                    omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
+                                                 zero_relaxation_counts, p0 = init_params)
+               
+            except Exception:
                 
-            else: 
-                init_params = tuple(init_params_list)
-                omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
-                                             zero_relaxation_counts, p0 = init_params)
-           
-        except Exception:
-            
-            o_fit_failed = True
-            o_fit_failed_list.append(o_fit_failed)
-
-        if not o_fit_failed:
-            o_fit_failed_list.append(o_fit_failed)
-            
-            o_rate_list.append(omega_opti_params[0])
-            o_amp_list.append(omega_opti_params[1])
-            if offset:
-                o_offset_list.append(omega_opti_params[2])
+                o_fit_failed = True
+                o_fit_failed_list.append(o_fit_failed)
+    
+            if not o_fit_failed:
+                o_fit_failed_list.append(o_fit_failed)
+                
+                o_rate_list.append(omega_opti_params[0])
+                o_amp_list.append(omega_opti_params[1])
+                if offset:
+                    o_offset_list.append(omega_opti_params[2])
 
 # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
 # to fit
@@ -370,8 +356,12 @@ def main(folder_name, num_bins, save_data = True, offset = True):
         # Advance_ the index
         i = i + bin_size
     
-    o_average = numpy.average(o_rate_list)
-    o_stdev = numpy.std(o_rate_list)
+    if omega is None and omega_unc is None:
+        o_average = numpy.average(o_rate_list)
+        o_stdev = numpy.std(o_rate_list)
+    else:
+        o_average = omega * 3
+        o_stdev = omega_unc * 3
     
     g_average = numpy.average(g_rate_list)
     g_stdev = numpy.std(g_rate_list)
@@ -440,7 +430,6 @@ def main(folder_name, num_bins, save_data = True, offset = True):
         file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_' + str(num_bins) + '_bins_v2' 
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                          file_name)
-    
         tool_belt.save_raw_data(raw_data, file_path)
     
     return o_average, o_stdev, g_average, g_stdev, \
@@ -450,8 +439,8 @@ def main(folder_name, num_bins, save_data = True, offset = True):
                   
 if __name__ == '__main__':
     
-    folder = 'nv16_2019_07_25_81MHz'
+    folder = 'nv2_2019_04_30_45MHz_2'
 
     
-    main(folder, 1,  False,  True)
+    main(folder, 1,  0.34, 0.07, True,  True)
 

@@ -61,7 +61,8 @@ def sqrt_eq(x, amp):
 
 # %% Main
 
-def main(folder_name, num_bins_list = None, offset = True):
+def main(folder_name, omega = None, omega_unc = None, num_bins_list = None, 
+                                                     offset = True):
 
     # If the list for number of bins is not passed through, use the factors of
     # the num_runs
@@ -102,36 +103,44 @@ def main(folder_name, num_bins_list = None, offset = True):
     # deviation
     for num_bins_ind in range(len(num_bins_list)):
         num_bins = num_bins_list[num_bins_ind]
-        retvals = relaxation_rate_binning.main(folder_name, num_bins, False, offset)
+        retvals = relaxation_rate_binning.main(folder_name, num_bins, omega, 
+                                               omega_unc, False, offset)
 
         # Save the data to the lists
-        o_value_list.append(retvals[0])
-        o_stdev_list.append(retvals[1])
         g_value_list.append(retvals[2])
         g_stdev_list.append(retvals[3])
         splitting_MHz = retvals[4]
 
-        o_fit_failed_list[num_bins_ind] = retvals[5]
         g_fit_failed_list[num_bins_ind] = retvals[6]
-
+        
+        if omega is None and omega_unc is None:
+            o_value_list.append(retvals[0])
+            o_stdev_list.append(retvals[1])
+            
+            o_fit_failed_list[num_bins_ind] = retvals[5]
 
         # Save the calculated value of omega and gamma for the data for one bin
         if num_bins == 1:
-            o_value_one_bin = retvals[0]
             g_value_one_bin = retvals[2]
+            if omega is None and omega_unc is None:
+                o_value_one_bin = retvals[0]
+            
 
     # Take the average over the different values found using the different bin
     # sizes to compare to the value found using one bin
-    o_value_avg = numpy.average(o_value_list)
+    
+    if omega is None and omega_unc is None:
+        o_value_avg = numpy.average(o_value_list)
+        # Fit the data to sqrt and extract the standard deviation value for one bin
+
+        opti_params, cov_arr = curve_fit(sqrt_eq, num_bins_list,
+                                     o_stdev_list, p0 = (0.1))
+        
+        o_stdev = sqrt_eq(1, opti_params[0])
+        
     g_value_avg = numpy.average(g_value_list)
 
-
     # Fit the data to sqrt and extract the standard deviation value for one bin
-
-    opti_params, cov_arr = curve_fit(sqrt_eq, num_bins_list,
-                                     o_stdev_list, p0 = (0.1))
-    o_stdev = sqrt_eq(1, opti_params[0])
-
     opti_params, cov_arr = curve_fit(sqrt_eq, num_bins_list,
                                      g_stdev_list, p0 = (1))
     g_stdev = sqrt_eq(1, opti_params[0])
@@ -145,7 +154,8 @@ def main(folder_name, num_bins_list = None, offset = True):
     ax.set_yscale("log", nonposy='clip')
     ax.plot(num_bins_list, g_stdev_list, 'go', label = 'g rate standard deviation')
     ax.plot(bin_linspace, sqrt_eq(bin_linspace, opti_params), 'teal', label = 'Sqrt[bin_size]')
-    ax.plot(num_bins_list, o_stdev_list, 'bo', label = 'o rate standard deviation')
+    if omega is None and omega_unc is None:
+        ax.plot(num_bins_list, o_stdev_list, 'bo', label = 'o rate standard deviation')
     ax.set_xlabel('Number of bins for num_runs')
     ax.set_ylabel('Standard Deviation (kHz)')
     ax.legend()
@@ -155,14 +165,17 @@ def main(folder_name, num_bins_list = None, offset = True):
 
     # We have calculated the average rate for the two fits and their stdev, and
     # NOW we finally calculate what omega nad gamma are, and their uncertainty
-
-    omega_value_one_bin = o_value_one_bin / 3.0
+    if omega is None and omega_unc is None:
+        omega_value_one_bin = o_value_one_bin / 3.0
+        omega_value_avg = o_value_avg / 3.0
+        omega_stdev = o_stdev / 3.0
+    else:
+        omega_value_one_bin = omega
+        omega_value_avg = omega
+        omega_stdev = omega_unc
+        
     gamma_value_one_bin = (g_value_one_bin - omega_value_one_bin) / 2.0
-
-    omega_value_avg = o_value_avg / 3.0
     gamma_value_avg = (g_value_avg - omega_value_one_bin) / 2.0
-
-    omega_stdev = o_stdev / 3.0
     gamma_stdev = numpy.sqrt(g_stdev**2 + omega_stdev**2) / 2.0
 
     print('Omega Value = {}, std dev = {}'.format(omega_value_one_bin, omega_stdev))
@@ -217,7 +230,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
 
-    folder = 'nv2_2019_04_30_29MHz_2'
+    folder = 'nv2_2019_04_30_45MHz_2'
 
 
     '''
@@ -240,7 +253,7 @@ if __name__ == '__main__':
     '''
 
 
-    main(folder, offset= True)
+    main(folder, 0.34, 0.07, offset= True)
 
 
     # Specify the number of bins
