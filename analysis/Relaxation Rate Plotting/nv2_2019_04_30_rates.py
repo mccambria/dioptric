@@ -71,7 +71,7 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv2_splitting_list_all, nv2_gamma_avg_list_all, yerr = nv2_gamma_error_list_all, 
-            label = r'$\gamma$', fmt='o',color='blue')
+            label = r'$\gamma$', fmt='o',markersize = 10,color='blue')
 #ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
 #            label = r'$\Omega$', fmt='o', markersize = 10, color='red')
 

@@ -432,7 +432,7 @@ def main(folder_name, omega = None, omega_unc = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-#        tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_raw_data(raw_data, file_path)
 
 # %% Saving the figure
 
@@ -440,13 +440,13 @@ def main(folder_name, omega = None, omega_unc = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                          file_name)
 
-#    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_45MHz_2'
+    folder = 'nv2_2019_04_30_29MHz_3'
 
 
 #    for folder in folder_list:
