@@ -11,9 +11,10 @@ Script to run various analysis techniques on the data.
 
 
 # User modules
-#import Utils.tool_belt as tool_belt
-import majorroutines.image_sample as image_sample
-#import majorroutines.t1_measurement as t1_measurement
+#import utils.tool_belt as tool_belt
+#import majorroutines.image_sample as image_sample
+import analysis.relaxation_rate_plot_data as relaxation_rate_plot_data
+import analysis.relaxation_rate_stdev as relaxation_rate_stdev
 
 
 # %% Analysis Routines
@@ -29,12 +30,17 @@ def create_scan_image_in_position_space():
     # Run the function
     image_sample.reformat_plot(colorMap, save_file_type)
     
-def fit_exponential_decay_from_basic_t1(open_file_name):
-    # This function fits an exponential decay to a t1 measurement
     
-    save_file_type = 'png'
+def t1_analysis(folder_name):
     
-    t1_measurement.t1_exponential_decay(open_file_name, save_file_type)
+    omega = 0.34
+    omega_unc = 0.07
+    
+    relaxation_rate_plot_data.main(folder_name,  omega, omega_unc, 
+                                   True, offset = True)
+    
+    relaxation_rate_stdev.main(folder_name, omega, omega_unc, offset = True)
+    
 
 # %% Script Code
 
@@ -49,9 +55,13 @@ if __name__ == "__main__":
 
     # %% Functions to run
     
-    create_scan_image_in_position_space()
-#    fit_exponential_decay_from_basic_t1('2019-05-11_19-53-32_ayrton12')
+    #t1 folder
+    folder_name = 'nv2_2019_04_30_29MHz_11'
     
+    
+#    create_scan_image_in_position_space()
+#    fit_exponential_decay_from_basic_t1('2019-05-11_19-53-32_ayrton12')
+    t1_analysis(folder_name)
     
     
     

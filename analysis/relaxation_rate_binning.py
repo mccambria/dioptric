@@ -356,7 +356,34 @@ def main(folder_name, num_bins, omega = None, omega_unc = None, save_data = True
             g_amp_list.append(gamma_opti_params[1])
             if offset:
                 g_offset_list.append(gamma_opti_params[2])
-                    
+        
+        # plot data if saving the data
+        if save_data:
+            if omega is None:
+                omega = omega_opti_params[0] / 3
+            gamma = (gamma_opti_params[0] - omega) / 2
+            
+            fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+            plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
+            #    ax = axes_pack[1]
+            ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
+            if offset:
+                ax.plot(plus_time_linspace,
+                    exp_eq_offset(plus_time_linspace, *gamma_opti_params),
+                    'r', label = 'fit')
+            else:
+                ax.plot(plus_time_linspace,
+                    exp_eq(plus_time_linspace, *gamma_opti_params),
+                    'r', label = 'fit')
+            ax.set_xlabel('Relaxation time (ms)')
+            ax.set_ylabel('Normalized signal Counts')
+            ax.set_title('(+1,+1) - (+1,-1)')
+            ax.legend()
+            text = r'$\gamma = $ {} kHz'.format('%.2f'%gamma)
+            
+            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+            ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+                    verticalalignment='top', bbox=props)
         # Advance_ the index
         i = i + bin_size
     
@@ -373,31 +400,11 @@ def main(folder_name, num_bins, omega = None, omega_unc = None, save_data = True
 #    print(o_average / 3)
 #    print((g_average - o_average / 3) / 2)
 
-#    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-#    plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
-##    ax = axes_pack[1]
-#    ax.plot(plus_plus_time, plus_relaxation_counts, 'bo')
-#    if offset:
-#        ax.plot(plus_time_linspace,
-#            exp_eq_offset(plus_time_linspace, *gamma_opti_params),
-#            'r', label = 'fit')
-#    else:
-#        ax.plot(plus_time_linspace,
-#            exp_eq(plus_time_linspace, *gamma_opti_params),
-#            'r', label = 'fit')
-#    ax.set_xlabel('Relaxation time (ms)')
-#    ax.set_ylabel('Normalized signal Counts')
-#    ax.set_title('(+1,+1) - (+1,-1)')
-#    ax.legend()
-#    text = r'$\gamma = $ {} kHz'.format('%.2f'%gamma)
 
-#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#    ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
-#            verticalalignment='top', bbox=props)
       
 # %% Saving data
-    
-    if save_data: 
+    if save_data:
+
         time_stamp = tool_belt.get_time_stamp()
         raw_data = {'time_stamp': time_stamp,
                     'level_splitting': splitting_MHz,
@@ -443,8 +450,8 @@ def main(folder_name, num_bins, omega = None, omega_unc = None, save_data = True
                   
 if __name__ == '__main__':
     
-    folder = 'nv2_2019_04_30_45MHz_2'
+    folder = 'nv2_2019_04_30_29MHz_7'
 
     
-    main(folder, 1,  0.34, 0.07, True,  True)
+    main(folder, 20,  0.34, 0.07, True,  True)
 

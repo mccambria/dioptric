@@ -234,7 +234,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
 
-    folder = 'nv2_2019_04_30_29MHz_3'
+    folder = 'nv2_2019_04_30_29MHz_11'
 
 
     '''
