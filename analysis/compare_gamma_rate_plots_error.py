@@ -78,11 +78,11 @@ ylower = exp_eq_offset(time_linspace, *opti_params_s)
 
 ax.fill_between(time_linspace, yupper,  ylower,
                  color='red', alpha=0.2)
-#
-#ax.set_xlabel('Relaxation time (ms)')
-#ax.set_ylabel('Contrast (arb. units)')
-#ax.legend()
-#
+
+ax.set_xlabel('Relaxation time (ms)')
+ax.set_ylabel('Contrast (arb. units)')
+ax.legend()
+
 fig.canvas.draw()
 fig.canvas.flush_events()
     
