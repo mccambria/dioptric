@@ -185,6 +185,30 @@ def do_t1_battery(nv_sig, apd_indices):
 
         t1_double_quantum.main(nv_sig, apd_indices, relaxation_time_range,
                            num_steps, num_reps, num_runs, init_read_states)
+        
+def do_t1_parallel(nv_sig, apd_indices):   
+    # T1 experiment parameters, formatted:
+    # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
+    # ~ 20 hours total
+    num_runs = 40
+    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4],
+                            [[States.HIGH, States.LOW], [0, 150*10**3], 26, 8*10**4],
+                            [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4],
+                            [[States.HIGH, States.HIGH], [0, 150*10**3], 26, 8*10**4],
+                            [[States.ZERO, States.HIGH], [0, 3.5*10**6], 26, 1*10**4],
+                            [[States.ZERO, States.ZERO], [0, 3.5*10**6], 26, 1*10**4]])
+
+    # Loop through the experiments
+#    for exp_ind in range(len(t1_exp_array)):
+##    for exp_ind in [1]:
+#
+#        init_read_states = t1_exp_array[exp_ind, 0]
+#        relaxation_time_range = t1_exp_array[exp_ind, 1]
+#        num_steps = t1_exp_array[exp_ind, 2]
+#        num_reps = t1_exp_array[exp_ind, 3]
+#        num_runs = t1_exp_array[exp_ind, 4]
+
+    t1_parellel.main(nv_sig, apd_indices, t1_exp_array, num_runs)
 
 def do_ramsey(nv_sig, apd_indices):
 

@@ -17,30 +17,33 @@ import matplotlib.dates as mdates
 import datetime
 import numpy
 
+# %%
+nv2_rates = [33.0, 32.3, 35.0, 28.9, 30, 33, 32.9, 28.9, 30.4, 34.8, 30.3,
+                                     29, 29.1, 30.5]
+nv2_error = [0.7, 0.9, 1.1, 1.0, 2, 1, 0.7, 0.7, 0.9, 1.3, 0.7, 1, 0.6, 1.1]
+# The time of the end of the experiment
+end_datetimes = [datetime.datetime(2019,8,13,18,44,32),
+                     datetime.datetime(2019,8,13,23,39,48),
+                     datetime.datetime(2019,8,14,4,35,43),
+                     datetime.datetime(2019,8,14,9,31,10),
+                     datetime.datetime(2019,8,14,14,43,33),
+                     datetime.datetime(2019,8,14,19,38,53),
+                     datetime.datetime(2019,8,15,0,34,47),
+                     datetime.datetime(2019,8,15,5,34,56),
+                     datetime.datetime(2019,8,15,10,35,42),
+                     datetime.datetime(2019,8,15,15,50,32),
+                     datetime.datetime(2019,8,15,20,51,51),
+                     datetime.datetime(2019,8,16,1,53,13),
+                     datetime.datetime(2019,8,16,6,54,48),
+                     datetime.datetime(2019,8,16,11,56,7)
+                     ]
+    
  #%%
    
 def main():
-    nv2_rates = [33.0, 32.3, 35.0, 28.9, 30, 33, 32.9, 28.9, 30.4, 34.8, 30.3,
-                                         29, 29.1]
-    nv2_error = [0.7, 0.9, 1.1, 1.0, 2, 1, 0.7, 0.7, 0.9, 1.3, 0.7, 1, 0.6]
-    # The time of the end of the experiment
-    list_of_datetimes = [datetime.datetime(2019,8,13,18,44,32),
-                         datetime.datetime(2019,8,13,23,39,48),
-                         datetime.datetime(2019,8,14,4,35,43),
-                         datetime.datetime(2019,8,14,9,31,10),
-                         datetime.datetime(2019,8,14,14,43,33),
-                         datetime.datetime(2019,8,14,19,38,53),
-                         datetime.datetime(2019,8,15,0,34,47),
-                         datetime.datetime(2019,8,15,5,34,56),
-                         datetime.datetime(2019,8,15,10,35,42),
-                         datetime.datetime(2019,8,15,15,50,32),
-                         datetime.datetime(2019,8,15,20,51,51),
-                         datetime.datetime(2019,8,16,1,53,13),
-                         datetime.datetime(2019,8,16,6,54,48)
-                         ]
+
     
-    time = mdates.date2num(list_of_datetimes)
-#    time = ['13-08-2019 18:44']
+    time = mdates.date2num(end_datetimes)
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     fig.autofmt_xdate()
@@ -64,9 +67,6 @@ def main():
     ax.legend(fontsize=18)
    # %% 
 def tmp():
-    nv2_rates = [33.0, 32.3, 35.0, 28.9, 30, 33, 32.9, 28.9, 30.4, 34.8, 30.3,
-                                         29, 29.1]
-    nv2_error = [0.7, 0.9, 1.1, 1.0, 2, 1, 0.7, 0.7, 0.9, 1.3, 0.7, 1, 0.6]
     
     #Taken when the auto_pESR_and_rabi file saves (the timestamp)
     start_datetimes = [datetime.datetime(2019,8,13,14,13,52),
@@ -81,22 +81,8 @@ def tmp():
                        datetime.datetime(2019,8,15,11,14,42),
                        datetime.datetime(2019,8,15,16,15,58),
                        datetime.datetime(2019,8,15,21,17,3),
-                       datetime.datetime(2019,8,16,2,18,37)]
-    
-    # Taken when the experiment ends (last t1 timestamp)
-    end_datetimes = [datetime.datetime(2019,8,13,18,44,32),
-                         datetime.datetime(2019,8,13,23,39,48),
-                         datetime.datetime(2019,8,14,4,35,43),
-                         datetime.datetime(2019,8,14,9,31,10),
-                         datetime.datetime(2019,8,14,14,43,33),
-                         datetime.datetime(2019,8,14,19,38,53),
-                         datetime.datetime(2019,8,15,0,34,47),
-                         datetime.datetime(2019,8,15,5,34,56),
-                         datetime.datetime(2019,8,15,10,35,42),
-                         datetime.datetime(2019,8,15,15,50,32),
-                         datetime.datetime(2019,8,15,20,51,51),
-                         datetime.datetime(2019,8,16,1,53,13),
-                         datetime.datetime(2019,8,16,6,54,48)]
+                       datetime.datetime(2019,8,16,2,18,37),
+                       datetime.datetime(2019,8,16,7,20,15)]
     
     # convert the datetimes ito python time
     start_time = mdates.date2num(start_datetimes).tolist()
