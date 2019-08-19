@@ -239,6 +239,8 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
     num_steps = 51
     num_runs = 2
     
+    fail_bool = False
+    
     value_list = []
     for state in state_list:
         
@@ -254,15 +256,17 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
         
         if resonance is None:
             print('Resonance fitting failed')
+            fail_bool = True
             return
 
         # If the resonance has shifted more than 1 MHz in either direction, stop
-        shift_res = 1/1000
+        shift_res = 2/1000
         limit_high_res = (nv_sig['resonance_{}'.format(state.name)] + shift_res)
         limit_low_res =  (nv_sig['resonance_{}'.format(state.name)] - shift_res)
         
         if resonance > limit_high_res or resonance < limit_low_res:
-            print('Resonance has shifted more than 1 MHz')
+            print('Resonance has shifted more than 2 MHz')
+            fail_bool = True
             return
         else:
             nv_sig['resonance_{}'.format(state.name)] = float('%.4f'%resonance)
@@ -278,6 +282,7 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
         
         if rabi_per is None:
             print('Rabi fitting failed')
+            fail_bool = True
             return
         
         # If the rabi period has shifted more than 50 ns in either direction, stop
@@ -287,6 +292,7 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
         
         if rabi_per > limit_high_per or rabi_per < limit_low_per:
             print('Rabi period has changed more than 50 ns')
+            fail_bool = True
             return
         else:
             nv_sig['rabi_{}'.format(state.name)] = float('%.1f'%rabi_per)
@@ -303,7 +309,7 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
     file_path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/auto_pESR_rabi/' + '{}-{}'.format(timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path)
        
-    
+    return fail_bool 
 
 def do_set_drift_from_reference_image(nv_sig, apd_indices):
 
@@ -335,8 +341,8 @@ if __name__ == '__main__':
       'name': '{}-nv{}_2019_04_30'.format(sample_name, 2),
       'expected_count_rate': 56,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 260, 'magnet_angle': 161.9,
-      'resonance_LOW': 2.8515, 'rabi_LOW': 200.0, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.8802, 'rabi_HIGH': 259.7, 'uwave_power_HIGH': 10.0}
+      'resonance_LOW': 2.8541, 'rabi_LOW': 202.0, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 2.8847, 'rabi_HIGH': 247.2, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv2_2019_04_30]
 
@@ -389,9 +395,13 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
 #            do_rabi(nv_sig, apd_indices, States.LOW)
 #            do_rabi(nv_sig, apd_indices, States.HIGH)
-            for i in range(6):
-                find_resonance_and_rabi(nv_sig, apd_indices)
-                do_t1_battery(nv_sig, apd_indices)
+            for i in range(5):
+                fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
+                if fail_bool == True:
+                    print('Failed to record pESR and Rabi')
+                    break
+                else:
+                    do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
