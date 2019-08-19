@@ -63,8 +63,7 @@ num_runs = 20
 t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
                         [[States.HIGH, States.LOW], [0, 150*10**3], 26, 8*10**4, num_runs],
                         [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
-                        [[States.HIGH, States.HIGH], [0, 150*10**3], 26, 8*10**4, num_runs]
-                        ])
+                        [[States.HIGH, States.HIGH], [0, 150*10**3], 26, 8*10**4, num_runs]])
     
 contrast = 0.6
 exp_count_rate = 56 # kcps

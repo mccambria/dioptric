@@ -144,7 +144,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
         print('Could not locate peaks')
         return None, None
 
-    low_freq_guess = 2.8510
+    low_freq_guess = freq_center
     high_freq_guess = None
 
     # %% Fit!
@@ -196,9 +196,10 @@ def state(nv_sig, apd_indices, state, freq_range,
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
     uwave_pulse_dur = nv_sig['rabi_{}'.format(state.name)] // 2
 
-    main(nv_sig, apd_indices, freq_center, freq_range,
+    resonance_list = main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-
+    
+    return resonance_list
 
 # %% Main
 
@@ -208,10 +209,10 @@ def main(nv_sig, apd_indices, freq_center, freq_range,
          state=States.LOW):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
+        resonance_list = main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
                   state)
-
+    return resonance_list
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
               state=States.LOW):
