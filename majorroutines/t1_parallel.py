@@ -226,8 +226,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
 # %% Start one of the runs
 
     for run_ind in range(num_runs):
-
-        print(' \nRun index: {}'.format(run_ind))
         
         # Set up the microwaves for the low and high states
         low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.LOW)
@@ -251,12 +249,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
             num_reps = t1_exp_array[exp_ind][3]
             taus = tau_master_list[exp_ind]
             
-            print('\nStarting experiment: ({}, {})'.format(init_state.name,
-                                              read_state.name))
-             
+            print(' \nOptimizing...\n')
             # Optimize
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
             opti_coords_master_list[exp_ind].append(opti_coords)
+            
+            print('\nStarting experiment: ({}, {}) on run_ind: {}'.format(init_state.name,
+                                              read_state.name, run_ind))
 
             # Load the APD
             cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -333,12 +332,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
             'gate_time-units': 'ns',
             'num_runs': num_runs,
             'params_master_list': params_master_list,
-            'params_master_list-format': '[[init_state, read_state], \
-                relaxation range, num_steps, num_reps, uwave_pi_pulse_init, \
-                uwave_freq_init, uwave_power_init, uwave_pi_pulse_read, \
-                uwave_freq_read, uwave_power_read]',
-            'params_master_list-units': '[[null, null], [ns, ns], null, null, \
-                                        ns, GHz, dBm, ns, GHz, dBm]',
+            'params_master_list-format': '[[init_state, read_state],relaxation range, num_steps, num_reps, uwave_pi_pulse_init, uwave_freq_init, uwave_power_init, uwave_pi_pulse_read, uwave_freq_read, uwave_power_read]',
+            'params_master_list-units': '[[null, null], [ns, ns], null, null, ns, GHz, dBm, ns, GHz, dBm]',
             'tau_master_list': tau_master_list,
             'tau_master_list-units': 'ns',
             'tau_ind_save_list': tau_ind_save_list,
@@ -487,12 +482,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
             'gate_time-units': 'ns',
             'num_runs': num_runs,
             'params_master_list': params_master_list,
-            'params_master_list-format': '[[init_state, read_state], \
-                relaxation range, num_steps, num_reps, uwave_pi_pulse_init, \
-                uwave_freq_init, uwave_power_init, uwave_pi_pulse_read, \
-                uwave_freq_read, uwave_power_read]',
-            'params_master_list-units': '[[null, null], [ns, ns], null, null, \
-                                        ns, GHz, dBm, ns, GHz, dBm]',
+            'params_master_list-format': '[[init_state, read_state],relaxation range, num_steps, num_reps, uwave_pi_pulse_init, uwave_freq_init, uwave_power_init, uwave_pi_pulse_read, uwave_freq_read, uwave_power_read]',
+            'params_master_list-units': '[[null, null], [ns, ns], null, null, ns, GHz, dBm, ns, GHz, dBm]',
             'tau_master_list': tau_master_list,
             'tau_master_list-units': 'ns',
             'tau_ind_save_list': tau_ind_save_list,
