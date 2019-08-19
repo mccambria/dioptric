@@ -344,7 +344,7 @@ if __name__ == '__main__':
       'expected_count_rate': 21,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 510, 'magnet_angle': 109.3,
       'resonance_LOW':2.6061, 'rabi_LOW': 186.7, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 3.1678, 'rabi_HIGH': 40, 'uwave_power_HIGH': 10.0}
+      'resonance_HIGH': 3.1678, 'rabi_HIGH': 61.5, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv1_2019_05_10]
 
