@@ -53,7 +53,7 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-    scan_range = 0.2
+    scan_range = 0.1
     num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
@@ -70,7 +70,7 @@ def do_optimize_list(nv_sig_list, apd_indices):
 
 def do_stationary_count(nv_sig, apd_indices):
 
-    run_time = 60 * 10**9  # ns
+    run_time = 120 * 10**9  # ns
 
     stationary_count.main(nv_sig, run_time, apd_indices)
 
@@ -112,7 +112,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
     num_reps = 10**5
     num_runs = 1
     uwave_power = 9.0
-    uwave_pulse_dur = 100
+    uwave_pulse_dur = 20
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -143,7 +143,7 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     num_freq_reps = 10**5
     num_freq_runs = 2
     uwave_power = 9.0
-    uwave_pulse_dur = 85
+    uwave_pulse_dur = 60
 
     optimize_magnet_angle.main(nv_sig, apd_indices,
                angle_range, num_angle_steps, freq_center, freq_range,
@@ -169,7 +169,9 @@ def do_t1_battery(nv_sig, apd_indices):
     t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
                             [[States.HIGH, States.LOW], [0, 150*10**3], 26, 8*10**4, num_runs],
                             [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
-                            [[States.HIGH, States.HIGH], [0, 150*10**3], 26, 8*10**4, num_runs]])
+                            [[States.HIGH, States.HIGH], [0, 150*10**3], 26, 8*10**4, num_runs],
+                            [[States.ZERO, States.HIGH], [0, 150*10**3], 26, 8*10**4, num_runs],
+                            [[States.ZERO, States.ZERO], [0, 150*10**3], 26, 8*10**4, num_runs]])
     
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -337,14 +339,14 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     sample_name = 'ayrton12'
     
-    nv2_2019_04_30 = {'coords': [-0.080, 0.122, 5.06],
-      'name': '{}-nv{}_2019_04_30'.format(sample_name, 2),
-      'expected_count_rate': 56,
-      'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 260, 'magnet_angle': 161.9,
-      'resonance_LOW': 2.8541, 'rabi_LOW': 202.0, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.8847, 'rabi_HIGH': 247.2, 'uwave_power_HIGH': 10.0}
+    nv1_2019_05_10 = {'coords': [0.234, 0.308, 5.06],
+      'name': '{}-nv{}_2019_05_10'.format(sample_name, 1),
+      'expected_count_rate': 26,
+      'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 510, 'magnet_angle': 109.3,
+      'resonance_LOW':2.64, 'rabi_LOW': 95.6, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 3.14, 'rabi_HIGH': 107.2, 'uwave_power_HIGH': 10.0}
     
-    nv_sig_list = [nv2_2019_04_30]
+    nv_sig_list = [nv1_2019_05_10]
 
     # %% Functions to run
 
@@ -387,21 +389,21 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.3, freq_range=0.200)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-#            do_pulsed_resonance(nv_sig, apd_indices,
-#                        freq_center=nv_sig['resonance_LOW'], freq_range=0.1)
-#            do_pulsed_resonance(nv_sig, apd_indices,
-#                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
+            do_pulsed_resonance(nv_sig, apd_indices,
+                        freq_center=nv_sig['resonance_LOW'], freq_range=0.15)
+            do_pulsed_resonance(nv_sig, apd_indices,
+                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.7, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
 #            do_rabi(nv_sig, apd_indices, States.LOW)
 #            do_rabi(nv_sig, apd_indices, States.HIGH)
-            for i in range(5):
-                fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
-                if fail_bool == True:
-                    print('Failed to record pESR and Rabi')
-                    break
-                else:
-                    do_t1_battery(nv_sig, apd_indices)
+#            for i in range(5):
+#                fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
+#                if fail_bool == True:
+#                    print('Failed to record pESR and Rabi')
+#                    break
+#                else:
+#                    do_t1_battery(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)

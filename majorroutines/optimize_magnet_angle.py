@@ -210,7 +210,9 @@ if __name__ == '__main__':
     angle_range = data['angle_range']
     num_angle_steps = data['num_angle_steps']
     angles = numpy.linspace(angle_range[0], angle_range[1], num_angle_steps)
-
+    
+    splittings = [79, 24, 32, 84, 55, 66]
+    angles = [90, 30, 0, 120, 60, 150]
     fit_func, popt = fit_data(splittings, angles)
 
     opti_angle = None

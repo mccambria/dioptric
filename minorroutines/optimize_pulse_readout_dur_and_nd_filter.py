@@ -359,8 +359,8 @@ def main(nv_sig):
 #            num_readout_steps = 9
 #            readout_range = [250, 600]
 #            num_readout_steps = 8
-            readout_range = [200, 300]
-            num_readout_steps = 5
+            readout_range = [700, 800]
+            num_readout_steps = 3
         
         print('nd filter set to {}'.format(nd_filter))
         
@@ -372,59 +372,81 @@ if __name__ == '__main__':
 
     # Define the nv_sig to be used
     sample_name = 'ayrton12'
-    nv2_2019_04_30 = {'coords': [-0.080, 0.122, 5.06],
-      'name': '{}-nv{}_2019_04_30'.format(sample_name, 2),
-      'expected_count_rate': 55,
-      'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 350, 'magnet_angle': 140.5,
-      'resonance_LOW': 2.8438, 'rabi_LOW': 202.2, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.8888, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    nv1_2019_05_10 = {'coords': [0.234, 0.308, 5.06],
+      'name': '{}-nv{}_2019_05_10'.format(sample_name, 1),
+      'expected_count_rate': 26,
+      'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 260, 'magnet_angle': 109.3,
+      'resonance_LOW':2.8229, 'rabi_LOW': 95.6, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 2.9086, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
     # Main parameters
-    nv_sig = nv2_2019_04_30
+    nv_sig = nv1_2019_05_10
     
     ### MAIN ###
-    main(nv_sig)
+#    main(nv_sig)
     
     # The individual functions in this file
 #    snr_measurement(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)
 #    optimize_readout(nv_sig, readout_range, num_readout_steps, 'nd_1.5')
 
 # %%
-#    snr_list =     [4.0999188929581365,
-#    3.6510686263146948,
-#    3.8189598302852774,
-#    4.829296777215037,
-#    4.557744344332746,
-#    4.016704434110489]
-#    
-#    readout_time_list = [300,
-#    350,
-#    400,
-#    450,
-#    500,
-#    550,
-#   ]
-#    
-#    init_guess_list = [10, 10, 450]
-#    
-#    popt = fit_parabola(readout_time_list, snr_list, init_guess_list)
-#    
-#    snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
-#    ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
-#    ax.set_xlabel('Readout time (ns)')
-#    ax.set_ylabel('Signal-to-noise ratio') 
-#    ax.set_title('Optimize readout window at {}'.format('nd_1.5'))
-#    linspace_time = numpy.linspace(300, 600, num=1000)
-#    ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
-#    
-#    text = ('Optimal readout time = {:.1f} ns'.format(popt[2]))
-#
-#    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-#    ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
-#                            verticalalignment="top", bbox=props)
-#    ax.legend() 
-#    snr_fig.canvas.draw()
-#    snr_fig.canvas.flush_events()
+    snr_list =     [    7.439604422189125,
+    7.686879319553283,
+    8.041485308004805,
+    9.554681541455329,
+    9.125572162492666,
+    7.807859294703643,
+    9.66741364630311,
+    9.463731427941084,
+    7.5704997378241545,
+    9.609301695826183,
+    10.543056235327139,
+    10.659862870377365,
+    10.26398344405384,
+    9.531577515144889,
+    12.951537948619501,
+    10.696615047491722,
+    9.768387837729152]
+    
+    readout_time_list = [    200,
+    250,
+    300,
+    350,
+    400,
+    450,
+    500,
+    300,
+    350,
+    400,
+    450,
+    500,
+    550,
+    600,
+    650,
+    700,
+    750
+   ]
+    
+    init_guess_list = [10, 10, 450]
+    
+    popt = fit_parabola(readout_time_list, snr_list, init_guess_list)
+    
+    snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+    ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
+    ax.set_xlabel('Readout time (ns)')
+    ax.set_ylabel('Signal-to-noise ratio') 
+    ax.set_title('Optimize readout window at {}'.format('nd_1.5'))
+    linspace_time = numpy.linspace(200, 600, num=1000)
+    ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
+    
+    text = ('Optimal readout time = {:.1f} ns'.format(popt[2]))
+
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
+                            verticalalignment="top", bbox=props)
+    ax.legend() 
+    snr_fig.canvas.draw()
+    snr_fig.canvas.flush_events()
     
 # %%
     if tool_belt.check_safe_stop_alive():
