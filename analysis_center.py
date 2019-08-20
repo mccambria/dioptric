@@ -33,8 +33,8 @@ def create_scan_image_in_position_space():
     
 def t1_analysis(folder_name):
     
-    omega = 0.34
-    omega_unc = 0.07
+    omega = None
+    omega_unc = None
     
     relaxation_rate_plot_data.main(folder_name,  omega, omega_unc, 
                                    True, offset = True)
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     # %% Functions to run
     
     #t1 folder
-    folder_name = 'nv2_2019_04_30_29MHz_27'
+    folder_name = 'nv1_2019_05_10_562MHz'
     
     
 #    create_scan_image_in_position_space()
