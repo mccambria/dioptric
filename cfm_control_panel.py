@@ -27,7 +27,7 @@ import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
-import majorroutines.t1_parallel as t1_parallel
+import majorroutines.t1_interleave as t1_interleave
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
@@ -166,17 +166,14 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     # ~ 20 hours total
-    num_runs = 30
-    t1_exp_array = numpy.array([
-                        [[States.HIGH, States.HIGH], [0, 10*10**3], 51, 8*10**4, num_runs]
-                        ])
-#    num_runs = 40
-#    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
-#                            [[States.HIGH, States.LOW], [0, 150*10**3], 26, 8*10**4, num_runs],
-#                            [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
-#                            [[States.HIGH, States.HIGH], [0, 150*10**3], 26, 8*10**4, num_runs],
-#                            [[States.ZERO, States.HIGH], [0, 3.5*10**6], 26, 1*10**4, num_runs],
-#                            [[States.ZERO, States.ZERO], [0, 3.5*10**6], 26, 1*10**4, num_runs]])
+
+    num_runs = 40
+    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
+                            [[States.HIGH, States.LOW], [0, 150*10**3], 26, 8*10**4, num_runs],
+                            [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
+                            [[States.HIGH, States.HIGH], [0, 150*10**3], 26, 8*10**4, num_runs],
+                            [[States.ZERO, States.HIGH], [0, 3.5*10**6], 26, 1*10**4, num_runs],
+                            [[States.ZERO, States.ZERO], [0, 3.5*10**6], 26, 1*10**4, num_runs]])
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -191,19 +188,20 @@ def do_t1_battery(nv_sig, apd_indices):
         t1_double_quantum.main(nv_sig, apd_indices, relaxation_time_range,
                            num_steps, num_reps, num_runs, init_read_states)
         
-def do_t1_parallel(nv_sig, apd_indices):   
+def do_t1_interleave(nv_sig, apd_indices):   
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
 #    num_runs = 3
 #    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 4, 0.5*10**4],
 #                        [[States.HIGH, States.HIGH], [0, 50*10**3], 7, 1*10**4],
 #                        [[States.ZERO, States.ZERO], [0, 500*10**3], 3, 1*10**4]])
-    num_runs = 20
-    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 150*10**3], 26, 6*10**4],
-                        [[States.HIGH, States.HIGH],[0, 150*10**3], 26, 6*10**4]])
+    num_runs = 10
+    t1_exp_array = numpy.array([
+                        [[States.HIGH, States.HIGH], [0, 10*10**3], 51, 8*10**4, num_runs]
+                        ])
 
 
-    t1_parallel.main(nv_sig, apd_indices, t1_exp_array, num_runs)
+    t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
 
 def do_ramsey(nv_sig, apd_indices):
 
@@ -280,14 +278,14 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     sample_name = 'ayrton12'
     
-    nv2_2019_04_30 = {'coords': [-0.080, 0.122, 5.06],
-      'name': '{}-nv{}_2019_04_30'.format(sample_name, 2),
-      'expected_count_rate': 56,
-      'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 260, 'magnet_angle': 161.9,
-      'resonance_LOW': 2.855, 'rabi_LOW': 201.3, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.8842, 'rabi_HIGH': 248.4, 'uwave_power_HIGH': 10.0}
+    nv1_2019_05_10 = {'coords': [0.234, 0.308, 5.06],
+      'name': '{}-nv{}_2019_05_10'.format(sample_name, 1),
+      'expected_count_rate': 21,
+      'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 510, 'magnet_angle': 109.3,
+      'resonance_LOW':2.8515, 'rabi_LOW': 101.5, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 2.8790, 'rabi_HIGH': 160.5, 'uwave_power_HIGH': 10.0}
     
-    nv_sig_list = [nv2_2019_04_30]
+    nv_sig_list = [nv1_2019_05_10]
 
     # %% Functions to run
 
@@ -339,7 +337,7 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.LOW)
 #            do_rabi(nv_sig, apd_indices, States.HIGH)
 #            do_t1_battery(nv_sig, apd_indices)
-            do_t1_parallel(nv_sig, apd_indices)
+            do_t1_interleave(nv_sig, apd_indices)
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)

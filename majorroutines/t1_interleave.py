@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-T1 measurement routine.
+T1 measurement routine, with experiments interleaved.
 
 This version of t1 allows the the readout and measurement of all nine possible
 combinations of the preparation and readout of the states in relaxation
@@ -118,7 +118,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
         # For each experiment, take the time values and create a linspace
         taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
                           num=num_steps, dtype=numpy.int32)
-        
         tau_master_list.append(taus.tolist())
         
         # also calculate the half length for each tau list to step through, 
@@ -192,6 +191,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
                     gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, max_relaxation_time,
                     apd_indices[0], init_state.value, read_state.value]
+
         seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load('t1_double_quantum.py', seq_args_string)
@@ -286,7 +286,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
     
                 print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
                 print('Second relaxation time: {}'.format(taus[tau_ind_second]))
-    
+
                 # Stream the sequence
                 seq_args = [taus[tau_ind_first], polarization_time, signal_time, reference_time,
                             sig_to_ref_wait_time, pre_uwave_exp_wait_time,
