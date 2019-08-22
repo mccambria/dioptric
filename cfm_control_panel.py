@@ -111,7 +111,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
     num_steps = 51
 #    num_steps = 101
     num_reps = 10**5
-    num_runs = 2
+    num_runs = 1
     uwave_power = 9.0
     uwave_pulse_dur = 50
 
@@ -410,8 +410,8 @@ if __name__ == '__main__':
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.100)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.3, freq_range=0.200)
+            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.74, freq_range=0.15)
+            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices,
@@ -420,7 +420,7 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.7, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
-            do_rabi(nv_sig, apd_indices, States.LOW)
+#            do_rabi(nv_sig, apd_indices, States.LOW)
 #            do_rabi(nv_sig, apd_indices, States.HIGH)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
