@@ -56,7 +56,7 @@ if __name__ == "__main__":
     # %% Functions to run
     
     #t1 folder
-    folder_name = 'nv1_2019_05_10_562MHz'
+    folder_name = 'nv1_2019_05_10_28MHz_2'
     
     
 #    create_scan_image_in_position_space()
