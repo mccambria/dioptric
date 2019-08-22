@@ -373,7 +373,8 @@ def lag_plot(x):
     
 #%%
 if __name__ == "__main__":
-#    histogram(nv2_rates, 20)
+    time_plot_formal()
+
 #     KDE Estimating Two Values
 #    kde_points, x_grid = kde_sklearn(nv2_rates, bandwidth=1.1)
 #    
@@ -392,28 +393,23 @@ if __name__ == "__main__":
     telegraph_prob = 0.30
     rate = 1/3.5
 
-    telegraph_noise_rate(rate, numpy.average(nv2_rates), numpy.std(nv2_rates),num_samples, num_avg)
+#    telegraph_noise_rate(rate, numpy.average(nv2_rates), numpy.std(nv2_rates),num_samples, num_avg)
 #     averaging
     
+    # simulate Data
 #    data_wn = white_noise(0, numpy.std(nv2_rates), num_samples, num_avg)
 #    data_wt = white_telegraph_noise(numpy.average(nv2_rates), numpy.std(nv2_rates),num_samples, num_avg)
 #    data_t = telegraph_noise(telegraph_prob, numpy.average(nv2_rates), numpy.std(nv2_rates),num_samples, num_avg)
-#    data_tr = telegraph_noise_rate(rate, numpy.average(nv2_rates), numpy.std(nv2_rates),num_samples, num_avg)
-    # averaging
+#    data_tr = telegraph_noise_rate(rate, numpy.average(nv2_rates), numpy.std(nv2_rates),num_samples, num_avg)    
 
-
-#    plt.plot(data_t)
-#    plt.plot(data_t_2)
-
-#    telegraph_noise_rate(rate, 0, 1, num_samples, num_avg)
-    
-#     Correlation Plot
+    # Correlation Plot
 #    result_wn = estimated_autocorrelation(data_wn)
 #    result_wt = estimated_autocorrelation(data_wt)
 #    result_t = estimated_autocorrelation(data_t)
 #    result_tr = estimated_autocorrelation(data_tr)
 #    real_data = estimated_autocorrelation([nv2_rates])
     
+    # Plot    
 #    linspace = numpy.linspace(0,25, 26)
 #    init_params = (0, 1, 1/25, 0.1) # sinexp
 #    init_params = (1, 1) # sinexp
@@ -434,7 +430,8 @@ if __name__ == "__main__":
 #    ax.axhline(y=0, color='k')
 #    ax.grid()
 #    ax.legend()
-
+    
+    # Plot multiple telegraph noise functions
 #    fig, ax = plt.subplots(1, 1, figsize=(17, 8))
 #    for i in [ 0.1, 0.2, 0.25, 0.3]:
 #        prob = i * 100
