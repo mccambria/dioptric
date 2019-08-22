@@ -20,27 +20,27 @@ import analysis.relaxation_rate_stdev as relaxation_rate_stdev
 # %% Analysis Routines
 
 def create_scan_image_in_position_space():
-    # This fucntion  takes the data from an image sample and plots it with 
+    # This fucntion  takes the data from an image sample and plots it with
     # position instead of voltage
-    
+
     # Function specific parameters
     colorMap = 'inferno'
     save_file_type = 'png'
-    
+
     # Run the function
     image_sample.reformat_plot(colorMap, save_file_type)
-    
-    
+
+
 def t1_analysis(folder_name):
-    
+
     omega = None
     omega_unc = None
-    
-    relaxation_rate_plot_data.main(folder_name,  omega, omega_unc, 
+
+    relaxation_rate_plot_data.main(folder_name,  omega, omega_unc,
                                    True, offset = True)
-    
+
     relaxation_rate_stdev.main(folder_name, omega, omega_unc, offset = True)
-    
+
 
 # %% Script Code
 
@@ -54,18 +54,11 @@ if __name__ == "__main__":
 
 
     # %% Functions to run
-    
+
     #t1 folder
-<<<<<<< HEAD
     folder_name = 'nv1_2019_05_10_28MHz_2'
-=======
-    folder_name = 'nv2_2019_04_30_29MHz_16'
->>>>>>> t1_parallel_exp
-    
-    
+
+
 #    create_scan_image_in_position_space()
 #    fit_exponential_decay_from_basic_t1('2019-05-11_19-53-32_ayrton12')
     t1_analysis(folder_name)
-    
-    
-    
