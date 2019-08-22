@@ -2,9 +2,9 @@
 """
 Created on Wed Aug 14 10:06:12 2019
 
-This file plots the data we've taken on NV2_2019_04_30 at the same splitting. 
+This file plots the data we've taken on NV2_2019_04_30 at the same splitting.
 
-Main will plot a data point corresponding to the time that the experiment 
+Main will plot a data point corresponding to the time that the experiment
 finished.
 
 Tmp is an experimnetal plotting, trying to plot the range of the experiment with
@@ -26,7 +26,7 @@ nv2_rates = [33.0, 32.3, 35.0, 28.9, 30, 33, 32.9, 28.9, 30.4, 34.8, 30.3,
             29, 29.1, 30.5, 31.1, 33.9, 35.5, 34.5, 35.1, 36.6, 33.0, 33,
             33.3, 33.9, 32.1, 34.3]
 nv2_rates_bi = [33.5, 33.5, 33.5, 29.5, 29.5, 33.5, 33.5, 29.5, 29.5, 33.5, 29.5,
-                 29.5, 29.5, 29.5, 29.5, 33.5, 33.5, 33.5, 33.5, 33.5, 33.5, 33.5, 
+                 29.5, 29.5, 29.5, 29.5, 33.5, 33.5, 33.5, 33.5, 33.5, 33.5, 33.5,
                  33.5, 33.5, 33.5, 33.5]
 nv2_error = [0.7, 0.9, 1.1, 1.0, 2, 1, 0.7, 0.7, 0.9, 1.3, 0.7, 1, 0.6, 1.1,
              1.1, 1.6, 1.3, 1.2, 1.0, 1.0, 0.7, 2, 1.1, 1.0, 0.8, 1.1]
@@ -105,28 +105,28 @@ def exp(t, lifetime, amp):
 
 def white_noise(mean, std, num_samples, num_avg):
     '''
-    Produces a list, num_samples long, of white noise around some mean, with 
+    Produces a list, num_samples long, of white noise around some mean, with
     some standard deviation
     '''
     data_wn_2D = []
-    for i in range(num_avg):    
+    for i in range(num_avg):
         data_wn = numpy.random.normal(mean, std, size=num_samples)
         data_wn_2D.append(data_wn)
     return data_wn_2D
-    
+
 def white_telegraph_noise(mean, std, num_samples, num_avg):
     '''
-    Produces a list, num_samples long, of telegraphic noise in the specifc case 
+    Produces a list, num_samples long, of telegraphic noise in the specifc case
     when each point has a 50% chance of changing value. This produces a two
     value white noise
     '''
     data_wt_2D = []
     low_value = mean - std
     high_value = mean + std
-       
+
     for avg in range(num_avg):
         data_wt_single = []
-        
+
         for i in range(num_samples):
             rand = numpy.random.randint(0, high=2)
             if rand == 0:
@@ -134,12 +134,12 @@ def white_telegraph_noise(mean, std, num_samples, num_avg):
             else:
                 data_wt_2D.append(high_value)
         data_wt_2D.append(data_wt_single)
-        
+
     return data_wt_2D
-    
+
 def telegraph_noise(prob_of_flipping, mean, std, num_samples, num_avg):
     '''
-    Produces a list, num_samples long, of telegraphic noise. At each point, 
+    Produces a list, num_samples long, of telegraphic noise. At each point,
     there is a probablity (which is passed into the function) of switching to
     the other state
     http://mathworld.wolfram.com/ExponentialDistribution.html
@@ -149,16 +149,16 @@ def telegraph_noise(prob_of_flipping, mean, std, num_samples, num_avg):
     low_value = mean - std
     high_value = mean + std
     for avg in range(num_avg):
-        
-        data_t = []    
-                
+
+        data_t = []
+
         rand = numpy.random.randint(0, high=2)
         if rand == 0:
             current_value = low_value
         else:
             current_value = high_value
         data_t.append(current_value)
-        
+
         for i in range(num_samples - 1):
             rand = numpy.random.random()
             if rand <= prob_of_flipping:
@@ -167,23 +167,23 @@ def telegraph_noise(prob_of_flipping, mean, std, num_samples, num_avg):
                     current_value = high_value
                 elif current_value == high_value:
                     current_value = low_value
-    
+
             data_t.append(current_value)
         data_t_2D.append(data_t)
     return data_t_2D
-    
+
 def telegraph_noise_rate(rate, mean, std, num_samples, num_avg):
     '''
     Produces a list, num_samples long, of telegraphic noise. The time spent in
     each state is set by an exponential distribution of a given rate.
-    
+
     http://mathworld.wolfram.com/ExponentialDistribution.html
     https://math.stackexchange.com/questions/1875135/how-to-calculate-rate-parameter-in-exponential-distribution
     '''
     data_tr_2D = []
     low_value = mean - std
     high_value = mean + std
-    
+
     for avg in range(num_avg):
         # start randomly in one of the two states
         rand = numpy.random.randint(0, high=2)
@@ -191,7 +191,7 @@ def telegraph_noise_rate(rate, mean, std, num_samples, num_avg):
             current_value = low_value
         else:
             current_value = high_value
-            
+
         time_intervals = []
         while sum(time_intervals) <= num_samples:
 #            random_exp_distribution = numpy.log(1- random.random()) / (-rate)
@@ -201,11 +201,11 @@ def telegraph_noise_rate(rate, mean, std, num_samples, num_avg):
             if random_exp_distribution_int == 0:
                 random_exp_distribution_int = 1
             time_intervals.append(random_exp_distribution_int)
-            
+
         # change the last value so that it fits within the num_samples
         diff = sum(time_intervals) - num_samples
         time_intervals[-1] = time_intervals[-1] - diff
-        
+
         data_tr = numpy.empty([num_samples])
         data_tr[:] = numpy.nan
         i = 0
@@ -217,35 +217,35 @@ def telegraph_noise_rate(rate, mean, std, num_samples, num_avg):
                 next_value = low_value
             i = i+time_intervals[t]
             current_value = next_value
-        
+
         plt.plot(data_tr)
-        data_tr_2D.append(data_tr) 
-   
+        data_tr_2D.append(data_tr)
+
     return(data_tr_2D)
-        
-        
+
+
 # %%
-    
+
 def time_plot():
     '''
     Basic function to plot the data we collected on this NV. Data represented
     as points.
-    '''    
+    '''
     time = mdates.date2num(end_datetimes)
-    
+
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     fig.autofmt_xdate()
     ax.xaxis_date()
-    ax.errorbar(time, nv2_rates, yerr = nv2_error, 
+    ax.errorbar(time, nv2_rates, yerr = nv2_error,
                 label = r'$\gamma$', fmt='o', markersize = 10,color='blue')
-    
+
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
                     grid_alpha=0.7, labelsize = 18)
-    
+
     ax.tick_params(which = 'major', length=12, width=2)
-    
+
     ax.grid()
-    
+
     xfmt = mdates.DateFormatter('%m-%d-%y %H:%M')
     ax.xaxis.set_major_formatter(xfmt)
 
@@ -253,7 +253,7 @@ def time_plot():
     plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
     plt.title(r'NV2', fontsize=18)
     ax.legend(fontsize=18)
-   # %% 
+   # %%
 def time_plot_formal():
     '''
     This function also plots the data we collected, however it represents the
@@ -262,28 +262,28 @@ def time_plot_formal():
     # convert the datetimes ito python time
     start_time = mdates.date2num(start_datetimes).tolist()
     end_time = mdates.date2num(end_datetimes).tolist()
-    
+
     # create the figure
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     fig.autofmt_xdate()
     ax.xaxis_date()
-    
-    # for each data "line", plot the hline and error 
+
+    # for each data "line", plot the hline and error
     for i in range(len(nv2_rates)):
         ax.hlines(nv2_rates[i], start_time[i], end_time[i], linewidth=5, colors = 'blue')
         ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
         time_space = numpy.linspace(start_time[i], end_time[i], 1000)
-        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],  
+        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
                         nv2_rates[i] - nv2_error[i],
                         color='blue', alpha=0.2)
-    
+
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
                     grid_alpha=0.7, labelsize = 18)
-    
+
     ax.tick_params(which = 'major', length=12, width=2)
-    
+
     ax.grid()
-    
+
     xfmt = mdates.DateFormatter('%m-%d-%y %H:%M')
     ax.xaxis.set_major_formatter(xfmt)
 
@@ -291,7 +291,7 @@ def time_plot_formal():
     plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
     plt.title(r'NV2, $\gamma$ rate', fontsize=18)
 #    ax.legend(fontsize=18)
-    
+
 def histogram(x, bins):
     '''
     Produces a histogram of the data passed
@@ -300,8 +300,8 @@ def histogram(x, bins):
     plt.hist(x, bins = bins)
     plt.xlabel('Gamma (kHz)')
     plt.ylabel('Occurances')
-    
-    
+
+
 def kde_sklearn(x, bandwidth=0.2):
     '''
     Produces a kernel density estimation of the data passed. It also plots it.
@@ -309,30 +309,30 @@ def kde_sklearn(x, bandwidth=0.2):
     '''
     from sklearn.neighbors import KernelDensity
     """Kernel Density Estimation with Scikit-learn"""
-    
+
     kde_skl = KernelDensity(bandwidth=bandwidth)
     x = numpy.array(x)
     kde_skl.fit(x[:, numpy.newaxis])
     # score_samples() returns the log-likelihood of the samples
     x_grid = numpy.linspace(min(x), max(x), 1000)
     log_pdf = kde_skl.score_samples(x_grid[:, numpy.newaxis])
-        
+
     pdf = numpy.exp(log_pdf)
     fig,ax = plt.subplots(1,1)
     ax.plot(x_grid, pdf, color='blue', alpha=0.5)
     ax.set_xlabel('Gamma (kHz)')
     ax.set_ylabel('Density')
     ax.set_title('Kernal Density Estimation')
-    
+
 #    print(numpy.exp(log_pdf))
     return numpy.exp(log_pdf), x_grid
-    
+
 def estimated_autocorrelation(array, do_plot = False):
     """
     Calculates the autocorrelation for discrete points.
-    
+
     x must be a 2D list. The points are averaged along the 0 axis
-    
+
     Documentation:
     http://stackoverflow.com/q/14297012/190597
     http://en.wikipedia.org/wiki/Autocorrelation#Estimation
@@ -349,9 +349,9 @@ def estimated_autocorrelation(array, do_plot = False):
     #    assert numpy.allclose(r, numpy.array([(x[:n-k]*x[-(n-k):]).sum() for k in range(n)]))
         row_result = r/(variance*(numpy.arange(n, 0, -1)))
         result_list.append(row_result)
-        
+
     avg_result = numpy.average(result_list, axis = 0)
-    
+
     if do_plot:
         fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     #    ax.plot(numpy.linspace(0, 5*25, 26), result)
@@ -360,9 +360,9 @@ def estimated_autocorrelation(array, do_plot = False):
         ax.set_ylabel('Autocorrelation')
         ax.axhline(y=0, color='k')
         ax.grid()
-    
-    return avg_result    
-    
+
+    return avg_result
+
 def lag_plot(x):
     '''
     Creates a lag plot
@@ -370,23 +370,23 @@ def lag_plot(x):
     data = pd.Series(x)
 #    print(data)
     pd.plotting.lag_plot(data, 1)
-    
+
 #%%
 if __name__ == "__main__":
     time_plot_formal()
 
 #     KDE Estimating Two Values
 #    kde_points, x_grid = kde_sklearn(nv2_rates, bandwidth=1.1)
-#    
+#
 #    init_guess = [0.1, 1, 29, 0.1, 1, 34]
-#    
+#
 #    dbl_gssn_popt, pcov = curve_fit(double_gaussian, x_grid, kde_points, p0 = init_guess)
-#     
+#
 #    plt.plot(x_grid, double_gaussian(x_grid, *dbl_gssn_popt), 'b--', label = 'fit')
 #    plt.legend()
-#    
+#
 #    print(dbl_gssn_popt)
-    
+
     #Data simulations
     num_samples = 26
     num_avg = 1
@@ -395,7 +395,7 @@ if __name__ == "__main__":
 
 #    telegraph_noise_rate(rate, numpy.average(nv2_rates), numpy.std(nv2_rates),num_samples, num_avg)
 #     averaging
-    
+
     # simulate Data
 #    data_wn = white_noise(0, numpy.std(nv2_rates), num_samples, num_avg)
 #    data_wt = white_telegraph_noise(numpy.average(nv2_rates), numpy.std(nv2_rates),num_samples, num_avg)
@@ -403,11 +403,14 @@ if __name__ == "__main__":
 #    data_tr = telegraph_noise_rate(rate, numpy.average(nv2_rates), numpy.std(nv2_rates),num_samples, num_avg)    
 
     # Correlation Plot
+#    telegraph_noise_rate(rate, 0, 1, num_samples, num_avg)
+
 #    result_wn = estimated_autocorrelation(data_wn)
 #    result_wt = estimated_autocorrelation(data_wt)
 #    result_t = estimated_autocorrelation(data_t)
 #    result_tr = estimated_autocorrelation(data_tr)
 #    real_data = estimated_autocorrelation([nv2_rates])
+
     
     # Plot    
 #    linspace = numpy.linspace(0,25, 26)
