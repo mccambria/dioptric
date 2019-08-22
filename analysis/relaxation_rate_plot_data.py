@@ -301,7 +301,9 @@ def main(folder_name, omega = None, omega_unc = None, doPlot = False, offset = T
                 init_params = tuple(init_params_list)
                 omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
                                              zero_relaxation_counts, p0 = init_params)
-    
+                
+            omega_unc = numpy.sqrt(cov_arr[0][0])/3
+            print('Std err in omega: {} kHz'.format(omega_unc))
         except Exception:
     
             omega_fit_failed = True
@@ -362,7 +364,9 @@ def main(folder_name, omega = None, omega_unc = None, doPlot = False, offset = T
             gamma_opti_params, cov_arr = curve_fit(exp_eq,
                              plus_plus_time, plus_relaxation_counts,
                              p0 = init_params)
-
+            
+        gamma_unc = numpy.sqrt(cov_arr[0][0] + omega_unc**2) / 2
+        print('Std err gamma: {} kHz'.format(gamma_unc))
     except Exception:
         gamma_fit_failed = True
 
@@ -432,7 +436,7 @@ def main(folder_name, omega = None, omega_unc = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-        tool_belt.save_raw_data(raw_data, file_path)
+#        tool_belt.save_raw_data(raw_data, file_path)
 
 # %% Saving the figure
 
@@ -440,15 +444,15 @@ def main(folder_name, omega = None, omega_unc = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                          file_name)
 
-    tool_belt.save_figure(fig, file_path)
+#    tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_29MHz_12'
+    folder = 'nv2_2019_04_30_57MHz'
 
 
 #    for folder in folder_list:
 #    main(folder, True)
-    main(folder, 0.34, 0.07, True, offset = True)
+    main(folder, None, None, True, offset = True)
