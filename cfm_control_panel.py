@@ -27,6 +27,7 @@ import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
+import majorroutines.t1_interleave as t1_interleave
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
@@ -164,6 +165,7 @@ def do_t1_battery(nv_sig, apd_indices):
     
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
+<<<<<<< HEAD
     # ~ 14 hours total
     num_runs = 30
     t1_exp_array = numpy.array([
@@ -179,6 +181,14 @@ def do_t1_battery(nv_sig, apd_indices):
 #                        [[States.ZERO, States.ZERO], [0, 1.2*10**6], 26, 2*10**4, num_runs]
 #                        ])
 
+=======
+    # ~ 20 hours total
+
+    num_runs = 10
+    t1_exp_array = numpy.array([
+                        [[States.HIGH, States.HIGH], [0, 10*10**3], 51, 8*10**4, num_runs]
+                        ])
+>>>>>>> t1_parallel_exp
 
     
     # Loop through the experiments
@@ -193,6 +203,22 @@ def do_t1_battery(nv_sig, apd_indices):
 
         t1_double_quantum.main(nv_sig, apd_indices, relaxation_time_range,
                            num_steps, num_reps, num_runs, init_read_states)
+        
+def do_t1_interleave(nv_sig, apd_indices):   
+    # T1 experiment parameters, formatted:
+    # [[init state, read state], relaxation_time_range, num_steps, num_reps]
+#    num_runs = 3
+#    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 4, 0.5*10**4],
+#                        [[States.HIGH, States.HIGH], [0, 50*10**3], 7, 1*10**4],
+#                        [[States.ZERO, States.ZERO], [0, 500*10**3], 3, 1*10**4]])
+    num_runs = 10
+    t1_exp_array = numpy.array([
+                        [[States.HIGH, States.LOW], [0, 10*10**3], 31, 7*10**4, num_runs],
+                        [[States.HIGH, States.HIGH], [0, 12*10**3], 26, 8*10**4, num_runs]
+                        ])
+
+
+    t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
 
 def do_ramsey(nv_sig, apd_indices):
 
@@ -407,6 +433,7 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.HIGH)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
+<<<<<<< HEAD
 
 #            for i in range(5):
 #                fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
@@ -415,6 +442,9 @@ if __name__ == '__main__':
 #                    break
 #                else:
 #                    do_t1_battery(nv_sig, apd_indices)
+=======
+            do_t1_interleave(nv_sig, apd_indices)
+>>>>>>> t1_parallel_exp
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)

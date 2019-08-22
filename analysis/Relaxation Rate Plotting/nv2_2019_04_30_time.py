@@ -23,6 +23,7 @@ import utils.tool_belt as tool_belt
 
 # %%
 nv2_rates = [33.0, 32.3, 35.0, 28.9, 30, 33, 32.9, 28.9, 30.4, 34.8, 30.3,
+<<<<<<< HEAD
             29, 29.1, 30.5, 31.1, 33.9, 35.5, 34.5, 35.1, 36.6, 33.0, 33,
             33.3, 33.9, 32.1, 34.3]
 nv2_rates_bi = [33.5, 33.5, 33.5, 29.5, 29.5, 33.5, 33.5, 29.5, 29.5, 33.5, 29.5,
@@ -59,6 +60,10 @@ start_datetimes = [datetime.datetime(2019,8,13,14,13,52),
                        datetime.datetime(2019,8,19,0,32,6)
                        ,datetime.datetime(2019,8,19,5,33,27)
                        ]
+=======
+                                     29, 29.1, 30.5]
+nv2_error = [0.7, 0.9, 1.1, 1.0, 2, 1, 0.7, 0.7, 0.9, 1.3, 0.7, 1, 0.6, 1.1]
+>>>>>>> t1_parallel_exp
 # The time of the end of the experiment
 end_datetimes = [datetime.datetime(2019,8,13,18,44,32),
                      datetime.datetime(2019,8,13,23,39,48),
@@ -73,6 +78,7 @@ end_datetimes = [datetime.datetime(2019,8,13,18,44,32),
                      datetime.datetime(2019,8,15,20,51,51),
                      datetime.datetime(2019,8,16,1,53,13),
                      datetime.datetime(2019,8,16,6,54,48),
+<<<<<<< HEAD
                      datetime.datetime(2019,8,16,11,56,7),
                      datetime.datetime(2019,8,16,19,29,27),
                      datetime.datetime(2019,8,17,0,30,46),
@@ -231,6 +237,16 @@ def time_plot():
     Basic function to plot the data we collected on this NV. Data represented
     as points.
     '''    
+=======
+                     datetime.datetime(2019,8,16,11,56,7)
+                     ]
+    
+ #%%
+   
+def main():
+
+    
+>>>>>>> t1_parallel_exp
     time = mdates.date2num(end_datetimes)
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
@@ -254,11 +270,32 @@ def time_plot():
     plt.title(r'NV2', fontsize=18)
     ax.legend(fontsize=18)
    # %% 
+<<<<<<< HEAD
 def time_plot_formal():
     '''
     This function also plots the data we collected, however it represents the
     data as horizontal lines over the course of the experiment
     '''
+=======
+def tmp():
+    
+    #Taken when the auto_pESR_and_rabi file saves (the timestamp)
+    start_datetimes = [datetime.datetime(2019,8,13,14,13,52),
+                       datetime.datetime(2019,8,13,19,8,32),
+                       datetime.datetime(2019,8,14,0,4,19),
+                       datetime.datetime(2019,8,14,4,59,48),
+                       datetime.datetime(2019,8,14,10,12,28),
+                       datetime.datetime(2019,8,14,15,7,55),
+                       datetime.datetime(2019,8,14,20,3,21),
+                       datetime.datetime(2019,8,15,0,59,7),
+                       datetime.datetime(2019,8,15,6,0,1),
+                       datetime.datetime(2019,8,15,11,14,42),
+                       datetime.datetime(2019,8,15,16,15,58),
+                       datetime.datetime(2019,8,15,21,17,3),
+                       datetime.datetime(2019,8,16,2,18,37),
+                       datetime.datetime(2019,8,16,7,20,15)]
+    
+>>>>>>> t1_parallel_exp
     # convert the datetimes ito python time
     start_time = mdates.date2num(start_datetimes).tolist()
     end_time = mdates.date2num(end_datetimes).tolist()
