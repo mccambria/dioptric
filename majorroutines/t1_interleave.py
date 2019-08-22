@@ -226,16 +226,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
 # %% Start one of the runs
 
     for run_ind in range(num_runs):
-        
-        # Set up the microwaves for the low and high states
-        low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.LOW)
-        low_sig_gen_cxn.set_freq(uwave_freq_low)
-        low_sig_gen_cxn.set_amp(uwave_power_low)
-        low_sig_gen_cxn.uwave_on()
-        high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)
-        high_sig_gen_cxn.set_freq(uwave_freq_high)
-        high_sig_gen_cxn.set_amp(uwave_power_high)
-        high_sig_gen_cxn.uwave_on()
+    
             
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
@@ -253,6 +244,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
             # Optimize
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
             opti_coords_master_list[exp_ind].append(opti_coords)
+            
+            # Set up the microwaves for the low and high states
+            low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.LOW)
+            low_sig_gen_cxn.set_freq(uwave_freq_low)
+            low_sig_gen_cxn.set_amp(uwave_power_low)
+            low_sig_gen_cxn.uwave_on()
+            high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)
+            high_sig_gen_cxn.set_freq(uwave_freq_high)
+            high_sig_gen_cxn.set_amp(uwave_power_high)
+            high_sig_gen_cxn.uwave_on()
             
             print('\nStarting experiment: ({}, {}) on run_ind: {}'.format(init_state.name,
                                               read_state.name, run_ind))
@@ -293,6 +294,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
                             post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
                             gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, taus[tau_ind_second],
                             apd_indices[0], init_state.value, read_state.value]
+
                 seq_args = [int(el) for el in seq_args]
                 seq_args_string = tool_belt.encode_seq_args(seq_args)
                 

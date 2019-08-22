@@ -167,13 +167,10 @@ def do_t1_battery(nv_sig, apd_indices):
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     # ~ 20 hours total
 
-    num_runs = 40
-    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
-                            [[States.HIGH, States.LOW], [0, 150*10**3], 26, 8*10**4, num_runs],
-                            [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
-                            [[States.HIGH, States.HIGH], [0, 150*10**3], 26, 8*10**4, num_runs],
-                            [[States.ZERO, States.HIGH], [0, 3.5*10**6], 26, 1*10**4, num_runs],
-                            [[States.ZERO, States.ZERO], [0, 3.5*10**6], 26, 1*10**4, num_runs]])
+    num_runs = 10
+    t1_exp_array = numpy.array([
+                        [[States.HIGH, States.HIGH], [0, 10*10**3], 51, 8*10**4, num_runs]
+                        ])
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -197,7 +194,8 @@ def do_t1_interleave(nv_sig, apd_indices):
 #                        [[States.ZERO, States.ZERO], [0, 500*10**3], 3, 1*10**4]])
     num_runs = 10
     t1_exp_array = numpy.array([
-                        [[States.HIGH, States.HIGH], [0, 10*10**3], 51, 8*10**4, num_runs]
+                        [[States.HIGH, States.LOW], [0, 10*10**3], 31, 7*10**4, num_runs],
+                        [[States.HIGH, States.HIGH], [0, 12*10**3], 26, 8*10**4, num_runs]
                         ])
 
 
