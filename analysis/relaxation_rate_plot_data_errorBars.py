@@ -358,8 +358,6 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                                              zero_relaxation_counts, p0 = init_params,
                                              sigma = zero_relaxation_error, 
                                              absolute_sigma=True)
-                
-    
     
         except Exception:
     
@@ -402,10 +400,11 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                 ax.set_ylabel('Normalized signal Counts')
                 ax.set_title('(0,0) - (0,+1)')
                 ax.legend()
-                text = r'$\Omega = $ {} kHz'.format('%.2f'%omega)
+                text = r'$\Omega = $ {} $\pm$ {} kHz'.format('%.3f'%omega, 
+                      '%.3f'%omega_std)
     
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-                ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+                ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
 
     # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
@@ -451,8 +450,8 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         gamma = (gamma_opti_params[0] - omega)/ 2.0
         gamma_std = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_std**2)
         
-#        print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma, 
-#                  '%.3f'%gamma_std))
+        print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma, 
+                  '%.3f'%gamma_std))
 
         # Plotting
         if doPlot:
@@ -473,10 +472,11 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
             ax.set_ylabel('Normalized signal Counts')
             ax.set_title('(+1,+1) - (+1,-1)')
             ax.legend()
-            text = r'$\gamma = $ {} kHz'.format('%.2f'%gamma)
+            text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma, 
+                  '%.3f'%gamma_std)
 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+            ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
                     verticalalignment='top', bbox=props)
     if doPlot:
         fig.canvas.draw()
@@ -506,7 +506,11 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                     'plus_plus_time': plus_plus_time.tolist(),
                     'plus_plus_time-units': 'ms',
                     'omega_opti_params': omega_opti_params.tolist(),
-                    'gamma_opti_params': gamma_opti_params.tolist()
+                    'gamma_opti_params': gamma_opti_params.tolist(),
+                    'omega_std_error': omega_std,
+                    'omega_std_error-units': 'khz',
+                    'gamma_std_error': gamma_std,
+                    'gamma_std_error-units': 'khz'
                     }
         
 
@@ -530,7 +534,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_29MHz_8'
+    folder = 'nv1_2019_05_10_268MHz'
 
 #    folder_list = ['nv0_2019_06_06 _48MHz',
 #                   'nv1_2019_05_10_20MHz',
@@ -552,4 +556,4 @@ if __name__ == '__main__':
 
 #    for folder in folder_list:
 #    main(folder, True)
-    main(folder, 0.34, 0.07, True, offset = True)
+    main(folder, None, None, True, offset = True)

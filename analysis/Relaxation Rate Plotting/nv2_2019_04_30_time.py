@@ -267,16 +267,46 @@ def time_plot_formal():
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     fig.autofmt_xdate()
     ax.xaxis_date()
-
     # for each data "line", plot the hline and error
     for i in range(len(nv2_rates)):
         ax.hlines(nv2_rates[i], start_time[i], end_time[i], linewidth=5, colors = 'blue')
-        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
+#        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
         time_space = numpy.linspace(start_time[i], end_time[i], 1000)
         ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
                         nv2_rates[i] - nv2_error[i],
                         color='blue', alpha=0.2)
 
+#    for i in [0, 1,2,5,6,9,15,16,17,18,19,20,21,22,23,24,25]:
+#        ax.hlines(nv2_rates[i], start_time[i], end_time[i], linewidth=5, colors = '#453fff')
+##        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
+#        time_space = numpy.linspace(start_time[i], end_time[i], 1000)
+#        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
+#                        nv2_rates[i] - nv2_error[i],
+#                        color='#453fff', alpha=0.2)
+#        
+#    for i in [3,4,7,8,10,11,12,13,14]:
+#        ax.hlines(nv2_rates[i], start_time[i], end_time[i], linewidth=5, colors = '#15e7ff')
+#        time_space = numpy.linspace(start_time[i], end_time[i], 1000)
+#        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
+#                        nv2_rates[i] - nv2_error[i],
+#                        color='#15e7ff', alpha=0.2)
+        
+    time_points = [start_time[0], end_time[2],  
+                   start_time[3], end_time[4],
+                   start_time[5], end_time[6],
+                   start_time[7], end_time[8],
+                   start_time[9], end_time[9],
+                   start_time[10], end_time[14],
+                   start_time[15], end_time[25],
+                   ]
+    values = [33.5, 33.5,
+              29.5, 29.5,
+              33.5, 33.5,
+              29.5, 29.5,
+              33.5, 33.5,
+              29.5, 29.5,
+              33.5, 33.5]
+#    ax.plot(time_points, values, '--', color = 'gray')
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
                     grid_alpha=0.7, labelsize = 18)
 
@@ -289,8 +319,10 @@ def time_plot_formal():
 
     plt.xlabel('Date (mm-dd-yy hh:mm)', fontsize=18)
     plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-    plt.title(r'NV2, $\gamma$ rate', fontsize=18)
-#    ax.legend(fontsize=18)
+#    plt.title(r'NV2, $\gamma$ rate', fontsize=18)
+    
+    fig.savefig("fig_3.pdf", bbox_inches='tight')
+
 
 def histogram(x, bins):
     '''

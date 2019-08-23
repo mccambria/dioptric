@@ -71,12 +71,12 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv2_splitting_list_all, nv2_gamma_avg_list_all, yerr = nv2_gamma_error_list_all, 
-            label = r'$\gamma$', fmt='o',markersize = 10,color='blue')
-#ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
-#            label = r'$\Omega$', fmt='o', markersize = 10, color='red')
+            label = r'$\gamma$', fmt='o',markersize = 10, color = '#9927c3')
+ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
+            label = r'$\Omega$', fmt='^', markersize = 10, color='#f68522')
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-            label = 'fit', color ='blue')
+            label = 'fit', color ='#9927c3')
 
 #ax.set_xscale("log", nonposx='clip')
 #ax.set_yscale("log", nonposy='clip')
@@ -126,5 +126,8 @@ ax.grid()
 
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-plt.title(r'NV2', fontsize=18)
+#plt.title(r'NV2', fontsize=18)
 ax.legend(fontsize=18)
+
+fig.savefig("fig_2.pdf", bbox_inches='tight')
+
