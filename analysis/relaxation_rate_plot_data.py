@@ -69,8 +69,8 @@ def main(folder_name, omega = None, omega_unc = None, doPlot = False, offset = T
     # the same type (ie (1,-1)) to be correctly sorted into one array
     for file in file_list:
         data = tool_belt.get_raw_data(data_folder, file[:-4], folder_name)
+#        print(data)
         try:
-
             init_state_name = data['init_state']
             read_state_name = data['read_state']
 
@@ -450,9 +450,9 @@ def main(folder_name, omega = None, omega_unc = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    folder = 'nv1_2019_05_10_268MHz'
+    folder = 'nv1_2019_05_10_28MHz_3'
 
 
 #    for folder in folder_list:
 #    main(folder, True)
-    main(folder, None, None, True, offset = True)
+    main(folder, None,None, True, offset = False)

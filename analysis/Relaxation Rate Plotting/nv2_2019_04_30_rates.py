@@ -62,21 +62,27 @@ fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv2_splitting_list_all, nv2_
                                 absolute_sigma = True)
 
 
-splitting_linspace = numpy.linspace(nv2_splitting_list_all[0], nv2_splitting_list_all[-1],
+splitting_linspace = numpy.linspace(20, 800,
                                     1000)
+omega_constant_array = numpy.empty([1000]) 
+omega_constant_array[:] = numpy.average(nv2_omega_avg_list_all)
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 
+orange = '#f68522'
+purple = '#9927c3'
 
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv2_splitting_list_all, nv2_gamma_avg_list_all, yerr = nv2_gamma_error_list_all, 
-            label = r'$\gamma$', fmt='o',markersize = 10, color = '#9927c3')
+            label = r'$\gamma$', fmt='o',markersize = 10, color = purple)
 ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
-            label = r'$\Omega$', fmt='^', markersize = 10, color='#f68522')
+            label = r'$\Omega$', fmt='^', markersize = 10, color=orange)
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-            label = 'fit', color ='#9927c3')
+            label = 'fit', color =purple)
+ax.plot(splitting_linspace, omega_constant_array, color = orange,
+            label = r'$\Omega$')
 
 #ax.set_xscale("log", nonposx='clip')
 #ax.set_yscale("log", nonposy='clip')
@@ -112,8 +118,8 @@ text_1 = '\n'.join((r'$1/f^{\alpha} + \gamma_\infty$ fit:',
                   ))
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.65, 0.95, text_1, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+#ax.text(0.65, 0.95, text_1, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -124,10 +130,14 @@ ax.tick_params(which = 'major', length=12, width=2)
 
 ax.grid()
 
+ax.set_xlim([20,800])
+ax.set_ylim([0.1,200])
+
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-#plt.title(r'NV2', fontsize=18)
-ax.legend(fontsize=18)
 
-fig.savefig("fig_2.pdf", bbox_inches='tight')
+#plt.title(r'NV2', fontsize=18)
+#ax.legend(fontsize=18)
+
+#fig.savefig("fig_3a.pdf", bbox_inches='tight')
 

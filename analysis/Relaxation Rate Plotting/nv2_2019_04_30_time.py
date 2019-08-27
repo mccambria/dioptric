@@ -260,21 +260,26 @@ def time_plot_formal():
     data as horizontal lines over the course of the experiment
     '''
     # convert the datetimes ito python time
-    start_time = mdates.date2num(start_datetimes).tolist()
-    end_time = mdates.date2num(end_datetimes).tolist()
+    zero_time = mdates.date2num(datetime.datetime(2019,8,13,14,13,52))
+    start_time_list = mdates.date2num(start_datetimes).tolist()
+    end_time_list = mdates.date2num(end_datetimes).tolist()
 
     # create the figure
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    fig.autofmt_xdate()
-    ax.xaxis_date()
+#    fig.autofmt_xdate()
+#    ax.xaxis_date()
     # for each data "line", plot the hline and error
     for i in range(len(nv2_rates)):
-        ax.hlines(nv2_rates[i], start_time[i], end_time[i], linewidth=5, colors = 'blue')
+        start_time = start_time_list[i]-zero_time
+        start_time_h = start_time * 24
+        end_time = end_time_list[i]-zero_time
+        end_time_h = end_time * 24
+        ax.hlines(nv2_rates[i], start_time_h, end_time_h, linewidth=5, colors = 'blue')
 #        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
-        time_space = numpy.linspace(start_time[i], end_time[i], 1000)
+        time_space = numpy.linspace(start_time_h, end_time_h, 1000)
         ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
                         nv2_rates[i] - nv2_error[i],
-                        color='blue', alpha=0.2)
+                        color='#453fff', alpha=0.2)
 
 #    for i in [0, 1,2,5,6,9,15,16,17,18,19,20,21,22,23,24,25]:
 #        ax.hlines(nv2_rates[i], start_time[i], end_time[i], linewidth=5, colors = '#453fff')
@@ -291,21 +296,21 @@ def time_plot_formal():
 #                        nv2_rates[i] - nv2_error[i],
 #                        color='#15e7ff', alpha=0.2)
         
-    time_points = [start_time[0], end_time[2],  
-                   start_time[3], end_time[4],
-                   start_time[5], end_time[6],
-                   start_time[7], end_time[8],
-                   start_time[9], end_time[9],
-                   start_time[10], end_time[14],
-                   start_time[15], end_time[25],
-                   ]
-    values = [33.5, 33.5,
-              29.5, 29.5,
-              33.5, 33.5,
-              29.5, 29.5,
-              33.5, 33.5,
-              29.5, 29.5,
-              33.5, 33.5]
+#    time_points = [start_time[0], end_time[2],  
+#                   start_time[3], end_time[4],
+#                   start_time[5], end_time[6],
+#                   start_time[7], end_time[8],
+#                   start_time[9], end_time[9],
+#                   start_time[10], end_time[14],
+#                   start_time[15], end_time[25],
+#                   ]
+#    values = [33.5, 33.5,
+#              29.5, 29.5,
+#              33.5, 33.5,
+#              29.5, 29.5,
+#              33.5, 33.5,
+#              29.5, 29.5,
+#              33.5, 33.5]
 #    ax.plot(time_points, values, '--', color = 'gray')
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
                     grid_alpha=0.7, labelsize = 18)
@@ -314,25 +319,31 @@ def time_plot_formal():
 
     ax.grid()
 
-    xfmt = mdates.DateFormatter('%m-%d-%y %H:%M')
-    ax.xaxis.set_major_formatter(xfmt)
-
-    plt.xlabel('Date (mm-dd-yy hh:mm)', fontsize=18)
-    plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
+#    xfmt = mdates.DateFormatter('%m-%d-%y %H:%M')
+#    ax.xaxis.set_major_formatter(xfmt)
+    ax.set_ylim([26, 38])
+    plt.xlabel('Time (hours)', fontsize=18)
+    plt.ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=18)
 #    plt.title(r'NV2, $\gamma$ rate', fontsize=18)
     
-    fig.savefig("fig_3.pdf", bbox_inches='tight')
+    fig.savefig("fig_4a.pdf", bbox_inches='tight')
 
 
 def histogram(x, bins):
     '''
     Produces a histogram of the data passed
     '''
+    text = 52
 #    numpy.histogram(nv2_rates, bins = 10)
-    plt.hist(x, bins = bins)
-    plt.xlabel('Gamma (kHz)')
-    plt.ylabel('Occurances')
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+    ax.hist(x, bins = bins, color = '#453fff')
+    ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
+    ax.set_ylabel('Occurances', fontsize=text)
+    ax.tick_params(which = 'both', length=10, width=20, colors='k',
+                    grid_alpha=1.2, labelsize = text)
 
+    ax.tick_params(which = 'major', length=12, width=2)
+    fig.savefig("fig_4b.pdf", bbox_inches='tight')
 
 def kde_sklearn(x, bandwidth=0.2):
     '''
@@ -406,7 +417,7 @@ def lag_plot(x):
 #%%
 if __name__ == "__main__":
     time_plot_formal()
-
+#    histogram(nv2_rates, 8)
 #     KDE Estimating Two Values
 #    kde_points, x_grid = kde_sklearn(nv2_rates, bandwidth=1.1)
 #

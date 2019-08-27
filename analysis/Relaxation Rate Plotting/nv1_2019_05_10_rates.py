@@ -22,8 +22,8 @@ def fit_eq_1(f, amp):
 def fit_eq_2(f, amp):
     return amp*f**(-2)
 
-def fit_eq_alpha(f, amp, alpha):
-    return amp*f**(-alpha)
+def fit_eq_alpha(f, amp, alpha, offset):
+    return offset + amp*f**(-alpha)
 
 # %%
 
@@ -33,11 +33,11 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-nv1_splitting_list = [19.8, 28, 30, 32.7, 51.8, 97.8, 116, 563.6]
-nv1_omega_avg_list = [1.3, 1.7, 1.62, 1.48, 2.3, 1.8, 1.18, 1.15]
-nv1_omega_error_list = [0.2, 0.4, 0, 0.09, 0.4, 0.2, 0.13, 0.12]
-nv1_gamma_avg_list = [136, 68, 37, 50, 13.0, 3.5, 4.6, 0.78]
-nv1_gamma_error_list = [10, 7, 6, 3, 0.6, 0.2, 0.3, 0.1]
+nv1_splitting_list = [19.8, 28, 30, 32.7, 51.8, 97.8, 116, 268, 563.6]
+nv1_omega_avg_list = [1.3, 1.7, 1.62, 1.48, 2.3, 1.8, 1.18, 1.07, 1.15]
+nv1_omega_error_list = [0.2, 0.4, 0, 0.09, 0.4, 0.2, 0.13, 0.10, 0.12]
+nv1_gamma_avg_list = [136, 68, 37, 50, 13.0, 3.5, 4.6, 1.92, 0.78]
+nv1_gamma_error_list = [10, 7, 6, 3, 0.6, 0.2, 0.3, 0.13, 0.1]
 
 # Try to fit the gamma to a 1/f^2
 
@@ -50,7 +50,7 @@ fit_2_params, cov_arr = curve_fit(fit_eq_2, nv1_splitting_list, nv1_gamma_avg_li
                                 absolute_sigma = True)
 
 fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv1_splitting_list, nv1_gamma_avg_list, 
-                                p0 = (100, 1), sigma = nv1_gamma_error_list,
+                                p0 = (100, 1, 2), sigma = nv1_gamma_error_list,
                                 absolute_sigma = True)
 
 splitting_linspace = numpy.linspace(nv1_splitting_list[0], nv1_splitting_list[-1],
@@ -80,8 +80,9 @@ ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list,
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
             'b', label = r'fit')
 
-text = '\n'.join((r'$1/f^{\alpha}$ fit:',
-                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1])
+text = '\n'.join((r'$1/f^{\alpha} + \gamma_\infty$ fit:',
+                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
+                  r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[2])
 #                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0]),
 #                  ,r'$a = $' + '%.2f'%(fit_params[2])
                   ))

@@ -39,21 +39,28 @@ fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv16_splitting_list, nv16_ga
                                 p0 = [100, 1], sigma = nv16_gamma_error_list,
                                 absolute_sigma = True)
 
-splitting_linspace = numpy.linspace(nv16_splitting_list[0], nv16_splitting_list[-1],
+splitting_linspace = numpy.linspace(20, 800,
                                     1000)
-
+omega_constant_array = numpy.empty([1000]) 
+omega_constant_array[:] = numpy.average(nv16_omega_avg_list)
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 
 
 axis_font = {'size':'14'}
 
+orange = '#f68522'
+purple = '#9927c3'
+
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv16_splitting_list, nv16_gamma_avg_list, yerr = nv16_gamma_error_list, 
-            label = r'$\gamma$', fmt='o', color='blue')
-#ax.errorbar(nv16_splitting_list, nv16_omega_avg_list, yerr = nv16_omega_error_list, 
-#            label = r'$\Omega$', fmt='o', color='red')
+            label = r'$\gamma$', fmt='o', markersize = 10, color=purple)
+ax.errorbar(nv16_splitting_list, nv16_omega_avg_list, yerr = nv16_omega_error_list, 
+            label = r'$\Omega$', fmt='^', markersize = 10, color=orange)
+ax.plot(splitting_linspace, omega_constant_array, color= orange,
+            label = r'$\Omega$')
+
 
 #ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
 #            label = r'$f^{-2}$', color ='teal')
@@ -63,7 +70,7 @@ ax.errorbar(nv16_splitting_list, nv16_gamma_avg_list, yerr = nv16_gamma_error_li
 # %%
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-            'b', label = 'fit')
+            color = purple, label = 'fit')
 
 text = '\n'.join((r'$1/f^\alpha$ fit:',
                   r'$\alpha = $' + '%.2f'%(fit_alpha_params[1])
@@ -71,8 +78,8 @@ text = '\n'.join((r'$1/f^\alpha$ fit:',
 #                  r'$\gamma_0 = $' + '%.2f'%(fit_params[2])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+#ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -83,7 +90,11 @@ ax.tick_params(which = 'major', length=12, width=2)
 
 ax.grid()
 
+ax.set_xlim([20,800])
+ax.set_ylim([0.1,200])
+
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-plt.title('NV16', fontsize=18)
-ax.legend(fontsize=18)
+#plt.title('NV16', fontsize=18)
+#ax.legend(fontsize=18)
+fig.savefig("fig_3b.pdf", bbox_inches='tight')

@@ -109,7 +109,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 #            norm_avg_err_0 = norm_avg_sig * \
 #                    numpy.sqrt((std_sig_counts/avg_sig_counts)**2 + \
 #                    (std_ref/avg_ref)**2)
-            norm_avg_err = std_sig_counts / avg_ref
+            norm_avg_err = std_sig_counts / avg_ref 
             
             # take the average of the reference for 
 

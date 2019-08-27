@@ -65,28 +65,17 @@ def convert(folder_name):
             
 if __name__ == '__main__':
     
-    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/' \
-        't1_double_quantum/{}'
+    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/Nice data for posters/{}'
         
-#    sub_folder_names = ['nv0_2019_06_06 _48MHz',
-#                        'nv1_2019_05_10_20MHz',
-#                        'nv1_2019_05_10_28MHz',
-#                        'nv1_2019_05_10_30MHz',
-#                        'nv1_2019_05_10_32MHz',
-#                        'nv1_2019_05_10_52MHz',
-#                        'nv1_2019_05_10_98MHz',
-#                        'nv1_2019_05_10_116MHz',
-#                        'nv2_2019_04_30_29MHz',
-#                        'nv2_2019_04_30_45MHz',
-#                        'nv2_2019_04_30_56MHz',
-#                        'nv2_2019_04_30_57MHz',
-#                        'nv2_2019_04_30_70MHz',
-#                        'nv2_2019_04_30_85MHz',
-#                        'nv2_2019_04_30_101MHz',
-#                        'nv4_2019_06_06_28MHz']
+#    sub_folder_names = ['2019-08-22-07_55_36-ayrton12-nv1_2019_05_10.txt',
+#                         '2019-08-23-17_36_12-ayrton12-nv1_2019_05_10.txt',
+#                         '2019-08-23-23_20_27-ayrton12-nv1_2019_05_10.txt',
+#                         '2019-08-24-06_51_38-ayrton12-nv1_2019_05_10.txt',
+#                         '2019-08-24-08_38_20-ayrton12-nv1_2019_05_10.txt',
+#                         '2019-08-24-14_22_27-ayrton12-nv1_2019_05_10.txt']
 #    
 #    for el in sub_folder_names:
 #        
 #        convert(top_folder_name.format(el))
         
-    convert(top_folder_name.format('nv13_2019_06_10_72MHz'))
+    convert(top_folder_name.format('relaxation rate paper data'))
