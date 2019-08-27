@@ -332,7 +332,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'gate_time': gate_time,
             'gate_time-units': 'ns',
-            'num_runs': num_runs,
+            'run_ind': run_ind,
             'params_master_list': params_master_list,
             'params_master_list-format': '[[init_state, read_state],relaxation range, num_steps, num_reps, uwave_pi_pulse_init, uwave_freq_init, uwave_power_init, uwave_pi_pulse_read, uwave_freq_read, uwave_power_read]',
             'params_master_list-units': '[[null, null], [ns, ns], null, null, ns, GHz, dBm, ns, GHz, dBm]',

@@ -519,7 +519,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-        tool_belt.save_raw_data(raw_data, file_path)
+#        tool_belt.save_raw_data(raw_data, file_path)
     
     # %% Saving the figure
 
@@ -528,13 +528,13 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
-        tool_belt.save_figure(fig, file_path)
+#        tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 
 if __name__ == '__main__':
 
-    folder = 'nv1_2019_05_10_268MHz'
+    folder = 'nv1_2019_05_10_28MHz_4'
 
 #    folder_list = ['nv0_2019_06_06 _48MHz',
 #                   'nv1_2019_05_10_20MHz',
@@ -556,4 +556,4 @@ if __name__ == '__main__':
 
 #    for folder in folder_list:
 #    main(folder, True)
-    main(folder, None, None, True, offset = True)
+    main(folder,  1.6, 0.6,  True, offset = True)
