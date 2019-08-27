@@ -51,8 +51,10 @@ def time_plot(file_name):
         time_list.append(time)
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.errorbar(time_list, gamma_list, yerr = gamma_ste_list,
-                label = r'$\gamma$', fmt='o', markersize = 10,color='blue')
+#    ax.errorbar(time_list, gamma_list, yerr = gamma_ste_list,
+#                label = r'$\gamma$', fmt='o', markersize = 10,color='blue')
+    ax.errorbar(time_list, gamma_list,
+                label = r'$\gamma$', fmt='-o', markersize = 10,color='blue')
 
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
                     grid_alpha=0.7, labelsize = 18)
@@ -68,8 +70,23 @@ def time_plot(file_name):
     fig.canvas.draw()
     fig.canvas.flush_events()
     
+def histogram(file_name, bins):
+    '''
+    Produces a histogram of the data passed
+    '''
+    data = tool_belt.get_raw_data('t1_double_quantum', file_name, 'nv1_2019_05_10_28MHz_4')
+    
+    gamma_list = data['gamma_list']
+    
+    plt.hist(gamma_list, bins = bins)
+    plt.xlabel('Gamma (kHz)')
+    plt.ylabel('Occurances')
+    
+    
 # %%
 file_name = '26.3_MHz_splitting_30_bins_v2'
     
-time_plot(file_name)
+#time_plot(file_name)
+histogram(file_name, 12)
+
     

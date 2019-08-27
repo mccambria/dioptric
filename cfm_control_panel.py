@@ -208,7 +208,7 @@ def do_t1_battery(nv_sig, apd_indices):
 def do_t1_interleave(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 90
+    num_runs = 75
     t1_exp_array = numpy.array([
                         [[States.HIGH, States.LOW], [0, 75*10**3], 76, 10**5, num_runs],
                         [[States.HIGH, States.HIGH], [0, 75*10**3], 76, 10**5, num_runs],
@@ -278,7 +278,7 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
 
         # Run resonance and save the resonance found
         num_reps = 10**5
-        freq_range = 0.040
+        freq_range = 0.04
 
         print('Measureing pESR on {}\n'.format(state.name))
         resonance_list = pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
@@ -304,7 +304,7 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
             nv_sig['resonance_{}'.format(state.name)] = float('%.4f'%resonance)
 
         # Run rabi and save the rabi period
-        uwave_time_range = [0, 300]
+        uwave_time_range = [0, 200]
         num_reps = 2*10**5
 
         print('Measureing rabi on {}\n'.format(state.name))
@@ -373,8 +373,8 @@ if __name__ == '__main__':
       'name': '{}-nv{}_2019_05_10'.format(sample_name, 1),
       'expected_count_rate': 25,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 510, 'magnet_angle': 109.3,
-      'resonance_LOW':2.8510, 'rabi_LOW': 99.8, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.8773, 'rabi_HIGH': 158.7, 'uwave_power_HIGH': 10.0}
+      'resonance_LOW':2.8512, 'rabi_LOW': 99.8, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 2.8777, 'rabi_HIGH': 158.7, 'uwave_power_HIGH': 10.0}
 
     nv_sig_list = [nv1_2019_05_10]
 
@@ -425,12 +425,12 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
-#            do_rabi(nv_sig, apd_indices, States.LOW)
-#            do_rabi(nv_sig, apd_indices, States.HIGH)
+            do_rabi(nv_sig, apd_indices, States.LOW)
+            do_rabi(nv_sig, apd_indices, States.HIGH)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
-            do_t1_interleave(nv_sig, apd_indices)
-
+#            do_t1_interleave(nv_sig, apd_indices)
+#            find_resonance_and_rabi(nv_sig, apd_indices)
 #            for i in range(5):
 #                fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
 #                if fail_bool == True:

@@ -344,12 +344,12 @@ def main(folder_name, num_bins, omega = None, omega_ste = None, save_data = True
         plus_plus_counts_slice = \
             numpy.average(plus_plus_counts[i:i+slice_size, ::], axis = 0)
         plus_plus_counts_slice_std = \
-            numpy.std(plus_plus_counts[i:i+slice_size, ::], axis = 0)
+            numpy.std(plus_plus_counts[i:i+slice_size, ::], axis = 0, ddof = 1)
             
         plus_minus_counts_slice = \
             numpy.average(plus_minus_counts[i:i+slice_size, ::], axis = 0)
         plus_minus_counts_slice_std = \
-            numpy.std(plus_minus_counts[i:i+slice_size, ::], axis = 0)
+            numpy.std(plus_minus_counts[i:i+slice_size, ::], axis = 0, ddof = 1)
         
         # Define the counts for the plus relaxation equation, propegate error
         plus_relaxation_counts =  plus_plus_counts_slice - plus_minus_counts_slice
@@ -405,7 +405,7 @@ def main(folder_name, num_bins, omega = None, omega_ste = None, save_data = True
             plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
             #    ax = axes_pack[1]
             ax.errorbar(plus_plus_time, plus_relaxation_counts,                         
-                    yerr = plus_relaxation_ste, 
+                    yerr = plus_relaxation_std, 
                     label = 'data', fmt = 'o', color = 'blue')
             if offset:
                 ax.plot(plus_time_linspace,
@@ -508,5 +508,5 @@ if __name__ == '__main__':
     folder = 'nv1_2019_05_10_28MHz_4'
 
     
-    main(folder, 1,  1.6, 0.6, True,  True)
+    main(folder, 15,  1.6, 0.6, True,  True)
 
