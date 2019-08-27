@@ -90,6 +90,7 @@ def main(folder_name, num_bins, omega = None, omega_unc = None, save_data = True
     g_amp_list = []
     g_offset_list = []
     
+    gamma_list =[]
     # %% Unpack the data
     
     # Unpack the data and sort into arrays. This allows multiple experiments of 
@@ -363,6 +364,8 @@ def main(folder_name, num_bins, omega = None, omega_unc = None, save_data = True
                 omega = omega_opti_params[0] / 3
             gamma = (gamma_opti_params[0] - omega) / 2
             
+            gamma_list.append(gamma)
+            
             fig, ax = plt.subplots(1, 1, figsize=(10, 8))
             plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
             #    ax = axes_pack[1]
@@ -431,6 +434,8 @@ def main(folder_name, num_bins, omega = None, omega_unc = None, save_data = True
                     'o_offset_list-units': 'arb',
                     'g_rate_list': g_rate_list,
                     'g_rate_list-units': 'kHz',
+                    'gamma_list': gamma_list,
+                    'gamma_list-units': 'kHz',
                     'g_amp_list': g_amp_list,
                     'g_amp_list-units': 'arb',
                     'g_offset_list': g_offset_list,
@@ -450,8 +455,8 @@ def main(folder_name, num_bins, omega = None, omega_unc = None, save_data = True
                   
 if __name__ == '__main__':
     
-    folder = 'nv2_2019_04_30_29MHz_7'
+    folder = 'nv1_2019_05_10_28MHz_4'
 
     
-    main(folder, 20,  0.34, 0.07, True,  True)
+    main(folder, 9,  1.6, 0.6, True,  True)
 

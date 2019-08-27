@@ -60,31 +60,13 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 
 # %%
 
-num_runs = 60
-t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 4*10**4, num_runs],
-                    [[States.HIGH, States.LOW],  [0, 600*10**3], 51, 2*10**4, num_runs],
-                    [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 4*10**4, num_runs],
-                    [[States.HIGH, States.HIGH],  [0, 600*10**3], 51, 2*10**4, num_runs],
-                    [[States.HIGH, States.ZERO], [0, 50*10**3], 51, 4*10**4, num_runs],
-                    [[States.HIGH, States.ZERO],  [0, 600*10**3], 51, 2*10**4, num_runs]
-                    
-#                    [[States.LOW, States.LOW], [0, 50*10**3], 51, 4*10**4, num_runs],
-#                    [[States.LOW, States.LOW],  [0, 600*10**3], 51, 2*10**4, num_runs],
-                    
-#                    [[States.LOW, States.HIGH], [0, 50*10**3], 51, 4*10**4, num_runs],
-#                    [[States.LOW, States.HIGH],  [0, 600*10**3], 51, 2*10**4, num_runs],
-#                    [[States.LOW, States.ZERO], [0, 50*10**3], 51, 4*10**4, num_runs],
-#                    [[States.LOW, States.ZERO],  [0, 600*10**3], 51, 2*10**4, num_runs],
-#                    
-#                    [[States.ZERO, States.LOW], [0, 50*10**3], 51, 4*10**4, num_runs],
-#                    [[States.ZERO, States.LOW],  [0, 600*10**3], 51, 2*10**4, num_runs],
-#                    [[States.ZERO, States.HIGH], [0, 50*10**3], 51, 4*10**4, num_runs],
-#                    [[States.ZERO, States.HIGH],  [0, 600*10**3], 51, 2*10**4, num_runs],
-#                    [[States.ZERO, States.ZERO], [0, 50*10**3], 51, 4*10**4, num_runs],
-#                    [[States.ZERO, States.ZERO],  [0, 600*10**3], 51, 2*10**4, num_runs]
+num_runs = 1
+t1_exp_array = numpy.array([
+                    [[States.HIGH, States.LOW], [0, 75*10**3], 76, 10**5, num_runs],
+                    [[States.HIGH, States.HIGH], [0, 75*10**3], 76, 10**5, num_runs],
                     ])
 
-contrast = .20
+contrast = .35
 exp_count_rate = 21 # kcps
 readout_window = 510 # ns
 

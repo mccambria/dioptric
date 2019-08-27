@@ -126,10 +126,10 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 #    num_runs = 2
 #    freq_range = 0.030
 
-    num_steps = 31
+    num_steps = 41
     num_reps = 10**5
     num_runs = 2
-    freq_range = 0.030
+    freq_range = 0.040
 
     pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
                           num_steps, num_reps, num_runs)
@@ -208,20 +208,10 @@ def do_t1_battery(nv_sig, apd_indices):
 def do_t1_interleave(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 40
-    t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
-                        [[States.HIGH, States.LOW],  [0, 2*10**6], 26, 1.5*10**4, num_runs],
-                        [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
-                        [[States.HIGH, States.HIGH], [0, 2*10**6], 26, 1.5*10**4, num_runs],
-                        [[States.ZERO, States.HIGH], [0, 1.2*10**6], 26, 2*10**4, num_runs],
-                        [[States.ZERO, States.ZERO], [0, 1.2*10**6], 26, 2*10**4, num_runs]
-                        ])
-    
+    num_runs = 90
     t1_exp_array = numpy.array([
-                        [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, 20],
-                        [[States.HIGH, States.LOW], [0, 150*10**3], 26, 8*10**4, 20],
-                        [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, 20],
-                        [[States.HIGH, States.HIGH, [0, 150*10**3], 26, 8*10**4, 20]
+                        [[States.HIGH, States.LOW], [0, 75*10**3], 76, 10**5, num_runs],
+                        [[States.HIGH, States.HIGH], [0, 75*10**3], 76, 10**5, num_runs],
                         ])
 
     t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
@@ -381,10 +371,10 @@ if __name__ == '__main__':
 
     nv1_2019_05_10 = {'coords': [0.234, 0.308, 5.06],
       'name': '{}-nv{}_2019_05_10'.format(sample_name, 1),
-      'expected_count_rate': 21,
+      'expected_count_rate': 25,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 510, 'magnet_angle': 109.3,
-      'resonance_LOW':2.8508, 'rabi_LOW': 100.5, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.8776, 'rabi_HIGH': 164.1, 'uwave_power_HIGH': 10.0}
+      'resonance_LOW':2.8510, 'rabi_LOW': 99.8, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 2.8773, 'rabi_HIGH': 158.7, 'uwave_power_HIGH': 10.0}
 
     nv_sig_list = [nv1_2019_05_10]
 
