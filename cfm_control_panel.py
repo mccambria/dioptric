@@ -371,10 +371,10 @@ if __name__ == '__main__':
 
     nv1_2019_05_10 = {'coords': [0.234, 0.308, 5.06],
       'name': '{}-nv{}_2019_05_10'.format(sample_name, 1),
-      'expected_count_rate': 25,
+      'expected_count_rate': 21,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 510, 'magnet_angle': 109.3,
-      'resonance_LOW':2.8512, 'rabi_LOW': 99.8, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.8777, 'rabi_HIGH': 158.7, 'uwave_power_HIGH': 10.0}
+      'resonance_LOW':2.8512, 'rabi_LOW': 99.9, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 2.8777, 'rabi_HIGH': 163.4, 'uwave_power_HIGH': 10.0}
 
     nv_sig_list = [nv1_2019_05_10]
 
@@ -425,11 +425,11 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
-            do_rabi(nv_sig, apd_indices, States.LOW)
-            do_rabi(nv_sig, apd_indices, States.HIGH)
+#            do_rabi(nv_sig, apd_indices, States.LOW)
+#            do_rabi(nv_sig, apd_indices, States.HIGH)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
-#            do_t1_interleave(nv_sig, apd_indices)
+            do_t1_interleave(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            for i in range(5):
 #                fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
