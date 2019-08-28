@@ -8,7 +8,7 @@ It works only with an experiment that performed (1,1) and (1,-1), for now
 
 @author: agardill
 """
-# %%
+# %% Imports
 
 import numpy
 from scipy.optimize import curve_fit
@@ -17,14 +17,14 @@ import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
 from utils.tool_belt import States
 
-# %%
+# %% Presets
 
 data_folder = 't1_double_quantum'
 
 omega = 1.6
 omega_ste = 0.6
 
-# %%
+# %% Minor functions
 
 def expon_decay(t, rate, amp, offset):
     return offset + amp*numpy.exp(-rate*t)
@@ -80,7 +80,7 @@ def plot_fig(x, y, fit_params, gamma, gamma_unc):
         fig.canvas.flush_events()
         
     
-# %%
+# %% Main
 
 def main(file_name, folder_name, num_bins):  
     # Make some lists to save data
