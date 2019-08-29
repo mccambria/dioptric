@@ -22,7 +22,7 @@ import numpy
 from numpy import exp
 import json
 import time
-#import labrad
+import labrad
 from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
@@ -549,12 +549,12 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
     if (time_stamp != '') and (name != ''):
         fileName = '{}-{}'.format(time_stamp, name)
         #locate the subfolder that matches the month and year when the data is taken
-        subfolder_name = str(time_stamp.split('-')[0]+' '+time_stamp.split('-')[1])
+        subfolder_name = str(time_stamp.split('-')[0]+'_'+time_stamp.split('-')[1])
     elif (time_stamp == '') and (name != ''):
         fileName = name
     elif (time_stamp != '') and (name == ''):
         fileName = '{}-{}'.format(time_stamp, 'untitled')
-        subfolder_name = str(time_stamp.split('-')[0]+' '+time_stamp.split('-')[1])
+        subfolder_name = str(time_stamp.split('-')[0]+'_'+time_stamp.split('-')[1])
     else:
         fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
     
