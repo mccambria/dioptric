@@ -22,7 +22,7 @@ import numpy
 from numpy import exp
 import json
 import time
-#import labrad
+import labrad
 from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
@@ -548,18 +548,54 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
     # Set up the file name
     if (time_stamp != '') and (name != ''):
         fileName = '{}-{}'.format(time_stamp, name)
+        #locate the subfolder that matches the month and year when the data is taken
+        subfolder_name = str(time_stamp.split('-')[0]+'_'+time_stamp.split('-')[1])
     elif (time_stamp == '') and (name != ''):
         fileName = name
     elif (time_stamp != '') and (name == ''):
         fileName = '{}-{}'.format(time_stamp, 'untitled')
+        subfolder_name = str(time_stamp.split('-')[0]+'_'+time_stamp.split('-')[1])
     else:
         fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
-
-    folderDir = get_folder_dir(source_name, subfolder)
+    
+    folderDir = get_folder_dir(source_name, subfolder_name)
 
     fileDir = os.path.abspath(os.path.join(folderDir, fileName))
 
     return fileDir
+
+#def get_file_path(source_name, time_stamp='', name='', subfolder=None):
+#    """
+#    Get the file path to save to. This will be in a subdirectory of nvdata.
+#
+#    Params:
+#        source_name: string
+#            Source file name - alternatively, __file__ of the caller which will
+#            be parsed to get the name of the subdirectory we will write to
+#        time_stamp: string
+#            Formatted timestamp to include in the file name
+#        name: string
+#            The file names consist of <timestamp>_<name>.<ext>
+#            Ext is supplied by the save functions
+#        subfolder: string
+#            Subfolder to save to under file name
+#    """
+#
+#    # Set up the file name
+#    if (time_stamp != '') and (name != ''):
+#        fileName = '{}-{}'.format(time_stamp, name)
+#    elif (time_stamp == '') and (name != ''):
+#        fileName = name
+#    elif (time_stamp != '') and (name == ''):
+#        fileName = '{}-{}'.format(time_stamp, 'untitled')
+#    else:
+#        fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
+#
+#    folderDir = get_folder_dir(source_name, subfolder)
+#
+#    fileDir = os.path.abspath(os.path.join(folderDir, fileName))
+#
+#    return fileDir
 
 
 def save_figure(fig, filePath):
