@@ -117,35 +117,35 @@ def fit_resonance(freq_range, freq_center, num_steps,
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
 
-    if len(peak_inds) > 1:
-        # Find the location of the highest peak
-        max_peak_peak_inds = peak_heights.index(max(peak_heights))
-        max_peak_freqs = peak_inds[max_peak_peak_inds]
+#    if len(peak_inds) > 1:
+#        # Find the location of the highest peak
+#        max_peak_peak_inds = peak_heights.index(max(peak_heights))
+#        max_peak_freqs = peak_inds[max_peak_peak_inds]
+#
+#        # Remove what we just found so we can find the second highest peak
+#        peak_inds.pop(max_peak_peak_inds)
+#        peak_heights.pop(max_peak_peak_inds)
+#
+#        # Find the location of the next highest peak
+#        next_max_peak_peak_inds = peak_heights.index(max(peak_heights))  # Index in peak_inds
+#        next_max_peak_freqs = peak_inds[next_max_peak_peak_inds]  # Index in freqs
+#
+#        # Order from smallest to largest
+#        peaks = [max_peak_freqs, next_max_peak_freqs]
+#        peaks.sort()
+#
+#        low_freq_guess = freqs[peaks[0]]
+#        high_freq_guess = freqs[peaks[1]]
+#
+#    elif len(peak_inds) == 1:
+#        low_freq_guess = freqs[peak_inds[0]]
+#        high_freq_guess = None
+#    else:
+#        print('Could not locate peaks')
+#        return None, None
 
-        # Remove what we just found so we can find the second highest peak
-        peak_inds.pop(max_peak_peak_inds)
-        peak_heights.pop(max_peak_peak_inds)
-
-        # Find the location of the next highest peak
-        next_max_peak_peak_inds = peak_heights.index(max(peak_heights))  # Index in peak_inds
-        next_max_peak_freqs = peak_inds[next_max_peak_peak_inds]  # Index in freqs
-
-        # Order from smallest to largest
-        peaks = [max_peak_freqs, next_max_peak_freqs]
-        peaks.sort()
-
-        low_freq_guess = freqs[peaks[0]]
-        high_freq_guess = freqs[peaks[1]]
-
-    elif len(peak_inds) == 1:
-        low_freq_guess = freqs[peak_inds[0]]
-        high_freq_guess = None
-    else:
-        print('Could not locate peaks')
-        return None, None
-
-#    low_freq_guess = 2.83
-#    high_freq_guess = None
+    low_freq_guess = 2.8779
+    high_freq_guess = None
 
     # %% Fit!
 
@@ -459,7 +459,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    file = '2019-08-27-16_27_33-ayrton12-nv1_2019_05_10'
+    file = '2019-08-28-12_41_47-ayrton12-nv1_2019_05_10'
     data = tool_belt.get_raw_data('pulsed_resonance.py', file)
 
     # file = '2019-08-01-11_31_52-ayrton12-nv16_2019_07_25'

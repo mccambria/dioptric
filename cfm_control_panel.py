@@ -129,7 +129,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     num_steps = 41
     num_reps = 10**5
     num_runs = 2
-    freq_range = 0.040
+    freq_range = 0.030
 
     pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
                           num_steps, num_reps, num_runs)
@@ -373,8 +373,8 @@ if __name__ == '__main__':
       'name': '{}-nv{}_2019_05_10'.format(sample_name, 1),
       'expected_count_rate': 21,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 510, 'magnet_angle': 109.3,
-      'resonance_LOW':2.8512, 'rabi_LOW': 99.9, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.8777, 'rabi_HIGH': 163.4, 'uwave_power_HIGH': 10.0}
+      'resonance_LOW': 2.8514, 'rabi_LOW': 98.8, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 2.8776, 'rabi_HIGH': 165.0, 'uwave_power_HIGH': 10.0}
 
     nv_sig_list = [nv1_2019_05_10]
 
