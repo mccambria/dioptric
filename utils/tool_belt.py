@@ -549,14 +549,23 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
     if (time_stamp != '') and (name != ''):
         fileName = '{}-{}'.format(time_stamp, name)
         #locate the subfolder that matches the month and year when the data is taken
-        subfolder_name = str(time_stamp.split('-')[0]+'_'+time_stamp.split('-')[1])
+        date_folder_name = str(time_stamp.split('-')[0]+'_'+time_stamp.split('-')[1])
     elif (time_stamp == '') and (name != ''):
         fileName = name
     elif (time_stamp != '') and (name == ''):
         fileName = '{}-{}'.format(time_stamp, 'untitled')
-        subfolder_name = str(time_stamp.split('-')[0]+'_'+time_stamp.split('-')[1])
+        date_folder_name = str(time_stamp.split('-')[0]+'_'+time_stamp.split('-')[1])
     else:
         fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
+    
+    # Create the subfolder combined name, if needed
+    if (subfolder != None) and (date_folder_name != None):
+        subfolder_name = str(date_folder_name + '/' + subfolder)
+    elif (subfolder == None) and (date_folder_name != None):
+        subfolder_name = date_folder_name
+    else:
+        subfolder_name = None
+        
     
     folderDir = get_folder_dir(source_name, subfolder_name)
 
