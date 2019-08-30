@@ -19,37 +19,41 @@ def exp_eq_offset(t, rate, amp, offset):
 
 # %%
     
-omega = 0.34
-omega_unc = 0.07
+omega = 1.6
+omega_unc = 1.6
 
-file = '29.9_MHz_splitting_1_bins'
-folder = 'nv2_2019_04_30_29MHz_9'
+first_ind = 5
+second_ind = 2
+
+folder = 'nv1_2019_05_10_28MHz_4'
+file = '26.3_MHz_splitting_30_bins_error'
 data_f = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
-gamma_f = 32.9
-gamma_unc_f = 0.7
 
-file = '29.8_MHz_splitting_1_bins'
-folder = 'nv2_2019_04_30_29MHz_10'
-data_s = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
-gamma_s = 28.9
-gamma_unc_s = 0.7
+
+gamma_f = data_f['gamma_list'][first_ind]
+gamma_unc_f = data_f['gamma_ste_list'][first_ind]
+
+gamma_s = data_f['gamma_list'][second_ind]
+gamma_unc_s = data_f['gamma_ste_list'][second_ind]
 
 # %%
 
-counts_f = data_f['plus_relaxation_counts']
-counts_s = data_s['plus_relaxation_counts']    
+counts_f = data_f['gamma_counts_list'][first_ind]
+counts_s = data_f['gamma_counts_list'][second_ind]  
 
-time = data_f['plus_plus_time']
+time = data_f['taus']
 time_linspace = numpy.linspace(time[0], time[-1], 1000)
 
-opti_params_f = data_f['gamma_opti_params']
-opti_params_s = data_s['gamma_opti_params']
+amp, offset = 0.3038, -0.0086
+
+opti_params_f = [data_f['gamma_fit_params_list'][first_ind][0], amp, offset]
+opti_params_s = [data_f['gamma_fit_params_list'][second_ind][0], amp, offset]
 
 # Plot
 fig, ax = plt.subplots(1, 1, figsize=(11, 8.5))
 
 ax.plot(time, counts_f, 'b.', 
-        label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f))
+        label = 'gamma = {}({}) kHz'.format('%.1f'%gamma_f, '%.1f'%gamma_unc_f))
 yfit = exp_eq_offset(time_linspace, *opti_params_f)
 ax.plot(time_linspace, yfit, '-', color='blue')
 
@@ -63,7 +67,7 @@ ax.fill_between(time_linspace, yupper,  ylower,
 
 
 ax.plot(time, counts_s, 'r.', 
-            label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s))
+            label = 'gamma = {}({}) kHz'.format('%.1f'%gamma_s, '%.1f'%gamma_unc_s))
 
 yfit = exp_eq_offset(time_linspace, *opti_params_s)
 ax.plot(time_linspace, yfit, '-', color='red')
