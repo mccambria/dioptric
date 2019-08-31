@@ -234,7 +234,7 @@ if __name__ == '__main__':
     # Set the file to pull data from here. These should be files in our
     # Double_Quantum nvdata folder, filled with the 6 relevant experiments
 
-    folder = 'nv1_2019_05_10_268MHz'
+    folder = 'nv1_2019_05_10_28MHz_6'
 
 
     '''
@@ -257,7 +257,7 @@ if __name__ == '__main__':
     '''
 
 
-    main(folder, None, None, offset= True)
+    main(folder, 1.6, .6, offset= True)
 
 
     # Specify the number of bins

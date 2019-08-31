@@ -9,52 +9,91 @@ Plotting time for the NV1_2019_05_10
 import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
 
-gamma_list=  [
-    52.59543496298523,
-    56.82144940136519,
-    55.3126329163876,
-    45.44249034570042,
-    59.4835139228308,
-    52.6799045438338,
-    51.92665707887074,
-    53.424913600568075,
-    42.44866500386536
-  ]
+# %%
 
-gamma_ste_list= [
-    9.097236428097386,
-    7.531331732369077,
-    6.5618760509982605,
-    6.244061098490613,
-    6.647872869875284,
-    7.542957405241219,
-    7.483242654100141,
-    7.115469961688277,
-    5.158527405140316
-  ]
+# 45 min incr
+#file4 = '26.3_MHz_splitting_30_bins_error'
+#folder4 = 'nv1_2019_05_10_28MHz_4'
+#data4 = tool_belt.get_raw_data('t1_double_quantum', file4, folder4)
+#
+#file5 = '26.5_MHz_splitting_25_bins_error'
+#folder5 = 'nv1_2019_05_10_28MHz_5'
+#data5 = tool_belt.get_raw_data('t1_double_quantum', file5, folder5)
+#
+#file6 = '26.2_MHz_splitting_25_bins_error'
+#folder6 = 'nv1_2019_05_10_28MHz_6'
+#data6 = tool_belt.get_raw_data('t1_double_quantum', file6, folder6)
+
+# 1.25 hour incr
+#file4 = '26.3_MHz_splitting_18_bins_error'
+#folder4 = 'nv1_2019_05_10_28MHz_4'
+#data4 = tool_belt.get_raw_data('t1_double_quantum', file4, folder4)
+#
+#file5 = '26.5_MHz_splitting_15_bins_error'
+#folder5 = 'nv1_2019_05_10_28MHz_5'
+#data5 = tool_belt.get_raw_data('t1_double_quantum', file5, folder5)
+#
+#file6 = '26.2_MHz_splitting_15_bins_error'
+#folder6 = 'nv1_2019_05_10_28MHz_6'
+#data6 = tool_belt.get_raw_data('t1_double_quantum', file6, folder6)
 
 
-def time_plot(file_name):
+# 3.75 hour incr
+file4 = '26.3_MHz_splitting_6_bins_error'
+folder4 = 'nv1_2019_05_10_28MHz_4'
+data4 = tool_belt.get_raw_data('t1_double_quantum', file4, folder4)
+
+file5 = '26.5_MHz_splitting_5_bins_error'
+folder5 = 'nv1_2019_05_10_28MHz_5'
+data5 = tool_belt.get_raw_data('t1_double_quantum', file5, folder5)
+
+file6 = '26.2_MHz_splitting_5_bins_error'
+folder6 = 'nv1_2019_05_10_28MHz_6'
+data6 = tool_belt.get_raw_data('t1_double_quantum', file6, folder6)
+
+gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list'] 
+gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
+                + data6['gamma_ste_list']
+                    
+# %%
+
+def time_plot(folder_name, file_name):
     '''
     Basic function to plot the data we collected on this NV. Data represented
     as points.
     '''
-    data = tool_belt.get_raw_data('t1_double_quantum', file_name, 'nv1_2019_05_10_28MHz_4')
+#    file4 = '26.3_MHz_splitting_6_bins_error'
+#    folder4 = 'nv1_2019_05_10_28MHz_4'
+#    data4 = tool_belt.get_raw_data('t1_double_quantum', file4, folder4)
+#    
+#    file5 = '26.5_MHz_splitting_5_bins_error'
+#    folder5 = 'nv1_2019_05_10_28MHz_5'
+#    data5 = tool_belt.get_raw_data('t1_double_quantum', file5, folder5)
+#    
+#    file6 = '26.2_MHz_splitting_5_bins_error'
+#    folder6 = 'nv1_2019_05_10_28MHz_6'
+#    data6 = tool_belt.get_raw_data('t1_double_quantum', file6, folder6)
+#    
+#    gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list'] 
+#    gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
+#                    + data6['gamma_ste_list']
     
-    gamma_list = data['gamma_list']
-    gamma_ste_list = data['gamma_ste_list']
+#    time_inc = 1380 / len(gamma_list) # min (4)
+#    time_inc = 1147 / len(gamma_list) # min (5)
+#    time_inc = 0.75 # hr
+#    time_inc = 1.25 # hr
+    time_inc = 3.75 # hr
     
-    time_inc = 1380 / len(gamma_list) # min
     time_list = []
     for i in range(len(gamma_list)):
         time = i*time_inc
         time_list.append(time)
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-#    ax.errorbar(time_list, gamma_list, yerr = gamma_ste_list,
-#                label = r'$\gamma$', fmt='o', markersize = 10,color='blue')
-    ax.errorbar(time_list, gamma_list,
-                label = r'$\gamma$', fmt='-o', markersize = 10,color='blue')
+    ax.errorbar(time_list, gamma_list, yerr = gamma_ste_list,
+                label = r'$\gamma$', fmt='o', markersize = 10,color='blue')
+#    ax.plot(gamma_list,'b-',
+#                label = r'$\gamma$',  markersize = 10)
 
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
                     grid_alpha=0.7, labelsize = 18)
@@ -63,20 +102,20 @@ def time_plot(file_name):
 
     ax.grid()
 
-    ax.set_xlabel('Time (minutes)', fontsize=18)
+    ax.set_xlabel('Time (hour)', fontsize=18)
     ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
     ax.set_title(r'NV1', fontsize=18)
     ax.legend(fontsize=18)
     fig.canvas.draw()
     fig.canvas.flush_events()
     
-def histogram(file_name, bins):
+def histogram(folder_name, file_name, bins):
     '''
     Produces a histogram of the data passed
     '''
-    data = tool_belt.get_raw_data('t1_double_quantum', file_name, 'nv1_2019_05_10_28MHz_4')
+#    data = tool_belt.get_raw_data('t1_double_quantum', file_name, folder_name)
     
-    gamma_list = data['gamma_list']
+#    gamma_list = data['gamma_list']
     
     plt.hist(gamma_list, bins = bins)
     plt.xlabel('Gamma (kHz)')
@@ -84,9 +123,10 @@ def histogram(file_name, bins):
     
     
 # %%
-file_name = '26.3_MHz_splitting_30_bins_v2'
-    
-#time_plot(file_name)
-histogram(file_name, 12)
+file_name = '26.2_MHz_splitting_25_bins_error'
+folder_name = 'nv1_2019_05_10_28MHz_6'    
+
+time_plot(folder_name, file_name)
+#histogram(folder_name, file_name, 7)
 
     

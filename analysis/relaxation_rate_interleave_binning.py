@@ -56,12 +56,13 @@ def extract_data(file_name, folder_name):
     return plus_plus_norm_counts, plus_minus_norm_counts, taus, \
                         num_runs, splitting_MHz
     
-def plot_fig(x, y, fit_params, gamma, gamma_unc):
+def plot_fig(x, y, y_sigma, fit_params, gamma, gamma_unc):
         fig, ax = plt.subplots(1, 1, figsize=(10, 8))
         plus_time_linspace = numpy.linspace(0, x[-1], num=1000)
         #    ax = axes_pack[1]
-        ax.plot(x, y, 'bo')
-
+        ax.errorbar(x, y, yerr = y_sigma, label = 'data', fmt = 'o', 
+                    color = 'blue')
+        
         ax.plot(plus_time_linspace,
             expon_decay(plus_time_linspace, *fit_params),
             'r', label = 'fit')
@@ -82,7 +83,7 @@ def plot_fig(x, y, fit_params, gamma, gamma_unc):
     
 # %% Main
 
-def main(file_name, folder_name, num_bins):  
+def main(file_name, folder_name, num_bins, amp = None, offset = None):  
     # Make some lists to save data
     gamma_list = []
     gamma_ste_list = []
@@ -116,17 +117,28 @@ def main(file_name, folder_name, num_bins):
         plus_subt_counts = plus_plus_sliced_counts - plus_minus_sliced_counts
         
         plus_subt_std = numpy.sqrt(plus_plus_sliced_std**2 + plus_minus_sliced_std**2)
+        plus_subt_ste = plus_subt_std/numpy.sqrt(bin_size)
         
         # Save the counts for future use
         gamma_counts_list.append(plus_subt_counts.tolist())
         
-        # Fit the data
-        init_params = (10, 0.3, 0)
-        
-        g_fit_params, g_pcov = curve_fit(expon_decay, taus, plus_subt_counts, 
-                                        p0 = init_params, 
-                                        sigma = plus_subt_std, 
-                                        absolute_sigma = True)
+        if amp == None and offset == None:
+            # Fit the data
+            init_params = (10, 0.3, 0)
+            g_fit_params, g_pcov = curve_fit(expon_decay, taus, plus_subt_counts, 
+                                            p0 = init_params, 
+                                            sigma = plus_subt_ste, 
+                                            absolute_sigma = True)
+
+        else:
+            # redefine the function so the rate is the only free paramter
+            expon_decay_simp = lambda t, rate: expon_decay(t, rate, amp, offset)
+            
+            init_params = (10)
+            g_fit_params, g_pcov = curve_fit(expon_decay_simp, taus, plus_subt_counts, 
+                                            p0 = init_params, 
+                                            sigma = plus_subt_ste, 
+                                            absolute_sigma = True)
         
         gamma_fit_params_list.append(g_fit_params.tolist())
         
@@ -136,8 +148,35 @@ def main(file_name, folder_name, num_bins):
         gamma_list.append(gamma)
         gamma_ste_list.append(gamma_ste)
         
-        # Plot the figure
-        plot_fig(taus, plus_subt_counts, g_fit_params, gamma, gamma_ste)
+        # Plot the figure        
+        fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+        plus_time_linspace = numpy.linspace(0, taus[-1], num=1000)
+        #    ax = axes_pack[1]
+        ax.errorbar(taus, plus_subt_counts, yerr = plus_subt_ste,
+                    label = 'data', fmt = 'o', 
+                    color = 'blue')
+        
+        if amp == None and offset == None: 
+            ax.plot(plus_time_linspace,
+                expon_decay(plus_time_linspace, *g_fit_params),
+                'r', label = 'fit')
+        else:
+            ax.plot(plus_time_linspace,
+                expon_decay_simp(plus_time_linspace, *g_fit_params),
+                'r', label = 'fit')
+        
+        ax.set_xlabel('Relaxation time (ms)')
+        ax.set_ylabel('Normalized signal Counts')
+        ax.set_title('(+1,+1) - (+1,-1)')
+        ax.legend()
+        text = r'$\gamma = $ {}$\pm${} kHz'.format('%.2f'%gamma, '%.2f'%gamma_ste)
+        
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+                verticalalignment='top', bbox=props)
+        
+        fig.canvas.draw()
+        fig.canvas.flush_events()
         
     # Save data on each bin
     time_stamp = tool_belt.get_time_stamp()
@@ -169,4 +208,4 @@ if __name__ == '__main__':
     folder = 'nv1_2019_05_10_28MHz_4'
     file = '2019-08-27-13_45_39-ayrton12-nv1_2019_05_10'
     
-    main(file, folder, 1)
+    main(file, folder, 30, amp = 0.3038, offset = -0.0086)
