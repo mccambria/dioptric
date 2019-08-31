@@ -167,14 +167,20 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     # ~ 30 hours total
-    num_runs = 75
+#    num_runs = 75
+#    t1_exp_array = numpy.array([
+#                        [[States.HIGH, States.LOW], [0, 50*10**3], 51, 3*10**4, num_runs],
+#                        [[States.HIGH, States.LOW], [0, 2.5*10**6], 26, 1*10**4, num_runs],
+#                        [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 3*10**4, num_runs],
+#                        [[States.HIGH, States.HIGH], [0, 2.5*10**6], 26, 1*10**4, num_runs],
+#                        [[States.ZERO, States.HIGH],[0, 1.2*10**6], 26, 2*10**4, num_runs],
+#                        [[States.ZERO, States.ZERO],[0, 1.2*10**6], 26, 2*10**4, num_runs]
+#                        ])
+    num_runs = 100
     t1_exp_array = numpy.array([
-                        [[States.HIGH, States.LOW], [0, 50*10**3], 51, 3*10**4, num_runs],
-                        [[States.HIGH, States.LOW], [0, 2.5*10**6], 26, 1*10**4, num_runs],
-                        [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 3*10**4, num_runs],
-                        [[States.HIGH, States.HIGH], [0, 2.5*10**6], 26, 1*10**4, num_runs],
-                        [[States.ZERO, States.HIGH],[0, 1.2*10**6], 26, 2*10**4, num_runs],
-                        [[States.ZERO, States.ZERO],[0, 1.2*10**6], 26, 2*10**4, num_runs]
+                        [[States.ZERO, States.LOW],[0, 2.5*10**6], 26, 10**4, num_runs],
+                        [[States.ZERO, States.HIGH],[0, 2.5*10**6], 26, 10**4, num_runs],
+                        [[States.ZERO, States.ZERO],[0, 2.5*10**6], 26, 10**4, num_runs]
                         ])
 
 
@@ -360,8 +366,8 @@ if __name__ == '__main__':
       'name': '{}-nv{}_2019_05_10'.format(sample_name, 1),
       'expected_count_rate': 18,
       'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 510, 'magnet_angle': 109.3,
-      'resonance_LOW': 2.4371, 'rabi_LOW': 235.4, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 3.4539, 'rabi_HIGH': 134.7, 'uwave_power_HIGH': 10.0}
+      'resonance_LOW': 2.4381, 'rabi_LOW': 232.6, 'uwave_power_LOW': 9.0,
+      'resonance_HIGH': 3.4531, 'rabi_HIGH': 130.2, 'uwave_power_HIGH': 10.0}
 
     nv_sig_list = [nv1_2019_05_10]
 
