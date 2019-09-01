@@ -119,7 +119,8 @@ def fit_resonance(freq_range, freq_center, num_steps,
 
     if len(peak_inds) > 1:
         # Find the location of the highest peak
-        max_peak_peak_inds = peak_heights.index(max(peak_heights))
+        max_peak_height = max(peak_heights)
+        max_peak_peak_inds = peak_heights.index(max_peak_height)
         max_peak_freqs = peak_inds[max_peak_peak_inds]
 
         # Remove what we just found so we can find the second highest peak
@@ -127,7 +128,8 @@ def fit_resonance(freq_range, freq_center, num_steps,
         peak_heights.pop(max_peak_peak_inds)
 
         # Find the location of the next highest peak
-        next_max_peak_peak_inds = peak_heights.index(max(peak_heights))  # Index in peak_inds
+        next_max_peak_height = max(peak_heights)
+        next_max_peak_peak_inds = peak_heights.index(next_max_peak_height)  # Index in peak_inds
         next_max_peak_freqs = peak_inds[next_max_peak_peak_inds]  # Index in freqs
 
         # Order from smallest to largest
@@ -135,7 +137,11 @@ def fit_resonance(freq_range, freq_center, num_steps,
         peaks.sort()
 
         low_freq_guess = freqs[peaks[0]]
-        high_freq_guess = freqs[peaks[1]]
+        # Only keep the smaller peak if it's >1/2 the height of the larger peak
+        if next_max_peak_height > max_peak_height / 2:
+            high_freq_guess = freqs[peaks[1]]
+        else:
+            high_freq_guess = None
 
     elif len(peak_inds) == 1:
         low_freq_guess = freqs[peak_inds[0]]
@@ -459,7 +465,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    file = '2019_08/2019-08-31-09_50_44-ayrton12-nv1_2019_05_10'
+    file = '2019_09/2019-09-01-17_58_12-ayrton12-nv2_2019_04_30'
     data = tool_belt.get_raw_data('pulsed_resonance.py', file)
 
     # file = '2019-08-01-11_31_52-ayrton12-nv16_2019_07_25'
