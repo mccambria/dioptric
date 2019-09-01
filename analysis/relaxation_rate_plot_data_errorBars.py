@@ -99,7 +99,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                                         max_relaxation_time, num=num_steps)
             
             avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-            std_sig_counts = numpy.std(sig_counts[::], axis=0) 
+            std_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) 
             
             avg_ref = numpy.average(ref_counts[::]) 
 #            std_ref = numpy.std(ref_counts)
@@ -327,7 +327,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
     if omega is not None and omega_std is not None:
         omega_opti_params = numpy.array([None])
         zero_relaxation_counts = numpy.array([None])
-        zero_relaxation_error = numpy.array([None])
+        zero_relaxation_ste = numpy.array([None])
         zero_zero_time = numpy.array([None])
     else:
         #Fit to the (0,0) - (0,1) data to find Omega
@@ -335,8 +335,8 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         # Define the counts for the zero relaxation equation
         
         zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
-        zero_relaxation_error = numpy.sqrt(zero_zero_err**2 + zero_plus_err**2)
-        
+        zero_relaxation_std = numpy.sqrt(zero_zero_err**2 + zero_plus_err**2)
+        zero_relaxation_ste = zero_relaxation_std / numpy.sqrt(num_runs)
     #    print(zero_relaxation_error)
     
     
@@ -349,14 +349,14 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                 init_params = tuple(init_params_list)
                 omega_opti_params, cov_arr = curve_fit(exp_eq_offset, zero_zero_time,
                                              zero_relaxation_counts, p0 = init_params,
-                                             sigma = zero_relaxation_error, 
+                                             sigma = zero_relaxation_ste, 
                                              absolute_sigma=True)
                 
             else: 
                 init_params = tuple(init_params_list)
                 omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
                                              zero_relaxation_counts, p0 = init_params,
-                                             sigma = zero_relaxation_error, 
+                                             sigma = zero_relaxation_ste, 
                                              absolute_sigma=True)
     
         except Exception:
@@ -366,7 +366,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
             if doPlot:
                 ax = axes_pack[0]
                 ax.errorbar(zero_zero_time, zero_relaxation_counts, 
-                            yerr = zero_relaxation_error / numpy.sqrt(num_runs), 
+                            yerr = zero_relaxation_ste, 
                             label = 'data', fmt = 'o', color = 'blue')
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
@@ -386,7 +386,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                 zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
                 ax = axes_pack[0]
                 ax.errorbar(zero_zero_time, zero_relaxation_counts, 
-                            yerr = zero_relaxation_error / numpy.sqrt(num_runs), 
+                            yerr = zero_relaxation_ste, 
                             label = 'data', fmt = 'o', color = 'blue')
                 if offset:
                     ax.plot(zero_time_linspace,
@@ -412,7 +412,8 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 
     # Define the counts for the plus relaxation equation
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
-    plus_relaxation_error = numpy.sqrt(plus_plus_err**2 + plus_minus_err**2)
+    plus_relaxation_std = numpy.sqrt(plus_plus_err**2 + plus_minus_err**2)
+    plus_relaxation_ste = plus_relaxation_std / numpy.sqrt(num_runs)
     
     init_params_list = [10, 0.40]
     try:
@@ -422,7 +423,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
             init_params = tuple(init_params_list)
             gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
                              plus_plus_time, plus_relaxation_counts,
-                             p0 = init_params, sigma = plus_relaxation_error, 
+                             p0 = init_params, sigma = plus_relaxation_ste, 
                              absolute_sigma=True)
             
             
@@ -430,7 +431,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
             init_params = tuple(init_params_list)
             gamma_opti_params, cov_arr = curve_fit(exp_eq,
                              plus_plus_time, plus_relaxation_counts,
-                             p0 = init_params, sigma = plus_relaxation_error, 
+                             p0 = init_params, sigma = plus_relaxation_ste, 
                              absolute_sigma=True)
 
     except Exception:
@@ -439,7 +440,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         if doPlot:
             ax = axes_pack[1]
             ax.errorbar(plus_plus_time, plus_relaxation_counts,                         
-                    yerr = plus_relaxation_error/ numpy.sqrt(num_runs), 
+                    yerr = plus_relaxation_ste, 
                     label = 'data', fmt = 'o', color = 'blue')
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
@@ -458,7 +459,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
             plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
             ax = axes_pack[1]
             ax.errorbar(plus_plus_time, plus_relaxation_counts,                         
-                    yerr = plus_relaxation_error / numpy.sqrt(num_runs), 
+                    yerr = plus_relaxation_ste, 
                     label = 'data', fmt = 'o', color = 'blue')
             if offset:
                 ax.plot(plus_time_linspace,
@@ -495,14 +496,14 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                     'offset_free_param?': offset,
                     'zero_relaxation_counts': zero_relaxation_counts.tolist(),
                     'zero_relaxation_counts-units': 'counts',
-                    'zero_relaxation_error': zero_relaxation_error.tolist(),
-                    'zero_relaxation_error-units': 'counts',
+                    'zero_relaxation_ste': zero_relaxation_ste.tolist(),
+                    'zero_relaxation_ste-units': 'counts',
                     'zero_zero_time': zero_zero_time.tolist(),
                     'zero_zero_time-units': 'ms',
                     'plus_relaxation_counts': plus_relaxation_counts.tolist(),
                     'plus_relaxation_counts-units': 'counts',
-                    'plus_relaxation_error': plus_relaxation_error.tolist(),
-                    'plus_relaxation_error-units': 'counts',
+                    'plus_relaxation_ste': plus_relaxation_ste.tolist(),
+                    'plus_relaxation_ste-units': 'counts',
                     'plus_plus_time': plus_plus_time.tolist(),
                     'plus_plus_time-units': 'ms',
                     'omega_opti_params': omega_opti_params.tolist(),
@@ -519,7 +520,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-#        tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_raw_data(raw_data, file_path)
     
     # %% Saving the figure
 
@@ -528,14 +529,14 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
-#        tool_belt.save_figure(fig, file_path)
+        tool_belt.save_figure(fig, file_path)
 
 # %% Run the file
 
 if __name__ == '__main__':
 
-    folder = 'nv1_2019_05_10_28MHz_5'
+    folder = 'nv1_2019_05_10_1017MHz'
 
 #    for folder in folder_list:
 #    main(folder, True)
-    main(folder,  1.6, 0.6,  True, offset = True)
+    main(folder,  None, None,  True, offset = True)
