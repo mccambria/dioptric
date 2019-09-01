@@ -8,6 +8,7 @@ Plotting time for the NV1_2019_05_10
 """
 import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
+import numpy
 
 # %%
 
@@ -84,14 +85,46 @@ def time_plot(folder_name, file_name):
 #    time_inc = 1.25 # hr
     time_inc = 3.75 # hr
     
-    time_list = []
-    for i in range(len(gamma_list)):
+    time_start_list_4 = []
+    for i in range(6):
         time = i*time_inc
-        time_list.append(time)
-    
+        time_start_list_4.append(time)
+    time_end_list_4 = []
+    for i in range(6):
+        time = i*time_inc+ time_inc
+        time_end_list_4.append(time)
+        
+    time_start_list_5 = []
+    for i in range(5):
+        time = i*time_inc + 3 + time_start_list_4[-1]
+        time_start_list_5.append(time)
+    time_end_list_5 = []
+    for i in range(5):
+        time = i*time_inc+ time_inc + 3 + time_end_list_4[-1]
+        time_end_list_5.append(time)
+        
+    time_start_list_6 = []
+    for i in range(5):
+        time = i*time_inc + 1 + time_start_list_5[-1]
+        time_start_list_6.append(time)
+    time_end_list_6 = []
+    for i in range(5):
+        time = i*time_inc+ time_inc + 1 + time_end_list_5[-1]
+        time_end_list_6.append(time)
+        
+    time_start_list = time_start_list_4 + time_start_list_5 + time_start_list_6
+    time_end_list = time_end_list_4 + time_end_list_5 + time_end_list_6
+        
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.errorbar(time_list, gamma_list, yerr = gamma_ste_list,
-                label = r'$\gamma$', fmt='o', markersize = 10,color='blue')
+    for i in range(len(gamma_list)):
+        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = 'blue')
+#        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
+        time_space = numpy.linspace(time_start_list[i], time_end_list[i], 1000)
+        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
+                        gamma_list[i] - gamma_ste_list[i],
+                        color='#453fff', alpha=0.2)
+#    ax.errorbar(time_list, gamma_list, yerr = gamma_ste_list,
+#                label = r'$\gamma$', fmt='o', markersize = 10,color='blue')
 #    ax.plot(gamma_list,'b-',
 #                label = r'$\gamma$',  markersize = 10)
 
