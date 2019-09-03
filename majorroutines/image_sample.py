@@ -198,9 +198,11 @@ def create_figure(file_name):
     x_range = data['x_range']
     y_range = data['y_range']
     x_voltages = data['x_voltages']
+    nv_sig = data['coords']
 #    nv_sig = data['nv_sig']
 #    coords = nv_sig['coords']
-    coords = data['coords']
+#    nv_sig = data['nv_sig']
+#    coords = nv_sig['coords']
     img_array = numpy.array(data['img_array'])
     readout = data['readout']
 
@@ -395,5 +397,5 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
 
 if __name__ == '__main__':
-    file_name = '2019-05-10_11-47-17_ayrton12'
+    file_name = '2019-07-25_18-37-46_ayrton12_search'
     create_figure(file_name)
