@@ -60,7 +60,7 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 
 # %%
 
-num_runs = 100
+num_runs = 125
 t1_exp_array = numpy.array([
                     [[States.HIGH, States.LOW], [0, 100*10**3], 101, 0.5*10**5, num_runs],
                     [[States.HIGH, States.HIGH], [0, 100*10**3], 101, 0.5*10**5, num_runs],

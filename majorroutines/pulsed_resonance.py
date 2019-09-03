@@ -150,8 +150,8 @@ def fit_resonance(freq_range, freq_center, num_steps,
         print('Could not locate peaks')
         return None, None
 
-#    low_freq_guess = 3.45
-#    high_freq_guess = None
+    low_freq_guess = freq_center
+    high_freq_guess = None
 
     # %% Fit!
 
