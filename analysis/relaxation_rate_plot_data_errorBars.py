@@ -449,10 +449,10 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
     if not gamma_fit_failed:
 
         gamma = (gamma_opti_params[0] - omega)/ 2.0
-        gamma_std = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_std**2)
+        gamma_ste = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_std**2)
         
         print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma, 
-                  '%.3f'%gamma_std))
+                  '%.3f'%gamma_ste))
 
         # Plotting
         if doPlot:
@@ -474,7 +474,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
             ax.set_title('(+1,+1) - (+1,-1)')
             ax.legend()
             text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma, 
-                  '%.3f'%gamma_std)
+                  '%.3f'%gamma_ste)
 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
@@ -510,8 +510,8 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                     'gamma_opti_params': gamma_opti_params.tolist(),
                     'omega_std_error': omega_std,
                     'omega_std_error-units': 'khz',
-                    'gamma_std_error': gamma_std,
-                    'gamma_std_error-units': 'khz'
+                    'gamma_ste': gamma_ste,
+                    'gamma_ste-units': 'khz'
                     }
         
 
@@ -530,13 +530,22 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                                                              file_name)
 
         tool_belt.save_figure(fig, file_path)
-
+        
+        return gamma, gamma_ste
 # %% Run the file
 
 if __name__ == '__main__':
 
-    folder = 'nv1_2019_05_10_1017MHz'
-
-#    for folder in folder_list:
+#    folder = 'nv2_2019_04_30_29MHz_29'
+    
+    gamma_list = []
+    gamma_error_list = []
+    
+    for folder_ind in range(3,29):
+        folder = 'nv2_2019_04_30_29MHz_{}'.format(folder_ind)
 #    main(folder, True)
-    main(folder,  None, None,  True, offset = True)
+        gamma, gamma_ste = main(folder,  0.34, 0.07,  True, offset = True)
+        gamma_list.append(gamma)
+        gamma_error_list.append(gamma_ste)
+        
+    print(gamma_error_list)

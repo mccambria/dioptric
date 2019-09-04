@@ -16,8 +16,8 @@ nv16_2019_07_25
 
 '''
 # %%
-def fit_eq_alpha(f, amp, alpha):
-    return amp*f**(-alpha)
+def fit_eq_alpha(f, amp, alpha, offset):
+    return amp*f**(-alpha) + offset
 
 # %%
 
@@ -36,10 +36,10 @@ nv16_gamma_error_list = [20, 5, 1.0, 0.8, 0.4]
 # Try to fit the gamma to a 1/f^alpha
 
 fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv16_splitting_list, nv16_gamma_avg_list, 
-                                p0 = [100, 1], sigma = nv16_gamma_error_list,
+                                p0 = [1000, 1, 3], sigma = nv16_gamma_error_list,
                                 absolute_sigma = True)
 
-splitting_linspace = numpy.linspace(20, 800,
+splitting_linspace = numpy.linspace(10, 2000,
                                     1000)
 omega_constant_array = numpy.empty([1000]) 
 omega_constant_array[:] = numpy.average(nv16_omega_avg_list)
@@ -49,8 +49,8 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 
 axis_font = {'size':'14'}
 
-orange = '#f68522'
-purple = '#9927c3'
+orange = '#f7941d'
+purple = '#87479b'
 
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
@@ -90,11 +90,11 @@ ax.tick_params(which = 'major', length=12, width=2)
 
 ax.grid()
 
-ax.set_xlim([20,800])
-ax.set_ylim([0.1,200])
+ax.set_xlim([10,1200])
+ax.set_ylim([0.1,300])
 
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
 #plt.title('NV16', fontsize=18)
 #ax.legend(fontsize=18)
-fig.savefig("fig_3b.pdf", bbox_inches='tight')
+fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b.pdf", bbox_inches='tight')

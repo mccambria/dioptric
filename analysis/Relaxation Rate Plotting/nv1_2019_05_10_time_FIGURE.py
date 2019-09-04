@@ -115,7 +115,7 @@ def time_main_plot(folder_name, file_name):
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 #    for i in range(0,15):
     for i in range(len(time_start_list)):
-        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = 'blue')
+        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = '#453fff')
 #        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
         time_space = numpy.linspace(time_start_list[i], time_end_list[i], 1000)
         ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
@@ -198,7 +198,7 @@ def time_zoom_plot(folder_name, file_name):
         
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     for i in range(0,15):
-        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = 'blue')
+        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = '#453fff')
         time_space = numpy.linspace(time_start_list[i], time_end_list[i], 1000)
         ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
                         gamma_list[i] - gamma_ste_list[i],
@@ -226,10 +226,22 @@ def histogram(folder_name, file_name, bins):
     '''
     Produces a histogram of the data passed
     '''
-#    data = tool_belt.get_raw_data('t1_double_quantum', file_name, folder_name)
+    # 3.75 hour incr
+    file4 = '26.3_MHz_splitting_6_bins_error'
+    folder4 = 'nv1_2019_05_10_28MHz_4'
+    data4 = tool_belt.get_raw_data('t1_double_quantum', file4, folder4)
     
-#    gamma_list = data['gamma_list']    
-    text = 52
+    file5 = '26.5_MHz_splitting_5_bins_error'
+    folder5 = 'nv1_2019_05_10_28MHz_5'
+    data5 = tool_belt.get_raw_data('t1_double_quantum', file5, folder5)
+    
+    file6 = '26.2_MHz_splitting_5_bins_error'
+    folder6 = 'nv1_2019_05_10_28MHz_6'
+    data6 = tool_belt.get_raw_data('t1_double_quantum', file6, folder6)
+    
+    gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list'] 
+
+    text = 62
 #    numpy.histogram(nv2_rates, bins = 10)
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ax.hist(gamma_list, bins = bins, color = '#453fff')
@@ -245,7 +257,8 @@ def histogram(folder_name, file_name, bins):
 file_name = '26.2_MHz_splitting_25_bins_error'
 folder_name = 'nv1_2019_05_10_28MHz_6'    
 
-time_zoom_plot(folder_name, file_name)
-#histogram(folder_name, file_name, 7)
+#time_main_plot(folder_name, file_name)
+#time_zoom_plot(folder_name, file_name)
+histogram(folder_name, file_name, 7)
 
     

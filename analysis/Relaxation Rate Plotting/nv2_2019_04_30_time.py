@@ -22,14 +22,11 @@ from scipy.optimize import curve_fit
 import utils.tool_belt as tool_belt
 
 # %%
-nv2_rates = [33.0, 32.3, 35.0, 28.9, 30, 33, 32.9, 28.9, 30.4, 34.8, 30.3,
-            29, 29.1, 30.5, 31.1, 33.9, 35.5, 34.5, 35.1, 36.6, 33.0, 33,
-            33.3, 33.9, 32.1, 34.3]
+nv2_rates = [32.70770316064578, 32.35792873748028, 35.60840175962606, 29.076817363540858, 29.68546343026479, 32.22330577990145, 32.387345860666684, 27.780385383768593, 30.00007693747414, 33.09897897375375, 30.773285182687147, 27.97443572316569, 29.065815743119092, 29.36234609205914, 30.662448026051702, 32.01335672237963, 34.71088090216354, 33.84862495884125, 35.384631508491054, 35.77689947969005, 31.34895513001851, 34.057308895650294, 33.233369742643895, 34.19121868682558, 32.32305688825209, 33.35789514617837]
 nv2_rates_bi = [33.5, 33.5, 33.5, 29.5, 29.5, 33.5, 33.5, 29.5, 29.5, 33.5, 29.5,
                  29.5, 29.5, 29.5, 29.5, 33.5, 33.5, 33.5, 33.5, 33.5, 33.5, 33.5,
                  33.5, 33.5, 33.5, 33.5]
-nv2_error = [0.7, 0.9, 1.1, 1.0, 2, 1, 0.7, 0.7, 0.9, 1.3, 0.7, 1, 0.6, 1.1,
-             1.1, 1.6, 1.3, 1.2, 1.0, 1.0, 0.7, 2, 1.1, 1.0, 0.8, 1.1]
+nv2_error = [0.7369762116347649, 0.7562560021631601, 0.7625914980081805, 0.6574314474315747, 0.919359268283852, 0.731682094646155, 0.6947147322987086, 0.616051484886374, 0.6780672107044817, 0.8163823109181038, 0.6770579087023205, 0.6029035459656106, 0.6382539810559575, 0.6652562354500725, 0.6922682555827679, 0.7336262328354057, 0.8238800269399206, 0.7897512310371543, 0.7605036639707671, 0.8105764122736127, 0.7538842164929711, 0.8121492389404094, 0.75566606260391, 0.7553684059638512, 0.7000456778038091, 0.7725893647614507]
 # the time of the start of the experiment (when the pESSR and rabi data was saved
 
 start_datetimes = [datetime.datetime(2019,8,13,14,13,52),
@@ -254,31 +251,64 @@ def time_plot():
     plt.title(r'NV2', fontsize=18)
     ax.legend(fontsize=18)
    # %%
-def time_plot_formal():
+def time_main_plot():
     '''
     This function also plots the data we collected, however it represents the
     data as horizontal lines over the course of the experiment
     '''
+    
+    file29 = '29.5_MHz_splitting_25_bins_error'
+    folder29 = 'nv2_2019_04_30_29MHz_29'
+    data29 = tool_belt.get_raw_data('t1_double_quantum', file29, folder29)
+
+    file30 = '29.8_MHz_splitting_10_bins_error'
+    folder30 = 'nv2_2019_04_30_29MHz_30'
+    data30 = tool_belt.get_raw_data('t1_double_quantum', file30, folder30)
+    
+    gamma_list = nv2_rates + data29['gamma_list'] + data30['gamma_list']
+    gamma_ste_list = nv2_error + data29['gamma_ste_list'] + data30['gamma_ste_list']
+    
     # convert the datetimes ito python time
     zero_time = mdates.date2num(datetime.datetime(2019,8,13,14,13,52))
     start_time_list = mdates.date2num(start_datetimes).tolist()
     end_time_list = mdates.date2num(end_datetimes).tolist()
+
+    start_time_list_1 = []
+    end_time_list_1 = []
+    for i in range(len(nv2_rates)):
+        start_time = start_time_list[i]-zero_time
+        start_time_h = start_time * 24
+        end_time = end_time_list[i]-zero_time
+        end_time_h = end_time * 24
+        
+        start_time_list_1.append(start_time_h)
+        end_time_list_1.append(end_time_h)
+
+    start_time_list_2 = []
+    end_time_list_2 = []
+    
+    time_inc = 5.5 #hr 
+    for i in range(len(data29['gamma_list'] + data30['gamma_list'])):
+        time = i*time_inc + 500
+        start_time_list_2.append(time)
+        
+        time = i*time_inc + time_inc+ 500
+        end_time_list_2.append(time)
+    
+    start_time_list = start_time_list_1 + start_time_list_2
+    end_time_list = end_time_list_1 + end_time_list_2
 
     # create the figure
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 #    fig.autofmt_xdate()
 #    ax.xaxis_date()
     # for each data "line", plot the hline and error
-    for i in range(len(nv2_rates)):
-        start_time = start_time_list[i]-zero_time
-        start_time_h = start_time * 24
-        end_time = end_time_list[i]-zero_time
-        end_time_h = end_time * 24
-        ax.hlines(nv2_rates[i], start_time_h, end_time_h, linewidth=5, colors = 'blue')
+    for i in range(len(gamma_list)):
+        ax.hlines(gamma_list[i], start_time_list[i], end_time_list[i], linewidth=5, colors = 'blue')
 #        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
-        time_space = numpy.linspace(start_time_h, end_time_h, 1000)
-        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
-                        nv2_rates[i] - nv2_error[i],
+        time_space = numpy.linspace(start_time_list[i], start_time_list[i], 1000)
+        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
+                        gamma_list[i] - gamma_ste_list[i],
                         color='#453fff', alpha=0.2)
 
 #    for i in [0, 1,2,5,6,9,15,16,17,18,19,20,21,22,23,24,25]:
@@ -321,13 +351,53 @@ def time_plot_formal():
 
 #    xfmt = mdates.DateFormatter('%m-%d-%y %H:%M')
 #    ax.xaxis.set_major_formatter(xfmt)
-    ax.set_ylim([26, 38])
+#    ax.set_ylim([26, 38])
     plt.xlabel('Time (hours)', fontsize=18)
     plt.ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=18)
 #    plt.title(r'NV2, $\gamma$ rate', fontsize=18)
     
-    fig.savefig("fig_4a.pdf", bbox_inches='tight')
+#    fig.savefig("fig_4a.pdf", bbox_inches='tight')
 
+def time_plot_inc():
+    file29 = '29.5_MHz_splitting_25_bins_error'
+    folder29 = 'nv2_2019_04_30_29MHz_29'
+    data29 = tool_belt.get_raw_data('t1_double_quantum', file29, folder29)
+
+    file30 = '29.8_MHz_splitting_10_bins_error'
+    folder30 = 'nv2_2019_04_30_29MHz_30'
+    data30 = tool_belt.get_raw_data('t1_double_quantum', file30, folder30)
+    
+    gamma_list = data29['gamma_list'] + data30['gamma_list']
+    gamma_ste_list = data29['gamma_ste_list'] + data30['gamma_ste_list']
+    
+#    time_inc = 0.5 # hr
+    time_inc = 1.0 # hr
+#    time_inc = 5.5 # hr
+    
+    time_list = []
+    
+    for i in range(len(gamma_list)):
+        time = i*time_inc
+        time_list.append(time)
+        
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+    
+    ax.errorbar(time_list, gamma_list, yerr = gamma_ste_list,
+        label = r'$\gamma$', fmt='o', markersize = 10,color='blue')
+    
+    ax.tick_params(which = 'both', length=6, width=2, colors='k',
+                    grid_alpha=0.7, labelsize = 18)
+
+    ax.tick_params(which = 'major', length=12, width=2)
+
+    ax.grid()
+
+    ax.set_xlabel('Time (hour)', fontsize=18)
+    ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
+    ax.set_title(r'NV2', fontsize=18)
+    ax.legend(fontsize=18)
+    fig.canvas.draw()
+    fig.canvas.flush_events()
 
 def histogram(x, bins):
     '''
@@ -343,7 +413,7 @@ def histogram(x, bins):
                     grid_alpha=1.2, labelsize = text)
 
     ax.tick_params(which = 'major', length=12, width=2)
-    fig.savefig("fig_4b.pdf", bbox_inches='tight')
+    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4b.pdf", bbox_inches='tight')
 
 def kde_sklearn(x, bandwidth=0.2):
     '''
@@ -416,19 +486,31 @@ def lag_plot(x):
 
 #%%
 if __name__ == "__main__":
-    time_plot_formal()
+    file29 = '29.5_MHz_splitting_5_bins_error'
+    folder29 = 'nv2_2019_04_30_29MHz_29'
+    data29 = tool_belt.get_raw_data('t1_double_quantum', file29, folder29)
+
+    file30 = '29.8_MHz_splitting_2_bins_error'
+    folder30 = 'nv2_2019_04_30_29MHz_30'
+    data30 = tool_belt.get_raw_data('t1_double_quantum', file30, folder30)
+    
+    gamma_list = data29['gamma_list'] + data30['gamma_list']+ nv2_rates
+#    time_plot_formal()
+#    time_plot_inc()
+#    time_main_plot()
 #    histogram(nv2_rates, 8)
+    
 #     KDE Estimating Two Values
-#    kde_points, x_grid = kde_sklearn(nv2_rates, bandwidth=1.1)
-#
-#    init_guess = [0.1, 1, 29, 0.1, 1, 34]
-#
-#    dbl_gssn_popt, pcov = curve_fit(double_gaussian, x_grid, kde_points, p0 = init_guess)
-#
-#    plt.plot(x_grid, double_gaussian(x_grid, *dbl_gssn_popt), 'b--', label = 'fit')
-#    plt.legend()
-#
-#    print(dbl_gssn_popt)
+    kde_points, x_grid = kde_sklearn(gamma_list, bandwidth=1.1)
+
+    init_guess = [0.1, 1, 29, 0.1, 1, 34]
+
+    dbl_gssn_popt, pcov = curve_fit(double_gaussian, x_grid, kde_points, p0 = init_guess)
+
+    plt.plot(x_grid, double_gaussian(x_grid, *dbl_gssn_popt), 'b--', label = 'fit')
+    plt.legend()
+
+    print(dbl_gssn_popt)
 
     #Data simulations
     num_samples = 26

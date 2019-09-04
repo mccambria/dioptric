@@ -21,8 +21,8 @@ from utils.tool_belt import States
 
 data_folder = 't1_double_quantum'
 
-omega = 1.6
-omega_ste = 0.6
+omega = 0.34
+omega_ste = 0.07
 
 # %% Minor functions
 
@@ -101,6 +101,9 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
 
     for bin_ind in range(num_bins):
         i = bin_ind * bin_size
+        if i > num_runs:
+            print('last bin_size too large, skipping last data point')
+            break
 
         # For each slice, calculate the average normalized counts, and the std
         plus_plus_sliced_counts = \
@@ -109,9 +112,9 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
             numpy.average(plus_minus_norm_counts[i:i+bin_size, ::], axis = 0)
     
         plus_plus_sliced_std = \
-            numpy.std(plus_plus_norm_counts[i:i+bin_size, ::], axis = 0)
+            numpy.std(plus_plus_norm_counts[i:i+bin_size, ::], axis = 0, ddof=1)
         plus_minus_sliced_std = \
-            numpy.std(plus_minus_norm_counts[i:i+bin_size, ::], axis = 0)
+            numpy.std(plus_minus_norm_counts[i:i+bin_size, ::], axis = 0, ddof=1)
         
         # Subtract the (1,1) and (1,-1) lists, and propegate error
         plus_subt_counts = plus_plus_sliced_counts - plus_minus_sliced_counts
@@ -121,6 +124,9 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
         
         # Save the counts for future use
         gamma_counts_list.append(plus_subt_counts.tolist())
+        
+        # if any ste are evaluated to 0, force them to be non-zero
+        plus_subt_ste = [0.00001 if x==0 else x for x in plus_subt_ste]
         
         if amp == None and offset == None:
             # Fit the data
@@ -134,7 +140,7 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
             # redefine the function so the rate is the only free paramter
             expon_decay_simp = lambda t, rate: expon_decay(t, rate, amp, offset)
             
-            init_params = (10)
+            init_params = (30)
             g_fit_params, g_pcov = curve_fit(expon_decay_simp, taus, plus_subt_counts, 
                                             p0 = init_params, 
                                             sigma = plus_subt_ste, 
@@ -205,7 +211,7 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
 
 if __name__ == '__main__':
 
-    folder = 'nv1_2019_05_10_28MHz_4'
-    file = '2019-08-27-13_45_39-ayrton12-nv1_2019_05_10'
+    folder = 'nv2_2019_04_30_29MHz_30'
+    file = '2019-09-03-08_17_43-ayrton12-nv2_2019_04_30'
     
-    main(file, folder, 30, amp = 0.3038, offset = -0.0086)
+    main(file, folder, 10, amp = 0.337, offset = 0.004)

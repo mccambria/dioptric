@@ -82,7 +82,8 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
     for file in file_list:
         data = tool_belt.get_raw_data(data_folder, file[:-4], folder_name)
         try:
-
+            splitting_MHz =(data['nv_sig']['resonance_HIGH'] - \
+                            data['nv_sig']['resonance_LOW']) * 10**3
             init_state_name = data['init_state']
             read_state_name = data['read_state']
 
@@ -267,8 +268,8 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                         
             if init_state_name == States.HIGH.name and read_state_name == States.LOW.name:
                 # We will want to put the MHz splitting in the file metadata
-                uwave_freq_init = data['uwave_freq_init']
-                uwave_freq_read = data['uwave_freq_read']
+#                uwave_freq_init = data['uwave_freq_init']
+#                uwave_freq_read = data['uwave_freq_read']
 
                 # Check to see if data has already been taken of this experiment
                 # If it hasn't, then create arrays of the data.
@@ -300,7 +301,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                         plus_minus_time = numpy.concatenate((time_array, plus_minus_time))
 
 
-                splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
+#                splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
 
         except Exception:
             continue
@@ -357,8 +358,8 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         omega_HIGH = omega_HIGH_opti_params[0] / 3.0
         omega_HIGH_ste = numpy.sqrt(cov_arr[0,0]) / 3.0
         
-        print('Omega HIGH: {} +/- {} kHz'.format('%.3f'%omega, 
-                  '%.3f'%omega_std))
+        print('Omega HIGH: {} +/- {} kHz'.format('%.3f'%omega_HIGH, 
+                  '%.3f'%omega_HIGH_ste))
         # Plotting the data
         if doPlot:
             zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
@@ -419,7 +420,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         omega_LOW_fit_failed = True
 
         if doPlot:
-            ax = axes_pack[0]
+            ax = axes_pack[1]
             ax.errorbar(zero_zero_time, omega_LOW_relaxation_counts, 
                         yerr = omega_LOW_relaxation_ste, 
                         label = 'data', fmt = 'o', color = 'blue')
@@ -434,13 +435,13 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         omega_LOW = omega_LOW_opti_params[0] / 3.0
         omega_LOW_ste = numpy.sqrt(cov_arr[0,0]) / 3.0
         
-        print('Omega LOW: {} +/- {} kHz'.format('%.3f'%omega, 
-                  '%.3f'%omega_std))
+        print('Omega LOW: {} +/- {} kHz'.format('%.3f'%omega_LOW, 
+                  '%.3f'%omega_LOW_ste))
         
     # Plotting the data
     if doPlot:
         zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
-        ax = axes_pack[0]
+        ax = axes_pack[1]
         ax.errorbar(zero_zero_time, omega_LOW_relaxation_counts, 
                     yerr = omega_LOW_relaxation_ste, 
                     label = 'data', fmt = 'o', color = 'blue')
@@ -515,7 +516,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    folder = 'nv1_2019_05_10_1017MHz'
+    folder = 'nv1_2019_05_10_1017MHz\high_low_comparison'
 
 #    for folder in folder_list:
 #    main(folder, True)

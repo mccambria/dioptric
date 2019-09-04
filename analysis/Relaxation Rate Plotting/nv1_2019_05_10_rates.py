@@ -33,11 +33,11 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-nv1_splitting_list = [19.8, 28, 30, 32.7, 51.8, 97.8, 116, 268, 563.6]
-nv1_omega_avg_list = [1.3, 1.7, 1.62, 1.48, 2.3, 1.8, 1.18, 1.07, 1.15]
-nv1_omega_error_list = [0.2, 0.4, 0, 0.09, 0.4, 0.2, 0.13, 0.10, 0.12]
-nv1_gamma_avg_list = [136, 68, 37, 50, 13.0, 3.5, 4.6, 1.92, 0.78]
-nv1_gamma_error_list = [10, 7, 6, 3, 0.6, 0.2, 0.3, 0.13, 0.1]
+nv1_splitting_list = [19.8, 27.8, 28, 30, 32.7, 51.8, 97.8, 116, 268, 563.6, 1016.8]
+nv1_omega_avg_list = [1.3, 1.25, 1.7, 1.62, 1.48, 2.3, 1.8, 1.18, 1.07, 1.15, 0.525]
+nv1_omega_error_list = [0.2, 0.1, 0.4, 0, 0.09, 0.4, 0.2, 0.13, 0.10, 0.12, 0.041]
+nv1_gamma_avg_list = [136, 61, 68, 37, 50, 13.0, 3.5, 4.6, 1.92, 0.78, 0.712]
+nv1_gamma_error_list = [10, 1, 7, 6, 3, 0.6, 0.2, 0.3, 0.13, 0.1, 0.122]
 
 # Try to fit the gamma to a 1/f^2
 
@@ -53,8 +53,11 @@ fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv1_splitting_list, nv1_gamm
                                 p0 = (100, 1, 2), sigma = nv1_gamma_error_list,
                                 absolute_sigma = True)
 
-splitting_linspace = numpy.linspace(nv1_splitting_list[0], nv1_splitting_list[-1],
+splitting_linspace = numpy.linspace(10, 2000,
                                     1000)
+
+omega_constant_array = numpy.empty([1000]) 
+omega_constant_array[:] = numpy.average(nv1_omega_avg_list)
 
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
@@ -63,12 +66,15 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 
 axis_font = {'size':'14'}
 
+orange = '#f7941d'
+purple = '#87479b'
+
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv1_splitting_list, nv1_gamma_avg_list, yerr = nv1_gamma_error_list, 
-            label = r'$\gamma$', fmt='o', color='blue')
+            label = r'$\gamma$',  fmt='o',markersize = 10, color = purple)
 ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
-            label = r'$\Omega$', fmt='o', color='red')
+            label = r'$\Omega$', fmt='^', markersize = 10, color=orange)
 
 #ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
 #            label = r'$f^{-2}$', color ='teal')
@@ -78,7 +84,9 @@ ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list,
 # %%
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-            'b', label = r'fit')
+             label = r'fit',color =purple)
+ax.plot(splitting_linspace, omega_constant_array, color = orange,
+            label = r'$\Omega$')
 
 text = '\n'.join((r'$1/f^{\alpha} + \gamma_\infty$ fit:',
                   r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
@@ -87,8 +95,8 @@ text = '\n'.join((r'$1/f^{\alpha} + \gamma_\infty$ fit:',
 #                  ,r'$a = $' + '%.2f'%(fit_params[2])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+#ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -99,7 +107,12 @@ ax.tick_params(which = 'major', length=12, width=2)
 
 ax.grid()
 
+ax.set_xlim([10,1200])
+ax.set_ylim([0.1,300])
+
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-plt.title('NV 1', fontsize=18)
-ax.legend(fontsize=18)
+#plt.title('NV 1', fontsize=18)
+#ax.legend(fontsize=18)
+
+fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c.pdf", bbox_inches='tight')
