@@ -153,12 +153,16 @@ def find_mag_B(splitting, theta_B, par_E, perp_E, phi):
     # which means it's invertible over this range, which means that there's
     # only a single value of mag_B that will solve the equation...
     fit_vec = (splitting, theta_B, par_E, perp_E, phi)
-    ret_vals = fsolve(diff_splitting, x0=0.1, args=fit_vec)
+    x_vals, infodict, ier, mesg = fsolve(diff_splitting, full_output=True,
+                                         x0=0.1, args=fit_vec)
     # Make sure we only got one root
-    if ret_vals.size > 1:
+    if x_vals.size > 1:
         raise RuntimeError('Multiple roots encountered.')
+    elif ier != 1:
+        # Something went wrong
+        mag_B = 1.0  # Blow up chi_squared so we move away from this
     else:
-        mag_B = ret_vals[0]
+        mag_B = x_vals[0]
     return mag_B
 
 
@@ -176,17 +180,24 @@ def calc_splitting(mag_B, theta_B, par_E, perp_E, phi):
 def plot_resonances(mag_B_range, theta_B, par_E, perp_E, phi):
 
     fig, ax = plt.subplots()
+
     smooth_mag_B = numpy.linspace(mag_B_range[0], mag_B_range[1], 100)
     resonances = calc_resonances(smooth_mag_B, theta_B, par_E, perp_E, phi)
+
     ax.plot(smooth_mag_B, resonances[0])
     ax.plot(smooth_mag_B, resonances[1])
     ax.set_xlabel('B magnitude (GHz)')
     ax.set_ylabel('Resonance (GHz)')
 
-    ax.text(r'$\theta_{B}$: {} rad$\\$'.format(theta_B) +
-                r'$E_{\par}$: {} GHz$\\$'.format(par_E) +
-                r'$E_{\perp}$: {} GHz$\\$'.format(perp_E) +
-                r'$\phi$: {} rad'.format(phi))
+    textstr = '\n'.join((
+        r'$\theta_{B}=%.3f \ rad$' % (theta_B, ),
+        r'$E_{\parallel}=%.3f \ GHz$' % (par_E, ),
+        r'$E_{\perp}=%.3f \ GHz$' % (perp_E, ),
+        r'$\phi=%.3f \ rad$' % (phi, )))
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.05, 0.95, textstr, fontsize=14, transform=ax.transAxes,
+            verticalalignment='top', bbox=props)
+
     return fig, ax
 
 
@@ -245,13 +256,19 @@ def main(zero_field_resonances, non_zero_field_resonances):
     non_zero_field_splittings = [abs(pair[0]-pair[1])
                                  for pair in non_zero_field_resonances]
     # fit_vec = [theta_B, par_E, perp_E, phi]
-    guess_params = [0, par_E, perp_E, 0]
+    guess_params = [1.116, par_E, perp_E, 0]
     param_bounds = ([0, -inf, 0, 0],
                     [pi, inf, inf, 2*pi/3])
     popt, pcov = curve_fit(calc_center_freq,
                    non_zero_field_splittings, non_zero_field_center_freqs,
-                   p0=guess_params,
-                   bounds=param_bounds)
+                   p0=guess_params, bounds=param_bounds)
+
+    predicted_center_freqs = calc_center_freq(non_zero_field_splittings, *popt)
+    residuals = predicted_center_freqs - non_zero_field_center_freqs
+    squared_residuals = residuals**2
+    ssqr = numpy.sum(squared_residuals)
+    chisq = ssqr/(len(non_zero_field_center_freqs) - len(guess_params))
+    print(chisq)
 
     ############ Plot the result ############
 
@@ -270,8 +287,6 @@ def main(zero_field_resonances, non_zero_field_resonances):
     ax.scatter(mag_B, non_zero_field_resonances[:,0])
     ax.scatter(mag_B, non_zero_field_resonances[:,1])
 
-    print(popt)
-
 
 # %% Run the file
 
@@ -285,30 +300,46 @@ if __name__ == '__main__':
     # is a single 2-list and non_zero_field_resonances is a list of 2-lists.
 
     # nv2_2019_04_30
-    zero_field_resonances = None
-    non_zero_field_resonances = [[2.8507, 2.8798],
-                                  [2.8434, 2.8882],
-                                  [2.8380, 2.8942],
-                                  [2.8379, 2.8948],
-                                  [2.8308, 2.9006],
-                                  [2.8228, 2.9079],
-                                  [2.8155, 2.9171]]
+    # zero_field_resonances = None
+    # non_zero_field_resonances = [[2.8507, 2.8798],
+    #                               [2.8434, 2.8882],
+    #                               [2.8380, 2.8942],
+    #                               [2.8379, 2.8948],
+    #                               [2.8308, 2.9006],
+    #                               [2.8228, 2.9079],
+    #                               [2.8155, 2.9171]]
 
     # nv2_2019_04_30 take 2
+    zero_field_resonances = None
+    non_zero_field_resonances = [[2.8512, 2.8804],
+                                  [2.8435, 2.8990],
+                                  [2.8265, 2.9117],
+                                  [2.7726, 3.0530],
+                                  [2.7738, 3.4712]]
+
+    # nv1_2019_05_10
     # zero_field_resonances = None
-    # non_zero_field_resonances = [[2.8512, 2.8804],
-    #                               [2.8435, 2.8990],
-    #                               [2.8265, 2.9117],
-    #                               [2.7726, 3.0530],
-    #                               [2.7738, 3.4712]]
+    # non_zero_field_resonances = [[2.8554, 2.8752],
+    #                               [2.8512, 2.8790],
+    #                               [2.8520, 2.8800],
+    #                               [2.8536, 2.8841],
+    #                               [2.8496, 2.8823],
+    #                               [2.8396, 2.8917],
+    #                               [2.8166, 2.9144],
+    #                               [2.8080, 2.9240],
+    #                               [2.7357, 3.0037],
+    #                               [2.6061, 3.1678],
+    #                               [2.6055, 3.1691],
+    #                               [2.4371, 3.4539]]
+
 
     # test
     # zero_field_resonances = [2.87, 2.87]
-    # non_zero_field_resonances = [[2.85, 2.89],
-    #                              [2.86, 2.88],
-    #                              [2.77, 2.97],
-    #                              [2.82, 2.92],
-    #                              [2.83, 2.91]]
+    # non_zero_field_resonances = [[2.86, 2.90],
+    #                              [2.87, 2.89],
+    #                              [2.78, 2.98],
+    #                              [2.83, 2.93],
+    #                              [2.84, 2.92]]
 
     # Run the script
     main(zero_field_resonances, non_zero_field_resonances)
