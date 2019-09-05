@@ -256,19 +256,30 @@ def main(zero_field_resonances, non_zero_field_resonances):
     non_zero_field_splittings = [abs(pair[0]-pair[1])
                                  for pair in non_zero_field_resonances]
     # fit_vec = [theta_B, par_E, perp_E, phi]
-    guess_params = [1.116, par_E, perp_E, 0]
+    guess_params = [pi/6, par_E, perp_E, 0]
     param_bounds = ([0, -inf, 0, 0],
                     [pi, inf, inf, 2*pi/3])
-    popt, pcov = curve_fit(calc_center_freq,
-                   non_zero_field_splittings, non_zero_field_center_freqs,
-                   p0=guess_params, bounds=param_bounds)
 
-    predicted_center_freqs = calc_center_freq(non_zero_field_splittings, *popt)
-    residuals = predicted_center_freqs - non_zero_field_center_freqs
-    squared_residuals = residuals**2
-    ssqr = numpy.sum(squared_residuals)
-    chisq = ssqr/(len(non_zero_field_center_freqs) - len(guess_params))
-    print(chisq)
+    num_iterations = 0
+    while True:
+        num_iterations += 1
+        popt, pcov = curve_fit(calc_center_freq,
+                       non_zero_field_splittings, non_zero_field_center_freqs,
+                       p0=guess_params, bounds=param_bounds)
+    
+        predicted_center_freqs = calc_center_freq(non_zero_field_splittings, *popt)
+        residuals = predicted_center_freqs - non_zero_field_center_freqs
+        squared_residuals = residuals**2
+        # Guess the variance - this is very loosely based on the width of
+        # our resonances
+        estimated_var = 0.0001
+        chisq = numpy.sum(squared_residuals / estimated_var)
+        degrees_of_freedom = len(non_zero_field_center_freqs) - len(guess_params)
+        reduced_chisq = chisq/degrees_of_freedom
+        print(reduced_chisq)
+        if (reduced_chisq < 1) or (num_iterations > 10):
+            break
+        guess_params = popt
 
     ############ Plot the result ############
 
@@ -310,12 +321,12 @@ if __name__ == '__main__':
     #                               [2.8155, 2.9171]]
 
     # nv2_2019_04_30 take 2
-    zero_field_resonances = None
-    non_zero_field_resonances = [[2.8512, 2.8804],
-                                  [2.8435, 2.8990],
-                                  [2.8265, 2.9117],
-                                  [2.7726, 3.0530],
-                                  [2.7738, 3.4712]]
+    # zero_field_resonances = None
+    # non_zero_field_resonances = [[2.8512, 2.8804],
+    #                               [2.8435, 2.8990],
+    #                               [2.8265, 2.9117],
+    #                               [2.7726, 3.0530],
+    #                               [2.7738, 3.4712]]
 
     # nv1_2019_05_10
     # zero_field_resonances = None
@@ -334,12 +345,12 @@ if __name__ == '__main__':
 
 
     # test
-    # zero_field_resonances = [2.87, 2.87]
-    # non_zero_field_resonances = [[2.86, 2.90],
-    #                              [2.87, 2.89],
-    #                              [2.78, 2.98],
-    #                              [2.83, 2.93],
-    #                              [2.84, 2.92]]
+    zero_field_resonances = [2.87, 2.87]
+    non_zero_field_resonances = [[2.86, 2.90],
+                                  [2.87, 2.89],
+                                  [2.78, 2.98],
+                                  [2.83, 2.93],
+                                  [2.84, 2.92]]
 
     # Run the script
     main(zero_field_resonances, non_zero_field_resonances)
