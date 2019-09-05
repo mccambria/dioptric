@@ -182,7 +182,11 @@ def plot_resonances(mag_B_range, theta_B, par_E, perp_E, phi):
     ax.plot(smooth_mag_B, resonances[1])
     ax.set_xlabel('B magnitude (GHz)')
     ax.set_ylabel('Resonance (GHz)')
-    ax.set_text('')
+
+    ax.text(r'$\theta_{B}$: {} rad$\\$'.format(theta_B) +
+                r'$E_{\par}$: {} GHz$\\$'.format(par_E) +
+                r'$E_{\perp}$: {} GHz$\\$'.format(perp_E) +
+                r'$\phi$: {} rad'.format(phi))
     return fig, ax
 
 
