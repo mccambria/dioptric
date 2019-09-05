@@ -38,7 +38,21 @@ As an aid to curve_fit, we can determine par_E and perp_E by the resonances
 at zero B field, as described below. Then we can guess theta_B, phi_B, and
 phi_E as the centers of their possible ranges. There's another simplifying
 factor. The characteristic polynomial of the NV Hamiltonian in the general
-case only includes phi_E and phi_B in the form (2 * phi_)
+case only includes phi_E and phi_B in the form (2 * phi_B) + phi_E. Let's just
+call this term phi. We can only find out anything out about phi; we can't
+resolve differences between phi_B and phi_E. As a result, we can just set
+phi_B = 0 and phi_E = phi and go about our business with one less fit
+parameter. Additionally, by symmetry, phi_E can only range from 0 to 
+2 * pi / 3. This can be seen more explicitly by looking at what happens to
+(2 * phi_B) + phi_E if we rotate by 120 deg. We pick up an extra 360 deg and
+cycle back to the same angle we had before the rotation. So ultimately
+our fit vector and parameter bounds are
+    fit_vec = [theta_B, par_E, perp_E, phi]
+    0 < mag_B
+    0 < theta_B < pi
+    par_E is unbounded
+    0 < perp_E
+    0 < phi < 2 * pi / 3
 
 Created on Sun Jun 16 11:22:40 2019
 
@@ -72,9 +86,11 @@ inv_sqrt_2 = 1/numpy.sqrt(2)
 # %% Functions
 
 
-def calc_single_hamiltonian(mag_B, theta_B, phi_B, par_E, perp_E, phi_E):
+def calc_single_hamiltonian(mag_B, theta_B, par_E, perp_E, phi):
     par_B = mag_B * numpy.cos(theta_B)
     perp_B = mag_B * numpy.sin(theta_B)
+    phi_B = 0
+    phi_E = phi
     hamiltonian = numpy.array([[d_gs + par_E + par_B,
                                 inv_sqrt_2 * perp_B * exp(-1j * phi_B),
                                 -perp_E * exp(1j * phi_E)],
@@ -87,20 +103,18 @@ def calc_single_hamiltonian(mag_B, theta_B, phi_B, par_E, perp_E, phi_E):
     return hamiltonian
 
 
-def calc_hamiltonian(mag_B, theta_B, phi_B, par_E, perp_E, phi_E):
+def calc_hamiltonian(mag_B, theta_B, par_E, perp_E, phi):
     if (type(mag_B) is list) or (type(mag_B) is numpy.ndarray):
-        fit_vec = [theta_B, phi_B, par_E, perp_E, phi_E]
+        fit_vec = [theta_B, par_E, perp_E, phi]
         hamiltonian_list = [calc_single_hamiltonian(val, *fit_vec)
                             for val in mag_B]
         return hamiltonian_list
     else:
-        return calc_single_hamiltonian(mag_B, theta_B, phi_B,
-                                       par_E, perp_E, phi_E)
+        return calc_single_hamiltonian(mag_B, theta_B, par_E, perp_E, phi)
 
 
-def calc_resonances(mag_B, theta_B, phi_B, par_E, perp_E, phi_E):
-    hamiltonian = calc_hamiltonian(mag_B, theta_B, phi_B,
-                                   par_E, perp_E, phi_E)
+def calc_resonances(mag_B, theta_B, par_E, perp_E, phi):
+    hamiltonian = calc_hamiltonian(mag_B, theta_B, par_E, perp_E, phi)
     if (type(mag_B) is list) or (type(mag_B) is numpy.ndarray):
         vals = numpy.sort(eigvals(hamiltonian), axis=1)
         resonance_low = numpy.real(vals[:,1] - vals[:,0])
@@ -112,10 +126,10 @@ def calc_resonances(mag_B, theta_B, phi_B, par_E, perp_E, phi_E):
     return resonance_low, resonance_high
 
 
-def calc_center_freq(splitting, theta_B, phi_B, par_E, perp_E, phi_E):
+def calc_center_freq(splitting, theta_B, par_E, perp_E, phi):
 
     # Find the mag_B that reproduces splitting for the given fit_vec
-    fit_vec = (theta_B, phi_B, par_E, perp_E, phi_E)
+    fit_vec = (theta_B, par_E, perp_E, phi)
     mag_B = [find_mag_B(val, *fit_vec) for val in splitting]
 
     # Calculate the center_freq for that mag_B and fit_vec
@@ -127,7 +141,7 @@ def calc_center_freq(splitting, theta_B, phi_B, par_E, perp_E, phi_E):
     return center_freq
 
 
-def find_mag_B(splitting, theta_B, phi_B, par_E, perp_E, phi_E):
+def find_mag_B(splitting, theta_B, par_E, perp_E, phi):
     # This function expects a single value for splitting
     # The equation we're trying to solve here is
     #   splitting = g(mag_B; fit_vec)
@@ -138,7 +152,7 @@ def find_mag_B(splitting, theta_B, phi_B, par_E, perp_E, phi_E):
     # have to hope the g is monotonic over the range we're interested in,
     # which means it's invertible over this range, which means that there's
     # only a single value of mag_B that will solve the equation...
-    fit_vec = (splitting, theta_B, phi_B, par_E, perp_E, phi_E)
+    fit_vec = (splitting, theta_B, par_E, perp_E, phi)
     ret_vals = fsolve(diff_splitting, x0=0.1, args=fit_vec)
     # Make sure we only got one root
     if ret_vals.size > 1:
@@ -148,27 +162,27 @@ def find_mag_B(splitting, theta_B, phi_B, par_E, perp_E, phi_E):
     return mag_B
 
 
-def diff_splitting(x, splitting, theta_B, phi_B, par_E, perp_E, phi_E):
-    calculated_splitting = calc_splitting(x, theta_B, phi_B,
-                                          par_E, perp_E, phi_E)
+def diff_splitting(x, splitting, theta_B, par_E, perp_E, phi):
+    calculated_splitting = calc_splitting(x, theta_B, par_E, perp_E, phi)
     return calculated_splitting - splitting
 
 
-def calc_splitting(mag_B, theta_B, phi_B, par_E, perp_E, phi_E):
-    resonances = calc_resonances(mag_B, theta_B, phi_B,
-                                 par_E, perp_E, phi_E)
+def calc_splitting(mag_B, theta_B, par_E, perp_E, phi):
+    resonances = calc_resonances(mag_B, theta_B, par_E, perp_E, phi)
     splitting = resonances[1] - resonances[0]
     return splitting
 
 
-def plot_resonances(mag_B_range, theta_B, phi_B, par_E, perp_E, phi_E):
+def plot_resonances(mag_B_range, theta_B, par_E, perp_E, phi):
 
     fig, ax = plt.subplots()
     smooth_mag_B = numpy.linspace(mag_B_range[0], mag_B_range[1], 100)
-    resonances = calc_resonances(smooth_mag_B, theta_B, phi_B,
-                                 par_E, perp_E, phi_E)
+    resonances = calc_resonances(smooth_mag_B, theta_B, par_E, perp_E, phi)
     ax.plot(smooth_mag_B, resonances[0])
     ax.plot(smooth_mag_B, resonances[1])
+    ax.set_xlabel('B magnitude (GHz)')
+    ax.set_ylabel('Resonance (GHz)')
+    ax.set_text('')
     return fig, ax
 
 
@@ -194,9 +208,9 @@ def main(zero_field_resonances, non_zero_field_resonances):
         zero_field_splitting = zero_field_high - zero_field_low
     
         # At B = 0 the Hamiltonian has the form
-        # [     d_gs + pi_par,          0,     -pi_perp * exp(i phi_e)   ]
+        # [     d_gs + par_E,           0,     - perp_E * exp(i phi_E)   ]
         # [            0,               0,                0              ]
-        # [-pi_perp * exp(-i phi_e),    0,          d_gs + pi_par        ]
+        # [-perp_E * exp(-i phi_E),     0,           d_gs + par_E        ]
     
         # The eigenvalues are simple in this case
         # [0, d_gs + par_E - perp_E, d_gs + par_E + perp_E]
@@ -226,12 +240,14 @@ def main(zero_field_resonances, non_zero_field_resonances):
                                    for pair in non_zero_field_resonances]
     non_zero_field_splittings = [abs(pair[0]-pair[1])
                                  for pair in non_zero_field_resonances]
-    # guess_params = [pi/4, pi/4, par_E, perp_E, pi/4]
-    guess_params = [pi/6, 0, par_E, perp_E, 0]
+    # fit_vec = [theta_B, par_E, perp_E, phi]
+    guess_params = [0, par_E, perp_E, 0]
+    param_bounds = ([0, -inf, 0, 0],
+                    [pi, inf, inf, 2*pi/3])
     popt, pcov = curve_fit(calc_center_freq,
                    non_zero_field_splittings, non_zero_field_center_freqs,
                    p0=guess_params,
-                   bounds=([0, 0, -inf, 0, 0], [pi, 2*pi, inf, inf, 2*pi]))
+                   bounds=param_bounds)
 
     ############ Plot the result ############
 
@@ -265,36 +281,34 @@ if __name__ == '__main__':
     # is a single 2-list and non_zero_field_resonances is a list of 2-lists.
 
     # nv2_2019_04_30
-    # zero_field_resonances = None
-    # non_zero_field_resonances = [[2.8507, 2.8798],
-    #                              [2.8434, 2.8882],
-    #                              [2.8380, 2.8942],
-    #                              [2.8379, 2.8948],
-    #                              [2.8308, 2.9006],
-    #                              [2.8228, 2.9079],
-    #                              [2.8155, 2.9171]]
+    zero_field_resonances = None
+    non_zero_field_resonances = [[2.8507, 2.8798],
+                                  [2.8434, 2.8882],
+                                  [2.8380, 2.8942],
+                                  [2.8379, 2.8948],
+                                  [2.8308, 2.9006],
+                                  [2.8228, 2.9079],
+                                  [2.8155, 2.9171]]
 
     # nv2_2019_04_30 take 2
     # zero_field_resonances = None
     # non_zero_field_resonances = [[2.8512, 2.8804],
-    #                              [2.8435, 2.8990],
-    #                              [2.8265, 2.9117],
-    #                              [2.7726, 3.0530],
-    #                              [2.7738, 3.4712]]
+    #                               [2.8435, 2.8990],
+    #                               [2.8265, 2.9117],
+    #                               [2.7726, 3.0530],
+    #                               [2.7738, 3.4712]]
 
     # test
-    zero_field_resonances = [2.87, 2.87]
-    non_zero_field_resonances = [[2.85, 2.89],
-                                 [2.86, 2.88],
-                                 [2.77, 2.97],
-                                 [2.82, 2.92],
-                                 [2.83, 2.91]]
+    # zero_field_resonances = [2.87, 2.87]
+    # non_zero_field_resonances = [[2.85, 2.89],
+    #                              [2.86, 2.88],
+    #                              [2.77, 2.97],
+    #                              [2.82, 2.92],
+    #                              [2.83, 2.91]]
 
     # Run the script
     main(zero_field_resonances, non_zero_field_resonances)
 
     # Test plot
-    # args: mag_B_range, theta_B, phi_B,
-    #       par_E, perp_E, phi_E
-    # plot_resonances([0, 0.5], 0, 0,
-    #                 0, 0, 0)
+    # args: mag_B_range, theta_B, par_E, perp_E, phi
+    # plot_resonances([0, 0.5], 0, 0, 0, 0)
