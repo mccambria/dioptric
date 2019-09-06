@@ -92,7 +92,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
 
     # %% Guess the locations of the minimums
 
-    contrast = 0.2  # Arb
+    contrast = 0.06  # Arb
     sigma = 0.005  # MHz
 #    sigma = 0.010  # MHz
     fwhm = 2.355 * sigma
@@ -150,7 +150,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
         print('Could not locate peaks')
         return None, None
 
-#    low_freq_guess = 3.32
+#    low_freq_guess = 2.69
 #    high_freq_guess = None
 
     # %% Fit!
@@ -465,8 +465,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    file = '2019_09/2019-09-03-12_35_56-ayrton12-nv2_2019_04_30'
-    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
+    file = '2019-09-06-16_26_29-ayrton12-nv2_2019_04_30'
+    data = tool_belt.get_raw_data('pulsed_resonance.py', '2019_09/' + file)
 
     # file = '2019-08-01-11_31_52-ayrton12-nv16_2019_07_25'
 #    file = '2019-08-01-14_58_51-ayrton12-nv16_2019_07_25'

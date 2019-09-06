@@ -27,11 +27,11 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-nv16_splitting_list = [28.6, 53.0, 81.2, 128.0, 283.7]
-nv16_omega_avg_list = [0.58, 0.79, 1.75, 0.69, 0.64]
-nv16_omega_error_list = [0.10, 0.11, 0.19, 0.10, 0.18]
-nv16_gamma_avg_list = [110, 32, 18.2, 12.1, 6.8]
-nv16_gamma_error_list = [20, 5, 1.0, 0.8, 0.4]
+nv16_splitting_list = [23.9, 28.6, 53.0, 81.2, 128.0, 283.7]
+nv16_omega_avg_list = [0.5, 0.58, 0.79, 1.75, 0.69, 0.64]
+nv16_omega_error_list = [0.1, 0.10, 0.11, 0.19, 0.10, 0.18]
+nv16_gamma_avg_list = [200, 110, 32, 18.2, 12.1, 6.8]
+nv16_gamma_error_list = [20, 20, 5, 1.0, 0.8, 0.4]
 
 # Try to fit the gamma to a 1/f^alpha
 
@@ -97,4 +97,4 @@ plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
 #plt.title('NV16', fontsize=18)
 #ax.legend(fontsize=18)
-fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b.pdf", bbox_inches='tight')
+#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b.pdf", bbox_inches='tight')
