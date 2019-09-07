@@ -86,7 +86,7 @@ inv_sqrt_2 = 1/numpy.sqrt(2)
 # %% Functions
 
 
-def calc_single_hamiltonian(mag_B, theta_B, par_E, perp_E, phi):
+def calc_single_hamiltonian(mag_B, par_E, perp_E, theta_B, phi):
     par_B = mag_B * numpy.cos(theta_B)
     perp_B = mag_B * numpy.sin(theta_B)
     phi_B = 0
@@ -103,18 +103,18 @@ def calc_single_hamiltonian(mag_B, theta_B, par_E, perp_E, phi):
     return hamiltonian
 
 
-def calc_hamiltonian(mag_B, theta_B, par_E, perp_E, phi):
+def calc_hamiltonian(mag_B, par_E, perp_E, theta_B, phi):
     if (type(mag_B) is list) or (type(mag_B) is numpy.ndarray):
-        fit_vec = [theta_B, par_E, perp_E, phi]
+        fit_vec = [par_E, perp_E, theta_B, phi]
         hamiltonian_list = [calc_single_hamiltonian(val, *fit_vec)
                             for val in mag_B]
         return hamiltonian_list
     else:
-        return calc_single_hamiltonian(mag_B, theta_B, par_E, perp_E, phi)
+        return calc_single_hamiltonian(mag_B, par_E, perp_E, theta_B, phi)
 
 
-def calc_res_pair(mag_B, theta_B, par_E, perp_E, phi):
-    hamiltonian = calc_hamiltonian(mag_B, theta_B, par_E, perp_E, phi)
+def calc_res_pair(mag_B, par_E, perp_E, theta_B, phi):
+    hamiltonian = calc_hamiltonian(mag_B, par_E, perp_E, theta_B, phi)
     if (type(mag_B) is list) or (type(mag_B) is numpy.ndarray):
         vals = numpy.sort(eigvals(hamiltonian), axis=1)
         resonance_low = numpy.real(vals[:,1] - vals[:,0])
@@ -126,10 +126,10 @@ def calc_res_pair(mag_B, theta_B, par_E, perp_E, phi):
     return resonance_low, resonance_high
 
 
-def find_mag_B(res_pair, theta_B, par_E, perp_E, phi):
+def find_mag_B(res_pair, par_E, perp_E, theta_B, phi):
     # Find the mag_B that minimizes the distance between the measured
     # resonances and the calculated resonances for a given fit_vec
-    args = (res_pair, theta_B, par_E, perp_E, phi)
+    args = (res_pair, par_E, perp_E, theta_B, phi)
     result = minimize_scalar(find_mag_B_objective, bounds=(0, 1.0), args=args,
                              method='bounded')
     if result.success:
@@ -143,20 +143,22 @@ def find_mag_B(res_pair, theta_B, par_E, perp_E, phi):
     return mag_B
 
 
-def find_mag_B_objective(x, res_pair, theta_B, par_E, perp_E, phi):
-    calculated_res_pair = calc_res_pair(x, theta_B, par_E, perp_E, phi)
+def find_mag_B_objective(x, res_pair, par_E, perp_E, theta_B, phi):
+    calculated_res_pair = calc_res_pair(x, par_E, perp_E, theta_B, phi)
     differences = calculated_res_pair - res_pair
     sum_squared_differences = numpy.sum(differences**2)
     return sum_squared_differences
 
 
-def plot_resonances(mag_B_range, theta_B, par_E, perp_E, phi):
-
-    fig, ax = plt.subplots()
+def plot_resonances(mag_B_range, par_E, perp_E, theta_B, phi,
+                    name='untitled'):
 
     smooth_mag_B = numpy.linspace(mag_B_range[0], mag_B_range[1], 1000)
-    res_pairs = calc_res_pair(smooth_mag_B, theta_B, par_E, perp_E, phi)
+    res_pairs = calc_res_pair(smooth_mag_B, par_E, perp_E, theta_B, phi)
 
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    fig.set_tight_layout(True)
+    ax.set_title('Extracted resonance curves: {}'.format(name))
     ax.plot(smooth_mag_B, res_pairs[0])
     ax.plot(smooth_mag_B, res_pairs[1])
     ax.set_xlabel('B magnitude (GHz)')
@@ -174,10 +176,10 @@ def plot_resonances(mag_B_range, theta_B, par_E, perp_E, phi):
     return fig, ax
 
 
-def chisq_func(fit_vec, resonances):
+def chisq_func(fit_vec, resonances, par_E, perp_E):
 
     num_resonance_pairs = len(resonances)
-    mag_Bs = [find_mag_B(val, *fit_vec) for val in resonances]
+    mag_Bs = [find_mag_B(val, par_E, perp_E, *fit_vec) for val in resonances]
 
     # Guess the variance - this is very loosely based on the width of
     # our resonances
@@ -185,8 +187,9 @@ def chisq_func(fit_vec, resonances):
 
     # find_mag_B_objective returns the sum of squared residuals for a single
     # pair of resonances. We want to sum this over all pairs.
-    squared_residuals = [find_mag_B_objective(mag_Bs[ind], resonances[ind], *fit_vec)
-                        for ind in range(num_resonance_pairs)]
+    squared_residuals = [find_mag_B_objective(mag_Bs[ind], resonances[ind],
+                         par_E, perp_E, *fit_vec) for ind
+                         in range(num_resonance_pairs)]
     sum_squared_residuals = numpy.sum(squared_residuals)
 
     chisq = sum_squared_residuals / estimated_var
@@ -198,7 +201,7 @@ def chisq_func(fit_vec, resonances):
 # %% Main
 
 
-def main(zero_field_resonances, non_zero_field_resonances):
+def main(name, zero_field_resonances, non_zero_field_resonances):
 
     ############ Setup ############
 
@@ -245,10 +248,11 @@ def main(zero_field_resonances, non_zero_field_resonances):
 
     ############ General case ############
 
-    # fit_vec = [theta_B, par_E, perp_E, phi]
-    guess_params = (pi/6, par_E, perp_E, 0)
-    param_bounds = ((0, pi), (-inf, inf), (0, inf), (0, 2*pi/3))
-    res = minimize(chisq_func, guess_params, args=(non_zero_field_resonances),
+    # fit_vec = [par_E, perp_E, theta_B, phi]
+    guess_params = (pi/6, 0)
+    param_bounds = ((0, pi), (0, 2*pi/3))
+    args = (non_zero_field_resonances, par_E, perp_E)
+    res = minimize(chisq_func, guess_params, args=args,
                    bounds=param_bounds, method='SLSQP')
     success = res.success
     if not success:
@@ -267,10 +271,11 @@ def main(zero_field_resonances, non_zero_field_resonances):
     ############ Plot the result ############
 
     # Get the mag_B for each pair of resonances with this fit_vec
-    mag_Bs = [find_mag_B(val, *popt) for val in non_zero_field_resonances]
+    mag_Bs = [find_mag_B(val, par_E, perp_E, *popt) for val
+              in non_zero_field_resonances]
 
     # Plot the calculated resonances up to the max mag_B
-    fig, ax = plot_resonances([0, max(mag_Bs)], *popt)
+    fig, ax = plot_resonances([0, max(mag_Bs)], par_E, perp_E, *popt, name)
 
     # Plot the zero field resonances
     if zero_field_resonances is not None:
@@ -293,7 +298,7 @@ if __name__ == '__main__':
     # Each pair of resonances should be a 2-list. So zero_field_resonances
     # is a single 2-list and non_zero_field_resonances is a list of 2-lists.
 
-    # nv2_2019_04_30
+    # name = 'nv2_2019_04_30'
     # zero_field_resonances = None
     # non_zero_field_resonances = [[2.8507, 2.8798],
     #                               [2.8434, 2.8882],
@@ -303,7 +308,7 @@ if __name__ == '__main__':
     #                               [2.8228, 2.9079],
     #                               [2.8155, 2.9171]]
 
-    # nv2_2019_04_30 take 2
+    name = 'nv2_2019_04_30_take2'
     zero_field_resonances = None
     non_zero_field_resonances = [[2.8512, 2.8804],
                                   [2.8435, 2.8990],
@@ -311,7 +316,7 @@ if __name__ == '__main__':
                                   [2.7726, 3.0530],
                                   [2.7738, 3.4712]]
 
-    # nv1_2019_05_10
+    # name = 'nv1_2019_05_10'
     # zero_field_resonances = None
     # non_zero_field_resonances = [[2.8554, 2.8752],
     #                               [2.8512, 2.8790],
@@ -327,7 +332,7 @@ if __name__ == '__main__':
     #                               [2.4371, 3.4539]]
 
 
-    # test
+    # name = test
     # zero_field_resonances = [2.88, 2.88]
     # non_zero_field_resonances = [[2.86, 2.90],
     #                               [2.87, 2.89],
@@ -336,8 +341,8 @@ if __name__ == '__main__':
     #                               [2.84, 2.92]]
 
     # Run the script
-    main(zero_field_resonances, non_zero_field_resonances)
+    main(name, zero_field_resonances, non_zero_field_resonances)
 
     # Test plot
-    # args: mag_B_range, theta_B, par_E, perp_E, phi
+    # args: mag_B_range, par_E, perp_E, theta_B, phi
     # plot_resonances([0, 0.5], pi/2, 0, 0, 0)
