@@ -67,10 +67,11 @@ import numpy
 from numpy.linalg import eigvals
 from numpy import pi
 from scipy.optimize import curve_fit
+from scipy.optimize import fsolve
+from scipy.optimize import minimize_scalar
 from numpy import inf
 from numpy import exp
 import matplotlib.pyplot as plt
-from scipy.optimize import fsolve
 
 
 # %% Constants
@@ -126,55 +127,25 @@ def calc_resonances(mag_B, theta_B, par_E, perp_E, phi):
     return resonance_low, resonance_high
 
 
-def calc_center_freq(splitting, theta_B, par_E, perp_E, phi):
-
-    # Find the mag_B that reproduces splitting for the given fit_vec
-    fit_vec = (theta_B, par_E, perp_E, phi)
-    mag_B = [find_mag_B(val, *fit_vec) for val in splitting]
-
-    # Calculate the center_freq for that mag_B and fit_vec
-    resonances = [calc_resonances(val, *fit_vec) for val in mag_B]
-    resonances = numpy.array(resonances)
-    center_freq = (resonances[:,0] + resonances[:,1]) / 2
-    # We're down to 1 dimension so get rid of the unnecessary level here
-    center_freq = center_freq.flatten()
-    return center_freq
-
-
-def find_mag_B(splitting, theta_B, par_E, perp_E, phi):
-    # This function expects a single value for splitting
-    # The equation we're trying to solve here is
-    #   splitting = g(mag_B; fit_vec)
-    # which is equivalent to
-    #   0 = g(mag_B; fit_vec) - splitting
-    # So really we're just looking for roots. SciPy provides a
-    # numerical root finder that we can use for this task. Now we
-    # have to hope the g is monotonic over the range we're interested in,
-    # which means it's invertible over this range, which means that there's
-    # only a single value of mag_B that will solve the equation...
-    fit_vec = (splitting, theta_B, par_E, perp_E, phi)
-    x_vals, infodict, ier, mesg = fsolve(diff_splitting, full_output=True,
-                                         x0=0.1, args=fit_vec)
-    # Make sure we only got one root
-    if x_vals.size > 1:
-        raise RuntimeError('Multiple roots encountered.')
-    elif ier != 1:
-        # Something went wrong
-        mag_B = 1.0  # Blow up chi_squared so we move away from this
+def find_mag_B(resonances, theta_B, par_E, perp_E, phi):
+    # Find the mag_B that minimizes the distance between the measured
+    # resonances and the calculated resonances for a given fit_vec
+    result = minimize_scalar(squared_resonance_differences, bounds=[0, 1.0],
+                             args=[resonances, theta_B, par_E, perp_E, phi])
+    if result.success:
+        mag_B = result.x
     else:
-        mag_B = x_vals[0]
+        # If we didn't find an optimal value, return something that will blow
+        # up chisq and push curve_fit away from this fit_vec
+        mag_B = 1.0
     return mag_B
 
 
-def diff_splitting(x, splitting, theta_B, par_E, perp_E, phi):
-    calculated_splitting = calc_splitting(x, theta_B, par_E, perp_E, phi)
-    return calculated_splitting - splitting
-
-
-def calc_splitting(mag_B, theta_B, par_E, perp_E, phi):
-    resonances = calc_resonances(mag_B, theta_B, par_E, perp_E, phi)
-    splitting = resonances[1] - resonances[0]
-    return splitting
+def squared_resonance_differences(x, resonances, theta_B, par_E, perp_E, phi):
+    calculated_resonances = calc_resonances(x, theta_B, par_E, perp_E, phi)
+    differences = calculated_resonances - resonances
+    sum_squared_differences = numpy.sum(differences**2)
+    return sum_squared_differences
 
 
 def plot_resonances(mag_B_range, theta_B, par_E, perp_E, phi):
