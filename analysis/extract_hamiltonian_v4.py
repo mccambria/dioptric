@@ -134,14 +134,14 @@ def find_mag_B(res_desc, theta_B, par_E, perp_E, phi):
     # finding the mag_B that minimizes the distance between the measured
     # resonances and the calculated resonances for a given fit_vec
     args = (res_desc, theta_B, par_E, perp_E, phi)
-    result = minimize_scalar(find_mag_B_objective, bounds=(0, 1.0), args=args,
+    result = minimize_scalar(find_mag_B_objective, bounds=(0, 1000), args=args,
                              method='bounded')
     if result.success:
         mag_B = result.x
     else:
         # If we didn't find an optimal value, return something that will blow
         # up chisq and push us away from this fit_vec
-        mag_B = 1.0
+        mag_B = 0.0
     return mag_B
 
 
@@ -185,7 +185,7 @@ def chisq_func(fit_vec, res_descs):
 
     # Guess the variance - this is very loosely based on the width of
     # our resonances
-    estimated_var = 0.0001
+    estimated_var = 1.0
 
     # find_mag_B_objective returns the sum of squared residuals for a single
     # pair of resonances. We want to sum this over all pairs.
@@ -260,12 +260,11 @@ def main(name, res_descs):
 
     # fit_vec = [theta_B, par_E, perp_E, phi]
     guess_params = (pi/6, par_E, perp_E, 0)
-    param_bounds = ((0, pi/2), (-0.1, 0.1), (0, 0.1), (0, 2*pi/3))
+    param_bounds = ((0, pi/2), (-100, 100), (0, 100), (0, 2*pi/3))
     args = (res_descs)
     res = minimize(chisq_func, guess_params, args=args,
                    bounds=param_bounds, method='SLSQP')
-    success = res.success
-    if not success:
+    if not res.success:
         print(res.message)
         return
 
@@ -276,6 +275,17 @@ def main(name, res_descs):
     degrees_of_freedom = len(res_descs) - len(guess_params)
     reduced_chisq = res.fun / degrees_of_freedom
     print('Reduced chi squared: {:.4g}'.format(reduced_chisq))
+
+    # jac_e5 = res.jac * 10**5
+    # print(jac_e5)
+    # print(numpy.outer(jac_e5, jac_e5))
+    # pcov = reduced_chisq * numpy.linalg.inv(numpy.outer(jac_e5, jac_e5))
+    # test = numpy.outer(jac_e5, jac_e5)
+    # print(numpy.matmul(test, numpy.linalg.inv(test)))
+    # # return
+    # print(pcov)
+    # st_errors = [numpy.sqrt(pcov[ind, ind]) for ind in range(len(jac))]
+    # print(st_errors)
 
     ############ Plot the result ############
 
@@ -312,12 +322,18 @@ if __name__ == '__main__':
     #               [None, 2.8155, 2.9171]]
 
     name = 'nv2_2019_04_30_take2'
-    res_descs = [[0.0, 2.8572, None],
-                  [None, 2.8512, 2.8804],
-                  [None, 2.8435, 2.8990],
-                  [None, 2.8265, 2.9117],
-                  [None, 2.7726, 3.0530],
-                  [None, 2.7738, 3.4712]]
+    # res_descs = [[0.0, 2.8572, None],
+    #               [None, 2.8512, 2.8804],
+    #               [None, 2.8435, 2.8990],
+    #               [None, 2.8265, 2.9117],
+    #               [None, 2.7726, 3.0530],
+    #               [None, 2.7738, 3.4712]]
+    res_descs = [[0.0, 2857.2, None],
+                  [None, 2851.2, 2880.4],
+                  [None, 2843.5, 2899.0],
+                  [None, 2826.5, 2911.7],
+                  [None, 2772.6, 3053.0],
+                  [None, 2773.8, 3471.2]]
     # res_descs = [[None, 2.8512, 2.8804],
     #               [None, 2.8435, 2.8990],
     #               [None, 2.8265, 2.9117],
