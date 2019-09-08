@@ -150,8 +150,8 @@ def fit_resonance(freq_range, freq_center, num_steps,
         print('Could not locate peaks')
         return None, None
 
-#    low_freq_guess = 2.69
-#    high_freq_guess = None
+    # low_freq_guess = 2.8655
+    # high_freq_guess = None
 
     # %% Fit!
 
@@ -204,7 +204,7 @@ def state(nv_sig, apd_indices, state, freq_range,
 
     resonance_list = main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-    
+
     return resonance_list
 
 # %% Main
@@ -476,6 +476,11 @@ if __name__ == '__main__':
     num_steps = data['num_steps']
     norm_avg_sig = numpy.array(data['norm_avg_sig'])
     ref_counts = numpy.array(data['ref_counts'])
+    # sig_counts = numpy.array(data['sig_counts'])
+    # avg_ref_counts = numpy.average(ref_counts, axis=0)
+    # avg_sig_counts = numpy.average(sig_counts, axis=0)
+    # norm_avg_sig = avg_sig_counts / avg_ref_counts
+
 
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
                                    norm_avg_sig, ref_counts)
