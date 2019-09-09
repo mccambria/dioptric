@@ -198,11 +198,11 @@ def create_figure(file_name):
     x_range = data['x_range']
     y_range = data['y_range']
     x_voltages = data['x_voltages']
-    nv_sig = data['coords']
+#    nv_sig = data['coords']
 #    nv_sig = data['nv_sig']
 #    coords = nv_sig['coords']
-#    nv_sig = data['nv_sig']
-#    coords = nv_sig['coords']
+    nv_sig = data['nv_sig']
+    coords = nv_sig['coords']
     img_array = numpy.array(data['img_array'])
     readout = data['readout']
 
