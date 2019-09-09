@@ -69,12 +69,14 @@ axis_font = {'size':'14'}
 orange = '#f7941d'
 purple = '#87479b'
 
+print(fit_alpha_params)
+
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv1_splitting_list, nv1_gamma_avg_list, yerr = nv1_gamma_error_list, 
-            label = r'$\gamma$',  fmt='o',markersize = 10, color = purple)
+            label = r'$\gamma$',  fmt='o',markersize = 12, color = purple)
 ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
-            label = r'$\Omega$', fmt='^', markersize = 10, color=orange)
+            label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
 
 #ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
 #            label = r'$f^{-2}$', color ='teal')
@@ -84,19 +86,19 @@ ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list,
 # %%
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-             label = r'fit',color =purple)
+             linestyle='dashed', linewidth=3, label = r'fit',color =purple)
 ax.plot(splitting_linspace, omega_constant_array, color = orange,
-            label = r'$\Omega$')
+            linestyle='dashed', linewidth=3, label = r'$\Omega$')
 
 text = '\n'.join((r'$1/f^{\alpha} + \gamma_\infty$ fit:',
                   r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
-                  r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[2])
-#                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0]),
+                  r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[2]),
+                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
 #                  ,r'$a = $' + '%.2f'%(fit_params[2])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
-#        verticalalignment='top', bbox=props)
+ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
+        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -115,4 +117,4 @@ plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
 #plt.title('NV 1', fontsize=18)
 #ax.legend(fontsize=18)
 
-fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c.pdf", bbox_inches='tight')
+#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c.pdf", bbox_inches='tight')

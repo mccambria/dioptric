@@ -9,6 +9,19 @@ Plotting time for the NV1_2019_05_10
 import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
 import numpy
+from scipy.optimize import curve_fit
+
+# %%
+
+def gaussian(freq, constrast, sigma, center):
+    return constrast * numpy.exp(-((freq-center)**2) / (2 * (sigma**2)))
+
+
+def double_gaussian(x, amp_1, sigma_1, center_1,
+                        amp_2, sigma_2, center_2):
+    low_gauss = gaussian(x, amp_1, sigma_1, center_1)
+    high_gauss = gaussian(x, amp_2, sigma_2, center_2)
+    return low_gauss + high_gauss
 
 # %%
 
@@ -40,21 +53,21 @@ import numpy
 
 
 # 3.75 hour incr
-#file4 = '26.3_MHz_splitting_6_bins_error'
-#folder4 = 'nv1_2019_05_10_28MHz_4'
-#data4 = tool_belt.get_raw_data('t1_double_quantum', file4, folder4)
-#
-#file5 = '26.5_MHz_splitting_5_bins_error'
-#folder5 = 'nv1_2019_05_10_28MHz_5'
-#data5 = tool_belt.get_raw_data('t1_double_quantum', file5, folder5)
-#
-#file6 = '26.2_MHz_splitting_5_bins_error'
-#folder6 = 'nv1_2019_05_10_28MHz_6'
-#data6 = tool_belt.get_raw_data('t1_double_quantum', file6, folder6)
+file4 = '26.3_MHz_splitting_6_bins_error'
+folder4 = 'nv1_2019_05_10_28MHz_4'
+data4 = tool_belt.get_raw_data('t1_double_quantum', file4, folder4)
 
-#gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list'] 
-#gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
-#                + data6['gamma_ste_list']
+file5 = '26.5_MHz_splitting_5_bins_error'
+folder5 = 'nv1_2019_05_10_28MHz_5'
+data5 = tool_belt.get_raw_data('t1_double_quantum', file5, folder5)
+
+file6 = '26.2_MHz_splitting_5_bins_error'
+folder6 = 'nv1_2019_05_10_28MHz_6'
+data6 = tool_belt.get_raw_data('t1_double_quantum', file6, folder6)
+
+gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list'] 
+gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
+                + data6['gamma_ste_list']
                     
 # %%
 
@@ -219,7 +232,7 @@ def time_zoom_plot(folder_name, file_name):
     fig.canvas.draw()
     fig.canvas.flush_events()
     
-    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4c2.pdf", bbox_inches='tight')
+#    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4c2.pdf", bbox_inches='tight')
 
     
 def histogram(folder_name, file_name, bins):
@@ -241,11 +254,48 @@ def histogram(folder_name, file_name, bins):
     ax.tick_params(which = 'major', length=12, width=2)
     fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
   
+    
+def kde_sklearn(x, bandwidth=0.2):
+    '''
+    Produces a kernel density estimation of the data passed. It also plots it.
+    https://jakevdp.github.io/blog/2013/12/01/kernel-density-estimation/
+    '''
+    from sklearn.neighbors import KernelDensity
+    """Kernel Density Estimation with Scikit-learn"""
+
+    kde_skl = KernelDensity(bandwidth=bandwidth)
+    x = numpy.array(x)
+    kde_skl.fit(x[:, numpy.newaxis])
+    # score_samples() returns the log-likelihood of the samples
+    x_grid = numpy.linspace(min(x), max(x), 1000)
+    log_pdf = kde_skl.score_samples(x_grid[:, numpy.newaxis])
+
+    pdf = numpy.exp(log_pdf)
+    fig,ax = plt.subplots(1,1)
+    ax.plot(x_grid, pdf, color='blue', alpha=0.5)
+    ax.set_xlabel('Gamma (kHz)')
+    ax.set_ylabel('Density')
+    ax.set_title('Kernal Density Estimation')
+
+#    print(numpy.exp(log_pdf))
+    return numpy.exp(log_pdf), x_grid
+
 # %%
 file_name = '26.2_MHz_splitting_25_bins_error'
 folder_name = 'nv1_2019_05_10_28MHz_6'    
 
-time_zoom_plot(folder_name, file_name)
+#time_zoom_plot(folder_name, file_name)
 #histogram(folder_name, file_name, 7)
+
+kde_points, x_grid = kde_sklearn(gamma_list, bandwidth=1.5)
+
+init_guess = [0.1, 1, 42, 0.1, 1, 52]
+
+dbl_gssn_popt, pcov = curve_fit(double_gaussian, x_grid, kde_points, p0 = init_guess)
+
+plt.plot(x_grid, double_gaussian(x_grid, *dbl_gssn_popt), 'b--', label = 'fit')
+plt.legend()
+
+print(dbl_gssn_popt)
 
     

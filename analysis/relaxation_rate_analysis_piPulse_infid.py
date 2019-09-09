@@ -9,12 +9,7 @@ statistics over the number of runs.
 
 This file plots the subtracted data along with the single eponential fit.
 
-Some additional features of this file:
--User can specify if the offset should be a free parameter or if it should be 
-  set to 0. All our analysis of rates has been with offset as free param
--If a value for omega and the omega uncertainty is passed, file will just 
-  evaluate gamma (t=with the omega provided).
-
+Offset is restricted to 0.
 
 @author: agardill
 """
@@ -33,15 +28,21 @@ from utils.tool_belt import States
 
 data_folder = 't1_double_quantum'
 
+#Infidelity percents extracted from the rabi data
+
+e_high = 0.07
+e_low = 0.33
+
 # %% Functions
 
 # The exponential function used to fit the data
 
-def exp_eq(t, rate, amp):
-    return  amp * exp(- rate * t)
+def exp_eq(t, rate, amp, offset):
+    return  amp * exp(- rate * t) + offset
 
-def exp_eq_offset(t, rate, amp, offset):
-    return  offset + amp * exp(- rate * t)
+def infid_exp_eq(t, rate_g, rate_o, amp, offset):
+    return amp*( (1-0.5*(e_high+e_low))*(1-e_high)* exp(-rate_g*t) \
+               + 1.5*(e_high-e_low) *(e_high-1/3)*exp(-rate_o*t)) + offset
 
 def get_data_lists(folder_name):
     # Get the file list from this folder
@@ -277,23 +278,13 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
     
     
     
-        init_params_list = [1.0, 0.4]
+        init_params = (1.0, 0.4, 0)
         
         try:
-            if offset:
-                init_params_list.append(0)
-                init_params = tuple(init_params_list)
-                omega_opti_params, cov_arr = curve_fit(exp_eq_offset, zero_zero_time,
-                                             zero_relaxation_counts, p0 = init_params,
-                                             sigma = zero_relaxation_ste, 
-                                             absolute_sigma=True)
-                
-            else: 
-                init_params = tuple(init_params_list)
-                omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
-                                             zero_relaxation_counts, p0 = init_params,
-                                             sigma = zero_relaxation_ste, 
-                                             absolute_sigma=True)
+            omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
+                                         zero_relaxation_counts, p0 = init_params,
+                                         sigma = zero_relaxation_ste, 
+                                         absolute_sigma=True)
     
         except Exception:
     
@@ -323,14 +314,9 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                 ax.errorbar(zero_zero_time, zero_relaxation_counts, 
                             yerr = zero_relaxation_ste, 
                             label = 'data', fmt = 'o', color = 'blue')
-                if offset:
-                    ax.plot(zero_time_linspace,
-                        exp_eq_offset(zero_time_linspace, *omega_opti_params),
-                        'r', label = 'fit')
-                else:
-                    ax.plot(zero_time_linspace,
-                        exp_eq(zero_time_linspace, *omega_opti_params),
-                        'r', label = 'fit')
+                ax.plot(zero_time_linspace,
+                    exp_eq(zero_time_linspace, *omega_opti_params),
+                    'r', label = 'fit')
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
                 ax.set_title('(0,0) - (0,+1)')
@@ -355,28 +341,18 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
     plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
     
-    init_params_list = [100, 0.40]
+    init_params = (1, 0.1, 0)
     try:
-        if offset:
-            
-            init_params_list.append(0)
-            init_params = tuple(init_params_list)
-            gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
-                             plus_plus_time, plus_relaxation_counts,
-                             p0 = init_params, sigma = plus_relaxation_ste, 
-                             absolute_sigma=True)
-            
-            
-        else:
-            init_params = tuple(init_params_list)
-            gamma_opti_params, cov_arr = curve_fit(exp_eq,
-                             plus_plus_time, plus_relaxation_counts,
-                             p0 = init_params, sigma = plus_relaxation_ste, 
-                             absolute_sigma=True)
+        infid_exp_eq_lamba = \
+                lambda t, rate_g, amp, offset: infid_exp_eq(t, rate_g, omega_opti_params[0], amp, offset)
+        gamma_opti_params, cov_arr = curve_fit(infid_exp_eq_lamba,
+                         plus_plus_time, plus_relaxation_counts,
+                         p0 = init_params, sigma = plus_relaxation_ste, 
+                         absolute_sigma=True)
 
     except Exception:
         gamma_fit_failed = True
-
+        print('Fit failed')
         if doPlot:
             ax = axes_pack[1]
             ax.errorbar(plus_plus_time, plus_relaxation_counts,                         
@@ -401,14 +377,9 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
             ax.errorbar(plus_plus_time, plus_relaxation_counts,                         
                     yerr = plus_relaxation_ste, 
                     label = 'data', fmt = 'o', color = 'blue')
-            if offset:
-                ax.plot(plus_time_linspace,
-                    exp_eq_offset(plus_time_linspace, *gamma_opti_params),
-                    'r', label = 'fit')
-            else:
-                ax.plot(plus_time_linspace,
-                    exp_eq(plus_time_linspace, *gamma_opti_params),
-                    'r', label = 'fit')
+            ax.plot(plus_time_linspace,
+                infid_exp_eq_lamba(plus_time_linspace, *gamma_opti_params),
+                'r', label = 'fit')
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
             ax.set_title('(+1,+1) - (+1,-1)')
@@ -431,7 +402,6 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         raw_data = {'time_stamp': time_stamp,
                     'splitting_MHz': splitting_MHz,
                     'splitting_MHz-units': 'MHz',
-                    'offset_free_param?': offset,
                     'omega': omega,
                     'omega-units': 'kHz',
                     'omega_std_error': omega_std,
@@ -458,20 +428,20 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         
 
         
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis' 
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis_infid' 
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
                                                              file_name)
         
-        tool_belt.save_raw_data(raw_data, file_path)
+#        tool_belt.save_raw_data(raw_data, file_path)
     
     # Saving the figure
 
    
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis'
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis_infid'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
-        tool_belt.save_figure(fig, file_path)
+#        tool_belt.save_figure(fig, file_path)
         
         return gamma, gamma_ste
 # %% Run the file
@@ -480,4 +450,4 @@ if __name__ == '__main__':
 
     folder = 'nv16_2019_07_25_496MHz'
     
-    main(folder,  None, None,  True, offset = True)
+    main(folder,  None, None,  True)
