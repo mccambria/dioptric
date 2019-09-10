@@ -19,6 +19,10 @@ import os
 import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
+from majorroutines.pulsed_resonance import fit_resonance
+from majorroutines.pulsed_resonance import create_fit_figure
+from majorroutines.pulsed_resonance import single_gaussian_dip
+from majorroutines.pulsed_resonance import double_gaussian_dip
 
 
 # %% Main
@@ -223,6 +227,32 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
                'norm_avg_sig-units': 'arb'}
 
-    filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    name = nv_sig['name']
+    filePath = tool_belt.get_file_path(__file__, timestamp, name)
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
+
+    # Use the pulsed_resonance fitting functions
+    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
+                                   norm_avg_sig, ref_counts)
+    fit_fig = None
+    if (fit_func is not None) and (popt is not None):
+        fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
+                                    norm_avg_sig, fit_func, popt)
+    filePath = tool_belt.get_file_path(__file__, timestamp, name + '-fit')
+    if fit_fig is not None:
+        tool_belt.save_figure(fit_fig, filePath)
+
+    if fit_func == single_gaussian_dip:
+        print('Single resonance at {:.4f} GHz'.format(popt[2]))
+        print('\n')
+        return popt[2], None
+    elif fit_func == double_gaussian_dip:
+        print('Resonances at {:.4f} GHz and {:.4f} GHz'.format(popt[2], popt[5]))
+        print('Splitting of {:d} MHz'.format(int((popt[5] - popt[2]) * 1000)))
+        print('\n')
+        return popt[2], popt[5]
+    else:
+        print('No resonances found')
+        print('\n')
+        return None, None
