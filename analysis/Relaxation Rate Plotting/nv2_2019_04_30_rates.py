@@ -73,17 +73,19 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 orange = '#f7941d'
 purple = '#87479b'
 
+print(fit_alpha_params)
+
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv2_splitting_list_all, nv2_gamma_avg_list_all, yerr = nv2_gamma_error_list_all, 
-            label = r'$\gamma$', fmt='o',markersize = 10, color = purple)
+            label = r'$\gamma$', fmt='o',markersize = 12, color = purple)
 ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
-            label = r'$\Omega$', fmt='^', markersize = 10, color=orange)
+            label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-            label = 'fit', color =purple)
+            linestyle='dashed', linewidth=3, label = 'fit', color =purple)
 ax.plot(splitting_linspace, omega_constant_array, color = orange,
-            label = r'$\Omega$')
+            linestyle='dashed', linewidth=3, label = r'$\Omega$')
 
 #ax.set_xscale("log", nonposx='clip')
 #ax.set_yscale("log", nonposy='clip')
@@ -114,13 +116,13 @@ ax.plot(splitting_linspace, omega_constant_array, color = orange,
 text_1 = '\n'.join((r'$1/f^{\alpha} + \gamma_\infty$ fit:',
                   r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
 #                  r'$\alpha_{recent} = $' + '%.2f'%(fit_alpha_params_2[1])
-#                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
+                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0]),
                   r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[2])
                   ))
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#ax.text(0.65, 0.95, text_1, transform=ax.transAxes, fontsize=12,
-#        verticalalignment='top', bbox=props)
+ax.text(0.65, 0.95, text_1, transform=ax.transAxes, fontsize=12,
+        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -140,5 +142,5 @@ plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
 #plt.title(r'NV2', fontsize=18)
 #ax.legend(fontsize=18)
 
-fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a.pdf", bbox_inches='tight')
+#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a.pdf", bbox_inches='tight')
 

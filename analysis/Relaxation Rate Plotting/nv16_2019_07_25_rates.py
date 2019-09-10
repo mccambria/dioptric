@@ -27,16 +27,16 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-nv16_splitting_list = [23.9, 28.6, 53.0, 81.2, 128.0, 283.7]
-nv16_omega_avg_list = [0.5, 0.58, 0.79, 1.75, 0.69, 0.64]
-nv16_omega_error_list = [0.1, 0.10, 0.11, 0.19, 0.10, 0.18]
-nv16_gamma_avg_list = [200, 110, 32, 18.2, 12.1, 6.8]
-nv16_gamma_error_list = [20, 20, 5, 1.0, 0.8, 0.4]
+nv16_splitting_list = [17.1, 28.6, 53.0, 81.2, 128.0, 283.7, 495.8, 746]
+nv16_omega_avg_list = [0.48, 0.58, 0.79, 1.75, 0.69, 0.64, 0.9, 1.0]
+nv16_omega_error_list = [0.18, 0.10, 0.11, 0.19, 0.10, 0.18, 0.3, 0.2]
+nv16_gamma_avg_list = [116, 110, 32, 18.2, 12.1, 6.8, 4.4, 2.6]
+nv16_gamma_error_list = [10, 20, 5, 1.0, 0.8, 0.4, 0.6, 0.5]
 
 # Try to fit the gamma to a 1/f^alpha
 
 fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv16_splitting_list, nv16_gamma_avg_list, 
-                                p0 = [1000, 1, 3], sigma = nv16_gamma_error_list,
+                                p0 = [1000, 2, 1], sigma = nv16_gamma_error_list,
                                 absolute_sigma = True)
 
 splitting_linspace = numpy.linspace(10, 2000,
@@ -52,14 +52,16 @@ axis_font = {'size':'14'}
 orange = '#f7941d'
 purple = '#87479b'
 
+print(fit_alpha_params)
+
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv16_splitting_list, nv16_gamma_avg_list, yerr = nv16_gamma_error_list, 
-            label = r'$\gamma$', fmt='o', markersize = 10, color=purple)
+            label = r'$\gamma$', fmt='o', markersize = 12, color=purple)
 ax.errorbar(nv16_splitting_list, nv16_omega_avg_list, yerr = nv16_omega_error_list, 
-            label = r'$\Omega$', fmt='^', markersize = 10, color=orange)
+            label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
 ax.plot(splitting_linspace, omega_constant_array, color= orange,
-            label = r'$\Omega$')
+            linestyle='dashed', linewidth=3, label = r'$\Omega$')
 
 
 #ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
@@ -70,16 +72,16 @@ ax.plot(splitting_linspace, omega_constant_array, color= orange,
 # %%
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-            color = purple, label = 'fit')
+            linestyle='dashed', linewidth=3, color = purple, label = 'fit')
 
-text = '\n'.join((r'$1/f^\alpha$ fit:',
-                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1])
-#                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0]),
-#                  r'$\gamma_0 = $' + '%.2f'%(fit_params[2])
+text = '\n'.join((r'$A_0/f^{\alpha} + \gamma_\infty$ fit:',
+                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
+                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0]),
+                  r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[2])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
-#        verticalalignment='top', bbox=props)
+ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
+        verticalalignment='top', bbox=props)
 
 # %%
 
