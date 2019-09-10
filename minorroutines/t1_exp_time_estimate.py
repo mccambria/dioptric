@@ -60,18 +60,21 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 
 # %%
 
-num_runs = 80
+#num_runs = 30
+#t1_exp_array = numpy.array([
+#        [[States.ZERO, States.HIGH], [0, 4.5*10**6], 26, 0.6*10**4, num_runs],
+#        [[States.ZERO, States.ZERO], [0, 4.5*10**6], 26, 0.6*10**4, num_runs]])
+num_runs = 15
 t1_exp_array = numpy.array([
-                    [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
-                    [[States.HIGH, States.LOW], [0, 700*10**3], 26, 4*10**4, num_runs],
-                    [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
-                    [[States.HIGH, States.HIGH], [0, 700*10**3], 26, 4*10**4, num_runs],
-                    [[States.ZERO, States.HIGH], [0, 2*10**6], 26, 1.3*10**4, num_runs],
-                    [[States.ZERO, States.ZERO], [0, 2*10**6], 26, 1.3*10**4, num_runs]
-                    ])
+        [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
+        [[States.HIGH, States.LOW], [0, 200*10**3], 26, 8*10**4, num_runs],
+        [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
+        [[States.HIGH, States.HIGH], [0, 200*10**3], 26, 8*10**4, num_runs],
+        [[States.ZERO, States.HIGH], [0, 3*10**6], 26, 1*10**4, num_runs],
+        [[States.ZERO, States.ZERO], [0, 3*10**6], 26, 1*10**4, num_runs]])
 
-contrast = .1
-exp_count_rate = 30 # kcps
-readout_window = 450 # ns
+contrast = 0.3  # arb
+exp_count_rate = 45  # kcps
+readout_window = 400  # ns
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)

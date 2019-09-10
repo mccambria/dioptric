@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy
 from scipy.optimize import curve_fit
 import majorroutines.pulsed_resonance as pulsed_resonance
+import majorroutines.resonance as resonance
 from random import shuffle
 import copy
 
@@ -93,7 +94,7 @@ def AbsCosNoOff(angle, amp, phase):
 def main(nv_sig, apd_indices, angle_range, num_angle_steps,
          freq_center, freq_range,
          num_freq_steps, num_freq_reps, num_freq_runs,
-         uwave_power, uwave_pulse_dur):
+         uwave_power, uwave_pulse_dur=None):
     """When you run the file, we'll call into main, which should contain the
     body of the routine.
     """
@@ -123,16 +124,23 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 
     nv_sig_copy = copy.deepcopy(nv_sig)
     pesr = pulsed_resonance.main_with_cxn
+    cwesr = resonance.main_with_cxn
 
     for ind in angle_inds:
 
         angle = angles[ind]
         nv_sig_copy['magnet_angle'] = angle
-
-        angle_resonances = pesr(cxn, nv_sig_copy, apd_indices,
-                                freq_center, freq_range,
-                                num_freq_steps, num_freq_reps, num_freq_runs,
-                                uwave_power, uwave_pulse_dur)
+        
+        angle_resonances = (None, None)  # Default to Nones
+        if uwave_pulse_dur is not None:
+            angle_resonances = pesr(cxn, nv_sig_copy, apd_indices,
+                                    freq_center, freq_range, num_freq_steps,
+                                    num_freq_reps, num_freq_runs,
+                                    uwave_power, uwave_pulse_dur)
+        else:
+            angle_resonances = cwesr(cxn, nv_sig_copy, apd_indices,
+                                     freq_center, freq_range, num_freq_steps,
+                                     num_freq_runs, uwave_power)
         resonances[ind, :] = angle_resonances
         if all(angle_resonances):
             # We got two resonances so take the difference
@@ -151,10 +159,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
     phase = 50
     guess_params = [amp, phase]
     # Check if we have any undefined splittings
-    if any(numpy.isnan(splittings)):
-        opti_angle = None
-        fig = None
-    else:
+    opti_angle = None
+    fig = None
+    if not any(numpy.isnan(splittings)):
         try:
             popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
             # Find the angle at the peak within [0, 360]
@@ -211,8 +218,14 @@ if __name__ == '__main__':
     num_angle_steps = data['num_angle_steps']
     angles = numpy.linspace(angle_range[0], angle_range[1], num_angle_steps)
     
-    splittings = [79, 24, 32, 84, 55, 66]
-    angles = [90, 30, 0, 120, 60, 150]
+    splittings = [
+        58.72095671281174,
+        85.16531216906876,
+        91.77178120036223,
+        76.8139264619525,
+        46.154347787948694,
+        27.087767613011238]
+    angles = numpy.linspace(0, 150, 6)
     fit_func, popt = fit_data(splittings, angles)
 
     opti_angle = None
