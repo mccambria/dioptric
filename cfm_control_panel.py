@@ -96,7 +96,6 @@ def do_resonance_state(nv_sig, apd_indices, state):
 
     freq_center = nv_sig['resonance_{}'.format(state.name)]
     freq_range = 0.050
-
     num_steps = 51
     num_runs = 2
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
@@ -122,10 +121,10 @@ def do_pulsed_resonance(nv_sig, apd_indices,
 
 def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
+    freq_range = 0.050
     num_steps = 51
     num_reps = 10**5
     num_runs = 2
-    freq_range = 0.06
 
     pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
                           num_steps, num_reps, num_runs)
@@ -161,23 +160,13 @@ def do_t1_battery(nv_sig, apd_indices):
 
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
-    # ~ 40 hours total
-
-#    num_runs = 15
-#    t1_exp_array = numpy.array([
-#            [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
-#            [[States.HIGH, States.LOW], [0, 200*10**3], 26, 8*10**4, num_runs],
-#            [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
-#            [[States.HIGH, States.HIGH], [0, 200*10**3], 26, 8*10**4, num_runs],
-#            [[States.ZERO, States.HIGH], [0, 3*10**6], 26, 1*10**4, num_runs],
-#            [[States.ZERO, States.ZERO], [0, 3*10**6], 26, 1*10**4, num_runs]])
-#    t1_exp_array = numpy.array([
-#            [[States.HIGH, States.LOW], [0, 300*10**3], 26, 8*10**4, num_runs],
-#            [[States.HIGH, States.HIGH], [0, 300*10**3], 26, 8*10**4, num_runs]])
-    num_runs = 30
     t1_exp_array = numpy.array([
-            [[States.ZERO, States.HIGH], [0, 4.5*10**6], 26, 0.6*10**4, num_runs],
-            [[States.ZERO, States.ZERO], [0, 4.5*10**6], 26, 0.6*10**4, num_runs]])
+        [[States.HIGH, States.LOW], [0, 50*10**3], 51, 10**5, 10],
+        [[States.HIGH, States.LOW], [0, 250*10**3], 26, 6*10**4, 10],
+        [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 10**5, 10],
+        [[States.HIGH, States.HIGH], [0, 250*10**3], 26, 6*10**4, 10],
+        [[States.ZERO, States.HIGH], [0, 6*10**6], 26, 0.4*10**4, 60],
+        [[States.ZERO, States.ZERO], [0, 6*10**6], 26, 0.4*10**4, 60]])
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -364,10 +353,10 @@ if __name__ == '__main__':
     
     nv0_2019_06_06 = { 'coords': [0.291, 0.248, 5.02],
         'name': 'ayrton12-nv0_2019_06_06',
-        'expected_count_rate': 45, 'nd_filter': 'nd_1.5',
+        'expected_count_rate': 41, 'nd_filter': 'nd_1.5',
         'pulsed_readout_dur': 400, 'magnet_angle': 53.6,
-        'resonance_LOW': 2.8216, 'rabi_LOW': 70.8, 'uwave_power_LOW': 9.0,
-        'resonance_HIGH': 2.9097, 'rabi_HIGH': 82.2, 'uwave_power_HIGH': 10.0}
+        'resonance_LOW': 2.8344, 'rabi_LOW': 75.7, 'uwave_power_LOW': 9.0,
+        'resonance_HIGH': 2.8998, 'rabi_HIGH': 63.3, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv0_2019_06_06]
 
@@ -406,8 +395,8 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.150)
-            do_resonance(nv_sig, apd_indices, freq_center=2.800, freq_range=0.100)
-            do_resonance(nv_sig, apd_indices, freq_center=2.920, freq_range=0.100)
+#            do_resonance(nv_sig, apd_indices, freq_center=2.800, freq_range=0.100)
+#            do_resonance(nv_sig, apd_indices, freq_center=2.920, freq_range=0.100)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
@@ -424,7 +413,7 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.LOW)
 #            do_rabi(nv_sig, apd_indices, States.HIGH)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
-#            do_t1_battery(nv_sig, apd_indices)
+            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            for i in range(5):

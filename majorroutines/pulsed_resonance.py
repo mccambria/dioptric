@@ -132,15 +132,17 @@ def fit_resonance(freq_range, freq_center, num_steps,
         next_max_peak_peak_inds = peak_heights.index(next_max_peak_height)  # Index in peak_inds
         next_max_peak_freqs = peak_inds[next_max_peak_peak_inds]  # Index in freqs
 
-        # Order from smallest to largest
+        # List of higest peak then next highest peak
         peaks = [max_peak_freqs, next_max_peak_freqs]
-        peaks.sort()
 
-        low_freq_guess = freqs[peaks[0]]
-        # Only keep the smaller peak if it's > 1/4 the height of the larger peak
-        if next_max_peak_height > max_peak_height / 4:
+        # Only keep the smaller peak if it's > 1/3 the height of the larger peak
+        if next_max_peak_height > max_peak_height / 3:
+            # Sort by frequency
+            peaks.sort()
+            low_freq_guess = freqs[peaks[0]]
             high_freq_guess = freqs[peaks[1]]
         else:
+            low_freq_guess = freqs[peaks[0]]
             high_freq_guess = None
 
     elif len(peak_inds) == 1:
@@ -468,7 +470,7 @@ if __name__ == '__main__':
 #    file = '2019-09-06-16_26_29-ayrton12-nv2_2019_04_30'
 #    data = tool_belt.get_raw_data('pulsed_resonance.py', '2019_09/' + file)
 
-    file = '2019_09/2019-09-08-15_09_38-ayrton12-nv0_2019_06_06'
+    file = '2019_09/2019-09-10-22_35_43-ayrton12-nv0_2019_06_06'
     data = tool_belt.get_raw_data('resonance.py', file)
 
     freq_center = data['freq_center']
