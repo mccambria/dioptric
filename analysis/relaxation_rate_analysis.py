@@ -478,6 +478,6 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    folder = 'nv0_2019_06_06_92MHz'
+    folder = 'nv0_2019_06_06_61MHz'
 
     main(folder,  None, None,  True, offset = True)
