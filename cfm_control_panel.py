@@ -112,7 +112,6 @@ def do_pulsed_resonance(nv_sig, apd_indices,
     num_reps = 10**5
     num_runs = 2
     uwave_power = 9.0
-#    uwave_power = 4.0
     uwave_pulse_dur = 60
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
@@ -121,7 +120,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
 
 def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
-    freq_range = 0.050
+    freq_range = 0.075
     num_steps = 51
     num_reps = 10**5
     num_runs = 2
@@ -355,8 +354,8 @@ if __name__ == '__main__':
         'name': 'ayrton12-nv0_2019_06_06',
         'expected_count_rate': 41, 'nd_filter': 'nd_1.5',
         'pulsed_readout_dur': 400, 'magnet_angle': 53.6,
-        'resonance_LOW': 2.8344, 'rabi_LOW': 75.7, 'uwave_power_LOW': 9.0,
-        'resonance_HIGH': 2.8998, 'rabi_HIGH': 63.3, 'uwave_power_HIGH': 10.0}
+        'resonance_LOW': 2.8361, 'rabi_LOW': 69.9, 'uwave_power_LOW': 9.0,
+        'resonance_HIGH': 2.8966, 'rabi_HIGH': 93.6, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv0_2019_06_06]
 
