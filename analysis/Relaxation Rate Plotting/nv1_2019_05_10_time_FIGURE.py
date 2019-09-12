@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
 import numpy
 
+purple = '#87259b'
+
 # %%
 
 # 45 min incr
@@ -114,29 +116,29 @@ def time_main_plot(folder_name, file_name):
         
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 #    for i in range(0,15):
-#    for i in range(len(time_start_list)):
+    for i in range(len(time_start_list)):
+        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = purple)
+#        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
+        time_space = numpy.linspace(time_start_list[i], time_end_list[i], 1000)
+        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
+                        gamma_list[i] - gamma_ste_list[i],
+                        color=purple, alpha=0.2)
+
+#    for i in [0,1,2,3,4,5, 8, 9, 10, 11,12,13,14,15]:
 #        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = '#453fff')
 ##        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
 #        time_space = numpy.linspace(time_start_list[i], time_end_list[i], 1000)
 #        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
 #                        gamma_list[i] - gamma_ste_list[i],
 #                        color='#453fff', alpha=0.2)
-
-    for i in [0,1,2,3,4,5, 8, 9, 10, 11,12,13,14,15]:
-        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = '#453fff')
-#        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
-        time_space = numpy.linspace(time_start_list[i], time_end_list[i], 1000)
-        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
-                        gamma_list[i] - gamma_ste_list[i],
-                        color='#453fff', alpha=0.2)
-                        
-    for i in [6,7]:
-        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = '#c91600')
-#        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
-        time_space = numpy.linspace(time_start_list[i], time_end_list[i], 1000)
-        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
-                        gamma_list[i] - gamma_ste_list[i],
-                        color='#c91600', alpha=0.2)
+#                        
+#    for i in [6,7]:
+#        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = '#c91600')
+##        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
+#        time_space = numpy.linspace(time_start_list[i], time_end_list[i], 1000)
+#        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
+#                        gamma_list[i] - gamma_ste_list[i],
+#                        color='#c91600', alpha=0.2)
                         
 
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
@@ -211,11 +213,11 @@ def time_zoom_plot(folder_name, file_name):
         
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     for i in range(0,15):
-        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = '#453fff')
+        ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = purple)
         time_space = numpy.linspace(time_start_list[i], time_end_list[i], 1000)
         ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
                         gamma_list[i] - gamma_ste_list[i],
-                        color='#453fff', alpha=0.2)
+                        color=purple, alpha=0.2)
 
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
                     grid_alpha=0.7, labelsize = 18)
@@ -270,8 +272,8 @@ def histogram(folder_name, file_name, bins):
 file_name = '26.2_MHz_splitting_25_bins_error'
 folder_name = 'nv1_2019_05_10_28MHz_6'    
 
-time_main_plot(folder_name, file_name)
-#time_zoom_plot(folder_name, file_name)
+#time_main_plot(folder_name, file_name)
+time_zoom_plot(folder_name, file_name)
 #histogram(folder_name, file_name, 7)
 
     

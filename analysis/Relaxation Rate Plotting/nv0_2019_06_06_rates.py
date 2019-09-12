@@ -23,11 +23,11 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-splitting_list = [48.1, 92.3]
-omega_avg_list = [0.45, 0.25]
-omega_error_list = [0.14, 0.05]
-gamma_avg_list = [17.5, 6.4]
-gamma_error_list = [0.7, 0.3]
+splitting_list = [48.1, 60.5, 92.3, 150.8]
+omega_avg_list = [0.33, 0.23, 0.25, 0.29]
+omega_error_list = [0.05, 0.03, 0.05, 0.04]
+gamma_avg_list = [17.8, 10.0, 6.4, 4.6]
+gamma_error_list = [0.5, 0.5, 0.3, 0.3]
 
 # Try to fit the gamma to a 1/f^2
 
@@ -53,17 +53,17 @@ purple = '#87479b'
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(splitting_list, gamma_avg_list, yerr = gamma_error_list, 
-            label = r'$\gamma$',  fmt='o',markersize = 10, color = purple)
+            label = r'$\gamma$',  fmt='o',markersize = 12, color = purple)
 ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list, 
-            label = r'$\Omega$', fmt='^', markersize = 10, color=orange)
+            label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
 
 
 # %%
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-             label = r'fit',color =purple)
+             label = r'fit',linestyle='dashed', linewidth=3, color =purple)
 ax.plot(splitting_linspace, omega_constant_array, color = orange,
-            label = r'$\Omega$')
+            label = r'$\Omega$', linestyle='dashed', linewidth=3)
 
 text = '\n'.join((r'$1/f^{\alpha}$ fit:',
                   r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),

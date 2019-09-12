@@ -18,6 +18,8 @@ import datetime
 import numpy
 import utils.tool_belt as tool_belt
 
+purple = '#87259b'
+
 # %%
 # These rates were retaken with new analysis method (9/3)
 nv2_rates = [32.70770316064578, 32.35792873748028, 35.60840175962606, 29.076817363540858, 29.68546343026479, 32.22330577990145, 32.387345860666684, 27.780385383768593, 30.00007693747414, 33.09897897375375, 30.773285182687147, 27.97443572316569, 29.065815743119092, 29.36234609205914, 30.662448026051702, 32.01335672237963, 34.71088090216354, 33.84862495884125, 35.384631508491054, 35.77689947969005, 31.34895513001851, 34.057308895650294, 33.233369742643895, 34.19121868682558, 32.32305688825209, 33.35789514617837]
@@ -110,31 +112,31 @@ def time_main_plot():
     # create the figure
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
 
-#    for i in range(len(start_time_list_1)):
-#        ax.hlines(nv2_rates[i], start_time_list_1[i], end_time_list_1[i], linewidth=5, colors = 'blue')
-##        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
-#        time_space = numpy.linspace(start_time_list_1[i], end_time_list_1[i], 10)
-#        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
-#                        nv2_rates[i] - nv2_error[i],
-#                        color='#453fff', alpha=0.2)
+    for i in range(len(start_time_list_1)):
+        ax.hlines(nv2_rates[i], start_time_list_1[i], end_time_list_1[i], linewidth=5, colors = purple)
+#        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
+        time_space = numpy.linspace(start_time_list_1[i], end_time_list_1[i], 10)
+        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
+                        nv2_rates[i] - nv2_error[i],
+                        color=purple, alpha=0.2)
     
     
     ax.spines['right'].set_visible(False)
 
-    for i in [0, 1,2,5,6,9,10, 14, 15,16,17,18,19,20,21,22,23,24,25]:
-        ax.hlines(nv2_rates[i], start_time_list_1[i], end_time_list_1[i], linewidth=5, colors = '#453fff')
-#        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
-        time_space = numpy.linspace(start_time_list_1[i], end_time_list_1[i], 1000)
-        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
-                        nv2_rates[i] - nv2_error[i],
-                        color='#453fff', alpha=0.2)
-        
-    for i in [3,4,7,8,11,12,13]:
-        ax.hlines(nv2_rates[i], start_time_list_1[i], end_time_list_1[i], linewidth=5, colors = '#c91600')
-        time_space = numpy.linspace(start_time_list_1[i], end_time_list_1[i], 1000)
-        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
-                        nv2_rates[i] - nv2_error[i],
-                        color='#c91600', alpha=0.2)
+#    for i in [0, 1,2,5,6,9,10, 14, 15,16,17,18,19,20,21,22,23,24,25]:
+#        ax.hlines(nv2_rates[i], start_time_list_1[i], end_time_list_1[i], linewidth=5, colors = '#453fff')
+##        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
+#        time_space = numpy.linspace(start_time_list_1[i], end_time_list_1[i], 1000)
+#        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
+#                        nv2_rates[i] - nv2_error[i],
+#                        color='#453fff', alpha=0.2)
+#        
+#    for i in [3,4,7,8,11,12,13]:
+#        ax.hlines(nv2_rates[i], start_time_list_1[i], end_time_list_1[i], linewidth=5, colors = '#c91600')
+#        time_space = numpy.linspace(start_time_list_1[i], end_time_list_1[i], 1000)
+#        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
+#                        nv2_rates[i] - nv2_error[i],
+#                        color='#c91600', alpha=0.2)
         
     time_points = [start_time_list_1[0], end_time_list_1[2],  
                    start_time_list_1[3], end_time_list_1[4],
@@ -197,26 +199,26 @@ def time_plot_inc():
         
     fig, ax = plt.subplots(1, 1, figsize=(2, 8))
     
-#    for i in range(len(start_time_list_2)):
-#        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = 'blue')
+    for i in range(len(start_time_list_2)):
+        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = purple)
+        time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
+        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
+                        gamma_list[i] - gamma_ste_list[i],
+                        color=purple, alpha=0.2)
+                        
+#    for i in [3,4,5,6]:
+#        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = '#453fff')
 #        time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
 #        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
 #                        gamma_list[i] - gamma_ste_list[i],
 #                        color='#453fff', alpha=0.2)
-                        
-    for i in [3,4,5,6]:
-        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = '#453fff')
-        time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
-        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
-                        gamma_list[i] - gamma_ste_list[i],
-                        color='#453fff', alpha=0.2)
-                        
-    for i in [0,1,2]:
-        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = '#c91600')
-        time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
-        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
-                        gamma_list[i] - gamma_ste_list[i],
-                        color='#c91600', alpha=0.2)
+#                        
+#    for i in [0,1,2]:
+#        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = '#c91600')
+#        time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
+#        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
+#                        gamma_list[i] - gamma_ste_list[i],
+#                        color='#c91600', alpha=0.2)
     time_points = [start_time_list_2[0], end_time_list_2[2],  
                    start_time_list_2[3], end_time_list_2[6]
                    ]
@@ -271,34 +273,34 @@ def time_plot_zoom():
         
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     
-#    for i in range(15, 35):
-#        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = 'blue')
-#    #        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
+    for i in range(15, 35):
+        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = purple)
+    #        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
+        time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
+        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
+                        gamma_list[i] - gamma_ste_list[i],
+                        color=purple, alpha=0.2)
+    
+#    for i in range(15, 31):
+#        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = '#453fff')
 #        time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
 #        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
 #                        gamma_list[i] - gamma_ste_list[i],
 #                        color='#453fff', alpha=0.2)
-    
-    for i in range(15, 31):
-        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = '#453fff')
-        time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
-        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
-                        gamma_list[i] - gamma_ste_list[i],
-                        color='#453fff', alpha=0.2)
-                
-    index = 31
-    ax.hlines(gamma_list[index], start_time_list_2[index], end_time_list_2[index], linewidth=5, colors = '#c91600')
-    time_space = numpy.linspace(start_time_list_2[index], end_time_list_2[index], 10)
-    ax.fill_between(time_space, gamma_list[index] + gamma_ste_list[index],
-                    gamma_list[index] - gamma_ste_list[index],
-                    color='#c91600', alpha=0.2)
-                    
-    for i in range(32, 35):
-        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = '#453fff')
-        time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
-        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
-                        gamma_list[i] - gamma_ste_list[i],
-                        color='#453fff', alpha=0.2)
+#                
+#    index = 31
+#    ax.hlines(gamma_list[index], start_time_list_2[index], end_time_list_2[index], linewidth=5, colors = '#c91600')
+#    time_space = numpy.linspace(start_time_list_2[index], end_time_list_2[index], 10)
+#    ax.fill_between(time_space, gamma_list[index] + gamma_ste_list[index],
+#                    gamma_list[index] - gamma_ste_list[index],
+#                    color='#c91600', alpha=0.2)
+#                    
+#    for i in range(32, 35):
+#        ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = '#453fff')
+#        time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
+#        ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
+#                        gamma_list[i] - gamma_ste_list[i],
+#                        color='#453fff', alpha=0.2)
 
     
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
@@ -362,6 +364,6 @@ if __name__ == "__main__":
 #    gamma_list = data29['gamma_list'] + data30['gamma_list']
 #    time_plot_inc()
 #    time_main_plot()
-#    time_plot_zoom()
-    histogram()
+    time_plot_zoom()
+#    histogram()
 

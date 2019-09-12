@@ -16,14 +16,8 @@ nv1_2019_05_10
 
 '''
 # %%
-def fit_eq_1(f, amp):
-    return amp*f**(-1)
-
-def fit_eq_2(f, amp):
-    return amp*f**(-2)
-
-def fit_eq_alpha(f, amp, alpha, offset):
-    return offset + amp*f**(-alpha)
+def fit_eq_alpha(f, amp, offset):
+    return amp*f**(-2) + offset
 
 # %%
 
@@ -31,6 +25,7 @@ import matplotlib.pyplot as plt
 from scipy import asarray as ar, exp
 from scipy.optimize import curve_fit
 import numpy
+from scipy.stats import chisquare
 
 # The data
 nv1_splitting_list = [19.8, 27.8, 28, 30, 32.7, 51.8, 97.8, 116, 268, 563.6, 1016.8]
@@ -41,16 +36,8 @@ nv1_gamma_error_list = [10, 1, 7, 6, 3, 0.6, 0.2, 0.3, 0.13, 0.1, 0.122]
 
 # Try to fit the gamma to a 1/f^2
 
-fit_1_params, cov_arr = curve_fit(fit_eq_1, nv1_splitting_list, nv1_gamma_avg_list, 
-                                p0 = 100, sigma = nv1_gamma_error_list,
-                                absolute_sigma = True)
-
-fit_2_params, cov_arr = curve_fit(fit_eq_2, nv1_splitting_list, nv1_gamma_avg_list, 
-                                p0 = 100, sigma = nv1_gamma_error_list,
-                                absolute_sigma = True)
-
 fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv1_splitting_list, nv1_gamma_avg_list, 
-                                p0 = (100, 1, 2), sigma = nv1_gamma_error_list,
+                                p0 = (100, 0.66), sigma = nv1_gamma_error_list,
                                 absolute_sigma = True)
 
 splitting_linspace = numpy.linspace(10, 2000,
@@ -78,26 +65,34 @@ ax.errorbar(nv1_splitting_list, nv1_gamma_avg_list, yerr = nv1_gamma_error_list,
 ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
             label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
 
-#ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
-#            label = r'$f^{-2}$', color ='teal')
-#ax.plot(splitting_linspace, fit_eq_1(splitting_linspace, *fit_1_params), 
-#            label = r'$f^{-1}$', color = 'orange')
+# %% Chi Squared
+
+expected = []
+
+for el in range(len(nv1_splitting_list)):
+    expected_value = fit_eq_alpha(nv1_splitting_list[el], *fit_alpha_params)
+    expected.append(expected_value)
+    
+ret_vals = chisquare(nv1_gamma_avg_list, f_exp=expected)
+chi_sq = ret_vals[0]
+
 
 # %%
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
-             linestyle='dashed', linewidth=3, label = r'fit',color =purple)
+             linestyle='dashed', linewidth=3,color =purple)
 ax.plot(splitting_linspace, omega_constant_array, color = orange,
-            linestyle='dashed', linewidth=3, label = r'$\Omega$')
+            linestyle='dashed', linewidth=3)
 
-text = '\n'.join((r'$1/f^{\alpha} + \gamma_\infty$ fit:',
-                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
-                  r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[2]),
-                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
+text = '\n'.join((r'$A_0/f^{2} + \gamma_\infty$ fit:',
+#                  r'$\alpha = {} \pm {}$'.format('%.2f'%(fit_alpha_params[1]), '%.2f'%(numpy.sqrt(cov_arr[1][1]))),
+                  r'$A_0 = {} \pm {}$'.format('%.0f'%(fit_alpha_params[0]), '%.0f'%(numpy.sqrt(cov_arr[0][0]))),
+                  r'$\gamma_\infty = {} \pm {}$'.format('%.2f'%(fit_alpha_params[1]), '%.2f'%(numpy.sqrt(cov_arr[1][1]))),
+                  r'$\chi^2 = $' + '%.2f'%(chi_sq)
 #                  ,r'$a = $' + '%.2f'%(fit_params[2])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
+ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
         verticalalignment='top', bbox=props)
 
 # %%
@@ -110,11 +105,13 @@ ax.tick_params(which = 'major', length=12, width=2)
 ax.grid()
 
 ax.set_xlim([10,1200])
-ax.set_ylim([0.1,300])
+#ax.set_ylim([-10,150])
 
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-#plt.title('NV 1', fontsize=18)
-#ax.legend(fontsize=18)
+plt.title('NV 1', fontsize=18)
+ax.legend(fontsize=18)
 
 #fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c.pdf", bbox_inches='tight')
+
+
