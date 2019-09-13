@@ -24,10 +24,10 @@ import numpy
 
 # The data
 splitting_list = [48.1, 60.5, 92.3, 150.8]
-omega_avg_list = [0.33, 0.23, 0.25, 0.29]
-omega_error_list = [0.05, 0.03, 0.05, 0.04]
-gamma_avg_list = [17.8, 10.0, 6.4, 4.6]
-gamma_error_list = [0.5, 0.5, 0.3, 0.3]
+omega_avg_list = [0.314, 0.24, 0.253, 0.29]
+omega_error_list = [0.01, 0.02, 0.012, 0.02]
+gamma_avg_list = [15.8, 9.1, 6.4, 4.08]
+gamma_error_list = [0.3, 0.3, 0.1, 0.15]
 
 # Try to fit the gamma to a 1/f^2
 

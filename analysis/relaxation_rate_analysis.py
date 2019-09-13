@@ -25,6 +25,7 @@ import numpy
 from scipy import exp
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
+import os
 
 import utils.tool_belt as tool_belt
 from utils.tool_belt import States
@@ -42,6 +43,19 @@ def exp_eq(t, rate, amp):
 
 def exp_eq_offset(t, rate, amp, offset):
     return  offset + amp * exp(- rate * t)
+
+def get_folder_list(keyword):
+    path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum'
+
+    folders = []
+    
+    # r=root, d=directories, f = files
+    for r, d, f in os.walk(path):
+        for folder in d:
+                if keyword in folder:
+                    folders.append(folder)
+    
+    return folders
 
 def get_data_lists(folder_name):
     # Get the file list from this folder
@@ -84,6 +98,7 @@ def get_data_lists(folder_name):
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             num_steps = data['num_steps']
             num_runs = data['num_runs']
+
 
             # Calculate time arrays
             min_relaxation_time, max_relaxation_time = \
@@ -477,7 +492,19 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 # %% Run the file
 
 if __name__ == '__main__':
+    
+#    folder_list = get_folder_list('nv2_2019_04_30')
+#    print(folder_list)
+#    
+#    for folder in folder_list:
+#        try:
+#            main(folder,  None, None,  True, offset = False)
+#        except Exception:
+#            continue
+        
 
-    folder = 'nv0_2019_06_06_48MHz'
+    for i in range(3,31):
+        folder = 'nv2_2019_04_30_29MHz_{}'.format(i)
 
-    main(folder,  None, None,  True, offset = True)
+
+        main(folder,  0.33, 0.06,  True, offset = False)

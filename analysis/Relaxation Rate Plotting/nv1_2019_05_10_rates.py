@@ -21,18 +21,18 @@ def fit_eq_alpha(f, amp, offset):
 
 # %%
 
+import numpy
 import matplotlib.pyplot as plt
 from scipy import asarray as ar, exp
 from scipy.optimize import curve_fit
-import numpy
 from scipy.stats import chisquare
 
 # The data
-nv1_splitting_list = [19.8, 27.8, 28, 30, 32.7, 51.8, 97.8, 116, 268, 563.6, 1016.8]
-nv1_omega_avg_list = [1.3, 1.25, 1.7, 1.62, 1.48, 2.3, 1.8, 1.18, 1.07, 1.15, 0.525]
-nv1_omega_error_list = [0.2, 0.1, 0.4, 0, 0.09, 0.4, 0.2, 0.13, 0.10, 0.12, 0.041]
-nv1_gamma_avg_list = [136, 61, 68, 37, 50, 13.0, 3.5, 4.6, 1.92, 0.78, 0.712]
-nv1_gamma_error_list = [10, 1, 7, 6, 3, 0.6, 0.2, 0.3, 0.13, 0.1, 0.122]
+nv1_splitting_list = [ 27.7, 28.9, 30.5, 32.7, 51.8, 97.8, 116, 268, 563.6, 1016.8]
+nv1_omega_avg_list = [ 1.30,  1.000, 1.2, 1.42, 1.85, 1.41, 1.18, 1.04, 1.19, 0.58]
+nv1_omega_error_list = [ 0.06, 0.016, 0.06, 0.05, 0.08, 0.05, 0.06, 0.04, 0.06, 0.03]
+nv1_gamma_avg_list = [64.5, 56.4, 30.5, 42.6, 13.1, 3.91, 4.67, 1.98, 0.70, 0.41]
+nv1_gamma_error_list = [1.4, 1.3, 1.6, 0.9, 0.2, 0.1, 0.11, 0.1, 0.05, 0.05]
 
 # Try to fit the gamma to a 1/f^2
 
@@ -46,6 +46,8 @@ splitting_linspace = numpy.linspace(10, 2000,
 omega_constant_array = numpy.empty([1000]) 
 omega_constant_array[:] = numpy.average(nv1_omega_avg_list)
 
+print(numpy.average(nv1_omega_avg_list))
+print( numpy.sqrt(numpy.sum(numpy.array(nv1_omega_error_list)**2)))
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 
@@ -56,7 +58,7 @@ axis_font = {'size':'14'}
 orange = '#f7941d'
 purple = '#87479b'
 
-print(fit_alpha_params)
+#print(fit_alpha_params)
 
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
@@ -92,8 +94,8 @@ text = '\n'.join((r'$A_0/f^{2} + \gamma_\infty$ fit:',
 #                  ,r'$a = $' + '%.2f'%(fit_params[2])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+#ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -105,13 +107,14 @@ ax.tick_params(which = 'major', length=12, width=2)
 ax.grid()
 
 ax.set_xlim([10,1200])
+ax.set_ylim([0.1,300])
 #ax.set_ylim([-10,150])
 
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-plt.title('NV 1', fontsize=18)
-ax.legend(fontsize=18)
+#plt.title('NV 1', fontsize=18)
+#ax.legend(fontsize=18)
 
-#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c.pdf", bbox_inches='tight')
+fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c.pdf", bbox_inches='tight')
 
 

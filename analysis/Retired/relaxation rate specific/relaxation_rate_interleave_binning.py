@@ -21,13 +21,13 @@ from utils.tool_belt import States
 
 data_folder = 't1_double_quantum'
 
-omega = 0.34
-omega_ste = 0.07
+omega =  1.2
+omega_ste = 0.6
 
 # %% Minor functions
 
-def expon_decay(t, rate, amp, offset):
-    return offset + amp*numpy.exp(-rate*t)
+def expon_decay(t, rate, amp):
+    return amp*numpy.exp(-rate*t)
 
 def extract_data(file_name, folder_name):
     # Call the data
@@ -128,9 +128,9 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
         # if any ste are evaluated to 0, force them to be non-zero
         plus_subt_ste = [0.00001 if x==0 else x for x in plus_subt_ste]
         
-        if amp == None and offset == None:
+        if amp == None:
             # Fit the data
-            init_params = (10, 0.3, 0)
+            init_params = (10, 0.3)
             g_fit_params, g_pcov = curve_fit(expon_decay, taus, plus_subt_counts, 
                                             p0 = init_params, 
                                             sigma = plus_subt_ste, 
@@ -138,7 +138,7 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
 
         else:
             # redefine the function so the rate is the only free paramter
-            expon_decay_simp = lambda t, rate: expon_decay(t, rate, amp, offset)
+            expon_decay_simp = lambda t, rate: expon_decay(t, rate, amp)
             
             init_params = (30)
             g_fit_params, g_pcov = curve_fit(expon_decay_simp, taus, plus_subt_counts, 
@@ -211,7 +211,7 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_29MHz_30'
-    file = '2019-09-03-08_17_43-ayrton12-nv2_2019_04_30'
+    folder = 'nv1_2019_05_10_28MHz_4'
+    file = '2019-08-27-13_45_39-ayrton12-nv1_2019_05_10'
     
-    main(file, folder, 10, amp = 0.337, offset = 0.004)
+    main(file, folder, 18, amp = 0.3019)
