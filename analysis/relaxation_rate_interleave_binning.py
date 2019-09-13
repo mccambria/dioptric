@@ -29,6 +29,7 @@ omega_ste = 0.6
 def expon_decay(t, rate, amp):
     return amp*numpy.exp(-rate*t)
 
+# Function to get data from interleave files from folder
 def extract_data(file_name, folder_name):
     # Call the data
     data = tool_belt.get_raw_data(data_folder, file_name, folder_name)
@@ -148,6 +149,7 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
         
         gamma_fit_params_list.append(g_fit_params.tolist())
         
+        # Calculate gamma and the ste
         gamma = (g_fit_params[0] - omega)/2
         gamma_ste = numpy.sqrt(g_pcov[0][0] + omega_ste**2)/2
         

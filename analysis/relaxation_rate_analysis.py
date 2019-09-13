@@ -3,15 +3,21 @@
 Created on Wed Sep 4 14:52:43 2019
 
 This analysis script will plot and evaluate the omega and gamma rates for the
-modified rate equations (ex: (0,0) - (0,1) and (1,1) - (1,-1)) for the whole
+modified rate equations [(0,0) - (0,1) and (1,1) - (1,-1)] for the complete
 data set. It calculates a standard error of each data point based on the
-statistics over the number of runs.
+statistics over the number of runs. With the standard error on each point, the
+subtracted data is then fit to a single exponential. From the (0,0) - (0,1)
+exponential, we extact 3*Omega from the exponent, along with the standard 
+error on omega from the covariance of the fit.
 
-This file plots the subtracted data along with the single eponential fit.
+From the (1,1) - (1,-1) exponential, we extract (2*gamma + Omega). Using the 
+Omega we just found, we calculate gamma and the associated standard error
+from the covariance of the fit.
 
-Some additional features of this file:
 -User can specify if the offset should be a free parameter or if it should be
-  set to 0. All our analysis of rates has been with offset as free param
+  set to 0. All our analysis of rates has been done without offset as a free
+  param.
+  
 -If a value for omega and the omega uncertainty is passed, file will just
   evaluate gamma (t=with the omega provided).
 
@@ -36,14 +42,15 @@ data_folder = 't1_double_quantum'
 
 # %% Functions
 
-# The exponential function used to fit the data
-
+# The exponential function without an offset
 def exp_eq(t, rate, amp):
     return  amp * exp(- rate * t)
 
+# The exponential function with an offset
 def exp_eq_offset(t, rate, amp, offset):
     return  offset + amp * exp(- rate * t)
 
+# A function to collect folders in mass analysis
 def get_folder_list(keyword):
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum'
 
@@ -57,19 +64,22 @@ def get_folder_list(keyword):
     
     return folders
 
+# This function sorts the data from one folder of an experiment and passes it
+# into main
 def get_data_lists(folder_name):
     # Get the file list from this folder
     file_list = tool_belt.get_file_list(data_folder, '.txt', folder_name)
 
     # Define booleans to be used later in putting data into arrays in the
-    # correct order
+    # correct order. This was mainly put in place for older data where we
+    # took measurements in an inconsistent way (unlike we are now)
     zero_zero_bool = False
     zero_plus_bool = False
     plus_plus_bool = False
     plus_minus_bool = False
 
     # Initially create empty lists, so that if no data is recieved, a list is
-    # still eturned from this function
+    # still returned from this function
     zero_zero_counts = []
     zero_zero_ste = []
     zero_plus_counts = []
@@ -83,8 +93,8 @@ def get_data_lists(folder_name):
 
     # Unpack the data
 
-    # Unpack the data and sort into arrays. This allows multiple experiments of
-    # the same type (ie (1,-1)) to be correctly sorted into one array
+    # Unpack the data and sort into arrays. This allows multiple measurements of
+    # the same type to be correctly sorted into one array
     for file in file_list:
         data = tool_belt.get_raw_data(data_folder, file[:-4], folder_name)
         try:
@@ -100,19 +110,21 @@ def get_data_lists(folder_name):
             num_runs = data['num_runs']
 
 
-            # Calculate time arrays
+            # Calculate time arrays in us
             min_relaxation_time, max_relaxation_time = \
                                         relaxation_time_range / 10**6
             time_array = numpy.linspace(min_relaxation_time,
                                         max_relaxation_time, num=num_steps)
-
+            
+            # Calculate the average signal counts over the runs, and st. error
             avg_sig_counts = numpy.average(sig_counts[::], axis=0)
             ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
 
+            # Assume reference is constant and can be approximated to one value
             avg_ref = numpy.average(ref_counts[::])
 
+            # Divide signal by reference to get normalized counts and st error
             norm_avg_sig = avg_sig_counts / avg_ref
-
             norm_avg_sig_ste = ste_sig_counts / avg_ref
 
             # older files still used 1,-1,0 convention. This will allow old
@@ -141,7 +153,7 @@ def get_data_lists(folder_name):
 
                     zero_zero_ref_max_time = max_relaxation_time
                     zero_zero_bool = True
-                # If data has already been taken for this experiment, then check
+                # If data has already been sorted for this experiment, then check
                 # to see if this current data is the shorter or longer measurement,
                 # and either append before or after the prexisting data
                 else:
@@ -260,7 +272,7 @@ def get_data_lists(folder_name):
 
 def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = True):
 
-    # Get the file list from this folder
+    # Get the file list from the folder
     omega_exp_list, gamma_exp_list, \
                 num_runs, splitting_MHz  = get_data_lists(folder_name)
 
@@ -272,7 +284,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
     omega_fit_failed = False
     gamma_fit_failed = False
 
-    # If omega is passed into the function, skip the omega fitting.
+    # If omega value is passed into the function, skip the omega fitting.
     if omega is not None and omega_std is not None:
         omega_opti_params = numpy.array([None])
         zero_relaxation_counts = numpy.array([None])
@@ -289,8 +301,6 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 
         zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
         zero_relaxation_ste = numpy.sqrt(zero_zero_ste**2 + zero_plus_ste**2)
-
-
 
         init_params_list = [1.0, 0.4]
 
@@ -325,12 +335,12 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                 ax.legend()
 
         if not omega_fit_failed:
-
+            # Calculate omega nad its ste
             omega = omega_opti_params[0] / 3.0
-            omega_std = numpy.sqrt(cov_arr[0,0]) / 3.0
+            omega_ste = numpy.sqrt(cov_arr[0,0]) / 3.0
 
             print('Omega: {} +/- {} kHz'.format('%.3f'%omega,
-                      '%.3f'%omega_std))
+                      '%.3f'%omega_ste))
             # Plotting the data
             if doPlot:
                 zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
@@ -351,7 +361,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                 ax.set_title('(0,0) - (0,+1)')
                 ax.legend()
                 text = r'$\Omega = $ {} $\pm$ {} kHz'.format('%.3f'%omega,
-                      '%.3f'%omega_std)
+                      '%.3f'%omega_ste)
 
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
                 ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
@@ -403,8 +413,9 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 
     if not gamma_fit_failed:
 
+        # Calculate gamma and its ste
         gamma = (gamma_opti_params[0] - omega)/ 2.0
-        gamma_ste = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_std**2)
+        gamma_ste = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_ste**2)
 
         print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma,
                   '%.3f'%gamma_ste))
@@ -449,8 +460,8 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                     'offset_free_param?': offset,
                     'omega': omega,
                     'omega-units': 'kHz',
-                    'omega_std_error': omega_std,
-                    'omega_std_error-units': 'khz',
+                    'omega_ste': omega_ste,
+                    'omega_ste-units': 'khz',
                     'gamma': gamma,
                     'gamma-units': 'kHz',
                     'gamma_ste': gamma_ste,
@@ -503,8 +514,8 @@ if __name__ == '__main__':
 #            continue
         
 
-    for i in range(3,31):
-        folder = 'nv2_2019_04_30_29MHz_{}'.format(i)
+
+    folder = 'nv0_2019_06_06_26MHz'
 
 
-        main(folder,  0.33, 0.06,  True, offset = False)
+    main(folder,  None, None,  True, offset = False)
