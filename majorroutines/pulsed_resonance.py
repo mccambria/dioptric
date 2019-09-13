@@ -467,10 +467,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-#    file = '2019-09-06-16_26_29-ayrton12-nv2_2019_04_30'
-#    data = tool_belt.get_raw_data('pulsed_resonance.py', '2019_09/' + file)
+    # file = '2019-07-26_13-40-13_ayrton12_nv3_2019_07_25'
+    # data = tool_belt.get_raw_data('pulsed_resonance.py', file)
 
-    file = '2019_09/2019-09-10-22_35_43-ayrton12-nv0_2019_06_06'
+    file = '2019-04-30_13-33-24_ayrton12'
     data = tool_belt.get_raw_data('resonance.py', file)
 
     freq_center = data['freq_center']
@@ -478,10 +478,10 @@ if __name__ == '__main__':
     num_steps = data['num_steps']
     norm_avg_sig = numpy.array(data['norm_avg_sig'])
     ref_counts = numpy.array(data['ref_counts'])
-    # sig_counts = numpy.array(data['sig_counts'])
-    # avg_ref_counts = numpy.average(ref_counts, axis=0)
-    # avg_sig_counts = numpy.average(sig_counts, axis=0)
-    # norm_avg_sig = avg_sig_counts / avg_ref_counts
+    sig_counts = numpy.array(data['sig_counts'])
+    avg_ref_counts = numpy.average(ref_counts, axis=0)
+    avg_sig_counts = numpy.average(sig_counts, axis=0)
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
 
 
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
