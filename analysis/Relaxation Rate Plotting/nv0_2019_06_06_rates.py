@@ -13,8 +13,8 @@ nv0_2019_06_27
 
 '''
 # %%
-def fit_eq_alpha(f, amp, alpha):
-    return amp*f**(-alpha)
+def fit_eq_alpha(f, amp):
+    return amp*f**(-1)
 
 # %%
 
@@ -23,16 +23,16 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-splitting_list = [48.1, 60.5, 92.3, 150.8]
-omega_avg_list = [0.33, 0.23, 0.25, 0.29]
-omega_error_list = [0.05, 0.03, 0.05, 0.04]
-gamma_avg_list = [17.8, 10.0, 6.4, 4.6]
-gamma_error_list = [0.5, 0.5, 0.3, 0.3]
+splitting_list = [26.3, 48.1, 60.5, 92.3, 150.8]
+omega_avg_list = [0.33, 0.314, 0.24, 0.253, 0.29]
+omega_error_list = [0.03, 0.01, 0.02, 0.012, 0.02]
+gamma_avg_list = [	29.0, 15.8, 9.1, 6.4, 4.08]
+gamma_error_list = [1.1, 0.3, 0.3, 0.1, 0.15]
 
 # Try to fit the gamma to a 1/f^2
 
 fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, splitting_list, gamma_avg_list, 
-                                p0 = (100, 1), sigma = gamma_error_list,
+                                p0 = (100), sigma = gamma_error_list,
                                 absolute_sigma = True)
 
 splitting_linspace = numpy.linspace(10, 2000,
@@ -65,8 +65,8 @@ ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params),
 ax.plot(splitting_linspace, omega_constant_array, color = orange,
             label = r'$\Omega$', linestyle='dashed', linewidth=3)
 
-text = '\n'.join((r'$1/f^{\alpha}$ fit:',
-                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
+text = '\n'.join((r'$1/f^{1}$ fit:',
+#                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
 #                  r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[2])
                   r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
                   ))
