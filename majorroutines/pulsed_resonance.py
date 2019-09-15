@@ -151,7 +151,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
     else:
         print('Could not locate peaks')
         return None, None
-
+    
 #    low_freq_guess = 2.8544
 #    high_freq_guess = 2.883
 
@@ -205,7 +205,7 @@ def state(nv_sig, apd_indices, state, freq_range,
     uwave_pulse_dur = nv_sig['rabi_{}'.format(state.name)] // 2
 
     resonance_list = main(nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state)
 
     return resonance_list
 
@@ -467,11 +467,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    # file = '2019-07-26_13-40-13_ayrton12_nv3_2019_07_25'
-    # data = tool_belt.get_raw_data('pulsed_resonance.py', file)
+    file = '2019_09/2019-09-15-16_42_40-ayrton12-nv0_2019_06_06'
+    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
 
-    file = '2019-04-30_13-33-24_ayrton12'
-    data = tool_belt.get_raw_data('resonance.py', file)
+#    file = '2019-04-30_13-33-24_ayrton12'
+#    data = tool_belt.get_raw_data('resonance.py', file)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']
