@@ -32,11 +32,11 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-nv13_splitting_list = [23.1, 28.0, 29.4, 29.8, 51.9, 72.4, 112.9, 164.1]
-nv13_omega_avg_list = [0.42, 0.9, 1.2, 0.9, 1.2, 0.8, 1.4, 1.2]
-nv13_omega_error_list = [0.12, 0.4, 0.2, 0.4, 0.6, 0.4, 0.3, 0.2]
-nv13_gamma_avg_list = [90, 58, 74, 25, 30, 22, 13, 5.8]
-nv13_gamma_error_list = [30, 8, 16, 5, 5, 3, 3, 0.5]
+nv13_splitting_list = [23.1,  29.8, 51.9, 72.4, 112.9, 164.1]
+nv13_omega_avg_list = [1.01, 1.01, 0.39, 0.76, 0.92, 0.66]
+nv13_omega_error_list = [0.16,   0.09, 0.04, 0.1, 0.14, 0.11]
+nv13_gamma_avg_list = [62, 19.3, 17.7, 16.2, 12.1, 5.6]
+nv13_gamma_error_list = [8,   1.1, 1.4, 1.1, 0.9, 0.5]
 
 # Try to fit the gamma to a 1/f^2
 
