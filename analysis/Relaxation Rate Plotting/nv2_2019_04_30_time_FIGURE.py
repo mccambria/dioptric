@@ -19,7 +19,7 @@ import numpy
 import utils.tool_belt as tool_belt
 from scipy.optimize import curve_fit
 
-purple = '#87259b'
+purple = '#2e008a'
 
 # %%
 
@@ -358,7 +358,7 @@ def histogram(bins = 9, fit_gaussian = False):
 
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ret_vals= ax.hist(gamma_list, bins = bins, color = '#453fff')
+    ret_vals= ax.hist(gamma_list, bins = bins, color = purple)
     print(ret_vals[0], ret_vals[1])
     ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
     ax.set_ylabel('Occurances', fontsize=text)
@@ -432,9 +432,9 @@ if __name__ == "__main__":
     gamma_list = data29['gamma_list'] + data30['gamma_list'] + nv2_rates
     
     
-#    time_plot_inc()
-#    time_main_plot()
-#    time_plot_zoom()
+    time_plot_inc()
+    time_main_plot()
+    time_plot_zoom()
     histogram(fit_gaussian = False)
 
 

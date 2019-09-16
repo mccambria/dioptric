@@ -11,7 +11,7 @@ import utils.tool_belt as tool_belt
 import numpy
 from scipy.optimize import curve_fit
 
-purple = '#87259b'
+purple = '#87479b'
 
 # %%
 
@@ -274,14 +274,14 @@ def histogram(bins = 9, fit_gaussian = False):
     text = 62
 #    numpy.histogram(nv2_rates, bins = 10)
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ret_vals= ax.hist(gamma_list, bins = bins, color = '#453fff')
+    ret_vals= ax.hist(gamma_list, bins = bins, color = purple)
     ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
     ax.set_ylabel('Occurances', fontsize=text)
     ax.tick_params(which = 'both', length=10, width=20, colors='k',
                     grid_alpha=1.2, labelsize = text)
 
     ax.tick_params(which = 'major', length=12, width=2)
-#    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
+    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
 #  
     if fit_gaussian:
         x_grid_endpoints = ret_vals[1]
@@ -336,9 +336,9 @@ def kde_sklearn(x, bandwidth=0.5):
 file_name = '26.2_MHz_splitting_25_bins_error'
 folder_name = 'nv1_2019_05_10_28MHz_6'    
 
-#time_main_plot(folder_name, file_name)
-#time_zoom_plot(folder_name, file_name)
-histogram(fit_gaussian = True)
+time_main_plot(folder_name, file_name)
+time_zoom_plot(folder_name, file_name)
+histogram(fit_gaussian = False)
 
 #file4 = '26.3_MHz_splitting_6_bins_error'
 #folder4 = 'nv1_2019_05_10_28MHz_4'
