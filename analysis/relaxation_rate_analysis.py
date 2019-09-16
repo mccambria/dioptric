@@ -515,7 +515,7 @@ if __name__ == '__main__':
         
 
 
-    folder = 'nv0_2019_06_06_330MHz'
+    folder = 'nv0_2019_06_06_36MHz'
 
 
     main(folder,  None, None,  True, offset = False)
