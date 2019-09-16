@@ -30,9 +30,9 @@ from scipy.stats import chisquare
 # The data
 nv16_splitting_list = [28.6, 53.0, 81.2, 128.0, 283.7, 495.8, 746]
 nv16_omega_avg_list = [0.53, 0.87, 1.7, 0.60, 0.70, 1.4, 1.03]
-nv16_omega_error_list = numpy.array([0.05, 0.09, 0.2, 0.05, 0.07, 0.4, 0.17])*3
+nv16_omega_error_list = numpy.array([0.05, 0.09, 0.2, 0.05, 0.07, 0.4, 0.17])*2
 nv16_gamma_avg_list = [90, 26.2, 17.5, 11.3, 5.6, 3.7, 2.8]
-nv16_gamma_error_list = numpy.array([5, 0.9, 0.6, 0.4, 0.3, 0.4, 0.3])*3
+nv16_gamma_error_list = numpy.array([5, 0.9, 0.6, 0.4, 0.3, 0.4, 0.3])*2
 
 # Try to fit the gamma to a 1/f^alpha
 

@@ -25,9 +25,9 @@ import numpy
 # The data
 splitting_list = [26.3, 48.1, 60.5, 92.3, 150.8, 329.6, 884.9]
 omega_avg_list = [0.33, 0.314, 0.24, 0.253, 0.29, 0.33, 0.29]
-omega_error_list = numpy.array([0.03, 0.01, 0.02, 0.012, 0.02, 0.02, 0.02])*3
+omega_error_list = numpy.array([0.03, 0.01, 0.02, 0.012, 0.02, 0.02, 0.02])*2
 gamma_avg_list = [	29.0, 15.8, 9.1, 6.4, 4.08, 1.23, 0.45]
-gamma_error_list = numpy.array([1.1, 0.3, 0.3, 0.1, 0.15, 0.07, 0.03])*3
+gamma_error_list = numpy.array([1.1, 0.3, 0.3, 0.1, 0.15, 0.07, 0.03])*2
 
 # Try to fit the gamma to a 1/f^2
 

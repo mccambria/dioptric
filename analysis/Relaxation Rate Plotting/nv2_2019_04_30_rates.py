@@ -42,9 +42,9 @@ nv2_gamma_error_list_2 = [0.4, 0.11, 0.05, 0.014, 0.06]
 
 nv2_splitting_list_all = nv2_splitting_list + nv2_splitting_list_2
 nv2_omega_avg_list_all = nv2_omega_avg_list + nv2_omega_avg_list_2
-nv2_omega_error_list_all = numpy.array(nv2_omega_error_list + nv2_omega_error_list_2)*3
+nv2_omega_error_list_all = numpy.array(nv2_omega_error_list + nv2_omega_error_list_2)*2
 nv2_gamma_avg_list_all = nv2_gamma_avg_list + nv2_gamma_avg_list_2
-nv2_gamma_error_list_all = numpy.array(nv2_gamma_error_list + nv2_gamma_error_list_2)*3
+nv2_gamma_error_list_all = numpy.array(nv2_gamma_error_list + nv2_gamma_error_list_2)*2
 
 # %% Seperate analysis of data
 
