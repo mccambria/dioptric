@@ -19,7 +19,7 @@ import numpy
 import utils.tool_belt as tool_belt
 from scipy.optimize import curve_fit
 
-purple = '#2e008a'
+purple = '#87479b'
 
 # %%
 

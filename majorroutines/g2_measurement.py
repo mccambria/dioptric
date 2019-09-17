@@ -254,7 +254,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
 if __name__ == '__main__':
     folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/g2_measurement'
-    file_name = '2019-05-10_14-08-47_ayrton12.txt'
+    file_name = '2019-07-25_21-36-31_ayrton12_nv16_2019_07_25.txt'
 
     with open('{}/{}'.format(folder_name, file_name)) as file:
         data = json.load(file)
@@ -262,5 +262,9 @@ if __name__ == '__main__':
         num_bins = data['num_bins']
     
     hist, bin_edges = numpy.histogram(differences, num_bins)
+    bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
+    bin_centers = bin_edges[0: num_bins] + bin_center_offset
+    
+    plt.plot(bin_centers / 1000, hist)
     g2_zero = calculate_relative_g2_zero(hist)
     print(g2_zero)
