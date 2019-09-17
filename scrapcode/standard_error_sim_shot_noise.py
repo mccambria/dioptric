@@ -31,27 +31,26 @@ from scipy import stats
 
 
 def exp_decay(x, coeff, rate):
-    return coeff*exp(-rate*x)
+    return coeff*exp(-rate*x)+(1-coeff)
 
-def simulate_noisy_exp_decay(x_linspace, coeff, rate, num_runs):
+def exp_inc
+
+def simulate_shot_noisy_exp_decay(x_linspace, coeff, rate, num_runs, num_reps):
     num_steps = len(x_linspace)
     data = numpy.zeros((num_runs, num_steps))
-    st_dev = sqrt(num_runs/400)*coeff
-    # st_dev = sqrt(num_runs/10000)*coeff
-    noise_list = numpy.random.normal(0, st_dev, num_runs*num_steps)
     for run_ind in range(num_runs):
         for step_ind in range(num_steps):
             x_val = x_linspace[step_ind]
-            y_val = exp_decay(x_val, coeff, rate)
-            noise = noise_list[(run_ind*num_steps)+step_ind]
-            data[run_ind, step_ind] = y_val+noise
+            brightness = exp_decay(x_val, coeff, rate)
+            counts = numpy.sum(numpy.random.poisson(brightness, num_reps))
+            data[run_ind, step_ind] = counts / num_reps
     return data
 
 
 # %% Main
 
 
-def main(num_samples, num_runs, num_steps, time_range, coeff, rate):
+def main(num_samples, num_runs, num_steps, num_reps, time_range, coeff, rate):
     """When you run the file, we'll call into main, which should contain the
     body of the script.
     """
@@ -65,7 +64,8 @@ def main(num_samples, num_runs, num_steps, time_range, coeff, rate):
 
         # Simulate the data
 
-        data = simulate_noisy_exp_decay(x_vals, coeff, rate, num_runs)
+        data = simulate_shot_noisy_exp_decay(x_vals, coeff, rate,
+                                             num_runs, num_reps)
         data_avg = numpy.mean(data, axis=0)
         data_std = numpy.std(data, axis=0, ddof=1)
         data_ste = data_std / numpy.sqrt(num_runs)
@@ -120,24 +120,21 @@ def main(num_samples, num_runs, num_steps, time_range, coeff, rate):
 # the script that you set up here.
 if __name__ == '__main__':
 
-    # Omega
-    # num_runs = 50
-    # num_samples = 100
-    # num_steps = 26
-    # time_range = [0, 6]
-    # coeff = 0.30
-    # rate = 0.9
-
-    # Gamma
-    num_runs = 15
+    # Set up your parameters to be passed to main here
+    num_runs = 50
     num_samples = 100
-    num_steps = 70
-    time_range = [0, 0.5]
-    coeff = 0.35
-    rate = 8.5
+    num_reps = 10**3
+    # num_runs = 100
+    # num_samples = num_runs // 10
+    # num_samples = 100
+    # num_runs = num_samples // 10
+    num_steps = 26
+    time_range = [0, 6]
+    coeff = 0.75
+    rate = 0.9
 
     # Run the script
-    main(num_samples, num_runs, num_steps, time_range, coeff, rate)
+    main(num_samples, num_runs, num_steps, num_reps, time_range, coeff, rate)
     # test = []
     # num_runs_vals = numpy.linspace(5,25,11, dtype=int)
     # for val in num_runs_vals:
