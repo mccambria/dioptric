@@ -397,5 +397,5 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
 
 if __name__ == '__main__':
-    file_name = '2019-07-25_18-37-46_ayrton12_search'
+    file_name = '2019_09\\2019-09-08-13_58_17-ayrton12-search'
     create_figure(file_name)
