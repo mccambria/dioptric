@@ -33,10 +33,10 @@ from scipy import stats
 def exp_decay(x, coeff, rate):
     return coeff*exp(-rate*x)
 
-def simulate_noisy_exp_decay(x_linspace, coeff, rate, num_runs, st_dev_factor=300):
+def simulate_noisy_exp_decay(x_linspace, coeff, rate, num_runs):
     num_steps = len(x_linspace)
     data = numpy.zeros((num_runs, num_steps))
-    st_dev = sqrt(num_runs/(sqrt(rate)*st_dev_factor))*coeff  # Chosen for a rough quantitative match
+    st_dev = sqrt(num_runs/(sqrt(rate)*250))*coeff  # Chosen for a qualitative match
     # st_dev = sqrt(num_runs/10000)*coeff
     noise_list = numpy.random.normal(0, st_dev, num_runs*num_steps)
     for run_ind in range(num_runs):
@@ -74,12 +74,10 @@ def main(num_samples, num_runs, num_steps, time_range, coeff, rate):
             x_vals_cum = []
             data_avg_cum = []
             data_ste_cum = []
-            st_dev_factors = [500, 300]
             for ind in range(num_multi):
                 tr = time_range[ind]
                 x_vals = numpy.linspace(tr[0], tr[1], num_steps[ind])
-                data = simulate_noisy_exp_decay(x_vals, coeff, rate,
-                                        num_runs[ind], st_dev_factors[ind])
+                data = simulate_noisy_exp_decay(x_vals, coeff, rate, num_runs[ind])
                 data_avg = numpy.mean(data, axis=0)
                 data_std = numpy.std(data, axis=0, ddof=1)
                 data_ste = data_std / numpy.sqrt(num_runs[ind])
@@ -96,11 +94,13 @@ def main(num_samples, num_runs, num_steps, time_range, coeff, rate):
             data_avg = numpy.mean(data, axis=0)
             data_std = numpy.std(data, axis=0, ddof=1)
             data_ste = data_std / numpy.sqrt(num_runs)
+            temp = data.transpose()
+            data_cov = abs(numpy.cov(temp, ddof=1))
 
         # Fit
-
+        print(data_cov)
         popt, pcov = curve_fit(exp_decay, x_vals, data_avg,
-                      p0=(coeff, rate), sigma=data_ste, absolute_sigma=True)
+                      p0=(coeff, rate), sigma=data_cov, absolute_sigma=True)
 
         # Populate our lists
 
@@ -128,20 +128,10 @@ def main(num_samples, num_runs, num_steps, time_range, coeff, rate):
 
     # Get the standard devation of the distibution
 
-    # print(numpy.mean(rate_avg_list) / 3)
-    # mean_ste = numpy.mean(rate_ste_list)
-    # print(mean_ste / 3)
-    # fit_std = numpy.std(rate_avg_list, ddof=1)
-    # print(fit_std / 3)
-
-    print((numpy.mean(rate_avg_list) - 0.286) / 2)
     mean_ste = numpy.mean(rate_ste_list)
-    gamma_mean_ste = numpy.sqrt(mean_ste**2 + 0.244**2) / 2
-    print(gamma_mean_ste)
+    print(mean_ste)
     fit_std = numpy.std(rate_avg_list, ddof=1)
-    gamma_fit_std = numpy.sqrt(fit_std**2 + 0.244**2) / 2
-    print(gamma_fit_std)
-
+    print(fit_std)
     return mean_ste / fit_std
 
 
@@ -154,20 +144,20 @@ def main(num_samples, num_runs, num_steps, time_range, coeff, rate):
 if __name__ == '__main__':
 
     # Omega
-    num_runs = 100
-    num_samples = 1000
+    num_runs = 10
+    num_samples = 10
     num_steps = 26
-    time_range = [0, 6]
-    coeff = 0.30
-    rate = 0.285*3
+    time_range = [0, 3]
+    coeff = 3
+    rate = 3
 
     # Gamma
-    # num_runs = [20, 30]
+    # num_runs = [20, 40]
     # num_steps = [51, 26]
     # time_range = [[0, 0.05], [0, 0.5]]
-    # num_samples = 1000
-    # coeff = 0.30
-    # rate = 0.285+2*4.075
+    # num_samples = 100
+    # coeff = 0.35
+    # rate = 8.5
 
     # Run the script
     main(num_samples, num_runs, num_steps, time_range, coeff, rate)
