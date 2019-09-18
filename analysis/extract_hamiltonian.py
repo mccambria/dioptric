@@ -16,7 +16,6 @@ from numpy import pi
 from scipy.optimize import minimize_scalar
 from scipy.optimize import minimize
 from scipy.optimize import brute
-from numpy import inf
 from numpy import exp
 import matplotlib.pyplot as plt
 
