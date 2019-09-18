@@ -254,7 +254,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
 if __name__ == '__main__':
     folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/g2_measurement'
-    file_name = '2019-05-10_14-08-47_ayrton12.txt'
+    file_name = 'branch_time-tagger-counter/2019-06-04_18-36-53_ayrton12.txt'
 
     with open('{}/{}'.format(folder_name, file_name)) as file:
         data = json.load(file)
