@@ -113,7 +113,7 @@ ax.errorbar(nv1_splitting_list, T2_max_1, yerr = T2_max_error_1,
 #ax.plot(linspace, average_traditional_t2_max_1,  
 #            label = 'NV1', linestyle=':', color = nv1_color, linewidth=3)
 
-
+print(numpy.average(T2_max_traditional_1))
 ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
 
@@ -131,7 +131,7 @@ ax.grid()
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
-fig1.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a_inset.pdf", bbox_inches='tight')
+#fig1.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a_inset.pdf", bbox_inches='tight')
 
 
 # %%
@@ -143,6 +143,8 @@ ax.errorbar(nv2_splitting_list, T2_max_2, yerr = T2_max_error_2,
 #ax.plot(linspace, average_traditional_t2_max_2,  
 #            label = 'NV2', linestyle='-.', color = nv2_color, linewidth=3)
 
+print(numpy.average(T2_max_traditional_2))
+
 ax.tick_params(which = 'both', length=14, width=3, colors='k',
                 grid_alpha=0.7, labelsize = font_size)
 
@@ -156,7 +158,7 @@ ax.grid()
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
-fig2.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b_inset.pdf", bbox_inches='tight')
+#fig2.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b_inset.pdf", bbox_inches='tight')
 
 
 # %%
@@ -165,6 +167,8 @@ ax.errorbar(nv16_splitting_list, T2_max_16, yerr = T2_max_error_16,
             label = 'NV16',  color= nv16_color, fmt='D',markersize = 20, elinewidth=4)
 #ax.plot(linspace, average_traditional_t2_max_16,  
 #            label = 'NV16', linestyle='--', color = nv16_color, linewidth=3)
+
+print(numpy.average(T2_max_traditional_16))
 
 ax.tick_params(which = 'both', length=14, width=3, colors='k',
                 grid_alpha=0.7, labelsize = font_size)
@@ -186,4 +190,4 @@ plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 #ax.legend(fontsize=18)
 
-fig3.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c_inset.pdf", bbox_inches='tight')
+#fig3.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c_inset.pdf", bbox_inches='tight')
