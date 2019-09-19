@@ -29,7 +29,7 @@ import labrad
 
 
 def calculate_relative_g2_zero(hist):
-    
+
     # We take the values on the wings to be representatives for g2(inf)
     # We take the wings to be the first and last 1/6 of collected data
     num_bins = len(hist)
@@ -37,7 +37,7 @@ def calculate_relative_g2_zero(hist):
     neg_wing = hist[0: wing_length]
     pos_wing = hist[num_bins - wing_length: ]
     inf_delay_differences = numpy.average([neg_wing, pos_wing])
-    
+
     # Use the parity of num_bins to determine differences at 0 ns
     if num_bins % 2 == 0:
         # As an example, say there are 6 bins. Then we want the differences
@@ -46,10 +46,10 @@ def calculate_relative_g2_zero(hist):
         zero_delay_differences = numpy.average(hist[midpoint_high - 1,
                                                     midpoint_high])
     else:
-        # Now say there are 7 bins. We'd like bin 3. 
+        # Now say there are 7 bins. We'd like bin 3.
         midpoint = int(numpy.floor(num_bins / 2))
         zero_delay_differences = hist[midpoint]
-        
+
     return zero_delay_differences / inf_delay_differences
 
 
@@ -65,12 +65,12 @@ def process_raw_buffer(timestamps, channels,
     if False:
         num_vals = timestamps.size
         for click_index in range(num_vals):
-    
+
             click_time = timestamps[click_index]
-    
+
             # Determine the afterpulse channel
             click_channel = channels[click_index]
-    
+
             # Calculate relevant differences
             next_index = click_index + 1
             while next_index < num_vals:
@@ -80,7 +80,7 @@ def process_raw_buffer(timestamps, channels,
                 if channels[next_index] == click_channel:
                     indices_to_delete_append(next_index)
                 next_index += 1
-    
+
         timestamps = numpy.delete(timestamps, indices_to_delete)
 
     # Calculate differences
@@ -126,16 +126,16 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
                   apd_a_index, apd_b_index):
 
     # %% Initial calculations and setup
-    
+
     tool_belt.reset_cfm(cxn)
-    
+
     afterpulse_window = 50 * 10**3
     sleep_time = 2
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
     opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-    
+
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
     cxn.pulse_streamer.constant([wiring['do_532_aom']])
 
@@ -146,14 +146,14 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
     num_bins = int(2 * diff_window) + 1  # 1 ns bins in ps
-    
+
     # Expose the stream
-    cxn.apd_tagger.start_tag_stream(apd_indices, [], False)  
-    
+    cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
+
     # Get the APD channel names that the tagger will return
     ret_vals = cxn.apd_tagger.get_channel_mapping()
     apd_a_chan_name, apd_b_chan_name = ret_vals
-    
+
     # %% Collect the data
 
     start_time = time.time()
@@ -211,15 +211,15 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
         collection_index += 1
         num_tags += len(buffer_timetags)
-        
+
     cxn.apd_tagger.stop_tag_stream()
-    
+
     # %% Calculate a relative value for g2(0)
-    
+
     g2_zero = calculate_relative_g2_zero(hist)
 
     # %% Clean up and save the data
-    
+
     tool_belt.reset_cfm(cxn)
 
     timestamp = tool_belt.get_time_stamp()
@@ -243,9 +243,9 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(raw_data, filePath)
-    
+
     print('g2(0) = {}'.format(g2_zero))
-    
+
     return g2_zero
 
 
@@ -254,17 +254,17 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
 if __name__ == '__main__':
     folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/g2_measurement'
-    file_name = '2019-07-25_21-36-31_ayrton12_nv16_2019_07_25.txt'
+    file_name = 'branch_time-tagger-counter/2019-06-04_18-36-53_ayrton12.txt'
 
     with open('{}/{}'.format(folder_name, file_name)) as file:
         data = json.load(file)
         differences = data['differences']
         num_bins = data['num_bins']
-    
+
     hist, bin_edges = numpy.histogram(differences, num_bins)
     bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
     bin_centers = bin_edges[0: num_bins] + bin_center_offset
-    
+
     plt.plot(bin_centers / 1000, hist)
     g2_zero = calculate_relative_g2_zero(hist)
     print(g2_zero)
