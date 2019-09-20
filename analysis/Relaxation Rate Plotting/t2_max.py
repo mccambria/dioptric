@@ -21,7 +21,7 @@ import matplotlib.ticker as ticker
 
 # %%
 
-font_size = 45
+font_size = 55
 
 # %%
 
@@ -43,6 +43,12 @@ nv16_omega_avg_list = numpy.array([0.53, 0.87, 1.7, 0.60, 0.70, 1.4, 1.03])
 nv16_omega_error_list = numpy.array([0.05, 0.09, 0.2, 0.05, 0.07, 0.4, 0.17])*2
 nv16_gamma_avg_list = numpy.array([90, 26.2, 17.5, 11.3, 5.6, 3.7, 2.8])
 nv16_gamma_error_list = numpy.array([5, 0.9, 0.6, 0.4, 0.3, 0.4, 0.3])*2
+
+splitting_list = [26.3, 36.2, 48.1, 60.5, 92.3, 150.8, 329.6, 884.9, 1080.5]
+omega_avg_list = numpy.array([0.33,0.32,  0.314, 0.24, 0.253, 0.29, 0.33, 0.29, 0.28])
+omega_error_list = numpy.array([0.03,0.03,  0.01, 0.02, 0.012, 0.02, 0.02, 0.02, 0.05])*2
+gamma_avg_list = numpy.array([	29.0, 20.4,  15.8, 9.1, 6.4, 4.08, 1.23, 0.45, 0.69])
+gamma_error_list = numpy.array([1.1, 0.5, 0.3, 0.3, 0.1, 0.15, 0.07, 0.03, 0.12])*2
 
 # %% NV1
 
@@ -95,6 +101,22 @@ average_traditional_t2_max_16[:] = numpy.average(T2_max_traditional_16)
 average_traditional_t2_error_16= numpy.empty([1000]) 
 average_traditional_t2_error_16[:]= numpy.sqrt(sum(T2_max_traditional_error_16**2)) / len(T2_max_traditional_error_16)
 
+# %% NV0
+
+nv0_color = '#87479b'
+
+T2_max_0 = 2 / (3 * omega_avg_list + gamma_avg_list) 
+T2_max_error_0 = (3*omega_avg_list + gamma_avg_list)**-2 * numpy.sqrt( (6*omega_error_list)**2 + (2*gamma_error_list)**2 )
+
+T2_max_traditional_0 = 2 / (3 * omega_avg_list)
+T2_max_traditional_error_0 = T2_max_traditional_0 * omega_error_list / omega_avg_list
+
+average_traditional_t2_max_0= numpy.empty([1000]) 
+average_traditional_t2_max_0[:] = numpy.average(T2_max_traditional_0)
+
+average_traditional_t2_error_0= numpy.empty([1000]) 
+average_traditional_t2_error_0[:]= numpy.sqrt(sum(T2_max_traditional_error_0**2)) / len(T2_max_traditional_error_0)
+
 
 
 # %%
@@ -126,12 +148,12 @@ ax.tick_params(which = 'major', length=20, width=5)
 
 
 
-ax.grid()
+ax.grid(lw=3)
 
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
-#fig1.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a_inset.pdf", bbox_inches='tight')
+fig1.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a_inset.pdf", bbox_inches='tight')
 
 
 # %%
@@ -154,11 +176,11 @@ ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
 
 
-ax.grid()
+ax.grid(lw=3)
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
-#fig2.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b_inset.pdf", bbox_inches='tight')
+fig2.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b_inset.pdf", bbox_inches='tight')
 
 
 # %%
@@ -178,7 +200,7 @@ ax.tick_params(which = 'major', length=20, width=5)
 ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
 
-ax.grid()
+ax.grid(lw=3)
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
@@ -190,4 +212,34 @@ plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 #ax.legend(fontsize=18)
 
-#fig3.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c_inset.pdf", bbox_inches='tight')
+fig3.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c_inset.pdf", bbox_inches='tight')
+
+# %%
+fig4, ax = plt.subplots(1, 1, figsize=(8, 8))
+ax.errorbar(splitting_list, T2_max_0, yerr = T2_max_error_0, 
+            label = 'NV0',  color= nv0_color, fmt='D',markersize = 20, elinewidth=4)
+
+print(numpy.average(T2_max_traditional_0))
+
+ax.tick_params(which = 'both', length=14, width=3, colors='k',
+                grid_alpha=0.7, labelsize = font_size)
+
+ax.tick_params(which = 'major', length=20, width=5)
+
+ax.set_yscale("log", nonposy='clip')
+ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
+
+ax.grid(lw=3)
+plt.xlabel('Splitting (MHz)', fontsize=font_size)
+plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
+
+#ax.set_xlim([-20,1100])
+#ax.set_ylim([-0.1,2.3])
+
+#ax.set_xscale("log", nonposx='clip')
+
+
+#ax.legend(fontsize=18)
+
+fig4.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3d_inset.pdf", bbox_inches='tight')
+

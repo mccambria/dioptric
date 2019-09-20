@@ -71,8 +71,8 @@ text = '\n'.join((r'$1/f^{2} + \gamma_\infty$ fit:',
                   r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+#ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -88,9 +88,9 @@ ax.set_ylim([0.1,300])
 
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-plt.title('NV 0', fontsize=18)
+#plt.title('NV 0', fontsize=18)
 #ax.legend(fontsize=18)
 fig.canvas.draw()
 fig.canvas.flush_events()
 
-#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c.pdf", bbox_inches='tight')
+#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3d.pdf", bbox_inches='tight')
