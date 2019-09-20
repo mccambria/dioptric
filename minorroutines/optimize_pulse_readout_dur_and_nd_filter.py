@@ -358,10 +358,10 @@ def main(nv_sig):
         elif nd_filter == 'nd_1.5':
 #            readout_range = [200, 400]
 #            num_readout_steps = 9
-            readout_range = [425, 500]
-            num_readout_steps = 4
-#            readout_range = [250, 600]
-#            num_readout_steps = 8
+#            readout_range = [425, 500]
+#            num_readout_steps = 4
+            readout_range = [250, 600]
+            num_readout_steps = 8
 #            readout_range = [700, 800]
 #            num_readout_steps = 3
         
@@ -376,15 +376,15 @@ if __name__ == '__main__':
     # Define the nv_sig to be used
     sample_name = 'ayrton12'
     
-    nv0_2019_06_06 = { 'coords': [0.291, 0.248, 5.02],
-        'name': '{}-nv0_2019_06_06'.format(sample_name),
-        'expected_count_rate': None, 'nd_filter': 'nd_1.0',
-        'pulsed_readout_dur': 300, 'magnet_angle': 53.6,
-        'resonance_LOW': 2.8201, 'rabi_LOW': 68.5, 'uwave_power_LOW': 9.0,
-        'resonance_HIGH': 2.9130, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    nv4_2019_06_06 = { 'coords': [-0.147, -0.063, 5.02],
+        'name': 'ayrton12-nv4_2019_06_06',
+        'expected_count_rate': 56, 'nd_filter': 'nd_1.0',
+        'pulsed_readout_dur': 400, 'magnet_angle': 53.6,
+        'resonance_LOW':2.8643, 'rabi_LOW': 148.2, 'uwave_power_LOW': 9.0,
+        'resonance_HIGH':3.5798, 'rabi_HIGH': 155.4 , 'uwave_power_HIGH': 10.0}
     
     # Main parameters
-    nv_sig = nv0_2019_06_06
+    nv_sig = nv4_2019_06_06
     
     ### MAIN ###
     main(nv_sig)
