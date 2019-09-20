@@ -302,14 +302,19 @@ if __name__ == '__main__':
     #               [None, 2.6055, 3.1691],
     #               [None, 2.4371, 3.4539]]
 
-    # name = 'NV0_2019_06_06'
-    # res_descs = [[0.0, 2.8547, 2.8793],
-    #               [None, 2.8532, 2.8795],
-    #               [None, 2.8430, 2.8911],
-    #               [None, 2.8361, 2.8998],
-    #               [None, 2.8209, 2.9132],
-    #               [None, 2.7915, 2.9423]]
-    
+    # Pretty sure the magnet was accidentally mis-aligned for the 2.4993 point
+    name = 'NV0_2019_06_06'
+    res_descs = [[0.0, 2.8547, 2.8793],
+                  [None, 2.8532, 2.8795],
+                  [None, 2.8494, 2.8839],
+                  [None, 2.8430, 2.8911],
+                  [None, 2.8361, 2.8998],
+                  [None, 2.8209, 2.9132],
+                  [None, 2.7915, 2.9423],
+                  [None, 2.7006, 3.0302],
+                  [None, 2.4244, 3.3093]]#,
+                  # [None, 2.4993, 3.5798]]
+
     ############ Not as nice ############
 
     # Should redo this zero-field with CWESR - 2.863 agrees excellently
@@ -325,15 +330,15 @@ if __name__ == '__main__':
     #               [None, 2.5830, 3.3290]]
 
     # Zero-field resonance is way off - 2.866 agrees excellently
-    name = 'nv2_2019_04_30'
-    res_descs = [[0.0, 2.8572, None],
-                  [None, 2.8507, 2.8798],
-                  [None, 2.8434, 2.8882],
-                  [None, 2.8380, 2.8942],
-                  [None, 2.8379, 2.8948],
-                  [None, 2.8308, 2.9006],
-                  [None, 2.8228, 2.9079],
-                  [None, 2.8155, 2.9171]]
+    # name = 'nv2_2019_04_30'
+    # res_descs = [[0.0, 2.8572, None],
+    #               [None, 2.8507, 2.8798],
+    #               [None, 2.8434, 2.8882],
+    #               [None, 2.8380, 2.8942],
+    #               [None, 2.8379, 2.8948],
+    #               [None, 2.8308, 2.9006],
+    #               [None, 2.8228, 2.9079],
+    #               [None, 2.8155, 2.9171]]
 
     # Zero-field resonance is way off - 2.866 agrees excellently
     # name = 'nv2_2019_04_30_take2'
@@ -346,7 +351,7 @@ if __name__ == '__main__':
 
     # Some of this data was taken after changing the magnet orientation.
     # Pretty sure the zero-field ESR is from 6/12 but we didn't name the NVs
-    # consistently then. We'll have to match is by coordinates.
+    # consistently then. We'll have to match it by coordinates.
     # name = 'nv13_2019_06_10'
     # res_descs = [[None, 2.8289, 2.8520],
     #               [None, 2.8266, 2.8546],
@@ -359,6 +364,8 @@ if __name__ == '__main__':
 
     # Run the script
     main(name, res_descs)
+
+    # Rotation prediction
 
     # Test plot
     # args: mag_B_range, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi

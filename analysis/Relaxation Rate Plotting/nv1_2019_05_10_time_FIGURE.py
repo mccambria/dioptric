@@ -96,6 +96,7 @@ def time_main_plot(folder_name, file_name):
     gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list'] 
     gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
                     + data6['gamma_ste_list']
+    gamma_ste_list = numpy.array(gamma_ste_list)*2
     
     time_inc = 3.75 # hr
     
@@ -165,7 +166,7 @@ def time_main_plot(folder_name, file_name):
 
     ax.set_xlabel('Time (hour)', fontsize=18)
     ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
-    ax.set_ylim(44,75)
+    ax.set_ylim(44,77)
 #    ax.set_title(r'NV1', fontsize=18)
 #    ax.legend(fontsize=18)
     fig.canvas.draw()
@@ -193,7 +194,8 @@ def time_zoom_plot(folder_name, file_name):
     gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list'] 
     gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
                     + data6['gamma_ste_list']
-
+    gamma_ste_list = numpy.array(gamma_ste_list)*2
+    
     time_inc = 1.25 # hr
     
     time_start_list_4 = []
@@ -243,7 +245,7 @@ def time_zoom_plot(folder_name, file_name):
 
     ax.set_xlabel('Time (hour)', fontsize=18)
     ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
-    ax.set_ylim(44,75)
+    ax.set_ylim(44,77)
 #    ax.set_title(r'NV1', fontsize=18)
 #    ax.legend(fontsize=18)
     fig.canvas.draw()
@@ -281,7 +283,7 @@ def histogram(bins = 9, fit_gaussian = False):
                     grid_alpha=1.2, labelsize = text)
 
     ax.tick_params(which = 'major', length=12, width=2)
-    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
+#    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
 #  
     if fit_gaussian:
         x_grid_endpoints = ret_vals[1]
@@ -338,7 +340,7 @@ folder_name = 'nv1_2019_05_10_28MHz_6'
 
 time_main_plot(folder_name, file_name)
 time_zoom_plot(folder_name, file_name)
-histogram(fit_gaussian = False)
+#histogram(fit_gaussian = False)
 
 #file4 = '26.3_MHz_splitting_6_bins_error'
 #folder4 = 'nv1_2019_05_10_28MHz_4'
