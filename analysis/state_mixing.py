@@ -30,7 +30,8 @@ inv_sqrt_2 = 1/numpy.sqrt(2)
 
 # NV1
 name = 'NV1'
-B_mag = 0.05
+#B_mag = 0.05 
+B_mag = 1.25
 B_theta = 0.644
 Pi_par = -0.005
 Pi_perp = 0.010
@@ -121,6 +122,28 @@ def calc_prob_opposite_state(initial_hamiltonian, final_hamiltonian):
     prob = numpy.abs(numpy.dot(numpy.conj(inner_product), inner_product))
     
     return prob
+
+def calc_prob_i_state(final_hamiltonian, i):
+    '''
+    This function will compare the HIGH state of an final hamiltonian
+    to the i state in the Sz basis (+1, -1, 0).
+    '''
+    
+    # Calculate the eigenvalues and eigenvectros of the hamiltonian some time later
+    eigval_t, eigvec_t = eig(final_hamiltonian)
+    
+    if i ==  1:
+        index = numpy.argmax(numpy.abs(eigval_t))
+    
+    # Determine what the high state is of this later hamiltonian
+    state_t = eigvec_t[index]
+    print(eigvec_t)
+    print(eigvec_t[index])
+    # Calculate the prob of finding the final state in the initial state
+    inner_product = numpy.dot(numpy.conj(state_t), HIGH_state_t)
+    prob = numpy.abs(numpy.dot(numpy.conj(inner_product), inner_product))
+    
+    return prob
     
 # %%
     
@@ -128,18 +151,22 @@ if __name__ == '__main__':
     same_prob_list = []
     opp_prob_list = []
     
-    omega_B = 0.001  # rad / us
-    omega_Pi = 0.009 # rad / us
+    omega_B = 0.0001  # rad / us
+    omega_Pi = 0.001 # rad / us
     starting_Phi_Pi = 0.2
     
-    B_perp_noise = 0.05 * 1
-    Pi_perp_noise = 0.010 * 1
+    B_perp_noise = B_mag * 1
+    Pi_perp_noise = 0.010 * 10
 #    Pi_perp_noise = 0.01
     
-    tau = numpy.linspace(0, 10000, 1000)
+    tau = numpy.linspace(0, 100000, 1000)
     
     ham_0 = calc_single_hamiltonian_osc(B_mag, B_theta, B_perp_noise, Pi_par, 
                                             Pi_perp, Pi_perp_noise, 0, starting_Phi_Pi)
+    ham_0_plus_one_basis = calc_single_hamiltonian_osc(B_mag, B_theta, 0, Pi_par, 
+                                            Pi_perp, 0, 0, 0)
+    print(eig(ham_0_plus_one_basis))
+    
     for t in tau:
         phi_B = omega_B * t
         phi_Pi = omega_Pi * t + starting_Phi_Pi
@@ -165,8 +192,8 @@ if __name__ == '__main__':
     textstr = '\n'.join((
         r'$B_{\perp, noise}=%.3f \ GHz$' % (B_perp_noise, ),
         r'$\Pi_{\perp, noise}=%.3f \ GHz$' % (Pi_perp_noise, ),
-        r'$\omega_{B}=%.3f \ rad/ \mu s$' % (omega_B, ),
-        r'$\omega_{\Pi}=%.3f \ rad/\mu s$' % (omega_Pi, ),
+        r'$\omega_{B}=%.2f \ rad/ms$' % (omega_B*10**3, ),
+        r'$\omega_{\Pi}=%.2f \ rad/ms$' % (omega_Pi*10**3, ),
         r'$\omega_{\Pi, 0}=%.3f \ rad$' % (starting_Phi_Pi, )
         ))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
