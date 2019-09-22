@@ -44,11 +44,11 @@ nv16_omega_error_list = numpy.array([0.05, 0.09, 0.2, 0.05, 0.07, 0.4, 0.17])*2
 nv16_gamma_avg_list = numpy.array([90, 26.2, 17.5, 11.3, 5.6, 3.7, 2.8])
 nv16_gamma_error_list = numpy.array([5, 0.9, 0.6, 0.4, 0.3, 0.4, 0.3])*2
 
-splitting_list = [26.3, 36.2, 48.1, 60.5, 92.3, 150.8, 329.6, 884.9, 1080.5]
-omega_avg_list = numpy.array([0.33,0.32,  0.314, 0.24, 0.253, 0.29, 0.33, 0.29, 0.28])
-omega_error_list = numpy.array([0.03,0.03,  0.01, 0.02, 0.012, 0.02, 0.02, 0.02, 0.05])*2
-gamma_avg_list = numpy.array([	29.0, 20.4,  15.8, 9.1, 6.4, 4.08, 1.23, 0.45, 0.69])
-gamma_error_list = numpy.array([1.1, 0.5, 0.3, 0.3, 0.1, 0.15, 0.07, 0.03, 0.12])*2
+splitting_list = [26.3, 36.2, 48.1, 60.5, 92.3, 150.8, 329.6, 884.9, 1080.5, 1148.4]
+omega_avg_list = numpy.array([0.33,0.32,  0.314, 0.24, 0.253, 0.29, 0.33, 0.29, 0.28, 0.38])
+omega_error_list = numpy.array([0.03,0.03,  0.01, 0.02, 0.012, 0.02, 0.02, 0.02, 0.05, 0.04])*2
+gamma_avg_list = numpy.array([	29.0, 20.4,  15.8, 9.1, 6.4, 4.08, 1.23, 0.45, 0.69, 0.35])
+gamma_error_list = numpy.array([1.1, 0.5, 0.3, 0.3, 0.1, 0.15, 0.07, 0.03, 0.12, 0.03])*2
 
 # %% NV1
 
@@ -153,7 +153,7 @@ ax.grid(lw=3)
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
-fig1.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a_inset.pdf", bbox_inches='tight')
+#fig1.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a_inset.pdf", bbox_inches='tight')
 
 
 # %%
@@ -180,7 +180,7 @@ ax.grid(lw=3)
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
-fig2.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b_inset.pdf", bbox_inches='tight')
+#fig2.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b_inset.pdf", bbox_inches='tight')
 
 
 # %%
@@ -212,7 +212,7 @@ plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 #ax.legend(fontsize=18)
 
-fig3.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c_inset.pdf", bbox_inches='tight')
+#fig3.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c_inset.pdf", bbox_inches='tight')
 
 # %%
 fig4, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -241,5 +241,5 @@ plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 #ax.legend(fontsize=18)
 
-fig4.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3d_inset.pdf", bbox_inches='tight')
+#fig4.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3d_inset.pdf", bbox_inches='tight')
 
