@@ -23,11 +23,11 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-splitting_list = [26.3, 36.2, 48.1, 60.5, 92.3, 150.8, 329.6, 884.9, 1080.5]
-omega_avg_list = [0.33,0.32,  0.314, 0.24, 0.253, 0.29, 0.33, 0.29, 0.28]
-omega_error_list = numpy.array([0.03,0.03,  0.01, 0.02, 0.012, 0.02, 0.02, 0.02, 0.05])*2
-gamma_avg_list = [	29.0, 20.4,  15.8, 9.1, 6.4, 4.08, 1.23, 0.45, 0.69]
-gamma_error_list = numpy.array([1.1, 0.5, 0.3, 0.3, 0.1, 0.15, 0.07, 0.03, 0.12])*2
+splitting_list = [26.3, 36.2, 48.1, 60.5, 92.3, 150.8, 329.6, 884.9, 1080.5, 1148.4]
+omega_avg_list = [0.33,0.32,  0.314, 0.24, 0.253, 0.29, 0.33, 0.29, 0.28, 0.38]
+omega_error_list = numpy.array([0.03,0.03,  0.01, 0.02, 0.012, 0.02, 0.02, 0.02, 0.05, 0.04])*2
+gamma_avg_list = [	29.0, 20.4,  15.8, 9.1, 6.4, 4.08, 1.23, 0.45, 0.69, 0.35]
+gamma_error_list = numpy.array([1.1, 0.5, 0.3, 0.3, 0.1, 0.15, 0.07, 0.03, 0.12, 0.03])*2
 
 # Try to fit the gamma to a 1/f^2
 
@@ -71,8 +71,8 @@ text = '\n'.join((r'$1/f^{2} + \gamma_\infty$ fit:',
                   r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+#ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -88,9 +88,9 @@ ax.set_ylim([0.1,300])
 
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-plt.title('NV 0', fontsize=18)
+#plt.title('NV 0', fontsize=18)
 #ax.legend(fontsize=18)
 fig.canvas.draw()
 fig.canvas.flush_events()
 
-#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c.pdf", bbox_inches='tight')
+#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3d.pdf", bbox_inches='tight')
