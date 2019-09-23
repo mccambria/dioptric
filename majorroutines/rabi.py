@@ -101,7 +101,7 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 
     if measured_rabi_period is None:
         resonant_rabi_freq = resonant_rabi_period**-1
-        res_dev = freq-resonant_freq
+        res_dev = freq - resonant_freq
         measured_rabi_freq = numpy.sqrt(res_dev**2 + resonant_rabi_freq**2)
         measured_rabi_period = measured_rabi_freq**-1
         print('measured_rabi_period: {} ns'.format(measured_rabi_period))
