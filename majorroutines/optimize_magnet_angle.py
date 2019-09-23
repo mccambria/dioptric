@@ -26,6 +26,8 @@ import copy
 
 
 def create_fit_figure(splittings, angles, fit_func, popt):
+    opti_angle = (-popt[2]) % 180
+    
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
 
     ax.set_title('ESR Splitting Versus Magnet Angle')
@@ -36,7 +38,12 @@ def create_fit_figure(splittings, angles, fit_func, popt):
     x_vals = numpy.linspace(0, 180, 1000)
     y_vals = fit_func(x_vals, *popt)
     ax.plot(x_vals, y_vals)
+    text = ('Optimized Angle: {}'.format('%.1f'%opti_angle))
 
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(0.80, 0.80, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment="top", bbox=props)
+    
     fig.canvas.draw()
     fig.set_tight_layout(True)
     fig.canvas.flush_events()
@@ -50,8 +57,8 @@ def create_fit_figure(splittings, angles, fit_func, popt):
 def fit_data(splittings, angles):
 
     fit_func = AbsCos
-    amp = 200
-    phase = 0
+    amp = max(splittings)
+    phase = angles[numpy.argmax(splittings)]
     offset = 0
     guess_params = [offset, amp, phase]
     # Check if we have any undefined splittings
@@ -219,12 +226,12 @@ if __name__ == '__main__':
     angles = numpy.linspace(angle_range[0], angle_range[1], num_angle_steps)
     
     splittings = [
-        58.72095671281174,
-        85.16531216906876,
-        91.77178120036223,
-        76.8139264619525,
-        46.154347787948694,
-        27.087767613011238]
+        29.211970839841506,
+        128.26740412019032,
+        160.54697425648624,
+        159.82405238961928,
+        100.01021574980263,
+        57.730687806567985]
     angles = numpy.linspace(0, 150, 6)
     fit_func, popt = fit_data(splittings, angles)
 

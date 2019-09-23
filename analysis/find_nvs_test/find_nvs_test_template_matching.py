@@ -22,9 +22,9 @@ import utils.image_processing as image_processing
 
 ####################### Files #######################
 
-directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\2019_09\\'
 
-file_name = '2019-08-06-10_36_52-ayrton12-nvsearch_2019_07_25.txt'
+file_name = '2019-09-22-15_05_55-ayrton12-search.txt'
 
 file_path = directory + file_name
 
@@ -87,9 +87,10 @@ for method_ind in [1]:
     # gaussian = image_processing.convert_to_8bit(gaussian)
 
     # Image
-    # file_name = '2019-04-29_16-39-18_ayrton12.txt'
+#    file_name = '2019-04-29_16-37-56_ayrton12.txt'
     file_name = '2019-04-29_16-39-18_ayrton12.txt'
-    # file_name = '2019-05-07_18-23-21_ayrton12.txt'
+#    file_name = '2019-05-30_10-39-05_ayrton12.txt'
+    directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
     file_path = directory + file_name
     with open(file_path, 'r') as file:
         data = json.load(file)
