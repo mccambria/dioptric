@@ -89,6 +89,22 @@ def calc_res_pair(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     return resonance_low, resonance_high
 
 
+def calc_eigenvectors(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
+    """Return the normalized eigenvectors, sorted by ascending eigenvalue
+    """
+    hamiltonian = calc_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi,
+                                   phi_B, phi_Pi)
+    if (type(mag_B) is list) or (type(mag_B) is numpy.ndarray):
+        vals = numpy.sort(eigvals(hamiltonian), axis=1)
+        resonance_low = numpy.real(vals[:,1] - vals[:,0])
+        resonance_high = numpy.real(vals[:,2] - vals[:,0])
+    else:
+        vals = numpy.sort(eigvals(hamiltonian))
+        resonance_low = numpy.real(vals[1] - vals[0])
+        resonance_high = numpy.real(vals[2] - vals[0])
+    return resonance_low, resonance_high
+
+
 def find_mag_B(res_desc, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     # Just return the given mag_B if it's known
     if res_desc[0] is not None:
