@@ -287,22 +287,21 @@ if __name__ == '__main__':
 
     ############ Nice ############
 
-     name = 'nv1_2019_05_10'
-     res_descs = [[0.0, 2.8545, 2.8762],
-                   [None, 2.8554, 2.8752],
-                   [None, 2.8512, 2.8790],
-                   [None, 2.8520, 2.8800],
-                   [None, 2.8536, 2.8841],
-                   [None, 2.8496, 2.8823],
-                   [None, 2.8396, 2.8917],
-                   [None, 2.8166, 2.9144],
-                   [None, 2.8080, 2.9240],
-                   [None, 2.7357, 3.0037],
-                   [None, 2.6061, 3.1678],
-                   [None, 2.6055, 3.1691],
-                   [None, 2.4371, 3.4539]]
+    # name = 'nv1_2019_05_10'
+    # res_descs = [[0.0, 2.8545, 2.8762],
+    #               [None, 2.8554, 2.8752],
+    #               [None, 2.8512, 2.8790],
+    #               [None, 2.8520, 2.8800],
+    #               [None, 2.8536, 2.8841],
+    #               [None, 2.8496, 2.8823],
+    #               [None, 2.8396, 2.8917],
+    #               [None, 2.8166, 2.9144],
+    #               [None, 2.8080, 2.9240],
+    #               [None, 2.7357, 3.0037],
+    #               [None, 2.6061, 3.1678],
+    #               [None, 2.6055, 3.1691],
+    #               [None, 2.4371, 3.4539]]
 
-    # Pretty sure the magnet was accidentally mis-aligned for the 2.4993 point
 #    name = 'NV0_2019_06_06'
 #    res_descs = [[0.0, 2.8547, 2.8793],
 #                  [None, 2.8532, 2.8795],
@@ -312,42 +311,41 @@ if __name__ == '__main__':
 #                  [None, 2.8209, 2.9132],
 #                  [None, 2.7915, 2.9423],
 #                  [None, 2.7006, 3.0302],
-#                  [None, 2.4244, 3.3093]]#,
-#                  # [None, 2.4993, 3.5798]]
+#                  [None, 2.4244, 3.3093],
+#                  [None, 2.2990, 3.4474]]  # Aligned
+#                  [None, 2.4993, 3.5798]]  # Accidentally misaligned
+
+#    name = 'nv2_2019_04_30'
+#    res_descs = [[0.0, 2.8584, 2.8725],
+#                   [None, 2.8507, 2.8798],
+#                   [None, 2.8434, 2.8882],
+#                   [None, 2.8380, 2.8942],
+#                   [None, 2.8379, 2.8948],
+#                   [None, 2.8308, 2.9006],
+#                   [None, 2.8228, 2.9079],
+#                   [None, 2.8155, 2.9171]]
+
+#    name = 'nv2_2019_04_30_take2'
+#    res_descs = [[0.0, 2.8584, 2.8725],
+#                   [None, 2.8512, 2.8804],
+#                   [None, 2.8435, 2.8990],
+#                   [None, 2.8265, 2.9117],
+#                   [None, 2.7726, 3.0530],
+#                   [None, 2.7738, 3.4712]]
 
     ############ Not as nice ############
 
     # Should redo this zero-field with CWESR - 2.863 agrees excellently
-    # name = 'NV16_2019_07_25'
-    # res_descs = [[0.0, 2.8655, None],
-    #               [None, 2.8519, 2.8690],
-    #               [None, 2.8460, 2.8746],
-    #               [None, 2.8337, 2.8867],
-    #               [None, 2.8202, 2.9014],
-    #               [None, 2.8012, 2.9292],
-    #               [None, 2.7393, 3.0224],
-    #               [None, 2.6995, 3.1953],
-    #               [None, 2.5830, 3.3290]]
-
-    # Zero-field resonance is way off - 2.866 agrees excellently
-    # name = 'nv2_2019_04_30'
-    # res_descs = [[0.0, 2.8572, None],
-    #               [None, 2.8507, 2.8798],
-    #               [None, 2.8434, 2.8882],
-    #               [None, 2.8380, 2.8942],
-    #               [None, 2.8379, 2.8948],
-    #               [None, 2.8308, 2.9006],
-    #               [None, 2.8228, 2.9079],
-    #               [None, 2.8155, 2.9171]]
-
-    # Zero-field resonance is way off - 2.866 agrees excellently
-    # name = 'nv2_2019_04_30_take2'
-    # res_descs = [[0.0, 2.8572, None],
-    #               [None, 2.8512, 2.8804],
-    #               [None, 2.8435, 2.8990],
-    #               [None, 2.8265, 2.9117],
-    #               [None, 2.7726, 3.0530],
-    #               [None, 2.7738, 3.4712]]
+     name = 'NV16_2019_07_25'
+     res_descs = [[0.0, 2.8584, 2.8725],
+                   [None, 2.8519, 2.8690],
+                   [None, 2.8460, 2.8746],
+                   [None, 2.8337, 2.8867],
+                   [None, 2.8202, 2.9014],
+                   [None, 2.8012, 2.9292],
+                   [None, 2.7393, 3.0224],
+                   [None, 2.6995, 3.1953],
+                   [None, 2.5830, 3.3290]]
 
     # Some of this data was taken after changing the magnet orientation.
     # Pretty sure the zero-field ESR is from 6/12 but we didn't name the NVs
@@ -363,7 +361,7 @@ if __name__ == '__main__':
     #               [None, 2.7857, 2.9498]]
 
     # Run the script
-     main(name, res_descs)
+    main(name, res_descs)
 
     # Rotation prediction
 
