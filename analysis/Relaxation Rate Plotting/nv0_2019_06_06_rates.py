@@ -71,8 +71,8 @@ text = '\n'.join((r'$1/f^{2} + \gamma_\infty$ fit:',
                   r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
-#        verticalalignment='top', bbox=props)
+ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
+        verticalalignment='top', bbox=props)
 
 # %%
 
