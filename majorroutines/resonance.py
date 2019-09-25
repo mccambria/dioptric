@@ -43,7 +43,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     tool_belt.reset_cfm(cxn)
     
     # Assume the low state
-    state = States.HIGH
+    state = States.LOW
 
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
