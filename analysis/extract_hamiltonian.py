@@ -97,38 +97,34 @@ def b_matrix_elements(name, res_descs):
 def find_B_orientation(rotated_res_desc, mag_B, par_Pi, perp_Pi, phi_Pi):
 
     # fit_vec = [theta_B, phi_B]
-    param_bounds = ((0, pi/2), (0, 2*pi/3)
+    param_bounds = ((0, pi/2), (0, 2*pi/3))
     guess_params = (pi/3, 0)
 
     args = (rotated_res_desc, mag_B, par_Pi, perp_Pi, phi_Pi)
-    res = minimize(chisq_func, guess_params, args=args,
-                   bounds=param_bounds, method='SLSQP')
-    if not res.success:
-        print(res.message)
-        return
-    
-    result = minimize(find_B_orientation_objective, bounds=param_bounds,
-                      args=args, method='bounded')
+    res = minimize(find_B_orientation_objective, guess_params,
+                   args=args, bounds=param_bounds, method='SLSQP')
 
-    return result.x
+    return res.x
 
 
 def find_B_orientation_objective(fit_vec, rotated_res_desc,
                                  mag_B, par_Pi, perp_Pi, phi_Pi):
     calculated_res_pair = calc_res_pair(mag_B, fit_vec[0], par_Pi, perp_Pi,
                                         fit_vec[1], phi_Pi)
-    differences = calculated_res_pair - rotated_res_desc[1:3]
-    sum_squared_differences = numpy.sum(differences**2)
+    diffs = numpy.array(calculated_res_pair) - numpy.array(rotated_res_desc[1:3])
+    sum_squared_differences = numpy.sum(diffs**2)
     return sum_squared_differences
 
 
 def predict_rotation(name, res_descs, aligned_res_desc, rotated_res_desc):
 
     popt = main(name, res_descs)  # Excluding phis
+    # popt_full = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
     popt_full = numpy.append(popt, [0.0, 0.0])  # phis = 0
 
     mag_B = find_mag_B(aligned_res_desc, *popt_full)
-    theta_B, phi_B = find_B_orientation(rotated_res_desc, *popt_full)
+    theta_B, phi_B = find_B_orientation(rotated_res_desc, mag_B,
+                                popt_full[1], popt_full[2], popt_full[4])
 
     print(theta_B, phi_B)
 
@@ -223,8 +219,8 @@ def find_mag_B(res_desc, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
 def find_mag_B_objective(x, res_desc, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     calculated_res_pair = calc_res_pair(x, theta_B, par_Pi, perp_Pi,
                                         phi_B, phi_Pi)
-    differences = calculated_res_pair - res_desc[1:3]
-    sum_squared_differences = numpy.sum(differences**2)
+    diffs = numpy.array(calculated_res_pair) - numpy.array(res_desc[1:3])
+    sum_squared_differences = numpy.sum(diffs**2)
     return sum_squared_differences
 
 
@@ -401,32 +397,33 @@ if __name__ == '__main__':
 
     ############ Nice ############
 
-    # name = 'nv1_2019_05_10'
-    # res_descs = [[0.0, 2.8545, 2.8762],
-    #               [None, 2.8554, 2.8752],
-    #               [None, 2.8512, 2.8790],
-    #               [None, 2.8520, 2.8800],
-    #               [None, 2.8536, 2.8841],
-    #               [None, 2.8496, 2.8823],
-    #               [None, 2.8396, 2.8917],
-    #               [None, 2.8166, 2.9144],
-    #               [None, 2.8080, 2.9240],
-    #               [None, 2.7357, 3.0037],
-    #               [None, 2.6061, 3.1678],
-    #               [None, 2.6055, 3.1691],
-    #               [None, 2.4371, 3.4539]]
+    name = 'nv1_2019_05_10'
+    res_descs = [[0.0, 2.8545, 2.8762],
+                  [None, 2.8554, 2.8752],
+                  [None, 2.8512, 2.8790],
+                  [None, 2.8520, 2.8800],
+                  [None, 2.8536, 2.8841],
+                  [None, 2.8496, 2.8823],
+                  [None, 2.8396, 2.8917],
+                  [None, 2.8198, 2.9106],
+                  [None, 2.8166, 2.9144],
+                  [None, 2.8080, 2.9240],
+                  [None, 2.7357, 3.0037],
+                  [None, 2.6061, 3.1678],
+                  [None, 2.6055, 3.1691],
+                  [None, 2.4371, 3.4539]]
 
-    name = 'NV0_2019_06_06'
-    res_descs = [[0.0, 2.8547, 2.8793],
-                  [None, 2.8532, 2.8795],
-                  [None, 2.8494, 2.8839],
-                  [None, 2.8430, 2.8911],
-                  [None, 2.8361, 2.8998],
-                  [None, 2.8209, 2.9132],
-                  [None, 2.7915, 2.9423],
-                  [None, 2.7006, 3.0302],
-                  [None, 2.4244, 3.3093],
-                  [None, 2.2990, 3.4474]]  # Aligned
+    # name = 'NV0_2019_06_06'
+    # res_descs = [[0.0, 2.8547, 2.8793],
+    #               [None, 2.8532, 2.8795],
+    #               [None, 2.8494, 2.8839],
+    #               [None, 2.8430, 2.8911],
+    #               [None, 2.8361, 2.8998],
+    #               [None, 2.8209, 2.9132],
+    #               [None, 2.7915, 2.9423],
+    #               [None, 2.7006, 3.0302],
+    #               [None, 2.4244, 3.3093],
+    #               [None, 2.2990, 3.4474]]  # Aligned
 #                  [None, 2.4993, 3.5798]]  # Accidentally misaligned
 
     # name = 'nv2_2019_04_30'
@@ -488,7 +485,8 @@ if __name__ == '__main__':
     # b_matrix_elements(name, res_descs)
 
     # Rotation prediction
-    predict_rotation(name, res_descs, rotated_res_desc)
+    predict_rotation(name, res_descs,
+                      [None, 2.8198, 2.9106], [None, 2.8454, 2.8873])
 
     # B matrix elements
     # b_matrix_elements(name, res_descs)
