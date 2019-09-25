@@ -12,6 +12,7 @@ Created on Sun Jun 16 11:22:40 2019
 
 import numpy
 from numpy.linalg import eigvals
+from numpy.linalg import eig
 from numpy import pi
 from scipy.optimize import minimize_scalar
 from scipy.optimize import minimize
@@ -31,6 +32,66 @@ inv_sqrt_2 = 1/numpy.sqrt(2)
 
 
 # %% Functions
+
+
+def b_matrix_elements(name, res_descs):
+
+    sq_mat_els = []  # zero, high
+    dq_mat_els = []  # low, high
+
+    zero_zero_comps = []
+    low_zero_comps = []
+    high_zero_comps = []
+
+    popt = main(name, res_descs)  # Excluding phis
+    popt_full = numpy.append(popt, [0.0, 0.0])  # phis = 0
+
+    smooth_mag_Bs = numpy.linspace(0.050, 1.0, 1000)
+    noise_params = [0.01, pi/4, 0.0, 0.0, 0.0, 0.0]
+    noise_hamiltonian = calc_hamiltonian(*noise_params)
+
+    for mag_B in smooth_mag_Bs:
+        vecs = calc_eigenvectors(mag_B, *popt_full)  # zero, low, high
+        zero_zero_comps.append(numpy.conj(vecs[0,1])*vecs[0,1])
+        low_zero_comps.append(numpy.conj(vecs[1,1])*vecs[1,1])
+        high_zero_comps.append(numpy.conj(vecs[2,1])*vecs[2,1])
+
+        sq_mat_el = numpy.matmul(noise_hamiltonian, vecs[1])
+        sq_mat_el = numpy.matmul(numpy.transpose(vecs[0]), sq_mat_el)
+        sq_mat_els.append(numpy.conj(sq_mat_el) * sq_mat_el)
+
+        dq_mat_el = numpy.matmul(noise_hamiltonian, vecs[2])
+        dq_mat_el = numpy.matmul(numpy.transpose(vecs[1]), dq_mat_el)
+        dq_mat_els.append(numpy.conj(dq_mat_el) * dq_mat_el)
+
+    sq_mat_els = numpy.array(sq_mat_els)
+    dq_mat_els = numpy.array(dq_mat_els)
+
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    fig.set_tight_layout(True)
+    ax.set_title('Generating fit vector: {}'.format(name))
+    ax.semilogy(smooth_mag_Bs, dq_mat_els/sq_mat_els)
+    ax.set_xlabel('B magnitude (GHz)')
+    ax.set_ylabel('DQ/SQ rate ratio')
+
+    # fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    # fig.set_tight_layout(True)
+    # ax.set_title('Generating fit vector: {}'.format(name))
+    # ax.plot(smooth_mag_Bs, sq_mat_els, label='SQ')
+    # ax.plot(smooth_mag_Bs, dq_mat_els, label='DQ')
+    # ax.set_xlabel('B magnitude (GHz)')
+    # ax.set_ylabel('Matrix elements magnitude squared')
+    # ax.legend()
+
+    # fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    # fig.set_tight_layout(True)
+    # ax.set_title('Generating fit vector: {}'.format(name))
+    # ax.plot(smooth_mag_Bs, zero_zero_comps, label='0, 0')
+    # ax.plot(smooth_mag_Bs, low_zero_comps, label='low, 0')
+    # ax.plot(smooth_mag_Bs, high_zero_comps, label='high, 0')
+    # ax.set_xlabel('B magnitude (GHz)')
+    # ax.set_ylabel('|<0|psi>|^2')
+    # ax.legend()
 
 
 def generate_fake_data(theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
@@ -94,15 +155,11 @@ def calc_eigenvectors(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     """
     hamiltonian = calc_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi,
                                    phi_B, phi_Pi)
-    if (type(mag_B) is list) or (type(mag_B) is numpy.ndarray):
-        vals = numpy.sort(eigvals(hamiltonian), axis=1)
-        resonance_low = numpy.real(vals[:,1] - vals[:,0])
-        resonance_high = numpy.real(vals[:,2] - vals[:,0])
-    else:
-        vals = numpy.sort(eigvals(hamiltonian))
-        resonance_low = numpy.real(vals[1] - vals[0])
-        resonance_high = numpy.real(vals[2] - vals[0])
-    return resonance_low, resonance_high
+    eigvals, eigvecs = eig(hamiltonian)
+    sorted_indices = numpy.argsort(eigvals)
+    sorted_eigvecs = [eigvecs[:,ind] for ind in sorted_indices]
+    sorted_eigvecs = numpy.array(sorted_eigvecs)
+    return sorted_eigvecs
 
 
 def find_mag_B(res_desc, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
@@ -135,15 +192,15 @@ def find_mag_B_objective(x, res_desc, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
 def plot_resonances(mag_B_range, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi,
                     name='untitled'):
 
-    smooth_mag_B = numpy.linspace(mag_B_range[0], mag_B_range[1], 1000)
-    res_pairs = calc_res_pair(smooth_mag_B, theta_B, par_Pi, perp_Pi,
+    smooth_mag_Bs = numpy.linspace(mag_B_range[0], mag_B_range[1], 1000)
+    res_pairs = calc_res_pair(smooth_mag_Bs, theta_B, par_Pi, perp_Pi,
                               phi_B, phi_Pi)
 
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
     fig.set_tight_layout(True)
     ax.set_title('Generating fit vector: {}'.format(name))
-    ax.plot(smooth_mag_B, res_pairs[0])
-    ax.plot(smooth_mag_B, res_pairs[1])
+    ax.plot(smooth_mag_Bs, res_pairs[0])
+    ax.plot(smooth_mag_Bs, res_pairs[1])
     ax.set_xlabel('B magnitude (GHz)')
     ax.set_ylabel('Resonance (GHz)')
 
@@ -289,6 +346,8 @@ def main(name, res_descs):
     ax.scatter(mag_Bs, res_descs[:,1])
     ax.scatter(mag_Bs, res_descs[:,2])
 
+    return popt
+
 
 # %% Run the file
 
@@ -318,50 +377,50 @@ if __name__ == '__main__':
     #               [None, 2.6055, 3.1691],
     #               [None, 2.4371, 3.4539]]
 
-#    name = 'NV0_2019_06_06'
-#    res_descs = [[0.0, 2.8547, 2.8793],
-#                  [None, 2.8532, 2.8795],
-#                  [None, 2.8494, 2.8839],
-#                  [None, 2.8430, 2.8911],
-#                  [None, 2.8361, 2.8998],
-#                  [None, 2.8209, 2.9132],
-#                  [None, 2.7915, 2.9423],
-#                  [None, 2.7006, 3.0302],
-#                  [None, 2.4244, 3.3093],
-#                  [None, 2.2990, 3.4474]]  # Aligned
+    name = 'NV0_2019_06_06'
+    res_descs = [[0.0, 2.8547, 2.8793],
+                  [None, 2.8532, 2.8795],
+                  [None, 2.8494, 2.8839],
+                  [None, 2.8430, 2.8911],
+                  [None, 2.8361, 2.8998],
+                  [None, 2.8209, 2.9132],
+                  [None, 2.7915, 2.9423],
+                  [None, 2.7006, 3.0302],
+                  [None, 2.4244, 3.3093],
+                  [None, 2.2990, 3.4474]]  # Aligned
 #                  [None, 2.4993, 3.5798]]  # Accidentally misaligned
 
-#    name = 'nv2_2019_04_30'
-#    res_descs = [[0.0, 2.8584, 2.8725],
-#                   [None, 2.8507, 2.8798],
-#                   [None, 2.8434, 2.8882],
-#                   [None, 2.8380, 2.8942],
-#                   [None, 2.8379, 2.8948],
-#                   [None, 2.8308, 2.9006],
-#                   [None, 2.8228, 2.9079],
-#                   [None, 2.8155, 2.9171]]
+    # name = 'nv2_2019_04_30'
+    # res_descs = [[0.0, 2.8584, 2.8725],
+    #               [None, 2.8507, 2.8798],
+    #               [None, 2.8434, 2.8882],
+    #               [None, 2.8380, 2.8942],
+    #               [None, 2.8379, 2.8948],
+    #               [None, 2.8308, 2.9006],
+    #               [None, 2.8228, 2.9079],
+    #               [None, 2.8155, 2.9171]]
 
-#    name = 'nv2_2019_04_30_take2'
-#    res_descs = [[0.0, 2.8584, 2.8725],
-#                   [None, 2.8512, 2.8804],
-#                   [None, 2.8435, 2.8990],
-#                   [None, 2.8265, 2.9117],
-#                   [None, 2.7726, 3.0530],
-#                   [None, 2.7738, 3.4712]]
+    # name = 'nv2_2019_04_30_take2'
+    # res_descs = [[0.0, 2.8584, 2.8725],
+    #               [None, 2.8512, 2.8804],
+    #               [None, 2.8435, 2.8990],
+    #               [None, 2.8265, 2.9117],
+    #               [None, 2.7726, 3.0530],
+    #               [None, 2.7738, 3.4712]]
 
     ############ Not as nice ############
 
     # Should redo this zero-field with CWESR - 2.863 agrees excellently
-     name = 'NV16_2019_07_25'
-     res_descs = [[0.0, 2.8584, 2.8725],
-                   [None, 2.8519, 2.8690],
-                   [None, 2.8460, 2.8746],
-                   [None, 2.8337, 2.8867],
-                   [None, 2.8202, 2.9014],
-                   [None, 2.8012, 2.9292],
-                   [None, 2.7393, 3.0224],
-                   [None, 2.6995, 3.1953],
-                   [None, 2.5830, 3.3290]]
+     # name = 'NV16_2019_07_25'
+     # res_descs = [[0.0, 2.8584, 2.8725],
+     #               [None, 2.8519, 2.8690],
+     #               [None, 2.8460, 2.8746],
+     #               [None, 2.8337, 2.8867],
+     #               [None, 2.8202, 2.9014],
+     #               [None, 2.8012, 2.9292],
+     #               [None, 2.7393, 3.0224],
+     #               [None, 2.6995, 3.1953],
+     #               [None, 2.5830, 3.3290]]
 
     # Some of this data was taken after changing the magnet orientation.
     # Pretty sure the zero-field ESR is from 6/12 but we didn't name the NVs
@@ -376,10 +435,23 @@ if __name__ == '__main__':
     #               [None, 2.7948, 2.9077],
     #               [None, 2.7857, 2.9498]]
 
-    # Run the script
-    main(name, res_descs)
+    # name = 'test'
+    # res_descs = [[0.0, 2.87, None],
+    #               [None, 2.86, 2.88],
+    #               [None, 2.85, 2.89],
+    #               [None, 2.77, 2.97],
+    #               [None, 2.67, 3.07]]
+
+    # Main
+    # main(name, res_descs)
+
+    # B noise matrix elements
+    b_matrix_elements(name, res_descs)
 
     # Rotation prediction
+
+    # B matrix elements
+    # b_matrix_elements(name, res_descs)
 
     # Test plot
     # args: mag_B_range, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
