@@ -40,7 +40,8 @@ splitting_linspace = numpy.linspace(10, 2000,
 
 omega_constant_array = numpy.empty([1000]) 
 omega_constant_array[:] = numpy.average(omega_avg_list)
-
+print(numpy.average(omega_avg_list))
+print( numpy.sqrt(numpy.sum(numpy.array(omega_error_list)**2)))
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 
@@ -65,10 +66,11 @@ ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params),
 ax.plot(splitting_linspace, omega_constant_array, color = orange,
             label = r'$\Omega$', linestyle='dashed', linewidth=3)
 
-text = '\n'.join((r'$1/f^{2} + \gamma_\infty$ fit:',
-#                  r'$\alpha = $' + '%.2f'%(fit_alpha_params[1]),
-                  r'$\gamma_\infty = $' + '%.2f'%(fit_alpha_params[1]),
-                  r'$A_0 = $' + '%.0f'%(fit_alpha_params[0])
+text = '\n'.join((r'$A_0/f^{2} + \gamma_\infty$ fit:',
+#                  r'$\alpha = {} \pm {}$'.format('%.2f'%(fit_alpha_params[1]), '%.2f'%(numpy.sqrt(cov_arr[1][1]))),
+                  r'$A_0 = {} \pm {}$'.format('%.0f'%(fit_alpha_params[0]), '%.0f'%(numpy.sqrt(cov_arr[0][0]))),
+                  r'$\gamma_\infty = {} \pm {}$'.format('%.2f'%(fit_alpha_params[1]), '%.2f'%(numpy.sqrt(cov_arr[1][1]))),
+                  r'$\chi^2 = $' + '%.2f'%(chi_sq)
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
