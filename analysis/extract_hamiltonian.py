@@ -94,6 +94,45 @@ def b_matrix_elements(name, res_descs):
     # ax.legend()
 
 
+def find_B_orientation(rotated_res_desc, mag_B, par_Pi, perp_Pi, phi_Pi):
+
+    # fit_vec = [theta_B, phi_B]
+    param_bounds = ((0, pi/2), (0, 2*pi/3)
+    guess_params = (pi/3, 0)
+
+    args = (rotated_res_desc, mag_B, par_Pi, perp_Pi, phi_Pi)
+    res = minimize(chisq_func, guess_params, args=args,
+                   bounds=param_bounds, method='SLSQP')
+    if not res.success:
+        print(res.message)
+        return
+    
+    result = minimize(find_B_orientation_objective, bounds=param_bounds,
+                      args=args, method='bounded')
+
+    return result.x
+
+
+def find_B_orientation_objective(fit_vec, rotated_res_desc,
+                                 mag_B, par_Pi, perp_Pi, phi_Pi):
+    calculated_res_pair = calc_res_pair(mag_B, fit_vec[0], par_Pi, perp_Pi,
+                                        fit_vec[1], phi_Pi)
+    differences = calculated_res_pair - rotated_res_desc[1:3]
+    sum_squared_differences = numpy.sum(differences**2)
+    return sum_squared_differences
+
+
+def predict_rotation(name, res_descs, aligned_res_desc, rotated_res_desc):
+
+    popt = main(name, res_descs)  # Excluding phis
+    popt_full = numpy.append(popt, [0.0, 0.0])  # phis = 0
+
+    mag_B = find_mag_B(aligned_res_desc, *popt_full)
+    theta_B, phi_B = find_B_orientation(rotated_res_desc, *popt_full)
+
+    print(theta_B, phi_B)
+
+
 def generate_fake_data(theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
 
     fit_vec = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
@@ -446,9 +485,10 @@ if __name__ == '__main__':
     # main(name, res_descs)
 
     # B noise matrix elements
-    b_matrix_elements(name, res_descs)
+    # b_matrix_elements(name, res_descs)
 
     # Rotation prediction
+    predict_rotation(name, res_descs, rotated_res_desc)
 
     # B matrix elements
     # b_matrix_elements(name, res_descs)
