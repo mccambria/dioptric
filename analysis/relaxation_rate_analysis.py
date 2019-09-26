@@ -515,7 +515,7 @@ if __name__ == '__main__':
         
 
 
-    folder = 'nv1_2019_05_10_42MHz'
+    folder = 'nv0_2019_06_27_23MHz'
 
-
+    # folder_name, omega, omega_std, doPlot, offset
     main(folder,  None, None,  True, offset = False)
