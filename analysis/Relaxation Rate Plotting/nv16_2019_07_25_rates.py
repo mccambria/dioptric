@@ -44,6 +44,8 @@ splitting_linspace = numpy.linspace(10, 2000,
                                     1000)
 omega_constant_array = numpy.empty([1000]) 
 omega_constant_array[:] = numpy.average(nv16_omega_avg_list)
+print(numpy.average(nv16_omega_avg_list))
+print( numpy.sqrt(numpy.sum(numpy.array(nv16_omega_error_list)**2)))
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 

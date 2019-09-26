@@ -7,17 +7,17 @@ modified rate equations [(0,0) - (0,1) and (1,1) - (1,-1)] for the complete
 data set. It calculates a standard error of each data point based on the
 statistics over the number of runs. With the standard error on each point, the
 subtracted data is then fit to a single exponential. From the (0,0) - (0,1)
-exponential, we extact 3*Omega from the exponent, along with the standard 
+exponential, we extact 3*Omega from the exponent, along with the standard
 error on omega from the covariance of the fit.
 
-From the (1,1) - (1,-1) exponential, we extract (2*gamma + Omega). Using the 
+From the (1,1) - (1,-1) exponential, we extract (2*gamma + Omega). Using the
 Omega we just found, we calculate gamma and the associated standard error
 from the covariance of the fit.
 
 -User can specify if the offset should be a free parameter or if it should be
   set to 0. All our analysis of rates has been done without offset as a free
   param.
-  
+
 -If a value for omega and the omega uncertainty is passed, file will just
   evaluate gamma (t=with the omega provided).
 
@@ -55,13 +55,13 @@ def get_folder_list(keyword):
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum'
 
     folders = []
-    
+
     # r=root, d=directories, f = files
     for r, d, f in os.walk(path):
         for folder in d:
                 if keyword in folder:
                     folders.append(folder)
-    
+
     return folders
 
 # This function sorts the data from one folder of an experiment and passes it
@@ -115,7 +115,7 @@ def get_data_lists(folder_name):
                                         relaxation_time_range / 10**6
             time_array = numpy.linspace(min_relaxation_time,
                                         max_relaxation_time, num=num_steps)
-            
+
             # Calculate the average signal counts over the runs, and st. error
             avg_sig_counts = numpy.average(sig_counts[::], axis=0)
             ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
@@ -503,16 +503,16 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 # %% Run the file
 
 if __name__ == '__main__':
-    
+
 #    folder_list = get_folder_list('nv2_2019_04_30')
 #    print(folder_list)
-#    
+#
 #    for folder in folder_list:
 #        try:
 #            main(folder,  None, None,  True, offset = False)
 #        except Exception:
 #            continue
-        
+
 
 
     folder = 'nv0_2019_06_27_23MHz'

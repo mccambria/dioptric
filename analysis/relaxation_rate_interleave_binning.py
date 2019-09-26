@@ -22,7 +22,7 @@ from utils.tool_belt import States
 data_folder = 't1_double_quantum'
 
 omega =  1.2
-omega_ste = 0.6
+omega_ste = 0.3
 
 # %% Minor functions
 

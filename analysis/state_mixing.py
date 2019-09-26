@@ -31,12 +31,12 @@ inv_sqrt_2 = 1/numpy.sqrt(2)
 # NV1
 name = 'NV1'
 #B_mag = 0.05 
-B_mag = .032 # GHz
-B_theta = 0.644 # rad
+#B_mag = .032 # GHz
+B_theta = 1.2 # rad
 Pi_par = -0.005 # GHz
 Pi_perp = 0.010 # GHz
 
-#B_mag = 1.2 # GHz
+B_mag = 1.2 # GHz
 #B_mag = 0.5 # GHz
 resonant_freq = 2.4371 # GHz
 contrast = 0.16
@@ -66,7 +66,9 @@ def calc_prob_i_state(final_hamiltonian):
     '''
     
     # Calculate the eigenvalues and eigenvectros of the hamiltonian some time later
-    eigval_t, eigvec_t = eig(final_hamiltonian)
+    eigsolution  = eig(final_hamiltonian)
+    eigval_t = eigsolution[0]
+    eigvec_t = eigsolution[1]
     
     # Collect the HIGH state of this hamiltonian
     high_index = numpy.argmax(numpy.abs(eigval_t))
@@ -74,8 +76,8 @@ def calc_prob_i_state(final_hamiltonian):
     mid_value_list = list(set([0,1,2]) - set([zero_index, high_index]))
     low_index = mid_value_list[0]
     
-    HIGH_state_t = eigvec_t[high_index]
-#    print(eigvec_t[high_index])
+    HIGH_state_t = eigvec_t[:,high_index]
+#    print(HIGH_state_t)
 #    print(eig(final_hamiltonian))
     
 #    high_index = 0
@@ -93,7 +95,7 @@ def calc_prob_i_state(final_hamiltonian):
         
     # Calculate < i | psi(t) >
     prob_dens_plus = HIGH_state_t[0]
-    prob_dens_zero = HIGH_state_t[1]
+    prob_dens_zero = HIGH_state_t[1] # for some reason, 0 and -1 element in eigenvalue are switched from what I'd expect
     prob_dens_minus = HIGH_state_t[2]
         
     # Calculate the corresponding probs
@@ -152,8 +154,11 @@ if __name__ == '__main__':
     omega_Pi = 1 # rad / ms
     starting_Phi_Pi = 0.2 # rad
     
+#    B_mag = 0
+#    Pi_perp = 1
+    
     B_perp_noise = B_mag * 1
-    Pi_perp_noise = Pi_perp * 1
+    Pi_perp_noise = Pi_perp * 2
 #    Pi_perp_noise = 1 * B_perp_noise
     
 #    tau = numpy.linspace(10.75, 10.77, 10)

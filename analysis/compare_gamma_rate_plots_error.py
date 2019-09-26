@@ -14,8 +14,8 @@ from scipy import exp
 
 # %%
 
-def exp_eq_offset(t, rate, amp, offset):
-    return offset + amp * exp(- rate * t)
+def exp_eq_offset(t, rate, amp):
+    return  amp * exp(- rate * t)
 
 # %%
     
@@ -23,27 +23,28 @@ num_runs = 20
 omega = 0.34
 omega_unc = 0.07
 
-file = '28.9_MHz_splitting_1_bins_error'
-folder = 'nv2_2019_04_30_29MHz_5'
+file = '29.1_MHz_splitting_rate_analysis'
+folder = 'nv2_2019_04_30_29MHz'
 data_f = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
-gamma_f = 35.0
-gamma_unc_f = 1.1
+gamma_f = 18.7
+gamma_unc_f = 0.3*2
 
-file = '29.1_MHz_splitting_1_bins_error'
-folder = 'nv2_2019_04_30_29MHz_6'
+file = '29.2_MHz_splitting_rate_analysis'
+folder = 'nv2_2019_04_30_29MHz_2'
 data_s = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
-gamma_s = 28.9
-gamma_unc_s = 1.0
+gamma_s = 31.1
+gamma_unc_s = 0.4*2
 
 # %%
 
 counts_f = data_f['plus_relaxation_counts']
-error_f = numpy.array(data_f['plus_relaxation_error']) / numpy.sqrt(num_runs)
+error_f = numpy.array(data_f['plus_relaxation_ste']) / numpy.sqrt(num_runs)
 counts_s = data_s['plus_relaxation_counts'] 
-error_s = numpy.array(data_s['plus_relaxation_error'])  / numpy.sqrt(num_runs)
+error_s = numpy.array(data_s['plus_relaxation_ste'])  / numpy.sqrt(num_runs)
 
-time = data_f['plus_plus_time']
-time_linspace = numpy.linspace(time[0], time[-1], 1000)
+time_f = data_f['plus_plus_time']
+time_linspace = numpy.linspace(time_f[0], time_f[-1], 1000)
+time_s = data_s['plus_plus_time']
 
 opti_params_f = data_f['gamma_opti_params']
 opti_params_s = data_s['gamma_opti_params']
@@ -51,7 +52,7 @@ opti_params_s = data_s['gamma_opti_params']
 # Plot
 fig, ax = plt.subplots(1, 1, figsize=(11, 8.5))
 
-ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
+ax.errorbar(time_f, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
             fmt = '.', color = 'blue')
 yfit = exp_eq_offset(time_linspace, *opti_params_f)
 ax.plot(time_linspace, yfit, '-', color='blue')
@@ -65,7 +66,7 @@ ax.fill_between(time_linspace, yupper,  ylower,
                  color='blue', alpha=0.2)
 
 
-ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
+ax.errorbar(time_s, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
             fmt = '.', color = 'red')
 
 yfit = exp_eq_offset(time_linspace, *opti_params_s)
@@ -82,6 +83,7 @@ ax.fill_between(time_linspace, yupper,  ylower,
 ax.set_xlabel('Relaxation time (ms)')
 ax.set_ylabel('Contrast (arb. units)')
 ax.legend()
+ax.set_title('Compare NV2 29 MHz measurements')
 
 fig.canvas.draw()
 fig.canvas.flush_events()
