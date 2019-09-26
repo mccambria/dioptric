@@ -39,13 +39,13 @@ def main(cxn, aom_on_time, aom_off_time, laser_pwr_voltage):
 #    cxn.pulse_streamer.stream_immediate(file_name, 3, seq_args_string)
     
 def on_589(cxn):
-    cxn.pulse_streamer.constant(5)
+    cxn.pulse_streamer.constant([],0.0, 1.0)
     
 def on_638(cxn):
     cxn.pulse_streamer.constant(4)
     
 def off(cxn):
-    cxn.pulse_streamer.constant(1)
+    cxn.pulse_streamer.constant([],0.0, 0.0)
     
 
     
@@ -58,14 +58,14 @@ if __name__ == '__main__':
     try:
         
         with labrad.connect() as cxn:
-            main(cxn, 1000, 1000, 1.0)
+#            main(cxn, 1000, 1000, 1.0)
             
             
 #            on_589(cxn)
             
 #            on_638(cxn)
             
-#            off(cxn)
+            off(cxn)
         
     finally:
         # Kill safe stop

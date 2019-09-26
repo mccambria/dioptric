@@ -24,7 +24,7 @@ import utils.image_processing as image_processing
 
 directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\2019_09\\'
 
-file_name = '2019-09-22-15_05_55-ayrton12-search.txt'
+file_name = '2019-09-22-18_55_51-ayrton12-search.txt'
 
 file_path = directory + file_name
 
