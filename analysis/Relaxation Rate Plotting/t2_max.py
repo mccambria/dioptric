@@ -260,3 +260,34 @@ plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 #fig4.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3d_inset.pdf", bbox_inches='tight')
 
+
+# %%
+fig5, ax = plt.subplots(1, 1, figsize=(8, 8))
+ax.errorbar(nv13_splitting_list, T2_max_13, yerr = T2_max_error_13, 
+            label = 'NV0',  color= nv0_color, fmt='D',markersize = 20, elinewidth=4)
+
+#print(numpy.average(T2_max_traditional_13))
+
+ax.tick_params(which = 'both', length=14, width=3, colors='k',
+                grid_alpha=0.7, labelsize = font_size)
+
+ax.tick_params(which = 'major', length=20, width=5)
+
+ax.set_yscale("log", nonposy='clip')
+ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
+
+ax.grid(lw=3)
+plt.xlabel('Splitting (MHz)', fontsize=font_size)
+plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
+
+#ax.set_xlim([-20,1100])
+#ax.set_ylim([-0.1,2.3])
+
+#ax.set_xscale("log", nonposx='clip')
+
+
+#ax.legend(fontsize=18)
+
+fig5.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/NV13_inset.pdf", bbox_inches='tight')
+
+

@@ -31,12 +31,12 @@ inv_sqrt_2 = 1/numpy.sqrt(2)
 # NV1
 name = 'NV1'
 #B_mag = 0.05 
-B_mag = .032 # GHz
-B_theta = 0.644 # rad
+#B_mag = .032 # GHz
+B_theta = 1.2 # rad
 Pi_par = -0.005 # GHz
 Pi_perp = 0.010 # GHz
 
-#B_mag = 1.2 # GHz
+B_mag = 1.2 # GHz
 #B_mag = 0.5 # GHz
 resonant_freq = 2.4371 # GHz
 contrast = 0.16

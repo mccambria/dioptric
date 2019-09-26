@@ -426,21 +426,21 @@ if __name__ == '__main__':
 #                   [None, 2.2990, 3.4474]]  # Aligned
 #                  [None, 2.4993, 3.5798]]  # Accidentally misaligned
 
-    name = 'nv2_2019_04_30'
-    res_descs = [[0.0, 2.8584, 2.8725],
-                   [None, 2.8507, 2.8798],
-                   [None, 2.8434, 2.8882],
-                   [None, 2.8380, 2.8942],
-                   [None, 2.8379, 2.8948],
-                   [None, 2.8308, 2.9006],
-                   [None, 2.8228, 2.9079],
-                   [None, 2.8155, 2.9171]
-                      
-                   ,[None, 2.8512, 2.8804],
-                   [None, 2.8435, 2.8990],
-                   [None, 2.8265, 2.9117],
-                   [None, 2.7726, 3.0530],
-                   [None, 2.7738, 3.4712]]
+#    name = 'nv2_2019_04_30'
+#    res_descs = [[0.0, 2.8584, 2.8725],
+#                   [None, 2.8507, 2.8798],
+#                   [None, 2.8434, 2.8882],
+#                   [None, 2.8380, 2.8942],
+#                   [None, 2.8379, 2.8948],
+#                   [None, 2.8308, 2.9006],
+#                   [None, 2.8228, 2.9079],
+#                   [None, 2.8155, 2.9171]
+#                      
+#                   ,[None, 2.8512, 2.8804],
+#                   [None, 2.8435, 2.8990],
+#                   [None, 2.8265, 2.9117],
+#                   [None, 2.7726, 3.0530],
+#                   [None, 2.7738, 3.4712]]
 
     # name = 'nv2_2019_04_30_take2'
 #    res_descs = [[0.0, 2.8584, 2.8725],
@@ -465,15 +465,15 @@ if __name__ == '__main__':
     # Some of this data was taken after changing the magnet orientation.
     # Pretty sure the zero-field ESR is from 6/12 but we didn't name the NVs
     # consistently then. We'll have to match it by coordinates.
-#    name = 'nv13_2019_06_10'
-#    res_descs = [[None, 2.8289, 2.8520],
-##                   [None, 2.8266, 2.8546], 
-##                   [None, 2.8262, 2.8556], 
-#                   [None, 2.8247, 2.8545],
-#                   [None, 2.8174, 2.8693],
-#                   [None, 2.8082, 2.8806],
-#                   [None, 2.7948, 2.9077],
-#                   [None, 2.7857, 2.9498]]
+    name = 'nv13_2019_06_10'
+    res_descs = [[None, 2.8289, 2.8520],
+#                   [None, 2.8266, 2.8546], 
+#                   [None, 2.8262, 2.8556], 
+                   [None, 2.8247, 2.8545],
+                   [None, 2.8174, 2.8693],
+                   [None, 2.8082, 2.8806],
+                   [None, 2.7948, 2.9077],
+                   [None, 2.7857, 2.9498]]
 
     # name = 'test'
     # res_descs = [[0.0, 2.87, None],
