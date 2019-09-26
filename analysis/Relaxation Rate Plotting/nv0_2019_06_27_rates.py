@@ -27,11 +27,19 @@ import matplotlib.pyplot as plt
 #import numpy
 
 # The data
-nv0_splitting_list = [23.9, 125.9, 128.1, 233.2]
-nv0_omega_avg_list = [0.065, 0.057, 0.059, 0.046]
-nv0_omega_error_list = [0.013, 0.010, 0.014, 0.008]
-nv0_gamma_avg_list = [0.15, 0.139, 0.13, 0.13]
-nv0_gamma_error_list = [0.03, 0.014, 0.02, 0.02]
+sample_name = 'NV 0'
+splitting_list = [23.9, 125.9, 128.1, 233.2]
+omega_avg_list = [0.063, 0.053, 0.059, 0.061]
+omega_error_list = [0.009, 0.003, 0.006, 0.006]
+gamma_avg_list = [0.127, 0.111, 0.144, 0.132]
+gamma_error_list = [0.023, 0.009, 0.025, 0.017]
+
+# sample_name = 'NV 1'
+# splitting_list = [129.7]
+# omega_avg_list = [0.060]
+# omega_error_list = [0.004]
+# gamma_avg_list = [0.114]
+# gamma_error_list = [0.012]
 
 # Try to fit the gamma to a 1/f^2
 
@@ -48,18 +56,23 @@ nv0_gamma_error_list = [0.03, 0.014, 0.02, 0.02]
 #                                    1000)
 
 
-fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+font = {'size': 14}
+plt.rc('font', **font)
+fig, ax = plt.subplots(figsize=(8.5, 8.5))
+fig.set_tight_layout(True)
 
 #ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list)
 
 axis_font = {'size':'14'}
 
-ax.set_xscale("log", nonposx='clip')
-ax.set_yscale("log", nonposy='clip')
-ax.errorbar(nv0_splitting_list, nv0_gamma_avg_list, yerr = nv0_gamma_error_list, 
+# ax.set_xscale("log", nonposx='clip')
+# ax.set_yscale("log", nonposy='clip')
+ax.errorbar(splitting_list, gamma_avg_list, yerr = gamma_error_list,
             label = r'$\gamma$', fmt='o', color='blue')
-ax.errorbar(nv0_splitting_list, nv0_omega_avg_list, yerr = nv0_omega_error_list, 
+ax.errorbar(splitting_list, omega_avg_list, yerr = omega_error_list,
             label = r'$\Omega$', fmt='o', color='red')
+# ax.set_xlim(left=0.0)
+ax.set_ylim(bottom=0.0)
 
 #ax.plot(splitting_linspace, fit_eq_2(splitting_linspace, *fit_2_params), 
 #            label = r'$f^{-2}$', color ='teal')
@@ -83,14 +96,13 @@ ax.errorbar(nv0_splitting_list, nv0_omega_avg_list, yerr = nv0_omega_error_list,
 
 # %%
 
-ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                grid_alpha=0.7, labelsize = 18)
+ax.tick_params(which = 'both', length=6, width=2, colors='k', grid_alpha=0.7)
 
 ax.tick_params(which = 'major', length=12, width=2)
 
 ax.grid()
 
-plt.xlabel('Splitting (MHz)', fontsize=18)
-plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-plt.title('Bulk Diamond, NV 0', fontsize=18)
-ax.legend(fontsize=18)
+ax.set_ylabel('Relaxation Rate (kHz)')
+ax.set_xlabel('Splitting (MHz)')
+ax.set_title('Bulk Diamond, {}'.format(sample_name))
+ax.legend()

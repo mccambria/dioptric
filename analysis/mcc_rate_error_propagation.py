@@ -39,42 +39,40 @@ def main(gammas, gamma_errors, omegas, omega_errors):
 
     # Gamma omega ratios
     gamma_omega_ratios = gammas / omegas
-    print(numpy.std(gamma_omega_ratios, ddof=1) / numpy.sqrt(len(gamma_omega_ratios)))
     rel_squared_errors = (gamma_errors/gammas)**2 + (omega_errors/omegas)**2
     gamma_omega_ratio_errors = gamma_omega_ratios * numpy.sqrt(rel_squared_errors)
-
-    print(gamma_omega_ratios)
-    print(gamma_omega_ratio_errors)
 
     # Weighted mean gamma_omega_ratio
     weights = gamma_omega_ratio_errors**-2  # Inverse squared error
     mean_gamma_omega_ratio = numpy.sum(gamma_omega_ratios*weights)
     mean_gamma_omega_ratio /= numpy.sum(weights)
-    print(mean_gamma_omega_ratio)
 
     # gamma_omega_ratio standard error
     mean_gamma_omega_ratio_ste_direct = numpy.std(gamma_omega_ratios, ddof=1)
     mean_gamma_omega_ratio_ste_direct /=  numpy.sqrt(len(gamma_omega_ratios))
-    print(mean_gamma_omega_ratio_ste_direct)
     mean_gamma_omega_ratio_ste_prop = numpy.sqrt((numpy.sum(weights))**-1)
-    print(mean_gamma_omega_ratio_ste_prop)
+
+    print('gamma_omega_ratios: {}'.format(gamma_omega_ratios))
+    print('gamma_omega_ratio_errors: {}'.format(gamma_omega_ratio_errors))
 
     # d_perp_prime calculation
     ratio = mean_gamma_omega_ratio
     ratio_unc = mean_gamma_omega_ratio_ste_prop
+    print('mean_gamma_omega_ratio: {}'.format(mean_gamma_omega_ratio))
+    print('mean_gamma_omega_ratio_ste_prop: {}'.format(mean_gamma_omega_ratio_ste_prop))
     d_parallel = 0.35
     d_parallel_unc = 0.02
     d_perp = 17
     d_perp_unc = 3
     d_perp_prime = d_parallel**2 + sqrt_2*d_parallel*d_perp + d_perp**2
     d_perp_prime = numpy.sqrt((mean_gamma_omega_ratio / 2) * d_perp_prime)
-    print(d_perp_prime)
+    print('d_perp_prime: {}'.format(d_perp_prime))
     d_perp_prime_unc = ((1/2)*(d_parallel**2 + sqrt_2*d_parallel*d_perp + d_perp**2))**2 * ratio_unc**2
     d_perp_prime_unc += (ratio*d_parallel + sqrt_2*ratio*d_perp/2)**2 * d_parallel_unc**2
     d_perp_prime_unc += (sqrt_2*ratio*d_parallel/2 + ratio*d_perp)**2 * d_perp_unc**2
     d_perp_prime_unc *= (1/(2*d_perp_prime))**2
     d_perp_prime_unc = numpy.sqrt(d_perp_prime_unc)
-    print(d_perp_prime_unc)
+    print('d_perp_prime_unc: {}'.format(d_perp_prime_unc))
 
 
 # %% Run the file
