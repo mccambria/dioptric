@@ -200,8 +200,8 @@ def get_data_lists(folder_name):
                         zero_plus_time = numpy.concatenate(time_array, zero_plus_time)
 
 
-            if init_state_name == high_state_name and \
-                                read_state_name == high_state_name:
+            if init_state_name == low_state_name and \
+                                read_state_name == low_state_name:
                 if plus_plus_bool == False:
                     plus_plus_counts = norm_avg_sig
                     plus_plus_ste = norm_avg_sig_ste
@@ -225,8 +225,8 @@ def get_data_lists(folder_name):
                                                           plus_plus_ste))
                         plus_plus_time = numpy.concatenate((time_array, plus_plus_time))
 
-            if init_state_name == high_state_name and \
-                                read_state_name == low_state_name:
+            if init_state_name == low_state_name and \
+                                read_state_name == high_state_name:
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']
@@ -437,7 +437,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                     'r', label = 'fit')
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(+1,+1) - (+1,-1)')
+            ax.set_title('(-1,-1) - (-1,+1)')
             ax.legend()
             text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma,
                   '%.3f'%gamma_ste)
@@ -517,5 +517,5 @@ if __name__ == '__main__':
     folder = 'nv2_2019_04_30_15MHz'
 
     # folder_name, omega, omega_std, doPlot, offset
-    main(folder,  None, None,  True, offset = False)
+    main(folder,  None, None,  True, offset = True)
 

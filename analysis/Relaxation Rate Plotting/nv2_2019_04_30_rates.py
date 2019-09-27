@@ -27,18 +27,18 @@ import numpy
 from scipy.stats import chisquare
 
 # The data
-nv2_splitting_list = [29.1, 44.8, 56.2, 56.9,  101.6]
+nv2_splitting_list = [ 29.1, 44.8, 56.2, 56.9,  101.6]
 nv2_omega_avg_list = [0.412, 0.356, 0.326, 0.42,  0.312]
-nv2_omega_error_list = [0.011, 0.012, 0.008, 0.05,  0.009]
+nv2_omega_error_list = [ 0.011, 0.012, 0.008, 0.05,  0.009]
 nv2_gamma_avg_list = [18.7, 6.43, 3.64, 3.77,  1.33]
 nv2_gamma_error_list = [0.3, 0.12, 0.08, 0.09,  0.05]
 
 # Data for the second round of measurements
-nv2_splitting_list_2 = [29.2, 45.5, 85.2, 280.4,697.4]
-nv2_omega_avg_list_2 = [0.328, 0.266, 0.285, 0.276, 0.29]
-nv2_omega_error_list_2 = [0.013, 0.01, 0.011, 0.011, 0.02]
-nv2_gamma_avg_list_2 = [31.1, 8.47, 2.62, 0.443, 0.81]
-nv2_gamma_error_list_2 = [0.4, 0.11, 0.05, 0.014, 0.06]
+nv2_splitting_list_2 = [15.3,29.2, 45.5, 85.2, 280.4,697.4]
+nv2_omega_avg_list_2 = [0.24, 0.328, 0.266, 0.285, 0.276, 0.29]
+nv2_omega_error_list_2 = [0.02, 0.013, 0.01, 0.011, 0.011, 0.02]
+nv2_gamma_avg_list_2 = [135, 31.1, 8.47, 2.62, 0.443, 0.81]
+nv2_gamma_error_list_2 = [5, 0.4, 0.11, 0.05, 0.014, 0.06]
 
 nv2_splitting_list_all = nv2_splitting_list + nv2_splitting_list_2
 nv2_omega_avg_list_all = nv2_omega_avg_list + nv2_omega_avg_list_2
