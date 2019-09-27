@@ -47,7 +47,7 @@ file_name_list = [
                     'branch_time-tagger-counter/2019-06-04_18-36-53_ayrton12.txt', # NV0
                     '2019-06-10_22-52-19_ayrton12.txt' # NV13
                   ]
-
+title = ['NV1', 'NV2', 'NV3', 'NV4', 'NV5']
 fig , axes = plt.subplots(3, 2, figsize=(16, 16))
 r_ind = 0
 c_ind = 0
@@ -73,16 +73,17 @@ for i in range(len(file_name_list)):
     g2_zero, inf_delay_diff = calculate_relative_g2_zero(hist)
     print(g2_zero)
     ax = axes[r_ind, c_ind]
-    
+
     ax.plot(bin_centers / 1000, hist/inf_delay_diff, label = 'NV{}'.format(i+1))
+    ax.set_xlabel('Delay time (ns)', fontsize=20)
+    ax.set_ylabel(r'$g^{2}(\tau)$', fontsize=20)
+    ax.set_title(title[i], fontsize=24)
     ax.tick_params(which = 'both', length=10, width=2, colors='k',
                     grid_alpha=0.7, labelsize = 20)
-    plt.xlabel('Delay time (ns)', fontsize=20)
-    plt.ylabel(r'$g^{2}(\tau)$', fontsize=20)
-    
+
     #ax.tick_params(which = 'major', length=10, width=1)
     ax.set_ylim(bottom=0, top = 1.5)
-    ax.legend(fontsize=20)
+#    ax.legend(fontsize=20)
 #    except Exception:
 #        continue
     
@@ -93,7 +94,9 @@ for i in range(len(file_name_list)):
         c_ind = 0
         
 fig.delaxes(axes[2][1])
-
+fig.canvas.draw()
+fig.canvas.flush_events()
+fig.tight_layout()
 fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/g2_figure.pdf", bbox_inches='tight')
     
 

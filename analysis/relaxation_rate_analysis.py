@@ -270,7 +270,7 @@ def get_data_lists(folder_name):
     return omega_exp_list, gamma_exp_list, num_runs, splitting_MHz
 # %% Main
 
-def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = True):
+def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = True):
 
     # Get the file list from the folder
     omega_exp_list, gamma_exp_list, \
@@ -285,7 +285,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
     gamma_fit_failed = False
 
     # If omega value is passed into the function, skip the omega fitting.
-    if omega is not None and omega_std is not None:
+    if omega is not None and omega_ste is not None:
         omega_opti_params = numpy.array([None])
         zero_relaxation_counts = numpy.array([None])
         zero_relaxation_ste = numpy.array([None])
@@ -515,7 +515,7 @@ if __name__ == '__main__':
         
 
 
-    folder = 'nv2_2019_04_30_29MHz'
+    folder = 'nv2_2019_04_30_15MHz'
 
 
-    main(folder,  None, None,  True, offset = False)
+    main(folder,  None, None,  True, offset = True)

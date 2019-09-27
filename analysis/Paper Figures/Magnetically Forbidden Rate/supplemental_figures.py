@@ -13,11 +13,26 @@ import matplotlib.pyplot as plt
 from utils.tool_belt import States
 from scipy import exp
 
-# %%
+# %% equations
 def exp_eq(t, rate, amp):
     return  amp * exp(- rate * t)
 
 # %%
+    
+def omega_comparison(save=False):
+    return
+
+# %%
+    
+def 1_hour_rates(save = False):
+    return
+# %%
+    
+def rate_comaprison(save=False):
+    return
+
+# %%
+    
 def subtraction_plot(save=False):
     
     text_font = 16
@@ -174,5 +189,7 @@ def all_9_meas(save=False):
 if __name__ == '__main__':
         
 #    all_9_meas()
-    subtraction_plot(True)    
-        
+#    subtraction_plot(True) 
+#    omega_comparison()
+#    1_hour_rates()
+#    rate_comaprison()
