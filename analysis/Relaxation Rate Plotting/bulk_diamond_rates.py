@@ -29,29 +29,29 @@ import matplotlib.pyplot as plt
 
 # The data at around one splitting
 NV0_opt_splitting_list = [125.9]
-NV0_opt_omega_avg_list = [0.057]
-NV0_opt_omega_error_list = [0.010]
-NV0_opt_gamma_avg_list = [0.139]
-NV0_opt_gamma_error_list = [0.014]
+NV0_opt_omega_avg_list = [0.053]
+NV0_opt_omega_error_list = [0.003]
+NV0_opt_gamma_avg_list = [0.111]
+NV0_opt_gamma_error_list = [0.009]
 
 NV0_mis_splitting_list = [128.1]
 NV0_mis_omega_avg_list = [0.059]
-NV0_mis_omega_error_list = [0.014]
-NV0_mis_gamma_avg_list = [0.13]
-NV0_mis_gamma_error_list = [0.02]
+NV0_mis_omega_error_list = [0.006]
+NV0_mis_gamma_avg_list = [0.144]
+NV0_mis_gamma_error_list = [0.025]
 
 nv1_splitting_list = [129.7]
-nv1_omega_avg_list = [0.058]
-nv1_omega_error_list = [0.008]
-nv1_gamma_avg_list = [0.11]
-nv1_gamma_error_list = [0.02]
+nv1_omega_avg_list = [0.060]
+nv1_omega_error_list = [0.004]
+nv1_gamma_avg_list = [0.114]
+nv1_gamma_error_list = [0.012]
 
 # The data of NV_0
 nv0_splitting_list = [23.9, 125.9, 233.2]
-nv0_omega_avg_list = [0.065, 0.057, 0.046]
-nv0_omega_error_list = [0.013, 0.010, 0.008]
-nv0_gamma_avg_list = [0.15, 0.139,0.13]
-nv0_gamma_error_list = [0.03, 0.014, 0.02]
+nv0_omega_avg_list = [0.063, 0.053, 0.061]
+nv0_omega_error_list = [0.009, 0.003, 0.006]
+nv0_gamma_avg_list = [0.127, 0.111, 0.132]
+nv0_gamma_error_list = [0.023, 0.009, 0.017]
 
 # Fig with just the magnet optimized data from NV0
 
