@@ -13,8 +13,11 @@ Created on Sun Jun 16 11:22:40 2019
 
 import analysis.extract_hamiltonian as extract_hamiltonian
 from scipy.optimize import minimize_scalar
+import numpy
 from numpy import pi
+import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 
 # %% Constants
@@ -69,11 +72,13 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     # at the same splitting. The matrix elements are ordered:
     # zero_to_low_el, zero_to_high_el, low_to_high_el
     aligned_rotated_dq_ratios = []
-    noise_mag_Bs = numpy.linspace(0.002, 0.100, 100)
+    noise_mag_Bs = numpy.linspace(0.0, 0.100, 100)
     phis = numpy.linspace(0, 2*pi, 100)
 
     x_vals = [[mag_B*numpy.cos(phi) for phi in phis] for mag_B in noise_mag_Bs]
+    x_vals = numpy.array(x_vals)
     y_vals = [[mag_B*numpy.sin(phi) for phi in phis] for mag_B in noise_mag_Bs]
+    y_vals = numpy.array(y_vals)
 
     for noise_mag_B in noise_mag_Bs:
 
@@ -96,11 +101,15 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
 
         aligned_rotated_dq_ratios.append(row)
 
-    fig, ax = plt.subplots(figsize=(8.5, 8.5), projection='3d')
+    aligned_rotated_dq_ratios = numpy.array(aligned_rotated_dq_ratios)
+
+    fig = plt.figure(figsize=(8.5, 8.5))
+    ax = fig.add_subplot(111, projection='3d')
     fig.set_tight_layout(True)
     ax.set_title('Aligned / rotated DQ ratios for varying B noise magnitude')
-    ax.plot(noise_mag_Bs, aligned_rotated_dq_ratios)
-    ax.plot_surface(x_vals, y_vals, aligned_rotated_dq_ratios)
+    # ax.plot(noise_mag_Bs, aligned_rotated_dq_ratios)
+    ax.plot_surface(x_vals, y_vals, aligned_rotated_dq_ratios,
+                    cmap=cm.coolwarm)
     ax.set_xlabel('B noise magnitude (GHz)')
     ax.set_ylabel('Aligned / rotated DQ matrix element ratio')
 
