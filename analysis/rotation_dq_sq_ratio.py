@@ -14,6 +14,7 @@ Created on Sun Jun 16 11:22:40 2019
 import analysis.extract_hamiltonian as extract_hamiltonian
 from scipy.optimize import minimize_scalar
 from numpy import pi
+from mpl_toolkits.mplot3d import Axes3D
 
 
 # %% Constants
@@ -26,7 +27,7 @@ def find_mag_B_splitting_objective(x, splitting,
                                    theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     calculated_res_pair = extract_hamiltonian.calc_res_pair(x,
                                     theta_B, par_Pi, perp_Pi, phi_B, phi_Pi)
-    calculated_splitting = calculated_res_pair[2] - calculated_res_pair[1]
+    calculated_splitting = calculated_res_pair[1] - calculated_res_pair[0]
     return (splitting - calculated_splitting)**2
 
 
@@ -41,6 +42,7 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     # Get the aligned Hamiltonian parameters
     # popt = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
     aligned_popt = extract_hamiltonian.main(name, res_descs)
+    # aligned_popt = (0,-0.006,0.011,0,0)
 
     # Find mag_B at the point we misaligned the field
     rotated_mag_B = extract_hamiltonian.find_mag_B(aligned_res_desc,
@@ -53,6 +55,7 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
 
     rotated_popt = (theta_B, aligned_popt[1], aligned_popt[2],
                     phi_B, aligned_popt[4])
+    # rotated_popt = (pi/2,-0.006,0.011,0,0)
 
     rotated_splitting = rotated_res_desc[2] - rotated_res_desc[1]
 
@@ -65,22 +68,41 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     # Now let's get the matrix elements of the aligned and rotated cases form
     # at the same splitting. The matrix elements are ordered:
     # zero_to_low_el, zero_to_high_el, low_to_high_el
-    noise_params = [0.20, pi/4, 0.0, 0.0, 0.0, 0.0]
-    noise_hamiltonian = extract_hamiltonian.calc_hamiltonian(*noise_params)
-    aligned_mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
-                                                 aligned_mag_B, *aligned_popt)
-    rotated_mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
-                                                 rotated_mag_B, *rotated_popt)
+    aligned_rotated_dq_ratios = []
+    noise_mag_Bs = numpy.linspace(0.002, 0.100, 100)
+    phis = numpy.linspace(0, 2*pi, 100)
 
-    aligned_factors = [numpy.abs(el)**2 for el in aligned_mat_els]
-    rotated_factors = [numpy.abs(el)**2 for el in rotated_mat_els]
+    x_vals = [[mag_B*numpy.cos(phi) for phi in phis] for mag_B in noise_mag_Bs]
+    y_vals = [[mag_B*numpy.sin(phi) for phi in phis] for mag_B in noise_mag_Bs]
 
-    # SQ uses zero_to_high
-    aligned_dq_sq_ratio = aligned_factors[2] / aligned_factors[1]
-    rotated_dq_sq_ratio = rotated_factors[2] / rotated_factors[1]
+    for noise_mag_B in noise_mag_Bs:
 
-    print('aligned_dq_sq_ratio: {}'.format(aligned_dq_sq_ratio))
-    print('rotated_dq_sq_ratio: {}'.format(rotated_dq_sq_ratio))
+        row = []
+
+        for phi in phis:
+
+            noise_params = [noise_mag_B, pi/2, 0.0, 0.0, phi, 0.0]
+            noise_hamiltonian = extract_hamiltonian.calc_hamiltonian(*noise_params)
+            aligned_mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
+                                                         aligned_mag_B, *aligned_popt)
+            rotated_mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
+                                                         rotated_mag_B, *rotated_popt)
+        
+            aligned_factors = [numpy.abs(el)**2 for el in aligned_mat_els]
+            rotated_factors = [numpy.abs(el)**2 for el in rotated_mat_els]
+    
+            ratio = aligned_factors[2] / rotated_factors[2]
+            row.append(rotated_factors[2])
+
+        aligned_rotated_dq_ratios.append(row)
+
+    fig, ax = plt.subplots(figsize=(8.5, 8.5), projection='3d')
+    fig.set_tight_layout(True)
+    ax.set_title('Aligned / rotated DQ ratios for varying B noise magnitude')
+    ax.plot(noise_mag_Bs, aligned_rotated_dq_ratios)
+    ax.plot_surface(x_vals, y_vals, aligned_rotated_dq_ratios)
+    ax.set_xlabel('B noise magnitude (GHz)')
+    ax.set_ylabel('Aligned / rotated DQ matrix element ratio')
 
 
 # %% Run the file
