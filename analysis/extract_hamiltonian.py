@@ -54,8 +54,8 @@ def calc_b_matrix_elements(noise_hamiltonian,
 
 def b_matrix_elements(name, res_descs):
 
-    sq_allow_factor = []  # zero to low
-    dq_allow_factor = []  # low to high
+    sq_allow_factors = []  # zero to low
+    dq_allow_factors = []  # low to high
 
     zero_zero_comps = []
     low_zero_comps = []
@@ -78,19 +78,16 @@ def b_matrix_elements(name, res_descs):
                                           mag_B, *popt_full)
         zero_to_low_el, zero_to_high_el, low_to_high_el = ret_vals
 
-        sq_mat_els.append(numpy.abs(sq_mat_el))
+        sq_allow_factors.append(numpy.abs(zero_to_low_el)**2)
+        dq_allow_factors.append(numpy.abs(low_to_high_el)**2)
 
-        dq_mat_el = numpy.matmul(noise_hamiltonian, vecs[2])
-        dq_mat_el = numpy.matmul(numpy.transpose(vecs[1]), dq_mat_el)
-        dq_mat_els.append(numpy.abs(dq_mat_el))
-
-    sq_mat_els = numpy.array(sq_mat_els)
-    dq_mat_els = numpy.array(dq_mat_els)
+    sq_allow_factors = numpy.array(sq_allow_factors)
+    dq_allow_factors = numpy.array(dq_allow_factors)
 
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
     fig.set_tight_layout(True)
     ax.set_title('Generating fit vector: {}'.format(name))
-    ax.semilogy(smooth_mag_Bs, dq_mat_els/sq_mat_els)
+    ax.semilogy(smooth_mag_Bs, dq_allow_factors/sq_allow_factors)
     ax.set_xlabel('B magnitude (GHz)')
     ax.set_ylabel('DQ/SQ rate ratio')
 
@@ -136,7 +133,8 @@ def find_B_orientation_objective(fit_vec, rotated_res_desc,
     return sum_squared_differences
 
 
-def predict_rotation(name, res_descs, aligned_res_desc, rotated_res_desc):
+def extract_rotated_hamiltonian(name, res_descs,
+                                aligned_res_desc, rotated_res_desc):
 
     popt = main(name, res_descs)  # Excluding phis
     # popt_full = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
@@ -146,7 +144,7 @@ def predict_rotation(name, res_descs, aligned_res_desc, rotated_res_desc):
     theta_B, phi_B = find_B_orientation(rotated_res_desc, mag_B,
                                 popt_full[1], popt_full[2], popt_full[4])
 
-    print(theta_B, phi_B)
+    return theta_B, phi_B
 
 
 def generate_fake_data(theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
@@ -401,7 +399,8 @@ def main(name, res_descs):
     ax.scatter(mag_Bs, res_descs[:,1])
     ax.scatter(mag_Bs, res_descs[:,2])
 
-    return popt
+    # Return the full 5 parameters
+    return numpy.append(popt, [0.0, 0.0])
 
 
 # %% Run the file
