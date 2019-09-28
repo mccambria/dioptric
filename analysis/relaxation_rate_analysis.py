@@ -43,8 +43,11 @@ data_folder = 't1_double_quantum'
 # %% Functions
 
 # The exponential function without an offset
-def exp_eq(t, rate, amp):
+def exp_eq_omega(t, rate, amp):
     return  amp * exp(- rate * t)
+
+def exp_eq_gamma(t, rate, amp):
+    return  amp * exp(- rate * t) + 0.037
 
 # The exponential function with an offset
 def exp_eq_offset(t, rate, amp, offset):
@@ -270,7 +273,7 @@ def get_data_lists(folder_name):
     return omega_exp_list, gamma_exp_list, num_runs, splitting_MHz
 # %% Main
 
-def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = True):
+def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = True):
 
     # Get the file list from the folder
     omega_exp_list, gamma_exp_list, \
@@ -285,7 +288,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
     gamma_fit_failed = False
 
     # If omega value is passed into the function, skip the omega fitting.
-    if omega is not None and omega_std is not None:
+    if omega is not None and omega_ste is not None:
         omega_opti_params = numpy.array([None])
         zero_relaxation_counts = numpy.array([None])
         zero_relaxation_ste = numpy.array([None])
@@ -315,7 +318,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 
             else:
                 init_params = tuple(init_params_list)
-                omega_opti_params, cov_arr = curve_fit(exp_eq, zero_zero_time,
+                omega_opti_params, cov_arr = curve_fit(exp_eq_omega, zero_zero_time,
                                              zero_relaxation_counts, p0 = init_params,
                                              sigma = zero_relaxation_ste,
                                              absolute_sigma=True)
@@ -354,7 +357,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                         'r', label = 'fit')
                 else:
                     ax.plot(zero_time_linspace,
-                        exp_eq(zero_time_linspace, *omega_opti_params),
+                        exp_eq_omega(zero_time_linspace, *omega_opti_params),
                         'r', label = 'fit')
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
@@ -394,7 +397,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 
         else:
             init_params = tuple(init_params_list)
-            gamma_opti_params, cov_arr = curve_fit(exp_eq,
+            gamma_opti_params, cov_arr = curve_fit(exp_eq_gamma,
                              plus_plus_time, plus_relaxation_counts,
                              p0 = init_params, sigma = plus_relaxation_ste,
                              absolute_sigma=True)
@@ -433,11 +436,11 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
                     'r', label = 'fit')
             else:
                 ax.plot(plus_time_linspace,
-                    exp_eq(plus_time_linspace, *gamma_opti_params),
+                    exp_eq_gamma(plus_time_linspace, *gamma_opti_params),
                     'r', label = 'fit')
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(+1,+1) - (+1,-1)')
+            ax.set_title('(-1,-1) - (-1,+1)')
             ax.legend()
             text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma,
                   '%.3f'%gamma_ste)
@@ -457,7 +460,8 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
         raw_data = {'time_stamp': time_stamp,
                     'splitting_MHz': splitting_MHz,
                     'splitting_MHz-units': 'MHz',
-                    'offset_free_param?': offset,
+#                    'offset_free_param?': offset,
+                    'offset_added_to_gamma': 0.037,
                     'omega': omega,
                     'omega-units': 'kHz',
                     'omega_ste': omega_ste,
@@ -484,7 +488,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
 
 
 
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis'
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis_offset'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
@@ -493,7 +497,7 @@ def main(folder_name, omega = None, omega_std = None, doPlot = False, offset = T
     # Saving the figure
 
 
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis'
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis_offset'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
@@ -514,8 +518,8 @@ if __name__ == '__main__':
 #            continue
 
 
-
-    folder = 'nv0_2019_06_27_23MHz'
+    folder = 'nv2_2019_04_30_15MHz'
 
     # folder_name, omega, omega_std, doPlot, offset
     main(folder,  None, None,  True, offset = False)
+

@@ -61,18 +61,11 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 # %%
     
 t1_exp_array = numpy.array([[[States.HIGH, States.LOW], [0, 20*10**3], 51, 20*10**4, 10],
-            [[States.HIGH, States.LOW], [0, 120*10**3], 26, 10*10**4, 15],
+            [[States.HIGH, States.LOW], [0, 60*10**3], 26, 15*10**4, 15],
             [[States.HIGH, States.HIGH], [0, 20*10**3], 51, 20*10**4, 10],
-            [[States.HIGH, States.HIGH], [0, 120*10**3], 26, 10*10**4, 15],
-            [[States.ZERO, States.HIGH], [0, 1.5*10**6], 26, 1.5*10**4, 40],
-            [[States.ZERO, States.ZERO], [0, 1.5*10**6], 26, 1.5*10**4, 40],
+            [[States.HIGH, States.HIGH], [0, 60*10**3], 26, 15*10**4, 15]])
             
-            [[States.HIGH, States.LOW], [0, 20*10**3], 51, 20*10**4, 10],
-            [[States.HIGH, States.LOW], [0, 120*10**3], 26, 10*10**4, 15],
-            [[States.HIGH, States.HIGH], [0, 20*10**3], 51, 20*10**4, 10],
-            [[States.HIGH, States.HIGH], [0, 120*10**3], 26, 10*10**4, 15],
-            [[States.ZERO, States.HIGH], [0, 3.5*10**6], 26, 0.5*10**4, 100],
-            [[States.ZERO, States.ZERO], [0, 3.5*10**6], 26, 0.5*10**4, 100]])
+         
 
 contrast = 0.35  # arb
 exp_count_rate = 22  # kcps
