@@ -201,8 +201,12 @@ def create_figure(file_name):
 #    coords = data['coords']
 #    nv_sig = data['nv_sig']
 #    coords = nv_sig['coords']
-    nv_sig = data['nv_sig']
-    coords = nv_sig['coords']
+    try:
+        nv_sig = data['nv_sig']
+        coords = nv_sig['coords']
+    except Exception as e:
+        print(e)
+        coords = data['coords']
     img_array = numpy.array(data['img_array'])
     readout = data['readout']
 
