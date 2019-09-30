@@ -54,15 +54,15 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-#    scan_range = 0.5
+    scan_range = 0.5
 #    num_steps = 150
-#    num_steps = 90
+    num_steps = 90
 #    scan_range = 0.5
 #    num_steps = 150
 #    scan_range = 0.3
 #    num_steps = 90
-    scan_range = 0.2
-    num_steps = 60
+#    scan_range = 0.2
+#    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -361,7 +361,7 @@ if __name__ == '__main__':
     
     nv0_2019_06_06  = { 'coords': [0.0, 0.0, 5.0],
         'name': 'goeppert_mayer-nv_search',
-        'expected_count_rate': 40, 'nd_filter': 'nd_1.5',
+        'expected_count_rate': None, 'nd_filter': 'nd_1.5',
         'pulsed_readout_dur': 400, 'magnet_angle': None,
         'resonance_LOW': 2.8556, 'rabi_LOW': 69.0, 'uwave_power_LOW': 9.0, 
         'resonance_HIGH': 2.8790, 'rabi_HIGH': 241.3, 'uwave_power_HIGH': 10.0}
@@ -395,7 +395,7 @@ if __name__ == '__main__':
 #                do_image_sample(nv_sig_copy, apd_indices)
 #            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
-#            do_stationary_count(nv_sig, apd_indices)
+            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
@@ -418,7 +418,7 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 100])
 #            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 400])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
-            do_t1_battery(nv_sig, apd_indices)
+#            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
