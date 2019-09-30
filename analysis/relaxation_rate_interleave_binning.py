@@ -21,13 +21,15 @@ from utils.tool_belt import States
 
 data_folder = 't1_double_quantum'
 
-omega =  1.2
-omega_ste = 0.3
+omega =  0.32
+omega_ste = 0.13
+
+gamma_offset = 0
 
 # %% Minor functions
 
 def expon_decay(t, rate, amp):
-    return amp*numpy.exp(-rate*t)
+    return amp*numpy.exp(-rate*t) + gamma_offset
 
 # Function to get data from interleave files from folder
 def extract_data(file_name, folder_name):
@@ -90,6 +92,7 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
     gamma_ste_list = []
     gamma_fit_params_list = []
     gamma_counts_list = []
+    gamma_counts_ste_list = []
     
     # get the normalized counts for the two experiments, num_runs, and splitting
     
@@ -125,7 +128,7 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
         
         # Save the counts for future use
         gamma_counts_list.append(plus_subt_counts.tolist())
-        
+        gamma_counts_ste_list.append(plus_subt_ste.tolist())
         # if any ste are evaluated to 0, force them to be non-zero
         plus_subt_ste = [0.00001 if x==0 else x for x in plus_subt_ste]
         
@@ -195,10 +198,12 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
                     'num_runs': num_runs,
                     'num_bins': num_bins,
                     'bin_size': bin_size,
+                    'gamma_offset': gamma_offset,
                     'gamma_list': gamma_list,
                     'gamma_ste_list': gamma_ste_list,
                     'gamma_fit_params_list': gamma_fit_params_list,
                     'gamma_counts_list': gamma_counts_list,
+                    'gamma_counts_ste_list': gamma_counts_ste_list,
                     'taus': taus.tolist()
             }
     
@@ -213,7 +218,7 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
 
 if __name__ == '__main__':
 
-    folder = 'nv1_2019_05_10_28MHz_4'
-    file = '2019-08-27-13_45_39-ayrton12-nv1_2019_05_10'
+    folder = 'nv2_2019_04_30_29MHz_30'
+    file = '2019-09-03-08_17_43-ayrton12-nv2_2019_04_30'
     
-    main(file, folder, 18, amp = 0.3019)
+    main(file, folder, 10, amp = 0.345)

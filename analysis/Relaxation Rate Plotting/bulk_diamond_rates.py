@@ -55,7 +55,7 @@ nv0_gamma_error_list = [0.023, 0.009, 0.017]
 
 # Fig with just the magnet optimized data from NV0
 
-fig_nv0, ax = plt.subplots(1, 1, figsize=(10, 8))
+fig_nv0, ax = plt.subplots(1, 1, figsize=(5, 4))
 
 axis_font = {'size':'14'}
 
@@ -92,11 +92,18 @@ ax.errorbar(NV0_mis_splitting_list, NV0_mis_gamma_avg_list, yerr = NV0_mis_gamma
 ax.errorbar(NV0_mis_splitting_list, NV0_mis_omega_avg_list, yerr = NV0_mis_omega_error_list, 
             label = r'$\Omega_{NV_1}$, misaligned', markersize = 10, fmt='o', color='orange',  markerfacecolor='none')
 
-# Data for original NV, with aligned magnet
+# Data for the original NV, with optimized magnet
 ax.errorbar(NV0_opt_splitting_list, NV0_opt_gamma_avg_list, yerr = NV0_opt_gamma_error_list, 
-            label = r'$\gamma_{NV_1}$, optimum magnet', markersize = 10, fmt='o', color='blue')
+            label = r'$\gamma_{NV_1}$, optimized', markersize = 10, fmt='o', color='blue')
 ax.errorbar(NV0_opt_splitting_list, NV0_opt_omega_avg_list, yerr = NV0_opt_omega_error_list, 
-            label = r'$\Omega_{NV_1}$, optimum magnet', markersize = 10, fmt='o', color='orange')
+            label = r'$\Omega_{NV_1}$, optimized', markersize = 10, fmt='o', color='orange')
+
+
+# NV0, alignd magnet data
+#ax.errorbar(nv0_splitting_list, nv0_gamma_avg_list, yerr = nv0_gamma_error_list, 
+#            label = r'$\gamma_{NV_1}$, optimum magnet', markersize = 10, fmt='o', color='blue')
+#ax.errorbar(nv0_splitting_list, nv0_omega_avg_list, yerr = nv0_omega_error_list, 
+#            label = r'$\Omega_{NV_1}$, optimum magnet', markersize = 10, fmt='o', color='orange')
 
 # Formatting
 ax.tick_params(which = 'both', length=6, width=2, colors='k',
@@ -105,6 +112,6 @@ ax.tick_params(which = 'major', length=12, width=2)
 ax.grid()
 ax.set_xlabel('Splitting (MHz)', fontsize=18)
 ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
-ax.legend(fontsize=18)
+#ax.legend(fontsize=18)
 ##ax.title('Bulk Diamond', fontsize=18)
 

@@ -91,8 +91,8 @@ text = '\n'.join((r'$A_0/f^{2} + \gamma_\infty$ fit:',
                   r'$\chi^2 = $' + '%.2f'%(chi_sq)
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+#ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
 
 
 # %%
@@ -104,7 +104,7 @@ ax.tick_params(which = 'major', length=12, width=2)
 
 ax.grid()
 
-ax.set_xlim([10,1200])
+ax.set_xlim([10,1600])
 ax.set_ylim([0.1,300])
 #ax.set_ylim([-10,150])
 
@@ -112,4 +112,4 @@ plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
 #plt.title('NV16', fontsize=18)
 #ax.legend(fontsize=18)
-#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b.pdf", bbox_inches='tight')
+fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b.pdf", bbox_inches='tight')

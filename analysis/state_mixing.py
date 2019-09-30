@@ -16,6 +16,7 @@ from numpy import exp
 #from numpy.linalg import eigvals
 from numpy.linalg import eig
 import matplotlib.pyplot as plt
+import numpy.random as random
 
 
 # %% Constants
@@ -77,21 +78,6 @@ def calc_prob_i_state(final_hamiltonian):
     low_index = mid_value_list[0]
     
     HIGH_state_t = eigvec_t[:,high_index]
-#    print(HIGH_state_t)
-#    print(eig(final_hamiltonian))
-    
-#    high_index = 0
-#    zero_index = 2
-#    low_index = 1
-#    if high_index == 0:
-#        zero_index = 2
-#        low_index = 1
-#    if high_index == 1:
-#        zero_index = 0
-#        low_index = 2
-#    if high_index == 2:
-#        zero_index = 1
-#        low_index = 0
         
     # Calculate < i | psi(t) >
     prob_dens_plus = HIGH_state_t[0]
@@ -139,83 +125,76 @@ def rabi_contrast(freq, resonant_freq, contrast, resonant_rabi_period):
     return current_contrast
 
 # %%
+
+def simulate(t, num_reps):
+    omega_B = .1  # rad / ms
+    omega_Pi = 1 # rad / ms
     
+    B_perp_noise = B_mag * 1
+    Pi_perp_noise = Pi_perp * 1
+    
+    plus_1_reps = []
+    zero_reps = []
+    minus_1_reps = []
+    
+    starting_Phi_Pi = random.uniform(0,2*numpy.pi, num_reps)
+    starting_Phi_B = random.uniform(0,2*numpy.pi, num_reps)
+    
+    for i in range(num_reps):
+        phi_B = omega_B * t + starting_Phi_B[i]
+        phi_Pi = omega_Pi * t + starting_Phi_Pi[i]
+ 
+        ham_t = calc_single_hamiltonian_osc(B_mag, B_theta, B_perp_noise, 
+                                        Pi_par, Pi_perp, Pi_perp_noise, 
+                                        phi_B, phi_Pi)
+        probs = calc_prob_i_state(ham_t)
+    
+        plus_1_reps.append(probs[0])
+        zero_reps.append(probs[1])
+        minus_1_reps.append(probs[2])
+    
+    plus_1_prob = numpy.average(plus_1_reps)
+    zero_prob = numpy.average(zero_reps)
+    minus_1_prob = numpy.average(minus_1_reps)
+    
+    return plus_1_prob, zero_prob, minus_1_prob
+    
+# %%
 if __name__ == '__main__':
     plus_1_list = []
     zero_list = []
     minus_1_list = []
-    eigen_LOW_list = []
-    eigen_ZERO_list = []
-    eigen_HIGH_list = []
     
-    efficiency_list = []
-    
-    omega_B = .1  # rad / ms
-    omega_Pi = 1 # rad / ms
-    starting_Phi_Pi = 0.2 # rad
-    
-#    B_mag = 0
-#    Pi_perp = 1
-    
-    B_perp_noise = B_mag * 1
-    Pi_perp_noise = Pi_perp * 2
-#    Pi_perp_noise = 1 * B_perp_noise
-    
-#    tau = numpy.linspace(10.75, 10.77, 10)
-    tau = numpy.linspace(0, 100, 1000)
-#    ham_0_plus_one_basis = calc_single_hamiltonian_osc(B_mag, B_theta, 0, Pi_par, 
-#                                            Pi_perp, 0, 0, 0)
-#    print(eig(ham_0_plus_one_basis))
-    
+    tau = numpy.linspace(0, .01, 100)  
+    num_reps = 10**4
     
     
     for t in tau:
-        phi_B = omega_B * t
-        phi_Pi = omega_Pi * t + starting_Phi_Pi
- 
-        ham_t = calc_single_hamiltonian_osc(B_mag, B_theta, B_perp_noise, 
-                                            Pi_par, Pi_perp, Pi_perp_noise, 
-                                            phi_B, phi_Pi)
-        probs = calc_prob_i_state(ham_t)
+        plus_1_prob, zero_prob, minus_1_prob = simulate(t, num_reps)
         
-        plus_1_list.append(probs[0])
-        zero_list.append(probs[1])
-        minus_1_list.append(probs[2])
-        eigen_LOW_list.append(probs[3])
-        eigen_ZERO_list.append(probs[4])
-        eigen_HIGH_list.append(probs[5])
-        
-        low_res = calc_LOW_resonance(ham_t)
-        
-        new_contrast = rabi_contrast(low_res, resonant_freq, contrast, resonant_rabi_period)
-#        print(new_contrast)
-        efficiency = new_contrast / contrast
-        efficiency_list.append(efficiency)
-    total = numpy.array(plus_1_list) + numpy.array(zero_list) + numpy.array(minus_1_list)
-    
+        plus_1_list.append(plus_1_prob)
+        zero_list.append(zero_prob)
+        minus_1_list.append(minus_1_prob)
+
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
     ax.plot(tau, plus_1_list, label = '+1 component')
     ax.plot(tau, zero_list, label = '0 component')
     ax.plot(tau, minus_1_list, label = '-1 component')
-#    ax.plot(tau, eigen_LOW_list, label = 'LOW eigenvalue')
-#    ax.plot(tau, eigen_ZERO_list, label = 'ZERO eigenvalue')
-#    ax.plot(tau, eigen_HIGH_list, label = 'HIGH eigenvalue')
-#    ax.plot(tau, efficiency_list, label = 'pi pulse efficiency')
-#    ax.plot(tau, total, label = 'total')
+    
     ax.set_xlabel('Time (ms)')
     ax.set_ylabel('Probability')
     ax.legend()
     ax.set_title(name)
-    textstr = '\n'.join((
-        r'$B_{\perp, noise}=%.3f \ GHz$' % (B_perp_noise, ),
-        r'$\Pi_{\perp, noise}=%.3f \ GHz$' % (Pi_perp_noise, ),
-        r'$\omega_{B}=%.2f \ rad/ms$' % (omega_B, ),
-        r'$\omega_{\Pi}=%.2f \ rad/ms$' % (omega_Pi, ),
-        r'$\phi_{\Pi, 0}=%.3f \ rad$' % (starting_Phi_Pi, )
-        ))
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.05, 0.65, textstr, fontsize=14, transform=ax.transAxes,
-            verticalalignment='top', bbox=props)
+#    textstr = '\n'.join((
+#        r'$B_{\perp, noise}=%.3f \ GHz$' % (B_perp_noise, ),
+#        r'$\Pi_{\perp, noise}=%.3f \ GHz$' % (Pi_perp_noise, ),
+#        r'$\omega_{B}=%.2f \ rad/ms$' % (omega_B, ),
+#        r'$\omega_{\Pi}=%.2f \ rad/ms$' % (omega_Pi, ),
+#        r'$\phi_{\Pi, 0}=%.3f \ rad$' % (starting_Phi_Pi, )
+#        ))
+#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+#    ax.text(0.05, 0.65, textstr, fontsize=14, transform=ax.transAxes,
+#            verticalalignment='top', bbox=props)
     
         
     

@@ -27,24 +27,24 @@ import numpy
 from scipy.stats import chisquare
 
 # The data
-nv2_splitting_list = [ 29.1, 44.8, 56.2, 56.9,  101.6]
-nv2_omega_avg_list = [0.412, 0.356, 0.326, 0.42,  0.312]
-nv2_omega_error_list = [ 0.011, 0.012, 0.008, 0.05,  0.009]
-nv2_gamma_avg_list = [18.7, 6.43, 3.64, 3.77,  1.33]
-nv2_gamma_error_list = [0.3, 0.12, 0.08, 0.09,  0.05]
+#nv2_splitting_list = [ 29.1, 44.8, 56.2, 56.9,  101.6]
+#nv2_omega_avg_list = [0.412, 0.356, 0.326, 0.42,  0.312]
+#nv2_omega_error_list = [ 0.011, 0.012, 0.008, 0.05,  0.009]
+#nv2_gamma_avg_list = [20.9, 6.43, 3.64, 3.77,  1.33]
+#nv2_gamma_error_list = [0.3, 0.12, 0.08, 0.09,  0.05]
+#
+## Data for the second round of measurements
+#nv2_splitting_list_2 = [15.3,29.2, 45.5, 85.2, 280.4,697.4]
+#nv2_omega_avg_list_2 = [0.24, 0.328, 0.266, 0.285, 0.276, 0.29]
+#nv2_omega_error_list_2 = [0.01, 0.013, 0.01, 0.011, 0.011, 0.02]
+#nv2_gamma_avg_list_2 = [124, 31.1, 8.47, 2.62, 0.443, 0.81]
+#nv2_gamma_error_list_2 = [3, 0.4, 0.11, 0.05, 0.014, 0.06]
 
-# Data for the second round of measurements
-nv2_splitting_list_2 = [15.3,29.2, 45.5, 85.2, 280.4,697.4]
-nv2_omega_avg_list_2 = [0.24, 0.328, 0.266, 0.285, 0.276, 0.29]
-nv2_omega_error_list_2 = [0.01, 0.013, 0.01, 0.011, 0.011, 0.02]
-nv2_gamma_avg_list_2 = [134, 31.1, 8.47, 2.62, 0.443, 0.81]
-nv2_gamma_error_list_2 = [4, 0.4, 0.11, 0.05, 0.014, 0.06]
-
-nv2_splitting_list_all = nv2_splitting_list + nv2_splitting_list_2
-nv2_omega_avg_list_all = nv2_omega_avg_list + nv2_omega_avg_list_2
-nv2_omega_error_list_all = numpy.array(nv2_omega_error_list + nv2_omega_error_list_2)*2
-nv2_gamma_avg_list_all = nv2_gamma_avg_list + nv2_gamma_avg_list_2
-nv2_gamma_error_list_all = numpy.array(nv2_gamma_error_list + nv2_gamma_error_list_2)*2
+nv2_splitting_list_all = [15.3,29.2, 45.5, 85.2, 280.4,697.4, 29.1, 44.8, 56.2, 56.9,  101.6]
+nv2_omega_avg_list_all = numpy.array([0.24, 0.328, 0.266, 0.285, 0.276, 0.29,0.412, 0.356, 0.326, 0.42,  0.312])
+nv2_omega_error_list_all = numpy.array([0.01, 0.013, 0.01, 0.011, 0.011, 0.02, 0.011, 0.012, 0.008, 0.05,  0.009])*2
+nv2_gamma_avg_list_all = numpy.array([124, 31.1, 8.47, 2.62, 0.443, 0.81,20.9, 6.43, 3.64, 3.77,  1.33])
+nv2_gamma_error_list_all = numpy.array([3, 0.4, 0.11, 0.05, 0.014, 0.06,0.3, 0.12, 0.08, 0.09,  0.05])*2
 
 # %% Seperate analysis of data
 
@@ -88,14 +88,14 @@ ax.plot(splitting_linspace, omega_constant_array, color = orange,
 
 # %% Chi Squared
 
-expected = []
-
-for el in range(len(nv2_splitting_list)):
-    expected_value = fit_eq_alpha(nv2_splitting_list[el], *fit_alpha_params)
-    expected.append(expected_value)
-    
-ret_vals = chisquare(nv2_gamma_avg_list, f_exp=expected)
-chi_sq = ret_vals[0]
+#expected = []
+#
+#for el in range(len(nv2_splitting_list)):
+#    expected_value = fit_eq_alpha(nv2_splitting_list[el], *fit_alpha_params)
+#    expected.append(expected_value)
+#    
+#ret_vals = chisquare(nv2_gamma_avg_list, f_exp=expected)
+#chi_sq = ret_vals[0]
 
 # %%
 
@@ -103,12 +103,12 @@ chi_sq = ret_vals[0]
 text = '\n'.join((r'$A_0/f^{2} + \gamma_\infty$ fit:',
 #                  r'$\alpha = {} \pm {}$'.format('%.2f'%(fit_alpha_params[2]), '%.2f'%(numpy.sqrt(cov_arr[2][2]))),
                   r'$A_0 = {} \pm {}$'.format('%.0f'%(fit_alpha_params[0]), '%.0f'%(numpy.sqrt(cov_arr[0][0]))),
-                  r'$\gamma_\infty = {} \pm {}$'.format('%.2f'%(fit_alpha_params[1]), '%.2f'%(numpy.sqrt(cov_arr[1][1]))),
-                  r'$\chi^2 = $' + '%.2f'%(chi_sq)
+                  r'$\gamma_\infty = {} \pm {}$'.format('%.2f'%(fit_alpha_params[1]), '%.2f'%(numpy.sqrt(cov_arr[1][1])))
+#                  r'$\chi^2 = $' + '%.2f'%(chi_sq)
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+#ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -119,7 +119,7 @@ ax.tick_params(which = 'major', length=12, width=2)
 
 ax.grid()
 
-ax.set_xlim([10,1200])
+ax.set_xlim([10,1600])
 ax.set_ylim([0.1,300])
 
 #ax.set_ylim([-5,40])

@@ -166,7 +166,7 @@ def time_main_plot(folder_name, file_name):
 
     ax.set_xlabel('Time (hour)', fontsize=18)
     ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
-    ax.set_ylim(44,77)
+    ax.set_ylim(40,70)
 #    ax.set_title(r'NV1', fontsize=18)
 #    ax.legend(fontsize=18)
     fig.canvas.draw()
@@ -245,7 +245,7 @@ def time_zoom_plot(folder_name, file_name):
 
     ax.set_xlabel('Time (hour)', fontsize=18)
     ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
-    ax.set_ylim(44,77)
+    ax.set_ylim(40,70)
 #    ax.set_title(r'NV1', fontsize=18)
 #    ax.legend(fontsize=18)
     fig.canvas.draw()
@@ -254,7 +254,7 @@ def time_zoom_plot(folder_name, file_name):
     fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4c2.pdf", bbox_inches='tight')
 
     
-def histogram(bins = 9, fit_gaussian = False):
+def histogram(bins = 6, fit_gaussian = False):
     '''
     Produces a histogram of the data passed
     '''
@@ -283,7 +283,7 @@ def histogram(bins = 9, fit_gaussian = False):
                     grid_alpha=1.2, labelsize = text)
 
     ax.tick_params(which = 'major', length=12, width=2)
-#    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
+    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
 #  
     if fit_gaussian:
         x_grid_endpoints = ret_vals[1]
@@ -340,7 +340,7 @@ folder_name = 'nv1_2019_05_10_28MHz_6'
 
 time_main_plot(folder_name, file_name)
 time_zoom_plot(folder_name, file_name)
-#histogram(fit_gaussian = False)
+histogram(fit_gaussian = False)
 
 #file4 = '26.3_MHz_splitting_6_bins_error'
 #folder4 = 'nv1_2019_05_10_28MHz_4'
