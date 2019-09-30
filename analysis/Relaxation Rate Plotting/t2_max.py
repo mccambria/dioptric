@@ -25,18 +25,18 @@ font_size = 55
 
 # %%
 
-nv1_splitting_list = [ 27.7, 28.9, 41.9, 32.7, 51.8, 97.8, 116, 268, 563.6, 1016.8]
-nv1_omega_avg_list = numpy.array([ 1.30,  1.000, 1.11, 1.42, 1.85, 1.41, 1.18, 1.04, 1.19, 0.58])
-nv1_omega_error_list = numpy.array([ 0.06, 0.016, 0.05, 0.05, 0.08, 0.05, 0.06, 0.04, 0.06, 0.03])*2
-nv1_gamma_avg_list = numpy.array([64.5, 56.4, 23.5, 42.6, 13.1, 3.91, 4.67, 1.98, 0.70, 0.41])
-nv1_gamma_error_list = numpy.array([1.4, 1.3, 0.5, 0.9, 0.2, 0.1, 0.11, 0.1, 0.05, 0.05])*2
+nv1_splitting_list = [ 19.5, 19.8, 27.7, 28.9, 41.9, 32.7, 51.8, 97.8, 116, 268, 563.6, 1016.8]
+nv1_omega_avg_list = numpy.array([ 0.83, 1.23, 1.30,  1.000, 1.11, 1.42, 1.85, 1.41, 1.18, 1.04, 1.19, 0.58])
+nv1_omega_error_list = numpy.array([ 0.04, 0.04, 0.06, 0.016, 0.05, 0.05, 0.08, 0.05, 0.06, 0.04, 0.06, 0.03])*2
+nv1_gamma_avg_list = numpy.array([58.3, 117, 64.5, 56.4, 23.5, 42.6, 13.1, 3.91, 4.67, 1.98, 0.70, 0.41])
+nv1_gamma_error_list = numpy.array([1.4, 4, 1.4, 1.3, 0.5, 0.9, 0.2, 0.1, 0.11, 0.1, 0.05, 0.05])*2
 
 # The data
-nv2_splitting_list = [29.1, 29.2, 44.8, 56.2, 56.9,  101.6, 29.2, 45.5, 85.2, 280.4,697.4]
-nv2_omega_avg_list = numpy.array([0.412, 0.328, 0.356, 0.326, 0.42,  0.312, 0.328, 0.266, 0.285, 0.276, 0.29])
-nv2_omega_error_list = numpy.array([0.011, 0.013, 0.012, 0.008, 0.05,  0.009, 0.013, 0.01, 0.011, 0.011, 0.02])*2
-nv2_gamma_avg_list = numpy.array([18.7, 31.1, 6.43, 3.64, 3.77,  1.33, 31.1, 8.47, 2.62, 0.443, 0.81])
-nv2_gamma_error_list = numpy.array([0.3, 0.4, 0.12, 0.08, 0.09,  0.05, 0.4, 0.11, 0.05, 0.014, 0.06])*2
+nv2_splitting_list = [15.3,29.2, 45.5, 85.2, 280.4,697.4, 29.1, 44.8, 56.2, 56.9,  101.6]
+nv2_omega_avg_list = numpy.array([0.24, 0.328, 0.266, 0.285, 0.276, 0.29,0.412, 0.356, 0.326, 0.42,  0.312])
+nv2_omega_error_list = numpy.array([0.01, 0.013, 0.01, 0.011, 0.011, 0.02, 0.011, 0.012, 0.008, 0.05,  0.009])*2
+nv2_gamma_avg_list = numpy.array([124, 31.1, 8.47, 2.62, 0.443, 0.81,20.9, 6.43, 3.64, 3.77,  1.33])
+nv2_gamma_error_list = numpy.array([3, 0.4, 0.11, 0.05, 0.014, 0.06,0.3, 0.12, 0.08, 0.09,  0.05])*2
 
 nv16_splitting_list = [28.6, 53.0, 81.2, 128.0, 283.7, 495.8, 746]
 nv16_omega_avg_list = numpy.array([0.53, 0.87, 1.7, 0.60, 0.70, 1.4, 1.03])
@@ -45,11 +45,11 @@ nv16_gamma_avg_list = numpy.array([90, 26.2, 17.5, 11.3, 5.6, 3.7, 2.8])
 nv16_gamma_error_list = numpy.array([5, 0.9, 0.6, 0.4, 0.3, 0.4, 0.3])*2
 
 #NV0
-splitting_list = [26.3, 36.2, 48.1, 60.5, 92.3, 150.8, 329.6, 884.9, 1080.5, 1148.4]
-omega_avg_list = numpy.array([0.33,0.32,  0.314, 0.24, 0.253, 0.29, 0.33, 0.29, 0.28, 0.38])
-omega_error_list = numpy.array([0.03,0.03,  0.01, 0.02, 0.012, 0.02, 0.02, 0.02, 0.05, 0.04])*2
-gamma_avg_list = numpy.array([	29.0, 20.4,  15.8, 9.1, 6.4, 4.08, 1.23, 0.45, 0.69, 0.35])
-gamma_error_list = numpy.array([1.1, 0.5, 0.3, 0.3, 0.1, 0.15, 0.07, 0.03, 0.12, 0.03])*2
+splitting_list = [23.4, 26.3, 36.2, 48.1, 60.5, 92.3, 150.8, 329.6, 884.9, 1080.5, 1148.4]
+omega_avg_list = numpy.array([0.283, 0.33,0.32,  0.314, 0.24, 0.253, 0.29, 0.33, 0.29, 0.28, 0.38])
+omega_error_list = numpy.array([0.017, 0.03,0.03,  0.01, 0.02, 0.012, 0.02, 0.02, 0.02, 0.05, 0.04])*2
+gamma_avg_list = numpy.array([	34.5, 29.0, 20.4,  15.8, 9.1, 6.4, 4.08, 1.23, 0.45, 0.69, 0.35])
+gamma_error_list = numpy.array([1.3, 1.1, 0.5, 0.3, 0.3, 0.1, 0.15, 0.07, 0.03, 0.12, 0.03])*2
 
 
 nv13_splitting_list = [23.1,  29.8, 51.9, 72.4, 112.9, 164.1]
@@ -125,8 +125,8 @@ average_traditional_t2_error_0= numpy.empty([1000])
 average_traditional_t2_error_0[:]= numpy.sqrt(sum(T2_max_traditional_error_0**2)) / len(T2_max_traditional_error_0)
 
 
-print(T2_max_1[0]*1000, T2_max_error_1[0]*2000, 
-      T2_max_2[1]*1000, T2_max_error_2[1]*2000,
+print(T2_max_1[1]*1000, T2_max_error_1[1]*2000, 
+      T2_max_2[0]*1000, T2_max_error_2[0]*2000,
       T2_max_16[0]*1000, T2_max_error_16[0]*2000,
       T2_max_0[0]*1000, T2_max_error_0[0]*2000)
 
@@ -170,7 +170,7 @@ ax.grid(lw=3)
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
-#fig1.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a_inset.pdf", bbox_inches='tight')
+fig1.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a_inset.pdf", bbox_inches='tight')
 
 
 # %%
@@ -229,7 +229,7 @@ plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 #ax.legend(fontsize=18)
 
-#fig3.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c_inset.pdf", bbox_inches='tight')
+fig3.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c_inset.pdf", bbox_inches='tight')
 
 # %%
 fig4, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -258,7 +258,7 @@ plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 #ax.legend(fontsize=18)
 
-#fig4.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3d_inset.pdf", bbox_inches='tight')
+fig4.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3d_inset.pdf", bbox_inches='tight')
 
 
 # %%

@@ -40,6 +40,7 @@ from utils.tool_belt import States
 
 data_folder = 't1_double_quantum'
 
+manual_offset_gamma = 0.0
 # %% Functions
 
 # The exponential function without an offset
@@ -47,7 +48,7 @@ def exp_eq_omega(t, rate, amp):
     return  amp * exp(- rate * t)
 
 def exp_eq_gamma(t, rate, amp):
-    return  amp * exp(- rate * t) + 0.037
+    return  amp * exp(- rate * t) + manual_offset_gamma
 
 # The exponential function with an offset
 def exp_eq_offset(t, rate, amp, offset):
@@ -461,7 +462,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                     'splitting_MHz': splitting_MHz,
                     'splitting_MHz-units': 'MHz',
 #                    'offset_free_param?': offset,
-                    'offset_added_to_gamma': 0.037,
+                    'manual_offset_gamma': manual_offset_gamma,
                     'omega': omega,
                     'omega-units': 'kHz',
                     'omega_ste': omega_ste,
@@ -488,7 +489,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
 
 
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis_offset'
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
@@ -497,7 +498,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
     # Saving the figure
 
 
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis_offset'
+        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis'
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
@@ -518,8 +519,10 @@ if __name__ == '__main__':
 #            continue
 
 
-    folder = 'nv2_2019_04_30_15MHz'
+    folder = 'nv0_2019_06_27_23MHz'
 
     # folder_name, omega, omega_std, doPlot, offset
     main(folder,  None, None,  True, offset = False)
+
+
 

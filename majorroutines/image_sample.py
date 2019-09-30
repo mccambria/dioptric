@@ -203,6 +203,12 @@ def create_figure(file_name):
 #    coords = nv_sig['coords']
 #    nv_sig = data['nv_sig']
 #    coords = nv_sig['coords']
+    try:
+        nv_sig = data['nv_sig']
+        coords = nv_sig['coords']
+    except Exception as e:
+        print(e)
+        coords = data['coords']
     img_array = numpy.array(data['img_array'])
     readout = data['readout']
 
@@ -245,7 +251,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
                   continuous=False, save_data=True, plot_data=True):
 
     # %% Some initial setup
-    
+
     tool_belt.reset_cfm(cxn)
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -296,9 +302,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
     # %% Set up the APD
 
     cxn.apd_tagger.start_tag_stream(apd_indices)
-    
+
     # %% Set up our raw data objects
-    
+
     # Initialize imgArray and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
     img_array = numpy.empty((x_num_steps, y_num_steps))
@@ -354,7 +360,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
             num_read_so_far += num_new_samples
 
     # %% Clean up
-    
+
     tool_belt.reset_cfm(cxn)
 
     # Return to center
