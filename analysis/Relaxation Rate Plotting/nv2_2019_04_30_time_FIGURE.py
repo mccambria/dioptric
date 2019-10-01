@@ -43,7 +43,7 @@ def double_gaussian(x, amp_1, sigma_1, center_1,
 
 # Rates after new analysis
 nv2_rates = [30.654098381810353, 30.558426784844333, 33.630011684029235, 27.358674274597067, 29.694225486301345, 29.735730885709835, 30.31658320217184, 27.439609570685615, 27.66001677267672, 29.85486711663969, 28.169702416919236, 27.69816916530537, 27.145989277188658, 28.072101725438515, 29.628036973737114, 28.16275682808092, 32.558160177911724, 31.709169560012526, 31.76693261940732, 33.301458363646816, 29.86610630656129, 30.615560494952753, 31.940700380850636, 31.30624290341998, 30.493046635745998, 29.360895743275577]
-nv2_error = numpy.array([0.46192455481282185, 0.48039831813814393, 0.4967232959644107, 0.40823547214785466, 0.630978928191298, 0.44868972180646705, 0.4461350277193815, 0.40385882769019393, 0.41618192075406124, 0.5168443270125564, 0.40613046174455897, 0.4116454070962489, 0.3924510042750695, 0.42545212722523895, 0.4509814527664112, 0.42811118173819585, 0.5250816941437906, 0.5166025539016457, 0.4603795565940479, 0.5204499896554495, 0.4766908170407312, 0.46055097844279863, 0.48053758925073475, 0.45784910287618946, 0.44671095116842086, 0.4584155029411859])*2
+nv2_error = numpy.array([0.46192455481282185, 0.48039831813814393, 0.4967232959644107, 0.40823547214785466, 0.630978928191298, 0.44868972180646705, 0.4461350277193815, 0.40385882769019393, 0.41618192075406124, 0.5168443270125564, 0.40613046174455897, 0.4116454070962489, 0.3924510042750695, 0.42545212722523895, 0.4509814527664112, 0.42811118173819585, 0.5250816941437906, 0.5166025539016457, 0.4603795565940479, 0.5204499896554495, 0.4766908170407312, 0.46055097844279863, 0.48053758925073475, 0.45784910287618946, 0.44671095116842086, 0.4584155029411859])
 
 # the time of the start of the experiment (when the pESSR and rabi data was saved
 
@@ -202,7 +202,7 @@ def time_plot_inc():
     
     gamma_list = data29['gamma_list'] + data30['gamma_list']
     gamma_ste_list = data29['gamma_ste_list'] + data30['gamma_ste_list']
-    gamma_ste_list = numpy.array(gamma_ste_list)*2
+    gamma_ste_list = numpy.array(gamma_ste_list)
     time_inc = 5.5 # hr
     
     start_time_list_2 = []
@@ -360,38 +360,36 @@ def histogram(bins = 9, fit_gaussian = False):
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ret_vals= ax.hist(gamma_list, bins = bins, color = purple)
-    print(ret_vals[0], ret_vals[1])
     ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
     ax.set_ylabel('Occurances', fontsize=text)
     ax.tick_params(which = 'both', length=10, width=20, colors='k',
                     grid_alpha=1.2, labelsize = text)
 
     ax.tick_params(which = 'major', length=12, width=2)
-    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4b.pdf", bbox_inches='tight')
     
-    if fit_gaussian:
-        x_grid_endpoints = ret_vals[1]
-        bin_width = (x_grid_endpoints[1] - x_grid_endpoints[0])/2
-        x_grid = numpy.array(x_grid_endpoints) + bin_width
-        hist_points = ret_vals[0]
         
-        init_guess = [5, 1, 27.3, 10, 1, 30.5]
-    
-        dbl_gssn_popt, pcov = curve_fit(double_gaussian, x_grid[:-1], hist_points, p0 = init_guess)
-    
-        x_linspace = numpy.linspace(25, 35, 1000)
-        ax.plot(x_linspace, double_gaussian(x_linspace, *dbl_gssn_popt), 'r--', label = 'fit')
-    #    ax.plot(x_grid[:-1}], hist_points, 'ro')
-        ax.legend()
-        
-        text = '\n'.join(('Double Gaussian',
-                      r'$x_1 = {}, simga_1= {}, a_1 = {}$'.format('%.2f'%(dbl_gssn_popt[2]), '%.2f'%(dbl_gssn_popt[1]), '%.2f'%(dbl_gssn_popt[0])),
-                      r'$x_2 = {}, simga_2 = {}, a_2 = {}$'.format('%.2f'%(dbl_gssn_popt[5]), '%.2f'%(dbl_gssn_popt[4]), '%.2f'%(dbl_gssn_popt[3]))
-                      ))
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.05, 0.9, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
+    gssn_1_popt = [5, 0.7, 27.6,]
+    gssn_2_popt = [8, 0.8, 30.3]
 
+    x_linspace = numpy.linspace(20, 35, 1000)
+#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_1_popt), 'k--', lw = 6, label = 'fit')
+#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_2_popt), 'k--', lw = 6, label = 'fit')
+    ax.set_xlim([24,34.5])
+
+    # Fit double gaussian
+    x_grid_endpoints = ret_vals[1]
+    bin_width = (x_grid_endpoints[1] - x_grid_endpoints[0])/2
+    x_grid = numpy.array(x_grid_endpoints) + bin_width
+    hist_points = ret_vals[0]
+    print(x_grid, hist_points)
+    init_guesses = gssn_1_popt + gssn_2_popt
+    popt, pcov = curve_fit(double_gaussian, hist_points, x_grid[:-1], p0= init_guesses)
+    print(popt)
+    
+    ax.plot(x_linspace, double_gaussian(x_linspace, *popt), 'k--', lw = 6, label = 'fit')
+
+#    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4b.pdf", bbox_inches='tight')
+    
 def kde_sklearn(x, bandwidth=0.5):
     '''
     Produces a kernel density estimation of the data passed. It also plots it.
@@ -432,10 +430,17 @@ if __name__ == "__main__":
     
     gamma_list = data29['gamma_list'] + data30['gamma_list'] + nv2_rates
     
+    init_guesses = [.16, 0.7, 27.6, .24, 0.8, 30.3]
     
-    time_plot_inc()
-    time_main_plot()
-    time_plot_zoom()
+    x_linspace = numpy.linspace(20, 35, 1000)
+    y,x = kde_sklearn(gamma_list, bandwidth=0.5)
+    popt, pcov = curve_fit(double_gaussian, y, x, p0= init_guesses)
+    print(popt)
+    plt.plot(x_linspace, double_gaussian(x_linspace, *popt), 'k--', lw = 1, label = 'fit')
+
+#    time_plot_inc()
+#    time_main_plot()
+#    time_plot_zoom()
 #    histogram(fit_gaussian = False)
 
 

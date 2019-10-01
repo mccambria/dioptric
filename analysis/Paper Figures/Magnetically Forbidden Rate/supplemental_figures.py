@@ -510,42 +510,56 @@ def rate_comaprison_similar(save=False):
 #%%
     
 def rate_comaprison_NV2(save=False):
-    omega = 0.32
-    omega_unc = 0.12
+    text_font = 18
+    blue = '#2e3192'
+    red = '#ed1c24'
+    omega = 0.32 / 1000 
+    omega_unc = 0.12 / 1000
     offset = 0
-    amp = 0.337
     
-    file = '29.8_MHz_splitting_10_bins_error'
-    folder = 'nv2_2019_04_30_29MHz_30'
-    data = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
-    first_number = 5
-    second_number = 4
+#    file = '28.9_MHz_splitting_rate_analysis'
+#    folder = 'nv2_2019_04_30_29MHz_5'
+#    data_f = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
+#    
+#    file = '29.1_MHz_splitting_rate_analysis'
+#    folder = 'nv2_2019_04_30_29MHz_6'
+#    data_s = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
+#    
     
-    num_runs - data['num_runs']
+    file = '28.9_MHz_splitting_rate_analysis'
+    folder = 'nv2_2019_04_30_29MHz_5'
+    data_f = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
     
-    counts_f = data['gamma_counts_list'][first_number]
-    error_f = numpy.array(data['gamma_counts_ste_list'][first_number])*2 / numpy.sqrt(num_runs)
-    counts_s = data['gamma_counts_list'][second_number] 
-    error_s = numpy.array(data['gamma_counts_ste_list'][second_number])*2  / numpy.sqrt(num_runs)
+    file = '29.1_MHz_splitting_rate_analysis'
+    folder = 'nv2_2019_04_30_29MHz_6'
+    data_s = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
     
-    time = data['taus']
+    
+    counts_f = data_f['plus_relaxation_counts']
+    error_f = numpy.array(data_f['plus_relaxation_ste'])
+    counts_s = data_s['plus_relaxation_counts']
+    error_s = numpy.array(data_s['plus_relaxation_ste'])
+    
+    time = numpy.array(data_f['plus_plus_time']) * 1000
     time_linspace = numpy.linspace(time[0], time[-1], 1000)
     
-    gamma_f = data['gamma_list'][first_number]
-    gamma_unc_f = data['gamma_ste_list'][first_number]
-    gamma_s = data['gamma_list'][second_number]
-    gamma_unc_s = data['gamma_ste_list'][second_number]
+    gamma_f = data_f['gamma'] / 1000
+    gamma_unc_f = data_f['gamma_ste'] / 1000
+    amp_f = data_f['gamma_opti_params'][1]
+    gamma_s = data_s['gamma'] / 1000
+    gamma_unc_s = data_s['gamma_ste'] / 1000
+    amp_s = data_s['gamma_opti_params'][1]
     
-    opti_params_f = [(2*gamma_f+omega), amp, offset]
-    opti_params_s = [(2*gamma_s+omega), amp, offset]
+    opti_params_f = [(2*gamma_f+omega), amp_f, offset]
+    opti_params_s = [(2*gamma_s+omega), amp_s, offset]
     
     # Plot
-    fig, ax = plt.subplots(1, 1, figsize=(11, 8.5))
+    fig, ax = plt.subplots(1, 1, figsize=(10,8))
     
     ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
-                fmt = '.', color = 'blue')
+                fmt = 'o', color = blue)
     yfit = exp_eq_offset(time_linspace, *opti_params_f)
-    ax.plot(time_linspace, yfit, '-', color='blue')
+    ax.plot(time_linspace, yfit, '-', color=blue)
     
     opti_params_f[0] = (2*(gamma_f + gamma_unc_f) + omega + omega_unc)
     yupper = exp_eq_offset(time_linspace, *opti_params_f)
@@ -557,10 +571,10 @@ def rate_comaprison_NV2(save=False):
     
     
     ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
-                fmt = '.', color = 'red')
+                fmt = '^', color = red)
     
     yfit = exp_eq_offset(time_linspace, *opti_params_s)
-    ax.plot(time_linspace, yfit, '-', color='red')
+    ax.plot(time_linspace, yfit, '-', color=red)
     
     opti_params_s[0] = (2*(gamma_s + gamma_unc_s) + omega + omega_unc)
     yupper = exp_eq_offset(time_linspace, *opti_params_s)
@@ -570,13 +584,21 @@ def rate_comaprison_NV2(save=False):
     ax.fill_between(time_linspace, yupper,  ylower,
                      color='red', alpha=0.2)
     
-    ax.set_xlabel('Relaxation time (ms)')
-    ax.set_ylabel('Contrast (arb. units)')
+    ax.set_xlabel(r'Relaxation time ($\mu$s)', fontsize=text_font)
+    ax.set_ylabel('Relaxation signal', fontsize=text_font)
+    ax.tick_params(which = 'both', length=8, width=2, colors='k',
+                grid_alpha=0.7, labelsize = text_font)
+    ax.grid()
+#    ax.set_xlim()
 #    ax.legend()
 #    ax.set_title('Compare NV1 measurements')
     
     fig.canvas.draw()
     fig.canvas.flush_events()
+    
+    if save:
+        fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/NV2_rate_compare.pdf", bbox_inches='tight')
+
 # %%
     
 def subtraction_plot(save=False):
@@ -742,6 +764,6 @@ if __name__ == '__main__':
 #    NV1_histogram(save=True)
 #    one_hour_rates_NV2(save=True)
 #    NV2_histogram(save=True)
-    rate_comaprison_similar(save=True)
-    rate_comaprison_different(save=True)
-#    rate_comaprison_NV2()
+#    rate_comaprison_similar(save=True)
+#    rate_comaprison_different(save=True)
+    rate_comaprison_NV2(save=True)
