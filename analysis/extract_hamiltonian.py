@@ -330,12 +330,12 @@ def main(name, res_descs):
         # Get the splitting and center_freq from the resonances
         zero_field_low = zero_field_res_desc[1]
         zero_field_high = zero_field_res_desc[2]
-    
+
         # At B = 0 the Hamiltonian has the form
         # [     d_gs + par_Pi,           0,     - perp_Pi * exp(i phi_Pi)   ]
         # [            0,               0,                0              ]
         # [-perp_Pi * exp(-i phi_Pi),     0,           d_gs + par_Pi        ]
-    
+
         # The eigenvalues are simple in this case
         # [0, d_gs + par_Pi - perp_Pi, d_gs + par_Pi + perp_Pi]
         # The resonances are thus
@@ -345,7 +345,7 @@ def main(name, res_descs):
         # zero_field_center = d_gs + par_Pi
         zero_field_center = (zero_field_high + zero_field_low) / 2
         par_Pi = zero_field_center - d_gs
-    
+
         # Similarly
         # zero_field_splitting = (d_gs + par_Pi + perp_Pi) - (d_gs + par_Pi - perp_Pi)
         # zero_field_splitting = 2 * perp_Pi
@@ -366,7 +366,7 @@ def main(name, res_descs):
         args = (phi_B, phi_Pi, res_descs)
         x0 = brute(chisq_func, param_ranges, args=args, Ns=10)
         guess_params = list(x0)
-        
+
     print(guess_params)
 
     ############ Fine tuning with minimize ############
@@ -431,7 +431,7 @@ if __name__ == '__main__':
                   [None, 2.6061, 3.1678],
                   [None, 2.6055, 3.1691],
                   [None, 2.4371, 3.4539]]
-    
+
     # name = 'nv1_2019_05_10_misaligned'
     # res_descs = [[0.0, 2.8537, 2.8751],
     #                [None, 2.8381, 2.9003],
@@ -485,33 +485,32 @@ if __name__ == '__main__':
     #               [None, 2.7857, 2.9498]]
 
     ############ Not as nice ############
-    
+
     # The last two points are a little off
-    # name = 'NV16_2019_07_25'
-    # res_descs = [[0.0, 2.8593, 2.8621],
-    #               [None, 2.8519, 2.8690],
-    #               [None, 2.8460, 2.8746],
-    #               [None, 2.8337, 2.8867],
-    #               [None, 2.8202, 2.9014],
-    #               [None, 2.8012, 2.9292],
-    #               [None, 2.7393, 3.0224],
-    #               [None, 2.6995, 3.1953],
-    #               [None, 2.5830, 3.3290]]
+#    name = 'NV16_2019_07_25'
+#    res_descs = [[0.0, 2.8593, 2.8621],
+#                   [None, 2.8519, 2.8690],
+#                   [None, 2.8460, 2.8746],
+#                   [None, 2.8337, 2.8867],
+#                   [None, 2.8202, 2.9014],
+#                   [None, 2.8012, 2.9292],
+#                   [None, 2.7393, 3.0224],
+#                   [None, 2.6995, 3.1953],
+#                   [None, 2.5830, 3.3290]]
 
-    ############ Test ############
+    # Weird
+    name = 'nv13_2019_06_10'
+    res_descs = [
+#            [0.0, 2.8147, 2.8454],
+                   [None, 2.8289, 2.8520],
+#                   [None, 2.8266, 2.8546],
+#                   [None, 2.8262, 2.8556],
+                   [None, 2.8247, 2.8545],
+                   [None, 2.8174, 2.8693],
+                   [None, 2.8082, 2.8806],
+                   [None, 2.7948, 2.9077],
+                   [None, 2.7857, 2.9498]]
 
-    # name = 'test'
-    # res_descs = [[0.0, 2.87, None],
-    #               [None, 2.86, 2.88],
-    #               [None, 2.85, 2.89],
-    #               [None, 2.77, 2.97],
-    #               [None, 2.67, 3.07]]
-
-    # Main
-    # main(name, res_descs)
-
-    # B noise matrix elements
-    # b_matrix_elements(name, res_descs)
     # Run the script
     # main(name, res_descs)
 

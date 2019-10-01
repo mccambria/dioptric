@@ -28,7 +28,7 @@ def illustrate_mapping(file_name, nv_indices=None):
     data = tool_belt.get_raw_data(__file__, file_name)
     image_sample_file_name = data['image_sample_file_name']
     nv_sig_list = data['nv_sig_list']
-        
+
     fig = image_sample.create_figure(image_sample_file_name)
     axes = fig.get_axes()
     ax = axes[0]
@@ -59,12 +59,12 @@ def illustrate_mapping(file_name, nv_indices=None):
         circle = plt.Circle(tuple(coords[0:2]), 2*airy_radius_volts,
                             ec='g', fill=False, lw=2.0)
         ax.add_patch(circle)
-        
+
     return fig
-    
+
 def generate_mapping_files(sample_name, micrometer_coords,
                            image_sample_file_name, nv_sig_list):
-    
+
     raw_data = {
             'sample_name': sample_name,
             'micrometer_coords': micrometer_coords,
@@ -73,13 +73,13 @@ def generate_mapping_files(sample_name, micrometer_coords,
             'nv_sig_list': nv_sig_list,
             'nv_sig_list-units': tool_belt.get_nv_sig_units(),
             }
-    
+
     file_name = '{}-mapping'.format(image_sample_file_name)
     file_path = tool_belt.get_file_path(__file__, name=file_name)
 
     tool_belt.save_raw_data(raw_data, file_path)
     fig = illustrate_mapping(file_name)
-    
+
     tool_belt.save_figure(fig, file_path)
 
 
@@ -87,8 +87,8 @@ def generate_mapping_files(sample_name, micrometer_coords,
 
 
 if __name__ == '__main__':
-    
-    image_sample_file_name = '2019-07-25_18-37-46_ayrton12_search'
+
+#    image_sample_file_name = '2019-07-25_18-37-46_ayrton12_search'
 
     # Ignore this...
     if True:
@@ -104,7 +104,7 @@ if __name__ == '__main__':
                           [0.003, 0.216, 5.02], # take g(2) again
                           [0.061, 0.164, 5.03],  #  great! nv5_2019_07_25
                           [0.006, 0.187, 5.03],  # take g(2) again
-                          [0.003, 0.170, 5.03],  
+                          [0.003, 0.170, 5.03],
                           [-0.010, 0.145, 5.01],
                           [-0.080, 0.162, 5.01],
                           [-0.169, 0.161, 5.03], # great! nv10_2019_07_25
@@ -131,11 +131,11 @@ if __name__ == '__main__':
                           [-0.137, -0.046, 5.03],
                           [0.242, -0.018, 5.03],
                           [0.229, -0.024, 5.07]] # take g(2) again
-    
+
         sample_name = 'ayrton12'
         micrometer_coords = [3.154, 2.193, 11.118, 120.21]
         image_sample_file_name = '2019-07-25_18-37-46_ayrton12_search'
-    
+
         nv_sig_list = []
         for ind in range(len(coords_list)):
             coords = coords_list[ind]
@@ -143,6 +143,6 @@ if __name__ == '__main__':
             nd_filter = 'nd_1.5'
             nv_sig = {'coords': coords, 'name': name, nd_filter: nd_filter}
             nv_sig_list.append(nv_sig)
-        
+
         generate_mapping_files(sample_name, micrometer_coords,
                               image_sample_file_name, nv_sig_list)
