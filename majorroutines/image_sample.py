@@ -198,7 +198,9 @@ def create_figure(file_name):
     x_range = data['x_range']
     y_range = data['y_range']
     x_voltages = data['x_voltages']
-#    coords = data['coords']
+    coords = data['coords']
+#    nv_sig = data['nv_sig']
+#    coords = nv_sig['coords']
 #    nv_sig = data['nv_sig']
 #    coords = nv_sig['coords']
     try:
@@ -249,7 +251,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
                   continuous=False, save_data=True, plot_data=True):
 
     # %% Some initial setup
-    
+
     tool_belt.reset_cfm(cxn)
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -300,9 +302,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
     # %% Set up the APD
 
     cxn.apd_tagger.start_tag_stream(apd_indices)
-    
+
     # %% Set up our raw data objects
-    
+
     # Initialize imgArray and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
     img_array = numpy.empty((x_num_steps, y_num_steps))
@@ -358,7 +360,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
             num_read_so_far += num_new_samples
 
     # %% Clean up
-    
+
     tool_belt.reset_cfm(cxn)
 
     # Return to center
@@ -401,5 +403,5 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
 
 if __name__ == '__main__':
-    file_name = '2019-07-25_18-37-46_ayrton12_search'
+    file_name = '2019-06-04_09-58-38_ayrton12'
     create_figure(file_name)
