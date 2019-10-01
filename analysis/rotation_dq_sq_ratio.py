@@ -77,7 +77,7 @@ def main_polar_3d(name, res_descs, aligned_res_desc, rotated_res_desc):
     # zero_to_low_el, zero_to_high_el, low_to_high_el
     aligned_rotated_dq_ratios = []
     nan_mask = []
-    noise_mag_Bs = numpy.linspace(0.0, 15000, 100)
+    noise_mag_Bs = numpy.linspace(10000, 15000, 100)
     phis = numpy.linspace(0, 2*pi, 100)
 
     x_vals = [[mag_B*numpy.cos(phi) for phi in phis] for mag_B in noise_mag_Bs]
@@ -139,7 +139,7 @@ def main_polar_3d(name, res_descs, aligned_res_desc, rotated_res_desc):
     ax = fig.add_subplot(111)
     fig.set_tight_layout(True)
     ax.set_title('Aligned / rotated DQ ratios for varying B noise magnitude')
-    aligned_rotated_dq_ratios = numpy.clip(aligned_rotated_dq_ratios, 0, 0.025)
+    # aligned_rotated_dq_ratios = numpy.clip(aligned_rotated_dq_ratios, 0, 0.025)
     mesh = ax.pcolormesh(x_vals, y_vals, aligned_rotated_dq_ratios,
                          cmap=cm.coolwarm, antialiased=True)
     fig.colorbar(mesh, ax=ax)
