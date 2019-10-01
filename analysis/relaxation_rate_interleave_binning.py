@@ -22,7 +22,7 @@ from utils.tool_belt import States
 data_folder = 't1_double_quantum'
 
 omega =  0.32
-omega_ste = 0.13
+omega_ste = 0.06
 
 gamma_offset = 0
 
@@ -47,8 +47,11 @@ def extract_data(file_name, folder_name):
 
     # Get the tau data and the (1,1) and (1,-1) sig and reference counts
     taus = numpy.array(data['tau_master_list'][0]) / 10**6 # us
+    taus = taus[1:]
     plus_minus_sig_counts = data['sig_counts_master_list'][0]
+    plus_minus_sig_counts = numpy.array(plus_minus_sig_counts)[:,1:]
     plus_plus_sig_counts= data['sig_counts_master_list'][1]
+    plus_plus_sig_counts = numpy.array(plus_plus_sig_counts)[:,1:]
     plus_minus_ref = numpy.average(data['ref_counts_master_list'][0])
     plus_plus_ref= numpy.average(data['ref_counts_master_list'][1])
     
@@ -218,7 +221,7 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_29MHz_30'
-    file = '2019-09-03-08_17_43-ayrton12-nv2_2019_04_30'
+    folder = 'nv2_2019_04_30_29MHz_29'
+    file = '2019-09-02-21_05_21-ayrton12-nv2_2019_04_30'
     
-    main(file, folder, 10, amp = 0.345)
+    main(file, folder, 25, amp = 0.32)

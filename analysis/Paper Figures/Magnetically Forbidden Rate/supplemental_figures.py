@@ -555,9 +555,13 @@ def rate_comaprison_NV2(save=False):
     
     # Plot
     fig, ax = plt.subplots(1, 1, figsize=(10,8))
-    
+#    ax.set_xscale("log", nonposx='clip')
+    ax.set_yscale("log", nonposy='clip')
+    ax.set_xlim([-1,50.5])
+    ax.set_ylim([6*10**-3,5*10**-1])
     ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
                 fmt = 'o', color = blue)
+#    ax.plot(time, counts_f, 'o', color =blue)
     yfit = exp_eq_offset(time_linspace, *opti_params_f)
     ax.plot(time_linspace, yfit, '-', color=blue)
     
@@ -572,6 +576,7 @@ def rate_comaprison_NV2(save=False):
     
     ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
                 fmt = '^', color = red)
+#    ax.plot(time, counts_s, '^', color =red)
     
     yfit = exp_eq_offset(time_linspace, *opti_params_s)
     ax.plot(time_linspace, yfit, '-', color=red)
@@ -766,4 +771,4 @@ if __name__ == '__main__':
 #    NV2_histogram(save=True)
 #    rate_comaprison_similar(save=True)
 #    rate_comaprison_different(save=True)
-    rate_comaprison_NV2(save=True)
+    rate_comaprison_NV2(save=False)
