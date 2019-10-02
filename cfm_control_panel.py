@@ -55,13 +55,16 @@ def set_xyz_zero():
 def do_image_sample(nv_sig, apd_indices):
     
     scan_range = 0.5
+    num_steps = 200
 #    num_steps = 150
-    num_steps = 90
+#    num_steps = 90
 #    scan_range = 0.5
 #    num_steps = 150
 #    scan_range = 0.3
 #    num_steps = 90
 #    scan_range = 0.2
+#    num_steps = 60
+#    scan_range = 0.1
 #    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
@@ -359,14 +362,14 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     sample_name = 'goeppert_mayer'
     
-    nv0_2019_06_06  = { 'coords': [0.0, 0.0, 5.0],
+    search  = { 'coords': [0.0, 0.0, 5.0],
         'name': 'goeppert_mayer-nv_search',
         'expected_count_rate': None, 'nd_filter': 'nd_1.5',
-        'pulsed_readout_dur': 400, 'magnet_angle': None,
-        'resonance_LOW': 2.8556, 'rabi_LOW': 69.0, 'uwave_power_LOW': 9.0, 
-        'resonance_HIGH': 2.8790, 'rabi_HIGH': 241.3, 'uwave_power_HIGH': 10.0}
+        'pulsed_readout_dur': None, 'magnet_angle': None,
+        'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': None, 
+        'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': None}
     
-    nv_sig_list = [nv0_2019_06_06]
+    nv_sig_list = [search]
 
     # %% Functions to run
 
@@ -393,9 +396,9 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-#            do_image_sample(nv_sig, apd_indices)
+            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
-            do_stationary_count(nv_sig, apd_indices)
+#            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
