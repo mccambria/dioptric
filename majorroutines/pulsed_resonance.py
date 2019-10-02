@@ -308,7 +308,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total
-            time.sleep(0.001)
+#            time.sleep(0.001)
 
             # Start the timing stream
             cxn.pulse_streamer.stream_start(num_reps)
