@@ -178,7 +178,7 @@ def time_main_plot():
 
     ax.tick_params(which = 'major', length=12, width=2)
 
-    ax.grid()
+#    ax.grid(axis='y')
 
 
 #    xfmt = mdates.DateFormatter('%m-%d-%y %H:%M')
@@ -251,7 +251,7 @@ def time_plot_inc():
 
     ax.tick_params(which = 'major', length=12, width=2)
 
-    ax.grid()
+#    ax.grid(axis='y')
     ax.set_ylim([23, 31.5])
     ax.spines['left'].set_visible(False)
     
@@ -367,15 +367,15 @@ def histogram(bins = 9, fit_gaussian = False):
     ax.tick_params(which = 'both', length=10, width=20, colors='k',
                     grid_alpha=1.2, labelsize = text)
 
-    ax.tick_params(which = 'major', length=12, width=2)
+    ax.tick_params(which = 'major', length=20, width=5)
     
         
     gssn_1_popt = [4, 0.8, 25.5]
     gssn_2_popt = [7,  0.8, 27.9]
 
     x_linspace = numpy.linspace(20, 35, 1000)
-    ax.plot(x_linspace, gaussian(x_linspace, *gssn_1_popt), '--',color = red,  lw = 6, label = 'fit')
-    ax.plot(x_linspace, gaussian(x_linspace, *gssn_2_popt), '--', color = blue,  lw = 6, label = 'fit')
+#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_1_popt), '--',color = red,  lw = 6, label = 'fit')
+#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_2_popt), '--', color = blue,  lw = 6, label = 'fit')
     ax.set_xlim([23,31.2])
 
     # Fit double gaussian
