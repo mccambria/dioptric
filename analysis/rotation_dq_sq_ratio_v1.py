@@ -16,8 +16,7 @@ from scipy.optimize import minimize_scalar
 import numpy
 from numpy import pi
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
+from scipy import integrate
 
 
 # %% Constants
@@ -41,6 +40,19 @@ def find_mag_B_splitting_objective(x, splitting,
     return (splitting - calculated_splitting)**2
 
 
+def calc_dq_factor(theta_B, phi_B,
+                   par_Pi, perp_Pi, phi_Pi, mag_B, popt):
+
+    noise_params = (theta_B, par_Pi, perp_Pi, phi_B, phi_Pi)
+    noise_hamiltonian = extract_hamiltonian.calc_hamiltonian(*noise_params)
+
+    mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
+                                                         mag_B, *popt)
+
+    mat_factors = [numpy.abs(el)**2 for el in mat_els]
+    return mat_factors[2]
+
+
 # %% Main
 
 
@@ -52,6 +64,8 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     # Get the aligned Hamiltonian parameters
     # popt = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
     aligned_popt = extract_hamiltonian.main(name, res_descs)
+    # aligned_popt = [0.0, 0.0, 0.0, 0.0, 0.0]
+    print(aligned_popt)
 
     # Find mag_B at the point we misaligned the field
     rotated_mag_B = extract_hamiltonian.find_mag_B(aligned_res_desc,
@@ -65,6 +79,8 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
 
     rotated_popt = (theta_B, aligned_popt[1], aligned_popt[2],
                     phi_B, aligned_popt[4])
+    # rotated_popt = [1.24, 0.0, 0.0, 0.0, 0.0]
+    print(rotated_popt)
 
     rotated_splitting = rotated_res_desc[2] - rotated_res_desc[1]
 
@@ -77,12 +93,14 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     aligned_vecs = extract_hamiltonian.calc_eigenvectors(aligned_mag_B, *aligned_popt)
     aligned_ideal_noise = numpy.outer(numpy.conj(aligned_vecs[2]), aligned_vecs[1])
     aligned_ideal_noise += numpy.outer(numpy.conj(aligned_vecs[1]), aligned_vecs[2])
-    print(numpy.real(aligned_ideal_noise))
+    aligned_ideal_noise = numpy.real(aligned_ideal_noise)
+    print(aligned_ideal_noise)
 
     rotated_vecs = extract_hamiltonian.calc_eigenvectors(rotated_mag_B, *rotated_popt)
     rotated_ideal_noise = numpy.outer(numpy.conj(rotated_vecs[2]), rotated_vecs[1])
     rotated_ideal_noise += numpy.outer(numpy.conj(rotated_vecs[1]), rotated_vecs[2])
-    print(numpy.real(rotated_ideal_noise))
+    aligned_ideal_noise = numpy.real(rotated_ideal_noise)
+    print(rotated_ideal_noise)
 
     print('\n- vec\n')
     print(aligned_vecs[1])
@@ -90,20 +108,26 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     print('+ vec\n')
     print(aligned_vecs[2])
     print(rotated_vecs[2])
-    return
+    # return
 
     # mag_B cancels, but if it's too small there are significant rounding errors
-    noise_params = [2.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    noise_params = [5.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     noise_hamiltonian = extract_hamiltonian.calc_hamiltonian(*noise_params)
     aligned_mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
-                                                 aligned_mag_B, *aligned_popt)
+                                                  aligned_mag_B, *aligned_popt)
     rotated_mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
-                                                 rotated_mag_B, *rotated_popt)
+                                                  rotated_mag_B, *rotated_popt)
 
     aligned_factors = [numpy.abs(el)**2 for el in aligned_mat_els]
     rotated_factors = [numpy.abs(el)**2 for el in rotated_mat_els]
 
     ratio = aligned_factors[2] / rotated_factors[2]
+    print(aligned_noise_theta)
+    print(rotated_noise_theta)
+    print(ratio)
+    # return
+
+    integral = integrate.dblquad()
 
     ################# Plotting... #################
 
@@ -111,31 +135,33 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     # at the same splitting. The matrix elements are ordered:
     # zero_to_low_el, zero_to_high_el, low_to_high_el
     aligned_rotated_dq_ratios = []
-    # noise_mag_B = 1000  # Computer does its best arithmetic with values ~1
-    noise_mag_Bs = numpy.linspace(0,200,1000)
+    aligned_factor_list = []
+    rotated_factor_list = []
+    noise_mag_B = 5.0  # Computer does its best arithmetic with values ~1
+    # noise_mag_Bs = numpy.linspace(0,200,1000)
     # phis = numpy.linspace(0, 2*pi, 1000)
-    # thetas = numpy.linspace(0, pi, 1000)
+    thetas = numpy.linspace(0, pi/2, 1000)
 
-    for noise_mag_B in noise_mag_Bs:
+    # for noise_mag_B in noise_mag_Bs:
     # for phi in phis:
-    # for theta in thetas:
+    for theta in thetas:
 
-        noise_params = [noise_mag_B, 0.0, 0.0, 0.0, 0.0, 0.0]
+        # noise_params = [noise_mag_B, 0.0, 0.0, 0.0, 0.0, 0.0]
         # noise_params = [noise_mag_B, pi/2, 0.0, 0.0, phi, 0.0]
-        # noise_params = [noise_mag_B, theta, 0.0, 0.0, 0, 0.0]
+        noise_params = [noise_mag_B, theta, 0.0, 0.0, 0, 0.0]
         noise_hamiltonian = extract_hamiltonian.calc_hamiltonian(*noise_params)
         aligned_mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
                                                      aligned_mag_B, *aligned_popt)
         rotated_mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
                                                      rotated_mag_B, *rotated_popt)
-    
+
         aligned_factors = [numpy.abs(el)**2 for el in aligned_mat_els]
         rotated_factors = [numpy.abs(el)**2 for el in rotated_mat_els]
 
         ratio = aligned_factors[2] / rotated_factors[2]
         aligned_rotated_dq_ratios.append(ratio)
-        # aligned_rotated_dq_ratios.append(aligned_factors[2])
-        # aligned_rotated_dq_ratios.append(rotated_factors[2])
+        aligned_factor_list.append(aligned_factors[2] * numpy.sin(theta))
+        rotated_factor_list.append(rotated_factors[2] * numpy.sin(theta))
         # aligned_rotated_dq_ratios.append(numpy.abs(aligned_mat_els[2]))
         # aligned_rotated_dq_ratios.append(numpy.abs(rotated_mat_els[2]))
 
@@ -144,9 +170,12 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     fig, ax = plt.subplots(1,1, figsize=(8.5, 8.5))
     fig.set_tight_layout(True)
 
-    ax.plot(noise_mag_Bs, aligned_rotated_dq_ratios)
+    # ax.plot(noise_mag_Bs, aligned_rotated_dq_ratios)
     # ax.plot(phis, aligned_rotated_dq_ratios)
     # ax.plot(thetas, aligned_rotated_dq_ratios)
+
+    ax.plot(thetas, aligned_factor_list)
+    ax.plot(thetas, rotated_factor_list)
 
 
 # %% Run the file
