@@ -130,8 +130,12 @@ if __name__ == '__main__':
                   [None, 2.6055, 3.1691],
                   [None, 2.4371, 3.4539]]
 
-    aligned_res_desc = [None, 2.8198, 2.9106]
-    rotated_res_desc = [None, 2.8454, 2.8873]
+    # aligned_res_desc = [None, 2.8198, 2.9106]
+    # rotated_res_desc = [None, 2.8454, 2.8873]
+
+    # Test
+    aligned_res_desc = [None, 2.6055, 3.1691]
+    rotated_res_desc = [None, 2.800, 3.200]
 
     # Run the script
     main(name, res_descs, aligned_res_desc, rotated_res_desc)
