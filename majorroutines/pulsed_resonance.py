@@ -152,7 +152,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
         print('Could not locate peaks')
         return None, None
     
-    low_freq_guess = freq_center
+#    low_freq_guess = freq_center
 #    high_freq_guess = 2.8429
 
     # %% Fit!
@@ -308,7 +308,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total
-            time.sleep(0.001)
+#            time.sleep(0.001)
 
             # Start the timing stream
             cxn.pulse_streamer.stream_start(num_reps)
@@ -467,27 +467,28 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-#    file = '2019-06-12_14-36-47_ayrton12'
+#    file = '2019_10/2019-10-03-16_27_15-ayrton12-NV0_2019_06_06'
 #    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
-
-    file = '2019-06-07_12-57-03_ayrton12'
-    data = tool_belt.get_raw_data('resonance.py', file)
-
-    freq_center = data['freq_center']
-    freq_range = data['freq_range']
-    num_steps = data['num_steps']
-    norm_avg_sig = numpy.array(data['norm_avg_sig'])
-    ref_counts = numpy.array(data['ref_counts'])
-    sig_counts = numpy.array(data['sig_counts'])
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
-
-
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, ref_counts)
-    if (fit_func is not None) and (popt is not None):
-        create_fit_figure(freq_range, freq_center, num_steps,
-                          norm_avg_sig, fit_func, popt)
-
-#    simulate(2.77, 0.1, 0.2, 100, 50)
+#
+##    file = '2019-10/2019-10-03-16_27_15-ayrton12-NV0_2019_06_06'
+##    data = tool_belt.get_raw_data('resonance.py', file)
+#
+#    freq_center = data['freq_center']
+#    freq_range = data['freq_range']
+#    num_steps = data['num_steps']
+#    norm_avg_sig = numpy.array(data['norm_avg_sig'])
+#    ref_counts = numpy.array(data['ref_counts'])
+#    sig_counts = numpy.array(data['sig_counts'])
+#    avg_ref_counts = numpy.average(ref_counts, axis=0)
+#    avg_sig_counts = numpy.average(sig_counts, axis=0)
+#    norm_avg_sig = avg_sig_counts / avg_ref_counts
+#
+#
+#    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
+#                                   norm_avg_sig, ref_counts)
+#    if (fit_func is not None) and (popt is not None):
+#        create_fit_figure(freq_range, freq_center, num_steps,
+#                          norm_avg_sig, fit_func, popt)
+    
+    # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
+    simulate(2.87, 0.2, 0.1, 100, 50)

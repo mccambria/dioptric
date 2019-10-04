@@ -46,9 +46,11 @@ def calc_dq_factor(theta_B, phi_B, mag_B, popt):
     return mat_factors[2]
 
 
-def calc_dq_factor_surface(theta_B, phi_B, mag_B, popt):
+def calc_dq_factor_surface(noise_theta_B, noise_phi_B, mag_B, popt):
 
-    return calc_dq_factor(theta_B, phi_B, mag_B, popt) * numpy.sin(theta_B)
+    val = calc_dq_factor(noise_theta_B, noise_phi_B, mag_B, popt)
+    val *= numpy.sin(noise_theta_B)
+    return val
 
 
 # %% Main
@@ -62,7 +64,6 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     # Get the aligned Hamiltonian parameters
     # popt = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
     aligned_popt = extract_hamiltonian.main(name, res_descs)
-    aligned_popt = [0.64, 0.0, 0.0, 0.0, 0.0]
     print(aligned_popt)
 
     # Find mag_B at the point we misaligned the field
@@ -71,38 +72,59 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
 
 
     # Get the rotated Hamiltonian parameters
-    theta_B, phi_B = extract_hamiltonian.find_B_orientation(rotated_res_desc,
-                                            rotated_mag_B, aligned_popt[1],
-                                            aligned_popt[2], aligned_popt[4])
+#    theta_B, phi_B = extract_hamiltonian.find_B_orientation(rotated_res_desc,
+#                                            rotated_mag_B, aligned_popt[1],
+#                                            aligned_popt[2], aligned_popt[4])
+#    rotated_popt = (theta_B, aligned_popt[1], aligned_popt[2],
+#                    phi_B, aligned_popt[4])
+#    print(rotated_popt)
 
-    rotated_popt = (theta_B, aligned_popt[1], aligned_popt[2],
-                    phi_B, aligned_popt[4])
-    rotated_popt = [1.24, 0.0, 0.0, 0.0, 0.0]
-    print(rotated_popt)
 
-    rotated_splitting = rotated_res_desc[2] - rotated_res_desc[1]
+    ######### TEST #########
 
-    # Find the mag_B for an equivalent splitting of the aligned Hamiltonian
-    args = (rotated_splitting, *aligned_popt)
-    result = minimize_scalar(find_mag_B_splitting_objective, bounds=(0, 1.0),
-                             args=args, method='bounded')
-    aligned_mag_B = result.x
+    rotated_popt = numpy.copy(aligned_popt)
+    angles = numpy.linspace(0, pi/2, 100)
+    ratios = []
+    for angle in angles:
+        rotated_popt[0] = angle
+#        print(rotated_popt)
+        res_pair = extract_hamiltonian.calc_res_pair(rotated_mag_B, *rotated_popt)
+        rotated_res_desc = [rotated_mag_B, res_pair[0], res_pair[1]]
 
-    aligned_args = (aligned_mag_B, aligned_popt)
-    aligned_integral, al_err = integrate.dblquad(calc_dq_factor_surface,
-                                         0, 2*pi, lambda x: 0, lambda x: pi,
-                                         args=aligned_args)
+        ######### FIN #########
 
-    rotated_args = (rotated_mag_B, rotated_popt)
-    rotated_integral, rot_err = integrate.dblquad(calc_dq_factor_surface,
-                                          0, 2*pi, lambda x: 0, lambda x: pi,
-                                          args=rotated_args)
+        rotated_splitting = rotated_res_desc[2] - rotated_res_desc[1]
+        zero_field_splitting = res_descs[0][2] - res_descs[0][1]
+        if rotated_splitting < zero_field_splitting:
+            # There is no mag_B that will give us the same splitting so stop
+            ratios.append(numpy.nan)
+            continue
 
-    print(al_err)
-    print(rot_err)
-    print(aligned_integral / (4*pi))
-    print(rotated_integral / (4*pi))
-    print(aligned_integral / rotated_integral)
+        # Find the mag_B for an equivalent splitting of the aligned Hamiltonian
+        args = (rotated_splitting, *aligned_popt)
+        result = minimize_scalar(find_mag_B_splitting_objective, bounds=(0, 1.0),
+                                 args=args, method='bounded')
+        aligned_mag_B = result.x
+
+        aligned_args = (aligned_mag_B, aligned_popt)
+        aligned_integral, al_err = integrate.dblquad(calc_dq_factor_surface,
+                                             0, 2*pi, lambda x: 0, lambda x: pi,
+                                             args=aligned_args)
+
+        rotated_args = (rotated_mag_B, rotated_popt)
+        rotated_integral, rot_err = integrate.dblquad(calc_dq_factor_surface,
+                                              0, 2*pi, lambda x: 0, lambda x: pi,
+                                              args=rotated_args)
+
+#        print(al_err)
+#        print(rot_err)
+#        print(aligned_integral / (4*pi))
+#        print(rotated_integral / (4*pi))
+#        print(aligned_integral / rotated_integral)
+        ratios.append(aligned_integral / rotated_integral)
+
+    fig, ax = plt.subplots()
+    ax.plot(angles, ratios)
 
 
 # %% Run the file

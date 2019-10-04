@@ -42,8 +42,8 @@ def double_gaussian(x, amp_1, sigma_1, center_1,
 #nv2_error = [0.7369762116347649, 0.7562560021631601, 0.7625914980081805, 0.6574314474315747, 0.919359268283852, 0.731682094646155, 0.6947147322987086, 0.616051484886374, 0.6780672107044817, 0.8163823109181038, 0.6770579087023205, 0.6029035459656106, 0.6382539810559575, 0.6652562354500725, 0.6922682555827679, 0.7336262328354057, 0.8238800269399206, 0.7897512310371543, 0.7605036639707671, 0.8105764122736127, 0.7538842164929711, 0.8121492389404094, 0.75566606260391, 0.7553684059638512, 0.7000456778038091, 0.7725893647614507]
 
 # Rates after new analysis
-nv2_rates = [30.654098381810353, 30.558426784844333, 33.630011684029235, 27.358674274597067, 29.694225486301345, 29.735730885709835, 30.31658320217184, 27.439609570685615, 27.66001677267672, 29.85486711663969, 28.169702416919236, 27.69816916530537, 27.145989277188658, 28.072101725438515, 29.628036973737114, 28.16275682808092, 32.558160177911724, 31.709169560012526, 31.76693261940732, 33.301458363646816, 29.86610630656129, 30.615560494952753, 31.940700380850636, 31.30624290341998, 30.493046635745998, 29.360895743275577]
-nv2_error = numpy.array([0.46192455481282185, 0.48039831813814393, 0.4967232959644107, 0.40823547214785466, 0.630978928191298, 0.44868972180646705, 0.4461350277193815, 0.40385882769019393, 0.41618192075406124, 0.5168443270125564, 0.40613046174455897, 0.4116454070962489, 0.3924510042750695, 0.42545212722523895, 0.4509814527664112, 0.42811118173819585, 0.5250816941437906, 0.5166025539016457, 0.4603795565940479, 0.5204499896554495, 0.4766908170407312, 0.46055097844279863, 0.48053758925073475, 0.45784910287618946, 0.44671095116842086, 0.4584155029411859])*2
+nv2_rates = [27.621071292343977, 28.00467103154353, 29.469965453079418, 25.10316827931753, 27.384306752689977, 26.950826695652587, 27.57847277904147, 25.813643197609753, 25.545459621923523, 27.73919964386004, 24.93512434869353, 25.341877755575116, 25.03634200036785, 25.81743330146043, 27.664173722079138, 26.182779332824943, 29.769336662684722, 29.004513033512666, 28.668977681142096, 30.34822157435222, 27.712413403059614, 27.39954530909307, 29.030026517648455, 28.11304948821951, 27.691511309720386, 26.623793229361375]
+nv2_error = numpy.array([0.48665910284728936, 0.5136437039949685, 0.5229472135927203, 0.43261891664090063, 0.6756646634091575, 0.46467072686726413, 0.47143103043938, 0.423587832606777, 0.4446911497352184, 0.5366201978752652, 0.4412212934696276, 0.43465587142873024, 0.42048005502218033, 0.4462953842115663, 0.4822572573604373, 0.4403568078813716, 0.5657279159827925, 0.543961952271339, 0.49386476574863025, 0.5473851659364642, 0.5002106035777926, 0.5016894491027237, 0.5087576703572062, 0.4840832910081832, 0.4797090724802973, 0.47941746597351753])
 
 # the time of the start of the experiment (when the pESSR and rabi data was saved
 
@@ -178,12 +178,12 @@ def time_main_plot():
 
     ax.tick_params(which = 'major', length=12, width=2)
 
-    ax.grid()
+#    ax.grid(axis='y')
 
 
 #    xfmt = mdates.DateFormatter('%m-%d-%y %H:%M')
 #    ax.xaxis.set_major_formatter(xfmt)
-    ax.set_ylim([24, 36])
+    ax.set_ylim([23, 31.5])
     ax.set_xlim([-5, 145])
     plt.xlabel('Time (hours)', fontsize=18)
     plt.ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=18)
@@ -202,7 +202,7 @@ def time_plot_inc():
     
     gamma_list = data29['gamma_list'] + data30['gamma_list']
     gamma_ste_list = data29['gamma_ste_list'] + data30['gamma_ste_list']
-    gamma_ste_list = numpy.array(gamma_ste_list)*2
+    gamma_ste_list = numpy.array(gamma_ste_list)
     time_inc = 5.5 # hr
     
     start_time_list_2 = []
@@ -251,8 +251,8 @@ def time_plot_inc():
 
     ax.tick_params(which = 'major', length=12, width=2)
 
-    ax.grid()
-    ax.set_ylim([24, 36])
+#    ax.grid(axis='y')
+    ax.set_ylim([23, 31.5])
     ax.spines['left'].set_visible(False)
     
 #    ax.set_xlabel('Time (hour)', fontsize=18)
@@ -336,7 +336,7 @@ def time_plot_zoom():
     fig.canvas.draw()
     fig.canvas.flush_events()
 
-    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4aZOOM.pdf", bbox_inches='tight')
+#    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4aZOOM.pdf", bbox_inches='tight')
 
 
 def histogram(bins = 9, fit_gaussian = False):
@@ -344,6 +344,8 @@ def histogram(bins = 9, fit_gaussian = False):
     Produces a histogram of the data passed
     '''
     text = 62
+    blue = '#2e3192'
+    red = '#ed1c24'
     # The data from the econd take
     file29 = '29.5_MHz_splitting_5_bins_error'
     folder29 = 'nv2_2019_04_30_29MHz_29'
@@ -360,38 +362,36 @@ def histogram(bins = 9, fit_gaussian = False):
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ret_vals= ax.hist(gamma_list, bins = bins, color = purple)
-    print(ret_vals[0], ret_vals[1])
     ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
     ax.set_ylabel('Occurances', fontsize=text)
     ax.tick_params(which = 'both', length=10, width=20, colors='k',
                     grid_alpha=1.2, labelsize = text)
 
-    ax.tick_params(which = 'major', length=12, width=2)
+    ax.tick_params(which = 'major', length=20, width=5)
+    
+        
+    gssn_1_popt = [4, 0.8, 25.5]
+    gssn_2_popt = [7,  0.8, 27.9]
+
+    x_linspace = numpy.linspace(20, 35, 1000)
+#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_1_popt), '--',color = red,  lw = 6, label = 'fit')
+#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_2_popt), '--', color = blue,  lw = 6, label = 'fit')
+    ax.set_xlim([23,31.2])
+
+    # Fit double gaussian
+    x_grid_endpoints = ret_vals[1]
+    bin_width = (x_grid_endpoints[1] - x_grid_endpoints[0])/2
+    x_grid = numpy.array(x_grid_endpoints) + bin_width
+    hist_points = ret_vals[0]
+    print(x_grid, hist_points)
+    init_guesses = gssn_1_popt + gssn_2_popt
+    popt, pcov = curve_fit(double_gaussian, hist_points, x_grid[:-1], p0= init_guesses)
+    print(popt)
+    
+#    ax.plot(x_linspace, double_gaussian(x_linspace, *popt), 'k--', lw = 6, label = 'fit')
+
     fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4b.pdf", bbox_inches='tight')
     
-    if fit_gaussian:
-        x_grid_endpoints = ret_vals[1]
-        bin_width = (x_grid_endpoints[1] - x_grid_endpoints[0])/2
-        x_grid = numpy.array(x_grid_endpoints) + bin_width
-        hist_points = ret_vals[0]
-        
-        init_guess = [5, 1, 27.3, 10, 1, 30.5]
-    
-        dbl_gssn_popt, pcov = curve_fit(double_gaussian, x_grid[:-1], hist_points, p0 = init_guess)
-    
-        x_linspace = numpy.linspace(25, 35, 1000)
-        ax.plot(x_linspace, double_gaussian(x_linspace, *dbl_gssn_popt), 'r--', label = 'fit')
-    #    ax.plot(x_grid[:-1}], hist_points, 'ro')
-        ax.legend()
-        
-        text = '\n'.join(('Double Gaussian',
-                      r'$x_1 = {}, simga_1= {}, a_1 = {}$'.format('%.2f'%(dbl_gssn_popt[2]), '%.2f'%(dbl_gssn_popt[1]), '%.2f'%(dbl_gssn_popt[0])),
-                      r'$x_2 = {}, simga_2 = {}, a_2 = {}$'.format('%.2f'%(dbl_gssn_popt[5]), '%.2f'%(dbl_gssn_popt[4]), '%.2f'%(dbl_gssn_popt[3]))
-                      ))
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.05, 0.9, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-
 def kde_sklearn(x, bandwidth=0.5):
     '''
     Produces a kernel density estimation of the data passed. It also plots it.
@@ -431,11 +431,19 @@ if __name__ == "__main__":
     # Combine all the data
     
     gamma_list = data29['gamma_list'] + data30['gamma_list'] + nv2_rates
-    
-    
+
     time_plot_inc()
     time_main_plot()
-    time_plot_zoom()
-#    histogram(fit_gaussian = False)
+#    time_plot_zoom()
+#    histogram(bins = 10)
+    
+#    init_guesses = [.16, 0.8, 25.5, .24, 0.8, 27.9]
+#    x_linspace = numpy.linspace(20, 35, 1000)
+#    y,x = kde_sklearn(gamma_list, bandwidth=0.8)
+#    popt, pcov = curve_fit(double_gaussian, y, x, p0= init_guesses)
+#    print(popt)
+#    plt.plot(x_linspace, double_gaussian(x_linspace, *popt), 'k--', lw = 1, label = 'fit')
+    
+    
 
 
