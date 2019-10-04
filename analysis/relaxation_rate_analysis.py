@@ -40,7 +40,7 @@ from utils.tool_belt import States
 
 data_folder = 't1_double_quantum'
 
-manual_offset_gamma = 0.0
+manual_offset_gamma = 0.037
 # %% Functions
 
 # The exponential function without an offset
@@ -521,10 +521,10 @@ if __name__ == '__main__':
 
     
 
-    folder = 'nv2_2019_04_30_29MHz_29'
+    folder = 'nv16_2019_07_25_17MHz'
 
     # folder_name, omega, omega_std, doPlot, offset
-    gamma, ste = main(folder,  0.32, 0.06,  True, offset = False)
+    gamma, ste = main(folder,  None, None,  True, offset = False)
 
 
 
