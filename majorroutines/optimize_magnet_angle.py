@@ -41,7 +41,7 @@ def create_fit_figure(splittings, angles, fit_func, popt):
     text = ('Optimized Angle: {}'.format('%.1f'%opti_angle))
 
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(0.80, 0.80, text, transform=ax.transAxes, fontsize=12,
+    ax.text(0.70, 0.90, text, transform=ax.transAxes, fontsize=12,
             verticalalignment="top", bbox=props)
     
     fig.canvas.draw()
@@ -175,6 +175,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
             opti_angle = (-popt[2]) % 180
             fig = create_fit_figure(splittings, angles, fit_func, popt)
         except Exception:
+            print("Wasn't able to plot resonances")
             opti_angle = None
 
     # %% Wrap up
@@ -226,12 +227,12 @@ if __name__ == '__main__':
     angles = numpy.linspace(angle_range[0], angle_range[1], num_angle_steps)
     
     splittings = [
-        31.51644491296013,
-        25.39622789351581,
-        53.35391946946322,
-        75.29429716393254,
-        79.01506367121458,
-        66.15301707758859]
+        85,
+        123,
+        129,
+        103,
+        50,
+        36]
     angles = numpy.linspace(0, 150, 6)
     fit_func, popt = fit_data(splittings, angles)
 
