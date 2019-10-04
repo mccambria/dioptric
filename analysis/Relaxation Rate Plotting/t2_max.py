@@ -145,12 +145,6 @@ fig1, ax = plt.subplots(1, 1, figsize=(8, 8))
 
 ax.errorbar(nv1_splitting_list, T2_max_1, yerr = T2_max_error_1, 
             label = 'NV1',  color= nv1_color, fmt='D',markersize = 20, elinewidth=4)
-#ax.hlines(average_traditional_t2_max_1, 0, 1000, linewidth=5, colors = 'red')
-#ax.fill_between(linspace, average_traditional_t2_max_1 + average_traditional_t2_error_1,
-#                        average_traditional_t2_max_1 - average_traditional_t2_error_1,
-#                        color = 'red', alpha=0.2)
-#ax.plot(linspace, average_traditional_t2_max_1,  
-#            label = 'NV1', linestyle=':', color = nv1_color, linewidth=3)
 
 print(numpy.average(T2_max_traditional_1))
 ax.set_yscale("log", nonposy='clip')
@@ -162,10 +156,10 @@ ax.tick_params(which = 'both', length=14, width=3, colors='k',
                 grid_alpha=0.7, labelsize = font_size)
 
 ax.tick_params(which = 'major', length=20, width=5)
+ax.set_xticks([0,500, 1000])
 
 
-
-ax.grid(lw=3)
+ax.grid(axis='y',lw=3)
 
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
@@ -191,9 +185,9 @@ ax.tick_params(which = 'major', length=20, width=5)
 
 ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
+ax.set_xticks([0,250, 500, 750])
 
-
-ax.grid(lw=3)
+ax.grid(axis='y',lw=3)
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
@@ -216,8 +210,9 @@ ax.tick_params(which = 'major', length=20, width=5)
 
 ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
+ax.set_xticks([0,250, 500, 750])
 
-ax.grid(lw=3)
+ax.grid(axis='y',lw=3)
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
@@ -245,8 +240,9 @@ ax.tick_params(which = 'major', length=20, width=5)
 
 ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
+ax.set_xticks([0,500, 1000])
 
-ax.grid(lw=3)
+ax.grid(axis='y',lw=3)
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
@@ -275,8 +271,9 @@ ax.tick_params(which = 'major', length=20, width=5)
 
 ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
+ax.set_xticks([0,50, 100, 150])
 
-ax.grid(lw=3)
+ax.grid(axis='y', lw=3)
 plt.xlabel('Splitting (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 

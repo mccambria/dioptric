@@ -137,7 +137,9 @@ def reformat_plot(colorMap, save_file_type):
             readout = data['readout']
 
             # Read in the arrays of Center and Image Reoslution
-            xyzCenters = data["coords"]
+            nv_sig = data['nv_sig']
+
+            xyzCenters = nv_sig["coords"]
             imgResolution = data["num_steps"]
 
             # Read in the values for the scan ranges, centers, and resolution
@@ -403,5 +405,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
 
 if __name__ == '__main__':
-    file_name = '2019_09/2019-09-13-10_56_02-ayrton12-nv0_2019_06_06'
+
+#    file_name = '2019-06-04_09-58-38_ayrton12'
+#    create_figure(file_name)
+    reformat_plot('inferno', 'svg')
+    file_name = '2019-07-25_18-37-46_ayrton12_search'
     create_figure(file_name)

@@ -283,7 +283,7 @@ def histogram(bins = 6, fit_gaussian = False):
                     grid_alpha=1.2, labelsize = text)
 
     ax.tick_params(which = 'major', length=12, width=2)
-    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
+#    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
 #  
     if fit_gaussian:
         x_grid_endpoints = ret_vals[1]
@@ -338,9 +338,9 @@ def kde_sklearn(x, bandwidth=0.5):
 file_name = '26.2_MHz_splitting_25_bins_error'
 folder_name = 'nv1_2019_05_10_28MHz_6'    
 
-time_main_plot(folder_name, file_name)
-time_zoom_plot(folder_name, file_name)
-histogram(fit_gaussian = False)
+#time_main_plot(folder_name, file_name)
+#time_zoom_plot(folder_name, file_name)
+histogram(fit_gaussian = True)
 
 #file4 = '26.3_MHz_splitting_6_bins_error'
 #folder4 = 'nv1_2019_05_10_28MHz_4'
