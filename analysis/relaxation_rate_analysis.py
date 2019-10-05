@@ -521,4 +521,5 @@ if __name__ == '__main__':
     folder = 'nv1_2019_05_10_351MHz_rot'
 
     # folder_name, omega, omega_std, doPlot, offset
-    gamma, ste = main(folder, omega=1.2, omega_ste=0.4, True, offset = False)
+    gamma, ste = main(folder, omega=1.17, omega_ste=0.05,
+                      doPlot=True, offset=False)
