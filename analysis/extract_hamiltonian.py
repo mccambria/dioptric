@@ -367,8 +367,6 @@ def main(name, res_descs):
         x0 = brute(chisq_func, param_ranges, args=args, Ns=10)
         guess_params = list(x0)
 
-    print(guess_params)
-
     ############ Fine tuning with minimize ############
 
     args = (phi_B, phi_Pi, res_descs)
@@ -379,7 +377,7 @@ def main(name, res_descs):
         return
 
     popt = res.x
-    print(popt)
+    print('popt: {}'.format(popt))
 
     chisq = res.fun
     print('Chi squared: {:.4g}'.format(chisq))
@@ -416,21 +414,23 @@ if __name__ == '__main__':
 
     ############ Nice ############
 
-#    name = 'nv1_2019_05_10'
-#    res_descs = [[0.0, 2.8537, 2.8751],
-#                  [None, 2.8554, 2.8752],
-#                  [None, 2.8512, 2.8790],
-#                  [None, 2.8520, 2.8800],
-#                  [None, 2.8536, 2.8841],
-#                  [None, 2.8496, 2.8823],
-#                  [None, 2.8396, 2.8917],
-#                  [None, 2.8198, 2.9106],  # Reference for misaligned T1
-#                  [None, 2.8166, 2.9144],
-#                  [None, 2.8080, 2.9240],
-#                  [None, 2.7357, 3.0037],
-#                  [None, 2.6061, 3.1678],
-#                  [None, 2.6055, 3.1691],
-#                  [None, 2.4371, 3.4539]]
+    name = 'nv1_2019_05_10'
+    res_descs = [[0.0, 2.8537, 2.8751],
+                  [None, 2.8554, 2.8752],
+                  [None, 2.8512, 2.8790],
+                  [None, 2.8520, 2.8800],
+                  [None, 2.8536, 2.8841],
+                  [None, 2.8496, 2.8823],
+                  [None, 2.8396, 2.8917],
+                  [None, 2.8198, 2.9106],  # Reference for misaligned T1
+                  [None, 2.8166, 2.9144],
+                  [None, 2.8080, 2.9240],
+                  [None, 2.7357, 3.0037],
+                  [None, 2.6061, 3.1678],
+                  [None, 2.6055, 3.1691],
+                  [None, 2.4371, 3.4539],
+                  [None, 2.6310, 3.1547],  # Reference for misaligned T1
+                  ]
 
 #    name = 'nv1_2019_05_10_misaligned'
 #    res_descs = [[0.0, 2.8537, 2.8751],
@@ -442,17 +442,17 @@ if __name__ == '__main__':
 #                    [None, 2.8443, 3.0193]
 #                    ]
 
-    name = 'NV0_2019_06_06'
-    res_descs = [[0.0, 2.8547, 2.8793],
-                  [None, 2.8532, 2.8795],
-                  [None, 2.8494, 2.8839],
-                  [None, 2.8430, 2.8911],
-                  [None, 2.8361, 2.8998],
-                  [None, 2.8209, 2.9132],
-                  [None, 2.7915, 2.9423],
-                  [None, 2.7006, 3.0302],
-                  [None, 2.4244, 3.3093],
-                  [None, 2.2990, 3.4474]]  # Aligned
+#    name = 'NV0_2019_06_06'
+#    res_descs = [[0.0, 2.8547, 2.8793],
+#                  [None, 2.8532, 2.8795],
+#                  [None, 2.8494, 2.8839],
+#                  [None, 2.8430, 2.8911],
+#                  [None, 2.8361, 2.8998],
+#                  [None, 2.8209, 2.9132],
+#                  [None, 2.7915, 2.9423],
+#                  [None, 2.7006, 3.0302],
+#                  [None, 2.4244, 3.3093],
+#                  [None, 2.2990, 3.4474]]  # Aligned
 #                  [None, 2.4993, 3.5798]]  # Accidentally misaligned
 
 #    name = 'nv2_2019_04_30'
