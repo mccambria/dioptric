@@ -38,11 +38,11 @@ nv2_omega_error_list = numpy.array([0.01, 0.013, 0.01, 0.011, 0.011, 0.02, 0.011
 nv2_gamma_avg_list = numpy.array([124, 31.1, 8.47, 2.62, 0.443, 0.81,20.9, 6.43, 3.64, 3.77,  1.33])
 nv2_gamma_error_list = numpy.array([3, 0.4, 0.11, 0.05, 0.014, 0.06,0.3, 0.12, 0.08, 0.09,  0.05])*2
 
-nv16_splitting_list = [28.6, 53.0, 81.2, 128.0, 283.7, 495.8, 746]
-nv16_omega_avg_list = numpy.array([0.53, 0.87, 1.7, 0.60, 0.70, 1.4, 1.03])
-nv16_omega_error_list = numpy.array([0.05, 0.09, 0.2, 0.05, 0.07, 0.4, 0.17])*2
-nv16_gamma_avg_list = numpy.array([90, 26.2, 17.5, 11.3, 5.6, 3.7, 2.8])
-nv16_gamma_error_list = numpy.array([5, 0.9, 0.6, 0.4, 0.3, 0.4, 0.3])*2
+nv16_splitting_list = [17.1, 28.6, 53.0, 81.2, 128.0, 283.7, 495.8, 746]
+nv16_omega_avg_list = numpy.array([0.708, 0.53, 0.87, 1.7, 0.60, 0.70, 1.4, 1.03])
+nv16_omega_error_list = numpy.array([0.165, 0.05, 0.09, 0.2, 0.05, 0.07, 0.4, 0.17])*2
+nv16_gamma_avg_list = numpy.array([108, 90, 26.2, 17.5, 11.3, 5.6, 3.7, 2.8])
+nv16_gamma_error_list = numpy.array([10, 5, 0.9, 0.6, 0.4, 0.3, 0.4, 0.3])*2
 
 #NV0
 splitting_list = [23.4, 26.3, 36.2, 48.1, 60.5, 92.3, 150.8, 329.6, 884.9, 1080.5, 1148.4]

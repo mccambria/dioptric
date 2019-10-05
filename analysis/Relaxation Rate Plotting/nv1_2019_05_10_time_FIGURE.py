@@ -278,7 +278,7 @@ def histogram(bins = 6, fit_gaussian = False):
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ret_vals= ax.hist(gamma_list, bins = bins, color = purple)
     ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
-    ax.set_ylabel('Occurances', fontsize=text)
+    ax.set_ylabel('Occurrences', fontsize=text)
     ax.tick_params(which = 'both', length=10, width=20, colors='k',
                     grid_alpha=1.2, labelsize = text)
 

@@ -81,7 +81,7 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
                     aligned_popt[3], aligned_popt[4])
     print(rotated_popt)
 
-    
+
     # Find the mag_B for an equivalent splitting of the aligned Hamiltonian
     rotated_splitting = rotated_res_desc[2] - rotated_res_desc[1]
     args = (rotated_splitting, *aligned_popt)
@@ -98,10 +98,10 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     rotated_integral, rot_err = integrate.dblquad(calc_dq_factor_surface,
                                           0, 2*pi, lambda x: 0, lambda x: pi,
                                           args=rotated_args)
-    
+
     ratio = aligned_integral / rotated_integral
     print('Expected ratio: {}'.format(ratio))
-        
+
 
 def main_plot(name, res_descs, aligned_res_desc):
     """When you run the file, we'll call into main, which should contain the
@@ -124,32 +124,32 @@ def main_plot(name, res_descs, aligned_res_desc):
         rotated_popt[0] = angle
         res_pair = extract_hamiltonian.calc_res_pair(rotated_mag_B, *rotated_popt)
         rotated_res_desc = [rotated_mag_B, res_pair[0], res_pair[1]]
-        
+
         rotated_splitting = rotated_res_desc[2] - rotated_res_desc[1]
         zero_field_splitting = res_descs[0][2] - res_descs[0][1]
         if rotated_splitting < zero_field_splitting:
             # There is no mag_B that will give us the same splitting so stop
             ratios.append(numpy.nan)
             continue
-    
+
         # Find the mag_B for an equivalent splitting of the aligned Hamiltonian
         args = (rotated_splitting, *aligned_popt)
         result = minimize_scalar(find_mag_B_splitting_objective, bounds=(0, 1.0),
                                  args=args, method='bounded')
         aligned_mag_B = result.x
-    
+
         aligned_args = (aligned_mag_B, aligned_popt)
         aligned_integral, al_err = integrate.dblquad(calc_dq_factor_surface,
                                              0, 2*pi, lambda x: 0, lambda x: pi,
                                              args=aligned_args)
-    
+
         rotated_args = (rotated_mag_B, rotated_popt)
         rotated_integral, rot_err = integrate.dblquad(calc_dq_factor_surface,
                                               0, 2*pi, lambda x: 0, lambda x: pi,
                                               args=rotated_args)
-    
+
         ratios.append(aligned_integral / rotated_integral)
-        
+
     fig, ax = plt.subplots()
     ax.plot(angles, ratios)
     ax.set_ylim(0, 1)
