@@ -18,7 +18,7 @@ import time
 
 import json
 import matplotlib.pyplot as plt
-import labrad
+#import labrad
 
 
 def populate_img_array(valsToAdd, imgArray, writePos):
@@ -127,7 +127,7 @@ def reformat_plot(colorMap, save_file_type):
             # Build the image array from the data
             imgArray = []
 
-            for line in data["img_array"]:
+            for line in data["imgArray"]:
                 imgArray.append(line)
 
             counts_array = numpy.array(imgArray)
@@ -137,17 +137,19 @@ def reformat_plot(colorMap, save_file_type):
             readout = data['readout']
 
             # Read in the arrays of Center and Image Reoslution
-            nv_sig = data['nv_sig']
-
-            xyzCenters = nv_sig["coords"]
-            imgResolution = data["num_steps"]
+            try:
+                nv_sig = data['nv_sig']
+                xyzCenters = nv_sig["coords"]
+            except Exception:
+                xyzCenters = data['xyzCenters']
+            imgResolution = data["scanStepSize"]
 
             # Read in the values for the scan ranges, centers, and resolution
-            yScanRange = data["y_range"]
+            yScanRange = data["yScanRange"]
             yCenter = xyzCenters[1]
             yImgResolution = imgResolution
 
-            xScanRange = data["x_range"]
+            xScanRange = data["xScanRange"]
             xCenter = xyzCenters[0]
             xImgResolution = imgResolution
 
@@ -409,5 +411,7 @@ if __name__ == '__main__':
 #    file_name = '2019-06-04_09-58-38_ayrton12'
 #    create_figure(file_name)
     reformat_plot('inferno', 'svg')
+
     file_name = '2019-07-25_18-37-46_ayrton12_search'
     create_figure(file_name)
+

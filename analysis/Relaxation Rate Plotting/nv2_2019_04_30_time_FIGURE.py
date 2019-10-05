@@ -363,11 +363,12 @@ def histogram(bins = 9, fit_gaussian = False):
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ret_vals= ax.hist(gamma_list, bins = bins, color = purple)
     ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
-    ax.set_ylabel('Occurances', fontsize=text)
+    ax.set_ylabel('Occurrences', fontsize=text)
     ax.tick_params(which = 'both', length=10, width=20, colors='k',
                     grid_alpha=1.2, labelsize = text)
 
     ax.tick_params(which = 'major', length=20, width=5)
+    ax.set_yticks([0,2, 4,6])
     
         
     gssn_1_popt = [4, 0.8, 25.5]
@@ -432,10 +433,10 @@ if __name__ == "__main__":
     
     gamma_list = data29['gamma_list'] + data30['gamma_list'] + nv2_rates
 
-    time_plot_inc()
-    time_main_plot()
+#    time_plot_inc()
+#    time_main_plot()
 #    time_plot_zoom()
-#    histogram(bins = 10)
+    histogram(bins = 10)
     
 #    init_guesses = [.16, 0.8, 25.5, .24, 0.8, 27.9]
 #    x_linspace = numpy.linspace(20, 35, 1000)

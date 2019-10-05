@@ -28,11 +28,11 @@ import numpy
 from scipy.stats import chisquare
 
 # The data
-nv16_splitting_list = [28.6, 53.0, 81.2, 128.0, 283.7, 495.8, 746]
-nv16_omega_avg_list = [0.53, 0.87, 1.7, 0.60, 0.70, 1.4, 1.03]
-nv16_omega_error_list = numpy.array([0.05, 0.09, 0.2, 0.05, 0.07, 0.4, 0.17])*2
-nv16_gamma_avg_list = [90, 26.2, 17.5, 11.3, 5.6, 3.7, 2.8]
-nv16_gamma_error_list = numpy.array([5, 0.9, 0.6, 0.4, 0.3, 0.4, 0.3])*2
+nv16_splitting_list = [17.1, 28.6, 53.0, 81.2, 128.0, 283.1, 495.8, 746]
+nv16_omega_avg_list = numpy.array([0.708, 0.53, 0.87, 1.7, 0.60, 0.70, 1.4, 1.03])
+nv16_omega_error_list = numpy.array([0.165, 0.05, 0.09, 0.2, 0.05, 0.07, 0.4, 0.17])*2
+nv16_gamma_avg_list = numpy.array([108, 90, 26.2, 17.5, 11.3, 5.6, 3.7, 2.8])
+nv16_gamma_error_list = numpy.array([10, 5, 0.9, 0.6, 0.4, 0.3, 0.4, 0.3])*2
 
 # Try to fit the gamma to a 1/f^alpha
 
@@ -55,7 +55,7 @@ axis_font = {'size':'14'}
 orange = '#f7941d'
 purple = '#87479b'
 
-print(fit_alpha_params)
+print(fit_alpha_params[1], numpy.sqrt(cov_arr[1][1]))
 
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
@@ -112,4 +112,4 @@ plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
 #plt.title('NV16', fontsize=18)
 #ax.legend(fontsize=18)
-fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b.pdf", bbox_inches='tight')
+#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b.pdf", bbox_inches='tight')

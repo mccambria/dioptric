@@ -105,9 +105,9 @@ def get_data_lists(folder_name):
 
             init_state_name = data['init_state']
             read_state_name = data['read_state']
-            
-            sig_counts  = numpy.array(data['sig_counts'])[:,1:]
-            ref_counts = numpy.array(data['ref_counts'])[:,1:]
+
+            sig_counts  = numpy.array(data['sig_counts'])
+            ref_counts = numpy.array(data['ref_counts'])
 
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             num_steps = data['num_steps']
@@ -120,7 +120,6 @@ def get_data_lists(folder_name):
             time_array = numpy.linspace(min_relaxation_time,
                                         max_relaxation_time, num=num_steps)
 
-            time_array = time_array[1:]
             # Calculate the average signal counts over the runs, and st. error
             avg_sig_counts = numpy.average(sig_counts[::], axis=0)
             ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
