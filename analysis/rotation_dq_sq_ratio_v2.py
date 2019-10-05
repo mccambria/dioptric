@@ -79,9 +79,9 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
 #                    phi_B, aligned_popt[4])
 #    print(rotated_popt)
 
-    
+
     ######### TEST #########
-    
+
     rotated_popt = numpy.copy(aligned_popt)
     angles = numpy.linspace(0, pi/2, 100)
     ratios = []
@@ -90,39 +90,39 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
 #        print(rotated_popt)
         res_pair = extract_hamiltonian.calc_res_pair(rotated_mag_B, *rotated_popt)
         rotated_res_desc = [rotated_mag_B, res_pair[0], res_pair[1]]
-        
+
         ######### FIN #########
-        
+
         rotated_splitting = rotated_res_desc[2] - rotated_res_desc[1]
         zero_field_splitting = res_descs[0][2] - res_descs[0][1]
         if rotated_splitting < zero_field_splitting:
             # There is no mag_B that will give us the same splitting so stop
             ratios.append(numpy.nan)
             continue
-    
+
         # Find the mag_B for an equivalent splitting of the aligned Hamiltonian
         args = (rotated_splitting, *aligned_popt)
         result = minimize_scalar(find_mag_B_splitting_objective, bounds=(0, 1.0),
                                  args=args, method='bounded')
         aligned_mag_B = result.x
-    
+
         aligned_args = (aligned_mag_B, aligned_popt)
         aligned_integral, al_err = integrate.dblquad(calc_dq_factor_surface,
                                              0, 2*pi, lambda x: 0, lambda x: pi,
                                              args=aligned_args)
-    
+
         rotated_args = (rotated_mag_B, rotated_popt)
         rotated_integral, rot_err = integrate.dblquad(calc_dq_factor_surface,
                                               0, 2*pi, lambda x: 0, lambda x: pi,
                                               args=rotated_args)
-    
+
 #        print(al_err)
 #        print(rot_err)
 #        print(aligned_integral / (4*pi))
 #        print(rotated_integral / (4*pi))
 #        print(aligned_integral / rotated_integral)
         ratios.append(aligned_integral / rotated_integral)
-        
+
     fig, ax = plt.subplots()
     ax.plot(angles, ratios)
 
@@ -136,56 +136,28 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here
-#    name = 'nv1_2019_05_10'
-#    res_descs = [[0.0, 2.8537, 2.8751],
-#                  [None, 2.8554, 2.8752],
-#                  [None, 2.8512, 2.8790],
-#                  [None, 2.8520, 2.8800],
-#                  [None, 2.8536, 2.8841],
-#                  [None, 2.8496, 2.8823],
-#                  [None, 2.8396, 2.8917],
-#                  [None, 2.8198, 2.9106],  # Reference for rotated T1
-#                  [None, 2.8166, 2.9144],
-#                  [None, 2.8080, 2.9240],
-#                  [None, 2.7357, 3.0037],
-#                  [None, 2.6061, 3.1678],
-#                  [None, 2.6055, 3.1691],
-#                  [None, 2.4371, 3.4539]]
-#
-#    aligned_res_desc = [None, 2.8198, 2.9106]
-#    rotated_res_desc = [None, 2.8454, 2.8873]
+    name = 'nv1_2019_05_10'
+    res_descs = [[0.0, 2.8537, 2.8751],
+                  [None, 2.8554, 2.8752],
+                  [None, 2.8512, 2.8790],
+                  [None, 2.8520, 2.8800],
+                  [None, 2.8536, 2.8841],
+                  [None, 2.8496, 2.8823],
+                  [None, 2.8396, 2.8917],
+                  [None, 2.8198, 2.9106],  # Reference for rotated T1
+                  [None, 2.8166, 2.9144],
+                  [None, 2.8080, 2.9240],
+                  [None, 2.7357, 3.0037],
+                  [None, 2.6061, 3.1678],
+                  [None, 2.6055, 3.1691],
+                  [None, 2.4371, 3.4539]]
 
-    # The last two points are a little off
-#    name = 'NV16_2019_07_25'
-#    res_descs = [[0.0, 2.8593, 2.8621],
-#                   [None, 2.8519, 2.8690],
-#                   [None, 2.8460, 2.8746],
-#                   [None, 2.8337, 2.8867],
-#                   [None, 2.8202, 2.9014],
-#                   [None, 2.8012, 2.9292],
-#                   [None, 2.7393, 3.0224],
-#                   [None, 2.6995, 3.1953],
-#                   [None, 2.5830, 3.3290],
-#                   ]
-#
-#    aligned_res_desc = [None, 2.8198, 2.9106]
-#    rotated_res_desc = [None, 2.8454, 2.8873]
-    
-    name = 'NV0_2019_06_06'
-    res_descs = [[0.0, 2.8547, 2.8793],
-                  [None, 2.8532, 2.8795],
-                  [None, 2.8494, 2.8839],
-                  [None, 2.8430, 2.8911],
-                  [None, 2.8361, 2.8998],
-                  [None, 2.8209, 2.9132],
-                  [None, 2.7915, 2.9423],
-                  [None, 2.7006, 3.0302],
-                  [None, 2.4244, 3.3093],
-                  [None, 2.2990, 3.4474],  # Aligned
-                  ]
+    # aligned_res_desc = [None, 2.8198, 2.9106]
+    # rotated_res_desc = [None, 2.8454, 2.8873]
 
-    aligned_res_desc = [None, 2.4244, 3.3093]#[None, 2.7915, 2.9423]
-    rotated_res_desc = None
+    # Test
+    aligned_res_desc = [None, 2.6055, 3.1691]
+    rotated_res_desc = [None, 2.800, 3.200]
 
     # Run the script
     main(name, res_descs, aligned_res_desc, rotated_res_desc)
