@@ -160,29 +160,18 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
             splittings[ind] = None
 
     # %% Analyze the data
-
-    fit_func = AbsCosNoOff
-    amp = 200
-    phase = 50
-    guess_params = [amp, phase]
-    # Check if we have any undefined splittings
+    
+    fit_func, popt = fit_data(splittings, angles)
     opti_angle = None
     fig = None
-    if not any(numpy.isnan(splittings)):
-        try:
-            popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
-            # Find the angle at the peak within [0, 360]
-            opti_angle = (-popt[2]) % 180
-            fig = create_fit_figure(splittings, angles, fit_func, popt)
-        except Exception:
-            print("Wasn't able to plot resonances")
-            opti_angle = None
+    if (fit_func is not None) and (popt is not None):
+        fig = create_fit_figure(splittings, angles, fit_func, popt)
+        # Find the angle at the peak within [0, 180]
+        opti_angle = (-popt[2]) % 180
+        print('Optimized angle: {}'.format(opti_angle))
+        cxn.rotation_stage_ell18k.set_angle(opti_angle)
 
     # %% Wrap up
-
-    if opti_angle is not None:
-        cxn.rotation_stage_ell18k.set_angle(opti_angle)
-        print('Optimized angle: {}'.format(opti_angle))
 
     # Set up the raw data dictionary
     raw_data = {'nv_sig': nv_sig,
@@ -218,22 +207,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    # nv2_2019_04_30    
-    file = '2019-08-06-11_37_06-ayrton12-nv2_2019_04_30'
+    file = '2019_10/2019-10-04-18_24_03-ayrton12-NV1_2019_05_10'
     data = tool_belt.get_raw_data(__file__, file)
     splittings = data['splittings']
     angle_range = data['angle_range']
     num_angle_steps = data['num_angle_steps']
     angles = numpy.linspace(angle_range[0], angle_range[1], num_angle_steps)
     
-    splittings = [
-        85,
-        123,
-        129,
-        103,
-        50,
-        36]
-    angles = numpy.linspace(0, 150, 6)
     fit_func, popt = fit_data(splittings, angles)
 
     opti_angle = None
