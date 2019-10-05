@@ -93,8 +93,8 @@ if __name__ == '__main__':
     # Ignore this...
     if True:
         # Circle NVs from an existing mapping
-        file_name = '2019-07-25_18-37-46_ayrton12_search-mapping'
-        illustrate_mapping(file_name, [16])
+        file_name = '2019-06-04_09-58-38_ayrton12_mapping_2019-06-06'
+        illustrate_mapping(file_name, [0])
     else:
 
         coords_list = [   [0.225, 0.142, 5.03],
