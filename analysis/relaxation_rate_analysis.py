@@ -518,8 +518,10 @@ if __name__ == '__main__':
 #        except Exception:
 #            continue
 
-    folder = 'nv1_2019_05_10_351MHz_rot'
+    folder = 'nv1_2019_05_10_351MHz_rot2'
 
     # folder_name, omega, omega_std, doPlot, offset
-    gamma, ste = main(folder, omega=1.17, omega_ste=0.05,
+    gamma, ste = main(folder, omega=None, omega_ste=None,
                       doPlot=True, offset=False)
+    # gamma, ste = main(folder, omega=1.17, omega_ste=0.05,
+    #                   doPlot=True, offset=False)
