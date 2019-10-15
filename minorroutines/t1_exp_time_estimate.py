@@ -61,16 +61,16 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 # %%
     
 t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, 10],
-        [[States.HIGH, States.LOW], [0, 2*10**6], 26, 1*10**4, 60],
-        [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, 10],
-        [[States.HIGH, States.HIGH], [0, 2*10**6], 26, 1*10**4, 60],
-        [[States.ZERO, States.HIGH], [0, 1.75*10**6], 26, 1.25*10**4, 50],
-        [[States.ZERO, States.ZERO], [0, 1.75*10**6], 26, 1.25*10**4, 50],
+        [[States.HIGH, States.LOW], [0, 20*10**3], 51, 25*10**4, 15],
+        [[States.HIGH, States.LOW], [0, 0.1*10**6], 26, 15*10**4, 25],
+        [[States.HIGH, States.HIGH], [0, 20*10**3], 51, 25*10**4, 15],
+        [[States.HIGH, States.HIGH], [0, 0.1*10**6], 26, 15*10**4, 25],
+        [[States.ZERO, States.HIGH], [0, 1.5*10**6], 26, 1.5*10**4, 200],
+        [[States.ZERO, States.ZERO], [0, 1.5*10**6], 26, 1.5*10**4, 200],
         ])
 
-contrast = 0.27  # arb
-exp_count_rate = 25  # kcps
-readout_window = 510  # ns
+contrast = 0.10  # arb
+exp_count_rate = 20  # kcps
+readout_window = 400  # ns
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)
