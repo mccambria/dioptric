@@ -410,8 +410,8 @@ if __name__ == '__main__':
 
 #    file_name = '2019-06-04_09-58-38_ayrton12'
 #    create_figure(file_name)
-    reformat_plot('inferno', 'svg')
+#    reformat_plot('inferno', 'svg')
 
-    file_name = '2019-07-25_18-37-46_ayrton12_search'
+    file_name = '2019_10/2019_10_15-14_10_16-ayrton15-nv_search'
     create_figure(file_name)
 
