@@ -58,13 +58,13 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 200
 #    num_steps = 120
 #    num_steps = 90
-    scan_range = 0.5
-    num_steps = 150
+#    scan_range = 0.5
+#    num_steps = 150
 #    scan_range = 0.3
 #    num_steps = 90
 #    scan_range = 0.2
-#    num_steps = 60
-#    scan_range = 0.1
+    num_steps = 60
+    scan_range = 0.1
 #    num_steps = 60
 #    scan_range = 0.025
 #    num_steps = 60
@@ -89,7 +89,7 @@ def do_stationary_count(nv_sig, apd_indices):
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 60 * 5  # s
+    run_time = 60 * 10  # s
     diff_window = 150  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
@@ -121,7 +121,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
 
     num_steps = 51
     num_reps = 10**5
-    num_runs = 2
+    num_runs = 3
     uwave_power = 9.0
     uwave_pulse_dur = 90
 
@@ -374,27 +374,27 @@ if __name__ == '__main__':
     
     sample_name = 'ayrton15'
     #### 2019_10_15 ####
-#    coord_list = [[-0.649, 0.100, 5.0],
-#                  [-0.630, -0.001, 5.0],
-#                  [-0.646, -0.008, 5.0],
-#                  [-0.753, -0.018, 5.0],
-#                  [-0.590, -0.026 , 5.0],
-#                  [-0.544, -0.051 , 5.0],
-#                  [-0.564, -0.053 , 5.0],
-#                  [-0.738, -0.122 , 5.0],
-#                  [-0.440, -0.056 , 5.0],
-#                  [-0.362, -0.079 , 5.0],
-#                  [-0.370, -0.104 , 5.0],
-#                  [-0.349, -0.164 , 5.0],
-#                  [-0.392, -0.290 , 5.0],
-#                  [-0.564, -0.234 , 5.0], # g2 nearly at 0.5
-#                  [-0.490, -0.129 , 5.0], #g2 nearly at 0.5
-#                  [-0.630, -0.202 , 5.0],
-#                  [-0.579, -0.167 , 5.0],
-#                  [-0.587, -0.123 , 5.0]  #g2 nearly at 0.5
-#                  ]
-    
-    coord_list = [[0.102, 0.571, 5.0],
+    coord_list = [[-0.649, 0.100, 5.0],
+                  [-0.630, -0.001, 5.0],
+                  [-0.646, -0.008, 5.0],
+                  [-0.753, -0.018, 5.0],
+                  [-0.590, -0.026 , 5.0],
+                  [-0.544, -0.051 , 5.0],
+                  [-0.564, -0.053 , 5.0],
+                  [-0.738, -0.122 , 5.0],
+                  [-0.440, -0.056 , 5.0],
+                  [-0.362, -0.079 , 5.0],
+                  [-0.370, -0.104 , 5.0],
+                  [-0.349, -0.164 , 5.0],
+                  [-0.392, -0.290 , 5.0],
+                  [-0.564, -0.234 , 5.0], # g2 nearly at 0.5
+                  [-0.490, -0.129 , 5.0], #g2 nearly at 0.5
+                  [-0.630, -0.202 , 5.0],
+                  [-0.579, -0.167 , 5.0],
+                  [-0.587, -0.123 , 5.0],  #g2 nearly at 0.5
+                  
+                  
+                  [0.102, 0.571, 5.0],
                   [-0.046, 0.579, 5.0],
                   [-0.170, 0.579, 5.0],
                   [-0.324, 0.584, 5.0],
@@ -424,23 +424,23 @@ if __name__ == '__main__':
                   ]
 
     
-    nv_sig_list = []
-    for i in range(18, len(coord_list)+18):
-        coords = coord_list[i]
-        nv_search = { 'coords': coords,
-            'name': '{}-NV{}_2019_10_15'.format(sample_name, i),
-            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
-            'pulsed_readout_dur': 400, 'magnet_angle': None,
-            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-        nv_sig_list.append(nv_search)
-        
-#    NV14_2019_10_15 = { 'coords': coord_list[14],
-#            'name': '{}-NV{}_2019_10_15'.format(sample_name, 14),
-#            'expected_count_rate': 60, 'nd_filter': 'nd_1.0',
+#    nv_sig_list = []
+#    for i in [28,33,39]:
+#        coords = coord_list[i]
+#        nv_search = { 'coords': coords,
+#            'name': '{}-NV{}_2019_10_15'.format(sample_name, i),
+#            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
 #            'pulsed_readout_dur': 400, 'magnet_angle': None,
-#            'resonance_LOW': 2.8702, 'rabi_LOW': 200, 'uwave_power_LOW': 9.0,
+#            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
 #            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+#        nv_sig_list.append(nv_search)
+        
+    NV14_2019_10_15 = { 'coords': coord_list[14],
+            'name': '{}-NV{}_2019_10_15'.format(sample_name, 14),
+            'expected_count_rate': 30, 'nd_filter': 'nd_1.5',
+            'pulsed_readout_dur': 400, 'magnet_angle': None,
+            'resonance_LOW': 2.8702, 'rabi_LOW': 200, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
 #    
 #    NV_search = { 'coords': [-0.116, 0.341, 5.0],
 #            'name': '{}-NV_search'.format(sample_name),
@@ -448,7 +448,7 @@ if __name__ == '__main__':
 #            'pulsed_readout_dur': 400, 'magnet_angle': None,
 #            'resonance_LOW': 2.8702, 'rabi_LOW': 200, 'uwave_power_LOW': 9.0,
 #            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-#    nv_sig_list = [NV_search]
+    nv_sig_list = [NV14_2019_10_15]
 
     # %% Functions to run
 
@@ -458,7 +458,8 @@ if __name__ == '__main__':
         # set_xyz_zero()
 #        set_xyz([0.0, 0.0, 5.0])
 #        drift = tool_belt.get_drift()
-#        tool_belt.set_drift([0.0, 0.0, drift[2]])
+#        print(drift)
+#        tool_belt.set_drift([0.026, 0.0, -0.526])
 #        set_xyz([0.0, 0.0, 5.02 + tool_belt.get_drift()[2]])
 #        with labrad.connect() as cxn:
 #            cxn.pulse_streamer.constant([])
@@ -478,7 +479,7 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-            do_image_sample(nv_sig, apd_indices)
+#            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
@@ -488,7 +489,7 @@ if __name__ == '__main__':
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
+            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.200, freq_range=0.100)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
