@@ -22,6 +22,11 @@ from scipy import integrate
 # %% Constants
 
 
+h_bar = 1.055e-34  # J s
+gyromagnetic = 2.8e6  # Hz / G
+g_mu_B = gyromagnetic * h_bar  # J / G
+
+
 # %% Functions
 
 
@@ -36,8 +41,8 @@ def find_mag_B_splitting_objective(x, splitting,
 def calc_dq_factor(theta_B, phi_B, mag_B, popt):
 
     # mag_B cancels, but if it's too small there are significant rounding errors
-    noise_params = (5.0, theta_B, 0.0, 0.0, phi_B, 0.0)
-    noise_hamiltonian = extract_hamiltonian.calc_hamiltonian(*noise_params)
+    noise_params = (5.0, theta_B, phi_B)
+    noise_hamiltonian = extract_hamiltonian.calc_B_hamiltonian(*noise_params)
 
     mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
                                                          mag_B, *popt)
@@ -58,8 +63,8 @@ def calc_rate_factor_surface(noise_theta_B, noise_phi_B, mag_B, popt, ind,
     """el: 0 for zero to low, 1 for zero to high, 2 for low to high
     """
 
-    noise_params = (noise_power, noise_theta_B, 0.0, 0.0, noise_phi_B, 0.0)
-    noise_hamiltonian = extract_hamiltonian.calc_hamiltonian(*noise_params)
+    noise_params = (noise_power, noise_theta_B, noise_phi_B)
+    noise_hamiltonian = extract_hamiltonian.calc_B_hamiltonian(*noise_params)
 
     mat_els = extract_hamiltonian.calc_b_matrix_elements(noise_hamiltonian,
                                                          mag_B, *popt)
@@ -72,6 +77,21 @@ def calc_rate_factor_surface(noise_theta_B, noise_phi_B, mag_B, popt, ind,
 
 
 # %% Main
+
+
+def mag_B_for_rate(name, res_descs, compare_res_desc, meas_rate):
+    popt = extract_hamiltonian.main(name, res_descs)
+    dummy_mag_B = 10.0
+    # MHz**2
+    dq_mat_factor, _ = integrate.dblquad(calc_rate_factor_surface,
+                                         0, 2*pi, lambda x: 0, lambda x: pi,
+                                         args=(1.000, popt, 2, dummy_mag_B))
+    dq_mat_factor /= (dummy_mag_B**2)  # dimensionless
+
+    # meas_rate = (g_mu_B * mag_B)**2 (2 * pi / h_bar) * sq_mat_factor * delta
+    mag_B = numpy.sqrt(meas_rate / (2 * pi * h_bar * dq_mat_factor)) / gyromagnetic
+    mag_B = numpy.sqrt(meas_rate / (2 * pi * dq_mat_factor)) / gyromagnetic
+    print(mag_B)
 
 
 def rate_factor_plot_func_B(name, res_descs):
@@ -94,35 +114,39 @@ def rate_factor_plot_func_B(name, res_descs):
 
 def dq_vs_sq_rates(name, res_descs, compare_res_desc):
     popt = extract_hamiltonian.main(name, res_descs)
+    popt = (0, 0, 0.1, 0, 0)
     mag_B = extract_hamiltonian.find_mag_B(compare_res_desc, *popt)
+    # print(mag_B)
+    # print(popt)
+    # return
 
-    noise_power_amp = 100
+    # noise_power_amp = 100
 
-    noise_power = noise_power_amp/(compare_res_desc[1]**2)
-    print(noise_power)
+    # noise_power = noise_power_amp/(compare_res_desc[1]**2)
+    # print(noise_power)
     zero_to_low_integral, zero_to_low_err = integrate.dblquad(
                                         calc_rate_factor_surface,
                                         0, 2*pi, lambda x: 0, lambda x: pi,
-                                        args=(mag_B, popt, 0, noise_power))
+                                        args=(mag_B, popt, 0))
     # zero_to_low_integral *= noise_power
 
     # noise_power = noise_power_amp/(compare_res_desc[2]**2)
     # print(noise_power)
-    # zero_to_high_integral, zero_to_high_err = integrate.dblquad(
-    #                                     calc_rate_factor_surface,
-    #                                     0, 2*pi, lambda x: 0, lambda x: pi,
-    #                                     args=(mag_B, popt, 1, noise_power))
+    zero_to_high_integral, zero_to_high_err = integrate.dblquad(
+                                        calc_rate_factor_surface,
+                                        0, 2*pi, lambda x: 0, lambda x: pi,
+                                        args=(mag_B, popt, 1))
 
-    noise_power = noise_power_amp/((compare_res_desc[2]-compare_res_desc[1])**2)
-    print(noise_power)
+    # noise_power = noise_power_amp/((compare_res_desc[2]-compare_res_desc[1])**2)
+    # print(noise_power)
     low_to_high_integral, low_to_high_err = integrate.dblquad(
                                         calc_rate_factor_surface,
                                         0, 2*pi, lambda x: 0, lambda x: pi,
-                                        args=(mag_B, popt, 2, noise_power))
+                                        args=(mag_B, popt, 2))
     # low_to_high_integral *= noise_power
 
     print('zero_to_low_integral: {}'.format(zero_to_low_integral))
-    # print('zero_to_high_integral: {}'.format(zero_to_high_integral))
+    print('zero_to_high_integral: {}'.format(zero_to_high_integral))
     print('low_to_high_integral: {}'.format(low_to_high_integral))
     ratio = zero_to_low_integral / low_to_high_integral
     print('ratio: {}'.format(ratio))
@@ -183,13 +207,13 @@ def main_plot(name, res_descs, aligned_res_desc):
     # Get the aligned Hamiltonian parameters
     # popt = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
     aligned_popt = extract_hamiltonian.main(name, res_descs)
-    print(aligned_popt)
 
     # Find mag_B at the point we misaligned the field
     rotated_mag_B = extract_hamiltonian.find_mag_B(aligned_res_desc,
                                                    *aligned_popt)
 
     rotated_popt = numpy.copy(aligned_popt)
+    mag_Bs = numpy.linspace(0,1, 100)
     angles = numpy.linspace(0, pi/2, 100)
     ratios = []
     for angle in angles:
@@ -227,6 +251,42 @@ def main_plot(name, res_descs, aligned_res_desc):
     ax.set_ylim(0, 1)
 
 
+def main_plot_paper(name, res_descs, aligned_res_desc):
+    """When you run the file, we'll call into main, which should contain the
+    body of the script.
+    """
+
+    # [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
+    popt = extract_hamiltonian.main(name, res_descs)
+
+    meas_splittings = numpy.array([19.5, 19.8, 27.7, 28.9, 41.9, 32.7,
+                                   51.8, 97.8, 116, 268, 561.7, 1016.8])
+    meas_splittings /= 1000
+    meas_gammas = numpy.array([58.3, 117, 64.5, 56.4, 23.5, 42.6, 13.1,
+                               3.91, 4.67, 1.98, 0.70, 0.41])
+
+    popt = numpy.copy(popt)
+    gamma_bs = []
+    splittings = []
+    mag_Bs = numpy.linspace(0.01, 1, 100)
+    for ind in range(len(mag_Bs)):
+        mag_B = mag_Bs[ind]
+        aligned_integral, al_err = integrate.dblquad(calc_rate_factor_surface,
+                                             0, 2*pi, lambda x: 0, lambda x: pi,
+                                             args=(mag_B, popt, 2, mag_B**(-1/2)))
+        if ind == 0:
+            scaling = meas_gammas[0] / aligned_integral
+        gamma_b = aligned_integral * scaling
+        gamma_bs.append(gamma_b + 1.0)
+        splittings.append(extract_hamiltonian.calc_splitting(mag_B, *popt))
+
+    fig, ax = plt.subplots()
+    # ax.plot(mag_Bs, gammas)
+    ax.loglog(splittings, gamma_bs)
+    # ax.set_ylim(0, 10)
+    ax.scatter(meas_splittings, meas_gammas)
+
+
 # %% Run the file
 
 
@@ -238,6 +298,8 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
     name = 'nv1_2019_05_10'
     res_descs = [[0.0, 2.8537, 2.8751],
+    # res_descs = [[0.0, 2.86, 2.87],
+    # res_descs = [[0.0, 2.864, None],
                   [None, 2.8554, 2.8752],
                   [None, 2.8512, 2.8790],
                   [None, 2.8520, 2.8800],
@@ -255,12 +317,20 @@ if __name__ == '__main__':
                   [None, 2.4371, 3.4539],
                   ]
 
-    sq_compare_res_desc = [None, 2.4381, 3.4531]
-    # aligned_res_desc = [None, 2.6310, 3.1547]
-    # rotated_res_desc = [None, 2.7366, 3.0873]
+    aligned_res_desc = [None, 2.6310, 3.1547]
+    rotated_res_desc = [None, 2.7366, 3.0873]
+
+    # sq_compare_res_desc = [None, 2.4381, 3.4531]
+    sq_compare_res_desc = [None, 2.8520, 2.8800]
+
+    mag_B_calc_res_desc = [None, 2.4381, 3.4531]
+    mag_B_calc_meas_rate = 1.57e3  # Hz
 
     # Run the script
     # main(name, res_descs, aligned_res_desc, rotated_res_desc)
-#    main_plot(name, res_descs, aligned_res_desc)
-    dq_vs_sq_rates(name, res_descs, sq_compare_res_desc)
+    # main_plot(name, res_descs, aligned_res_desc)
+    main_plot_paper(name, res_descs, aligned_res_desc)
+    # dq_vs_sq_rates(name, res_descs, sq_compare_res_desc)
     # rate_factor_plot_func_B(name, res_descs)
+    # mag_B_for_rate(name, res_descs,
+    #                mag_B_calc_res_desc, mag_B_calc_meas_rate)
