@@ -493,7 +493,8 @@ def get_time_stamp():
     timestamp = str(datetime.datetime.now())
     timestamp = timestamp.split('.')[0]  # Keep up to seconds
     timestamp = timestamp.replace(':', '_')  # Replace colon with dash
-    timestamp = timestamp.replace(' ', '-')  # Replace space with underscore
+    timestamp = timestamp.replace('-', '_')  # Replace dash with underscore
+    timestamp = timestamp.replace(' ', '-')  # Replace space with dash
     return timestamp
 
 
@@ -549,12 +550,12 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
     if (time_stamp != '') and (name != ''):
         fileName = '{}-{}'.format(time_stamp, name)
         #locate the subfolder that matches the month and year when the data is taken
-        date_folder_name = str(time_stamp.split('-')[0]+'_'+time_stamp.split('-')[1])
+        date_folder_name = '_'.join(time_stamp.split('_')[0:2])
     elif (time_stamp == '') and (name != ''):
         fileName = name
     elif (time_stamp != '') and (name == ''):
         fileName = '{}-{}'.format(time_stamp, 'untitled')
-        date_folder_name = str(time_stamp.split('-')[0]+'_'+time_stamp.split('-')[1])
+        date_folder_name = '_'.join(time_stamp.split('_')[0:2])
     else:
         fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
     
