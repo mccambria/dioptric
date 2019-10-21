@@ -29,15 +29,28 @@ inv_sqrt_2 = 1/numpy.sqrt(2)
 
 # %% Values
 
-# NV1
-name = 'NV1'
-#B_mag = 0.05 
-#B_mag = .032 # GHz
-B_theta = 1.2 # rad
-Pi_par = -0.005 # GHz
-Pi_perp = 0.010 # GHz
+## NV1
+#name = 'NV1'
+#
+#B_theta = 1.2 # rad
+#Pi_par = -0.005 # GHz
+#Pi_perp = 0.010 # GHz
 
-B_mag = 1.2 # GHz
+# NV2
+#name = 'NV2'
+#
+#B_theta = 0.640 # rad
+#Pi_par = -0.004 # GHz
+#Pi_perp = 0.007 # GHz
+
+# NV13
+#name = 'NV13'
+#
+#B_theta = 1.224 # rad
+#Pi_par = -0.03 # GHz
+#Pi_perp = 0.003 # GHz
+
+B_mag = .56 # GHz
 #B_mag = 0.5 # GHz
 resonant_freq = 2.4371 # GHz
 contrast = 0.16
@@ -169,22 +182,31 @@ if __name__ == '__main__':
     num_reps = 10**4
     
     
-    for t in tau:
-        plus_1_prob, zero_prob, minus_1_prob = simulate(t, num_reps)
-        
-        plus_1_list.append(plus_1_prob)
-        zero_list.append(zero_prob)
-        minus_1_list.append(minus_1_prob)
-
-    fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    ax.plot(tau, plus_1_list, label = '+1 component')
-    ax.plot(tau, zero_list, label = '0 component')
-    ax.plot(tau, minus_1_list, label = '-1 component')
+#    for t in tau:
+#        plus_1_prob, zero_prob, minus_1_prob = simulate(t, num_reps)
+#        
+#        plus_1_list.append(plus_1_prob)
+#        zero_list.append(zero_prob)
+#        minus_1_list.append(minus_1_prob)
+#
+#    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+#    ax.plot(tau, plus_1_list, label = '+1 component')
+#    ax.plot(tau, zero_list, label = '0 component')
+#    ax.plot(tau, minus_1_list, label = '-1 component')
+#    
+#    ax.set_xlabel('Time (ms)')
+#    ax.set_ylabel('Probability')
+#    ax.legend()
+#    ax.set_title(name)
     
-    ax.set_xlabel('Time (ms)')
-    ax.set_ylabel('Probability')
-    ax.legend()
-    ax.set_title(name)
+    
+    ham = calc_single_hamiltonian_osc(B_mag, B_theta, 0, 
+                                        Pi_par, Pi_perp, 0, 
+                                        0, 0)
+    
+    ret_vals = calc_prob_i_state(ham)
+    print(ret_vals)
+    
 #    textstr = '\n'.join((
 #        r'$B_{\perp, noise}=%.3f \ GHz$' % (B_perp_noise, ),
 #        r'$\Pi_{\perp, noise}=%.3f \ GHz$' % (Pi_perp_noise, ),

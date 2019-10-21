@@ -94,8 +94,8 @@ text = '\n'.join((r'$A_0/f^{2} + \gamma_\infty$ fit:',
 #                  r'$\chi^2 = $' + '%.2f'%(chi_sq)
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
-#        verticalalignment='top', bbox=props)
+ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
+        verticalalignment='top', bbox=props)
 
 # %%
 

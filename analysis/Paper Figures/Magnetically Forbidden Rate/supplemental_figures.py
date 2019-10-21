@@ -54,6 +54,12 @@ gamma_list_NV2 = data29['gamma_list'] + data30['gamma_list']
 gamma_ste_list_NV2 = data29['gamma_ste_list'] + data30['gamma_ste_list']
 
 gamma_ste_list_NV2 = numpy.array(gamma_ste_list_NV2)*2
+
+nv2_rates = [27.621071292343977, 28.00467103154353, 29.469965453079418, 25.10316827931753, 27.384306752689977, 26.950826695652587, 27.57847277904147, 25.813643197609753, 25.545459621923523, 27.73919964386004, 24.93512434869353, 25.341877755575116, 25.03634200036785, 25.81743330146043, 27.664173722079138, 26.182779332824943, 29.769336662684722, 29.004513033512666, 28.668977681142096, 30.34822157435222, 27.712413403059614, 27.39954530909307, 29.030026517648455, 28.11304948821951, 27.691511309720386, 26.623793229361375]
+nv2_error = numpy.array([0.48665910284728936, 0.5136437039949685, 0.5229472135927203, 0.43261891664090063, 0.6756646634091575, 0.46467072686726413, 0.47143103043938, 0.423587832606777, 0.4446911497352184, 0.5366201978752652, 0.4412212934696276, 0.43465587142873024, 0.42048005502218033, 0.4462953842115663, 0.4822572573604373, 0.4403568078813716, 0.5657279159827925, 0.543961952271339, 0.49386476574863025, 0.5473851659364642, 0.5002106035777926, 0.5016894491027237, 0.5087576703572062, 0.4840832910081832, 0.4797090724802973, 0.47941746597351753])
+
+splittings = [29.4, 29.2, 28.9,	29.1, 29.3, 29.5, 29.9, 29.8, 29.8, 30.0, 29.7, 29.3, 29.9, 29.8, 29.7, 29.5, 29.6, 29.6, 29.8, 29.6, 29.0, 29.5, 29.7, 29.0, 29.3, 29.2 ]
+
     
 # %% equations
 def exp_eq(t, rate, amp):
@@ -62,22 +68,60 @@ def exp_eq(t, rate, amp):
 def exp_eq_offset(t, rate, amp, offset):
     return  amp * exp(- rate * t) + offset
 
+def plus_plus(t, gamma, omega, ep, em):
+    return 1/3 + (1/2*(1-ep)*exp(-(2*gamma+omega)*t) -1/2*(ep-1/3)*exp(-3*omega*t))*(1-ep) \
+                + (ep-1/3)*exp(-3*omega*t)*ep
+                
+def plus_minus(t, gamma, omega, ep, em):
+    return 1/3 + (-1/2*(1-ep)*exp(-(2*gamma+omega)*t) -1/2*(ep-1/3)*exp(-3*omega*t))*(1-em) \
+                + (ep-1/3)*exp(-3*omega*t)*em
+                
+def plus_zero(t, gamma, omega, ep, em):
+    return 1/3 +  (ep-1/3)*exp(-3*omega*t)
+
+def minus_plus(t, gamma, omega, ep, em):
+    return 1/3 + (-1/2*(1-em)*exp(-(2*gamma+omega)*t) -1/2*(em-1/3)*exp(-3*omega*t))*(1-ep) \
+                + (em-1/3)*exp(-3*omega*t)*ep
+
+def minus_minus(t, gamma, omega, ep, em):
+    return 1/3 + (1/2*(1-em)*exp(-(2*gamma+omega)*t) -1/2*(em-1/3)*exp(-3*omega*t))*(1-em) \
+                + (em-1/3)*exp(-3*omega*t)*em
+
+def minus_zero(t, gamma, omega, ep, em):
+    return 1/3 +  (em-1/3)*exp(-3*omega*t)
+
+def zero_plus(t, gamma, omega, ep, em):
+    return 1/3 - 1/2* (2/3)*exp(-3*omega*t)*(1-ep) + (2/3)*exp(-3*omega*t)*ep
+
+def zero_minus(t, gamma, omega, ep, em):
+    return 1/3 - 1/2* (2/3)*exp(-3*omega*t)*(1-em) + (2/3)*exp(-3*omega*t)*em
+
+def zero_zero(t, gamma, omega, ep, em):
+    return 1/3 +  (2/3)*exp(-3*omega*t)
+
+fitting_eq_list = [plus_plus, plus_minus, plus_zero, minus_plus, minus_minus, \
+                minus_zero, zero_plus, zero_minus, zero_zero]
 # %%
     
 def omega_comparison(save=False):
     text_font = 24
     title_font = 20
     
-    linspace = numpy.linspace(-0.05, 1, 1000)
+    linspace = numpy.linspace(-0.05, 2.5, 1000)
     folder = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum'
     
     low_plus_file = 'nv1_2019_05_10_28MHz_3/2019-08-26-05_57_27-ayrton12-nv1_2019_05_10.txt'
     low_minus_file = 'nv1_2019_05_10_28MHz_3/2019-08-25-22_26_53-ayrton12-nv1_2019_05_10.txt'
     low_zero_file = 'nv1_2019_05_10_28MHz_3/2019-08-26-13_27_51-ayrton12-nv1_2019_05_10.txt'
     
-    high_plus_file = 'nv1_2019_05_10_116MHz/2019-05-18_11-32-57_ayrton12.txt'
-    high_minus_file = 'nv1_2019_05_10_116MHz/2019-05-18_13-03-58_ayrton12.txt'
-    high_zero_file = 'nv1_2019_05_10_116MHz/2019-05-18_19-25-42_ayrton12.txt'
+#    high_plus_file = 'nv1_2019_05_10_116MHz/2019-05-18_11-32-57_ayrton12.txt'
+#    high_minus_file = 'nv1_2019_05_10_116MHz/2019-05-18_13-03-58_ayrton12.txt'
+#    high_zero_file = 'nv1_2019_05_10_116MHz/2019-05-18_19-25-42_ayrton12.txt'
+    
+    
+    high_plus_file = 'nv1_2019_05_10_1017MHz/high_low_comparison/2019-09-01-05_08_17-ayrton12-nv1_2019_05_10.txt'
+    high_minus_file = 'nv1_2019_05_10_1017MHz/high_low_comparison/2019-08-31-19_45_43-ayrton12-nv1_2019_05_10.txt'
+    high_zero_file = 'nv1_2019_05_10_1017MHz/high_low_comparison/2019-09-01-14_30_44-ayrton12-nv1_2019_05_10.txt'
     
 
     file_list = [low_plus_file, low_minus_file, low_zero_file,
@@ -117,6 +161,7 @@ def omega_comparison(save=False):
                 relaxation_counts.append(norm_avg_sig)
                 relaxation_ste.append(norm_avg_sig_ste)
                 time.append(time_array)
+    
     
     for i in [0,3]:
         #Omega Plus
@@ -175,12 +220,11 @@ def omega_comparison(save=False):
                         label = r'P$_{0,0}$ - P$_{0,-1}$', markersize = 10,fmt = '^', color = 'orange')
     ax.plot(linspace,exp_eq(linspace, *omega_params[1]),
                         'r', linestyle='--', linewidth=3, color = 'orange', label = 'fit')
-    ax.set_xlabel('Relaxation time (ms)', fontsize=text_font)
-    ax.set_ylabel('Relaxation signal', fontsize=text_font)
-#    ax.set_title(r'NV1 at 10.3 G', fontsize=title_font)
-#    ax.legend(fontsize=20)
+    ax.set_xlabel(r'Wait time, $\tau$  (ms)', fontsize=text_font)
+    ax.set_ylabel(r'Relaxation signal, $F_{\Omega}$ (arb. units)', fontsize=text_font)
     ax.set_xlim([-0.01, 0.61])
     ax.set_ylim([-0.01, 0.43])
+#    ax.set_ylim([0.6, 0.9])
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
                 grid_alpha=0.7, labelsize = text_font)
     
@@ -196,12 +240,11 @@ def omega_comparison(save=False):
                         label = r'P$_{0,0}$ - P$_{0,-1}$', markersize = 10,fmt = '^', color = 'orange')
     ax.plot(linspace,exp_eq(linspace, *omega_params[3]),
                         'r', linestyle='--', linewidth=3, color = 'orange',label = 'fit')
-    ax.set_xlabel('Relaxation time (ms)', fontsize=text_font)
-    ax.set_ylabel('Relaxation signal', fontsize=text_font)
-#    ax.set_title(r'NV1 at 41.4 G', fontsize=title_font)
-#    ax.legend(fontsize=20)
-    ax.set_xlim([-0.01, 0.81])
-    ax.set_ylim([-0.01, 0.43])
+    ax.set_xlabel(r'Wait time, $\tau$  (ms)', fontsize=text_font)
+    ax.set_ylabel(r'Relaxation signal, $F_{\Omega}$ (arb. units)', fontsize=text_font)
+    ax.set_xlim([-0.1, 2.26])
+#    ax.set_ylim([-0.01, 0.43])
+#    ax.set_ylim([0.6, 0.9])
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
                 grid_alpha=0.7, labelsize = text_font)
             
@@ -345,11 +388,67 @@ def NV2_histogram(save=False):
     if save:
         fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/NV2_hist.pdf", bbox_inches='tight')
     
+#%%
+    
+def rate_comaprison_NV2_subtraction(save=False):
+    text_font = 18
+    blue = '#2e3192'
+    omega = 0.32 / 1000 
+    omega_unc = 0.06 / 1000
+    offset = 0
+    
+    file = '28.9_MHz_splitting_rate_analysis'
+    folder = 'nv2_2019_04_30_29MHz_5'
+    data_f = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
+    
+    file = '29.1_MHz_splitting_rate_analysis'
+    folder = 'nv2_2019_04_30_29MHz_6'
+    data_s = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
+    
+    
+    counts_f = numpy.array(data_f['plus_relaxation_counts'])
+    error_f = numpy.array(data_f['plus_relaxation_ste'])
+    counts_s = numpy.array(data_s['plus_relaxation_counts'])
+    error_s = numpy.array(data_s['plus_relaxation_ste'])
+    
+    time = numpy.array(data_f['plus_plus_time']) * 1000
+    time_linspace = numpy.linspace(time[0], time[-1], 1000)
+
+    
+    gamma_f = data_f['gamma'] / 1000
+    gamma_unc_f = data_f['gamma_ste'] / 1000
+    amp_f = data_f['gamma_opti_params'][1]
+    gamma_s = data_s['gamma'] / 1000
+    gamma_unc_s = data_s['gamma_ste'] / 1000
+    amp_s = data_s['gamma_opti_params'][1]
+    
+    opti_params_f = [(2*gamma_f+omega), amp_f, offset]
+    opti_params_s = [(2*gamma_s+omega), amp_s, offset]
+    
+    # Plot
+    fig, ax = plt.subplots(1, 1, figsize=(10,8))
+
+    ax.set_xlim([-1,110])
+    ax.errorbar(time, counts_s - counts_f, yerr = numpy.sqrt(error_f**2 + error_s**2), label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
+                fmt = 'o', color = blue)
+    ax.hlines(0, -10, 500)
+    
+    
+    ax.set_xlabel(r'Relaxation time ($\mu$s)', fontsize=text_font)
+    ax.set_ylabel('Difference between two data sets', fontsize=text_font)
+    ax.tick_params(which = 'both', length=8, width=2, colors='k',
+                grid_alpha=0.7, labelsize = text_font)
+    
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    
+    if save:
+        fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/NV2_rate_compare_subtraction.pdf", bbox_inches='tight')
 
 #%%
     
 def rate_comaprison_NV2_lin(save=False):
-    text_font = 18
+    text_font = 24
     blue = '#2e3192'
     red = '#ed1c24'
     omega = 0.32 / 1000 
@@ -365,9 +464,9 @@ def rate_comaprison_NV2_lin(save=False):
     data_s = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
     
     
-    counts_f = data_f['plus_relaxation_counts']
+    counts_f = numpy.array(data_f['plus_relaxation_counts'])
     error_f = numpy.array(data_f['plus_relaxation_ste'])
-    counts_s = data_s['plus_relaxation_counts']
+    counts_s = numpy.array(data_s['plus_relaxation_counts'])
     error_s = numpy.array(data_s['plus_relaxation_ste'])
     
     time = numpy.array(data_f['plus_plus_time']) * 1000
@@ -389,7 +488,7 @@ def rate_comaprison_NV2_lin(save=False):
 
     ax.set_xlim([-1,110])
     ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
-                fmt = 'o', color = blue)
+                fmt = 'o', color = blue, markersize = 8)
     yfit = exp_eq_offset(time_linspace, *opti_params_f)
     ax.plot(time_linspace, yfit, '-', color=blue)
     
@@ -403,7 +502,7 @@ def rate_comaprison_NV2_lin(save=False):
     
     
     ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
-                fmt = '^', color = red)
+                fmt = '^', color = red, markersize = 8)
     
     yfit = exp_eq_offset(time_linspace, *opti_params_s)
     ax.plot(time_linspace, yfit, '-', color=red)
@@ -472,7 +571,7 @@ def rate_comaprison_NV2_log(save=False):
     ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
     
     ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
-                fmt = 'o', markersize = 10, color = blue)
+                fmt = 'o', markersize = 12, color = blue)
 #    ax.plot(time, counts_f, 'o', color =blue)
     yfit = exp_eq_offset(time_linspace, *opti_params_f)
     ax.plot(time_linspace, yfit, '-', color=blue)
@@ -487,7 +586,7 @@ def rate_comaprison_NV2_log(save=False):
     
     
     ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
-                fmt = '^', markersize = 10, color = red)
+                fmt = '^', markersize = 12, color = red)
 #    ax.plot(time, counts_s, '^', color =red)
     
     yfit = exp_eq_offset(time_linspace, *opti_params_s)
@@ -517,29 +616,278 @@ def rate_comaprison_NV2_log(save=False):
     if save:
         fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/NV2_rate_compare_log.pdf", bbox_inches='tight')
 
+#%%
+    
+def rate_comaprison_NV1_lin(save=False):
+    text_font = 24
+    blue = '#2e3192'
+    red = '#ed1c24'
+    omega = 1.17 / 1000 
+    omega_unc = 0.18 / 1000
+    offset = -0.006
+    
+    file = '26.5_MHz_splitting_5_bins_error'
+    folder = 'nv1_2019_05_10_28MHz_5'
+    f_number = 1
+    s_number = 2
+    data = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
+    
+    offset = data['gamma_offset']
+    
+    
+    
+    counts_f = numpy.array(data['gamma_counts_list'][f_number])
+    error_f = numpy.array(data['gamma_counts_ste_list'][f_number])
+    counts_s = numpy.array(data['gamma_counts_list'][s_number])
+    error_s = numpy.array(data['gamma_counts_ste_list'][s_number])
+    
+    time = numpy.array(data['taus']) * 1000
+    time_linspace = numpy.linspace(time[0], time[-1]+5, 1000)
+
+    
+    gamma_f = data['gamma_list'][f_number] / 1000
+    gamma_unc_f = data['gamma_ste_list'][f_number] / 1000
+    amp_f = 0.302
+    gamma_s = data['gamma_list'][s_number] / 1000
+    gamma_unc_s = data['gamma_ste_list'][s_number] / 1000
+    amp_s = 0.302
+    
+    opti_params_f = [(2*gamma_f+omega), amp_f, offset]
+    opti_params_s = [(2*gamma_s+omega), amp_s, offset]
+    
+    # Plot
+    fig, ax = plt.subplots(1, 1, figsize=(10,8))
+
+    ax.set_xlim([-1,76])
+    ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
+                fmt = 'o', color = blue, markersize = 8)
+    yfit = exp_eq_offset(time_linspace, *opti_params_f)
+    ax.plot(time_linspace, yfit, '-', color=blue)
+    
+    opti_params_f[0] = (2*(gamma_f + gamma_unc_f) + omega + omega_unc)
+    yupper = exp_eq_offset(time_linspace, *opti_params_f)
+    opti_params_f[0] = (2*(gamma_f - gamma_unc_f) + omega - omega_unc)
+    ylower = exp_eq_offset(time_linspace, *opti_params_f)
+    
+    ax.fill_between(time_linspace, yupper,  ylower,
+                     color='blue', alpha=0.4)
+    
+    
+    ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
+                fmt = '^', color = red, markersize = 8)
+    
+    yfit = exp_eq_offset(time_linspace, *opti_params_s)
+    ax.plot(time_linspace, yfit, '-', color=red)
+    
+    opti_params_s[0] = (2*(gamma_s + gamma_unc_s) + omega + omega_unc)
+    yupper = exp_eq_offset(time_linspace, *opti_params_s)
+    opti_params_s[0] = (2*(gamma_s - gamma_unc_s) + omega - omega_unc)
+    ylower = exp_eq_offset(time_linspace, *opti_params_s)
+    
+    ax.fill_between(time_linspace, yupper,  ylower,
+                     color='red', alpha=0.4)
+    
+    ax.set_xlabel(r'Wait time, $\tau$ ($\mu$s)', fontsize=text_font)
+    ax.set_ylabel(r'Relaxation signal, $F_\gamma$ (arb. units)', fontsize=text_font)
+    ax.tick_params(which = 'both', length=8, width=2, colors='k',
+                grid_alpha=0.7, labelsize = text_font)
+    
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    
+    if save:
+        fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/NV1_rate_compare_lin.pdf", bbox_inches='tight')
+
+#%%
+    
+def rate_comaprison_NV1_log(save=False):
+    text_font = 50
+    blue = '#2e3192'
+    red = '#ed1c24'
+    omega = 1.17 / 1000 
+    omega_unc = 0.18 / 1000
+    offset = -0.006
+    
+    file = '26.5_MHz_splitting_5_bins_error'
+    folder = 'nv1_2019_05_10_28MHz_5'
+    f_number = 1
+    s_number = 2
+    data = tool_belt.get_raw_data('t1_double_quantum.py', '{}\\{}'.format(folder, file))
+    
+    offset = data['gamma_offset']
+    
+    
+    
+    counts_f = numpy.array(data['gamma_counts_list'][f_number])
+    error_f = numpy.array(data['gamma_counts_ste_list'][f_number])
+    counts_s = numpy.array(data['gamma_counts_list'][s_number])
+    error_s = numpy.array(data['gamma_counts_ste_list'][s_number])
+    
+    time = numpy.array(data['taus']) * 1000
+    time_linspace = numpy.linspace(time[0], time[-1]+5, 1000)
+
+    
+    gamma_f = data['gamma_list'][f_number] / 1000
+    gamma_unc_f = data['gamma_ste_list'][f_number] / 1000
+    amp_f = 0.302
+    gamma_s = data['gamma_list'][s_number] / 1000
+    gamma_unc_s = data['gamma_ste_list'][s_number] / 1000
+    amp_s = 0.302
+    
+    opti_params_f = [(2*gamma_f+omega), amp_f, offset]
+    opti_params_s = [(2*gamma_s+omega), amp_s, offset]
+    
+    # Plot
+    fig, ax = plt.subplots(1, 1, figsize=(10,8))
+    ax.set_yscale("log", nonposy='clip')
+    ax.set_xlim([-0.5,21.5])
+    ax.set_ylim([2*10**-2,3.5*10**-1])
+    ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
+    
+    ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
+                fmt = 'o', markersize = 12, color = blue)
+#    ax.plot(time, counts_f, 'o', color =blue)
+    yfit = exp_eq_offset(time_linspace, *opti_params_f)
+    ax.plot(time_linspace, yfit, '-', color=blue)
+    
+    opti_params_f[0] = (2*(gamma_f + gamma_unc_f) + omega + omega_unc)
+    yupper = exp_eq_offset(time_linspace, *opti_params_f)
+    opti_params_f[0] = (2*(gamma_f - gamma_unc_f) + omega - omega_unc)
+    ylower = exp_eq_offset(time_linspace, *opti_params_f)
+    
+    ax.fill_between(time_linspace, yupper,  ylower,
+                     color='blue', alpha=0.4)
+    
+    
+    ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
+                fmt = '^', markersize = 12, color = red)
+#    ax.plot(time, counts_s, '^', color =red)
+    
+    yfit = exp_eq_offset(time_linspace, *opti_params_s)
+    ax.plot(time_linspace, yfit, '-', color=red)
+    
+    opti_params_s[0] = (2*(gamma_s + gamma_unc_s) + omega + omega_unc)
+    yupper = exp_eq_offset(time_linspace, *opti_params_s)
+    opti_params_s[0] = (2*(gamma_s - gamma_unc_s) + omega - omega_unc)
+    ylower = exp_eq_offset(time_linspace, *opti_params_s)
+    
+    ax.fill_between(time_linspace, yupper,  ylower,
+                     color='red', alpha=0.4)
+    
+    ax.set_xlabel(r'Wait time, $\tau$ ($\mu$s)', fontsize=text_font)
+    ax.set_ylabel(r'$F_\gamma$ (arb. units)', fontsize=text_font)
+    ax.tick_params(which = 'both', length=8, width=3, colors='k',
+                grid_alpha=0.7, labelsize = text_font)
+    ax.tick_params(which = 'major', length=20, width=5)
+    ax.grid(axis='y')
+#    ax.set_xlim()
+#    ax.legend()
+#    ax.set_title('Compare NV1 measurements')
+    
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    
+    if save:
+        fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/NV1_rate_compare_log.pdf", bbox_inches='tight')
+
+# %%
+    
+def silicon_sample(save=False):
+    
+    text_font = 16
+    title_font = 20
+    folder = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/nv14_2019_10_17_15MHz'
+    
+    file = '15.1_MHz_splitting_rate_analysis.txt'
+    
+    with open('{}/{}'.format(folder, file)) as file:
+            data = json.load(file)
+            
+            zero_relaxation_counts = data['zero_relaxation_counts']
+            zero_relaxation_ste = numpy.array(data['zero_relaxation_ste'])
+            zero_zero_time = data['zero_zero_time']
+            
+            plus_relaxation_counts = data['plus_relaxation_counts']
+            plus_relaxation_ste = data['plus_relaxation_ste']
+            plus_plus_time = data['plus_plus_time']
+
+            omega_opti_params = data['omega_opti_params']
+            gamma_opti_params = data['gamma_opti_params']
+            manual_offset_gamma = data['manual_offset_gamma']
+            
+#    del plus_relaxation_counts[0], plus_relaxation_counts[50]
+#    del plus_relaxation_ste[0], plus_relaxation_ste[50]
+#    del plus_plus_time[0], plus_plus_time[50]
+    fig, axes_pack = plt.subplots(2,1, figsize=(8.5, 7.5))
+    
+    ax = axes_pack[0]
+    
+    ax.errorbar(zero_zero_time, zero_relaxation_counts,
+                        yerr = zero_relaxation_ste,
+                        label = 'data',  fmt = 'o', color = 'blue')
+    zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
+    ax.plot(zero_time_linspace,
+                exp_eq(zero_time_linspace, *omega_opti_params),
+                'r', label = 'fit')
+    ax.set_xlabel(r'Wait time, $\tau$  (ms)', fontsize=text_font)
+    ax.set_ylabel(r'$F_{\Omega}$ (arb. units)', fontsize=text_font)
+#    ax.set_title(r'$P_{0,0} - P_{0,1}$', fontsize=title_font)
+#    ax.legend(fontsize=20)
+    ax.tick_params(which = 'both', length=8, width=2, colors='k',
+                grid_alpha=0.7, labelsize = text_font)
+    
+    ax = axes_pack[1]
+    
+    ax.errorbar(numpy.array(plus_plus_time)*1000, plus_relaxation_counts,
+                        yerr = plus_relaxation_ste,
+                        label = 'data', fmt = 'o', color = 'blue')
+    plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)*1000
+    gamma_rate = gamma_opti_params[0]
+    gamma_opti_params[0] = gamma_rate/1000
+    gamma_opti_params_offset = gamma_opti_params + [manual_offset_gamma]
+    ax.plot(plus_time_linspace,
+                exp_eq_offset(plus_time_linspace, *gamma_opti_params_offset),
+                'r', label = 'fit')
+    ax.set_xlabel(r'Wait time, $\tau$  ($\mu$s)', fontsize=text_font)
+    ax.set_ylabel(r'$F_{\gamma}$ (arb. units)', fontsize=text_font)
+#    ax.set_title(r'$P_{1,1} - P_{1,-1}$', fontsize=title_font)
+#    ax.legend(fontsize=20)
+
+    ax.tick_params(which = 'both', length=8, width=2, colors='k',
+                grid_alpha=0.7, labelsize = text_font)
+            
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    fig.tight_layout()
+    
+    if save:
+        fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/silicon_sample.pdf", bbox_inches='tight')
+    
+    
 # %%
     
 def subtraction_plot(save=False):
     
     text_font = 16
     title_font = 20
-    folder = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/nv1_2019_05_10_28MHz_2'
+    folder = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/nv1_2019_05_10_20MHz'
     
-    file = '27.7_MHz_splitting_rate_analysis.txt'
+    file = '19.8_MHz_splitting_rate_analysis.txt'
     
     with open('{}/{}'.format(folder, file)) as file:
             data = json.load(file)
             
             zero_relaxation_counts = data['zero_relaxation_counts']
-            zero_relaxation_ste = numpy.array(data['zero_relaxation_ste'])*2
+            zero_relaxation_ste = numpy.array(data['zero_relaxation_ste'])
             zero_zero_time = data['zero_zero_time']
             
             plus_relaxation_counts = data['plus_relaxation_counts']
-            plus_relaxation_ste = numpy.array(data['plus_relaxation_ste'])*2
+            plus_relaxation_ste = numpy.array(data['plus_relaxation_ste'])
             plus_plus_time = data['plus_plus_time']
-            
+
             omega_opti_params = data['omega_opti_params']
             gamma_opti_params = data['gamma_opti_params']
+            manual_offset_gamma = data['manual_offset_gamma']
             
     fig, axes_pack = plt.subplots(2,1, figsize=(8.5, 7.5))
     
@@ -547,30 +895,33 @@ def subtraction_plot(save=False):
     
     ax.errorbar(zero_zero_time, zero_relaxation_counts,
                         yerr = zero_relaxation_ste,
-                        label = 'data', fmt = 'o', color = 'blue')
+                        label = 'data',  fmt = 'o', color = 'blue')
     zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
     ax.plot(zero_time_linspace,
                 exp_eq(zero_time_linspace, *omega_opti_params),
                 'r', label = 'fit')
-    ax.set_xlabel('Relaxation time (ms)', fontsize=text_font)
-    ax.set_ylabel('Relaxation signal', fontsize=text_font)
-    ax.set_title(r'$P_{0,0} - P_{0,1}$', fontsize=title_font)
+    ax.set_xlabel('Wait time, $\tau$  (ms)', fontsize=text_font)
+    ax.set_ylabel(r'$F_{\Omega}$ (arb. units)', fontsize=text_font)
+#    ax.set_title(r'$P_{0,0} - P_{0,1}$', fontsize=title_font)
 #    ax.legend(fontsize=20)
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
                 grid_alpha=0.7, labelsize = text_font)
     
     ax = axes_pack[1]
     
-    ax.errorbar(plus_plus_time, plus_relaxation_counts,
+    ax.errorbar(numpy.array(plus_plus_time)*1000, plus_relaxation_counts,
                         yerr = plus_relaxation_ste,
                         label = 'data', fmt = 'o', color = 'blue')
-    plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
+    plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)*1000
+    gamma_rate = gamma_opti_params[0]
+    gamma_opti_params[0] = gamma_rate/1000
+    gamma_opti_params_offset = gamma_opti_params + [manual_offset_gamma]
     ax.plot(plus_time_linspace,
-                exp_eq(plus_time_linspace, *gamma_opti_params),
+                exp_eq_offset(plus_time_linspace, *gamma_opti_params_offset),
                 'r', label = 'fit')
-    ax.set_xlabel('Relaxation time (ms)', fontsize=text_font)
-    ax.set_ylabel('Relaxation signal', fontsize=text_font)
-    ax.set_title(r'$P_{1,1} - P_{1,-1}$', fontsize=title_font)
+    ax.set_xlabel(r'Wait time, $\tau$  ($\mu$s)', fontsize=text_font)
+    ax.set_ylabel(r'$F_{\gamma}$ (arb. units)', fontsize=text_font)
+#    ax.set_title(r'$P_{1,1} - P_{1,-1}$', fontsize=title_font)
 #    ax.legend(fontsize=20)
 
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
@@ -623,6 +974,12 @@ def all_9_meas(save=False):
     c_ind = 0
     
     for i in range(int(len(file_list)/2)):
+        if i < 3:
+            min_fluor = 0.622735
+        elif i > 2 or i < 5:
+            min_fluor = 0.609
+        else:
+            min_fluor = 0.607
         with open('{}/{}'.format(folder, file_list[i*2])) as file_shrt:
             data_shrt = json.load(file_shrt)
             relaxation_time_range = data_shrt['relaxation_time_range']
@@ -630,7 +987,7 @@ def all_9_meas(save=False):
             
             taus_shrt = numpy.linspace(relaxation_time_range[0],
                                   relaxation_time_range[1], num_steps) / 10**6
-            norm_avg_sig_shrt = (numpy.array(data_shrt['norm_avg_sig']) - 0.622735) / 0.376254
+            norm_avg_sig_shrt = (numpy.array(data_shrt['norm_avg_sig']) - min_fluor) / (1-min_fluor) #0.622735) / 0.376254
         
         with open('{}/{}'.format(folder, file_list[i*2+1])) as file_long:
             data_long = json.load(file_long)
@@ -640,23 +997,30 @@ def all_9_meas(save=False):
             
             taus_long = numpy.linspace(relaxation_time_range[0],
                                   relaxation_time_range[1], num_steps) / 10**6
-            norm_avg_sig_long = (numpy.array(data_long['norm_avg_sig']) - 0.622735) / 0.376254
-            
+            norm_avg_sig_long = (numpy.array(data_long['norm_avg_sig']) - min_fluor) / (1-min_fluor)
             
         taus = numpy.concatenate((taus_shrt, taus_long))
         norm_sig = numpy.concatenate((norm_avg_sig_shrt, norm_avg_sig_long))
     
         ax = axes[r_ind,c_ind]
         
+        gamma = 56.4
+        omega = 1.0
+        ep = 0.069
+        em = 0.013
+        lintaus = numpy.linspace(0,0.6,1000)
+
+        ax.plot(lintaus, fitting_eq_list[i](lintaus, gamma, omega, ep, em), 'r',  lw = 3)
+        
+        
         ax.plot(taus, norm_sig, 'bo')
         ax.set_ylim([-0.1,1.1])
-        ax.set_xlabel(r'Relaxation time, $\tau$ ($\mu$s)', fontsize=20)
+        ax.set_xlabel(r'Wait time, $\tau$ (ms)', fontsize=20)
         ax.set_ylabel('Normalized NV Fluorescence', fontsize=20)
         ax.set_title(titles[i], fontsize=24)
         ax.tick_params(which = 'both', length=10, width=3, colors='k',
                         grid_alpha=0.7, labelsize = 20)
-        
-        
+
         if c_ind == 0:
             c_ind = 1
         elif c_ind == 1:
@@ -671,11 +1035,30 @@ def all_9_meas(save=False):
     
     if save:
         fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/all_9_measure_figure.pdf", bbox_inches='tight')
+
+# %%
+        
+def correlation(save=False):
+    fig, ax = plt.subplots(1,1,figsize=(8,8))
+    ax.scatter(splittings, nv2_rates, color = purple,  s = 200)
+    ax.set_ylabel(r'Relaxation rate, $\gamma$ (kHz)', fontsize=20)
+    ax.set_xlabel(r'Splitting, $\Delta_\pm$ (MHz)', fontsize=20)
+    ax.tick_params(which = 'both', length=10, width=3, colors='k',
+                    grid_alpha=0.7, labelsize = 20)
+        
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    fig.tight_layout()
     
+    if save:
+        fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/NV2_correlation.pdf", bbox_inches='tight')
+
 # %%
 if __name__ == '__main__':
         
 #    all_9_meas(True)
+#    correlation(True)
+    silicon_sample(True)
 #    subtraction_plot(True) 
 #    omega_comparison(True)
 #    one_hour_rates_NV1(save=True)
@@ -684,5 +1067,10 @@ if __name__ == '__main__':
 #    NV2_histogram(save=True)
 #    rate_comaprison_similar(save=True)
 #    rate_comaprison_different(save=True)
-    rate_comaprison_NV2_lin(save=True)
-    rate_comaprison_NV2_log(save=True)
+#    rate_comaprison_NV2_subtraction(save=False)
+    
+#    rate_comaprison_NV2_lin(save=True)
+#    rate_comaprison_NV2_log(save=True)
+    
+#    rate_comaprison_NV1_lin(True)
+#    rate_comaprison_NV1_log(True)

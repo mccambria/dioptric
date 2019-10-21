@@ -21,10 +21,10 @@ from utils.tool_belt import States
 
 data_folder = 't1_double_quantum'
 
-omega =  0.32
-omega_ste = 0.06
+omega =  1.17
+omega_ste = 0.18
 
-gamma_offset = 0
+gamma_offset = -0.006
 
 # %% Minor functions
 
@@ -221,7 +221,7 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
 
 if __name__ == '__main__':
 
-    folder = 'nv2_2019_04_30_29MHz_29'
-    file = '2019-09-02-21_05_21-ayrton12-nv2_2019_04_30'
+    folder = 'nv1_2019_05_10_28MHz_5'
+    file = '2019-08-28-12_00_49-ayrton12-nv1_2019_05_10'
     
-    main(file, folder, 25, amp = 0.32)
+    main(file, folder, 5, amp = 0.302)

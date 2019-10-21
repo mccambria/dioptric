@@ -48,7 +48,7 @@ file_name_list = [
                     '2019-06-10_22-52-19_ayrton12.txt' # NV13
                   ]
 title = ['NV1', 'NV2', 'NV3', 'NV4', 'NV5']
-fig , axes = plt.subplots(3, 2, figsize=(16, 16))
+fig , axes = plt.subplots(3, 2, figsize=(15, 16))
 r_ind = 0
 c_ind = 0
 
@@ -76,8 +76,9 @@ for i in range(len(file_name_list)):
 
     ax.plot(bin_centers / 1000, hist/inf_delay_diff, label = 'NV{}'.format(i+1))
     ax.set_xlabel('Delay time (ns)', fontsize=20)
-    ax.set_ylabel(r'$g^{2}(\tau)$', fontsize=20)
+    ax.set_ylabel(r'$g^{(2)}(\tau)$', fontsize=20)
     ax.set_title(title[i], fontsize=24)
+    ax.set_xticks([-150, -75, 0, 75, 150])
     ax.tick_params(which = 'both', length=10, width=2, colors='k',
                     grid_alpha=0.7, labelsize = 20)
 

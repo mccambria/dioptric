@@ -45,6 +45,7 @@ def double_gaussian(x, amp_1, sigma_1, center_1,
 nv2_rates = [27.621071292343977, 28.00467103154353, 29.469965453079418, 25.10316827931753, 27.384306752689977, 26.950826695652587, 27.57847277904147, 25.813643197609753, 25.545459621923523, 27.73919964386004, 24.93512434869353, 25.341877755575116, 25.03634200036785, 25.81743330146043, 27.664173722079138, 26.182779332824943, 29.769336662684722, 29.004513033512666, 28.668977681142096, 30.34822157435222, 27.712413403059614, 27.39954530909307, 29.030026517648455, 28.11304948821951, 27.691511309720386, 26.623793229361375]
 nv2_error = numpy.array([0.48665910284728936, 0.5136437039949685, 0.5229472135927203, 0.43261891664090063, 0.6756646634091575, 0.46467072686726413, 0.47143103043938, 0.423587832606777, 0.4446911497352184, 0.5366201978752652, 0.4412212934696276, 0.43465587142873024, 0.42048005502218033, 0.4462953842115663, 0.4822572573604373, 0.4403568078813716, 0.5657279159827925, 0.543961952271339, 0.49386476574863025, 0.5473851659364642, 0.5002106035777926, 0.5016894491027237, 0.5087576703572062, 0.4840832910081832, 0.4797090724802973, 0.47941746597351753])
 
+splittings = [29.4, 29.2, 28.9,	29.1, 29.3, 29.5, 29.9, 29.8, 29.8, 30.0, 29.7, 29.3, 29.9, 29.8, 29.7, 29.5, 29.6, 29.6, 29.8, 29.6, 29.0, 29.5, 29.7, 29.0, 29.3, 29.2 ]
 # the time of the start of the experiment (when the pESSR and rabi data was saved
 
 start_datetimes = [datetime.datetime(2019,8,13,14,13,52),
@@ -138,55 +139,29 @@ def time_main_plot():
                         nv2_rates[i] - nv2_error[i],
                         color=purple, alpha=0.2)
     
-    
     ax.spines['right'].set_visible(False)
-
-#    for i in [0, 1,2,5,6,9,10, 14, 15,16,17,18,19,20,21,22,23,24,25]:
-#        ax.hlines(nv2_rates[i], start_time_list_1[i], end_time_list_1[i], linewidth=5, colors = '#453fff')
-##        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
-#        time_space = numpy.linspace(start_time_list_1[i], end_time_list_1[i], 1000)
-#        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
-#                        nv2_rates[i] - nv2_error[i],
-#                        color='#453fff', alpha=0.2)
-#        
-#    for i in [3,4,7,8,11,12,13]:
-#        ax.hlines(nv2_rates[i], start_time_list_1[i], end_time_list_1[i], linewidth=5, colors = '#c91600')
-#        time_space = numpy.linspace(start_time_list_1[i], end_time_list_1[i], 1000)
-#        ax.fill_between(time_space, nv2_rates[i] + nv2_error[i],
-#                        nv2_rates[i] - nv2_error[i],
-#                        color='#c91600', alpha=0.2)
-        
-    time_points = [start_time_list_1[0], end_time_list_1[2],  
-                   start_time_list_1[3], end_time_list_1[4],
-                   start_time_list_1[5], end_time_list_1[6],
-                   start_time_list_1[7], end_time_list_1[8],
-                   start_time_list_1[9], end_time_list_1[9],
-                   start_time_list_1[10], end_time_list_1[14],
-                   start_time_list_1[15], end_time_list_1[25]+10
-                   ]
-    values = [32.6, 32.6,
-              28.2, 28.2,
-              32.6, 32.6,
-              28.2, 28.2,
-              32.6, 32.6,
-              28.2, 28.2,
-              32.6, 32.6]
-#    ax.plot(time_points, values, '--', color = 'gray')
     
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                    grid_alpha=0.7, labelsize = 18)
+                    grid_alpha=0.7, labelsize = 24, labelcolor='k')
 
     ax.tick_params(which = 'major', length=12, width=2)
-
-#    ax.grid(axis='y')
-
-
+    
 #    xfmt = mdates.DateFormatter('%m-%d-%y %H:%M')
 #    ax.xaxis.set_major_formatter(xfmt)
     ax.set_ylim([23, 31.5])
     ax.set_xlim([-5, 145])
+    ax.set_ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=18)
+#    ax2 = ax.twinx()
+#    
+#    ax2.tick_params(which = 'both', length=6, width=2, colors='k',
+#                    grid_alpha=0.7, labelsize = 18, labelcolor='r')
+#    ax2.set_ylabel('Splitting (MHz)', color='r', fontsize=18)
+#    ax2.plot(start_time_list_1, splittings, marker = 'o', color='r')
+#
+#    ax2.tick_params(which = 'major', length=12, width=2)
+    
     plt.xlabel('Time (hours)', fontsize=18)
-    plt.ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=18)
+#    plt.ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=18)
 #    plt.title(r'NV2, $\gamma$ rate', fontsize=18)
     
     fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4aLEFT.pdf", bbox_inches='tight')
@@ -247,7 +222,7 @@ def time_plot_inc():
     
     
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                    grid_alpha=0.7, labelsize = 18)
+                    grid_alpha=0.7, labelsize = 24)
 
     ax.tick_params(which = 'major', length=12, width=2)
 
@@ -275,7 +250,7 @@ def time_plot_zoom():
     
     gamma_list = data29['gamma_list'] + data30['gamma_list']
     gamma_ste_list = data29['gamma_ste_list'] + data30['gamma_ste_list']
-    gamma_ste_list = numpy.array(gamma_ste_list)*2
+    gamma_ste_list = numpy.array(gamma_ste_list)
     
     time_inc = 1.0 # hr
 #    time_inc = 5.5 # hr
@@ -290,9 +265,10 @@ def time_plot_zoom():
         time = i*time_inc + time_inc + 640
         end_time_list_2.append(time)
         
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+    fig, ax = plt.subplots(1, 1, figsize=(5, 8))
     
-    for i in range(15, 35):
+#    for i in range(15, 35):
+    for i in range(len(gamma_list)):
         ax.hlines(gamma_list[i], start_time_list_2[i], end_time_list_2[i], linewidth=5, colors = purple)
     #        ax.hlines(nv2_rates_bi[i], start_time[i], end_time[i], linewidth=5, colors = 'black')
         time_space = numpy.linspace(start_time_list_2[i], end_time_list_2[i], 10)
@@ -327,25 +303,24 @@ def time_plot_zoom():
 
     ax.tick_params(which = 'major', length=12, width=2)
 
-    ax.grid()
-    ax.set_ylim([24, 36])
 
-    ax.set_xlim([653, 677])
+    ax.set_ylim([21, 33.5])
+
+    ax.set_xlim([638, 677])
     plt.xlabel('Time (hours)', fontsize=18)
     plt.ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=18)
     fig.canvas.draw()
     fig.canvas.flush_events()
 
-#    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4aZOOM.pdf", bbox_inches='tight')
+    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4aZOOM.pdf", bbox_inches='tight')
 
 
-def histogram(bins = 9, fit_gaussian = False):
+def histogram_5hr(bins = 10, fit_gaussian = False):
     '''
     Produces a histogram of the data passed
     '''
-    text = 62
-    blue = '#2e3192'
-    red = '#ed1c24'
+    text = 90
+    light_purple = '#CE7FFF'
     # The data from the econd take
     file29 = '29.5_MHz_splitting_5_bins_error'
     folder29 = 'nv2_2019_04_30_29MHz_29'
@@ -361,7 +336,7 @@ def histogram(bins = 9, fit_gaussian = False):
 
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ret_vals= ax.hist(gamma_list, bins = bins, color = purple)
+    ret_vals= ax.hist(gamma_list, bins = bins, color = light_purple)
     ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
     ax.set_ylabel('Occurrences', fontsize=text)
     ax.tick_params(which = 'both', length=10, width=20, colors='k',
@@ -371,52 +346,56 @@ def histogram(bins = 9, fit_gaussian = False):
     ax.set_yticks([0,2, 4,6])
     
         
-    gssn_1_popt = [4, 0.8, 25.5]
-    gssn_2_popt = [7,  0.8, 27.9]
+    gssn_popt = [7, numpy.average(nv2_error), 27.4]
 
     x_linspace = numpy.linspace(20, 35, 1000)
-#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_1_popt), '--',color = red,  lw = 6, label = 'fit')
+    ax.plot(x_linspace, gaussian(x_linspace, *gssn_popt), '--',color = 'k',  lw = 10, label = 'fit')
 #    ax.plot(x_linspace, gaussian(x_linspace, *gssn_2_popt), '--', color = blue,  lw = 6, label = 'fit')
     ax.set_xlim([23,31.2])
-
-    # Fit double gaussian
-    x_grid_endpoints = ret_vals[1]
-    bin_width = (x_grid_endpoints[1] - x_grid_endpoints[0])/2
-    x_grid = numpy.array(x_grid_endpoints) + bin_width
-    hist_points = ret_vals[0]
-    print(x_grid, hist_points)
-    init_guesses = gssn_1_popt + gssn_2_popt
-    popt, pcov = curve_fit(double_gaussian, hist_points, x_grid[:-1], p0= init_guesses)
-    print(popt)
-    
-#    ax.plot(x_linspace, double_gaussian(x_linspace, *popt), 'k--', lw = 6, label = 'fit')
-
+    print(numpy.average(nv2_error))
     fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4b.pdf", bbox_inches='tight')
     
-def kde_sklearn(x, bandwidth=0.5):
+def histogram_1hr(bins = 10, fit_gaussian = False):
     '''
-    Produces a kernel density estimation of the data passed. It also plots it.
-    https://jakevdp.github.io/blog/2013/12/01/kernel-density-estimation/
+    Produces a histogram of the data passed
     '''
-    from sklearn.neighbors import KernelDensity
-    """Kernel Density Estimation with Scikit-learn"""
+    text = 62
+    blue = '#2e3192'
+    red = '#ed1c24'
+    # The data from the econd take
+    file29 = '29.5_MHz_splitting_25_bins_error'
+    folder29 = 'nv2_2019_04_30_29MHz_29'
+    data29 = tool_belt.get_raw_data('t1_double_quantum', file29, folder29)
 
-    kde_skl = KernelDensity(bandwidth=bandwidth)
-    x = numpy.array(x)
-    kde_skl.fit(x[:, numpy.newaxis])
-    # score_samples() returns the log-likelihood of the samples
-    x_grid = numpy.linspace(min(x), max(x), 1000)
-    log_pdf = kde_skl.score_samples(x_grid[:, numpy.newaxis])
+    file30 = '29.8_MHz_splitting_10_bins_error'
+    folder30 = 'nv2_2019_04_30_29MHz_30'
+    data30 = tool_belt.get_raw_data('t1_double_quantum', file30, folder30)
 
-    pdf = numpy.exp(log_pdf)
-    fig,ax = plt.subplots(1,1)
-    ax.plot(x_grid, pdf, color='blue', alpha=0.5)
-    ax.set_xlabel('Gamma (kHz)')
-    ax.set_ylabel('Density')
-    ax.set_title('Kernal Density Estimation')
+    # Combine all the data
+    
+    gamma_list = data29['gamma_list'] + data30['gamma_list']
 
-#    print(numpy.exp(log_pdf))
-    return numpy.exp(log_pdf), x_grid
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+    ret_vals = ax.hist(gamma_list, bins = bins, color = '#9E5E9A')
+    print(ret_vals)
+    ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
+    ax.set_ylabel('Occurrences', fontsize=text)
+    ax.tick_params(which = 'both', length=10, width=20, colors='k',
+                    grid_alpha=1.2, labelsize = text)
+
+    ax.tick_params(which = 'major', length=20, width=5)
+    ax.set_yticks([0,2, 4,6])
+    
+        
+    gssn_popt = [11, numpy.average(nv2_error), 27.4]
+
+    x_linspace = numpy.linspace(20, 35, 1000)
+#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_popt), '--',color = 'k',  lw = 8, label = 'fit')
+#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_2_popt), '--', color = blue,  lw = 6, label = 'fit')
+#    ax.set_xlim([22,32.5])
+#    print(numpy.average(nv2_error))
+    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/NV2_zoom_hist.pdf", bbox_inches='tight')
 
 #%%
 if __name__ == "__main__":
@@ -433,10 +412,11 @@ if __name__ == "__main__":
     
     gamma_list = data29['gamma_list'] + data30['gamma_list'] + nv2_rates
 
-#    time_plot_inc()
+    time_plot_inc()
 #    time_main_plot()
 #    time_plot_zoom()
-    histogram(bins = 10)
+#    histogram_5hr(bins = 10)
+#    histogram_1hr(bins = 10)
     
 #    init_guesses = [.16, 0.8, 25.5, .24, 0.8, 27.9]
 #    x_linspace = numpy.linspace(20, 35, 1000)

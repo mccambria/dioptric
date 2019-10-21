@@ -96,7 +96,7 @@ def time_main_plot(folder_name, file_name):
     gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list'] 
     gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
                     + data6['gamma_ste_list']
-    gamma_ste_list = numpy.array(gamma_ste_list)*2
+    gamma_ste_list = numpy.array(gamma_ste_list)
     
     time_inc = 3.75 # hr
     
@@ -130,7 +130,7 @@ def time_main_plot(folder_name, file_name):
     time_start_list = time_start_list_4 + time_start_list_5 + time_start_list_6
     time_end_list = time_end_list_4 + time_end_list_5 + time_end_list_6
         
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
 #    for i in range(0,15):
     for i in range(len(time_start_list)):
         ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = purple)
@@ -158,15 +158,14 @@ def time_main_plot(folder_name, file_name):
                         
 
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                    grid_alpha=0.7, labelsize = 18)
+                    grid_alpha=0.7, labelsize = 24)
 
     ax.tick_params(which = 'major', length=12, width=2)
 
-    ax.grid()
 
-    ax.set_xlabel('Time (hour)', fontsize=18)
-    ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
-    ax.set_ylim(40,70)
+    ax.set_xlabel('Time (hours)', fontsize=26)
+    ax.set_ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=26)
+    ax.set_ylim(39.5,59.5)
 #    ax.set_title(r'NV1', fontsize=18)
 #    ax.legend(fontsize=18)
     fig.canvas.draw()
@@ -194,7 +193,7 @@ def time_zoom_plot(folder_name, file_name):
     gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list'] 
     gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
                     + data6['gamma_ste_list']
-    gamma_ste_list = numpy.array(gamma_ste_list)*2
+    gamma_ste_list = numpy.array(gamma_ste_list)
     
     time_inc = 1.25 # hr
     
@@ -228,8 +227,9 @@ def time_zoom_plot(folder_name, file_name):
     time_start_list = time_start_list_4 + time_start_list_5 + time_start_list_6
     time_end_list = time_end_list_4 + time_end_list_5 + time_end_list_6
         
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    for i in range(0,15):
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+#    for i in range(0,15):
+    for i in range(len(gamma_list)):
         ax.hlines(gamma_list[i], time_start_list[i], time_end_list[i], linewidth=5, colors = purple)
         time_space = numpy.linspace(time_start_list[i], time_end_list[i], 1000)
         ax.fill_between(time_space, gamma_list[i] + gamma_ste_list[i],
@@ -241,11 +241,10 @@ def time_zoom_plot(folder_name, file_name):
 
     ax.tick_params(which = 'major', length=12, width=2)
 
-    ax.grid()
 
-    ax.set_xlabel('Time (hour)', fontsize=18)
-    ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
-    ax.set_ylim(40,70)
+    ax.set_xlabel('Time (hours)', fontsize=18)
+    ax.set_ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=18)
+    ax.set_ylim(35,68)
 #    ax.set_title(r'NV1', fontsize=18)
 #    ax.legend(fontsize=18)
     fig.canvas.draw()
@@ -254,10 +253,12 @@ def time_zoom_plot(folder_name, file_name):
     fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4c2.pdf", bbox_inches='tight')
 
     
-def histogram(bins = 6, fit_gaussian = False):
+def histogram(bins = 7, fit_gaussian = False):
     '''
     Produces a histogram of the data passed
     '''
+    
+    light_purple = '#CE7FFF'
     # 3.75 hour incr
     file4 = '26.3_MHz_splitting_6_bins_error'
     folder4 = 'nv1_2019_05_10_28MHz_4'
@@ -271,44 +272,79 @@ def histogram(bins = 6, fit_gaussian = False):
     folder6 = 'nv1_2019_05_10_28MHz_6'
     data6 = tool_belt.get_raw_data('t1_double_quantum', file6, folder6)
     
-    gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list'] 
+    gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list']
+    gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
+                    + data6['gamma_ste_list']
+                    
+        
 
-    text = 62
+    text = 90
 #    numpy.histogram(nv2_rates, bins = 10)
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ret_vals= ax.hist(gamma_list, bins = bins, color = purple)
+    ret_vals= ax.hist(gamma_list, bins = bins, color = light_purple)
     ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
     ax.set_ylabel('Occurrences', fontsize=text)
     ax.tick_params(which = 'both', length=10, width=20, colors='k',
                     grid_alpha=1.2, labelsize = text)
-
+    ax.set_yticks([0,2, 4])
     ax.tick_params(which = 'major', length=12, width=2)
-#    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
-#  
-    if fit_gaussian:
-        x_grid_endpoints = ret_vals[1]
-        bin_width = (x_grid_endpoints[1] - x_grid_endpoints[0])/2
-        x_grid = numpy.array(x_grid_endpoints) + bin_width
-        hist_points = ret_vals[0]
-        
-        init_guess = [1, 1, 47, 3, 1, 53, 3, 1, 64]
+  
+    gaus_params = [4, numpy.average(gamma_ste_list), 49.3]
     
-        dbl_gssn_popt, pcov = curve_fit(triple_gaussian, x_grid[:-1], hist_points, p0 = init_guess)
+    x_linspace = numpy.linspace(40, 58, 1000)
+    ax.plot(x_linspace, gaussian(x_linspace, *gaus_params), '--',color = 'k',  lw = 10, label = 'fit')
+    ax.set_xlim([42.5,56.5])
+
+    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
+
+def histogram_1hr(bins = 10, fit_gaussian = False):
+    '''
+    Produces a histogram of the data passed
+    '''
+    text = 90
+    blue = '#2e3192'
+    red = '#ed1c24'
+    
+    #  1.2 hours
+    file4 = '26.3_MHz_splitting_18_bins_error'
+    folder4 = 'nv1_2019_05_10_28MHz_4'
+    data4 = tool_belt.get_raw_data('t1_double_quantum', file4, folder4)
+    
+    file5 = '26.5_MHz_splitting_15_bins_error'
+    folder5 = 'nv1_2019_05_10_28MHz_5'
+    data5 = tool_belt.get_raw_data('t1_double_quantum', file5, folder5)
+    
+    file6 = '26.2_MHz_splitting_15_bins_error'
+    folder6 = 'nv1_2019_05_10_28MHz_6'
+    data6 = tool_belt.get_raw_data('t1_double_quantum', file6, folder6)
+    
+    gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list']
+    gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
+                    + data6['gamma_ste_list']
+
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+    ret_vals = ax.hist(gamma_list, bins = bins, color = purple)
+#    print(ret_vals)
+    ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
+    ax.set_ylabel('Occurrences', fontsize=text)
+    ax.tick_params(which = 'both', length=10, width=20, colors='r',
+                    grid_alpha=1.2, labelsize = text)
+
+    ax.tick_params(which = 'major', length=20, width=5)
+    ax.set_yticks([0,2, 4,6])
+    
         
-        x_linspace = numpy.linspace(45, 60, 1000)
-        ax.plot(x_linspace, triple_gaussian(x_linspace, *dbl_gssn_popt), 'r--', label = 'fit')
-    #    ax.plot(x_grid[:-1}], hist_points, 'ro')
-        ax.legend()
-        
-        text = '\n'.join(('Double Gaussian',
-                      r'$x_1 = {}, simga_1= {}, a_1 = {}$'.format('%.2f'%(dbl_gssn_popt[2]), '%.2f'%(dbl_gssn_popt[1]), '%.2f'%(dbl_gssn_popt[0])),
-                      r'$x_2 = {}, simga_2 = {}, a_2 = {}$'.format('%.2f'%(dbl_gssn_popt[5]), '%.2f'%(dbl_gssn_popt[4]), '%.2f'%(dbl_gssn_popt[3])),
-                      r'$x_3 = {}, simga_3 = {}, a_3 = {}$'.format('%.2f'%(dbl_gssn_popt[8]), '%.2f'%(dbl_gssn_popt[7]), '%.2f'%(dbl_gssn_popt[6]))
-                      ))
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.05, 0.9, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-        
+#    gssn_popt = [11, numpy.average(gamma_ste_list), 27.4]
+
+#    x_linspace = numpy.linspace(20, 35, 1000)
+#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_popt), '--',color = 'k',  lw = 8, label = 'fit')
+#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_2_popt), '--', color = blue,  lw = 6, label = 'fit')
+#    ax.set_xlim([22,32.5])
+#    print(numpy.average(nv2_error))
+    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/NV1_zoom_hist.pdf", bbox_inches='tight')
+
+
 def kde_sklearn(x, bandwidth=0.5):
     '''
     Produces a kernel density estimation of the data passed. It also plots it.
@@ -338,9 +374,10 @@ def kde_sklearn(x, bandwidth=0.5):
 file_name = '26.2_MHz_splitting_25_bins_error'
 folder_name = 'nv1_2019_05_10_28MHz_6'    
 
-#time_main_plot(folder_name, file_name)
+time_main_plot(folder_name, file_name)
 #time_zoom_plot(folder_name, file_name)
-histogram(fit_gaussian = True)
+histogram(bins = 7, fit_gaussian = True)
+#histogram_1hr(bins = 14)
 
 #file4 = '26.3_MHz_splitting_6_bins_error'
 #folder4 = 'nv1_2019_05_10_28MHz_4'
