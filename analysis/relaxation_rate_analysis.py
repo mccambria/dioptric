@@ -40,7 +40,7 @@ from utils.tool_belt import States
 
 data_folder = 't1_double_quantum'
 
-manual_offset_gamma = 0.0
+manual_offset_gamma = 0.014
 # %% Functions
 
 # The exponential function without an offset
@@ -106,13 +106,23 @@ def get_data_lists(folder_name):
             init_state_name = data['init_state']
             read_state_name = data['read_state']
 
-            sig_counts  = numpy.array(data['sig_counts'])
-            ref_counts = numpy.array(data['ref_counts'])
-
+            # older files still used 1,-1,0 convention. This will allow old
+            # and new files to be evaluated
+            if init_state_name == 1 or init_state_name == -1 or  \
+                                    init_state_name == 0:
+                high_state_name = 1
+                low_state_name = -1
+                zero_state_name = 0
+            else:
+                high_state_name = States.HIGH.name
+                low_state_name = States.LOW.name
+                zero_state_name = States.ZERO.name
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             num_steps = data['num_steps']
+            
             num_runs = data['num_runs']
-
+            sig_counts  = numpy.array(data['sig_counts'])
+            ref_counts = numpy.array(data['ref_counts'])
 
             # Calculate time arrays in us
             min_relaxation_time, max_relaxation_time = \
@@ -121,6 +131,7 @@ def get_data_lists(folder_name):
                                         max_relaxation_time, num=num_steps)
 
             # Calculate the average signal counts over the runs, and st. error
+#            print(sig_counts)
             avg_sig_counts = numpy.average(sig_counts[::], axis=0)
             ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
 
@@ -131,17 +142,6 @@ def get_data_lists(folder_name):
             norm_avg_sig = avg_sig_counts / avg_ref
             norm_avg_sig_ste = ste_sig_counts / avg_ref
 
-            # older files still used 1,-1,0 convention. This will allow old
-            # and new files to be evaluated
-            if init_state_name == 1 or init_state_name == -1 or  \
-                    init_state_name == 0:
-                high_state_name = 1
-                low_state_name = -1
-                zero_state_name = 0
-            else:
-                high_state_name = States.HIGH.name
-                low_state_name = States.LOW.name
-                zero_state_name = States.ZERO.name
 
 
             # Check to see which data set the file is for, and append the data
@@ -302,7 +302,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
         zero_plus_counts = omega_exp_list[2]
         zero_plus_ste = omega_exp_list[3]
         zero_zero_time = omega_exp_list[4]
-
+        
         zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
         zero_relaxation_ste = numpy.sqrt(zero_zero_ste**2 + zero_plus_ste**2)
 
@@ -445,6 +445,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
             ax.legend()
             text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma,
                   '%.3f'%gamma_ste)
+            ax.set_xlim([-0.001, 0.05])
 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
@@ -518,7 +519,11 @@ if __name__ == '__main__':
 #        except Exception:
 #            continue
 
-    folder = 'nv1_2019_05_10_351MHz_rot2'
+    
+
+    folder = 'nv14_2019_10_17_15MHz'
+#    folder = 'nv0_2019_06_06_36MHz'
+
 
     # folder_name, omega, omega_std, doPlot, offset
     gamma, ste = main(folder, omega=None, omega_ste=None,

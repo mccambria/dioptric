@@ -74,8 +74,8 @@ text = '\n'.join((r'$A_0/f^{2} + \gamma_\infty$ fit:',
                                            
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
-#        verticalalignment='top', bbox=props)
+ax.text(0.85, 0.7, text, transform=ax.transAxes, fontsize=12,
+        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -96,4 +96,4 @@ plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
 fig.canvas.draw()
 fig.canvas.flush_events()
 
-fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3d.pdf", bbox_inches='tight')
+#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3d.pdf", bbox_inches='tight')

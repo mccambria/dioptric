@@ -28,11 +28,12 @@ from scipy.optimize import curve_fit
 import numpy
 
 # The data
-nv13_splitting_list = [23.1,  29.8, 51.9, 72.4, 112.9, 164.1]
-nv13_omega_avg_list = [1.01, 1.01, 0.39, 0.76, 0.92, 0.66]
-nv13_omega_error_list = numpy.array([0.16,   0.09, 0.04, 0.1, 0.14, 0.11])*2
-nv13_gamma_avg_list = [62, 19.3, 17.7, 16.2, 12.1, 5.6]
-nv13_gamma_error_list = numpy.array([8,   1.1, 1.4, 1.1, 0.9, 0.5])*2
+nv13_splitting_list = numpy.array([10.9,  23.1,  29.8, 51.9, 72.4, 112.9, 164.1, 256.2])
+nv13_splitting_error = numpy.full(len(nv13_splitting_list), 0.3)*2
+nv13_omega_avg_list = numpy.array([0.45,  1.01, 1.01, 0.39, 0.76, 0.92, 0.66, 0.23])
+nv13_omega_error_list = numpy.array([0.06,  0.16,   0.09, 0.04, 0.1, 0.14, 0.11, 0.04])*2
+nv13_gamma_avg_list = numpy.array([240,  62, 19.3, 17.7, 16.2, 12.1, 5.6, 2.1])
+nv13_gamma_error_list = numpy.array([25,  8,   1.1, 1.4, 1.1, 0.9, 0.5, 0.3])*2
 
 # Try to fit the gamma to a 1/f^2
 
@@ -40,7 +41,7 @@ fit_alpha_params, cov_arr = curve_fit(fit_eq_alpha, nv13_splitting_list, nv13_ga
                                 p0 = [1000, 1], sigma = nv13_gamma_error_list,
                                 absolute_sigma = True)
 
-splitting_linspace = numpy.linspace(10, 2000,
+splitting_linspace = numpy.linspace(1, 2000,
                                     1000)
 omega_constant_array = numpy.empty([1000]) 
 omega_constant_array[:] = numpy.average(nv13_omega_avg_list)
@@ -61,35 +62,35 @@ print(fit_alpha_params)
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv13_splitting_list, nv13_gamma_avg_list, yerr = nv13_gamma_error_list, 
-            label = r'$\gamma$', fmt='o', markersize = 12, color=purple)
+             xerr = nv13_splitting_error, label = r'$\gamma$', fmt='o', markersize = 12, color=purple)
 ax.errorbar(nv13_splitting_list, nv13_omega_avg_list, yerr = nv13_omega_error_list, 
-            label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
+             xerr = nv13_splitting_error, label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
             linestyle='dashed', linewidth=3, color = purple)
 ax.plot(splitting_linspace, omega_constant_array, color= orange,
             linestyle='dashed', linewidth=3)
 
+# %% Residuals
 
-# %% Chi Squared
-
-expected = []
-
-for el in range(len(nv13_splitting_list)):
-    expected_value = fit_eq_alpha(nv13_splitting_list[el], *fit_alpha_params)
-    expected.append(expected_value)
-    
-ret_vals = chisquare(nv13_gamma_avg_list, f_exp=expected)
-chi_sq = ret_vals[0]
-
+#ax.plot(nv13_splitting_list, nv13_gamma_avg_list - fit_eq_alpha(nv13_splitting_list, *fit_alpha_params), color='b', label = r'$\gamma$ residual')
+#ax.set_ylabel('Residuals', color='b', fontsize=18)
+#ax.set_xlabel('Splitting (MHz)', color='k', fontsize=18)
+#
+##ax2 = ax.twinx()
+#ax.plot(nv13_splitting_list, nv13_omega_avg_list - numpy.average(nv13_omega_avg_list), color = 'r', label = r'$\Omega$ residual')
+##ax.set_ylabel('Omega Residuals', color='r', fontsize=18)
+#ax.tick_params(which = 'both', length=6, width=2, colors='k',
+#                grid_alpha=0.7, labelsize = 18)
+#ax.set_ylim([-5,10])
+##ax2.tick_params(which = 'major', length=12, width=2)
 # %%
 
 
 text = '\n'.join((r'$A_0/f^{2} + \gamma_\infty$ fit:',
 #                  r'$\alpha = {} \pm {}$'.format('%.2f'%(fit_alpha_params[1]), '%.2f'%(numpy.sqrt(cov_arr[1][1]))),
                   r'$A_0 = {} \pm {}$'.format('%.0f'%(fit_alpha_params[0]), '%.0f'%(numpy.sqrt(cov_arr[0][0]))),
-                  r'$\gamma_\infty = {} \pm {}$'.format('%.2f'%(fit_alpha_params[1]), '%.2f'%(numpy.sqrt(cov_arr[1][1]))),
-                  r'$\chi^2 = $' + '%.2f'%(chi_sq)
+                  r'$\gamma_\infty = {} \pm {}$'.format('%.2f'%(fit_alpha_params[1]), '%.2f'%(numpy.sqrt(cov_arr[1][1])))
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 #ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
@@ -105,13 +106,13 @@ ax.tick_params(which = 'major', length=12, width=2)
 
 ax.grid()
 
-ax.set_xlim([10,1200])
-ax.set_ylim([0.1,300])
-#ax.set_ylim([-10,150])
+#ax.set_xlim([8,400])
+#ax.set_ylim([0.1,800])
+
+
 
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-#plt.title('NV16', fontsize=18)
-#ax.legend(fontsize=18)
+ax.legend(fontsize=18)
 
-fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/NV13.pdf", bbox_inches='tight')
+#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/NV13.pdf", bbox_inches='tight')

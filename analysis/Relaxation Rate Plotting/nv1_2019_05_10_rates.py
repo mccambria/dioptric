@@ -28,11 +28,11 @@ from scipy.optimize import curve_fit
 from scipy.stats import chisquare
 
 # The data
-nv1_splitting_list = [ 19.5, 19.8, 27.7, 28.9, 41.9, 32.7, 51.8, 97.8, 116, 268, 561.7, 1016.8]
-nv1_omega_avg_list = numpy.array([ 0.83, 1.23, 1.30,  1.000, 1.11, 1.42, 1.85, 1.41, 1.18, 1.04, 1.19, 0.58])
-nv1_omega_error_list = numpy.array([ 0.04, 0.04, 0.06, 0.016, 0.05, 0.05, 0.08, 0.05, 0.06, 0.04, 0.06, 0.03])*2
-nv1_gamma_avg_list = numpy.array([58.3, 117, 64.5, 56.4, 23.5, 42.6, 13.1, 3.91, 4.67, 1.98, 0.70, 0.41])
-nv1_gamma_error_list = numpy.array([1.4, 4, 1.4, 1.3, 0.5, 0.9, 0.2, 0.1, 0.11, 0.1, 0.05, 0.05])*2
+nv1_splitting_list = [ 19.5, 19.8, 27.7, 28.9, 32.7, 51.8, 97.8, 116, 268, 350, 561.7, 1016.8]
+nv1_omega_avg_list = numpy.array([ 0.83, 1.23, 1.30,  1.000,  1.42, 1.85, 1.41, 1.18, 1.04, 0.72, 1.19, 0.58])
+nv1_omega_error_list = numpy.array([ 0.04, 0.04, 0.06, 0.016,  0.05, 0.08, 0.05, 0.06, 0.04, 0.04, 0.06, 0.03])*2
+nv1_gamma_avg_list = numpy.array([58.3, 117, 64.5, 56.4,  42.6, 13.1, 3.91, 4.67, 1.98, 1.57, 0.70, 0.41])
+nv1_gamma_error_list = numpy.array([1.4, 4, 1.4, 1.3,  0.9, 0.2, 0.1, 0.11, 0.1, 0.12, 0.05, 0.05])*2
 
 # Try to fit the gamma to a 1/f^2
 
@@ -44,7 +44,7 @@ splitting_linspace = numpy.linspace(10, 2000,
                                     1000)
 
 omega_constant_array = numpy.empty([1000]) 
-omega_constant_array[:] = numpy.average(nv1_omega_avg_list)
+omega_constant_array[:] = numpy.average(nv1_omega_avg_list) 
 
 print(numpy.average(nv1_omega_avg_list))
 print( numpy.sqrt(numpy.sum(numpy.array(nv1_omega_error_list)**2)))
@@ -94,8 +94,8 @@ text = '\n'.join((r'$A_0/f^{2} + \gamma_\infty$ fit:',
 #                  ,r'$a = $' + '%.2f'%(fit_params[2])
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
-#        verticalalignment='top', bbox=props)
+ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
+        verticalalignment='top', bbox=props)
 
 # %%
 
@@ -115,6 +115,6 @@ plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
 #plt.title('NV 1', fontsize=18)
 #ax.legend(fontsize=18)
 
-fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c.pdf", bbox_inches='tight')
+#fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3c.pdf", bbox_inches='tight')
 
 
