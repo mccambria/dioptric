@@ -34,8 +34,8 @@ inv_sqrt_2 = 1/numpy.sqrt(2)
 # %% Functions
 
 
-def calc_b_matrix_elements(noise_hamiltonian,
-                           mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
+def calc_matrix_elements(noise_hamiltonian,
+                         mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
 
     popt_full = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
     vecs = calc_eigenvectors(mag_B, *popt_full)  # zero, low, high
@@ -74,7 +74,7 @@ def b_matrix_elements(name, res_descs):
         low_zero_comps.append(numpy.abs(vecs[1,1])**2)
         high_zero_comps.append(numpy.abs(vecs[2,1])**2)
 
-        ret_vals = calc_b_matrix_elements(noise_hamiltonian,
+        ret_vals = calc_matrix_elements(noise_hamiltonian,
                                           mag_B, *popt_full)
         zero_to_low_el, zero_to_high_el, low_to_high_el = ret_vals
 
@@ -214,6 +214,27 @@ def calc_B_hamiltonian(mag_B, theta_B, phi_B):
         return calc_single_B_hamiltonian(*args)
 
 
+def calc_single_Pi_hamiltonian(mag_Pi, theta_Pi, phi_Pi):
+    d_par = 0.3
+    d_perp = 17.0
+    par_Pi = d_par * mag_Pi * numpy.cos(theta_Pi)
+    perp_Pi = d_perp * mag_Pi * numpy.sin(theta_Pi)
+    hamiltonian = numpy.array([[par_Pi, 0, perp_Pi * exp(1j * phi_Pi)],
+                               [0, 0, 0],
+                               [perp_Pi * exp(-1j * phi_Pi), 0, par_Pi]])
+    return hamiltonian
+
+
+def calc_Pi_hamiltonian(perp_Pi, theta_Pi, phi_Pi):
+    args = (perp_Pi, theta_Pi, phi_Pi)
+    if (type(perp_Pi) is list) or (type(perp_Pi) is numpy.ndarray):
+        hamiltonian_list = [calc_single_Pi_hamiltonian(*args)
+                            for val in perp_Pi]
+        return hamiltonian_list
+    else:
+        return calc_single_Pi_hamiltonian(*args)
+
+
 def calc_res_pair(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     hamiltonian = calc_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi,
                                    phi_B, phi_Pi)
@@ -241,6 +262,7 @@ def calc_eigenvectors(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
                                    phi_B, phi_Pi)
     eigvals, eigvecs = eig(hamiltonian)
     sorted_indices = numpy.argsort(eigvals)
+    # sorted_eigvecs = [numpy.round(eigvecs[:,ind], 3) for ind in sorted_indices]
     sorted_eigvecs = [eigvecs[:,ind] for ind in sorted_indices]
     sorted_eigvecs = numpy.array(sorted_eigvecs)
     return sorted_eigvecs
@@ -445,23 +467,24 @@ if __name__ == '__main__':
 
     ############ Nice ############
 
-#    name = 'nv1_2019_05_10'
-#    res_descs = [[0.0, 2.8537, 2.8751],
-#                  [None, 2.8554, 2.8752],
-#                  [None, 2.8512, 2.8790],
-#                  [None, 2.8520, 2.8800],
-#                  [None, 2.8536, 2.8841],
-#                  [None, 2.8496, 2.8823],
-#                  [None, 2.8396, 2.8917],
-#                  [None, 2.8198, 2.9106],  # Reference for misaligned T1
-#                  [None, 2.8166, 2.9144],
-#                  [None, 2.8080, 2.9240],
-#                  [None, 2.7357, 3.0037],
-#                  [None, 2.6061, 3.1678],
-#                  [None, 2.6055, 3.1691],
-#                  [None, 2.4371, 3.4539],
-#                  [None, 2.6310, 3.1547],  # Reference for misaligned T1
-#                  ]
+    name = 'nv1_2019_05_10'
+    res_descs = [[0.0, 2.8537, 2.8751],
+                  [None, 2.8554, 2.8752],
+                  [None, 2.8512, 2.8790],
+                  [None, 2.8520, 2.8800],
+                  [None, 2.8536, 2.8841],
+                  [None, 2.8496, 2.8823],
+                  [None, 2.8396, 2.8917],
+                  [None, 2.8198, 2.9106],  # Reference for misaligned T1
+                  [None, 2.8166, 2.9144],
+                  [None, 2.8080, 2.9240],
+                  [None, 2.7357, 3.0037],
+                  [None, 2.6310, 3.1547],  # Reference for misaligned T1
+                  [None, 2.6061, 3.1678],
+                  [None, 2.6055, 3.1691],
+                  [None, 2.4381, 3.4531],  # 0,-1 and 0,+1 omegas
+                  [None, 2.4371, 3.4539],
+                  ]
 
 #    name = 'nv1_2019_05_10_misaligned'
 #    res_descs = [[0.0, 2.8537, 2.8751],
@@ -515,12 +538,12 @@ if __name__ == '__main__':
     #               [None, 2.7948, 2.9077],
     #               [None, 2.7857, 2.9498]]
 
-    name = 'nv13_2019_06_10'
-    res_descs = [[0.0, 2.8367, 2.8444],
-                   [None, 2.8230, 2.8625],
-                   [None, 2.8143, 2.8741],
-                   [None, 2.8076, 2.8887],
-                   [None, 2.7923, 2.9284]]
+    # name = 'nv13_2019_06_10'
+    # res_descs = [[0.0, 2.8367, 2.8444],
+    #                [None, 2.8230, 2.8625],
+    #                [None, 2.8143, 2.8741],
+    #                [None, 2.8076, 2.8887],
+    #                [None, 2.7923, 2.9284]]
 
     ############ Not as nice ############
 
@@ -544,29 +567,28 @@ if __name__ == '__main__':
 #                   ]
 
     # Weird
-
-    name = 'nv13_2019_06_10'
-    res_descs = [
-            [0.0, 2.8370, 2.8430], # [0.0, 2.8147, 2.8454],
-            [None, 2.8289, 2.8520],
-            [None, 2.8266, 2.8546],
-            [None, 2.8262, 2.8556],
-            [None, 2.8247, 2.8545],
-            [None, 2.8174, 2.8693],
-            [None, 2.8082, 2.8806],
-            [None, 2.7948, 2.9077],
-            [None, 2.7857, 2.9498],
-            [None, 2.7848, 3.0329],
-            ]
+    # name = 'nv13_2019_06_10'
+    # res_descs = [
+    #         [0.0, 2.8370, 2.8430], # [0.0, 2.8147, 2.8454],
+    #         [None, 2.8289, 2.8520],
+    #         [None, 2.8266, 2.8546],
+    #         [None, 2.8262, 2.8556],
+    #         [None, 2.8247, 2.8545],
+    #         [None, 2.8174, 2.8693],
+    #         [None, 2.8082, 2.8806],
+    #         [None, 2.7948, 2.9077],
+    #         [None, 2.7857, 2.9498],
+    #         [None, 2.7848, 3.0329],
+    #         ]
 
     # Run the script
-    # main(name, res_descs)
+    main(name, res_descs)
 
     # Why does pi_perp allow DQ matrix elements
     # nh = calc_B_hamiltonian(100, pi/4, 0)
     # shp = (4.112704686434049e-06, 0.64801485, -0.00444952, 0.01029658, 0., 0.)
     # shp = (1.0, 0.6, 0, 0, 0., 0.)
-    # calc_b_matrix_elements(nh, *shp)
+    # calc_matrix_elements(nh, *shp)
     # print(calc_eigenvectors(*shp))
     # Rotation prediction
     # predict_rotation(name, res_descs,

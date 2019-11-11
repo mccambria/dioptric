@@ -119,7 +119,7 @@ def get_data_lists(folder_name):
                 zero_state_name = States.ZERO.name
             relaxation_time_range = numpy.array(data['relaxation_time_range'])
             num_steps = data['num_steps']
-            
+
             num_runs = data['num_runs']
             sig_counts  = numpy.array(data['sig_counts'])
             ref_counts = numpy.array(data['ref_counts'])
@@ -302,7 +302,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
         zero_plus_counts = omega_exp_list[2]
         zero_plus_ste = omega_exp_list[3]
         zero_zero_time = omega_exp_list[4]
-        
+
         zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
         zero_relaxation_ste = numpy.sqrt(zero_zero_ste**2 + zero_plus_ste**2)
 
@@ -519,14 +519,14 @@ if __name__ == '__main__':
 #        except Exception:
 #            continue
 
-    
+
 
     folder = 'nv1_2019_05_10_1017MHz'
 #    folder = 'nv0_2019_06_06_36MHz'
 
 
     # folder_name, omega, omega_std, doPlot, offset
-    gamma, ste = main(folder, omega=None, omega_ste=None,
-                      doPlot=True, offset=False)
+    gamma, ste = main(folder, omega=1.0, omega_ste=0.5,
+                      doPlot=True, offset=True)
     # gamma, ste = main(folder, omega=1.17, omega_ste=0.05,
     #                   doPlot=True, offset=False)
