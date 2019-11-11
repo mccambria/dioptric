@@ -418,7 +418,7 @@ if __name__ == '__main__':
     # mag_B_calc_meas_rate = 1.57e3  # Hz
 
     # Run the script
-    # main(name, res_descs, aligned_res_desc, rotated_res_desc)
+#    main(name, res_descs, aligned_res_desc, rotated_res_desc)
     # main_plot(name, res_descs, aligned_res_desc)
     main_plot_paper(name, res_descs, meas_splittings, meas_gammas)
     # main_plot_rot(name, res_descs)
