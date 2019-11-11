@@ -412,6 +412,6 @@ if __name__ == '__main__':
 #    create_figure(file_name)
 #    reformat_plot('inferno', 'svg')
 
-    file_name = '2019_10/2019_10_17-09_41_28-ayrton19-NV_search'
+    file_name = '2019_10/2019_10_31-13_50_10-Goeppert-Mayer-NV_search'
     create_figure(file_name)
 

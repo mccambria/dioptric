@@ -60,11 +60,11 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 90
 #    scan_range = 0.5
 #    num_steps = 150
-#    scan_range = 0.3
+    scan_range = 0.2
 #    num_steps = 90
-#    scan_range = 0.2
+#    scan_range = 0.1
     num_steps = 60
-    scan_range = 0.05
+#    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
 #    num_steps = 60
@@ -361,13 +361,13 @@ if __name__ == '__main__':
     
 
     
-    sample_name = 'ayrton14'
+    sample_name = 'Johnson'
 
-    NV_search = { 'coords': [0.048, -0.201, 5.0],
+    NV_search = { 'coords': [0.164, -0.011, 5.57],
             'name': '{}-NV_search'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
+            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 400, 'magnet_angle': None,
-            'resonance_LOW': None, 'rabi_LOW': 200, 'uwave_power_LOW': 9.0,
+            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     nv_sig_list = [NV_search]
 
@@ -377,7 +377,8 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
 #         set_xyz_zero()
-#        set_xyz([0.0, 0.0, 5.0])
+#        set_xyz([0.163, -0.011, 5.57]) # On NV 
+        set_xyz([0.234, -0.067, 5.57]) # Off NV 
 #        drift = tool_belt.get_drift()
 #        print(drift)
 #        tool_belt.set_drift([0.0, 0.0, 0.0])
@@ -394,14 +395,14 @@ if __name__ == '__main__':
 
         
         # Routines that expect single NVs
-        for ind in range(len(nv_sig_list)):
-            nv_sig = nv_sig_list[ind]                
+#        for ind in range(len(nv_sig_list)):
+#            nv_sig = nv_sig_list[ind]                
 #            for z in numpy.linspace(5.5, 6.5, 6):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-            do_image_sample(nv_sig, apd_indices)
+#            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
