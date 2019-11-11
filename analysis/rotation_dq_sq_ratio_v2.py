@@ -327,7 +327,7 @@ if __name__ == '__main__':
     mag_B_calc_meas_rate = 1.57e3  # Hz
 
     # Run the script
-    # main(name, res_descs, aligned_res_desc, rotated_res_desc)
+#    main(name, res_descs, aligned_res_desc, rotated_res_desc)
     # main_plot(name, res_descs, aligned_res_desc)
     main_plot_paper(name, res_descs, aligned_res_desc)
     # dq_vs_sq_rates(name, res_descs, sq_compare_res_desc)

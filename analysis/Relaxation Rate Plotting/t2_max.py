@@ -22,12 +22,14 @@ import matplotlib.ticker as ticker
 # %%
 
 font_size = 75
-marker_size = 30
+marker_size = 38 #40
 
-xlim = [-50,1080]
-ylim = [0.011,2.1]
+xlim = [-100,1200]
+ylim = [0.005,2.5]
 #xticks = [0,400, 800]
 xticks = [0,500, 1000]
+yticks=[0.01,0.1,1]
+
 
 # %%
 
@@ -159,18 +161,24 @@ ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.
 
 
 
-ax.tick_params(which = 'both', length=14, width=3, colors='k',
-                grid_alpha=0.7, labelsize = font_size)
+ax.tick_params(which = 'both', length=16, width=3, colors='k',
+                 direction = 'in', grid_alpha=0.7, labelsize = font_size)
 
-ax.tick_params(which = 'major', length=20, width=5)
+ax.tick_params(which = 'major', length=30, width=5)
 ax.set_xticks(xticks)
+ax.set_yticks(yticks)
+
+locmin = ticker.LogLocator(base=10.0,subs=(0.1, 0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9),numticks=16)
+ax.yaxis.set_minor_locator(locmin)
+ax.yaxis.set_minor_formatter(ticker.NullFormatter())
+
 ax.set_xlim(xlim)
 ax.set_ylim(ylim)
 
 ax.grid(axis='y',lw=3)
 
-plt.xlabel(r'$\Delta_{\pm}$ (MHz)', fontsize=font_size)
-plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
+#plt.xlabel(r'$\Delta_{\pm}$ (MHz)', fontsize=font_size)
+#plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 fig1.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3a_inset.pdf", bbox_inches='tight')
 
@@ -186,20 +194,26 @@ ax.errorbar(nv2_splitting_list, T2_max_2, yerr = T2_max_error_2,
 
 print(numpy.average(T2_max_traditional_2))
 
-ax.tick_params(which = 'both', length=14, width=3, colors='k',
-                grid_alpha=0.7, labelsize = font_size)
+ax.tick_params(which = 'both', length=16, width=3, colors='k',
+                 direction = 'in', grid_alpha=0.7, labelsize = font_size)
 
-ax.tick_params(which = 'major', length=20, width=5)
+ax.tick_params(which = 'major', length=30, width=5)
 
 ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
 ax.set_xticks(xticks)
+ax.set_yticks(yticks)
+
+locmin = ticker.LogLocator(base=10.0,subs=(0.1, 0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9),numticks=16)
+ax.yaxis.set_minor_locator(locmin)
+ax.yaxis.set_minor_formatter(ticker.NullFormatter())
+
 ax.set_xlim(xlim)
 ax.set_ylim(ylim)
 
 ax.grid(axis='y',lw=3)
-plt.xlabel(r'$\Delta_{\pm}$ (MHz)', fontsize=font_size)
-plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
+#plt.xlabel(r'$\Delta_{\pm}$ (MHz)', fontsize=font_size)
+#plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 fig2.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_3b_inset.pdf", bbox_inches='tight')
 
@@ -213,18 +227,23 @@ ax.errorbar(nv16_splitting_list, T2_max_16, yerr = T2_max_error_16,
 
 print(numpy.average(T2_max_traditional_16))
 
-ax.tick_params(which = 'both', length=14, width=3, colors='k',
-                grid_alpha=0.7, labelsize = font_size)
+ax.tick_params(which = 'both', length=16, width=3, colors='k',
+                 direction = 'in', grid_alpha=0.7, labelsize = font_size)
 
 ax.tick_params(which = 'major', length=20, width=5)
 
 ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
 ax.set_xticks(xticks)
+ax.set_yticks(yticks)
+
+locmin = ticker.LogLocator(base=10.0,subs=(0.1, 0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9),numticks=16)
+ax.yaxis.set_minor_locator(locmin)
+ax.yaxis.set_minor_formatter(ticker.NullFormatter())
 
 ax.grid(axis='y',lw=3)
-plt.xlabel(r'$\Delta_{\pm}$ (MHz)', fontsize=font_size)
-plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
+#plt.xlabel(r'$\Delta_{\pm}$ (MHz)', fontsize=font_size)
+#plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 ax.set_xlim(xlim)
 ax.set_ylim(ylim)
@@ -243,18 +262,23 @@ ax.errorbar(splitting_list, T2_max_0, yerr = T2_max_error_0,
 
 print(numpy.average(T2_max_traditional_0))
 
-ax.tick_params(which = 'both', length=14, width=3, colors='k',
-                grid_alpha=0.7, labelsize = font_size)
+ax.tick_params(which = 'both', length=16, width=3, colors='k',
+                 direction = 'in', grid_alpha=0.7, labelsize = font_size)
 
 ax.tick_params(which = 'major', length=20, width=5)
 
 ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
 ax.set_xticks(xticks)
+ax.set_yticks(yticks)
+
+locmin = ticker.LogLocator(base=10.0,subs=(0.1, 0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9),numticks=16)
+ax.yaxis.set_minor_locator(locmin)
+ax.yaxis.set_minor_formatter(ticker.NullFormatter())
 
 ax.grid(axis='y',lw=3)
-plt.xlabel(r'$\Delta_{\pm}$ (MHz)', fontsize=font_size)
-plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
+#plt.xlabel(r'$\Delta_{\pm}$ (MHz)', fontsize=font_size)
+#plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
 ax.set_xlim(xlim)
 ax.set_ylim(ylim)
@@ -274,20 +298,25 @@ ax.errorbar(nv13_splitting_list, T2_max_13, yerr = T2_max_error_13,
 
 #print(numpy.average(T2_max_traditional_13))
 
-ax.tick_params(which = 'both', length=14, width=3, colors='k',
-                grid_alpha=0.7, labelsize = font_size)
+ax.tick_params(which = 'both', length=16, width=3, colors='k',
+                 direction = 'in', grid_alpha=0.7, labelsize = font_size)
 
 ax.tick_params(which = 'major', length=20, width=5)
 
 ax.set_yscale("log", nonposy='clip')
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
 ax.set_xticks([0, 150, 300])
+ax.set_yticks([0.01, 0.1, 1])
+
+locmin = ticker.LogLocator(base=10.0,subs=(0.1, 0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9),numticks=16)
+ax.yaxis.set_minor_locator(locmin)
+ax.yaxis.set_minor_formatter(ticker.NullFormatter())
 
 ax.grid(axis='y', lw=3)
 plt.xlabel(r'$\Delta_{\pm}$ (MHz)', fontsize=font_size)
 plt.ylabel(r'$T_{2,max}$ (ms)', fontsize=font_size)
 
-ax.set_xlim([-8,350])
+ax.set_xlim([-15,350])
 ax.set_ylim([0.004,1.1])
 
 #ax.set_xscale("log", nonposx='clip')

@@ -16,6 +16,10 @@ nv1_2019_05_10
 
 
 '''
+
+# %%
+
+font_size = 40
 # %%
 def fit_eq_alpha(f, amp, alpha):
     return amp*f**(-alpha)
@@ -55,9 +59,9 @@ nv0_gamma_error_list = [0.023, 0.009, 0.017]
 
 # Fig with just the magnet optimized data from NV0
 
-fig_nv0, ax = plt.subplots(1, 1, figsize=(5, 4))
+fig_nv0, ax = plt.subplots(1, 1, figsize=(8, 7))
 
-axis_font = {'size':'14'}
+#axis_font = {'size':'20'}
 
 #ax = axes[0]
 
@@ -80,38 +84,43 @@ axis_font = {'size':'14'}
 # %%
 #ax = axes[1]
 
-# Data for a second NV
-ax.errorbar(nv1_splitting_list, nv1_gamma_avg_list, yerr = nv1_gamma_error_list, 
-            label = r'$\gamma_{NV_2}$', fmt='^', markersize = 10, color='blue')
-ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
-            label = r'$\Omega_{NV_2}$', fmt='^', markersize = 10, color='orange')
-
-# Data for the original Nv, with misaligned magnet
-ax.errorbar(NV0_mis_splitting_list, NV0_mis_gamma_avg_list, yerr = NV0_mis_gamma_error_list, 
-            label = r'$\gamma_{NV_1}$, misaligned', markersize = 10, fmt='o', color='blue',  markerfacecolor='none')
-ax.errorbar(NV0_mis_splitting_list, NV0_mis_omega_avg_list, yerr = NV0_mis_omega_error_list, 
-            label = r'$\Omega_{NV_1}$, misaligned', markersize = 10, fmt='o', color='orange',  markerfacecolor='none')
-
-# Data for the original NV, with optimized magnet
-ax.errorbar(NV0_opt_splitting_list, NV0_opt_gamma_avg_list, yerr = NV0_opt_gamma_error_list, 
-            label = r'$\gamma_{NV_1}$, optimized', markersize = 10, fmt='o', color='blue')
-ax.errorbar(NV0_opt_splitting_list, NV0_opt_omega_avg_list, yerr = NV0_opt_omega_error_list, 
-            label = r'$\Omega_{NV_1}$, optimized', markersize = 10, fmt='o', color='orange')
+## Data for a second NV
+#ax.errorbar(nv1_splitting_list, nv1_gamma_avg_list, yerr = nv1_gamma_error_list, 
+#            label = r'$\gamma_{NV_2}$', fmt='^', markersize = 10, color='blue')
+#ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
+#            label = r'$\Omega_{NV_2}$', fmt='^', markersize = 10, color='orange')
+#
+## Data for the original Nv, with misaligned magnet
+#ax.errorbar(NV0_mis_splitting_list, NV0_mis_gamma_avg_list, yerr = NV0_mis_gamma_error_list, 
+#            label = r'$\gamma_{NV_1}$, misaligned', markersize = 10, fmt='o', color='blue',  markerfacecolor='none')
+#ax.errorbar(NV0_mis_splitting_list, NV0_mis_omega_avg_list, yerr = NV0_mis_omega_error_list, 
+#            label = r'$\Omega_{NV_1}$, misaligned', markersize = 10, fmt='o', color='orange',  markerfacecolor='none')
+#
+## Data for the original NV, with optimized magnet
+#ax.errorbar(NV0_opt_splitting_list, NV0_opt_gamma_avg_list, yerr = NV0_opt_gamma_error_list, 
+#            label = r'$\gamma_{NV_1}$, optimized', markersize = 10, fmt='o', color='blue')
+#ax.errorbar(NV0_opt_splitting_list, NV0_opt_omega_avg_list, yerr = NV0_opt_omega_error_list, 
+#            label = r'$\Omega_{NV_1}$, optimized', markersize = 10, fmt='o', color='orange')
 
 
 # NV0, alignd magnet data
-#ax.errorbar(nv0_splitting_list, nv0_gamma_avg_list, yerr = nv0_gamma_error_list, 
-#            label = r'$\gamma_{NV_1}$, optimum magnet', markersize = 10, fmt='o', color='blue')
-#ax.errorbar(nv0_splitting_list, nv0_omega_avg_list, yerr = nv0_omega_error_list, 
-#            label = r'$\Omega_{NV_1}$, optimum magnet', markersize = 10, fmt='o', color='orange')
+ax.errorbar(nv0_splitting_list, nv0_gamma_avg_list, yerr = nv0_gamma_error_list, 
+            label = r'$\gamma_{NV_1}$, optimum magnet', markersize = 15, fmt='o', color='#87479b')
+ax.errorbar(nv0_splitting_list, nv0_omega_avg_list, yerr = nv0_omega_error_list, 
+            label = r'$\Omega_{NV_1}$, optimum magnet', markersize = 15, fmt='^', color='#f7941d')
 
 # Formatting
 ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                grid_alpha=0.7, labelsize = 18)
+                direction='in',grid_alpha=0.7, labelsize = font_size)
 ax.tick_params(which = 'major', length=12, width=2)
-ax.grid()
-ax.set_xlabel('Splitting (MHz)', fontsize=18)
-ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
+ax.set_xticks([0, 100,200, 300])
+ax.set_yticks([0.06,0.08,0.1,0.12,0.14])
+ax.set_xlim([-15,310])
+#ax.grid()
+#ax.set_xlabel('Splitting (MHz)', fontsize=font_size)
+#ax.set_ylabel('Relaxation Rate (kHz)', fontsize=font_size)
 #ax.legend(fontsize=18)
 ##ax.title('Bulk Diamond', fontsize=18)
+
+fig_nv0.savefig("C:/Users/Aedan/Creative Cloud Files/Graduate School Posters/CQE 2019/bulk.pdf", bbox_inches='tight')
 

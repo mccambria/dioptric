@@ -40,7 +40,7 @@ from utils.tool_belt import States
 
 data_folder = 't1_double_quantum'
 
-manual_offset_gamma = 0.014
+manual_offset_gamma = 0.0
 # %% Functions
 
 # The exponential function without an offset
@@ -445,7 +445,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
             ax.legend()
             text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma,
                   '%.3f'%gamma_ste)
-            ax.set_xlim([-0.001, 0.05])
+#            ax.set_xlim([-0.001, 0.05])
 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
@@ -494,7 +494,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
-        tool_belt.save_raw_data(raw_data, file_path)
+#        tool_belt.save_raw_data(raw_data, file_path)
 
     # Saving the figure
 
@@ -503,7 +503,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
-        tool_belt.save_figure(fig, file_path)
+#        tool_belt.save_figure(fig, file_path)
 
         return gamma, gamma_ste
 # %% Run the file
@@ -521,7 +521,7 @@ if __name__ == '__main__':
 
     
 
-    folder = 'nv14_2019_10_17_15MHz'
+    folder = 'nv1_2019_05_10_1017MHz'
 #    folder = 'nv0_2019_06_06_36MHz'
 
 
