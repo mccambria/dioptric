@@ -361,10 +361,10 @@ if __name__ == '__main__':
     
 
     
-    sample_name = 'Johnson'
+    sample_name = 'Y2O3'
 
-    NV_search = { 'coords': [-0.066, -0.210, 5.57],
-            'name': '{}-NV_search'.format(sample_name),
+    NV_search = { 'coords': [-0.066, -0.210, 5.65],
+            'name': '{}-lifetime'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 400, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
@@ -377,8 +377,8 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
 #         set_xyz_zero()
-#        set_xyz([0.163, -0.011, 5.57]) # On NV 
-#        set_xyz([0.234, -0.067, 5.57]) # Off NV 
+#        set_xyz([-0.063, -0.210, 5.69]) # On NV 
+#        set_xyz([-0.122, -0.151, 5.69]) # Off NV 
 #        drift = tool_belt.get_drift()
 #        print(drift)
 #        tool_belt.set_drift([0.0, 0.0, 0.0])

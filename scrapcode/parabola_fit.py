@@ -22,9 +22,9 @@ def fit_parabola(x, y, init_guess_list):
 
  # %%
 
-voltages = [5.25, 5.2,5.175, 5.16,5.15,5.125,5.1,5.05,5.0]
-counts = [938, 1032, 1064, 1042, 1076, 1054, 1036, 876, 808]
-init_guess_list = [1000, 400, 5.15]
+voltages = [5.5, 5.55, 5.6,5.65,5.67,5.69,5.7,5.75,5.8]
+counts = [642, 658,680,712,698,716,678,654,634]
+init_guess_list = [1000, 600, 5.67]
 
 popt = fit_parabola(voltages, counts, init_guess_list)
 
