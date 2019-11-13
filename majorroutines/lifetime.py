@@ -49,9 +49,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
-    polarization_time = shared_params['polarization_dur']
+    polarization_time = 30 * 10**3
     # time between experiments
-    inter_exp_wait_time = 100
+    inter_exp_wait_time = 500
 
     aom_delay_time = shared_params['532_aom_delay']
     gate_time = nv_sig['pulsed_readout_dur']
@@ -97,7 +97,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 
     sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
     sig_counts[:] = numpy.nan
-    ref_counts = numpy.copy(sig_counts)
 
     # %% Make some lists and variables to save at the end
 
@@ -151,15 +150,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 #        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 #        opti_coords_list.append(opti_coords)
 
-#        # Set up the microwaves for the low and high states
-#        low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.LOW)
-#        low_sig_gen_cxn.set_freq(uwave_freq_low)
-#        low_sig_gen_cxn.set_amp(uwave_power_low)
-#        low_sig_gen_cxn.uwave_on()
-#        high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)
-#        high_sig_gen_cxn.set_freq(uwave_freq_high)
-#        high_sig_gen_cxn.set_amp(uwave_power_high)
-#        high_sig_gen_cxn.uwave_on()
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -210,21 +200,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 #            sig_gate_counts = sample_counts[::4]
 #            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
 
-            count = sum(sample_counts[0::4])
+            count = sum(sample_counts[0::2])
             sig_counts[run_ind, tau_ind_first] = count
             print('First signal = ' + str(count))
 
-            count = sum(sample_counts[1::4])
-            ref_counts[run_ind, tau_ind_first] = count
-            print('First Reference = ' + str(count))
-
-            count = sum(sample_counts[2::4])
+            count = sum(sample_counts[1::2])
             sig_counts[run_ind, tau_ind_second] = count
             print('Second Signal = ' + str(count))
-
-            count = sum(sample_counts[3::4])
-            ref_counts[run_ind, tau_ind_second] = count
-            print('Second Reference = ' + str(count))
 
         cxn.apd_tagger.stop_tag_stream()
 
@@ -244,9 +226,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 #                    'opti_coords_list': opti_coords_list,
 #                    'opti_coords_list-units': 'V',
                     'sig_counts': sig_counts.astype(int).tolist(),
-                    'sig_counts-units': 'counts',
-                    'ref_counts': ref_counts.astype(int).tolist(),
-                    'ref_counts-units': 'counts'}
+                    'sig_counts-units': 'counts'}
 
         # This will continuously be the same file path so we will overwrite
         # the existing file with the latest version
@@ -261,35 +241,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     # %% Average the counts over the iterations
 
     avg_sig_counts = numpy.average(sig_counts, axis=0)
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-
-    # %% Calculate the t1 data, signal / reference over different relaxation times
-
-    # Replace x/0=inf with 0
-    try:
-        norm_avg_sig = avg_sig_counts / avg_ref_counts
-    except RuntimeWarning as e:
-        print(e)
-        inf_mask = numpy.isinf(norm_avg_sig)
-        # Assign to 0 based on the passed conditional array
-        norm_avg_sig[inf_mask] = 0
 
     # %% Plot the t1 signal
 
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    raw_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
 
-    ax = axes_pack[0]
     ax.plot(taus / 10**6, avg_sig_counts, 'r-', label = 'signal')
-    ax.plot(taus / 10**6, avg_ref_counts, 'g-', label = 'reference')
-    ax.set_xlabel('Relaxation time (ms)')
+    ax.set_xlabel('Wait time (ms)')
     ax.set_ylabel('Counts')
     ax.legend()
 
-    ax = axes_pack[1]
-    ax.plot(taus / 10**6, norm_avg_sig, 'b-')
-    ax.set_title('Lifetime measurement')
-    ax.set_xlabel('Wait time (ms)')
-    ax.set_ylabel('Contrast (arb. units)')
 
     raw_fig.canvas.draw()
     # fig.set_tight_layout(True)
@@ -319,11 +280,82 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 #            'opti_coords_list-units': 'V',
             'sig_counts': sig_counts.astype(int).tolist(),
             'sig_counts-units': 'counts',
-            'ref_counts': ref_counts.astype(int).tolist(),
-            'ref_counts-units': 'counts',
-            'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-            'norm_avg_sig-units': 'arb'}
+            'avg_sig_counts': avg_sig_counts,
+            'avg_sig_counts-units': 'counts'}
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
+
+# %%
+
+def decayExp(t, amplitude, decay):
+    return amplitude * numpy.exp(- t / decay)
+
+# %% Fitting the data
+
+def t1_exponential_decay(open_file_name):
+
+    directory = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime/'
+
+    # Open the specified file
+    with open(directory + open_file_name + '.txt') as json_file:
+
+        # Load the data from the file
+        data = json.load(json_file)
+        countsT1_array = numpy.array(data["sig_counts"])
+        relaxation_time_range = data["relaxation_time_range"]
+        num_steps = data["num_steps"]
+
+    min_relaxation_time = relaxation_time_range[0] / 10**3
+    max_relaxation_time = relaxation_time_range[1] / 10**3
+
+    timeArray = numpy.linspace(min_relaxation_time, max_relaxation_time,
+                              num=num_steps, dtype=numpy.int32)
+    print(max_relaxation_time)
+    amplitude = 500
+    decay = 100 # us
+    init_params = [amplitude, decay]
+    
+    countsT1 = numpy.average(countsT1_array, axis = 0)
+    popt,pcov = curve_fit(decayExp, timeArray, countsT1,
+                              p0=init_params)
+
+    decay_time = popt[1]
+
+    first = timeArray[0]
+    last = timeArray[len(timeArray)-1]
+    linspaceTime = numpy.linspace(first, last, num=1000)
+
+
+    fig_fit, ax= plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(timeArray, countsT1,'bo',label='data')
+    ax.plot(linspaceTime, decayExp(linspaceTime,*init_params),'r-',label='fit')
+    ax.set_xlabel('Wait Time (us)')
+    ax.set_ylabel('Counts (arb.)')
+    ax.set_title('Lifetime')
+    ax.legend()
+
+    text = "\n".join((r'$A_0 e^{-t / d}$',
+                      r'$A_0 = $' + '%.1f'%(popt[1]),
+                      r'$d = $' + "%.3f"%(decay_time) + " us"))
+
+
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(0.70, 0.95, text, transform=ax.transAxes, fontsize=12,
+                            verticalalignment="top", bbox=props)
+
+    fig_fit.canvas.draw()
+    fig_fit.canvas.flush_events()
+
+    file_path = directory + open_file_name
+    tool_belt.save_figure(fig_fit, file_path+'-fit')
+#    fig.savefig(open_file_name + '-fit.' + save_file_type)
+
+# %%
+    
+
+if __name__ == '__main__':
+    file_name = '2019_11/2019_11_12-12_21_16-Y2O3-lifetime'
+    
+    t1_exponential_decay(file_name)

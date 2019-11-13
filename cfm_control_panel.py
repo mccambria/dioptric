@@ -30,6 +30,7 @@ import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.t1_interleave as t1_interleave
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
+import majorroutines.lifetime as lifetime
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
@@ -207,6 +208,22 @@ def do_t1_interleave(nv_sig, apd_indices):
 
     t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
 
+def do_lifetime(nv_sig, apd_indices):
+    
+    num_reps = 10**4
+    num_runs = 40
+    relaxation_time_range = [0, 1.2*10**6]
+    num_steps = 41
+    
+#    num_reps = 10**4
+#    num_runs = 1
+#    relaxation_time_range = [10000, 10000]
+#    num_steps = 2
+    
+    
+    lifetime. main(nv_sig, apd_indices, relaxation_time_range,
+         num_steps, num_reps, num_runs)
+    
 def do_ramsey(nv_sig, apd_indices):
 
     detuning = 2.5  # MHz
@@ -365,8 +382,8 @@ if __name__ == '__main__':
 
     NV_search = { 'coords': [-0.066, -0.210, 5.65],
             'name': '{}-lifetime'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
-            'pulsed_readout_dur': 400, 'magnet_angle': None,
+            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
+            'pulsed_readout_dur': 10000, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     nv_sig_list = [NV_search]
@@ -379,6 +396,7 @@ if __name__ == '__main__':
 #         set_xyz_zero()
 #        set_xyz([-0.063, -0.210, 5.69]) # On NV 
 #        set_xyz([-0.122, -0.151, 5.69]) # Off NV 
+        set_xyz([0.0, 0.0, 5.0,])
 #        drift = tool_belt.get_drift()
 #        print(drift)
 #        tool_belt.set_drift([0.0, 0.0, 0.0])
@@ -395,15 +413,15 @@ if __name__ == '__main__':
 
         
         # Routines that expect single NVs
-        for ind in range(len(nv_sig_list)):
-            nv_sig = nv_sig_list[ind]                
+#        for ind in range(len(nv_sig_list)):
+#            nv_sig = nv_sig_list[ind]                
 #            for z in numpy.linspace(5.5, 6.5, 6):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
 #            do_image_sample(nv_sig, apd_indices)
-            do_optimize(nv_sig, apd_indices)
+#            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
@@ -427,6 +445,7 @@ if __name__ == '__main__':
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
+#            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
 #            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
