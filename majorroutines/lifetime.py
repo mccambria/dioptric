@@ -26,7 +26,7 @@ from random import shuffle
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import json
-import labrad
+#import labrad
 
 
 # %% Main
@@ -280,7 +280,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 #            'opti_coords_list-units': 'V',
             'sig_counts': sig_counts.astype(int).tolist(),
             'sig_counts-units': 'counts',
-            'avg_sig_counts': avg_sig_counts,
+            'avg_sig_counts': avg_sig_counts.astype(int).tolist(),
             'avg_sig_counts-units': 'counts'}
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
@@ -291,6 +291,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 
 def decayExp(t, amplitude, decay):
     return amplitude * numpy.exp(- t / decay)
+
+def triple_decay(t, a1, d1, a2, d2, a3, d3):
+    return decayExp(t, a1, d1) + decayExp(t, a2, d2) + decayExp(t, a3, d3)
 
 # %% Fitting the data
 
@@ -317,11 +320,15 @@ def t1_exponential_decay(open_file_name):
     decay = 100 # us
     init_params = [amplitude, decay]
     
+    init_params = [500, 10, 500, 100, 500, 500]
+    
     countsT1 = numpy.average(countsT1_array, axis = 0)
-    popt,pcov = curve_fit(decayExp, timeArray, countsT1,
+#    popt,pcov = curve_fit(decayExp, timeArray, countsT1,
+#                              p0=init_params)
+    popt,pcov = curve_fit(triple_decay, timeArray, countsT1,
                               p0=init_params)
 
-    decay_time = popt[1]
+#    decay_time = popt[1]
 
     first = timeArray[0]
     last = timeArray[len(timeArray)-1]
@@ -330,32 +337,40 @@ def t1_exponential_decay(open_file_name):
 
     fig_fit, ax= plt.subplots(1, 1, figsize=(10, 8))
     ax.plot(timeArray, countsT1,'bo',label='data')
-    ax.plot(linspaceTime, decayExp(linspaceTime,*init_params),'r-',label='fit')
+    ax.plot(linspaceTime, triple_decay(linspaceTime,*popt),'r-',label='fit')
     ax.set_xlabel('Wait Time (us)')
     ax.set_ylabel('Counts (arb.)')
     ax.set_title('Lifetime')
     ax.legend()
 
-    text = "\n".join((r'$A_0 e^{-t / d}$',
-                      r'$A_0 = $' + '%.1f'%(popt[1]),
-                      r'$d = $' + "%.3f"%(decay_time) + " us"))
+#    text = "\n".join((r'$A_0 e^{-t / d}$',
+#                      r'$A_0 = $' + '%.1f'%(popt[0]),
+#                      r'$d = $' + "%.1f"%(decay_time) + " us"))
+    text = "\n".join((r'$A_1 e^{-t / d_1} + A_2 e^{-t / d_2} + A_3 e^{-t / d_3}$',
+                      r'$A_1 = $' + '%.1f'%(popt[0]),
+                      r'$d_1 = $' + "%.1f"%(popt[1]) + " us",
+                      r'$A_2 = $' + '%.1f'%(popt[2]),
+                      r'$d_2 = $' + "%.1f"%(popt[3]) + " us",
+                      r'$A_3 = $' + '%.1f'%(popt[4]),
+                      r'$d_3 = $' + "%.1f"%(popt[5]) + " us"))
 
 
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(0.70, 0.95, text, transform=ax.transAxes, fontsize=12,
+    ax.text(0.65, 0.75, text, transform=ax.transAxes, fontsize=12,
                             verticalalignment="top", bbox=props)
-
+    ax.set_yscale("log", nonposy='clip')
+    
     fig_fit.canvas.draw()
     fig_fit.canvas.flush_events()
 
     file_path = directory + open_file_name
-    tool_belt.save_figure(fig_fit, file_path+'-fit')
+    tool_belt.save_figure(fig_fit, file_path+'-triple_fit_semilog')
 #    fig.savefig(open_file_name + '-fit.' + save_file_type)
 
 # %%
     
 
 if __name__ == '__main__':
-    file_name = '2019_11/2019_11_12-12_21_16-Y2O3-lifetime'
+    file_name = '2019_11/2019_11_12-16_31_02-Y2O3-lifetime'
     
     t1_exponential_decay(file_name)
