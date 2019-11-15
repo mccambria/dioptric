@@ -380,7 +380,7 @@ if __name__ == '__main__':
     
     sample_name = 'Y2O3'
 
-    NV_search = { 'coords': [-0.066, -0.210, 5.65],
+    NV_search = { 'coords': [0.0, 0.0, 5.0],
             'name': '{}-lifetime'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 10000, 'magnet_angle': None,
@@ -396,13 +396,13 @@ if __name__ == '__main__':
 #         set_xyz_zero()
 #        set_xyz([-0.063, -0.210, 5.69]) # On NV 
 #        set_xyz([-0.122, -0.151, 5.69]) # Off NV 
-        set_xyz([0.0, 0.0, 5.0,])
+#        set_xyz([0.0, 0.0, 5.0,])
 #        drift = tool_belt.get_drift()
 #        print(drift)
 #        tool_belt.set_drift([0.0, 0.0, 0.0])
 #        set_xyz([0.0, 0.0, 5.02 + tool_belt.get_drift()[2]])
-#        with labrad.connect() as cxn:
-#            cxn.filter_slider_ell9k.set_filter('nd_1.5')
+        with labrad.connect() as cxn:
+            cxn.filter_slider_ell9k.set_filter('nd_1.0')
 #            cxn.pulse_streamer.constant([])
 #            input('Press enter to stop...')
 
