@@ -244,14 +244,14 @@ def create_figure(file_name):
 # %% Mains
 
 
-def main(nv_sig, x_range, y_range, num_steps, apd_indices,
+def main(nv_sig, x_range, y_range, num_steps, aom_power, apd_indices,
          continuous=False, save_data=True, plot_data=True):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
+        main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indices,
                       continuous, save_data, plot_data)
 
-def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
+def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indices,
                   continuous=False, save_data=True, plot_data=True):
 
     # %% Some initial setup
@@ -278,7 +278,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
     # %% Load the PulseStreamer
 
-    seq_args = [delay, readout, apd_indices[0]]
+    seq_args = [delay, readout, aom_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
@@ -412,6 +412,6 @@ if __name__ == '__main__':
 #    create_figure(file_name)
 #    reformat_plot('inferno', 'svg')
 
-    file_name = '2019_10/2019_10_31-13_50_10-Goeppert-Mayer-NV_search'
+    file_name = '2019_11/2019_11_18-16_31_05-goeppert_mayer-lifetime'
     create_figure(file_name)
 

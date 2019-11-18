@@ -16,12 +16,13 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    delay, readout, apd_index = args
+    delay, readout, power, apd_index = args
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    pulser_do_aom = pulser_wiring['do_532_aom']
+#    pulser_do_aom = pulser_wiring['do_532_aom']
+    pulser_ao_aom = pulser_wiring['ao_589_aom']
 
     # Convert the 32 bit ints into 64 bit ints
     delay = numpy.int64(delay)
@@ -40,11 +41,12 @@ def get_seq(pulser_wiring, args):
     train = [(delay, LOW), (readout, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
 
-    train = [(period, HIGH)]
-    seq.setDigital(pulser_do_aom, train)
+    train = [(period, power)]
+#    seq.setDigital(pulser_do_aom, train)
+    seq.setAnalog(pulser_ao_aom, train)
 
-    final_digital = [pulser_wiring['do_532_aom']]
-    final = OutputState(final_digital, 0.0, 0.0)
+    final_digital = []
+    final = OutputState(final_digital, 0.0, power)
     return seq, final, [period]
 
 
