@@ -37,10 +37,16 @@ def get_seq(pulser_wiring, args):
     durations = args[0:2]
     durations = [numpy.int64(el) for el in durations]
     delay, readout = durations[0:2]
+    aom_indices = args[3]
     
     apd_index = args[2]
     do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    do_aom = pulser_wiring['do_532_aom']
+    if aom_indices == 1:
+        do_aom = pulser_wiring['do_532_aom']
+    elif aom_indices == 2:
+        do_aom = pulser_wiring['do_589_aom']
+    elif aom_indices == 3:
+        do_aom = pulser_wiring['do_638_aom']
     
     period = 6 * readout
 
@@ -63,7 +69,7 @@ def get_seq(pulser_wiring, args):
     train.extend([(3*readout, HIGH)])
     seq.setDigital(do_aom, train)
 
-    final_digital = [pulser_wiring['do_532_aom'],
+    final_digital = [do_aom,
                      pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]
@@ -82,10 +88,10 @@ if __name__ == '__main__':
     # go through that here.
 
     # Set up a dummy pulser wiring dictionary
-    pulser_wiring = {'do_apd_0_gate': 0, 'do_532_aom': 1, 'do_sample_clock': 2}
+    pulser_wiring = {'do_apd_0_gate': 0, 'do_532_aom': 1, 'do_sample_clock': 2,'do_589_aom': 3, 'do_638_aom': 4}
 
     # Set up a dummy args list
-    args = [0, 2000, 0]
+    args = [0, 2000, 0, 3]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

@@ -30,7 +30,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,ionizatio
     
     #delay of aoms and laser
     aom_delay589 = shared_params['589_aom_delay'] 
-    #gate_time in this sequence is the readout time 
+    #gate_time in this sequence is the readout time ~8 ms 
     gate_time = readout_time
     # Analyze the sequence
     file_name = os.path.basename(__file__)

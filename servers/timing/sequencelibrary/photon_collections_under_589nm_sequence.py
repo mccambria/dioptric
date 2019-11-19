@@ -7,10 +7,7 @@ Created on Mon Nov 18 16:45:20 2019
 """
 
 from pulsestreamer import Sequence
-from pulsestreamer import OutputState
 import numpy
-import utils.tool_belt as tool_belt
-from utils.tool_belt import States
 
 LOW = 0
 HIGH = 1
@@ -18,51 +15,33 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    gate_time, aom_delay589, apd_index, state_value = args
-    
+    gate_time, aom_delay589, apd_index = args
+
 
 
     readout_time = numpy.int64(gate_time)
     aom_delay589 = numpy.int64(aom_delay589)
-#    uwave_switch_delay = numpy.int64(uwave_switch_delay)
-    clock_pulse = numpy.int64(100)
-    clock_buffer = 3 * clock_pulse
-    #SCC charge readout period
+
+   #SCC photon collection test period
     period =  readout_time + aom_delay589
     # Get what we need out of the wiring dictionary
-    pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_aom589 = pulser_wiring['do_589_aom']
-    
-#    sig_gen_name = tool_belt.get_signal_generator_name(States(state_value))
-#    sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
-#    pulser_do_sig_gen_gate = pulser_wiring['sig_gen_gate_chan_name']
+
 
     seq = Sequence()
-    
-#    #collect one sample for each run
-#    train = [(polarize_time + ionize_time + buffer_time, LOW),
-#             (clock_pulse, HIGH),
-#             (clock_pulse, LOW),
-#             (period/2 - (polarize_time + ionize_time + buffer_time + clock_pulse*2),LOW),
-#             (polarize_time + ionize_time + buffer_time, LOW),
-#             (clock_pulse, LOW),
-#             (clock_pulse, LOW),
-#             (period/2 - (polarize_time + ionize_time + buffer_time + clock_pulse*2),LOW)]
-#    seq.setDigital(pulser_do_daq_clock, train)
-    
+
+
     #collect photons for certain timewindow tR in APD
     train = [(readout_time, HIGH), (aom_delay589, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
-    
-    
-    #readout with 589 
+
+
+    #readout with 589
     train = [(readout_time,HIGH),(aom_delay589, LOW)]
     seq.setDigital(pulser_do_aom589 , train)
-    
 
-#    final_digital = [pulser_wiring['do_532_aom']]
-#    final = OutputState(final_digital, 0.0, 0.0)
+
     return seq,[period]
 
 
@@ -74,6 +53,6 @@ if __name__ == '__main__':
                'do_sample_clock':4,
                'do_589_aom': 5,
                'do_638_aom': 6}
-    args = [8*10**6, 1*10**6,0, LOW]
+    args = [8*10**6, 1*10**6,1]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()
