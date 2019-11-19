@@ -7,6 +7,7 @@ Created on Mon Nov 18 16:45:20 2019
 """
 
 from pulsestreamer import Sequence
+from pulsestreamer import OutputState
 import numpy
 
 LOW = 0
@@ -15,7 +16,7 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    gate_time, aom_delay589, apd_index = args
+    gate_time, aom_delay589, apd_index, aom_power = args
 
 
 
@@ -26,7 +27,7 @@ def get_seq(pulser_wiring, args):
     period =  readout_time + aom_delay589
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    pulser_do_aom589 = pulser_wiring['ao_589_aom']
+    pulser_ao_aom589 = pulser_wiring['ao_589_aom']
 
 
     seq = Sequence()
@@ -38,21 +39,23 @@ def get_seq(pulser_wiring, args):
 
 
     #readout with 589
-    train = [(readout_time,HIGH),(aom_delay589, LOW)]
-    seq.setDigital(pulser_do_aom589 , train)
+    train = [(readout_time,aom_power),(aom_delay589, LOW)]
+    seq.setAnalog(pulser_ao_aom589, train)
+    
+    final_digital = [pulser_do_apd_gate]
+    final = OutputState(final_digital, 0.0, aom_power)
 
-
-    return seq,[period]
+    return seq, final, [period]
 
 
 if __name__ == '__main__':
-    wiring = {'do_daq_clock': 0,
+    wiring = {'do_daq_clock': 7,
               'do_apd_0_gate': 1,
               'do_532_aom': 2,
               'sig_gen_gate_chan_name': 3,
                'do_sample_clock':4,
-               'do_589_aom': 5,
+               'ao_589_aom': 0,
                'do_638_aom': 6}
-    args = [8*10**6, 1*10**6,1]
-    seq, ret_vals = get_seq(wiring, args)
+    args = [8*10**6, 1*10**6,0,-1]
+    seq, final, ret_vals = get_seq(wiring, args)
     seq.plot()
