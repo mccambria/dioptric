@@ -41,8 +41,8 @@ def get_seq(pulser_wiring, args):
     train = [(delay, LOW), (readout, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
 
-    train = [(period, power)]
-#    seq.setDigital(pulser_do_aom, train)
+    train = [(period, HIGH)]
+    seq.setDigital(pulser_do_aom, train)
     seq.setAnalog(pulser_ao_aom, train)
 
     final_digital = []

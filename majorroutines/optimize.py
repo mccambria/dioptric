@@ -92,7 +92,7 @@ def stationary_count_lite(cxn, coords, shared_params, apd_indices):
     readout = shared_params['continuous_readout_dur']
     total_num_samples = 2
     x_center, y_center, z_center = coords
-    aom_power = 1.0
+    aom_power = 0.25
 
     seq_args = [shared_params['532_aom_delay'], readout, aom_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -120,7 +120,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     x_center, y_center, z_center = coords
     scan_range_nm = 2 * shared_params['airy_radius']
     readout = shared_params['continuous_readout_dur']
-    aom_power = 1.0
+    aom_power = 0.25
 
     # Reset to centers
     tool_belt.set_xyz(cxn, coords)

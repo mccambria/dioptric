@@ -15,6 +15,12 @@ import matplotlib.pyplot as plt
 import labrad
 
 #%% Main
+# Connect to labrad in this file, as opposed to control panel
+def main(nv_sig, apd_indices, readout_power,readout_time,ionization_power, 
+                  ionization_time,state,num_runs):
+    with labrad.connect() as cxn:
+        main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,ionization_power, 
+                  ionization_time,state,num_runs)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,ionization_power, 
                   ionization_time,state,num_runs):
@@ -46,6 +52,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,ionizatio
     sig_counts = numpy.empty(num_runs, dtype=numpy.uint32)
     sig_counts[:] = numpy.nan
     # norm_avg_sig = numpy.empty([num_runs, num_steps])
+    
+    # create a list to store the optimized coordinates
+    opti_coords_list = []
     
 #%% Collect data
     tool_belt.init_safe_stop()

@@ -26,7 +26,7 @@ def get_seq(pulser_wiring, args):
     period =  readout_time + aom_delay589
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    pulser_do_aom589 = pulser_wiring['do_589_aom']
+    pulser_do_aom589 = pulser_wiring['ao_589_aom']
 
 
     seq = Sequence()

@@ -70,7 +70,7 @@ def do_image_sample(nv_sig, apd_indices):
 #    scan_range = 0.025
 #    num_steps = 60
 
-    aom_power = 0.1
+    aom_power = 1.0
     
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, 
@@ -401,7 +401,7 @@ if __name__ == '__main__':
 #         set_xyz_zero()
 #        set_xyz([-0.063, -0.210, 5.69]) # On NV 
 #        set_xyz([-0.122, -0.151, 5.69]) # Off NV 
-#        set_xyz([0.0, 0.0, 5.0,])
+        set_xyz([0.0, -0.3, 5.0,])
 #        drift = tool_belt.get_drift()
 #        print(drift)
 #        tool_belt.set_drift([0.0, 0.0, 0.0])
@@ -414,6 +414,8 @@ if __name__ == '__main__':
 
 #        with labrad.connect() as cxn:
 #            cxn.pulse_streamer.constant([],0.0,1.0)
+#        with labrad.connect() as cxn:
+#            cxn.objective_piezo.write(5.1)
         
         # Routines that expect lists of NVs
 #        do_optimize_list(nv_sig_list, apd_indices)

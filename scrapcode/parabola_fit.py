@@ -35,11 +35,14 @@ ax.set_ylabel('Power (uW)')
 linspace_time = numpy.linspace(voltages[-1], voltages[0], num=1000)
 ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
 
-#text = ('Optimal piezo voltage = {:.3f} V'.format(popt[2]))
+text = '\n'.join((r'$C + A_0 (x - x_off)^2$',
+                      r'$C = $' + '%.3f'%(popt[0]),
+                      r'$A_0 = $' + '%.3f'%(popt[1]),
+                      r'$x_{off} = $' + '%.1f'%(popt[2])))
 
-#props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-#ax.text(0.60, 0.05, text, transform=ax.transAxes, fontsize=12,
-#                        verticalalignment="top", bbox=props)
+props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+ax.text(0.60, 0.15, text, transform=ax.transAxes, fontsize=12,
+                        verticalalignment="top", bbox=props)
 ax.legend() 
 fig.canvas.draw()
 fig.canvas.flush_events()
