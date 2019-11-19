@@ -19,6 +19,7 @@ import time
 import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
+import majorroutines.image_sample_SCC as image_sample_SCC
 import majorroutines.optimize as optimize
 import majorroutines.stationary_count as stationary_count
 import majorroutines.resonance as resonance
@@ -33,6 +34,7 @@ import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
+import minorroutines.photon_collections_under_589 as photon_collections_under_589
 from utils.tool_belt import States
 
 
@@ -73,6 +75,16 @@ def do_image_sample(nv_sig, aom_power, apd_indices, color_ind):
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, 
                               aom_power, apd_indices, color_ind)
+    
+def do_image_sample_SCC(nv_sig, aom_power, apd_indices):
+    
+
+    scan_range = 0.2
+    num_steps = 60
+    
+    # For now we only support square scans so pass scan_range twice
+    image_sample_SCC.main(nv_sig, scan_range, scan_range, num_steps, 
+                              aom_power, apd_indices)
 
 def do_optimize(nv_sig, apd_indices, color_ind):
 
@@ -385,7 +397,7 @@ if __name__ == '__main__':
     sample_name = 'goeppert_mayer_SCC'
 #    sample_name = 'silicon_SCC'
 
-    nv0_2019_11_19 = { 'coords': [-0.020, -0.001, 5.0],
+    nv0_2019_11_19 = { 'coords': [-0.024, -0.006, 5.0],
             'name': '{}-lifetime'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.5',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
@@ -395,8 +407,8 @@ if __name__ == '__main__':
     
     nv_sig_list = [nv0_2019_11_19]
     
-    aom_power = 0.1
-    color_ind = 589
+    aom_power = 0.18
+    color_ind = 532
 
     # %% Functions to run
 
@@ -435,9 +447,10 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-#            do_image_sample(nv_sig, 0.08, apd_indices, 589)
-#            do_optimize(nv_sig, apd_indices, 532)
-            do_stationary_count(nv_sig, aom_power, apd_indices, color_ind)
+#            do_image_sample(nv_sig, aom_power, apd_indices, 532)
+#            do_image_sample_SCC(nv_sig, aom_power, apd_indices)
+            do_optimize(nv_sig, apd_indices, color_ind)
+#            do_stationary_count(nv_sig, aom_power, apd_indices, color_ind)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
