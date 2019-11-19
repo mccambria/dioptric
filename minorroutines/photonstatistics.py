@@ -16,22 +16,22 @@ from scipy.optimize import curve_fit
 
 #%% define the four parameters that are used in the photon statistics
 def get_g0(readout_power):
-    P = readout_power
+    P = readout_power*10**-3
     g0 = 39*P**2 /(1+P/134)
     return g0 
 
 def get_g1(readout_power):
-    P = readout_power  
+    P = readout_power*10**-3 
     g1 = 310*P**2 / (1 + P/53.2)
     return g1 
 
 def get_y0(readout_power):
-    P = readout_power
+    P = readout_power*10**-3
     y0 = 1.63*10**3 * P/(1+P/134) + 0.268*10**3
     return y0 
 
 def get_y1(readout_power):
-    P = readout_power
+    P = readout_power*10**-3
     y1 = 46.2*10**3 * P/(1+ P/53)+ 0.268*10**3
     return y1 
 
@@ -265,9 +265,7 @@ def get_optimized_fidelity(readout_time, power_range, n_threshold_list):
     highest_fidelity, optimized_power = get_optimized_power(tR, P, optimized_n_threshold)
     return optimized_n_threshold, optimized_power, highest_fidelity
     
-
-run_test(400,0.01,6*10**-3,450*10**-3)  
-        
+run_test(300,0.001,5*10**-3,820)  
     
     
         

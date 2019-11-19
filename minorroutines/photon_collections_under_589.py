@@ -37,7 +37,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
     gate_time = readout_time
     #get the aom_power corresponding to the laser power we want 
     #readout_power in unit of microwatts
-    aom_power = numpy.sqrt(abs((readout_power-1.326))/3139.579)+0.1
+    aom_power = numpy.sqrt((readout_power - 0.432)/1361.811)
     # Analyze the sequence
     seq_args = [gate_time, aom_delay589,readout_time,apd_indices, aom_power]
     seq_args = [int(el) for el in seq_args]
@@ -57,7 +57,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
     
 #%% Collect data
     tool_belt.init_safe_stop()
-
+    # Optimize
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, readout_power, apd_indices, 532)
+    opti_coords_list.append(opti_coords)    
     for run_ind in range(num_runs):
 
         print('Run index: {}'. format(run_ind))
@@ -65,10 +67,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
-
-        # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, readout_power, apd_indices, 532)
-        opti_coords_list.append(opti_coords)
         
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
