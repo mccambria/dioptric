@@ -26,7 +26,7 @@ from utils.tool_belt import States
 
 def measure_delay(cxn, nv_sig, readout, apd_indices,
               delay_range, num_steps, num_reps, seq_file,
-              state=States.LOW, aom_delay=None):
+              state=States.LOW, aom_delay=None, aom_indices=None):
     
     taus = numpy.linspace(delay_range[0], delay_range[1],
                           num_steps, dtype=numpy.int32)
@@ -62,7 +62,10 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
         
         tau = taus[tau_ind]
         if seq_file == 'aom_delay.py':
-            seq_args = [tau, readout, apd_indices[0]]
+            seq_args = [tau, readout, apd_indices[0],aom_indices]
+        #aom_indices indicate which aom to measure
+        # 1 = 532 aom; 2 = 589 aom; 3 = 638 aom
+            
         elif seq_file == 'uwave_delay.py':
             polarization_time = 1000
             wait_time = 1000
@@ -112,6 +115,7 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
             'readout-units': 'ns',
             'delay_range': delay_range,
             'delay_range-units': 'ns',
+            'aom_indices': aom_indices,
             'num_steps': num_steps,
             'num_reps': num_reps,
             'sig_counts': sig_counts.astype(int).tolist(),
@@ -130,12 +134,12 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
 
 
 def aom_delay(cxn, nv_sig, readout, apd_indices,
-              delay_range, num_steps, num_reps):
+              delay_range, num_steps, num_reps, aom_indices):
     
     seq_file = 'aom_delay.py'
     
     measure_delay(cxn, nv_sig, readout, apd_indices,
-              delay_range, num_steps, num_reps, seq_file)
+              delay_range, num_steps, num_reps, seq_file, aom_indices)
 
 def uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
               delay_range, num_steps, num_reps):
