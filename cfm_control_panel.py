@@ -366,7 +366,12 @@ def do_test_major_routines(nv_sig, apd_indices):
 
     test_major_routines.main(nv_sig, apd_indices)
 
+def do_photon_collections_under_589(nv_sig, apd_indices,readout_time,readout_power):
+    #"collect photons for tR at fixed power P and return a probability distribution"
+    num_runs = 100,000
+    photon_collections_under_589.main(nv_sig, apd_indices, readout_power,readout_time,num_runs)
 
+    
 # %% Run the file
 
 

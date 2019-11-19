@@ -16,14 +16,11 @@ import labrad
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, readout_power,readout_time,ionization_power, 
-                  ionization_time,state,num_runs):
+def main(nv_sig, apd_indices, readout_power,readout_time,num_runs):
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,ionization_power, 
-                  ionization_time,state,num_runs)
+        main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,ionization_power, 
-                  ionization_time,state,num_runs):
+def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs):
 
     tool_belt.reset_cfm(cxn)
 
@@ -35,17 +32,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,ionizatio
     #Define some parameters
     
     #delay of aoms and laser
-    aom_delay589 = shared_params['589_aom_delay'] 
+    aom_delay589 = shared_params['532_aom_delay'] 
     #gate_time in this sequence is the readout time ~8 ms 
     gate_time = readout_time
+    #get the aom_power corresponding to the laser power we want 
+    #readout_power in unit of microwatts
+    aom_power = numpy.sqrt(abs((readout_power-1.326))/3139.579)+0.1
     # Analyze the sequence
-    file_name = os.path.basename(__file__)
-    seq_args = [gate_time, aom_delay589,readout_time,apd_indices]
+    seq_args = [gate_time, aom_delay589,readout_time,apd_indices, aom_power]
     seq_args = [int(el) for el in seq_args]
 #    print(seq_args)
 #    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    cxn.pulse_streamer.stream_load('photon_collections_under_589nm_sequence.py', seq_args_string)
 
     # Set up our data structure, an array of NaNs that we'll fill
     # we repeatively collect photons for tR 

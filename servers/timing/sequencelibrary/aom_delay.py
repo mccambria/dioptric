@@ -44,7 +44,7 @@ def get_seq(pulser_wiring, args):
     if aom_indices == 1:
         do_aom = pulser_wiring['do_532_aom']
     elif aom_indices == 2:
-        do_aom = pulser_wiring['do_589_aom']
+        do_aom = pulser_wiring['ao_589_aom']
     elif aom_indices == 3:
         do_aom = pulser_wiring['do_638_aom']
     
@@ -67,7 +67,7 @@ def get_seq(pulser_wiring, args):
     train.extend([(readout_on_5, HIGH)])
     train.extend([(readout_rem, LOW), (readout+delay, LOW)])
     train.extend([(3*readout, HIGH)])
-    seq.setDigital(do_aom, train)
+    seq.setAnalog(do_aom, train)
 
     final_digital = [do_aom,
                      pulser_wiring['do_sample_clock']]
@@ -88,10 +88,10 @@ if __name__ == '__main__':
     # go through that here.
 
     # Set up a dummy pulser wiring dictionary
-    pulser_wiring = {'do_apd_0_gate': 0, 'do_532_aom': 1, 'do_sample_clock': 2,'do_589_aom': 3, 'do_638_aom': 4}
+    pulser_wiring = {'do_apd_0_gate': 0, 'do_532_aom': 1, 'do_sample_clock': 2,'ao_589_aom': 1, 'do_638_aom': 4}
 
     # Set up a dummy args list
-    args = [0, 2000, 0, 3]
+    args = [0, 2000, 0, 2]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.
