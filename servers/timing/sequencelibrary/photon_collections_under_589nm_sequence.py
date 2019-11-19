@@ -74,6 +74,6 @@ if __name__ == '__main__':
                'do_sample_clock':4,
                'do_589_aom': 5,
                'do_638_aom': 6}
-    args = [8*10**6, 1*10**6,1, LOW]
+    args = [8*10**6, 1*10**6,0, LOW]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()

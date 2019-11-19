@@ -22,24 +22,24 @@ def fit_parabola(x, y, init_guess_list):
 
  # %%
 
-voltages = [4.0, 4.1,4.2,4.3,4.6,4.4,4.45,4.5,4.75,4.85,4.9,4.95,5,5.1,5.15]
-counts = [632, 682,758, 754, 650,672,694,700,742,692,700,694,702,608,590]
-init_guess_list = [1000, 600, 5.0]
+voltages = [ 0.5, 0.25, 0.1, 0.08, 0.06, 0.05]
+counts = [ 600, 110, 6.8, 3, 1.1, 0.65]
+init_guess_list = [0, 1000, 0]
 
 popt = fit_parabola(voltages, counts, init_guess_list)
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 ax.plot(voltages, counts, 'ro', label = 'data')
-ax.set_xlabel('Piezo voltage z (V)')
-ax.set_ylabel('Counts') 
-linspace_time = numpy.linspace(voltages[0], voltages[-1], num=1000)
+ax.set_xlabel('AOM AO power setting')
+ax.set_ylabel('Power (uW)') 
+linspace_time = numpy.linspace(voltages[-1], voltages[0], num=1000)
 ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
 
-text = ('Optimal piezo voltage = {:.3f} V'.format(popt[2]))
+#text = ('Optimal piezo voltage = {:.3f} V'.format(popt[2]))
 
-props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-ax.text(0.60, 0.05, text, transform=ax.transAxes, fontsize=12,
-                        verticalalignment="top", bbox=props)
+#props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+#ax.text(0.60, 0.05, text, transform=ax.transAxes, fontsize=12,
+#                        verticalalignment="top", bbox=props)
 ax.legend() 
 fig.canvas.draw()
 fig.canvas.flush_events()

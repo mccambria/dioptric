@@ -21,7 +21,7 @@ def get_seq(pulser_wiring, args):
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-#    pulser_do_aom = pulser_wiring['do_532_aom']
+    pulser_do_aom = pulser_wiring['do_532_aom']
     pulser_ao_aom = pulser_wiring['ao_589_aom']
 
     # Convert the 32 bit ints into 64 bit ints

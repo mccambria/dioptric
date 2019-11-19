@@ -59,18 +59,18 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 200
 #    num_steps = 120
 #    num_steps = 90
-#    scan_range = 0.5
+    scan_range = 0.5
 #    num_steps = 150
-    scan_range = 0.2
-#    num_steps = 90
+#    scan_range = 0.2
+    num_steps = 90
 #    scan_range = 0.1
-    num_steps = 60
+#    num_steps = 60
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
 #    num_steps = 60
 
-    aom_power = 0.25
+    aom_power = 0.1
     
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, 
@@ -379,9 +379,10 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    sample_name = 'goeppert_mayer_SCC'
+#    sample_name = 'goeppert_mayer_SCC'
+    sample_name = 'silicon_SCC'
 
-    nv1_2019_11_18 = { 'coords': [-0.031, 0.062, 5.08],
+    focus_test = { 'coords': [0.091, -0.250, 5.31],
             'name': '{}-lifetime'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.5',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
@@ -389,7 +390,7 @@ if __name__ == '__main__':
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
     
-    nv_sig_list = [nv1_2019_11_18]
+    nv_sig_list = [focus_test]
     
 
     # %% Functions to run
@@ -410,6 +411,10 @@ if __name__ == '__main__':
 #            cxn.pulse_streamer.constant([])
 #            input('Press enter to stop...')
 
+
+#        with labrad.connect() as cxn:
+#            cxn.pulse_streamer.constant([],0.0,1.0)
+        
         # Routines that expect lists of NVs
 #        do_optimize_list(nv_sig_list, apd_indices)
 #        do_sample_nvs(nv_sig_list, apd_indices)
@@ -424,7 +429,7 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-            do_image_sample(nv_sig, apd_indices)
+#            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
