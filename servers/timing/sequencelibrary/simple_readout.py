@@ -16,7 +16,7 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    delay, readout, power, apd_index = args
+    delay, readout, power, apd_index, color_ind = args
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
@@ -40,13 +40,24 @@ def get_seq(pulser_wiring, args):
 
     train = [(delay, LOW), (readout, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
+    
+    if color_ind == 589:
+        
+        train = [(period, power)]
+        seq.setAnalog(pulser_ao_aom, train)
+        
+        final_digital = []
+        final = OutputState(final_digital, 0.0, power)
+    
+    elif color_ind == 532:
+        
+        train = [(period, HIGH)]
+        seq.setDigital(pulser_do_aom, train)
+        
+        final_digital = [3]
+        final = OutputState(final_digital, 0.0, 0.0)
 
-    train = [(period, HIGH)]
-    seq.setDigital(pulser_do_aom, train)
-    seq.setAnalog(pulser_ao_aom, train)
 
-    final_digital = []
-    final = OutputState(final_digital, 0.0, power)
     return seq, final, [period]
 
 

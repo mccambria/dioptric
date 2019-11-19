@@ -39,12 +39,12 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(nv_sig, run_time, apd_indices, continuous=False):
+def main(nv_sig, run_time, aom_power, apd_indices, color_ind, continuous=False):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, run_time, apd_indices, continuous)
+        main_with_cxn(cxn, nv_sig, run_time, aom_power, apd_indices, color_ind, continuous)
 
-def main_with_cxn(cxn, nv_sig, run_time, apd_indices, continuous=False):
+def main_with_cxn(cxn, nv_sig, run_time, aom_power, apd_indices, color_ind, continuous=False):
 
     # %% Some initial setup
     
@@ -56,11 +56,11 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, continuous=False):
 
     # %% Optimize
 
-    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
 
     # %% Load the PulseStreamer
 
-    seq_args = [0, readout, apd_indices[0]]
+    seq_args = [0, readout, aom_power, apd_indices[0], color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)

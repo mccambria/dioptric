@@ -244,14 +244,14 @@ def create_figure(file_name):
 # %% Mains
 
 
-def main(nv_sig, x_range, y_range, num_steps, aom_power, apd_indices,
+def main(nv_sig, x_range, y_range, num_steps, aom_power, apd_indices, color_ind,
          continuous=False, save_data=True, plot_data=True):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indices,
+        main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indices, color_ind,
                       continuous, save_data, plot_data)
 
-def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indices,
+def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indices, color_ind,
                   continuous=False, save_data=True, plot_data=True):
 
     # %% Some initial setup
@@ -259,7 +259,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indic
     tool_belt.reset_cfm(cxn)
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    readout = shared_params['continuous_readout_dur']
+#    readout = shared_params['continuous_readout_dur']
+    readout = 100*10**6
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
@@ -278,7 +279,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indic
 
     # %% Load the PulseStreamer
 
-    seq_args = [delay, readout, aom_power, apd_indices[0]]
+    seq_args = [delay, readout, aom_power, apd_indices[0], color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
@@ -377,6 +378,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indic
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'color_ind': color_ind,
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,

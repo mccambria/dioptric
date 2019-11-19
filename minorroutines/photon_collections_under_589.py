@@ -68,7 +68,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,ionizatio
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, readout_power, apd_indices, 532)
         opti_coords_list.append(opti_coords)
         
         # Load the APD

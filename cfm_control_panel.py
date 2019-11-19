@@ -53,43 +53,41 @@ def set_xyz_zero():
 # %% Major Routines
 
 
-def do_image_sample(nv_sig, apd_indices):
+def do_image_sample(nv_sig, aom_power, apd_indices, color_ind):
     
 #    scan_range = 1.0
 #    num_steps = 200
 #    num_steps = 120
 #    num_steps = 90
-    scan_range = 0.5
+#    scan_range = 0.5
 #    num_steps = 150
-#    scan_range = 0.2
-    num_steps = 90
+    scan_range = 0.2
+#    num_steps = 90
 #    scan_range = 0.1
-#    num_steps = 60
+    num_steps = 60
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
 #    num_steps = 60
-
-    aom_power = 1.0
     
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, 
-                              aom_power, apd_indices)
+                              aom_power, apd_indices, color_ind)
 
-def do_optimize(nv_sig, apd_indices):
+def do_optimize(nv_sig, apd_indices, color_ind):
 
-    optimize.main(nv_sig, apd_indices,
+    optimize.main(nv_sig, apd_indices, color_ind,
               set_to_opti_coords=False, save_data=True, plot_data=True)
 
 def do_optimize_list(nv_sig_list, apd_indices):
 
     optimize.optimize_list(nv_sig_list, apd_indices)
 
-def do_stationary_count(nv_sig, apd_indices):
+def do_stationary_count(nv_sig, aom_power, apd_indices, color_ind):
 
     run_time = 90 * 10**9  # ns
 
-    stationary_count.main(nv_sig, run_time, apd_indices)
+    stationary_count.main(nv_sig, run_time, aom_power, apd_indices, color_ind)
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
@@ -379,10 +377,10 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-#    sample_name = 'goeppert_mayer_SCC'
-    sample_name = 'silicon_SCC'
+    sample_name = 'goeppert_mayer_SCC'
+#    sample_name = 'silicon_SCC'
 
-    focus_test = { 'coords': [0.091, -0.250, 5.31],
+    nv0_2019_11_19 = { 'coords': [-0.020, -0.001, 5.0],
             'name': '{}-lifetime'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.5',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
@@ -390,8 +388,10 @@ if __name__ == '__main__':
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
     
-    nv_sig_list = [focus_test]
+    nv_sig_list = [nv0_2019_11_19]
     
+    aom_power = 0.1
+    color_ind = 589
 
     # %% Functions to run
 
@@ -401,7 +401,7 @@ if __name__ == '__main__':
 #         set_xyz_zero()
 #        set_xyz([-0.063, -0.210, 5.69]) # On NV 
 #        set_xyz([-0.122, -0.151, 5.69]) # Off NV 
-        set_xyz([0.0, -0.3, 5.0,])
+#        set_xyz([0.0, -0.3, 5.0])
 #        drift = tool_belt.get_drift()
 #        print(drift)
 #        tool_belt.set_drift([0.0, 0.0, 0.0])
@@ -412,8 +412,7 @@ if __name__ == '__main__':
 #            input('Press enter to stop...')
 
 
-#        with labrad.connect() as cxn:
-#            cxn.pulse_streamer.constant([],0.0,1.0)
+#        
 #        with labrad.connect() as cxn:
 #            cxn.objective_piezo.write(5.1)
         
@@ -431,9 +430,9 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-#            do_image_sample(nv_sig, apd_indices)
-#            do_optimize(nv_sig, apd_indices)
-#            do_stationary_count(nv_sig, apd_indices)
+#            do_image_sample(nv_sig, 0.08, apd_indices, 589)
+#            do_optimize(nv_sig, apd_indices, 532)
+            do_stationary_count(nv_sig, aom_power, apd_indices, color_ind)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
