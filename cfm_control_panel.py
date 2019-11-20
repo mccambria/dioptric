@@ -35,6 +35,7 @@ import majorroutines.lifetime as lifetime
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 import minorroutines.photon_collections_under_589 as photon_collections_under_589
+import minorroutines.determine_n_thresh as determine_n_thresh
 from utils.tool_belt import States
 
 
@@ -382,11 +383,18 @@ def do_test_major_routines(nv_sig, apd_indices):
 
 def do_photon_collections_under_589(nv_sig, apd_indices):
     #"collect photons for tR at fixed power P and return a probability distribution"
-    num_runs = 2
-    num_reps = 10**6
+    num_runs = 1
+    num_reps = 10
     readout_time = 8 * 10**6
-    readout_power = 1 #mW
+    readout_power = 100 #uW
     photon_collections_under_589.main(nv_sig, apd_indices, readout_power, readout_time, num_runs, num_reps)
+    
+def do_determine_n_thresh(nv_sig, readout_power, readout_time, apd_indices):
+    
+    num_runs = 1
+    num_reps = 100* 10**3
+    
+    determine_n_thresh.main(nv_sig, apd_indices, readout_power, readout_time, num_runs, num_reps)
 
     
 # %% Run the file
@@ -404,7 +412,7 @@ if __name__ == '__main__':
 
     nv0_2019_11_19 = { 'coords': [-0.024, -0.006, 5.0],
             'name': '{}-lifetime'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
+            'expected_count_rate': 15, 'nd_filter': 'nd_1.5',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
@@ -452,7 +460,10 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-            do_photon_collections_under_589(nv_sig, apd_indices)
+            
+#            do_photon_collections_under_589(nv_sig, apd_indices)
+            do_determine_n_thresh(nv_sig, 100, 1 * 10**6, apd_indices)
+            
 #            do_image_sample(nv_sig, aom_power, apd_indices, 532)
 #            do_image_sample_SCC(nv_sig, aom_power, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)

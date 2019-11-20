@@ -10,7 +10,6 @@ Created on Mon Nov 18 20:39:55 2019
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-import os
 import matplotlib.pyplot as plt
 import labrad
 
@@ -38,7 +37,7 @@ def get_Probability_distribution(aList):
     
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, readout_power,readout_time,num_runs, num_reps):
+def main(nv_sig, apd_indices, readout_power,readout_time, num_runs, num_reps):
     
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs, num_reps)
@@ -63,34 +62,25 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
     if aom_power > 1:
         aom_power = 1.0
-        
-#    # Analyze the sequence
-#    seq_args = [gate_time, aom_delay589 ,apd_indices[0], aom_power]
-#    seq_args_string = tool_belt.encode_seq_args(seq_args)
-#    cxn.pulse_streamer.stream_load('photon_collections_under_589nm_sequence.py', seq_args_string)
+    
+    illumination_time = 10**6
 
     # Set up our data structure, an array of NaNs that we'll fill
     # we repeatively collect photons for tR 
     
-#    sig_counts=[]
-    sig_counts = []
-    
-    
-    # norm_avg_sig = numpy.empty([num_runs, num_steps])
-    
-    # create a list to store the optimized coordinates
+    sig_counts=[]
     opti_coords_list = []
     
 #%% Collect data
     tool_belt.init_safe_stop()
 
-        
-    # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
-    opti_coords_list.append(opti_coords)    
     
     for run_ind in range(num_runs):
 
+        # Optimize
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
+        opti_coords_list.append(opti_coords)    
+        
         print('Run index: {}'. format(run_ind))
 
         # Break out of the while if the user says stop
@@ -100,10 +90,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
         
-        seq_args = [gate_time, aom_delay589 ,apd_indices[0], aom_power]
-    #        seq_args = [int(el) for el in seq_args]
+        seq_args = [gate_time, illumination_time, aom_delay589 ,apd_indices[0], aom_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        cxn.pulse_streamer.stream_immediate('photon_collections_under_589nm_sequence.py', num_reps, seq_args_string)
+        cxn.pulse_streamer.stream_immediate('determine_n_thresh.py', num_reps, seq_args_string)
     
         # Get the counts
         new_counts = cxn.apd_tagger.read_counter_simple(num_reps)
@@ -135,6 +124,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
             'readout_power_unit':'uW',
             'readout_time':readout_time,
             'readout_time_unit':'ns',
+            'illumination_time': illumination_time,
+            'illumination_time-units': 'ns',
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'num_runs': num_runs,
             'sig_counts': sig_counts,
