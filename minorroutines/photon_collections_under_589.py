@@ -16,16 +16,17 @@ import labrad
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, readout_power,readout_time,num_runs):
+def main(nv_sig, apd_indices, readout_power,readout_time,num_runs, num_reps):
+    
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
+        main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs, num_reps)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs):
+def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs, num_reps):
 
     tool_belt.reset_cfm(cxn)
 
 # %% Initial Calculation and setup
-    apd_indices = [0]
+#    apd_indices = [0]
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     
@@ -38,18 +39,20 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
     #get the aom_power corresponding to the laser power we want 
     #readout_power in unit of microwatts
     aom_power = numpy.sqrt((readout_power - 0.432)/1361.811)
-    # Analyze the sequence
-    seq_args = [gate_time, aom_delay589,readout_time,apd_indices, aom_power]
-    seq_args = [int(el) for el in seq_args]
-#    print(seq_args)
-#    return
+    
+#    # Analyze the sequence
+    seq_args = [gate_time, aom_delay589 ,apd_indices[0], aom_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load('photon_collections_under_589nm_sequence.py', seq_args_string)
 
     # Set up our data structure, an array of NaNs that we'll fill
     # we repeatively collect photons for tR 
-    sig_counts = numpy.empty(num_runs, dtype=numpy.uint32)
-    sig_counts[:] = numpy.nan
+    
+    sig_counts=[]
+#    sig_counts = numpy.empty(num_runs, dtype=numpy.uint32)
+#    sig_counts[:] = numpy.nan
+    
+    
     # norm_avg_sig = numpy.empty([num_runs, num_steps])
     
     # create a list to store the optimized coordinates
@@ -58,7 +61,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
 #%% Collect data
     tool_belt.init_safe_stop()
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, readout_power, apd_indices, 532)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
     opti_coords_list.append(opti_coords)    
     for run_ind in range(num_runs):
 
@@ -70,15 +73,22 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
         
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
+        
+        seq_args = [gate_time, aom_delay589 ,apd_indices[0], 1.0]
+    #        seq_args = [int(el) for el in seq_args]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.pulse_streamer.stream_immediate('photon_collections_under_589nm_sequence.py',1,seq_args_string)
     
         # Get the counts
-        new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-
+        new_counts = cxn.apd_tagger.read_counter_simple(2)
+        print(new_counts)
         sample_counts = new_counts[0]
-
+        print(sample_counts)
         # there is only one readout period 
-        sig_gate_counts = sample_counts[0]
-        sig_counts[run_ind] = sum(sig_gate_counts)
+#        sig_gate_counts = sample_counts[0]
+    #    sig_counts[run_ind] = sum(sig_gate_counts)
+        sig_counts = sample_counts
+
 
 
     cxn.apd_tagger.stop_tag_stream()

@@ -88,6 +88,8 @@ def do_image_sample_SCC(nv_sig, aom_power, apd_indices):
 
 def do_optimize(nv_sig, apd_indices, color_ind):
 
+#    aom_power
+    
     optimize.main(nv_sig, apd_indices, color_ind,
               set_to_opti_coords=False, save_data=True, plot_data=True)
 
@@ -378,10 +380,13 @@ def do_test_major_routines(nv_sig, apd_indices):
 
     test_major_routines.main(nv_sig, apd_indices)
 
-def do_photon_collections_under_589(nv_sig, apd_indices,readout_time,readout_power):
+def do_photon_collections_under_589(nv_sig, apd_indices):
     #"collect photons for tR at fixed power P and return a probability distribution"
-    num_runs = 100,000
-    photon_collections_under_589.main(nv_sig, apd_indices, readout_power,readout_time,num_runs)
+    num_runs = 2
+    num_reps = 10**6
+    readout_time = 8 * 10**6
+    readout_power = 1 #mW
+    photon_collections_under_589.main(nv_sig, apd_indices, readout_power, readout_time, num_runs, num_reps)
 
     
 # %% Run the file
@@ -447,9 +452,10 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
+            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_image_sample(nv_sig, aom_power, apd_indices, 532)
 #            do_image_sample_SCC(nv_sig, aom_power, apd_indices)
-            do_optimize(nv_sig, apd_indices, color_ind)
+#            do_optimize(nv_sig, apd_indices, 532)
 #            do_stationary_count(nv_sig, aom_power, apd_indices, color_ind)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)

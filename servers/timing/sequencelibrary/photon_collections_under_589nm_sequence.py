@@ -16,7 +16,7 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    gate_time, aom_delay589, apd_index, aom_power = args
+    gate_time, aom_delay589, apd_indices, aom_power = args
 
 
 
@@ -26,7 +26,7 @@ def get_seq(pulser_wiring, args):
    #SCC photon collection test period
     period =  readout_time + aom_delay589
     # Get what we need out of the wiring dictionary
-    pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
+    pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_indices)]
     pulser_ao_aom589 = pulser_wiring['ao_589_aom']
 
 
