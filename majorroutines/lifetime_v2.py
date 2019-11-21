@@ -150,38 +150,26 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
 #        opti_coords_list.append(opti_coords)
 
 
-
+        samples_cur = 0
+        
         # Expose the stream
         cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
 
-
-#        # 'Flip a coin' to determine which tau (long/shrt) is used first
-#        rand_boolean = numpy.random.randint(0, high=2)
-
-#        if rand_boolean == 1:
-#            tau_ind_first = tau_ind
-#            tau_ind_second = -tau_ind - 1
-#        elif rand_boolean == 0:
-#            tau_ind_first = -tau_ind - 1
-#            tau_ind_second = tau_ind
-
-        # add the tau indexxes used to a list to save at the end
-#        tau_index_master_list[run_ind].append(tau_ind_first)
-#        tau_index_master_list[run_ind].append(tau_ind_second)
-
-
-
-        # Stream the sequence
-        seq_args = [readout_time, polarization_time, 
-                aom_delay_time, apd_indices[0]]
-        seq_args = [int(el) for el in seq_args]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
-        
-        cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
-                                            seq_args_string)
-
-
-        ret_vals = cxn.apd_tagger.read_tag_stream()
+        while samples_cur < num_samples:
+            
+            # Stream the sequence
+            seq_args = [readout_time, polarization_time, 
+                    aom_delay_time, apd_indices[0]]
+            seq_args = [int(el) for el in seq_args]
+            seq_args_string = tool_belt.encode_seq_args(seq_args)
+            
+            cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
+                                                seq_args_string)
+    
+    
+            ret_vals = cxn.apd_tagger.read_tag_stream()
+            
+            samples_cur =+ 1
         
         
 #        # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
