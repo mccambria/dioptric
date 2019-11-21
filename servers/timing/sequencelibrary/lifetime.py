@@ -76,7 +76,7 @@ if __name__ == '__main__':
               'do_signal_generator_tsg4104a_gate': 2,
               'do_signal_generator_bnc835_gate': 3}
     
-    seq_args = [0, 100, 100, 0, 1000, 500, 0]
-
+    seq_args = [0, 1000, 100, 0, 100, 500, 0]
+            
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()
