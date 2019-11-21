@@ -391,8 +391,8 @@ def do_photon_collections_under_589(nv_sig, apd_indices):
     
 def do_determine_n_thresh(nv_sig, readout_power, readout_time, apd_indices):
     
-    num_runs = 1
-    num_reps = 100* 10**3
+    num_runs = 10
+    num_reps = 5* 10**3
     
     determine_n_thresh.main(nv_sig, apd_indices, readout_power, readout_time, num_runs, num_reps)
 
@@ -462,7 +462,7 @@ if __name__ == '__main__':
 #                do_image_sample(nv_sig_copy, apd_indices)
             
 #            do_photon_collections_under_589(nv_sig, apd_indices)
-            do_determine_n_thresh(nv_sig, 100, 1 * 10**6, apd_indices)
+            do_determine_n_thresh(nv_sig, 50, 10 * 10**6, apd_indices)
             
 #            do_image_sample(nv_sig, aom_power, apd_indices, 532)
 #            do_image_sample_SCC(nv_sig, aom_power, apd_indices)

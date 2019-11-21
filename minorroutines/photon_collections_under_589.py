@@ -142,7 +142,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
             'unique_values': unique_value,
             'unique_values-units': 'num of photons',
             'relative_frequency': relative_frequency,
-            'relative_frequency-units': 'occurences'
+            'relative_frequency-units': 'occurrences'
             }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])

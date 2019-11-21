@@ -71,6 +71,24 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     sig_counts=[]
     opti_coords_list = []
     
+#%% Estimate the lenth of the sequance
+    
+    seq_args = [gate_time, illumination_time, aom_delay589 ,apd_indices[0], aom_power]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    ret_vals = cxn.pulse_streamer.stream_load('determine_n_thresh.py', seq_args_string)
+    
+    seq_time = ret_vals[0]
+    
+    seq_time_s = seq_time / (10**9)  # s
+    expected_run_time = num_reps * num_runs * seq_time_s + (0.5 * num_runs)  # s
+    expected_run_time_m = expected_run_time / 60 # m
+
+    # Ask to continue and timeout if no response in 2 seconds?
+
+    print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
+    
+#    return
+    
 #%% Collect data
     tool_belt.init_safe_stop()
 
@@ -128,12 +146,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
             'illumination_time-units': 'ns',
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'num_runs': num_runs,
+            'num_reps':num_reps,
             'sig_counts': sig_counts,
             'sig_counts-units': 'counts',
             'unique_values': unique_value,
             'unique_values-units': 'num of photons',
             'relative_frequency': relative_frequency,
-            'relative_frequency-units': 'occurences'
+            'relative_frequency-units': 'occurrences'
             }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
