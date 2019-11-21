@@ -136,13 +136,12 @@ def find_B_orientation_objective(fit_vec, rotated_res_desc,
 def extract_rotated_hamiltonian(name, res_descs,
                                 aligned_res_desc, rotated_res_desc):
 
+    # [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
     popt = main(name, res_descs)  # Excluding phis
-    # popt_full = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
-    popt_full = numpy.append(popt, [0.0, 0.0])  # phis = 0
 
-    mag_B = find_mag_B(aligned_res_desc, *popt_full)
+    mag_B = find_mag_B(aligned_res_desc, *popt)
     theta_B, phi_B = find_B_orientation(rotated_res_desc, mag_B,
-                                popt_full[1], popt_full[2], popt_full[4])
+                                popt[1], popt[2], popt[4])
 
     return theta_B, phi_B
 
@@ -293,6 +292,27 @@ def find_mag_B_objective(x, res_desc, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     diffs = numpy.array(calculated_res_pair) - numpy.array(res_desc[1:3])
     sum_squared_differences = numpy.sum(diffs**2)
     return sum_squared_differences
+
+
+def find_mag_B_splitting(splitting, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
+    # Otherwise we'll determine the most likely mag_B for this fit_vec by
+    # finding the mag_B that minimizes the distance between the measured
+    # resonances and the calculated resonances for a given fit_vec
+    args = (splitting, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi)
+    result = minimize_scalar(find_mag_B_splitting_objective,
+                             bounds=(0, 1.5), args=args, method='bounded')
+    if result.success:
+        mag_B = result.x
+    else:
+        mag_B = 0.0
+    return mag_B
+
+
+def find_mag_B_splitting_objective(x, splitting,
+                                   theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
+    calculated_splitting = calc_splitting(x, theta_B, par_Pi, perp_Pi,
+                                          phi_B, phi_Pi)
+    return numpy.abs(calculated_splitting - splitting)
 
 
 def plot_resonances(mag_B_range, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi,
