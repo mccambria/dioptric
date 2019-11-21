@@ -62,9 +62,9 @@ def do_image_sample(nv_sig, apd_indices):
 #    scan_range = 0.5
 #    num_steps = 150
     scan_range = 0.2
-#    num_steps = 90
+    num_steps = 90
 #    scan_range = 0.1
-    num_steps = 60
+#    num_steps = 60
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
@@ -99,7 +99,7 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
-    num_runs = 2
+    num_runs = 3
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
@@ -376,17 +376,18 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
+    sample_name = 'goeppert_mayer'
 
-    
-    sample_name = 'Y2O3'
-
-    NV_search = { 'coords': [-0.066, -0.210, 5.65],
+    NV_search = { 'coords': [0.037, 0.106, 5.0],
             'name': '{}-lifetime'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 10000, 'magnet_angle': None,
+            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
+            'pulsed_readout_dur': 450, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    
+    
     nv_sig_list = [NV_search]
+    
 
     # %% Functions to run
 
@@ -396,15 +397,19 @@ if __name__ == '__main__':
 #         set_xyz_zero()
 #        set_xyz([-0.063, -0.210, 5.69]) # On NV 
 #        set_xyz([-0.122, -0.151, 5.69]) # Off NV 
-        set_xyz([0.0, 0.0, 5.0,])
+#        set_xyz([0.0, 0.0, 5.0,])
 #        drift = tool_belt.get_drift()
 #        print(drift)
 #        tool_belt.set_drift([0.0, 0.0, 0.0])
 #        set_xyz([0.0, 0.0, 5.02 + tool_belt.get_drift()[2]])
 #        with labrad.connect() as cxn:
-#            cxn.filter_slider_ell9k.set_filter('nd_1.5')
+#            cxn.filter_slider_ell9k.set_filter('nd_0.5')
 #            cxn.pulse_streamer.constant([])
 #            input('Press enter to stop...')
+        
+#        with labrad.connect() as cxn:
+#            cxn.pulse_treamer.constant([3], 0.0, 0.0)        
+        
 
         # Routines that expect lists of NVs
 #        do_optimize_list(nv_sig_list, apd_indices)
@@ -413,14 +418,14 @@ if __name__ == '__main__':
 
         
         # Routines that expect single NVs
-#        for ind in range(len(nv_sig_list)):
-#            nv_sig = nv_sig_list[ind]                
+        for ind in range(len(nv_sig_list)):
+            nv_sig = nv_sig_list[ind]                
 #            for z in numpy.linspace(5.5, 6.5, 6):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-#            do_image_sample(nv_sig, apd_indices)
+            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
