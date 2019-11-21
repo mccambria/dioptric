@@ -104,8 +104,7 @@ fitting_eq_list = [plus_plus, plus_minus, plus_zero, minus_plus, minus_minus, \
 # %%
     
 def omega_comparison(save=False):
-    text_font = 24
-    title_font = 20
+    text_font = 40
     
     linspace = numpy.linspace(-0.05, 2.5, 1000)
     folder = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum'
@@ -221,12 +220,15 @@ def omega_comparison(save=False):
     ax.plot(linspace,exp_eq(linspace, *omega_params[1]),
                         'r', linestyle='--', linewidth=3, color = 'orange', label = 'fit')
     ax.set_xlabel(r'Wait time, $\tau$  (ms)', fontsize=text_font)
-    ax.set_ylabel(r'Relaxation signal, $F_{\Omega}$ (arb. units)', fontsize=text_font)
+    ax.set_ylabel(r'$F_{\Omega}$ (arb. units)', fontsize=text_font)
     ax.set_xlim([-0.01, 0.61])
     ax.set_ylim([-0.01, 0.43])
+    
+    ax.set_xticks([0.0,0.2,0.4,0.6])
+    ax.set_yticks([0.0,0.1,0.2,0.3,0.4])
 #    ax.set_ylim([0.6, 0.9])
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                grid_alpha=0.7, labelsize = text_font)
+                direction='in',grid_alpha=0.7, labelsize = text_font)
     
     
     ax = axes[1]
@@ -241,12 +243,14 @@ def omega_comparison(save=False):
     ax.plot(linspace,exp_eq(linspace, *omega_params[3]),
                         'r', linestyle='--', linewidth=3, color = 'orange',label = 'fit')
     ax.set_xlabel(r'Wait time, $\tau$  (ms)', fontsize=text_font)
-    ax.set_ylabel(r'Relaxation signal, $F_{\Omega}$ (arb. units)', fontsize=text_font)
+    ax.set_ylabel(r'$F_{\Omega}$ (arb. units)', fontsize=text_font)
     ax.set_xlim([-0.1, 2.26])
+    ax.set_xticks([0.0,0.5,1,1.5,2])
+    ax.set_yticks([-0.05,0.0,0.05,0.1,0.15,0.2])
 #    ax.set_ylim([-0.01, 0.43])
 #    ax.set_ylim([0.6, 0.9])
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                grid_alpha=0.7, labelsize = text_font)
+                direction='in',grid_alpha=0.7, labelsize = text_font)
             
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -448,7 +452,7 @@ def rate_comaprison_NV2_subtraction(save=False):
 #%%
     
 def rate_comaprison_NV2_lin(save=False):
-    text_font = 24
+    text_font = 30
     blue = '#2e3192'
     red = '#ed1c24'
     omega = 0.32 / 1000 
@@ -488,7 +492,7 @@ def rate_comaprison_NV2_lin(save=False):
 
     ax.set_xlim([-1,110])
     ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
-                fmt = 'o', color = blue, markersize = 8)
+                fmt = 'o', color = blue, markersize = 10)
     yfit = exp_eq_offset(time_linspace, *opti_params_f)
     ax.plot(time_linspace, yfit, '-', color=blue)
     
@@ -502,7 +506,7 @@ def rate_comaprison_NV2_lin(save=False):
     
     
     ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
-                fmt = '^', color = red, markersize = 8)
+                fmt = '^', color = red, markersize = 10)
     
     yfit = exp_eq_offset(time_linspace, *opti_params_s)
     ax.plot(time_linspace, yfit, '-', color=red)
@@ -518,7 +522,7 @@ def rate_comaprison_NV2_lin(save=False):
     ax.set_xlabel(r'Relaxation time ($\mu$s)', fontsize=text_font)
     ax.set_ylabel('Relaxation signal', fontsize=text_font)
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                grid_alpha=0.7, labelsize = text_font)
+                direction = 'in', grid_alpha=0.7, labelsize = text_font)
     
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -529,7 +533,7 @@ def rate_comaprison_NV2_lin(save=False):
 #%%
     
 def rate_comaprison_NV2_log(save=False):
-    text_font = 50
+    text_font = 60
     blue = '#2e3192'
     red = '#ed1c24'
     omega = 0.32 / 1000 
@@ -571,7 +575,7 @@ def rate_comaprison_NV2_log(save=False):
     ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
     
     ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
-                fmt = 'o', markersize = 12, color = blue)
+                fmt = 'o', markersize = 16, color = blue)
 #    ax.plot(time, counts_f, 'o', color =blue)
     yfit = exp_eq_offset(time_linspace, *opti_params_f)
     ax.plot(time_linspace, yfit, '-', color=blue)
@@ -586,7 +590,7 @@ def rate_comaprison_NV2_log(save=False):
     
     
     ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
-                fmt = '^', markersize = 12, color = red)
+                fmt = '^', markersize = 16, color = red)
 #    ax.plot(time, counts_s, '^', color =red)
     
     yfit = exp_eq_offset(time_linspace, *opti_params_s)
@@ -603,7 +607,7 @@ def rate_comaprison_NV2_log(save=False):
     ax.set_xlabel(r'Relaxation time ($\mu$s)', fontsize=text_font)
     ax.set_ylabel('Relaxation signal', fontsize=text_font)
     ax.tick_params(which = 'both', length=8, width=3, colors='k',
-                grid_alpha=0.7, labelsize = text_font)
+                direction = 'in', grid_alpha=0.7, labelsize = text_font)
     ax.tick_params(which = 'major', length=20, width=5)
     ax.grid(axis='y')
 #    ax.set_xlim()
@@ -619,7 +623,7 @@ def rate_comaprison_NV2_log(save=False):
 #%%
     
 def rate_comaprison_NV1_lin(save=False):
-    text_font = 24
+    text_font = 40
     blue = '#2e3192'
     red = '#ed1c24'
     omega = 1.17 / 1000 
@@ -660,7 +664,7 @@ def rate_comaprison_NV1_lin(save=False):
 
     ax.set_xlim([-1,76])
     ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
-                fmt = 'o', color = blue, markersize = 8)
+                fmt = 'o', color = blue, markersize = 10)
     yfit = exp_eq_offset(time_linspace, *opti_params_f)
     ax.plot(time_linspace, yfit, '-', color=blue)
     
@@ -674,7 +678,7 @@ def rate_comaprison_NV1_lin(save=False):
     
     
     ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
-                fmt = '^', color = red, markersize = 8)
+                fmt = '^', color = red, markersize = 10)
     
     yfit = exp_eq_offset(time_linspace, *opti_params_s)
     ax.plot(time_linspace, yfit, '-', color=red)
@@ -688,9 +692,9 @@ def rate_comaprison_NV1_lin(save=False):
                      color='red', alpha=0.4)
     
     ax.set_xlabel(r'Wait time, $\tau$ ($\mu$s)', fontsize=text_font)
-    ax.set_ylabel(r'Relaxation signal, $F_\gamma$ (arb. units)', fontsize=text_font)
+    ax.set_ylabel(r'$F_\gamma$ (arb. units)', fontsize=text_font)
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                grid_alpha=0.7, labelsize = text_font)
+                direction='in',grid_alpha=0.7, labelsize = text_font)
     
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -701,7 +705,7 @@ def rate_comaprison_NV1_lin(save=False):
 #%%
     
 def rate_comaprison_NV1_log(save=False):
-    text_font = 50
+    text_font = 65
     blue = '#2e3192'
     red = '#ed1c24'
     omega = 1.17 / 1000 
@@ -745,7 +749,7 @@ def rate_comaprison_NV1_log(save=False):
     ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(numpy.maximum(-numpy.log10(y),0)))).format(y)))
     
     ax.errorbar(time, counts_f, yerr = error_f, label = 'gamma = {}({}) kHz'.format(gamma_f, gamma_unc_f), 
-                fmt = 'o', markersize = 12, color = blue)
+                fmt = 'o', markersize = 16, color = blue)
 #    ax.plot(time, counts_f, 'o', color =blue)
     yfit = exp_eq_offset(time_linspace, *opti_params_f)
     ax.plot(time_linspace, yfit, '-', color=blue)
@@ -760,7 +764,7 @@ def rate_comaprison_NV1_log(save=False):
     
     
     ax.errorbar(time, counts_s, yerr = error_s, label = 'gamma = {}({}) kHz'.format(gamma_s, gamma_unc_s), 
-                fmt = '^', markersize = 12, color = red)
+                fmt = '^', markersize = 16, color = red)
 #    ax.plot(time, counts_s, '^', color =red)
     
     yfit = exp_eq_offset(time_linspace, *opti_params_s)
@@ -777,9 +781,10 @@ def rate_comaprison_NV1_log(save=False):
     ax.set_xlabel(r'Wait time, $\tau$ ($\mu$s)', fontsize=text_font)
     ax.set_ylabel(r'$F_\gamma$ (arb. units)', fontsize=text_font)
     ax.tick_params(which = 'both', length=8, width=3, colors='k',
-                grid_alpha=0.7, labelsize = text_font)
+                direction='in',grid_alpha=0.7, labelsize = text_font)
     ax.tick_params(which = 'major', length=20, width=5)
     ax.grid(axis='y')
+    ax.set_xticks([0,10,20])
 #    ax.set_xlim()
 #    ax.legend()
 #    ax.set_title('Compare NV1 measurements')
@@ -834,7 +839,7 @@ def silicon_sample(save=False):
 #    ax.set_title(r'$P_{0,0} - P_{0,1}$', fontsize=title_font)
 #    ax.legend(fontsize=20)
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                grid_alpha=0.7, labelsize = text_font)
+                direction='in',grid_alpha=0.7, labelsize = text_font)
     
     ax = axes_pack[1]
     
@@ -854,7 +859,7 @@ def silicon_sample(save=False):
 #    ax.legend(fontsize=20)
 
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                grid_alpha=0.7, labelsize = text_font)
+                direction='in',grid_alpha=0.7, labelsize = text_font)
             
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -905,7 +910,7 @@ def subtraction_plot(save=False):
 #    ax.set_title(r'$P_{0,0} - P_{0,1}$', fontsize=title_font)
 #    ax.legend(fontsize=20)
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                grid_alpha=0.7, labelsize = text_font)
+                direction='in',grid_alpha=0.7, labelsize = text_font)
     
     ax = axes_pack[1]
     
@@ -925,7 +930,7 @@ def subtraction_plot(save=False):
 #    ax.legend(fontsize=20)
 
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                grid_alpha=0.7, labelsize = text_font)
+                direction='in',grid_alpha=0.7, labelsize = text_font)
             
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -1010,17 +1015,19 @@ def all_9_meas(save=False):
         em = 0.013
         lintaus = numpy.linspace(0,0.6,1000)
 
-        ax.plot(lintaus, fitting_eq_list[i](lintaus, gamma, omega, ep, em), 'r',  lw = 3)
+        ax.plot(lintaus, fitting_eq_list[i](lintaus, gamma, omega, ep, em), 
+                'r',  lw = 3)
         
         
         ax.plot(taus, norm_sig, 'bo')
         ax.set_ylim([-0.1,1.1])
-        ax.set_xlabel(r'Wait time, $\tau$ (ms)', fontsize=20)
-        ax.set_ylabel('Normalized NV Fluorescence', fontsize=20)
-        ax.set_title(titles[i], fontsize=24)
+        ax.set_xlabel(r'Wait time, $\tau$ (ms)', fontsize=30)
+        ax.set_ylabel('Norm. NV Fluor.', fontsize=30)
+        ax.set_title(titles[i], fontsize=30)
         ax.tick_params(which = 'both', length=10, width=3, colors='k',
-                        grid_alpha=0.7, labelsize = 20)
-
+                        direction = 'in', grid_alpha=0.7, labelsize = 30)
+        ax.set_xticks([0.0,0.2,0.4,0.6])
+        ax.set_yticks([0.0,0.2,0.4,0.6,0.8,1.0])
         if c_ind == 0:
             c_ind = 1
         elif c_ind == 1:
@@ -1058,9 +1065,9 @@ if __name__ == '__main__':
         
 #    all_9_meas(True)
 #    correlation(True)
-    silicon_sample(True)
+#    silicon_sample(True)
 #    subtraction_plot(True) 
-#    omega_comparison(True)
+    omega_comparison(True)
 #    one_hour_rates_NV1(save=True)
 #    NV1_histogram(save=True)
 #    one_hour_rates_NV2(save=True)

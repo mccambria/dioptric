@@ -62,9 +62,9 @@ print(fit_alpha_params)
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv13_splitting_list, nv13_gamma_avg_list, yerr = nv13_gamma_error_list, 
-             xerr = nv13_splitting_error, label = r'$\gamma$', fmt='o', markersize = 12, color=purple)
+             xerr = nv13_splitting_error, label = r'$\gamma$', fmt='o', markersize = 15, color=purple)
 ax.errorbar(nv13_splitting_list, nv13_omega_avg_list, yerr = nv13_omega_error_list, 
-             xerr = nv13_splitting_error, label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
+             xerr = nv13_splitting_error, label = r'$\Omega$', fmt='^', markersize = 15, color=orange)
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
             linestyle='dashed', linewidth=3, color = purple)
@@ -93,26 +93,26 @@ text = '\n'.join((r'$A_0/f^{2} + \gamma_\infty$ fit:',
                   r'$\gamma_\infty = {} \pm {}$'.format('%.2f'%(fit_alpha_params[1]), '%.2f'%(numpy.sqrt(cov_arr[1][1])))
                   ))
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
-#        verticalalignment='top', bbox=props)
+ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
+        verticalalignment='top', bbox=props)
 
 
 # %%
 
 ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                grid_alpha=0.7, labelsize = 18)
+                direction='in',grid_alpha=0.7, labelsize = 18)
 
 ax.tick_params(which = 'major', length=12, width=2)
 
 ax.grid()
 
-#ax.set_xlim([8,400])
-#ax.set_ylim([0.1,800])
+ax.set_xlim([8,400])
+ax.set_ylim([0.1,800])
 
 
 
 plt.xlabel('Splitting (MHz)', fontsize=18)
 plt.ylabel('Relaxation Rate (kHz)', fontsize=18)
-ax.legend(fontsize=18)
+#ax.legend(fontsize=18)
 
 #fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/NV13.pdf", bbox_inches='tight')

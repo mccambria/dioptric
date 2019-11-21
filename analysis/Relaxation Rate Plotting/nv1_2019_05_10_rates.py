@@ -28,8 +28,8 @@ from scipy.optimize import curve_fit
 from scipy.stats import chisquare
 
 # The data
-nv1_splitting_list = [ 19.5, 19.8, 27.7, 28.9, 32.7, 51.8, 97.8, 116, 268, 350, 561.7, 1016.8]
-nv1_omega_avg_list = numpy.array([ 0.83, 1.23, 1.30,  1.000,  1.42, 1.85, 1.41, 1.18, 1.04, 0.72, 1.19, 0.58])
+nv1_splitting_list =            [ 19.5, 19.8, 27.7, 28.9, 32.7, 51.8, 97.8, 116, 268, 350, 561.7, 1016.8]
+nv1_omega_avg_list = numpy.array([ 0.83, 1.28, 1.30,  1.000,  1.42, 1.85, 1.41, 1.18, 1.04, 0.72, 1.19, 0.58])
 nv1_omega_error_list = numpy.array([ 0.04, 0.04, 0.06, 0.016,  0.05, 0.08, 0.05, 0.06, 0.04, 0.04, 0.06, 0.03])*2
 nv1_gamma_avg_list = numpy.array([58.3, 117, 64.5, 56.4,  42.6, 13.1, 3.91, 4.67, 1.98, 1.57, 0.70, 0.41])
 nv1_gamma_error_list = numpy.array([1.4, 4, 1.4, 1.3,  0.9, 0.2, 0.1, 0.11, 0.1, 0.12, 0.05, 0.05])*2
@@ -63,9 +63,9 @@ purple = '#87479b'
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv1_splitting_list, nv1_gamma_avg_list, yerr = nv1_gamma_error_list, 
-            label = r'$\gamma$',  fmt='o',markersize = 12, color = purple)
+            label = r'$\gamma$',  fmt='o',markersize = 15, color = purple)
 ax.errorbar(nv1_splitting_list, nv1_omega_avg_list, yerr = nv1_omega_error_list, 
-            label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
+            label = r'$\Omega$', fmt='^', markersize = 15, color=orange)
 
 # %% Chi Squared
 
@@ -100,7 +100,7 @@ ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
 # %%
 
 ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                grid_alpha=0.7, labelsize = 18)
+                direction='in', grid_alpha=0.7, labelsize = 18)
 
 ax.tick_params(which = 'major', length=12, width=2)
 

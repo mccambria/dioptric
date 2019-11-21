@@ -62,10 +62,11 @@ if __name__ == '__main__':
             
             
 #            on_589(cxn)
+            cxn.pulse_streamer.constant([3],0.0, 0.2)
             
 #            on_638(cxn)
             
-            off(cxn)
+#            off(cxn)
         
     finally:
         # Kill safe stop

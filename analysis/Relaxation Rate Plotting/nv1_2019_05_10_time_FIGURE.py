@@ -80,6 +80,7 @@ def time_main_plot(folder_name, file_name):
     Basic function to plot the data we collected on this NV. Data represented
     as points.
     '''
+    font_size = 36
     # 3.75 hour incr
     file4 = '26.3_MHz_splitting_6_bins_error'
     folder4 = 'nv1_2019_05_10_28MHz_4'
@@ -158,13 +159,13 @@ def time_main_plot(folder_name, file_name):
                         
 
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                    grid_alpha=0.7, labelsize = 24)
+                    direction='in',grid_alpha=0.7, labelsize = font_size)
 
     ax.tick_params(which = 'major', length=12, width=2)
 
 
-    ax.set_xlabel('Time (hours)', fontsize=26)
-    ax.set_ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=26)
+    ax.set_xlabel('Time (hours)', fontsize=font_size)
+    ax.set_ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=font_size)
     ax.set_ylim(39.5,59.5)
 #    ax.set_title(r'NV1', fontsize=18)
 #    ax.legend(fontsize=18)
@@ -237,7 +238,7 @@ def time_zoom_plot(folder_name, file_name):
                         color=purple, alpha=0.2)
 
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                    grid_alpha=0.7, labelsize = 18)
+                    direction='in',grid_alpha=0.7, labelsize = 18)
 
     ax.tick_params(which = 'major', length=12, width=2)
 
@@ -278,16 +279,16 @@ def histogram(bins = 7, fit_gaussian = False):
                     
         
 
-    text = 90
+    text = 115
 #    numpy.histogram(nv2_rates, bins = 10)
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ret_vals= ax.hist(gamma_list, bins = bins, color = light_purple)
     ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
-    ax.set_ylabel('Occurrences', fontsize=text)
+    ax.set_ylabel('Occur.', fontsize=text)
     ax.tick_params(which = 'both', length=10, width=20, colors='k',
-                    grid_alpha=1.2, labelsize = text)
+                    direction='in',grid_alpha=1.2, labelsize = text)
     ax.set_yticks([0,2, 4])
-    ax.tick_params(which = 'major', length=12, width=2)
+    ax.tick_params(which = 'major', length=25, width=10)
   
     gaus_params = [4, numpy.average(gamma_ste_list), 49.3]
     
@@ -296,79 +297,6 @@ def histogram(bins = 7, fit_gaussian = False):
     ax.set_xlim([42.5,56.5])
 
     fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4d.pdf", bbox_inches='tight')
-
-def histogram_1hr(bins = 10, fit_gaussian = False):
-    '''
-    Produces a histogram of the data passed
-    '''
-    text = 90
-    blue = '#2e3192'
-    red = '#ed1c24'
-    
-    #  1.2 hours
-    file4 = '26.3_MHz_splitting_18_bins_error'
-    folder4 = 'nv1_2019_05_10_28MHz_4'
-    data4 = tool_belt.get_raw_data('t1_double_quantum', file4, folder4)
-    
-    file5 = '26.5_MHz_splitting_15_bins_error'
-    folder5 = 'nv1_2019_05_10_28MHz_5'
-    data5 = tool_belt.get_raw_data('t1_double_quantum', file5, folder5)
-    
-    file6 = '26.2_MHz_splitting_15_bins_error'
-    folder6 = 'nv1_2019_05_10_28MHz_6'
-    data6 = tool_belt.get_raw_data('t1_double_quantum', file6, folder6)
-    
-    gamma_list = data4['gamma_list'] + data5['gamma_list'] + data6['gamma_list']
-    gamma_ste_list = data4['gamma_ste_list'] + data5['gamma_ste_list'] \
-                    + data6['gamma_ste_list']
-
-
-    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-    ret_vals = ax.hist(gamma_list, bins = bins, color = purple)
-#    print(ret_vals)
-    ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
-    ax.set_ylabel('Occurrences', fontsize=text)
-    ax.tick_params(which = 'both', length=10, width=20, colors='r',
-                    grid_alpha=1.2, labelsize = text)
-
-    ax.tick_params(which = 'major', length=20, width=5)
-    ax.set_yticks([0,2, 4,6])
-    
-        
-#    gssn_popt = [11, numpy.average(gamma_ste_list), 27.4]
-
-#    x_linspace = numpy.linspace(20, 35, 1000)
-#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_popt), '--',color = 'k',  lw = 8, label = 'fit')
-#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_2_popt), '--', color = blue,  lw = 6, label = 'fit')
-#    ax.set_xlim([22,32.5])
-#    print(numpy.average(nv2_error))
-    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/NV1_zoom_hist.pdf", bbox_inches='tight')
-
-
-def kde_sklearn(x, bandwidth=0.5):
-    '''
-    Produces a kernel density estimation of the data passed. It also plots it.
-    https://jakevdp.github.io/blog/2013/12/01/kernel-density-estimation/
-    '''
-    from sklearn.neighbors import KernelDensity
-    """Kernel Density Estimation with Scikit-learn"""
-
-    kde_skl = KernelDensity(bandwidth=bandwidth)
-    x = numpy.array(x)
-    kde_skl.fit(x[:, numpy.newaxis])
-    # score_samples() returns the log-likelihood of the samples
-    x_grid = numpy.linspace(min(x), max(x), 1000)
-    log_pdf = kde_skl.score_samples(x_grid[:, numpy.newaxis])
-
-    pdf = numpy.exp(log_pdf)
-    fig,ax = plt.subplots(1,1)
-    ax.plot(x_grid, pdf, color='blue', alpha=0.5)
-    ax.set_xlabel('Gamma (kHz)')
-    ax.set_ylabel('Density')
-    ax.set_title('Kernal Density Estimation')
-
-#    print(numpy.exp(log_pdf))
-    return numpy.exp(log_pdf), x_grid
 
 # %%
 file_name = '26.2_MHz_splitting_25_bins_error'

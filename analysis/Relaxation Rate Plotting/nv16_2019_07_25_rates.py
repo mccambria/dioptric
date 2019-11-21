@@ -60,9 +60,9 @@ print(fit_alpha_params[1], numpy.sqrt(cov_arr[1][1]))
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv16_splitting_list, nv16_gamma_avg_list, yerr = nv16_gamma_error_list, 
-            label = r'$\gamma$', fmt='o', markersize = 12, color=purple)
+            label = r'$\gamma$', fmt='o', markersize = 15, color=purple)
 ax.errorbar(nv16_splitting_list, nv16_omega_avg_list, yerr = nv16_omega_error_list, 
-            label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
+            label = r'$\Omega$', fmt='^', markersize = 15, color=orange)
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
             linestyle='dashed', linewidth=3, color = purple)
@@ -98,7 +98,7 @@ ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
 # %%
 
 ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                grid_alpha=0.7, labelsize = 18)
+                direction='in', grid_alpha=0.7, labelsize = 18)
 
 ax.tick_params(which = 'major', length=12, width=2)
 

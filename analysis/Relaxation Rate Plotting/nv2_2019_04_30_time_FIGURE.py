@@ -142,7 +142,7 @@ def time_main_plot():
     ax.spines['right'].set_visible(False)
     
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                    grid_alpha=0.7, labelsize = 24, labelcolor='k')
+                    direction='in',grid_alpha=0.7, labelsize = 30, labelcolor='k')
 
     ax.tick_params(which = 'major', length=12, width=2)
     
@@ -151,6 +151,7 @@ def time_main_plot():
     ax.set_ylim([23, 31.5])
     ax.set_xlim([-5, 145])
     ax.set_ylabel(r'Relaxation Rate, $\gamma$ (kHz)', fontsize=18)
+    ax.set_xticks([0,25, 50,75,100,125])
 #    ax2 = ax.twinx()
 #    
 #    ax2.tick_params(which = 'both', length=6, width=2, colors='k',
@@ -222,7 +223,7 @@ def time_plot_inc():
     
     
     ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                    grid_alpha=0.7, labelsize = 24)
+                    direction='in',grid_alpha=0.7, labelsize = 30)
 
     ax.tick_params(which = 'major', length=12, width=2)
 
@@ -319,7 +320,7 @@ def histogram_5hr(bins = 10, fit_gaussian = False):
     '''
     Produces a histogram of the data passed
     '''
-    text = 90
+    text = 115
     light_purple = '#CE7FFF'
     # The data from the econd take
     file29 = '29.5_MHz_splitting_5_bins_error'
@@ -337,10 +338,10 @@ def histogram_5hr(bins = 10, fit_gaussian = False):
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     ret_vals= ax.hist(gamma_list, bins = bins, color = light_purple)
-    ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
-    ax.set_ylabel('Occurrences', fontsize=text)
+#    ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
+#    ax.set_ylabel('Occurrences', fontsize=text)
     ax.tick_params(which = 'both', length=10, width=20, colors='k',
-                    grid_alpha=1.2, labelsize = text)
+                    direction='in',grid_alpha=1.2, labelsize = text)
 
     ax.tick_params(which = 'major', length=20, width=5)
     ax.set_yticks([0,2, 4,6])
@@ -355,48 +356,6 @@ def histogram_5hr(bins = 10, fit_gaussian = False):
     print(numpy.average(nv2_error))
     fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/fig_4b.pdf", bbox_inches='tight')
     
-def histogram_1hr(bins = 10, fit_gaussian = False):
-    '''
-    Produces a histogram of the data passed
-    '''
-    text = 62
-    blue = '#2e3192'
-    red = '#ed1c24'
-    # The data from the econd take
-    file29 = '29.5_MHz_splitting_25_bins_error'
-    folder29 = 'nv2_2019_04_30_29MHz_29'
-    data29 = tool_belt.get_raw_data('t1_double_quantum', file29, folder29)
-
-    file30 = '29.8_MHz_splitting_10_bins_error'
-    folder30 = 'nv2_2019_04_30_29MHz_30'
-    data30 = tool_belt.get_raw_data('t1_double_quantum', file30, folder30)
-
-    # Combine all the data
-    
-    gamma_list = data29['gamma_list'] + data30['gamma_list']
-
-
-    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-    ret_vals = ax.hist(gamma_list, bins = bins, color = '#9E5E9A')
-    print(ret_vals)
-    ax.set_xlabel(r'$\gamma$ (kHz)', fontsize=text)
-    ax.set_ylabel('Occurrences', fontsize=text)
-    ax.tick_params(which = 'both', length=10, width=20, colors='k',
-                    grid_alpha=1.2, labelsize = text)
-
-    ax.tick_params(which = 'major', length=20, width=5)
-    ax.set_yticks([0,2, 4,6])
-    
-        
-    gssn_popt = [11, numpy.average(nv2_error), 27.4]
-
-    x_linspace = numpy.linspace(20, 35, 1000)
-#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_popt), '--',color = 'k',  lw = 8, label = 'fit')
-#    ax.plot(x_linspace, gaussian(x_linspace, *gssn_2_popt), '--', color = blue,  lw = 6, label = 'fit')
-#    ax.set_xlim([22,32.5])
-#    print(numpy.average(nv2_error))
-    fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/NV2_zoom_hist.pdf", bbox_inches='tight')
-
 #%%
 if __name__ == "__main__":
     # The data from the econd take
@@ -413,9 +372,9 @@ if __name__ == "__main__":
     gamma_list = data29['gamma_list'] + data30['gamma_list'] + nv2_rates
 
     time_plot_inc()
-#    time_main_plot()
+    time_main_plot()
 #    time_plot_zoom()
-#    histogram_5hr(bins = 10)
+    histogram_5hr(bins = 10)
 #    histogram_1hr(bins = 10)
     
 #    init_guesses = [.16, 0.8, 25.5, .24, 0.8, 27.9]

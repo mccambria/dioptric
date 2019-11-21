@@ -27,7 +27,7 @@ import numpy
 from scipy.stats import chisquare
 
 # The data
-nv2_splitting_list_all = [15.3,29.2, 45.5, 85.2, 280.4,697.4, 29.1, 44.8, 56.2, 56.9,  101.6]
+nv2_splitting_list_all =            [15.3,29.2, 45.5, 85.2, 280.4,697.4, 29.1, 44.8, 56.2, 56.9,  101.6]
 nv2_omega_avg_list_all = numpy.array([0.24, 0.328, 0.266, 0.285, 0.276, 0.29,0.412, 0.356, 0.326, 0.42,  0.312])
 nv2_omega_error_list_all = numpy.array([0.01, 0.013, 0.01, 0.011, 0.011, 0.02, 0.011, 0.012, 0.008, 0.05,  0.009])*2
 nv2_gamma_avg_list_all = numpy.array([124, 31.1, 8.47, 2.62, 0.443, 0.81,20.9, 6.43, 3.64, 3.77,  1.33])
@@ -64,9 +64,9 @@ print(fit_alpha_params)
 ax.set_xscale("log", nonposx='clip')
 ax.set_yscale("log", nonposy='clip')
 ax.errorbar(nv2_splitting_list_all, nv2_gamma_avg_list_all, yerr = nv2_gamma_error_list_all, 
-            label = r'$\gamma$', fmt='o',markersize = 12, color = purple)
+            label = r'$\gamma$', fmt='o',markersize = 15, color = purple)
 ax.errorbar(nv2_splitting_list_all, nv2_omega_avg_list_all, yerr = nv2_omega_error_list_all, 
-            label = r'$\Omega$', fmt='^', markersize = 12, color=orange)
+            label = r'$\Omega$', fmt='^', markersize = 15, color=orange)
 
 ax.plot(splitting_linspace, fit_eq_alpha(splitting_linspace, *fit_alpha_params), 
             linestyle='dashed', linewidth=3, color =purple)
@@ -100,7 +100,7 @@ ax.text(0.75, 0.8, text, transform=ax.transAxes, fontsize=12,
 # %%
 
 ax.tick_params(which = 'both', length=6, width=2, colors='k',
-                grid_alpha=0.7, labelsize = 18)
+                direction='in', grid_alpha=0.7, labelsize = 18)
 
 ax.tick_params(which = 'major', length=12, width=2)
 

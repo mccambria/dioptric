@@ -75,12 +75,12 @@ for i in range(len(file_name_list)):
     ax = axes[r_ind, c_ind]
 
     ax.plot(bin_centers / 1000, hist/inf_delay_diff, label = 'NV{}'.format(i+1))
-    ax.set_xlabel('Delay time (ns)', fontsize=20)
-    ax.set_ylabel(r'$g^{(2)}(\tau)$', fontsize=20)
-    ax.set_title(title[i], fontsize=24)
+    ax.set_xlabel('Delay time (ns)', fontsize=30)
+    ax.set_ylabel(r'$g^{(2)}(\tau)$', fontsize=30)
+    ax.set_title(title[i], fontsize=30)
     ax.set_xticks([-150, -75, 0, 75, 150])
     ax.tick_params(which = 'both', length=10, width=2, colors='k',
-                    grid_alpha=0.7, labelsize = 20)
+                    direction='in',grid_alpha=0.7, labelsize = 30)
 
     #ax.tick_params(which = 'major', length=10, width=1)
     ax.set_ylim(bottom=0, top = 1.5)
