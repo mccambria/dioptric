@@ -57,16 +57,17 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     aom_delay589 = shared_params['532_aom_delay'] 
     #gate_time in this sequence is the readout time ~8 ms 
     gate_time = readout_time
+    illumination_time589 = readout_time + 10**3
     #get the aom_power corresponding to the laser power we want 
     #readout_power in unit of microwatts
     aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
     if aom_power > 1:
         aom_power = 1.0
     
-    illumination_time = 10**6
+    illumination_time532 = 10**6
     
     aom_delay638 = shared_params['532_aom_delay']
-    # Set up our data structure, an array of NaNs that we'll fill
+    # Set up our data structure, list 
     # we repeatively collect photons for tR 
     
     counts = []
@@ -132,8 +133,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
     
-    ax.plot(unique_value1, relative_frequency1, 'bo','r')
-    ax.plot(unique_value2, relative_frequency2, 'bo','b')
+    ax.plot(unique_value1, relative_frequency1, 'ro')
+    ax.plot(unique_value2, relative_frequency2, 'bo')
     ax.set_xlabel('number of photons (n)')
     ax.set_ylabel('P(n)')
 

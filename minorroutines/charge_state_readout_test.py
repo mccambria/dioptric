@@ -142,8 +142,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,ionizatio
         plt.ylabel('P(n)')
         return fig
      
-    sig_plot = plot_Probability_distribution(sig_counts,'r')
-    ref_plot = plot_Probability_distribution(ref_counts,'b')
+    sig_plot = plot_Probability_distribution(sig_counts,'ro')
+    ref_plot = plot_Probability_distribution(ref_counts,'bo')
     raw_plot = plt.show()
     timestamp = tool_belt.get_time_stamp()
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])    
