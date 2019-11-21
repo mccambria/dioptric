@@ -78,7 +78,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     
     seq_args = [gate_time, illumination_time, aom_delay589 ,apd_indices[0], aom_power,aom_delay638, ionize_time]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load('determine_n_thresh_with_638.py', seq_args_string)
+    ret_vals = cxn.pulse_streamer.stream_load('determine_cut_off_photon_number.py', seq_args_string)
     
     seq_time = ret_vals[0]
     

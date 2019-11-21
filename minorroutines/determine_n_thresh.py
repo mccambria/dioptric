@@ -40,7 +40,7 @@ def get_Probability_distribution(aList):
 def main(nv_sig, apd_indices, readout_power,readout_time, num_runs, num_reps):
     
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs, num_reps)
+        main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time, num_runs, num_reps)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs, num_reps):
 
@@ -64,10 +64,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
         aom_power = 1.0
     
     illumination_time = 10**6
-
+    
     # Set up our data structure, an array of NaNs that we'll fill
     # we repeatively collect photons for tR 
     
+
     sig_counts=[]
     opti_coords_list = []
     
@@ -119,9 +120,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
 
     cxn.apd_tagger.stop_tag_stream()
     
+    
 #%% plot the data
     
-    unique_value, relative_frequency = get_Probability_distribution(list(sig_counts))
+    unique_value, relative_frequency = get_Probability_distribution(list(sig_counts))    
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
     
@@ -149,9 +151,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
             'num_reps':num_reps,
             'sig_counts': sig_counts,
             'sig_counts-units': 'counts',
-            'unique_values': unique_value,
+            'unique_valuesNV-': unique_value,
             'unique_values-units': 'num of photons',
-            'relative_frequency': relative_frequency,
+            'relative_frequencyNV-': relative_frequency,
             'relative_frequency-units': 'occurrences'
             }
 
