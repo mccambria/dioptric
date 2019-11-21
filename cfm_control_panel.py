@@ -406,6 +406,10 @@ if __name__ == '__main__':
 #            cxn.filter_slider_ell9k.set_filter('nd_0.5')
 #            cxn.pulse_streamer.constant([])
 #            input('Press enter to stop...')
+        
+#        with labrad.connect() as cxn:
+#            cxn.pulse_treamer.constant([3], 0.0, 0.0)        
+        
 
         # Routines that expect lists of NVs
 #        do_optimize_list(nv_sig_list, apd_indices)
@@ -421,12 +425,12 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-#            do_image_sample(nv_sig, apd_indices)
+            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
-            do_resonance(nv_sig, apd_indices)
+#            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
