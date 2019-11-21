@@ -98,8 +98,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
         print('Run index: {}'. format(run_ind))
                 
 #        # Optimize
-#        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
-#        opti_coords_list.append(opti_coords)    
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
+        opti_coords_list.append(opti_coords)    
     
 
         # Break out of the while if the user says stop

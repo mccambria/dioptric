@@ -391,7 +391,7 @@ def do_photon_collections_under_589(nv_sig, apd_indices):
     
 def do_determine_n_thresh(nv_sig, readout_power, readout_time, apd_indices):
     
-    num_runs = 10
+    num_runs = 5
     num_reps = 5* 10**3
     
     determine_n_thresh.main(nv_sig, apd_indices, readout_power, readout_time, num_runs, num_reps)
@@ -425,7 +425,7 @@ if __name__ == '__main__':
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
     
-    nv_sig_list = [nv0_2019_11_19_OFF]
+    nv_sig_list = [nv0_2019_11_19]
     
     aom_power = 0.18
     color_ind = 532
