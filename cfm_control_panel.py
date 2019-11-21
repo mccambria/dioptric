@@ -391,7 +391,7 @@ def do_photon_collections_under_589(nv_sig, apd_indices):
     
 def do_determine_n_thresh(nv_sig, readout_power, readout_time, apd_indices):
     
-    num_runs = 10
+    num_runs = 5
     num_reps = 5* 10**3
     
     determine_n_thresh.main(nv_sig, apd_indices, readout_power, readout_time, num_runs, num_reps)
@@ -411,6 +411,13 @@ if __name__ == '__main__':
 #    sample_name = 'silicon_SCC'
 
     nv0_2019_11_19 = { 'coords': [-0.024, -0.006, 5.0],
+            'name': '{}-lifetime'.format(sample_name),
+            'expected_count_rate': 14, 'nd_filter': 'nd_1.5',
+            'pulsed_readout_dur': 450, 'magnet_angle': None,
+            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    
+    nv0_2019_11_19_OFF = { 'coords': [-0.027, 0.016, 5.0],
             'name': '{}-lifetime'.format(sample_name),
             'expected_count_rate': 15, 'nd_filter': 'nd_1.5',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
