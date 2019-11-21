@@ -18,30 +18,91 @@ Created on Mon Nov 11 12:49:55 2019
 
 
 import utils.tool_belt as tool_belt
-#import majorroutines.optimize as optimize
+import majorroutines.optimize as optimize
 import numpy
 import os
 import time
-from random import shuffle
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import json
 import labrad
 
 
+# %% Functions
+
+
+def process_raw_buffer(timestamps, channels,
+                       leftover_timestamps, leftover_channels,
+                       gate_open_channel, gate_close_channel):
+    
+    # Tack the new data onto the leftover data (leftovers are necessary if
+    # the last read contained a gate open without a matching gate close)
+    timestamps = leftover_timestamps.extend(timestamps)
+    channels = leftover_channels.extend(channels)
+    
+    # The processing here will be bin_size agnostic. The data structure will
+    # be, you guessed it, a list of lists. The deepest list contains the
+    # photon timetags for a given sample
+    
+    # Find gate open clicks
+    result = numpy.nonzero(channels == gate_open_channel)
+    gate_open_click_inds = result[0].tolist()
+
+    # Find gate close clicks
+    # Gate close channel is negative of gate open channel,
+    # signifying the falling edge
+    result = numpy.nonzero(channels == gate_close_channel)
+    gate_close_click_inds = result[0].tolist()
+    
+    new_samples = []
+    
+    # Loop over the number of closes we have since there are guaranteed to
+    # be opens
+    for list_ind in range(len(gate_close_click_inds)):
+        
+        gate_open_click_ind = gate_open_click_inds[list_ind]
+        gate_close_click_ind = gate_close_click_inds[list_ind]
+        
+        # Extract all the counts between these two indices as a single sample
+        # Include the gate open/closs for bin reference points
+        sample = timestamps[gate_open_click_ind: gate_close_click_ind+1]
+        new_samples.append(sample)
+        
+    # Handle potential leftovers
+    if len(gate_open_click_inds) > len(gate_close_click_inds):
+        leftover_timestamps = timestamps[gate_open_click_inds:]
+        leftover_channels = channels[gate_open_click_inds:]
+        
+    return new_samples, leftover_timestamps, leftover_channels
+
+
+def bin_samples(samples, num_bins):
+    
+    # The structure of samples is a list of lists. Each sublist contains the
+    # timetag of the opening gate, followed by the timetags of the photon
+    # counts
+    binned_samples = []
+    for samples in samples:
+        clipped_sample = samples[1:-1]  # Trim the reference points
+        binned_sample = numpy.histogram(clipped_sample, num_bins,
+                                        (samples[0], samples[-1]))
+        binned_samples.append(binned_sample)
+    return binned_samples
+
+
 # %% Main
 
 
 def main(nv_sig, apd_indices, readout_time,
-         num_steps, num_reps, num_runs):
+         num_reps, num_runs, num_bins):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
-                      num_steps, num_reps, num_runs)
+                      num_reps, num_runs, num_bins)
 
 
 def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
-                  num_steps, num_reps, num_runs):
+                  num_reps, num_runs, num_bins):
 
     tool_belt.reset_cfm(cxn)
 
@@ -49,66 +110,18 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
+    # In ns
     polarization_time = 30 * 10**3
-    # time between experiments
-    inter_exp_wait_time = 500
+    readout_time = 2 * 10**6
+#    inter_exp_wait_time = 500  # time between experiments
 
     aom_delay_time = shared_params['532_aom_delay']
     gate_time = nv_sig['pulsed_readout_dur']
-
-    # %% Create the array of relaxation times
-
-    # Array of times to sweep through
-    # Must be ints since the pulse streamer only works with int64s
-
-#    min_relaxation_time = int( relaxation_time_range[0] )
-#    max_relaxation_time = int( relaxation_time_range[1] )
-#
-#    taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
-#                          num=num_steps, dtype=numpy.int32)
-
-    # %% Fix the length of the sequence to account for odd amount of elements
-
-    # Our sequence pairs the longest time with the shortest time, and steps
-    # toward the middle. This means we only step through half of the length
-    # of the time array.
-
-    # That is a problem if the number of elements is odd. To fix this, we add
-    # one to the length of the array. When this number is halfed and turned
-    # into an integer, it will step through the middle element.
-
-#    if len(taus) % 2 == 0:
-#        half_length_taus = int( len(taus) / 2 )
-#    elif len(taus) % 2 == 1:
-#        half_length_taus = int( (len(taus) + 1) / 2 )
-
-    # Then we must use this half length to calculate the list of integers to be
-    # shuffled for each run
-
-#    tau_ind_list = list(range(0, half_length_taus))
-
-    # %% Create data structure to save the counts
-
-    # We create an array of NaNs that we'll fill
-    # incrementally for the signal and reference counts.
-    # NaNs are ignored by matplotlib, which is why they're useful for us here.
-    # We define 2D arrays, with the horizontal dimension for the frequency and
-    # the veritical dimension for the index of the run.
-
-    sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
-    sig_counts[:] = numpy.nan
-
-    # %% Make some lists and variables to save at the end
-
-#    opti_coords_list = []
-#    tau_index_master_list = [[] for i in range(num_runs)]
 
     # %% Analyze the sequence
 
     # pulls the file of the sequence from serves/timing/sequencelibrary
     file_name = os.path.basename(__file__)
-
-
     seq_args = [readout_time, polarization_time, 
                 aom_delay_time, apd_indices[0]]
     seq_args = [int(el) for el in seq_args]
@@ -116,21 +129,20 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
 
-    # %% Ask user if they wish to run experiment based on run time
+    # %% Report the expected run time
 
     seq_time_s = seq_time / (10**9)  # s
-    expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
+    expected_run_time = num_reps * num_runs * seq_time_s  # s
     expected_run_time_m = expected_run_time / 60 # m
-
-    # Ask to continue and timeout if no response in 2 seconds?
-
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
-#    return
     
-    # %% Get the starting time of the function, to be used to calculate run time
+    # %% Bit more setup
 
+    # Record the start time
     startFunctionTime = time.time()
     start_timestamp = tool_belt.get_time_stamp()
+    
+    opti_coords_list = []
 
     # %% Collect the data
 
@@ -145,51 +157,42 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
         if tool_belt.safe_stop():
             break
 
-#        # Optimize
-#        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-#        opti_coords_list.append(opti_coords)
-
-
-        samples_cur = 0
+        # Optimize
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords_list.append(opti_coords)
         
         # Expose the stream
-        cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
-
-        while samples_cur < num_samples:
+        cxn.apd_tagger.start_tag_stream(apd_indices)
             
-            # Stream the sequence
-            seq_args = [readout_time, polarization_time, 
+        # Stream the sequence
+        seq_args = [readout_time, polarization_time, 
                     aom_delay_time, apd_indices[0]]
-            seq_args = [int(el) for el in seq_args]
-            seq_args_string = tool_belt.encode_seq_args(seq_args)
-            
-            cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
-                                                seq_args_string)
-    
-    
-            ret_vals = cxn.apd_tagger.read_tag_stream()
-            
-            samples_cur =+ 1
+        seq_args = [int(el) for el in seq_args]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
         
+        cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
+                                            seq_args_string)
         
-#        # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
-#        # So we can sum on the values for similar index modulus 4 to
-#        # parse the returned list into what we want.
-#        new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-#        sample_counts = new_counts[0]
-#
-##            sig_gate_counts = sample_counts[::4]
-##            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
-#
-#        count = sum(sample_counts[0::2])
-#        sig_counts[run_ind, tau_ind_first] = count
-#        print('First signal = ' + str(count))
-#
-#        count = sum(sample_counts[1::2])
-#        sig_counts[run_ind, tau_ind_second] = count
-#        print('Second Signal = ' + str(count))
-#
-#        cxn.apd_tagger.stop_tag_stream()
+        # Initialize state and data
+        leftover_timestamps = []
+        leftover_channels = []
+        samples = []
+
+        while len(samples) < num_reps:
+    
+            # ret_vals = timestamps, semantic_channels
+            timestamps, channels = cxn.apd_tagger.read_tag_stream()
+            
+            ret_vals = process_raw_buffer(timestamps, channels,
+                                   leftover_timestamps, leftover_channels,
+                                   gate_open_channel, gate_close_channel)
+            
+            new_samples, leftover_timestamps, leftover_channels = ret_vals
+            
+            samples.extend(new_samples)
+            
+
+        cxn.apd_tagger.stop_tag_stream()
 
         # %% Save the data we have incrementally for long measurements
 
@@ -198,14 +201,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
                     'readout_time': readout_time,
                     'gate_time-units': 'ns',
-                    'num_steps': num_steps,
                     'num_reps': num_reps,
                     'run_ind': run_ind,
-                    'tau_index_master_list': tau_index_master_list,
-#                    'opti_coords_list': opti_coords_list,
-#                    'opti_coords_list-units': 'V',
-                    'sig_counts': sig_counts.astype(int).tolist(),
-                    'sig_counts-units': 'counts'}
+                    'opti_coords_list': opti_coords_list,
+                    'opti_coords_list-units': 'V',
+                    }
 
         # This will continuously be the same file path so we will overwrite
         # the existing file with the latest version
@@ -217,23 +217,25 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
 
     tool_belt.reset_cfm(cxn)
 
-    # %% Average the counts over the iterations
-
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
+    # %% Bin the data
+    
+    binned_samples = bin_samples(samples, num_bins)
+    # Compute the centers of the bins
+    bin_size = readout_time / num_bins
+    bin_center_offset = bin_size / 2
+    bin_centers = numpy.linspace(0, readout_time-bin_size) + bin_center_offset
 
     # %% Plot the t1 signal
 
-    raw_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
 
-    ax.plot(taus / 10**6, avg_sig_counts, 'r-', label = 'signal')
-    ax.set_xlabel('Wait time (ms)')
+    ax.plot(bin_centers, binned_samples, 'r-')
+    ax.set_xlabel('Time after illumination (us)')
     ax.set_ylabel('Counts')
-    ax.legend()
-
-
-    raw_fig.canvas.draw()
-    # fig.set_tight_layout(True)
-    raw_fig.canvas.flush_events()
+    
+    fig.canvas.draw()
+    fig.set_tight_layout(True)
+    fig.canvas.flush_events()
 
     # %% Save the data
 
@@ -244,26 +246,20 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
     timestamp = tool_belt.get_time_stamp()
 
     raw_data = {'timestamp': timestamp,
-            'timeElapsed': timeElapsed,
-            'nv_sig': nv_sig,
-            'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'gate_time': gate_time,
-            'gate_time-units': 'ns',
-            'relaxation_time_range': relaxation_time_range,
-            'relaxation_time_range-units': 'ns',
-            'num_steps': num_steps,
-            'num_reps': num_reps,
-            'num_runs': num_runs,
-            'tau_index_master_list': tau_index_master_list,
-#            'opti_coords_list': opti_coords_list,
-#            'opti_coords_list-units': 'V',
-            'sig_counts': sig_counts.astype(int).tolist(),
-            'sig_counts-units': 'counts',
-            'avg_sig_counts': avg_sig_counts.astype(int).tolist(),
-            'avg_sig_counts-units': 'counts'}
+                'timeElapsed': timeElapsed,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'gate_time': gate_time,
+                'gate_time-units': 'ns',
+                'num_reps': num_reps,
+                'num_runs': num_runs,
+                'num_bins': num_bins,
+                'opti_coords_list': opti_coords_list,
+                'opti_coords_list-units': 'V',
+                }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_figure(raw_fig, file_path)
+    tool_belt.save_figure(fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
 
 # %%
