@@ -32,15 +32,15 @@ import labrad
 # %% Main
 
 
-def main(nv_sig, apd_indices, relaxation_time_range,
+def main(nv_sig, apd_indices, readout_time,
          num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
+        main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                       num_steps, num_reps, num_runs)
 
 
-def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
+def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                   num_steps, num_reps, num_runs):
 
     tool_belt.reset_cfm(cxn)
@@ -61,11 +61,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
 
-    min_relaxation_time = int( relaxation_time_range[0] )
-    max_relaxation_time = int( relaxation_time_range[1] )
-
-    taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
-                          num=num_steps, dtype=numpy.int32)
+#    min_relaxation_time = int( relaxation_time_range[0] )
+#    max_relaxation_time = int( relaxation_time_range[1] )
+#
+#    taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
+#                          num=num_steps, dtype=numpy.int32)
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -77,15 +77,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     # one to the length of the array. When this number is halfed and turned
     # into an integer, it will step through the middle element.
 
-    if len(taus) % 2 == 0:
-        half_length_taus = int( len(taus) / 2 )
-    elif len(taus) % 2 == 1:
-        half_length_taus = int( (len(taus) + 1) / 2 )
+#    if len(taus) % 2 == 0:
+#        half_length_taus = int( len(taus) / 2 )
+#    elif len(taus) % 2 == 1:
+#        half_length_taus = int( (len(taus) + 1) / 2 )
 
     # Then we must use this half length to calculate the list of integers to be
     # shuffled for each run
 
-    tau_ind_list = list(range(0, half_length_taus))
+#    tau_ind_list = list(range(0, half_length_taus))
 
     # %% Create data structure to save the counts
 
@@ -101,7 +101,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     # %% Make some lists and variables to save at the end
 
 #    opti_coords_list = []
-    tau_index_master_list = [[] for i in range(num_runs)]
+#    tau_index_master_list = [[] for i in range(num_runs)]
 
     # %% Analyze the sequence
 
@@ -109,9 +109,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     file_name = os.path.basename(__file__)
 
 
-    seq_args = [min_relaxation_time, polarization_time, inter_exp_wait_time, 
-                aom_delay_time, gate_time,  max_relaxation_time,
-                apd_indices[0]]
+    seq_args = [readout_time, polarization_time, 
+                aom_delay_time, apd_indices[0]]
     seq_args = [int(el) for el in seq_args]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -154,59 +153,48 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
-        # Shuffle the list of tau indices so that it steps thru them randomly
-        shuffle(tau_ind_list)
 
-        for tau_ind in tau_ind_list:
+#        # 'Flip a coin' to determine which tau (long/shrt) is used first
+#        rand_boolean = numpy.random.randint(0, high=2)
 
-            # 'Flip a coin' to determine which tau (long/shrt) is used first
-            rand_boolean = numpy.random.randint(0, high=2)
+#        if rand_boolean == 1:
+#            tau_ind_first = tau_ind
+#            tau_ind_second = -tau_ind - 1
+#        elif rand_boolean == 0:
+#            tau_ind_first = -tau_ind - 1
+#            tau_ind_second = tau_ind
 
-            if rand_boolean == 1:
-                tau_ind_first = tau_ind
-                tau_ind_second = -tau_ind - 1
-            elif rand_boolean == 0:
-                tau_ind_first = -tau_ind - 1
-                tau_ind_second = tau_ind
-
-            # add the tau indexxes used to a list to save at the end
-            tau_index_master_list[run_ind].append(tau_ind_first)
-            tau_index_master_list[run_ind].append(tau_ind_second)
+        # add the tau indexxes used to a list to save at the end
+#        tau_index_master_list[run_ind].append(tau_ind_first)
+#        tau_index_master_list[run_ind].append(tau_ind_second)
 
 
-            # Break out of the while if the user says stop
-            if tool_belt.safe_stop():
-                break
 
-            print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
-            print('Second relaxation time: {}'.format(taus[tau_ind_second]))
+        # Stream the sequence
+        seq_args = [readout_time, polarization_time, 
+                aom_delay_time, apd_indices[0]]
+        seq_args = [int(el) for el in seq_args]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        
+        cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
+                                            seq_args_string)
 
-            # Stream the sequence
-            seq_args = [taus[tau_ind_first], polarization_time, 
-                        inter_exp_wait_time, aom_delay_time,gate_time, 
-                        taus[tau_ind_second], apd_indices[0]]
-            seq_args = [int(el) for el in seq_args]
-            seq_args_string = tool_belt.encode_seq_args(seq_args)
-            
-            cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
-                                                seq_args_string)
-
-            # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
-            # So we can sum on the values for similar index modulus 4 to
-            # parse the returned list into what we want.
-            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-            sample_counts = new_counts[0]
+        # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
+        # So we can sum on the values for similar index modulus 4 to
+        # parse the returned list into what we want.
+        new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+        sample_counts = new_counts[0]
 
 #            sig_gate_counts = sample_counts[::4]
 #            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
 
-            count = sum(sample_counts[0::2])
-            sig_counts[run_ind, tau_ind_first] = count
-            print('First signal = ' + str(count))
+        count = sum(sample_counts[0::2])
+        sig_counts[run_ind, tau_ind_first] = count
+        print('First signal = ' + str(count))
 
-            count = sum(sample_counts[1::2])
-            sig_counts[run_ind, tau_ind_second] = count
-            print('Second Signal = ' + str(count))
+        count = sum(sample_counts[1::2])
+        sig_counts[run_ind, tau_ind_second] = count
+        print('Second Signal = ' + str(count))
 
         cxn.apd_tagger.stop_tag_stream()
 
