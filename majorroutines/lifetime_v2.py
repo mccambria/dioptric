@@ -150,8 +150,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
 #        opti_coords_list.append(opti_coords)
 
 
-        # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
+
+        # Expose the stream
+        cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
 
 
 #        # 'Flip a coin' to determine which tau (long/shrt) is used first
@@ -179,34 +180,36 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
         cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
                                             seq_args_string)
 
-        # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
-        # So we can sum on the values for similar index modulus 4 to
-        # parse the returned list into what we want.
-        new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-        sample_counts = new_counts[0]
 
-#            sig_gate_counts = sample_counts[::4]
-#            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
-
-        count = sum(sample_counts[0::2])
-        sig_counts[run_ind, tau_ind_first] = count
-        print('First signal = ' + str(count))
-
-        count = sum(sample_counts[1::2])
-        sig_counts[run_ind, tau_ind_second] = count
-        print('Second Signal = ' + str(count))
-
-        cxn.apd_tagger.stop_tag_stream()
+        ret_vals = cxn.apd_tagger.read_tag_stream()
+        
+        
+#        # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
+#        # So we can sum on the values for similar index modulus 4 to
+#        # parse the returned list into what we want.
+#        new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+#        sample_counts = new_counts[0]
+#
+##            sig_gate_counts = sample_counts[::4]
+##            sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
+#
+#        count = sum(sample_counts[0::2])
+#        sig_counts[run_ind, tau_ind_first] = count
+#        print('First signal = ' + str(count))
+#
+#        count = sum(sample_counts[1::2])
+#        sig_counts[run_ind, tau_ind_second] = count
+#        print('Second Signal = ' + str(count))
+#
+#        cxn.apd_tagger.stop_tag_stream()
 
         # %% Save the data we have incrementally for long measurements
 
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'gate_time': gate_time,
+                    'readout_time': readout_time,
                     'gate_time-units': 'ns',
-                    'relaxation_time_range': relaxation_time_range,
-                    'relaxation_time_range-units': 'ns',
                     'num_steps': num_steps,
                     'num_reps': num_reps,
                     'run_ind': run_ind,
