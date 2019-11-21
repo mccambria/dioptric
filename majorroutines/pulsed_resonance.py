@@ -150,10 +150,10 @@ def fit_resonance(freq_range, freq_center, num_steps,
         high_freq_guess = None
     else:
         print('Could not locate peaks')
-        return None, None
-    
-#    low_freq_guess = 2.832
-#    high_freq_guess = 2.849
+        # return None, None
+
+    # low_freq_guess = 2.8365
+    # high_freq_guess = 2.8445
 
     # %% Fit!
 
@@ -467,9 +467,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    file = '2019_10/2019_10_13-23_44_37-ayrton12-NV13_2019_06_10'
-    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
-#    data = tool_belt.get_raw_data('resonance.py', file)
+    file = '2019_10/2019-10-04-16_50_05-ayrton12-NV13_2019_06_06'
+    # data = tool_belt.get_raw_data('pulsed_resonance.py', file)
+    data = tool_belt.get_raw_data('resonance.py', file)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']

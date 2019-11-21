@@ -58,7 +58,7 @@ def calc_dq_factor_surface(noise_theta_B, noise_phi_B, mag_B, popt):
     return val
 
 
-def calc_rate_factor_surface(noise_theta_B, noise_phi_B, mag_B, popt, ind,
+def calc_B_factor_surface(noise_theta_B, noise_phi_B, mag_B, popt, ind,
                              noise_power = 100.0):
     """el: 0 for zero to low, 1 for zero to high, 2 for low to high
     """
@@ -269,37 +269,36 @@ def main_plot(name, res_descs, aligned_res_desc):
     ax.set_ylim(0, 1)
 
 
-def main_plot_rot(name, res_descs):
-    """When you run the file, we'll call into main, which should contain the
-    body of the script.
-    """
+# def main_plot_rot(name, res_descs):
+#     """When you run the file, we'll call into main, which should contain the
+#     body of the script.
+#     """
 
-    # [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
-    popt = extract_hamiltonian.main(name, res_descs)
-    popt = list(popt)
-    popt[0] = 0.0
-    popt[2] = 0.0
-    print(popt)
-    mag_B = 0.1
-    # print(extract_hamiltonian.calc_eigenvectors(mag_B, *popt))
-    # return
+#     # [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
+#     popt = extract_hamiltonian.main(name, res_descs)
+#     popt = list(popt)
+#     popt[0] = 0.0
+#     popt[2] = 0.0
+#     print(popt)
+#     mag_B = 0.1
+#     # print(extract_hamiltonian.calc_eigenvectors(mag_B, *popt))
+#     # return
 
-    gammas = []
-    phi_Pis = numpy.linspace(0, 2*pi, 100)
-    for ind in range(len(phi_Pis)):
-        phi_Pi = phi_Pis[ind]
-        popt[4] = phi_Pi
-        aligned_integral, al_err = integrate.quad(calc_Pi_factor_circle,
-                                              0, 2*pi, args=(mag_B, popt, 2))
-        gammas.append(aligned_integral)
+#     gammas = []
+#     phi_Pis = numpy.linspace(0, 2*pi, 100)
+#     for ind in range(len(phi_Pis)):
+#         phi_Pi = phi_Pis[ind]
+#         popt[4] = phi_Pi
+#         aligned_integral, al_err = integrate.quad(calc_Pi_factor_circle,
+#                                               0, 2*pi, args=(mag_B, popt, 2))
+#         gammas.append(aligned_integral)
 
-    fig, ax = plt.subplots()
-    fig.set_tight_layout(True)
-    ax.plot(phi_Pis, gammas)
+#     fig, ax = plt.subplots()
+#     fig.set_tight_layout(True)
+#     ax.plot(phi_Pis, gammas)
 
 
-def main_plot_paper(name, res_descs,
-                    meas_splittings=None, meas_gammas=None):
+def main_plot_paper(name, res_descs, meas_splittings, meas_gammas):
     """When you run the file, we'll call into main, which should contain the
     body of the script.
     """
@@ -317,43 +316,46 @@ def main_plot_paper(name, res_descs,
     # print(extract_hamiltonian.calc_eigenvectors(0.0, *popt))
     # return
     
-    meas_splittings /= 1000
-    noise_func = calc_Pi_factor_surface
-    # noise_func = calc_B_factor_surface
+    # noise_func = calc_Pi_factor_surface
+    noise_func = calc_B_factor_surface
 
     popt = numpy.copy(popt)
     gamma_bs = []
     splittings = []
     empiricals = []
-    empirical_scaling = -2.0
+    # empirical_scaling = -2.0
     # mag_Bs = numpy.linspace(0.001, 1.0, 100)
-    mag_Bs = numpy.logspace(-3, 0.0, 100)
+    min_splitting = min(meas_splittings)
+    max_splitting = max(meas_splittings)
+    min_mag_B = extract_hamiltonian.find_mag_B_splitting(min_splitting, *popt)
+    max_mag_B = extract_hamiltonian.find_mag_B_splitting(max_splitting, *popt)
+    mag_Bs = numpy.logspace(numpy.log10(min_mag_B), numpy.log10(max_mag_B), 100)
     for ind in range(len(mag_Bs)):
         mag_B = mag_Bs[ind]
         splitting = extract_hamiltonian.calc_splitting(mag_B, *popt)
         splittings.append(splitting)
-        noise_mag = 3.5 + splitting**-2
+        # noise_mag = 15.0 + splitting**-2
         aligned_integral, al_err = integrate.dblquad(noise_func, 0, 2*pi,
                                                  lambda x: 0, lambda x: pi,
                                                  args=(mag_B, popt, 2))
         if ind == 0:
-            # scaling = numpy.average(meas_gammas[0:2]) / aligned_integral
+            scaling = meas_gammas[0] / aligned_integral
             # coeff = (10 * meas_gammas[0] + meas_gammas[1]) / 5
-            coeff = meas_gammas[1]
-            scaling = coeff / aligned_integral
-            empirical_coeff = 40 / (splitting**empirical_scaling)
-        gamma_b = noise_mag * aligned_integral * 10**-5
+            # coeff = meas_gammas[1]
+            # scaling = coeff / aligned_integral
+            # empirical_coeff = 40 / (splitting**empirical_scaling)
+        gamma_b = scaling * aligned_integral
         gamma_bs.append(gamma_b)
         # gamma_bs.append(aligned_integral)
-        empirical = empirical_coeff * (splitting**empirical_scaling)
-        empiricals.append(empirical + 0.5)
+        # empirical = empirical_coeff * (splitting**empirical_scaling)
+        # empiricals.append(empirical + 0.5)
         # print(extract_hamiltonian.calc_eigenvectors(mag_B, *popt))
 
     fig, ax = plt.subplots()
     fig.set_tight_layout(True)
     # ax.plot(splittings, gamma_bs)
     ax.loglog(splittings, gamma_bs)
-    ax.loglog(splittings, empiricals)
+    # ax.loglog(splittings, empiricals)
     # ax.set_ylim(0, 10)
     ax.scatter(meas_splittings, meas_gammas)
 
