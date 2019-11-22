@@ -30,7 +30,7 @@ import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.t1_interleave as t1_interleave
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
-import majorroutines.lifetime as lifetime
+import majorroutines.lifetime_v2 as lifetime
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
@@ -62,9 +62,9 @@ def do_image_sample(nv_sig, apd_indices):
 #    scan_range = 0.5
 #    num_steps = 150
     scan_range = 0.2
-    num_steps = 90
+#    num_steps = 90
 #    scan_range = 0.1
-#    num_steps = 60
+    num_steps = 60
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
@@ -210,19 +210,14 @@ def do_t1_interleave(nv_sig, apd_indices):
 
 def do_lifetime(nv_sig, apd_indices):
     
-    num_reps = 10**4
-    num_runs = 40
-    relaxation_time_range = [0, 1.2*10**6]
-    num_steps = 41
+    num_reps = 10**6
+    num_runs = 1
+    num_bins = 100
+#    readout_time = 1.2 * 10**6
+    readout_time = 500
     
-#    num_reps = 10**4
-#    num_runs = 1
-#    relaxation_time_range = [10000, 10000]
-#    num_steps = 2
-    
-    
-    lifetime. main(nv_sig, apd_indices, relaxation_time_range,
-         num_steps, num_reps, num_runs)
+    lifetime.main(nv_sig, apd_indices, readout_time,
+                  num_reps, num_runs, num_bins)
     
 def do_ramsey(nv_sig, apd_indices):
 
@@ -378,15 +373,21 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert_mayer'
 
-    NV_search = { 'coords': [0.037, 0.106, 5.0],
+    NV_search = { 'coords': [0.0, 0.0, 5.0],
             'name': '{}-lifetime'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
+            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
+            'pulsed_readout_dur': 450, 'magnet_angle': None,
+            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+
+    lifetime_test = { 'coords': [-0.051, 0.005, 5.00],
+            'name': '{}-lifetime_test'.format(sample_name),
+            'expected_count_rate': 55, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
-    
-    nv_sig_list = [NV_search]
+    nv_sig_list = [lifetime_test]
     
 
     # %% Functions to run
@@ -425,7 +426,7 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-            do_image_sample(nv_sig, apd_indices)
+#            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
@@ -450,7 +451,7 @@ if __name__ == '__main__':
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
-#            do_lifetime(nv_sig, apd_indices)
+            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
 #            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)

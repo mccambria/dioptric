@@ -294,10 +294,7 @@ class ApdTagger(LabradServer):
         self.stream_channels = channels
         # De-duplicate the channels list
         channels = list(set(channels))
-        # Hardware-limited max buffer is a million total samples
-        buffer_size = int(10**6 / len(channels))  
-        self.stream = TimeTagger.TimeTagStream(self.tagger,
-                                               buffer_size, channels)
+        self.stream = TimeTagger.TimeTagStream(self.tagger, 10**6, channels)
         # When you set up a measurement, it will not start recording data
         # immediately. It takes some time for the tagger to configure the fpga,
         # etc. The sync call waits until this process is complete. 
@@ -312,11 +309,12 @@ class ApdTagger(LabradServer):
         self.stop_tag_stream_internal()
 
     @setting(3, returns='*s*s')
+#    @setting(3, returns='*2s')
     def read_tag_stream(self, c):
         """Read the stream started with start_tag_stream. Returns two lists,
         each as long as the number of counts that have occurred since the
-        buffer was refreshed. First list is timestamps in ps, second is apd
-        indices.
+        buffer was refreshed. First list is timestamps in ps, second is
+        channel names
         """
         if self.stream is None:
             logging.error('read_tag_stream attempted while stream is None.')
@@ -328,6 +326,7 @@ class ApdTagger(LabradServer):
         # Map channels to semantic channels
         semantic_channels = [self.channel_mapping[chan] for chan in channels]
         return timestamps, semantic_channels
+#        return [timestamps, semantic_channels]
 
     @setting(4, num_to_read='i', returns='*3w')
     def read_counter_complete(self, c, num_to_read=None):

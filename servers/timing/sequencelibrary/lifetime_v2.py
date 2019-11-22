@@ -18,7 +18,7 @@ def get_seq(pulser_wiring, args):
 
     # %% Parse wiring and args
 
-    # The first 11 args are ns durations and we need them as int64s
+    # The first 3 args are ns durations and we need them as int64s
     durations = []
     for ind in range(3):
         durations.append(numpy.int64(args[ind]))
@@ -26,9 +26,8 @@ def get_seq(pulser_wiring, args):
     # Unpack the durations
     readout_time, polarization_time, aom_delay_time = durations
 
-    # Get the APD indices
+    # Get the APD index
     apd_index = args[3]
-
 
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
 
