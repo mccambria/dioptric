@@ -42,15 +42,15 @@ def get_seq(pulser_wiring, args):
     train = [(aom_delay589 + illumination_time + 100 + readout_time + 100, LOW), (100, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_clock, train)
 
-    #illuminate with 532 (and temporarily readout with 532 nm light as well)
-#    train = [(illumination_time, HIGH), (aom_delay589, LOW)]
-#    seq.setDigital(pulser_do_aom532, train)
-    train = [(illumination_time, HIGH), (100, LOW), (readout_time, HIGH), (aom_delay589, LOW)]
+    # illuminate with 532 
+    train = [(illumination_time, HIGH), (aom_delay589, LOW)]
     seq.setDigital(pulser_do_aom532, train)
+#    train = [(illumination_time, HIGH), (100, LOW), (readout_time, HIGH), (aom_delay589, LOW)]
+#    seq.setDigital(pulser_do_aom532, train)
     
-    #readout with 589
-#    train = [(illumination_time + 100, LOW), (readout_time, aom_power), (aom_delay589, LOW)]
-#    seq.setAnalog(pulser_ao_aom589, train)
+    # readout with 589
+    train = [(illumination_time + 100, LOW), (readout_time, aom_power), (aom_delay589, LOW)]
+    seq.setAnalog(pulser_ao_aom589, train)
     
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)

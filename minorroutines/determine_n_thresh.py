@@ -12,6 +12,7 @@ import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import labrad
+import time
 
 def get_Probability_distribution(aList):
         
@@ -63,7 +64,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     if aom_power > 1:
         aom_power = 1.0
     
-    illumination_time = 10**6
+    illumination_time = 10*10**6
     
     # Set up our data structure, an array of NaNs that we'll fill
     # we repeatively collect photons for tR 
@@ -99,9 +100,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
         print('Run index: {}'. format(run_ind))
                 
 #        # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
-        opti_coords_list.append(opti_coords)    
-    
+#        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
+#        opti_coords_list.append(opti_coords)    
+        
+        #  set filter slider according to nv_sig
+        ND_filter = nv_sig['nd_filter']
+        cxn.filter_slider_ell9k.set_filter(ND_filter)
+        time.sleep(0.1)
+        
 
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
