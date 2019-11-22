@@ -62,11 +62,12 @@ def do_image_sample(nv_sig, aom_power, apd_indices, color_ind):
 #    num_steps = 200
 #    num_steps = 120
 #    num_steps = 90
+#    scan_range = 0.7
 #    scan_range = 0.5
 #    num_steps = 150
-    scan_range = 0.2
-#    num_steps = 90
 #    scan_range = 0.1
+#    num_steps = 90
+    scan_range = 0.2
     num_steps = 60
 #    scan_range = 0.05
 #    num_steps = 60
@@ -80,7 +81,7 @@ def do_image_sample(nv_sig, aom_power, apd_indices, color_ind):
 def do_image_sample_SCC(nv_sig, aom_power, apd_indices):
     
 
-    scan_range = 0.2
+    scan_range = 0.1
     num_steps = 60
     
     # For now we only support square scans so pass scan_range twice
@@ -391,7 +392,7 @@ def do_photon_collections_under_589(nv_sig, apd_indices):
     
 def do_determine_n_thresh(nv_sig, readout_power, readout_time, apd_indices):
     
-    num_runs = 5
+    num_runs = 2
     num_reps = 1* 10**3
     
     determine_n_thresh.main(nv_sig, apd_indices, readout_power, readout_time, num_runs, num_reps)
@@ -407,25 +408,33 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    sample_name = 'goeppert_mayer_SCC'
+    sample_name = 'johnson'
+#    sample_name = 'goeppert_mayer'
 #    sample_name = 'silicon_SCC'
 
-    nv0_2019_11_22 = { 'coords': [-0.024, -0.006, 5.0],
-            'name': '{}-lifetime'.format(sample_name),
-            'expected_count_rate': 55, 'nd_filter': 'nd_1.0',
+#    nv2_2019_11_22 = { 'coords': [0.249, 0.354, 4.64],
+#            'name': '{}-lifetime'.format(sample_name),
+#            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
+#            'pulsed_readout_dur': 450, 'magnet_angle': None,
+#            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+#            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    nv_search = { 'coords': [1.0, 0.0, 5.0],
+            'name': '{}'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
-    nv0_2019_11_22_OFF = { 'coords': [-0.049, -0.021, 5.0],
-            'name': '{}-lifetime'.format(sample_name),
-            'expected_count_rate': 15, 'nd_filter': 'nd_1.0',
+    nv4_2019_11_22 = { 'coords': [0.681, 0.366, 4.85],
+            'name': 'nv3_2019_11_22-{}'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
+
     
-    nv_sig_list = [nv0_2019_11_22_OFF]
+    nv_sig_list = [nv4_2019_11_22]
     
     aom_power = 0.18
     color_ind = 532
@@ -438,7 +447,7 @@ if __name__ == '__main__':
 #         set_xyz_zero()
 #        set_xyz([-0.063, -0.210, 5.69]) # On NV 
 #        set_xyz([-0.122, -0.151, 5.69]) # Off NV 
-#        set_xyz([0.0, -0.3, 5.0])
+#        set_xyz([0.0, 0.0, 5.0])
 #        drift = tool_belt.get_drift()
 #        print(drift)
 #        tool_belt.set_drift([0.0, 0.0, 0.0])
@@ -469,9 +478,9 @@ if __name__ == '__main__':
 #                do_image_sample(nv_sig_copy, apd_indices)
             
 #            do_photon_collections_under_589(nv_sig, apd_indices)
-            do_determine_n_thresh(nv_sig, 30, 1 * 10**6, apd_indices)
+#            do_determine_n_thresh(nv_sig, 30, 10 * 10**6, apd_indices)
             
-#            do_image_sample(nv_sig, aom_power, apd_indices, 532)
+            do_image_sample(nv_sig, aom_power, apd_indices, 532)
 #            do_image_sample_SCC(nv_sig, aom_power, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_stationary_count(nv_sig, aom_power, apd_indices, color_ind)

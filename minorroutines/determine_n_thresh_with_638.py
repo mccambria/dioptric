@@ -42,7 +42,7 @@ def main(nv_sig, apd_indices, readout_power,readout_time, ionize_time, num_runs,
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time, ionize_time, num_runs, num_reps)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs, num_reps):
+def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time, ionize_time,num_runs, num_reps):
 
     tool_belt.reset_cfm(cxn)
 
@@ -55,6 +55,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     
     #delay of aoms and laser
     aom_delay589 = shared_params['532_aom_delay'] 
+    aom_delay638 = shared_params['532_aom_delay'] 
     #gate_time in this sequence is the readout time ~8 ms 
     gate_time = readout_time
     illumination_time589 = readout_time + 10**3
@@ -77,9 +78,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     
 #%% Estimate the lenth of the sequance
     
-    seq_args = [gate_time, illumination_time, aom_delay589 ,apd_indices[0], aom_power,aom_delay638, ionize_time]
+    seq_args = [gate_time, illumination_time532, illumination_time589, 
+                    aom_delay589, apd_indices[0], aom_power, aom_delay638, 
+                    ionize_time]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load('determine_cut_off_photon_number.py', seq_args_string)
+    ret_vals = cxn.pulse_streamer.stream_load('determine_n_thresh_with_638.py', seq_args_string)
     
     seq_time = ret_vals[0]
     
@@ -112,9 +115,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
         
-        seq_args = [gate_time, illumination_time, aom_delay589 ,apd_indices[0], aom_power]
+        seq_args = [gate_time, illumination_time532, illumination_time589, 
+                    aom_delay589, apd_indices[0], aom_power, aom_delay638, 
+                    ionize_time]
+        
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        cxn.pulse_streamer.stream_immediate('determine_n_thresh.py', num_reps, seq_args_string)
+        cxn.pulse_streamer.stream_immediate('determine_n_thresh_with_638.py', num_reps, seq_args_string)
     
         # Get the counts
         new_counts = cxn.apd_tagger.read_counter_simple(num_reps)
