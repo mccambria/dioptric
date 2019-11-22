@@ -200,11 +200,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                 break
     
             start = time.time()
-            new_timestamps, new_channels = cxn.apd_tagger.read_tag_stream()
+            new_timetags, new_channels = cxn.apd_tagger.read_tag_stream()
+            new_timetags = numpy.array(new_timetags, dtype=numpy.int64)
             print(time.time() - start)
             continue
             
-            new_samples = process_raw_buffer(new_timestamps, new_channels,
+            new_samples = process_raw_buffer(new_timetags, new_channels,
                                    current_timestamps, current_channels,
                                    gate_open_channel, gate_close_channel)
             
