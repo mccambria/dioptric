@@ -81,7 +81,7 @@ def do_image_sample(nv_sig, aom_power, apd_indices, color_ind):
 def do_image_sample_SCC(nv_sig, aom_power, apd_indices):
     
 
-    scan_range = 0.1
+    scan_range = 0.2
     num_steps = 60
     
     # For now we only support square scans so pass scan_range twice
@@ -141,7 +141,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
     num_reps = 10**5
     num_runs = 1
     uwave_power = 9.0
-    uwave_pulse_dur = 200
+    uwave_pulse_dur = 50
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -418,25 +418,44 @@ if __name__ == '__main__':
 #            'pulsed_readout_dur': 450, 'magnet_angle': None,
 #            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
 #            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-    nv_search = { 'coords': [1.0, 0.0, 5.0],
+    nv_search = { 'coords': [0.0, 1.0, 5.0],
             'name': '{}'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
+            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
-    nv4_2019_11_22 = { 'coords': [0.681, 0.366, 4.85],
+#    nv4_2019_11_22 = { 'coords': [-0.136, 0.749, 5.0],
+#            'name': 'nv3_2019_11_22-{}'.format(sample_name),
+#            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
+#            'pulsed_readout_dur': 450, 'magnet_angle': None,
+#            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+#            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    
+    nv5_2019_11_22 = { 'coords': [-0.336, 1.563, 4.46],
             'name': 'nv3_2019_11_22-{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
-
+    nv5_2019_11_22_off = { 'coords': [-0.247, 1.468, 4.46],
+            'name': 'nv3_2019_11_22-{}'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
+            'pulsed_readout_dur': 450, 'magnet_angle': None,
+            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
-    nv_sig_list = [nv4_2019_11_22]
     
-    aom_power = 0.18
+    nv_sig_list = [nv5_2019_11_22]
+    
+    
+    readout_power = 500
+    
+    aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
+    if aom_power > 1:
+        aom_power = 1.0
+        
     color_ind = 532
 
     # %% Functions to run
@@ -478,19 +497,19 @@ if __name__ == '__main__':
 #                do_image_sample(nv_sig_copy, apd_indices)
             
 #            do_photon_collections_under_589(nv_sig, apd_indices)
-#            do_determine_n_thresh(nv_sig, 30, 10 * 10**6, apd_indices)
+#            do_determine_n_thresh(nv_sig, readout_power, 10 * 10**6, apd_indices)
             
-            do_image_sample(nv_sig, aom_power, apd_indices, 532)
-#            do_image_sample_SCC(nv_sig, aom_power, apd_indices)
+#            do_image_sample(nv_sig, aom_power, apd_indices, 532)
+#            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)
-#            do_stationary_count(nv_sig, aom_power, apd_indices, color_ind)
+#            do_stationary_count(nv_sig, 1.0, apd_indices, 532)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
-#            do_pulsed_resonance(nv_sig, apd_indices)
+            do_pulsed_resonance(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.200, freq_range=0.100)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)

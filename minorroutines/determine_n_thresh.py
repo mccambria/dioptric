@@ -65,6 +65,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
         aom_power = 1.0
     
     illumination_time = 1*10**6
+#    illumination_time = 1*10**6
     
     # Set up our data structure, an array of NaNs that we'll fill
     # we repeatively collect photons for tR 
@@ -100,8 +101,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
         print('Run index: {}'. format(run_ind))
                 
 #        # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
-        opti_coords_list.append(opti_coords)    
+#        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
+#        opti_coords_list.append(opti_coords)   
+        
+        drift = numpy.array(tool_belt.get_drift())
+        coords = numpy.array(nv_sig['coords'])
+        
+        coords_drift = coords - drift
+        
+        cxn.galvo.write(coords_drift[0], coords_drift[1])
+        cxn.objective_piezo.write(coords_drift[2])
         
         #  set filter slider according to nv_sig
         ND_filter = nv_sig['nd_filter']

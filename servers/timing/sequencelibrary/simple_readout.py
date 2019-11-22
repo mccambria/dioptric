@@ -27,6 +27,7 @@ def get_seq(pulser_wiring, args):
     # Convert the 32 bit ints into 64 bit ints
     delay = numpy.int64(delay)
     readout = numpy.int64(readout)
+    
     period = numpy.int64(delay + readout + 300)
 
     seq = Sequence()
