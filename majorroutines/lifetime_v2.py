@@ -22,7 +22,6 @@ import majorroutines.optimize as optimize
 import numpy
 import os
 import time
-import datetime
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import json
@@ -32,19 +31,17 @@ import labrad
 # %% Functions
 
 
-def process_raw_buffer(new_timestamps, new_channels,
-                       current_timestamps, current_channels,
+def process_raw_buffer(new_tags, new_channels,
+                       current_tags, current_channels,
                        gate_open_channel, gate_close_channel):
+    
+    # The processing here will be bin_size agnostic
     
     # Tack the new data onto the leftover data (leftovers are necessary if
     # the last read contained a gate open without a matching gate close)
-    current_timestamps.extend(new_timestamps)
+    current_tags.extend(new_tags)
     current_channels.extend(new_channels)
     current_channels_array = numpy.array(current_channels)
-    
-    # The processing here will be bin_size agnostic. The data structure will
-    # be, you guessed it, a list of lists. The deepest list contains the
-    # photon timetags for a given sample
     
     # Find gate open clicks
     result = numpy.nonzero(current_channels_array == gate_open_channel)
@@ -54,47 +51,31 @@ def process_raw_buffer(new_timestamps, new_channels,
     result = numpy.nonzero(current_channels_array == gate_close_channel)
     gate_close_click_inds = result[0].tolist()
     
-    new_samples = []
+    new_processed_tags = []
     
     # Loop over the number of closes we have since there are guaranteed to
     # be opens
-    for list_ind in range(len(gate_close_click_inds)):
+    num_closed_samples = len(gate_close_click_inds)
+    for list_ind in range(num_closed_samples):
         
         gate_open_click_ind = gate_open_click_inds[list_ind]
         gate_close_click_ind = gate_close_click_inds[list_ind]
         
         # Extract all the counts between these two indices as a single sample
-        # Include the gate open/closs for bin reference points
-        sample = current_timestamps[gate_open_click_ind:
-                                    gate_close_click_ind+1]
-        new_samples.append(sample)
+        rep = current_tags[gate_open_click_ind+1:
+                                    gate_close_click_ind]
+        rep = numpy.array(rep, dtype=numpy.int64)
+        # Make relative to gate open
+        rep -= current_tags[gate_open_click_ind]
+        new_processed_tags.extend(rep.astype(int).tolist())
         
-    # Handle potential leftovers
+    # Clear processed tags
     if len(gate_close_click_inds) > 0:
         leftover_start = gate_close_click_inds[-1]
-        del current_timestamps[0: leftover_start+1]
+        del current_tags[0: leftover_start+1]
         del current_channels[0: leftover_start+1]
         
-    return new_samples
-
-
-def bin_samples(samples, num_bins):
-    
-    # The structure of samples is a list of lists. Each sublist contains the
-    # timetag of the opening gate, followed by the timetags of the photon
-    # counts. First we'll flatten the samples into a 1D list of timetags
-    # relative to each sample's gate open
-    flattened_samples = []
-    for sample in samples:
-        sample = numpy.array(sample, dtype=numpy.int64)
-        sample -= sample[0]  # Make relative to gate open
-        clipped_sample = sample[1:-1]  # Trim the reference points
-        flattened_samples.extend(clipped_sample)
-    
-    binned_samples = []
-    binned_samples, bin_edges = numpy.histogram(flattened_samples, num_bins,
-                                                (sample[0], sample[-1]))
-    return binned_samples
+    return new_processed_tags, num_closed_samples
 
 
 # %% Main
@@ -155,12 +136,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
     opti_coords_list = []
 
     # %% Collect the data
+    
+    processed_tags = []
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
-
+        
         print(' \nRun index: {}'.format(run_ind))
 
         # Break out of the while if the user says stop
@@ -189,30 +172,31 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
         cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
                                             seq_args_string)
         
-        # Initialize state and data
-        current_timestamps = []
+        # Initialize state
+        current_tags = []
         current_channels = []
-        samples = []
+        num_processed_reps = 0
 
-        while len(samples) < num_reps:
+        while num_processed_reps < num_reps:
+
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
     
-            start = time.time()
-            new_timetags, new_channels = cxn.apd_tagger.read_tag_stream()
-            new_timetags = numpy.array(new_timetags, dtype=numpy.int64)
-            print(time.time() - start)
-            continue
+            new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
+            new_tags = numpy.array(new_tags, dtype=numpy.int64)
             
-            new_samples = process_raw_buffer(new_timetags, new_channels,
-                                   current_timestamps, current_channels,
+            ret_vals = process_raw_buffer(new_tags, new_channels,
+                                   current_tags, current_channels,
                                    gate_open_channel, gate_close_channel)
+            new_processed_tags, num_new_processed_reps = ret_vals
             
-            samples.extend(new_samples)
+            num_processed_reps += num_new_processed_reps
+            
+            processed_tags.extend(new_processed_tags)
 
         cxn.apd_tagger.stop_tag_stream()
-
+        
         # %% Save the data we have incrementally for long measurements
 
         raw_data = {'start_timestamp': start_timestamp,
@@ -222,9 +206,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                     'readout_time-units': 'ns',
                     'num_reps': num_reps,
                     'num_runs': num_runs,
+                    'run_ind': run_ind,
                     'opti_coords_list': opti_coords_list,
                     'opti_coords_list-units': 'V',
-                    'samples': samples,
+                    'processed_tags': processed_tags,
+                    'processed_tags-units': 'ps',
                     }
 
         # This will continuously be the same file path so we will overwrite
@@ -239,17 +225,21 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
 
     # %% Bin the data
     
-    binned_samples = bin_samples(samples, num_bins)
+    readout_time_ps = 1000*readout_time
+    binned_samples, bin_edges = numpy.histogram(processed_tags, num_bins,
+                                                (0, readout_time_ps))
+    
     # Compute the centers of the bins
     bin_size = readout_time / num_bins
     bin_center_offset = bin_size / 2
     bin_centers = numpy.linspace(0, readout_time, num_bins) + bin_center_offset
 
-    # %% Plot the t1 signal
+    # %% Plot
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
 
     ax.plot(bin_centers, binned_samples, 'r-')
+    ax.set_title('Lifetime')
     ax.set_xlabel('Time after illumination (ns)')
     ax.set_ylabel('Counts')
     
@@ -260,11 +250,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
     # %% Save the data
 
     endFunctionTime = time.time()
-
     time_elapsed = endFunctionTime - startFunctionTime
-
     timestamp = tool_belt.get_time_stamp()
-
+    
     raw_data = {'timestamp': timestamp,
                 'time_elapsed': time_elapsed,
                 'nv_sig': nv_sig,
@@ -277,7 +265,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                 'opti_coords_list': opti_coords_list,
                 'opti_coords_list-units': 'V',
                 'binned_samples': binned_samples.tolist(),
-                'samples': samples,
+                'processed_tags': processed_tags,
+                'processed_tags-units': 'ps',
                 }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
