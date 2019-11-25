@@ -214,7 +214,7 @@ def do_lifetime(nv_sig, apd_indices):
     num_runs = 3
     num_bins = 100
 #    readout_time = 1.2 * 10**6
-    readout_time = 100
+    readout_time = 100 #ns
     
     lifetime.main(nv_sig, apd_indices, readout_time,
                   num_reps, num_runs, num_bins)
@@ -368,8 +368,8 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-#    apd_indices = [0]
-    apd_indices = [0, 1]
+    apd_indices = [0]
+#    apd_indices = [0, 1]
     
     sample_name = 'goeppert_mayer'
 
@@ -394,9 +394,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
 #         set_xyz_zero()
-#        set_xyz([-0.063, -0.210, 5.69]) # On NV 
-#        set_xyz([-0.122, -0.151, 5.69]) # Off NV 
-#        set_xyz([0.0, 0.0, 5.0,])
+        set_xyz([0.0,0.0,5.0])
 #        drift = tool_belt.get_drift()
 #        print(drift)
 #        tool_belt.set_drift([0.0, 0.0, 0.0])
@@ -415,8 +413,8 @@ if __name__ == '__main__':
 #        do_g2_measurement(nv_sig_list, apd_indices[0], apd_indices[1])
 
         # Routines that expect single NVs
-        for ind in range(len(nv_sig_list)):
-            nv_sig = nv_sig_list[ind]                
+#        for ind in range(len(nv_sig_list)):
+#            nv_sig = nv_sig_list[ind]                
 #            for z in numpy.linspace(5.5, 6.5, 6):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                coords = nv_sig_copy['coords']
@@ -425,7 +423,7 @@ if __name__ == '__main__':
 #            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
-            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
+#            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
