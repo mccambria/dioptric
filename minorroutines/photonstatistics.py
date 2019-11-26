@@ -180,6 +180,33 @@ def get_curve_fit(readout_time,readout_power,data):
     popt, pcov = curve_fit(get_photon_distribution_curve, photon_number, data, p0 = initial_guess)
     return popt  
 
+#def get_curve_fit_NVm(readout_time,readout_power,data):
+#    tR = readout_time
+#    P = readout_power
+#    initial_guess = [10,100,10000,1000]
+#    def get_photon_distribution_curve(photon_number,g0,g1,y1,y0):    
+#        poisspdf2 = scipy.stats.poisson(y1*tR)
+#        photon_number = list(photon_number)
+#        i = 0
+#        curve = []
+#        for i in range(len(photon_number)): 
+#            n = i
+#            def IntegNVm(t):
+#                poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
+#                integ = g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n) + math.sqrt((g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf1.pmf(n)
+#                return integ
+#
+#            valNVm, err = scipy.integrate.quad(IntegNVm,0,tR)
+#            result = valNVm + math.e**(-g1*tR)*poisspdf2.pmf(n)
+#            curve.append(result)
+#            i += 1
+#        return curve 
+#    max_range = len(data)
+#    photon_number = list(range(0,max_range))
+#    popt, pcov = curve_fit(get_photon_distribution_curve, photon_number, data, p0 = initial_guess)
+#    return popt  
+
+
 #%% test module that simulates data to test the curve fit
 #given readout time and power, return a list of probability of observing each number of photon
 def get_PhotonNV_list(photon_number,readout_time,readout_power):
@@ -265,12 +292,106 @@ def get_optimized_fidelity(readout_time, power_range, n_threshold_list):
     highest_fidelity, optimized_power = get_optimized_power(tR, P, optimized_n_threshold)
     return optimized_n_threshold, optimized_power, highest_fidelity
     
-run_test(300,0.001,5*10**-3,820)  
-    
-    
-        
-        
-        
+#%% curve fit and figure drawing for each charge state
+#given actural data: 
+#unique_value: number of photons that are collected; 
+#relative_frequency: the probabiltiy of appearance for each number of photons
+def get_curve_fit_NVm(readout_time,readout_power,unique_value, relative_frequency):
+    tR = readout_time
+    P = readout_power
+    initial_guess = [10,100,10000,1000]
+    def get_photon_distribution_curve(unique_value,g0,g1,y1,y0):    
+        poisspdf2 = scipy.stats.poisson(y1*tR)
+        photon_number = unique_value
+        i = 0
+        curve = []
+        for i in range(len(photon_number)): 
+            n = photon_number[i]
+            def IntegNVm(t):
+                poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
+                integ = g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n) + math.sqrt(abs(g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(abs(g1*g0*t*(tR-t))))* poisspdf1.pmf(n)
+                return integ
+
+            valNVm, err = scipy.integrate.quad(IntegNVm,0,tR)
+            result = valNVm + math.e**(-g1*tR)*poisspdf2.pmf(n)
+            curve.append(result)
+            i += 1
+        return curve 
+    photon_number =unique_value
+    popt, pcov = curve_fit(get_photon_distribution_curve, photon_number,  relative_frequency, p0 = initial_guess)
+    return popt 
+
+def get_photon_distribution_curveNVm(photon_number,readout_time, g0,g1,y1,y0):  
+    if g0 < 0:
+            g0 = 0
+    if g1 < 0:
+        g1 = 0
+    tR = readout_time 
+    poisspdf2 = scipy.stats.poisson(y1*tR)
+    i = 0
+    curve = []
+    photon_number_list = list(range(photon_number))
+    for i in range(len(photon_number_list)): 
+        n = i
+        def IntegNVm(t):
+            poisspdf1 = scipy.stats.poisson(y1*t+y0*(tR-t))
+            integ = g1*math.e**((g0-g1)*t-g0*tR)*poisspdf1.pmf(n)
+            + math.sqrt(abs(g1*g0*t/(tR-t)))*math.e**((g0-g1)*t-g0*tR)*scipy.special.jv(1, 2*math.sqrt(abs(g1*g0*t*(tR-t))))* poisspdf1.pmf(n)
+            return integ
+        valNVm, err = scipy.integrate.quad(IntegNVm,0,tR)
+        result = valNVm + math.e**(-g1*tR)*poisspdf2.pmf(n) 
+        curve.append(result)
+        i += 1
+    return curve 
+
+def get_curve_fit_NV0(readout_time,readout_power,unique_value, relative_frequency):
+    tR = readout_time
+    P = readout_power
+    initial_guess = [10,100,10000,1000]
+    def get_photon_distribution_curve(unique_value,g0,g1,y1,y0):
+        poisspdf3 = scipy.stats.poisson(y0*tR)
+        photon_number = unique_value
+        i = 0
+        curve = []
+        for i in range(len(photon_number)): 
+            n = photon_number[i]
+            def IntegNV0(t):
+                poisspdf4 = scipy.stats.poisson(y0*t+y1*(tR-t))
+                integ = g0*math.e**((g0-g1)*t-g0*tR)*poisspdf4.pmf(n) + math.sqrt(abs(g1*g0*t/(tR-t)))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(abs(g1*g0*t*(tR-t))))* poisspdf4.pmf(n)
+                return integ
+
+            valNV0, err = scipy.integrate.quad(IntegNV0,0,tR)
+            result = valNV0 + math.e**(-g0*tR)*poisspdf3.pmf(n)
+            curve.append(result)
+            i += 1
+        return curve 
+    photon_number =unique_value
+    popt, pcov = curve_fit(get_photon_distribution_curve, photon_number,  relative_frequency, p0 = initial_guess)
+    return popt 
+
+def get_photon_distribution_curveNV0(photon_number,readout_time, g0,g1,y1,y0):    
+    if g0 < 0:
+        g0 = 0
+    if g1 < 0:
+        g1 = 0
+    tR = readout_time 
+    poisspdf3 = scipy.stats.poisson(y0*tR)
+    i = 0
+    curve = []
+    photon_number_list = list(range(photon_number))
+    for i in range(len(photon_number_list)): 
+        n = i
+        def IntegNV0(t):
+            poisspdf4 = scipy.stats.poisson(y0*t+y1*(tR-t))
+            integ = g0*math.e**((g0-g1)*t-g0*tR)*poisspdf4.pmf(n) + math.sqrt(g1*g0*t/(tR-t))*math.e**((g1-g0)*t-g1*tR)*scipy.special.jv(1, 2*math.sqrt(g1*g0*t*(tR-t)))* poisspdf4.pmf(n)
+            return integ
+
+        valNV0, err = scipy.integrate.quad(IntegNV0,0,tR)
+        result = valNV0 + math.e**(-g0*tR)*poisspdf3.pmf(n)
+        curve.append(result)
+        i += 1
+    return curve    
+          
         
         
         

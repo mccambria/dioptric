@@ -77,7 +77,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     
 #%% Estimate the lenth of the sequance
     
-    seq_args = [gate_time, illumination_time, aom_delay589 ,apd_indices[0], aom_power,aom_delay638, ionize_time]
+    seq_args = [gate_time, illumination_time532,illumination_time589, aom_delay589 ,apd_indices[0], aom_power,aom_delay638, ionize_time]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('determine_cut_off_photon_number.py', seq_args_string)
     
@@ -155,7 +155,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
             'readout_power_unit':'uW',
             'readout_time':readout_time,
             'readout_time_unit':'ns',
-            'illumination_time': illumination_time,
+            'illumination_time532': illumination_time532,
+            'illumination_time-units': 'ns',
+            'illumination_time589': illumination_time589,
+            'illumination_time-units': 'ns',
+            'illumination_time638': ionize_time,
             'illumination_time-units': 'ns',
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'num_runs': num_runs,
