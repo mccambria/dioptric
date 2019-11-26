@@ -261,8 +261,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indic
 #    shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     reionization = 1*10**6
+#    illumination = 10*10**6
     illumination = 10*10**6
-    readout = illumination - 1000
+    readout = illumination
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
