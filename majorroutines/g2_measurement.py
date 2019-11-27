@@ -130,7 +130,6 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     tool_belt.reset_cfm(cxn)
 
     afterpulse_window = 50 * 10**3
-    sleep_time = 2
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
@@ -163,13 +162,8 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     # Python does not have do-while loops so we will use something like
     # a while True
     stop = False
-    start_calc_time = start_time
     while not stop:
 
-        # Wait until some data has filled
-        now = time.time()
-        calc_time_elapsed = now - start_calc_time
-        time.sleep(max(sleep_time - calc_time_elapsed, 0))
         # Read the stream and convert from strings to int64s
         ret_vals = cxn.apd_tagger.read_tag_stream()
         buffer_timetags, buffer_channels = ret_vals
@@ -183,7 +177,6 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
             print(int(time_remaining))
 
         # Process data
-        start_calc_time = time.time()
         process_raw_buffer(buffer_timetags, buffer_channels,
                            diff_window_ps, afterpulse_window,
                            differences_append,
