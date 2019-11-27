@@ -126,7 +126,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
     expected_run_time = num_reps * num_runs * seq_time_s  # s
     expected_run_time_m = expected_run_time / 60 # m
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
-    
+
     # %% Bit more setup
 
     # Record the start time
@@ -151,8 +151,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
+        
         
         # Expose the stream
         cxn.apd_tagger.start_tag_stream(apd_indices, apd_indices, False)
@@ -190,6 +191,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                                    current_tags, current_channels,
                                    gate_open_channel, gate_close_channel)
             new_processed_tags, num_new_processed_reps = ret_vals
+            # MCC test
+            if num_new_processed_reps > 750000:
+                print('Processed {} reps out of 10^6 max'.format(num_new_processed_reps))
+                print('Tell Matt that the time tagger is too slow!')
             
             num_processed_reps += num_new_processed_reps
             
@@ -265,6 +270,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                 'opti_coords_list': opti_coords_list,
                 'opti_coords_list-units': 'V',
                 'binned_samples': binned_samples.tolist(),
+                'bin_centers': bin_centers.tolist(),
                 'processed_tags': processed_tags,
                 'processed_tags-units': 'ps',
                 }
@@ -285,46 +291,40 @@ def triple_decay(t, a1, d1, a2, d2, a3, d3):
 
 def t1_exponential_decay(open_file_name):
 
-    directory = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime/'
+    directory = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/'
 
     # Open the specified file
     with open(directory + open_file_name + '.txt') as json_file:
 
         # Load the data from the file
         data = json.load(json_file)
-        countsT1_array = numpy.array(data["sig_counts"])
-        relaxation_time_range = data["relaxation_time_range"]
-        num_steps = data["num_steps"]
+        countsT1_array = numpy.array(data["binned_samples"])
+        readout_time = data["readout_time"]
+        num_bins = data["num_bins"]
+        
+    bin_size = readout_time / num_bins
+    bin_center_offset = bin_size / 2
+    bin_centers = numpy.linspace(0, readout_time, num_bins) + bin_center_offset
 
-    min_relaxation_time = relaxation_time_range[0] / 10**3
-    max_relaxation_time = relaxation_time_range[1] / 10**3
-
-    timeArray = numpy.linspace(min_relaxation_time, max_relaxation_time,
-                              num=num_steps, dtype=numpy.int32)
-    print(max_relaxation_time)
     amplitude = 500
     decay = 100 # us
     init_params = [amplitude, decay]
     
     init_params = [500, 10, 500, 100, 500, 500]
     
-    countsT1 = numpy.average(countsT1_array, axis = 0)
+
 #    popt,pcov = curve_fit(decayExp, timeArray, countsT1,
 #                              p0=init_params)
-    popt,pcov = curve_fit(triple_decay, timeArray, countsT1,
-                              p0=init_params)
+#    popt,pcov = curve_fit(triple_decay, bin_centers, countsT1_array,
+#                              p0=init_params)
 
-#    decay_time = popt[1]
-
-    first = timeArray[0]
-    last = timeArray[len(timeArray)-1]
-    linspaceTime = numpy.linspace(first, last, num=1000)
+    linspaceTime = numpy.linspace(0, readout_time, num=1000)
 
 
     fig_fit, ax= plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(timeArray, countsT1,'bo',label='data')
-    ax.plot(linspaceTime, triple_decay(linspaceTime,*popt),'r-',label='fit')
-    ax.set_xlabel('Wait Time (us)')
+    ax.plot(bin_centers, countsT1_array,'bo',label='data')
+#    ax.plot(linspaceTime, triple_decay(linspaceTime,*popt),'r-',label='fit')
+    ax.set_xlabel('Wait Time (ns)')
     ax.set_ylabel('Counts (arb.)')
     ax.set_title('Lifetime')
     ax.legend()
@@ -332,18 +332,18 @@ def t1_exponential_decay(open_file_name):
 #    text = "\n".join((r'$A_0 e^{-t / d}$',
 #                      r'$A_0 = $' + '%.1f'%(popt[0]),
 #                      r'$d = $' + "%.1f"%(decay_time) + " us"))
-    text = "\n".join((r'$A_1 e^{-t / d_1} + A_2 e^{-t / d_2} + A_3 e^{-t / d_3}$',
-                      r'$A_1 = $' + '%.1f'%(popt[0]),
-                      r'$d_1 = $' + "%.1f"%(popt[1]) + " us",
-                      r'$A_2 = $' + '%.1f'%(popt[2]),
-                      r'$d_2 = $' + "%.1f"%(popt[3]) + " us",
-                      r'$A_3 = $' + '%.1f'%(popt[4]),
-                      r'$d_3 = $' + "%.1f"%(popt[5]) + " us"))
+#    text = "\n".join((r'$A_1 e^{-t / d_1} + A_2 e^{-t / d_2} + A_3 e^{-t / d_3}$',
+#                      r'$A_1 = $' + '%.1f'%(popt[0]),
+#                      r'$d_1 = $' + "%.1f"%(popt[1]) + " us",
+#                      r'$A_2 = $' + '%.1f'%(popt[2]),
+#                      r'$d_2 = $' + "%.1f"%(popt[3]) + " us",
+#                      r'$A_3 = $' + '%.1f'%(popt[4]),
+#                      r'$d_3 = $' + "%.1f"%(popt[5]) + " us"))
 
 
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(0.65, 0.75, text, transform=ax.transAxes, fontsize=12,
-                            verticalalignment="top", bbox=props)
+#    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+#    ax.text(0.65, 0.75, text, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
     ax.set_yscale("log", nonposy='clip')
     
     fig_fit.canvas.draw()
@@ -351,12 +351,12 @@ def t1_exponential_decay(open_file_name):
 
     file_path = directory + open_file_name
     tool_belt.save_figure(fig_fit, file_path+'-triple_fit_semilog')
-#    fig.savefig(open_file_name + '-fit.' + save_file_type)
+#    fig_fit.savefig(open_file_name + '-replot.svg')
 
 # %%
     
 
 if __name__ == '__main__':
-    file_name = '2019_11/2019_11_12-16_31_02-Y2O3-lifetime'
+    file_name = '2019_11/2019_11_26-17_22_11-undoped_Y2O3-633_bandpass'
     
     t1_exponential_decay(file_name)
