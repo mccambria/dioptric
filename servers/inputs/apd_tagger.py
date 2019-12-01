@@ -244,7 +244,6 @@ class ApdTagger(LabradServer):
         type will be present is based on the channels passed to
         start_tag_stream.
         """
-        
         return self.stream_channels
 
     @setting(1, apd_indices='*i', gate_indices='*i', clock='b')
