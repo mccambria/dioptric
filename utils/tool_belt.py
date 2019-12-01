@@ -768,14 +768,7 @@ def get_drift():
                 drift.append(0.0)
         elif len_drift > 3:
             drift = drift[0:3]
-    drift_to_return = []
-    for el in drift:
-        type_el = type(el)
-        if type_el not in [float, numpy.float64]:
-            print('Got drift element of type {}.'.format(type_el))
-            print('Casting to float.')
-            el = float(el)
-        drift_to_return.append(el)
+    drift_to_return = [float(el) for el in drift]  # Cast to float
     return drift_to_return
 
 

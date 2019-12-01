@@ -62,9 +62,9 @@ def do_image_sample(nv_sig, apd_indices):
 #    scan_range = 0.5
 #    num_steps = 150
     scan_range = 0.2
-#    num_steps = 90
+    num_steps = 90
 #    scan_range = 0.1
-    num_steps = 60
+#    num_steps = 60
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
@@ -81,6 +81,11 @@ def do_optimize(nv_sig, apd_indices):
 def do_optimize_list(nv_sig_list, apd_indices):
 
     optimize.optimize_list(nv_sig_list, apd_indices)
+    
+def do_opti_z(nv_sig_list, apd_indices):
+    
+    optimize.opti_z(nv_sig, apd_indices,
+              set_to_opti_coords=False, save_data=True, plot_data=True)
 
 def do_stationary_count(nv_sig, apd_indices):
 
@@ -210,11 +215,12 @@ def do_t1_interleave(nv_sig, apd_indices):
 
 def do_lifetime(nv_sig, apd_indices):
     
-    num_reps = 10**6
+#    num_reps = 10**6
+    num_reps = 2*10**5
     num_runs = 1
     num_bins = 100
 #    readout_time = 1.2 * 10**6
-    readout_time = 500
+    readout_time = 1.5 * 10**6 #ns
     
     lifetime.main(nv_sig, apd_indices, readout_time,
                   num_reps, num_runs, num_bins)
@@ -368,27 +374,26 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-    apd_indices = [0]
-#    apd_indices = [0, 1]
+#    apd_indices = [0]
+    apd_indices = [0, 1]
     
-    sample_name = 'goeppert_mayer'
+    sample_name = 'Geoppert-Mayer'
 
-    NV_search = { 'coords': [0.0, 0.0, 5.0],
-            'name': '{}-lifetime'.format(sample_name),
+    search = { 'coords': [0.0,0.0,5.0],
+            'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-
-    lifetime_test = { 'coords': [-0.051, 0.005, 5.00],
-            'name': '{}-lifetime_test'.format(sample_name),
-            'expected_count_rate': 55, 'nd_filter': 'nd_1.0',
+    nv1_2019_11_27 = { 'coords': [0.0,0.0,5.0],
+            'name': '{}-nv1_2019_11_27'.format(sample_name),
+            'expected_count_rate': 50, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 450, 'magnet_angle': None,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
-    nv_sig_list = [lifetime_test]
-    
+#    nv_sig_list = [search]
+    nv_sig_list = [nv1_2019_11_27]
 
     # %% Functions to run
 
@@ -396,13 +401,11 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
 #         set_xyz_zero()
-#        set_xyz([-0.063, -0.210, 5.69]) # On NV 
-#        set_xyz([-0.122, -0.151, 5.69]) # Off NV 
-#        set_xyz([0.0, 0.0, 5.0,])
+#        set_xyz([0.0,0.0,5.0])
+#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        drift = tool_belt.get_drift()
-#        print(drift)
-#        tool_belt.set_drift([0.0, 0.0, 0.0])
-#        set_xyz([0.0, 0.0, 5.02 + tool_belt.get_drift()[2]])
+#        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+#        set_xyz([-0.116, -0.073, 2.61])
 #        with labrad.connect() as cxn:
 #            cxn.filter_slider_ell9k.set_filter('nd_0.5')
 #            cxn.pulse_streamer.constant([])
@@ -410,14 +413,17 @@ if __name__ == '__main__':
         
 #        with labrad.connect() as cxn:
 #            cxn.pulse_treamer.constant([3], 0.0, 0.0)        
-        
 
+#        with labrad.connect() as cxn:
+#            cxn.filter_slider_ell9k.set_filter('nd_0')
+#        with labrad.connect() as cxn:
+#            cxn.filter_slider_ell9k.set_filter('nd_1.0')
+        
         # Routines that expect lists of NVs
 #        do_optimize_list(nv_sig_list, apd_indices)
 #        do_sample_nvs(nv_sig_list, apd_indices)
 #        do_g2_measurement(nv_sig_list, apd_indices[0], apd_indices[1])
 
-        
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]                
@@ -428,8 +434,9 @@ if __name__ == '__main__':
 #                do_image_sample(nv_sig_copy, apd_indices)
 #            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
+#            do_opti_z(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
-#            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
+            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
@@ -451,7 +458,7 @@ if __name__ == '__main__':
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
-            do_lifetime(nv_sig, apd_indices)
+#            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
 #            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
@@ -476,3 +483,4 @@ if __name__ == '__main__':
         if tool_belt.check_safe_stop_alive():
             print('\n\nRoutine complete. Press enter to exit.')
             tool_belt.poll_safe_stop()
+
