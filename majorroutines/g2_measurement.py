@@ -162,6 +162,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     # Python does not have do-while loops so we will use something like
     # a while True
     stop = False
+    time_remaining = run_time
     while not stop:
 
         # Read the stream and convert from strings to int64s
@@ -170,11 +171,13 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
 
         # Check if we should stop
-        time_remaining = (start_time + run_time)- time.time()
+        new_time_remaining = int((start_time + run_time) - time.time())
         if (time_remaining < 0) or tool_belt.safe_stop():
             stop = True
-        else:
-            print(int(time_remaining))
+        # Do not spam the console witth the same number
+        elif new_time_remaining < time_remaining:  
+            print(new_time_remaining)
+            time_remaining = new_time_remaining
 
         # Process data
         process_raw_buffer(buffer_timetags, buffer_channels,
