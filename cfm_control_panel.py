@@ -56,19 +56,17 @@ def set_xyz_zero():
 def do_image_sample(nv_sig, apd_indices):
     
 #    scan_range = 1.0
+#    scan_range = 0.5
+    scan_range = 0.2
+#    scan_range = 0.1
+#    scan_range = 0.05
+#    scan_range = 0.025
+    
 #    num_steps = 200
+#    num_steps = 150
 #    num_steps = 120
 #    num_steps = 90
-#    scan_range = 0.5
-#    num_steps = 150
-    scan_range = 0.2
-    num_steps = 90
-#    scan_range = 0.1
-#    num_steps = 60
-#    scan_range = 0.05
-#    num_steps = 60
-#    scan_range = 0.025
-#    num_steps = 60
+    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -469,7 +467,7 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-#            do_image_sample(nv_sig, apd_indices)
+            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
@@ -493,7 +491,7 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 150])
 #            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 150])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
-            do_t1_battery(nv_sig, apd_indices)
+#            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
 #            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
