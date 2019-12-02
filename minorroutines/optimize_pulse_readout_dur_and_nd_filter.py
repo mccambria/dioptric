@@ -330,8 +330,8 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
 def main(nv_sig):
     # Step through the nd filters and find the optimized gate time in each one.
     
-#    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
-    nd_filter_list = ['nd_1.0']
+    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
+#    nd_filter_list = ['nd_1.0']
 #    nd_filter_list = ['nd_1.5']
     
     # Start 'Press enter to stop...'
@@ -374,20 +374,17 @@ def main(nv_sig):
 if __name__ == '__main__':
 
     # Define the nv_sig to be used
-    sample_name = 'ayrton12'
+    sample_name = 'goeppert_mayer'
     
-    nv4_2019_06_06 = { 'coords': [-0.147, -0.063, 5.02],
-        'name': 'ayrton12-nv4_2019_06_06',
-        'expected_count_rate': 56, 'nd_filter': 'nd_1.0',
-        'pulsed_readout_dur': 400, 'magnet_angle': 53.6,
-        'resonance_LOW':2.8643, 'rabi_LOW': 148.2, 'uwave_power_LOW': 9.0,
-        'resonance_HIGH':3.5798, 'rabi_HIGH': 155.4 , 'uwave_power_HIGH': 10.0}
-    
-    # Main parameters
-    nv_sig = nv4_2019_06_06
+    nv7_2019_11_27 = { 'coords': [-0.761, -0.181, 5.06],
+            'name': '{}-nv7_2019_11_27'.format(sample_name),
+            'expected_count_rate': 55, 'nd_filter': 'nd_1.0',
+            'pulsed_readout_dur': 450, 'magnet_angle': 176.8,
+            'resonance_LOW': 2.7892, 'rabi_LOW': 80.2, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 2.9562, 'rabi_HIGH': 108.2, 'uwave_power_HIGH': 10.0}
     
     ### MAIN ###
-    main(nv_sig)
+    main(nv7_2019_11_27)
     
     # The individual functions in this file
 #    snr_measurement(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)
@@ -398,42 +395,10 @@ if __name__ == '__main__':
     if do_plot:
         
         snr_list = [
-                7.439604422189125,
-                7.686879319553283,
-                8.041485308004805,
-                9.554681541455329,
-                9.125572162492666,
-                7.807859294703643,
-                9.66741364630311,
-                9.463731427941084,
-                7.5704997378241545,
-                9.609301695826183,
-                10.543056235327139,
-                10.659862870377365,
-                10.26398344405384,
-                9.531577515144889,
-                12.951537948619501,
-                10.696615047491722,
-                9.768387837729152]
+                ]
         
         readout_time_list = [
-                200,
-                250,
-                300,
-                350,
-                400,
-                450,
-                500,
-                300,
-                350,
-                400,
-                450,
-                500,
-                550,
-                600,
-                650,
-                700,
-                750]
+                ]
         
         init_guess_list = [10, 10, 450]
         

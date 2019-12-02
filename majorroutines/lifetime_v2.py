@@ -151,8 +151,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
             break
 
         # Optimize
-        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
-        opti_coords_list.append(opti_coords)
+#        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
+#        opti_coords_list.append(opti_coords)
         
         
         # Expose the stream

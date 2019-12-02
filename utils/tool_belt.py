@@ -126,6 +126,7 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None):
 
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
+    fig.set_tight_layout(True)
 
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',
@@ -546,6 +547,7 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
             Subfolder to save to under file name
     """
 
+    date_folder_name = None  # Init to None
     # Set up the file name
     if (time_stamp != '') and (name != ''):
         fileName = '{}-{}'.format(time_stamp, name)
@@ -560,16 +562,13 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
         fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
     
     # Create the subfolder combined name, if needed
+    subfolder_name = None
     if (subfolder != None) and (date_folder_name != None):
         subfolder_name = str(date_folder_name + '/' + subfolder)
     elif (subfolder == None) and (date_folder_name != None):
         subfolder_name = date_folder_name
-    else:
-        subfolder_name = None
-        
     
     folderDir = get_folder_dir(source_name, subfolder_name)
-
     fileDir = os.path.abspath(os.path.join(folderDir, fileName))
 
     return fileDir
@@ -768,14 +767,7 @@ def get_drift():
                 drift.append(0.0)
         elif len_drift > 3:
             drift = drift[0:3]
-    drift_to_return = []
-    for el in drift:
-        type_el = type(el)
-        if type_el not in [float, numpy.float64]:
-            print('Got drift element of type {}.'.format(type_el))
-            print('Casting to float.')
-            el = float(el)
-        drift_to_return.append(el)
+    drift_to_return = [float(el) for el in drift]  # Cast to float
     return drift_to_return
 
 

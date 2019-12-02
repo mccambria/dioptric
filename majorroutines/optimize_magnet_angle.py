@@ -61,12 +61,14 @@ def fit_data(splittings, angles):
     phase = angles[numpy.argmax(splittings)]
     offset = 0
     guess_params = [offset, amp, phase]
+    bounds = ([0, 0, 0], [numpy.inf, numpy.inf, 180])
     # Check if we have any undefined splittings
     if any(numpy.isnan(splittings)):
         fit_func = None
         popt = None
     else:
-        popt, pcov = curve_fit(fit_func, angles, splittings, p0=guess_params)
+        popt, pcov = curve_fit(fit_func, angles, splittings,
+                               p0=guess_params, bounds=bounds)
 
     return fit_func, popt
 
@@ -207,7 +209,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    file = '2019_10/2019_10_07-19_34_35-ayrton12-NV13_2019_06_10'
+    file = '2019_11/2019_11_27-14_50_01-Geoppert-Mayer-nv7_2019_11_27'
     data = tool_belt.get_raw_data(__file__, file)
     splittings = data['splittings']
     angle_range = data['angle_range']
