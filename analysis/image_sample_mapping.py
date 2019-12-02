@@ -74,8 +74,13 @@ def generate_mapping_files(sample_name, micrometer_coords,
             'nv_sig_list-units': tool_belt.get_nv_sig_units(),
             }
 
-    file_name = '{}-mapping'.format(image_sample_file_name)
-    file_path = tool_belt.get_file_path(__file__, name=file_name)
+    # Parse image_sample_file_name, which will look like:
+    # 'month_folder/time-stamp-description'
+    split_name = image_sample_file_name.split('/')
+    file_name = split_name[1]
+    time_stamp = '-'.join(file_name.split('-')[0:1])
+    file_name = '{}-mapping'.format(file_name)
+    file_path = tool_belt.get_file_path(__file__, time_stamp, file_name)
 
     tool_belt.save_raw_data(raw_data, file_path)
     fig = illustrate_mapping(file_name)

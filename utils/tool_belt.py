@@ -562,16 +562,13 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
         fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
     
     # Create the subfolder combined name, if needed
+    subfolder_name = None
     if (subfolder != None) and (date_folder_name != None):
         subfolder_name = str(date_folder_name + '/' + subfolder)
     elif (subfolder == None) and (date_folder_name != None):
         subfolder_name = date_folder_name
-    else:
-        subfolder_name = None
-        
     
     folderDir = get_folder_dir(source_name, subfolder_name)
-
     fileDir = os.path.abspath(os.path.join(folderDir, fileName))
 
     return fileDir
