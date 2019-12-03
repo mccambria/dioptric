@@ -79,12 +79,12 @@ def generate_mapping_files(sample_name, micrometer_coords,
     split_name = image_sample_file_name.split('/')
     file_name = split_name[1]
     time_stamp = '-'.join(file_name.split('-')[0:1])
-    file_name = '{}-mapping'.format(file_name)
-    file_path = tool_belt.get_file_path(__file__, time_stamp, file_name)
+    mapping_file_name = '{}-mapping'.format('-'.join(file_name.split('-')[1:]))
+    file_path = tool_belt.get_file_path(__file__, time_stamp, mapping_file_name)
 
     tool_belt.save_raw_data(raw_data, file_path)
-    fig = illustrate_mapping(file_name)
-
+    # Use the raw data we just saved to create the mapping
+    fig = illustrate_mapping('/'.join(file_path.split('/')[-2:]))
     tool_belt.save_figure(fig, file_path)
 
 
@@ -96,17 +96,17 @@ if __name__ == '__main__':
 #    image_sample_file_name = '2019-07-25_18-37-46_ayrton12_search'
 
     # Ignore this...
-    if False:
+    if True:
         # Circle NVs from an existing mapping
-        file_name = '2019-06-10_15-26-39_ayrton12_mapping'
-        illustrate_mapping(file_name, [13])
+        file_name = '2019_11/2019_11_27-14_40_50-Geoppert-Mayer-nv5_2019_11_27-mapping'
+        illustrate_mapping(file_name, [0])
     else:
 
         coords_list = [
                 [-0.761, -0.181, 5.06]
                 ]
 
-        sample_name = 'ayrton12'
+        sample_name = 'goeppert_mayer'
         micrometer_coords = [2730, 1588, 9275]
         image_sample_file_name = '2019_11/2019_11_27-14_40_50-Geoppert-Mayer-nv5_2019_11_27'
 
