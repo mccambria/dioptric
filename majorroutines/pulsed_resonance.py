@@ -117,6 +117,8 @@ def fit_resonance(freq_range, freq_center, num_steps,
     peak_inds = peak_inds.tolist()
     peak_heights = details['peak_heights'].tolist()
 
+    low_freq_guess = None
+    high_freq_guess = None
     if len(peak_inds) > 1:
         # Find the location of the highest peak
         max_peak_height = max(peak_heights)
@@ -150,10 +152,12 @@ def fit_resonance(freq_range, freq_center, num_steps,
         high_freq_guess = None
     else:
         print('Could not locate peaks')
-        # return None, None
 
     # low_freq_guess = 2.8365
     # high_freq_guess = 2.8445
+    
+    if low_freq_guess is None:
+        return None, None
 
     # %% Fit!
 

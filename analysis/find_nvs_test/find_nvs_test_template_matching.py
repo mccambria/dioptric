@@ -22,9 +22,9 @@ import utils.image_processing as image_processing
 
 ####################### Files #######################
 
-directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\2019_09\\'
+directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\2019_12\\'
 
-file_name = '2019-09-22-18_55_51-ayrton12-search.txt'
+file_name = '2019_12_02-15_33_39-goeppert_mayer-nv7_2019_11_27.txt'
 
 file_path = directory + file_name
 
@@ -88,9 +88,9 @@ for method_ind in [1]:
 
     # Image
 #    file_name = '2019-04-29_16-37-56_ayrton12.txt'
-    file_name = '2019-04-29_16-39-18_ayrton12.txt'
+    file_name = '2019_12_02-15_14_04-goeppert_mayer-nv7_2019_11_27.txt'
 #    file_name = '2019-05-30_10-39-05_ayrton12.txt'
-    directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+    directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\2019_12\\'
     file_path = directory + file_name
     with open(file_path, 'r') as file:
         data = json.load(file)

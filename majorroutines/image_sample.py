@@ -408,10 +408,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
 if __name__ == '__main__':
 
-#    file_name = '2019-06-04_09-58-38_ayrton12'
-#    create_figure(file_name)
-#    reformat_plot('inferno', 'svg')
-
-    file_name = '2019_10/2019_10_31-13_50_10-Goeppert-Mayer-NV_search'
+    file_name = '2019_11/2019_11_27-13_59_47-Geoppert-Mayer-search'
     create_figure(file_name)
 

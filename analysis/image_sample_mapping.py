@@ -74,12 +74,17 @@ def generate_mapping_files(sample_name, micrometer_coords,
             'nv_sig_list-units': tool_belt.get_nv_sig_units(),
             }
 
-    file_name = '{}-mapping'.format(image_sample_file_name)
-    file_path = tool_belt.get_file_path(__file__, name=file_name)
+    # Parse image_sample_file_name, which will look like:
+    # 'month_folder/time-stamp-description'
+    split_name = image_sample_file_name.split('/')
+    file_name = split_name[1]
+    time_stamp = '-'.join(file_name.split('-')[0:1])
+    mapping_file_name = '{}-mapping'.format('-'.join(file_name.split('-')[1:]))
+    file_path = tool_belt.get_file_path(__file__, time_stamp, mapping_file_name)
 
     tool_belt.save_raw_data(raw_data, file_path)
-    fig = illustrate_mapping(file_name)
-
+    # Use the raw data we just saved to create the mapping
+    fig = illustrate_mapping('/'.join(file_path.split('/')[-2:]))
     tool_belt.save_figure(fig, file_path)
 
 
@@ -93,54 +98,23 @@ if __name__ == '__main__':
     # Ignore this...
     if True:
         # Circle NVs from an existing mapping
-        file_name = '2019-06-10_15-26-39_ayrton12_mapping'
-        illustrate_mapping(file_name, [13])
+        file_name = '2019_11/2019_11_27-14_40_50-Geoppert-Mayer-nv5_2019_11_27-mapping'
+        illustrate_mapping(file_name, [0])
     else:
 
-        coords_list = [   [0.225, 0.142, 5.03],
-                          [0.180, 0.190, 5.02],
-                          [0.016, 0.242, 5.03],
-                          [-0.038, 0.231, 5.01],
-                          [0.003, 0.216, 5.02], # take g(2) again
-                          [0.061, 0.164, 5.03],  #  great! nv5_2019_07_25
-                          [0.006, 0.187, 5.03],  # take g(2) again
-                          [0.003, 0.170, 5.03],
-                          [-0.010, 0.145, 5.01],
-                          [-0.080, 0.162, 5.01],
-                          [-0.169, 0.161, 5.03], # great! nv10_2019_07_25
-                          [-0.148, 0.111, 5.03],
-                          [-0.221, 0.154, 5.03],
-                          [-0.235, 0.140, 5.03],
-                          [-0.229, 0.116, 5.02],
-                          [-0.128, 0.049, 5.02], # possibly nv15_2019_07_25
-                          [-0.191, 0.041, 5.04], # great! nv16_2019_07_25
-                          [-0.101, 0.048, 5.02],
-                          [0.032, 0.006, 5.03],  # great! low counts nv18_2019_07_25
-                          [-0.075, 0.042, 5.02],
-                          [-0.085, -0.006, 5.04],
-                          [-0.012, -0.032, 5.03],
-                          [0.045, -0.042, 5.01],
-                          [0.026, -0.068, 5.01], # take g(2) again
-                          [0.036, -0.188, 5.03],
-                          [0.122, -0.219, 5.02], # great! nv25_2019_07_25
-                          [-0.101, -0.082, 5.00],
-                          [-0.229, -0.052, 5.03], # great! nv27_2019_07_25
-                          [-0.209, -0.105, 5.05],
-                          [-0.222, -0.121, 5.03], # possibly nv29_2019_07_25
-                          [-0.056, -0.015, 5.02],
-                          [-0.137, -0.046, 5.03],
-                          [0.242, -0.018, 5.03],
-                          [0.229, -0.024, 5.07]] # take g(2) again
+        coords_list = [
+                [-0.761, -0.181, 5.06]
+                ]
 
-        sample_name = 'ayrton12'
-        micrometer_coords = [3.154, 2.193, 11.118, 120.21]
-        image_sample_file_name = '2019-07-25_18-37-46_ayrton12_search'
+        sample_name = 'goeppert_mayer'
+        micrometer_coords = [2730, 1588, 9275]
+        image_sample_file_name = '2019_11/2019_11_27-14_40_50-Geoppert-Mayer-nv5_2019_11_27'
 
         nv_sig_list = []
         for ind in range(len(coords_list)):
             coords = coords_list[ind]
-            name = '{}-nv{}_2019_07_25'.format(sample_name, ind)
-            nd_filter = 'nd_1.5'
+            name = '{}-nv{}_2019_11_27'.format(sample_name, ind)
+            nd_filter = 'nd_1.0'
             nv_sig = {'coords': coords, 'name': name, nd_filter: nd_filter}
             nv_sig_list.append(nv_sig)
 
