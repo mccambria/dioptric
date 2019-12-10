@@ -138,6 +138,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,ao_638_pwr,readout_ti
     ax.plot(unique_value2, relative_frequency2, 'bo')
     ax.set_xlabel('number of photons (n)')
     ax.set_ylabel('P(n)')
+    
+    text = '\n'.join(('Reionization time (532 nm)' + '%.3f'%(reionization_time/10**3) + 'us',
+                      'Illumination time (589 nm)' + '%.3f'%(illumination_time/10**3) + 'us',
+                      'Ionization time (638 nm)' + '%.3f'%(ionization_time/10**3) + 'us'))
+
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
 
 #%% Save data
     timestamp = tool_belt.get_time_stamp()
