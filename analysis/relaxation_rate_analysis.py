@@ -284,6 +284,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
     if doPlot:
         fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
+        fig.set_tight_layout(True)
 
     omega_fit_failed = False
     gamma_fit_failed = False
@@ -384,7 +385,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
     plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
 
-    init_params_list = [1, 0.40]
+    init_params_list = [2*omega, 0.40]
     try:
         if offset:
 
@@ -488,21 +489,10 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                     'gamma_opti_params': gamma_opti_params.tolist(),
                     }
 
-
-
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis'
+        file_name = '{}MHz_splitting_rate_analysis'.format(round(splitting_MHz))
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
-
         tool_belt.save_raw_data(raw_data, file_path)
-
-    # Saving the figure
-
-
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis'
-        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
-                                                             file_name)
-
         tool_belt.save_figure(fig, file_path)
 
         return gamma, gamma_ste
@@ -510,23 +500,9 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-#    folder_list = get_folder_list('nv2_2019_04_30')
-#    print(folder_list)
-#
-#    for folder in folder_list:
-#        try:
-#            main(folder,  None, None,  True, offset = False)
-#        except Exception:
-#            continue
+    path = 'paper_data/bulk_dq/'
+    folder = 'goeppert_mayer-nv7_2019_11_27-167MHz'
+    path += folder
 
-
-
-    folder = 'paper_data/bulk_dq/goeppert_mayer-nv7_2019_11_27-832MHz'
-#    folder = 'nv0_2019_06_06_36MHz'
-
-
-    # folder_name, omega, omega_std, doPlot, offset
-    gamma, ste = main(folder, omega=None, omega_ste=None,
-                      doPlot=True, offset=True)
-    # gamma, ste = main(folder, omega=1.17, omega_ste=0.05,
-    #                   doPlot=True, offset=False)
+    gamma, ste = main(path, omega=None, omega_ste=None,
+                      doPlot=True, offset=False)
