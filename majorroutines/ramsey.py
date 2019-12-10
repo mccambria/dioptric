@@ -174,7 +174,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, detuning,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves

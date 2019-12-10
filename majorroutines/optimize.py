@@ -86,14 +86,16 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
     return numpy.array(counts, dtype=int)
 
     
-def stationary_count_lite(cxn, coords, shared_params, aom_power, apd_indices, color_ind):
+def stationary_count_lite(cxn, coords, shared_params, aom_ao_589_pwr, 
+                          apd_indices, color_ind):
     
     # Some initial values
     readout = shared_params['continuous_readout_dur']
     total_num_samples = 2
     x_center, y_center, z_center = coords
 
-    seq_args = [shared_params['532_aom_delay'], readout, aom_power, apd_indices[0], color_ind]
+    seq_args = [shared_params['532_aom_delay'], readout, aom_ao_589_pwr, 
+                apd_indices[0], color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)
 
@@ -110,7 +112,7 @@ def stationary_count_lite(cxn, coords, shared_params, aom_power, apd_indices, co
     return counts_kcps
     
     
-def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_power,
+def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
                      apd_indices, color_ind, fig=None):
     
     seq_file_name = 'simple_readout.py'
@@ -128,7 +130,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_power,
     # x/y
     if axis_ind in [0, 1]:
         scan_range = scan_range_nm / shared_params['galvo_nm_per_volt']
-        seq_args = [shared_params['galvo_delay'], readout, aom_power, apd_indices[0], color_ind]
+        seq_args = [shared_params['galvo_delay'], readout, aom_ao_589_pwr, 
+                    apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string)
@@ -148,7 +151,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_power,
         
         scan_range = scan_range_nm / shared_params['piezo_nm_per_volt']
         seq_args = [shared_params['objective_piezo_delay'],
-                    readout, aom_power, apd_indices[0], color_ind]
+                    readout, aom_ao_589_pwr, apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string)
@@ -239,12 +242,15 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
 # %% User functions
     
 
-def optimize_list(nv_sig_list, apd_indices):
+def optimize_list(nv_sig_list, apd_indices, color_ind= 532, 
+                  aom_ao_589_pwr = 1.0):
 
     with labrad.connect() as cxn:
-        optimize_list_with_cxn(cxn, nv_sig_list, apd_indices)
+        optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, color_ind,
+                               aom_ao_589_pwr)
 
-def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices):
+def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, color_ind,
+                           aom_ao_589_pwr):
     
     tool_belt.init_safe_stop()
     
@@ -257,7 +263,8 @@ def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices):
             break
         
         nv_sig = nv_sig_list[ind]
-        opti_coords = main_with_cxn(cxn, nv_sig, apd_indices,
+        opti_coords = main_with_cxn(cxn, nv_sig, apd_indices, 
+                                    color_ind, aom_ao_589_pwr,
                            set_to_opti_coords=False, set_drift=False)
         if opti_coords is not None:
             opti_coords_list.append('[{:.3f}, {:.3f}, {:.2f}],'.format(*opti_coords))
@@ -271,14 +278,14 @@ def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices):
 # %% Main
 
 
-def main(nv_sig, apd_indices, color_ind, aom_power = 1.0, 
+def main(nv_sig, apd_indices, color_ind, aom_ao_589_pwr = 1.0, 
          set_to_opti_coords=True, save_data=False, plot_data=False):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, color_ind, aom_power, 
+        main_with_cxn(cxn, nv_sig, apd_indices, color_ind, aom_ao_589_pwr, 
                       set_to_opti_coords, save_data, plot_data)
 
-def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_power = 1.0, 
+def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, 
                   set_to_opti_coords=True, save_data=False,
                   plot_data=False, set_drift=True):
     
@@ -325,7 +332,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_power = 1.0,
         counts_by_axis = []
         for axis_ind in range(3):
             ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
-                                        shared_params, aom_power, 
+                                        shared_params, aom_ao_589_pwr, 
                                         apd_indices, color_ind, fig)
             opti_coords.append(ret_vals[0])
             voltages_by_axis.append(ret_vals[1])
@@ -337,7 +344,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_power = 1.0,
             
         # Check the count rate
         opti_count_rate = stationary_count_lite(cxn, opti_coords,shared_params,
-                                            aom_power, apd_indices, color_ind)
+                                            aom_ao_589_pwr, apd_indices, color_ind)
         
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate
@@ -421,6 +428,8 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_power = 1.0,
                    'readout-units': 'ns',
                    'opti_coords': opti_coords,
                    'opti_coords-units': 'V',
+                   'color_ind': color_ind,
+                   'aom_ao_589_pwr': aom_ao_589_pwr,
                    'x_voltages': voltages_by_axis[0].tolist(),
                    'x_voltages-units': 'V',
                    'y_voltages': voltages_by_axis[1].tolist(),
