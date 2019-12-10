@@ -384,7 +384,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
     plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
 
-    init_params_list = [100, 0.40]
+    init_params_list = [1, 0.40]
     try:
         if offset:
 
@@ -494,7 +494,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
-#        tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_raw_data(raw_data, file_path)
 
     # Saving the figure
 
@@ -503,7 +503,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
         file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
                                                              file_name)
 
-#        tool_belt.save_figure(fig, file_path)
+        tool_belt.save_figure(fig, file_path)
 
         return gamma, gamma_ste
 # %% Run the file
@@ -521,12 +521,12 @@ if __name__ == '__main__':
 
 
 
-    folder = 'nv1_2019_05_10_1017MHz'
+    folder = 'paper_data/bulk_dq/goeppert_mayer-nv7_2019_11_27-832MHz'
 #    folder = 'nv0_2019_06_06_36MHz'
 
 
     # folder_name, omega, omega_std, doPlot, offset
-    gamma, ste = main(folder, omega=1.0, omega_ste=0.5,
+    gamma, ste = main(folder, omega=None, omega_ste=None,
                       doPlot=True, offset=True)
     # gamma, ste = main(folder, omega=1.17, omega_ste=0.05,
     #                   doPlot=True, offset=False)

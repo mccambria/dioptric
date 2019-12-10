@@ -145,7 +145,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     freq_range = 0.03
     num_steps = 51
     num_reps = 10**5
-    num_runs = 2
+    num_runs = 3
 
     pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
                           num_steps, num_reps, num_runs)
@@ -172,7 +172,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 10**5
-    num_runs = 2
+    num_runs = 3
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -182,11 +182,18 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 15*10**6], 11, 0.35*10**4, 210],
-        [[States.HIGH, States.HIGH], [0, 15*10**6], 11, 0.35*10**4, 210],
-        [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 0.25*10**4, 210],
-        [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 0.25*10**4, 210]
-        ])
+            [[States.HIGH, States.LOW], [0, 2*10**6], 11, 1.8*10**4, 40],
+            [[States.HIGH, States.LOW], [0, 12*10**6], 11, 0.35*10**4, 210],
+            
+            [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 1.8*10**4, 40],
+            [[States.HIGH, States.HIGH], [0, 12*10**6], 11, 0.35*10**4, 210],
+            
+            [[States.ZERO, States.HIGH], [0, 2*10**6], 11, 1.8*10**4, 40],
+            [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 0.25*10**4, 210],
+            
+            [[States.ZERO, States.ZERO], [0, 2*10**6], 11, 1.8*10**4, 40],
+            [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 0.25*10**4, 210]
+            ])
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -386,10 +393,10 @@ if __name__ == '__main__':
     
     nv7_2019_11_27 = { 'coords': [-0.745, -0.167, 5.00],
             'name': '{}-nv7_2019_11_27'.format(sample_name),
-            'expected_count_rate': 45, 'nd_filter': 'nd_1.0',
+            'expected_count_rate': 42, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 375, 'magnet_angle': 176.8,
-            'resonance_LOW': 2.4857, 'rabi_LOW': 121.4, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 3.3173, 'rabi_HIGH': 201.3, 'uwave_power_HIGH': 10.0}
+            'resonance_LOW': 2.3298, 'rabi_LOW': 200.8, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 3.5369, 'rabi_HIGH': 487.7, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv7_2019_11_27]
 
@@ -452,8 +459,8 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.600, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.100, freq_range=0.15)
-#            do_rabi(nv_sig, apd_indices, States.LOW, [0, 250])
-#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 400])
+#            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
+#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 600])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
