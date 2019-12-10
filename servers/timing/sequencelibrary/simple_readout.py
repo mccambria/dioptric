@@ -7,6 +7,7 @@ Created on Tue Apr  9 21:24:36 2019
 
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
+import utils.tool_belt as tool_belt
 import numpy
 
 LOW = 0
@@ -16,44 +17,51 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    delay, readout, power, apd_index, color_ind = args
+    delay, readout_time, aom_ao_589_pwr, apd_index, color_ind = args
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    pulser_do_aom = pulser_wiring['do_532_aom']
-    pulser_ao_aom = pulser_wiring['ao_589_aom']
+    pulser_do_532_aom = pulser_wiring['do_532_aom']
+    pulser_ao_589_aom = pulser_wiring['ao_589_aom']
 
     # Convert the 32 bit ints into 64 bit ints
     delay = numpy.int64(delay)
-    readout = numpy.int64(readout)
+    readout_time = numpy.int64(readout_time)
     
-    period = numpy.int64(delay + readout + 300)
-
+    period = numpy.int64(delay + readout_time + 300)
+    
+    # Make sure the aom_ao_589_pwer is within range of +1 and 0
+    tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
+        
+    # make sure only the color passed is either 532 or 589
+    tool_belt.color_ind_err(color_ind)
+        
+    # Define the sequence
     seq = Sequence()
 
     # The clock signal will be high for 100 ns with buffers of 100 ns on
     # either side. During the buffers, everything should be low. The buffers
     # account for any timing jitters/delays and ensure that everything we
     # expect to be on one side of the clock signal is indeed on that side.
-    train = [(delay + readout + 100, LOW), (100, HIGH), (100, LOW)]
+    train = [(delay + readout_time + 100, LOW), (100, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_daq_clock, train)
 
-    train = [(delay, LOW), (readout, HIGH), (300, LOW)]
+    train = [(delay, LOW), (readout_time, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
     
     if color_ind == 589:
         
-        train = [(period, power)]
-        seq.setAnalog(pulser_ao_aom, train)
+        train = [(period, aom_ao_589_pwr)]
+        seq.setAnalog(pulser_ao_589_aom, train)
         
         final_digital = []
-        final = OutputState(final_digital, 0.0, power)
+        final = OutputState(final_digital, 0.0, aom_ao_589_pwr)
     
     elif color_ind == 532:
         
         train = [(period, HIGH)]
-        seq.setDigital(pulser_do_aom, train)
+        seq.setDigital(pulser_do_532_aom, train)
         
         final_digital = [3]
         final = OutputState(final_digital, 0.0, 0.0)

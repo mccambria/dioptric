@@ -3,9 +3,7 @@
 Scan the galvos over the designated area, collecting counts at each point.
 Generate an image of the sample.
 
-Includes a replotting routine to show the data with axes in um instead of V.
-
-Includes a replotting routine to replot rw data to manipulate again.
+Reionize NVs into NV- with green light before collecting photons with yellow.
 
 Created on Tue Apr  9 15:18:53 2019
 
@@ -244,24 +242,26 @@ def create_figure(file_name):
 # %% Mains
 
 
-def main(nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr, apd_indices, 
-         color_ind, continuous=False, save_data=True, plot_data=True):
+def main(nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr, apd_indices,
+         continuous=False, save_data=True, plot_data=True):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr, 
-                      apd_indices, color_ind, continuous, save_data, plot_data)
+                      apd_indices, continuous, save_data, plot_data)
 
 def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr, 
-                  apd_indices, color_ind, continuous=False, save_data=True, 
-                  plot_data=True):
+               apd_indices, continuous=False, save_data=True, plot_data=True):
 
     # %% Some initial setup
 
     tool_belt.reset_cfm(cxn)
 
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    readout = shared_params['continuous_readout_dur']
-#    readout = 100*10**6
+#    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+
+    reionization = 1*10**6
+#    illumination = 10*10**6
+    illumination = 10*10**6
+    readout = illumination
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
@@ -279,10 +279,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     total_num_samples = num_steps**2
 
     # %% Load the PulseStreamer
-        
-    seq_args = [delay, readout, aom_ao_589_pwr, apd_indices[0], color_ind]
+
+    seq_args = [delay, readout, illumination, reionization, aom_ao_589_pwr, 
+                    apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+    ret_vals = cxn.pulse_streamer.stream_load('image_sample_589_w_reionize.py',
                                               seq_args_string)
     period = ret_vals[0]
 
@@ -379,15 +380,18 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
-               'color_ind': color_ind,
                'aom_ao_589_pwr': aom_ao_589_pwr,
+               'readout': readout,
+               'readout-units': 'ns',
+               'illumination': illumination,
+               'illumination-units': 'ns',
+               'reionization': reionization,
+               'reionization-units': 'ns',
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,
                'y_range-units': 'V',
                'num_steps': num_steps,
-               'readout': readout,
-               'readout-units': 'ns',
                'x_voltages': x_voltages.tolist(),
                'x_voltages-units': 'V',
                'y_voltages': y_voltages.tolist(),

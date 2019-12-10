@@ -22,7 +22,7 @@ import numpy
 from numpy import exp
 import json
 import time
-import labrad
+#import labrad
 from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
@@ -645,7 +645,17 @@ def get_nv_sig_units():
         'pulsed_readout_dur': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz',
         'rabi': 'ns', 'uwave_power': 'dBm'}
 
-
+# Error messages
+    
+def color_ind_err(color_ind):
+    if color_ind != 532 or color_ind != 589:
+        raise RuntimeError('Value of color_ind must be 532 or 589.'+
+                           '\nYou entered {} V'.format(color_ind))
+        
+def aom_ao_589_pwr_err(aom_ao_589_pwr):
+    if aom_ao_589_pwr < 0 or aom_ao_589_pwr > 1.0:
+        raise RuntimeError('Value for 589 aom must be within 0 to +1 V.'+
+                           '\nYou entered {} V'.format(aom_ao_589_pwr))
 # %% Safe stop (TM mccambria)
 
 

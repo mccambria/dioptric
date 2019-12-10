@@ -3,9 +3,7 @@
 Scan the galvos over the designated area, collecting counts at each point.
 Generate an image of the sample.
 
-Includes a replotting routine to show the data with axes in um instead of V.
-
-Includes a replotting routine to replot rw data to manipulate again.
+Reionize NVs into NV- with green light before collecting photons with yellow.
 
 Created on Tue Apr  9 15:18:53 2019
 
@@ -244,15 +242,15 @@ def create_figure(file_name):
 # %% Mains
 
 
-def main(nv_sig, x_range, y_range, num_steps, aom_power, apd_indices,
+def main(nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr, apd_indices,
          continuous=False, save_data=True, plot_data=True):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indices,
-                      continuous, save_data, plot_data)
+        main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr, 
+                      apd_indices, continuous, save_data, plot_data)
 
-def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indices,
-                  continuous=False, save_data=True, plot_data=True):
+def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr, 
+               apd_indices, continuous=False, save_data=True, plot_data=True):
 
     # %% Some initial setup
 
@@ -282,7 +280,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indic
 
     # %% Load the PulseStreamer
 
-    seq_args = [delay, readout, illumination, reionization, aom_power, 
+    seq_args = [delay, readout, illumination, reionization, aom_ao_589_pwr, 
                     apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('SCC_image.py',
@@ -382,7 +380,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_power, apd_indic
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
-               'AOM_power': aom_power,
+               'aom_ao_589_pwr': aom_ao_589_pwr,
                'readout': readout,
                'readout-units': 'ns',
                'illumination': illumination,
