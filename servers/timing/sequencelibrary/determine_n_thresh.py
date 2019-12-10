@@ -3,11 +3,14 @@
 """
 Created on Mon Nov 18 16:45:20 2019
 
+Collect the photon counts under yellow illumination, after reionizing NV into 
+NV- with green light.
+
 @author: yanfeili
 """
 
 from pulsestreamer import Sequence
-from pulsestreamer import OutputState
+import ultils.tool_belt as tool_belt
 import numpy
 
 LOW = 0
@@ -16,41 +19,44 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    gate_time, illumination_time, aom_delay589, apd_indices, aom_power = args
+    readout_time, illumination_time, aom_delay, apd_indices, \
+                                                    aom_ao_589_pwr = args
 
-    readout_time = numpy.int64(gate_time)
-    aom_delay589 = numpy.int64(aom_delay589)
+    readout_time = numpy.int64(readout_time)
+    aom_delay = numpy.int64(aom_delay)
 
     # SCC photon collection test period
-    period =  illumination_time + readout_time + aom_delay589 + 400
+    period =  illumination_time + readout_time + aom_delay + 400
     
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_indices)]
     pulser_do_clock = pulser_wiring['do_sample_clock']
-    pulser_do_aom532 = pulser_wiring['do_532_aom']
-    pulser_ao_aom589 = pulser_wiring['ao_589_aom']
-
-
+    pulser_do_532_aom = pulser_wiring['do_532_aom']
+    pulser_ao_589_aom = pulser_wiring['ao_589_aom']
+    
+    # Make sure the ao_aom voltage to the 589 aom is within 0 and 1 V
+    tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
+    
     seq = Sequence()
 
 
     #collect photons for certain timewindow tR in APD
-    train = [(aom_delay589 + illumination_time + 100, LOW), (readout_time, HIGH), (100, LOW)]
+    train = [(aom_delay + illumination_time + 100, LOW), (readout_time, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
     #clock pulse
-    train = [(aom_delay589 + illumination_time + 100 + readout_time + 100, LOW), (100, HIGH), (100, LOW)]
+    train = [(aom_delay + illumination_time + 100 + readout_time + 100, LOW), (100, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_clock, train)
 
     # illuminate with 532 
-    train = [(illumination_time, HIGH), (aom_delay589, LOW)]
-    seq.setDigital(pulser_do_aom532, train)
-#    train = [(illumination_time, HIGH), (100, LOW), (readout_time, HIGH), (aom_delay589, LOW)]
-#    seq.setDigital(pulser_do_aom532, train)
+    train = [(illumination_time, HIGH), (aom_delay, LOW)]
+    seq.setDigital(pulser_do_532_aom, train)
+#    train = [(illumination_time, HIGH), (100, LOW), (readout_time, HIGH), (aom_delay, LOW)]
+#    seq.setDigital(pulser_do_532_aom, train)
     
     # readout with 589
-    train = [(illumination_time + 100, LOW), (readout_time, aom_power), (aom_delay589, LOW)]
-    seq.setAnalog(pulser_ao_aom589, train)
+    train = [(illumination_time + 100, LOW), (readout_time, aom_ao_589_pwr), (aom_delay, LOW)]
+    seq.setAnalog(pulser_ao_589_aom, train)
     
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)

@@ -258,10 +258,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
 
 #    shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
-    reionization = 1*10**6
+    reionization_time = 1*10**6
 #    illumination = 10*10**6
-    illumination = 10*10**6
-    readout = illumination
+    illumination_time = 10*10**6
+    readout = illumination_time
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
@@ -280,7 +280,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
 
     # %% Load the PulseStreamer
 
-    seq_args = [delay, readout, illumination, reionization, aom_ao_589_pwr, 
+    seq_args = [delay, readout, illumination_time, reionization_time, aom_ao_589_pwr, 
                     apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('image_sample_589_w_reionize.py',
@@ -381,12 +381,13 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
                'aom_ao_589_pwr': aom_ao_589_pwr,
+               'aom_ao_589_pwr-units': 'V',
                'readout': readout,
                'readout-units': 'ns',
-               'illumination': illumination,
-               'illumination-units': 'ns',
-               'reionization': reionization,
-               'reionization-units': 'ns',
+               'illumination_time': illumination_time,
+               'illumination_time-units': 'ns',
+               'reionization_time': reionization_time,
+               'reionization_time-units': 'ns',
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,

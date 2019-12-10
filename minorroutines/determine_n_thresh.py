@@ -3,6 +3,9 @@
 """
 Created on Mon Nov 18 20:39:55 2019
 
+Collect the photon counts under yellow illumination, after reionizing NV into 
+NV- with green light.
+
 @author: yanfeili
 """
 
@@ -38,31 +41,25 @@ def get_Probability_distribution(aList):
     
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, readout_power,readout_time, num_runs, num_reps):
+def main(nv_sig, apd_indices, aom_ao_589_pwr,readout_time, num_runs, num_reps):
     
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time, num_runs, num_reps)
+        main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time, num_runs, num_reps)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs, num_reps):
+def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs, num_reps):
 
     tool_belt.reset_cfm(cxn)
 
-# %% Initial Calculation and setup
-#    apd_indices = [0]
-    
+# %% Initial Calculation and setup  
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     
     #Define some parameters
     
-    #delay of aoms and laser
-    aom_delay589 = shared_params['532_aom_delay'] 
-    #gate_time in this sequence is the readout time ~8 ms 
-    gate_time = readout_time
-    #get the aom_power corresponding to the laser power we want 
+    #delay of aoms
+    aom_delay = shared_params['532_aom_delay'] 
+    
     #readout_power in unit of microwatts
-    aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
-    if aom_power > 1:
-        aom_power = 1.0
+#    aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
     
     illumination_time = 1*10**6
 #    illumination_time = 1*10**6
@@ -70,13 +67,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     # Set up our data structure, an array of NaNs that we'll fill
     # we repeatively collect photons for tR 
     
-
     sig_counts=[]
     opti_coords_list = []
     
 #%% Estimate the lenth of the sequance
     
-    seq_args = [gate_time, illumination_time, aom_delay589 ,apd_indices[0], aom_power]
+    seq_args = [readout_time, illumination_time, aom_delay ,apd_indices[0], 
+                aom_ao_589_pwr]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('determine_n_thresh.py', seq_args_string)
     
@@ -100,9 +97,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
 
         print('Run index: {}'. format(run_ind))
                 
-#        # Optimize
-#        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
-#        opti_coords_list.append(opti_coords)   
+        # Optimize
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
+        opti_coords_list.append(opti_coords)   
         
         drift = numpy.array(tool_belt.get_drift())
         coords = numpy.array(nv_sig['coords'])
@@ -125,7 +122,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
         
-        seq_args = [gate_time, illumination_time, aom_delay589 ,apd_indices[0], aom_power]
+        seq_args = [readout_time, illumination_time, aom_delay ,apd_indices[0], aom_ao_589_pwr]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate('determine_n_thresh.py', num_reps, seq_args_string)
     
@@ -156,8 +153,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs,
     
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
-            'readout_power': readout_power,
-            'readout_power_unit':'uW',
+            'aom_ao_589_pwr': aom_ao_589_pwr,
+            'aom_ao_589_pwr':'V',
             'readout_time':readout_time,
             'readout_time_unit':'ns',
             'illumination_time': illumination_time,

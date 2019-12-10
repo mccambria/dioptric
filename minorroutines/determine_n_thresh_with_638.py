@@ -5,6 +5,10 @@ Created on Wed Sep  4 10:45:09 2019
 This file is used to determine the cutoff for photon count nuer for individual
 measurmenets between the charge states of the NV.
 
+Collect the photon counts under yellow illumination, after reionizing NV into 
+NV- with green light. A second collection occurs after ionizing NV to NV0 with 
+red light.
+
 @author: yanfeili
 """
 import utils.tool_belt as tool_belt
@@ -37,12 +41,12 @@ def get_Probability_distribution(aList):
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, readout_power,readout_time, ionize_time, num_runs, num_reps):
+def main(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,readout_time, ionization_time, num_runs, num_reps):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time, ionize_time, num_runs, num_reps)
+        main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,ao_638_pwr,readout_time, ionization_time, num_runs, num_reps)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time, ionize_time,num_runs, num_reps):
+def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,ao_638_pwr,readout_time, ionization_time,num_runs, num_reps):
 
     tool_belt.reset_cfm(cxn)
 
@@ -54,20 +58,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time, ionize_t
     #Define some parameters
 
     #delay of aoms and laser
-    aom_delay589 = shared_params['532_aom_delay']
-    aom_delay638 = shared_params['532_aom_delay']
+    aom_delay = shared_params['532_aom_delay']
     #gate_time in this sequence is the readout time ~8 ms
     gate_time = readout_time
-    illumination_time589 = readout_time + 10**3
-    #get the aom_power corresponding to the laser power we want
-    #readout_power in unit of microwatts
-    aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
-    if aom_power > 1:
-        aom_power = 1.0
+    illumination_time = readout_time + 10**3
 
-    illumination_time532 = 10**6
+    reionization_time = 10**6
 
-    aom_delay638 = shared_params['532_aom_delay']
     # Set up our data structure, list
     # we repeatively collect photons for tR
 
@@ -78,9 +75,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time, ionize_t
 
 #%% Estimate the lenth of the sequance
 
-    seq_args = [gate_time, illumination_time532, illumination_time589,
-                    aom_delay589, apd_indices[0], aom_power, aom_delay638,
-                    ionize_time]
+    seq_args = [gate_time, reionization_time, illumination_time, ionization_time,
+                    aom_delay, apd_indices[0], aom_ao_589_pwr, ao_638_pwr]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('determine_n_thresh_with_638.py', seq_args_string)
 
@@ -115,9 +111,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time, ionize_t
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
-        seq_args = [gate_time, illumination_time532, illumination_time589,
-                    aom_delay589, apd_indices[0], aom_power, aom_delay638,
-                    ionize_time]
+        seq_args = [readout_time, reionization_time, illumination_time, ionization_time,
+                    aom_delay, apd_indices[0], aom_ao_589_pwr, ao_638_pwr]
 
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate('determine_n_thresh_with_638.py', num_reps, seq_args_string)
@@ -157,16 +152,18 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time, ionize_t
 
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
-            'readout_power': readout_power,
-            'readout_power_unit':'uW',
+            'aom_ao_589_pwr': aom_ao_589_pwr,
+            'aom_ao_589_pwr-units':'V',
+            'ao_638_pwr': ao_638_pwr,
+            'ao_638_pwr-units': 'V',
             'readout_time':readout_time,
             'readout_time_unit':'ns',
-            'illumination_time532': illumination_time532,
+            'reionization_time': reionization_time,
+            'reionization_time-units': 'ns',
+            'illumination_time': illumination_time,
             'illumination_time-units': 'ns',
-            'illumination_time589': illumination_time589,
-            'illumination_time-units': 'ns',
-            'illumination_time638': ionize_time,
-            'illumination_time-units': 'ns',
+            'ionization_time': ionization_time,
+            'ionization_time-units': 'ns',
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'num_runs': num_runs,
             'num_reps':num_reps,
