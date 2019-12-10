@@ -13,35 +13,35 @@ import json
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-init_params_list_2 = [[10**5, 10, 100],
-                        [10**5, 10,  100],
-                        [10**5, 10,  100],
-                        [10**5, 10,  100]
-                        ]
+#init_params_list_2 = [[10**5, 10, 10**5, 100],
+#                        [10**5, 10, 10**5,  100],
+#                        [10**5, 10, 10**5,  100],
+#                        [10**5, 10, 10**5,  100]
+#                        ]
 
 
-init_params_list_3 = [[10**5, 10, 30,  100],
-                    [10**5, 10, 30,  100],
-                    [10**5, 10, 30,  100],
-                    [10**5, 10, 30,  100],
+init_params_list_3 = [[10**5, 10, 10**5,70,  10**5,300],
+                    [10**5, 10, 10**5,70,  10**5,300],
+                    [10**5, 10, 10**5,70,  10**5,300],
+                    [10**5, 10, 10**5,70,  10**5,300],
                     ]
 
-init_params_list_4 = [[10**4, 10, 30,  100,  1000],
-                    [10**4, 10, 30,  100,  1000],
-                    [10**4, 10, 30,  100,  1000],
-                    [10**4, 10, 30,  100,  1000],
-                    ]
+#init_params_list_4 = [[10**4, 10, 30,  100,  1000],
+#                    [10**4, 10, 30,  100,  1000],
+#                    [10**4, 10, 30,  100,  1000],
+#                    [10**4, 10, 30,  100,  1000],
+#                    ]
     
 # %%
 
 def decayExp(t, amplitude, decay):
     return amplitude * numpy.exp(- t / decay)
 
-def double_decay(t, a, d1, d2):
-    return decayExp(t, a, d1) + decayExp(t, 2*a, d2)
+def double_decay(t, a1, d1, a2, d2):
+    return decayExp(t, a1, d1) + decayExp(t, a2, d2)
 
-def triple_decay(t, a, d1, d2, d3):
-    return decayExp(t, a, d1) + decayExp(t, a, d2) + decayExp(t, a, d3)
+def triple_decay(t, a1, d1, a2, d2, a3, d3):
+    return decayExp(t, a1, d1) + decayExp(t, a2, d2) + decayExp(t, a3, d3)
 
 def tetra_decay(t, a, d1, d2, d3, d4):
     return decayExp(t, a, d1) + decayExp(t, a, d2) + decayExp(t, a, d3) \
@@ -57,16 +57,16 @@ def main():
 #    file_NG = '2019_11_27-10_31_03-Y2O3-no_filter'
     
     # 550 Bandpass
-    #file_HIGH = '2019_11_27-09_10_09-graphene_Y2O3-550_bandpass'
-    #file_ZERO = '2019_11_27-09_37_59-graphene_Y2O3-550_bandpass'
-    #file_LOW = '2019_11_27-10_06_12-graphene_Y2O3-550_bandpass'
-    #file_NG = '2019_11_27-10_44_01-Y2O3-550_bandpass'
+    file_HIGH = '2019_11_27-09_10_09-graphene_Y2O3-550_bandpass'
+    file_ZERO = '2019_11_27-09_37_59-graphene_Y2O3-550_bandpass'
+    file_LOW = '2019_11_27-10_06_12-graphene_Y2O3-550_bandpass'
+    file_NG = '2019_11_27-10_44_01-Y2O3-550_bandpass'
     #
     # 630 longpass
-    file_HIGH = '2019_11_27-09_16_22-graphene_Y2O3-630_longpass'
-    file_ZERO = '2019_11_27-09_44_07-graphene_Y2O3-630_longpass'
-    file_LOW = '2019_11_27-09_59_07-graphene_Y2O3-630_longpass'
-    file_NG = '2019_11_27-10_36_39-Y2O3-630_longpass'
+#    file_HIGH = '2019_11_27-09_16_22-graphene_Y2O3-630_longpass'
+#    file_ZERO = '2019_11_27-09_44_07-graphene_Y2O3-630_longpass'
+#    file_LOW = '2019_11_27-09_59_07-graphene_Y2O3-630_longpass'
+#    file_NG = '2019_11_27-10_36_39-Y2O3-630_longpass'
     
     file_list = [file_HIGH, file_ZERO, file_LOW, file_NG]
     # Make list for the data
@@ -99,43 +99,81 @@ def main():
     
     for i in range(len(file_list)):
     
-        popt,pcov = curve_fit(tetra_decay, bin_center_list[i][0:34], counts_list[i][0:34],
-                                  p0=init_params_list_4[i])
+        popt,pcov = curve_fit(triple_decay, bin_center_list[i][0:34], counts_list[i][0:34],
+                                  p0=init_params_list_3[i])
 
         popt_list.append(popt)
         
         ax.plot(bin_center_list[i], counts_list[i], data_fmt_list[i],label=label_list[i])
-        ax.plot(linspaceTime, tetra_decay(linspaceTime,*popt),fit_fmt_list[i])
+#        ax.plot(linspaceTime, triple_decay(linspaceTime,*popt),fit_fmt_list[i])
         
     ax.set_xlabel('Time (us)')
     ax.set_ylabel('Counts (arb.)')
-    ax.set_title('Er implanted Y2O3 lifetime, 630 longpass filter')
+    ax.set_title('Er implanted Y2O3 lifetime, 550 bandpass filter')
     ax.legend()
-    ax.set_xlim([0,500])
+#    ax.set_xlim([0,500])
     ax.set_yscale("log", nonposy='clip')
     print(popt_list)
     
-    text = "\n".join((r'$A e^{-t / d_1} +  A e^{-t / d_2} +  A e^{-t / d_3} $',
-#        + A_4 e^{-t / d_4}$',
+    text_eq = r'$A_1 e^{-t / d_1} +  A_2 e^{-t / d_2} +  A_3 e^{-t / d_3} $'
+    text_4V = "\n".join((
                       'w/ graphene 4.2 V',
-                      r'$A = $' + "%.1f"%(popt_list[0][0]),
+                      r'$A_1 = $' + "%.1f"%(popt_list[0][0]) + ', '
                       r'$d_1 = $' + "%.1f"%(popt_list[0][1]) + " us",
-                      r'$d_2 = $' + "%.1f"%(popt_list[0][2]) + " us",
-                      r'$d_3 = $' + "%.1f"%(popt_list[0][3]) + " us",
-                      r'$d_4 = $' + "%.1f"%(popt_list[0][4]) + " us",
+                      r'$A_2 = $' + "%.1f"%(popt_list[0][2]) + ', '
+                      r'$d_2 = $' + "%.1f"%(popt_list[0][3]) + " us",
+                      r'$A_3 = $' + "%.1f"%(popt_list[0][3]) + ', '
+                      r'$d_3 = $' + "%.1f"%(popt_list[0][5]) + " us"))
+    text_0V = "\n".join((
+                      'w/ graphene 0 V',
+                      r'$A_1 = $' + "%.1f"%(popt_list[1][0]) + ', '
+                      r'$d_1 = $' + "%.1f"%(popt_list[1][1]) + " us",
+                      r'$A_2 = $' + "%.1f"%(popt_list[1][2]) + ', '
+                      r'$d_2 = $' + "%.1f"%(popt_list[1][3]) + " us",
+                      r'$A_3 = $' + "%.1f"%(popt_list[1][3]) + ', '
+                      r'$d_3 = $' + "%.1f"%(popt_list[1][5]) + " us"))
+    text_3V = "\n".join((
+                      'w/ graphene -3 V',
+                      r'$A_1 = $' + "%.1f"%(popt_list[2][0]) + ', '
+                      r'$d_1 = $' + "%.1f"%(popt_list[2][1]) + " us",
+                      r'$A_2 = $' + "%.1f"%(popt_list[2][2]) + ', '
+                      r'$d_2 = $' + "%.1f"%(popt_list[2][3]) + " us",
+                      r'$A_3 = $' + "%.1f"%(popt_list[2][3]) + ', '
+                      r'$d_3 = $' + "%.1f"%(popt_list[2][5]) + " us"))
+    text_NOF = "\n".join((
                       'w/out graphene',
-                      r'$A = $' + "%.1f"%(popt_list[3][0]),
+                      r'$A_1 = $' + "%.1f"%(popt_list[3][0]) + ', '
                       r'$d_1 = $' + "%.1f"%(popt_list[3][1]) + " us",
-                      r'$d_2 = $' + "%.1f"%(popt_list[3][2]) + " us",
-                      r'$d_3 = $' + "%.1f"%(popt_list[3][3]) + " us",
-                      r'$d_4 = $' + "%.1f"%(popt_list[3][4]) + " us"
+                      r'$A_2 = $' + "%.1f"%(popt_list[3][2]) + ', '
+                      r'$d_2 = $' + "%.1f"%(popt_list[3][3]) + " us",
+                      r'$A_3 = $' + "%.1f"%(popt_list[3][4]) + ', '
+                      r'$d_3 = $' + "%.1f"%(popt_list[3][5]) + " us",
                       ))
     
     
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(0.05, 0.5, text, transform=ax.transAxes, fontsize=12,
-                            verticalalignment="top", bbox=props)
+#    ax.text(0.02, 0.48, text_eq, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    ax.text(0.02, 0.38, text_4V, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    ax.text(0.34, 0.38, text_0V, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    ax.text(0.02, 0.18, text_3V, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    ax.text(0.34, 0.18, text_NOF, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
     
+#    ax.text(0.35, 0.95, text_eq, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    ax.text(0.35, 0.85, text_4V, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    ax.text(0.67, 0.8, text_0V, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    ax.text(0.35, 0.65, text_3V, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    ax.text(0.67, 0.6, text_NOF, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
+#    
 #    ax.set_yscale("log", nonposy='clip')
     
     fig_fit.canvas.draw()
@@ -242,25 +280,52 @@ def subtract():
     ax.legend()
     ax.set_xlim([0,500])
     
-    text = "\n".join((r'$A e^{-t / d_1} +  A e^{-t / d_2} +  A e^{-t / d_3} $',
-#        + A_4 e^{-t / d_4}$',
+    text_eq = r'$A_1 e^{-t / d_1} +  A_2 e^{-t / d_2} +  A_3 e^{-t / d_3} $'
+    text_4V = "\n".join((
                       'w/ graphene 4.2 V',
-                      r'$A = $' + "%.1f"%(popt_list[0][0]),
+                      r'$A_1 = $' + "%.1f"%(popt_list[0][0]) + ', '
                       r'$d_1 = $' + "%.1f"%(popt_list[0][1]) + " us",
-                      r'$d_2 = $' + "%.1f"%(popt_list[0][2]) + " us",
-                      r'$d_3 = $' + "%.1f"%(popt_list[0][3]) + " us",
-#                      r'$d_4 = $' + "%.1f"%(popt_list[0][4]) + " us",
+                      r'$A_2 = $' + "%.1f"%(popt_list[0][2]) + ', '
+                      r'$d_2 = $' + "%.1f"%(popt_list[0][3]) + " us",
+                      r'$A_3 = $' + "%.1f"%(popt_list[0][3]) + ', '
+                      r'$d_3 = $' + "%.1f"%(popt_list[0][5]) + " us"))
+    text_0V = "\n".join((
+                      'w/ graphene 0 V',
+                      r'$A_1 = $' + "%.1f"%(popt_list[1][0]) + ', '
+                      r'$d_1 = $' + "%.1f"%(popt_list[1][1]) + " us",
+                      r'$A_2 = $' + "%.1f"%(popt_list[1][2]) + ', '
+                      r'$d_2 = $' + "%.1f"%(popt_list[1][3]) + " us",
+                      r'$A_3 = $' + "%.1f"%(popt_list[1][3]) + ', '
+                      r'$d_3 = $' + "%.1f"%(popt_list[1][5]) + " us"))
+    text_3V = "\n".join((
+                      'w/ graphene -3 V',
+                      r'$A_1 = $' + "%.1f"%(popt_list[2][0]) + ', '
+                      r'$d_1 = $' + "%.1f"%(popt_list[2][1]) + " us",
+                      r'$A_2 = $' + "%.1f"%(popt_list[2][2]) + ', '
+                      r'$d_2 = $' + "%.1f"%(popt_list[2][3]) + " us",
+                      r'$A_3 = $' + "%.1f"%(popt_list[2][3]) + ', '
+                      r'$d_3 = $' + "%.1f"%(popt_list[2][5]) + " us"))
+    text_NOF = "\n".join((
                       'w/out graphene',
-                      r'$A = $' + "%.1f"%(popt_list[3][0]),
+                      r'$A_1 = $' + "%.1f"%(popt_list[3][0]) + ', '
                       r'$d_1 = $' + "%.1f"%(popt_list[3][1]) + " us",
-                      r'$d_2 = $' + "%.1f"%(popt_list[3][2]) + " us",
-                      r'$d_3 = $' + "%.1f"%(popt_list[3][3]) + " us",
-#                      r'$d_4 = $' + "%.1f"%(popt_list[3][4]) + " us"
+                      r'$A_2 = $' + "%.1f"%(popt_list[3][2]) + ', '
+                      r'$d_2 = $' + "%.1f"%(popt_list[3][3]) + " us",
+                      r'$A_3 = $' + "%.1f"%(popt_list[3][4]) + ', '
+                      r'$d_3 = $' + "%.1f"%(popt_list[3][5]) + " us",
                       ))
     
     
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(0.05, 0.5, text, transform=ax.transAxes, fontsize=12,
+    ax.text(0.05, 0.6, text_eq, transform=ax.transAxes, fontsize=12,
+                            verticalalignment="top", bbox=props)
+    ax.text(0.05, 0.5, text_4V, transform=ax.transAxes, fontsize=12,
+                            verticalalignment="top", bbox=props)
+    ax.text(0.4, 0.5, text_0V, transform=ax.transAxes, fontsize=12,
+                            verticalalignment="top", bbox=props)
+    ax.text(0.05, 0.3, text_3V, transform=ax.transAxes, fontsize=12,
+                            verticalalignment="top", bbox=props)
+    ax.text(0.4, 0.3, text_NOF, transform=ax.transAxes, fontsize=12,
                             verticalalignment="top", bbox=props)
     
     
@@ -275,5 +340,5 @@ def subtract():
 #%%
     
 if __name__ == '__main__':
-    subtract()
-#    main()
+#    subtract()
+    main()
