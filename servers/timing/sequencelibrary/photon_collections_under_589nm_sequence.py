@@ -16,26 +16,26 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    gate_time, aom_delay589, apd_indices, aom_power = args
+    readout_time, aom_delay, apd_indices, aom_ao_589_pwr = args
 
 
 
-    readout_time = numpy.int64(gate_time)
-    aom_delay589 = numpy.int64(aom_delay589)
+    readout_time = numpy.int64(readout_time)
+    aom_delay = numpy.int64(aom_delay)
 
    #SCC photon collection test period
-    period =  readout_time + aom_delay589
+    period =  readout_time + aom_delay
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_indices)]
     pulser_do_clock = pulser_wiring['do_sample_clock']
-    pulser_ao_aom589 = pulser_wiring['ao_589_aom']
+    pulser_ao_589_aom = pulser_wiring['ao_589_aom']
 
 
     seq = Sequence()
 
 
     #collect photons for certain timewindow tR in APD
-    train = [(readout_time, HIGH), (aom_delay589, LOW)]
+    train = [(readout_time, HIGH), (aom_delay, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
 
     #clock
@@ -43,8 +43,8 @@ def get_seq(pulser_wiring, args):
     seq.setDigital(pulser_do_clock, train)
 
     #readout with 589
-    train = [(readout_time, aom_power),(aom_delay589, LOW)]
-    seq.setAnalog(pulser_ao_aom589, train)
+    train = [(readout_time, aom_ao_589_pwr),(aom_delay, LOW)]
+    seq.setAnalog(pulser_ao_589_aom, train)
     
     final_digital = [0]
     final = OutputState(final_digital, 0.0, 0.0)

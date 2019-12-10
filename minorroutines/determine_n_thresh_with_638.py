@@ -41,12 +41,15 @@ def get_Probability_distribution(aList):
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,readout_time, ionization_time, num_runs, num_reps):
+def main(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr, readout_time, 
+         ionization_time, num_runs, num_reps):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,ao_638_pwr,readout_time, ionization_time, num_runs, num_reps)
+        main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr, 
+                      readout_time, ionization_time, num_runs, num_reps)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,ao_638_pwr,readout_time, ionization_time,num_runs, num_reps):
+def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr, 
+                  readout_time, ionization_time,num_runs, num_reps):
 
     tool_belt.reset_cfm(cxn)
 
@@ -54,15 +57,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,ao_638_pwr,readout_ti
 #    apd_indices = [0]
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-
-    #Define some parameters
-
+    
     #delay of aoms and laser
     aom_delay = shared_params['532_aom_delay']
-    #gate_time in this sequence is the readout time ~8 ms
-    gate_time = readout_time
+    
     illumination_time = readout_time + 10**3
-
     reionization_time = 10**6
 
     # Set up our data structure, list
@@ -75,15 +74,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,ao_638_pwr,readout_ti
 
 #%% Estimate the lenth of the sequance
 
-    seq_args = [gate_time, reionization_time, illumination_time, ionization_time,
-                    aom_delay, apd_indices[0], aom_ao_589_pwr, ao_638_pwr]
+    seq_args = [readout_time, reionization_time, illumination_time, 
+                ionization_time, aom_delay, apd_indices[0], 
+                aom_ao_589_pwr, ao_638_pwr]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('determine_n_thresh_with_638.py', seq_args_string)
 
     seq_time = ret_vals[0]
 
     seq_time_s = seq_time / (10**9)  # s
-    expected_run_time = num_reps * num_runs * seq_time_s + (0.5 * num_runs)  # s
+    expected_run_time = num_reps * num_runs * seq_time_s + (0.5 * num_runs)  #s
     expected_run_time_m = expected_run_time / 60 # m
 
     # Ask to continue and timeout if no response in 2 seconds?
@@ -111,8 +111,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,ao_638_pwr,readout_ti
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
-        seq_args = [readout_time, reionization_time, illumination_time, ionization_time,
-                    aom_delay, apd_indices[0], aom_ao_589_pwr, ao_638_pwr]
+        seq_args = [readout_time, reionization_time, illumination_time, 
+                    ionization_time, aom_delay, apd_indices[0], 
+                    aom_ao_589_pwr, ao_638_pwr]
 
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate('determine_n_thresh_with_638.py', num_reps, seq_args_string)

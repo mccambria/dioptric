@@ -19,14 +19,16 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    readout_time, illumination_time, aom_delay, apd_indices, \
+    readout_time, reionization_time, illumination_time, aom_delay, apd_indices, \
                                                     aom_ao_589_pwr = args
 
     readout_time = numpy.int64(readout_time)
+    illumination_time = numpy.int64(illumination_time)
+    reionization_time = numpy.int64(reionization_time)
     aom_delay = numpy.int64(aom_delay)
 
     # SCC photon collection test period
-    period =  illumination_time + readout_time + aom_delay + 400
+    period =  reionization_time + illumination_time + aom_delay + 400
     
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_indices)]
@@ -41,21 +43,21 @@ def get_seq(pulser_wiring, args):
 
 
     #collect photons for certain timewindow tR in APD
-    train = [(aom_delay + illumination_time + 100, LOW), (readout_time, HIGH), (100, LOW)]
+    train = [(aom_delay + reionization_time + 100, LOW), (readout_time, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
     #clock pulse
-    train = [(aom_delay + illumination_time + 100 + readout_time + 100, LOW), (100, HIGH), (100, LOW)]
+    train = [(aom_delay + reionization_time + 100 + readout_time + 100, LOW), (100, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_clock, train)
 
     # illuminate with 532 
-    train = [(illumination_time, HIGH), (aom_delay, LOW)]
+    train = [(reionization_time, HIGH), (aom_delay, LOW)]
     seq.setDigital(pulser_do_532_aom, train)
-#    train = [(illumination_time, HIGH), (100, LOW), (readout_time, HIGH), (aom_delay, LOW)]
+#    train = [(reionization_time, HIGH), (100, LOW), (readout_time, HIGH), (aom_delay, LOW)]
 #    seq.setDigital(pulser_do_532_aom, train)
     
     # readout with 589
-    train = [(illumination_time + 100, LOW), (readout_time, aom_ao_589_pwr), (aom_delay, LOW)]
+    train = [(reionization_time + 100, LOW), (illumination_time, aom_ao_589_pwr), (aom_delay, LOW)]
     seq.setAnalog(pulser_ao_589_aom, train)
     
     final_digital = []

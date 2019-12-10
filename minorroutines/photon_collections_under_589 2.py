@@ -16,11 +16,11 @@ import labrad
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, readout_power,readout_time,num_runs):
+def main(nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs):
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
+        main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs):
+def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs):
 
     tool_belt.reset_cfm(cxn)
 
@@ -32,14 +32,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
     #Define some parameters
     
     #delay of aoms and laser
-    aom_delay589 = shared_params['532_aom_delay'] 
-    #gate_time in this sequence is the readout time ~8 ms 
-    gate_time = readout_time
-    #get the aom_power corresponding to the laser power we want 
-    #readout_power in unit of microwatts
-    aom_power = numpy.sqrt((readout_power - 0.432)/1361.811)
+    aom_delay = shared_params['532_aom_delay'] 
+
     # Analyze the sequence
-    seq_args = [gate_time, aom_delay589,readout_time,apd_indices, aom_power]
+    seq_args = [readout_time, aom_delay,readout_time,apd_indices, aom_ao_589_pwr]
     seq_args = [int(el) for el in seq_args]
 #    print(seq_args)
 #    return
@@ -58,7 +54,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
 #%% Collect data
     tool_belt.init_safe_stop()
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, readout_power, apd_indices, 532)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
     opti_coords_list.append(opti_coords)    
     for run_ind in range(num_runs):
 
@@ -87,8 +83,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_power,readout_time,num_runs)
      
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
-            'readout_power':readout_power,
-            'readout_power_unit':'nW',
+            'aom_ao_589_pwr':aom_ao_589_pwr,
+            'aom_ao_589_pwr-units':'nW',
             'readout_time':readout_time,
             'readout_time_unit':'ns',
             'nv_sig-units': tool_belt.get_nv_sig_units(),

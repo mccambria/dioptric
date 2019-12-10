@@ -61,8 +61,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     #readout_power in unit of microwatts
 #    aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
     
-    illumination_time = 1*10**6
-#    illumination_time = 1*10**6
+    reionization_time = 1*10**6
+    illumination_time = readout_time + 10**3
     
     # Set up our data structure, an array of NaNs that we'll fill
     # we repeatively collect photons for tR 
@@ -72,8 +72,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     
 #%% Estimate the lenth of the sequance
     
-    seq_args = [readout_time, illumination_time, aom_delay ,apd_indices[0], 
-                aom_ao_589_pwr]
+    seq_args = [readout_time, reionization_time, illumination_time, aom_delay, 
+                apd_indices[0], aom_ao_589_pwr]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('determine_n_thresh.py', seq_args_string)
     
@@ -122,7 +122,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
         
-        seq_args = [readout_time, illumination_time, aom_delay ,apd_indices[0], aom_ao_589_pwr]
+        seq_args = [readout_time, reionization_time, illumination_time, 
+                    aom_delay ,apd_indices[0], aom_ao_589_pwr]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate('determine_n_thresh.py', num_reps, seq_args_string)
     
@@ -143,6 +144,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     ax.plot(unique_value, relative_frequency, 'bo')
     ax.set_xlabel('number of photons (n)')
     ax.set_ylabel('P(n)')
+    
+    text = '\n'.join(('Reionization time (532 nm)' + '%.3f'%(reionization_time/10**3) + 'us',
+                      'Illumination time (589 nm)' + '%.3f'%(illumination_time/10**3) + 'us'))
+
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
 
 #%% Save data 
     timestamp = tool_belt.get_time_stamp()
@@ -154,9 +162,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
             'aom_ao_589_pwr': aom_ao_589_pwr,
-            'aom_ao_589_pwr':'V',
+            'aom_ao_589_pwr-units':'V',
             'readout_time':readout_time,
             'readout_time_unit':'ns',
+            'reionization_time': reionization_time,
+            'reionization_time-units': 'ns',
             'illumination_time': illumination_time,
             'illumination_time-units': 'ns',
             'nv_sig-units': tool_belt.get_nv_sig_units(),
