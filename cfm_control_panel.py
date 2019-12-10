@@ -56,7 +56,7 @@ def set_xyz_zero():
 # %% Major Routines
 
 
-def do_image_sample(nv_sig, aom_power, apd_indices, color_ind):
+def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind):
     
 #    scan_range = 1.0
 #    num_steps = 200
@@ -76,9 +76,9 @@ def do_image_sample(nv_sig, aom_power, apd_indices, color_ind):
     
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, 
-                              aom_power, apd_indices, color_ind)
+                              aom_ao_589_pwr, apd_indices, color_ind)
     
-def do_image_sample_SCC(nv_sig, aom_power, apd_indices):
+def do_image_sample_SCC(nv_sig, aom_ao_589_pwr, apd_indices):
     
 
     scan_range = 0.2
@@ -86,7 +86,7 @@ def do_image_sample_SCC(nv_sig, aom_power, apd_indices):
     
     # For now we only support square scans so pass scan_range twice
     image_sample_SCC.main(nv_sig, scan_range, scan_range, num_steps, 
-                              aom_power, apd_indices)
+                              aom_ao_589_pwr, apd_indices)
 
 def do_optimize(nv_sig, apd_indices, color_ind):
 
@@ -95,15 +95,15 @@ def do_optimize(nv_sig, apd_indices, color_ind):
     optimize.main(nv_sig, apd_indices, color_ind,
               set_to_opti_coords=False, save_data=True, plot_data=True)
 
-def do_optimize_list(nv_sig_list, apd_indices):
+def do_optimize_list(nv_sig_list, apd_indices, color_ind):
 
-    optimize.optimize_list(nv_sig_list, apd_indices)
+    optimize.optimize_list(nv_sig_list, apd_indices, color_ind)
 
-def do_stationary_count(nv_sig, aom_power, apd_indices, color_ind):
+def do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, color_ind):
 
     run_time = 90 * 10**9  # ns
 
-    stationary_count.main(nv_sig, run_time, aom_power, apd_indices, color_ind)
+    stationary_count.main(nv_sig, run_time, aom_ao_589_pwr, apd_indices, color_ind)
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
@@ -387,15 +387,15 @@ def do_photon_collections_under_589(nv_sig, apd_indices):
     num_runs = 1
     num_reps = 10
     readout_time = 8 * 10**6
-    readout_power = 100 #uW
-    photon_collections_under_589.main(nv_sig, apd_indices, readout_power, readout_time, num_runs, num_reps)
+    aom_ao_589_pwr = 0.1 #V
+    photon_collections_under_589.main(nv_sig, apd_indices, aom_ao_589_pwr, readout_time, num_runs, num_reps)
     
-def do_determine_n_thresh(nv_sig, readout_power, readout_time, apd_indices):
+def do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices):
     
     num_runs = 2
     num_reps = 1* 10**3
     
-    determine_n_thresh.main(nv_sig, apd_indices, readout_power, readout_time, num_runs, num_reps)
+    determine_n_thresh.main(nv_sig, apd_indices, aom_ao_589_pwr, readout_time, num_runs, num_reps)
 
     
 # %% Run the file
@@ -450,13 +450,9 @@ if __name__ == '__main__':
     nv_sig_list = [nv5_2019_11_22]
     
     
-    readout_power = 500
-    
-    aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
-    if aom_power > 1:
-        aom_power = 1.0
-        
+    aom_ao_589_pwr = 0.1
     color_ind = 532
+    readout_time = 10* 10**6
 
     # %% Functions to run
 
@@ -497,12 +493,16 @@ if __name__ == '__main__':
 #                do_image_sample(nv_sig_copy, apd_indices)
             
 #            do_photon_collections_under_589(nv_sig, apd_indices)
-#            do_determine_n_thresh(nv_sig, readout_power, 10 * 10**6, apd_indices)
+#            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
             
-#            do_image_sample(nv_sig, aom_power, apd_indices, 532)
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_stationary_count(nv_sig, 1.0, apd_indices, 532)
+            
+            
+            
+            
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
