@@ -64,7 +64,7 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
 
     return fit_func, popt
 
-def create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
+def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
                       fit_func, popt):
 
     min_uwave_time = uwave_time_range[0]
@@ -80,14 +80,19 @@ def create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
     ax.set_ylabel('Contrast (arb. units)')
     ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
     ax.legend()
-    text = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
+    
+    text_freq = 'Resonant frequency:' + '%.3f'%(uwave_freq) + 'GHz'
+    
+    text_popt = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
                       r'$C = $' + '%.3f'%(popt[0]),
                       r'$A_0 = $' + '%.3f'%(popt[1]),
                       r'$\frac{1}{\nu} = $' + '%.1f'%(1/popt[2]) + ' ns',
                       r'$d = $' + '%i'%(popt[3]) + ' ' + r'$ ns$'))
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.55, 0.25, text, transform=ax.transAxes, fontsize=12,
+    ax.text(0.55, 0.25, text_popt, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    ax.text(0.55, 0.3, text_freq, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
 
     fit_fig.canvas.draw()
@@ -366,7 +371,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     fit_fig = None
     if (fit_func is not None) and (popt is not None):
-        fit_fig = create_fit_figure(uwave_time_range, num_steps,
+        fit_fig = create_fit_figure(uwave_time_range, uwave_freq, num_steps,
                                     norm_avg_sig, fit_func, popt)
         rabi_period = 1/popt[2]
         print('Rabi period measured: {} ns\n'.format('%.1f'%rabi_period))
