@@ -141,6 +141,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     g00,g01,y01,y00 = ps.get_curve_fit_NV0(readout_time,readout_power,unique_value1, relative_frequency1)
     gm0,gm1,ym1,ym0 = ps.get_curve_fit_NVm(readout_time,readout_power,unique_value2, relative_frequency2)
     
+    photon_numbers1 = list(range(max(unique_value1)))
+    photon_numbers2 = list(range(max(unique_value2)))
+    curve1 = ps.get_photon_distribution_curveNV0(photon_numbers1,readout_time, g00,g01,y01,y00)
+    curve2 = ps.get_photon_distribution_curveNVm(photon_numbers2,readout_time, gm0,gm1,ym1,ym0)
+    
+    ax.plot(photon_numbers1,curve1,'r')
+    ax.plot(photon_numbers2,curve2,'b')
     ax.plot(unique_value1, relative_frequency1, 'ro')
     ax.plot(unique_value2, relative_frequency2, 'bo')
     ax.set_xlabel('number of photons (n)')
