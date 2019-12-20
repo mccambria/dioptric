@@ -391,7 +391,81 @@ def get_photon_distribution_curveNV0(photon_number,readout_time, g0,g1,y1,y0):
         curve.append(result)
         i += 1
     return curve    
-          
+#%% quick poisson curve fit 
+def get_poisson_distribution_fit(readout_time,readout_power,unique_value, relative_frequency):
+    tR = readout_time
+    number_of_photons = unique_value
+    def PoissonDistribution(number_of_photons, F):
+        poissonian =[]
+        for i in range(len(number_of_photons)):
+            n = number_of_photons[i]
+            poissonian.append(((F*tR)**n) * (math.e ** (-F*tR)) /math.factorial(n))
+        return poissonian
+    popt, pcov = curve_fit(PoissonDistribution, number_of_photons,  relative_frequency)
+    return popt
+
+def get_poisson_distribution_curve(number_of_photons,readout_time, F):
+    poissonian_curve =[]
+    tR = readout_time
+    for i in range(len(number_of_photons)):
+        n = number_of_photons[i]
+        poissonian_curve.append(((F*tR)**n) * (math.e ** (-F*tR)) /math.factorial(n))
+    return poissonian_curve   
+#%%
+def get_gaussian_distribution_fit(readout_time,readout_power,unique_value, relative_frequency):
+    tR = readout_time
+    number_of_photons = unique_value
+    average_photon_number = 0
+    for i in range(len(unique_value)):
+        average_photon_number += relative_frequency[i] * unique_value[i]
+    variance = 0 
+    for i in range(len(unique_value)):
+        variance += relative_frequency[i] * (unique_value[i])**2
+    variance = variance - average_photon_number**2
+    sigma_guess = math.sqrt(variance)
+    def GaussianDistribution(number_of_photons,u,sigma, offset, coeff):
+        gaussian = []
+        for i in range(len(number_of_photons)):
+            n = number_of_photons[i]
+            gaussian.append(offset + coeff * math.e ** (-0.5*((n - u)/sigma)**2))
+        return gaussian
+    popt, pcov = curve_fit(GaussianDistribution,number_of_photons,relative_frequency,p0= [average_photon_number,sigma_guess,0,0.1])
+    return popt
+
+def get_gaussian_distribution_curve(number_of_photons,readout_time,u, sigma, offset, coeff):
+    gaussian =[]
+    for i in range(len(number_of_photons)):
+        n = number_of_photons[i]
+        gaussian.append(offset + coeff * math.e**(-0.5*((n - u)/sigma)**2))
+    return gaussian
+
+#%%#1:NVm, 2:NV0, 3:poisson,4:gaussian
+def getGraph(distribution_index, readout_time, readout_power, unique_value, relative_frequency):
+    if distribution_index == 1:
+        g0, g1, y1, y0 = get_curve_fit_NVm(readout_time,readout_power,unique_value, relative_frequency)        
+        photon_number = list(range(max(unique_value)))
+        curve = get_photon_distribution_curveNVm(photon_number,readout_time, g0,g1,y1,y0)
+    
+    elif distribution_index == 2:
+        g0, g1, y1, y0 = get_curve_fit_NV0(readout_time,readout_power,unique_value, relative_frequency)
+        photon_number = list(range(max(unique_value)))
+        curve =  get_photon_distribution_curveNV0(photon_number,readout_time, g0,g1,y1,y0)
+    
+    elif distribution_index == 3:
+        F = get_poisson_distribution_fit(readout_time,readout_power,unique_value, relative_frequency)
+        photon_number = list(range(max(unique_value)))
+        curve = get_poisson_distribution_curve(photon_number,readout_time, F)
+    
+    elif distribution_index == 4:
+        u, sigma, offset, coeff = get_gaussian_distribution_fit(readout_time,readout_power,unique_value, relative_frequency)
+        photon_number = np.linspace(0,max(unique_value),num = 1000).tolist()
+        curve = get_gaussian_distribution_curve(photon_number,readout_time,u, sigma, offset, coeff)
+    
+    plt.plot(unique_value, relative_frequency,'bo')
+    plt.plot(photon_number,curve,'r')      
+    plt.xlabel('number of photons')
+    plt.ylabel('P(n)')
+    plt.show()           
         
         
         
