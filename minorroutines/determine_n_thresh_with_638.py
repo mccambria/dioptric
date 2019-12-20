@@ -16,6 +16,7 @@ import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import labrad
+import photonstatistics as ps
 
 def get_Probability_distribution(aList):
 
@@ -63,6 +64,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     
     illumination_time = readout_time + 10**3
     reionization_time = 10**6
+    
+    readout_power = aom_ao_589_pwr
 
     # Set up our data structure, list
     # we repeatively collect photons for tR
@@ -128,13 +131,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     sig_counts = counts[0:len(counts):2]
     ref_counts = counts[1:len(counts):2]
 
-#%% plot the data
+#%% plot the data and the fit
 
     unique_value1, relative_frequency1 = get_Probability_distribution(list(sig_counts))
     unique_value2, relative_frequency2 = get_Probability_distribution(list(ref_counts))
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-
+    
+    g00,g01,y01,y00 = ps.get_curve_fit_NV0(readout_time,readout_power,unique_value1, relative_frequency1)
+    gm0,gm1,ym1,ym0 = ps.get_curve_fit_NVm(readout_time,readout_power,unique_value2, relative_frequency2)
+    
     ax.plot(unique_value1, relative_frequency1, 'ro')
     ax.plot(unique_value2, relative_frequency2, 'bo')
     ax.set_xlabel('number of photons (n)')
@@ -142,7 +148,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     
     text = '\n'.join(('Reionization time (532 nm)' + '%.3f'%(reionization_time/10**3) + 'us',
                       'Illumination time (589 nm)' + '%.3f'%(illumination_time/10**3) + 'us',
-                      'Ionization time (638 nm)' + '%.3f'%(ionization_time/10**3) + 'us'))
+                      'Ionization time (638 nm)' + '%.3f'%(ionization_time/10**3) + 'us',
+                      'Readout time' + '%.3f'%(readout_time/10**3)+ 'us'))
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
