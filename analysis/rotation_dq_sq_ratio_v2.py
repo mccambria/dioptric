@@ -384,7 +384,7 @@ if __name__ == '__main__':
     #               [None, 2.6310, 3.1547],  # Reference for misaligned T1
     #               [None, 2.6061, 3.1678],
     #               [None, 2.6055, 3.1691],
-    #               [None, 2.4381, 3.4531],  # 0,-1 and 0,+1 omegas
+                  [None, 2.4381, 3.4531],  # 0,-1 and 0,+1 omegas
     #               [None, 2.4371, 3.4539],
     #               ]
     # meas_splittings = numpy.array([19.5, 19.8, 27.7, 28.9, 41.9, 32.7,
@@ -422,9 +422,9 @@ if __name__ == '__main__':
     # Run the script
 #    main(name, res_descs, aligned_res_desc, rotated_res_desc)
     # main_plot(name, res_descs, aligned_res_desc)
-    main_plot_paper(name, res_descs, meas_splittings, meas_gammas)
+    # main_plot_paper(name, res_descs, meas_splittings, meas_gammas)
     # main_plot_rot(name, res_descs)
     # dq_vs_sq_rates(name, res_descs, sq_compare_res_desc)
-    # rate_factor_plot_func_B(name, res_descs)
+    rate_factor_plot_func_B(name, res_descs)
     # mag_B_for_rate(name, res_descs,
     #                mag_B_calc_res_desc, mag_B_calc_meas_rate)
