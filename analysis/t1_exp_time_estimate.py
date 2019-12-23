@@ -55,26 +55,27 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 
     total_exp_time = sum(total_exp_time_list)
 
+    # Somehow this is off... so let's tack on a heuristic correction
+    total_exp_time *= (21/20)
 
-    print('Total experiment time: {} hrs'.format('%.1f'%total_exp_time))
+    print('Total experiment time: {:.1f} hrs'.format(total_exp_time))
 
 # %%
+num_runs = 40
 t1_exp_array = numpy.array([
-    # [[States.HIGH, States.LOW], [0, 2*10**6], 11, 1.8*10**4, 40],
-    # [[States.HIGH, States.LOW], [0, 12*10**6], 11, 0.35*10**4, 210],
-    
-    # [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 1.8*10**4, 40],
-    # [[States.HIGH, States.HIGH], [0, 12*10**6], 11, 0.35*10**4, 210],
-    
-    # [[States.ZERO, States.HIGH], [0, 2*10**6], 11, 1.8*10**4, 40],
-    # [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 0.25*10**4, 210],
-    
-    # [[States.ZERO, States.ZERO], [0, 2*10**6], 11, 1.8*10**4, 40],
-    [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 0.25*10**4, 33]
+    [[States.HIGH, States.LOW], [0, 50*10**3], 51, 15*10**4, num_runs],
+    [[States.HIGH, States.LOW], [0, 250*10**3], 26, 4*10**4, num_runs],
+
+    [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 15*10**4, num_runs],
+    [[States.HIGH, States.HIGH], [0, 250*10**3], 26, 4*10**4, num_runs],
+
+    [[States.ZERO, States.HIGH], [0, 1.5*10**6], 26, 1.5*10**4, num_runs],
+
+    [[States.ZERO, States.ZERO], [0, 1.5*10**6], 26, 1.5*10**4, num_runs],
     ])
 
-contrast = 0.1  # arb
-exp_count_rate =38  # kcps
-readout_window = 375  # ns
+contrast = 0.25  # arb
+exp_count_rate = 130  # kcps
+readout_window = 160  # ns
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)
