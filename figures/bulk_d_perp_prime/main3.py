@@ -19,28 +19,37 @@ import matplotlib.pyplot as plt
 # %% Main
 
 
-def main(nv_data):
+def main(nv_data, just_splittings=False):
+    
+    # %% Setup
+    
+    all_ratios = []
+    all_ratio_errors = []
 
     # %% Plotting
 
     plt.rcParams.update({'font.size': 18})  # Increase font size
-    # fig, axes_pack = plt.subplots(1, 2, figsize=(12,5))
-    fig, ax = plt.subplots(figsize=(6,5))
+    if just_splittings:
+        fig, ax = plt.subplots(figsize=(6,5))
+    else:
+        fig, axes_pack = plt.subplots(1, 2, figsize=(12,5))
     fig.set_tight_layout(True)
     
     # Splittings
-    # ax = axes_pack[0]
+    if not just_splittings:
+        ax = axes_pack[0]
     ax.set_xlabel(r'Splitting, $\Delta_{\pm}$ (MHz)')
     ax.set_ylabel(r'$\gamma / \Omega$')
     ax.set_ylim(0, 3.0)
     
     # Angles
-    # ax = axes_pack[1]
-    # ax.set_xlabel(r'Magnet angle, $\theta_{B}$ ($\degree$)')
-    # ax.set_ylabel(r'$\gamma / \Omega$')
-    # ax.set_xlim(0, 180)
-    # ax.set_xticks(numpy.linspace(0, 180, 5))
-    # ax.set_ylim(0, 3.0)
+    if not just_splittings:
+        ax = axes_pack[1]
+        ax.set_xlabel(r'Magnet angle, $\theta_{B}$ ($\degree$)')
+        ax.set_ylabel(r'$\gamma / \Omega$')
+        ax.set_xlim(0, 180)
+        ax.set_xticks(numpy.linspace(0, 180, 5))
+        ax.set_ylim(0, 3.0)
     
     # Marker and color combination to distinguish NVs
     markers = ['^', 'o', 's', 'D', ]
@@ -61,19 +70,34 @@ def main(nv_data):
         ratios = gammas / omegas
         ratio_errors = ratios * numpy.sqrt((gamma_errors / gammas)**2 +
                                            (omega_errors / omegas)**2)
+        all_ratios.extend(ratios)
+        all_ratio_errors.extend(ratio_errors)
         
         # Plot splittings
-        # ax = axes_pack[0]
+        if not just_splittings:
+            ax = axes_pack[0]
         splittings = numpy.array(nv['splittings'])
         ax.errorbar(splittings, ratios, yerr=ratio_errors, label=name,
                     marker=marker, color=color, linestyle='None', ms=9, lw=2.5)
     
         # Plot angles
-        # ax = axes_pack[1]
-        # ax.scatter(times_high, signal_high, marker='o',
-        #            color='#CC99CC', edgecolor='#993399', ms=60)
+        if not just_splittings:
+            ax = axes_pack[1]
 
+    all_ratios = numpy.array(all_ratios)
+    all_ratio_errors = numpy.array(all_ratio_errors)
+    if not just_splittings:
+        ax = axes_pack[0]
     ax.legend(loc='lower right')
+    wavg_ratio = numpy.average(all_ratios, weights=(1/all_ratio_errors**2))
+    ste_ratio = numpy.sqrt(1/numpy.sum(all_ratio_errors**-2))
+    print(wavg_ratio)
+    print(ste_ratio)
+    xlim = ax.get_xlim()
+    ax.fill_between([xlim[0], xlim[1]],
+                    wavg_ratio+ste_ratio, wavg_ratio-ste_ratio,
+                    alpha=0.5, color=colors[-1])
+    ax.plot([xlim[0], xlim[1]], [wavg_ratio, wavg_ratio], color=colors[-1])
 
 
 # %% Run
@@ -106,14 +130,14 @@ if __name__ == '__main__':
                 },
             {
                 'name': 'NVB1',
-                'splittings': [167.1, 831.6],
-                'angles': [None, None],
-                'gammas': [0.132, 0.169],
-                'gamma_errors': [0.04],
-                'omegas': [0.083],
-                'omega_errors': [0.02],
+                'splittings': [40.6, 167.1, 412.7, 831.6, 1207.1],
+                'angles': [None, None, None, None, None],
+                'gammas': [0.115, 0.132, 0.135, 0.169, 0.103],
+                'gamma_errors': [0.010, 0.011, 0.013, 0.04, 0.026],
+                'omegas': [0.049, 0.056, 0.065, 0.083, 0.048],
+                'omega_errors': [0.003, 0.003, 0.005, 0.02, 0.013],
                 },
         ]
     
-    main(nv_data)
+    main(nv_data, just_splittings=True)
 
