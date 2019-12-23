@@ -61,22 +61,21 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
     print('Total experiment time: {:.1f} hrs'.format(total_exp_time))
 
 # %%
+num_runs = 40
 t1_exp_array = numpy.array([
-    [[States.HIGH, States.LOW], [0, 2*10**6], 11, 2.5*10**4, 25],
-    [[States.HIGH, States.LOW], [0, 15*10**6], 11, 0.35*10**4, 175],
+    [[States.HIGH, States.LOW], [0, 50*10**3], 51, 15*10**4, num_runs],
+    [[States.HIGH, States.LOW], [0, 250*10**3], 26, 4*10**4, num_runs],
     
-    [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 2.5*10**4, 25],
-    [[States.HIGH, States.HIGH], [0, 15*10**6], 11, 0.35*10**4, 175],
+    [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 15*10**4, num_runs],
+    [[States.HIGH, States.HIGH], [0, 250*10**3], 26, 4*10**4, num_runs],
     
-    [[States.ZERO, States.HIGH], [0, 2*10**6], 11, 2.5*10**4, 25],
-    [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 0.25*10**4, 250],
+    [[States.ZERO, States.HIGH], [0, 1.5*10**6], 26, 1.5*10**4, num_runs],
     
-    [[States.ZERO, States.ZERO], [0, 2*10**6], 11, 2.5*10**4, 25],
-    [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 0.25*10**4, 250]
+    [[States.ZERO, States.ZERO], [0, 1.5*10**6], 26, 1.5*10**4, num_runs],
     ])
 
-contrast = 0.20  # arb
-exp_count_rate = 51  # kcps
-readout_window = 375  # ns
+contrast = 0.25  # arb
+exp_count_rate = 130  # kcps
+readout_window = 160  # ns
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)

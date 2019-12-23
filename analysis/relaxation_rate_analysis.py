@@ -500,8 +500,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    path = 'paper_data/bulk_dq/'
-    folder = 'goeppert_mayer-nv7_2019_11_27-41MHz'
+    path = 'paper_data/fast_relaxation_on_magnetic/'
+    folder = 'nv1_2019_05_10_45MHz-ND00'
     path += folder
 
     gamma, ste = main(path, omega=None, omega_ste=None,

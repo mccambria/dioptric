@@ -85,7 +85,8 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
     apd_indices = [0]
     
     # Assume the low state
-    state = States.LOW
+#    state = States.LOW
+    state = States.HIGH
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     
@@ -94,7 +95,7 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
     exp_dur = 5 * 10**3
     aom_delay = shared_params['532_aom_delay']
     uwave_delay = shared_params['uwave_delay']
-    pi_pulse = round(nv_sig['rabi_LOW'] / 2)
+    pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
     
     # The two parameters we currently alter
     readout_time = int(readout_time)
@@ -133,10 +134,11 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
         # After optimizing, change the filter to the nd_filter passed
         cxn.filter_slider_ell9k.set_filter(nd_filter)
         time.sleep(0.5)
-
-        cxn.signal_generator_tsg4104a.set_freq(nv_sig['resonance_LOW'])
-        cxn.signal_generator_tsg4104a.set_amp(nv_sig['uwave_power_LOW'])
-        cxn.signal_generator_tsg4104a.uwave_on()
+        
+        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn.set_freq(nv_sig['resonance_{}'.format(state.name)])
+        sig_gen_cxn.set_amp(nv_sig['uwave_power_{}'.format(state.name)])
+        sig_gen_cxn.uwave_on()
 
         # Load the APD stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -374,17 +376,16 @@ def main(nv_sig):
 if __name__ == '__main__':
 
     # Define the nv_sig to be used
-    sample_name = 'goeppert_mayer'
-    
-    nv7_2019_11_27 = { 'coords': [-0.761, -0.181, 5.06],
-            'name': '{}-nv7_2019_11_27'.format(sample_name),
-            'expected_count_rate': 55, 'nd_filter': 'nd_1.0',
-            'pulsed_readout_dur': 450, 'magnet_angle': 176.8,
-            'resonance_LOW': 2.7892, 'rabi_LOW': 80.2, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.9562, 'rabi_HIGH': 108.2, 'uwave_power_HIGH': 10.0}
+    sample_name = 'ayrton12'
+    nv1_2019_05_10 = { 'coords': [-0.176, 0.181, 5.03],
+            'name': '{}-NV1_2019_05_10'.format(sample_name),
+            'expected_count_rate': 30, 'nd_filter': 'nd_1.5',
+            'pulsed_readout_dur': 375, 'magnet_angle': 105.2,
+            'resonance_LOW': 2.7751, 'rabi_LOW': 114.8, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 2.9606, 'rabi_HIGH': 77.7, 'uwave_power_HIGH': 10.0}
     
     ### MAIN ###
-    main(nv7_2019_11_27)
+    main(nv1_2019_05_10)
     
     # The individual functions in this file
 #    snr_measurement(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)
