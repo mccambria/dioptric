@@ -486,32 +486,141 @@ if __name__ == '__main__':
     # is a single 2-list and non_zero_field_resonances is a list of 2-lists.
 
     ############ Nice ############
-    
-    name = 'goeppert_mayer-nv7_2019_11_27'
-    res_descs = [#[0.0, 2.87, 2.87],
-                  [None, 2.8508, 2.8914],  # 41 MHz
-                  [None, 2.7893, 2.9564],  # 167 MHz
-                  [None, 2.6719, 3.0846],  # 413 MHz
-                  [None, 2.5760, 3.1998],  # 624 MHz
-                  [None, 2.4857, 3.3173],  # 832 MHz
-                  [None, 2.3298, 3.5369],  # 1207 MHz
-                  [None, 2.7243, 3.0243],
-                  [None, 2.7113, 3.0402],
-                  [None, 2.6270, 3.1365],
-                  [None, 2.4991, 3.2991],
-                  [None, 2.4290, 3.3976],
-                  [None, 2.3844, 3.4575],
-                  [None, 2.3293, 3.5355],
-                  [None, 2.8028, 2.9413],
-                  [None, 2.8286, 2.9116],
-                  [None, 2.8466, 2.8937],
-                  [None, 2.8302, 2.9098],
-                  [None, 2.7706, 2.9749],
-                  [None, 2.7706, 2.9749],
-                  ] 
+
+    # name = 'nv1_2019_05_10'
+    # res_descs = [[0.0, 2.8537, 2.8751],
+    #               [None, 2.8554, 2.8752],
+    #               [None, 2.8512, 2.8790],
+    #               [None, 2.8520, 2.8800],
+    #               [None, 2.8536, 2.8841],
+    #               [None, 2.8496, 2.8823],
+    #               [None, 2.8396, 2.8917],
+    #               [None, 2.8198, 2.9106],  # Reference for misaligned T1
+    #               [None, 2.8166, 2.9144],
+    #               [None, 2.8080, 2.9240],
+    #               [None, 2.7357, 3.0037],
+    #               [None, 2.6310, 3.1547],  # Reference for misaligned T1
+    #               [None, 2.6061, 3.1678],
+    #               [None, 2.6055, 3.1691],
+    #               [None, 2.4381, 3.4531],  # 0,-1 and 0,+1 omegas
+    #               [None, 2.4371, 3.4539],
+    #               ] 
+
+#    name = 'nv1_2019_05_10_misaligned'
+#    res_descs = [[0.0, 2.8537, 2.8751],
+#                    [None, 2.8381, 2.9003],
+#                    [None, 2.8317, 2.9312],
+#                    [None, 2.8454, 2.8873],
+#                    [None, 2.8443, 3.0193],
+#                    [None, 2.9057, 3.1766],
+#                    [None, 2.8443, 3.0193]
+#                    ]
+
+    name = 'NV0_2019_06_06'
+    res_descs = [[0.0, 2.8547, 2.8793],
+                  [None, 2.8532, 2.8795],
+                  [None, 2.8494, 2.8839],
+                  [None, 2.8430, 2.8911],
+                  [None, 2.8361, 2.8998],
+                  [None, 2.8209, 2.9132],
+                  [None, 2.7915, 2.9423],
+                  [None, 2.7006, 3.0302],
+                  [None, 2.4244, 3.3093],
+                  [None, 2.2990, 3.4474]]  # Aligned
+#                  [None, 2.4993, 3.5798]]  # Accidentally misaligned
+
+    # name = 'nv2_2019_04_30'
+    # res_descs = [[0.0, 2.8584, 2.8725],
+    #                [None, 2.8507, 2.8798],
+    #                [None, 2.8434, 2.8882],
+    #                [None, 2.8380, 2.8942],
+    #                [None, 2.8379, 2.8948],
+    #                [None, 2.8308, 2.9006],
+    #                [None, 2.8228, 2.9079],
+    #                [None, 2.8155, 2.9171]]
+
+    # name = 'nv2_2019_04_30_take2'
+    # res_descs = [[0.0, 2.8584, 2.8725],
+    #               [None, 2.8512, 2.8804],
+    #               [None, 2.8435, 2.8990],
+    #               [None, 2.8265, 2.9117],
+    #               [None, 2.7726, 3.0530],
+    #               [None, 2.7738, 3.4712]]
+
+    # name = 'nv13_2019_06_10'
+    # res_descs = [[0.0, 2.8387, None],
+    #               [None, 2.8289, 2.8520],
+    #               [None, 2.8266, 2.8546],
+    #               [None, 2.8262, 2.8556],
+    #               [None, 2.8247, 2.8545],
+    #               [None, 2.8174, 2.8693],
+    #               [None, 2.8082, 2.8806],
+    #               [None, 2.7948, 2.9077],
+    #               [None, 2.7857, 2.9498]]
+
+    # name = 'nv13_2019_06_10'
+    # res_descs = [[0.0, 2.8367, 2.8444],
+    #                [None, 2.8230, 2.8625],
+    #                [None, 2.8143, 2.8741],
+    #                [None, 2.8076, 2.8887],
+    #                [None, 2.7923, 2.9284]]
+
+    ############ Not as nice ############
+
+    # The last two points are a little off
+#    name = 'NV16_2019_07_25'
+#    res_descs = [[0.0, 2.8593, 2.8621],
+#                   [None, 2.8519, 2.8690],
+#                   [None, 2.8460, 2.8746],
+#                   [None, 2.8337, 2.8867],
+#                   [None, 2.8202, 2.9014],
+#                   [None, 2.8012, 2.9292],
+#                   [None, 2.7393, 3.0224],
+#                   [None, 2.6995, 3.1953],
+#                   [None, 2.5830, 3.3290],
+#                   ]
+
+    # Test
+#    name = 'NV16_2019_07_25'
+#    res_descs = [[0.0, 2.8593, 2.8621],
+#                   [None, 2.8203, 2.9021],
+#                   ]
+
+    # Weird
+    # name = 'nv13_2019_06_10'
+    # res_descs = [
+    #         [0.0, 2.8370, 2.8430], # [0.0, 2.8147, 2.8454],
+    #         [None, 2.8289, 2.8520],
+    #         [None, 2.8266, 2.8546],
+    #         [None, 2.8262, 2.8556],
+    #         [None, 2.8247, 2.8545],
+    #         [None, 2.8174, 2.8693],
+    #         [None, 2.8082, 2.8806],
+    #         [None, 2.7948, 2.9077],
+    #         [None, 2.7857, 2.9498],
+    #         [None, 2.7848, 3.0329],
+    #         ]
 
     # Run the script
-    main(name, res_descs)
+    # hamiltonian_params = main(name, res_descs)
+    # print(calc_eigenvectors(0.005, *hamiltonian_params))
+
+    # Why does pi_perp allow DQ matrix elements
+    # nh = calc_B_hamiltonian(100, pi/4, 0)
+    # shp = (4.112704686434049e-06, 0.64801485, -0.00444952, 0.01029658, 0., 0.)
+    # shp = (1.0, 0.6, 0, 0, 0., 0.)
+    # calc_matrix_elements(nh, *shp)
+    # print(calc_eigenvectors(*shp))
+    # Rotation prediction
+    # predict_rotation(name, res_descs,
+    #                   [None, 2.8198, 2.9106], [None, 2.8454, 2.8873])
+
+    # B matrix elements
+#    b_matrix_elements(name, res_descs)
+
+    # Test plot
+    # args: mag_B_range, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
+    # plot_resonances([0, 1.0], 1.560, 0.000, 0.025, 0.000, 0.000)
 
     # Fake data
     # args: theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
