@@ -27,6 +27,7 @@ from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
 from pathlib import Path
+from pathlib import PurePath
 from enum import Enum, auto
 
 
@@ -452,21 +453,35 @@ def get_file_list(source_name, file_ends_with, sub_folder_name = None,
     return file_list
 
 
-def get_raw_data(source_name, file_name, sub_folder_name=None,
-                 data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
+# def get_raw_data(source_name, file_name, sub_folder_name=None,
+#                  data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
+#     """Returns a dictionary containing the json object from the specified
+#     raw data file.
+#     """
+
+#     # Parse the source_name if __file__ was passed
+#     source_name = os.path.splitext(os.path.basename(source_name))[0]
+
+#     data_dir = Path(data_dir)
+#     file_name_ext = '{}.txt'.format(file_name)
+#     if sub_folder_name is None:
+#         file_path = data_dir / source_name / file_name_ext
+#     else:
+#         file_path = data_dir / source_name / sub_folder_name / file_name_ext
+
+#     with open(file_path) as file:
+#         return json.load(file)
+
+
+def get_raw_data(path_from_nvdata, file_name,
+                 nvdata_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
     """Returns a dictionary containing the json object from the specified
     raw data file.
     """
 
-    # Parse the source_name if __file__ was passed
-    source_name = os.path.splitext(os.path.basename(source_name))[0]
-
-    data_dir = Path(data_dir)
+    data_dir = PurePath(nvdata_dir, path_from_nvdata)
     file_name_ext = '{}.txt'.format(file_name)
-    if sub_folder_name is None:
-        file_path = data_dir / source_name / file_name_ext
-    else:
-        file_path = data_dir / source_name / sub_folder_name / file_name_ext
+    file_path = data_dir / file_name_ext
 
     with open(file_path) as file:
         return json.load(file)
