@@ -217,7 +217,7 @@ def do_t1_interleave(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
     # ~18 hrs
-    num_runs = 40
+    num_runs = 5
     t1_exp_array = numpy.array([
         [[States.HIGH, States.LOW], [0, 50*10**3], 51, 15*10**4, num_runs],
         [[States.HIGH, States.LOW], [0, 250*10**3], 26, 4*10**4, num_runs],
@@ -412,12 +412,12 @@ if __name__ == '__main__':
             'resonance_LOW': 2.7775, 'rabi_LOW': 79.5, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': 2.9687, 'rabi_HIGH': 114.0, 'uwave_power_HIGH': 10.0}
     
-    nd_filter = 'nd_0'
+    nd_filter = 'nd_1.0'
     expected_count_rate = {
             'nd_0': 140,
-            'nd_0.5': 110,
-            'nd_1.0': 70,
-            'nd_1.5': 30,
+            'nd_0.5': 50,
+            'nd_1.0': 35,
+            'nd_1.5': 15,
             }
     pulsed_readout_dur = {
             'nd_0': 160,
@@ -425,7 +425,7 @@ if __name__ == '__main__':
             'nd_1.0': 400,
             'nd_1.5': 450,
             }
-    nv1_2019_05_10 = { 'coords': [-0.178, 0.171, 5.01],
+    nv1_2019_05_10 = { 'coords': [-0.190, 0.177, 5.00],
             'name': '{}-NV1_2019_05_10'.format(sample_name),
             'expected_count_rate': expected_count_rate[nd_filter], 'nd_filter': nd_filter,
             'pulsed_readout_dur': pulsed_readout_dur[nd_filter], 'magnet_angle': 105.2,
@@ -440,7 +440,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.0])
@@ -449,7 +449,7 @@ if __name__ == '__main__':
 #        with labrad.connect() as cxn:
 #            cxn.filter_slider_ell9k.set_filter('nd_0')
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
-#            input('Press enter to stop...')
+#            input('Laser currently turned off, Press enter to stop...')
         
         # Routines that expect lists of NVs
 #        do_optimize_list(nv_sig_list, apd_indices)
@@ -464,7 +464,7 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-#            do_image_sample(nv_sig, apd_indices)
+            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
@@ -494,12 +494,12 @@ if __name__ == '__main__':
 #            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
-            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
-            if fail_bool == True:
-                print('Failed to record pESR and Rabi')
-                break
-            else:
-                do_t1_interleave(nv_sig, apd_indices)
+#            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
+#            if fail_bool == True:
+#                print('Failed to record pESR and Rabi')
+#                break
+#            else:
+#                do_t1_interleave(nv_sig, apd_indices)
             
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
