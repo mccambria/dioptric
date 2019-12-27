@@ -471,9 +471,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    file = '2019_10/2019-10-04-16_50_05-ayrton12-NV13_2019_06_06'
+    path = 'resonance/2019_12'
+    file = '2019_12_22-19_44_21-goeppert_mayer-nv7_2019_11_27'
     # data = tool_belt.get_raw_data('pulsed_resonance.py', file)
-    data = tool_belt.get_raw_data('resonance.py', file)
+    data = tool_belt.get_raw_data(path, file)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']
