@@ -159,8 +159,8 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 def do_optimize_magnet_angle(nv_sig, apd_indices):
 
     angle_range = [0, 150]
-    num_angle_steps = 6
-    freq_center = 2.87
+    num_angle_steps = 7
+    freq_center = 2.870
     freq_range = 0.200
     num_freq_steps = 76
     num_freq_runs = 2
@@ -217,17 +217,17 @@ def do_t1_interleave(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
     # ~18 hrs
-    num_runs = 5
+    num_runs = 20
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 50*10**3], 51, 15*10**4, num_runs],
-        [[States.HIGH, States.LOW], [0, 250*10**3], 26, 4*10**4, num_runs],
-        
-        [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 15*10**4, num_runs],
-        [[States.HIGH, States.HIGH], [0, 250*10**3], 26, 4*10**4, num_runs],
-        
-        [[States.ZERO, States.HIGH], [0, 1.5*10**6], 26, 1.5*10**4, num_runs],
-        
-        [[States.ZERO, States.ZERO], [0, 1.5*10**6], 26, 1.5*10**4, num_runs],
+        [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
+        [[States.HIGH, States.LOW], [0, 120*10**3], 26, 8*10**4, num_runs],
+    
+        [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
+        [[States.HIGH, States.HIGH], [0, 120*10**3], 26, 8*10**4, num_runs],
+    
+        [[States.ZERO, States.HIGH], [0, 2.5*10**6], 26, 1*10**4, num_runs],
+    
+        [[States.ZERO, States.ZERO], [0, 2.5*10**6], 26, 1*10**4, num_runs],
         ])
 
     t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
@@ -405,34 +405,54 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9687, 'rabi_HIGH': 114.0, 'uwave_power_HIGH': 10.0}
     
     sample_name = 'ayrton12'
-    search = { 'coords': [-0.100, 0.000, 5.03],
+    search = { 'coords': [0.000, 0.000, 5.00],
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.5',
             'pulsed_readout_dur': 375, 'magnet_angle': 176.8,
             'resonance_LOW': 2.7775, 'rabi_LOW': 79.5, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': 2.9687, 'rabi_HIGH': 114.0, 'uwave_power_HIGH': 10.0}
     
-    nd_filter = 'nd_1.0'
+#    nd_filter = 'nd_1.0'
+#    expected_count_rate = {
+#            'nd_0': 140,
+#            'nd_0.5': 50,
+#            'nd_1.0': 35,
+#            'nd_1.5': 15,
+#            }
+#    pulsed_readout_dur = {
+#            'nd_0': 160,
+#            'nd_0.5': 280,
+#            'nd_1.0': 400,
+#            'nd_1.5': 450,
+#            }
+#    nv1_2019_05_10 = { 'coords': [-0.190, 0.177, 5.00],
+#            'name': '{}-NV1_2019_05_10'.format(sample_name),
+#            'expected_count_rate': expected_count_rate[nd_filter], 'nd_filter': nd_filter,
+#            'pulsed_readout_dur': pulsed_readout_dur[nd_filter], 'magnet_angle': 105.2,
+#            'resonance_LOW': 2.8422, 'rabi_LOW': 95.6, 'uwave_power_LOW': 9.0,
+#            'resonance_HIGH': 2.8875, 'rabi_HIGH': 111.7, 'uwave_power_HIGH': 10.0}
+    
+    nd_filter = 'nd_1.5'
     expected_count_rate = {
-            'nd_0': 140,
-            'nd_0.5': 50,
-            'nd_1.0': 35,
-            'nd_1.5': 15,
+            'nd_0': 125,
+            'nd_0.5': 95,
+            'nd_1.0': 85,
+            'nd_1.5': 55,
             }
     pulsed_readout_dur = {
-            'nd_0': 160,
-            'nd_0.5': 280,
-            'nd_1.0': 400,
-            'nd_1.5': 450,
+            'nd_0': 150,
+            'nd_0.5': 215,
+            'nd_1.0': 280,
+            'nd_1.5': 420,
             }
-    nv1_2019_05_10 = { 'coords': [-0.190, 0.177, 5.00],
+    nv2_2019_04_30  = { 'coords': [-0.065, 0.087, 5.01],
             'name': '{}-NV1_2019_05_10'.format(sample_name),
             'expected_count_rate': expected_count_rate[nd_filter], 'nd_filter': nd_filter,
-            'pulsed_readout_dur': pulsed_readout_dur[nd_filter], 'magnet_angle': 105.2,
-            'resonance_LOW': 2.8422, 'rabi_LOW': 95.6, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.8875, 'rabi_HIGH': 111.7, 'uwave_power_HIGH': 10.0}
+            'pulsed_readout_dur': pulsed_readout_dur[nd_filter], 'magnet_angle': 170.7,
+            'resonance_LOW': 2.8514, 'rabi_LOW': 188.9, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 2.8820, 'rabi_HIGH': 221.7, 'uwave_power_HIGH': 10.0}
     
-    nv_sig_list = [nv1_2019_05_10]
+    nv_sig_list = [nv2_2019_04_30]
 
     # %% Functions to run
 
@@ -440,14 +460,14 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.0])
 #        set_xyz([-0.116, -0.073, 2.61])
         
 #        with labrad.connect() as cxn:
-#            cxn.filter_slider_ell9k.set_filter('nd_0')
+#            cxn.filter_slider_ell9k.set_filter('nd_1.5')
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            input('Laser currently turned off, Press enter to stop...')
         
@@ -464,14 +484,14 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-            do_image_sample(nv_sig, apd_indices)
+#            do_image_sample(nv_sig, apd_indices)
 #            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.075)
+#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.100)
 #            do_resonance(nv_sig, apd_indices, freq_center=3.050, freq_range=0.1)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
@@ -486,11 +506,11 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.600, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.100, freq_range=0.15)
-#            do_rabi(nv_sig, apd_indices, States.LOW, [0, 175])
-#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 175])
+#            do_rabi(nv_sig, apd_indices, States.LOW, [0, 400])
+#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 500])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
-#            do_t1_interleave(nv_sig, apd_indices)
+            do_t1_interleave(nv_sig, apd_indices)
 #            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
