@@ -106,7 +106,8 @@ def plot_resonances_vs_theta_B(precession_dur_range, num_steps, norm_avg_sig,
     
     
 def mag_B_from_revival_time(revival_time):
-    return (revival_time*(10**-3)*1.071)**-1
+    # 1071 Hz/G is the C13 Larmor precession frequency
+    return ((revival_time*10**-6)*1071)**-1
  
 
 def quartic(tau, offset, revival_time, decay_time,
@@ -167,10 +168,10 @@ def fit_data(precession_dur_range, num_steps, norm_avg_sig):
         popt = None
         
     revival_time = popt[1]
-    print(pcov)
-    revival_time_ste = numpy.sqrt(pcov[1,1])
-    print('revival_time: {}'.format(revival_time))
-    print('revival_time_ste: {}'.format(revival_time_ste))
+    # print(pcov)
+    # revival_time_ste = numpy.sqrt(pcov[1,1])
+    # print('revival_time: {}'.format(revival_time))
+    # print('revival_time_ste: {}'.format(revival_time_ste))
 
     return fit_func, popt
 
@@ -550,8 +551,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 if __name__ == '__main__':
 
     center_freq = 2.8696  # zfs in GHz
-    # file = '2019_12_22-16_46_54-goeppert_mayer-nv7_2019_11_27'
-    file = '2019_12_22-19_18_05-goeppert_mayer-nv7_2019_11_27'
+    # center_freq = 2.871  # zfs in GHz
+    file = '2019_12_22-16_46_54-goeppert_mayer-nv7_2019_11_27'
+    # file = '2019_12_22-19_18_05-goeppert_mayer-nv7_2019_11_27'
     data = tool_belt.get_raw_data('spin_echo/2019_12', file)
 
     nv_sig = data['nv_sig']
@@ -562,10 +564,10 @@ if __name__ == '__main__':
     precession_dur_range = [el/1000 for el in precession_dur_range]
     num_steps = data['num_steps']
 
-    fit_func, popt = fit_data(precession_dur_range, num_steps, norm_avg_sig)
-    if (fit_func is not None) and (popt is not None):
-        create_fit_figure(precession_dur_range, num_steps, norm_avg_sig,
-                          fit_func, popt)
+    # fit_func, popt = fit_data(precession_dur_range, num_steps, norm_avg_sig)
+    # if (fit_func is not None) and (popt is not None):
+    #     create_fit_figure(precession_dur_range, num_steps, norm_avg_sig,
+    #                       fit_func, popt)
         
-    # plot_resonances_vs_theta_B(precession_dur_range, num_steps, norm_avg_sig,
-    #                            center_freq, measured_resonances)
+    plot_resonances_vs_theta_B(precession_dur_range, num_steps, norm_avg_sig,
+                                center_freq, measured_resonances)

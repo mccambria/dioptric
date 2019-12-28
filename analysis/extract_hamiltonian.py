@@ -483,19 +483,17 @@ def main(name, res_descs):
 # the script that you set up here.
 if __name__ == '__main__':
 
-    # Each pair of resonances should be a 2-list. So zero_field_resonances
-    # is a single 2-list and non_zero_field_resonances is a list of 2-lists.
-
     ############ Nice ############
     
     name = 'goeppert_mayer-nv7_2019_11_27'
-    res_descs = [[0.0, 2.8696, 2.8696],
+    res_descs = [[0.0, 2.8696, None],
                   [None, 2.8508, 2.8914],  # 41 MHz
                   [None, 2.7893, 2.9564],  # 167 MHz
                   [None, 2.6719, 3.0846],  # 413 MHz
                   [None, 2.5760, 3.1998],  # 624 MHz
                   [None, 2.4857, 3.3173],  # 832 MHz
                   [None, 2.3298, 3.5369],  # 1207 MHz
+                  [None, 2.7775, 2.9687],  # spin_echo
                   [None, 2.7243, 3.0243],
                   [None, 2.7113, 3.0402],
                   [None, 2.6270, 3.1365],
@@ -507,7 +505,6 @@ if __name__ == '__main__':
                   [None, 2.8286, 2.9116],
                   [None, 2.8466, 2.8937],
                   [None, 2.8302, 2.9098],
-                  [None, 2.7706, 2.9749],
                   [None, 2.7706, 2.9749],
                   ] 
 
