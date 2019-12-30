@@ -50,7 +50,9 @@ def main():
     """
     
 #    period = numpy.int64(100)
-    period = numpy.int64(300)
+#    period = numpy.int64(300)
+    period = numpy.int64(10**3)
+#    period = numpy.int64(10**5)
 #    period = numpy.int64(10**9)
     half_period = period // 2
     
@@ -58,12 +60,12 @@ def main():
 
 #    train = [(half_period, HIGH), (half_period, HIGH)]
     train = [(half_period, HIGH), (half_period, LOW)]
-    seq.setDigital(7, train)
+    seq.setDigital(3, train)
     
     pulser = Pulser('128.104.160.111')
     pulser.constant(OutputState([]))
     pulser.setTrigger(start=TriggerStart.SOFTWARE)
-    pulser.stream(seq, -1, OutputState([7]))
+    pulser.stream(seq, Pulser.REPEAT_INFINITELY)
     pulser.startNow()
     
     input('Press enter to stop...')
@@ -82,5 +84,5 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     # Run the script
-#    main()
-    constant([3], 0.0, 0.0)
+    main()
+#    constant([3], 0.0, 0.0)

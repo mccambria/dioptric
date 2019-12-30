@@ -148,7 +148,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 #    num_runs = 1
     
     # Zoom
-    freq_range = 0.075
+    freq_range = 0.050
     num_steps = 51
     num_reps = 10**5
     num_runs = 2
@@ -217,7 +217,7 @@ def do_t1_interleave(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
     # ~18 hrs
-    num_runs = 20
+    num_runs = 40
     t1_exp_array = numpy.array([
         [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
         [[States.HIGH, States.LOW], [0, 120*10**3], 26, 8*10**4, num_runs],
@@ -432,9 +432,9 @@ if __name__ == '__main__':
 #            'resonance_LOW': 2.8422, 'rabi_LOW': 95.6, 'uwave_power_LOW': 9.0,
 #            'resonance_HIGH': 2.8875, 'rabi_HIGH': 111.7, 'uwave_power_HIGH': 10.0}
     
-    nd_filter = 'nd_1.5'
+    nd_filter = 'nd_1.0'
     expected_count_rate = {
-            'nd_0': 125,
+            'nd_0': 110,
             'nd_0.5': 95,
             'nd_1.0': 85,
             'nd_1.5': 55,
@@ -446,11 +446,11 @@ if __name__ == '__main__':
             'nd_1.5': 420,
             }
     nv2_2019_04_30  = { 'coords': [-0.065, 0.087, 5.01],
-            'name': '{}-NV1_2019_05_10'.format(sample_name),
+            'name': '{}-nv2_2019_04_30'.format(sample_name),
             'expected_count_rate': expected_count_rate[nd_filter], 'nd_filter': nd_filter,
             'pulsed_readout_dur': pulsed_readout_dur[nd_filter], 'magnet_angle': 170.7,
-            'resonance_LOW': 2.8514, 'rabi_LOW': 188.9, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.8820, 'rabi_HIGH': 221.7, 'uwave_power_HIGH': 10.0}
+            'resonance_LOW': 2.8542, 'rabi_LOW': 191.5, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 2.8849, 'rabi_HIGH': 199.5, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv2_2019_04_30]
 
@@ -510,7 +510,7 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 500])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
-            do_t1_interleave(nv_sig, apd_indices)
+#            do_t1_interleave(nv_sig, apd_indices)
 #            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
