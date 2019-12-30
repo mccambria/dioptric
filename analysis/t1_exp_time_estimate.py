@@ -75,8 +75,8 @@ t1_exp_array = numpy.array([
     [[States.ZERO, States.ZERO], [0, 2.5*10**6], 26, 1*10**4, num_runs],
     ])
 
-contrast = 0.35  # arb
-exp_count_rate = 55  # kcps
-readout_window = 420  # ns
+contrast = 0.41  # arb
+exp_count_rate = 23  # kcps
+readout_window = 550  # ns
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)

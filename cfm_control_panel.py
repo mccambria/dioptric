@@ -217,7 +217,7 @@ def do_t1_interleave(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
     # ~18 hrs
-    num_runs = 40
+    num_runs = 30
     t1_exp_array = numpy.array([
         [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
         [[States.HIGH, States.LOW], [0, 120*10**3], 26, 8*10**4, num_runs],
@@ -432,25 +432,25 @@ if __name__ == '__main__':
 #            'resonance_LOW': 2.8422, 'rabi_LOW': 95.6, 'uwave_power_LOW': 9.0,
 #            'resonance_HIGH': 2.8875, 'rabi_HIGH': 111.7, 'uwave_power_HIGH': 10.0}
     
-    nd_filter = 'nd_1.0'
+    nd_filter = 'nd_1.5'
     expected_count_rate = {
-            'nd_0': 110,
-            'nd_0.5': 95,
-            'nd_1.0': 85,
-            'nd_1.5': 55,
+            'nd_0': 95,
+            'nd_0.5': 85,
+            'nd_1.0': 54,
+            'nd_1.5': 23,
             }
     pulsed_readout_dur = {
-            'nd_0': 150,
-            'nd_0.5': 215,
-            'nd_1.0': 280,
-            'nd_1.5': 420,
+            'nd_0': None,
+            'nd_0.5': None,
+            'nd_1.0': 450,
+            'nd_1.5': 550,
             }
     nv2_2019_04_30  = { 'coords': [-0.065, 0.087, 5.01],
             'name': '{}-nv2_2019_04_30'.format(sample_name),
             'expected_count_rate': expected_count_rate[nd_filter], 'nd_filter': nd_filter,
             'pulsed_readout_dur': pulsed_readout_dur[nd_filter], 'magnet_angle': 170.7,
-            'resonance_LOW': 2.8542, 'rabi_LOW': 191.5, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.8849, 'rabi_HIGH': 199.5, 'uwave_power_HIGH': 10.0}
+            'resonance_LOW': 2.8525, 'rabi_LOW': 184.6, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 2.8852, 'rabi_HIGH': 195.3, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv2_2019_04_30]
 
@@ -466,8 +466,8 @@ if __name__ == '__main__':
 #        set_xyz([0.0,0.0,5.0])
 #        set_xyz([-0.116, -0.073, 2.61])
         
-#        with labrad.connect() as cxn:
-#            cxn.filter_slider_ell9k.set_filter('nd_1.5')
+        with labrad.connect() as cxn:
+            cxn.filter_slider_ell9k.set_filter('nd_0.5')
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            input('Laser currently turned off, Press enter to stop...')
         
@@ -507,7 +507,7 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.600, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.100, freq_range=0.15)
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 400])
-#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 500])
+#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 450])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
