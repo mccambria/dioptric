@@ -73,29 +73,42 @@ def calc_res_pair(theta_B, center_freq, mag_B):
     return resonance_low, resonance_high
 
 
-def plot_resonances_vs_theta_B(precession_dur_range, num_steps, norm_avg_sig,
-                               center_freq, measured_resonances):
+def plot_resonances_vs_theta_B(folder, file, center_freq):
     
-    fit_func, popt = fit_data(precession_dur_range, num_steps, norm_avg_sig)
+    fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
     if (fit_func is None) or (popt is None):
         print('Fit failed!')
         return
     
+    data = tool_belt.get_raw_data(folder, file)
+    nv_sig = data['nv_sig']
+    resonance_LOW = nv_sig['resonance_LOW']
+    resonance_HIGH = nv_sig['resonance_HIGH']
+    
     revival_time = popt[1]
-    mag_B = mag_B_from_revival_time(revival_time)
+    revival_time_ste = stes[1]
+    mag_B, mag_B_ste = mag_B_from_revival_time(revival_time, revival_time_ste)
+    print(mag_B)
+    print(mag_B_ste)
     num_steps = 1000
     linspace_theta_B = numpy.linspace(0, numpy.pi/2, num_steps)
     
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
     fig.set_tight_layout(True)
     res_pairs = calc_res_pair(linspace_theta_B, center_freq, mag_B)
+    res_pairs_high = calc_res_pair(linspace_theta_B, center_freq, mag_B+mag_B_ste)
+    res_pairs_low = calc_res_pair(linspace_theta_B, center_freq, mag_B-mag_B_ste)
     linspace_theta_B_deg = linspace_theta_B * (180/numpy.pi)
     ax.plot(linspace_theta_B_deg, res_pairs[0])
+    ax.fill_between(linspace_theta_B_deg, res_pairs_high[0], res_pairs_low[0],
+                    alpha=0.5)
     ax.plot(linspace_theta_B_deg, res_pairs[1])
+    ax.fill_between(linspace_theta_B_deg, res_pairs_high[1], res_pairs_low[1],
+                    alpha=0.5)
     
-    ax.plot(linspace_theta_B_deg, [measured_resonances[0]
+    ax.plot(linspace_theta_B_deg, [resonance_LOW
                                    for el in range(0, num_steps)])
-    ax.plot(linspace_theta_B_deg, [measured_resonances[1]
+    ax.plot(linspace_theta_B_deg, [resonance_HIGH
                                    for el in range(0, num_steps)])
     
     ax.set_xlabel(r'$\theta_{B}$ (deg))')
@@ -105,9 +118,14 @@ def plot_resonances_vs_theta_B(precession_dur_range, num_steps, norm_avg_sig,
 # %% Functions
     
     
-def mag_B_from_revival_time(revival_time):
+def mag_B_from_revival_time(revival_time, revival_time_ste=None):
     # 1071 Hz/G is the C13 Larmor precession frequency
-    return ((revival_time*10**-6)*1071)**-1
+    mag_B = ((revival_time*10**-6)*1071)**-1
+    if revival_time_ste is not None:
+        mag_B_ste = mag_B * (revival_time_ste / revival_time)
+        return mag_B, mag_B_ste
+    else:
+        return mag_B
  
 
 def quartic(tau, offset, revival_time, decay_time,
@@ -122,16 +140,45 @@ def quartic(tau, offset, revival_time, decay_time,
     return tally
 
 
-def fit_data(precession_dur_range, num_steps, norm_avg_sig):
+def fit_data_from_file(folder, file):
+
+    data = tool_belt.get_raw_data(folder, file)
+    precession_dur_range = data['precession_time_range']
+    sig_counts = data['sig_counts']
+    ref_counts = data['ref_counts']
+    num_steps = data['num_steps']
+    num_runs = data['num_runs']
+    
+    ret_vals =  fit_data(precession_dur_range, num_steps, num_runs,
+                         sig_counts, ref_counts)
+    return ret_vals
+
+
+def fit_data(precession_dur_range, num_steps, num_runs,
+             sig_counts, ref_counts):
 
     # %% Set up
 
+    # Convert to us
+    precession_dur_range = [el/1000 for el in precession_dur_range]
     min_precession_dur = precession_dur_range[0]
     max_precession_dur = precession_dur_range[1]
     taus, tau_step = numpy.linspace(min_precession_dur, max_precession_dur,
                             num=num_steps, dtype=numpy.int32, retstep=True)
     
     fit_func = quartic
+    
+    # %% Normalization and uncertainty
+    
+    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
+    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
+    
+    # Assume reference is constant and can be approximated to one value
+    avg_ref = numpy.average(ref_counts[::])
+
+    # Divide signal by reference to get normalized counts and st error
+    norm_avg_sig = avg_sig_counts / avg_ref
+    norm_avg_sig_ste = ste_sig_counts / avg_ref
 
     # %% Estimated fit parameters
 
@@ -162,22 +209,26 @@ def fit_data(precession_dur_range, num_steps, norm_avg_sig):
 
     try:
         popt, pcov = curve_fit(fit_func, taus, norm_avg_sig,
-                               p0=init_params, bounds=(min_bounds, max_bounds))
+                                sigma=norm_avg_sig_ste, absolute_sigma=True,
+                                p0=init_params, bounds=(min_bounds, max_bounds))
     except Exception as e:
         print(e)
         popt = None
         
     revival_time = popt[1]
-    # print(pcov)
-    # revival_time_ste = numpy.sqrt(pcov[1,1])
-    # print('revival_time: {}'.format(revival_time))
-    # print('revival_time_ste: {}'.format(revival_time_ste))
+    stes = numpy.sqrt(numpy.diag(pcov))
 
-    return fit_func, popt
+    if (fit_func is not None) and (popt is not None):
+        fit_fig = create_fit_figure(precession_dur_range, num_steps,
+                                    norm_avg_sig, norm_avg_sig_ste, 
+                                    fit_func, popt)
 
-def create_fit_figure(precession_dur_range, num_steps, norm_avg_sig,
+    return fit_func, popt, stes, fit_fig
+
+def create_fit_figure(precession_dur_range, num_steps,
+                      norm_avg_sig, norm_avg_sig_ste,
                       fit_func, popt):
-
+    
     min_precession_dur = precession_dur_range[0]
     max_precession_dur = precession_dur_range[1]
     taus = numpy.linspace(min_precession_dur, max_precession_dur,
@@ -188,6 +239,8 @@ def create_fit_figure(precession_dur_range, num_steps, norm_avg_sig,
     fit_fig, ax = plt.subplots(figsize=(8.5, 8.5))
     fit_fig.set_tight_layout(True)
     ax.plot(taus, norm_avg_sig,'bo',label='data')
+    # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
+    #             fmt='bo', label='data')
     ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', label='fit')
     ax.set_xlabel(r'Precession duration ($\mathrm{\mu s}$)')
     ax.set_ylabel('Contrast (arb. units)')
@@ -552,22 +605,10 @@ if __name__ == '__main__':
 
     center_freq = 2.8696  # zfs in GHz
     # center_freq = 2.871  # zfs in GHz
+    folder = 'spin_echo/2019_12'
     file = '2019_12_22-16_46_54-goeppert_mayer-nv7_2019_11_27'
     # file = '2019_12_22-19_18_05-goeppert_mayer-nv7_2019_11_27'
-    data = tool_belt.get_raw_data('spin_echo/2019_12', file)
-
-    nv_sig = data['nv_sig']
-    measured_resonances = [nv_sig['resonance_LOW'], nv_sig['resonance_HIGH']]
-    norm_avg_sig = data['norm_avg_sig']
-    precession_dur_range = data['precession_time_range']
-    # Convert to us
-    precession_dur_range = [el/1000 for el in precession_dur_range]
-    num_steps = data['num_steps']
-
-    # fit_func, popt = fit_data(precession_dur_range, num_steps, norm_avg_sig)
-    # if (fit_func is not None) and (popt is not None):
-    #     create_fit_figure(precession_dur_range, num_steps, norm_avg_sig,
-    #                       fit_func, popt)
+    
+    # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
         
-    plot_resonances_vs_theta_B(precession_dur_range, num_steps, norm_avg_sig,
-                                center_freq, measured_resonances)
+    plot_resonances_vs_theta_B(folder, file, center_freq)

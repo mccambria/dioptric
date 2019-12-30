@@ -428,21 +428,15 @@ def ask_open_file(file_path):
                                           title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) )
     return file_name
 
-def get_file_list(source_name, file_ends_with, sub_folder_name = None,
+def get_file_list(path_from_nvdata, file_ends_with,
                  data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
     '''
     Creates a list of all the files in the folder for one experiment, based on
     the ending file name
     '''
-    # Parse the source_name if __file__ was passed
-    source_name = os.path.splitext(os.path.basename(source_name))[0]
     
     data_dir = Path(data_dir)
-    
-    if sub_folder_name is None:
-        file_path = data_dir / source_name 
-    else:
-        file_path = data_dir / source_name / sub_folder_name
+    file_path = data_dir / path_from_nvdata 
     
     file_list = []
     
