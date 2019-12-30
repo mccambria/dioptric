@@ -38,8 +38,6 @@ from utils.tool_belt import States
 
 # %% Constants
 
-data_folder = 't1_double_quantum'
-
 manual_offset_gamma = 0.0
 # %% Functions
 
@@ -72,7 +70,7 @@ def get_folder_list(keyword):
 # into main
 def get_data_lists(folder_name):
     # Get the file list from this folder
-    file_list = tool_belt.get_file_list(data_folder, '.txt', folder_name)
+    file_list = tool_belt.get_file_list(folder_name, '.txt')
 
     # Define booleans to be used later in putting data into arrays in the
     # correct order. This was mainly put in place for older data where we
@@ -100,7 +98,7 @@ def get_data_lists(folder_name):
     # Unpack the data and sort into arrays. This allows multiple measurements of
     # the same type to be correctly sorted into one array
     for file in file_list:
-        data = tool_belt.get_raw_data(data_folder, file[:-4], folder_name)
+        data = tool_belt.get_raw_data(folder_name, file[:-4])
         try:
 
             init_state_name = data['init_state']
@@ -263,6 +261,7 @@ def get_data_lists(folder_name):
                 splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
 
         except Exception:
+            print('Skipping {}'.format(str(file)))
             continue
 
     omega_exp_list = [zero_zero_counts, zero_zero_ste, \
@@ -490,8 +489,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                     }
 
         file_name = '{}MHz_splitting_rate_analysis'.format(round(splitting_MHz))
-        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
-                                                             file_name)
+        file_path = '{}/{}/{}'.format(data_dir, folder_name, file_name)
         tool_belt.save_raw_data(raw_data, file_path)
         tool_belt.save_figure(fig, file_path)
 
@@ -500,8 +498,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    path = 'paper_data/fast_relaxation_on_magnetic/'
-    folder = 'nv1_2019_05_10_45MHz-ND00'
+    path = 't1_interleave/paper_data/fast_relaxation_on_magnetic/'
+    folder = 'nv2_2019_04_30-44uW'
     path += folder
 
     gamma, ste = main(path, omega=None, omega_ste=None,

@@ -4,7 +4,10 @@ Created on Tue Aug 27 17:45:26 2019
 
 This file specifically made to analyze the data of t1_interleave
 
-It works only with an experiment that performed (1,1) and (1,-1), for now
+It works only with an experiment that performed (1,1) and (1,-1), for now.
+
+It fits to a simple exponential, and you can manually set the offset and amp
+for the fit, besed on, say, the fit for all the data combined.
 
 @author: agardill
 """
@@ -19,10 +22,18 @@ from utils.tool_belt import States
 
 # %% Presets
 
+
+data_folder = 't1_double_quantum'
+
+# put in the value of omega to use in the analysis of gamma, under the assumption
+# that omega is not changing drastically
+
 omega =  1.17
 omega_ste = 0.18
 
-gamma_offset = -0.006
+
+# Input an offset for the exponential fit for gamma
+gamma_offset = 0.0
 
 # %% Minor functions
 
@@ -44,14 +55,14 @@ def extract_data(file_name, folder_name):
     splitting_MHz = resonance_HIGH - resonance_LOW
 
     # Get the tau data and the (1,1) and (1,-1) sig and reference counts
-    taus = numpy.array(data['tau_master_list'][0]) / 10**6 # us
+    taus = numpy.array(data['tau_master_list'][1]) / 10**6 # us
     taus = taus[1:]
-    plus_minus_sig_counts = data['sig_counts_master_list'][0]
+    plus_minus_sig_counts = data['sig_counts_master_list'][1]
     plus_minus_sig_counts = numpy.array(plus_minus_sig_counts)[:,1:]
-    plus_plus_sig_counts= data['sig_counts_master_list'][1]
+    plus_plus_sig_counts= data['sig_counts_master_list'][3]
     plus_plus_sig_counts = numpy.array(plus_plus_sig_counts)[:,1:]
-    plus_minus_ref = numpy.average(data['ref_counts_master_list'][0])
-    plus_plus_ref= numpy.average(data['ref_counts_master_list'][1])
+    plus_minus_ref = numpy.average(data['ref_counts_master_list'][1])
+    plus_plus_ref= numpy.average(data['ref_counts_master_list'][3])
     
     # Normalize the data using one averaged ref value
     plus_plus_norm_counts = plus_plus_sig_counts/plus_plus_ref
@@ -218,8 +229,10 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
 
 if __name__ == '__main__':
 
+
     folder = 't1_interleave/paper_data/fast_relaxation_on_magnetic/nv2_2019_04_30-nd_1.5'
     file = '2019_12_27-00_51_31-ayrton12-nv2_2019_04_30'
     
     main(file, folder, 1)
     
+

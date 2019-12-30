@@ -61,8 +61,8 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
     print('Total experiment time: {:.1f} hrs'.format(total_exp_time))
 
 # %%
-    
-num_runs = 20
+
+num_runs = 40
 t1_exp_array = numpy.array([
     [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
     [[States.HIGH, States.LOW], [0, 120*10**3], 26, 8*10**4, num_runs],
