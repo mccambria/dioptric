@@ -377,15 +377,15 @@ if __name__ == '__main__':
 
     # Define the nv_sig to be used
     sample_name = 'ayrton12'
-    nv1_2019_05_10 = { 'coords': [-0.176, 0.181, 5.03],
+    nv2_2019_04_30  = { 'coords': [-0.065, 0.087, 5.01],
             'name': '{}-NV1_2019_05_10'.format(sample_name),
-            'expected_count_rate': 30, 'nd_filter': 'nd_1.5',
-            'pulsed_readout_dur': 375, 'magnet_angle': 105.2,
-            'resonance_LOW': 2.7751, 'rabi_LOW': 114.8, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.9606, 'rabi_HIGH': 77.7, 'uwave_power_HIGH': 10.0}
+            'expected_count_rate': 55, 'nd_filter': 'nd_1.5',
+            'pulsed_readout_dur': 400, 'magnet_angle': 170.7,
+            'resonance_LOW': 2.8514, 'rabi_LOW': 188.9, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 2.8820, 'rabi_HIGH': 221.7, 'uwave_power_HIGH': 10.0}
     
     ### MAIN ###
-    main(nv1_2019_05_10)
+    main(nv2_2019_04_30)
     
     # The individual functions in this file
 #    snr_measurement(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)

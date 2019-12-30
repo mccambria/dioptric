@@ -26,7 +26,7 @@ import copy
 
 
 def create_fit_figure(splittings, angles, fit_func, popt):
-    opti_angle = (-popt[2]) % 180
+    opti_angle = popt[2] % 180
     
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
 
@@ -91,10 +91,14 @@ def save_data(name, raw_data, fig):
         tool_belt.save_figure(fig, file_path)
 
 def AbsCos(angle, offset, amp, phase):
-    return offset + abs(amp * numpy.cos(angle * numpy.pi / 180 + phase * numpy.pi / 180))
+    angle_rad = angle * numpy.pi / 180
+    phase_rad = phase * numpy.pi / 180
+    return offset + abs(amp * numpy.cos(angle_rad - phase_rad))
 
 def AbsCosNoOff(angle, amp, phase):
-    return abs(amp * numpy.cos(angle * numpy.pi / 180 + phase * numpy.pi / 180))
+    angle_rad = angle * numpy.pi / 180
+    phase_rad = phase * numpy.pi / 180
+    return abs(amp * numpy.cos(angle_rad - phase_rad))
 
 
 # %% Main
@@ -169,7 +173,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
     if (fit_func is not None) and (popt is not None):
         fig = create_fit_figure(splittings, angles, fit_func, popt)
         # Find the angle at the peak within [0, 180]
-        opti_angle = (-popt[2]) % 180
+        opti_angle = popt[2] % 180
         print('Optimized angle: {}'.format(opti_angle))
         cxn.rotation_stage_ell18k.set_angle(opti_angle)
 
@@ -209,8 +213,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    file = '2019_11/2019_11_27-14_50_01-Geoppert-Mayer-nv7_2019_11_27'
-    data = tool_belt.get_raw_data(__file__, file)
+    path = 'optimize_magnet_angle/2019_12'
+    file = '2019_12_26-12_31_52-ayrton12-NV1_2019_05_10'
+    data = tool_belt.get_raw_data(path, file)
     splittings = data['splittings']
     angle_range = data['angle_range']
     num_angle_steps = data['num_angle_steps']
@@ -223,6 +228,6 @@ if __name__ == '__main__':
     if (fit_func is not None) and (popt is not None):
         fig = create_fit_figure(splittings, angles, fit_func, popt)
         # Find the angle at the peak within [0, 180]
-        opti_angle = (-popt[2]) % 180
+        opti_angle = popt[2] % 180
         print('Optimized angle: {}'.format(opti_angle))
 

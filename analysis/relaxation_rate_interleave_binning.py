@@ -22,12 +22,15 @@ from utils.tool_belt import States
 
 # %% Presets
 
+
 data_folder = 't1_double_quantum'
 
 # put in the value of omega to use in the analysis of gamma, under the assumption
 # that omega is not changing drastically
-omega =  2.52
-omega_ste = 2
+
+omega =  1.17
+omega_ste = 0.18
+
 
 # Input an offset for the exponential fit for gamma
 gamma_offset = 0.0
@@ -40,7 +43,7 @@ def expon_decay(t, rate, amp):
 # Function to get data from interleave files from folder
 def extract_data(file_name, folder_name):
     # Call the data
-    data = tool_belt.get_raw_data(data_folder, file_name, folder_name)
+    data = tool_belt.get_raw_data(folder_name, file_name)
     
     # Define the num_runs
     num_runs = data['num_runs']
@@ -219,15 +222,17 @@ def main(file_name, folder_name, num_bins, amp = None, offset = None):
     data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
         
     file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_' + str(num_bins) + '_bins_error' 
-    file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name, 
-                                                     file_name)
+    file_path = '{}/{}/{}'.format(data_dir, folder_name, file_name)
     tool_belt.save_raw_data(raw_data, file_path)
     
 # %% Run the file
 
 if __name__ == '__main__':
 
-    folder = 'paper_data/fast_relaxation_on_magnetic/nv1_2019_05_10_45MHz-ND00'
-    file = '2019_12_24-09_36_17-ayrton12-NV1_2019_05_10'
+
+    folder = 't1_interleave/paper_data/fast_relaxation_on_magnetic/nv2_2019_04_30-nd_1.5'
+    file = '2019_12_27-00_51_31-ayrton12-nv2_2019_04_30'
     
-    main(file, folder, 4, amp = None)
+    main(file, folder, 1)
+    
+
