@@ -88,8 +88,6 @@ def plot_resonances_vs_theta_B(folder, file, center_freq):
     revival_time = popt[1]
     revival_time_ste = stes[1]
     mag_B, mag_B_ste = mag_B_from_revival_time(revival_time, revival_time_ste)
-    print(mag_B)
-    print(mag_B_ste)
     num_steps = 1000
     linspace_theta_B = numpy.linspace(0, numpy.pi/2, num_steps)
     
@@ -124,7 +122,7 @@ def plot_resonances_vs_theta_B(folder, file, center_freq):
     
 def mag_B_from_revival_time(revival_time, revival_time_ste=None):
     # 1071 Hz/G is the C13 Larmor precession frequency
-    mag_B = ((revival_time*10**-6)*1071)**-1
+    mag_B = ((revival_time/10**9)*1071)**-1
     if revival_time_ste is not None:
         mag_B_ste = mag_B * (revival_time_ste / revival_time)
         return mag_B, mag_B_ste
@@ -153,33 +151,26 @@ def fit_data_from_file(folder, file):
     # Get the pi pulse duration
     state = data['state']
     nv_sig = data['nv_sig']
-    pi_pulse_dur = nv_sig['rabi_{}'.format(state)]
+    rabi_period = nv_sig['rabi_{}'.format(state)]
     
-    ret_vals =  fit_data(precession_dur_range, pi_pulse_dur,
-                         num_steps, num_runs,
-                         sig_counts, ref_counts)
+    ret_vals = fit_data(precession_dur_range, rabi_period,
+                        num_steps, num_runs, sig_counts, ref_counts)
     return ret_vals
 
 
-def fit_data(precession_dur_range, pi_pulse_dur,
-             num_steps, num_runs,
-             sig_counts, ref_counts):
+def fit_data(precession_dur_range, rabi_period,
+             num_steps, num_runs, sig_counts, ref_counts):
     
-    # Everything here is converted to us!!
-
     # %% Set up
 
     min_precession_dur = precession_dur_range[0]
-    min_precession_dur_us = float(min_precession_dur) / 1000
     max_precession_dur = precession_dur_range[1]
-    max_precession_dur_us = float(max_precession_dur) / 1000
-    taus, tau_step  = numpy.linspace(min_precession_dur_us,
-                                     max_precession_dur_us,
-                                     num=num_steps, dtype=float, retstep=True)
+    taus, tau_step  = numpy.linspace(min_precession_dur, max_precession_dur,
+                             num=num_steps, dtype=numpy.int32, retstep=True)
     
     # Account for the pi/2 pulse on each side of a tau
-    pi_pulse_dur_us = float(pi_pulse_dur) / 1000
-    taus += pi_pulse_dur_us
+    pi_pulse_dur = tool_belt.get_pi_pulse_dur(rabi_period)
+    tau_pis = taus + pi_pulse_dur
     
     fit_func = quartic
     
@@ -201,7 +192,7 @@ def fit_data(precession_dur_range, pi_pulse_dur,
     # us back to 1.0
     amplitude = 1.0 - numpy.average(norm_avg_sig)
     offset = 1.0 - amplitude
-    decay_time = 3
+    decay_time = 3000.0
 
     # To estimate the revival frequency let's find the highest peak in the FFT
     transform = numpy.fft.rfft(norm_avg_sig)
@@ -212,60 +203,64 @@ def fit_data(precession_dur_range, pi_pulse_dur,
     frequency = freqs[max_ind+1]
     revival_time = 1/frequency
     
-    num_revivals = max_precession_dur_us / revival_time
+    num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
 
     # %% Fit
     
-    init_params = [offset, revival_time, decay_time, *amplitudes]
+    # The fit doesn't like dealing with vary large numbers. We'll convert to
+    # us here and then convert back to ns after the fit for consistency.
+    
+    init_params = [offset, revival_time / 1000, decay_time / 1000, *amplitudes]
     min_bounds = (0.5, 0.0, 0.0, *[0.0 for el in amplitudes])
-    max_bounds = (1.0, max_precession_dur_us, max_precession_dur_us,
+    max_bounds = (1.0, max_precession_dur / 1000, max_precession_dur / 1000,
                   *[0.3 for el in amplitudes])
 
     try:
-        popt, pcov = curve_fit(fit_func, taus, norm_avg_sig,
-                                sigma=norm_avg_sig_ste, absolute_sigma=True,
-                                p0=init_params, bounds=(min_bounds, max_bounds))
+        popt, pcov = curve_fit(fit_func, tau_pis / 1000, norm_avg_sig,
+                               sigma=norm_avg_sig_ste, absolute_sigma=True,
+                               p0=init_params, bounds=(min_bounds, max_bounds))
+        popt[1] *= 1000
+        popt[2] *= 1000
     except Exception as e:
         print(e)
         popt = None
+        return
         
     revival_time = popt[1]
     stes = numpy.sqrt(numpy.diag(pcov))
-
     if (fit_func is not None) and (popt is not None):
-        fit_fig = create_fit_figure(precession_dur_range, pi_pulse_dur,
+        fit_fig = create_fit_figure(precession_dur_range, rabi_period,
                                     num_steps, norm_avg_sig, norm_avg_sig_ste, 
                                     fit_func, popt)
 
     return fit_func, popt, stes, fit_fig
 
-def create_fit_figure(precession_dur_range, pi_pulse_dur,
+def create_fit_figure(precession_dur_range, rabi_period,
                       num_steps, norm_avg_sig, norm_avg_sig_ste,
                       fit_func, popt):
     
     min_precession_dur = precession_dur_range[0]
-    min_precession_dur_us = float(min_precession_dur) / 1000
     max_precession_dur = precession_dur_range[1]
-    max_precession_dur_us = float(max_precession_dur) / 1000
-    taus = numpy.linspace(min_precession_dur_us, max_precession_dur_us,
-                          num=num_steps, dtype=float)
+    taus = numpy.linspace(min_precession_dur, max_precession_dur,
+                          num=num_steps, dtype=numpy.int32)
     
     # Account for the pi/2 pulse on each side of a tau
-    pi_pulse_dur_us = float(pi_pulse_dur) / 1000
-    taus += pi_pulse_dur_us
+    pi_pulse_dur = tool_belt.get_pi_pulse_dur(rabi_period)
+    tau_pis = taus + pi_pulse_dur
     
-    linspaceTau = numpy.linspace(min_precession_dur_us+pi_pulse_dur_us,
-                                 max_precession_dur_us+pi_pulse_dur_us,
-                                 num=1000)
+    linspace_taus = numpy.linspace(min_precession_dur, max_precession_dur,
+                                   num=1000)
+    linspace_tau_pis = linspace_taus + pi_pulse_dur
     
 
     fit_fig, ax = plt.subplots(figsize=(8.5, 8.5))
     fit_fig.set_tight_layout(True)
-    ax.plot(taus, norm_avg_sig,'bo',label='data')
+    ax.plot(tau_pis / 1000, norm_avg_sig,'bo',label='data')
     # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
     #             fmt='bo', label='data')
-    ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', label='fit')
+    ax.plot(linspace_tau_pis / 1000, fit_func(linspace_tau_pis, *popt),
+            'r-', label='fit')
     ax.set_xlabel(r'$\tau + \pi$ ($\mathrm{\mu s}$)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.set_title('Spin Echo')
@@ -274,7 +269,7 @@ def create_fit_figure(precession_dur_range, pi_pulse_dur,
     revival_time = popt[1]
     text_popt = '\n'.join(
         (
-            r'$\tau_{r}=$%.3f $\mathrm{\mu s}$'%(revival_time),
+            r'$\tau_{r}=$%.3f $\mathrm{\mu s}$'%(revival_time / 1000),
             r'$B=$%.3f G'%(mag_B_from_revival_time(revival_time)),
          )
         )
@@ -334,8 +329,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
 
     # Get pulse frequencies
-    uwave_pi_pulse = round(rabi_period / 2)
-    uwave_pi_on_2_pulse = round(rabi_period / 4)
+    uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
+    uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
     
     seq_file_name = 'spin_echo.py'
 
@@ -565,20 +560,22 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
-    ax.plot(taus / 10**3, avg_sig_counts, 'r-', label = 'signal')
-    ax.plot(taus / 10**3, avg_ref_counts, 'g-', label = 'reference')
-    ax.set_xlabel('\u03C4 (us)')  # tau = \u03C4 in unicode
+    # Account for the pi/2 pulse on each side of a tau
+    plot_taus = (taus + uwave_pi_pulse) / 1000
+    ax.plot(plot_taus, avg_sig_counts, 'r-', label = 'signal')
+    ax.plot(plot_taus, avg_ref_counts, 'g-', label = 'reference')
+    ax.set_xlabel(r'$\tau + \pi$ ($\mathrm{\mu s}$)')
     ax.set_ylabel('Counts')
     ax.legend()
 
     ax = axes_pack[1]
-    ax.plot(taus / 10**3, norm_avg_sig, 'b-')
+    ax.plot(plot_taus, norm_avg_sig, 'b-')
     ax.set_title('Spin Echo Measurement')
-    ax.set_xlabel('Precession time (us)')
+    ax.set_xlabel(r'$\tau + \pi$ ($\mathrm{\mu s}$)')
     ax.set_ylabel('Contrast (arb. units)')
 
     raw_fig.canvas.draw()
-#     fig.set_tight_layout(True)
+    raw_fig.set_tight_layout(True)
     raw_fig.canvas.flush_events()
     
     # %% Save the data
@@ -633,11 +630,7 @@ if __name__ == '__main__':
 
     center_freq = 2.8703  # zfs in GHz
     folder = 'spin_echo/2019_12'
-    # file = '2019_12_22-16_46_54-goeppert_mayer-nv7_2019_11_27'
-    # file = '2019_12_22-19_18_05-goeppert_mayer-nv7_2019_11_27'
-    # file = '2019_12_30-16_23_51-goeppert_mayer-nv7_2019_11_27'
-    # file = '2019_12_30-18_22_09-goeppert_mayer-nv7_2019_11_27'
-    file = '2019_12_30-20_05_04-goeppert_mayer-nv7_2019_11_27'
+    file = '2019_12_31-10_26_07-goeppert_mayer-nv7_2019_11_27'
     
     # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
         
