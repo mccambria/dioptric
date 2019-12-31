@@ -114,6 +114,10 @@ def plot_resonances_vs_theta_B(folder, file, center_freq):
     ax.set_xlabel(r'$\theta_{B}$ (deg))')
     ax.set_ylabel('Resonances (GHz)')
     
+    fig_file = file + '-theta_B'
+    file_path = tool_belt.get_data_path() / folder / fig_file
+    tool_belt.save_figure(fig, file_path)
+    
 
 # %% Functions
     
@@ -130,9 +134,6 @@ def mag_B_from_revival_time(revival_time, revival_time_ste=None):
 
 def quartic(tau, offset, revival_time, decay_time,
             *amplitudes):
-    # return amplitude * numpy.exp(((tau - revival_time)/decay_time)**4)
-    # complex_arg = amplitude * numpy.exp((tau - im*revival_time/decay_time)**4)
-    # return numpy.real(complex_arg)
     tally = offset
     for ind in range(0, len(amplitudes)):
         exp_part = numpy.exp(-((tau - ind*revival_time)/decay_time)**4)
@@ -249,9 +250,11 @@ def create_fit_figure(precession_dur_range, pi_pulse_dur,
     max_precession_dur_us = float(max_precession_dur) / 1000
     taus = numpy.linspace(min_precession_dur_us, max_precession_dur_us,
                           num=num_steps, dtype=float)
+    
     # Account for the pi/2 pulse on each side of a tau
     pi_pulse_dur_us = float(pi_pulse_dur) / 1000
     taus += pi_pulse_dur_us
+    
     linspaceTau = numpy.linspace(min_precession_dur_us+pi_pulse_dur_us,
                                  max_precession_dur_us+pi_pulse_dur_us,
                                  num=1000)
@@ -263,7 +266,7 @@ def create_fit_figure(precession_dur_range, pi_pulse_dur,
     # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
     #             fmt='bo', label='data')
     ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', label='fit')
-    ax.set_xlabel(r'$\tau + \pi/2$ ($\mathrm{\mu s}$)')
+    ax.set_xlabel(r'$\tau + \pi$ ($\mathrm{\mu s}$)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.set_title('Spin Echo')
     ax.legend()
@@ -283,6 +286,10 @@ def create_fit_figure(precession_dur_range, pi_pulse_dur,
     fit_fig.canvas.draw()
     fit_fig.set_tight_layout(True)
     fit_fig.canvas.flush_events()
+    
+    fig_file = file + '-fit'
+    file_path = tool_belt.get_data_path() / folder / fig_file
+    tool_belt.save_figure(fit_fig, file_path)
 
     return fit_fig
 
@@ -626,10 +633,11 @@ if __name__ == '__main__':
 
     center_freq = 2.8703  # zfs in GHz
     folder = 'spin_echo/2019_12'
-#    file = '2019_12_22-16_46_54-goeppert_mayer-nv7_2019_11_27'
-#    file = '2019_12_22-19_18_05-goeppert_mayer-nv7_2019_11_27'
-#    file = '2019_12_30-16_23_51-goeppert_mayer-nv7_2019_11_27'
-    file = '2019_12_30-18_22_09-goeppert_mayer-nv7_2019_11_27'
+    # file = '2019_12_22-16_46_54-goeppert_mayer-nv7_2019_11_27'
+    # file = '2019_12_22-19_18_05-goeppert_mayer-nv7_2019_11_27'
+    # file = '2019_12_30-16_23_51-goeppert_mayer-nv7_2019_11_27'
+    # file = '2019_12_30-18_22_09-goeppert_mayer-nv7_2019_11_27'
+    file = '2019_12_30-20_05_04-goeppert_mayer-nv7_2019_11_27'
     
     # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
         
