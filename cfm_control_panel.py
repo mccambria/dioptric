@@ -262,11 +262,11 @@ def do_spin_echo(nv_sig, apd_indices):
 
     # T2 in nanodiamond NVs without dynamical decoupling is just a couple
     # us so don't bother looking past 10s of us
-#    precession_time_range = [0, 100 * 10**3]
-    precession_time_range = [0, 75*10**3]
+    precession_time_range = [0, 100 * 10**3]
+#    precession_time_range = [0, 75*10**3]
     num_steps = 101
     num_reps = int(3.0 * 10**4)
-    num_runs = 7
+    num_runs = 2
     state = States.LOW
 
     spin_echo.main(nv_sig, apd_indices, precession_time_range,
@@ -410,8 +410,8 @@ if __name__ == '__main__':
             'name': '{}-nv7_2019_11_27'.format(sample_name),
             'expected_count_rate': 47, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
-            'resonance_LOW': 2.7747, 'rabi_LOW': 77.3, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.9676, 'rabi_HIGH': 120.2, 'uwave_power_HIGH': 10.0}
+            'resonance_LOW': 2.7769, 'rabi_LOW': 77.6, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 2.9639, 'rabi_HIGH': 120.2, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv7_2019_11_27]
 
@@ -497,4 +497,3 @@ if __name__ == '__main__':
         if tool_belt.check_safe_stop_alive():
             print('\n\nRoutine complete. Press enter to exit.')
             tool_belt.poll_safe_stop()
-
