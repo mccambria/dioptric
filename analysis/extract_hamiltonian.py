@@ -450,6 +450,7 @@ def main(name, res_descs):
         return
 
     popt = res.x
+    
     print('popt: {}'.format(popt))
 
     chisq = res.fun
@@ -464,7 +465,8 @@ def main(name, res_descs):
     mag_Bs = [find_mag_B(desc, *popt, phi_B, phi_Pi) for desc in res_descs]
 
     # Plot the calculated resonances up to the max mag_B
-    # popt[0] = 32 * (numpy.pi / 180)
+#    popt[0] = 32.5 * (numpy.pi / 180)
+#    print(popt)
     fig, ax = plot_resonances([0, max(mag_Bs)], *popt, phi_B, phi_Pi, name)
 
     # Plot the resonances
@@ -486,7 +488,7 @@ if __name__ == '__main__':
     ############ Nice ############
     
     name = 'goeppert_mayer-nv7_2019_11_27'
-    res_descs = [[0.0, 2.8696, None],
+    res_descs = [[0.0, 2.8703, None],
                   [None, 2.8508, 2.8914],  # 41 MHz
                   [None, 2.7893, 2.9564],  # 167 MHz
                   [None, 2.6719, 3.0846],  # 413 MHz

@@ -24,9 +24,11 @@ import utils.image_processing as image_processing
 
 directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\2019_12\\'
 
-file_name = '2019_12_02-15_33_39-goeppert_mayer-nv7_2019_11_27.txt'
+needle_file = '2019_12_30-11_06_19-goeppert_mayer-search.txt'
+haystack_file = '2019_12_02-15_33_39-goeppert_mayer-nv7_2019_11_27.txt'
+matching_crit = 0.75
 
-file_path = directory + file_name
+file_path = directory + haystack_file
 
 ####################### Parameters #######################
 
@@ -87,11 +89,8 @@ for method_ind in [1]:
     # gaussian = image_processing.convert_to_8bit(gaussian)
 
     # Image
-#    file_name = '2019-04-29_16-37-56_ayrton12.txt'
-    file_name = '2019_12_02-15_14_04-goeppert_mayer-nv7_2019_11_27.txt'
-#    file_name = '2019-05-30_10-39-05_ayrton12.txt'
     directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\2019_12\\'
-    file_path = directory + file_name
+    file_path = directory + needle_file
     with open(file_path, 'r') as file:
         data = json.load(file)
     template_img = numpy.array(data['img_array'])
@@ -112,7 +111,7 @@ for method_ind in [1]:
     red_pixel_vals = [255, 0, 0]
     for y_ind in range(res_size):
         for x_ind in range(res_size):
-            if res[y_ind][x_ind] > 0.8:
+            if res[y_ind][x_ind] > matching_crit:
                 img_y_ind = y_ind + clip_offset
                 img_x_ind = x_ind + clip_offset
                 processed_img_array[img_y_ind][img_x_ind] = red_pixel_vals
