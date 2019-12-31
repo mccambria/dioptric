@@ -332,9 +332,9 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
 def main(nv_sig):
     # Step through the nd filters and find the optimized gate time in each one.
     
-    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
+#    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
 #    nd_filter_list = ['nd_1.0']
-#    nd_filter_list = ['nd_1.5']
+    nd_filter_list = ['nd_1.0', 'nd_1.5']
     
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -349,23 +349,17 @@ def main(nv_sig):
         nd_filter = nd_filter_list[nd_filter_ind]
         
         if nd_filter == 'nd_0':
-            readout_range = [25, 200]
-            num_readout_steps = 8
-        elif nd_filter == 'nd_0.5':
             readout_range = [50, 400]
             num_readout_steps = 8
-        elif nd_filter == 'nd_1.0':
+        elif nd_filter == 'nd_0.5':
             readout_range = [100, 500]
             num_readout_steps = 9
-        elif nd_filter == 'nd_1.5':
-#            readout_range = [200, 400]
-#            num_readout_steps = 9
-#            readout_range = [425, 500]
-#            num_readout_steps = 4
+        elif nd_filter == 'nd_1.0':
             readout_range = [250, 600]
             num_readout_steps = 8
-#            readout_range = [700, 800]
-#            num_readout_steps = 3
+        elif nd_filter == 'nd_1.5':
+            readout_range = [250, 600]
+            num_readout_steps = 8
         
         print('nd filter set to {}'.format(nd_filter))
         
@@ -377,12 +371,25 @@ if __name__ == '__main__':
 
     # Define the nv_sig to be used
     sample_name = 'ayrton12'
+    nd_filter = 'nd_1.0'
+    expected_count_rate = {
+            'nd_0': 95,
+            'nd_0.5': 85,
+            'nd_1.0': 54,
+            'nd_1.5': 23,
+            }
+    pulsed_readout_dur = {
+            'nd_0': 215,
+            'nd_0.5': 280,
+            'nd_1.0': 420,
+            'nd_1.5': 420,
+            }
     nv2_2019_04_30  = { 'coords': [-0.065, 0.087, 5.01],
-            'name': '{}-NV1_2019_05_10'.format(sample_name),
-            'expected_count_rate': 55, 'nd_filter': 'nd_1.5',
-            'pulsed_readout_dur': 400, 'magnet_angle': 170.7,
-            'resonance_LOW': 2.8514, 'rabi_LOW': 188.9, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.8820, 'rabi_HIGH': 221.7, 'uwave_power_HIGH': 10.0}
+            'name': '{}-nv2_2019_04_30'.format(sample_name),
+            'expected_count_rate': expected_count_rate[nd_filter], 'nd_filter': nd_filter,
+            'pulsed_readout_dur': pulsed_readout_dur[nd_filter], 'magnet_angle': 170.7,
+            'resonance_LOW': 2.8532, 'rabi_LOW': 185.4, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 2.8855, 'rabi_HIGH': 194.5, 'uwave_power_HIGH': 10.0}
     
     ### MAIN ###
     main(nv2_2019_04_30)

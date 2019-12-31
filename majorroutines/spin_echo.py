@@ -149,22 +149,36 @@ def fit_data_from_file(folder, file):
     num_steps = data['num_steps']
     num_runs = data['num_runs']
     
-    ret_vals =  fit_data(precession_dur_range, num_steps, num_runs,
+    # Get the pi pulse duration
+    state = data['state']
+    nv_sig = data['nv_sig']
+    pi_pulse_dur = nv_sig['rabi_{}'.format(state)]
+    
+    ret_vals =  fit_data(precession_dur_range, pi_pulse_dur,
+                         num_steps, num_runs,
                          sig_counts, ref_counts)
     return ret_vals
 
 
-def fit_data(precession_dur_range, num_steps, num_runs,
+def fit_data(precession_dur_range, pi_pulse_dur,
+             num_steps, num_runs,
              sig_counts, ref_counts):
+    
+    # Everything here is converted to us!!
 
     # %% Set up
 
-    # Convert to us
-    precession_dur_range = [el/1000 for el in precession_dur_range]
     min_precession_dur = precession_dur_range[0]
+    min_precession_dur_us = float(min_precession_dur) / 1000
     max_precession_dur = precession_dur_range[1]
-    taus, tau_step = numpy.linspace(min_precession_dur, max_precession_dur,
-                            num=num_steps, dtype=numpy.int32, retstep=True)
+    max_precession_dur_us = float(max_precession_dur) / 1000
+    taus, tau_step  = numpy.linspace(min_precession_dur_us,
+                                     max_precession_dur_us,
+                                     num=num_steps, dtype=float, retstep=True)
+    
+    # Account for the pi/2 pulse on each side of a tau
+    pi_pulse_dur_us = float(pi_pulse_dur) / 1000
+    taus += pi_pulse_dur_us
     
     fit_func = quartic
     
@@ -197,14 +211,14 @@ def fit_data(precession_dur_range, num_steps, num_runs,
     frequency = freqs[max_ind+1]
     revival_time = 1/frequency
     
-    num_revivals = max_precession_dur / revival_time
+    num_revivals = max_precession_dur_us / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
 
     # %% Fit
     
     init_params = [offset, revival_time, decay_time, *amplitudes]
     min_bounds = (0.5, 0.0, 0.0, *[0.0 for el in amplitudes])
-    max_bounds = (1.0, max_precession_dur, max_precession_dur,
+    max_bounds = (1.0, max_precession_dur_us, max_precession_dur_us,
                   *[0.3 for el in amplitudes])
 
     try:
@@ -219,22 +233,29 @@ def fit_data(precession_dur_range, num_steps, num_runs,
     stes = numpy.sqrt(numpy.diag(pcov))
 
     if (fit_func is not None) and (popt is not None):
-        fit_fig = create_fit_figure(precession_dur_range, num_steps,
-                                    norm_avg_sig, norm_avg_sig_ste, 
+        fit_fig = create_fit_figure(precession_dur_range, pi_pulse_dur,
+                                    num_steps, norm_avg_sig, norm_avg_sig_ste, 
                                     fit_func, popt)
 
     return fit_func, popt, stes, fit_fig
 
-def create_fit_figure(precession_dur_range, num_steps,
-                      norm_avg_sig, norm_avg_sig_ste,
+def create_fit_figure(precession_dur_range, pi_pulse_dur,
+                      num_steps, norm_avg_sig, norm_avg_sig_ste,
                       fit_func, popt):
     
     min_precession_dur = precession_dur_range[0]
+    min_precession_dur_us = float(min_precession_dur) / 1000
     max_precession_dur = precession_dur_range[1]
-    taus = numpy.linspace(min_precession_dur, max_precession_dur,
-                          num=num_steps, dtype=numpy.int32)
-    linspaceTau = numpy.linspace(min_precession_dur, max_precession_dur,
+    max_precession_dur_us = float(max_precession_dur) / 1000
+    taus = numpy.linspace(min_precession_dur_us, max_precession_dur_us,
+                          num=num_steps, dtype=float)
+    # Account for the pi/2 pulse on each side of a tau
+    pi_pulse_dur_us = float(pi_pulse_dur) / 1000
+    taus += pi_pulse_dur_us
+    linspaceTau = numpy.linspace(min_precession_dur_us+pi_pulse_dur_us,
+                                 max_precession_dur_us+pi_pulse_dur_us,
                                  num=1000)
+    
 
     fit_fig, ax = plt.subplots(figsize=(8.5, 8.5))
     fit_fig.set_tight_layout(True)
@@ -242,7 +263,7 @@ def create_fit_figure(precession_dur_range, num_steps,
     # ax.errorbar(taus, norm_avg_sig, yerr=norm_avg_sig_ste,\
     #             fmt='bo', label='data')
     ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', label='fit')
-    ax.set_xlabel(r'Precession duration ($\mathrm{\mu s}$)')
+    ax.set_xlabel(r'$\tau + \pi/2$ ($\mathrm{\mu s}$)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.set_title('Spin Echo')
     ax.legend()
@@ -603,11 +624,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 if __name__ == '__main__':
 
-    center_freq = 2.8696  # zfs in GHz
-    # center_freq = 2.871  # zfs in GHz
+    center_freq = 2.8703  # zfs in GHz
     folder = 'spin_echo/2019_12'
-    file = '2019_12_22-16_46_54-goeppert_mayer-nv7_2019_11_27'
-    # file = '2019_12_22-19_18_05-goeppert_mayer-nv7_2019_11_27'
+#    file = '2019_12_22-16_46_54-goeppert_mayer-nv7_2019_11_27'
+#    file = '2019_12_22-19_18_05-goeppert_mayer-nv7_2019_11_27'
+#    file = '2019_12_30-16_23_51-goeppert_mayer-nv7_2019_11_27'
+    file = '2019_12_30-18_22_09-goeppert_mayer-nv7_2019_11_27'
     
     # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
         
