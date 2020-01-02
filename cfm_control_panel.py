@@ -125,7 +125,7 @@ def do_resonance_state(nv_sig, apd_indices, state):
     # Zoom
     freq_range = 0.05
     num_steps = 51
-    num_runs = 2
+    num_runs = 4
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                    num_steps, num_runs, uwave_power)
@@ -191,17 +191,15 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 2*10**6], 11, 2.5*10**4, 25],
-        [[States.HIGH, States.LOW], [0, 15*10**6], 11, 0.35*10**4, 175],
-        
-        [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 2.5*10**4, 25],
-        [[States.HIGH, States.HIGH], [0, 15*10**6], 11, 0.35*10**4, 175],
-        
-        [[States.ZERO, States.HIGH], [0, 2*10**6], 11, 2.5*10**4, 25],
-        [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 0.25*10**4, 250],
-        
-        [[States.ZERO, States.ZERO], [0, 2*10**6], 11, 2.5*10**4, 25],
-        [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 0.25*10**4, 250]
+        [[States.HIGH, States.LOW], [0, 2*10**6], 11, 25*10**3, 20],
+        [[States.HIGH, States.LOW], [0, 15*10**6], 11, 3.5*10**3, 110],
+    
+        [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 25*10**3, 20],
+        [[States.HIGH, States.HIGH], [0, 15*10**6], 11, 3.5*10**3, 110],
+    
+        [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 2.5*10**3, 150],
+    
+        [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 2.5*10**3, 150],
         ])
 
     # Loop through the experiments
@@ -266,7 +264,7 @@ def do_spin_echo(nv_sig, apd_indices):
 #    precession_time_range = [0, 75*10**3]
     num_steps = 101
     num_reps = int(3.0 * 10**4)
-    num_runs = 2
+    num_runs = 4
     state = States.LOW
 
     spin_echo.main(nv_sig, apd_indices, precession_time_range,
@@ -408,10 +406,10 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9687, 'rabi_HIGH': 114.0, 'uwave_power_HIGH': 10.0}
     nv7_2019_11_27 = { 'coords': [-0.092, -0.300, 4.98],
             'name': '{}-nv7_2019_11_27'.format(sample_name),
-            'expected_count_rate': 47, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
-            'resonance_LOW': 2.7769, 'rabi_LOW': 77.6, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.9639, 'rabi_HIGH': 120.2, 'uwave_power_HIGH': 10.0}
+            'expected_count_rate': 48, 'nd_filter': 'nd_0.5',
+            'pulsed_readout_dur': 375, 'magnet_angle': 60.0,
+            'resonance_LOW': 2.8335, 'rabi_LOW': 83.7, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 2.9139, 'rabi_HIGH': 131.5, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv7_2019_11_27]
 
@@ -452,7 +450,7 @@ if __name__ == '__main__':
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.200)
+#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.150)
 #            do_resonance(nv_sig, apd_indices, freq_center=3.050, freq_range=0.1)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)

@@ -228,6 +228,7 @@ def fit_data(precession_dur_range, pi_pulse_dur,
     except Exception as e:
         print(e)
         popt = None
+        return None, None, None, None
         
     revival_time = popt[1]
     stes = numpy.sqrt(numpy.diag(pcov))
@@ -626,10 +627,7 @@ if __name__ == '__main__':
 
     center_freq = 2.8703  # zfs in GHz
     folder = 'spin_echo/2019_12'
-#    file = '2019_12_22-16_46_54-goeppert_mayer-nv7_2019_11_27'
-#    file = '2019_12_22-19_18_05-goeppert_mayer-nv7_2019_11_27'
-#    file = '2019_12_30-16_23_51-goeppert_mayer-nv7_2019_11_27'
-    file = '2019_12_30-18_22_09-goeppert_mayer-nv7_2019_11_27'
+    file = '2019_12_31-10_26_07-goeppert_mayer-nv7_2019_11_27'
     
     # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
         
