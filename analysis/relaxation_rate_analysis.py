@@ -498,8 +498,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    path = 't1_interleave/paper_data/fast_relaxation_on_magnetic/'
-    folder = 'nv2_2019_04_30-44uW'
+    path = 't1_double_quantum/paper_data/bulk_dq/'
+    folder = 'goeppert_mayer-nv7_2019_11_27-0deg'
     path += folder
 
     gamma, ste = main(path, omega=None, omega_ste=None,

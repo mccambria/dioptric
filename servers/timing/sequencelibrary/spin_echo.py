@@ -183,13 +183,19 @@ if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 4,
               'do_532_aom': 1,
-              'do_uwave_gate_0': 2,
-              'do_uwave_gate_1': 3}
+              'do_signal_generator_tsg4104a_gate': 2,
+              'do_uwave_gate_1': 3,
+              }
 
-#    args = [0, 3000, 3000, 3000, 2000, 1000, 1000,
-#            750, 40, 320, 72, 36, 2000, 0]
-    # no delays
-    args = [500, 3000, 3000, 3000, 2000, 1000, 1000,
-            0, 0, 320, 72, 36, 2500, 0]
-    seq, ret_vals = get_seq(wiring, args)
+            # tau_shrt, polarization_time, signal_time, reference_time
+    args = [500, 3000, 3000, 3000,
+            # sig_to_ref_wait_time, pre_uwave_exp_wait_time
+            2000, 1000,
+            # post_uwave_exp_wait_time, aom_delay_time, rf_delay_time
+            1000, 0, 0, 
+            # gate_time, pi_pulse, pi_on_2_pulse, tau_long
+            320, 1000, 500, 2500,
+            # apd_index, state_value 
+            0, States.LOW.value]
+    seq, final, ret_vals = get_seq(wiring, args)
     seq.plot()

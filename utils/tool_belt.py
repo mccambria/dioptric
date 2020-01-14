@@ -64,9 +64,9 @@ def set_xyz(cxn, coords):
     time.sleep(0.001)
 
 
-def set_xyz_zero(cxn):
+def set_xyz_center(cxn):
     cxn.galvo.write(0.0, 0.0)
-    cxn.objective_piezo.write(50.0)
+    cxn.objective_piezo.write(5.0)
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
@@ -296,6 +296,14 @@ def update_line_plot_figure(fig, vals):
 
 
 # %% Math functions
+    
+
+def get_pi_pulse_dur(rabi_period):
+    return round(rabi_period / 2)
+    
+
+def get_pi_on_2_pulse_dur(rabi_period):
+    return round(rabi_period / 4)
 
 
 def gaussian(x, *params):
@@ -539,6 +547,10 @@ def get_folder_dir(source_name, subfolder):
     return folderDir
 
 
+def get_data_path():
+    return Path('E:/Shared drives/Kolkowitz Lab Group/nvdata')
+
+
 def get_file_path(source_name, time_stamp='', name='', subfolder=None):
     """
     Get the file path to save to. This will be in a subdirectory of nvdata.
@@ -616,19 +628,20 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
 #    return fileDir
 
 
-def save_figure(fig, filePath):
+def save_figure(fig, file_path):
     """
     Save a matplotlib figure as a png.
 
     Params:
         fig: matplotlib.figure.Figure
             The figure to save
-        filePath: string
+        file_path: string
             The file path to save to including the file name, excluding the
             extension
     """
 
-    fig.savefig(filePath + '.svg')
+    file_path = str(file_path)
+    fig.savefig(file_path + '.svg')
 
 
 def save_raw_data(rawData, filePath):

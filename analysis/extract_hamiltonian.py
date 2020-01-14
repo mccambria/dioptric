@@ -61,21 +61,20 @@ def b_matrix_elements(name, res_descs):
     low_zero_comps = []
     high_zero_comps = []
 
-    popt = main(name, res_descs)  # Excluding phis
-    popt_full = numpy.append(popt, [0.0, 0.0])  # phis = 0
+    popt = main(name, res_descs)
 
-    smooth_mag_Bs = numpy.linspace(0.050, 1.0, 1000)
     noise_params = [0.20, pi/4, 0.0, 0.0, 0.0, 0.0]
     noise_hamiltonian = calc_hamiltonian(*noise_params)
 
+    smooth_mag_Bs = numpy.linspace(0, 1.0, 1000)
     for mag_B in smooth_mag_Bs:
-        vecs = calc_eigenvectors(mag_B, *popt_full)  # zero, low, high
+        vecs = calc_eigenvectors(mag_B, *popt)  # zero, low, high
         zero_zero_comps.append(numpy.abs(vecs[0,1])**2)
         low_zero_comps.append(numpy.abs(vecs[1,1])**2)
         high_zero_comps.append(numpy.abs(vecs[2,1])**2)
 
         ret_vals = calc_matrix_elements(noise_hamiltonian,
-                                          mag_B, *popt_full)
+                                        mag_B, *popt)
         zero_to_low_el, zero_to_high_el, low_to_high_el = ret_vals
 
         sq_allow_factors.append(numpy.abs(zero_to_low_el)**2)
@@ -87,9 +86,19 @@ def b_matrix_elements(name, res_descs):
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
     fig.set_tight_layout(True)
     ax.set_title('Generating fit vector: {}'.format(name))
-    ax.semilogy(smooth_mag_Bs, dq_allow_factors/sq_allow_factors)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    splittings = calc_splitting(smooth_mag_Bs, *popt)
+    
+    ax.plot(splittings, dq_allow_factors/sq_allow_factors)
+    ax.plot(splittings, splittings**-2 / 500)
     ax.set_xlabel('B magnitude (GHz)')
     ax.set_ylabel('DQ/SQ rate ratio')
+    
+    # ax.plot(splittings, dq_allow_factors)
+    # ax.plot(splittings, splittings**-2 / 1000)
+    # ax.set_xlabel('Splitting (GHz)')
+    # ax.set_ylabel('DQ Matrix Element')
 
     # fig, ax = plt.subplots(figsize=(8.5, 8.5))
     # fig.set_tight_layout(True)
@@ -450,8 +459,7 @@ def main(name, res_descs):
         return
 
     popt = res.x
-    print('popt: {}'.format(popt))
-
+    
     chisq = res.fun
     print('Chi squared: {:.4g}'.format(chisq))
     degrees_of_freedom = len(res_descs) - len(x0)
@@ -464,7 +472,8 @@ def main(name, res_descs):
     mag_Bs = [find_mag_B(desc, *popt, phi_B, phi_Pi) for desc in res_descs]
 
     # Plot the calculated resonances up to the max mag_B
-    # popt[0] = 32 * (numpy.pi / 180)
+#    popt[0] = 32.5 * (numpy.pi / 180)
+#    print(popt)
     fig, ax = plot_resonances([0, max(mag_Bs)], *popt, phi_B, phi_Pi, name)
 
     # Plot the resonances
@@ -483,35 +492,48 @@ def main(name, res_descs):
 # the script that you set up here.
 if __name__ == '__main__':
 
+    ############ Fake ############
+    
+    name = 'fake'
+    res_descs = [[0.0, 2.845, 2.895], 
+                [None, 2.838, 2.902], 
+                [None, 2.805, 2.935], 
+                [None, 2.767, 2.973], 
+                [None, 2.619, 3.121], 
+                [None, 2.369, 3.371], 
+                ]
+
     ############ Nice ############
     
-    name = 'goeppert_mayer-nv7_2019_11_27'
-    res_descs = [[0.0, 2.8696, None],
-                  [None, 2.8508, 2.8914],  # 41 MHz
-                  [None, 2.7893, 2.9564],  # 167 MHz
-                  [None, 2.6719, 3.0846],  # 413 MHz
-                  [None, 2.5760, 3.1998],  # 624 MHz
-                  [None, 2.4857, 3.3173],  # 832 MHz
-                  [None, 2.3298, 3.5369],  # 1207 MHz
-                  [None, 2.7775, 2.9687],  # spin_echo
-                  [None, 2.7243, 3.0243],
-                  [None, 2.7113, 3.0402],
-                  [None, 2.6270, 3.1365],
-                  [None, 2.4991, 3.2991],
-                  [None, 2.4290, 3.3976],
-                  [None, 2.3844, 3.4575],
-                  [None, 2.3293, 3.5355],
-                  [None, 2.8028, 2.9413],
-                  [None, 2.8286, 2.9116],
-                  [None, 2.8466, 2.8937],
-                  [None, 2.8302, 2.9098],
-                  [None, 2.7706, 2.9749],
-                  ] 
+    # name = 'goeppert_mayer-nv7_2019_11_27'
+    # res_descs = [[0.0, 2.8703, None],
+    #               [None, 2.8508, 2.8914],  # 41 MHz
+    #               [None, 2.7893, 2.9564],  # 167 MHz
+    #               [None, 2.6719, 3.0846],  # 413 MHz
+    #               [None, 2.5760, 3.1998],  # 624 MHz
+    #               [None, 2.4857, 3.3173],  # 832 MHz
+    #               [None, 2.3298, 3.5369],  # 1207 MHz
+    #               [None, 2.7775, 2.9687],  # spin_echo
+    #               [None, 2.7243, 3.0243],
+    #               [None, 2.7113, 3.0402],
+    #               [None, 2.6270, 3.1365],
+    #               [None, 2.4991, 3.2991],
+    #               [None, 2.4290, 3.3976],
+    #               [None, 2.3844, 3.4575],
+    #               [None, 2.3293, 3.5355],
+    #               [None, 2.8028, 2.9413],
+    #               [None, 2.8286, 2.9116],
+    #               [None, 2.8466, 2.8937],
+    #               [None, 2.8302, 2.9098],
+    #               [None, 2.7706, 2.9749],
+    #               ] 
 
     # Run the script
-    main(name, res_descs)
+    # main(name, res_descs)
+    
+    # b_matrix_elements(name, res_descs)
 
     # Fake data
     # args: theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
     # bounds: ((0, pi/2), (-0.050, 0.050), (0, 0.050), (0, pi/3), (0, 2*pi/3))
-    # generate_fake_data(1.563, 0.000, 0.025, 0.000, 0.000)
+    generate_fake_data(0, 0.000, 0.020, 0.000, 0.000)

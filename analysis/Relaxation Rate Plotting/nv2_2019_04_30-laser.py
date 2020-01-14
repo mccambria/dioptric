@@ -25,14 +25,20 @@ omega_errors = numpy.array([0.010, 0.016, 0.042, 0.018])*2
 gammas = [24.254, 21.692, 26.103, 25.415]
 gamma_errors = numpy.array([0.335, 0.313, 0.665, 0.598])*2
 
+omega_twice_errors = [2*error for error in omega_errors]
+gamma_twice_errors = [2*error for error in gamma_errors]
+
 
 # %% Plotting
 
 
+
 fig, ax = plt.subplots(1, 1, figsize=(7, 8))
+
 
 orange = '#f7941d'
 purple = '#87479b'
+
 
 x_range = [30/1000, 2000/1000]
 laser_powers_linspace = numpy.linspace(*x_range, 1000)
@@ -47,6 +53,7 @@ ax.errorbar(laser_powers, omegas, yerr=omega_errors,
 #        linestyle='dashed', linewidth=3, color=purple)
 ax.plot(laser_powers_linspace, [numpy.average(omegas)]*1000,
         linestyle='dashed', linewidth=3, color=orange)
+omega_ax.set_ylim([0.1, 0.4])
 
 
 ax.tick_params(which='both', length=6, width=2, colors='k',
@@ -65,3 +72,4 @@ ax.set_xlabel(r'Laser Power (mW)', fontsize=18)
 ax.set_ylabel('Relaxation Rate (kHz)', fontsize=18)
 
 fig.savefig("C:/Users/Aedan/Creative Cloud Files/Paper Illustrations/Magnetically Forbidden Rate/supplemental_materials/laser_omega.svg", bbox_inches='tight')
+
