@@ -262,14 +262,14 @@ def create_figure(file_name):
 # %% Mains
 
 
-def main(nv_sig, file, aom_ao_589_pwr, apd_indices, 
+def main(nv_sig, file, aom_ao_589_pwr, aom_ao_638_pwr, apd_indices, 
          continuous=False, save_data=True, plot_data=True):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, file, aom_ao_589_pwr, 
+        main_with_cxn(cxn, nv_sig, file, aom_ao_589_pwr, aom_ao_638_pwr, 
                       apd_indices, continuous, save_data, plot_data)
 
-def main_with_cxn(cxn, nv_sig, file, aom_ao_589_pwr, 
+def main_with_cxn(cxn, nv_sig, file, aom_ao_589_pwr, aom_ao_638_pwr, 
                   apd_indices, continuous=False, save_data=True, 
                   plot_data=True):
 
@@ -336,7 +336,7 @@ def main_with_cxn(cxn, nv_sig, file, aom_ao_589_pwr,
     y_low = y_voltages[0]
     y_high = y_voltages[y_num_steps-1]
 
-    pixel_size = x_voltages[1] - x_voltages[0]
+#    pixel_size = x_voltages[1] - x_voltages[0]
 
     # Scan over the sample with green
 
@@ -346,9 +346,44 @@ def main_with_cxn(cxn, nv_sig, file, aom_ao_589_pwr,
     # %% Next we want to scan over selectrive parts of the sample with red 
     # light to ionize NVs
     
-    # I will do this step last
+    # create an array of the coordinates of the dark pizels
     
-    # %% Lastly run image sample with yellow light. This is essentially image_sample
+    dark_px_list = []
+
+    for row_px in range(x_num_steps):
+        for column_px in range(y_num_steps):
+            if img_arr[row_px][column_px].all() == 0:
+                dark_px_list.append([row_px, column_px])
+                
+    dark_px_arr = numpy.array(dark_px_list)
+    
+    # Right now, this array starts with (0,0) in the top left corner.
+    # Let's calculate the position of that point and use that as the origin
+    
+    x_origin = x_center + x_range/2
+    y_origin = y_center + y_range/2
+    
+    # Loop over each pixel where we want it to be dark, by shining red light
+    for ind in range(len(dark_px_arr)):
+        current_px_coords = dark_px_arr[ind]
+        x_px_ind = current_px_coords[0]
+        y_px_ind = current_px_coords[1]
+        
+        # Calculate the position of the specific dark pixel
+        x_coord = x_px_ind*px_size + x_origin
+        y_coord = y_px_ind*px_size + y_origin
+        
+        # position the galvo
+        tool_belt.set_xyz(cxn, [x_coord, y_coord, z_center])
+        
+        # Shine the red light for a certain duration
+        ionization_duration = 10**3 #ns
+        seq_args = [ionization_duration, aom_ao_589_pwr, aom_ao_638_pwr, 638]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.pulse_streamer.stream_immediate("simple_pulse.py", 1, seq_args)
+        
+        
+    # %% Lastly scan with yellow light. This is essentially image_sample
     
     # Load the PulseStreamer
         
