@@ -4,13 +4,10 @@
 Repurposing the image scan code to use the different lasers to create an image
 with the various lasers. 
 
-First we apply a green laser to recombine an electron to NV-. Then we either 
-apply a red laser pulse to ionize the NV or leave it in NV-. Then we collect
-light under 589 nm illumination.
-
-(Alternatively, we could do three scans. First scan the green light. Next we 
-scan the red where we want to ionize NVs. Finally we scan with yellow and 
-collect the photons.)
+We perform three "scans". First scan the green light to unionize all the NVs.
+Next we position the galvo at each pixel where we want there to be a dark pixel
+and shine red light to ionize those NVs. Finally we scan with yellow and 
+collect the photons to form an image.
 
 Created on Tue Jan 14 15:18:53 2020
 
@@ -376,11 +373,13 @@ def main_with_cxn(cxn, nv_sig, file, aom_ao_589_pwr, aom_ao_638_pwr,
         # position the galvo
         tool_belt.set_xyz(cxn, [x_coord, y_coord, z_center])
         
-        # Shine the red light for a certain duration
+        # Shine the red light for a specific duration
         ionization_duration = 10**3 #ns
-        seq_args = [ionization_duration, aom_ao_589_pwr, aom_ao_638_pwr, 638]
+        seq_args = [delay, ionization_duration, aom_ao_589_pwr, 
+                                                        aom_ao_638_pwr, 638]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        cxn.pulse_streamer.stream_immediate("simple_pulse.py", 1, seq_args)
+        cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args)
+        
         
         
     # %% Lastly scan with yellow light. This is essentially image_sample
