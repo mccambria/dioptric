@@ -17,6 +17,8 @@ Created on Wed Apr 24 15:01:04 2019
 
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
+from scipy.optimize import minimize_scalar
+from numpy import pi
 import numpy
 import time
 import matplotlib.pyplot as plt
@@ -73,7 +75,17 @@ def calc_res_pair(theta_B, center_freq, mag_B):
     return resonance_low, resonance_high
 
 
+def theta_B_cost_func(theta_B, center_freq, mag_B,
+                      meas_res_low, meas_res_high):
+    calc_res_low, calc_res_high = calc_res_pair(theta_B, center_freq, mag_B)
+    diff_low = calc_res_low - meas_res_low
+    diff_high = calc_res_high - meas_res_high
+    return numpy.sqrt(diff_low**2 + diff_high**2)
+
+
 def plot_resonances_vs_theta_B(folder, file, center_freq):
+
+    # %% Setup
 
     fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
     if (fit_func is None) or (popt is None):
@@ -88,33 +100,64 @@ def plot_resonances_vs_theta_B(folder, file, center_freq):
     revival_time = popt[1]
     revival_time_ste = stes[1]
     mag_B, mag_B_ste = mag_B_from_revival_time(revival_time, revival_time_ste)
+
+    # %% Angle matching
+
+    # Find the angle that minimizes the distances of the predicted resonances
+    # from the measured resonances
+    theta_B = None
+    args = (center_freq, mag_B, resonance_LOW, resonance_HIGH)
+    result = minimize_scalar(theta_B_cost_func, bounds=(0, pi/2), args=args,
+                             method='bounded')
+    if result.success:
+        theta_B = result.x
+        theta_B_deg = theta_B * 180 / pi
+        print('theta_B = {:.4f} radians, {:.3f} degrees'.format(theta_B,
+                                                                theta_B_deg))
+        print('cost = {:.3e}'.format(result.fun))
+    else:
+        print('minimize_scalar failed to find theta_B')
+
+    # %% Plotting
+
     num_steps = 1000
-    linspace_theta_B = numpy.linspace(0, numpy.pi/2, num_steps)
+    linspace_theta_B = numpy.linspace(0, pi/2, num_steps)
 
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
     fig.set_tight_layout(True)
     res_pairs = calc_res_pair(linspace_theta_B, center_freq, mag_B)
-    res_pairs_high = calc_res_pair(linspace_theta_B, center_freq, mag_B+mag_B_ste)
-    res_pairs_low = calc_res_pair(linspace_theta_B, center_freq, mag_B-mag_B_ste)
-    linspace_theta_B_deg = linspace_theta_B * (180/numpy.pi)
-    ax.plot(linspace_theta_B_deg, res_pairs[0])
-    ax.fill_between(linspace_theta_B_deg, res_pairs_high[0], res_pairs_low[0],
-                    alpha=0.5)
-    ax.plot(linspace_theta_B_deg, res_pairs[1])
-    ax.fill_between(linspace_theta_B_deg, res_pairs_high[1], res_pairs_low[1],
-                    alpha=0.5)
+    # res_pairs_high = calc_res_pair(linspace_theta_B, center_freq, mag_B+mag_B_ste)
+    # res_pairs_low = calc_res_pair(linspace_theta_B, center_freq, mag_B-mag_B_ste)
+    linspace_theta_B_deg = linspace_theta_B * (180/pi)
+    ax.plot(linspace_theta_B_deg, res_pairs[0], label='Calculated low')
+    # ax.fill_between(linspace_theta_B_deg, res_pairs_high[0], res_pairs_low[0],
+    #                 alpha=0.5)
+    ax.plot(linspace_theta_B_deg, res_pairs[1], label='Calculated high')
+    # ax.fill_between(linspace_theta_B_deg, res_pairs_high[1], res_pairs_low[1],
+    #                 alpha=0.5)
 
-    ax.plot(linspace_theta_B_deg, [resonance_LOW
-                                   for el in range(0, num_steps)])
-    ax.plot(linspace_theta_B_deg, [resonance_HIGH
-                                   for el in range(0, num_steps)])
+    const = [resonance_LOW for el in range(0, num_steps)]
+    ax.plot(linspace_theta_B_deg, const, label='Measured low')
+    const = [resonance_HIGH for el in range(0, num_steps)]
+    ax.plot(linspace_theta_B_deg, const, label='Measured high')
 
-    ax.set_xlabel(r'$\theta_{B}$ (deg))')
+    if theta_B is not None:
+        text = 'theta_B = {:.3f} deg'.format(theta_B_deg)
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(0.05, 0.65, text, fontsize=14, transform=ax.transAxes,
+                verticalalignment='top', bbox=props)
+
+    ax.set_xlabel(r'$\theta_{B}$ (deg)')
     ax.set_ylabel('Resonances (GHz)')
+    ax.legend()
+
+    # %% Save and return
 
     fig_file = file + '-theta_B'
     file_path = tool_belt.get_data_path() / folder / fig_file
     tool_belt.save_figure(fig, file_path)
+
+    return theta_B
 
 
 # %% Functions
@@ -202,6 +245,7 @@ def fit_data(precession_dur_range, rabi_period,
     max_ind = numpy.argmax(transform_mag[1:])
     frequency = freqs[max_ind+1]
     revival_time = 1/frequency
+    # revival_time = 25000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -275,7 +319,7 @@ def create_fit_figure(precession_dur_range, rabi_period,
         )
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.80, 0.90, text_popt, transform=ax.transAxes, fontsize=12,
+    ax.text(0.80, 0.85, text_popt, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
 
     fit_fig.canvas.draw()
@@ -628,9 +672,40 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 if __name__ == '__main__':
 
+    # %% nv7_2019_11_27
+
+    # The 'edit' files are the high quality 0 deg spin echo data with the
+    # resonances from rotated experiments manually punched in
+
     center_freq = 2.8703  # zfs in GHz
-    folder = 'spin_echo/2019_12'
-    file = '2019_12_31-10_26_07-goeppert_mayer-nv7_2019_11_27'
+
+    # folder = 'spin_echo/2019_12'
+    folder = 'spin_echo/2020_01'
+
+    # 0 deg
+    # file = '2019_12_31-10_26_07-goeppert_mayer-nv7_2019_11_27'
+
+    # 60 deg
+    # file = '2020_01_02-12_14_59-goeppert_mayer-nv7_2019_11_27'
+    # file = '2020_01_02-12_14_59-goeppert_mayer-nv7_2019_11_27-edit'
+
+    # 15 deg
+    # file = '2020_01_04-16_05_00-goeppert_mayer-nv7_2019_11_27'
+    # file = '2020_01_04-16_05_00-goeppert_mayer-nv7_2019_11_27-edit'
+
+    # 45 deg
+    # file = '2020_01_06-20_12_33-goeppert_mayer-nv7_2019_11_27'  # take 1
+    file = '2020_01_15-19_02_19-goeppert_mayer-nv7_2019_11_27'  # take 2
+
+    # 75 deg
+    # file = '2020_01_08-23_27_40-goeppert_mayer-nv7_2019_11_27'
+
+    # 90 deg
+    # file = '2020_01_11-14_55_53-goeppert_mayer-nv7_2019_11_27'
+    # file = '2020_01_11-14_55_53-goeppert_mayer-nv7_2019_11_27-edit'
+
+    # 30 deg
+    # file = '2020_01_13-17_32_58-goeppert_mayer-nv7_2019_11_27'
 
     # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
 

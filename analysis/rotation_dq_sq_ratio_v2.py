@@ -130,12 +130,11 @@ def calc_Pi_factor_surface(noise_phi, noise_theta, mag_B, popt, ind,
 
 
 def dq_vs_sq_rates(name, res_descs):
-    # popt = extract_hamiltonian.main(name, res_descs)
-    # popt = [0.6, 0.000, 0.010, 0.000, 0.000]  # NV1
-    # popt = [0.6, 0.000, 0.008, 0.000, 0.000]  # NV2
-    # popt = [0.9, 0.000, 0.009, 0.000, 0.000]  # NV3
-    # popt = [0.16, 0.000, 0.012, 0.000, 0.000]  # NV4
-    popt = [1.24, 0.000, 0.005, 60*numpy.pi/180, 0.000]  # NV5
+    # name = 'nv2'
+    # popt = [0.6398153129728315, -0.0044880947609542005, 0.0070490732314452695, 0.0, 0.0]
+    name = 'nv2_take2'
+    # popt = [1.1162003323335492, -0.0031494625116033634, 0.007006402029975579, 0.0, 0.0]
+    popt = [0.0, -0.0031494625116033634, 0.007006402029975579, 0.0, 0.0]
 
     # noise_power_amp = 100
 
@@ -143,8 +142,12 @@ def dq_vs_sq_rates(name, res_descs):
     # print(noise_power)
     ratios = []
     dq_factors = []
+    high_vecs = []
     smooth_mag_Bs = numpy.linspace(0, 1.0, 100)
     for mag_B in smooth_mag_Bs:
+        # vecs = extract_hamiltonian.calc_eigenvectors(mag_B, *popt)
+        # high_vecs.append(list(vecs[1]))
+        
         zero_to_low_integral, zero_to_low_err = integrate.dblquad(
                                             calc_B_factor_surface,
                                             0, 2*pi, lambda x: 0, lambda x: pi,
@@ -153,10 +156,10 @@ def dq_vs_sq_rates(name, res_descs):
     
         # noise_power = noise_power_amp/(compare_res_desc[2]**2)
         # print(noise_power)
-        zero_to_high_integral, zero_to_high_err = integrate.dblquad(
-                                            calc_B_factor_surface,
-                                            0, 2*pi, lambda x: 0, lambda x: pi,
-                                            args=(mag_B, popt, 1))
+        # zero_to_high_integral, zero_to_high_err = integrate.dblquad(
+        #                                     calc_B_factor_surface,
+        #                                     0, 2*pi, lambda x: 0, lambda x: pi,
+        #                                     args=(mag_B, popt, 1))
     
         # noise_power = noise_power_amp/((compare_res_desc[2]-compare_res_desc[1])**2)
         # print(noise_power)
@@ -165,9 +168,10 @@ def dq_vs_sq_rates(name, res_descs):
                                             0, 2*pi, lambda x: 0, lambda x: pi,
                                             args=(mag_B, popt, 2))
         # low_to_high_integral *= noise_power
-        # ratio = zero_to_low_integral / low_to_high_integral
-        ratio = low_to_high_integral / zero_to_low_integral
+        ratio = zero_to_low_integral / low_to_high_integral
+        # ratio = low_to_high_integral / zero_to_low_integral
         dq_factors.append(low_to_high_integral)
+        # dq_factors.append(calc_B_factor_surface(pi/2, 0, mag_B, popt, 2))
         ratios.append(ratio)
         
         # print('zero_to_low_integral: {}'.format(zero_to_low_integral))
@@ -182,21 +186,26 @@ def dq_vs_sq_rates(name, res_descs):
     ax.set_title('Generating fit vector: {}'.format(name))
     ax.set_xscale('log')
     ax.set_yscale('log')
-    # ax.plot(splittings, ratios)
-    dq_factors = numpy.array(dq_factors)
-    ax.plot(splittings, dq_factors / dq_factors[0])
-    ax.plot(splittings, splittings**-2 / splittings[0]**-2)
+    # high_vecs = numpy.array(high_vecs)
+    # ax.plot(splittings, numpy.abs(high_vecs[:, 0])**2, label='+1')
+    # ax.plot(splittings, numpy.abs(high_vecs[:, 1])**2, label='0')
+    # ax.plot(splittings, numpy.abs(high_vecs[:, 2])**2, label='-1')
+    # ax.legend()
+    ax.plot(splittings, ratios)
+    # dq_factors = numpy.array(dq_factors)
+    # ax.plot(splittings, dq_factors / dq_factors[0])
+    # ax.plot(splittings, splittings**-2 / splittings[0]**-2)
 
 
-def main(name, res_descs, aligned_res_desc, rotated_res_desc):
+def main(name, aligned_popt, aligned_res_desc, rotated_res_desc):
     """When you run the file, we'll call into main, which should contain the
     body of the script.
     """
 
     # Get the aligned Hamiltonian parameters
     # popt = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
-    aligned_popt = extract_hamiltonian.main(name, res_descs)
-    print(aligned_popt)
+    # aligned_popt = extract_hamiltonian.main(name, res_descs)
+    # print(aligned_popt)
 
     # Find mag_B at the point we misaligned the field
     rotated_mag_B = extract_hamiltonian.find_mag_B(aligned_res_desc,
@@ -207,6 +216,7 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
     theta_B, phi_B = extract_hamiltonian.find_B_orientation(rotated_res_desc,
                                             rotated_mag_B, aligned_popt[1],
                                             aligned_popt[2], aligned_popt[4])
+    # theta_B = 70 * numpy.pi / 180
 #    rotated_popt = (theta_B, aligned_popt[1], aligned_popt[2],
 #                    phi_B, aligned_popt[4])
     rotated_popt = (theta_B, aligned_popt[1], aligned_popt[2],
@@ -231,18 +241,18 @@ def main(name, res_descs, aligned_res_desc, rotated_res_desc):
                                           0, 2*pi, lambda x: 0, lambda x: pi,
                                           args=rotated_args)
 
-    ratio = aligned_integral / rotated_integral
+    ratio = rotated_integral / aligned_integral
     print('Expected ratio: {}'.format(ratio))
 
 
-def main_plot(name, res_descs, aligned_res_desc):
+def main_plot(name, aligned_popt, aligned_res_desc):
     """When you run the file, we'll call into main, which should contain the
     body of the script.
     """
 
     # Get the aligned Hamiltonian parameters
     # popt = [theta_B, par_Pi, perp_Pi, phi_B, phi_Pi]
-    aligned_popt = extract_hamiltonian.main(name, res_descs)
+    # aligned_popt = extract_hamiltonian.main(name, res_descs)
 
     # Find mag_B at the point we misaligned the field
     rotated_mag_B = extract_hamiltonian.find_mag_B(aligned_res_desc,
@@ -250,7 +260,7 @@ def main_plot(name, res_descs, aligned_res_desc):
 
     rotated_popt = numpy.copy(aligned_popt)
     mag_Bs = numpy.linspace(0,1, 100)
-    angles = numpy.linspace(0, pi/2, 100)
+    angles = numpy.linspace(0, pi/2, 50)
     ratios = []
     for angle in angles:
         rotated_popt[0] = angle
@@ -280,11 +290,14 @@ def main_plot(name, res_descs, aligned_res_desc):
                                               0, 2*pi, lambda x: 0, lambda x: pi,
                                               args=rotated_args)
 
-        ratios.append(aligned_integral / rotated_integral)
+        ratio = aligned_integral / rotated_integral
+        if 9.5 < ratio < 10.5:
+            print(rotated_splitting)
+        ratios.append(ratio)
 
     fig, ax = plt.subplots()
     ax.plot(angles, ratios)
-    ax.set_ylim(0, 1)
+    # ax.set_ylim(0, 2)
 
 
 # def main_plot_rot(name, res_descs):
@@ -386,21 +399,83 @@ def main_plot_paper(name, res_descs, meas_splittings, meas_gammas):
 # the script that you set up here.
 if __name__ == '__main__':
 
-    name = 'fake'
-    res_descs = [[0.0, 2.845, 2.895], 
-                [None, 2.838, 2.902], 
-                [None, 2.805, 2.935], 
-                [None, 2.767, 2.973], 
-                [None, 2.619, 3.121], 
-                [None, 2.369, 3.371], 
-                ]
+    # name = 'fake'
+    # res_descs = [[0.0, 2.845, 2.895], 
+    #             [None, 2.838, 2.902], 
+    #             [None, 2.805, 2.935], 
+    #             [None, 2.767, 2.973], 
+    #             [None, 2.619, 3.121], 
+    #             [None, 2.369, 3.371], 
+    #             ]
+    
+    
+    # name = 'nv1_2019_05_10'  # NV1
+    # popt = [0.6474219686681678, -0.005159086817872651, 0.009754609612326834, 0.0, 0.0]
+    # # popt = [0.6500999024309339, -0.005162723325066839, 0.009743779800841193, 1.0471975511965976, 1.0471975511965976]
+    # res_descs = [[0.0, 2.8544, 2.8739],
+    #               [None, 2.8554, 2.8752],
+    #               [None, 2.8512, 2.8790],
+    #               # [None, 2.8520, 2.8800],  # not used in paper
+    #               [None, 2.8503, 2.8792],
+    #               # [None, 2.8536, 2.8841],  # not used in paper
+    #               [None, 2.8396, 2.8917],
+    #               [None, 2.8496, 2.8823],
+    #               # [None, 2.8198, 2.9106],  # misaligned ref
+    #               [None, 2.8166, 2.9144],
+    #               [None, 2.8080, 2.9240],
+    #               [None, 2.7357, 3.0037],
+    #               # [None, 2.7374, 3.0874],  # misaligned, theta_B = 1.014639916147641
+    #               # [None, 2.6310, 3.1547],  # misaligned ref for prev
+    #               [None, 2.6061, 3.1678],
+    #               # [None, 2.6055, 3.1691],  # repeat of previous
+    #               [None, 2.4371, 3.4539],  # 0,-1 and 0,+1 omegas
+    #               # [None, 2.4381, 3.4531],   # retake 0,-1 and 0,+1 omegas
+    #               ]
+    
+    # # aligned_res_desc = [None, 2.6310, 3.1547]
+    # rotated_res_desc = [None, 2.7374, 3.0874]
+    
+    
+    # name = 'NV0_2019_06_06'  # NV4
+    # res_descs = [
+    #               # [0.0, 2.8547, 2.8793],  # old zero field
+    #               [0.0, 2.8556, 2.8790],
+    #               [None, 2.8532, 2.8795],
+    #               [None, 2.8494, 2.8839],
+    #               [None, 2.8430, 2.8911],
+    #               [None, 2.8361, 2.8998],
+    #               [None, 2.8209, 2.9132],
+    #               [None, 2.7915, 2.9423],
+    #               [None, 2.7006, 3.0302],
+    #               [None, 2.4244, 3.3093],
+    #               # [None, 2.4993, 3.5798],  # misaligned
+    #               [None, 2.2990, 3.4474],
+    #               ]
+    # aligned_res_desc = [None, 2.4244, 3.3093]
+    
+    
+    # name = 'nv13_2019_06_10'  # NV5
+    # res_descs = [[0.0, 2.8365, 2.8446],  # no T1
+    #               [None, 2.8363, 2.8472],
+    #               [None, 2.8289, 2.8520],
+    #               # [None, 2.8266, 2.8546],  # not used in paper
+    #               # [None, 2.8262, 2.8556],  # not used in paper
+    #               [None, 2.8247, 2.8545],
+    #               [None, 2.8174, 2.8693],
+    #               [None, 2.8082, 2.8806],
+    #               [None, 2.7948, 2.9077],
+    #               [None, 2.7857, 2.9498],
+    #               [None, 2.7822, 3.0384],
+    #               ]
+    # aligned_res_desc = [None, 2.8082, 2.8806]
+    
 
     # Run the script
-    # main(name, res_descs, aligned_res_desc, rotated_res_desc)
-    # main_plot(name, res_descs, aligned_res_desc)
+    main(name, popt, aligned_res_desc, rotated_res_desc)
+    # main_plot(name, popt, aligned_res_desc)
     # main_plot_paper(name, res_descs, meas_splittings, meas_gammas)
     # main_plot_rot(name, res_descs)
-    dq_vs_sq_rates(name, res_descs)
+    # dq_vs_sq_rates(name, res_descs)
     # rate_factor_plot_func_B(name, res_descs)
     # mag_B_for_rate(name, res_descs,
-    #                mag_B_calc_res_desc, mag_B_calc_meas_rate)
+    #                 mag_B_calc_res_desc, mag_B_calc_meas_rate)

@@ -34,6 +34,10 @@ inv_sqrt_2 = 1/numpy.sqrt(2)
 # %% Functions
 
 
+def conj_trans(matrix):
+    return numpy.conj(numpy.transpose(matrix))
+
+
 def calc_matrix_elements(noise_hamiltonian,
                          mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
 
@@ -41,15 +45,31 @@ def calc_matrix_elements(noise_hamiltonian,
     vecs = calc_eigenvectors(mag_B, *popt_full)  # zero, low, high
 
     zero_to_low_el = numpy.matmul(noise_hamiltonian, vecs[1])
-    zero_to_low_el = numpy.matmul(numpy.transpose(vecs[0]), zero_to_low_el)
+    zero_to_low_el = numpy.matmul(conj_trans(vecs[0]), zero_to_low_el)
 
     zero_to_high_el = numpy.matmul(noise_hamiltonian, vecs[2])
-    zero_to_high_el = numpy.matmul(numpy.transpose(vecs[0]), zero_to_high_el)
+    zero_to_high_el = numpy.matmul(conj_trans(vecs[0]), zero_to_high_el)
 
     low_to_high_el = numpy.matmul(noise_hamiltonian, vecs[2])
-    low_to_high_el = numpy.matmul(numpy.transpose(vecs[1]), low_to_high_el)
+    low_to_high_el = numpy.matmul(conj_trans(vecs[1]), low_to_high_el)
 
     return zero_to_low_el, zero_to_high_el, low_to_high_el
+
+
+def plot_components(mag_B, popt):
+    
+    zero_zero_comps = []
+    low_zero_comps = []
+    high_zero_comps = []
+    
+    angles = numpy.linspace(0, pi/2, 1000)
+    for angle in angles:
+        
+        vecs = calc_eigenvectors(mag_B, *popt)  # zero, low, high
+        zero_zero_comps.append(numpy.abs(vecs[0,1])**2)
+        low_zero_comps.append(numpy.abs(vecs[1,1])**2)
+        high_zero_comps.append(numpy.abs(vecs[2,1])**2)
+    
 
 
 def b_matrix_elements(name, res_descs):
@@ -383,8 +403,10 @@ def main(name, res_descs):
 
     ############ Setup ############
 
-    phi_B = 0
-    phi_Pi = 0
+    phi_B = 0.0
+    phi_Pi = 0.0
+    # phi_B = pi/3
+    # phi_Pi = pi/3
 
     # fit_vec = [theta_B, par_Pi, perp_Pi,]
     param_bounds = ((0, pi/2), (-0.050, 0.050), (0, 0.050))
@@ -459,6 +481,8 @@ def main(name, res_descs):
         return
 
     popt = res.x
+    popt_full = numpy.append(popt, [phi_B, phi_Pi])
+    # popt_full[0] = 0.5
     
     chisq = res.fun
     print('Chi squared: {:.4g}'.format(chisq))
@@ -469,19 +493,18 @@ def main(name, res_descs):
     ############ Plot the result ############
 
     # Get the mag_B for each pair of resonances with this fit_vec
-    mag_Bs = [find_mag_B(desc, *popt, phi_B, phi_Pi) for desc in res_descs]
+    mag_Bs = [find_mag_B(desc, *popt_full) for desc in res_descs]
 
     # Plot the calculated resonances up to the max mag_B
-#    popt[0] = 32.5 * (numpy.pi / 180)
-#    print(popt)
-    fig, ax = plot_resonances([0, max(mag_Bs)], *popt, phi_B, phi_Pi, name)
+    fig, ax = plot_resonances([0, max(mag_Bs)], *popt_full, name)
 
     # Plot the resonances
     ax.scatter(mag_Bs, res_descs[:,1])
     ax.scatter(mag_Bs, res_descs[:,2])
 
     # Return the full 5 parameters
-    return numpy.append(popt, [0.0, 0.0])
+    print(list(popt_full))
+    return popt_full
 
 
 # %% Run the file
@@ -494,16 +517,63 @@ if __name__ == '__main__':
 
     ############ Fake ############
     
-    name = 'fake'
-    res_descs = [[0.0, 2.845, 2.895], 
-                [None, 2.838, 2.902], 
-                [None, 2.805, 2.935], 
-                [None, 2.767, 2.973], 
-                [None, 2.619, 3.121], 
-                [None, 2.369, 3.371], 
-                ]
+    # name = 'fake'
+    # res_descs = [[0.0, 2.845, 2.895], 
+    #             [None, 2.838, 2.902], 
+    #             [None, 2.805, 2.935], 
+    #             [None, 2.767, 2.973], 
+    #             [None, 2.619, 3.121], 
+    #             [None, 2.369, 3.371], 
+    #             ]
 
-    ############ Nice ############
+    ############ ND ############
+    
+    # name = 'nv2_2019_04_30'
+    # popt = [0.6398153129728315, -0.0044880947609542005, 0.0070490732314452695, 0.0, 0.0]
+    # res_descs = [[0.0, 2.8584, 2.8725],
+    #                 [None, 2.8507, 2.8798],
+    #                 [None, 2.8434, 2.8882],
+    #                 [None, 2.8380, 2.8942],
+    #                 [None, 2.8379, 2.8948],
+    #                 [None, 2.8308, 2.9006],
+    #                 [None, 2.8228, 2.9079],
+    #                 [None, 2.8155, 2.9171],
+    #                 ]
+
+    name = 'nv2_2019_04_30_take2'
+    popt = [1.1162003323335492, -0.0031494625116033634, 0.007006402029975579, 0.0, 0.0]
+    res_descs = [[0.0, 2.8584, 2.8725],
+                  [None, 2.8512, 2.8804],
+                  [None, 2.8435, 2.8990],
+                  [None, 2.8265, 2.9117],
+                    [None, 2.7726, 3.0530],
+                    [None, 2.7738, 3.4712],
+                  ]
+    
+    # name = 'nv1_2019_05_10'  # NV1
+    # popt = [0.6474219686681678, -0.005159086817872651, 0.009754609612326834, 0.0, 0.0]
+    # popt = [0.6500999024309339, -0.005162723325066839, 0.009743779800841193, 1.0471975511965976, 1.0471975511965976]
+    # res_descs = [[0.0, 2.8544, 2.8739],
+    #               [None, 2.8554, 2.8752],
+    #               [None, 2.8512, 2.8790],
+    #               # [None, 2.8520, 2.8800],  # not used in paper
+    #               [None, 2.8503, 2.8792],
+    #               # [None, 2.8536, 2.8841],  # not used in paper
+    #               [None, 2.8396, 2.8917],
+    #               [None, 2.8496, 2.8823],
+    #               # [None, 2.8198, 2.9106],  # misaligned ref
+    #               [None, 2.8166, 2.9144],
+    #               [None, 2.8080, 2.9240],
+    #               [None, 2.7357, 3.0037],
+    #               # [None, 2.7374, 3.0874],  # misaligned
+    #               # [None, 2.6310, 3.1547],  # misaligned ref for prev
+    #               [None, 2.6061, 3.1678],
+    #               # [None, 2.6055, 3.1691],  # repeat of previous
+    #               [None, 2.4371, 3.4539],  # 0,-1 and 0,+1 omegas
+    #               # [None, 2.4381, 3.4531],   # retake 0,-1 and 0,+1 omegas
+    #               ]
+
+    ############ Bulk ############
     
     # name = 'goeppert_mayer-nv7_2019_11_27'
     # res_descs = [[0.0, 2.8703, None],
@@ -531,9 +601,10 @@ if __name__ == '__main__':
     # Run the script
     # main(name, res_descs)
     
+    print(calc_eigenvectors(0.1, pi/2, 0, 0, 0, 0))
     # b_matrix_elements(name, res_descs)
 
     # Fake data
     # args: theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
     # bounds: ((0, pi/2), (-0.050, 0.050), (0, 0.050), (0, pi/3), (0, 2*pi/3))
-    generate_fake_data(0, 0.000, 0.020, 0.000, 0.000)
+    # generate_fake_data(0, 0.000, 0.020, 0.000, 0.000)
