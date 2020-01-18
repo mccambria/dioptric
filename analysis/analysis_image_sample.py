@@ -62,7 +62,8 @@ def recreate_scan_image(colorMap, fileType):
             Z = numpy.flip(numpy.flip(imgArray, 0),1)
             
             # Read in the arrays of Center and Image Reoslution
-            xyzCenters = data["coords"]
+            nv_sig = data["nv_sig"]
+            xyzCenters = nv_sig["coords"]
             imgResolution = data["num_steps"]
             
             # Read in the floating values for the scan ranges, centers, and resolution
@@ -138,5 +139,5 @@ def recreate_scan_image(colorMap, fileType):
 if __name__ == "__main__":
   
     
-    recreate_scan_image('inferno', 'png')
+    recreate_scan_image('inferno', 'svg')
     
