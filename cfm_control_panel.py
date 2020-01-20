@@ -406,10 +406,10 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9687, 'rabi_HIGH': 114.0, 'uwave_power_HIGH': 10.0}
     nv7_2019_11_27 = { 'coords': [-0.092, -0.300, 4.98],
             'name': '{}-nv7_2019_11_27'.format(sample_name),
-            'expected_count_rate': 48, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 375, 'magnet_angle': 60.0,
-            'resonance_LOW': 2.8335, 'rabi_LOW': 83.7, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.9139, 'rabi_HIGH': 131.5, 'uwave_power_HIGH': 10.0}
+            'expected_count_rate': 42, 'nd_filter': 'nd_0.5',
+            'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
+            'resonance_LOW': 2.8091, 'rabi_LOW': 78.8, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 2.9318, 'rabi_HIGH': 133.9, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv7_2019_11_27]
 
