@@ -118,9 +118,9 @@ def do_resonance_state(nv_sig, apd_indices, state):
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 #    uwave_power = -5.0  # After inserting mixer
     
-#    freq_range = 0.150
+#    freq_range = 0.200
 #    num_steps = 51
-#    num_runs = 2
+#    num_runs = 1
     
     # Zoom
     freq_range = 0.05
@@ -260,11 +260,16 @@ def do_spin_echo(nv_sig, apd_indices):
 
     # T2 in nanodiamond NVs without dynamical decoupling is just a couple
     # us so don't bother looking past 10s of us
-    precession_time_range = [0, 100 * 10**3]
-#    precession_time_range = [0, 75*10**3]
+    
     num_steps = 101
-    num_reps = int(3.0 * 10**4)
-    num_runs = 4
+    
+#    precession_time_range = [0, 100 * 10**3]
+#    num_reps = int(3.0 * 10**4)
+#    num_runs = 4
+    
+    precession_time_range = [0, 30*10**3]
+    num_reps = int(7.0 * 10**4)
+    num_runs = 2
     state = States.LOW
 
     spin_echo.main(nv_sig, apd_indices, precession_time_range,
@@ -408,8 +413,8 @@ if __name__ == '__main__':
             'name': '{}-nv7_2019_11_27'.format(sample_name),
             'expected_count_rate': 42, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
-            'resonance_LOW': 2.8091, 'rabi_LOW': 78.8, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.9318, 'rabi_HIGH': 133.9, 'uwave_power_HIGH': 10.0}
+            'resonance_LOW': 2.4431, 'rabi_LOW': 127.0, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 3.3022, 'rabi_HIGH': 204.7, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv7_2019_11_27]
 
@@ -450,7 +455,7 @@ if __name__ == '__main__':
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.150)
+#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.200)
 #            do_resonance(nv_sig, apd_indices, freq_center=3.050, freq_range=0.1)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)

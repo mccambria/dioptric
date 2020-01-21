@@ -245,7 +245,7 @@ def fit_data(precession_dur_range, rabi_period,
     max_ind = numpy.argmax(transform_mag[1:])
     frequency = freqs[max_ind+1]
     revival_time = 1/frequency
-    # revival_time = 25000
+#    revival_time = 42e3
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -695,7 +695,7 @@ if __name__ == '__main__':
 
     # 45 deg
     # file = '2020_01_06-20_12_33-goeppert_mayer-nv7_2019_11_27'  # take 1
-    file = '2020_01_15-19_02_19-goeppert_mayer-nv7_2019_11_27'  # take 2
+#    file = '2020_01_15-19_02_19-goeppert_mayer-nv7_2019_11_27'  # take 2
 
     # 75 deg
     # file = '2020_01_08-23_27_40-goeppert_mayer-nv7_2019_11_27'
@@ -706,6 +706,9 @@ if __name__ == '__main__':
 
     # 30 deg
     # file = '2020_01_13-17_32_58-goeppert_mayer-nv7_2019_11_27'
+
+    # 0 deg, 122 MHz
+    file = '2020_01_18-16_23_54-goeppert_mayer-nv7_2019_11_27'
 
     # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
 
