@@ -62,15 +62,69 @@ def plot_components(mag_B, popt):
     low_zero_comps = []
     high_zero_comps = []
     
+    zero_plus_comps = []
+    low_plus_comps = []
+    high_plus_comps = []
+    
+    zero_minus_comps = []
+    low_minus_comps = []
+    high_minus_comps = []
+    
     angles = numpy.linspace(0, pi/2, 1000)
     for angle in angles:
         
-        vecs = calc_eigenvectors(mag_B, *popt)  # zero, low, high
+        popt[0] = angle
+        
+        # vecs are returned zero, low, high
+        # components are ordered +1, 0, -1
+        vecs = calc_eigenvectors(mag_B, *popt)
+        
         zero_zero_comps.append(numpy.abs(vecs[0,1])**2)
         low_zero_comps.append(numpy.abs(vecs[1,1])**2)
         high_zero_comps.append(numpy.abs(vecs[2,1])**2)
+        
+        zero_plus_comps.append(numpy.abs(vecs[0,0])**2)
+        low_plus_comps.append(numpy.abs(vecs[1,0])**2)
+        high_plus_comps.append(numpy.abs(vecs[2,0])**2)
+        
+        zero_minus_comps.append(numpy.abs(vecs[0,2])**2)
+        low_minus_comps.append(numpy.abs(vecs[1,2])**2)
+        high_minus_comps.append(numpy.abs(vecs[2,2])**2)
+        
+    angles_deg = angles * (180/pi)
+    fig, axes_pack = plt.subplots(1, 3, figsize=(15, 5))
+    fig.set_tight_layout(True)
     
-
+    # |Sz;+1> projections
+    ax = axes_pack[0]
+    ax.set_title('|Sz;+1> projections')
+    ax.plot(angles_deg, zero_plus_comps, label='|H;0>')
+    ax.plot(angles_deg, low_plus_comps, label='|H;-1>')
+    ax.plot(angles_deg, high_plus_comps, label='|H;+1>')
+    ax.set_xlabel('B field angle (deg)')
+    ax.set_ylabel('|<Sz;+1|psi>|^2')
+    ax.legend()
+    
+    # |Sz;0> projections
+    ax = axes_pack[1]
+    ax.set_title('|Sz;0> projections')
+    ax.plot(angles_deg, zero_zero_comps, label='|H;0>')
+    ax.plot(angles_deg, low_zero_comps, label='|H;-1>')
+    ax.plot(angles_deg, high_zero_comps, label='|H;+1>')
+    ax.set_xlabel('B field angle (deg)')
+    ax.set_ylabel('|<Sz;0|psi>|^2')
+    ax.legend()
+    
+    # |Sz;-1> projections
+    ax = axes_pack[2]
+    ax.set_title('|Sz;-1> projections')
+    ax.plot(angles_deg, zero_minus_comps, label='|H;0>')
+    ax.plot(angles_deg, low_minus_comps, label='|H;-1>')
+    ax.plot(angles_deg, high_minus_comps, label='|H;+1>')
+    ax.set_xlabel('B field angle (deg)')
+    ax.set_ylabel('|<Sz;-1|psi>|^2')
+    ax.legend()
+    
 
 def b_matrix_elements(name, res_descs):
 
@@ -601,8 +655,10 @@ if __name__ == '__main__':
     # Run the script
     # main(name, res_descs)
     
-    print(calc_eigenvectors(0.1, pi/2, 0, 0, 0, 0))
+    popt = [0, 0, 0, 0, 0]
+    # print(calc_eigenvectors(0.1, pi/2, 0, 0, 0, 0))
     # b_matrix_elements(name, res_descs)
+    plot_components(0.095, popt)
 
     # Fake data
     # args: theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
