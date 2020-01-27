@@ -24,8 +24,9 @@ import matplotlib.pyplot as plt
 # %% Constants
 
 
-# GHz
-d_gs = 2.87
+d_gs = 2.87  # ground state zfs in GHz
+# d_gs = 1.42  # excited state zfs in GHz
+gmuB = 2.8  # gyromagnetic ratio in MHz / G
 
 # numbers
 inv_sqrt_2 = 1/numpy.sqrt(2)
@@ -58,72 +59,95 @@ def calc_matrix_elements(noise_hamiltonian,
 
 def plot_components(mag_B, popt):
     
-    zero_zero_comps = []
-    low_zero_comps = []
-    high_zero_comps = []
-    
-    zero_plus_comps = []
-    low_plus_comps = []
-    high_plus_comps = []
-    
-    zero_minus_comps = []
-    low_minus_comps = []
-    high_minus_comps = []
-    
-    angles = numpy.linspace(0, pi/2, 1000)
-    for angle in angles:
+    # mode = 'theta_B'
+    mode = 'mag_B'
         
-        popt[0] = angle
-        
-        # vecs are returned zero, low, high
-        # components are ordered +1, 0, -1
-        vecs = calc_eigenvectors(mag_B, *popt)
-        
-        zero_zero_comps.append(numpy.abs(vecs[0,1])**2)
-        low_zero_comps.append(numpy.abs(vecs[1,1])**2)
-        high_zero_comps.append(numpy.abs(vecs[2,1])**2)
-        
-        zero_plus_comps.append(numpy.abs(vecs[0,0])**2)
-        low_plus_comps.append(numpy.abs(vecs[1,0])**2)
-        high_plus_comps.append(numpy.abs(vecs[2,0])**2)
-        
-        zero_minus_comps.append(numpy.abs(vecs[0,2])**2)
-        low_minus_comps.append(numpy.abs(vecs[1,2])**2)
-        high_minus_comps.append(numpy.abs(vecs[2,2])**2)
-        
-    angles_deg = angles * (180/pi)
     fig, axes_pack = plt.subplots(1, 3, figsize=(15, 5))
+    # fig, ax = plt.subplots(1, 1, figsize=(7, 5))
     fig.set_tight_layout(True)
     
-    # |Sz;+1> projections
-    ax = axes_pack[0]
-    ax.set_title('|Sz;+1> projections')
-    ax.plot(angles_deg, zero_plus_comps, label='|H;0>')
-    ax.plot(angles_deg, low_plus_comps, label='|H;-1>')
-    ax.plot(angles_deg, high_plus_comps, label='|H;+1>')
-    ax.set_xlabel('B field angle (deg)')
-    ax.set_ylabel('|<Sz;+1|psi>|^2')
-    ax.legend()
+    if mode == 'theta_B':
+        x_data = numpy.linspace(0, pi/2, 1000)
+        plot_x_data = x_data * (180/pi)
+        x_label = 'B field angle (deg)'
+    elif mode == 'mag_B':
+        x_data = numpy.linspace(0.001, 25.0, 1000)  # GHz
+        plot_x_data = x_data
+        x_label = 'B field magnitude (GHz)'
+        # plot_x_data = x_data*1000/gmuB  # G
+        # x_label = 'B field magnitude (MHz)'
     
-    # |Sz;0> projections
-    ax = axes_pack[1]
-    ax.set_title('|Sz;0> projections')
-    ax.plot(angles_deg, zero_zero_comps, label='|H;0>')
-    ax.plot(angles_deg, low_zero_comps, label='|H;-1>')
-    ax.plot(angles_deg, high_zero_comps, label='|H;+1>')
-    ax.set_xlabel('B field angle (deg)')
-    ax.set_ylabel('|<Sz;0|psi>|^2')
-    ax.legend()
+    # theta_Bs = [6, 54.1]
+    # line_styles = [None, '--']
+    labels = [['|H;0>', '|H;-1>', '|H;+1>']]
+    for ind in range(1):
+        # theta_B = theta_Bs[ind] * (pi/180)
+        # line_style = line_styles[ind]
     
-    # |Sz;-1> projections
-    ax = axes_pack[2]
-    ax.set_title('|Sz;-1> projections')
-    ax.plot(angles_deg, zero_minus_comps, label='|H;0>')
-    ax.plot(angles_deg, low_minus_comps, label='|H;-1>')
-    ax.plot(angles_deg, high_minus_comps, label='|H;+1>')
-    ax.set_xlabel('B field angle (deg)')
-    ax.set_ylabel('|<Sz;-1|psi>|^2')
-    ax.legend()
+        zero_zero_comps = []
+        low_zero_comps = []
+        high_zero_comps = []
+        
+        zero_plus_comps = []
+        low_plus_comps = []
+        high_plus_comps = []
+        
+        zero_minus_comps = []
+        low_minus_comps = []
+        high_minus_comps = []
+    
+        for val in x_data:
+            
+            if mode == 'theta_B':
+                popt[0] = val
+            elif mode == 'mag_B':
+                mag_B = val
+            
+            # vecs are returned zero, low, high
+            # components are ordered +1, 0, -1
+            vecs = calc_eigenvectors(mag_B, *popt)
+            
+            zero_zero_comps.append(numpy.abs(vecs[0,1])**2)
+            low_zero_comps.append(numpy.abs(vecs[1,1])**2)
+            high_zero_comps.append(numpy.abs(vecs[2,1])**2)
+            
+            zero_plus_comps.append(numpy.abs(vecs[0,0])**2)
+            low_plus_comps.append(numpy.abs(vecs[1,0])**2)
+            high_plus_comps.append(numpy.abs(vecs[2,0])**2)
+            
+            zero_minus_comps.append(numpy.abs(vecs[0,2])**2)
+            low_minus_comps.append(numpy.abs(vecs[1,2])**2)
+            high_minus_comps.append(numpy.abs(vecs[2,2])**2)
+        
+        # |Sz;+1> projections
+        ax = axes_pack[0]
+        ax.set_title('|Sz;+1> projections')
+        ax.plot(plot_x_data, zero_plus_comps, label=labels[ind][0])
+        ax.plot(plot_x_data, low_plus_comps, label=labels[ind][1])
+        ax.plot(plot_x_data, high_plus_comps, label=labels[ind][2])
+        ax.set_xlabel(x_label)
+        ax.set_ylabel('|<Sz;+1|psi>|^2')
+        ax.legend()
+        
+        # |Sz;0> projections
+        ax = axes_pack[1]
+        ax.set_title('|Sz;0> projections')
+        ax.plot(plot_x_data, zero_zero_comps, label=labels[ind][0])
+        ax.plot(plot_x_data, low_zero_comps, label=labels[ind][1])
+        ax.plot(plot_x_data, high_zero_comps, label=labels[ind][2])
+        ax.set_xlabel(x_label)
+        ax.set_ylabel('|<Sz;0|psi>|^2')
+        ax.legend()
+        
+        # |Sz;-1> projections
+        ax = axes_pack[2]
+        ax.set_title('|Sz;-1> projections')
+        ax.plot(plot_x_data, zero_minus_comps, label=labels[ind][0])
+        ax.plot(plot_x_data, low_minus_comps, label=labels[ind][1])
+        ax.plot(plot_x_data, high_minus_comps, label=labels[ind][2])
+        ax.set_xlabel(x_label)
+        ax.set_ylabel('|<Sz;-1|psi>|^2')
+        ax.legend()
     
 
 def b_matrix_elements(name, res_descs):
@@ -347,6 +371,8 @@ def calc_eigenvectors(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     # sorted_eigvecs = [numpy.round(eigvecs[:,ind], 3) for ind in sorted_indices]
     sorted_eigvecs = [eigvecs[:,ind] for ind in sorted_indices]
     sorted_eigvecs = numpy.array(sorted_eigvecs)
+    # for vec in sorted_eigvecs:
+    #     print(numpy.matmul(hamiltonian, vec) / vec)
     return sorted_eigvecs
 
 
@@ -655,12 +681,19 @@ if __name__ == '__main__':
     # Run the script
     # main(name, res_descs)
     
-    popt = [0, 0, 0, 0, 0]
-    # print(calc_eigenvectors(0.1, pi/2, 0, 0, 0, 0))
+    # popt: theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
+    
+    mag_B = 0.5
+    popt = [74*(pi/180), 0, 0, 0, 0]
+    # print(calc_eigenvectors(mag_B, *popt))
+    # vecs = calc_eigenvectors(mag_B, *popt)
+    # for vec in vecs:
+    #     vec = numpy.array(vec)
+    #     print(numpy.abs(vec)**2)
     # b_matrix_elements(name, res_descs)
-    plot_components(0.095, popt)
+    plot_components(mag_B, popt)
+    # print(calc_res_pair(mag_B, *popt))
 
     # Fake data
-    # args: theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
     # bounds: ((0, pi/2), (-0.050, 0.050), (0, 0.050), (0, pi/3), (0, 2*pi/3))
-    # generate_fake_data(0, 0.000, 0.020, 0.000, 0.000)
+    # generate_fake_data(pi/4, 0.000, 0.000, 0.000, 0.000)
