@@ -34,7 +34,7 @@ from numpy.linalg import eigvals
 
 im = 0+1j
 inv_sqrt_2 = 1/numpy.sqrt(2)
-gmuB = 2.8e-3  # gyromagnetic ratio in MHz / G**-
+gmuB = 2.8e-3  # gyromagnetic ratio in GHz / G
 
 
 # %% Simplified Hamiltonian analysis
