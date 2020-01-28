@@ -333,8 +333,8 @@ def main(nv_sig):
     # Step through the nd filters and find the optimized gate time in each one.
     
 #    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
-#    nd_filter_list = ['nd_1.0']
-    nd_filter_list = ['nd_1.0', 'nd_1.5']
+    nd_filter_list = ['nd_0.5']
+#    nd_filter_list = ['nd_1.0', 'nd_1.5']
     
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -352,7 +352,7 @@ def main(nv_sig):
             readout_range = [50, 400]
             num_readout_steps = 8
         elif nd_filter == 'nd_0.5':
-            readout_range = [100, 500]
+            readout_range = [200, 600]
             num_readout_steps = 9
         elif nd_filter == 'nd_1.0':
             readout_range = [250, 600]
@@ -370,29 +370,16 @@ def main(nv_sig):
 if __name__ == '__main__':
 
     # Define the nv_sig to be used
-    sample_name = 'ayrton12'
-    nd_filter = 'nd_1.0'
-    expected_count_rate = {
-            'nd_0': 95,
-            'nd_0.5': 85,
-            'nd_1.0': 54,
-            'nd_1.5': 23,
-            }
-    pulsed_readout_dur = {
-            'nd_0': 215,
-            'nd_0.5': 280,
-            'nd_1.0': 420,
-            'nd_1.5': 420,
-            }
-    nv2_2019_04_30  = { 'coords': [-0.065, 0.087, 5.01],
-            'name': '{}-nv2_2019_04_30'.format(sample_name),
-            'expected_count_rate': expected_count_rate[nd_filter], 'nd_filter': nd_filter,
-            'pulsed_readout_dur': pulsed_readout_dur[nd_filter], 'magnet_angle': 170.7,
-            'resonance_LOW': 2.8532, 'rabi_LOW': 185.4, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.8855, 'rabi_HIGH': 194.5, 'uwave_power_HIGH': 10.0}
+    sample_name = 'goeppert_mayer'
+    nv7_2019_11_27 = { 'coords': [-0.092, -0.300, 4.98],
+            'name': '{}-nv7_2019_11_27'.format(sample_name),
+            'expected_count_rate': 33, 'nd_filter': 'nd_0.5',
+            'pulsed_readout_dur': 375, 'magnet_angle': 45.0,
+            'resonance_LOW': 2.6481, 'rabi_LOW': 76.2, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 3.2038, 'rabi_HIGH': 232.0, 'uwave_power_HIGH': 10.0}
     
     ### MAIN ###
-    main(nv2_2019_04_30)
+    main(nv7_2019_11_27)
     
     # The individual functions in this file
 #    snr_measurement(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)
