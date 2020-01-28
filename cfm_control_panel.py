@@ -120,7 +120,7 @@ def do_resonance_state(nv_sig, apd_indices, state):
     
     freq_range = 0.200
     num_steps = 51
-    num_runs = 1
+    num_runs = 2
     
     # Zoom
 #    freq_range = 0.05
@@ -414,8 +414,8 @@ if __name__ == '__main__':
             'name': '{}-nv7_2019_11_27'.format(sample_name),
             'expected_count_rate': 42, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
-            'resonance_LOW': 2.500, 'rabi_LOW': 152.5, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 3.23, 'rabi_HIGH': 550.6, 'uwave_power_HIGH': 10.0}
+            'resonance_LOW': 2.5398, 'rabi_LOW': 99.3, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': 3.2025, 'rabi_HIGH': 229.8, 'uwave_power_HIGH': 10.0}
     
     nv_sig_list = [nv7_2019_11_27]
 
@@ -458,8 +458,8 @@ if __name__ == '__main__':
 #            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.200)
 #            do_resonance(nv_sig, apd_indices, freq_center=3.050, freq_range=0.1)
-            do_resonance_state(nv_sig, apd_indices, States.LOW)
-            do_resonance_state(nv_sig, apd_indices, States.HIGH)
+#            do_resonance_state(nv_sig, apd_indices, States.LOW)
+#            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.4542, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.9564, freq_range=0.100)
@@ -472,7 +472,7 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.600, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.100, freq_range=0.15)
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
-#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 700])
+#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 200])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
@@ -487,7 +487,7 @@ if __name__ == '__main__':
 #                do_t1_interleave(nv_sig, apd_indices)
             
 #            do_ramsey(nv_sig, apd_indices)
-#            do_spin_echo(nv_sig, apd_indices)
+            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
 #            do_test_major_routines(nv_sig, apd_indices)
 #            with labrad.connect() as cxn:
