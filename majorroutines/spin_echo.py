@@ -722,7 +722,10 @@ if __name__ == '__main__':
 #    file = '2020_01_21-14_34_47-goeppert_mayer-nv7_2019_11_27'
     
     # 0 deg, 1.288 GHz
-    file = '2020_01_27-16_48_32-goeppert_mayer-nv7_2019_11_27'
+#    file = '2020_01_27-16_48_32-goeppert_mayer-nv7_2019_11_27'
+    
+    # temp
+    file = '2020_01_28-14_55_21-goeppert_mayer-nv7_2019_11_27'
 
     # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
 
