@@ -56,19 +56,19 @@ def set_xyz_zero():
 def do_image_sample(nv_sig, apd_indices):
     
 #    scan_range = 1.0
-#    scan_range = 0.5
+    scan_range = 0.5
 #    scan_range = 0.3
-    scan_range = 0.2
+#    scan_range = 0.2
 #    scan_range = 0.1
 #    scan_range = 0.05
 #    scan_range = 0.025
     
 #    num_steps = 300
 #    num_steps = 200
-#    num_steps = 150
+    num_steps = 150
 #    num_steps = 135
 #    num_steps = 120
-    num_steps = 90
+#    num_steps = 90
 #    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
@@ -192,14 +192,16 @@ def do_t1_battery(nv_sig, apd_indices):
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
         [[States.HIGH, States.LOW], [0, 2*10**6], 11, 25*10**3, 40],
-        [[States.HIGH, States.LOW], [0, 15*10**6], 11, 3.5*10**3, 220],
+        [[States.HIGH, States.LOW], [0, 15*10**6], 11, 3.5*10**3, 250],
     
         [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 25*10**3, 40],
-        [[States.HIGH, States.HIGH], [0, 15*10**6], 11, 3.5*10**3, 220],
+        [[States.HIGH, States.HIGH], [0, 15*10**6], 11, 3.5*10**3, 250],
     
-        [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 2.5*10**3, 300],
+        [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 2.5*10**3, 350],
     
-        [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 2.5*10**3, 300],
+        [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 2.5*10**3, 350],
+    
+        [[States.ZERO, States.LOW], [0, 20*10**6], 11, 2.5*10**3, 350],
         ])
 
     # Loop through the experiments
@@ -403,21 +405,21 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    sample_name = 'goeppert_mayer'
-    search = { 'coords': [0.000, -0.250, 5.00],
+    sample_name = 'johnson'
+    search = { 'coords': [0.000, 0.000, 5.00],
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 375, 'magnet_angle': 176.8,
-            'resonance_LOW': 2.7775, 'rabi_LOW': 79.5, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.9687, 'rabi_HIGH': 114.0, 'uwave_power_HIGH': 10.0}
-    nv7_2019_11_27 = { 'coords': [-0.093, -0.281, 4.94],
-            'name': '{}-nv7_2019_11_27'.format(sample_name),
-            'expected_count_rate': 37, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
-            'resonance_LOW': 2.0446, 'rabi_LOW': 195.3, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 3.7070, 'rabi_HIGH': 508.3, 'uwave_power_HIGH': 10.0}
+            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    nv1_2020_02_04 = { 'coords': [0.160, -0.250, 5.15],
+            'name': '{}-nv7_2019_11_27'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
+            'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
+            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
-    nv_sig_list = [nv7_2019_11_27]
+    nv_sig_list = [nv1_2020_02_04]
 
     # %% Functions to run
 
@@ -425,7 +427,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.0])
@@ -450,7 +452,7 @@ if __name__ == '__main__':
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
 #            do_image_sample(nv_sig, apd_indices)
-#            do_optimize(nv_sig, apd_indices)
+            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
@@ -487,7 +489,7 @@ if __name__ == '__main__':
 #                do_t1_interleave(nv_sig, apd_indices)
             
 #            do_ramsey(nv_sig, apd_indices)
-            do_spin_echo(nv_sig, apd_indices)
+#            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
 #            do_test_major_routines(nv_sig, apd_indices)
 #            with labrad.connect() as cxn:
