@@ -115,7 +115,11 @@ def plot_splittings_vs_angle(nv_data):
 # %% Main
 
 
-def main(nv_data, just_splittings=False):
+def main(nv_data, mode='both'):
+    
+    if mode not in ['splittings', 'angles', 'both']:
+        print('Allowed modes are splittings, angles, or both.')
+        return
     
     # %% Setup
     
@@ -125,34 +129,39 @@ def main(nv_data, just_splittings=False):
     # %% Plotting
 
     plt.rcParams.update({'font.size': 18})  # Increase font size
-    if just_splittings:
+    if mode != 'both':
         fig, ax = plt.subplots(figsize=(6,5))
-        # Pack the one ax up so we don't have to make too many changes
-        # for just_splittings
-        axes_pack = [ax]
+        axes_pack = [ax]  # Pack up to allow for common codepaths
+        if mode == 'splittings':
+            splittings_ax_ind = 0
+        elif mode == 'angles':
+            angles_ax_ind = 0
     else:
         fig, axes_pack = plt.subplots(1, 2, figsize=(12,5))
+        splittings_ax_ind = 0
+        angles_ax_ind = 1
     fig.set_tight_layout(True)
     
-    # Splittings
-    ax = axes_pack[0]
-    ax.set_xlabel(r'Splitting, $\Delta_{\pm}$ (MHz)')
-    ax.set_xlim(-50, 1300)
-    
-    # Angles
-    if not just_splittings:
-        ax = axes_pack[1]
-        ax.set_xlabel(r'Magnet angle, $\theta_{B}$ ($\degree$)')
-        ax.set_xlim(-5, 95)
-        ax.set_xticks(numpy.linspace(0,90,7))
-        
-    # Both
-    for ax in axes_pack:
+    # Splitting setup
+    if mode in ['splittings', 'both']:
+        ax = axes_pack[splittings_ax_ind]
+        ax.set_xlabel(r'Splitting, $\Delta_{\pm}$ (MHz)')
+        ax.set_xlim(-50, 1300)
         ax.set_ylabel(r'$\gamma / \Omega$')
         ax.set_ylim(0, 3.5)
-        
+            
+    # Angles setup
+    if mode in ['angles', 'both']:
+        ax = axes_pack[angles_ax_ind]
+        ax.set_xlabel(r'Magnet angle, $\theta_{B}$ ($\degree$)')
+        # ax.set_xlim(-5, 95)
+        ax.set_xlim(47, 49)
+        # ax.set_xticks(numpy.linspace(0,90,7))
+        ax.set_ylabel(r'$\gamma / \Omega$')
+        ax.set_ylim(0, 3.5)
     
     # Marker and color combination to distinguish NVs
+    # Colors are from the Wong colorblind-safe palette
     markers = ['^', 'o', 's', 'D', ]
     colors = ['#009E73', '#E69F00', '#0072B2', '#CC79A7', ]
 
@@ -160,7 +169,7 @@ def main(nv_data, just_splittings=False):
         
         nv = nv_data[ind]
         marker = markers[ind]
-        color = colors[ind]  # Wong colorblind-safe palette
+        color = colors[ind]  
         
         name = nv['name']
         # if name in ['NVA1', 'NVA2']:
@@ -180,18 +189,19 @@ def main(nv_data, just_splittings=False):
         all_ratio_errors.extend(ratio_errors)
         
         # Plot splittings
-        ax = axes_pack[0]
-        splittings = numpy.array(nv['splittings'])
-        mask = splittings != None
-        if True in mask:
-            ax.errorbar(splittings[mask], ratios[mask],
-                        yerr=ratio_errors[mask], label=name,
-                        marker=marker, color=color, linestyle='None',
-                        ms=9, lw=2.5)
+        if mode in ['splittings', 'both']:
+            ax = axes_pack[splittings_ax_ind]
+            splittings = numpy.array(nv['splittings'])
+            mask = splittings != None
+            if True in mask:
+                ax.errorbar(splittings[mask], ratios[mask],
+                            yerr=ratio_errors[mask], label=name,
+                            marker=marker, color=color, linestyle='None',
+                            ms=9, lw=2.5)
     
         # Plot angles
-        if not just_splittings:
-            ax = axes_pack[1]
+        if mode in ['angles', 'both']:
+            ax = axes_pack[angles_ax_ind]
             angles = numpy.array(nv['angles'])
             mask = angles != None
             if True in mask:
@@ -202,9 +212,6 @@ def main(nv_data, just_splittings=False):
                             yerr=ratio_errors[mask], label=name,
                             marker=marker, color=color, linestyle='None',
                             ms=9, lw=2.5)
-        # print(ratios)
-        # print(ratio_errors)
-        # print(angles)
 
     all_ratios = numpy.array(all_ratios)
     all_ratio_errors = numpy.array(all_ratio_errors)
@@ -289,7 +296,7 @@ if __name__ == '__main__':
             #     },
         ]
     
-    main(nv_data, just_splittings=False)
+    main(nv_data, mode='angles')
     # plot_gamma_omega_vs_angle(nv_data)
     # plot_splittings_vs_angle(nv_data)
 
