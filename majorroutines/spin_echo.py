@@ -235,7 +235,7 @@ def fit_data(precession_dur_range, rabi_period,
     # us back to 1.0
     amplitude = 1.0 - numpy.average(norm_avg_sig)
     offset = 1.0 - amplitude
-    decay_time = 2000.0
+    decay_time = 1000.0
 
     # To estimate the revival frequency let's find the highest peak in the FFT
     transform = numpy.fft.rfft(norm_avg_sig)
@@ -250,7 +250,7 @@ def fit_data(precession_dur_range, rabi_period,
 #    amplitude = 0.07
 #    offset = 0.93
 #    decay_time = 2000.0
-#    revival_time = 7000
+    # revival_time = 3300
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]

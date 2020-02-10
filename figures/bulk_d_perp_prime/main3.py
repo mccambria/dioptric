@@ -174,7 +174,7 @@ def main(nv_data, mode='both'):
         name = nv['name']
         # if name in ['NVA1', 'NVA2']:
         #     continue
-        if name == 'test':
+        if name != 'test':
             continue
         
         # Calculate ratios
@@ -218,8 +218,8 @@ def main(nv_data, mode='both'):
     
     wavg_ratio = numpy.average(all_ratios, weights=(1/all_ratio_errors**2))
     ste_ratio = numpy.sqrt(1/numpy.sum(all_ratio_errors**-2))
-    # print(all_ratios)
-    # print(all_ratio_errors)
+    print(all_ratios)
+    print(all_ratio_errors)
     # print(wavg_ratio)
     # print(ste_ratio)
     
@@ -285,15 +285,15 @@ if __name__ == '__main__':
                                  0.005, 0.005, 0.005, 0.004, 0.005, 0.005,
                                  0.005, 0.005, 0.009],
                 },
-            # {
-            #     'name': 'test',
-            #     'splittings': [],
-            #     'angles': [],
-            #     'gammas': [0.113],
-            #     'gamma_errors': [0.010],
-            #     'omegas': [0.055],
-            #     'omega_errors': [0.004],
-            #     },
+            {
+                'name': 'test',
+                'splittings': [],
+                'angles': [],
+                'gammas': [0.149],
+                'gamma_errors': [0.015],
+                'omegas': [0.053],
+                'omega_errors': [0.007],
+                },
         ]
     
     main(nv_data, mode='angles')

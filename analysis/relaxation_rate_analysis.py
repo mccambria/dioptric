@@ -174,8 +174,9 @@ def get_data_lists(folder_name):
                                               zero_zero_ste))
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
+            # MCC
             if init_state_name == zero_state_name and \
-                                read_state_name == high_state_name:
+                                read_state_name == low_state_name:
                 if zero_plus_bool == False:
                     zero_plus_counts = norm_avg_sig
                     zero_plus_ste = norm_avg_sig_ste
@@ -362,7 +363,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                         'r', label = 'fit')
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
-                ax.set_title('(0,0) - (0,+1)')
+                ax.set_title('(0,0) - (0,-1)')  # MCC
+                # ax.set_title('(0,0) - (0,+1)')
                 ax.legend()
                 text = r'$\Omega = $ {} $\pm$ {} kHz'.format('%.3f'%omega,
                       '%.3f'%omega_ste)
@@ -499,7 +501,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 if __name__ == '__main__':
 
     path = 't1_double_quantum/paper_data/bulk_dq/'
-    folder = 'goeppert_mayer-nv7_2019_11_27-556MHz-48deg'
+    folder = 'johnson-nv0_2019_06_27-24MHz'
     path += folder
 
     gamma, ste = main(path, omega=None, omega_ste=None,
