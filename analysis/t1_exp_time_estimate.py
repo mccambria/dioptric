@@ -61,20 +61,20 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
     print('Total experiment time: {:.1f} hrs'.format(total_exp_time))
 
 # %%
-    
+
 t1_exp_array = numpy.array([
     [[States.HIGH, States.LOW], [0, 2*10**6], 11, 25*10**3, 20],
-    [[States.HIGH, States.LOW], [0, 15*10**6], 11, 3.5*10**3, 110],
+    [[States.HIGH, States.LOW], [0, 15*10**6], 11, 3.5*10**3, 100],
 
     [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 25*10**3, 20],
-    [[States.HIGH, States.HIGH], [0, 15*10**6], 11, 3.5*10**3, 110],
+    [[States.HIGH, States.HIGH], [0, 15*10**6], 11, 3.5*10**3, 100],
 
-    [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 2.5*10**3, 150],
+    [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 2.5*10**3, 140],
 
-    [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 2.5*10**3, 150],
+    [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 2.5*10**3, 140]
     ])
 
-contrast = 0.25  # arb
+contrast = 0.35  # arb
 exp_count_rate = 35  # kcps
 readout_window = 375  # ns
 
