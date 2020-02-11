@@ -104,7 +104,7 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
-    num_steps = 101
+    num_steps = 76
     num_runs = 1
     uwave_power = -13.0
 #    uwave_power = -20.0
@@ -161,12 +161,13 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
 
-    angle_range = [0, 150]
+#    angle_range = [0, 150]
+    angle_range = [25, 35]
     num_angle_steps = 6
     freq_center = 2.870
-    freq_range = 0.2
+    freq_range = 0.5
     num_freq_steps = 76
-    num_freq_runs = 2
+    num_freq_runs = 1
 #    uwave_power = 9.0
     uwave_power = -13.0
     uwave_pulse_dur = None  # Set to None for CWESR
@@ -412,7 +413,7 @@ if __name__ == '__main__':
     search = { 'coords': [0.000, 0.000, 5.00],
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.5',
-            'pulsed_readout_dur': 375, 'magnet_angle':0.0,
+            'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
@@ -458,7 +459,7 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.260)
-            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.4)
+            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.5)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
