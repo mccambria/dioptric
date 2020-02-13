@@ -24,6 +24,7 @@ import numpy.random as random
 # GHz
 d_gs = 2.87
 
+#d_gs = 1.42
 # numbers
 inv_sqrt_2 = 1/numpy.sqrt(2)
 
@@ -50,7 +51,15 @@ inv_sqrt_2 = 1/numpy.sqrt(2)
 #Pi_par = -0.03 # GHz
 #Pi_perp = 0.003 # GHz
 
-B_mag = .56 # GHz
+# Test NV
+name = 'NV1'
+
+B_theta = (180-144.8) * numpy.pi / 180 
+Pi_par = 0 # GHz
+Pi_perp = 0 # GHz
+
+B_mag_Gauss = 50
+B_mag = (B_mag_Gauss*2.8) / 1000 # GHz
 #B_mag = 0.5 # GHz
 resonant_freq = 2.4371 # GHz
 contrast = 0.16
@@ -58,8 +67,38 @@ resonant_rabi_period = 235.4 # ns
 
 # %%
 
+def angle_between_vectors(v1, v2):
+    theta = numpy.arccos(numpy.dot(v1,v2) / (numpy.linalg.norm(v1) * numpy.linalg.norm(v1)))
+    return theta
+
+# %%
+    
+def rotate_y(A):
+    return [[numpy.cos(A), 0, numpy.sin(A)], [0, 1, 0], [-numpy.sin(A), 0, numpy.cos(A)]]
+
+# %%
+        
+        
 def calc_single_hamiltonian_osc(mag_B, theta_B, perp_B_prime, par_Pi, perp_Pi, 
                                 perp_Pi_prime, phi_B, phi_Pi):
+    '''
+    Given values of the surround ing magnetic and Pi-field (electric and 
+    strain), this function calculates the Hamiltonian in the Sz basis.
+    
+    mag_B: the magnitude of the applied magnetic field
+    theta_B: the angle that the applied magnetic field makes with the NV axis
+    perp_B_prime: the perpendicular componenet of magnetic field noise, 
+    possibly changing in time
+    par_Pi: the Pi field applied perpendicular to the NV axis
+    perp_Pi: the Pi field applied perpendicular to the NV axis
+    perp_Pi_prime: the perpendicular componenet of Pi field noise, 
+    possibly changing in time
+    phi_B: The angle of the perpendicuclar magnetic fields
+    phi_Pi: The angle of the perpendicular Pi fields
+    
+    Returns the Hamiltonian matrix as an array
+    '''
+    
     par_B = mag_B * numpy.cos(theta_B)
     perp_B = mag_B * numpy.sin(theta_B)
     hamiltonian = numpy.array([[d_gs + par_Pi + par_B,
@@ -75,8 +114,11 @@ def calc_single_hamiltonian_osc(mag_B, theta_B, perp_B_prime, par_Pi, perp_Pi,
 
 def calc_prob_i_state(final_hamiltonian):
     '''
-    This function will compare the HIGH state of an final hamiltonian
+    This function will compare the HIGH state of a final hamiltonian
     to the i state in the Sz basis (+1, -1, 0).
+    
+    Returns the various components of the HIGH states of the hamiltonian in the
+    Sz basis, along with the eigenvalues of the hamiltonian
     '''
     
     # Calculate the eigenvalues and eigenvectros of the hamiltonian some time later
@@ -121,6 +163,12 @@ def calc_LOW_resonance(hamiltonian):
     
     
 def rabi_contrast(freq, resonant_freq, contrast, resonant_rabi_period):
+    '''
+    Calculating the expected contrast due to how off resonance the applied
+    microwaves are. Taken from major_routines.rabi. 
+    
+    Needs work
+    '''
     resonant_rabi_freq = resonant_rabi_period**-1
     res_dev = freq - resonant_freq
     measured_rabi_freq = numpy.sqrt(res_dev**2 + resonant_rabi_freq**2)
@@ -138,8 +186,53 @@ def rabi_contrast(freq, resonant_freq, contrast, resonant_rabi_period):
     return current_contrast
 
 # %%
+    
+def angle_rotation(angle):
+    '''
+    this function will calculate the angles between a the magnetic field from 
+    the permanent magnet and the 4 NV orientations. The NV orientations are 
+    set so that the roation axis of our rotation stage is along the y-axis
+    of the coordinate system imposed. Then the program calculates the four
+    angles made between the magnet at a specified angle and the NV orientations
+    
+    angle: float (radians)
+    '''
+    
+    # start with the four N positions oriented in space so that the rotation
+    #axis is along the y axis.
+    
+    a = [1,0,0]
+    b = [-0.333478, 0.942758, 0]
+    c = [-0.333261, -0.471379, -0.816541]
+    d = [-0.333261, -0.471379, 0.816541]
+    
+    # define the magnetic field as pointing along x-axis, which will not rotate
+    
+    mag = [1,0,0]
+    
+    # rotate the NV system
+    a_r = numpy.dot(rotate_y(angle), a)
+    b_r = numpy.dot(rotate_y(angle), b)
+    c_r = numpy.dot(rotate_y(angle), c)
+    d_r = numpy.dot(rotate_y(angle), d)
+    
+    # Calc the angle between magnetic field and NV orientations
+    
+    theta_a = angle_between_vectors(a_r, mag)
+    theta_b = angle_between_vectors(b_r, mag)
+    theta_c = angle_between_vectors(c_r, mag)
+    theta_d = angle_between_vectors(d_r, mag)
+    
+    return theta_a, theta_b, theta_c, theta_d
+        
+# %%
 
 def simulate(t, num_reps):
+    '''
+    Similation of some B and Pi noise perpendicular to the NV axis that 
+    oscillates at a rate omega.
+    '''
+    
     omega_B = .1  # rad / ms
     omega_Pi = 1 # rad / ms
     
@@ -199,21 +292,79 @@ if __name__ == '__main__':
 #    ax.legend()
 #    ax.set_title(name)
     
+
+    angles = numpy.linspace(0, numpy.pi/2, 100)
+    B_mag_Gauss = 50 #G
+    eigensHIGH =[[],[],[],[]]
+    eigensLOW = [[],[],[],[]]
     
-    ham = calc_single_hamiltonian_osc(B_mag, B_theta, 0, 
+    for t in range(len(angles)):
+        angles_ret_vals = angle_rotation(angles[t])
+        
+        for NV in range(4):
+        
+            B_theta = angles_ret_vals[NV]        
+        
+            B_mag = (B_mag_Gauss*2.8) / 1000 # GHz
+            ham = calc_single_hamiltonian_osc(B_mag, B_theta, 0, 
                                         Pi_par, Pi_perp, 0, 
                                         0, 0)
+            ret_vals = calc_prob_i_state(ham)
+            
+            eigensHIGH[NV].append(ret_vals[3])
+            eigensLOW[NV].append(ret_vals[5])
+            
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    print(eigensHIGH[0][48])
+    ax.plot(angles*180/numpy.pi, eigensHIGH[0], label = 'initially aligned NV')
+    ax.plot(angles*180/numpy.pi, eigensHIGH[1], label = 'b')
+    ax.plot(angles*180/numpy.pi, eigensHIGH[2], label = 'c')
+    ax.plot(angles*180/numpy.pi, eigensHIGH[3], label = 'd')
+    ax.set_xlabel('Angle (degree)')
+    ax.set_ylabel('Resonance (GHz)')
+    ax.legend()     
+            
     
-    ret_vals = calc_prob_i_state(ham)
-    print(ret_vals)
+#    ham = calc_single_hamiltonian_osc(B_mag, B_theta, 0, 
+#                                        Pi_par, Pi_perp, 0, 
+#                                        0, 0)
+#    
+#    ret_vals = calc_prob_i_state(ham)
+#    print('What is the mixture of the Sz eigenstates in the highest energy eigenstate of this Hamltonian:')
+#    print(ret_vals)
     
-#    textstr = '\n'.join((
-#        r'$B_{\perp, noise}=%.3f \ GHz$' % (B_perp_noise, ),
-#        r'$\Pi_{\perp, noise}=%.3f \ GHz$' % (Pi_perp_noise, ),
-#        r'$\omega_{B}=%.2f \ rad/ms$' % (omega_B, ),
-#        r'$\omega_{\Pi}=%.2f \ rad/ms$' % (omega_Pi, ),
-#        r'$\phi_{\Pi, 0}=%.3f \ rad$' % (starting_Phi_Pi, )
-#        ))
+    
+    
+    
+#    angles=[]
+#    for angle in range(0,91):
+#        B_theta = angle * numpy.pi / 180 
+#        ham = calc_single_hamiltonian_osc(B_mag, B_theta, 0, 
+#                                        Pi_par, Pi_perp, 0, 
+#                                        0, 0)
+#    
+#        ret_vals = calc_prob_i_state(ham)
+#        
+#        angles.append(angle)
+#        plus_1_list.append(ret_vals[0])
+#        zero_list.append(ret_vals[1])
+#        minus_1_list.append(ret_vals[2])
+#    
+#    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+#    ax.plot(angles, plus_1_list, label = '+1 component')
+#    ax.plot(angles, zero_list, label = '0 component')
+#    ax.plot(angles, minus_1_list, label = '-1 component')
+#    
+#    ax.set_xlabel('Angle (degree)')
+#    ax.set_ylabel('Probability')
+#    ax.legend()
+#    ax.set_title('Sz eigenstate composition of highest energy eigenstate of Hamiltonian')
+#        
+##    textstr = '\n'.join((
+##        r'$B_{\perp, noise}=%.3f \ GHz$' % (B_mag, ),
+##        r'$\phi_{\Pi, 0}=%.3f \ rad$' % (starting_Phi_Pi, )
+##        ))
+#    textstr = ( r'$B_{applied}=%.0f \ G$' % (B_mag_Gauss, ))
 #    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 #    ax.text(0.05, 0.65, textstr, fontsize=14, transform=ax.transAxes,
 #            verticalalignment='top', bbox=props)
