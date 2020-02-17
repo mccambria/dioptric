@@ -313,9 +313,9 @@ if __name__ == '__main__':
             
             eigensHIGH[NV].append(ret_vals[3])
             eigensLOW[NV].append(ret_vals[5])
-            
+        
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    print(eigensHIGH[0][48])
+#    print(eigensHIGH[0][48])
     ax.plot(angles*180/numpy.pi, eigensHIGH[0], label = 'initially aligned NV')
     ax.plot(angles*180/numpy.pi, eigensHIGH[1], label = 'b')
     ax.plot(angles*180/numpy.pi, eigensHIGH[2], label = 'c')
@@ -323,8 +323,24 @@ if __name__ == '__main__':
     ax.set_xlabel('Angle (degree)')
     ax.set_ylabel('Resonance (GHz)')
     ax.legend()     
-            
     
+        
+    angle_hopper = [0, 10, 20, 30, 40, 48, 50, 35, 52, 55, 55, 60, 70, 68, 75,
+                    85, 89]
+    
+    resonances_1 = [2.719, 2.720, 2.726, 2.737, 2.751, 2.767, 2.77, 2.744, 
+                    2.765, 2.76, 2.759, 2.759, 2.753, 2.815, 2.755, 2.847, 2.851]
+    
+    resonances_2 = [2.828, 2.821, 2.806, 2.788, 2.772, 2.822, 2.822, 2.782, 
+                    2.776, 2.783, 2.783, 2.795, 2.820, 2.829, 2.8343, 2.860, 2.871]
+    resonances_3 = [2.834, None, 2.817, 2.817, 2.819, None, None,2.818,  None, None,
+                    2.824, 2.824, 2.830, None, None, None, None]
+    
+    print(len(resonances_3))
+    print(len(angle_hopper))
+    ax.plot(angle_hopper, resonances_1, 'ko')
+    ax.plot(angle_hopper, resonances_2, 'ko')
+    ax.plot(angle_hopper, resonances_3, 'ko')
 #    ham = calc_single_hamiltonian_osc(B_mag, B_theta, 0, 
 #                                        Pi_par, Pi_perp, 0, 
 #                                        0, 0)
