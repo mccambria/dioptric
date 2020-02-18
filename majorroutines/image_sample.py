@@ -197,8 +197,9 @@ def reformat_plot(colorMap, save_file_type):
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
 
 def create_figure(file_name):
-
-    data = tool_belt.get_raw_data(__file__, file_name)
+    
+    path = 'image_sample'
+    data = tool_belt.get_raw_data(path, file_name)
     x_range = data['x_range']
     y_range = data['y_range']
     x_voltages = data['x_voltages']
@@ -409,7 +410,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 if __name__ == '__main__':
 
 
-    file_name = '2019_12/2019_12_02-15_33_39-goeppert_mayer-nv7_2019_11_27'
+    file_name = '2020_02/2020_02_18-13_01_15-ayrton20-search'
 
     create_figure(file_name)
 

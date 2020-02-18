@@ -55,9 +55,10 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-#    scan_range = 1.0
-    scan_range = 0.5
-#    scan_range = 0.3
+#    scan_range = 2.0
+#    scan_range = 0.6
+#    scan_range = 0.5
+    scan_range = 0.3
 #    scan_range = 0.2
 #    scan_range = 0.1
 #    scan_range = 0.05
@@ -67,8 +68,8 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 200
 #    num_steps = 150
 #    num_steps = 135
-    num_steps = 120
-#    num_steps = 90
+#    num_steps = 120
+    num_steps = 90
 #    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
@@ -105,7 +106,7 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 76
-    num_runs = 1
+    num_runs = 5
     uwave_power = -13.0
 #    uwave_power = -20.0
 
@@ -409,10 +410,17 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    sample_name = 'hopper'
-    search = { 'coords': [0.000, 0.000, 5.00],
+    sample_name = 'ayrton20'
+#    search = { 'coords': [0.579, 0.232, 5.17],
+#            'name': '{}-search'.format(sample_name),
+#            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
+#            'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
+#            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+#            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    
+    search = { 'coords': [0.054, 0.675, 5.17],
             'name': '{}-search'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
+            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
@@ -432,8 +440,8 @@ if __name__ == '__main__':
 #        set_xyz([0.0,0.0,5.0])
 #        set_xyz([-0.116, -0.073, 2.61])
         
-#        with labrad.connect() as cxn:
-#            cxn.filter_slider_ell9k.set_filter('nd_1.5')
+        with labrad.connect() as cxn:
+            cxn.filter_slider_ell9k.set_filter('nd_0')
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            input('Laser currently turned off, Press enter to stop...')
         
@@ -441,16 +449,16 @@ if __name__ == '__main__':
 #        do_optimize_list(nv_sig_list, apd_indices)
 #        do_sample_nvs(nv_sig_list, apd_indices)
 #        do_g2_measurement(nv_sig_list, apd_indices[0], apd_indices[1])
-
+        
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]                
-#            for z in numpy.linspace(4.0, 6.0, 11):
+#            for z in numpy.linspace(5.15, 5.25, 11):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-#            do_image_sample(nv_sig, apd_indices)
+            do_image_sample(nv_sig, apd_indices)
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)
@@ -459,7 +467,7 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.260)
-            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.5)
+#            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
