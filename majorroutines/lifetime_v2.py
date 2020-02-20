@@ -7,7 +7,8 @@ It takes the same structure as a standard t1 measurement. We shine 532 nm
 light, wait some time, and then read out the counts WITHOUT shining 532 nm 
 light.
 
-I'm not sure what to normalize the signal to quite yet...
+Adding a variable 'filter' to pass into the function to signify what filter 
+was used to take the measurement (2/20/2020)
 
 Created on Mon Nov 11 12:49:55 2019
 
@@ -82,15 +83,15 @@ def process_raw_buffer(new_tags, new_channels,
 
 
 def main(nv_sig, apd_indices, readout_time,
-         num_reps, num_runs, num_bins):
+         num_reps, num_runs, num_bins, filter, voltage):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
-                      num_reps, num_runs, num_bins)
+                      num_reps, num_runs, num_bins, filter, voltage)
 
 
 def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
-                  num_reps, num_runs, num_bins):
+                  num_reps, num_runs, num_bins, filter, voltage):
     
     if len(apd_indices) > 1:
         msg = 'Currently lifetime only supports single APDs!!'
@@ -151,8 +152,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
             break
 
         # Optimize
-#        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
-#        opti_coords_list.append(opti_coords)
+        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
+        opti_coords_list.append(opti_coords)
         
         
         # Expose the stream
@@ -199,6 +200,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
             num_processed_reps += num_new_processed_reps
             
             processed_tags.extend(new_processed_tags)
+            
 
         cxn.apd_tagger.stop_tag_stream()
         
@@ -207,6 +209,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'filter': filter,
                     'readout_time': readout_time,
                     'readout_time-units': 'ns',
                     'num_reps': num_reps,
@@ -262,6 +265,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                 'time_elapsed': time_elapsed,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'filter': filter,
+                'voltage': voltage,
                 'readout_time': readout_time,
                 'readout_time-units': 'ns',
                 'num_bins': num_bins,

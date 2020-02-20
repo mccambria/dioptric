@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Specify folders and run to produce csv files containing the taus and
-norm_avg_sigs within each json-formatted text file in the folder.
+Specify folders and run to produce csv files containing the bin-centers and
+binned_samples within each json-formatted text file in the folder.
 
-The csv files are named as:
-<init state>_to_<read state>_<max relaxation time in us>.csv
+The csv files are named the same as the original file
 
 Created on Mon May 27 11:26:49 2019
 
@@ -37,10 +36,6 @@ def convert(folder_name):
                 print('skipped {}'.format(json_file_name))
                 continue
     
-#        # Calculate the taus
-#        taus = numpy.linspace(relaxation_time_range[0], relaxation_time_range[1],
-#                              num=num_steps, dtype=numpy.int32)
-    
         # Populate the data to save
         csv_data = []
         for bin_ind in range(len(bin_centers)):
@@ -49,10 +44,7 @@ def convert(folder_name):
             row.append(binned_samples[bin_ind])
             csv_data.append(row)
     
-        max_relaxation_us = relaxation_time_range[1] // 1000
-    
-        csv_file_name = '{}_to_{}_{}'.format(init_state, read_state,
-                         max_relaxation_us)
+        csv_file_name = json_file_name
     
         with open('{}/{}.csv'.format(folder_name, csv_file_name),
                   'w', newline='') as csv_file:
@@ -75,4 +67,4 @@ if __name__ == '__main__':
 #        
 #        convert(top_folder_name.format(el))
         
-    convert(top_folder_name.format('relaxation rate paper data'))
+    convert(top_folder_name)

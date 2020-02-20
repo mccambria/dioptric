@@ -235,18 +235,18 @@ def do_t1_interleave(nv_sig, apd_indices):
 
     t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
 
-def do_lifetime(nv_sig, apd_indices):
+def do_lifetime(nv_sig, apd_indices, num_reps, num_bins, readout_time, 
+                filter, voltage):
     
-    num_reps =2* 10**5
-#    num_reps =0.5* 10**5
+#    num_reps =3* 10**5
     num_runs = 1
-#    num_bins = 100
-    num_bins = 150
-#    readout_time = 1.5 * 10**6 #ns
-    readout_time = 1 * 10**6 #ns
+#    num_bins = 300
+#    num_bins = 150
+#    readout_time = 50 * 10**3 #ns
+#    readout_time = 1 * 10**6 #ns
     
     lifetime.main(nv_sig, apd_indices, readout_time,
-                  num_reps, num_runs, num_bins)
+                  num_reps, num_runs, num_bins, filter, voltage)
     
 def do_ramsey(nv_sig, apd_indices):
 
@@ -416,7 +416,7 @@ if __name__ == '__main__':
     
     search = { 'coords': [0.054, 0.675, 5.17],
             'name': '{}'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': nd,
+            'expected_count_rate': 7000, 'nd_filter': nd,
             'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
@@ -436,8 +436,8 @@ if __name__ == '__main__':
 #        set_xyz([0.0,0.0,5.0])
 #        set_xyz([-0.116, -0.073, 2.61])
         
-        with labrad.connect() as cxn:
-            cxn.filter_slider_ell9k.set_filter(nd)
+#        with labrad.connect() as cxn:
+#            cxn.filter_slider_ell9k.set_filter(nd)
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            input('Laser currently turned off, Press enter to stop...')
         
@@ -482,7 +482,16 @@ if __name__ == '__main__':
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
-            do_lifetime(nv_sig, apd_indices)
+            
+#            filter = 'No filter'
+            filter = 'Shortpass'
+#            filter = 'Longpass'
+#            filter = 'All filters'
+            voltage = -1
+            
+            do_lifetime(nv_sig, apd_indices, 6* 10**5, 100, 50 * 10**3, filter, voltage)
+            do_lifetime(nv_sig, apd_indices, 1 *10**5, 100, 1 * 10**6, filter, voltage)
+            
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
 #            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
