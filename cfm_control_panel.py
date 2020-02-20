@@ -237,12 +237,13 @@ def do_t1_interleave(nv_sig, apd_indices):
 
 def do_lifetime(nv_sig, apd_indices):
     
-#    num_reps = 10**6
-    num_reps = 2*10**5
+    num_reps =2* 10**5
+#    num_reps =0.5* 10**5
     num_runs = 1
-    num_bins = 100
-#    readout_time = 1.2 * 10**6
-    readout_time = 1.5 * 10**6 #ns
+#    num_bins = 100
+    num_bins = 150
+#    readout_time = 1.5 * 10**6 #ns
+    readout_time = 1 * 10**6 #ns
     
     lifetime.main(nv_sig, apd_indices, readout_time,
                   num_reps, num_runs, num_bins)
@@ -410,17 +411,12 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    sample_name = 'ayrton20'
-#    search = { 'coords': [0.579, 0.232, 5.17],
-#            'name': '{}-search'.format(sample_name),
-#            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
-#            'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
-#            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
-#            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    nd = 'nd_0.5'
+    sample_name = 'graphene_Y2O3'
     
     search = { 'coords': [0.054, 0.675, 5.17],
-            'name': '{}-search'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
+            'name': '{}'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
@@ -441,7 +437,7 @@ if __name__ == '__main__':
 #        set_xyz([-0.116, -0.073, 2.61])
         
         with labrad.connect() as cxn:
-            cxn.filter_slider_ell9k.set_filter('nd_0')
+            cxn.filter_slider_ell9k.set_filter(nd)
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            input('Laser currently turned off, Press enter to stop...')
         
@@ -458,7 +454,7 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-            do_image_sample(nv_sig, apd_indices)
+#            do_image_sample(nv_sig, apd_indices)
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)
@@ -486,7 +482,7 @@ if __name__ == '__main__':
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
-#            do_lifetime(nv_sig, apd_indices)
+            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
 #            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
