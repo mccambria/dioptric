@@ -416,7 +416,7 @@ if __name__ == '__main__':
     
     search = { 'coords': [0.054, 0.675, 5.17],
             'name': '{}'.format(sample_name),
-            'expected_count_rate': 7000, 'nd_filter': nd,
+            'expected_count_rate': 4000, 'nd_filter': nd, # nf 7000, sp 5000, lp 2000
             'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
@@ -458,7 +458,7 @@ if __name__ == '__main__':
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)
-#            do_stationary_count(nv_sig, apd_indices)
+            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
@@ -487,10 +487,10 @@ if __name__ == '__main__':
             filter = 'Shortpass'
 #            filter = 'Longpass'
 #            filter = 'All filters'
-            voltage = -1
+            voltage = -2.6
             
-            do_lifetime(nv_sig, apd_indices, 6* 10**5, 100, 50 * 10**3, filter, voltage)
-            do_lifetime(nv_sig, apd_indices, 1 *10**5, 100, 1 * 10**6, filter, voltage)
+#            do_lifetime(nv_sig, apd_indices, 6* 10**5, 100, 50 * 10**3, filter, voltage)
+#            do_lifetime(nv_sig, apd_indices, 1 *10**5, 100, 1 * 10**6, filter, voltage)
             
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
