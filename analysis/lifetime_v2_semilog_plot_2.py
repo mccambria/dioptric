@@ -120,7 +120,7 @@ def tetra_decay(t, a, d1, d2, d3, d4):
 fig2, ax= plt.subplots(1, 1, figsize=(10, 8))
 for i in range(3):
     f = i*3+1
-    file = files_s[f]
+    file = files_l[f]
     data = tool_belt.get_raw_data(folder, file)
 
     counts = numpy.array(data["binned_samples"])
@@ -136,7 +136,7 @@ for i in range(3):
                                   p0=init_params_list_2)
     lin_centers = numpy.linspace(0,50, 1000)
 
-    ax.semilogy(bin_centers, counts, data_fmt_list[i], label=label_list[i])
+    ax.plot(bin_centers, counts, data_fmt_list[i], label=label_list[i])
 #    ax.semilogy(lin_centers, double_decay(lin_centers,*popt), fit_fmt_list[i])
     ax.set_xlabel('Time after illumination (us)')
     ax.set_ylabel('Counts')
@@ -162,7 +162,7 @@ text_eq = r'$A_1 e^{-t / d_1} +  A_2 e^{-t / d_2}$'
 fig3, ax= plt.subplots(1, 1, figsize=(10, 8))
 for i in range(3):
     f = i*3+2
-    file = files_s[f]
+    file = files_l[f]
     data = tool_belt.get_raw_data(folder, file)
 
     counts = numpy.array(data["binned_samples"])
@@ -178,7 +178,7 @@ for i in range(3):
                                   p0=init_params_list_2)
     lin_centers = numpy.linspace(0,50, 1000)
 
-    ax.semilogy(bin_centers, counts, data_fmt_list[i], label=label_list[i])
+    ax.plot(bin_centers, counts, data_fmt_list[i], label=label_list[i])
 #    ax.semilogy(lin_centers, double_decay(lin_centers,*popt), fit_fmt_list[i])
     ax.set_xlabel('Time after illumination (us)')
     ax.set_ylabel('Counts')
