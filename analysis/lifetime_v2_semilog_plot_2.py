@@ -117,14 +117,14 @@ def tetra_decay(t, a, d1, d2, d3, d4):
 #ax.text(0.5, 0.8, text_eq, transform=ax.transAxes, fontsize=12,
 #                            verticalalignment="top", bbox=props)
 
-fig2, ax= plt.subplots(1, 1, figsize=(10, 8))
-for i in range(3):
-    f = i*3+1
-    file = files_l[f]
-    data = tool_belt.get_raw_data(folder, file)
-
-    counts = numpy.array(data["binned_samples"])
-    bin_centers = numpy.array(data["bin_centers"])/10**3
+#fig2, ax= plt.subplots(1, 1, figsize=(10, 8))
+#for i in range(3):
+#    f = i*3+1
+#    file = files_l[f]
+#    data = tool_belt.get_raw_data(folder, file)
+#
+#    counts = numpy.array(data["binned_samples"])
+#    bin_centers = numpy.array(data["bin_centers"])/10**3
     
     
 #    background = numpy.average(counts[75:150])
@@ -132,23 +132,23 @@ for i in range(3):
 #    short_norm_counts = counts[0:30]-background
 #    short_centers = bin_centers[0:30]
     
-    popt,pcov = curve_fit(double_decay,bin_centers, counts,
-                                  p0=init_params_list_2)
-    lin_centers = numpy.linspace(0,50, 1000)
+#    popt,pcov = curve_fit(double_decay,bin_centers, counts,
+#                                  p0=init_params_list_2)
+#    lin_centers = numpy.linspace(0,50, 1000)
 
-    ax.plot(bin_centers, counts, data_fmt_list[i], label=label_list[i])
+#    ax.plot(bin_centers, counts, data_fmt_list[i], label=label_list[i])
 #    ax.semilogy(lin_centers, double_decay(lin_centers,*popt), fit_fmt_list[i])
-    ax.set_xlabel('Time after illumination (us)')
-    ax.set_ylabel('Counts')
-    ax.set_title('Lifetime, shortpass filter')
-    ax.legend()
-    
-    
-    text = "\n".join((label_list[i],
-                      r'$A_1 = $' + "%.1f"%(popt[0]) + ', '
-                      r'$d_1 = $' + "%.1f"%(popt[1]) + " us",
-                      r'$A_2 = $' + "%.1f"%(popt[2]) + ', '
-                      r'$d_2 = $' + "%.1f"%(popt[3]) + " us"))
+#    ax.set_xlabel('Time after illumination (us)')
+#    ax.set_ylabel('Counts')
+#    ax.set_title('Lifetime, shortpass filter')
+#    ax.legend()
+#    
+#    
+#    text = "\n".join((label_list[i],
+#                      r'$A_1 = $' + "%.1f"%(popt[0]) + ', '
+#                      r'$d_1 = $' + "%.1f"%(popt[1]) + " us",
+#                      r'$A_2 = $' + "%.1f"%(popt[2]) + ', '
+#                      r'$d_2 = $' + "%.1f"%(popt[3]) + " us"))
     
 
 
@@ -169,7 +169,9 @@ for i in range(3):
     bin_centers = numpy.array(data["bin_centers"])/10**3
     
     
-#    background = numpy.average(counts[75:150])
+    background = numpy.average(counts[50:100])
+    
+    print(background)
     
 #    short_norm_counts = counts[0:30]-background
 #    short_centers = bin_centers[0:30]
