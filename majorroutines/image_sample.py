@@ -127,7 +127,7 @@ def reformat_plot(colorMap, save_file_type):
             # Build the image array from the data
             imgArray = []
 
-            for line in data["imgArray"]:
+            for line in data["img_array"]:
                 imgArray.append(line)
 
             counts_array = numpy.array(imgArray)
@@ -142,16 +142,16 @@ def reformat_plot(colorMap, save_file_type):
                 xyzCenters = nv_sig["coords"]
             except Exception:
                 xyzCenters = data['xyzCenters']
-            imgResolution = data["scanStepSize"]
+            num_steps = data["num_steps"]
 
             # Read in the values for the scan ranges, centers, and resolution
-            yScanRange = data["yScanRange"]
+            yScanRange = data["y_range"]
             yCenter = xyzCenters[1]
-            yImgResolution = imgResolution
+            yImgResolution = yScanRange / num_steps
 
-            xScanRange = data["xScanRange"]
+            xScanRange = data["x_range"]
             xCenter = xyzCenters[0]
-            xImgResolution = imgResolution
+            xImgResolution = xScanRange / num_steps
 
         # define the readout in seconds
         readout_sec = float(readout) / 10**9
@@ -197,8 +197,9 @@ def reformat_plot(colorMap, save_file_type):
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
 
 def create_figure(file_name):
-
-    data = tool_belt.get_raw_data(__file__, file_name)
+    
+    path = 'image_sample'
+    data = tool_belt.get_raw_data(path, file_name)
     x_range = data['x_range']
     y_range = data['y_range']
     x_voltages = data['x_voltages']
@@ -409,7 +410,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 if __name__ == '__main__':
 
 
-    file_name = '2019_12/2019_12_02-15_33_39-goeppert_mayer-nv7_2019_11_27'
+    file_name = '2020_02/2020_02_17-16_33_38-yalow-search'
 
-    create_figure(file_name)
+#    create_figure(file_name)
+    
+    reformat_plot('inferno', 'svg')
 

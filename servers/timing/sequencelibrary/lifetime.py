@@ -2,6 +2,8 @@
 """
 Created on Sat May  4 08:34:08 2019
 
+2/24/2020 Setting the start of the readout_time at the beginning of the sequence.
+
 @author: Aedan
 """
 
@@ -48,13 +50,13 @@ def get_seq(pulser_wiring, args):
     seq = Sequence()
 
     # APD gating
-    pre_duration = aom_delay_time + polarization_time +  tau_frst
+    pre_duration = aom_delay_time +  tau_frst
 
     train = [(pre_duration, LOW),
              (gate_time, HIGH),
-             (inter_exp_wait_time + polarization_time + tau_scnd, LOW),
+             (polarization_time + inter_exp_wait_time  + tau_scnd, LOW),
              (gate_time, HIGH),
-             (inter_exp_wait_time, LOW)]
+             (polarization_time + inter_exp_wait_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
 
     # Pulse the laser with the AOM for polarization and readout
@@ -76,7 +78,7 @@ if __name__ == '__main__':
               'do_signal_generator_tsg4104a_gate': 2,
               'do_signal_generator_bnc835_gate': 3}
     
-    seq_args = [0, 100, 100, 0, 1000, 500, 0]
+    seq_args = [10**5/2, 10000, 0, 0, 5000, 10**5/2, 0]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()

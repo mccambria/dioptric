@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Specify folders and run to produce csv files containing the taus and
-norm_avg_sigs within each json-formatted text file in the folder.
+Specify folders and run to produce csv files containing the bin-centers and
+binned_samples within each json-formatted text file in the folder.
 
-The csv files are named as:
-<init state>_to_<read state>_<max relaxation time in us>.csv
+The csv files are named the same as the original file
 
 Created on Mon May 27 11:26:49 2019
 
@@ -32,27 +31,28 @@ def convert(folder_name):
                 data = json.load(json_file)
                 binned_samples = data['binned_samples']
                 bin_centers = data['bin_centers']
+                filter = data['filter']
+                voltage = data['voltage']
+                readout_time = data['readout_time']
             except Exception:
                 # Skip txt files that are evidently not data files
                 print('skipped {}'.format(json_file_name))
                 continue
     
-#        # Calculate the taus
-#        taus = numpy.linspace(relaxation_time_range[0], relaxation_time_range[1],
-#                              num=num_steps, dtype=numpy.int32)
-    
         # Populate the data to save
         csv_data = []
+        csv_data.append([filter])
+        csv_data.append([str(voltage) + 'V'])
+        csv_data.append([str(readout_time) + 'ns'])
+        
         for bin_ind in range(len(bin_centers)):
             row = []
             row.append(bin_centers[bin_ind])
             row.append(binned_samples[bin_ind])
             csv_data.append(row)
     
-        max_relaxation_us = relaxation_time_range[1] // 1000
-    
-        csv_file_name = '{}_to_{}_{}'.format(init_state, read_state,
-                         max_relaxation_us)
+        csv_file_name = '2020_02_20-' + str(voltage) + '-' + str(filter)  \
+                        + '-' + str(readout_time)
     
         with open('{}/{}.csv'.format(folder_name, csv_file_name),
                   'w', newline='') as csv_file:
@@ -62,7 +62,7 @@ def convert(folder_name):
             
 if __name__ == '__main__':
     
-    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_02'
+    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_02/2020_02_20_measurement'
         
 #    sub_folder_names = ['2019-08-22-07_55_36-ayrton12-nv1_2019_05_10.txt',
 #                         '2019-08-23-17_36_12-ayrton12-nv1_2019_05_10.txt',
@@ -75,4 +75,4 @@ if __name__ == '__main__':
 #        
 #        convert(top_folder_name.format(el))
         
-    convert(top_folder_name.format('relaxation rate paper data'))
+    convert(top_folder_name)

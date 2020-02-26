@@ -30,7 +30,8 @@ import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.t1_interleave as t1_interleave
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
-import majorroutines.lifetime_v2 as lifetime
+import majorroutines.lifetime as lifetime
+import majorroutines.lifetime_v2 as lifetime_v2
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
@@ -55,10 +56,11 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-#    scan_range = 1.0
+#    scan_range = 2.0
+#    scan_range = 0.6
 #    scan_range = 0.5
-#    scan_range = 0.3
-    scan_range = 0.2
+    scan_range = 0.3
+#    scan_range = 0.2
 #    scan_range = 0.1
 #    scan_range = 0.05
 #    scan_range = 0.025
@@ -68,8 +70,8 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 150
 #    num_steps = 135
 #    num_steps = 120
-#    num_steps = 90
-    num_steps = 60
+    num_steps = 90
+#    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -85,7 +87,7 @@ def do_optimize_list(nv_sig_list, apd_indices):
     
 def do_opti_z(nv_sig_list, apd_indices):
     
-    optimize.opti_z(nv_sig, apd_indices,
+    optimize.opti_z(nv_sig_list, apd_indices,
               set_to_opti_coords=False, save_data=True, plot_data=True)
 
 def do_stationary_count(nv_sig, apd_indices):
@@ -104,8 +106,8 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
-    num_steps = 51
-    num_runs = 4
+    num_steps = 76
+    num_runs = 5
     uwave_power = -13.0
 #    uwave_power = -20.0
 
@@ -161,12 +163,13 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
 
-    angle_range = [0, 150]
+#    angle_range = [0, 150]
+    angle_range = [25, 35]
     num_angle_steps = 6
     freq_center = 2.870
-    freq_range = 0.2
+    freq_range = 0.5
     num_freq_steps = 76
-    num_freq_runs = 2
+    num_freq_runs = 1
 #    uwave_power = 9.0
     uwave_power = -13.0
     uwave_pulse_dur = None  # Set to None for CWESR
@@ -233,17 +236,31 @@ def do_t1_interleave(nv_sig, apd_indices):
 
     t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
 
-def do_lifetime(nv_sig, apd_indices):
+def do_lifetime(nv_sig, apd_indices, readout_time_range, num_steps, num_reps, 
+                filter, voltage, polarization_time):
     
-#    num_reps = 10**6
-    num_reps = 2*10**5
+#    num_reps =3* 10**5
+#    num_bins = 300
     num_runs = 1
-    num_bins = 100
-#    readout_time = 1.2 * 10**6
-    readout_time = 1.5 * 10**6 #ns
+#    num_bins = 150
+#    readout_time = 50 * 10**3 #ns
+#    readout_time = 1 * 10**6 #ns
     
-    lifetime.main(nv_sig, apd_indices, readout_time,
-                  num_reps, num_runs, num_bins)
+    lifetime.main(nv_sig, apd_indices, readout_time_range,
+         num_steps, num_reps, num_runs, filter, voltage, polarization_time)
+    
+def do_lifetime_v2(nv_sig, apd_indices, readout_time_range, num_reps, num_bins, num_runs,
+                filter, voltage, polarization_time):
+    
+#    num_reps =3* 10**5
+#    num_bins = 300
+#    num_runs = 1
+#    num_bins = 150
+#    readout_time = 50 * 10**3 #ns
+#    readout_time = 1 * 10**6 #ns
+    
+    lifetime_v2.main(nv_sig, apd_indices, readout_time_range,
+         num_reps, num_runs, num_bins, filter, voltage, polarization_time)
     
 def do_ramsey(nv_sig, apd_indices):
 
@@ -408,37 +425,18 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    sample_name = 'johnson'
-    search = { 'coords': [0.000, 0.000, 5.00],
-            'name': '{}-search'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
+    nd = 'nd_0'
+    sample_name = 'graphene_Y2O3'
+    
+    search = { 'coords': [0.054, 0.675, 5.75],
+            'name': '{}'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': nd, # nf 7000, sp 5000, lp 2000
+            'pulsed_readout_dur': 5000, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
-    nv3_2020_02_04 = { 'coords': [0.113, -0.094, 4.83],
-            'name': '{}-nv3_2020_02_04'.format(sample_name),
-            'expected_count_rate': 35, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
-            'resonance_LOW': 2.8102, 'rabi_LOW':  94.9, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.9310, 'rabi_HIGH': 149.6, 'uwave_power_HIGH': 10.0}
     
-    nv7_2020_02_04 = { 'coords': [0.098, -0.199, 5.75],
-            'name': '{}-nv7_2020_02_04'.format(sample_name),
-            'expected_count_rate': 27, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
-            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-    nv8_2020_02_04 = { 'coords': [0.204, -0.245, 5.80],
-            'name': '{}-nv8_2020_02_04'.format(sample_name),
-            'expected_count_rate': 45, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 375, 'magnet_angle': 0.0,
-            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-    
-#    nv_sig_list = [search]
-    nv_sig_list = [nv3_2020_02_04]
-#    nv_sig_list = [nv3_2020_02_04, nv7_2020_02_04, nv8_2020_02_04]
+    nv_sig_list = [search]
     
     # %% Functions to run
 
@@ -452,8 +450,8 @@ if __name__ == '__main__':
 #        set_xyz([0.0,0.0,5.0])
 #        set_xyz([-0.116, -0.073, 2.61])
         
-#        with labrad.connect() as cxn:
-#            cxn.filter_slider_ell9k.set_filter('nd_0.5')
+        with labrad.connect() as cxn:
+            cxn.filter_slider_ell9k.set_filter(nd)
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            input('Laser currently turned off, Press enter to stop...')
         
@@ -461,11 +459,11 @@ if __name__ == '__main__':
 #        do_optimize_list(nv_sig_list, apd_indices)
 #        do_sample_nvs(nv_sig_list, apd_indices)
 #        do_g2_measurement(nv_sig_list, apd_indices[0], apd_indices[1])
-
+        
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]                
-#            for z in numpy.linspace(4.0, 6.0, 11):
+#            for z in numpy.linspace(5.15, 5.25, 11):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
@@ -479,7 +477,7 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.260)
-#            do_resonance(nv_sig, apd_indices, freq_center=3.050, freq_range=0.1)
+#            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
@@ -498,7 +496,21 @@ if __name__ == '__main__':
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
-#            do_lifetime(nv_sig, apd_indices)
+            
+#            filter = 'No filter'
+            filter = 'Shortpass'
+#            filter = 'Longpass'
+#            filter = 'All filters'
+            voltage = '0V'
+#            for t in range(0):
+            
+            polarization_time = 20 * 10**3
+            do_lifetime_v2(nv_sig, apd_indices, [polarization_time - 10**3, 3*10**5], 
+                           0.5*10**6, 100, 1, filter, voltage, polarization_time) # 200 us decay
+            polarization_time = 20 * 10**3
+            do_lifetime_v2(nv_sig, apd_indices, [polarization_time - 50, polarization_time + 30], 
+                           10**6, 81, 5, filter, voltage, polarization_time) # fast decay
+            
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
 #            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
