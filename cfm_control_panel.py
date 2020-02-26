@@ -426,11 +426,11 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     nd = 'nd_0'
-    sample_name = 'graphene_Y2O3'
+    sample_name = 'Y2O3'
     
     search = { 'coords': [0.054, 0.675, 5.75],
             'name': '{}'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': nd, # nf 7000, sp 5000, lp 2000
+            'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 5000, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
@@ -498,18 +498,25 @@ if __name__ == '__main__':
 #            do_t1_interleave(nv_sig, apd_indices)
             
 #            filter = 'No filter'
-            filter = 'Shortpass'
-#            filter = 'Longpass'
+#            filter = 'Shortpass'
+            filter = 'Longpass'
 #            filter = 'All filters'
             voltage = '0V'
 #            for t in range(0):
             
-            polarization_time = 20 * 10**3
-            do_lifetime_v2(nv_sig, apd_indices, [polarization_time - 10**3, 3*10**5], 
-                           0.5*10**6, 100, 1, filter, voltage, polarization_time) # 200 us decay
-            polarization_time = 20 * 10**3
-            do_lifetime_v2(nv_sig, apd_indices, [polarization_time - 50, polarization_time + 30], 
-                           10**6, 81, 5, filter, voltage, polarization_time) # fast decay
+#            polarization_time = 20 * 10**3
+#            do_lifetime_v2(nv_sig, apd_indices, [polarization_time - 10**3, 3*10**5], 
+#                           0.5*10**6, 100, 1, filter, voltage, polarization_time) # 200 us decay
+#            polarization_time = 20 * 10**3
+#            do_lifetime_v2(nv_sig, apd_indices, [polarization_time - 50, polarization_time + 30], 
+#                           10**6, 81, 5, filter, voltage, polarization_time) # fast decay
+            
+            polarization_time =  5*10**5
+            do_lifetime_v2(nv_sig, apd_indices, [0, 2*10**6], 
+                           0.5*10**4, 100, 1, filter, voltage, polarization_time) # 200 us decay
+#            polarization_time = 20 * 10**3
+#            do_lifetime_v2(nv_sig, apd_indices, [polarization_time - 50, polarization_time + 30], 
+#                           10**5, 81, 1, filter, voltage, polarization_time) # fast decay            
             
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
