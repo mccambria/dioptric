@@ -11,6 +11,7 @@ Created on Mon Dec  9 17:04:19 2019
 
 import csv
 import numpy
+import numpy
 from numpy import pi
 import matplotlib.pyplot as plt
 from analysis.extract_hamiltonian import calc_splitting
@@ -32,6 +33,12 @@ def get_nv_data_csv(file):
     Parses a csv into a list of dictionaries for each NV. Assumes the data 
     for an NV is grouped together, ie there are no gaps.
     """
+    
+    # Marker and color combination to distinguish NVs
+    # Colors are from the Wong colorblind-safe palette
+    marker_ind = 0
+    markers = ['^', 'o', 's', 'D', 'X']
+    colors = ['#009E73', '#E69F00', '#0072B2', '#CC79A7', '#D55E00',]
     
     # Columns to loop through, so this exludes name, column 0
     # res in GHz, splitting in MHz, B mags in G, angles in deg, 
@@ -60,6 +67,9 @@ def get_nv_data_csv(file):
                 current_name = row[0]
                 nv = {}
                 nv['name'] = current_name
+                nv['marker'] = markers[marker_ind]
+                nv['color'] = colors[marker_ind]
+                marker_ind += 1
                 # Initialize a new list for each column
                 for column in columns:
                     nv[column] = []
@@ -80,61 +90,74 @@ def get_nv_data_csv(file):
 def plot_gamma_omega_vs_angle(nv_data):
 
     plt.rcParams.update({'font.size': 18})  # Increase font size
-    fig, axes_pack = plt.subplots(3, 1, figsize=(6,18))
+    fig, axes_pack = plt.subplots(3, 1, figsize=(9,18))
     fig.set_tight_layout(True)
     for ax in axes_pack:
         ax.set_xlabel(r'Magnet angle, $\theta_{B}$ ($\degree$)')
         ax.set_xlim(-5, 95)
         ax.set_xticks(numpy.linspace(0,90,7))
+        # ax.set_xlim(47, 50)
         
     # Ax-specific setup
     
     gamma_ax = axes_pack[0]
-    gamma_ax.set_title('gamma vs angle')
-    gamma_ax.set_ylim(0.78, 1.25)
+    gamma_ax.set_title('Gamma vs Angle')
+    # gamma_ax.set_ylim(0.1, 0.2)
+    gamma_ax.set_ylim(0.1, 0.3)
+    gamma_ax.set_ylabel('Gamma (kHz)')
     
     omega_ax = axes_pack[1]
-    omega_ax.set_title('Omega vs angle')
-    omega_ax.set_ylim(0.78, 1.25)
+    omega_ax.set_title('Omega vs Angle')
+    omega_ax.set_ylim(0.04, 0.08)
+    omega_ax.set_ylabel('Omega (kHz)')
     
     ratio_ax = axes_pack[2]
-    ratio_ax.set_title('gamma/Omega vs angle')
-    ratio_ax.set_ylim(0.78, 1.25)
+    ratio_ax.set_title('Gamma/Omega vs Angle')
+    # ratio_ax.set_ylim(1.5, 3.5)
+    ratio_ax.set_ylim(1.5, 4.5)
+    ratio_ax.set_ylabel('Ratio')
     
     for ind in range(len(nv_data)):
         
         nv = nv_data[ind]
         
-        # name = nv['name']
-        # if name in ['NVA1', 'NVA2']:
-        #     continue
+        name = nv['name']
+        if name not in ['NVE']:
+            continue
         
         gammas = numpy.array(nv['gamma'])
-        omegas = numpy.array(nv['omega'])
         gamma_errors = numpy.array(nv['gamma_error'])
+        
+        omegas = numpy.array(nv['omega'])
         omega_errors = numpy.array(nv['omega_error'])
+        
         ratios = numpy.array(nv['ratio'])
         ratio_errors = numpy.array(nv['ratio_error'])
         
-        angles = numpy.array(nv['angles'])
+        angles = numpy.array(nv['theta_B'])
         mask = angles != None
         if True in mask:
             
-            # gamma_ax.errorbar(angles[mask], gammas[mask],
-            #             yerr=gamma_errors[mask], label='gamma',
-            #             linestyle='None', marker='o', ms=9, lw=2.5)
-            # omega_ax.errorbar(angles[mask], omegas[mask],
-            #             yerr=omega_errors[mask], label='Omega',
-            #             linestyle='None', marker='o', ms=9, lw=2.5)
+            gamma_ax.errorbar(angles[mask], gammas[mask],
+                    yerr=gamma_errors[mask], linestyle='None', ms=9, lw=2.5,
+                    marker=nv['marker'], color=nv['color'], label=nv['name'])
+            omega_ax.errorbar(angles[mask], omegas[mask],
+                    yerr=omega_errors[mask], linestyle='None', ms=9, lw=2.5,
+                    marker=nv['marker'], color=nv['color'], label=nv['name'])
+            ratio_ax.errorbar(angles[mask], ratios[mask],
+                    yerr=ratio_errors[mask], linestyle='None', ms=9, lw=2.5,
+                    marker=nv['marker'], color=nv['color'], label=nv['name'])
             
-            gamma_wavg = numpy.average(gammas[mask], weights=(1/gamma_errors[mask]**2))
-            gamma_ax.errorbar(angles[mask], gammas[mask]/gamma_wavg,
-                              yerr=gamma_errors[mask]/gamma_wavg,
-                              linestyle='None', marker='o', ms=9, lw=2.5)
-            omega_wavg = numpy.average(omegas[mask], weights=(1/omega_errors[mask]**2))
-            omega_ax.errorbar(angles[mask], omegas[mask]/omega_wavg,
-                              yerr=omega_errors[mask]/omega_wavg,
-                              linestyle='None', marker='o', ms=9, lw=2.5)
+            # gamma_wavg = numpy.average(gammas[mask], weights=(1/gamma_errors[mask]**2))
+            # gamma_ax.errorbar(angles[mask], gammas[mask]/gamma_wavg,
+            #                   yerr=gamma_errors[mask]/gamma_wavg,
+            #                   linestyle='None', marker='o', ms=9, lw=2.5)
+            # omega_wavg = numpy.average(omegas[mask], weights=(1/omega_errors[mask]**2))
+            # omega_ax.errorbar(angles[mask], omegas[mask]/omega_wavg,
+            #                   yerr=omega_errors[mask]/omega_wavg,
+            #                   linestyle='None', marker='o', ms=9, lw=2.5)
+            
+    gamma_ax.legend()
 
 
 def plot_splittings_vs_angle(nv_data):
@@ -155,8 +178,8 @@ def plot_splittings_vs_angle(nv_data):
         name = nv['name']
         # if name in ['NVA1', 'NVA2']:
         #     continue
-        if name != 'NVB1':
-            continue
+        # if name != 'NVB1':
+        #     continue
         
         all_splittings = numpy.array(nv['all_splittings'])
         angles = numpy.array(nv['angle'])
@@ -171,7 +194,60 @@ def plot_splittings_vs_angle(nv_data):
             ax.scatter(angles[mask], all_splittings[mask],
                        label='Measured splittings')
             ax.legend()
-
+            
+    
+def hist_gamma_omega(nv_data):
+    
+    plt.rcParams.update({'font.size': 18})  # Increase font size
+    fig, axes_pack = plt.subplots(3, 1, figsize=(9,18))
+    fig.set_tight_layout(True)
+    for ax in axes_pack:
+        ax.set_ylabel('Occurrences')
+        
+    # Ax-specific setup
+    
+    gamma_ax = axes_pack[0]
+    gamma_ax.set_title('Gamma Histogram')
+    # gamma_ax.set_ylim(0.1, 0.2)
+    # gamma_ax.set_xlim(0.1, 0.3)
+    gamma_ax.set_xlabel('Gamma (kHz)')
+    
+    omega_ax = axes_pack[1]
+    omega_ax.set_title('Omega Histogram')
+    # omega_ax.set_xlim(0.04, 0.08)
+    omega_ax.set_xlabel('Omega (kHz)')
+    
+    ratio_ax = axes_pack[2]
+    ratio_ax.set_title('Gamma/Omega Histogram')
+    # ratio_ax.set_xlim(1.5, 3.5)
+    # ratio_ax.set_xlim(1.5, 4.5)
+    ratio_ax.set_xlabel('Ratio')
+    
+    all_gammas = []
+    all_omegas = []
+    all_ratios = []
+    
+    for ind in range(len(nv_data)):
+        
+        nv = nv_data[ind]
+        
+        name = nv['name']
+        if name not in ['NVE']:
+            continue
+        
+        all_gammas.extend(nv['gamma'])
+        all_omegas.extend(nv['omega'])
+        all_ratios.extend(nv['ratio'])
+        
+    all_gammas = numpy.array(all_gammas)
+    all_omegas = numpy.array(all_omegas)
+    all_ratios = numpy.array(all_ratios)
+    
+    num_bins = 10
+    gamma_hist, gamma_bin_edges, gamma_patches = gamma_ax.hist(all_gammas, num_bins)
+    omega_hist, omega_bin_edges, omega_patches = omega_ax.hist(all_omegas, num_bins)
+    ratio_hist, ratio_bin_edges, ratio_patches = ratio_ax.hist(all_ratios, num_bins)
+    
 
 # %% Main
 
@@ -220,11 +296,6 @@ def main(nv_data, mode='both'):
         # ax.set_xticks(numpy.linspace(0,90,7))
         ax.set_ylabel(r'$\gamma / \Omega$')
         ax.set_ylim(0, 3.5)
-    
-    # Marker and color combination to distinguish NVs
-    # Colors are from the Wong colorblind-safe palette
-    markers = ['^', 'o', 's', 'D', 'X']
-    colors = ['#009E73', '#E69F00', '#0072B2', '#CC79A7', '#D55E00',]
 
     for ind in range(len(nv_data)):
         
@@ -299,6 +370,7 @@ if __name__ == '__main__':
     nv_data = get_nv_data_csv(file)
     
     # main(nv_data)
-    plot_gamma_omega_vs_angle(nv_data)
+    # plot_gamma_omega_vs_angle(nv_data)
+    hist_gamma_omega(nv_data)
     # plot_splittings_vs_angle(nv_data)
 
