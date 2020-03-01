@@ -80,7 +80,7 @@ def main(folder, file_high, file_zero, file_high_to_low,
          gamma, omega, pi_pulse_infidelity):
 
     plt.rcParams.update({'font.size': 18})  # Increase font size
-    fig, axes_pack = plt.subplots(1,2, figsize=(1,5))
+    fig, axes_pack = plt.subplots(1,2, figsize=(12,6))
     fig.set_tight_layout(True)
     
     source = 't1_double_quantum/paper_data/bulk_dq/'
@@ -143,9 +143,19 @@ def main(folder, file_high, file_zero, file_high_to_low,
     
     ax = axes_pack[1]
 
-    ax.set_xlabel(r'Wait time, $\tau$ (ms)')
-    ax.set_ylabel('Fluorescence (arb. units)')
+    ax.set_xlabel(r'$T_{1}^{(0)}$ (ms)')
+    ax.set_ylabel(r'$T_{2}$ (ms)')
     
+    t2max_right = lambda T10: 2*((T10**-1) + (2/3)*(T10**-1))**-1
+    t2max_wrong = lambda T10: 2*T10
+    
+    smooth_T10 = numpy.linspace(1, 250, 1000, dtype=float)
+    ax.plot(smooth_T10, t2max_right(smooth_T10),
+            label=r'$T_{2,\text{max}}$', color='red')
+    ax.plot(smooth_T10, t2max_wrong(smooth_T10),
+            label=r'$2T_{1}^{(0)}$', color='gray', ls='dashed')
+    
+    ax.legend()
     
 
 # %% Run
