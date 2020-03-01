@@ -13,6 +13,7 @@ import csv
 import numpy
 from numpy import pi
 import matplotlib.pyplot as plt
+import analysis.extract_hamiltonian as eh
 from analysis.extract_hamiltonian import calc_splitting
 import scipy.stats as stats
 
@@ -37,17 +38,9 @@ def get_nv_data_csv(file):
     # Marker and color combination to distinguish NVs
     # Colors are from the Wong colorblind-safe palette
     marker_ind = 0
-    markers = ['^', 'o', 's', 'D', 'X']
+    markers = ['^', 'X', 'o', 's', 'D']
     colors = ['#009E73', '#E69F00', '#0072B2', '#CC79A7', '#D55E00',]
     
-    # Columns to loop through, so this exludes name, column 0
-    # res in GHz, splitting in MHz, B mags in G, angles in deg, 
-    # rabis in ns, rates in kHz
-    columns = ['res_minus', 'res_plus', 'splitting', 'mag_B',
-               'theta_B', 'perp_B', 'contrast_minus', 'contrast_plus', 
-               'rabi_minus', 'rabi_plus', 'gamma', 'gamma_error',
-               'omega', 'omega_error', 'ratio', 'ratio_error']
-
     nv_data = []
     header = True
     current_name = None
@@ -55,8 +48,9 @@ def get_nv_data_csv(file):
     with open(file, newline='') as f:
         reader = csv.reader(f)
         for row in reader:
-            # Skip the header (first row)
+            # Create columns from the header (first row)
             if header:
+                columns = row[1:]
                 header = False
                 continue
             # Set up for a new NV if we're in a new block
@@ -87,7 +81,7 @@ def get_nv_data_csv(file):
     return nv_data
 
 
-def weighted_corrcoeff(x, y, y_errors=None):
+def weighted_corrcoeff(x, y, errors=None):
     """
     Returns Pearson correlation coefficient for dependent variable y and
     independent variable x. Optionally weighted by squared errors on y 
@@ -99,244 +93,13 @@ def weighted_corrcoeff(x, y, y_errors=None):
     y_mask = y != None
     mask = x_mask * y_mask
     
-    if y_errors is not None:
+    if errors is not None:
         cov_mat = numpy.cov(x[mask].astype(float), y[mask].astype(float),
-                            aweights=y_errors[mask]**-2)
+                            aweights=errors[mask]**-2)
     else:
         cov_mat = numpy.cov(x[mask].astype(float), y[mask].astype(float))
     
     return cov_mat[0,1] / numpy.sqrt(cov_mat[0,0]*cov_mat[1,1])
-    
-    
-def correlations_OLD(nv_data):
-    """
-    Return Pearson product-moment correlation coefficients for various
-    combinations of measured quantities.
-    """
-    
-    mode = 'all'
-    # mode = 'single nv'
-    # mode = 'ensemble'
-    
-    # columns = ['res_minus', 'res_plus', 'splitting', 'mag_B',
-    #            'theta_B', 'perp_B', 'contrast_minus', 'contrast_plus', 
-    #            'rabi_minus', 'rabi_plus', 'gamma', 'gamma_error',
-    #            'omega', 'omega_error', 'ratio', 'ratio_error']
-    
-    res_minus = []
-    res_plus = []
-    splitting = []
-    mag_B = []
-    theta_B = []
-    perp_B = []
-    perp_B_frac = []
-    contrast_minus = []
-    contrast_plus = []
-    rabi_minus = []
-    rabi_plus = []
-    gamma = []
-    gamma_error = []
-    omega = []
-    omega_error = []
-    ratio = []
-    ratio_error = []
-    
-    if mode == 'all':
-        inclusion_check = lambda name: True
-    elif mode == 'single nv':
-        inclusion_check = lambda name: name not in ['NVE']
-    elif mode == 'ensemble':
-        inclusion_check = lambda name: name == 'NVE'
-    
-    for ind in range(len(nv_data)):
-        
-        nv = nv_data[ind]
-        
-        name = nv['name']
-        if not inclusion_check(name):
-            continue
-        
-        res_minus.extend(nv['res_minus'])
-        res_plus.extend(nv['res_plus'])
-        splitting.extend(nv['splitting'])
-        mag_B.extend(nv['mag_B'])
-        theta_B.extend(nv['theta_B'])
-        perp_B.extend(nv['perp_B'])
-        
-        nv_perp_B = nv['perp_B']
-        nv_mag_B = nv['mag_B']
-        nv_perp_B_frac = []
-        for ind in range(len(nv_perp_B)):
-            if nv_perp_B[ind] is None:
-               nv_perp_B_frac.append(None)
-            else:
-               nv_perp_B_frac.append(nv_perp_B[ind] / nv_mag_B[ind])
-        perp_B_frac.extend(nv_perp_B_frac)
-        
-        contrast_minus.extend(nv['contrast_minus'])
-        contrast_plus.extend(nv['contrast_plus'])
-        rabi_minus.extend(nv['rabi_minus'])
-        rabi_plus.extend(nv['rabi_plus'])
-        gamma.extend(nv['gamma'])
-        gamma_error.extend(nv['gamma_error'])
-        omega.extend(nv['omega'])
-        omega_error.extend(nv['omega_error'])
-        ratio.extend(nv['ratio'])
-        ratio_error.extend(nv['ratio_error'])
-        
-    res_minus = numpy.array(res_minus)
-    res_plus = numpy.array(res_plus)
-    splitting = numpy.array(splitting)
-    mag_B = numpy.array(mag_B)
-    theta_B = numpy.array(theta_B)
-    perp_B = numpy.array(perp_B)
-    perp_B_frac = numpy.array(perp_B_frac)
-    contrast_minus = numpy.array(contrast_minus)
-    contrast_plus = numpy.array(contrast_plus)
-    rabi_minus = numpy.array(rabi_minus)
-    rabi_plus = numpy.array(rabi_plus)
-    gamma = numpy.array(gamma)
-    gamma_error = numpy.array(gamma_error)
-    omega = numpy.array(omega)
-    omega_error = numpy.array(omega_error)
-    ratio = numpy.array(ratio)
-    ratio_error = numpy.array(ratio_error)
-    
-    # Calculate correlations
-    p_corr_fun = lambda x,y: numpy.corrcoef(x,y)[0,1]  # Pearson
-    s_corr_fun = lambda x,y: stats.spearmanr(x,y).correlation  # Spearman
-    w_corr_fun = weighted_corrcoeff  # test
-    
-    title = '\nCorrelation coefficients for {} measurements, Pearson, Spearman, then weighted Pearson\n'
-    print(title.format(mode))
-    
-    # rabi_plus, rabi_minus
-    p_corr = p_corr_fun(rabi_plus, rabi_minus)
-    s_corr = s_corr_fun(rabi_plus, rabi_minus)
-    w_corr = w_corr_fun(rabi_plus, rabi_minus)
-    print('rabi_plus, rabi_minus correlation: {:.2}, {:.2}, {:.2}'.format(p_corr, s_corr, w_corr))
-    
-    # contrast_plus, contrast_minus
-    p_corr = p_corr_fun(contrast_plus, contrast_minus)
-    s_corr = s_corr_fun(contrast_plus, contrast_minus)
-    w_corr = w_corr_fun(contrast_plus, contrast_minus)
-    print('contrast_plus, contrast_minus correlation: {:.2}, {:.2}, {:.2}'.format(p_corr, s_corr, w_corr))
-    
-    # contrast_plus, perp_B
-    mask = perp_B != None
-    p_corr = p_corr_fun(contrast_plus[mask].astype(float),
-                        perp_B[mask].astype(float))
-    s_corr = s_corr_fun(contrast_plus[mask].astype(float),
-                        perp_B[mask].astype(float))
-    w_corr = w_corr_fun(contrast_plus, perp_B)
-    print('contrast_plus, perp_B correlation: {:.2}, {:.2}, {:.2}'.format(p_corr, s_corr, w_corr))
-    
-    # ratio, theta_B
-    mask = theta_B != None
-    p_corr = p_corr_fun(ratio[mask].astype(float),
-                        theta_B[mask].astype(float))
-    s_corr = s_corr_fun(ratio[mask].astype(float),
-                        theta_B[mask].astype(float))
-    w_corr = w_corr_fun(ratio, theta_B, ratio_error)
-    print('ratio, theta_B correlation: {:.2}, {:.2}, {:.2}'.format(p_corr, s_corr, w_corr))
-    
-    # ratio, perp_B
-    mask = perp_B != None
-    p_corr = p_corr_fun(ratio[mask].astype(float),
-                        perp_B[mask].astype(float))
-    s_corr = s_corr_fun(ratio[mask].astype(float),
-                        perp_B[mask].astype(float))
-    w_corr = w_corr_fun(ratio, perp_B, ratio_error)
-    print('ratio, perp_B correlation: {:.2}, {:.2}, {:.2}'.format(p_corr, s_corr, w_corr))
-    
-    # gamma, theta_B
-    mask = theta_B != None
-    p_corr = p_corr_fun(gamma[mask].astype(float),
-                        theta_B[mask].astype(float))
-    s_corr = s_corr_fun(gamma[mask].astype(float),
-                        theta_B[mask].astype(float))
-    w_corr = w_corr_fun(gamma, theta_B, gamma_error)
-    print('gamma, theta_B correlation: {:.2}, {:.2}, {:.2}'.format(p_corr, s_corr, w_corr))
-    
-    # gamma, perp_B
-    mask = perp_B != None
-    p_corr = p_corr_fun(gamma[mask].astype(float),
-                        perp_B[mask].astype(float))
-    s_corr = s_corr_fun(gamma[mask].astype(float),
-                        perp_B[mask].astype(float))
-    w_corr = w_corr_fun(gamma, perp_B, gamma_error)
-    print('gamma, perp_B correlation: {:.2}, {:.2}, {:.2}'.format(p_corr, s_corr, w_corr))
-    
-    # omega, theta_B
-    mask = theta_B != None
-    p_corr = p_corr_fun(omega[mask].astype(float),
-                        theta_B[mask].astype(float))
-    s_corr = s_corr_fun(omega[mask].astype(float),
-                        theta_B[mask].astype(float))
-    w_corr = w_corr_fun(omega, theta_B, omega_error)
-    print('omega, theta_B correlation: {:.2}, {:.2}, {:.2}'.format(p_corr, s_corr, w_corr))
-    
-    # omega, perp_B
-    mask = perp_B != None
-    p_corr = p_corr_fun(omega[mask].astype(float),
-                        perp_B[mask].astype(float))
-    s_corr = s_corr_fun(omega[mask].astype(float),
-                        perp_B[mask].astype(float))
-    w_corr = w_corr_fun(omega, perp_B, omega_error)
-    print('omega, perp_B correlation: {:.2}, {:.2}, {:.2}'.format(p_corr, s_corr, w_corr))
-    
-    
-    
-    # # contrast_plus, theta_B
-    # mask = theta_B != None
-    # p_corr = p_corr_fun(contrast_plus[mask].astype(float),
-    #                     theta_B[mask].astype(float))
-    # s_corr = s_corr_fun(contrast_plus[mask].astype(float),
-    #                     theta_B[mask].astype(float))
-    # print('contrast_plus, theta_B correlation: {:.2}, {:.2}'.format(p_corr, s_corr))
-    
-    # # ratio, contrast_minus
-    # p_corr = p_corr_fun(ratio, contrast_minus)
-    # s_corr = s_corr_fun(ratio, contrast_minus)
-    # print('ratio, contrast_minus correlation: {:.2}, {:.2}'.format(p_corr, s_corr))
-    
-    # # ratio, contrast_plus
-    # p_corr = p_corr_fun(ratio, contrast_plus)
-    # s_corr = s_corr_fun(ratio, contrast_plus)
-    # print('ratio, contrast_plus correlation: {:.2}, {:.2}'.format(p_corr, s_corr))
-    
-    # # ratio, rabi_minus
-    # p_corr = p_corr_fun(ratio, rabi_minus)
-    # s_corr = s_corr_fun(ratio, rabi_minus)
-    # print('ratio, rabi_minus correlation: {:.2}, {:.2}'.format(p_corr, s_corr))
-    
-    # # ratio, rabi_plus
-    # p_corr = p_corr_fun(ratio, rabi_plus)
-    # s_corr = s_corr_fun(ratio, rabi_plus)
-    # print('ratio, rabi_plus correlation: {:.2}, {:.2}'.format(p_corr, s_corr))
-    
-    # # ratio, splitting
-    # p_corr = p_corr_fun(ratio, splitting)
-    # s_corr = s_corr_fun(ratio, splitting)
-    # print('ratio, splitting correlation: {:.2}, {:.2}'.format(p_corr, s_corr))
-    
-    # # ratio, perp_B_frac
-    # mask = perp_B != None
-    # p_corr = p_corr_fun(ratio[mask].astype(float),
-    #                     perp_B_frac[mask].astype(float))
-    # s_corr = s_corr_fun(ratio[mask].astype(float),
-    #                     perp_B_frac[mask].astype(float))
-    # print('ratio, perp_B_frac correlation: {:.2}, {:.2}'.format(p_corr, s_corr))
-    
-    # # ratio, res_minus
-    # p_corr = p_corr_fun(ratio, res_minus)
-    # s_corr = s_corr_fun(ratio, res_minus)
-    # print('ratio, res_minus correlation: {:.2}, {:.2}'.format(p_corr, s_corr))
-    
-    # # ratio, res_plus
-    # p_corr = p_corr_fun(ratio, res_plus)
-    # s_corr = s_corr_fun(ratio, res_plus)
-    # print('ratio, res_plus correlation: {:.2}, {:.2}'.format(p_corr, s_corr))
     return
     
     
@@ -362,6 +125,10 @@ def correlations(nv_data):
     theta_B = []
     perp_B = []
     perp_B_frac = []
+    
+    comp_minus = []  # |<Sz;-1|H;-1>|**2
+    comp_plus = []  # |<Sz;+1|H;+1>|**2
+    
     contrast_minus = []
     contrast_plus = []
     rabi_minus = []
@@ -468,7 +235,6 @@ def correlations(nv_data):
             print(corrcoeff)
         
 
-
 def plot_gamma_omega_vs_angle(nv_data):
 
     plt.rcParams.update({'font.size': 18})  # Increase font size
@@ -540,95 +306,6 @@ def plot_gamma_omega_vs_angle(nv_data):
             #                   linestyle='None', marker='o', ms=9, lw=2.5)
             
     gamma_ax.legend()
-
-
-def plot_splittings_vs_angle(nv_data):
-
-    plt.rcParams.update({'font.size': 18})  # Increase font size
-    fig, ax = plt.subplots(1, 1, figsize=(8, 7))
-    fig.set_tight_layout(True)
-    ax.set_xlabel(r'Magnet angle, $\theta_{B}$ ($\degree$)')
-    ax.set_xlim(-5, 95)
-    ax.set_xticks(numpy.linspace(0,90,7))
-    ax.set_ylabel('Splitting (MHz)')
-    mag_B = 33 * gmuB
-        
-    for ind in range(len(nv_data)):
-        
-        nv = nv_data[ind]
-        
-        name = nv['name']
-        # if name in ['NVA1', 'NVA2']:
-        #     continue
-        # if name != 'NVB1':
-        #     continue
-        
-        all_splittings = numpy.array(nv['all_splittings'])
-        angles = numpy.array(nv['angle'])
-        mask = angles != None
-        if True in mask:
-            smooth_theta_Bs = numpy.linspace(0, pi/2, 1000)
-            smooth_theta_Bs_deg = smooth_theta_Bs * (180/pi)
-            splittings = [calc_splitting(mag_B, val, 0, 0, 0, 0) * 1000
-                          for val in smooth_theta_Bs]  # Scaled to MHz
-            ax.plot(smooth_theta_Bs_deg, splittings,
-                    c='orange', label='33 G predicted splittings')
-            ax.scatter(angles[mask], all_splittings[mask],
-                       label='Measured splittings')
-            ax.legend()
-            
-    
-def hist_gamma_omega(nv_data):
-    
-    plt.rcParams.update({'font.size': 18})  # Increase font size
-    fig, axes_pack = plt.subplots(3, 1, figsize=(9,18))
-    fig.set_tight_layout(True)
-    for ax in axes_pack:
-        ax.set_ylabel('Occurrences')
-        
-    # Ax-specific setup
-    
-    gamma_ax = axes_pack[0]
-    gamma_ax.set_title('Gamma Histogram')
-    # gamma_ax.set_ylim(0.1, 0.2)
-    # gamma_ax.set_xlim(0.1, 0.3)
-    gamma_ax.set_xlabel('Gamma (kHz)')
-    
-    omega_ax = axes_pack[1]
-    omega_ax.set_title('Omega Histogram')
-    # omega_ax.set_xlim(0.04, 0.08)
-    omega_ax.set_xlabel('Omega (kHz)')
-    
-    ratio_ax = axes_pack[2]
-    ratio_ax.set_title('Gamma/Omega Histogram')
-    # ratio_ax.set_xlim(1.5, 3.5)
-    # ratio_ax.set_xlim(1.5, 4.5)
-    ratio_ax.set_xlabel('Ratio')
-    
-    all_gammas = []
-    all_omegas = []
-    all_ratios = []
-    
-    for ind in range(len(nv_data)):
-        
-        nv = nv_data[ind]
-        
-        name = nv['name']
-        if name not in ['NVE']:
-            continue
-        
-        all_gammas.extend(nv['gamma'])
-        all_omegas.extend(nv['omega'])
-        all_ratios.extend(nv['ratio'])
-        
-    all_gammas = numpy.array(all_gammas)
-    all_omegas = numpy.array(all_omegas)
-    all_ratios = numpy.array(all_ratios)
-    
-    num_bins = 10
-    gamma_hist, gamma_bin_edges, gamma_patches = gamma_ax.hist(all_gammas, num_bins)
-    omega_hist, omega_bin_edges, omega_patches = omega_ax.hist(all_omegas, num_bins)
-    ratio_hist, ratio_bin_edges, ratio_patches = ratio_ax.hist(all_ratios, num_bins)
     
 
 # %% Main
@@ -748,12 +425,12 @@ def main(nv_data, mode='both'):
 if __name__ == '__main__':
     
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/papers/bulk_dq_relaxation/'
-    file = path + 'compiled_data_markup.csv'
+    file = path + 'compiled_data_import.csv'
     nv_data = get_nv_data_csv(file)
     
     # main(nv_data)
     # plot_gamma_omega_vs_angle(nv_data)
     # hist_gamma_omega(nv_data)
-    correlations(nv_data)
+    # correlations(nv_data)
     # plot_splittings_vs_angle(nv_data)
 
