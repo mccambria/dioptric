@@ -313,24 +313,26 @@ def plot_gamma_omega_vs_angle(nv_data):
 
 def main(nv_data):
     
-    all_ratios = []
-    all_ratio_errors = []
-
-    # Splitting, par_B, perp_B
-    # plt.rcParams.update({'font.size': 15})  # Increase font size
-    # fig, axes_pack = plt.subplots(3,1, figsize=(7,8))
-
+    # plot = 'ratio'
+    # plot = 'gamma'
+    plot = 'omega'
+    
+    if plot == 'ratio':
+        plot_y_label = r'$\gamma / \Omega$'
+        y_min = 1.5
+        y_max = 4.5
+    elif plot == 'gamma':
+        plot_y_label = r'$\gamma$ (kHz)'
+        y_min = 0.1
+        y_max = 0.275
+    elif plot == 'omega':
+        plot_y_label = r'$\Omega$ (kHz)'
+        y_min = 0.04
+        y_max = 0.08
+    
     # par_B, perp_B
     plt.rcParams.update({'font.size': 18})  # Increase font size
     fig, axes_pack = plt.subplots(2,1, figsize=(7,8))
-    
-    # Splitting setup
-    # ax = axes_pack[0]
-    # ax.set_xlabel(r'Splitting, $\Delta_{\pm}$ (MHz)')
-    # # ax.set_xlim(-50, 1300)
-    # ax.set_xlim(-10, 350)
-    # ax.set_ylabel(r'$\gamma / \Omega$')
-    # ax.set_ylim(1.5, 4.5)
     
     # x_min = -1.5
     # x_max = 61.5
@@ -338,22 +340,18 @@ def main(nv_data):
     x_max = 115
             
     # par_B setup
-    # ax = axes_pack[1]
     ax = axes_pack[0]
     ax.set_xlabel(r'$B_{\parallel}$ (G)')
     ax.set_xlim(x_min, x_max)
-    # ax.set_xticks(numpy.linspace(0,90,7))
-    ax.set_ylabel(r'$\gamma / \Omega$')
-    ax.set_ylim(1.5, 4.5)
+    ax.set_ylabel(plot_y_label)
+    ax.set_ylim(y_min, y_max)
     
-    # par_B setup
-    # ax = axes_pack[2]
+    # perp_B setup
     ax = axes_pack[1]
     ax.set_xlabel(r'$B_{\perp}$ (G)')
     ax.set_xlim(x_min, x_max)
-    # ax.set_xticks(numpy.linspace(0,90,7))
-    ax.set_ylabel(r'$\gamma / \Omega$')
-    ax.set_ylim(1.5, 4.5)
+    ax.set_ylabel(plot_y_label)
+    ax.set_ylim(y_min, y_max)
 
     for ind in range(len(nv_data)):
         
@@ -370,8 +368,9 @@ def main(nv_data):
         # Calculate ratios
         ratios = numpy.array(nv['ratio'])
         ratio_errors = numpy.array(nv['ratio_err'])
-        all_ratios.extend(ratios)
-        all_ratio_errors.extend(ratio_errors)
+        
+        plot_vals = numpy.array(nv[plot])
+        plot_errors = numpy.array(nv['{}_err'.format(plot)])
         
         # Plot splitting
         # ax = axes_pack[0]
@@ -384,13 +383,12 @@ def main(nv_data):
         #                 ms=9, lw=2.5)
     
         # Plot par_B
-        # ax = axes_pack[1]
         ax = axes_pack[0]
         par_Bs = numpy.array(nv['par_B'])
         mask = par_Bs != None
         if True in mask:
-            ax.errorbar(par_Bs[mask], ratios[mask],
-                        yerr=ratio_errors[mask], label=name,
+            ax.errorbar(par_Bs[mask], plot_vals[mask],
+                        yerr=plot_errors[mask], label=name,
                         marker=marker, color=color, linestyle='None',
                         ms=9, lw=2.5)
     
@@ -400,30 +398,11 @@ def main(nv_data):
         perp_Bs = numpy.array(nv['perp_B'])
         mask = perp_Bs != None
         if True in mask:
-            ax.errorbar(perp_Bs[mask], ratios[mask],
-                        yerr=ratio_errors[mask], label=name,
+            ax.errorbar(perp_Bs[mask], plot_vals[mask],
+                        yerr=plot_errors[mask], label=name,
                         marker=marker, color=color, linestyle='None',
                         ms=9, lw=2.5)
 
-    all_ratios = numpy.array(all_ratios)
-    all_ratio_errors = numpy.array(all_ratio_errors)
-    
-    # wavg_ratio = numpy.average(all_ratios, weights=(1/all_ratio_errors**2))
-    # ste_ratio = numpy.sqrt(1/numpy.sum(all_ratio_errors**-2))
-    # print(all_ratios)
-    # print(all_ratio_errors)
-    # print(wavg_ratio)
-    # print(ste_ratio)
-    
-    # For both axes, plot the same weighted average and display a legend.
-    # for ax in axes_pack:
-    #     ax.legend(loc='lower right')
-        # xlim = ax.get_xlim()
-        # ax.fill_between([0, xlim[1]],
-        #                 wavg_ratio+ste_ratio, wavg_ratio-ste_ratio,
-        #                 alpha=0.5, color=colors[-1])
-        # ax.plot([0, xlim[1]], [wavg_ratio, wavg_ratio], color=colors[-1])
-    
     axes_pack[0].legend(bbox_to_anchor=(0., 1.10, 1., .102), loc='lower left',
            ncol=5, mode='expand', borderaxespad=0., handlelength=0.5)
     fig.tight_layout(pad=0.5)

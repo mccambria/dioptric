@@ -71,85 +71,16 @@ def get_first_norm_avg_sig(data):
     avg_ref = numpy.average(ref_counts[::])
     avg_sig_counts = numpy.average(sig_counts[::], axis=0)
     return avg_sig_counts[0] / avg_ref
-
-
-def exp_eq(t, rate, amp):
-    return  amp * numpy.exp(- rate * t)
-
-
-def exp_eq_offset(t, rate, amp, offset):
-    return  amp * numpy.exp(- rate * t) + offset
-
-
-def subtraction_plot(axes_pack, analysis_file_path):
-    """
-    This is adapted from Aedan's function of the same name in
-    analysis/Paper Figures\Magnetically Forbidden Rate\supplemental_figures.py
-    """
-    
-    text_font = 16
-    title_font = 20
-    
-    with open(analysis_file_path) as file:
-            data = json.load(file)
-            
-            zero_relaxation_counts = data['zero_relaxation_counts']
-            zero_relaxation_ste = numpy.array(data['zero_relaxation_ste'])
-            zero_zero_time = data['zero_zero_time']
-            
-            plus_relaxation_counts = data['plus_relaxation_counts']
-            plus_relaxation_ste = numpy.array(data['plus_relaxation_ste'])
-            plus_plus_time = data['plus_plus_time']
-
-            omega_opti_params = data['omega_opti_params']
-            gamma_opti_params = data['gamma_opti_params']
-            manual_offset_gamma = data['manual_offset_gamma']
-            
-    ax = axes_pack[0]
-    
-    ax.errorbar(zero_zero_time, zero_relaxation_counts,
-                        yerr = zero_relaxation_ste,
-                        label = 'data',  fmt = 'o', color = 'blue')
-    zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
-    ax.plot(zero_time_linspace,
-                exp_eq(zero_time_linspace, *omega_opti_params),
-                'r', label = 'fit')
-    ax.set_xlabel(r'Wait time, $\tau$ (ms)', fontsize=text_font)
-    ax.set_ylabel(r'$F_{\Omega}$ (arb. units)', fontsize=text_font)
-#    ax.set_title(r'$P_{0,0} - P_{0,1}$', fontsize=title_font)
-#    ax.legend(fontsize=20)
-    ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                direction='in',grid_alpha=0.7, labelsize = text_font)
-    
-    ax = axes_pack[1]
-    
-    ax.errorbar(numpy.array(plus_plus_time), plus_relaxation_counts,
-                        yerr = plus_relaxation_ste,
-                        label = 'data', fmt = 'o', color = 'blue')
-    plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
-    gamma_rate = gamma_opti_params[0]
-    gamma_opti_params[0] = gamma_rate
-    gamma_opti_params_offset = gamma_opti_params + [manual_offset_gamma]
-    ax.plot(plus_time_linspace,
-                exp_eq_offset(plus_time_linspace, *gamma_opti_params_offset),
-                'r', label = 'fit')
-    ax.set_xlabel(r'Wait time, $\tau$ (ms)', fontsize=text_font)
-    ax.set_ylabel(r'$F_{\gamma}$ (arb. units)', fontsize=text_font)
-#    ax.set_title(r'$P_{1,1} - P_{1,-1}$', fontsize=title_font)
-#    ax.legend(fontsize=20)
-
-    ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                direction='in',grid_alpha=0.7, labelsize = text_font)
             
 
 # %% Main
 
 
 def main(folder, file_high, file_zero, file_high_to_low,
-         gamma, omega, pi_pulse_infidelity, analysis_file):
+         gamma, omega, pi_pulse_infidelity):
 
     plt.rcParams.update({'font.size': 18})  # Increase font size
-    fig, axes_pack = plt.subplots(3, 1, figsize=(10,15))
+    fig, axes_pack = plt.subplots(1,2, figsize=(1,5))
     fig.set_tight_layout(True)
     
     source = 't1_double_quantum/paper_data/bulk_dq/'
@@ -208,11 +139,13 @@ def main(folder, file_high, file_zero, file_high_to_low,
                color='#CC99CC', edgecolor='#993399', s=64)
     ax.legend(handles=[zero_patch, high_patch])
     
-    # %% F Omega and gamma
+    # %% T2max
     
-    source = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/' 
-    analysis_file_path = source + path + '/' + analysis_file
-    subtraction_plot(axes_pack[1:], analysis_file_path)
+    ax = axes_pack[1]
+
+    ax.set_xlabel(r'Wait time, $\tau$ (ms)')
+    ax.set_ylabel('Fluorescence (arb. units)')
+    
     
 
 # %% Run
@@ -228,7 +161,6 @@ if __name__ == '__main__':
     # This assumes the num_steps and relaxation_time_range are the same for
     # both data sets
     folder = 'goeppert_mayer-nv7_2019_11_27-167MHz'
-    analysis_file = '167MHz_splitting_rate_analysis.txt'
     file_high = '2019_11_29-11_26_00-goeppert_mayer-nv7_2019_11_27'
     file_zero = '2019_12_01-05_31_53-goeppert_mayer-nv7_2019_11_27'
     file_high_to_low = '2019_11_28-14_23_04-goeppert_mayer-nv7_2019_11_27'
@@ -237,5 +169,5 @@ if __name__ == '__main__':
     pi_pulse_infidelity = (1.0 - numpy.exp(-111/1398)) # 7.6%
 
     main(folder, file_high, file_zero, file_high_to_low,
-         gamma, omega, pi_pulse_infidelity, analysis_file)
+         gamma, omega, pi_pulse_infidelity)
 
