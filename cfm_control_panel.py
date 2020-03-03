@@ -472,7 +472,7 @@ if __name__ == '__main__':
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)
-            do_stationary_count(nv_sig, apd_indices)
+#            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
@@ -497,16 +497,15 @@ if __name__ == '__main__':
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
             
-            filter = 'No filter'
-#            filter = 'Shortpass'
+#            filter = 'No filter'
+            filter = 'Shortpass'
 #            filter = 'Longpass'
 #            filter = 'All filters'
-            voltage = '0V'
+            voltage = '-2.5V'
 #
-#            do_stationary_count(nv_sig, apd_indices)
-#            polarization_time = 20 * 10**3
-#            do_lifetime_v2(nv_sig, apd_indices, [0, 10**6], # make the measurement start sooner in polariz time
-#                           0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
+            polarization_time = 20 * 10**3
+            do_lifetime_v2(nv_sig, apd_indices, [0, 10**6],
+                           0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
             
 #            print("refocusing...")
 #            do_stationary_count(nv_sig, apd_indices)
