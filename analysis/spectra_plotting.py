@@ -97,24 +97,28 @@ def wavelength_range_calc(wavelength_range, wavelength_list):
         
     return plot_strt, plot_end
 
+# %%
+    
 def plot_spectra(file, wavelength_range, vertical_range, plot_title):
     data = tool_belt.get_raw_data(folder, file,
                  nvdata_dir=data_path)
-    wavelengths = data['wavelengths']
-    counts = data['counts']
+    wavelengths = numpy.array(data['wavelengths'])
+    counts = numpy.array(data['counts'])
+    
+    background= counts[0]
     
     plot_strt_ind, plot_end_ind  = wavelength_range_calc(wavelength_range, wavelengths)
     
 #    print(wavelengths[plot_strt_ind : plot_end_ind])
-    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(wavelengths[plot_strt_ind : plot_end_ind], counts[plot_strt_ind : plot_end_ind])
-    ax.set_xlabel('Wavelength')
-    ax.set_ylabel('Counts')
-    ax.set_title(plot_title)
-    ax.set_ylim(vertical_range)
+#    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
+#    ax.plot(wavelengths[plot_strt_ind : plot_end_ind], counts[plot_strt_ind : plot_end_ind]-background)
+#    ax.set_xlabel('Wavelength')
+#    ax.set_ylabel('Counts')
+#    ax.set_title(plot_title)
+#    ax.set_ylim(vertical_range)
     
     
-       
+    return wavelengths[plot_strt_ind : plot_end_ind], counts[plot_strt_ind : plot_end_ind]-background
         
         
         
@@ -132,9 +136,29 @@ file_shortpass = 'Shortpass_filter'
 file_longpass = 'Longpass filter'
 
 file_00 = '0.0V'
-file_m25 = 'm2.5V'
+file_m25 = 'm2.5'
 
 if __name__ == '__main__':
     
     
-    plot_spectra(file_longpass, [None, None], [450, 1200],'Longpass Filter')
+    wvlngth_1, counts_1 = plot_spectra(file_p03, [545, 560], [-100, 600],'+0.3V')
+    wvlngth_2, counts_2 = plot_spectra(file_m10, [545, 560], [-100, 600],'-1.0V')
+    wvlngth_3, counts_3 = plot_spectra(file_m15, [545, 560], [-100, 600],'-1.5V')
+    wvlngth_4, counts_4 = plot_spectra(file_m20, [545, 560], [-100, 600],'-2.0V')
+    wvlngth_5, counts_5 = plot_spectra(file_m23, [545, 560], [-100, 600],'-2.3V')
+    
+    
+    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(wvlngth_1, counts_1, label = '0.0V')
+    ax.plot(wvlngth_2, counts_2, label = '-1.0V')
+    ax.plot(wvlngth_3, counts_3, label = '-1.5V')
+    ax.plot(wvlngth_4, counts_4, label = '-2.0V')
+    ax.plot(wvlngth_5, counts_5, label = '-2.3V')
+    ax.set_xlabel('Wavelength')
+    ax.set_ylabel('Counts')
+#    ax.set_title(plot_title)
+    ax.set_ylim([-100, 600]) 
+    ax.legend()
+    
+    
+    
