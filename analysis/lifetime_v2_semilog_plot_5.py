@@ -47,7 +47,6 @@ file_m25_lp = '2020_03_02-20_44_24-Y2O3_graphene_Er_5nm'
 file_m25_sp = '2020_03_02-20_53_10-Y2O3_graphene_Er_5nm'
 
 
-
 files = [file_p02_lp,file_p02_sp,file_p02_nf,
            file_m05_lp,file_m05_sp,file_m05_nf, 
          file_m10_lp,file_m10_sp,file_m10_nf,
@@ -56,12 +55,22 @@ files = [file_p02_lp,file_p02_sp,file_p02_nf,
          file_m10_lp_2, file_m10_sp_2, file_m10_nf_2,
          file_m25_lp, file_m25_sp]
 
+file_NG_lp = '2020_03_04-13_08_53-Y2O3_no_graphene_no_IG'
+file_NG_sp = '2020_03_04-12_47_02-Y2O3_no_graphene_no_IG'
+file_NG_nf = '2020_03_04-12_36_45-Y2O3_no_graphene_no_IG'
+
+#files = [file_p02_lp,file_p02_sp,file_p02_nf,
+#         file_NG_lp, file_NG_sp, file_NG_nf]
+
+
 count_list = []
 bin_centers_list = []
 text_list = []
-data_fmt_list = ['b.','k.','r.','g.', 'y.', 'm.', 'c.']
+#data_fmt_list = ['b.','k.','r.','g.', 'y.', 'm.', 'c.']
+data_fmt_list = ['bo','ko','ro','go', 'yo', 'mo', 'co']
 fit_fmt_list = ['b-','k-','r-','g-', 'y-', 'm-', 'c-']
-label_list = ['+0.3 V', '-0.5', '-1.0V', '-1.5 V', '-2.0V', '-1.0V', '-2.5V']
+label_list = ['CNP, 0.3V', '-0.5V','-1.0V', '-1.5V','-2.0V','-1.0V', '-2.5V']
+#label_list = ['CNP, graphene/IG', 'no graphene/no IG']
 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
 
 init_params_list_1 = [10,1]
@@ -84,8 +93,28 @@ def tetra_decay(t, a, d1, d2, d3, d4):
                 + decayExp(t, a, d4)
                 
 # %%
-
-def fig(num_data, file_list, file_ind, title, fit_eq, fit_params):
+def pol_counts(num_data, file_list, file_ind, title):
+    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
+    first_point_list = []
+    for i in range(num_data):
+        f = i*3 + file_ind
+        file = file_list[f]
+        data = tool_belt.get_raw_data(folder, file)
+        
+        counts = numpy.array(data["binned_samples"])/10**5
+#        bin_centers = numpy.array(data["bin_centers"])/10**3
+        
+        first_point_list.append(counts[0])
+        
+    ax.plot(label_list, first_point_list, 'bo')
+    ax.set_xlabel('Gate Voltage')
+    ax.set_ylabel('Counts (x 10^5)')
+    ax.set_title(title)
+        
+    
+        
+    
+def fig_lifetime(num_data, file_list, file_ind, title, fit_eq, fit_params):
 
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
     for i in range(num_data):
@@ -103,10 +132,10 @@ def fig(num_data, file_list, file_ind, title, fit_eq, fit_params):
         counts_bkgd = counts-background
         norm_counts = counts_bkgd/first_two_points
         
-        popt,pcov = curve_fit(fit_eq,bin_centers[1:], norm_counts[1:],
-                                      p0=fit_params)
-        print(popt)
-        lin_centers = numpy.linspace(bin_centers[0],bin_centers[-1], 1000)
+#        popt,pcov = curve_fit(fit_eq,bin_centers[1:], norm_counts[1:],
+#                                      p0=fit_params)
+#        print(popt)
+#        lin_centers = numpy.linspace(bin_centers[0],bin_centers[-1], 1000)
     
         ax.semilogy(bin_centers, counts, data_fmt_list[i], label=label_list[i])
 #        ax.semilogy(lin_centers, fit_eq(lin_centers,*popt), fit_fmt_list[i])
@@ -115,34 +144,34 @@ def fig(num_data, file_list, file_ind, title, fit_eq, fit_params):
         ax.set_title(title)
         ax.legend()
         
-        if fit_eq == double_decay:
-            text = "\n".join((label_list[i],
-                              r'$A_1 = $' + "%.1f"%(popt[0]) + ', '
-                              r'$d_1 = $' + "%.1f"%(popt[1]) + " us",
-                              r'$A_2 = $' + "%.1f"%(popt[2]) + ', '
-                              r'$d_2 = $' + "%.1f"%(popt[3]) + " us"))
+#        if fit_eq == double_decay:
+#            text = "\n".join((label_list[i],
+#                              r'$A_1 = $' + "%.1f"%(popt[0]) + ', '
+#                              r'$d_1 = $' + "%.1f"%(popt[1]) + " us",
+#                              r'$A_2 = $' + "%.1f"%(popt[2]) + ', '
+#                              r'$d_2 = $' + "%.1f"%(popt[3]) + " us"))
 #            ax.text(0.55, 0.95 - (1.1*i)/10, text, transform=ax.transAxes, fontsize=12,
 #                                    verticalalignment="top", bbox=props)
         
-        elif fit_eq == triple_decay:
-            text = "\n".join((label_list[i],
-                              r'$A_1 = $' + "%.1f"%(popt[0]) + ', '
-                              r'$d_1 = $' + "%.1f"%(popt[1]) + " us",
-                              r'$A_2 = $' + "%.1f"%(popt[2]) + ', '
-                              r'$d_2 = $' + "%.1f"%(popt[3]) + " us",
-                              r'$A_3 = $' + "%.1f"%(popt[4]) + ', '
-                              r'$d_3 = $' + "%.1f"%(popt[5]) + " us"
-                              ))
+#        elif fit_eq == triple_decay:
+#            text = "\n".join((label_list[i],
+#                              r'$A_1 = $' + "%.1f"%(popt[0]) + ', '
+#                              r'$d_1 = $' + "%.1f"%(popt[1]) + " us",
+#                              r'$A_2 = $' + "%.1f"%(popt[2]) + ', '
+#                              r'$d_2 = $' + "%.1f"%(popt[3]) + " us",
+#                              r'$A_3 = $' + "%.1f"%(popt[4]) + ', '
+#                              r'$d_3 = $' + "%.1f"%(popt[5]) + " us"
+#                              ))
             
         
         
-            ax.text(0.55, 0.95 - (1.5*i)/10, text, transform=ax.transAxes, fontsize=12,
-                                    verticalalignment="top", bbox=props)
+#            ax.text(0.55, 0.95 - (1.5*i)/10, text, transform=ax.transAxes, fontsize=12,
+#                                    verticalalignment="top", bbox=props)
     
-    if fit_eq == double_decay:
-        text_eq = r'$A_1 e^{-t / d_1} +  A_2 e^{-t / d_2}$' 
-    elif fit_eq == triple_decay:
-        text_eq = r'$A_1 e^{-t / d_1} +  A_2 e^{-t / d_2} +  A_3 e^{-t / d_3}$'
+#    if fit_eq == double_decay:
+#        text_eq = r'$A_1 e^{-t / d_1} +  A_2 e^{-t / d_2}$' 
+#    elif fit_eq == triple_decay:
+#        text_eq = r'$A_1 e^{-t / d_1} +  A_2 e^{-t / d_2} +  A_3 e^{-t / d_3}$'
 #    ax.text(0.2, 0.8, text_eq, transform=ax.transAxes, fontsize=12,
 #                                verticalalignment="top", bbox=props)
     return
@@ -155,9 +184,9 @@ if __name__ == '__main__':
     
     #file_ind: 0 for long pass, 1 for short pass, 2 for no filter 
 
-    fig(num_files, files, 1, 'Lifetime, shortpass filter', double_decay, init_params_list_2) # shortpass
-    fig(num_files, files, 0, 'Lifetime, longpass filter', double_decay, init_params_list_2) # longpass
+#    fig_lifetime(num_files, files, 1, 'Lifetime, shortpass filter', double_decay, init_params_list_2) # shortpass
+#    fig_lifetime(num_files, files, 0, 'Lifetime, longpass filter', double_decay, init_params_list_2) # longpass
 
 
-#file_path = str(data_path + '/' + folder + '/plotted_data/' + file + '-loglog')
-#tool_belt.save_figure(fig, file_path)
+    pol_counts(num_files, files, 1, 'Fluorescence while Er is polarized, Shortpass filter')
+    pol_counts(num_files, files, 0, 'Fluorescence while Er is polarized, Longpass filter')

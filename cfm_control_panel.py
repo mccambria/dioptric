@@ -426,7 +426,7 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     nd = 'nd_0'
-    sample_name = 'Y2O3_graphene_Er_5nm'
+    sample_name = 'Y2O3_no_graphene_no_IG'
     
     search = { 'coords': [0.0, 0, 5.0],
             'name': '{}'.format(sample_name),
@@ -472,7 +472,7 @@ if __name__ == '__main__':
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)
-#            do_stationary_count(nv_sig, apd_indices)
+            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
@@ -501,10 +501,10 @@ if __name__ == '__main__':
             filter = 'Shortpass'
 #            filter = 'Longpass'
 #            filter = 'All filters'
-            voltage = '-2.5V'
+            voltage = 'no_graphene_no_IG'
 #
-            polarization_time = 20 * 10**3
-            do_lifetime_v2(nv_sig, apd_indices, [0, 10**6],
+            polarization_time = 600 * 10**3
+            do_lifetime_v2(nv_sig, apd_indices, [0, 2*10**6],
                            0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
             
 #            print("refocusing...")
