@@ -51,8 +51,7 @@ def convert(folder_name):
             row.append(binned_samples[bin_ind])
             csv_data.append(row)
     
-        csv_file_name = '2020_02_20-' + str(voltage) + '-' + str(filter)  \
-                        + '-' + str(readout_time)
+        csv_file_name = '2020_02_20-' + str(voltage) + '-' + str(filter)
     
         with open('{}/{}.csv'.format(folder_name, csv_file_name),
                   'w', newline='') as csv_file:

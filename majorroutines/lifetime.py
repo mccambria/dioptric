@@ -33,15 +33,15 @@ import labrad
 
 
 def main(nv_sig, apd_indices, relaxation_time_range,
-         num_steps, num_reps, num_runs):
+         num_steps, num_reps, num_runs, filter, voltage, polarization_time):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
-                      num_steps, num_reps, num_runs)
+                      num_steps, num_reps, num_runs, filter, voltage, polarization_time)
 
 
 def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
-                  num_steps, num_reps, num_runs):
+                  num_steps, num_reps, num_runs, filter, voltage, polarization_time):
 
     tool_belt.reset_cfm(cxn)
 
@@ -49,7 +49,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
-    polarization_time = 30 * 10**3
+#    polarization_time = 30 * 10**3
     # time between experiments
     inter_exp_wait_time = 500
 
@@ -62,7 +62,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     # Must be ints since the pulse streamer only works with int64s
 
     min_relaxation_time = int( relaxation_time_range[0] )
-    max_relaxation_time = int( relaxation_time_range[1] )
+    max_relaxation_time = int( polarization_time + relaxation_time_range[1] )
 
     taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
                           num=num_steps, dtype=numpy.int32)
@@ -215,6 +215,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'filter': filter,
+                    'voltage': voltage,
                     'gate_time': gate_time,
                     'gate_time-units': 'ns',
                     'relaxation_time_range': relaxation_time_range,
@@ -268,6 +270,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
             'timeElapsed': timeElapsed,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'filter': filter,
+            'voltage': voltage,
+            'polarization_time': polarization_time,
+            'polarization_time-units': 'ns',
             'gate_time': gate_time,
             'gate_time-units': 'ns',
             'relaxation_time_range': relaxation_time_range,

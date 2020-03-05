@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov 26 16:00:15 2019
+Created on Sat Feb 29 17:35:45 2020
 
 @author: matth
 """
@@ -11,9 +11,9 @@ Created on Tue Nov 26 16:00:15 2019
 
 import numpy
 import matplotlib.pyplot as plt
-import utils.tool_belt as tool_belt
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar as scale_bar
 import json
-import matplotlib.patches as mpatches
+import utils.tool_belt as tool_belt
 import matplotlib.lines as mlines
 
 
@@ -73,91 +73,92 @@ def get_first_norm_avg_sig(data):
     return avg_sig_counts[0] / avg_ref
 
 
-def exp_eq(t, rate, amp):
-    return  amp * numpy.exp(- rate * t)
-
-
-def exp_eq_offset(t, rate, amp, offset):
-    return  amp * numpy.exp(- rate * t) + offset
-
-
-def subtraction_plot(axes_pack, analysis_file_path):
-    """
-    This is adapted from Aedan's function of the same name in
-    analysis/Paper Figures\Magnetically Forbidden Rate\supplemental_figures.py
-    """
-    
-    text_font = 16
-    title_font = 20
-    
-    with open(analysis_file_path) as file:
-            data = json.load(file)
-            
-            zero_relaxation_counts = data['zero_relaxation_counts']
-            zero_relaxation_ste = numpy.array(data['zero_relaxation_ste'])
-            zero_zero_time = data['zero_zero_time']
-            
-            plus_relaxation_counts = data['plus_relaxation_counts']
-            plus_relaxation_ste = numpy.array(data['plus_relaxation_ste'])
-            plus_plus_time = data['plus_plus_time']
-
-            omega_opti_params = data['omega_opti_params']
-            gamma_opti_params = data['gamma_opti_params']
-            manual_offset_gamma = data['manual_offset_gamma']
-            
-    ax = axes_pack[0]
-    
-    ax.errorbar(zero_zero_time, zero_relaxation_counts,
-                        yerr = zero_relaxation_ste,
-                        label = 'data',  fmt = 'o', color = 'blue')
-    zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
-    ax.plot(zero_time_linspace,
-                exp_eq(zero_time_linspace, *omega_opti_params),
-                'r', label = 'fit')
-    ax.set_xlabel(r'Wait time, $\tau$ (ms)', fontsize=text_font)
-    ax.set_ylabel(r'$F_{\Omega}$ (arb. units)', fontsize=text_font)
-#    ax.set_title(r'$P_{0,0} - P_{0,1}$', fontsize=title_font)
-#    ax.legend(fontsize=20)
-    ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                direction='in',grid_alpha=0.7, labelsize = text_font)
-    
-    ax = axes_pack[1]
-    
-    ax.errorbar(numpy.array(plus_plus_time), plus_relaxation_counts,
-                        yerr = plus_relaxation_ste,
-                        label = 'data', fmt = 'o', color = 'blue')
-    plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
-    gamma_rate = gamma_opti_params[0]
-    gamma_opti_params[0] = gamma_rate
-    gamma_opti_params_offset = gamma_opti_params + [manual_offset_gamma]
-    ax.plot(plus_time_linspace,
-                exp_eq_offset(plus_time_linspace, *gamma_opti_params_offset),
-                'r', label = 'fit')
-    ax.set_xlabel(r'Wait time, $\tau$ (ms)', fontsize=text_font)
-    ax.set_ylabel(r'$F_{\gamma}$ (arb. units)', fontsize=text_font)
-#    ax.set_title(r'$P_{1,1} - P_{1,-1}$', fontsize=title_font)
-#    ax.legend(fontsize=20)
-
-    ax.tick_params(which = 'both', length=8, width=2, colors='k',
-                direction='in',grid_alpha=0.7, labelsize = text_font)
-            
-
 # %% Main
 
 
-def main(folder, file_high, file_zero, file_high_to_low,
+def main(file_names):
+    """
+    2 x 2 figure. Top left ax blank for level structure, next 3 for sample
+    scans. file_names should be a list with 3 paths to the appropriate
+    raw data files.
+    """
+    
+    plt.rcParams.update({'font.size': 18})  # Increase font size
+    fig, axes_pack = plt.subplots(1, 3, figsize=(15,5))
+    fig.set_tight_layout(True)
+    ticks = [[10,20,30,40,50,60],
+             [20,40,60,80,100],
+             [15,20,25,30]]
+    
+    for ind in range(3):
+        
+        ax = axes_pack[ind]
+        name = file_names[ind]
+        
+        # This next bit is jacked from image_sample.reformat_plot 2/29/2020
+        with open(name) as file:
+
+            # Load the data from the file
+            data = json.load(file)
+
+            # Build the image array from the data
+            # Not sure why we're doing it this way...
+            img_array = []
+            try:
+                file_img_array = data['img_array']
+            except:
+                file_img_array = data['imgArray']
+            for line in file_img_array:
+                img_array.append(line)
+
+            # Get the readout in s
+            readout = float(data['readout']) / 10**9
+
+            try:
+                xScanRange = data['x_range']
+                yScanRange = data['y_range']
+            except:
+                xScanRange = data['xScanRange']
+                yScanRange = data['yScanRange']
+            
+        kcps_array = (numpy.array(img_array) / 1000) / readout
+
+        # ax.set_xlabel('Position ($\mu$m)')
+        # ax.set_ylabel('Position ($\mu$m)')
+        
+        scale = 35  # galvo scaling in microns / volt
+        
+        # Plot!
+        img = ax.imshow(kcps_array, cmap='inferno', interpolation='none')
+        ax.set_axis_off()
+        
+        # Scale bar
+        # Find the number of pixels in a micron
+        num_steps = kcps_array.shape[0]
+        v_resolution = xScanRange / num_steps  # resolution in volts / pixel
+        resolution = v_resolution * scale  # resolution in microns / pixel
+        px_per_micron = int(1/resolution)
+        trans = ax.transData
+        bar = scale_bar(trans, 5*px_per_micron, '5 $\mu$m', 'upper right',
+                        size_vertical=int(num_steps/100))
+        ax.add_artist(bar)
+
+        # Add the color bar
+        cbar = fig.colorbar(img, ax=ax, ticks=ticks[ind])
+        cbar.ax.set_title('kcps')
+    
+    
+def main2(folder, file_high, file_zero, file_high_to_low,
          gamma, omega, pi_pulse_infidelity, analysis_file):
 
     plt.rcParams.update({'font.size': 18})  # Increase font size
-    fig, axes_pack = plt.subplots(3, 1, figsize=(10,15))
+    fig, ax = plt.subplots(1, 1, figsize=(6,6))
     fig.set_tight_layout(True)
     
     source = 't1_double_quantum/paper_data/bulk_dq/'
     path = source + folder
 
     # %% Relaxation out of plots
-    
-    ax = axes_pack[0]
     
     # Get reference values for to convert fluorescence to population
     ref_range = [None, None]
@@ -207,18 +208,19 @@ def main(folder, file_high, file_zero, file_high_to_low,
     ax.scatter(times_high, signal_high, zorder=5, marker='o',
                color='#CC99CC', edgecolor='#993399', s=64)
     ax.legend(handles=[zero_patch, high_patch])
-    
-    # %% F Omega and gamma
-    
-    source = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/' 
-    analysis_file_path = source + path + '/' + analysis_file
-    subtraction_plot(axes_pack[1:], analysis_file_path)
-    
+
 
 # %% Run
 
 
 if __name__ == '__main__':
+
+    path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/image_sample/'
+    file_names = ['2019_07/2019-07-23_17-39-48_johnson1.txt',
+                  '2019_10/2019-10-02-15_12_01-goeppert_mayer-nv_search.txt',
+                  '2019_04/2019-04-15_16-42-08_Hopper.txt']
+    file_names = [path+name for name in file_names]
+    # main(file_names)
     
     plt.rc('text', usetex=True)
     plt.rcParams['text.latex.preamble'] = [
@@ -236,6 +238,5 @@ if __name__ == '__main__':
     omega = 0.056
     pi_pulse_infidelity = (1.0 - numpy.exp(-111/1398)) # 7.6%
 
-    main(folder, file_high, file_zero, file_high_to_low,
+    main2(folder, file_high, file_zero, file_high_to_low,
          gamma, omega, pi_pulse_infidelity, analysis_file)
-

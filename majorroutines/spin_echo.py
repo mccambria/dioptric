@@ -250,7 +250,7 @@ def fit_data(precession_dur_range, rabi_period,
 #    amplitude = 0.07
 #    offset = 0.93
 #    decay_time = 2000.0
-#    revival_time = 30000
+    revival_time = 40000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -684,10 +684,11 @@ if __name__ == '__main__':
 
     # zfs in GHz
 #    center_freq = 2.8702  # johnson-nv3_2020_02_04
-    center_freq = 2.8707  # 2020_02_07-15_18_57-johnson-nv3_2020_02_04
+    # center_freq = 2.8707  # 2020_02_07-15_18_57-johnson-nv3_2020_02_04
+    center_freq = 2.8706  # 2020_02_09-23_28_56-johnson-nv3_2020_02_04
 
-    # folder = 'spin_echo/2019_12'
-    folder = 'spin_echo/2020_02'
+    folder = 'spin_echo/branch_temperature_reading/2020_02'
+    # folder = 'spin_echo/2020_02'
 
     # 0 deg
     # file = '2019_12_31-10_26_07-goeppert_mayer-nv7_2019_11_27'
@@ -727,7 +728,7 @@ if __name__ == '__main__':
 #    file = '2020_01_27-16_48_32-goeppert_mayer-nv7_2019_11_27'
 
     # temp
-    file = '2020_02_07-17_48_31-johnson-nv3_2020_02_04'
+    file = '2020_02_09-23_28_56-johnson-nv3_2020_02_04'
 
     # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
 

@@ -82,16 +82,16 @@ def process_raw_buffer(new_tags, new_channels,
 # %% Main
 
 
-def main(nv_sig, apd_indices, readout_time,
-         num_reps, num_runs, num_bins, filter, voltage):
+def main(nv_sig, apd_indices, readout_time_range,
+         num_reps, num_runs, num_bins, filter, voltage, polarization_time):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
-                      num_reps, num_runs, num_bins, filter, voltage)
+        main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
+                      num_reps, num_runs, num_bins, filter, voltage, polarization_time)
 
 
-def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
-                  num_reps, num_runs, num_bins, filter, voltage):
+def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
+                  num_reps, num_runs, num_bins, filter, voltage, polarization_time):
     
     if len(apd_indices) > 1:
         msg = 'Currently lifetime only supports single APDs!!'
@@ -104,8 +104,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     # In ns
-    polarization_time = 30 * 10**3
-    readout_time = int(readout_time)
+#    polarization_time = 25 * 10**3
+    start_readout_time = int(readout_time_range[0])
+    end_readout_time = int(readout_time_range[1])
+    
+    if end_readout_time < polarization_time:
+        end_readout_time = polarization_time
+        
+    calc_readout_time = end_readout_time - start_readout_time
+#    readout_time = polarization_time + int(readout_time)
 #    inter_exp_wait_time = 500  # time between experiments
 
     aom_delay_time = shared_params['532_aom_delay']
@@ -114,7 +121,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
 
     # pulls the file of the sequence from serves/timing/sequencelibrary
     file_name = os.path.basename(__file__)
-    seq_args = [readout_time, polarization_time, 
+    seq_args = [start_readout_time, end_readout_time, polarization_time,
                 aom_delay_time, apd_indices[0]]
     seq_args = [int(el) for el in seq_args]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -127,6 +134,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
     expected_run_time = num_reps * num_runs * seq_time_s  # s
     expected_run_time_m = expected_run_time / 60 # m
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
+#    return
 
     # %% Bit more setup
 
@@ -152,8 +160,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
             break
 
         # Optimize
-        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
-        opti_coords_list.append(opti_coords)
+#        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
+#        opti_coords_list.append(opti_coords)
         
         
         # Expose the stream
@@ -166,8 +174,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
         gate_close_channel = channel_mapping[2]
             
         # Stream the sequence
-        seq_args = [readout_time, polarization_time, 
-                    aom_delay_time, apd_indices[0]]
+        seq_args = [start_readout_time, end_readout_time, polarization_time,
+                aom_delay_time, apd_indices[0]]
         seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         
@@ -210,8 +218,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
                     'filter': filter,
-                    'readout_time': readout_time,
-                    'readout_time-units': 'ns',
+                    'start_readout_time': start_readout_time,
+                    'start_readout_time-units': 'ns',
+                    'end_readout_time': end_readout_time,
+                    'end_readout_time-units': 'ns',
+                    'calc_readout_time': calc_readout_time,
+                    'calc_readout_time-units': 'ns',
                     'num_reps': num_reps,
                     'num_runs': num_runs,
                     'run_ind': run_ind,
@@ -233,20 +245,25 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
 
     # %% Bin the data
     
-    readout_time_ps = 1000*readout_time
+    readout_time_ps = 1000*calc_readout_time
+    
+#    start_readout_time_ps = 1000*start_readout_time
+#    end_readout_time_ps = 1000*end_readout_time
     binned_samples, bin_edges = numpy.histogram(processed_tags, num_bins,
-                                                (0, readout_time_ps))
+                                (0, readout_time_ps))
+#    print(binned_samples)
     
     # Compute the centers of the bins
-    bin_size = readout_time / num_bins
+    bin_size = calc_readout_time / num_bins
     bin_center_offset = bin_size / 2
-    bin_centers = numpy.linspace(0, readout_time, num_bins) + bin_center_offset
+    bin_centers = numpy.linspace(start_readout_time, end_readout_time, num_bins) + bin_center_offset
+#    print(bin_centers)
 
     # %% Plot
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
 
-    ax.plot(bin_centers, binned_samples, 'r-')
+    ax.semilogy(bin_centers, binned_samples, 'r-')
     ax.set_title('Lifetime')
     ax.set_xlabel('Time after illumination (ns)')
     ax.set_ylabel('Counts')
@@ -267,8 +284,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 'filter': filter,
                 'voltage': voltage,
-                'readout_time': readout_time,
-                'readout_time-units': 'ns',
+                'polarization_time': polarization_time,
+                'polarization_time-units': 'ns',
+                'start_readout_time': start_readout_time,
+                'start_readout_time-units': 'ns',
+                'end_readout_time': end_readout_time,
+                'end_readout_time-units': 'ns',
+                'calc_readout_time': calc_readout_time,
+                'calc_readout_time-units': 'ns',
                 'num_bins': num_bins,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
