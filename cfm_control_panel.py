@@ -426,7 +426,7 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     nd = 'nd_0'
-    sample_name = 'Y2O3_no_graphene_no_IG'
+    sample_name = 'Y2O3_no_graphene_yes_IG'
     
     search = { 'coords': [0.0, 0, 5.0],
             'name': '{}'.format(sample_name),
@@ -503,15 +503,10 @@ if __name__ == '__main__':
 #            filter = 'All filters'
             voltage = 'no_graphene_no_IG'
 #
-            polarization_time = 600 * 10**3
-            do_lifetime_v2(nv_sig, apd_indices, [0, 2*10**6],
-                           0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
-            
-#            print("refocusing...")
-#            do_stationary_count(nv_sig, apd_indices)
-#            polarization_time = 20 * 10**3
-#            do_lifetime_v2(nv_sig, apd_indices, [polarization_time - 50, polarization_time + 30], 
-#                           10**6, 81, 7, filter, voltage, polarization_time) # fast decay
+#            polarization_time = 600 * 10**3
+#            do_lifetime_v2(nv_sig, apd_indices, [0, 2*10**6],
+#                           0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
+        
             
             
 #            find_resonance_and_rabi(nv_sig, apd_indices)
