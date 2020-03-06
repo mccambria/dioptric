@@ -20,9 +20,9 @@ import matplotlib.pyplot as plt
 
 data_path = 'C:/Users/Public/Documents/Jobin Yvon/SpectraData'
 
-#folder = '5_nm_Er_graphene/2020_03_02'
+folder = '5_nm_Er_graphene/2020_03_02'
 
-folder = '5_nm_Er_NO_graphene_Y_ig'
+#folder = '5_nm_Er_NO_graphene_Y_ig'
 
 # %%
 
@@ -138,38 +138,41 @@ file_longpass = 'Longpass filter'
 
 file_ionic_gel = 'Ionic_gel'
 file_er_surface = 'Erbium'
+file_in_oxide = 'In_oxide'
 
+file_no_graphene_no_IG = '550'
 
 if __name__ == '__main__':
     
     
    
 #    plot_spectra(file_ionic_gel, [None, None], [0, 9350],'Focused on Ionic Gel')
-#    plot_spectra(file_er_surface, [None, None], [0, 9350],'Focused on Oxide Surface')
+#    plot_spectra(file_in_oxide, [None, None], [0, 9350],'Focused on below Oxide Surface')
     
  # %%
-    data_IG = tool_belt.get_raw_data(folder, file_ionic_gel,
+    data_graphene = tool_belt.get_raw_data('5_nm_Er_graphene/2020_03_02', file_m10,
                  nvdata_dir=data_path)
-    wavelengths = numpy.array(data_IG['wavelengths'])
-    counts_IG = numpy.array(data_IG['counts'])
+    wavelengths_graphene = numpy.array(data_graphene['wavelengths'])
+    counts_graphene = numpy.array(data_graphene['counts'])
     
-    data_Er = tool_belt.get_raw_data(folder, file_er_surface,
+    data_no_graphene = tool_belt.get_raw_data('5_nm_Er_NO_graphene_NO_ig', file_no_graphene_no_IG,
                  nvdata_dir=data_path)
-    counts_Er = numpy.array(data_Er['counts'])
-    
-    
-    
-    counts = counts_Er - counts_IG
-    
-    plot_strt_ind, plot_end_ind  = wavelength_range_calc([None,None], wavelengths)
+    counts_no_graphene = numpy.array(data_no_graphene['counts'])
+    wavelengths_no_graphene = numpy.array(data_no_graphene['wavelengths'])
+        
+    plot_strt_ind_g, plot_end_ind_g  = wavelength_range_calc([545,570], wavelengths_graphene)
+    plot_strt_ind_ng, plot_end_ind_ng  = wavelength_range_calc([545,570], wavelengths_no_graphene)
     
 
-    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(wavelengths[plot_strt_ind : plot_end_ind], counts[plot_strt_ind : plot_end_ind])
-    ax.set_xlabel('Wavelength')
+    fig, ax= plt.subplots(1, 1, figsize=(10, 8))    
+    ax.plot(wavelengths_no_graphene[plot_strt_ind_ng : plot_end_ind_ng], counts_no_graphene[plot_strt_ind_ng : plot_end_ind_ng], label = 'Er without graphene')
+
+    ax.plot(wavelengths_graphene[plot_strt_ind_g : plot_end_ind_g], counts_graphene[plot_strt_ind_g : plot_end_ind_g] - 750, label = 'Er with graphene (gate voltage = -1.0V)')
+    ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
-    ax.set_title('Er signal subtracted from Ionic Liquid signal')
-#    ax.set_ylim([0, 9350])
+    ax.set_title('Spectra around 550 nm with and without graphene')
+    ax.set_ylim([0, 2000])
+    ax.legend()
 
     
     
