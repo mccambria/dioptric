@@ -226,27 +226,40 @@ if __name__ == '__main__':
     wvlngth_linspace = numpy.linspace(wvlngth_2[0], wvlngth_2[-1], 1000)
     
     titles = ['0.2V', '-1.0V', '-1.5V', '-2.0V', '-2.3V']
-    fig, axes= plt.subplots(2, 3, figsize=(10, 8))
+    wavelengths = [wvlngth_1, wvlngth_2, wvlngth_3,wvlngth_4,wvlngth_5]
+    counts = [counts_1, counts_2, counts_3, counts_4, counts_5]
+    popts = [popt1, popt2, popt3, popt4, popt5]
+    
+    fig, axes_pack= plt.subplots(3, 2, figsize=(10, 8))
+    r_ind = 0
+    c_ind = 0
     for i in range(5):
-        ax = axes[i]
+        ax = axes_pack[r_ind,c_ind]
         ax.set_xlabel('Wavelength (nm)')
         ax.set_ylabel('Normalized Counts')
-#    ax.set_title(plot_title)
+        ax.set_title(titles[i])
         ax.set_ylim([-100, 200]) 
-        ax.legend()
-    ax.plot(wvlngth_1, counts_1, label = '0.2V')
-    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt1), label = 'fit')
-    ax.plot(wvlngth_2, counts_2, label = '-1.0V')
-    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt2), label = 'fit')
-    ax.plot(wvlngth_3, counts_3, label = '-1.5V')
-    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt3), label = 'fit')
-    ax.plot(wvlngth_4, counts_4, label = '-2.0V')
-    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt4), label = 'fit')
-    ax.plot(wvlngth_5, counts_5, label = '-2.3V')
-    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt5), label = 'fit')
-    text_eq = r'Gaussian fit height = ' + "%.1f"%(popt2[0]**2) 
-    ax.text(0.57, 0.8, text_eq, transform=ax.transAxes, fontsize=12,
+#        ax.legend()
+        ax.plot(wavelengths[i], counts[i], label = titles[i])
+        ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popts[i]), label = 'fit')
+#    ax.plot(wvlngth_2, counts_2, label = '-1.0V')
+#    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt2), label = 'fit')
+#    ax.plot(wvlngth_3, counts_3, label = '-1.5V')
+#    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt3), label = 'fit')
+#    ax.plot(wvlngth_4, counts_4, label = '-2.0V')
+#    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt4), label = 'fit')
+#    ax.plot(wvlngth_5, counts_5, label = '-2.3V')
+#    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt5), label = 'fit')
+        text_eq = r'Gaussian fit height = ' + "%.1f"%(popts[i][0]**2) 
+        ax.text(0.3, 0.17, text_eq, transform=ax.transAxes, fontsize=12,
                                 verticalalignment="top", bbox=props)
+        
+        if c_ind == 0:
+            c_ind = 1
+        elif c_ind == 1:
+            r_ind = r_ind +  1
+            c_ind = 0 
+    fig.tight_layout()
     
     
     

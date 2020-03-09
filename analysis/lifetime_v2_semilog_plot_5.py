@@ -47,20 +47,20 @@ file_m25_lp = '2020_03_02-20_44_24-Y2O3_graphene_Er_5nm'
 file_m25_sp = '2020_03_02-20_53_10-Y2O3_graphene_Er_5nm'
 
 
-files = [file_p02_lp,file_p02_sp,file_p02_nf,
-           file_m05_lp,file_m05_sp,file_m05_nf, 
-         file_m10_lp,file_m10_sp,file_m10_nf,
-         file_m15_lp, file_m15_sp, file_m15_nf,
-         file_m20_lp, file_m20_sp, file_m20_nf,
-         file_m10_lp_2, file_m10_sp_2, file_m10_nf_2,
-         file_m25_lp, file_m25_sp]
+#files = [file_p02_lp,file_p02_sp,file_p02_nf,
+#           file_m05_lp,file_m05_sp,file_m05_nf, 
+#         file_m10_lp,file_m10_sp,file_m10_nf,
+#         file_m15_lp, file_m15_sp, file_m15_nf,
+#         file_m20_lp, file_m20_sp, file_m20_nf,
+#         file_m10_lp_2, file_m10_sp_2, file_m10_nf_2,
+#         file_m25_lp, file_m25_sp]
 
 file_NG_lp = '2020_03_04-13_08_53-Y2O3_no_graphene_no_IG'
 file_NG_sp = '2020_03_04-12_47_02-Y2O3_no_graphene_no_IG'
 file_NG_nf = '2020_03_04-12_36_45-Y2O3_no_graphene_no_IG'
 
-#files = [file_p02_lp,file_p02_sp,file_p02_nf,
-#         file_NG_lp, file_NG_sp, file_NG_nf]
+files = [file_p02_lp,file_p02_sp,file_p02_nf,
+         file_NG_lp, file_NG_sp, file_NG_nf]
 
 
 count_list = []
@@ -69,8 +69,8 @@ text_list = []
 #data_fmt_list = ['b.','k.','r.','g.', 'y.', 'm.', 'c.']
 data_fmt_list = ['bo','ko','ro','go', 'yo', 'mo', 'co']
 fit_fmt_list = ['b-','k-','r-','g-', 'y-', 'm-', 'c-']
-label_list = ['CNP, 0.3V', '-0.5V','-1.0V', '-1.5V','-2.0V','-1.0V', '-2.5V']
-#label_list = ['CNP, graphene/IG', 'no graphene/no IG']
+#label_list = ['CNP, 0.3V', '-0.5V','-1.0V', '-1.5V','-2.0V','-1.0V', '-2.5V']
+label_list = ['CNP, graphene/ionic gel', 'no graphene/no ionic gel']
 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
 
 init_params_list_1 = [10,1]
@@ -137,11 +137,12 @@ def fig_lifetime(num_data, file_list, file_ind, title, fit_eq, fit_params):
 #        print(popt)
 #        lin_centers = numpy.linspace(bin_centers[0],bin_centers[-1], 1000)
     
-        ax.semilogy(bin_centers, counts, data_fmt_list[i], label=label_list[i])
+        ax.semilogy(bin_centers[3:], counts[3:], data_fmt_list[i], label=label_list[i])
 #        ax.semilogy(lin_centers, fit_eq(lin_centers,*popt), fit_fmt_list[i])
         ax.set_xlabel('Time after illumination (us)')
         ax.set_ylabel('Counts')
         ax.set_title(title)
+        ax.set_ylim([0.9*10**2, 1.1*10**3])
         ax.legend()
         
 #        if fit_eq == double_decay:
@@ -180,13 +181,13 @@ def fig_lifetime(num_data, file_list, file_ind, title, fit_eq, fit_params):
         
 if __name__ == '__main__':
     
-    num_files = 7
+    num_files = 2
     
     #file_ind: 0 for long pass, 1 for short pass, 2 for no filter 
 
-#    fig_lifetime(num_files, files, 1, 'Lifetime, shortpass filter', double_decay, init_params_list_2) # shortpass
-#    fig_lifetime(num_files, files, 0, 'Lifetime, longpass filter', double_decay, init_params_list_2) # longpass
+    fig_lifetime(num_files, files, 1, 'Lifetime, shortpass filter', double_decay, init_params_list_2) # shortpass
+    fig_lifetime(num_files, files, 0, 'Lifetime, longpass filter', double_decay, init_params_list_2) # longpass
 
 
-    pol_counts(num_files, files, 1, 'Fluorescence while Er is polarized, Shortpass filter')
-    pol_counts(num_files, files, 0, 'Fluorescence while Er is polarized, Longpass filter')
+#    pol_counts(num_files, files, 1, 'Fluorescence while Er is polarized, Shortpass filter')
+#    pol_counts(num_files, files, 0, 'Fluorescence while Er is polarized, Longpass filter')
