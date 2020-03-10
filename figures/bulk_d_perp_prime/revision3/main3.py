@@ -12,10 +12,14 @@ Created on Mon Dec  9 17:04:19 2019
 import csv
 import numpy
 from numpy import pi
+import matplotlib
 import matplotlib.pyplot as plt
 import analysis.extract_hamiltonian as eh
 from analysis.extract_hamiltonian import calc_splitting
 import scipy.stats as stats
+from scipy.optimize import curve_fit
+from numpy import matmul
+import matplotlib.gridspec as gridspec
 
 
 # %% Constants
@@ -24,6 +28,12 @@ import scipy.stats as stats
 im = 0+1j
 inv_sqrt_2 = 1/numpy.sqrt(2)
 gmuB = 2.8e-3  # gyromagnetic ratio in GHz / G
+
+ms = 7
+lw = 1.75
+    
+ms = 5.25
+lw = 5.25/4
 
 
 # %% Functions
@@ -101,6 +111,34 @@ def weighted_corrcoeff(x, y, errors=None):
     
     return cov_mat[0,1] / numpy.sqrt(cov_mat[0,0]*cov_mat[1,1])
     return
+
+
+def linear(x, m, b):
+    return m*x + b
+
+
+def linear_prop(B_linspace, pcov):
+    
+    # Gradient as a column vector
+    grad = numpy.array([[B_linspace], [1]])
+    grad_T = numpy.transpose(grad)
+    
+    squared_errs = matmul(grad_T, matmul(pcov, grad)).flatten()[0]
+    return numpy.sqrt(squared_errs)
+
+
+def conf_int(ax, B_linspace, popt, pcov):
+    
+    # Propagation of error
+    fit = linear(B_linspace, *popt)
+    err = linear_prop(B_linspace, pcov)
+    
+    lin_color = '#009E73'
+    fill_color = '#ACECDB'
+    pste = numpy.sqrt(numpy.diag(pcov))
+    ax.plot(B_linspace, linear(B_linspace, *popt), c=lin_color)
+    ax.fill_between(B_linspace, fit - 2*err, fit + 2*err, color=fill_color)
+    print('{}\n{}\n'.format(popt, pste))
     
     
 def correlations(nv_data):
@@ -233,127 +271,80 @@ def correlations(nv_data):
             corrcoeff = corr_fun(x_column, y_column, error)
             # print('{}, {}: {:.2}'.format(x_name, y_name, corrcoeff))
             print(corrcoeff)
-        
-
-def plot_gamma_omega_vs_angle(nv_data):
-
-    plt.rcParams.update({'font.size': 18})  # Increase font size
-    fig, axes_pack = plt.subplots(3, 1, figsize=(9,18))
-    fig.set_tight_layout(True)
-    for ax in axes_pack:
-        ax.set_xlabel(r'Magnet angle, $\theta_{B}$ ($\degree$)')
-        ax.set_xlim(-5, 95)
-        ax.set_xticks(numpy.linspace(0,90,7))
-        # ax.set_xlim(47, 50)
-        
-    # Ax-specific setup
-    
-    gamma_ax = axes_pack[0]
-    gamma_ax.set_title('Gamma vs Angle')
-    # gamma_ax.set_ylim(0.1, 0.2)
-    gamma_ax.set_ylim(0.1, 0.3)
-    gamma_ax.set_ylabel('Gamma (kHz)')
-    
-    omega_ax = axes_pack[1]
-    omega_ax.set_title('Omega vs Angle')
-    omega_ax.set_ylim(0.04, 0.08)
-    omega_ax.set_ylabel('Omega (kHz)')
-    
-    ratio_ax = axes_pack[2]
-    ratio_ax.set_title('Gamma/Omega vs Angle')
-    # ratio_ax.set_ylim(1.5, 3.5)
-    ratio_ax.set_ylim(1.5, 4.5)
-    ratio_ax.set_ylabel('Ratio')
-    
-    for ind in range(len(nv_data)):
-        
-        nv = nv_data[ind]
-        
-        name = nv['name']
-        if name not in ['NVE']:
-            continue
-        
-        gammas = numpy.array(nv['gamma'])
-        gamma_errors = numpy.array(nv['gamma_error'])
-        
-        omegas = numpy.array(nv['omega'])
-        omega_errors = numpy.array(nv['omega_error'])
-        
-        ratios = numpy.array(nv['ratio'])
-        ratio_errors = numpy.array(nv['ratio_error'])
-        
-        angles = numpy.array(nv['theta_B'])
-        mask = angles != None
-        if True in mask:
-            
-            gamma_ax.errorbar(angles[mask], gammas[mask],
-                    yerr=gamma_errors[mask], linestyle='None', ms=9, lw=2.5,
-                    marker=nv['marker'], color=nv['color'], label=nv['name'])
-            omega_ax.errorbar(angles[mask], omegas[mask],
-                    yerr=omega_errors[mask], linestyle='None', ms=9, lw=2.5,
-                    marker=nv['marker'], color=nv['color'], label=nv['name'])
-            ratio_ax.errorbar(angles[mask], ratios[mask],
-                    yerr=ratio_errors[mask], linestyle='None', ms=9, lw=2.5,
-                    marker=nv['marker'], color=nv['color'], label=nv['name'])
-            
-            # gamma_wavg = numpy.average(gammas[mask], weights=(1/gamma_errors[mask]**2))
-            # gamma_ax.errorbar(angles[mask], gammas[mask]/gamma_wavg,
-            #                   yerr=gamma_errors[mask]/gamma_wavg,
-            #                   linestyle='None', marker='o', ms=9, lw=2.5)
-            # omega_wavg = numpy.average(omegas[mask], weights=(1/omega_errors[mask]**2))
-            # omega_ax.errorbar(angles[mask], omegas[mask]/omega_wavg,
-            #                   yerr=omega_errors[mask]/omega_wavg,
-            #                   linestyle='None', marker='o', ms=9, lw=2.5)
-            
-    gamma_ax.legend()
     
 
 # %% Main
-
+            
 
 def main(nv_data):
     
-    all_ratios = []
-    all_ratio_errors = []
-
-    # Splitting, par_B, perp_B
-    # plt.rcParams.update({'font.size': 15})  # Increase font size
-    # fig, axes_pack = plt.subplots(3,1, figsize=(7,8))
-
-    # par_B, perp_B
-    plt.rcParams.update({'font.size': 18})  # Increase font size
-    fig, axes_pack = plt.subplots(2,1, figsize=(7,8))
+    # fig, axes_pack = plt.subplots(4,1, figsize=(5.0625,9.0))
+    fig = plt.figure(figsize=(5.0625,7.0))
     
-    # Splitting setup
-    # ax = axes_pack[0]
-    # ax.set_xlabel(r'Splitting, $\Delta_{\pm}$ (MHz)')
-    # # ax.set_xlim(-50, 1300)
-    # ax.set_xlim(-10, 350)
-    # ax.set_ylabel(r'$\gamma / \Omega$')
-    # ax.set_ylim(1.5, 4.5)
+    gs_fig = gridspec.GridSpec(2, 1, figure=fig)
+    gs_top = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=gs_fig[0],
+                                              hspace=0.0)
+    gs_bot = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=gs_fig[1],
+                                              hspace=0.0)
     
-    # x_min = -1.5
-    # x_max = 61.5
-    x_min = -5
-    x_max = 115
+    axes_pack = []
+    
+    ax = fig.add_subplot(gs_top[0])
+    axes_pack.append(ax)
+    ax = fig.add_subplot(gs_top[1], sharex=ax)
+    axes_pack.append(ax)
+    
+    ax = fig.add_subplot(gs_bot[0])
+    axes_pack.append(ax)
+    ax = fig.add_subplot(gs_bot[1], sharex=ax)
+    axes_pack.append(ax)
+    
+    
+    # %% Axes setups
+    
+    x_min = -1.5
+    x_max = 61.5
+    # x_min = -5
+    # x_max = 115
+    
+    omega_label = r'$\Omega$ (kHz)'
+    omega_min = 0.043
+    omega_max = 0.077
+    
+    gamma_label = r'$\gamma$ (kHz)'
+    gamma_min = 0.09
+    gamma_max = 0.27
             
-    # par_B setup
-    # ax = axes_pack[1]
     ax = axes_pack[0]
+    # ax.set_xlabel(r'$B_{\parallel}$ (G)')
+    # ax.set_xlim(x_min, x_max)
+    ax.set_ylabel(omega_label)
+    ax.set_ylim(omega_min, omega_max)
+    
+    ax = axes_pack[1]
     ax.set_xlabel(r'$B_{\parallel}$ (G)')
     ax.set_xlim(x_min, x_max)
-    # ax.set_xticks(numpy.linspace(0,90,7))
-    ax.set_ylabel(r'$\gamma / \Omega$')
-    ax.set_ylim(1.5, 4.5)
+    ax.set_ylabel(gamma_label)
+    ax.set_ylim(gamma_min, gamma_max)
     
-    # par_B setup
-    # ax = axes_pack[2]
-    ax = axes_pack[1]
+    ax = axes_pack[2]
+    # ax.set_xlabel(r'$B_{\perp}$ (G)')
+    # ax.set_xlim(x_min, x_max)
+    ax.set_ylabel(omega_label)
+    ax.set_ylim(omega_min, omega_max)
+    
+    ax = axes_pack[3]
     ax.set_xlabel(r'$B_{\perp}$ (G)')
     ax.set_xlim(x_min, x_max)
-    # ax.set_xticks(numpy.linspace(0,90,7))
-    ax.set_ylabel(r'$\gamma / \Omega$')
-    ax.set_ylim(1.5, 4.5)
+    ax.set_ylabel(gamma_label)
+    ax.set_ylim(gamma_min, gamma_max)
+    
+    all_omega = []
+    all_omega_err = []
+    all_gamma = []
+    all_gamma_err = []
+    all_par_B = []
+    all_perp_B = []
 
     for ind in range(len(nv_data)):
         
@@ -367,67 +358,139 @@ def main(nv_data):
         # if name != 'test':
         #     continue
         
-        # Calculate ratios
-        ratios = numpy.array(nv['ratio'])
-        ratio_errors = numpy.array(nv['ratio_err'])
-        all_ratios.extend(ratios)
-        all_ratio_errors.extend(ratio_errors)
+        omega = numpy.array(nv['omega'])
+        omega_err = numpy.array(nv['omega_err'])
+        gamma = numpy.array(nv['gamma'])
+        gamma_err = numpy.array(nv['gamma_err'])
+        mag_B = numpy.array(nv['mag_B'])
+        par_B = numpy.array(nv['par_B'])
+        perp_B = numpy.array(nv['perp_B'])
         
-        # Plot splitting
-        # ax = axes_pack[0]
-        # splittings = numpy.array(nv['splitting'])
-        # mask = splittings != None
-        # if True in mask:
-        #     ax.errorbar(splittings[mask], ratios[mask],
-        #                 yerr=ratio_errors[mask], label=name,
-        #                 marker=marker, color=color, linestyle='None',
-        #                 ms=9, lw=2.5)
+        # Only plot points with measured angles and
+        # B small enough to fit in xlims
+        mag_B_mask = []
+        for val in mag_B:
+            if val is None:
+                mag_B_mask.append(False)
+            elif val > 65:
+                mag_B_mask.append(False)
+            else:
+                mag_B_mask.append(True)
+        mag_B_mask = numpy.array(mag_B_mask)
+        angle_mask = par_B != None
+        mask = angle_mask * mag_B_mask
+        
+        # Calculate based on all measurements with components, including
+        # those off axis
+        all_omega.extend(omega[angle_mask])
+        all_omega_err.extend(omega_err[angle_mask])
+        all_gamma.extend(gamma[angle_mask])
+        all_gamma_err.extend(gamma_err[angle_mask])
+        all_par_B.extend(par_B[angle_mask])
+        all_perp_B.extend(perp_B[angle_mask])
     
-        # Plot par_B
-        # ax = axes_pack[1]
         ax = axes_pack[0]
-        par_Bs = numpy.array(nv['par_B'])
-        mask = par_Bs != None
         if True in mask:
-            ax.errorbar(par_Bs[mask], ratios[mask],
-                        yerr=ratio_errors[mask], label=name,
+            ax.errorbar(par_B[mask], omega[mask],
+                        yerr=omega_err[mask], label=name,
                         marker=marker, color=color, linestyle='None',
-                        ms=9, lw=2.5)
+                        ms=ms, lw=lw)
     
-        # Plot perp_B
-        # ax = axes_pack[2]
         ax = axes_pack[1]
-        perp_Bs = numpy.array(nv['perp_B'])
-        mask = perp_Bs != None
         if True in mask:
-            ax.errorbar(perp_Bs[mask], ratios[mask],
-                        yerr=ratio_errors[mask], label=name,
+            ax.errorbar(par_B[mask], gamma[mask],
+                        yerr=gamma_err[mask], label=name,
                         marker=marker, color=color, linestyle='None',
-                        ms=9, lw=2.5)
+                        ms=ms, lw=lw)
+    
+        ax = axes_pack[2]
+        if True in mask:
+            ax.errorbar(perp_B[mask], omega[mask],
+                        yerr=omega_err[mask], label=name,
+                        marker=marker, color=color, linestyle='None',
+                        ms=ms, lw=lw)
+    
+        ax = axes_pack[3]
+        if True in mask:
+            ax.errorbar(perp_B[mask], gamma[mask],
+                        yerr=gamma_err[mask], label=name,
+                        marker=marker, color=color, linestyle='None',
+                        ms=ms, lw=lw)
+            
+    # Cast to arrays
+    all_omega = numpy.array(all_omega)
+    all_omega_err = numpy.array(all_omega_err)
+    all_gamma = numpy.array(all_gamma)
+    all_gamma_err = numpy.array(all_gamma_err)
+    all_par_B = numpy.array(all_par_B)
+    all_perp_B = numpy.array(all_perp_B)
 
-    all_ratios = numpy.array(all_ratios)
-    all_ratio_errors = numpy.array(all_ratio_errors)
+    # Legend
+    ax = axes_pack[0]
+    # Label sorting as foretold in the good book, stack overflow
+    handles, labels = ax.get_legend_handles_labels()
+    labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+    # for el in handles:
+    #     el.set_yerr_size(0.0)
+    ax.legend(handles, labels, bbox_to_anchor=(0., 1.08, 1., .102),
+              loc='lower left', ncol=5, mode='expand',
+              borderaxespad=0., handlelength=0.5, )
     
-    # wavg_ratio = numpy.average(all_ratios, weights=(1/all_ratio_errors**2))
-    # ste_ratio = numpy.sqrt(1/numpy.sum(all_ratio_errors**-2))
-    # print(all_ratios)
-    # print(all_ratio_errors)
-    # print(wavg_ratio)
-    # print(ste_ratio)
+    # yticks
+    ticks = numpy.linspace(0.05, 0.07, 3)  # omega
+    axes_pack[0].set_yticks(ticks)
+    axes_pack[2].set_yticks(ticks)
+    ticks = numpy.linspace(0.1, 0.25, 4)  # gamma
+    axes_pack[1].set_yticks(ticks)
+    axes_pack[3].set_yticks(ticks)
     
-    # For both axes, plot the same weighted average and display a legend.
-    # for ax in axes_pack:
-    #     ax.legend(loc='lower right')
-        # xlim = ax.get_xlim()
-        # ax.fill_between([0, xlim[1]],
-        #                 wavg_ratio+ste_ratio, wavg_ratio-ste_ratio,
-        #                 alpha=0.5, color=colors[-1])
-        # ax.plot([0, xlim[1]], [wavg_ratio, wavg_ratio], color=colors[-1])
+    # xticks
+    axes_pack[0].set_zorder(10)
+    axes_pack[2].set_zorder(10)
+    axes_pack[0].tick_params('x', direction='inout',
+                             labelbottom=False, length=6)
+    axes_pack[2].tick_params('x', direction='inout',
+                             labelbottom=False, length=6)
+    axes_pack[1].tick_params('x', top=True)
+    axes_pack[3].tick_params('x', top=True)
     
-    axes_pack[0].legend(bbox_to_anchor=(0., 1.10, 1., .102), loc='lower left',
-           ncol=5, mode='expand', borderaxespad=0., handlelength=0.5)
-    fig.tight_layout(pad=0.5)
+    # Label
+    fig_labels = ['(a)', '(b)', '(c)', '(d)']
+    for ind in range(4):
+        ax = axes_pack[ind]
+        ax.text(-0.15, 0.92, fig_labels[ind], transform=ax.transAxes,
+                color='black', fontsize=12)
+        
+        
+    # Linear fits
+    B_linspace = numpy.linspace(0, x_max, num=1000)
+    abs_sig = True
     
+    popt, pcov = curve_fit(linear, all_par_B, all_omega,
+                            sigma=all_omega_err, absolute_sigma=abs_sig,
+                            p0=(0.0, numpy.average(all_omega)))
+    conf_int(axes_pack[0], B_linspace, popt, pcov)
+    
+    popt, pcov = curve_fit(linear, all_par_B, all_gamma,
+                            sigma=all_gamma_err, absolute_sigma=abs_sig,
+                            p0=(0.0, numpy.average(all_omega)))
+    conf_int(axes_pack[1], B_linspace, popt, pcov)
+    
+    popt, pcov = curve_fit(linear, all_perp_B, all_omega,
+                            sigma=all_omega_err, absolute_sigma=abs_sig,
+                            p0=(0.0, numpy.average(all_omega)))
+    conf_int(axes_pack[2], B_linspace, popt, pcov)
+    
+    popt, pcov = curve_fit(linear, all_perp_B, all_gamma,
+                            sigma=all_gamma_err, absolute_sigma=abs_sig,
+                            p0=(0.0, numpy.average(all_omega)))
+    conf_int(axes_pack[3], B_linspace, popt, pcov)
+        
+    
+    # %% Wrap up
+    
+    fig.tight_layout(pad=0.4, h_pad=0.4)
+
     
 def color_scatter(nv_data):
     
@@ -487,6 +550,17 @@ def color_scatter(nv_data):
 
 
 if __name__ == '__main__':
+    
+    plt.rcParams['text.latex.preamble'] = [
+        r'\usepackage{physics}',
+        r'\usepackage{sfmath}',
+        r'\usepackage{upgreek}',
+        r'\usepackage{helvet}',
+       ]  
+    plt.rcParams.update({'font.size': 9.75})
+    plt.rcParams.update({'font.family': 'sans-serif'})
+    plt.rcParams.update({'font.sans-serif': ['Helvetica']})
+    plt.rc('text', usetex=True)
     
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/papers/bulk_dq_relaxation/'
     file = path + 'compiled_data_import.csv'

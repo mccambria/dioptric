@@ -313,9 +313,9 @@ def plot_gamma_omega_vs_angle(nv_data):
 
 def main(nv_data):
     
-    # plot = 'ratio'
+    plot = 'ratio'
     # plot = 'gamma'
-    plot = 'omega'
+    # plot = 'omega'
     
     if plot == 'ratio':
         plot_y_label = r'$\gamma / \Omega$'
@@ -331,13 +331,16 @@ def main(nv_data):
         y_max = 0.08
     
     # par_B, perp_B
-    plt.rcParams.update({'font.size': 18})  # Increase font size
-    fig, axes_pack = plt.subplots(2,1, figsize=(7,8))
+    # plt.rcParams.update({'font.family': 'serif'})  # Increase font size
+    plt.rcParams.update({'font.size': 22})  # Increase font size
+    plt.rcParams.update({'mathtext.default': 'it'})  # Increase font size
+    # plt.rcParams.update({'font.weight': 50})  # Increase font size
+    fig, axes_pack = plt.subplots(2,1, figsize=(10,12))
     
-    # x_min = -1.5
-    # x_max = 61.5
-    x_min = -5
-    x_max = 115
+    x_min = -1.5
+    x_max = 61.5
+    # x_min = -5
+    # x_max = 115
             
     # par_B setup
     ax = axes_pack[0]
@@ -403,9 +406,10 @@ def main(nv_data):
                         marker=marker, color=color, linestyle='None',
                         ms=9, lw=2.5)
 
-    axes_pack[0].legend(bbox_to_anchor=(0., 1.10, 1., .102), loc='lower left',
+    axes_pack[0].legend(bbox_to_anchor=(0., 1.08, 1., .102), loc='lower left',
            ncol=5, mode='expand', borderaxespad=0., handlelength=0.5)
-    fig.tight_layout(pad=0.5)
+    # fig.tight_layout()
+    fig.tight_layout(h_pad=1.5)
     
     
 def color_scatter(nv_data):
@@ -466,6 +470,14 @@ def color_scatter(nv_data):
 
 
 if __name__ == '__main__':
+    
+    plt.rcParams['text.latex.preamble'] = [
+       r'\usepackage{physics}',
+       ]  
+    # plt.rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],
+    #                  'size': 20, 'weight':'bold'})
+    # plt.rc('text', usetex=True)
+
     
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/papers/bulk_dq_relaxation/'
     file = path + 'compiled_data_import.csv'

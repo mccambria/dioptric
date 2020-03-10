@@ -410,9 +410,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 if __name__ == '__main__':
 
 
-    file_name = '2020_02/2020_02_17-16_33_38-yalow-search'
+    # file_name = '2019_07/2019-07-23_17-39-48_johnson1'
+    file_name = '2019_04/2019-04-15_16-42-08_Hopper'
 
-#    create_figure(file_name)
+    create_figure(file_name)
     
-    reformat_plot('inferno', 'svg')
+    # reformat_plot('inferno', 'svg')
 
