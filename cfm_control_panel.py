@@ -426,9 +426,9 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     nd = 'nd_0'
-    sample_name = 'Y2O3_no_graphene_yes_IG'
+    sample_name = 'Y2O3_no_graphene_yes_IG_10nm'
     
-    search = { 'coords': [0.0, 0, 5.0],
+    search = { 'coords': [0.0, 0, 4.99],
             'name': '{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 5000, 'magnet_angle': 0.0,
@@ -444,10 +444,10 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
-#        set_xyz([0.0,0.0,5.0])
+        set_xyz([0.0,0.0,5.01])
 #        set_xyz([-0.116, -0.073, 2.61])
         
         with labrad.connect() as cxn:
@@ -497,14 +497,18 @@ if __name__ == '__main__':
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
             
-#            filter = 'No filter'
-            filter = 'Shortpass'
+            filter = 'No filter'
+#            filter = 'Shortpass'
 #            filter = 'Longpass'
-#            filter = 'All filters'
-            voltage = 'no_graphene_no_IG'
+#            filter = 'Sample removed'
+            voltage = 'no_graphene_yes_IG'
 #
 #            polarization_time = 600 * 10**3
 #            do_lifetime_v2(nv_sig, apd_indices, [0, 2*10**6],
+#                           0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
+            
+#            polarization_time = 100 * 10**3
+#            do_lifetime_v2(nv_sig, apd_indices, [0, 1*10**6],
 #                           0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
         
             
