@@ -197,7 +197,7 @@ def reformat_plot(colorMap, save_file_type):
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
 
 def create_figure(file_name):
-    
+
     path = 'image_sample'
     data = tool_belt.get_raw_data(path, file_name)
     x_range = data['x_range']
@@ -410,9 +410,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 if __name__ == '__main__':
 
 
-    file_name = '2020_02/2019_10_31-13_47_40-Goeppert-Mayer-NV_search'
+    # file_name = '2019_07/2019-07-23_17-39-48_johnson1'
+    file_name = '2019_04/2019-04-15_16-42-08_Hopper'
 
-#    create_figure(file_name)
-    
-    reformat_plot('inferno', 'svg')
+    create_figure(file_name)
 
+    # reformat_plot('inferno', 'svg')

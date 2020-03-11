@@ -146,30 +146,33 @@ def plot_spectra(file, wavelength_range, vertical_range, plot_title, normalizati
     plot_strt_ind, plot_end_ind  = wavelength_range_calc(wavelength_range, wavelengths)
     
     
-    begin_counts = numpy.average(counts[plot_strt_ind:plot_strt_ind+8])
-    end_counts = numpy.average(counts[plot_end_ind-8 : plot_end_ind])
+    
     
     
     # subtract off a constant background
-    counts_cnst_bkgd = counts - begin_counts
+    counts_cnst_bkgd = counts - numpy.average(counts[plot_strt_ind:plot_strt_ind+8])
+    
+    begin_counts = numpy.average(counts_cnst_bkgd[plot_strt_ind:plot_strt_ind+8])
+    end_counts = numpy.average(counts_cnst_bkgd[plot_end_ind-8 : plot_end_ind])
     
     # Calc straight line to subtract from data
     dy = end_counts -begin_counts
     dx = wavelengths[plot_end_ind] - wavelengths[plot_strt_ind]
     slope = dy /  dx
-    y_int = begin_counts - dy / dx * wavelengths[plot_strt_ind]
-
+    y_int = slope * wavelengths[plot_strt_ind] - begin_counts
+    
     #background that is linear with wavelength               
-    counts_lin_bckg = counts_cnst_bkgd - slope * wavelengths - y_int
+    counts_lin_bckg = counts_cnst_bkgd - slope * wavelengths + y_int
     
-#    counts_norm = counts_lin_bckg * normalization_factor/147
-    print(plot_end_ind)
-    popt = gaussian_fit_spectra(wavelengths, counts_lin_bckg, 547)
-    print(popt[0]**2)
-    
-    
-#    popt = gaussian_fit_spectra(wavelengths, counts_norm, 553)
+    counts_norm = counts_lin_bckg * 145 / normalization_factor
+#    print( y_int)
+#    print(slope)
+#    popt = gaussian_fit_spectra(wavelengths, counts_lin_bckg, 547)
 #    print(popt[0]**2)
+    
+    
+    popt = gaussian_fit_spectra(wavelengths, counts_norm, 553)
+    print(popt[0]**2)
     
 #    print(wavelengths[plot_strt_ind : plot_end_ind])
 #    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
@@ -180,7 +183,7 @@ def plot_spectra(file, wavelength_range, vertical_range, plot_title, normalizati
 #    ax.set_ylim(vertical_range)
     
     
-    return wavelengths[plot_strt_ind : plot_end_ind], counts_lin_bckg[plot_strt_ind : plot_end_ind], popt
+    return wavelengths[plot_strt_ind : plot_end_ind], counts_norm[plot_strt_ind : plot_end_ind], popt
         
         
         
@@ -214,17 +217,31 @@ if __name__ == '__main__':
 #    wvlngth_2, counts_2, popt2 = plot_spectra(file_660_NgraphNig, [650, 670], [-20, 80],'No graphene, No Ionic Gel, 660 peaks')
     
     
-    wvlngth_1, counts_1, popt1 = plot_spectra(file_p03, [545, 560], [-100, 300],'+0.3V', 111)
-    wvlngth_2, counts_2, popt2 = plot_spectra(file_m10, [545, 560], [-100, 300],'-1.0V', 143)
-    wvlngth_3, counts_3, popt3 = plot_spectra(file_m15, [545, 560], [-100, 300],'-1.5V', 146)
-    wvlngth_4, counts_4, popt4 = plot_spectra(file_m20, [545, 560], [-100, 300],'-2.0V', 139)
-    wvlngth_5, counts_5, popt5 = plot_spectra(file_m23, [545, 560], [-100, 300],'-2.3V', 136)
+    wvlngth_1, counts_1, popt1 = plot_spectra(file_p03, [545, 560], [-100, 300],'+0.3V', 113)
+    wvlngth_2, counts_2, popt2 = plot_spectra(file_m10, [545, 560], [-100, 300],'-1.0V', 145)
+    wvlngth_3, counts_3, popt3 = plot_spectra(file_m15, [545, 560], [-100, 300],'-1.5V', 130)
+    wvlngth_4, counts_4, popt4 = plot_spectra(file_m20, [545, 560], [-100, 300],'-2.0V', 128)
+    wvlngth_5, counts_5, popt5 = plot_spectra(file_m23, [545, 560], [-100, 300],'-2.3V', 127)
     
     wvlngth_linspace = numpy.linspace(wvlngth_2[0], wvlngth_2[-1], 1000)
     
-    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(wvlngth_1, counts_1, label = '0.2V')
-    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt1), label = 'fit')
+    titles = ['0.2V', '-1.0V', '-1.5V', '-2.0V', '-2.3V']
+    wavelengths = [wvlngth_1, wvlngth_2, wvlngth_3,wvlngth_4,wvlngth_5]
+    counts = [counts_1, counts_2, counts_3, counts_4, counts_5]
+    popts = [popt1, popt2, popt3, popt4, popt5]
+    
+    fig, axes_pack= plt.subplots(3, 2, figsize=(10, 8))
+    r_ind = 0
+    c_ind = 0
+    for i in range(5):
+        ax = axes_pack[r_ind,c_ind]
+        ax.set_xlabel('Wavelength (nm)')
+        ax.set_ylabel('Normalized Counts')
+        ax.set_title(titles[i])
+        ax.set_ylim([-100, 200]) 
+#        ax.legend()
+        ax.plot(wavelengths[i], counts[i], label = titles[i])
+        ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popts[i]), label = 'fit')
 #    ax.plot(wvlngth_2, counts_2, label = '-1.0V')
 #    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt2), label = 'fit')
 #    ax.plot(wvlngth_3, counts_3, label = '-1.5V')
@@ -233,15 +250,18 @@ if __name__ == '__main__':
 #    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt4), label = 'fit')
 #    ax.plot(wvlngth_5, counts_5, label = '-2.3V')
 #    ax.plot(wvlngth_linspace, gaussian(wvlngth_linspace, *popt5), label = 'fit')
-    ax.set_xlabel('Wavelength')
-    ax.set_ylabel('Counts')
-#    ax.set_title(plot_title)
-    ax.set_ylim([-100, 200]) 
-    ax.legend()
-    
-    text_eq = r'Gaussian fit height = ' + "%.1f"%(popt1[0]**2) 
-    ax.text(0.57, 0.8, text_eq, transform=ax.transAxes, fontsize=12,
+        text_eq = r'Gaussian fit height = ' + "%.1f"%(popts[i][0]**2) 
+        ax.text(0.3, 0.17, text_eq, transform=ax.transAxes, fontsize=12,
                                 verticalalignment="top", bbox=props)
+        
+        if c_ind == 0:
+            c_ind = 1
+        elif c_ind == 1:
+            r_ind = r_ind +  1
+            c_ind = 0 
+    fig.tight_layout()
+    
+    
     
     
     
