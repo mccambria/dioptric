@@ -4,7 +4,8 @@ Created on Tue Mar  3 10:17:30 2020
 
 Plot spectra data from a json file with the wavelengths and counts
 
-Specifically for plotting data from 3/10 and 3/9 of Er samples without graphene
+Specifically for plotting data from 3/11 of trying to focus on Er in 10 sample 
+with ionic gel
 
 @author: agardill
 """
@@ -25,6 +26,44 @@ data_path = 'C:/Users/Public/Documents/Jobin Yvon/SpectraData'
 #folder = '5_nm_Er_NO_graphene_NO_ig'
 
 # %%
+
+def cosmic_ray_subtraction(counts, cutoff):
+    index_list = []
+    double_index_list = []
+    i = 0
+    while i < len(counts):
+        print(i)
+        if counts[i] > cutoff:         
+            if i == 0 or i == len(counts)-1 or i == len(counts)-2:
+                index_list.append(i)
+                i = i + 1
+            else:
+                if counts[i+1] > cutoff:
+                    double_index_list.append(i)
+#                    double_index_list.append(i+1)
+                    i = i + 2
+                else:
+                    index_list.append(i)
+                    i = i + 1
+        else:
+            i = i+1
+    # average down single spikes in counts 
+    for ind in index_list:
+        if ind == 0:
+            counts[0] = counts[1]
+        elif ind == len(counts)-1:
+            counts[-1] = counts[-2]
+        else:
+            counts[ind] = numpy.average([counts[ind-1], counts[ind+1]])
+            
+    # average down two consecutive spikes in counts 
+    for ind in double_index_list:
+        avg = numpy.average([counts[ind-1], counts[ind+2]])
+        counts[ind] = avg
+        counts[ind+1] = avg
+            
+    return counts
+
 def wavelength_range_calc(wavelength_range, wavelength_list):
     wvlngth_range_strt = wavelength_range[0]
     wvlngth_range_end = wavelength_range[1]
@@ -106,10 +145,12 @@ def plot_spectra(file,folder, wavelength_range, vertical_range, plot_title):
     wavelengths = numpy.array(data['wavelengths'])
     counts = numpy.array(data['counts'])
     
+    counts = cosmic_ray_subtraction(counts, 1010)
+    
     plot_strt_ind, plot_end_ind  = wavelength_range_calc(wavelength_range, wavelengths)
     
     # subtract off a constant background
-    counts_cnst_bkgd = counts - numpy.average(counts[plot_end_ind-8:plot_end_ind])
+#    counts_cnst_bkgd = counts - numpy.average(counts[plot_end_ind-8:plot_end_ind])
     
     return wavelengths[plot_strt_ind : plot_end_ind], counts[plot_strt_ind : plot_end_ind]
         
@@ -118,54 +159,32 @@ def plot_spectra(file,folder, wavelength_range, vertical_range, plot_title):
     
 # %%
 
-# Measurements on 5 nm Er 3/9
-folder_5 = '5_nm_ionic_gel_tests'
-
-file_n_g_n_ig_550_5nm = 'no_g_no_ig_550'
-file_n_g_n_ig_660_5nm = 'no_g_no_ig_660'
-
-file_n_g_y_ig_550_5nm = 'no_g_yes_ig_550'
-file_n_g_y_ig_660_5nm = 'no_g_yes_ig_660'
-
-
-# Measurements on 10 nm Er 3/10
+# Measurements on 10 nm Er 3/11, collecting data at different focus
 folder_10 = '10_nm_ionic_gel_tests'
 
-file_n_g_n_ig_550_10nm = 'no_g_no_ig_550'
-file_n_g_n_ig_660_10nm = 'no_g_no_ig_660'
-
-file_n_g_y_ig_550_10nm = 'no_g_yes_ig_550'
-file_n_g_y_ig_660_10nm = 'no_g_yes_ig_660'
+file_ionic_gel_10nm_1 = 'no_g_yes_ig_550_01'
+file_ionic_gel_10nm_2 = 'no_g_yes_ig_550_02'
+file_ionic_gel_10nm_3 = 'no_g_yes_ig_550_03'
+file_ionic_gel_10nm_4 = 'no_g_yes_ig_550_04'
+file_ionic_gel_10nm_5 = 'no_g_yes_ig_550_05'
+file_ionic_gel_10nm_6 = 'no_g_yes_ig_550_06'
 
 if __name__ == '__main__':
-    
-     # 550 nm, no ionic gel
-#    wvlngth_1, counts_1 = plot_spectra(file_n_g_n_ig_550_5nm, folder_5,  [None, None], [-100, 300],'5 nm Er')
-#    wvlngth_1, counts_1 = plot_spectra(file_n_g_n_ig_550_10nm, folder_10, [None, None], [-100, 300],'10 nm Er')
-#     660 nm, no ionic gel
-    wvlngth_1, counts_1 = plot_spectra(file_n_g_n_ig_660_5nm, folder_5,  [None, None], [-100, 300],'5 nm Er')
-#    wvlngth_1, counts_1 = plot_spectra(file_n_g_n_ig_660_10nm, folder_10, [None, None], [-100, 300],'10 nm Er')
-    
-        
-     # 550 nm, with ionic gel
-#    wvlngth_2, counts_2 = plot_spectra(file_n_g_y_ig_550_5nm, folder_5,  [None, None], [-100, 300],'5 nm Er')
-#    wvlngth_2, counts_2 = plot_spectra(file_n_g_y_ig_550_10nm, folder_10, [None, None], [-100, 300],'10 nm Er')
-    # 660 nm, with ionic gel
-    wvlngth_2, counts_2 = plot_spectra(file_n_g_y_ig_660_5nm, folder_5,  [None, None], [-100, 300],'5 nm Er')
-#    wvlngth_2, counts_2 = plot_spectra(file_n_g_y_ig_660_10nm, folder_10, [None, None], [-100, 300],'10 nm Er')
 
+    labels = ['below oxide surface', 'at oxide surface', '~mm above oxide surface', 'inbetween oxide and ionic gel surface',
+              'ionic gel surface', 'sample a few mm our of focus']
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
+    for i in range(6):
+        file = 'no_g_yes_ig_550_0' + str(i + 1)
     
-#    print(counts_1)
-    ax.set_xlabel('Wavelength (nm)')
-    ax.set_ylabel('Counts')
-    ax.set_title('Spectra (compare ionic gel addition)')
-    ax.set_ylim([500, 1000]) 
-    ax.plot(wvlngth_1, counts_1, label = '5 nm Er w/out ionic gel')
-    ax.plot(wvlngth_2, counts_2, label = '5 nm Er w/ ionic gel')
-    ax.legend()
+        wvlngth, counts = plot_spectra(file, folder_10, [None, None], [-100, 300],'')
+    
+        ax.set_xlabel('Wavelength (nm)')
+        ax.set_ylabel('Counts')
+        ax.set_title('Spectra of 10 nm Er (with ionic gel)')
+        ax.set_ylim([300, 1360]) 
+        ax.plot(wvlngth, counts, label = labels[i])
+        ax.legend()
 
-    
-    
     
     
