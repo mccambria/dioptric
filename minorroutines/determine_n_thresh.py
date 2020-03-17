@@ -16,7 +16,15 @@ import numpy
 import matplotlib.pyplot as plt
 import labrad
 import time
+from scipy.optimize import curve_fit
+import scipy.stats
+import scipy.special
+import math  
+import photonstatistics as ps
 
+#%% function
+
+#get photon distribution 
 def get_Probability_distribution(aList):
         
     def get_unique_value(aList):
@@ -32,13 +40,32 @@ def get_Probability_distribution(aList):
         
     return unique_value, relative_frequency
 
-#def create_figure():
-#    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-#    ax.set_xlabel('number of photons (n)')
-#    ax.set_ylabel('P(n)')
-#    
-#    return fig
-    
+#quick double poisson curve fit 
+
+#given the data, return the fit     
+def get_poisson_distribution_fit(readout_time,unique_value, relative_frequency):
+    tR = readout_time
+    number_of_photons = unique_value
+    def PoissonDistribution(number_of_photons, a, b, numbla1, numbla2):
+        #numbla1 and numbla2 represent the fluorescence rate 
+        poissonian =[]
+        for i in range(len(number_of_photons)):
+            n = number_of_photons[i]
+            poissonian.append((a*(numbla1*tR)**n) * (math.e ** (-numbla1*tR)) /math.factorial(n) + b*((numbla2*tR)**n) * (math.e ** (-numbla2*tR)) /math.factorial(n))
+        return poissonian
+    popt, pcov = curve_fit(PoissonDistribution, number_of_photons,  relative_frequency)
+    print(popt, pcov)
+    return popt
+#given the fit, return the curve
+def get_poisson_distribution_curve(number_of_photons,readout_time, a, b, numbla1, numbla2):
+    poissonian_curve =[]
+    tR = readout_time
+    for i in range(len(number_of_photons)):
+        n = number_of_photons[i]
+        poissonian_curve.append((a*(numbla1*tR)**n) * (math.e ** (-numbla1*tR)) /math.factorial(n) + b*((numbla2*tR)**n) * (math.e ** (-numbla2*tR)) /math.factorial(n))
+    return poissonian_curve 
+
+
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
 def main(nv_sig, apd_indices, aom_ao_589_pwr,readout_time, num_runs, num_reps):
@@ -59,7 +86,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     aom_delay = shared_params['532_aom_delay'] 
     
     #readout_power in unit of microwatts
-#    aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
+    # aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
+    'TBD'
+    readout_power = 0 
     
     reionization_time = 1*10**6
     illumination_time = readout_time + 10**3
@@ -135,13 +164,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     cxn.apd_tagger.stop_tag_stream()
     
     
-#%% plot the data
+#%% plot the data and fit
     
-    unique_value, relative_frequency = get_Probability_distribution(list(sig_counts))    
+    unique_value, relative_frequency = get_Probability_distribution(list(sig_counts))  
+    
+    #double poisson fit    
+    a, b, numbla1, numbla2 = get_poisson_distribution_fit(readout_time,unique_value, relative_frequency)
+    number_of_photons = list(range(max(unique_value)))
+    curve = get_poisson_distribution_curve(number_of_photons,a, b, numbla1, numbla2)
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
     
     ax.plot(unique_value, relative_frequency, 'bo')
+    ax.plot(number_of_photons, curve,'r') 
     ax.set_xlabel('number of photons (n)')
     ax.set_ylabel('P(n)')
     
@@ -151,6 +186,24 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
+
+  #%% monitor photon counts 
+    fig2, ax2 = plt.subplots(1,1,figsize = (10,8.5))
+    
+    time_axe = ps.get_time_axe(seq_time_s, readout_time*10**-9,sig_counts)
+    photon_counts = ps.get_photon_counts(readout_time*10**-9, sig_counts)
+    
+    ax2.plot(time_axe,photon_counts)
+    ax2.set_xlabel('time (s)')
+    ax2.set_ylabel('photon counts (cps)')
+    
+    text = '\n'.join(('Readout time (589 nm)'+'%.3f'%(readout_time/10**3) + 'us',
+                     'Readout power (589 nm)'+'%.3f'%(readout_power) + 'uW'))
+   
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)    
+         
 
 #%% Save data 
     timestamp = tool_belt.get_time_stamp()

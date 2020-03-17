@@ -133,21 +133,36 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
 
 #%% plot the data and the fit
 
-    unique_value1, relative_frequency1 = get_Probability_distribution(list(sig_counts))
-    unique_value2, relative_frequency2 = get_Probability_distribution(list(ref_counts))
+    # signal -> NVm, reference -> NV0
+    unique_value1, relative_frequency1 = get_Probability_distribution(list(ref_counts))
+    unique_value2, relative_frequency2 = get_Probability_distribution(list(sig_counts))
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
     
+    #Shield's NVm, NV0 full model fit
     g00,g01,y01,y00 = ps.get_curve_fit_NV0(readout_time,readout_power,unique_value1, relative_frequency1)
     gm0,gm1,ym1,ym0 = ps.get_curve_fit_NVm(readout_time,readout_power,unique_value2, relative_frequency2)
+    print('NV0 full model fit: ' + str(g00,g01,y01,y00))
+    print('NVm full model fit:' + str(gm0,gm1,ym1,ym0))
+    
+    #Double poisson fit
+    a0, b0, numbla10, numbla20 = ps.get_gaussian_distribution_fit(readout_time,readout_power,unique_value1, relative_frequency1)
+    am, bm, numbla1m, numbla2m = ps.get_gaussian_distribution_fit(readout_time,readout_power,unique_value2, relative_frequency2)
+    print('NV0 double poisson fit: '+str(a0, b0, numbla10, numbla20))
+    print('NVm double poisson fit: '+str(am, bm, numbla1m, numbla2m))
     
     photon_numbers1 = list(range(max(unique_value1)))
     photon_numbers2 = list(range(max(unique_value2)))
     curve1 = ps.get_photon_distribution_curveNV0(photon_numbers1,readout_time, g00,g01,y01,y00)
     curve2 = ps.get_photon_distribution_curveNVm(photon_numbers2,readout_time, gm0,gm1,ym1,ym0)
+    curve3 = ps.get_poisson_distribution_curve(photon_numbers1,a0, b0, numbla10, numbla20)
+    curve4 = ps.get_poisson_distribution_curve(photon_numbers2,am, bm, numbla1m, numbla2m)
     
+ 
     ax.plot(photon_numbers1,curve1,'r')
     ax.plot(photon_numbers2,curve2,'b')
+    ax.plot(photon_numbers1,curve3,'y')
+    ax.plot(photon_numbers2,curve4,'g')
     ax.plot(unique_value1, relative_frequency1, 'ro')
     ax.plot(unique_value2, relative_frequency2, 'bo')
     ax.set_xlabel('number of photons (n)')
@@ -161,7 +176,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
-
+#%% monitor photon counts 
+            
 #%% Save data
     timestamp = tool_belt.get_time_stamp()
 
