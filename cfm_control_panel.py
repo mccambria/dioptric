@@ -56,11 +56,11 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-    scan_range = 5.0
+#    scan_range = 5.0
 #    scan_range = 0.6
 #    scan_range = 0.5
 #    scan_range = 0.3
-#    scan_range = 0.2
+    scan_range = 0.2
 #    scan_range = 0.1
 #    scan_range = 0.05
 #    scan_range = 0.025
@@ -426,9 +426,9 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     nd = 'nd_1.0'
-    sample_name = 'hopper'
+    sample_name = 'ayrton12'
     
-    search = { 'coords': [0.0, 0, 5.0],
+    search = { 'coords': [0.281, -0.213, 5.0],
             'name': '{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
@@ -451,7 +451,7 @@ if __name__ == '__main__':
 #        set_xyz([-0.116, -0.073, 2.61])
         
         with labrad.connect() as cxn:
-            cxn.filter_slider_ell9k.set_filter(nd)
+            cxn.filter_slider_ell9k.set_filter('nd_1.5')
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            input('Laser currently turned off, Press enter to stop...')
         
@@ -478,8 +478,8 @@ if __name__ == '__main__':
 #            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.4)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2)
-            do_resonance_state(nv_sig, apd_indices, States.LOW)
-            do_resonance_state(nv_sig, apd_indices, States.HIGH)
+#            do_resonance_state(nv_sig, apd_indices, States.LOW)
+#            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.4542, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.150)
