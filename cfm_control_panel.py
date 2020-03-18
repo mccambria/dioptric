@@ -106,8 +106,8 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
-    num_steps = 76
-    num_runs = 5
+    num_steps = 151
+    num_runs = 2
     uwave_power = -13.0
 #    uwave_power = -20.0
 
@@ -425,13 +425,13 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    nd = 'nd_0'
-    sample_name = 'Y2O3_no_graphene_yes_IG_10nm'
+    nd = 'nd_1.0'
+    sample_name = 'hopper'
     
-    search = { 'coords': [0.0, 0, 4.99],
+    search = { 'coords': [0.0, 0, 5.0],
             'name': '{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
-            'pulsed_readout_dur': 5000, 'magnet_angle': 0.0,
+            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
@@ -444,10 +444,10 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
-        set_xyz([0.0,0.0,5.01])
+#        set_xyz([0.0,0.0,5.01])
 #        set_xyz([-0.116, -0.073, 2.61])
         
         with labrad.connect() as cxn:
@@ -476,10 +476,10 @@ if __name__ == '__main__':
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.260)
+#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.4)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2)
-#            do_resonance_state(nv_sig, apd_indices, States.LOW)
-#            do_resonance_state(nv_sig, apd_indices, States.HIGH)
+            do_resonance_state(nv_sig, apd_indices, States.LOW)
+            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.4542, freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.150)
