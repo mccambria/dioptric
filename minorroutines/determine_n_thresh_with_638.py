@@ -177,6 +177,25 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
 #%% monitor photon counts 
+    
+    fig2, ax2 = plt.subplots(1,1, figsize = (10, 8.5))
+    
+    time_axe_sig = ps.get_time_axe(seq_time_s*2, readout_time*10**-9,sig_counts)
+    photon_counts_sig = ps.get_photon_counts(readout_time*10**-9, sig_counts)
+
+    time_axe_ref = numpy.array(ps.get_time_axe(seq_time_s*2, readout_time*10**-9,ref_counts)) + seq_time_s 
+    photon_counts_ref = ps.get_photon_counts(readout_time*10**-9, ref_counts)  
+    
+    ax2.plot(time_axe_sig, photon_counts_sig, 'g')
+    ax2.plot(time_axe_ref.tolist(), photon_counts_ref, 'r')
+    
+    text = '\n'.join(('Readout time (589 nm)'+'%.3f'%(readout_time/10**3) + 'us',
+                     'Readout power (589 nm)'+'%.3f'%(readout_power) + 'uW'))
+   
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)    
+             
             
 #%% Save data
     timestamp = tool_belt.get_time_stamp()
