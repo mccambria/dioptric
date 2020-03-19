@@ -409,19 +409,16 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     sample_name = 'hopper'
-#    sample_name = 'goeppert_mayer'
-#    sample_name = 'silicon_SCC'
-
-    nv_search = { 'coords': [0.0, 0.0, 5.0],
-            'name': '{}'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 450, 'magnet_angle': None,
-            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    ensemble = { 'coords': [0.0, 0.0, 5.00],
+            'name': '{}-ensemble'.format(sample_name),
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 350, 'magnet_angle': 0,
+            'resonance_LOW': 2.8058, 'rabi_LOW': 175.8, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9357, 'rabi_HIGH': 242.5, 'uwave_power_HIGH': 10.0}
     
     
     
-    nv_sig_list = [nv_search]
+    nv_sig_list = [ensemble]
     
     
     aom_ao_589_pwr = 0.1
@@ -469,7 +466,7 @@ if __name__ == '__main__':
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
             
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_stationary_count(nv_sig, 1.0, apd_indices, 532)
@@ -479,7 +476,7 @@ if __name__ == '__main__':
             
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
-            do_resonance(nv_sig, apd_indices)
+#            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)

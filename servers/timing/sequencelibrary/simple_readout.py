@@ -17,14 +17,17 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    
+    args = tool_belt.decode_seq_args(args)
+    print(args[4])
     delay, readout_time, aom_ao_589_pwr, apd_index, color_ind = args
+    color_ind = int(color_ind)
+    print(type(color_ind))
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_532_aom = pulser_wiring['do_532_aom']
-#    pulser_ao_589_aom = pulser_wiring['ao_589_aom']
+    pulser_ao_589_aom = pulser_wiring['ao_589_aom']
 
     # Convert the 32 bit ints into 64 bit ints
     delay = numpy.int64(delay)
@@ -36,7 +39,7 @@ def get_seq(pulser_wiring, args):
     tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
         
     # make sure only the color passed is either 532 or 589
-    tool_belt.color_ind_err(color_ind)
+#    tool_belt.color_ind_err(color_ind)
         
     # Define the sequence
     seq = Sequence()
@@ -74,8 +77,9 @@ def get_seq(pulser_wiring, args):
 if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 1,
-              'do_532_aom': 2}
+              'do_532_aom': 2,
+              'ao_589_aom': 1}
     args = [0, 100, 1, 0, 532]
     seq_args_string = tool_belt.encode_seq_args(args)
-    seq, ret_vals = get_seq(wiring, seq_args_string)
+    seq, ret_vals, period = get_seq(wiring, seq_args_string)
     seq.plot()

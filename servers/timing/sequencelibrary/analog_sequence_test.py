@@ -26,7 +26,6 @@ def get_seq(pulser_wiring, args):
     
     # Analog
     power = args[2]
-    half_power = power / 2
 #    MID = args[3]
 #    HIGH = args[4]
     
@@ -34,13 +33,13 @@ def get_seq(pulser_wiring, args):
     LOW = 0
     HIGH = 1
 
-    pulser_ao = 0
+    pulser_ao = 1
     
     pulser_do_638_laser = pulser_wiring['do_638_laser']
         
     seq = Sequence()
 
-    train = [(aom_on_time, 1.0), (aom_off_time + aom_on_time, 0.9), (aom_off_time, 1.0)]
+    train = [(aom_on_time, power), (aom_off_time + aom_on_time, 0.0), (aom_off_time, power)]
     seq.setAnalog(pulser_ao, train)
     
     train = [(aom_on_time, HIGH), (aom_off_time, LOW), (aom_on_time, HIGH), (aom_off_time, LOW)]
@@ -48,7 +47,7 @@ def get_seq(pulser_wiring, args):
     
     final_digital = [pulser_wiring['do_sample_clock'],
                      pulser_wiring['do_532_aom']]
-    final = OutputState(final_digital, 1.0, 0.0)
+    final = OutputState(final_digital, 0.0, 0.0)
     
     return seq, final, [period]
 

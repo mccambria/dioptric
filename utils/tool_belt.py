@@ -648,9 +648,10 @@ def get_nv_sig_units():
 # Error messages
     
 def color_ind_err(color_ind):
+    print(color_ind)
     if color_ind != 532 or color_ind != 589:
         raise RuntimeError('Value of color_ind must be 532 or 589.'+
-                           '\nYou entered {} V'.format(color_ind))
+                           '\nYou entered {}'.format(color_ind))
         
 def aom_ao_589_pwr_err(aom_ao_589_pwr):
     if aom_ao_589_pwr < 0 or aom_ao_589_pwr > 1.0:
