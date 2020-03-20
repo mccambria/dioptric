@@ -200,21 +200,29 @@ def create_figure(file_name):
 
     path = 'image_sample'
     data = tool_belt.get_raw_data(path, file_name)
-    x_range = data['x_range']
-    y_range = data['y_range']
-    x_voltages = data['x_voltages']
-#    coords = data['coords']
-#    nv_sig = data['nv_sig']
-#    coords = nv_sig['coords']
-#    nv_sig = data['nv_sig']
-#    coords = nv_sig['coords']
+    try:
+        x_range = data['x_range']
+        y_range = data['y_range']
+    except:
+        x_range = data['xScanRange']
+        y_range = data['yScanRange']
+    try:
+        x_voltages = data['x_voltages']
+        pixel_size = x_voltages[1] - x_voltages[0]
+    except:
+        pixel_size = data['scanStepSize']
     try:
         nv_sig = data['nv_sig']
         coords = nv_sig['coords']
     except Exception as e:
-        print(e)
-        coords = data['coords']
-    img_array = numpy.array(data['img_array'])
+        try:
+            coords = data['coords']
+        except:
+            coords = data['xyzCenters']
+    try:
+        img_array = numpy.array(data['img_array'])
+    except:
+        img_array = numpy.array(data['imgArray'])
     readout = data['readout']
 
     x_coord = coords[0]
@@ -227,8 +235,7 @@ def create_figure(file_name):
     y_high = y_coord + half_y_range
 
     img_array_kcps = (img_array / 1000) / (readout / 10**9)
-
-    pixel_size = x_voltages[1] - x_voltages[0]
+    
     half_pixel_size = pixel_size / 2
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
@@ -410,8 +417,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 if __name__ == '__main__':
 
 
-    # file_name = '2019_07/2019-07-23_17-39-48_johnson1'
-    file_name = '2019_04/2019-04-15_16-42-08_Hopper'
+    file_name = '2019_07/2019-07-23_17-39-48_johnson1'
+    # file_name = '2019_04/2019-04-15_16-42-08_Hopper'
 
     create_figure(file_name)
 

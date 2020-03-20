@@ -22,24 +22,38 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
     
 ms = 7
 lw = 1.75
+    
+# d_parallel = 0.35
+# d_perp = 17
+d_parallel = 0.35
+d_perp = 17
 
 
 # %% Functions
 
 
-def ratio(d_perp_prime):
+def intersection():
     
-    d_parallel = 0.35
-    d_perp = 17
+    meas_ratio = 1.973556424
+    meas_err = 0.111886693
+    
+    factor = ((d_parallel - 2*d_perp)**2 + d_parallel**2) / 8
+    d_perp_prime = numpy.sqrt(factor * meas_ratio)
+    err = d_perp_prime * (1/2) * meas_err / meas_ratio
+    
+    print('d_perp_prime = {} +/- {}'.format(d_perp_prime, err))
+
+
+def ratio(d_perp_prime):
     
     return (8 * d_perp_prime**2) / ((d_parallel - 2*d_perp)**2 + d_parallel**2)
 
 
 def plot_ratio(ax, linspace_x):
     
-    ax.plot(linspace_x, ratio(linspace_x), linewidth=lw, color='#009E73')
+    ax.plot(linspace_x, ratio(linspace_x), linewidth=lw, color='#0072B2')
     
-    ax.set_xlabel(r"$d_{\perp}'/(2 \pi)$ (Hz cm/V)")
+    ax.set_xlabel(r"$d_{\perp}'$ (Hz cm/V)")
     ax.set_ylabel(r'$\gamma/\Omega$')
     ax.set_xticks([0,5,10,15, 20])
     
@@ -130,4 +144,5 @@ if __name__ == '__main__':
 
     main()
     # print(ratio(17))
+    # intersection()
 

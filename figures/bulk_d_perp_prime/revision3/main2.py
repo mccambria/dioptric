@@ -111,6 +111,7 @@ def main(file_names, nv_data):
         sample_label = sample_labels[ind]
         ax.text(0.035, 0.07, sample_label,
                 transform=ax.transAxes, color='white')
+        # cbar = plt.colorbar(img)
         
     # %% perp_B = 0 gamma and omega
         
@@ -235,34 +236,32 @@ if __name__ == '__main__':
     # NV data in three samples at B perp ~ 0
     nv_data = [
         {
-            'name': 'NVA3',
+            'name': 'NVA3',  # perp_B = 0.5536
             'gamma': 0.114,
             'gamma_err': 0.01,
             'omega': 0.059,
             'omega_err': 0.004,
             'ratio': 1.9322,
             'ratio_err': 0.2142,
-            'perp_B': 0.5536,
+            
         },
         {
-            'name': 'NVB1',
-            'gamma': 0.121,
-            'gamma_err': 0.01,
-            'omega': 0.062,
-            'omega_err': 0.005,
-            'ratio': 1.9516,
-            'ratio_err': 0.2254,
-            'perp_B': 0.0,
+            'name': 'NVB1',  # Weighted averages for both perp_B = 0 runs
+            'gamma': 0.117,
+            'gamma_err': 0.007071068,
+            'omega': 0.057731707,
+            'omega_err': 0.003123475,
+            'ratio': 2.000849784,
+            'ratio_err': 0.162765942,
         },
         {
-            'name': 'NVE',
+            'name': 'NVE',  # perp_B = 0.0
             'gamma': 0.12,
             'gamma_err': 0.011,
             'omega': 0.061,
             'omega_err': 0.004,
             'ratio': 1.9672,
             'ratio_err': 0.2217,
-            'perp_B': 0.0,
         }
     ]
     

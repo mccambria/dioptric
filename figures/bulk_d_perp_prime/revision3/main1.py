@@ -220,11 +220,14 @@ def main(folder, file_high, file_zero, file_high_to_low,
 
     # Reference for 0
     data = tool_belt.get_raw_data(path, file_high_to_low)
-    ref_range[0] = get_first_norm_avg_sig(data)
+    # ref_range[0] = get_first_norm_avg_sig(data)
+    ref_range[0] = 0.64 
 
     # Reference for 1
     data = tool_belt.get_raw_data(path, file_zero)
     ref_range[1] = get_first_norm_avg_sig(data)
+    # print(ref_range)
+    # return
 
     raw_data_zero = tool_belt.get_raw_data(path, file_zero)
     signal_zero, ste_zero, times_zero = process_raw_data(raw_data_zero,
@@ -315,14 +318,23 @@ if __name__ == '__main__':
     # This assumes the num_steps and relaxation_time_range are the same for
     # both data sets
     
-    folder = 'goeppert_mayer-nv7_2019_11_27-167MHz'
-    analysis_file = '167MHz_splitting_rate_analysis.txt'
-    file_high = '2019_11_29-11_26_00-goeppert_mayer-nv7_2019_11_27'
-    file_zero = '2019_12_01-05_31_53-goeppert_mayer-nv7_2019_11_27'
-    file_high_to_low = '2019_11_28-14_23_04-goeppert_mayer-nv7_2019_11_27'
-    gamma = 0.132
-    omega = 0.056
-    pi_pulse_infidelity = (1.0 - numpy.exp(-111/1398)) # 7.6%
+    # folder = 'goeppert_mayer-nv7_2019_11_27-167MHz'
+    # analysis_file = '167MHz_splitting_rate_analysis.txt'
+    # file_high = '2019_11_29-11_26_00-goeppert_mayer-nv7_2019_11_27'
+    # file_zero = '2019_12_01-05_31_53-goeppert_mayer-nv7_2019_11_27'
+    # file_high_to_low = '2019_11_28-14_23_04-goeppert_mayer-nv7_2019_11_27'
+    # gamma = 0.132
+    # omega = 0.056
+    # pi_pulse_infidelity = (1.0 - numpy.exp(-111/1398)) # 7.6%
+    
+    folder = 'johnson-nv0_2020_03_13-122MHz'
+    analysis_file = '104MHz_splitting_rate_analysis.txt'
+    file_high = '2020_03_16-05_16_47-johnson-nv0_2020_03_13'
+    file_zero = '2020_03_17-18_32_12-johnson-nv0_2020_03_13'
+    file_high_to_low = '2020_03_15-10_39_07-johnson-nv0_2020_03_13'
+    gamma = 0.092
+    omega = 0.050
+    pi_pulse_infidelity = 1.0 - numpy.exp(-91.6/(2*721))  # 6.2%
     
     # folder = 'goeppert_mayer-nv7_2019_11_27-123MHz-0deg'
     # analysis_file = '123MHz_splitting_rate_analysis.txt'
