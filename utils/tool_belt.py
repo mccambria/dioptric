@@ -27,6 +27,7 @@ from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
 from pathlib import Path
+from pathlib import PurePath
 from enum import Enum, auto
 
 
@@ -295,6 +296,13 @@ def update_line_plot_figure(fig, vals):
 
 # %% Math functions
 
+def get_pi_pulse_dur(rabi_period):
+    return round(rabi_period / 2)
+    
+
+def get_pi_on_2_pulse_dur(rabi_period):
+    return round(rabi_period / 4)
+
 
 def gaussian(x, *params):
     """
@@ -451,21 +459,15 @@ def get_file_list(source_name, file_ends_with, sub_folder_name = None,
     return file_list
 
 
-def get_raw_data(source_name, file_name, sub_folder_name=None,
-                 data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
+def get_raw_data(path_from_nvdata, file_name,
+                 nvdata_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
     """Returns a dictionary containing the json object from the specified
     raw data file.
     """
 
-    # Parse the source_name if __file__ was passed
-    source_name = os.path.splitext(os.path.basename(source_name))[0]
-
-    data_dir = Path(data_dir)
+    data_dir = PurePath(nvdata_dir, path_from_nvdata)
     file_name_ext = '{}.txt'.format(file_name)
-    if sub_folder_name is None:
-        file_path = data_dir / source_name / file_name_ext
-    else:
-        file_path = data_dir / source_name / sub_folder_name / file_name_ext
+    file_path = data_dir / file_name_ext
 
     with open(file_path) as file:
         return json.load(file)
@@ -528,6 +530,8 @@ def get_folder_dir(source_name, subfolder):
 
     return folderDir
 
+def get_data_path():
+    return Path('E:/Shared drives/Kolkowitz Lab Group/nvdata')
 
 def get_file_path(source_name, time_stamp='', name='', subfolder=None):
     """
@@ -608,19 +612,20 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
 #    return fileDir
 
 
-def save_figure(fig, filePath):
+def save_figure(fig, file_path):
     """
     Save a matplotlib figure as a png.
 
     Params:
         fig: matplotlib.figure.Figure
             The figure to save
-        filePath: string
+        file_path: string
             The file path to save to including the file name, excluding the
             extension
     """
 
-    fig.savefig(filePath + '.svg')
+    file_path = str(file_path)
+    fig.savefig(file_path + '.svg')
 
 
 def save_raw_data(rawData, filePath):
@@ -648,7 +653,6 @@ def get_nv_sig_units():
 # Error messages
     
 def color_ind_err(color_ind):
-    print(color_ind)
     if color_ind != 532 or color_ind != 589:
         raise RuntimeError('Value of color_ind must be 532 or 589.'+
                            '\nYou entered {}'.format(color_ind))

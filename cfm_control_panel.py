@@ -115,9 +115,9 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
-    num_steps = 51
-    num_runs = 1
-    uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
+    num_steps = 101
+    num_runs = 3
+    uwave_power = -7.0  # -13.0 with a 1.5 ND is a good starting point
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                    num_steps, num_runs, uwave_power)
@@ -127,8 +127,9 @@ def do_resonance_state(nv_sig, apd_indices, state):
     freq_center = nv_sig['resonance_{}'.format(state.name)]
     freq_range = 0.07
     num_steps = 51
-    num_runs = 15
-    uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
+    num_runs = 3
+    uwave_power = -7.0  # -7.0 for 515 nm light at 4 mW
+#    uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 #    uwave_power = -5.0  # After inserting mixer
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
@@ -149,12 +150,12 @@ def do_pulsed_resonance(nv_sig, apd_indices,
 
 def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
-    freq_range = 0.02
+    freq_range = 0.1
 #    num_steps = 101
 #    freq_range = 0.025
     num_steps = 51
-    num_reps = 10**5
-    num_runs = 2
+    num_reps = 10**3
+    num_runs = 1
 
     pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
                           num_steps, num_reps, num_runs)
@@ -164,11 +165,11 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     angle_range = [0, 150]
     num_angle_steps = 6
     freq_center = 2.87
-    freq_range = 0.150
-    num_freq_steps = 76
-    num_freq_runs = 2
-    uwave_power = 9.0
-    uwave_pulse_dur = 200  # Set to None for CWESR
+    freq_range = 0.3
+    num_freq_steps = 101
+    num_freq_runs = 3
+    uwave_power = -7.0
+    uwave_pulse_dur = None  # Set to None for CWESR
     num_freq_reps = 10**5
 
     optimize_magnet_angle.main(nv_sig, apd_indices,
@@ -257,11 +258,11 @@ def do_spin_echo(nv_sig, apd_indices):
     # T2 in nanodiamond NVs without dynamical decoupling is just a couple
     # us so don't bother looking past 10s of us
 #    precession_time_range = [0, 100 * 10**3]
-    precession_time_range = [0, 10 * 10**3]
+    precession_time_range = [0, 100 * 10**3]
     num_steps = 101
-    num_reps = int(8.0 * 10**4)
-    num_runs = 150
-    state = States.HIGH
+    num_reps = int(3.0 * 10**4)
+    num_runs = 4
+    state = States.LOW
 
     spin_echo.main(nv_sig, apd_indices, precession_time_range,
                    num_steps, num_reps, num_runs, state)
@@ -412,16 +413,16 @@ if __name__ == '__main__':
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 350, 'magnet_angle': 0,
-            'resonance_LOW': 2.8058, 'rabi_LOW': 175.8, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9357, 'rabi_HIGH': 242.5, 'uwave_power_HIGH': 10.0}
+            'pulsed_readout_dur': 350, 'magnet_angle': 6.6,
+            'resonance_LOW': 2.8046, 'rabi_LOW': 171.1, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9371, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
     
     
     
     nv_sig_list = [ensemble]
     
     
-    aom_ao_589_pwr = 0.1
+    aom_ao_589_pwr = 0.5
     color_ind = 532
     readout_time = 10* 10**6
 
@@ -430,23 +431,18 @@ if __name__ == '__main__':
     try:
         
         # Operations that don't need an NV
-#         set_xyz_zero()
-#        set_xyz([-0.063, -0.210, 5.69]) # On NV 
-#        set_xyz([-0.122, -0.151, 5.69]) # Off NV 
-#        set_xyz([0.0, 0.0, 5.0])
-#        drift = tool_belt.get_drift()
-#        print(drift)
-#        tool_belt.set_drift([0.0, 0.0, 0.0])
-#        set_xyz([0.0, 0.0, 5.02 + tool_belt.get_drift()[2]])
+        
+#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+#        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+        
+#        set_xyz([0.0,0.0,5.0])
+#        set_xyz([-0.116, -0.073, 2.61])
+        
 #        with labrad.connect() as cxn:
-#            cxn.filter_slider_ell9k.set_filter('nd_0.5')
-#            cxn.pulse_streamer.constant([])
-#            input('Press enter to stop...')
-
-
-#        
-#        with labrad.connect() as cxn:
+#            cxn.filter_slider_ell9k.set_filter('nd_1.5')
+#            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            cxn.objective_piezo.write(5.1)
+#            input('Laser currently turned off, Press enter to stop...')
         
         # Routines that expect lists of NVs
 #        do_optimize_list(nv_sig_list, apd_indices)
@@ -466,7 +462,7 @@ if __name__ == '__main__':
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
             
-            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_stationary_count(nv_sig, 1.0, apd_indices, 532)
@@ -477,8 +473,8 @@ if __name__ == '__main__':
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
-#            do_resonance_state(nv_sig, apd_indices, States.LOW)
+#            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.5)
+            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
@@ -491,8 +487,8 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
-#            do_rabi(nv_sig, apd_indices, States.LOW, [0, 300])
-#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 400])
+#            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
+#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 300])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)

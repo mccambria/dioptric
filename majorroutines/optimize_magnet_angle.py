@@ -207,7 +207,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    file = '2019_10/2019_10_07-19_34_35-ayrton12-NV13_2019_06_10'
+    file = 'branch_Spin_to_charge/2020_03/2020_03_20-09_02_55-hopper-ensemble'
     data = tool_belt.get_raw_data(__file__, file)
     splittings = data['splittings']
     angle_range = data['angle_range']
