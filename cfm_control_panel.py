@@ -56,11 +56,11 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-    scan_range = 5.0
+#    scan_range = 5.0
 #    scan_range = 0.6
 #    scan_range = 0.5
 #    scan_range = 0.3
-#    scan_range = 0.2
+    scan_range = 0.2
 #    scan_range = 0.1
 #    scan_range = 0.05
 #    scan_range = 0.025
@@ -106,8 +106,8 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
-    num_steps = 76
-    num_runs = 5
+    num_steps = 151
+    num_runs = 2
     uwave_power = -13.0
 #    uwave_power = -20.0
 
@@ -425,13 +425,13 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    nd = 'nd_0'
-    sample_name = 'Y2O3_no_graphene_yes_IG'
+    nd = 'nd_1.0'
+    sample_name = 'ayrton12'
     
-    search = { 'coords': [0.0, 0, 5.0],
+    search = { 'coords': [0.281, -0.213, 5.0],
             'name': '{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
-            'pulsed_readout_dur': 5000, 'magnet_angle': 0.0,
+            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
@@ -447,11 +447,11 @@ if __name__ == '__main__':
 #        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
-#        set_xyz([0.0,0.0,5.0])
+#        set_xyz([0.0,0.0,5.01])
 #        set_xyz([-0.116, -0.073, 2.61])
         
         with labrad.connect() as cxn:
-            cxn.filter_slider_ell9k.set_filter(nd)
+            cxn.filter_slider_ell9k.set_filter('nd_1.5')
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            input('Laser currently turned off, Press enter to stop...')
         
@@ -472,11 +472,11 @@ if __name__ == '__main__':
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)
-            do_stationary_count(nv_sig, apd_indices)
+#            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.260)
+#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.4)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
@@ -497,14 +497,18 @@ if __name__ == '__main__':
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
             
-#            filter = 'No filter'
-            filter = 'Shortpass'
+            filter = 'No filter'
+#            filter = 'Shortpass'
 #            filter = 'Longpass'
-#            filter = 'All filters'
-            voltage = 'no_graphene_no_IG'
+#            filter = 'Sample removed'
+            voltage = 'no_graphene_yes_IG'
 #
 #            polarization_time = 600 * 10**3
 #            do_lifetime_v2(nv_sig, apd_indices, [0, 2*10**6],
+#                           0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
+            
+#            polarization_time = 100 * 10**3
+#            do_lifetime_v2(nv_sig, apd_indices, [0, 1*10**6],
 #                           0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
         
             
