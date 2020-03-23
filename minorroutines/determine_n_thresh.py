@@ -182,26 +182,26 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
 
 #%% plot the data and fit
 
-#    unique_value, relative_frequency = get_Probability_distribution(list(sig_counts))
-#
-#    #double poisson fit
-#    a, b, numbla1, numbla2 = get_poisson_distribution_fit(readout_time,unique_value, relative_frequency)
-#    number_of_photons = list(range(max(unique_value)))
-#    curve = get_poisson_distribution_curve(number_of_photons,a, b, numbla1, numbla2)
-#
-#    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-#
-#    ax.plot(unique_value, relative_frequency, 'bo')
-#    ax.plot(number_of_photons, curve,'r')
-#    ax.set_xlabel('number of photons (n)')
-#    ax.set_ylabel('P(n)')
-#
-#    text = '\n'.join(('Reionization time (532 nm)' + '%.3f'%(reionization_time/10**3) + 'us',
-#                      'Illumination time (589 nm)' + '%.3f'%(illumination_time/10**3) + 'us'))
-#
-#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
-#            verticalalignment='top', bbox=props)
+    unique_value, relative_frequency = get_Probability_distribution(list(sig_counts))
+
+    #double poisson fit
+    a, b, numbla1, numbla2 = get_poisson_distribution_fit(readout_time*10**-9,unique_value, relative_frequency)
+    number_of_photons = list(range(max(unique_value)))
+    curve = get_poisson_distribution_curve(number_of_photons,readout_time*10**-9, a, b, numbla1, numbla2)
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+
+    ax.plot(unique_value, relative_frequency, 'bo')
+    ax.plot(number_of_photons, curve,'r')
+    ax.set_xlabel('number of photons (n)')
+    ax.set_ylabel('P(n)')
+
+    text = '\n'.join(('Reionization time (532 nm)' + '%.3f'%(reionization_time/10**3) + 'us',
+                      'Illumination time (589 nm)' + '%.3f'%(illumination_time/10**3) + 'us'))
+
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
 
   #%% monitor photon counts
     fig2, ax2 = plt.subplots(1,1,figsize = (10,8.5))
@@ -217,7 +217,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
                      'Readout power (589 nm)'+'%.3f'%(yellow_optical_power_mW * 1000) + 'uW'))
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
+    ax2.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
 
 
