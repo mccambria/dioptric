@@ -44,13 +44,13 @@ class photodiode(LabradServer):
         return result['get']
 
     def on_get_config(self, wiring):
-        self.daq_ai_pd = wiring[0]
+        self.daq_ai_pd = wiring
 
     def stopServer(self):
         for apd_index in self.tasks:
             self.close_task_internal(apd_index)
 
-    @setting(0, returns='*v')
+    @setting(0, returns='v[]')
     def read_optical_power(self, c):
         """Return the optical power from a pickoff beam in V"""
         

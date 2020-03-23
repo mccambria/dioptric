@@ -105,7 +105,9 @@ if __name__ == '__main__':
               'do_638_laser': 7, 'do_apd_0_gate': 5, 'do_arb_wave_trigger': 6,
               'do_sample_clock': 0, 'do_signal_generator_bnc835_gate': 1,
               'do_signal_generator_tsg4104a_gate': 4}
-#    args = [0, 3000, 1000, 1000, 2000, 1000, 1000, 300, 150, 0, 3]
-    args = [2000, 3000, 1000, 1000, 2000, 1000, 0, 300, 2000, 0, 3]
+#    args = tau, polarization_time, reference_time, signal_wait_time, \
+#        reference_wait_time, background_wait_time, aom_delay_time, \
+#        gate_time, max_tau
+    args = [2000, 3000, 1000, 1000, 2000, 1000, 0, 500, 2000, 0, 3]
     seq = get_seq(wiring, args)[0]
     seq.plot()

@@ -36,22 +36,22 @@ def set_laset_power(color_ind, set_515_power = None, set_589_AI = None,
             return set_589_AI
         
         elif color_ind == 638:
-            tool_belt.aom_ao_638_pwr_err(set_638_AI)
-            cxn.pulse_streamer.constant([], 0.0, set_638_AI)
+            tool_belt.ao_638_pwr_err(set_638_AI)
+            cxn.pulse_streamer.constant([], set_638_AI, 0.0)
         
             return set_638_AI
         
 # %%
             
 def main(color_ind, totel_measure_time, set_515_power = None, set_589_AI = None, 
-                    set_589_ND = None, set_638_AI = None):
+                    set_589_ND = None, set_638_AI = None, plot= False):
            
     time_step = 0.5 # s
     num_steps = int(totel_measure_time / time_step)
     
     laser_power_indicator = set_laset_power(color_ind, set_515_power, set_589_AI, 
                     set_638_AI)
-    
+    time.sleep(1)
     optical_power_list = []
     
     with labrad.connect() as cxn:
@@ -62,12 +62,19 @@ def main(color_ind, totel_measure_time, set_515_power = None, set_589_AI = None,
         for t in range(num_steps):
             optical_power = cxn.photodiode.read_optical_power()
             optical_power_list.append(optical_power)
-        time.sleep(time_step)
+            time.sleep(time_step)
         
     time_linspace = numpy.linspace(0,totel_measure_time, num=num_steps)
     
-    fig, ax = plt.subplots(1, 1, figsize=(11, 8.5))
-    ax.plot(time_linspace, optical_power_list)
+    if plot:
+        fig, ax = plt.subplots(1, 1, figsize=(11, 8.5))
+        ax.plot(time_linspace, numpy.array(optical_power_list)*1000)
+        ax.set_xlabel('Time(s)')
+        ax.set_ylabel('Voltage (mV)')
+    
+    avg_voltage = numpy.average(optical_power_list)
+    
+    return avg_voltage # V
         
     #Save the information...
 # %% Run the file
@@ -75,6 +82,7 @@ def main(color_ind, totel_measure_time, set_515_power = None, set_589_AI = None,
 
 if __name__ == '__main__':
     
-    main(589, 4, set_589_AI = 0.6, set_589_ND = 'nd_0')
+    avg_voltage = main(532, 10, set_515_power = 1, plot=False)
 
+    print('Avg voltage: {} mV'.format(avg_voltage*1000))
 

@@ -63,15 +63,15 @@ def raw_plot(num_steps ,avg_sig_counts, avg_ref_counts ,norm_avg_sig):
 # %% Main, this allows any one of the inputs to be varied, like the readout
 #    time or the nd_filter
 
-def snr_measurement(nv_sig, readout_time, nd_filter, num_steps, num_reps, num_runs, 
+def snr_measurement(nv_sig, readout_time, green_power, num_steps, num_reps, num_runs, 
                              do_plot, save_raw_data):
 
     with labrad.connect() as cxn:
-        sig_to_noise_ratio = snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
+        sig_to_noise_ratio = snr_measurement_with_cxn(cxn, nv_sig, readout_time, green_power,
                       num_steps, num_reps, num_runs, do_plot, save_raw_data)
         
         return sig_to_noise_ratio
-def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
+def snr_measurement_with_cxn(cxn, nv_sig, readout_time, green_power,
                  num_steps, num_reps, num_runs,
                  do_plot = False, save_raw_data = False):
     
@@ -128,11 +128,12 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
             break
         
         # Optimize
-        opti_coords_list.append(optimize.main(nv_sig, apd_indices))
+#        opti_coords = optimize.main(cxn, nv_sig, apd_indices, 532, disable = True)
+#        opti_coords_list.append(opti_coords)
         
         # After optimizing, change the filter to the nd_filter passed
-        cxn.filter_slider_ell9k.set_filter(nd_filter)
-        time.sleep(0.5)
+#        cxn.filter_slider_ell9k.set_filter(nd_filter)
+#        time.sleep(0.5)
 
         cxn.signal_generator_tsg4104a.set_freq(nv_sig['resonance_LOW'])
         cxn.signal_generator_tsg4104a.set_amp(nv_sig['uwave_power_LOW'])
@@ -219,7 +220,7 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
                     'nv_sig': nv_sig,
                     'opti_coords_list': opti_coords_list,
                     'coords-units': 'V',
-                    'nd_filter_used': nd_filter,
+                    'green_power': green_power,
                     'state': state,
                     'num_steps': num_steps,
                     'num_reps': num_reps,
@@ -239,16 +240,16 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
 
 # %%
     
-def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
+def optimize_readout(nv_sig, readout_range, num_readout_steps, green_power):
     
     # don't plot or save each individual raw data of the snr
     do_plot = False
     save_raw_data = False
     
     num_steps = 51
-    num_reps = 10**5
-#    num_reps = 10**3
-    num_runs = 1
+#    num_reps = 10**5
+    num_reps = 10**3
+    num_runs = 4
     
     # Create an empty list to fill with snr
     snr_list = []
@@ -267,7 +268,7 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
         
         readout_time = readout_ind_time
     
-        snr_value = snr_measurement(nv_sig, readout_time, nd_filter,
+        snr_value = snr_measurement(nv_sig, readout_time, green_power,
                  num_steps, num_reps, num_runs, do_plot, save_raw_data)
         
         snr_list.append(snr_value)
@@ -278,7 +279,7 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
     ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
     ax.set_xlabel('Readout time (ns)')
     ax.set_ylabel('Signal-to-noise ratio') 
-    ax.set_title('Optimize readout window at {}'.format(nd_filter))
+    ax.set_title('Optimize readout window at {} mW'.format(green_power))
     
     # Fit the data to a parabola
     offset = 130
@@ -318,7 +319,9 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
                 'num_runs': num_runs,
                 'snr_list': snr_list,
                 'readout_time_list': readout_time_list.tolist(),
-                'nd_filter': nd_filter}
+                'green_power': green_power
+#                'nd_filter': nd_filter,
+}
     
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(snr_fig, file_path)
@@ -330,61 +333,38 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter):
 def main(nv_sig):
     # Step through the nd filters and find the optimized gate time in each one.
     
-#    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
-    nd_filter_list = ['nd_1.0']
+    green_power_list = [1, 2,3, 4, 5]
+#    nd_filter_list = ['nd_1.0']
 #    nd_filter_list = ['nd_1.5']
     
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
     
-    # Step thru the nd_filters and take snr over range of readout times
-    for nd_filter_ind in range(len(nd_filter_list)):
+
+    green_power = 8
+    readout_range = [250, 1300]
+    num_readout_steps = 22
+
         
-        # Break out of the while if the user says stop
-        if tool_belt.safe_stop():
-            break
-        
-        nd_filter = nd_filter_list[nd_filter_ind]
-        
-        if nd_filter == 'nd_0':
-            readout_range = [25, 200]
-            num_readout_steps = 8
-        elif nd_filter == 'nd_0.5':
-            readout_range = [50, 400]
-            num_readout_steps = 8
-        elif nd_filter == 'nd_1.0':
-            readout_range = [100, 500]
-            num_readout_steps = 9
-        elif nd_filter == 'nd_1.5':
-#            readout_range = [200, 400]
-#            num_readout_steps = 9
-#            readout_range = [425, 500]
-#            num_readout_steps = 4
-            readout_range = [250, 600]
-            num_readout_steps = 8
-#            readout_range = [700, 800]
-#            num_readout_steps = 3
-        
-        print('nd filter set to {}'.format(nd_filter))
-        
-        optimize_readout(nv_sig, readout_range, num_readout_steps, nd_filter)
+#    print('nd filter set to {}'.format(nd_filter))
+    
+    optimize_readout(nv_sig, readout_range, num_readout_steps, green_power)
     
 # %%
     
 if __name__ == '__main__':
 
     # Define the nv_sig to be used
-    sample_name = 'ayrton12'
-    
-    nv4_2019_06_06 = { 'coords': [-0.147, -0.063, 5.02],
-        'name': 'ayrton12-nv4_2019_06_06',
-        'expected_count_rate': 56, 'nd_filter': 'nd_1.0',
-        'pulsed_readout_dur': 400, 'magnet_angle': 53.6,
-        'resonance_LOW':2.8643, 'rabi_LOW': 148.2, 'uwave_power_LOW': 9.0,
-        'resonance_HIGH':3.5798, 'rabi_HIGH': 155.4 , 'uwave_power_HIGH': 10.0}
+    sample_name = 'hopper'
+    ensemble = { 'coords': [0.0, 0.0, 5.00],
+            'name': '{}-ensemble'.format(sample_name),
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 350, 'magnet_angle': 6.6,
+            'resonance_LOW': 2.8046, 'rabi_LOW': 172.1, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9371, 'rabi_HIGH': 239.5, 'uwave_power_HIGH': 10.0}
     
     # Main parameters
-    nv_sig = nv4_2019_06_06
+    nv_sig = ensemble
     
     ### MAIN ###
     main(nv_sig)
@@ -394,67 +374,67 @@ if __name__ == '__main__':
 #    optimize_readout(nv_sig, readout_range, num_readout_steps, 'nd_1.5')
 
 # %%
-    do_plot = False
-    if do_plot:
-        
-        snr_list = [
-                7.439604422189125,
-                7.686879319553283,
-                8.041485308004805,
-                9.554681541455329,
-                9.125572162492666,
-                7.807859294703643,
-                9.66741364630311,
-                9.463731427941084,
-                7.5704997378241545,
-                9.609301695826183,
-                10.543056235327139,
-                10.659862870377365,
-                10.26398344405384,
-                9.531577515144889,
-                12.951537948619501,
-                10.696615047491722,
-                9.768387837729152]
-        
-        readout_time_list = [
-                200,
-                250,
-                300,
-                350,
-                400,
-                450,
-                500,
-                300,
-                350,
-                400,
-                450,
-                500,
-                550,
-                600,
-                650,
-                700,
-                750]
-        
-        init_guess_list = [10, 10, 450]
-        
-        popt = fit_parabola(readout_time_list, snr_list, init_guess_list)
-        
-        snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
-        ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
-        ax.set_xlabel('Readout time (ns)')
-        ax.set_ylabel('Signal-to-noise ratio') 
-        ax.set_title('Optimize readout window at {}'.format('nd_1.5'))
-        linspace_time = numpy.linspace(200, 600, num=1000)
-        ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
-        
-        text = ('Optimal readout time = {:.1f} ns'.format(popt[2]))
-    
-        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-        ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
-                                verticalalignment="top", bbox=props)
-        ax.legend() 
-        snr_fig.canvas.draw()
-        snr_fig.canvas.flush_events()
+#    do_plot = False
+#    if do_plot:
+#        
+#        snr_list = [
+#                7.439604422189125,
+#                7.686879319553283,
+#                8.041485308004805,
+#                9.554681541455329,
+#                9.125572162492666,
+#                7.807859294703643,
+#                9.66741364630311,
+#                9.463731427941084,
+#                7.5704997378241545,
+#                9.609301695826183,
+#                10.543056235327139,
+#                10.659862870377365,
+#                10.26398344405384,
+#                9.531577515144889,
+#                12.951537948619501,
+#                10.696615047491722,
+#                9.768387837729152]
+#        
+#        readout_time_list = [
+#                200,
+#                250,
+#                300,
+#                350,
+#                400,
+#                450,
+#                500,
+#                300,
+#                350,
+#                400,
+#                450,
+#                500,
+#                550,
+#                600,
+#                650,
+#                700,
+#                750]
+#        
+#        init_guess_list = [10, 10, 450]
+#        
+#        popt = fit_parabola(readout_time_list, snr_list, init_guess_list)
+#        
+#        snr_fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+#        ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
+#        ax.set_xlabel('Readout time (ns)')
+#        ax.set_ylabel('Signal-to-noise ratio') 
+#        ax.set_title('Optimize readout window at {}'.format('nd_1.5'))
+#        linspace_time = numpy.linspace(200, 600, num=1000)
+#        ax.plot(linspace_time, parabola(linspace_time,*popt), 'b-', label = 'fit')
+#        
+#        text = ('Optimal readout time = {:.1f} ns'.format(popt[2]))
+#    
+#        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+#        ax.text(0.70, 0.05, text, transform=ax.transAxes, fontsize=12,
+#                                verticalalignment="top", bbox=props)
+#        ax.legend() 
+#        snr_fig.canvas.draw()
+#        snr_fig.canvas.flush_events()
     
 # %%
     if tool_belt.check_safe_stop_alive():
