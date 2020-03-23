@@ -10,7 +10,8 @@ NV- with green light.
 """
 
 from pulsestreamer import Sequence
-import ultils.tool_belt as tool_belt
+from pulsestreamer import OutputState
+import utils.tool_belt as tool_belt
 import numpy
 
 LOW = 0
@@ -73,6 +74,6 @@ if __name__ == '__main__':
                'do_sample_clock':4,
                'ao_589_aom': 0,
                'do_638_aom': 6}
-    args = [1000, 500 ,0, 0,1.0]
+    args = [1000, 500 ,500,0, 0,1.0]
     seq, final, _ = get_seq(wiring, args)
     seq.plot()

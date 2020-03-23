@@ -35,7 +35,7 @@ import majorroutines.lifetime as lifetime
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 import minorroutines.photon_collections_under_589 as photon_collections_under_589
-#import minorroutines.determine_n_thresh as determine_n_thresh
+import minorroutines.determine_n_thresh as determine_n_thresh
 from utils.tool_belt import States
 
 
@@ -394,12 +394,12 @@ def do_photon_collections_under_589(nv_sig, apd_indices):
     aom_ao_589_pwr = 0.1 #V
     photon_collections_under_589.main(nv_sig, apd_indices, aom_ao_589_pwr, readout_time, num_runs, num_reps)
     
-#def do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices):
-#    
-#    num_runs = 2
-#    num_reps = 1* 10**3
-#    
-#    determine_n_thresh.main(nv_sig, apd_indices, aom_ao_589_pwr, readout_time, num_runs, num_reps)
+def do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices):
+    
+    num_runs = 1
+    num_reps = 1* 10**3
+    
+    determine_n_thresh.main(nv_sig, apd_indices, aom_ao_589_pwr, readout_time, num_runs, num_reps)
 
     
 # %% Run the file
@@ -425,9 +425,9 @@ if __name__ == '__main__':
     nv_sig_list = [ensemble]
     
     
-    aom_ao_589_pwr = 0.5
+    aom_ao_589_pwr = 0.4
     color_ind = 532
-    readout_time = 10* 10**6
+    readout_time = 10* 10**3
 
     # %% Functions to run
 
@@ -463,7 +463,7 @@ if __name__ == '__main__':
 #                do_image_sample(nv_sig_copy, apd_indices)
             
 #            do_photon_collections_under_589(nv_sig, apd_indices)
-#            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
+            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
             
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
@@ -493,7 +493,7 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
 #            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 300])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
-            do_t1_battery(nv_sig, apd_indices)
+#            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
 #            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)

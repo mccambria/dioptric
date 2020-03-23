@@ -316,7 +316,20 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     img_array = numpy.empty((x_num_steps, y_num_steps))
     img_array[:] = numpy.nan
     img_write_pos = []
-
+    
+    
+    # %% Read the optical power for either yellow or green light
+    
+    if color_ind == 532:
+        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
+    elif color_ind == 589:
+        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind, 
+           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])
+        
+    # Convert V to mW optical power
+    optical_power_mW = tool_belt.calc_optical_power_mW(color_ind, optical_power_pd)   
+    
+    
     # %% Set up the image display
 
     if plot_data:
@@ -380,6 +393,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
                'color_ind': color_ind,
+               'optical_power_pd': optical_power_pd,
+               'optical_power_pd-units': 'V',
+               'optical_power_mW': optical_power_mW,
+               'optical_power_mW-units': 'mW',
                'aom_ao_589_pwr': aom_ao_589_pwr,
                'aom_ao_589_pwr-units': 'V',
                'x_range': x_range,

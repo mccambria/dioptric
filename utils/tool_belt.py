@@ -664,8 +664,44 @@ def aom_ao_589_pwr_err(aom_ao_589_pwr):
         
 def ao_638_pwr_err(ao_638_pwr):
     if ao_638_pwr < 0 or ao_638_pwr > 0.9:
-        raise RuntimeError('Value for 638 ao must be within 0 to +1 V.'+
+        raise RuntimeError('Value for 638 ao must be within 0 to 0.9 V.'+
                            '\nYou entered {} V'.format(ao_638_pwr))
+        
+# %% Misc
+        
+def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = None):
+    cxn = labrad.connect()
+    
+    if color_ind==532:
+        cxn.pulse_streamer.constant([3],0.0, 0.0) # Turn on the green laser  
+        time.sleep(0.5)
+        optical_power = cxn.photodiode.read_optical_power()
+        
+    elif color_ind==589:
+        cxn.filter_slider_ell9k.set_filter(nd_filter) # Change the nd filter for the yellow laser
+        cxn.pulse_streamer.constant([],0.0, AO_power_settings) # Turn on the yellow laser       
+        time.sleep(0.5)
+        optical_power = cxn.photodiode.read_optical_power()
+        
+    elif color_ind==638:
+        cxn.pulse_streamer.constant([], AO_power_settings, 0.0) # Turn on the red laser     
+        time.sleep(0.5)
+        optical_power = cxn.photodiode.read_optical_power()
+    
+    time.sleep(0.5)
+    cxn.pulse_streamer.constant([], 0.0, 0.0)
+    return optical_power
+
+def calc_optical_power_mW(color_ind, optical_power_V):
+    # Values found from experiments. See Notebook entry 3/19/2020 and 3/20/2020
+    if color_ind == 532:
+        return 13* optical_power_V + 0.037
+    elif color_ind == 589:
+        return 7.9* optical_power_V + 0.024
+    if color_ind == 638:
+        return 5.7* optical_power_V + 0.035
+    
+    
 # %% Safe stop (TM mccambria)
 
 

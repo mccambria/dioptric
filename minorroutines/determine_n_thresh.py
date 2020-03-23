@@ -20,7 +20,7 @@ from scipy.optimize import curve_fit
 import scipy.stats
 import scipy.special
 import math  
-import photonstatistics as ps
+import minorroutines.photonstatistics as ps
 
 #%% function
 
@@ -83,21 +83,37 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     #Define some parameters
     
     #delay of aoms
-    aom_delay = shared_params['532_aom_delay'] 
+    aom_delay = shared_params['515_laser_delay'] 
     
     #readout_power in unit of microwatts
     # aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
-    'TBD'
-    readout_power = 0 
+    #'TBD'
+#    readout_power = 0 
     
     reionization_time = 1*10**6
     illumination_time = readout_time + 10**3
-    
+
     # Set up our data structure, an array of NaNs that we'll fill
     # we repeatively collect photons for tR 
     
     sig_counts=[]
     opti_coords_list = []
+  
+    # %% Read the optical power for yellow and green light
+    
+    green_optical_power_pd = tool_belt.opt_power_via_photodiode(532)
+
+    yellow_optical_power_pd = tool_belt.opt_power_via_photodiode(589, 
+           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])
+        
+    # Convert V to mW optical power
+    green_optical_power_mW = \
+            tool_belt.calc_optical_power_mW(532, green_optical_power_pd) 
+            
+    yellow_optical_power_mW = \
+            tool_belt.calc_optical_power_mW(589, yellow_optical_power_pd)
+    
+    
     
 #%% Estimate the lenth of the sequance
     
@@ -127,16 +143,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
         print('Run index: {}'. format(run_ind))
                 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = True)
         opti_coords_list.append(opti_coords)   
-        
-        drift = numpy.array(tool_belt.get_drift())
-        coords = numpy.array(nv_sig['coords'])
-        
-        coords_drift = coords - drift
-        
-        cxn.galvo.write(coords_drift[0], coords_drift[1])
-        cxn.objective_piezo.write(coords_drift[2])
+#        
+#        drift = numpy.array(tool_belt.get_drift())
+#        coords = numpy.array(nv_sig['coords'])
+#        
+#        coords_drift = coords - drift
+#        
+#        cxn.galvo.write(coords_drift[0], coords_drift[1])
+#        cxn.objective_piezo.write(coords_drift[2])
         
         #  set filter slider according to nv_sig
         ND_filter = nv_sig['nd_filter']
@@ -166,26 +182,26 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     
 #%% plot the data and fit
     
-    unique_value, relative_frequency = get_Probability_distribution(list(sig_counts))  
-    
-    #double poisson fit    
-    a, b, numbla1, numbla2 = get_poisson_distribution_fit(readout_time,unique_value, relative_frequency)
-    number_of_photons = list(range(max(unique_value)))
-    curve = get_poisson_distribution_curve(number_of_photons,a, b, numbla1, numbla2)
-    
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-    
-    ax.plot(unique_value, relative_frequency, 'bo')
-    ax.plot(number_of_photons, curve,'r') 
-    ax.set_xlabel('number of photons (n)')
-    ax.set_ylabel('P(n)')
-    
-    text = '\n'.join(('Reionization time (532 nm)' + '%.3f'%(reionization_time/10**3) + 'us',
-                      'Illumination time (589 nm)' + '%.3f'%(illumination_time/10**3) + 'us'))
-
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
+#    unique_value, relative_frequency = get_Probability_distribution(list(sig_counts))  
+#    
+#    #double poisson fit    
+#    a, b, numbla1, numbla2 = get_poisson_distribution_fit(readout_time,unique_value, relative_frequency)
+#    number_of_photons = list(range(max(unique_value)))
+#    curve = get_poisson_distribution_curve(number_of_photons,a, b, numbla1, numbla2)
+#    
+#    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+#    
+#    ax.plot(unique_value, relative_frequency, 'bo')
+#    ax.plot(number_of_photons, curve,'r') 
+#    ax.set_xlabel('number of photons (n)')
+#    ax.set_ylabel('P(n)')
+#    
+#    text = '\n'.join(('Reionization time (532 nm)' + '%.3f'%(reionization_time/10**3) + 'us',
+#                      'Illumination time (589 nm)' + '%.3f'%(illumination_time/10**3) + 'us'))
+#
+#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+#    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
 
   #%% monitor photon counts 
     fig2, ax2 = plt.subplots(1,1,figsize = (10,8.5))
@@ -198,7 +214,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     ax2.set_ylabel('photon counts (cps)')
     
     text = '\n'.join(('Readout time (589 nm)'+'%.3f'%(readout_time/10**3) + 'us',
-                     'Readout power (589 nm)'+'%.3f'%(readout_power) + 'uW'))
+                     'Readout power (589 nm)'+'%.3f'%(yellow_optical_power_mW * 1000) + 'uW'))
    
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
@@ -216,6 +232,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
             'nv_sig': nv_sig,
             'aom_ao_589_pwr': aom_ao_589_pwr,
             'aom_ao_589_pwr-units':'V',
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
             'readout_time':readout_time,
             'readout_time_unit':'ns',
             'reionization_time': reionization_time,

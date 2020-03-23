@@ -2,6 +2,8 @@
 """
 Created on Fri Mar 20 10:05:38 2020
 
+NOT FINISHED 3/23/2020
+
 Choose a laser, set the laser power, and read off the voltage from the 
 photodiode
 
