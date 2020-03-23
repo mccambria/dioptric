@@ -86,7 +86,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     aom_delay = shared_params['532_aom_delay'] 
     
     #readout_power in unit of microwatts
-    # aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
+    aom_power = numpy.sqrt((readout_power - 0.432)/1361.811) #uW
     'TBD'
     readout_power = 0 
     
