@@ -186,7 +186,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
 
     #double poisson fit
     a, b, numbla1, numbla2 = get_poisson_distribution_fit(readout_time*10**-9,unique_value, relative_frequency)
-    number_of_photons = list(range(max(unique_value)))
+    number_of_photons = list(range(max(unique_value)+1))
     curve = get_poisson_distribution_curve(number_of_photons,readout_time*10**-9, a, b, numbla1, numbla2)
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
