@@ -155,7 +155,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 #    freq_range = 0.025
     num_steps = 51
     num_reps = 10**3
-    num_runs = 1
+    num_runs = 3
 
     pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
                           num_steps, num_reps, num_runs)
@@ -180,8 +180,8 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
-    num_reps = 10**5
-    num_runs = 2
+    num_reps = 10**4
+    num_runs = 20
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -192,9 +192,12 @@ def do_t1_battery(nv_sig, apd_indices):
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
         
     t1_exp_array = numpy.array([
-            [[States.ZERO, States.HIGH], [0, 7*10**6], 26, 0.3*10**4, 230],
-            [[States.ZERO, States.ZERO], [0, 7*10**6], 26, 0.3*10**4, 230]
-            ])
+        [[States.HIGH, States.LOW], [0, 15*10**6], 16, 2.5*10**2, 1500],
+        [[States.HIGH, States.HIGH], [0, 15*10**6], 16, 2.5*10**2, 1500],
+        [[States.ZERO, States.HIGH], [0, 15*10**6], 16, 2.5*10**2, 1500],
+        [[States.ZERO, States.ZERO], [0, 15*10**6], 16, 2.5*10**2, 1500]
+        ])
+
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -413,9 +416,9 @@ if __name__ == '__main__':
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 350, 'magnet_angle': 6.6,
-            'resonance_LOW': 2.8046, 'rabi_LOW': 171.1, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9371, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
+            'pulsed_readout_dur': 1000, 'magnet_angle': 0,
+            'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
     
     
     
@@ -474,7 +477,7 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.5)
-            do_resonance_state(nv_sig, apd_indices, States.LOW)
+#            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
@@ -490,7 +493,7 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
 #            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 300])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
-#            do_t1_battery(nv_sig, apd_indices)
+            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
 #            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)

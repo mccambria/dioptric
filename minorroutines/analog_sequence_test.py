@@ -58,11 +58,11 @@ if __name__ == '__main__':
     try:
         
         with labrad.connect() as cxn:
-            main(cxn, 1*10**8, 5*10**8, 0.1)
+#            main(cxn, 1*10**8, 5*10**8, 0.1)
             
             
 #            on_589(cxn)
-#            cxn.pulse_streamer.constant([],0.0, 0.0)
+            cxn.pulse_streamer.constant([3],0.0, 0.0)
             
 #            on_638(cxn)
             

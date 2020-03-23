@@ -663,7 +663,7 @@ def aom_ao_589_pwr_err(aom_ao_589_pwr):
                            '\nYou entered {} V'.format(aom_ao_589_pwr))
         
 def ao_638_pwr_err(ao_638_pwr):
-    if ao_638_pwr < 0 or ao_638_pwr > 1.0:
+    if ao_638_pwr < 0 or ao_638_pwr > 0.9:
         raise RuntimeError('Value for 638 ao must be within 0 to +1 V.'+
                            '\nYou entered {} V'.format(ao_638_pwr))
 # %% Safe stop (TM mccambria)
