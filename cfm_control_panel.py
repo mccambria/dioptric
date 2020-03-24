@@ -36,6 +36,8 @@ import majorroutines.set_drift_from_reference_image as set_drift_from_reference_
 import debug.test_major_routines as test_major_routines
 import minorroutines.photon_collections_under_589 as photon_collections_under_589
 import minorroutines.determine_n_thresh as determine_n_thresh
+import minorroutines.determine_n_thresh_with_638 as determine_n_thresh_with_638
+import minorroutines.continuous_photon_counting as continuous_photon_counting
 from utils.tool_belt import States
 
 
@@ -400,6 +402,31 @@ def do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices):
     num_reps = 1* 10**3
     
     determine_n_thresh.main(nv_sig, apd_indices, aom_ao_589_pwr, readout_time, num_runs, num_reps)
+    
+def do_determine_n_thresh_with_638(nv_sig, aom_ao_589_pwr, ao_638_pwr, 
+                                   readout_time, apd_indices):
+    
+    num_runs = 1
+    num_reps = 10**3
+    ionization_time = 10**6
+    
+    determine_n_thresh_with_638.main(nv_sig, apd_indices, aom_ao_589_pwr, 
+                ao_638_pwr, readout_time, ionization_time, num_runs, num_reps)
+    
+def do_continuous_photon_counting(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
+                                 init_color_ind, illum_color_ind):
+    readout_time = 10*10**6
+    init_pulse_duration = 10**3
+    illum_pulse_duration = readout_time * 1.01
+    num_reps = 10**5
+    num_runs = 1
+    num_bins = 10*10**3
+    
+
+    continuous_photon_counting.main(nv_sig, apd_indices, readout_time, init_pulse_duration,
+                  illum_pulse_duration, aom_ao_589_pwr, ao_638_pwr, 
+                  init_color_ind, illum_color_ind,
+                  num_reps, num_runs, num_bins)
 
     
 # %% Run the file
@@ -426,8 +453,9 @@ if __name__ == '__main__':
     
     
     aom_ao_589_pwr = 0.4
+    ao_638_pwr = 0.65
     color_ind = 532
-    readout_time = 10* 10**3
+#    readout_time = 100*10**3
 
     # %% Functions to run
 
@@ -463,7 +491,12 @@ if __name__ == '__main__':
 #                do_image_sample(nv_sig_copy, apd_indices)
             
 #            do_photon_collections_under_589(nv_sig, apd_indices)
-            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
+#            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
+#            do_determine_n_thresh_with_638(nv_sig, aom_ao_589_pwr, ao_638_pwr, 
+#                                   readout_time, apd_indices)
+            
+            do_continuous_photon_counting(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
+                                 532, 589)
             
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)

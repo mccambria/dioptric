@@ -90,7 +90,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     #'TBD'
 #    readout_power = 0
 
-    reionization_time = 1*10**6
+    reionization_time = 10**6
     illumination_time = readout_time + 10**3
 
     # Set up our data structure, an array of NaNs that we'll fill
@@ -182,26 +182,26 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
 
 #%% plot the data and fit
 
-#    unique_value, relative_frequency = get_Probability_distribution(list(sig_counts))
+    unique_value, relative_frequency = get_Probability_distribution(list(sig_counts))
 #
 #    #double poisson fit
 #    a, b, numbla1, numbla2 = get_poisson_distribution_fit(readout_time,unique_value, relative_frequency)
 #    number_of_photons = list(range(max(unique_value)))
 #    curve = get_poisson_distribution_curve(number_of_photons,a, b, numbla1, numbla2)
 #
-#    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
 #
-#    ax.plot(unique_value, relative_frequency, 'bo')
+    ax.plot(unique_value, relative_frequency, 'bo')
 #    ax.plot(number_of_photons, curve,'r')
-#    ax.set_xlabel('number of photons (n)')
-#    ax.set_ylabel('P(n)')
+    ax.set_xlabel('number of photons (n)')
+    ax.set_ylabel('P(n)')
 #
-#    text = '\n'.join(('Reionization time (532 nm)' + '%.3f'%(reionization_time/10**3) + 'us',
-#                      'Illumination time (589 nm)' + '%.3f'%(illumination_time/10**3) + 'us'))
+    text = '\n'.join(('Reionization time (532 nm)' + '%.3f'%(reionization_time/10**3) + 'us',
+                      'Illumination time (589 nm)' + '%.3f'%(illumination_time/10**3) + 'us'))
 #
-#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-#    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
-#            verticalalignment='top', bbox=props)
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
 
   #%% monitor photon counts
     fig2, ax2 = plt.subplots(1,1,figsize = (10,8.5))
@@ -209,15 +209,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     time_axe = ps.get_time_axe(seq_time_s, readout_time*10**-9,sig_counts)
     photon_counts = ps.get_photon_counts(readout_time*10**-9, sig_counts)
 
-    ax2.plot(time_axe,photon_counts)
-    ax2.set_xlabel('time (s)')
-    ax2.set_ylabel('photon counts (cps)')
+    ax2.plot(numpy.linspace(0,num_reps-1, num_reps), numpy.array(photon_counts) / 1000)
+    ax2.set_xlabel('Rep number')
+    ax2.set_ylabel('photon counts (kcps)')
 
     text = '\n'.join(('Readout time (589 nm)'+'%.3f'%(readout_time/10**3) + 'us',
                      'Readout power (589 nm)'+'%.3f'%(yellow_optical_power_mW * 1000) + 'uW'))
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.55, 0.6, text, transform=ax.transAxes, fontsize=12,
+    ax2.text(0.55, 0.95, text, transform=ax2.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
 
 
@@ -260,4 +260,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path)
 
-    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_figure(fig, file_path + '-histogram')
+    tool_belt.save_figure(fig2, file_path + '-counts')
+    
