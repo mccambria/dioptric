@@ -201,6 +201,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
 #
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(0.55, 0.95, text, transform=ax.transAxes, fontsize=12,
+
             verticalalignment='top', bbox=props)
 
   #%% monitor photon counts
@@ -218,6 +219,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax2.text(0.55, 0.95, text, transform=ax2.transAxes, fontsize=12,
+
             verticalalignment='top', bbox=props)
 
 
@@ -262,4 +264,3 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr,readout_time,num_runs
 
     tool_belt.save_figure(fig, file_path + '-histogram')
     tool_belt.save_figure(fig2, file_path + '-counts')
-    

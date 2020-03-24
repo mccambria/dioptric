@@ -413,7 +413,7 @@ def get_single_poisson_distribution_curve(number_of_photons,readout_time, F):
     return poissonian_curve   
 
 #%% quick double poisson curve fit 
-def get_poisson_distribution_fit(readout_time,readout_power,unique_value, relative_frequency):
+def get_poisson_distribution_fit(readout_time,unique_value, relative_frequency):
     tR = readout_time
     number_of_photons = unique_value
     def PoissonDistribution(number_of_photons, a, b, numbla1, numbla2):
