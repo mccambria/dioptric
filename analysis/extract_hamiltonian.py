@@ -376,6 +376,24 @@ def calc_eigenvectors(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     return sorted_eigvecs
 
 
+def calc_eig(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
+    """
+    Return the normalized eigenvectors and eigenvalues,
+    sorted by ascending eigenvalue.
+    """
+    hamiltonian = calc_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi,
+                                   phi_B, phi_Pi)
+    eigvals, eigvecs = eig(hamiltonian)
+    sorted_eigvals = numpy.sort(eigvals)
+    sorted_indices = numpy.argsort(eigvals)
+    # sorted_eigvecs = [numpy.round(eigvecs[:,ind], 3) for ind in sorted_indices]
+    sorted_eigvecs = [eigvecs[:,ind] for ind in sorted_indices]
+    sorted_eigvecs = numpy.array(sorted_eigvecs)
+    # for vec in sorted_eigvecs:
+    #     print(numpy.matmul(hamiltonian, vec) / vec)
+    return sorted_eigvecs, sorted_eigvals
+
+
 def find_mag_B(res_desc, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     # Just return the given mag_B if it's known
     if res_desc[0] is not None:

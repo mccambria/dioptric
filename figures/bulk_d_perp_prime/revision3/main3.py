@@ -11,7 +11,6 @@ Created on Mon Dec  9 17:04:19 2019
 
 import csv
 import numpy
-from numpy import pi
 import matplotlib
 import matplotlib.pyplot as plt
 import analysis.extract_hamiltonian as eh
@@ -20,6 +19,11 @@ import scipy.stats as stats
 from scipy.optimize import curve_fit
 from numpy import matmul
 import matplotlib.gridspec as gridspec
+from numpy import 
+
+from numpy import pi
+from scipy.constants import Boltzmann
+from scipy.constants import hbar
 
 
 # %% Constants
@@ -29,11 +33,89 @@ im = 0+1j
 inv_sqrt_2 = 1/numpy.sqrt(2)
 gmuB = 2.8e-3  # gyromagnetic ratio in GHz / G
 
-ms = 7
-lw = 1.75
-    
+# ms = 7
+# lw = 1.75
 ms = 5.25
 lw = 5.25/4
+
+T = 295  # measurement temperature
+Omega = (3.567e-10)**3  # unit cell volume in diamond
+v_s = 1.2e4  # speed of sound in diamond
+omega_D = 2*pi*38.76e12  # Debye angular frequency in diamond
+# This rate coefficient absorbs (2*pi*hbar)**4 from the matrix elements
+rate_coeff = (8 * pi * Omega**2 * (Boltzmann*T)**5) / (v_s**6 * hbar**5 * omega_D**2)
+x_d = (hbar*omega_D)/(Boltzmann*T)  # dimensionless phonon energy limit
+
+
+# %% Phonon fitting
+
+
+def phonon_fit(nv_data):
+    """
+    Fits gamma and omega as functions of perp_B to a model of relaxation
+    limited by two-phonon processes.
+    """
+
+    # %% Get the rates and the values of perp_B
+    
+    all_omega = []
+    all_omega_err = []
+    all_gamma = []
+    all_gamma_err = []
+    all_mag_B = []
+    all_theta_B = []
+
+    for ind in range(len(nv_data)):
+        
+        nv = nv_data[ind]
+        
+        name = nv['name']
+        # if name in ['NVA1', 'NVA2']:
+        #     continue
+        # if name != 'test':
+        #     continue
+        
+        omega = numpy.array(nv['omega'])
+        omega_err = numpy.array(nv['omega_err'])
+        gamma = numpy.array(nv['gamma'])
+        gamma_err = numpy.array(nv['gamma_err'])
+        mag_B = numpy.array(nv['mag_B'])
+        theta_B = numpy.array(nv['theta_B'])
+        
+        # Only consider points with known B field components
+        mask = mag_B != None
+        
+        # Calculate based on all measurements with components, including
+        # those off axis
+        all_omega.extend(omega[mask])
+        all_omega_err.extend(omega_err[mask])
+        all_gamma.extend(gamma[mask])
+        all_gamma_err.extend(gamma_err[mask])
+        all_mag_B.extend(mag_B[mask])
+        all_theta_B.extend(theta_B[mask])
+    
+    # Cast to arrays
+    all_omega = numpy.array(all_omega)
+    all_omega_err = numpy.array(all_omega_err)
+    all_gamma = numpy.array(all_gamma)
+    all_gamma_err = numpy.array(all_gamma_err)
+    all_mag_B = numpy.array(all_mag_B)
+    all_theta_B = numpy.array(all_theta_B)
+    
+    # B magnitude is accepted as gmuB*mag_B
+    # Everything in GHz
+    hamiltonian_args = [gmuB*mag_B, theta_B, 0.0, 0.0, 0.0, 0.0]
+    vecs, vals = eh.calc_eig(*hamiltonian_args)
+    
+    
+def distr(x):
+    """Bose Einstein distribution"""
+    
+    
+    
+def f_ij(x):
+    diff = x-x_ji
+    x**3 * diff**3 * 
 
 
 # %% Functions
@@ -567,7 +649,10 @@ if __name__ == '__main__':
     nv_data = get_nv_data_csv(file)
     # print(nv_data)
     
-    main(nv_data)
+    print(rate_coeff)
+    
+    # main(nv_data)
+    # phonon_fit(nv_data)
     # color_scatter(nv_data)
     # plot_gamma_omega_vs_angle(nv_data)
     # hist_gamma_omega(nv_data)
