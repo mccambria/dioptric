@@ -11,23 +11,28 @@ Created on Mon Dec  9 17:04:19 2019
 
 import csv
 import numpy
+from numpy import matmul
+from numpy import exp
+from numpy import conj
 import matplotlib
 import matplotlib.pyplot as plt
 import analysis.extract_hamiltonian as eh
+from analysis.extract_hamiltonian import conj_trans
+from analysis.extract_hamiltonian import calc_eig
 from analysis.extract_hamiltonian import calc_splitting
 import scipy.stats as stats
 from scipy.optimize import curve_fit
-from numpy import matmul
 import matplotlib.gridspec as gridspec
-from numpy import 
-
-from numpy import pi
-from scipy.constants import Boltzmann
-from scipy.constants import hbar
+from scipy.integrate import quad
 
 
 # %% Constants
 
+
+from numpy import pi
+from scipy.constants import Boltzmann
+from scipy.constants import hbar
+from scipy.constants import Planck
 
 im = 0+1j
 inv_sqrt_2 = 1/numpy.sqrt(2)
@@ -38,13 +43,17 @@ gmuB = 2.8e-3  # gyromagnetic ratio in GHz / G
 ms = 5.25
 lw = 5.25/4
 
-T = 295  # measurement temperature
+kT = Boltzmann*295  # measurement thermal energy
 Omega = (3.567e-10)**3  # unit cell volume in diamond
 v_s = 1.2e4  # speed of sound in diamond
 omega_D = 2*pi*38.76e12  # Debye angular frequency in diamond
 # This rate coefficient absorbs (2*pi*hbar)**4 from the matrix elements
-rate_coeff = (8 * pi * Omega**2 * (Boltzmann*T)**5) / (v_s**6 * hbar**5 * omega_D**2)
-x_d = (hbar*omega_D)/(Boltzmann*T)  # dimensionless phonon energy limit
+rate_coeff = (8 * pi * Omega**2 * kT**5) / (v_s**6 * hbar**5 * omega_D**2)
+x_D = (hbar*omega_D) / kT  # dimensionless phonon energy limit
+
+# Eigenvectors and values are sorted in increasing order of eigenvalue.
+# Assume B is small enough such that there are no crossings and theta <= pi/2.
+state_mapping = {-1: 1, 0: 0, +1: 2}
 
 
 # %% Phonon fitting
@@ -102,20 +111,80 @@ def phonon_fit(nv_data):
     all_mag_B = numpy.array(all_mag_B)
     all_theta_B = numpy.array(all_theta_B)
     
-    # B magnitude is accepted as gmuB*mag_B
-    # Everything in GHz
     hamiltonian_args = [gmuB*mag_B, theta_B, 0.0, 0.0, 0.0, 0.0]
-    vecs, vals = eh.calc_eig(*hamiltonian_args)
+    
     
     
 def distr(x):
     """Bose Einstein distribution"""
+    return 1.0 / (exp(x) - 1.0)
     
     
+def f_ij(x, x_ji):
+    diff = x - x_ji
+    return x**3 * diff**3 * distr(x) * (distr(diff) + 1)
     
-def f_ij(x):
-    diff = x-x_ji
-    x**3 * diff**3 * 
+
+def g_ijm(x, x_im, x_jm):
+    return 1 / (x_im + x) + 1 / (x_jm + x)
+    
+    
+def int_arg(x, i, j, vecs, vals, noise_hamiltonian):
+    
+    i_vec = vecs[state_mapping[i]]
+    j_vec = vecs[state_mapping[j]]
+    
+    i_val = vals[state_mapping[i]]
+    j_val = vals[state_mapping[j]]
+
+    x_ji = (Planck*(j_val-i_val)) / kT
+    f_val = f_ij(x, x_ji)
+    
+    sum_val = 0
+    for m in [-1, 0, +1]:
+        
+        m_vec = vecs[state_mapping[m]]
+        m_val = vals[state_mapping[m]]
+        
+        H_jm = numpy.matmul(noise_hamiltonian, m_vec)
+        H_jm = numpy.matmul(conj_trans(j_vec), H_jm)
+        
+        H_mi = numpy.matmul(noise_hamiltonian, i_vec)
+        H_mi = numpy.matmul(conj_trans(m_vec), H_mi)
+        
+        if i == m:
+            x_im = 0.0
+        else:
+            x_im = (Planck*(i_val-m_val)) / kT
+        
+        if j == m:
+            x_jm = 0
+        else:
+            x_jm = (Planck*(j_val-m_val)) / kT
+        
+        g_val = g_ijm(x, x_im, x_jm)
+        
+        sum_val += (H_jm * H_mi * g_val)
+        
+    return f_val * conj(sum_val) * sum_val
+    
+    
+def rate(i, j, static_hamiltonian_args, noise_hamiltonian):
+    """
+    Calculate the two-phonon rate between states i and j. i and j are
+    designated by m_s as integers.
+    """
+    
+    # B magnitude is accepted as gmuB*mag_B, everything in GHz
+    vecs, vals = calc_eig(*static_hamiltonian_args)
+    
+    args = (i, j, vecs, vals, noise_hamiltonian)
+    int_val, int_error = quad(int_arg, 0, x_D, args=args)
+    
+    print(rate_coeff)
+    print(int_val)
+    
+    return rate_coeff * int_val
 
 
 # %% Functions
@@ -646,10 +715,10 @@ if __name__ == '__main__':
     
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/papers/bulk_dq_relaxation/'
     file = path + 'compiled_data_import.csv'
-    nv_data = get_nv_data_csv(file)
+    # nv_data = get_nv_data_csv(file)
     # print(nv_data)
     
-    print(rate_coeff)
+    # print(rate_coeff)
     
     # main(nv_data)
     # phonon_fit(nv_data)
@@ -658,4 +727,12 @@ if __name__ == '__main__':
     # hist_gamma_omega(nv_data)
     # correlations(nv_data)
     # plot_splittings_vs_angle(nv_data)
+    
+    # %% Phonon fitting
+    
+    static_hamiltonian_args = [0.1, 0.0, 0.0, 0.0, 0.0, 0.0]
+    noise_hamiltonian_args = [0.0, 0.0, 1.0, numpy.sqrt(2.0), 0.0, pi/4]
+    noise_hamiltonian = eh.calc_single_hamiltonian(*noise_hamiltonian_args)
+    val = rate(-1, +1, static_hamiltonian_args, noise_hamiltonian)
+    print(val)
 
