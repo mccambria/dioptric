@@ -113,6 +113,22 @@ def phonon_fit(nv_data):
     
     hamiltonian_args = [gmuB*mag_B, theta_B, 0.0, 0.0, 0.0, 0.0]
     
+    # result = minimize_scalar(rate_comb_cost, bounds=(1, 1000),
+    #                          args=args, method='bounded')
+    
+    static_hamiltonian_args = [0.1, 0.0, 0.0, 0.0, 0.0, 0.0]
+    args = (-1, +1, static_hamiltonian_args)
+    popt, pcov = curve_fit(rate, x_dataargs=args
+    
+    
+def rate_comb_cost():
+    
+    
+def rate_mag_E(mag_E, args):
+    
+    noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3)
+    return rate(args)
+    
     
     
 def distr(x):
@@ -121,20 +137,26 @@ def distr(x):
     
     
 def f_ij(x, x_ji):
+    # For x=0 or diff=0, we get a blowup, naively at least. If we're a little
+    # clever we can show that the limit at x=0 is in fact 0. 
     diff = x - x_ji
-    return x**3 * diff**3 * distr(x) * (distr(diff) + 1)
-    
+    # if (x == 0.0) or (diff == 0.0):
+    #     return 0.0
+    val = (x * diff)**3 * distr(x) * (distr(diff) + 1)
+    # val[numpy.isnan(val)] = 0.0
+    return val
+
 
 def g_ijm(x, x_im, x_jm):
-    return 1 / (x_im + x) + 1 / (x_jm + x)
+    return (1 / (x_im + x)) + (1 / (x_jm - x))
     
     
 def int_arg(x, i, j, vecs, vals, noise_hamiltonian):
     
     i_vec = vecs[state_mapping[i]]
-    j_vec = vecs[state_mapping[j]]
-    
     i_val = vals[state_mapping[i]]
+    
+    j_vec = vecs[state_mapping[j]]
     j_val = vals[state_mapping[j]]
 
     x_ji = (Planck*(j_val-i_val)) / kT
@@ -148,9 +170,11 @@ def int_arg(x, i, j, vecs, vals, noise_hamiltonian):
         
         H_jm = numpy.matmul(noise_hamiltonian, m_vec)
         H_jm = numpy.matmul(conj_trans(j_vec), H_jm)
+        H_jm *= 10**9
         
         H_mi = numpy.matmul(noise_hamiltonian, i_vec)
         H_mi = numpy.matmul(conj_trans(m_vec), H_mi)
+        H_mi *= 10**9
         
         if i == m:
             x_im = 0.0
@@ -158,7 +182,7 @@ def int_arg(x, i, j, vecs, vals, noise_hamiltonian):
             x_im = (Planck*(i_val-m_val)) / kT
         
         if j == m:
-            x_jm = 0
+            x_jm = 0.0
         else:
             x_jm = (Planck*(j_val-m_val)) / kT
         
@@ -166,7 +190,7 @@ def int_arg(x, i, j, vecs, vals, noise_hamiltonian):
         
         sum_val += (H_jm * H_mi * g_val)
         
-    return f_val * conj(sum_val) * sum_val
+    return numpy.real(f_val * conj(sum_val) * sum_val)
     
     
 def rate(i, j, static_hamiltonian_args, noise_hamiltonian):
@@ -177,14 +201,45 @@ def rate(i, j, static_hamiltonian_args, noise_hamiltonian):
     
     # B magnitude is accepted as gmuB*mag_B, everything in GHz
     vecs, vals = calc_eig(*static_hamiltonian_args)
+    vals *= 10**9  # Convert to Hz
     
     args = (i, j, vecs, vals, noise_hamiltonian)
-    int_val, int_error = quad(int_arg, 0, x_D, args=args)
+    diffs = [vals[2]-vals[1], vals[2]-vals[0], vals[1]-vals[0]]
+    diffs = numpy.array(diffs)
+    diffs *= (Planck / kT)
+    points = [0.0, *diffs]
+    int_val, int_error = quad(int_arg, 0.0, x_D, args=args, points=points)
     
-    print(rate_coeff)
-    print(int_val)
+    # x_vals = numpy.linspace(0.0,6.5,100)
+    # plt.plot(x_vals, int_arg(x_vals, *args))
+    # print(int_arg(numpy.array([0.0, 0.000001]), *args))
+    # return
     
     return rate_coeff * int_val
+
+
+def calc_phonon_hamiltonian():
+    pass
+
+
+def calc_electric_hamiltonian(E_field_vec):
+    
+    d_parallel = 0.35
+    d_perp = 17
+    d_perp_prime = 17
+    
+    E_x, E_y, E_z = E_field_vec
+    
+    diag = d_parallel*E_z
+    sq = inv_sqrt_2*d_perp_prime*(E_x-im*E_y)
+    dq = -d_perp*(E_x+im*E_y)
+    
+    hamiltonian = numpy.array([[diag, sq, dq],
+                               [numpy.conj(sq), 0.0, -sq],
+                               [numpy.conj(dq), numpy.conj(-sq), diag]])
+    
+    return hamiltonian
+    
 
 
 # %% Functions
@@ -731,8 +786,12 @@ if __name__ == '__main__':
     # %% Phonon fitting
     
     static_hamiltonian_args = [0.1, 0.0, 0.0, 0.0, 0.0, 0.0]
-    noise_hamiltonian_args = [0.0, 0.0, 1.0, numpy.sqrt(2.0), 0.0, pi/4]
-    noise_hamiltonian = eh.calc_single_hamiltonian(*noise_hamiltonian_args)
-    val = rate(-1, +1, static_hamiltonian_args, noise_hamiltonian)
-    print(val)
+    
+    # k =1e10, q=4e=6e-19 for Carbon nucleus, 154e-12 bond length, a pm on 
+    # either side gives 6e7 E field in V / cm! So large fields are reasonable
+    mag_E = 85  # This number is chosen to get ~kHz rates out
+    noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3)
+    
+    val = rate(0, +1, static_hamiltonian_args, noise_hamiltonian)
+    print(val/1000)  # rate in kHz
 

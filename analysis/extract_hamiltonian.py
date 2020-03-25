@@ -384,6 +384,7 @@ def calc_eig(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     hamiltonian = calc_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi,
                                    phi_B, phi_Pi)
     eigvals, eigvecs = eig(hamiltonian)
+    eigvals = numpy.real(eigvals)  # ditch the complex part
     sorted_eigvals = numpy.sort(eigvals)
     sorted_indices = numpy.argsort(eigvals)
     # sorted_eigvecs = [numpy.round(eigvecs[:,ind], 3) for ind in sorted_indices]
