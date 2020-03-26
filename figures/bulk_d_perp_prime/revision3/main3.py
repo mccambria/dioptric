@@ -115,32 +115,36 @@ def phonon_fit(nv_data):
     all_theta_B = numpy.array(all_theta_B)
     all_perp_B = numpy.array(all_perp_B)
     
+    # %% Fit as function of B_perp to phonon coupling constants
     
     # result = minimize_scalar(rate_comb_cost, bounds=(1, 1000),
     #                          args=args, method='bounded')
     
-    # Try out fitting to the E magnitude
+    # %% Fit as function of B_perp to d_perp_prime and the E field magnitude
+    
+    p0 = (85, 17)
     popt, pcov = curve_fit(gamma_electric_perp_B, all_perp_B, all_gamma,
-                        p0=(100,), sigma=all_gamma_err, absolute_sigma=True)
+                        p0=p0, sigma=all_gamma_err, absolute_sigma=True)
     print(popt)
     print(numpy.sqrt(numpy.diag(pcov)))
     
     fig, ax = plt.subplots()
-    ax.errorbar(all_perp_B, all_gamma, yerr=all_gamma_err, linestyle='None')
+    fig.set_tight_layout(True)
+    ax.errorbar(all_perp_B, all_gamma, yerr=all_gamma_err,
+                linestyle='None', ms=10)
     perp_B_linspace = numpy.linspace(0, max(all_perp_B))
     gammas = gamma_electric_perp_B(perp_B_linspace, *popt)
-    print(gammas)
     ax.plot(perp_B_linspace, gammas)
     
     
-def gamma_electric_perp_B(perp_B, mag_E):
+def gamma_electric_perp_B(perp_B, mag_E, d_perp_prime):
     """
     Calculate gamma (in kHz) as a function of perp_B, optimizing the
     magnitude of the noise E field
     """
     
     # Fixed axial B component so we can plot in 1D
-    noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3)
+    noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3, d_perp_prime)
     gamma = lambda B_field_vec: rate(-1, +1, B_field_vec, noise_hamiltonian)/1000
     if (type(perp_B) is list) or (type(perp_B) is numpy.ndarray):
         rates = []
@@ -187,8 +191,9 @@ def int_arg(x, i, j, vecs, vals, noise_hamiltonian):
     sum_val = 0
     for m in [-1, 0, +1]:
         
-        m_vec = vecs[state_mapping[m]]
-        m_val = vals[state_mapping[m]]
+        m_ind = state_mapping[m]
+        m_vec = vecs[m_ind]
+        m_val = vals[m_ind]
         
         H_jm = numpy.matmul(noise_hamiltonian, m_vec)
         H_jm = numpy.matmul(conj_trans(j_vec), H_jm)
@@ -213,42 +218,107 @@ def int_arg(x, i, j, vecs, vals, noise_hamiltonian):
         sum_val += (H_jm * H_mi * g_val)
         
     return numpy.real(f_val * conj(sum_val) * sum_val)
+
+
+def int_arg_fast(x, i, j, x_ij_mat, noise_H_mat):
+    """
+    This is a sped up version of int_arg. There's a lot of duplicated
+    calculation in that function which can be done once elsewhere and passed
+    in as a lookup matrix.
+    """
+    
+    i_ind = state_mapping[i]
+    j_ind = state_mapping[j]
+    
+    x_ji = x_ij_mat[j_ind, i_ind]
+    f_val = f_ij(x, x_ji)
+    
+    sum_val = 0
+    for m in [-1, 0, +1]:
+        
+        m_ind = state_mapping[m]
+        
+        H_jm = noise_H_mat[j_ind, m_ind]
+        H_mi = noise_H_mat[m_ind, i_ind]
+        
+        x_im = x_ij_mat[i_ind, m_ind]
+        x_jm = x_ij_mat[j_ind, m_ind]
+        g_val = g_ijm(x, x_im, x_jm)
+        
+        sum_val += (H_jm * H_mi * g_val)
+        
+    return numpy.real(f_val * conj(sum_val) * sum_val)
     
     
-def rate(i, j, B_field_vec, noise_hamiltonian):
+def rate(i, j, B_field_vec, noise_hamiltonian, fast=True):
     """
     Calculate the two-phonon rate between states i and j. i and j are
     designated by m_s as integers.
     """
     
-    # B magnitude is accepted as gmuB*mag_B, everything in GHz
-    vecs, vals = calc_eig_static_cartesian_B(*B_field_vec)
-    vals *= 10**9  # Convert to Hz
+    # Fast mode does some of the int_arg processing right here so that it
+    # isn't duplicated in each call to the argument.
+    if fast:
+        
+        # B magnitude is accepted as gmuB*mag_B, everything in GHz
+        vecs, vals = calc_eig_static_cartesian_B(*B_field_vec)
+        
+        # Construct matrices so we can just look up necessary values
+        x_ij_mat = numpy.empty((3, 3), dtype=float)
+        noise_H_mat = numpy.empty((3, 3), dtype=complex)
+        for a in [-1, 0, +1]:
+            a_ind = state_mapping[a]
+            a_val = vals[a_ind]
+            a_vec = vecs[a_ind]
+            for b in [-1, 0, +1]:
+                b_ind = state_mapping[b]
+                b_val = vals[b_ind]
+                b_vec = vecs[b_ind]
+                if a_ind == b_ind:
+                    x_ij_mat[a_ind, b_ind] = 0.0
+                else:
+                    x_ij_mat[a_ind, b_ind] = a_val-b_val
+                el = numpy.matmul(noise_hamiltonian, b_vec)
+                el = numpy.matmul(conj_trans(a_vec), el)
+                noise_H_mat[a_ind, b_ind] = el
+        x_ij_mat *= (10**9*Planck / kT)  # Convert from GHz to dimensionless
+        noise_H_mat *= (10**9)  # Convert from GHz to Hz
+        
+        args = (i, j, x_ij_mat, noise_H_mat)
+        int_val, int_error = quad(int_arg_fast, 0.001, x_D, args=args)
+        
+        return rate_coeff * int_val
     
-    args = (i, j, vecs, vals, noise_hamiltonian)
-    diffs = [vals[2]-vals[1], vals[2]-vals[0], vals[1]-vals[0]]
-    diffs = numpy.array(diffs)
-    diffs *= (Planck / kT)
-    points = [0.0, *diffs]
-    int_val, int_error = quad(int_arg, 0.001, x_D, args=args, points=points)
-    
-    # x_vals = numpy.linspace(0.0,6.5,100)
-    # plt.plot(x_vals, int_arg(x_vals, *args))
-    # print(int_arg(numpy.array([0.0, 0.000001]), *args))
-    # return
-    
-    return rate_coeff * int_val
+    else:
+        
+        # B magnitude is accepted as gmuB*mag_B, everything in GHz
+        vecs, vals = calc_eig_static_cartesian_B(*B_field_vec)
+        vals *= 10**9  # Convert to Hz
+        
+        args = (i, j, vecs, vals, noise_hamiltonian)
+        diffs = [vals[2]-vals[1], vals[2]-vals[0], vals[1]-vals[0]]
+        diffs = numpy.array(diffs)
+        diffs *= (Planck / kT)
+        points = [0.0, *diffs]
+        int_val, int_error = quad(int_arg, 0.001, x_D, args=args, points=points)
+        
+        
+        # x_vals = numpy.linspace(0.0,6.5,100)
+        # plt.plot(x_vals, int_arg(x_vals, *args))
+        # print(int_arg(numpy.array([0.0, 0.000001]), *args))
+        # return
+        
+        return rate_coeff * int_val
 
 
 def calc_phonon_hamiltonian():
     pass
 
 
-def calc_electric_hamiltonian(E_field_vec):
+def calc_electric_hamiltonian(E_field_vec, d_perp_prime=17):
     
     d_parallel = 0.35
     d_perp = 17
-    d_perp_prime = 17
     
     E_x, E_y, E_z = E_field_vec
     
@@ -807,17 +877,18 @@ if __name__ == '__main__':
     
     # %% Phonon fitting
     
-    B_field_vec = [0.0, 0.0, 0.1]
+    # B_field_vec = [0.0, 0.0, 0.1]
     
-    # k =1e10, q=4e=6e-19 for Carbon nucleus, 154e-12 bond length, a pm on 
-    # either side gives 6e7 E field in V / cm! So large fields are reasonable
-    mag_E = 100  # This number is chosen to get ~kHz rates out
-    noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3)
+    # # k =1e10, q=4e=6e-19 for Carbon nucleus, 154e-12 bond length, a pm on 
+    # # either side gives 6e7 E field in V / cm! So large fields are reasonable
+    # mag_E = 100  # This number is chosen to get ~kHz rates out
+    # d_perp_prime = 17
+    # noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3, d_perp_prime)
     
-    val = rate(-1, +1, B_field_vec, noise_hamiltonian)
-    print(val/1000)  # rate in kHz
-    val = gamma_electric_perp_B(0.0, mag_E)
-    print(val)  # rate in kHz
+    # # val = rate(-1, +1, B_field_vec, noise_hamiltonian)
+    # # print(val/1000)  # rate in kHz
+    # val = gamma_electric_perp_B(0.0, mag_E, d_perp_prime)
+    # print(val)  # rate in kHz
     
-    # phonon_fit(nv_data)
+    phonon_fit(nv_data)
 
