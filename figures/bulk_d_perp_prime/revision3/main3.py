@@ -94,7 +94,17 @@ def phonon_fit(nv_data):
         perp_B = numpy.array(nv['perp_B'])
         
         # Only consider points with known B field components
-        mask = mag_B != None
+        # mask = mag_B != None
+        
+        # Only consider points with known perp_B < 80
+        mask = []
+        for el in perp_B:
+            if el is not None:
+                if el < 80:
+                    mask.append(True)
+                    continue
+            mask.append(False)
+        
         
         # Calculate based on all measurements with components, including
         # those off axis
@@ -120,41 +130,105 @@ def phonon_fit(nv_data):
     # result = minimize_scalar(rate_comb_cost, bounds=(1, 1000),
     #                          args=args, method='bounded')
     
-    # %% Fit as function of B_perp to d_perp_prime and the E field magnitude
+    # %% Setup for d_perp_prime and the E field magnitude fits
+    
+    gamma = lambda perp_B, mag_E, d_perp_prime: rate_kHz_electric_perp_B(-1, +1, perp_B, mag_E, d_perp_prime)
+    omega = lambda perp_B, mag_E, d_perp_prime: rate_kHz_electric_perp_B(0, +1, perp_B, mag_E, d_perp_prime)
+    
+    # %% Level 1
+    # Fit gamma as a function of B_perp
+    # to d_perp_prime and the E field magnitude
     
     p0 = (85, 17)
-    popt, pcov = curve_fit(gamma_electric_perp_B, all_perp_B, all_gamma,
-                        p0=p0, sigma=all_gamma_err, absolute_sigma=True)
+    popt, pcov = curve_fit(gamma, all_perp_B, all_gamma, p0=p0,
+                            sigma=all_gamma_err, absolute_sigma=True)
     print(popt)
     print(numpy.sqrt(numpy.diag(pcov)))
     
-    fig, ax = plt.subplots()
+    # %% Level 2
+    # Fit both gamma and omega as functions of B_perp
+    # to d_perp_prime and the E field magnitude
+    
+    # We can trick curve_fit into doing a fit to a double-valued function by
+    # using the sign of the x argument to tell us which rate to calculate - 
+    # plus for gamma, minus for omega. To distinguish 0, we'll add 1 before
+    # inverting for negative rates, so perp_B < 0 is for omega
+    
+    # p0 = (85, 17)
+    # double_valued_perp_B = numpy.append(all_perp_B, -(all_perp_B+1))
+    # double_valued_rates = numpy.append(all_gamma, all_omega)
+    # double_valued_rates_err = numpy.append(all_gamma_err, all_omega_err)
+    # popt, pcov = curve_fit(double_valued_electric_perp_B,
+    #                        double_valued_perp_B, double_valued_rates, p0=p0,
+    #                        sigma=double_valued_rates_err, absolute_sigma=True)
+    # print(popt)
+    # print(numpy.sqrt(numpy.diag(pcov)))
+    
+    
+    # %% Plot for d_perp_prime and the E field magnitude fits
+    
+    fig, axes_pack = plt.subplots(1, 2, figsize=(10,5.0))
     fig.set_tight_layout(True)
+    
+    ax = axes_pack[0]
     ax.errorbar(all_perp_B, all_gamma, yerr=all_gamma_err,
                 linestyle='None', ms=10)
     perp_B_linspace = numpy.linspace(0, max(all_perp_B))
-    gammas = gamma_electric_perp_B(perp_B_linspace, *popt)
+    gammas = gamma(perp_B_linspace, *popt)
     ax.plot(perp_B_linspace, gammas)
     
+    ax = axes_pack[1]
+    ax.errorbar(all_perp_B, all_omega, yerr=all_omega_err,
+                linestyle='None', ms=10)
+    perp_B_linspace = numpy.linspace(0, max(all_perp_B))
+    omegas = omega(perp_B_linspace, *popt)
+    ax.plot(perp_B_linspace, omegas)
     
-def gamma_electric_perp_B(perp_B, mag_E, d_perp_prime):
+    
+def double_valued_electric_perp_B(perp_B, mag_E, d_perp_prime):
+    
+    noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3, d_perp_prime)
+    gamma = lambda B_field_vec: rate(-1, +1, B_field_vec, noise_hamiltonian)/1000
+    omega = lambda B_field_vec: rate(0, +1, B_field_vec, noise_hamiltonian)/1000
+    
+    ret_vals = []
+    if (type(perp_B) is list) or (type(perp_B) is numpy.ndarray):
+        rates = []
+        for val in perp_B:
+            if val < 0:
+                B_field_vec = [gmuB*-(val+1), 0.0, 0.1]
+                rates.append(omega(B_field_vec))
+            else:
+                B_field_vec = [gmuB*val, 0.0, 0.1]
+                rates.append(gamma(B_field_vec))
+        return numpy.array(rates)
+    else:
+        if perp_B < 0:
+            B_field_vec = [gmuB*-(perp_B+1), 0.0, 0.1]
+            return omega(B_field_vec)
+        else:
+            B_field_vec = [gmuB*perp_B, 0.0, 0.1]
+            return gamma(B_field_vec)
+    
+    
+def rate_kHz_electric_perp_B(i, j, perp_B, mag_E, d_perp_prime):
     """
-    Calculate gamma (in kHz) as a function of perp_B, optimizing the
-    magnitude of the noise E field
+    Calculate rate (in kHz) as a function of perp_B, optimizing the
+    magnitude of the noise E field and d_perp_prime
     """
     
     # Fixed axial B component so we can plot in 1D
     noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3, d_perp_prime)
-    gamma = lambda B_field_vec: rate(-1, +1, B_field_vec, noise_hamiltonian)/1000
+    rate_kHz = lambda B_field_vec: rate(i, j, B_field_vec, noise_hamiltonian)/1000
     if (type(perp_B) is list) or (type(perp_B) is numpy.ndarray):
         rates = []
         for val in perp_B:
             B_field_vec = [gmuB*val, 0.0, 0.1]
-            rates.append(gamma(B_field_vec))
+            rates.append(rate_kHz(B_field_vec))
         return numpy.array(rates)
     else:
         B_field_vec = [gmuB*perp_B, 0.0, 0.1]
-        return gamma(B_field_vec)
+        return rate_kHz(B_field_vec)
     
     
 def distr(x):
@@ -887,7 +961,7 @@ if __name__ == '__main__':
     
     # # val = rate(-1, +1, B_field_vec, noise_hamiltonian)
     # # print(val/1000)  # rate in kHz
-    # val = gamma_electric_perp_B(0.0, mag_E, d_perp_prime)
+    # val = rate_kHz_electric_perp_B(0, +1, 0.0, mag_E, d_perp_prime)
     # print(val)  # rate in kHz
     
     phonon_fit(nv_data)
