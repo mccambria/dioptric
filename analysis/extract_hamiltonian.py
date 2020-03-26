@@ -30,6 +30,7 @@ gmuB = 2.8  # gyromagnetic ratio in MHz / G
 
 # numbers
 inv_sqrt_2 = 1/numpy.sqrt(2)
+im = 0+1j
 
 
 # %% Functions
@@ -320,6 +321,29 @@ def calc_B_hamiltonian(mag_B, theta_B, phi_B):
         return calc_single_B_hamiltonian(*args)
 
 
+def calc_single_static_cartesian_B_hamiltonian(B_x, B_y, B_z):
+    hamiltonian = numpy.array([[d_gs+B_z,
+                                inv_sqrt_2 * (B_x - im*B_y),
+                                0],
+                               [inv_sqrt_2 * (B_x + im*B_y),
+                                0,
+                                inv_sqrt_2 * (B_x - im*B_y)],
+                               [0,
+                                inv_sqrt_2 * (B_x + im*B_y),
+                                d_gs-B_z]])
+    return hamiltonian
+
+
+def calc_static_cartesian_B_hamiltonian(B_x, B_y, B_z):
+    args = (B_x, B_y, B_z)
+    if (type(B_x) is list) or (type(B_x) is numpy.ndarray):
+        hamiltonian_list = [calc_single_static_cartesian_B_hamiltonian(*args)
+                            for val in B_x]
+        return hamiltonian_list
+    else:
+        return calc_single_static_cartesian_B_hamiltonian(*args)
+
+
 def calc_single_Pi_hamiltonian(mag_Pi, theta_Pi, phi_Pi):
     d_par = 0.3
     d_perp = 17.0
@@ -376,13 +400,12 @@ def calc_eigenvectors(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     return sorted_eigvecs
 
 
-def calc_eig(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
+def calc_eig_static_cartesian_B(B_x, B_y, B_z):
     """
     Return the normalized eigenvectors and eigenvalues,
     sorted by ascending eigenvalue.
     """
-    hamiltonian = calc_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi,
-                                   phi_B, phi_Pi)
+    hamiltonian = calc_static_cartesian_B_hamiltonian(B_x, B_y, B_z)
     eigvals, eigvecs = eig(hamiltonian)
     eigvals = numpy.real(eigvals)  # ditch the complex part
     sorted_eigvals = numpy.sort(eigvals)

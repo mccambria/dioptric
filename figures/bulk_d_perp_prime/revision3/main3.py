@@ -18,7 +18,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import analysis.extract_hamiltonian as eh
 from analysis.extract_hamiltonian import conj_trans
-from analysis.extract_hamiltonian import calc_eig
+from analysis.extract_hamiltonian import calc_eig_static_cartesian_B
 from analysis.extract_hamiltonian import calc_splitting
 import scipy.stats as stats
 from scipy.optimize import curve_fit
@@ -73,6 +73,7 @@ def phonon_fit(nv_data):
     all_gamma_err = []
     all_mag_B = []
     all_theta_B = []
+    all_perp_B = []
 
     for ind in range(len(nv_data)):
         
@@ -90,6 +91,7 @@ def phonon_fit(nv_data):
         gamma_err = numpy.array(nv['gamma_err'])
         mag_B = numpy.array(nv['mag_B'])
         theta_B = numpy.array(nv['theta_B'])
+        perp_B = numpy.array(nv['perp_B'])
         
         # Only consider points with known B field components
         mask = mag_B != None
@@ -102,6 +104,7 @@ def phonon_fit(nv_data):
         all_gamma_err.extend(gamma_err[mask])
         all_mag_B.extend(mag_B[mask])
         all_theta_B.extend(theta_B[mask])
+        all_perp_B.extend(perp_B[mask])
     
     # Cast to arrays
     all_omega = numpy.array(all_omega)
@@ -110,25 +113,44 @@ def phonon_fit(nv_data):
     all_gamma_err = numpy.array(all_gamma_err)
     all_mag_B = numpy.array(all_mag_B)
     all_theta_B = numpy.array(all_theta_B)
+    all_perp_B = numpy.array(all_perp_B)
     
-    hamiltonian_args = [gmuB*mag_B, theta_B, 0.0, 0.0, 0.0, 0.0]
     
     # result = minimize_scalar(rate_comb_cost, bounds=(1, 1000),
     #                          args=args, method='bounded')
     
-    static_hamiltonian_args = [0.1, 0.0, 0.0, 0.0, 0.0, 0.0]
-    args = (-1, +1, static_hamiltonian_args)
-    popt, pcov = curve_fit(rate, x_dataargs=args
+    # Try out fitting to the E magnitude
+    popt, pcov = curve_fit(gamma_electric_perp_B, all_perp_B, all_gamma,
+                        p0=(100,), sigma=all_gamma_err, absolute_sigma=True)
+    print(popt)
+    print(numpy.sqrt(numpy.diag(pcov)))
+    
+    fig, ax = plt.subplots()
+    ax.errorbar(all_perp_B, all_gamma, yerr=all_gamma_err, linestyle='None')
+    perp_B_linspace = numpy.linspace(0, max(all_perp_B))
+    gammas = gamma_electric_perp_B(perp_B_linspace, *popt)
+    print(gammas)
+    ax.plot(perp_B_linspace, gammas)
     
     
-def rate_comb_cost():
+def gamma_electric_perp_B(perp_B, mag_E):
+    """
+    Calculate gamma (in kHz) as a function of perp_B, optimizing the
+    magnitude of the noise E field
+    """
     
-    
-def rate_mag_E(mag_E, args):
-    
+    # Fixed axial B component so we can plot in 1D
     noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3)
-    return rate(args)
-    
+    gamma = lambda B_field_vec: rate(-1, +1, B_field_vec, noise_hamiltonian)/1000
+    if (type(perp_B) is list) or (type(perp_B) is numpy.ndarray):
+        rates = []
+        for val in perp_B:
+            B_field_vec = [gmuB*val, 0.0, 0.1]
+            rates.append(gamma(B_field_vec))
+        return numpy.array(rates)
+    else:
+        B_field_vec = [gmuB*perp_B, 0.0, 0.1]
+        return gamma(B_field_vec)
     
     
 def distr(x):
@@ -193,14 +215,14 @@ def int_arg(x, i, j, vecs, vals, noise_hamiltonian):
     return numpy.real(f_val * conj(sum_val) * sum_val)
     
     
-def rate(i, j, static_hamiltonian_args, noise_hamiltonian):
+def rate(i, j, B_field_vec, noise_hamiltonian):
     """
     Calculate the two-phonon rate between states i and j. i and j are
     designated by m_s as integers.
     """
     
     # B magnitude is accepted as gmuB*mag_B, everything in GHz
-    vecs, vals = calc_eig(*static_hamiltonian_args)
+    vecs, vals = calc_eig_static_cartesian_B(*B_field_vec)
     vals *= 10**9  # Convert to Hz
     
     args = (i, j, vecs, vals, noise_hamiltonian)
@@ -208,7 +230,7 @@ def rate(i, j, static_hamiltonian_args, noise_hamiltonian):
     diffs = numpy.array(diffs)
     diffs *= (Planck / kT)
     points = [0.0, *diffs]
-    int_val, int_error = quad(int_arg, 0.0, x_D, args=args, points=points)
+    int_val, int_error = quad(int_arg, 0.001, x_D, args=args, points=points)
     
     # x_vals = numpy.linspace(0.0,6.5,100)
     # plt.plot(x_vals, int_arg(x_vals, *args))
@@ -770,7 +792,7 @@ if __name__ == '__main__':
     
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/papers/bulk_dq_relaxation/'
     file = path + 'compiled_data_import.csv'
-    # nv_data = get_nv_data_csv(file)
+    nv_data = get_nv_data_csv(file)
     # print(nv_data)
     
     # print(rate_coeff)
@@ -785,13 +807,17 @@ if __name__ == '__main__':
     
     # %% Phonon fitting
     
-    static_hamiltonian_args = [0.1, 0.0, 0.0, 0.0, 0.0, 0.0]
+    B_field_vec = [0.0, 0.0, 0.1]
     
     # k =1e10, q=4e=6e-19 for Carbon nucleus, 154e-12 bond length, a pm on 
     # either side gives 6e7 E field in V / cm! So large fields are reasonable
-    mag_E = 85  # This number is chosen to get ~kHz rates out
+    mag_E = 100  # This number is chosen to get ~kHz rates out
     noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3)
     
-    val = rate(0, +1, static_hamiltonian_args, noise_hamiltonian)
+    val = rate(-1, +1, B_field_vec, noise_hamiltonian)
     print(val/1000)  # rate in kHz
+    val = gamma_electric_perp_B(0.0, mag_E)
+    print(val)  # rate in kHz
+    
+    # phonon_fit(nv_data)
 
