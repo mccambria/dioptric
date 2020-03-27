@@ -125,25 +125,20 @@ def phonon_fit(nv_data):
     all_theta_B = numpy.array(all_theta_B)
     all_perp_B = numpy.array(all_perp_B)
     
-    # %% Fit as function of B_perp to phonon coupling constants
-    
-    # result = minimize_scalar(rate_comb_cost, bounds=(1, 1000),
-    #                          args=args, method='bounded')
-    
     # %% Setup for d_perp_prime and the E field magnitude fits
     
-    gamma = lambda perp_B, mag_E, d_perp_prime: rate_kHz_electric_perp_B(-1, +1, perp_B, mag_E, d_perp_prime)
-    omega = lambda perp_B, mag_E, d_perp_prime: rate_kHz_electric_perp_B(0, +1, perp_B, mag_E, d_perp_prime)
+    # gamma = lambda perp_B, mag_E, d_perp_prime: rate_kHz_electric_perp_B(-1, +1, perp_B, mag_E, d_perp_prime)
+    # omega = lambda perp_B, mag_E, d_perp_prime: rate_kHz_electric_perp_B(0, +1, perp_B, mag_E, d_perp_prime)
     
     # %% Level 1
     # Fit gamma as a function of B_perp
     # to d_perp_prime and the E field magnitude
     
-    p0 = (85, 17)
-    popt, pcov = curve_fit(gamma, all_perp_B, all_gamma, p0=p0,
-                            sigma=all_gamma_err, absolute_sigma=True)
-    print(popt)
-    print(numpy.sqrt(numpy.diag(pcov)))
+    # p0 = (85, 17)
+    # popt, pcov = curve_fit(gamma, all_perp_B, all_gamma, p0=p0,
+    #                         sigma=all_gamma_err, absolute_sigma=True)
+    # print(popt)
+    # print(numpy.sqrt(numpy.diag(pcov)))
     
     # %% Level 2
     # Fit both gamma and omega as functions of B_perp
@@ -159,13 +154,47 @@ def phonon_fit(nv_data):
     # double_valued_rates = numpy.append(all_gamma, all_omega)
     # double_valued_rates_err = numpy.append(all_gamma_err, all_omega_err)
     # popt, pcov = curve_fit(double_valued_electric_perp_B,
-    #                        double_valued_perp_B, double_valued_rates, p0=p0,
-    #                        sigma=double_valued_rates_err, absolute_sigma=True)
+    #                         double_valued_perp_B, double_valued_rates, p0=p0,
+    #                         sigma=double_valued_rates_err, absolute_sigma=True)
     # print(popt)
     # print(numpy.sqrt(numpy.diag(pcov)))
     
     
     # %% Plot for d_perp_prime and the E field magnitude fits
+    
+    # fig, axes_pack = plt.subplots(1, 2, figsize=(10,5.0))
+    # fig.set_tight_layout(True)
+    
+    # ax = axes_pack[0]
+    # ax.errorbar(all_perp_B, all_gamma, yerr=all_gamma_err,
+    #             linestyle='None', ms=10)
+    # perp_B_linspace = numpy.linspace(0, max(all_perp_B))
+    # gammas = gamma(perp_B_linspace, *popt)
+    # ax.plot(perp_B_linspace, gammas)
+    
+    # ax = axes_pack[1]
+    # ax.errorbar(all_perp_B, all_omega, yerr=all_omega_err,
+    #             linestyle='None', ms=10)
+    # perp_B_linspace = numpy.linspace(0, max(all_perp_B))
+    # omegas = omega(perp_B_linspace, *popt)
+    # ax.plot(perp_B_linspace, omegas)
+    
+    
+    # %% Phonon fit
+    
+    gamma = lambda perp_B, popt: rate_kHz_phonon_perp_B(-1, +1, perp_B, *popt)
+    omega = lambda perp_B, popt: rate_kHz_phonon_perp_B(0, +1, perp_B, *popt)
+    
+    p0 = [1300]*5
+    popt = []
+    # double_valued_perp_B = numpy.append(all_perp_B, -(all_perp_B+1))
+    # double_valued_rates = numpy.append(all_gamma, all_omega)
+    # double_valued_rates_err = numpy.append(all_gamma_err, all_omega_err)
+    # popt, pcov = curve_fit(double_valued_phonon_perp_B,
+    #                         double_valued_perp_B, double_valued_rates, p0=p0,
+    #                         sigma=double_valued_rates_err, absolute_sigma=True)
+    # print(popt)
+    # print(numpy.sqrt(numpy.diag(pcov)))
     
     fig, axes_pack = plt.subplots(1, 2, figsize=(10,5.0))
     fig.set_tight_layout(True)
@@ -174,20 +203,33 @@ def phonon_fit(nv_data):
     ax.errorbar(all_perp_B, all_gamma, yerr=all_gamma_err,
                 linestyle='None', ms=10)
     perp_B_linspace = numpy.linspace(0, max(all_perp_B))
-    gammas = gamma(perp_B_linspace, *popt)
+    gammas = gamma(perp_B_linspace, popt)
     ax.plot(perp_B_linspace, gammas)
     
     ax = axes_pack[1]
     ax.errorbar(all_perp_B, all_omega, yerr=all_omega_err,
                 linestyle='None', ms=10)
     perp_B_linspace = numpy.linspace(0, max(all_perp_B))
-    omegas = omega(perp_B_linspace, *popt)
+    omegas = omega(perp_B_linspace, popt)
     ax.plot(perp_B_linspace, omegas)
     
+    
+    
+def double_valued_phonon_perp_B(perp_B, lambda_z, lambda_xz,
+                                lambda_yz, lambda_yx, lambda_xy):
+    
+    noise_hamiltonian = calc_phonon_hamiltonian(lambda_z, lambda_xz,
+                                            lambda_yz, lambda_yx, lambda_xy)
+    return double_valued_noise_hamiltonian_perp_B(perp_B, noise_hamiltonian)
     
 def double_valued_electric_perp_B(perp_B, mag_E, d_perp_prime):
     
     noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3, d_perp_prime)
+    return double_valued_noise_hamiltonian_perp_B(perp_B, noise_hamiltonian)
+        
+    
+def double_valued_noise_hamiltonian_perp_B(perp_B, noise_hamiltonian):
+    
     gamma = lambda B_field_vec: rate(-1, +1, B_field_vec, noise_hamiltonian)/1000
     omega = lambda B_field_vec: rate(0, +1, B_field_vec, noise_hamiltonian)/1000
     
@@ -211,14 +253,26 @@ def double_valued_electric_perp_B(perp_B, mag_E, d_perp_prime):
             return gamma(B_field_vec)
     
     
+def rate_kHz_phonon_perp_B(i, j, perp_B, lambda_z, lambda_xz,
+                           lambda_yz, lambda_yx, lambda_xy):
+    
+    noise_hamiltonian = calc_phonon_hamiltonian(lambda_z, lambda_xz,
+                                            lambda_yz, lambda_yx, lambda_xy)
+    return rate_kHz_noise_hamiltonian_perp_B(i, j, perp_B, noise_hamiltonian)
+    
+    
 def rate_kHz_electric_perp_B(i, j, perp_B, mag_E, d_perp_prime):
+    
+    noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3, d_perp_prime)
+    return rate_kHz_noise_hamiltonian_perp_B(i, j, perp_B, noise_hamiltonian)
+    
+    
+def rate_kHz_noise_hamiltonian_perp_B(i, j, perp_B, noise_hamiltonian):
     """
-    Calculate rate (in kHz) as a function of perp_B, optimizing the
-    magnitude of the noise E field and d_perp_prime
+    Calculate rate (in kHz) as a function of perp_B, a fixed axial 
+    B component so we can plot in 1D
     """
     
-    # Fixed axial B component so we can plot in 1D
-    noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3, d_perp_prime)
     rate_kHz = lambda B_field_vec: rate(i, j, B_field_vec, noise_hamiltonian)/1000
     if (type(perp_B) is list) or (type(perp_B) is numpy.ndarray):
         rates = []
@@ -385,8 +439,20 @@ def rate(i, j, B_field_vec, noise_hamiltonian, fast=True):
         return rate_coeff * int_val
 
 
-def calc_phonon_hamiltonian():
-    pass
+def calc_phonon_hamiltonian(lambda_z, lambda_xz, lambda_yz, 
+                            lambda_yx, lambda_xy):
+    """
+    Calculate a noise Hamiltonian based on the 5 phonon coupling constants
+    """
+    
+    sq = inv_sqrt_2*(lambda_xz-im*lambda_yz)
+    dq = -lambda_yx-im*lambda_xy
+    
+    hamiltonian = numpy.array([[lambda_z, sq, dq],
+                               [numpy.conj(sq), 0.0, -sq],
+                               [numpy.conj(dq), numpy.conj(-sq), lambda_z]])
+    return hamiltonian
+    
 
 
 def calc_electric_hamiltonian(E_field_vec, d_perp_prime=17):
