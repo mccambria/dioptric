@@ -5,8 +5,8 @@ Created on Wed Sep  4 10:45:09 2019
 This file is used to determine the cutoff for photon count nuer for individual
 measurmenets between the charge states of the NV.
 
-Collect the photon counts under yellow illumination, after reionizing NV into 
-NV- with green light. A second collection occurs after ionizing NV to NV0 with 
+Collect the photon counts under yellow illumination, after reionizing NV into
+NV- with green light. A second collection occurs after ionizing NV to NV0 with
 red light.
 
 @author: yanfeili
@@ -42,14 +42,14 @@ def get_Probability_distribution(aList):
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr, readout_time, 
+def main(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr, readout_time,
          ionization_time, num_runs, num_reps):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr, 
+        main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
                       readout_time, ionization_time, num_runs, num_reps)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr, 
+def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
                   readout_time, ionization_time,num_runs, num_reps):
 
     tool_belt.reset_cfm(cxn)
@@ -58,14 +58,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
 #    apd_indices = [0]
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    
+
     #delay of aoms and laser
     aom_delay = shared_params['515_laser_delay']
     wait_time = shared_params['post_polarization_wait_dur']
-    
+
     illumination_time = readout_time + 10**3
     reionization_time = 10**6
-    
+
 #    readout_power = aom_ao_589_pwr
 
     # Set up our data structure, list
@@ -75,11 +75,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     ref_counts = []
     sig_counts=[]
     opti_coords_list = []
-    
+
     # %% Read the optical power for red, yellow, and green light
     green_optical_power_pd = tool_belt.opt_power_via_photodiode(532)
-    
-    red_optical_power_pd = tool_belt.opt_power_via_photodiode(638, 
+
+    red_optical_power_pd = tool_belt.opt_power_via_photodiode(638,
                                             AO_power_settings = ao_638_pwr)
 
     yellow_optical_power_pd = tool_belt.opt_power_via_photodiode(589,
@@ -88,19 +88,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     # Convert V to mW optical power
     green_optical_power_mW = \
             tool_belt.calc_optical_power_mW(532, green_optical_power_pd)
-            
+
     red_optical_power_mW = \
             tool_belt.calc_optical_power_mW(638, red_optical_power_pd)
 
     yellow_optical_power_mW = \
             tool_belt.calc_optical_power_mW(589, yellow_optical_power_pd)
-    
+
     readout_power = yellow_optical_power_mW
 
 #%% Estimate the lenth of the sequance
 
-    seq_args = [readout_time, reionization_time, illumination_time, 
-                ionization_time, wait_time, aom_delay, apd_indices[0], 
+    seq_args = [readout_time, reionization_time, illumination_time,
+                ionization_time, wait_time, aom_delay, apd_indices[0],
                 aom_ao_589_pwr, ao_638_pwr]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('determine_n_thresh_with_638.py', seq_args_string)
@@ -135,9 +135,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
-        
-        seq_args = [readout_time, reionization_time, illumination_time, 
-                    ionization_time, wait_time, aom_delay, apd_indices[0], 
+
+        seq_args = [readout_time, reionization_time, illumination_time,
+                    ionization_time, wait_time, aom_delay, apd_indices[0],
                     aom_ao_589_pwr, ao_638_pwr]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate('determine_n_thresh_with_638.py', num_reps, seq_args_string)
@@ -160,27 +160,27 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     unique_value2, relative_frequency2 = get_Probability_distribution(list(sig_counts))
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-    
+
 #    #Shield's NVm, NV0 full model fit
 #    g00,g01,y01,y00 = ps.get_curve_fit_NV0(readout_time,readout_power,unique_value1, relative_frequency1)
 #    gm0,gm1,ym1,ym0 = ps.get_curve_fit_NVm(readout_time,readout_power,unique_value2, relative_frequency2)
 #    print('NV0 full model fit: ' + str(g00,g01,y01,y00))
 #    print('NVm full model fit:' + str(gm0,gm1,ym1,ym0))
-#    
+#
 #    #Double poisson fit
 #    a0, b0, numbla10, numbla20 = ps.get_gaussian_distribution_fit(readout_time,readout_power,unique_value1, relative_frequency1)
 #    am, bm, numbla1m, numbla2m = ps.get_gaussian_distribution_fit(readout_time,readout_power,unique_value2, relative_frequency2)
 #    print('NV0 double poisson fit: '+str(a0, b0, numbla10, numbla20))
 #    print('NVm double poisson fit: '+str(am, bm, numbla1m, numbla2m))
-#    
+#
 #    photon_numbers1 = list(range(max(unique_value1)))
 #    photon_numbers2 = list(range(max(unique_value2)))
 #    curve1 = ps.get_photon_distribution_curveNV0(photon_numbers1,readout_time, g00,g01,y01,y00)
 #    curve2 = ps.get_photon_distribution_curveNVm(photon_numbers2,readout_time, gm0,gm1,ym1,ym0)
 #    curve3 = ps.get_poisson_distribution_curve(photon_numbers1,a0, b0, numbla10, numbla20)
 #    curve4 = ps.get_poisson_distribution_curve(photon_numbers2,am, bm, numbla1m, numbla2m)
-    
- 
+
+
 #    ax.plot(photon_numbers1,curve1,'r')
 #    ax.plot(photon_numbers2,curve2,'b')
 #    ax.plot(photon_numbers1,curve3,'y')
@@ -190,7 +190,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     ax.set_xlabel('number of photons (n)')
     ax.set_ylabel('P(n)')
     ax.legend()
-    
+
     text = '\n'.join(('Reionization time (532 nm)' + '%.3f'%(reionization_time/10**3) + 'us',
                       'Illumination time (589 nm)' + '%.3f'%(illumination_time/10**3) + 'us',
                       'Ionization time (638 nm)' + '%.3f'%(ionization_time/10**3) + 'us',
@@ -199,32 +199,32 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(0.55, 0.85, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
-#%% monitor photon counts 
-    
+#%% monitor photon counts
+
     fig2, ax2 = plt.subplots(1,1, figsize = (10, 8.5))
-    
+
     time_axe_sig = ps.get_time_axe(seq_time_s*2, readout_time*10**-9,sig_counts)
     photon_counts_sig = ps.get_photon_counts(readout_time*10**-9, sig_counts)
     sig_len=len(photon_counts_sig)
 
-    time_axe_ref = numpy.array(ps.get_time_axe(seq_time_s*2, readout_time*10**-9,ref_counts)) + seq_time_s 
-    photon_counts_ref = ps.get_photon_counts(readout_time*10**-9, ref_counts)  
+    time_axe_ref = numpy.array(ps.get_time_axe(seq_time_s*2, readout_time*10**-9,ref_counts)) + seq_time_s
+    photon_counts_ref = ps.get_photon_counts(readout_time*10**-9, ref_counts)
     ref_len=len(photon_counts_ref)
-    
+
     ax2.plot(numpy.linspace(0,sig_len-1, sig_len), numpy.array(photon_counts_sig)/10**3, 'r', label='Ionization pulse')
     ax2.plot(numpy.linspace(0,ref_len-1, ref_len), numpy.array(photon_counts_ref)/10**3, 'k', label='Ionization pulse absent')
     ax2.set_xlabel('Rep number')
     ax2.set_ylabel('photon counts (kcps)')
     ax2.legend()
-    
+
     text = '\n'.join(('Readout time (589 nm)'+'%.3f'%(readout_time/10**3) + 'us',
                      'Readout power (589 nm)'+'%.3f'%(readout_power*1000) + 'uW'))
-   
+
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax2.text(0.55, 0.85, text, transform=ax2.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)    
-             
-            
+            verticalalignment='top', bbox=props)
+
+
 #%% Save data
     timestamp = tool_belt.get_time_stamp()
 
