@@ -26,21 +26,21 @@ def get_seq(pulser_wiring, args):
 
     # The first 3 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(5):
+    for ind in range(6):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
-    readout, init_pulse_duration, illum_pulse_duration, wait_time, \
-                laser_delay_time = durations
+    readout, illum_pulse_duration, init_pulse_duration, wait_time, \
+                init_pulse_delay, illum_pulse_delay = durations
                 
-    aom_ao_589_pwr = args[5]
-    ao_638_pwr = args[6]
+    aom_ao_589_pwr = args[6]
+    ao_638_pwr = args[7]
 
     # Get the APD index
-    apd_index = args[7]
+    apd_index = args[8]
     
-    init_color_ind = args[8]
-    illum_color_ind = args[9]
+    init_color_ind = args[9]
+    illum_color_ind = args[10]
 
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
@@ -70,38 +70,46 @@ def get_seq(pulser_wiring, args):
         illum_high = ao_638_pwr
 
     # %% Calclate total period. This is fixed for each tau index
-
-    # The period is independent of the particular tau, but it must be long
-    # enough to accomodate the longest tau
-    period = laser_delay_time + init_pulse_duration + \
-                                        illum_pulse_duration + wait_time
-
+    
+    total_laser_delay = init_pulse_delay + illum_pulse_delay
+    
+    extra_illum_time = int((readout - illum_pulse_duration) / 2)
+    
+#    readout = 2000 + illum_pulse_duration
+    period = total_laser_delay + init_pulse_duration + readout + wait_time
+    
     # %% Define the sequence
 
     seq = Sequence()
     
     # APD 
 
-    train = [(laser_delay_time + init_pulse_duration + wait_time, LOW),
-             (readout, HIGH), (illum_pulse_duration - readout, LOW),]
+    train = [(total_laser_delay + init_pulse_duration + wait_time, LOW),
+             (readout, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
 
     # initial pulse sequence.
-    train = [(init_pulse_duration, init_high),
-             (wait_time + illum_pulse_duration + laser_delay_time, LOW)]
+    train = [(illum_pulse_delay, LOW), (init_pulse_duration, init_high),
+             (wait_time + readout + init_pulse_delay, LOW)]
     if init_color_ind == 532:
         seq.setDigital(pulser_do_532_aom, train)
     else:
         seq.setAnalog(init_pulse_channel, train) 
 
     # illumination pulse sequence.
-    train = [(init_pulse_duration + wait_time, LOW),
-             (illum_pulse_duration, illum_high), ( laser_delay_time, LOW)]
-    
+    train = [(init_pulse_delay + init_pulse_duration + wait_time + extra_illum_time, LOW),
+             (illum_pulse_duration, illum_high), 
+             (extra_illum_time + illum_pulse_delay, LOW)]
     if illum_color_ind == 532:
         seq.setDigital(pulser_do_532_aom, train)
     else:
         seq.setAnalog(illum_pulse_channel, train) 
+        
+    # If we're using red/yellow, we'll want to start in NV- each time. The
+    # quickest way to implement this is to stick on a green pulse at the end
+    if init_color_ind == 638 and illum_color_ind == 589:
+        train = [(period + 1000, LOW), (3000, 1), (100, LOW)]
+        seq.setDigital(pulser_do_532_aom, train)
         
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -114,7 +122,7 @@ if __name__ == '__main__':
               'do_apd_0_gate': 4,
               'do_532_aom': 1
               }
-    seq_args = [100, 100, 200, 100, 0, 1.0, 1.0, 0, 532, 589 ]
+    seq_args = [1000, 500, 200, 3000, 0, 0, 0.4, 0.9, 0, 638, 589]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()

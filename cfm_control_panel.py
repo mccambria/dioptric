@@ -37,7 +37,7 @@ import debug.test_major_routines as test_major_routines
 import minorroutines.photon_collections_under_589 as photon_collections_under_589
 import minorroutines.determine_n_thresh as determine_n_thresh
 import minorroutines.determine_n_thresh_with_638 as determine_n_thresh_with_638
-import minorroutines.continuous_photon_counting as continuous_photon_counting
+import minorroutines.time_resolved_readout as time_resolved_readout
 from utils.tool_belt import States
 
 
@@ -66,9 +66,9 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind):
 #    num_steps = 90
 #    scan_range = 0.7
     scan_range = 0.5
-#    num_steps = 150
+    num_steps = 150
 #    scan_range = 0.1
-    num_steps = 90
+#    num_steps = 90
 #    scan_range = 0.2
 #    num_steps = 60
 #    scan_range = 0.05
@@ -408,23 +408,36 @@ def do_determine_n_thresh_with_638(nv_sig, aom_ao_589_pwr, ao_638_pwr,
     
     num_runs = 1
     num_reps = 10**3
-    ionization_time = 10**6
+#    ionization_time = 10**6 # Green
+    ionization_time = 200 # Red
     
     determine_n_thresh_with_638.main(nv_sig, apd_indices, aom_ao_589_pwr, 
                 ao_638_pwr, readout_time, ionization_time, num_runs, num_reps)
     
-def do_continuous_photon_counting(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
+def do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
                                  init_color_ind, illum_color_ind):
-    readout_time = 10*10**6
-    init_pulse_duration = 10**3
-    illum_pulse_duration = readout_time * 1.01
-    num_reps = 10**5
-    num_runs = 1
-    num_bins = 10*10**3
+#    illumination_time = 500 # turns on at 250 and turns off at 750
+#    num_reps = 10**5
+#    num_bins = 500
     
+#    illumination_time = 10**4 # turns on at 250 and turns off at 750
+#    num_reps = 10**4
+#    num_bins = 1000
+    
+#    illumination_time = 10**6 # turns on at 250 and turns off at 750
+#    num_reps = 10**3
+#    num_bins = 500
 
-    continuous_photon_counting.main(nv_sig, apd_indices, readout_time, init_pulse_duration,
-                  illum_pulse_duration, aom_ao_589_pwr, ao_638_pwr, 
+    illumination_time = 2*10**6 # turns on at 250 and turns off at 750
+    num_reps = 10**3
+#    num_reps = 10**4
+    num_bins = 1000
+
+    
+    init_pulse_duration = 3*10**3
+    num_runs = 1
+    time_resolved_readout.main(nv_sig, apd_indices, illumination_time, init_pulse_duration,
+                  aom_ao_589_pwr, ao_638_pwr, 
                   init_color_ind, illum_color_ind,
                   num_reps, num_runs, num_bins)
 
@@ -452,10 +465,12 @@ if __name__ == '__main__':
     nv_sig_list = [ensemble]
     
     
-    aom_ao_589_pwr = 0.4
-    ao_638_pwr = 0.65
+    aom_ao_589_pwr = 0.7
+#    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
+    ao_638_pwr = 0.80
+#    ao_638_pwr_list = numpy.linspace(0.71, 0.9, 20)
     color_ind = 532
-#    readout_time = 100*10**3
+    readout_time = 100*10**3
 
     # %% Functions to run
 
@@ -483,7 +498,7 @@ if __name__ == '__main__':
         
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
-            nv_sig = nv_sig_list[ind]                
+            nv_sig = nv_sig_list[ind]                 
 #            for z in numpy.linspace(5.5, 6.5, 6):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                coords = nv_sig_copy['coords']
@@ -494,10 +509,13 @@ if __name__ == '__main__':
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
 #            do_determine_n_thresh_with_638(nv_sig, aom_ao_589_pwr, ao_638_pwr, 
 #                                   readout_time, apd_indices)
+#            for p in range(len(aom_ao_589_pwr_list)):
+#                aom_ao_589_pwr = aom_ao_589_pwr_list[p]
+#                print(aom_ao_589_pwr)
+            do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
+                             638, 589)
             
-            do_continuous_photon_counting(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
-                                 532, 589)
-            
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)

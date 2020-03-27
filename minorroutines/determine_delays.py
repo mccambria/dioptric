@@ -25,11 +25,12 @@ from utils.tool_belt import States
 
 
 def measure_delay(cxn, nv_sig, readout, apd_indices,
-              delay_range, num_steps, num_reps, seq_file,
-              state=States.LOW, aom_delay=None, aom_indices=None):
+              delay_range, num_steps, num_reps, seq_file, color_ind,
+              state=States.LOW, aom_delay=None):
     
     taus = numpy.linspace(delay_range[0], delay_range[1],
                           num_steps, dtype=numpy.int32)
+    max_tau = delay_range[1]
     tau_ind_list = list(range(num_steps))
     shuffle(tau_ind_list)
     
@@ -37,7 +38,23 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     
-    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    # Input a set delay to check that measured delay is correct
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    
+    #delay of aoms and laser
+#    if not aom_delay:
+    laser_delay = 0
+#    else:
+    if color_ind == 532:
+        laser_delay = shared_params['515_laser_delay']
+    if color_ind == 589:
+        laser_delay = shared_params['589_aom_delay']
+    if color_ind == 638:
+        laser_delay = shared_params['638_laser_delay']
+#        
+        
+
+#    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     
     tool_belt.reset_cfm(cxn)
     
@@ -62,14 +79,12 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
         
         tau = taus[tau_ind]
         if seq_file == 'aom_delay.py':
-            seq_args = [tau, readout, apd_indices[0],aom_indices]
-        #aom_indices indicate which aom to measure
-        # 1 = 532 aom; 2 = 589 aom; 3 = 638 aom
-            
+            seq_args = [tau, max_tau, readout, laser_delay, apd_indices[0], color_ind]
+#            print(seq_args)
         elif seq_file == 'uwave_delay.py':
             polarization_time = 1000
             wait_time = 1000
-            seq_args = [tau, readout, pi_pulse, aom_delay, 
+            seq_args = [tau, max_tau, readout, pi_pulse, aom_delay, 
                         polarization_time, wait_time, state.value, apd_indices[0]]
         seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -96,6 +111,7 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
     ax.set_title('Counts vs Delay Time')
     ax.set_xlabel('Delay time (ns)')
     ax.set_ylabel('Count rate (cps)')
+    ax.legend()
     ax = axes_pack[1]
     ax.plot(taus, norm_avg_sig, 'b-')
     ax.set_title('Contrast vs Delay Time')
@@ -111,11 +127,11 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
             'sig_gen': sig_gen,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'color_ind': color_ind,
             'readout': readout,
             'readout-units': 'ns',
             'delay_range': delay_range,
             'delay_range-units': 'ns',
-            'aom_indices': aom_indices,
             'num_steps': num_steps,
             'num_reps': num_reps,
             'sig_counts': sig_counts.astype(int).tolist(),
@@ -134,15 +150,15 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
 
 
 def aom_delay(cxn, nv_sig, readout, apd_indices,
-              delay_range, num_steps, num_reps, aom_indices):
+              delay_range, num_steps, num_reps, color_ind = 532):
     
     seq_file = 'aom_delay.py'
     
     measure_delay(cxn, nv_sig, readout, apd_indices,
-              delay_range, num_steps, num_reps, seq_file, aom_indices)
+              delay_range, num_steps, num_reps, seq_file, color_ind)
 
 def uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
-              delay_range, num_steps, num_reps):
+              delay_range, num_steps, num_reps, color_ind = 532):
     
     '''
     This will incrementally shift the pi pulse through the sequence, starting 
@@ -156,7 +172,7 @@ def uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
     
     measure_delay(cxn, nv_sig, readout, apd_indices,
               delay_range, num_steps, num_reps, seq_file,
-              state, aom_delay_time)
+              state, color_ind, aom_delay_time)
 
 
 # %% Run the file
@@ -168,33 +184,47 @@ def uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here 
-    sample_name = 'ayrton12'
-    nv2_2019_04_30 = {'coords': [-0.080, 0.122, 5.06],
-      'name': '{}-nv{}_2019_04_30'.format(sample_name, 2),
-      'expected_count_rate': 57,
-      'nd_filter': 'nd_1.5',  'pulsed_readout_dur': 260, 'magnet_angle': 161.9,
-      'resonance_LOW': 2.8265, 'rabi_LOW': 198.0, 'uwave_power_LOW': 9.0,
-      'resonance_HIGH': 2.9117, 'rabi_HIGH': 181.7, 'uwave_power_HIGH': 10.0}
+    sample_name = 'hopper'
+    nd_filter = 'nd_1.0'
+    expected_count_rate = {
+            'nd_0': 95,
+            'nd_0.5': 85,
+            'nd_1.0': 1000,
+            'nd_1.5': 25,
+            }
+    pulsed_readout_dur = {
+            'nd_0': 215,
+            'nd_0.5': 280,
+            'nd_1.0': 350,
+            'nd_1.5': 420,
+            }
+
+    ensemble = { 'coords': [0.0, 0.0, 5.00],
+            'name': '{}-ensemble'.format(sample_name),
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 1000, 'magnet_angle': 0,
+            'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
     apd_indices = [0]
-    num_reps = 2*10**5
-    readout = 2000
-    nv_sig = nv2_2019_04_30
+    num_reps = 2*10**3
+    readout = 200
+    nv_sig = ensemble
 
     # aom_delay
-#    delay_range = [900, 1500]
-#    num_steps = 51
-#    with labrad.connect() as cxn:
-#        aom_delay(cxn, nv_sig, readout, apd_indices,
-#                  delay_range, num_steps, num_reps)
+    delay_range = [0, 2000]
+    num_steps = 151
+    with labrad.connect() as cxn:
+        aom_delay(cxn, nv_sig, readout, apd_indices,
+                  delay_range, num_steps, num_reps, color_ind  =638)
 
     # uwave_delay
-    delay_range = [500, 2500]
-    num_steps = 101
-    # tsg4104a
-#    state = States.LOW
-    # bnc851
-    state = States.HIGH
-    aom_delay_time = 1000
-    with labrad.connect() as cxn:
-        uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
-              delay_range, num_steps, num_reps)
+#    delay_range = [500, 2500]
+#    num_steps = 101
+#    # tsg4104a
+##    state = States.LOW
+#    # bnc851
+#    state = States.HIGH
+#    aom_delay_time = 1000
+#    with labrad.connect() as cxn:
+#        uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
+#              delay_range, num_steps, num_reps)

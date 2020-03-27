@@ -25,7 +25,7 @@ import numpy
 import os
 import time
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
+#from scipy.optimize import curve_fit
 import json
 import labrad
 
@@ -83,20 +83,20 @@ def process_raw_buffer(new_tags, new_channels,
 # %% Main
 
 
-def main(nv_sig, apd_indices, readout_time, init_pulse_duration,
-                  illum_pulse_duration, aom_ao_589_pwr, ao_638_pwr, 
+def main(nv_sig, apd_indices, illumination_time, init_pulse_duration,
+                  aom_ao_589_pwr, ao_638_pwr, 
                   init_color_ind, illum_color_ind,
                   num_reps, num_runs, num_bins):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, readout_time, init_pulse_duration,
-                  illum_pulse_duration, aom_ao_589_pwr, ao_638_pwr, 
+        main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_duration,
+                  aom_ao_589_pwr, ao_638_pwr, 
                   init_color_ind, illum_color_ind,
                   num_reps, num_runs, num_bins)
 
 
-def main_with_cxn(cxn, nv_sig, apd_indices, readout_time, init_pulse_duration,
-                  illum_pulse_duration, aom_ao_589_pwr, ao_638_pwr, 
+def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_duration,
+                  aom_ao_589_pwr, ao_638_pwr, 
                   init_color_ind, illum_color_ind,
                   num_reps, num_runs, num_bins):
     
@@ -111,52 +111,62 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time, init_pulse_duration,
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     # In ns
-    readout_time = int(readout_time)
+    illumination_time = int(illumination_time)
     init_pulse_duration = int(init_pulse_duration)
-    illum_pulse_duration = int(illum_pulse_duration)
+#    readout_time = int(illumination_time + 500)
+    readout_time = int(illumination_time + 50000)
 
-    aom_delay_time = shared_params['532_aom_delay']
-    wait_time = shared_params['post_polarization_wait_dur']
+#    aom_delay_time = shared_params['532_aom_delay']
+#    wait_time = shared_params['post_polarization_wait_dur']
+    wait_time = 3*10**3
     
-    # %% Read the optical power forinit and illum pulse light
+    # %% Read the optical power forinit and illum pulse light. 
+    # Aslo set the init pusle and illum pulse delays
     
     
     if init_color_ind == 532:
         init_optical_power_pd = tool_belt.opt_power_via_photodiode(532)
         init_optical_power_mW = \
             tool_belt.calc_optical_power_mW(532, init_optical_power_pd)
+        init_pulse_delay = shared_params['515_laser_delay']
     elif init_color_ind == 589:
         init_optical_power_pd = tool_belt.opt_power_via_photodiode(589,
            AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])        
         init_optical_power_mW = \
             tool_belt.calc_optical_power_mW(589, init_optical_power_pd)
+        init_pulse_delay = shared_params['589_aom_delay']
     elif init_color_ind == 638:
         init_optical_power_pd = tool_belt.opt_power_via_photodiode(638,
            AO_power_settings = ao_638_pwr)        
         init_optical_power_mW = \
             tool_belt.calc_optical_power_mW(638, init_optical_power_pd)
+        init_pulse_delay = shared_params['638_laser_delay']
      
     if illum_color_ind == 532:
         illum_optical_power_pd = tool_belt.opt_power_via_photodiode(532)
         illum_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(532, illum_optical_power_pd)        
+            tool_belt.calc_optical_power_mW(532, illum_optical_power_pd)  
+        illum_pulse_delay = shared_params['515_laser_delay']
     if illum_color_ind == 589:       
         illum_optical_power_pd = tool_belt.opt_power_via_photodiode(589,
            AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter']) 
         illum_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(589, illum_optical_power_pd)        
+            tool_belt.calc_optical_power_mW(589, illum_optical_power_pd)    
+        illum_pulse_delay = shared_params['589_aom_delay']
     elif illum_color_ind == 638:
         illum_optical_power_pd = tool_belt.opt_power_via_photodiode(638,
            AO_power_settings = ao_638_pwr)        
         illum_optical_power_mW = \
             tool_belt.calc_optical_power_mW(638, illum_optical_power_pd)
+        illum_pulse_delay = shared_params['638_laser_delay']
 
     # %% Analyze the sequence
 
     # pulls the file of the sequence from serves/timing/sequencelibrary
     file_name = os.path.basename(__file__)
-    seq_args = [readout_time, init_pulse_duration, illum_pulse_duration, wait_time, 
-                aom_delay_time, aom_ao_589_pwr, ao_638_pwr, apd_indices[0],
+    seq_args = [readout_time, illumination_time, init_pulse_duration, wait_time, 
+                init_pulse_delay, illum_pulse_delay, 
+                aom_ao_589_pwr, ao_638_pwr, apd_indices[0],
                 init_color_ind, illum_color_ind]
     seq_args = [int(el) for el in seq_args]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -209,10 +219,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time, init_pulse_duration,
         gate_close_channel = channel_mapping[2]
             
         # Stream the sequence
-        seq_args = [readout_time, init_pulse_duration, illum_pulse_duration, wait_time, 
-                aom_delay_time, aom_ao_589_pwr, ao_638_pwr, apd_indices[0],
+        seq_args = [readout_time, illumination_time, init_pulse_duration, wait_time, 
+                init_pulse_delay, illum_pulse_delay, 
+                aom_ao_589_pwr, ao_638_pwr, apd_indices[0],
                 init_color_ind, illum_color_ind]
-        seq_args = [int(el) for el in seq_args]
+#        print(seq_args)
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         
         cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
@@ -263,12 +274,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time, init_pulse_duration,
                     'illum_optical_power_pd-units': 'V',
                     'illum_optical_power_mW': illum_optical_power_mW,
                     'illum_optical_power_mW-units': 'mW',
-                    'readout_time': readout_time,
-                    'readout_time-units': 'ns',
+                    'aom_ao_589_pwr': aom_ao_589_pwr,
+                    'aom_ao_589_pwr-units': '0-1 V',
+                    'ao_638_pwr': ao_638_pwr,
+                    'ao_638_pwr-units': '0-1 V',
+                    'illumination_time': illumination_time,
+                    'illumination_time-units': 'ns',
                     'init_pulse_duration': init_pulse_duration,
                     'init_pulse_duration-units': 'ns',
-                    'illum_pulse_duration': illum_pulse_duration,
-                    'illum_pulse_duration-units': 'ns',
+                    'illumination_time': illumination_time,
+                    'illumination_time-units': 'ns',
                     'num_reps': num_reps,
                     'num_runs': num_runs,
                     'run_ind': run_ind,
@@ -347,12 +362,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time, init_pulse_duration,
                 'illum_optical_power_pd-units': 'V',
                 'illum_optical_power_mW': illum_optical_power_mW,
                 'illum_optical_power_mW-units': 'mW',
+                'aom_ao_589_pwr': aom_ao_589_pwr,
+                'aom_ao_589_pwr-units': '0-1 V',
+                'ao_638_pwr': ao_638_pwr,
+                'ao_638_pwr-units': '0-1 V',
                 'readout_time': readout_time,
                 'readout_time-units': 'ns',
                 'init_pulse_duration': init_pulse_duration,
                 'init_pulse_duration-units': 'ns',
-                'illum_pulse_duration': illum_pulse_duration,
-                'illum_pulse_duration-units': 'ns',
+                'illumination_time': illumination_time,
+                'illumination_time-units': 'ns',
                 'num_bins': num_bins,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
@@ -367,85 +386,172 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time, init_pulse_duration,
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
+    
+    return bin_centers, binned_samples, illum_optical_power_mW
 
 # %%
-
-#def decayExp(t, amplitude, decay):
-#    return amplitude * numpy.exp(- t / decay)
+##
+#def integrate_under_curve(open_file_name):
 #
-#def triple_decay(t, a1, d1, a2, d2, a3, d3):
-#    return decayExp(t, a1, d1) + decayExp(t, a2, d2) + decayExp(t, a3, d3)
-#
-## %% Fitting the data
-#
-#def t1_exponential_decay(open_file_name):
-#
-#    directory = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/'
+#    directory = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/time_resolved_readout/branch_Spin_to_charge/2020_03/R-Y-vary_yellow_power/'
 #
 #    # Open the specified file
-#    with open(directory + open_file_name + '.txt') as json_file:
+#    with open(directory + open_file_name) as json_file:
 #
 #        # Load the data from the file
 #        data = json.load(json_file)
-#        countsT1_array = numpy.array(data["binned_samples"])
-#        readout_time = data["readout_time"]
-#        num_bins = data["num_bins"]
+#        counts_array = numpy.array(data["binned_samples"])
+##        readout_time = data["readout_time"]
+##        num_bins = data["num_bins"]
+#        illum_optical_power_mW = data['illum_optical_power_mW']
+#        bin_centers = data['bin_centers']
 #        
-#    bin_size = readout_time / num_bins
-#    bin_center_offset = bin_size / 2
-#    bin_centers = numpy.linspace(0, readout_time, num_bins) + bin_center_offset
+##    bin_size = readout_time / num_bins
+##    bin_center_offset = bin_size / 2
+##    bin_centers = numpy.linspace(0, readout_time, num_bins) + bin_center_offset
 #
-#    amplitude = 500
-#    decay = 100 # us
-#    init_params = [amplitude, decay]
+#    integrated_counts = numpy.trapz(counts_array, bin_centers)
 #    
-#    init_params = [500, 10, 500, 100, 500, 500]
-#    
-#
-##    popt,pcov = curve_fit(decayExp, timeArray, countsT1,
-##                              p0=init_params)
-##    popt,pcov = curve_fit(triple_decay, bin_centers, countsT1_array,
-##                              p0=init_params)
-#
-#    linspaceTime = numpy.linspace(0, readout_time, num=1000)
-#
-#
-#    fig_fit, ax= plt.subplots(1, 1, figsize=(10, 8))
-#    ax.plot(bin_centers, countsT1_array,'bo',label='data')
-##    ax.plot(linspaceTime, triple_decay(linspaceTime,*popt),'r-',label='fit')
-#    ax.set_xlabel('Wait Time (ns)')
-#    ax.set_ylabel('Counts (arb.)')
-#    ax.set_title('Lifetime')
-#    ax.legend()
-#
-##    text = "\n".join((r'$A_0 e^{-t / d}$',
-##                      r'$A_0 = $' + '%.1f'%(popt[0]),
-##                      r'$d = $' + "%.1f"%(decay_time) + " us"))
-##    text = "\n".join((r'$A_1 e^{-t / d_1} + A_2 e^{-t / d_2} + A_3 e^{-t / d_3}$',
-##                      r'$A_1 = $' + '%.1f'%(popt[0]),
-##                      r'$d_1 = $' + "%.1f"%(popt[1]) + " us",
-##                      r'$A_2 = $' + '%.1f'%(popt[2]),
-##                      r'$d_2 = $' + "%.1f"%(popt[3]) + " us",
-##                      r'$A_3 = $' + '%.1f'%(popt[4]),
-##                      r'$d_3 = $' + "%.1f"%(popt[5]) + " us"))
-#
-#
-##    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-##    ax.text(0.65, 0.75, text, transform=ax.transAxes, fontsize=12,
-##                            verticalalignment="top", bbox=props)
-#    ax.set_yscale("log", nonposy='clip')
-#    
-#    fig_fit.canvas.draw()
-#    fig_fit.canvas.flush_events()
-#
-#    file_path = directory + open_file_name
-#    tool_belt.save_figure(fig_fit, file_path+'-triple_fit_semilog')
-##    fig_fit.savefig(open_file_name + '-replot.svg')
+#    return integrated_counts, illum_optical_power_mW
 
 # %%
     
+def optimize_readout_power(nv_sig, apd_indices, illumination_time, 
+                           init_pulse_duration, ao_638_pwr, 
+                  num_reps, num_runs, num_bins, power_list):
+    
+    power_list = []
+    g_y_counts_s_list = []
+    r_y_counts_s_list = []
+    
+    for p in range(len(power_list)):
+        aom_ao_589_pwr = power_list[p]
+        print(aom_ao_589_pwr)
+        bin_centers, binned_samples, illum_optical_power_mW = main(nv_sig, 
+                  apd_indices, illumination_time, init_pulse_duration,
+                  aom_ao_589_pwr, ao_638_pwr, 
+                  532, 589,
+                  num_reps, num_runs, num_bins)
+        integrated_counts = numpy.trapz(binned_samples, bin_centers)
+        
+        power_list.append(illum_optical_power_mW)
+        g_y_counts_s_list(integrated_counts)
+        
+        bin_centers, binned_samples, illum_optical_power_mW = main(nv_sig, 
+                  apd_indices, illumination_time, init_pulse_duration,
+                  aom_ao_589_pwr, ao_638_pwr, 
+                  532, 589,
+                  num_reps, num_runs, num_bins)
+        integrated_counts = numpy.trapz(binned_samples, bin_centers)
+        
+        r_y_counts_s_list(integrated_counts)
+           
+    difference = numpy.array(g_y_counts_s_list) - numpy.array(r_y_counts_s_list)
+    ind_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+    ax.plot(power_list, g_y_counts_s_list, 'g', label = 'Green/Yellow')
+    ax.plot(power_list, r_y_counts_s_list, 'r', label = 'Red/Yellow')
+    ax.set_xlabel('589 power (mW)')
+    ax.set_ylabel('Area under time_resolved_readout curves (count*ns)')
+    ax.legend()
+    
+    dif_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+    ax.plot(power_list, difference)
+    ax.set_xlabel('589 power (mW)')
+    ax.set_ylabel('Subtracted area under time_resolved_readout curves (counts*ns)')
+    
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                '589_power_list': power_list,
+                'aom_ao_589_pwr-units': '0-1 V',
+                'ao_638_pwr': ao_638_pwr,
+                'ao_638_pwr-units': '0-1 V',
+                'init_pulse_duration': init_pulse_duration,
+                'init_pulse_duration-units': 'ns',
+                'illumination_time': illumination_time,
+                'illumination_time-units': 'ns',
+                'num_bins': num_bins,
+                'num_reps': num_reps,
+                'num_runs': num_runs,
+                'g_y_counts_s_list': g_y_counts_s_list,
+                'g_y_counts_s_list-units': 'counts*ns',
+                'r_y_counts_s_list': r_y_counts_s_list,
+                'r_y_counts_s_list-units': 'counts*ns',
+                'power_list': power_list,
+                'power_list-units': 'mW'
+                }
+    
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_figure(ind_fig, str(file_path + 'opt_power_ind_fig'))
+    tool_belt.save_figure(dif_fig, str(file_path + 'opt_power_dif_fig'))
+    tool_belt.save_raw_data(raw_data, str(file_path + 'opt_power'))
+    
+#def optimize_readout_time(nv_sig, apd_indices, illumination_time, 
+#                           init_pulse_duration, aom_589_laser_pwr, ao_638_pwr, 
+#                  num_reps, num_runs, num_bins, powetime_listr_list):
+#    return
+    
+# %%
 
 if __name__ == '__main__':
-    file_name = '2019_11/2019_11_26-17_22_11-undoped_Y2O3-633_bandpass'
+    apd_indices = [0]
+    sample_name = 'hopper'
+    ensemble = { 'coords': [0.0, 0.0, 5.00],
+            'name': '{}-ensemble'.format(sample_name),
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 1000, 'magnet_angle': 0,
+            'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
+    nv_sig = [ensemble]
     
-#    t1_exponential_decay(file_name)
+    ao_638_pwr = 0.80
+    power_list = numpy.linspace(0.1, 0.7, 13)
+    
+    init_pulse_duration = 3*10**3
+    illumination_time = 2*10**6
+    
+    num_reps = 10**4
+    num_bins = 1000
+    num_runs = 1
+    
+    optimize_readout_power(nv_sig, apd_indices, illumination_time, 
+                           init_pulse_duration, ao_638_pwr, 
+                           num_reps, num_runs, num_bins, power_list)    
+    
+    
+    
+# %%
+
+    
+#    folder = 'time_resolved_readout'
+#    sub_folder = 'branch_Spin_to_charge/2020_03/R-Y-vary_yellow_power'
+#    
+#    file_list = tool_belt.get_file_list(folder, 'txt', sub_folder)
+#    count_second_list = []
+#    power_list = []
+#
+##    for file in file_list:
+##        try:
+##            count_second, power = integrate_under_curve(file)
+##            count_second_list.append(count_second)
+##            power_list.append(power)
+##        except Exception:
+##            continue
+##    print(count_second_list)
+##    print(power_list)
+#    
+#    
+#    G_Y_counts = [23087637.63763764, 87113713.71371372, 207461436.4364364, 352807257.2572572, 488446871.87187195, 609473823.8238239, 711014489.4894896, 800907707.7077079, 888199949.94995, 939677727.7277279, 982788263.2632635, 1023652827.8278279, 1031481406.4064065]
+#    R_Y_counts = [6548098.098098099, 24815465.46546546, 66190990.990991, 145861911.9119119, 257067742.74274278, 374258383.3833834, 493877627.6276276, 598611286.2862862, 671990615.6156156, 751055155.1551552, 802539089.0890892, 841369044.0440441, 861570470.4704705]
+#    powers = [-0.011956253797609902, 0.008394938665521117, 0.04655342488791242, 0.10379115508684919, 0.18010813029947312, 0.2767763015473715, 0.3772603247901645, 0.4535773065972609, 0.5311662399831372, 0.5833161798815681, 0.6418258695666592, 0.6659929156202796, 0.6825282630258871]
+#    
+#    difference = numpy.array(G_Y_counts) - numpy.array(R_Y_counts)
+#    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+#
+#    ax.plot(powers, difference)
+##    ax.plot(powers, G_Y_counts, 'g', label = 'Green/Yellow')
+##    ax.plot(powers, R_Y_counts, 'r', label = 'Red/Yellow')
+#    ax.set_xlabel('589 power (mW)')
+##    ax.set_ylabel('Area under time_resolved_readout curves (count*ns)')
+#    ax.set_ylabel('Subtracted area under time_resolved_readout curves (counts*ns)')
