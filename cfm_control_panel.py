@@ -428,10 +428,25 @@ def do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
 #    num_reps = 10**3
 #    num_bins = 500
 
-    illumination_time = 2*10**6 # turns on at 250 and turns off at 750
-    num_reps = 10**3
+#    illumination_time = 2*10**6 # turns on at 250 and turns off at 750
+#    num_reps = 10**3
 #    num_reps = 10**4
-    num_bins = 1000
+#    num_bins = 1000
+    
+    # 1
+#    illumination_time = 1*10**6    
+#    num_reps = 5*10**3
+#    num_bins = 1000
+    
+#    # 2
+    illumination_time = 3*10**6    # For some reason the yellow laser only turns on for max 2.2 ms??? 
+    num_reps = 10**3
+    num_bins = 100
+#    
+#    # 3
+#    illumination_time = 10*10**6    
+#    num_reps = 10**1
+#    num_bins = 1000
 
     
     init_pulse_duration = 3*10**3
@@ -513,7 +528,7 @@ if __name__ == '__main__':
 #                aom_ao_589_pwr = aom_ao_589_pwr_list[p]
 #                print(aom_ao_589_pwr)
             do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
-                             638, 589)
+                             532, 589)
             
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)

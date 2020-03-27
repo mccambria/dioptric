@@ -122,7 +122,7 @@ if __name__ == '__main__':
               'do_apd_0_gate': 4,
               'do_532_aom': 1
               }
-    seq_args = [1000, 500, 200, 3000, 0, 0, 0.4, 0.9, 0, 638, 589]
+    seq_args = [3050000, 3000000, 3000, 3000, 0, 0, 0.7, 0.8, 0, 532, 589]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()
