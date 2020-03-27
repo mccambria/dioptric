@@ -434,18 +434,18 @@ def do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
 #    num_bins = 1000
     
     # 1
-#    illumination_time = 1*10**6    
-#    num_reps = 5*10**3
-#    num_bins = 1000
+#    illumination_time = 15*10**6    
+#    num_reps = 2*10**2
+#    num_bins = 1500
     
 #    # 2
-    illumination_time = 3*10**6    # For some reason the yellow laser only turns on for max 2.2 ms??? 
-    num_reps = 10**3
-    num_bins = 100
-#    
-#    # 3
-#    illumination_time = 10*10**6    
-#    num_reps = 10**1
+    illumination_time = 10*10**6    
+    num_reps = 5*10**3
+    num_bins = 1000
+    
+    # 3
+#    illumination_time = 5*10**6    
+#    num_reps = 10**3
 #    num_bins = 1000
 
     
@@ -470,7 +470,7 @@ if __name__ == '__main__':
     sample_name = 'hopper'
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+            'expected_count_rate': 1000, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 1000, 'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
@@ -480,7 +480,7 @@ if __name__ == '__main__':
     nv_sig_list = [ensemble]
     
     
-    aom_ao_589_pwr = 0.7
+    aom_ao_589_pwr = 0.5
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
     ao_638_pwr = 0.80
 #    ao_638_pwr_list = numpy.linspace(0.71, 0.9, 20)

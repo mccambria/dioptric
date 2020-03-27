@@ -69,7 +69,7 @@ def process_raw_buffer(new_tags, new_channels,
         rep = numpy.array(rep, dtype=numpy.int64)
         # Make relative to gate open
         rep -= current_tags[gate_open_click_ind]
-        new_processed_tags.extend(rep.astype(int).tolist())
+        new_processed_tags.extend(rep.astype(numpy.int64).tolist())
         
     # Clear processed tags
     if len(gate_close_click_inds) > 0:
@@ -86,21 +86,21 @@ def process_raw_buffer(new_tags, new_channels,
 def main(nv_sig, apd_indices, illumination_time, init_pulse_duration,
                   aom_ao_589_pwr, ao_638_pwr, 
                   init_color_ind, illum_color_ind,
-                  num_reps, num_runs, num_bins):
+                  num_reps, num_runs, num_bins, plot = True):
 
     with labrad.connect() as cxn:
         bin_centers, binned_samples, illum_optical_power_mW = main_with_cxn(cxn, 
                   nv_sig, apd_indices, illumination_time, init_pulse_duration,
                   aom_ao_589_pwr, ao_638_pwr, 
                   init_color_ind, illum_color_ind,
-                  num_reps, num_runs, num_bins)
+                  num_reps, num_runs, num_bins, plot)
 
     return bin_centers, binned_samples, illum_optical_power_mW
 
 def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_duration,
                   aom_ao_589_pwr, ao_638_pwr, 
                   init_color_ind, illum_color_ind,
-                  num_reps, num_runs, num_bins):
+                  num_reps, num_runs, num_bins, plot):
     
     if len(apd_indices) > 1:
         msg = 'Currently lifetime only supports single APDs!!'
@@ -115,8 +115,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
     # In ns
     illumination_time = int(illumination_time)
     init_pulse_duration = int(init_pulse_duration)
-#    readout_time = int(illumination_time + 500)
-    readout_time = int(illumination_time + 50000)
+#    readout_time = int(illumination_time + 500) # illumination time ~ 500 us
+#    readout_time = int(illumination_time + 50000) # illuminaion time ~ 1 ms
+    readout_time = int(illumination_time + 500000) # illuminaion time ~ 10 ms
 
 #    aom_delay_time = shared_params['532_aom_delay']
 #    wait_time = shared_params['post_polarization_wait_dur']
@@ -262,7 +263,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
         cxn.apd_tagger.stop_tag_stream()
         
         # %% Save the data we have incrementally for long measurements
-
+        processed_tags = [int(el) for el in processed_tags]
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
@@ -322,27 +323,27 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
 #    print(bin_centers)
 
     # %% Plot
-
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    if plot:
+        fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        
+        ax.plot(bin_centers, binned_samples, 'r-')
+        ax.set_title('Lifetime')
+        ax.set_xlabel('Readout time (ns)')
+        ax.set_ylabel('Counts')
+        ax.set_title('{} initial pulse, {} readout'.format(init_color_ind, illum_color_ind))
+           
+        params_text = '\n'.join(('Init pulse time: {} us'.format(init_pulse_duration/10**3),
+                          'Init power: ' + '%.3f'%(init_optical_power_mW)+ 'mW',
+                          'Illum power: ' + '%.3f'%(illum_optical_power_mW)+ 'mW',
+                          'bin size: ' + '%.1f'%(bin_size) + 'ns'))
     
-    ax.plot(bin_centers, binned_samples, 'r-')
-    ax.set_title('Lifetime')
-    ax.set_xlabel('Readout time (ns)')
-    ax.set_ylabel('Counts')
-    ax.set_title('{} initial pulse, {} readout'.format(init_color_ind, illum_color_ind))
-       
-    params_text = '\n'.join(('Init pulse time: {} us'.format(init_pulse_duration/10**3),
-                      'Init power: ' + '%.3f'%(init_optical_power_mW)+ 'mW',
-                      'Illum power: ' + '%.3f'%(illum_optical_power_mW)+ 'mW',
-                      'bin size: ' + '%.1f'%(bin_size) + 'ns'))
-
-    ax.text(0.55, 0.85, params_text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    
-    fig.canvas.draw()
-    fig.set_tight_layout(True)
-    fig.canvas.flush_events()
+        ax.text(0.55, 0.85, params_text, transform=ax.transAxes, fontsize=12,
+                verticalalignment='top', bbox=props)
+        
+        fig.canvas.draw()
+        fig.set_tight_layout(True)
+        fig.canvas.flush_events()
 
     # %% Save the data
 
@@ -387,7 +388,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(fig, file_path)
-    tool_belt.save_raw_data(raw_data, file_path)
+    if plot:
+        tool_belt.save_raw_data(raw_data, file_path)
     
     return bin_centers, binned_samples, illum_optical_power_mW
 
@@ -425,6 +427,7 @@ def optimize_readout_power(nv_sig, apd_indices, illumination_time,
     power_list = []
     g_y_counts_s_list = []
     r_y_counts_s_list = []
+    start_timestamp = tool_belt.get_time_stamp()
     
     for p in range(len(yellow_power_list)):
         aom_ao_589_pwr = yellow_power_list[p]
@@ -434,7 +437,7 @@ def optimize_readout_power(nv_sig, apd_indices, illumination_time,
                   apd_indices, illumination_time, init_pulse_duration,
                   aom_ao_589_pwr, ao_638_pwr, 
                   532, 589,
-                  num_reps, num_runs, num_bins)
+                  num_reps, num_runs, num_bins, plot= False)
         
         integrated_counts = numpy.trapz(binned_samples, bin_centers)
         
@@ -445,11 +448,40 @@ def optimize_readout_power(nv_sig, apd_indices, illumination_time,
                   apd_indices, illumination_time, init_pulse_duration,
                   aom_ao_589_pwr, ao_638_pwr, 
                   638, 589,
-                  num_reps, num_runs, num_bins)
+                  num_reps, num_runs, num_bins, plot = False)
         integrated_counts = numpy.trapz(binned_samples, bin_centers)
         
         r_y_counts_s_list.append(integrated_counts)
-           
+        
+        #save data incrimentally
+        raw_data = {'start_timestamp': start_timestamp,
+                    'nv_sig': nv_sig,
+                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    '589_power_list': yellow_power_list,
+                    'aom_ao_589_pwr-units': '0-1 V',
+                    'ao_638_pwr': ao_638_pwr,
+                    'ao_638_pwr-units': '0-1 V',
+                    'init_pulse_duration': init_pulse_duration,
+                    'init_pulse_duration-units': 'ns',
+                    'illumination_time': illumination_time,
+                    'illumination_time-units': 'ns',
+                    'num_bins': num_bins,
+                    'num_reps': num_reps,
+                    'num_runs': num_runs,
+                    'g_y_counts_s_list': g_y_counts_s_list,
+                    'g_y_counts_s_list-units': 'counts*ns',
+                    'r_y_counts_s_list': r_y_counts_s_list,
+                    'r_y_counts_s_list-units': 'counts*ns',
+                    'power_list': power_list,
+                    'power_list-units': 'mW'
+                    }
+
+        # This will continuously be the same file path so we will overwrite
+        # the existing file with the latest version
+        file_path = tool_belt.get_file_path(__file__, start_timestamp,
+                                            nv_sig['name'], 'incremental')
+        tool_belt.save_raw_data(raw_data, file_path + 'opt_power')
+        
     difference = numpy.array(g_y_counts_s_list) - numpy.array(r_y_counts_s_list)
     text = 'Illumnation time: ' + '%.1f'%(illumination_time/10**3) + ' us'
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -514,7 +546,7 @@ if __name__ == '__main__':
     sample_name = 'hopper'
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+            'expected_count_rate': 1000, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 1000, 'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
@@ -532,28 +564,28 @@ if __name__ == '__main__':
 #    num_bins = 1000
     
     # 1
-#    illumination_time = 500*10**3    
-#    num_reps = 10**4
-#    num_bins = 500
+#    illumination_time = 5*10**6    
+#    num_reps = 10**3
+#    num_bins = 1000
 #    optimize_readout_power(nv_sig, apd_indices, illumination_time, 
 #                           init_pulse_duration, ao_638_pwr, 
 #                           num_reps, num_runs, num_bins, power_list)    
-#    # 2
-#    illumination_time = 250*10**3   
-#    num_reps = 10**4
-#    num_bins = 250
-#    optimize_readout_power(nv_sig, apd_indices, illumination_time, 
-#                           init_pulse_duration, ao_638_pwr, 
-#                           num_reps, num_runs, num_bins, power_list)    
-    # 3 
-    illumination_time = 2*10**6    
-    num_reps = 4*10**3
-    num_bins = 2000
-
-    
+    # 2
+    illumination_time = 10*10**6    
+    num_reps = 5*10**3
+    num_bins = 1000
     optimize_readout_power(nv_sig, apd_indices, illumination_time, 
                            init_pulse_duration, ao_638_pwr, 
                            num_reps, num_runs, num_bins, power_list)    
+    # 3 
+#    illumination_time = 15*10**6    
+#    num_reps = 2*10**2
+#    num_bins = 1500
+#
+#    
+#    optimize_readout_power(nv_sig, apd_indices, illumination_time, 
+#                           init_pulse_duration, ao_638_pwr, 
+#                           num_reps, num_runs, num_bins, power_list)    
     
     
     
