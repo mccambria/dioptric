@@ -3,6 +3,10 @@
 Plot the counts obtained by moving the AOM on time so that we can
 determine the delay of the AOM relative to the APD gating.
 
+For laser delays, the tail of the pulse shoudl be at 500 ns. If it occurs
+later thatn 500 ns, the difference is the delay added at the beginning of 
+all other sequence trains.
+
 Created on Fri Jul 12 13:53:45 2019
 
 @author: mccambria
@@ -50,7 +54,7 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
     if color_ind == 589:
         laser_delay = shared_params['589_aom_delay']
     if color_ind == 638:
-        laser_delay = shared_params['638_laser_delay']
+        laser_delay = 0
 #        
         
 

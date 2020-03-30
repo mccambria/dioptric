@@ -183,7 +183,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 10**4
-    num_runs = 20
+    num_runs = 4
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -416,9 +416,9 @@ def do_determine_n_thresh_with_638(nv_sig, aom_ao_589_pwr, ao_638_pwr,
     
 def do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
                                  init_color_ind, illum_color_ind):
-#    illumination_time = 500 # turns on at 250 and turns off at 750
-#    num_reps = 10**5
-#    num_bins = 500
+    illumination_time = 500 # turns on at 250 and turns off at 750
+    num_reps = 10**5
+    num_bins = 250
     
 #    illumination_time = 10**4 # turns on at 250 and turns off at 750
 #    num_reps = 10**4
@@ -439,9 +439,9 @@ def do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
 #    num_bins = 1500
     
 #    # 2
-    illumination_time = 10*10**6    
-    num_reps = 5*10**3
-    num_bins = 1000
+#    illumination_time = 10*10**6    
+#    num_reps = 5*10**3
+#    num_bins = 1000
     
     # 3
 #    illumination_time = 5*10**6    
@@ -485,7 +485,7 @@ if __name__ == '__main__':
     
     aom_ao_589_pwr = 0.3
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
-    ao_638_pwr = 0.80
+    ao_638_pwr = 160
 #    ao_638_pwr_list = numpy.linspace(0.71, 0.9, 20)
     color_ind = 532
     readout_time = 100*10**3
@@ -531,7 +531,7 @@ if __name__ == '__main__':
 #                aom_ao_589_pwr = aom_ao_589_pwr_list[p]
 #                print(aom_ao_589_pwr)
             do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
-                             532, 589)
+                             532, 638)
             
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
