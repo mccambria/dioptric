@@ -647,7 +647,10 @@ def save_raw_data(rawData, filePath):
 
 def get_nv_sig_units():
     return {'coords': 'V', 'expected_count_rate': 'kcps', 
-        'pulsed_readout_dur': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz',
+        'pulsed_readout_dur': 'ns', 'am_589_power': '0-1 V', 
+        'pulsed_ionization_dur': 'ns', 'am_638_power': '0-1 V', 
+        'pulsed_reionization_dur': 'ns', 'cobalt_532_power': '0-1 mW', 
+        'magnet_angle': 'deg', 'resonance': 'GHz',
         'rabi': 'ns', 'uwave_power': 'dBm'}
 
 # Error messages

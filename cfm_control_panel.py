@@ -470,8 +470,11 @@ if __name__ == '__main__':
     sample_name = 'hopper'
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_1.0',
-            'pulsed_readout_dur': 1000, 'magnet_angle': 0,
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
+            'pulsed_readout_dur': 10**7, 'am_589_power': 0.3, 
+            'pulsed_ionization_dur': 300, 'am_638_power': 0.9, 
+            'pulsed_reionization_dur': 10**6, 'cobalt_532_power': 8, 
+            'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
     
@@ -480,7 +483,7 @@ if __name__ == '__main__':
     nv_sig_list = [ensemble]
     
     
-    aom_ao_589_pwr = 0.5
+    aom_ao_589_pwr = 0.3
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
     ao_638_pwr = 0.80
 #    ao_638_pwr_list = numpy.linspace(0.71, 0.9, 20)
