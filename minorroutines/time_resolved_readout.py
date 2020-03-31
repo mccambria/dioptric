@@ -36,7 +36,6 @@ import labrad
 def process_raw_buffer(new_tags, new_channels,
                        current_tags, current_channels,
                        gate_open_channel, gate_close_channel):
-    
     # The processing here will be bin_size agnostic
     
     # Tack the new data onto the leftover data (leftovers are necessary if
@@ -58,6 +57,8 @@ def process_raw_buffer(new_tags, new_channels,
     # Loop over the number of closes we have since there are guaranteed to
     # be opens
     num_closed_samples = len(gate_close_click_inds)
+    print('Num open gate clicks: ' + str(len(gate_open_click_inds)))
+    print('Num close gate clicks: ' + str(len(gate_close_click_inds)))
     for list_ind in range(num_closed_samples):
         
         gate_open_click_ind = gate_open_click_inds[list_ind]
@@ -84,21 +85,18 @@ def process_raw_buffer(new_tags, new_channels,
 
 
 def main(nv_sig, apd_indices, illumination_time, init_pulse_duration,
-                  aom_ao_589_pwr, ao_638_pwr, 
                   init_color_ind, illum_color_ind,
                   num_reps, num_runs, num_bins, plot = True):
 
     with labrad.connect() as cxn:
         bin_centers, binned_samples, illum_optical_power_mW = main_with_cxn(cxn, 
                   nv_sig, apd_indices, illumination_time, init_pulse_duration,
-                  aom_ao_589_pwr, ao_638_pwr, 
                   init_color_ind, illum_color_ind,
                   num_reps, num_runs, num_bins, plot)
 
     return bin_centers, binned_samples, illum_optical_power_mW
 
 def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_duration,
-                  aom_ao_589_pwr, ao_638_pwr, 
                   init_color_ind, illum_color_ind,
                   num_reps, num_runs, num_bins, plot):
     
@@ -110,16 +108,24 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
 
     # %% Define the times to be used in the sequence
     
+    aom_ao_589_pwr = nv_sig['am_589_power']
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-
-    # In ns
-    illumination_time = int(illumination_time)
-    init_pulse_duration = int(init_pulse_duration)
+    
+    # We want to observe the illumination pulsee turn on/off. So we make thee
+    # readout longer than the illuination time. Below I set these readout
+    # times based on the lengths of the illumination time, so that the extra 
+    # time will be resolvable.
+    if illumination_time < 600*10**3:
+        readout_time = illumination_time + 500
+    elif illumination_time > 4*10**6:
+        readout_time = illumination_time + 500000
+    else:
+        readout_time = illumination_time + 50000
+        
 #    readout_time = int(illumination_time + 500) # illumination time ~ 500 us
 #    readout_time = int(illumination_time + 50000) # illuminaion time ~ 1 ms
-    readout_time = int(illumination_time + 500000) # illuminaion time ~ 10 ms
+#    readout_time = int(illumination_time + 500000) # illuminaion time ~ 10 ms
 
-#    aom_delay_time = shared_params['532_aom_delay']
 #    wait_time = shared_params['post_polarization_wait_dur']
     wait_time = 3*10**3
     
@@ -139,11 +145,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
             tool_belt.calc_optical_power_mW(589, init_optical_power_pd)
         init_pulse_delay = shared_params['589_aom_delay']
     elif init_color_ind == 638:
-        init_optical_power_pd = tool_belt.opt_power_via_photodiode(638,
-           AO_power_settings = ao_638_pwr)        
+        init_optical_power_pd = tool_belt.opt_power_via_photodiode(638)        
         init_optical_power_mW = \
             tool_belt.calc_optical_power_mW(638, init_optical_power_pd)
-        init_pulse_delay = shared_params['638_laser_delay']
+        init_pulse_delay = shared_params['638_DM_laser_delay']
      
     if illum_color_ind == 532:
         illum_optical_power_pd = tool_belt.opt_power_via_photodiode(532)
@@ -157,11 +162,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
             tool_belt.calc_optical_power_mW(589, illum_optical_power_pd)    
         illum_pulse_delay = shared_params['589_aom_delay']
     elif illum_color_ind == 638:
-        illum_optical_power_pd = tool_belt.opt_power_via_photodiode(638,
-           AO_power_settings = ao_638_pwr)        
+        illum_optical_power_pd = tool_belt.opt_power_via_photodiode(638)        
         illum_optical_power_mW = \
             tool_belt.calc_optical_power_mW(638, illum_optical_power_pd)
-        illum_pulse_delay = shared_params['638_laser_delay']
+        illum_pulse_delay = shared_params['638_DM_laser_delay']
 
     # %% Analyze the sequence
 
@@ -169,7 +173,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
     file_name = os.path.basename(__file__)
     seq_args = [readout_time, illumination_time, init_pulse_duration, wait_time, 
                 init_pulse_delay, illum_pulse_delay, 
-                aom_ao_589_pwr, ao_638_pwr, apd_indices[0],
+                aom_ao_589_pwr, apd_indices[0],
                 init_color_ind, illum_color_ind]
     seq_args = [int(el) for el in seq_args]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -224,7 +228,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
         # Stream the sequence
         seq_args = [readout_time, illumination_time, init_pulse_duration, wait_time, 
                 init_pulse_delay, illum_pulse_delay, 
-                aom_ao_589_pwr, ao_638_pwr, apd_indices[0],
+                aom_ao_589_pwr, apd_indices[0],
                 init_color_ind, illum_color_ind]
 #        print(seq_args)
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -277,16 +281,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
                     'illum_optical_power_pd-units': 'V',
                     'illum_optical_power_mW': illum_optical_power_mW,
                     'illum_optical_power_mW-units': 'mW',
-                    'aom_ao_589_pwr': aom_ao_589_pwr,
-                    'aom_ao_589_pwr-units': '0-1 V',
-                    'ao_638_pwr': ao_638_pwr,
-                    'ao_638_pwr-units': '0-1 V',
                     'illumination_time': illumination_time,
                     'illumination_time-units': 'ns',
                     'init_pulse_duration': init_pulse_duration,
                     'init_pulse_duration-units': 'ns',
-                    'illumination_time': illumination_time,
-                    'illumination_time-units': 'ns',
                     'num_reps': num_reps,
                     'num_runs': num_runs,
                     'run_ind': run_ind,
@@ -365,16 +363,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
                 'illum_optical_power_pd-units': 'V',
                 'illum_optical_power_mW': illum_optical_power_mW,
                 'illum_optical_power_mW-units': 'mW',
-                'aom_ao_589_pwr': aom_ao_589_pwr,
-                'aom_ao_589_pwr-units': '0-1 V',
-                'ao_638_pwr': ao_638_pwr,
-                'ao_638_pwr-units': '0-1 V',
                 'readout_time': readout_time,
                 'readout_time-units': 'ns',
                 'init_pulse_duration': init_pulse_duration,
                 'init_pulse_duration-units': 'ns',
-                'illumination_time': illumination_time,
-                'illumination_time-units': 'ns',
                 'num_bins': num_bins,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
@@ -387,9 +379,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
                 }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_figure(fig, file_path)
     if plot:
-        tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(raw_data, file_path)
     
     return bin_centers, binned_samples, illum_optical_power_mW
 

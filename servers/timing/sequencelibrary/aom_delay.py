@@ -4,6 +4,7 @@ the pulse_streamer server won't be able to read your sequence."
 
 Determine the delay from lasers by illuminating an NV and sweeping the 
 readout pulse over the end of the laser pulse. 
+
 Created on Sun Jun 16 11:22:40 2019
 
 @author: mccambria
@@ -49,9 +50,11 @@ def get_seq(pulser_wiring, args):
         do_aom = pulser_wiring['ao_589_aom']
         HIGH = 1
     elif color_ind == 638:
-        do_aom = pulser_wiring['ao_638_laser']
-        HIGH = 0.8
-    
+#        do_aom = pulser_wiring['ao_638_laser']
+#        HIGH = 0.8
+        do_aom = pulser_wiring['do_638_laser']
+        HIGH = 1
+        
     illumination = 10**4
     inter_time = 10**3
     period = 2 * illumination
@@ -70,7 +73,7 @@ def get_seq(pulser_wiring, args):
     train = [(illumination, HIGH), (inter_time, LOW), (illumination, HIGH), (100, LOW)]
     
     
-    if color_ind == 532:
+    if color_ind == 532 or color_ind == 638:
         seq.setDigital(do_aom, train)
     else:
         seq.setAnalog(do_aom, train)
@@ -94,7 +97,7 @@ if __name__ == '__main__':
     # go through that here.
 
     # Set up a dummy pulser wiring dictionary
-    pulser_wiring = {'do_apd_0_gate': 0, 'do_532_aom': 1, 'do_sample_clock': 2,'ao_589_aom': 1, 'do_638_aom': 4}
+    pulser_wiring = {'do_apd_0_gate': 0, 'do_532_aom': 1, 'do_sample_clock': 2,'ao_589_aom': 1, 'do_638_laser': 4}
 
     # Set up a dummy args list
     args = [ 250, 1500, 200, 0, 0, 589]

@@ -687,7 +687,7 @@ def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = No
         optical_power = cxn.photodiode.read_optical_power()
         
     elif color_ind==638:
-        cxn.pulse_streamer.constant([], AO_power_settings, 0.0) # Turn on the red laser     
+        cxn.pulse_streamer.constant([7], 0.0, 0.0) # Turn on the red laser     
         time.sleep(0.5)
         optical_power = cxn.photodiode.read_optical_power()
     
@@ -703,7 +703,28 @@ def calc_optical_power_mW(color_ind, optical_power_V):
         return 7.9* optical_power_V + 0.024
     if color_ind == 638:
         return 5.7* optical_power_V + 0.035
-    
+
+def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
+    green_optical_power_pd = opt_power_via_photodiode(532)
+
+    red_optical_power_pd = opt_power_via_photodiode(638)
+
+    yellow_optical_power_pd = opt_power_via_photodiode(589,
+           AO_power_settings = aom_ao_589_pwr, nd_filter = nd_filter)
+
+    # Convert V to mW optical power
+    green_optical_power_mW = \
+            calc_optical_power_mW(532, green_optical_power_pd)
+
+    red_optical_power_mW = \
+            calc_optical_power_mW(638, red_optical_power_pd)
+
+    yellow_optical_power_mW = \
+            calc_optical_power_mW(589, yellow_optical_power_pd)
+            
+    return green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW
     
 # %% Safe stop (TM mccambria)
 

@@ -11,6 +11,8 @@ while sweeping the length, and readout the counts with a low yellow light. In
 this case, we'd want to observe a minimum amount of counts to optimize the red's
 ability to ionize th eNv into NV0.
 
+test_pulse_color_ind can be 532 or 638. This is the second pulse in the seq
+
 @author: agardill
 """
 import utils.tool_belt as tool_belt
@@ -19,23 +21,20 @@ import numpy
 import os
 import matplotlib.pyplot as plt
 import labrad
-import minorroutines.photonstatistics as ps
-
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, ao_638_pwr, cobalt_532_pwr, test_pulse_length, 
+def main(nv_sig, apd_indices,
           num_runs, num_reps, test_pulse_color_ind, plot = True):
 
     with labrad.connect() as cxn:
-        sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices, 
-                           ao_638_pwr, cobalt_532_pwr, 
-                           test_pulse_length, num_runs, num_reps, 
+        sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices,  
+                           num_runs, num_reps, 
                            test_pulse_color_ind, plot)
         
     return sig_counts, ref_counts
-def main_with_cxn(cxn, nv_sig, apd_indices, ao_638_pwr, cobalt_532_pwr, 
-                  test_pulse_length, num_runs, num_reps, 
+def main_with_cxn(cxn, nv_sig, apd_indices,
+                  num_runs, num_reps, 
                   test_pulse_color_ind, plot):
 
     tool_belt.reset_cfm(cxn)
@@ -44,6 +43,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, ao_638_pwr, cobalt_532_pwr,
     readout_time = nv_sig['pulsed_readout_dur']
     aom_ao_589_pwr = nv_sig['am_589_power']
     nd_filter = nv_sig['nd_filter']
+    cobalt_532_pwr = nv_sig['cobalt_532_pwr']
+    cobalt_638_pwr = nv_sig['cobalt_638_pwr']
+    
+    if test_pulse_color_ind == 532:
+        test_pulse_length = nv_sig['pulsed_reionization_dur']
+    elif test_pulse_color_ind == 638:
+        test_pulse_length = nv_sig['pulsed_ionization_dur']
+        
     # set the nd_filter for yellow
     cxn.filter_slider_ell9k.set_filter(nd_filter)
     
@@ -52,7 +59,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, ao_638_pwr, cobalt_532_pwr,
     #delay of aoms and laser
     laser_515_delay = shared_params['515_laser_delay']
     aom_589_delay = shared_params['589_aom_delay']
-    laser_638_delay = shared_params['638_laser_delay']
+    laser_638_delay = shared_params['638_DM_laser_delay']
     
     wait_time = shared_params['post_polarization_wait_dur']
     
@@ -61,7 +68,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, ao_638_pwr, cobalt_532_pwr,
         print(' \nTesting GREEN, set to {} mW, at {} us long'.format(cobalt_532_pwr, test_pulse_length / 10**3))
     elif test_pulse_color_ind == 638:
         initial_pulse = nv_sig['pulsed_reionization_dur']
-        print(' \nTesting RED, set to {} V, at {} us long'.format(ao_638_pwr, test_pulse_length / 10**3))
+        print(' \nTesting RED, set to {} mW, at {} us long'.format(cobalt_638_pwr, test_pulse_length / 10**3))
         
     test_pulse = test_pulse_length
 
@@ -96,7 +103,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, ao_638_pwr, cobalt_532_pwr,
     file_name = os.path.basename(__file__)
     seq_args = [readout_time, initial_pulse, test_pulse,
             wait_time, laser_515_delay, aom_589_delay, laser_638_delay, 
-            apd_indices[0], aom_ao_589_pwr, ao_638_pwr, test_pulse_color_ind]
+            apd_indices[0], aom_ao_589_pwr, test_pulse_color_ind]
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -126,7 +133,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, ao_638_pwr, cobalt_532_pwr,
 
     seq_args = [readout_time, initial_pulse, test_pulse,
         wait_time, laser_515_delay, aom_589_delay, laser_638_delay, 
-        apd_indices[0], aom_ao_589_pwr, ao_638_pwr, test_pulse_color_ind]
+        apd_indices[0], aom_ao_589_pwr, test_pulse_color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
     
@@ -236,17 +243,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, ao_638_pwr, cobalt_532_pwr,
 
 # %%
 
-def optimize_pulse_length(nv_sig, ao_638_pwr, cobalt_532_pwr, 
-                          test_pulse_dur_list, test_pulse_color_ind):
+def optimize_pulse_length(nv_sig, test_pulse_dur_list, test_pulse_color_ind):
     apd_indices = [0]
     num_runs = 1
-    num_reps = 10**3
+    num_reps = 10**4
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
             red_optical_power_pd, red_optical_power_mW, \
             yellow_optical_power_pd, yellow_optical_power_mW = \
-            tool_belt.measure_g_r_y_power(ao_638_pwr, 
+            tool_belt.measure_g_r_y_power( 
                                   nv_sig['am_589_power'], nv_sig['nd_filter'])
             
     if type(test_pulse_dur_list) != list:
@@ -257,9 +263,8 @@ def optimize_pulse_length(nv_sig, ao_638_pwr, cobalt_532_pwr,
 #    norm_count_list = []
     
     for test_pulse_length in test_pulse_dur_list:
-        test_pulse_length = int(test_pulse_length)
-        sig_count, ref_count = main(nv_sig, apd_indices, ao_638_pwr, 
-                                   cobalt_532_pwr, test_pulse_length, 
+        nv_sig['pulsed_reionization_dur'] = int(test_pulse_length)
+        sig_count, ref_count = main(nv_sig, apd_indices,
                                    num_runs, num_reps, test_pulse_color_ind)
         
 #        norm_counts = numpy.array(sig_counts) / numpy.array(ref_counts)
@@ -293,10 +298,6 @@ def optimize_pulse_length(nv_sig, ao_638_pwr, cobalt_532_pwr,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'test_pulse_color_ind': test_pulse_color_ind,
-            'ao_638_pwr': ao_638_pwr,
-            'ao_638_pwr-units': 'V',
-            'cobalt_532_pwr': cobalt_532_pwr,
-            'cobalt_532_pwr-units': 'mW',
             'green_optical_power_pd': green_optical_power_pd,
             'green_optical_power_pd-units': 'V',
             'green_optical_power_mW': green_optical_power_mW,
@@ -338,8 +339,9 @@ if __name__ == '__main__':
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 10**7, 'am_589_power': 0.3, 
-            'pulsed_ionization_dur': 300, 'am_638_power': 0.9, 
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 10**7, 'am_589_power': 0.3, 
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 10**6, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
@@ -350,16 +352,13 @@ if __name__ == '__main__':
     nv_sig = ensemble
     num_runs = 1
     
-    ao_638_pwr = 0.9
-    cobalt_532_pwr = 8
 #    test_pulse_length = 10**4 # ns
-    test_pulse_dur_list = numpy.linspace(1000, 30000, 4)
+    test_pulse_dur_list = numpy.linspace(100, 600, 6)
 #    test_pulse_dur_list = [1000, 2000, 3000, 4000, 5000]
     
-    num_reps = 10**3
+    num_reps = 10**4
     test_pulse_color_ind = 638
 #    main(nv_sig, apd_indices, ao_638_pwr, cobalt_532_pwr, test_pulse_length, 
 #          num_runs, num_reps, test_pulse_color_ind)
     
-    optimize_pulse_length(nv_sig, ao_638_pwr, cobalt_532_pwr, 
-                          test_pulse_dur_list, test_pulse_color_ind)
+    optimize_pulse_length(nv_sig, test_pulse_dur_list, test_pulse_color_ind)

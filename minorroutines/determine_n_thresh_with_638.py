@@ -42,29 +42,32 @@ def get_Probability_distribution(aList):
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr, readout_time,
-         ionization_time, num_runs, num_reps):
+def main(nv_sig, apd_indices, num_runs, num_reps):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
-                      readout_time, ionization_time, num_runs, num_reps)
+        main_with_cxn(cxn, nv_sig, apd_indices, num_runs, num_reps)
 
-def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
-                  readout_time, ionization_time,num_runs, num_reps):
+def main_with_cxn(cxn, nv_sig, apd_indices, num_runs, num_reps):
 
     tool_belt.reset_cfm(cxn)
 
 # %% Initial Calculation and setup
 #    apd_indices = [0]
-
+    readout_time = nv_sig['pulsed_readout_dur']
+    reionization_time = nv_sig['pulsed_reionization_dur']
+    ionization_time = nv_sig['pulsed_ionization_dur']
+    aom_ao_589_pwr = nv_sig['am_589_power']
+#    nd_filter = nv_sig['nd_filter']
+    
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     #delay of aoms and laser
-    aom_delay = shared_params['515_laser_delay']
+    laser_515_delay = shared_params['515_laser_delay']
+    aom_589_delay = shared_params['589_aom_delay']
+    laser_638_delay = shared_params['638_DM_laser_delay']
     wait_time = shared_params['post_polarization_wait_dur']
 
-    illumination_time = readout_time + 10**3
-    reionization_time = 10**6
+    illumination_time = readout_time
 
 #    readout_power = aom_ao_589_pwr
 
@@ -77,31 +80,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     opti_coords_list = []
 
     # %% Read the optical power for red, yellow, and green light
-    green_optical_power_pd = tool_belt.opt_power_via_photodiode(532)
-
-    red_optical_power_pd = tool_belt.opt_power_via_photodiode(638,
-                                            AO_power_settings = ao_638_pwr)
-
-    yellow_optical_power_pd = tool_belt.opt_power_via_photodiode(589,
-           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])
-
-    # Convert V to mW optical power
-    green_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(532, green_optical_power_pd)
-
-    red_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(638, red_optical_power_pd)
-
-    yellow_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(589, yellow_optical_power_pd)
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
 
     readout_power = yellow_optical_power_mW
 
 #%% Estimate the lenth of the sequance
 
     seq_args = [readout_time, reionization_time, illumination_time,
-                ionization_time, wait_time, aom_delay, apd_indices[0],
-                aom_ao_589_pwr, ao_638_pwr]
+                ionization_time, wait_time, laser_515_delay, aom_589_delay, laser_638_delay,apd_indices[0],
+                aom_ao_589_pwr]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('determine_n_thresh_with_638.py', seq_args_string)
 
@@ -137,8 +128,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
         seq_args = [readout_time, reionization_time, illumination_time,
-                    ionization_time, wait_time, aom_delay, apd_indices[0],
-                    aom_ao_589_pwr, ao_638_pwr]
+                ionization_time, wait_time, laser_515_delay, aom_589_delay, laser_638_delay,apd_indices[0],
+                aom_ao_589_pwr]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate('determine_n_thresh_with_638.py', num_reps, seq_args_string)
 
@@ -152,6 +143,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     sig_counts = counts[0:len(counts):2]
     print(len(sig_counts))
     ref_counts = counts[1:len(counts):2]
+    print(len(ref_counts))
 
 #%% plot the data and the fit
 
@@ -237,11 +229,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
     ref_counts = [int(el) for el in ref_counts]
 
     raw_data = {'timestamp': timestamp,
-            'nv_sig': nv_sig,
-            'aom_ao_589_pwr': aom_ao_589_pwr,
-            'aom_ao_589_pwr-units':'V',
-            'ao_638_pwr': ao_638_pwr,
-            'ao_638_pwr-units': 'V',
+            'nv_sig': nv_sig,          
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
             'green_optical_power_pd': green_optical_power_pd,
             'green_optical_power_pd-units': 'V',
             'green_optical_power_mW': green_optical_power_mW,
@@ -254,15 +243,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
             'yellow_optical_power_pd-units': 'V',
             'yellow_optical_power_mW': yellow_optical_power_mW,
             'yellow_optical_power_mW-units': 'mW',
-            'readout_time':readout_time,
-            'readout_time_unit':'ns',
-            'reionization_time': reionization_time,
-            'reionization_time-units': 'ns',
-            'illumination_time': illumination_time,
-            'illumination_time-units': 'ns',
-            'ionization_time': ionization_time,
-            'ionization_time-units': 'ns',
-            'nv_sig-units': tool_belt.get_nv_sig_units(),
             'num_runs': num_runs,
             'num_reps':num_reps,
             'sig_counts': sig_counts,

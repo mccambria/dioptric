@@ -414,21 +414,21 @@ def do_determine_n_thresh_with_638(nv_sig, aom_ao_589_pwr, ao_638_pwr,
     determine_n_thresh_with_638.main(nv_sig, apd_indices, aom_ao_589_pwr, 
                 ao_638_pwr, readout_time, ionization_time, num_runs, num_reps)
     
-def do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
+def do_time_resolved_readout(nv_sig, apd_indices,
                                  init_color_ind, illum_color_ind):
-    illumination_time = 500 # turns on at 250 and turns off at 750
-    num_reps = 10**5
-    num_bins = 250
+#    illumination_time = 500 # turns on at 250 and turns off at 750
+#    num_reps = 10**5
+#    num_bins = 500
     
-#    illumination_time = 10**4 # turns on at 250 and turns off at 750
+#    illumination_time = 10**4 
 #    num_reps = 10**4
 #    num_bins = 1000
     
-#    illumination_time = 10**6 # turns on at 250 and turns off at 750
+#    illumination_time = 10**6 
 #    num_reps = 10**3
 #    num_bins = 500
 
-#    illumination_time = 2*10**6 # turns on at 250 and turns off at 750
+#    illumination_time = 2*10**6 
 #    num_reps = 10**3
 #    num_reps = 10**4
 #    num_bins = 1000
@@ -439,9 +439,9 @@ def do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
 #    num_bins = 1500
     
 #    # 2
-#    illumination_time = 10*10**6    
-#    num_reps = 5*10**3
-#    num_bins = 1000
+    illumination_time = 10*10**6    
+    num_reps = 10**3
+    num_bins = 1000
     
     # 3
 #    illumination_time = 5*10**6    
@@ -449,12 +449,12 @@ def do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
 #    num_bins = 1000
 
     
-    init_pulse_duration = 3*10**3
+    init_pulse_duration = 10**6
     num_runs = 1
-    time_resolved_readout.main(nv_sig, apd_indices, illumination_time, init_pulse_duration,
-                  aom_ao_589_pwr, ao_638_pwr, 
-                  init_color_ind, illum_color_ind,
-                  num_reps, num_runs, num_bins)
+    time_resolved_readout.main(nv_sig, apd_indices, 
+                   illumination_time, init_pulse_duration,
+                   init_color_ind, illum_color_ind,
+                   num_reps, num_runs, num_bins)
 
     
 # %% Run the file
@@ -471,24 +471,23 @@ if __name__ == '__main__':
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 10**7, 'am_589_power': 0.3, 
-            'pulsed_ionization_dur': 300, 'am_638_power': 0.9, 
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 10**7, 'am_589_power': 0.3, 
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 10**6, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
-    
-    
-    
+  
     nv_sig_list = [ensemble]
     
     
-    aom_ao_589_pwr = 0.3
+#    aom_ao_589_pwr = 0.3
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
-    ao_638_pwr = 160
+#    cobalt_638_power = 30
 #    ao_638_pwr_list = numpy.linspace(0.71, 0.9, 20)
-    color_ind = 532
-    readout_time = 100*10**3
+#    color_ind = 532
+#    readout_time = 100*10**3
 
     # %% Functions to run
 
@@ -530,8 +529,8 @@ if __name__ == '__main__':
 #            for p in range(len(aom_ao_589_pwr_list)):
 #                aom_ao_589_pwr = aom_ao_589_pwr_list[p]
 #                print(aom_ao_589_pwr)
-            do_time_resolved_readout(nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
-                             532, 638)
+            do_time_resolved_readout(nv_sig, apd_indices,
+                             532, 589)
             
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
