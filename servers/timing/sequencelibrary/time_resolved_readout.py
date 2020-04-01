@@ -88,7 +88,7 @@ def get_seq(pulser_wiring, args):
     # APD 
 
     train = [(total_laser_delay + init_pulse_duration + wait_time, LOW),
-             (readout, HIGH), (100, LOW)]
+             (readout, HIGH), (100, LOW)] 
     seq.setDigital(pulser_do_apd_gate, train)
 
     # initial pulse sequence.
@@ -126,7 +126,8 @@ if __name__ == '__main__':
               'do_532_aom': 1,
               'do_638_laser': 7
               }
-    seq_args = [3050000, 3000000, 3000, 3000, 0, 0, 0.7, 0, 532, 638]
+
+    seq_args = [10500, 10000, 5, 300, 0, 0, 0.7, 0, 532 , 589]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()

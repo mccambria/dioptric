@@ -235,13 +235,13 @@ if __name__ == '__main__':
     nv_sig = ensemble
     
     power_list = numpy.linspace(0.1, 0.7, 13).tolist()
-#    power_list = [0.5, 0.7]
-    num_runs = 1
+#    power_list = [0.35] # too many tags, G/Y, 4/1/20
+    num_runs = 10
 #    init_pulse_duration = 3*10**3
 #    init_pulse_duration = 500
     
 #    illumination_time = 10*10**6    
-    num_reps = 5*10**3
+    num_reps = int(0.25*10**3)
     num_bins = 1000
     optimize_readout_power(nv_sig, apd_indices, num_reps, num_runs,
                            num_bins, power_list)    
