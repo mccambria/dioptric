@@ -52,13 +52,20 @@ def process_raw_buffer(new_tags, new_channels,
     result = numpy.nonzero(current_channels_array == gate_close_channel)
     gate_close_click_inds = result[0].tolist()
     
+#    try:
+#        print(gate_open_click_inds[-1])
+#        print(gate_close_click_inds[-1])
+#    except:
+#        pass
+    
     new_processed_tags = []
     
     # Loop over the number of closes we have since there are guaranteed to
     # be opens
     num_closed_samples = len(gate_close_click_inds)
-    print('Num open gate clicks: ' + str(len(gate_open_click_inds)))
-    print('Num close gate clicks: ' + str(len(gate_close_click_inds)))
+#    print()
+#    print('Num open gate clicks: ' + str(len(gate_open_click_inds)))
+#    print('Num close gate clicks: ' + str(len(gate_close_click_inds)))
     for list_ind in range(num_closed_samples):
         
         gate_open_click_ind = gate_open_click_inds[list_ind]
@@ -242,22 +249,24 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
         num_processed_reps = 0
 
         while num_processed_reps < num_reps:
-
+            
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
-    
+            
             new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
             new_tags = numpy.array(new_tags, dtype=numpy.int64)
+            
+            # MCC test
+            if len(new_tags) > 750000:
+                print()
+                print('Received {} tags out of 10^6 max'.format(len(new_tags)))
+                print('Tell Matt that the time tagger is too slow!')
             
             ret_vals = process_raw_buffer(new_tags, new_channels,
                                    current_tags, current_channels,
                                    gate_open_channel, gate_close_channel)
             new_processed_tags, num_new_processed_reps = ret_vals
-            # MCC test
-            if num_new_processed_reps > 750000:
-                print('Processed {} reps out of 10^6 max'.format(num_new_processed_reps))
-                print('Tell Matt that the time tagger is too slow!')
             
             num_processed_reps += num_new_processed_reps
             

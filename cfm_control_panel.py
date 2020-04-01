@@ -439,14 +439,19 @@ def do_time_resolved_readout(nv_sig, apd_indices,
 #    num_bins = 1500
     
 #    # 2
-    illumination_time = 10*10**6    
-    num_reps = 10**3
-    num_bins = 1000
+#    illumination_time = 10*10**6    
+#    num_reps = 10**3
+#    num_bins = 1000
     
     # 3
 #    illumination_time = 5*10**6    
 #    num_reps = 10**3
 #    num_bins = 1000
+    
+    # DEBUG
+    illumination_time = 10**7
+    num_reps = 5*10**3
+    num_bins = 1000
 
     
     init_pulse_duration = 10**6

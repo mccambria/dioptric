@@ -62,7 +62,6 @@ class ApdTagger(LabradServer):
         # The APDs share a clock, but everything else is distinct
         self.tagger_di_clock = get_result[1]
         # Create a mapping from tagger channels to semantic channel names
-        self.channel_mapping = {self.tagger_di_clock: 'di_clock'}
         # Determine how many APDs we're supposed to set up
         apd_sub_dirs = []
         apd_indices = []
@@ -93,22 +92,8 @@ class ApdTagger(LabradServer):
             wiring_index = 2 * loop_index
             di_apd = wiring[wiring_index]
             self.tagger_di_apd[apd_index] = di_apd
-            self.channel_mapping[di_apd] = 'di_apd_{}'.format(apd_index)
             di_gate = wiring[wiring_index+1]
             self.tagger_di_gate[apd_index] = di_gate
-            # APDs can share gates so make that apparent in the channel mapping
-            if di_gate in self.channel_mapping:
-                prev_val = self.channel_mapping[di_gate]
-                new_val = '{}-{}'.format(prev_val, apd_index)
-                self.channel_mapping[di_gate] = new_val
-                prev_val = self.channel_mapping[-di_gate]
-                new_val = '{}-{}'.format(prev_val, apd_index)
-                self.channel_mapping[-di_gate] = new_val
-            else:
-                val = 'di_gate_open_{}'.format(apd_index)
-                self.channel_mapping[di_gate] = val
-                val = 'di_gate_close_{}'.format(apd_index)
-                self.channel_mapping[-di_gate] = val
         self.reset_tag_stream_state()  # Initialize state variables
         self.reset(None)
         logging.debug('init complete')
@@ -252,7 +237,7 @@ class ApdTagger(LabradServer):
         self.leftover_timestamps = []
         self.leftover_channels = []
 
-    @setting(0, returns='*s')
+    @setting(0, returns='*i')
     def get_channel_mapping(self, c):
         """As a regexp, the order is:
         [+APD, *[gate open, gate close], ?clock]
@@ -260,8 +245,7 @@ class ApdTagger(LabradServer):
         type will be present is based on the channels passed to
         start_tag_stream.
         """
-        
-        return [self.channel_mapping[chan] for chan in self.stream_channels]
+        return self.stream_channels
 
     @setting(1, apd_indices='*i', gate_indices='*i', clock='b')
     def start_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
@@ -311,7 +295,7 @@ class ApdTagger(LabradServer):
         """
         self.stop_tag_stream_internal()
 
-    @setting(3, returns='*s*s')
+    @setting(3, returns='*s*i')
     def read_tag_stream(self, c):
         """Read the stream started with start_tag_stream. Returns two lists,
         each as long as the number of counts that have occurred since the
@@ -325,9 +309,7 @@ class ApdTagger(LabradServer):
         # Convert timestamps to strings since labrad does not support int64s
         # It must be converted to int64s back on the client
         timestamps = timestamps.astype(str).tolist()
-        # Map channels to semantic channels
-        semantic_channels = [self.channel_mapping[chan] for chan in channels]
-        return timestamps, semantic_channels
+        return timestamps, channels
 
     @setting(4, num_to_read='i', returns='*3w')
     def read_counter_complete(self, c, num_to_read=None):
