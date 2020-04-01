@@ -291,7 +291,8 @@ class ApdTagger(LabradServer):
         """
         self.stop_tag_stream_internal()
 
-    @setting(3, returns='*s*i')
+#    @setting(3, returns='*s*i')
+    @setting(3, returns='s')    
     def read_tag_stream(self, c):
         """Read the stream started with start_tag_stream. Returns two lists,
         each as long as the number of counts that have occurred since the
@@ -304,8 +305,14 @@ class ApdTagger(LabradServer):
         timestamps, channels = self.read_raw_stream()
         # Convert timestamps to strings since labrad does not support int64s
         # It must be converted to int64s back on the client
-        timestamps = timestamps.astype(str).tolist()
-        return timestamps, channels
+#        timestamps = timestamps.astype(str).tolist()
+#        return timestamps, channels
+        ret_vals = []  # List of comma delimited strings to minimize data
+        for ind in range(len(timestamps)):
+            ret_vals.append('{},{}'.format(timestamps[ind], channels[ind]))
+        delim = '.'
+        ret_vals_string = delim.join(ret_vals)
+        return ret_vals_string
 
     @setting(4, num_to_read='i', returns='*3w')
     def read_counter_complete(self, c, num_to_read=None):

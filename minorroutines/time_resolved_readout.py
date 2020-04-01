@@ -254,19 +254,34 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
             if tool_belt.safe_stop():
                 break
             
-            new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
+#            dur_start = time.time()
+#            new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
+            ret_vals_string = cxn.apd_tagger.read_tag_stream()
+            ret_vals = ret_vals_string.split('.')
+            if ret_vals[0] == '':
+                continue
+            new_tags = []
+            new_channels = []
+            for val in ret_vals:
+                split_val = val.split(',')
+                new_tags.append(split_val[0])
+                new_channels.append(int(split_val[1]))
             new_tags = numpy.array(new_tags, dtype=numpy.int64)
+#            print()
+#            print(time.time()-dur_start)
             
             # MCC test
             if len(new_tags) > 750000:
                 print()
                 print('Received {} tags out of 10^6 max'.format(len(new_tags)))
-                print('Tell Matt that the time tagger is too slow!')
+                print('Turn down the reps and turn up the runs so that the Time Tagger can catch up!')
             
+#            dur_start = time.time()
             ret_vals = process_raw_buffer(new_tags, new_channels,
                                    current_tags, current_channels,
                                    gate_open_channel, gate_close_channel)
             new_processed_tags, num_new_processed_reps = ret_vals
+#            print(time.time()-dur_start)
             
             num_processed_reps += num_new_processed_reps
             
