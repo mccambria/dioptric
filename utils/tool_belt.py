@@ -104,6 +104,19 @@ def get_pulse_streamer_wiring(cxn):
         pulse_streamer_wiring[key] = wiring[key]
     return pulse_streamer_wiring
 
+# %% adp_tagger utils
+    
+def decode_time_tags(ret_vals_string):
+    ret_vals = ret_vals_string.split('.')
+    new_tags = []
+    new_channels = []
+    if ret_vals[0] != '':
+        for val in ret_vals:
+            split_val = val.split(',')
+            new_tags.append(split_val[0])
+            new_channels.append(int(split_val[1]))
+        new_tags = numpy.array(new_tags, dtype=numpy.int64)    
+    return new_tags, new_channels
 
 # %% Matplotlib plotting utils
 
@@ -647,7 +660,8 @@ def save_raw_data(rawData, filePath):
 
 def get_nv_sig_units():
     return {'coords': 'V', 'expected_count_rate': 'kcps', 
-        'pulsed_readout_dur': 'ns', 'am_589_power': '0-1 V', 
+        'pulsed_readout_dur': 'ns', 
+        'pulsed_SCC_readout_dur': 'ns', 'am_589_power': '0-1 V', 
         'pulsed_ionization_dur': 'ns', 'am_638_power': '0-1 V', 
         'pulsed_reionization_dur': 'ns', 'cobalt_532_power': '0-1 mW', 
         'magnet_angle': 'deg', 'resonance': 'GHz',

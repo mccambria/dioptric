@@ -212,9 +212,9 @@ def optimize_readout_time(nv_sig, apd_indices, num_reps, num_runs,
                 }
     
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_figure(ind_fig, str(file_path + 'opt_length_ind_fig'))
-    tool_belt.save_figure(dif_fig, str(file_path + 'opt_length_dif_fig'))
-    tool_belt.save_raw_data(raw_data, str(file_path + 'opt_length'))
+    tool_belt.save_figure(ind_fig, str(file_path + '-opt_length_ind_fig'))
+    tool_belt.save_figure(dif_fig, str(file_path + '-opt_length_dif_fig'))
+    tool_belt.save_raw_data(raw_data, str(file_path + '-opt_length'))
     print('Run complete!')
     
 # %%
@@ -224,7 +224,7 @@ if __name__ == '__main__':
     sample_name = 'hopper'
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 10**7, 'am_589_power': 0.3, 
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
@@ -234,8 +234,8 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
     nv_sig = ensemble
     
-#    power_list = numpy.linspace(0.1, 0.7, 13).tolist()
-    power_list = [0.5, 0.7]
+    power_list = numpy.linspace(0.1, 0.7, 13).tolist()
+#    power_list = [0.5, 0.7]
     num_runs = 1
 #    init_pulse_duration = 3*10**3
 #    init_pulse_duration = 500

@@ -257,16 +257,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
 #            dur_start = time.time()
 #            new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
             ret_vals_string = cxn.apd_tagger.read_tag_stream()
-            ret_vals = ret_vals_string.split('.')
-            if ret_vals[0] == '':
+            new_tags,new_channels = tool_belt.decode_time_tags(ret_vals_string)
+            if new_tags == []:
                 continue
-            new_tags = []
-            new_channels = []
-            for val in ret_vals:
-                split_val = val.split(',')
-                new_tags.append(split_val[0])
-                new_channels.append(int(split_val[1]))
-            new_tags = numpy.array(new_tags, dtype=numpy.int64)
 #            print()
 #            print(time.time()-dur_start)
             
