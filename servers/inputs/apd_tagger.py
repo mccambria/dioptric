@@ -61,7 +61,6 @@ class ApdTagger(LabradServer):
         self.tagger.reset()
         # The APDs share a clock, but everything else is distinct
         self.tagger_di_clock = get_result[1]
-        # Create a mapping from tagger channels to semantic channel names
         # Determine how many APDs we're supposed to set up
         apd_sub_dirs = []
         apd_indices = []
@@ -278,10 +277,7 @@ class ApdTagger(LabradServer):
         self.stream_channels = channels
         # De-duplicate the channels list
         channels = list(set(channels))
-        # Hardware-limited max buffer is a million total samples
-        buffer_size = int(10**6 / len(channels))  
-        self.stream = TimeTagger.TimeTagStream(self.tagger,
-                                               buffer_size, channels)
+        self.stream = TimeTagger.TimeTagStream(self.tagger, 10**6, channels)
         # When you set up a measurement, it will not start recording data
         # immediately. It takes some time for the tagger to configure the fpga,
         # etc. The sync call waits until this process is complete. 
@@ -299,8 +295,8 @@ class ApdTagger(LabradServer):
     def read_tag_stream(self, c):
         """Read the stream started with start_tag_stream. Returns two lists,
         each as long as the number of counts that have occurred since the
-        buffer was refreshed. First list is timestamps in ps, second is apd
-        indices.
+        buffer was refreshed. First list is timestamps in ps, second is
+        channel indices
         """
         if self.stream is None:
             logging.error('read_tag_stream attempted while stream is None.')
