@@ -9,65 +9,121 @@ A file to optimize both the power and readout duration for the 589 laser
 
 import utils.tool_belt as tool_belt
 import numpy
+import labrad
 import matplotlib.pyplot as plt
-import minorroutines.time_resolved_readout as time_resolved_readout
+import os
 
 # %%
+
+def main_measurement(nv_sig, apd_indices, num_reps):
     
-def optimize_readout_power(nv_sig, apd_indices, num_reps, num_runs,
-                           num_bins, yellow_power_list):
+    with labrad.connect() as cxn:
+        reion_count, ion_count = main_measurement_w_cxn(cxn,
+                            nv_sig, apd_indices, num_reps)
+        
+    return reion_count, ion_count
+
+def main_measurement_w_cxn(cxn, nv_sig, apd_indices, num_reps):
+    
+    # Collect the needed parameters from nv_sig or shared_parameters
+    readout_time = nv_sig['pulsed_SCC_readout_dur']
+    reionization_time = nv_sig['pulsed_reionization_dur']
+    ionization_time = nv_sig['pulsed_ionization_dur']
+    aom_ao_589_pwr = nv_sig['am_589_power']
+    nd_filter = nv_sig['nd_filter']
+    
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    wait_time = shared_params['post_polarization_wait_dur']
+    laser_515_delay = shared_params['515_laser_delay']
+    aom_589_delay = shared_params['589_aom_delay']
+    laser_638_delay = shared_params['638_DM_laser_delay']
+    
+    # set the nd filter
+    cxn.filter_slider_ell9k.set_filter(nd_filter)
+            
+    # Analyze the sequence
+
+    # pulls the file of the sequence from serves/timing/sequencelibrary
+    file_name = os.path.basename(__file__)
+    seq_args = [readout_time, reionization_time, ionization_time,\
+            wait_time, laser_515_delay, aom_589_delay, laser_638_delay, \
+            apd_indices[0], aom_ao_589_pwr]
+    seq_args = [int(el) for el in seq_args]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    seq_time = ret_vals[0]
+
+    # Report the expected run time
+    seq_time_s = seq_time / (10**9)  # s
+    expected_run_time = num_reps * seq_time_s  # s
+    expected_run_time_m = expected_run_time / 60 # m
+    print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
+    
+    # Run the sequence
+    cxn.apd_tagger.start_tag_stream(apd_indices)
+
+    seq_args = [readout_time, reionization_time, ionization_time,\
+            wait_time, laser_515_delay, aom_589_delay, laser_638_delay, \
+            apd_indices[0], aom_ao_589_pwr]
+#    print(seq_args)
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
+    
+    new_counts = cxn.apd_tagger.read_counter_separate_gates(num_reps)
+#    print(len(new_counts))
+#    sample_counts = new_counts[0]
+    
+    # Counts w/out red are even - get every second element starting from 0
+    reion_gate_counts = new_counts[0::2]
+    reion_count = int(numpy.average(reion_gate_counts))
+
+    # Counts w/ red are odd - sample_counts every second element starting from 1
+    ion_gate_counts = new_counts[1::2]
+    ion_count = int(numpy.average(ion_gate_counts))
+    
+    cxn.apd_tagger.stop_tag_stream()
+    
+    
+    return reion_count, ion_count
+# %%
+    
+def optimize_readout_power(nv_sig, apd_indices, num_reps, yellow_power_list):
     # Create some lists to fill
     power_list = []
-    g_y_counts_s_list = []
-    r_y_counts_s_list = []
+    g_y_counts_list = []
+    r_y_counts_list = []
     # Get the starting timestamp for incriment data
     start_timestamp = tool_belt.get_time_stamp()
-    # get the yellow readout time from the nv_sig
-    illumination_time = nv_sig['pulsed_SCC_readout_dur']
     
     for p in range(len(yellow_power_list)):
-        # set the yellow power via AOM
         nv_sig['am_589_power'] = yellow_power_list[p]
-        # Set the init pulse (green) to the reionization pulse in nv_sig
-        init_pulse_duration = nv_sig['pulsed_reionization_dur']
+        # Measure the optical powers
+        ret_vals = tool_belt.measure_g_r_y_power(nv_sig['am_589_power'], 
+                                                 nv_sig['nd_filter'])
         
-        print('589 AM set to: ' + str(nv_sig['am_589_power']))
-        print('Measuring Green/Yellow')
+        green_optical_power_pd, green_optical_power_mW, \
+                    red_optical_power_pd, red_optical_power_mW, \
+                    yellow_optical_power_pd, yellow_optical_power_mW = ret_vals
         
-        # Run time resolved readout of G/Y
-        bin_centers, binned_samples, illum_optical_power_mW = \
-                  time_resolved_readout.main(nv_sig, apd_indices, 
-                  illumination_time, init_pulse_duration, 532, 589,
-                  num_reps, num_runs, num_bins, plot= True)
+        print(' \n589 AM set to: ' + str(nv_sig['am_589_power']))
         
-        integrated_counts = numpy.trapz(binned_samples, bin_centers)
-        
-        power_list.append(illum_optical_power_mW)
-        g_y_counts_s_list.append(integrated_counts)
-        
-        # Set the init pulse (red) to the ionization pulse in nv_sig
-        init_pulse_duration = nv_sig['pulsed_ionization_dur']
-        print('Measuring Red/Yellow')
-        bin_centers, binned_samples, illum_optical_power_mW = time_resolved_readout.main(nv_sig, 
-                  apd_indices, illumination_time, init_pulse_duration,
-                  638, 589,
-                  num_reps, num_runs, num_bins, plot = True)
-        integrated_counts = numpy.trapz(binned_samples, bin_centers)
-        
-        r_y_counts_s_list.append(integrated_counts)
+        # Run the sequence
+        reion_count, ion_count = main_measurement(nv_sig, apd_indices, num_reps)
+                
+        power_list.append(yellow_optical_power_mW)
+        g_y_counts_list.append(reion_count)        
+        r_y_counts_list.append(ion_count)
         
         #save data incrimentally
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
                     '589_power_list': yellow_power_list,
-                    'num_bins': num_bins,
                     'num_reps': num_reps,
-                    'num_runs': num_runs,
-                    'g_y_counts_s_list': g_y_counts_s_list,
-                    'g_y_counts_s_list-units': 'counts*ns',
-                    'r_y_counts_s_list': r_y_counts_s_list,
-                    'r_y_counts_s_list-units': 'counts*ns',
+                    'g_y_counts_list': g_y_counts_list,
+                    'g_y_counts_list-units': 'counts*ns',
+                    'r_y_counts_list': r_y_counts_list,
+                    'r_y_counts_list-units': 'counts*ns',
                     'power_list': power_list,
                     'power_list-units': 'mW'
                     }
@@ -78,81 +134,80 @@ def optimize_readout_power(nv_sig, apd_indices, num_reps, num_runs,
                                             nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(raw_data, file_path + 'opt_power')
         
-    difference = numpy.array(g_y_counts_s_list) - numpy.array(r_y_counts_s_list)
-    text = 'Illumnation time: ' + '%.1f'%(illumination_time/10**3) + ' us'
+    # Plot
+    SNR = (numpy.array(g_y_counts_list) - numpy.array(r_y_counts_list)) / \
+                numpy.sqrt(numpy.array(g_y_counts_list))
+    text = 'Illumnation time: ' + '%.1f'%(nv_sig['pulsed_SCC_readout_dur']/10**3) + ' us'
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     
     ind_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
 
     ax.text(0.55, 0.85, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
-    ax.plot(power_list, g_y_counts_s_list, 'g', label = 'Green/Yellow')
-    ax.plot(power_list, r_y_counts_s_list, 'r', label = 'Red/Yellow')
+    ax.plot(power_list, g_y_counts_list, 'g', label = 'Green/Yellow')
+    ax.plot(power_list, r_y_counts_list, 'r', label = 'Red/Yellow')
     ax.set_xlabel('589 power (mW)')
-    ax.set_ylabel('Area under time_resolved_readout curves (count*ns)')
+    ax.set_ylabel('Counts')
     ax.legend()
     
-    dif_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+    snr_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
     ax.text(0.55, 0.85, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
-    ax.plot(power_list, difference)
+    ax.plot(power_list, SNR)
     ax.set_xlabel('589 power (mW)')
-    ax.set_ylabel('Subtracted area under time_resolved_readout curves (counts*ns)')
+    ax.set_ylabel('SNR')
     
-    
+    # Save
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 '589_power_list': yellow_power_list,
-                'num_bins': num_bins,
+                'green_optical_power_pd': green_optical_power_pd,
+                'green_optical_power_pd-units': 'V',
+                'green_optical_power_mW': green_optical_power_mW,
+                'green_optical_power_mW-units': 'mW',
+                'red_optical_power_pd': red_optical_power_pd,
+                'red_optical_power_pd-units': 'V',
+                'red_optical_power_mW': red_optical_power_mW,
+                'red_optical_power_mW-units': 'mW',
                 'num_reps': num_reps,
-                'num_runs': num_runs,
-                'g_y_counts_s_list': g_y_counts_s_list,
-                'g_y_counts_s_list-units': 'counts*ns',
-                'r_y_counts_s_list': r_y_counts_s_list,
-                'r_y_counts_s_list-units': 'counts*ns',
                 'power_list': power_list,
-                'power_list-units': 'mW'
+                'power_list-units': 'mW',
+                'g_y_counts_list': g_y_counts_list,
+                'g_y_counts_list-units': 'counts',
+                'r_y_counts_list': r_y_counts_list,
+                'r_y_counts_list-units': 'counts'
                 }
     
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_figure(ind_fig, str(file_path + 'opt_power_ind_fig'))
-    tool_belt.save_figure(dif_fig, str(file_path + 'opt_power_dif_fig'))
-    tool_belt.save_raw_data(raw_data, str(file_path + 'opt_power'))
+    tool_belt.save_figure(ind_fig, str(file_path + '-opt_power_ind_fig'))
+    tool_belt.save_figure(snr_fig, str(file_path + '-opt_power_snr_fig'))
+    tool_belt.save_raw_data(raw_data, str(file_path + '-opt_power'))
     print('Run complete!')
     
 # %% Untested 3/27
     
-def optimize_readout_time(nv_sig, apd_indices, num_reps, num_runs,
-                           num_bins, readout_time_list):
-    g_y_counts_s_list = []
-    r_y_counts_s_list = []
+def optimize_readout_time(nv_sig, apd_indices, num_reps, readout_time_list):
+    g_y_counts_list = []
+    r_y_counts_list = []
     start_timestamp = tool_belt.get_time_stamp()
+    # Measure the optical powers
+    ret_vals = tool_belt.measure_g_r_y_power(nv_sig['am_589_power'], 
+                                             nv_sig['nd_filter'])
     
-    for p in range(len(readout_time_list)):
-        illumination_time = readout_time_list[p]
-        init_pulse_duration = nv_sig['pulsed_reionization_dur']
-        print('589 pulse length set to: ' + str(illumination_time/10**3) + ' us')
-        print('Measuring Green/Yellow')
-        bin_centers, binned_samples, illum_optical_power_mW = \
-                  time_resolved_readout.main(nv_sig, apd_indices, 
-                  illumination_time, init_pulse_duration,
-                  532, 589,
-                  num_reps, num_runs, num_bins, plot= False)
-        
-        integrated_counts = numpy.trapz(binned_samples, bin_centers)
-        g_y_counts_s_list.append(integrated_counts)
-        
-        init_pulse_duration = nv_sig['pulsed_reionization_dur']
-        print('Measuring Red/Yellow')
-        bin_centers, binned_samples, illum_optical_power_mW = time_resolved_readout.main(nv_sig, 
-                  apd_indices, illumination_time, init_pulse_duration,
-                  638, 589,
-                  num_reps, num_runs, num_bins, plot = False)
-        integrated_counts = numpy.trapz(binned_samples, bin_centers)
-        
-        r_y_counts_s_list.append(integrated_counts)
+    green_optical_power_pd, green_optical_power_mW, \
+                red_optical_power_pd, red_optical_power_mW, \
+                yellow_optical_power_pd, yellow_optical_power_mW = ret_vals
+    
+    for t in range(len(readout_time_list)):
+        illumination_time = readout_time_list[t]
+        nv_sig['pulsed_SCC_readout_dur'] = illumination_time
+        print(' \n589 pulse length set to: ' + str(illumination_time/10**6) + ' ms')
+        reion_count, ion_count =main_measurement(nv_sig, apd_indices, num_reps)
+                
+        g_y_counts_list.append(reion_count)        
+        r_y_counts_list.append(ion_count)
         
         #save data incrimentally
         raw_data = {'start_timestamp': start_timestamp,
@@ -160,13 +215,11 @@ def optimize_readout_time(nv_sig, apd_indices, num_reps, num_runs,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
                     'readout_time_list': readout_time_list,
                     'readout_time_list-units': 'ns',
-                    'num_bins': num_bins,
                     'num_reps': num_reps,
-                    'num_runs': num_runs,
-                    'g_y_counts_s_list': g_y_counts_s_list,
-                    'g_y_counts_s_list-units': 'counts*ns',
-                    'r_y_counts_s_list': r_y_counts_s_list,
-                    'r_y_counts_s_list-units': 'counts*ns'
+                    'g_y_counts_list': g_y_counts_list,
+                    'g_y_counts_list-units': 'counts*ns',
+                    'r_y_counts_list': r_y_counts_list,
+                    'r_y_counts_list-units': 'counts*ns'
                     }
         # This will continuously be the same file path so we will overwrite
         # the existing file with the latest version
@@ -174,7 +227,9 @@ def optimize_readout_time(nv_sig, apd_indices, num_reps, num_runs,
                                             nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(raw_data, file_path + 'opt_power')
         
-    difference = numpy.array(g_y_counts_s_list) - numpy.array(r_y_counts_s_list)
+    # Plot
+    SNR = (numpy.array(g_y_counts_list) - numpy.array(r_y_counts_list)) / \
+                numpy.sqrt(numpy.array(g_y_counts_list))
     text = 'Illumnation time: ' + '%.1f'%(illumination_time/10**3) + ' us'
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     
@@ -182,38 +237,44 @@ def optimize_readout_time(nv_sig, apd_indices, num_reps, num_runs,
 
     ax.text(0.55, 0.85, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
-    ax.plot(numpy.array(readout_time_list)/10**3, g_y_counts_s_list, 'g', label = 'Green/Yellow')
-    ax.plot(numpy.array(readout_time_list)/10**3, r_y_counts_s_list, 'r', label = 'Red/Yellow')
-    ax.set_xlabel('589 nm pulse duration (us)')
-    ax.set_ylabel('Area under time_resolved_readout curves (count*ns)')
+    ax.plot(numpy.array(readout_time_list)/10**6, g_y_counts_list, 'g', label = 'Green/Yellow')
+    ax.plot(numpy.array(readout_time_list)/10**6, r_y_counts_list, 'r', label = 'Red/Yellow')
+    ax.set_xlabel('589 nm pulse duration (ms)')
+    ax.set_ylabel('Counts')
     ax.legend()
     
-    dif_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+    snr_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
     ax.text(0.55, 0.85, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
-    ax.plot(numpy.array(readout_time_list)/10**3, difference)
-    ax.set_xlabel('589 nm pulse duration (us)')
-    ax.set_ylabel('Subtracted area under time_resolved_readout curves (counts*ns)')
+    ax.plot(numpy.array(readout_time_list)/10**6, SNR)
+    ax.set_xlabel('589 nm pulse duration (ms)')
+    ax.set_ylabel('SNR')
     
-    
+    # Save
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'green_optical_power_pd': green_optical_power_pd,
+                'green_optical_power_pd-units': 'V',
+                'green_optical_power_mW': green_optical_power_mW,
+                'green_optical_power_mW-units': 'mW',
+                'red_optical_power_pd': red_optical_power_pd,
+                'red_optical_power_pd-units': 'V',
+                'red_optical_power_mW': red_optical_power_mW,
+                'red_optical_power_mW-units': 'mW',
+                'num_reps': num_reps,
                 'readout_time_list': readout_time_list,
                 'readout_time_list-units': 'ns',
-                'num_bins': num_bins,
-                'num_reps': num_reps,
-                'num_runs': num_runs,
-                'g_y_counts_s_list': g_y_counts_s_list,
-                'g_y_counts_s_list-units': 'counts*ns',
-                'r_y_counts_s_list': r_y_counts_s_list,
-                'r_y_counts_s_list-units': 'counts*ns'
+                'g_y_counts_list': g_y_counts_list,
+                'g_y_counts_list-units': 'counts*ns',
+                'r_y_counts_list': r_y_counts_list,
+                'r_y_counts_list-units': 'counts*ns'
                 }
     
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(ind_fig, str(file_path + '-opt_length_ind_fig'))
-    tool_belt.save_figure(dif_fig, str(file_path + '-opt_length_dif_fig'))
+    tool_belt.save_figure(snr_fig, str(file_path + '-opt_length_snr_fig'))
     tool_belt.save_raw_data(raw_data, str(file_path + '-opt_length'))
     print('Run complete!')
     
@@ -226,7 +287,7 @@ if __name__ == '__main__':
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10**7, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 10**6, 'am_589_power': 0.5, 
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 10**6, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
@@ -235,15 +296,16 @@ if __name__ == '__main__':
     nv_sig = ensemble
     
     power_list = numpy.linspace(0.1, 0.7, 13).tolist()
-#    power_list = [0.35] # too many tags, G/Y, 4/1/20
-    num_runs = 10
-#    init_pulse_duration = 3*10**3
-#    init_pulse_duration = 500
-    
-#    illumination_time = 10*10**6    
-    num_reps = int(0.25*10**3)
-    num_bins = 1000
-    optimize_readout_power(nv_sig, apd_indices, num_reps, num_runs,
-                           num_bins, power_list)    
+#    power_list = [0.4, 0.6]
+#    num_runs = 10
+#    readout_time_list = [5*10**5, 10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
+#                         6*10**6, 7*10**6, 8*10**6, 9*10**6, 10**7]
+#    readout_time_list = [5*10**5, 10**6]
+    num_reps = 5*10**4
+#    num_bins = 1000
+#    readout_time_array =10**5 * numpy.linspace(1,9,9)
+
+    optimize_readout_power(nv_sig, apd_indices, num_reps, power_list)  
+#    optimize_readout_time(nv_sig, apd_indices, num_reps, readout_time_list)
   
     

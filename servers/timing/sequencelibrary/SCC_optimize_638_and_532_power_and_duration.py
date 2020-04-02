@@ -66,7 +66,7 @@ def get_seq(pulser_wiring, args):
     seq.setDigital(pulser_do_clock, train)
 
     # inital pulse
-    train = [ (init_laser_delay + initial_pulse_time, HIGH), (3*wait_time + test_pulse_time + readout_time, LOW), 
+    train = [ (init_laser_delay, LOW) , (initial_pulse_time, HIGH), (3*wait_time + test_pulse_time + readout_time, LOW), 
               (initial_pulse_time, HIGH), (3*wait_time + test_pulse_time + readout_time + clock_time, LOW)]
     if color_ind == 532:
         train.extend([(laser_638_delay, LOW)])

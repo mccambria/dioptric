@@ -273,7 +273,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
-
+#            print(taus[tau_ind])
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
 
@@ -290,7 +290,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-            print(new_counts)
+#            print(len(new_counts[0]))
 
             sample_counts = new_counts[0]
 
