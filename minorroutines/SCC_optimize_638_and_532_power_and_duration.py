@@ -219,7 +219,7 @@ if __name__ == '__main__':
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 10**7, 'am_589_power': 0.25, 
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 10**6, 'cobalt_532_power': 8, 
+            'pulsed_reionization_dur': 10**7, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}  
@@ -228,9 +228,10 @@ if __name__ == '__main__':
     # TEST PULSE LISTS
     
 #    test_pulse_length = 10**4 # ns
-#    test_pulse_dur_list = numpy.linspace(100, 600, 6) # Red
-    test_pulse_dur_list = [5*10**2, 10**3, 10**4, 10**5, 1*10**6, 5*10**6, 10**7, 5*10**7]
+    test_pulse_dur_list = numpy.linspace(100, 600, 6) # Red
+#    test_pulse_dur_list = [5*10**2, 10**3, 10**4, 10**5, 1*10**6, 3*10**6, 5*10**6, 
+#                           10**7, 2*10**7, 3*10**7, 4*10**7, 5*10**7]
     
     # Run the program
-    test_pulse_color_ind = 532
+    test_pulse_color_ind = 638
     optimize_pulse_length(nv_sig, test_pulse_dur_list, test_pulse_color_ind)

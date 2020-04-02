@@ -403,16 +403,11 @@ def do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices):
     
     determine_n_thresh.main(nv_sig, apd_indices, aom_ao_589_pwr, readout_time, num_runs, num_reps)
     
-def do_determine_n_thresh_with_638(nv_sig, aom_ao_589_pwr, ao_638_pwr, 
-                                   readout_time, apd_indices):
+def do_determine_n_thresh_with_638(nv_sig, apd_indices):
     
-    num_runs = 1
-    num_reps = 10**3
-#    ionization_time = 10**6 # Green
-    ionization_time = 200 # Red
+    num_reps = 500
     
-    determine_n_thresh_with_638.main(nv_sig, apd_indices, aom_ao_589_pwr, 
-                ao_638_pwr, readout_time, ionization_time, num_runs, num_reps)
+    determine_n_thresh_with_638.main(nv_sig, apd_indices, num_reps)
     
 def do_time_resolved_readout(nv_sig, apd_indices,
                                  init_color_ind, illum_color_ind):
@@ -472,12 +467,12 @@ if __name__ == '__main__':
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10**7, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 10**7, 'am_589_power': 0.25, 
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 10**6, 'cobalt_532_power': 8, 
+            'pulsed_reionization_dur': 10**7, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
+            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}  
   
     nv_sig_list = [ensemble]
     
@@ -524,8 +519,7 @@ if __name__ == '__main__':
             
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
-#            do_determine_n_thresh_with_638(nv_sig, aom_ao_589_pwr, ao_638_pwr, 
-#                                   readout_time, apd_indices)
+            do_determine_n_thresh_with_638(nv_sig, apd_indices)
 #            for p in range(len(aom_ao_589_pwr_list)):
 #                aom_ao_589_pwr = aom_ao_589_pwr_list[p]
 #                print(aom_ao_589_pwr)
@@ -558,7 +552,7 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
-            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
+#            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
 #            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 300])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
