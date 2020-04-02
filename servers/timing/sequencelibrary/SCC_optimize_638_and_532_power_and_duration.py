@@ -24,7 +24,7 @@ def get_seq(pulser_wiring, args):
     readout_time = numpy.int64(readout_time)
     initial_pulse_time = numpy.int64(initial_pulse_time)
     test_pulse_time = numpy.int64(test_pulse_time)
-    clock_time = 100
+#    clock_time = 100
     
     total_laser_delay = laser_515_delay + aom_589_delay + laser_638_delay
     # Test period
@@ -60,14 +60,14 @@ def get_seq(pulser_wiring, args):
              (initial_pulse_time + test_pulse_time + 3*wait_time, LOW), (readout_time, HIGH), (wait_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
-    #clock pulse
-    train = [(total_laser_delay + initial_pulse_time + test_pulse_time + readout_time + 3*wait_time - clock_time, LOW), (clock_time, HIGH), 
-             ( initial_pulse_time + test_pulse_time + readout_time + 3*wait_time - clock_time, LOW), (clock_time, HIGH), (100, LOW)]
-    seq.setDigital(pulser_do_clock, train)
+#    #clock pulse
+#    train = [(total_laser_delay + initial_pulse_time + test_pulse_time + readout_time + 3*wait_time - clock_time, LOW), (clock_time, HIGH), 
+#             ( initial_pulse_time + test_pulse_time + readout_time + 3*wait_time - clock_time, LOW), (clock_time, HIGH), (100, LOW)]
+#    seq.setDigital(pulser_do_clock, train)
 
     # inital pulse
     train = [ (init_laser_delay, LOW) , (initial_pulse_time, HIGH), (3*wait_time + test_pulse_time + readout_time, LOW), 
-              (initial_pulse_time, HIGH), (3*wait_time + test_pulse_time + readout_time + clock_time, LOW)]
+              (initial_pulse_time, HIGH), (3*wait_time + test_pulse_time + readout_time, LOW)]
     if color_ind == 532:
         train.extend([(laser_638_delay, LOW)])
     if color_ind == 638:
@@ -90,7 +90,7 @@ def get_seq(pulser_wiring, args):
     
 
     
-    final_digital = []
+    final_digital = [pulser_do_clock]
     final = OutputState(final_digital, 0.0, 0.0)
 
     return seq, final, [period]

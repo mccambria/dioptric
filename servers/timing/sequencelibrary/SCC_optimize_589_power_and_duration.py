@@ -32,7 +32,7 @@ def get_seq(pulser_wiring, args):
     
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_indices)]
-#    pulser_do_clock = pulser_wiring['do_sample_clock']
+    pulser_do_clock = pulser_wiring['do_sample_clock']
     pulser_do_532_aom = pulser_wiring['do_532_aom']
     pulser_ao_589_aom = pulser_wiring['ao_589_aom']
     pulser_do_638_aom = pulser_wiring['do_638_laser']
@@ -81,7 +81,7 @@ def get_seq(pulser_wiring, args):
     
 
     
-    final_digital = [pulser_wiring['do_sample_clock']]
+    final_digital = [pulser_do_clock]
     final = OutputState(final_digital, 0.0, 0.0)
 
     return seq, final, [period]

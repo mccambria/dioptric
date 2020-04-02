@@ -123,9 +123,9 @@ def optimize_readout_power(nv_sig, apd_indices, num_reps, yellow_power_list):
                     '589_power_list': yellow_power_list,
                     'num_reps': num_reps,
                     'g_y_counts_list': g_y_counts_list,
-                    'g_y_counts_list-units': 'counts*ns',
+                    'g_y_counts_list-units': 'counts',
                     'r_y_counts_list': r_y_counts_list,
-                    'r_y_counts_list-units': 'counts*ns',
+                    'r_y_counts_list-units': 'counts',
                     'power_list': power_list,
                     'power_list-units': 'mW'
                     }
@@ -143,8 +143,8 @@ def optimize_readout_power(nv_sig, apd_indices, num_reps, yellow_power_list):
                       'Num_reps: {}'.format(num_reps)))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     
-    ind_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-
+    fig, axes = plt.subplots(1,2, figsize = (17, 8.5))
+    ax = axes[0]
     ax.text(0.55, 0.85, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
     ax.plot(power_list, g_y_counts_list, 'g', label = 'Green/Yellow')
@@ -153,7 +153,7 @@ def optimize_readout_power(nv_sig, apd_indices, num_reps, yellow_power_list):
     ax.set_ylabel('Counts')
     ax.legend()
     
-    snr_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+    ax = axes[1]
     ax.text(0.55, 0.85, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
     ax.plot(power_list, SNR)
@@ -180,12 +180,14 @@ def optimize_readout_power(nv_sig, apd_indices, num_reps, yellow_power_list):
                 'g_y_counts_list': g_y_counts_list,
                 'g_y_counts_list-units': 'counts',
                 'r_y_counts_list': r_y_counts_list,
-                'r_y_counts_list-units': 'counts'
+                'r_y_counts_list-units': 'counts',
+                'SNR': SNR,
+                'SNR-units': 'arb'
                 }
     
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_figure(ind_fig, str(file_path + '-opt_power_ind_fig'))
-    tool_belt.save_figure(snr_fig, str(file_path + '-opt_power_snr_fig'))
+    tool_belt.save_figure(fig, str(file_path + '-opt_power'))
+#    tool_belt.save_figure(snr_fig, str(file_path + '-opt_power_snr_fig'))
     tool_belt.save_raw_data(raw_data, str(file_path + '-opt_power'))
     print('Run complete!')
     
@@ -220,9 +222,9 @@ def optimize_readout_time(nv_sig, apd_indices, num_reps, readout_time_list):
                     'readout_time_list-units': 'ns',
                     'num_reps': num_reps,
                     'g_y_counts_list': g_y_counts_list,
-                    'g_y_counts_list-units': 'counts*ns',
+                    'g_y_counts_list-units': 'counts',
                     'r_y_counts_list': r_y_counts_list,
-                    'r_y_counts_list-units': 'counts*ns'
+                    'r_y_counts_list-units': 'counts'
                     }
         # This will continuously be the same file path so we will overwrite
         # the existing file with the latest version
@@ -236,20 +238,21 @@ def optimize_readout_time(nv_sig, apd_indices, num_reps, readout_time_list):
     text = 'Illumination time: ' + '%.1f'%(illumination_time/10**3) + ' us'
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     
-    ind_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+    fig, axes = plt.subplots(1,2, figsize = (17, 8.5))
+    ax = axes[0]
 
     ax.text(0.55, 0.85, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
-    ax.plot(numpy.array(readout_time_list)/10**6, g_y_counts_list, 'g', label = 'Green/Yellow')
-    ax.plot(numpy.array(readout_time_list)/10**6, r_y_counts_list, 'r', label = 'Red/Yellow')
+    ax.plot(numpy.array(readout_time_list)/10**6, g_y_counts_list, 'go', label = 'Green/Yellow')
+    ax.plot(numpy.array(readout_time_list)/10**6, r_y_counts_list, 'ro', label = 'Red/Yellow')
     ax.set_xlabel('589 nm pulse duration (ms)')
     ax.set_ylabel('Counts')
     ax.legend()
     
-    snr_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+    ax = axes[1]
     ax.text(0.55, 0.85, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
-    ax.plot(numpy.array(readout_time_list)/10**6, SNR)
+    ax.plot(numpy.array(readout_time_list)/10**6, SNR, 'yo')
     ax.set_xlabel('589 nm pulse duration (ms)')
     ax.set_ylabel('SNR')
     
@@ -270,14 +273,16 @@ def optimize_readout_time(nv_sig, apd_indices, num_reps, readout_time_list):
                 'readout_time_list': readout_time_list,
                 'readout_time_list-units': 'ns',
                 'g_y_counts_list': g_y_counts_list,
-                'g_y_counts_list-units': 'counts*ns',
+                'g_y_counts_list-units': 'counts',
                 'r_y_counts_list': r_y_counts_list,
-                'r_y_counts_list-units': 'counts*ns'
+                'r_y_counts_list-units': 'counts',
+                'SNR': SNR,
+                'SNR-units': 'arb'
                 }
     
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_figure(ind_fig, str(file_path + '-opt_length_ind_fig'))
-    tool_belt.save_figure(snr_fig, str(file_path + '-opt_length_snr_fig'))
+    tool_belt.save_figure(fig, str(file_path + '-opt_length'))
+#    tool_belt.save_figure(snr_fig, str(file_path + '-opt_length_snr_fig'))
     tool_belt.save_raw_data(raw_data, str(file_path + '-opt_length'))
     print('Run complete!')
     
