@@ -24,7 +24,6 @@ def get_seq(pulser_wiring, args):
     readout_time = numpy.int64(readout_time)
     reionization_time = numpy.int64(reionization_time)
     ionization_time = numpy.int64(ionization_time)
-    clock_time = 100
     
     total_laser_delay = laser_515_delay + aom_589_delay + laser_638_delay
     # Test period

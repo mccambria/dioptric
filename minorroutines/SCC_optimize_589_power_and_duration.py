@@ -71,17 +71,17 @@ def main_measurement_w_cxn(cxn, nv_sig, apd_indices, num_reps):
     
     new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
 
-    print(new_counts)
+#    print(new_counts)
     sample_counts = new_counts[0]
-    print(len(sample_counts))
+#    print(len(sample_counts))
     
     # Counts w/out red are even - get every second element starting from 0
     reion_gate_counts = sample_counts[0::2]
-    reion_count = int(numpy.average(reion_gate_counts))
+    reion_count = int(sum(reion_gate_counts))
 
     # Counts w/ red are odd - sample_counts every second element starting from 1
     ion_gate_counts = sample_counts[1::2]
-    ion_count = int(numpy.average(ion_gate_counts))
+    ion_count = int(sum(ion_gate_counts))
     
     cxn.apd_tagger.stop_tag_stream()
     
@@ -139,7 +139,8 @@ def optimize_readout_power(nv_sig, apd_indices, num_reps, yellow_power_list):
     # Plot
     SNR = (numpy.array(g_y_counts_list) - numpy.array(r_y_counts_list)) / \
                 numpy.sqrt(numpy.array(g_y_counts_list))
-    text = 'Illumnation time: ' + '%.1f'%(nv_sig['pulsed_SCC_readout_dur']/10**3) + ' us'
+    text = '\n'.join(('Illumination time: ' + '%.1f'%(nv_sig['pulsed_SCC_readout_dur']/10**3) + ' us',
+                      'Num_reps: {}'.format(num_reps)))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     
     ind_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
@@ -232,7 +233,7 @@ def optimize_readout_time(nv_sig, apd_indices, num_reps, readout_time_list):
     # Plot
     SNR = (numpy.array(g_y_counts_list) - numpy.array(r_y_counts_list)) / \
                 numpy.sqrt(numpy.array(g_y_counts_list))
-    text = 'Illumnation time: ' + '%.1f'%(illumination_time/10**3) + ' us'
+    text = 'Illumination time: ' + '%.1f'%(illumination_time/10**3) + ' us'
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     
     ind_fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
@@ -287,9 +288,9 @@ if __name__ == '__main__':
     sample_name = 'hopper'
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10**6, 'am_589_power': 0.5, 
+            'pulsed_SCC_readout_dur': 10**7, 'am_589_power': 0.25, 
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 10**6, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
@@ -297,17 +298,20 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
     nv_sig = ensemble
     
-#    power_list = numpy.linspace(0.1, 0.7, 13).tolist()
-    power_list = [0.4]
+    power_list = numpy.linspace(0.1, 0.7, 13).tolist()
+#    power_list = [0.4]
 #    num_runs = 10
 #    readout_time_list = [5*10**5, 10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
 #                         6*10**6, 7*10**6, 8*10**6, 9*10**6, 10**7]
 #    readout_time_list = [5*10**5, 10**6]
 #    num_reps = 5*10**4
-    num_reps = 10**3
-#    readout_time_array =10**5 * numpy.linspace(1,9,9)
-
+    num_reps = 500
+    
+#    readout_time_array =10**5 * numpy.linspace(1,10,10)
+#    for readout_time in readout_time_array:
+#        nv_sig['pulsed_SCC_readout_dur'] = readout_time
     optimize_readout_power(nv_sig, apd_indices, num_reps, power_list)  
+    
 #    optimize_readout_time(nv_sig, apd_indices, num_reps, readout_time_list)
   
     
