@@ -69,16 +69,18 @@ def main_measurement_w_cxn(cxn, nv_sig, apd_indices, num_reps):
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
     
-    new_counts = cxn.apd_tagger.read_counter_separate_gates(num_reps)
-#    print(len(new_counts))
-#    sample_counts = new_counts[0]
+    new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+
+    print(new_counts)
+    sample_counts = new_counts[0]
+    print(len(sample_counts))
     
     # Counts w/out red are even - get every second element starting from 0
-    reion_gate_counts = new_counts[0::2]
+    reion_gate_counts = sample_counts[0::2]
     reion_count = int(numpy.average(reion_gate_counts))
 
     # Counts w/ red are odd - sample_counts every second element starting from 1
-    ion_gate_counts = new_counts[1::2]
+    ion_gate_counts = sample_counts[1::2]
     ion_count = int(numpy.average(ion_gate_counts))
     
     cxn.apd_tagger.stop_tag_stream()
@@ -295,14 +297,14 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
     nv_sig = ensemble
     
-    power_list = numpy.linspace(0.1, 0.7, 13).tolist()
-#    power_list = [0.4, 0.6]
+#    power_list = numpy.linspace(0.1, 0.7, 13).tolist()
+    power_list = [0.4]
 #    num_runs = 10
 #    readout_time_list = [5*10**5, 10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
 #                         6*10**6, 7*10**6, 8*10**6, 9*10**6, 10**7]
 #    readout_time_list = [5*10**5, 10**6]
-    num_reps = 5*10**4
-#    num_bins = 1000
+#    num_reps = 5*10**4
+    num_reps = 10**3
 #    readout_time_array =10**5 * numpy.linspace(1,9,9)
 
     optimize_readout_power(nv_sig, apd_indices, num_reps, power_list)  
