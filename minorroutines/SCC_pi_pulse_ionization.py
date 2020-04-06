@@ -11,6 +11,7 @@ import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
 import os
+import json
 import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
@@ -33,6 +34,36 @@ def get_Probability_distribution(aList):
 
     return unique_value, relative_frequency
 
+
+def calc_snr(sig_count, ref_count):
+            
+    dif = numpy.array(ref_count) - numpy.array(sig_count)
+    noise = numpy.sqrt(ref_count)
+    snr = dif / noise
+    snr = numpy.average(snr)
+    return snr
+
+def plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, snr_list):
+     fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
+     ax = axes[0]
+     ax.plot(test_pulse_dur_list / 10**3, sig_counts_avg, 'ro', 
+            label = 'W/ pi-pulse')
+     ax.plot(test_pulse_dur_list / 10**3, ref_counts_avg, 'ko', 
+            label = 'W/out pi-pulse')
+     ax.set_xlabel('Test pulse length (us)')
+     ax.set_ylabel('Counts')
+     ax.set_title('Sweep pusle length for 638 nm')
+     ax.legend()
+    
+     ax = axes[1]    
+     ax.plot(test_pulse_dur_list / 10**3, snr_list, 'ro')
+     ax.set_xlabel('Test pulse length (us)')
+     ax.set_ylabel('SNR')
+     ax.set_title('Sweep pusle length for 638 nm')
+    
+     return fig
+ 
+
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
 def main(nv_sig, apd_indices, num_reps, state, plot = True):
@@ -53,6 +84,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     nd_filter = nv_sig['nd_filter']
     ionization_time = nv_sig['pulsed_ionization_dur']
     reionization_time = nv_sig['pulsed_reionization_dur']
+    shelf_time = 100
     
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
@@ -79,7 +111,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 # Estimate the lenth of the sequance            
     file_name = os.path.basename(__file__)
     seq_args = [readout_time, reionization_time, ionization_time, uwave_pi_pulse,
-        wait_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
+        shelf_time , wait_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
         apd_indices[0], aom_ao_589_pwr,  state.value]
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -111,7 +143,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     cxn.apd_tagger.start_tag_stream(apd_indices)
 
     seq_args = [readout_time, reionization_time, ionization_time, uwave_pi_pulse,
-        wait_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
+        shelf_time, wait_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
         apd_indices[0], aom_ao_589_pwr,  state.value]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
@@ -155,7 +187,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         ax2.set_xlabel('Rep number')
         ax2.set_ylabel('photon counts (kcps)')
         ax2.legend()
-    
+        
+        timestamp = tool_belt.get_time_stamp()
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+        tool_belt.save_figure(fig, file_path + '-red_pulse_dur-dist')  
+        tool_belt.save_figure(fig2, file_path + '-red_pulse_dur-counts')  
+        
     return sig_counts, ref_counts
 
 # %%
@@ -167,7 +204,7 @@ def optimize_ion_pulse_length(nv_sig):
     '''
     apd_indices = [0]
     num_reps = 10**3
-    test_pulse_dur_list = numpy.linspace(0,600,7)
+    test_pulse_dur_list = numpy.linspace(0,1500,16)
 #    test_pulse_dur_list = numpy.linspace(0,100,2)
     
     # measure laser powers:
@@ -195,32 +232,14 @@ def optimize_ion_pulse_length(nv_sig):
         sig_count_raw.append(sig_count)
         ref_count_raw.append(ref_count)
         
-        dif = abs(numpy.array(ref_count) - numpy.array(sig_count))
-        noise = numpy.sqrt(ref_count)
-        snr = dif / noise
-        avg_snr = numpy.average(snr)
+        avg_snr = calc_snr(sig_count, ref_count)
         
         sig_counts_avg.append(numpy.average(sig_count))
         ref_counts_avg.append(numpy.average(ref_count))
         snr_list.append(avg_snr)
  
-    fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
-    ax = axes[0]
-    ax.plot(test_pulse_dur_list / 10**3, sig_counts_avg, 'ro', 
-            label = 'W/ pi-pulse')
-    ax.plot(test_pulse_dur_list / 10**3, ref_counts_avg, 'ko', 
-            label = 'W/out pi-pulse')
-    ax.set_xlabel('Test pulse length (us)')
-    ax.set_ylabel('Counts')
-    ax.set_title('Sweep pusle length for 638 nm')
-    ax.legend()
-    
-    ax = axes[1]    
-    ax.plot(test_pulse_dur_list / 10**3, snr_list, 'ro')
-    ax.set_xlabel('Test pulse length (us)')
-    ax.set_ylabel('SNR')
-    ax.set_title('Sweep pusle length for 638 nm')
-
+    #plot
+    fig = plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, snr_list)
     # Save
     
     timestamp = tool_belt.get_time_stamp()
@@ -283,4 +302,29 @@ if __name__ == '__main__':
     # Run the program
 #    optimize_ion_pulse_length(nv_sig)
     
-    sig_counts, ref_counts = main(nv_sig, apd_indices, 10**3, States.LOW)
+#    sig_counts, ref_counts = main(nv_sig, apd_indices, 10**3, States.LOW)
+    
+    # %% Replot data
+    directory = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/SCC_pi_pulse_ionization/'
+    folder= 'branch_Spin_to_charge/2020_04/'
+    
+    open_file_name = '2020_04_06-17_17_07-hopper-ensemble-red_pulse_dur'
+
+    # Open the specified file
+    with open(directory + folder + open_file_name + '.txt') as json_file:
+
+        # Load the data from the file
+        data = json.load(json_file)
+        sig_count_raw = data["sig_count_raw"]
+        ref_count_raw = data["ref_count_raw"]
+        sig_counts_avg = data["sig_counts_avg"]
+        ref_counts_avg = data["ref_counts_avg"]
+        test_pulse_dur_list = numpy.array(data["test_pulse_dur_list"])
+    snr_list = []
+    for i in range(len(test_pulse_dur_list)):
+        sig_count = sig_count_raw[i]
+        ref_count = ref_count_raw[i]
+        snr = calc_snr(sig_count, ref_count)
+        snr_list .append(snr)
+    plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, snr_list)
+    
