@@ -135,17 +135,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
     # Get the counts
     new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-    print(new_counts)
     
     sample_counts = new_counts[0]
-#    counts.extend(new_counts)
 
     cxn.apd_tagger.stop_tag_stream()
 
     sig_counts = sample_counts[0::2]
-    print(len(sig_counts))
     ref_counts = sample_counts[1::2]
-    print(len(ref_counts))
 
 #%% plot the data and the fit
 
