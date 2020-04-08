@@ -243,8 +243,11 @@ def optimize_initial_ion_pulse_length(nv_sig):
     '''
     apd_indices = [0]
     num_reps = 10**3
-    test_pulse_dur_list = numpy.linspace(0,100*10**3,11)
-#    test_pulse_dur_list = numpy.linspace(0,100,2)
+#    test_pulse_dur_list = numpy.linspace(0,10**6,11)
+    test_pulse_dur_list = numpy.array([0.,  10000.,  20000.,  30000.,  40000.,  50000.,  60000.,
+        70000.,  80000.,  90000., 100000.,
+        200000.,  300000.,  400000.,  500000.,
+        600000.,  700000.,  800000.,  900000., 1000000.])
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -614,12 +617,10 @@ if __name__ == '__main__':
             'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 10**7, 'am_589_power': 0.25, 
-            'pulsed_initial_ion_dur': 10**5,
+            'pulsed_initial_ion_dur': 200*10**3,
             'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
             'pulsed_ionization_dur': 800, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 3*10**3,
-            #10**7, 
-            'cobalt_532_power': 8, 
+            'pulsed_reionization_dur': 3*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}  
