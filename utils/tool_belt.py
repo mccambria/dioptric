@@ -360,6 +360,25 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
                 amp_1 * numpy.cos(two_pi * freq_1 * t) +
                 amp_2 * numpy.cos(two_pi * freq_2 * t) +
                 amp_3 * numpy.cos(two_pi * freq_3 * t))
+    
+def calc_snr(sig_count, ref_count):
+    '''
+    Take a list of signal and reference counts, and take their average, then 
+    calculate a snr.
+    inputs:
+        sig_count = list
+        ref_counts = list
+    outputs:
+        snr = list
+    '''    
+    
+    sig_count_avg = numpy.average(sig_count)
+    ref_count_avg = numpy.average(ref_count)
+    dif = sig_count_avg - ref_count_avg
+    noise = numpy.sqrt(ref_count_avg)
+    snr = dif / noise
+    
+    return snr
 
 
 # %% LabRAD utils

@@ -120,7 +120,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 def optimize_pulse_length(nv_sig, test_pulse_dur_list, test_pulse_color_ind):
     apd_indices = [0]
-    num_reps = 500
+    num_reps = 1000
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -233,5 +233,5 @@ if __name__ == '__main__':
 #                           10**7, 2*10**7, 3*10**7, 4*10**7, 5*10**7]
     
     # Run the program
-    test_pulse_color_ind = 638
+    test_pulse_color_ind = 532
     optimize_pulse_length(nv_sig, test_pulse_dur_list, test_pulse_color_ind)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Mar 30 20:40:44 2020
+4/8/20 includes initial red ionization pulse
 
 @author: agardill
 """
@@ -17,18 +18,18 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    readout_time, initial_pulse_time, test_pulse_time, \
+    readout_time, init_ion_pulse_time, initial_pulse_time, test_pulse_time, \
             wait_time, laser_515_delay, aom_589_delay, laser_638_delay, \
             apd_indices, aom_ao_589_pwr, color_ind = args
 
     readout_time = numpy.int64(readout_time)
+    init_ion_pulse_time = numpy.int64(init_ion_pulse_time)
     initial_pulse_time = numpy.int64(initial_pulse_time)
     test_pulse_time = numpy.int64(test_pulse_time)
-#    clock_time = 100
     
     total_laser_delay = laser_515_delay + aom_589_delay + laser_638_delay
     # Test period
-    period =  total_laser_delay + (initial_pulse_time + test_pulse_time + \
+    period =  total_laser_delay + (init_ion_pulse_time + initial_pulse_time + test_pulse_time + \
                            readout_time + 3 * wait_time)*2
     
     # Get what we need out of the wiring dictionary
@@ -38,16 +39,16 @@ def get_seq(pulser_wiring, args):
     pulser_ao_589_aom = pulser_wiring['ao_589_aom']
     pulser_do_638_aom = pulser_wiring['do_638_laser']
     
-    if color_ind == 532:
-        init_laser_delay = laser_515_delay + aom_589_delay
-        test_laser_delay = aom_589_delay + laser_638_delay
-        init_channel = pulser_do_638_aom
-        test_channel = pulser_do_532_aom
-    elif color_ind == 638:
-        init_laser_delay = laser_638_delay + aom_589_delay
-        test_laser_delay = aom_589_delay + laser_515_delay
-        init_channel = pulser_do_532_aom
-        test_channel = pulser_do_638_aom
+#    if color_ind == 532:
+#        init_laser_delay = laser_515_delay + aom_589_delay
+#        test_laser_delay = aom_589_delay + laser_638_delay
+#        init_channel = pulser_do_638_aom
+#        test_channel = pulser_do_532_aom
+#    elif color_ind == 638:
+#        init_laser_delay = laser_638_delay + aom_589_delay
+#        test_laser_delay = aom_589_delay + laser_515_delay
+#        init_channel = pulser_do_532_aom
+#        test_channel = pulser_do_638_aom
 
     # Make sure the ao_aom voltage to the 589 aom is within 0 and 1 V
     tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
@@ -56,36 +57,52 @@ def get_seq(pulser_wiring, args):
 
 
     #collect photons for certain timewindow tR in APD
-    train = [(total_laser_delay + initial_pulse_time + test_pulse_time +  2*wait_time, LOW), (readout_time, HIGH),
-             (initial_pulse_time + test_pulse_time + 3*wait_time, LOW), (readout_time, HIGH), (wait_time, LOW)]
+    train = [(total_laser_delay + init_ion_pulse_time + initial_pulse_time + test_pulse_time +  3*wait_time, LOW), 
+             (readout_time, HIGH),
+             (init_ion_pulse_time + initial_pulse_time + test_pulse_time + 4*wait_time, LOW), 
+             (readout_time, HIGH), (wait_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
-#    #clock pulse
-#    train = [(total_laser_delay + initial_pulse_time + test_pulse_time + readout_time + 3*wait_time - clock_time, LOW), (clock_time, HIGH), 
-#             ( initial_pulse_time + test_pulse_time + readout_time + 3*wait_time - clock_time, LOW), (clock_time, HIGH), (100, LOW)]
-#    seq.setDigital(pulser_do_clock, train)
-
-    # inital pulse
-    train = [ (init_laser_delay, LOW) , (initial_pulse_time, HIGH), (3*wait_time + test_pulse_time + readout_time, LOW), 
-              (initial_pulse_time, HIGH), (3*wait_time + test_pulse_time + readout_time, LOW)]
+    # if test pulse = 532 (green pulse w/ and w/out)
     if color_ind == 532:
-        train.extend([(laser_638_delay, LOW)])
-    if color_ind == 638:
-        train.extend([(laser_515_delay, LOW)])       
-    seq.setDigital(init_channel, train)
+        # red pulse is initial
+        train = [(laser_515_delay + aom_589_delay, LOW), (init_ion_pulse_time, HIGH),
+                 (wait_time, LOW), (initial_pulse_time, HIGH), 
+                 (3*wait_time + test_pulse_time + readout_time, LOW), 
+                 (init_ion_pulse_time, HIGH), (wait_time, LOW), 
+                 (initial_pulse_time, HIGH), 
+                 (3*wait_time + test_pulse_time + readout_time + laser_638_delay, LOW)]
+        seq.setDigital(pulser_do_638_aom, train)
+        
+        # green pulse is test
+        train = [(aom_589_delay + laser_638_delay + init_ion_pulse_time + initial_pulse_time + 2*wait_time, LOW), 
+                 (test_pulse_time, HIGH), 
+                 (6*wait_time + init_ion_pulse_time + initial_pulse_time + 2*readout_time + test_pulse_time + laser_515_delay, LOW)]       
+        seq.setDigital(pulser_do_532_aom, train)
  
-    # test pulse
-    train = [(test_laser_delay + initial_pulse_time+ wait_time, LOW), (test_pulse_time, HIGH), \
-             (5*wait_time + initial_pulse_time + 2*readout_time + test_pulse_time, LOW)]
-    if color_ind == 532:
-        train.extend([(laser_515_delay, LOW)])
-    if color_ind == 638:
-        train.extend([(laser_638_delay, LOW)])
-    seq.setDigital(test_channel, train)
+    # if test pulse = 638 (red pulse w/ and w/out)
+    elif color_ind == 638:
+        # green pulse is initial
+        train = [(laser_638_delay + aom_589_delay + init_ion_pulse_time + wait_time, LOW),
+                 (initial_pulse_time, HIGH), 
+                 (4*wait_time + test_pulse_time + readout_time + init_ion_pulse_time, LOW), 
+                 (initial_pulse_time, HIGH), 
+                 (3*wait_time + test_pulse_time + readout_time + laser_515_delay, LOW)]
+        seq.setDigital(pulser_do_532_aom, train)
+    
+        # red pulse is test
+        train = [(aom_589_delay + laser_515_delay, LOW), (init_ion_pulse_time, HIGH),
+                 (initial_pulse_time + 2*wait_time, LOW), 
+                 (test_pulse_time, HIGH), 
+                 (2*wait_time + readout_time, LOW), (init_ion_pulse_time, HIGH),
+                 (4*wait_time + initial_pulse_time + readout_time + test_pulse_time + laser_638_delay, LOW)]       
+        seq.setDigital(pulser_do_638_aom, train)
     
     # readout with 589
-    train = [(laser_515_delay + laser_638_delay + initial_pulse_time + test_pulse_time +  2*wait_time, LOW), (readout_time, aom_ao_589_pwr),
-             (initial_pulse_time + test_pulse_time + 3*wait_time, LOW), (readout_time, aom_ao_589_pwr), (wait_time + aom_589_delay, LOW)]
+    train = [(laser_515_delay + laser_638_delay + init_ion_pulse_time + initial_pulse_time + test_pulse_time +  3*wait_time, LOW), 
+             (readout_time, aom_ao_589_pwr),
+             (init_ion_pulse_time + initial_pulse_time + test_pulse_time + 4*wait_time, LOW), 
+             (readout_time, aom_ao_589_pwr), (wait_time + aom_589_delay, LOW)]
     seq.setAnalog(pulser_ao_589_aom, train) 
     
 
@@ -105,6 +122,6 @@ if __name__ == '__main__':
                'ao_638_laser': 1,
                'do_638_laser': 7             }
 
-    args = [1000, 100, 200, 100, 0, 0, 0, 0, 0.7,  638]
+    args = [1000,500, 100, 200, 100, 0, 0, 0, 0, 0.7,  532]
     seq, final, _ = get_seq(wiring, args)
     seq.plot()
