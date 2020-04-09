@@ -13,7 +13,6 @@ I have also included the initial long ionization pulse in the sequence.
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-import os
 import matplotlib.pyplot as plt
 import labrad
 
@@ -72,11 +71,12 @@ def plot_power_sweep(power_list, sig_counts_avg, ref_counts_avg, snr_list, title
   
     return fig
 
-def compile_raw_data_lenght_sweep(nv_sig, green_optical_power_pd, green_optical_power_mW, 
+def compile_raw_data_length_sweep(nv_sig, green_optical_power_pd, green_optical_power_mW, 
                      red_optical_power_pd, red_optical_power_mW, yellow_optical_power_pd, 
                      yellow_optical_power_mW, test_pulse_dur_list, num_reps, 
                      sig_count_raw, ref_count_raw, sig_counts_avg, snr_list):
-    
+    if type(test_pulse_dur_list) == list:
+        test_pulse_dur_list.tolist()
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
@@ -95,6 +95,47 @@ def compile_raw_data_lenght_sweep(nv_sig, green_optical_power_pd, green_optical_
             'yellow_optical_power_mW-units': 'mW',
             'test_pulse_dur_list': test_pulse_dur_list,
             'test_pulse_dur_list-units': 'ns',
+            'num_reps':num_reps,
+            'sig_count_raw': sig_count_raw,
+            'sig_count_raw-units': 'counts',
+            'ref_count_raw': ref_count_raw,
+            'ref_count_raw-units': 'counts',            
+            'sig_counts_avg': sig_counts_avg,
+            'sig_counts_avg-units': 'counts',
+            'sig_counts_avg': sig_counts_avg,
+            'sig_counts_avg-units': 'counts',
+            'snr_list': snr_list,
+            'snr_list-units': 'arb'
+            }
+    return timestamp, raw_data
+
+def compile_raw_data_power_sweep(nv_sig, green_optical_power_pd, green_optical_power_mW, 
+                     red_optical_power_pd, red_optical_power_mW, yellow_optical_power_pd, 
+                     yellow_optical_power_mW, power_list, optical_power_list, num_reps, 
+                     sig_count_raw, ref_count_raw, sig_counts_avg, snr_list):
+    if type(power_list) == list:
+        power_list.tolist()
+        
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'power_list': power_list,
+            'power_list-units': '0-1 V',
+            'optical_power_list': optical_power_list,
+            'optical_power_list-units': 'mW',
             'num_reps':num_reps,
             'sig_count_raw': sig_count_raw,
             'sig_count_raw-units': 'counts',
@@ -236,43 +277,12 @@ def optimize_reion_pulse_length(nv_sig, test_pulse_dur_list = None):
     fig = plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, 
                           snr_list, title)
     # Save
-    timestamp, raw_data = compile_raw_data_lenght_sweep(nv_sig, 
+    timestamp, raw_data = compile_raw_data_length_sweep(nv_sig, 
                      green_optical_power_pd, green_optical_power_mW, 
                      red_optical_power_pd, red_optical_power_mW, 
                      yellow_optical_power_pd, yellow_optical_power_mW, 
                      test_pulse_dur_list, num_reps, 
                      sig_count_raw, ref_count_raw, sig_counts_avg, snr_list)
-    
-    timestamp = tool_belt.get_time_stamp()
-    raw_data = {'timestamp': timestamp,
-            'nv_sig': nv_sig,
-            'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'green_optical_power_pd': green_optical_power_pd,
-            'green_optical_power_pd-units': 'V',
-            'green_optical_power_mW': green_optical_power_mW,
-            'green_optical_power_mW-units': 'mW',
-            'red_optical_power_pd': red_optical_power_pd,
-            'red_optical_power_pd-units': 'V',
-            'red_optical_power_mW': red_optical_power_mW,
-            'red_optical_power_mW-units': 'mW',
-            'yellow_optical_power_pd': yellow_optical_power_pd,
-            'yellow_optical_power_pd-units': 'V',
-            'yellow_optical_power_mW': yellow_optical_power_mW,
-            'yellow_optical_power_mW-units': 'mW',
-            'test_pulse_dur_list': test_pulse_dur_list,
-            'test_pulse_dur_list-units': 'ns',
-            'num_reps':num_reps,
-            'sig_count_raw': sig_count_raw,
-            'sig_count_raw-units': 'counts',
-            'ref_count_raw': ref_count_raw,
-            'ref_count_raw-units': 'counts',            
-            'sig_counts_avg': sig_counts_avg,
-            'sig_counts_avg-units': 'counts',
-            'sig_counts_avg': sig_counts_avg,
-            'sig_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
-            }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path + '-reion_pulse_dur')
@@ -339,36 +349,12 @@ def optimize_init_ion_and_reion_pulse_length(nv_sig, test_pulse_dur_list = None)
                           snr_list, title)
 
     # Save
-    timestamp = tool_belt.get_time_stamp()
-    raw_data = {'timestamp': timestamp,
-            'nv_sig': nv_sig,
-            'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'green_optical_power_pd': green_optical_power_pd,
-            'green_optical_power_pd-units': 'V',
-            'green_optical_power_mW': green_optical_power_mW,
-            'green_optical_power_mW-units': 'mW',
-            'red_optical_power_pd': red_optical_power_pd,
-            'red_optical_power_pd-units': 'V',
-            'red_optical_power_mW': red_optical_power_mW,
-            'red_optical_power_mW-units': 'mW',
-            'yellow_optical_power_pd': yellow_optical_power_pd,
-            'yellow_optical_power_pd-units': 'V',
-            'yellow_optical_power_mW': yellow_optical_power_mW,
-            'yellow_optical_power_mW-units': 'mW',
-            'test_pulse_dur_list': test_pulse_dur_list,
-            'test_pulse_dur_list-units': 'ns',
-            'num_reps':num_reps,
-            'sig_count_raw': sig_count_raw,
-            'sig_count_raw-units': 'counts',
-            'ref_count_raw': ref_count_raw,
-            'ref_count_raw-units': 'counts',            
-            'sig_counts_avg': sig_counts_avg,
-            'sig_counts_avg-units': 'counts',
-            'sig_counts_avg': sig_counts_avg,
-            'sig_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
-            }
+    timestamp, raw_data = compile_raw_data_length_sweep(nv_sig, 
+                     green_optical_power_pd, green_optical_power_mW, 
+                     red_optical_power_pd, red_optical_power_mW, 
+                     yellow_optical_power_pd, yellow_optical_power_mW, 
+                     test_pulse_dur_list, num_reps, 
+                     sig_count_raw, ref_count_raw, sig_counts_avg, snr_list)
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path + '-init_ion_and_reion_pulse_dur')
@@ -426,36 +412,12 @@ def optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = None):
                           snr_list, title)
 
     # Save
-    timestamp = tool_belt.get_time_stamp()
-    raw_data = {'timestamp': timestamp,
-            'nv_sig': nv_sig,
-            'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'green_optical_power_pd': green_optical_power_pd,
-            'green_optical_power_pd-units': 'V',
-            'green_optical_power_mW': green_optical_power_mW,
-            'green_optical_power_mW-units': 'mW',
-            'red_optical_power_pd': red_optical_power_pd,
-            'red_optical_power_pd-units': 'V',
-            'red_optical_power_mW': red_optical_power_mW,
-            'red_optical_power_mW-units': 'mW',
-            'yellow_optical_power_pd': yellow_optical_power_pd,
-            'yellow_optical_power_pd-units': 'V',
-            'yellow_optical_power_mW': yellow_optical_power_mW,
-            'yellow_optical_power_mW-units': 'mW',
-            'test_pulse_dur_list': test_pulse_dur_list,
-            'test_pulse_dur_list-units': 'ns',
-            'num_reps':num_reps,
-            'sig_count_raw': sig_count_raw,
-            'sig_count_raw-units': 'counts',
-            'ref_count_raw': ref_count_raw,
-            'ref_count_raw-units': 'counts',            
-            'sig_counts_avg': sig_counts_avg,
-            'sig_counts_avg-units': 'counts',
-            'sig_counts_avg': sig_counts_avg,
-            'sig_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
-            }
+    timestamp, raw_data = compile_raw_data_length_sweep(nv_sig, 
+                     green_optical_power_pd, green_optical_power_mW, 
+                     red_optical_power_pd, red_optical_power_mW, 
+                     yellow_optical_power_pd, yellow_optical_power_mW, 
+                     test_pulse_dur_list, num_reps, 
+                     sig_count_raw, ref_count_raw, sig_counts_avg, snr_list)
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path + '-ion_pulse_dur')
@@ -517,36 +479,12 @@ def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list = None):
                           snr_list, title, text = text)
     
     # Save
-    timestamp = tool_belt.get_time_stamp()
-    raw_data = {'timestamp': timestamp,
-            'nv_sig': nv_sig,
-            'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'green_optical_power_pd': green_optical_power_pd,
-            'green_optical_power_pd-units': 'V',
-            'green_optical_power_mW': green_optical_power_mW,
-            'green_optical_power_mW-units': 'mW',
-            'red_optical_power_pd': red_optical_power_pd,
-            'red_optical_power_pd-units': 'V',
-            'red_optical_power_mW': red_optical_power_mW,
-            'red_optical_power_mW-units': 'mW',
-            'yellow_optical_power_pd': yellow_optical_power_pd,
-            'yellow_optical_power_pd-units': 'V',
-            'yellow_optical_power_mW': yellow_optical_power_mW,
-            'yellow_optical_power_mW-units': 'mW',
-            'test_pulse_dur_list': test_pulse_dur_list,
-            'test_pulse_dur_list-units': 'ns',
-            'num_reps':num_reps,
-            'sig_count_raw': sig_count_raw,
-            'sig_count_raw-units': 'counts',
-            'ref_count_raw': ref_count_raw,
-            'ref_count_raw-units': 'counts',            
-            'sig_counts_avg': sig_counts_avg,
-            'sig_counts_avg-units': 'counts',
-            'sig_counts_avg': sig_counts_avg,
-            'sig_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
-            }
+    timestamp, raw_data = compile_raw_data_length_sweep(nv_sig, 
+                     green_optical_power_pd, green_optical_power_mW, 
+                     red_optical_power_pd, red_optical_power_mW, 
+                     yellow_optical_power_pd, yellow_optical_power_mW, 
+                     test_pulse_dur_list, num_reps, 
+                     sig_count_raw, ref_count_raw, sig_counts_avg, snr_list)
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path + '-readout_pulse_dur')
@@ -603,38 +541,12 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
     fig = plot_power_sweep(optical_power_list, sig_counts_avg, ref_counts_avg, 
                           snr_list, title, text = text)
     # Save
-    timestamp = tool_belt.get_time_stamp()
-    raw_data = {'timestamp': timestamp,
-            'nv_sig': nv_sig,
-            'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'green_optical_power_pd': green_optical_power_pd,
-            'green_optical_power_pd-units': 'V',
-            'green_optical_power_mW': green_optical_power_mW,
-            'green_optical_power_mW-units': 'mW',
-            'red_optical_power_pd': red_optical_power_pd,
-            'red_optical_power_pd-units': 'V',
-            'red_optical_power_mW': red_optical_power_mW,
-            'red_optical_power_mW-units': 'mW',
-            'yellow_optical_power_pd': yellow_optical_power_pd,
-            'yellow_optical_power_pd-units': 'V',
-            'yellow_optical_power_mW': yellow_optical_power_mW,
-            'yellow_optical_power_mW-units': 'mW',
-            'power_list': power_list,
-            'power_list-units': '0-1 V',
-            'optical_power_list': optical_power_list,
-            'optical_power_list-units': 'mW',
-            'num_reps':num_reps,
-            'sig_count_raw': sig_count_raw,
-            'sig_count_raw-units': 'counts',
-            'ref_count_raw': ref_count_raw,
-            'ref_count_raw-units': 'counts',            
-            'sig_counts_avg': sig_counts_avg,
-            'sig_counts_avg-units': 'counts',
-            'sig_counts_avg': sig_counts_avg,
-            'sig_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
-            }
+    timestamp, raw_data = compile_raw_data_power_sweep(nv_sig, 
+                     green_optical_power_pd, green_optical_power_mW, 
+                     red_optical_power_pd, red_optical_power_mW, 
+                     yellow_optical_power_pd, yellow_optical_power_mW, 
+                     power_list, optical_power_list, num_reps, 
+                     sig_count_raw, ref_count_raw, sig_counts_avg, snr_list)
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path + '-readout_pulse_pwr')
@@ -643,7 +555,7 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
     
     print(' \nRoutine complete!')
     return
-# %%
+# %% Run the files
     
 if __name__ == '__main__':
     sample_name = 'hopper'
@@ -651,7 +563,7 @@ if __name__ == '__main__':
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 2*10**7, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 200*10**3,
             'pulsed_shelf_dur': 0, 'am_589_shelf_power': 0,#50/0.3,
             'pulsed_ionization_dur': 800, 'cobalt_638_power': 160, 
