@@ -15,11 +15,15 @@ import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
 import minorroutines.photonstatistics as ps
+from scipy.optimize import curve_fit
 
 #%%
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
 # %%
+
+def sqrt_fnct(x, alpha):
+    return numpy.sqrt(x/alpha)
 def get_Probability_distribution(aList):
 
     def get_unique_value(aList):
@@ -90,7 +94,7 @@ def compile_raw_data_length_sweep(nv_sig, green_optical_power_pd, green_optical_
                      yellow_optical_power_mW, test_pulse_dur_list, num_reps, 
                      sig_count_raw, ref_count_raw, sig_counts_avg, snr_list):
     
-    if type(test_pulse_dur_list) == list:
+    if type(test_pulse_dur_list) != list:
         test_pulse_dur_list.tolist()
         
     timestamp = tool_belt.get_time_stamp()
@@ -129,7 +133,10 @@ def compile_raw_data_power_sweep(nv_sig, green_optical_power_pd, green_optical_p
                      red_optical_power_pd, red_optical_power_mW, yellow_optical_power_pd, 
                      yellow_optical_power_mW, power_list, optical_power_list, num_reps, 
                      sig_count_raw, ref_count_raw, sig_counts_avg, snr_list):
-    
+
+    if type(power_list) != list:
+        power_list.tolist()
+        
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
@@ -210,7 +217,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     # Set up our data lists
     opti_coords_list = []
 
-# Estimate the lenth of the sequance            
+    # Estimate the lenth of the sequance            
     file_name = 'SCC_pi_pulse_ionization_ion_edit.py'
     seq_args = [readout_time, init_ion_time, reionization_time, ionization_time, uwave_pi_pulse,
         shelf_time , wait_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
@@ -248,7 +255,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
     sample_counts = new_counts[0]
-#    print(len(sample_counts))
+
     # signal counts are even - get every second element starting from 0
     sig_counts = sample_counts[0::2]
 
@@ -257,7 +264,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     
     cxn.apd_tagger.stop_tag_stream()
     
-    # Plot
+    # Plot the counts from each experiment
     if plot:
         unique_value1, relative_frequency1 = get_Probability_distribution(list(ref_counts))
         unique_value2, relative_frequency2 = get_Probability_distribution(list(sig_counts))
@@ -632,7 +639,12 @@ def optimize_readout_pulse_length(nv_sig):
                            100*10**3,500*10**3, 
                            1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
                            6*10**6, 7*10**6, 8*10**6, 9*10**6,
-                           1*10**7,2*10**7,3*10**7,4*10**7,5*10**7]
+                           1*10**7,2*10**7]
+                           #3*10**7,4*10**7,5*10**7]
+                           
+#    test_pulse_dur_list = [10*10**3,
+#                           100*10**3,
+#                           1*10**6]
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -670,6 +682,26 @@ def optimize_readout_pulse_length(nv_sig):
     text = 'Readout pulse power = ' + '%.0f'%(yellow_optical_power_mW * 10**3) + ' uW' 
     fig = plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, snr_list, title, text = text)
     
+    # Fit sqrt function to the curve (in ms)
+    init_params = [100]
+    test_pulse_dur_list_ms = numpy.array(test_pulse_dur_list) / 10**6
+    time_linspace_ms = numpy.linspace(test_pulse_dur_list_ms[0], test_pulse_dur_list_ms[-1], 1000)
+    popt,pcov = curve_fit(sqrt_fnct, test_pulse_dur_list_ms, snr_list,
+                              p0=init_params)
+    fit_fig, ax= plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(test_pulse_dur_list_ms, snr_list,'bo',label='data')
+    ax.plot(time_linspace_ms, sqrt_fnct(time_linspace_ms,*popt),'r-',label='fit')
+    ax.set_xlabel('Readout time (ms)')
+    ax.set_ylabel('snr')
+    ax.set_title('SNR vs readout time, fit')
+    ax.legend()
+
+    text = "\n".join((r'$SNR = \sqrt{\frac{\tau_R}{\alpha}}$',
+                      r'$\alpha = $' + '%.1f'%(popt[0]) + ' ms'))
+
+    ax.text(0.70, 0.95, text, transform=ax.transAxes, fontsize=12,
+                            verticalalignment="top", bbox=props)    
+    
     # Save
     timestamp, raw_data = compile_raw_data_length_sweep(nv_sig, 
                      green_optical_power_pd, green_optical_power_mW, 
@@ -682,6 +714,7 @@ def optimize_readout_pulse_length(nv_sig):
     tool_belt.save_raw_data(raw_data, file_path + '-readout_pulse_dur')
 
     tool_belt.save_figure(fig, file_path + '-readout_pulse_dur')
+    tool_belt.save_figure(fit_fig, file_path + '-readout_pulse_dur_fit')
     
     print(' \nRoutine complete!')
     return
@@ -694,7 +727,7 @@ def optimize_shelf_pulse_length(nv_sig):
     '''
     apd_indices = [0]
     num_reps = 10**3
-    test_pulse_dur_list = numpy.linspace(0,200,11)
+    test_pulse_dur_list = numpy.linspace(0,200,11).tolist()
 #    test_pulse_dur_list = numpy.linspace(0,200,3)
     
     # measure laser powers:
@@ -764,7 +797,7 @@ def optimize_shelf_pulse_power(nv_sig):
     '''
     apd_indices = [0]
     num_reps = 10**3
-    power_list = numpy.linspace(0,0.8,9)
+    power_list = numpy.linspace(0.1,0.8,15).tolist()
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -837,7 +870,7 @@ if __name__ == '__main__':
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 200*10**3,
-            'pulsed_shelf_dur': 0, 'am_589_shelf_power': 0,#50/0.3,
+            'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
             'pulsed_ionization_dur': 800, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
@@ -850,8 +883,8 @@ if __name__ == '__main__':
 #    optimize_ion_pulse_length(nv_sig)
 #    optimize_reion_pulse_length(nv_sig)
 #    optimize_reion_and_init_ion_pulse_length(nv_sig)
-#    optimize_readout_pulse_length(nv_sig)
-    optimize_readout_pulse_power(nv_sig)
+    optimize_readout_pulse_length(nv_sig)
+#    optimize_readout_pulse_power(nv_sig)
 #    optimize_shelf_pulse_length(nv_sig)
 #    optimize_shelf_pulse_power(nv_sig)
     
