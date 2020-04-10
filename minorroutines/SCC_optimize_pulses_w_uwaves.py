@@ -2,8 +2,8 @@
 """
 Created on mon Apr 6 10:45:09 2020
 
-This file will perform the sequence G/R/Y, two times, one with a pi pulse
-occuring during the rd ionization process and the second without the pi pulse.
+This file will perform the sequence R/G/R/Y, two times, one with a pi pulse
+occuring before the red ionization process and the second without the pi pulse.
 
 @author: agardill
 """
@@ -172,7 +172,7 @@ def compile_raw_data_power_sweep(nv_sig, green_optical_power_pd, green_optical_p
     return timestamp, raw_data
 
 #%% Main
-# Connect to labrad in this file, as opposed to control panel
+# Function to actually run sequence and collect counts
 def main(nv_sig, apd_indices, num_reps, state, plot = True):
 
     with labrad.connect() as cxn:
@@ -218,7 +218,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     opti_coords_list = []
 
     # Estimate the lenth of the sequance            
-    file_name = 'SCC_pi_pulse_ionization_ion_edit.py'
+    file_name = 'SCC_optimize_pulses_w_uwaves.py'
     seq_args = [readout_time, init_ion_time, reionization_time, ionization_time, uwave_pi_pulse,
         shelf_time , wait_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
         apd_indices[0], aom_ao_589_pwr, shelf_power, state.value]
@@ -571,7 +571,7 @@ def optimize_readout_pulse_power(nv_sig):
     NV state.
     '''
     apd_indices = [0]
-    num_reps = 10**3
+    num_reps = 5*10**3
     power_list = numpy.linspace(0.1,0.8,15).tolist()
     
     # create some lists for data
@@ -883,8 +883,8 @@ if __name__ == '__main__':
 #    optimize_ion_pulse_length(nv_sig)
 #    optimize_reion_pulse_length(nv_sig)
 #    optimize_reion_and_init_ion_pulse_length(nv_sig)
-    optimize_readout_pulse_length(nv_sig)
-#    optimize_readout_pulse_power(nv_sig)
+#    optimize_readout_pulse_length(nv_sig)
+    optimize_readout_pulse_power(nv_sig)
 #    optimize_shelf_pulse_length(nv_sig)
 #    optimize_shelf_pulse_power(nv_sig)
     

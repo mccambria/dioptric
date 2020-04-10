@@ -2,11 +2,9 @@
 """
 Created on mon Apr 8 10:45:09 2020
 
-This file will change the pulse duration of either the red or green pulse. 
-The sequence will always be in the form G/R/Y, with the ionizing red pulse
-either being present (signal) or absent (reference).
-
-I have also included the initial long ionization pulse in the sequence.
+This file runs a sequence of R/G/(R)/Y. The second red pulse is applied in
+the signal and not applied for the reference. The difference in these two 
+cases relates to our ability to distinguish the charge state.
 
 @author: agardill
 """
@@ -185,7 +183,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     opti_coords_list = []
 
     # Estimate the lenth of the sequance            
-    file_name = 'SCC_alternate_red_ion_pulse.py'
+    file_name = 'SCC_optimize_pulses_wout_uwaves.py'
     seq_args = [readout_time,init_ion_time, reion_time, ion_time,
             wait_time, laser_515_delay, aom_589_delay, laser_638_delay, 
             apd_indices[0], aom_ao_589_pwr]
