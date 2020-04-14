@@ -138,12 +138,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     # Estimate the lenth of the sequance            
     file_name = 'SCC_ionize_NV_orientation.py'
-#    seq_args = [readout_time, yellow_pol_time, shelf_time, init_ion_time, reionization_time, ionization_time, uwave_pi_pulse,
-#        wait_time, num_ionizations, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
-#        apd_indices[0], aom_ao_589_pwr, yellow_pol_pwr, shelf_pwr,  state.value]
-    seq_args = [readout_time, yellow_pol_time, init_ion_time, reionization_time, ionization_time, uwave_pi_pulse,
+    seq_args = [readout_time, yellow_pol_time, shelf_time, init_ion_time, reionization_time, ionization_time, uwave_pi_pulse,
         wait_time, num_ionizations, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
-        apd_indices[0], aom_ao_589_pwr, yellow_pol_pwr,  state.value]
+        apd_indices[0], aom_ao_589_pwr, yellow_pol_pwr, shelf_pwr,  state.value]
+#    seq_args = [readout_time, yellow_pol_time, init_ion_time, reionization_time, ionization_time, uwave_pi_pulse,
+#        wait_time, num_ionizations, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
+#        apd_indices[0], aom_ao_589_pwr, yellow_pol_pwr,  state.value]
     print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -197,7 +197,7 @@ def optimize_num_ionizations(nv_sig):
     num_reps = 10**3
 #    if not num_ion_list:
     #    num_ion_list = numpy.linspace(0,5, 6)
-    num_ion_list = numpy.linspace(0,160, 81)
+    num_ion_list = numpy.linspace(0,60, 31)
     
     # measure laser powers (yellow one is measured at readout power:
     green_optical_power_pd, green_optical_power_mW, \
@@ -305,7 +305,7 @@ if __name__ == '__main__':
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 200*10**3,
             'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
-            'pulsed_ionization_dur': 200, 'cobalt_638_power': 160, 
+            'pulsed_ionization_dur': 400, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
