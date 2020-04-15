@@ -88,31 +88,30 @@ props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
 #%% Main
 # Function to actually run sequence and collect counts
-def main(nv_sig, apd_indices, num_ionizations, num_reps, state):
+def main(nv_sig, apd_indices, num_reps, state):
 
     with labrad.connect() as cxn:
-        sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices,  
-                           num_ionizations, num_reps, state)
+        sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices,
+                            num_reps, state)
         
     return sig_counts, ref_counts
-def main_with_cxn(cxn, nv_sig, apd_indices,
-                  num_ionizations, num_reps, state):
+def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, state):
 
     tool_belt.reset_cfm(cxn)
 
     # Initial Calculation and setup
-    yellow_pol_time = 10**3
-    yellow_pol_pwr = 0.3
+    num_ionizations = nv_sig['ionization_rep']
+    yellow_pol_time =  nv_sig['yellow_pol_dur']
+    yellow_pol_pwr = nv_sig['am_589_pol_power']
     shelf_time = nv_sig['pulsed_shelf_dur']
     shelf_pwr = nv_sig['am_589_shelf_power']
     readout_time = nv_sig['pulsed_SCC_readout_dur']
     aom_ao_589_pwr = nv_sig['am_589_power']
     nd_filter = nv_sig['nd_filter']
     init_ion_time = nv_sig['pulsed_initial_ion_dur']
-#    init_ion_time = 0
     ionization_time = nv_sig['pulsed_ionization_dur']
     reionization_time = nv_sig['pulsed_reionization_dur']
-#    reionization_time = 10**7
+
     
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
@@ -141,9 +140,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     seq_args = [readout_time, yellow_pol_time, shelf_time, init_ion_time, reionization_time, ionization_time, uwave_pi_pulse,
         wait_time, num_ionizations, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
         apd_indices[0], aom_ao_589_pwr, yellow_pol_pwr, shelf_pwr,  state.value]
-#    seq_args = [readout_time, yellow_pol_time, init_ion_time, reionization_time, ionization_time, uwave_pi_pulse,
-#        wait_time, num_ionizations, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
-#        apd_indices[0], aom_ao_589_pwr, yellow_pol_pwr,  state.value]
     print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -197,7 +193,8 @@ def optimize_num_ionizations(nv_sig):
     num_reps = 10**3
 #    if not num_ion_list:
     #    num_ion_list = numpy.linspace(0,5, 6)
-    num_ion_list = numpy.linspace(0,60, 31)
+#    num_ion_list = numpy.linspace(0,150, 76)
+    num_ion_list = numpy.linspace(0,30, 31)
     
     # measure laser powers (yellow one is measured at readout power:
     green_optical_power_pd, green_optical_power_mW, \
@@ -220,7 +217,8 @@ def optimize_num_ionizations(nv_sig):
     
     # Step through the pulse lengths for the test laser
     for num_ionizations in num_ion_list:
-        sig_counts, ref_counts = main(nv_sig, apd_indices, num_ionizations, num_reps,
+        nv_sig['ionization_rep'] = num_ionizations
+        sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
                                     States.LOW)
         sig_counts = [int(el) for el in sig_counts]
         ref_counts = [int(el) for el in ref_counts]
@@ -294,6 +292,464 @@ def optimize_num_ionizations(nv_sig):
     return
 
 # %%
+
+def optimize_shelf_pulse_length(nv_sig):
+    '''
+    This function will sweep the pulse length for the shelf pulse
+    '''
+    apd_indices = [0]
+    num_reps = 10**3
+    test_pulse_dur_list = numpy.linspace(0,400,21).tolist()
+    
+    # measure laser powers (yellow one is measured at readout power:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+    # measure shelf laser power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    # create some lists for data
+    sig_count_raw = []
+    ref_count_raw = []
+    sig_counts_avg = []
+    ref_counts_avg = []
+    snr_list = []
+    
+    # Step through the pulse lengths for the test laser
+    for test_pulse_length in test_pulse_dur_list:
+        nv_sig['pulsed_shelf_dur'] = test_pulse_length
+        sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
+                                    States.LOW)
+        sig_counts = [int(el) for el in sig_counts]
+        ref_counts = [int(el) for el in ref_counts]
+        
+        sig_count_raw.append(sig_counts)
+        ref_count_raw.append(ref_counts)
+        
+        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        
+        sig_counts_avg.append(numpy.average(sig_counts))
+        ref_counts_avg.append(numpy.average(ref_counts))
+        snr_list.append(avg_snr)
+ 
+    #plot
+    fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
+    ax = axes[0]
+    ax.plot(test_pulse_dur_list, sig_counts_avg, 'ro', 
+           label = 'W/ pi-pulse')
+    ax.plot(test_pulse_dur_list, ref_counts_avg, 'ko', 
+           label = 'W/out pi-pulse')
+    ax.set_xlabel('Pulse length (ns)')
+    ax.set_ylabel('Counts (single shot measurement)')
+    ax.set_title('Sweep shelf pulse length')
+    ax.legend()
+    ax = axes[1]
+    ax.plot(test_pulse_dur_list, snr_list, 'ro')
+    ax.set_xlabel('Pulse length (ns)')
+    ax.set_ylabel('SNR')
+    ax.set_title('Sweep shelf pulse length')
+    text = 'Shelf pulse power = ' + '%.0f'%(shelf_power * 10**3) + ' uW' 
+    ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    
+    # Save
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'shelf_optical_power': shelf_power,
+            'shelf_optical_power-units': 'mW',
+            'test_pulse_dur_list': test_pulse_dur_list,
+            'test_pulse_dur_list-units': 'ns',
+            'num_reps':num_reps,
+            'sig_count_raw': sig_count_raw,
+            'sig_count_raw-units': 'counts',
+            'ref_count_raw': ref_count_raw,
+            'ref_count_raw-units': 'counts',
+            'sig_counts_avg': sig_counts_avg,
+            'sig_counts_avg-units': 'counts',
+            'ref_counts_avg': ref_counts_avg,
+            'ref_counts_avg-units': 'counts',
+            'snr_list': snr_list,
+            'snr_list-units': 'arb'
+            }
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path + '-shelf_dur')
+
+    tool_belt.save_figure(fig, file_path + '-shelf_dur')
+    
+    print(' \nRoutine complete!')
+    return
+
+# %%
+
+def optimize_shelf_power(nv_sig):
+    '''
+    This function will sweep the pulse power for the shelf pulse
+    '''
+    apd_indices = [0]
+    num_reps = 10**3
+    power_list = numpy.linspace(0.1,0.8,15).tolist()
+    
+    # measure laser powers (yellow one is measured at readout power:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+    # measure yellow pol power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_pol_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    yel_pol_power = tool_belt.calc_optical_power_mW(589, optical_power)
+            
+    # create some lists for data
+    opt_power_list = []
+    sig_count_raw = []
+    ref_count_raw = []
+    sig_counts_avg = []
+    ref_counts_avg = []
+    snr_list = []
+    
+    # Step through the pulse lengths for the test laser
+    for power in power_list:
+        nv_sig['am_589_shelf_power'] = power
+        # measure shelf laser power
+        optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                        AO_power_settings = nv_sig['am_589_shelf_power'], 
+                                        nd_filter = nv_sig['nd_filter'])
+        shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+        opt_power_list.append(shelf_power)
+
+        sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
+                                    States.LOW)
+        sig_counts = [int(el) for el in sig_counts]
+        ref_counts = [int(el) for el in ref_counts]
+        
+        sig_count_raw.append(sig_counts)
+        ref_count_raw.append(ref_counts)
+        
+        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        
+        sig_counts_avg.append(numpy.average(sig_counts))
+        ref_counts_avg.append(numpy.average(ref_counts))
+        snr_list.append(avg_snr)
+ 
+    #plot
+    fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
+    ax = axes[0]
+    ax.plot(numpy.array(opt_power_list)*10**3, sig_counts_avg, 'ro', 
+           label = 'W/ pi-pulse')
+    ax.plot(numpy.array(opt_power_list)*10**3, ref_counts_avg, 'ko', 
+           label = 'W/out pi-pulse')
+    ax.set_xlabel('Pulse power (uW)')
+    ax.set_ylabel('Counts (single shot measurement)')
+    ax.set_title('Sweep shelf pulse power')
+    ax.legend()
+    ax = axes[1]
+    ax.plot(numpy.array(opt_power_list)*10**3, snr_list, 'ro')
+    ax.set_xlabel('Pulse power (uW)')
+    ax.set_ylabel('SNR')
+    ax.set_title('Sweep shelf pulse power')
+    text = 'Shelf pulse length = ' + '%.0f'%(nv_sig['pulsed_shelf_dur'] / 10**3) + ' us' 
+    ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    
+    # Save
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'yel_pol_power': yel_pol_power,
+            'yel_pol_power-units': 'mW',
+            'power_list': power_list,
+            'power_list-units': '0-1 V',
+            'opt_power_list': opt_power_list,
+            'opt_power_list-units': 'mW',
+            'num_reps':num_reps,
+            'sig_count_raw': sig_count_raw,
+            'sig_count_raw-units': 'counts',
+            'ref_count_raw': ref_count_raw,
+            'ref_count_raw-units': 'counts',
+            'sig_counts_avg': sig_counts_avg,
+            'sig_counts_avg-units': 'counts',
+            'ref_counts_avg': ref_counts_avg,
+            'ref_counts_avg-units': 'counts',
+            'snr_list': snr_list,
+            'snr_list-units': 'arb'
+            }
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path + '-shelf_pwr')
+
+    tool_belt.save_figure(fig, file_path + '-shelf_pwr')
+    
+    print(' \nRoutine complete!')
+    return
+# %%
+
+def optimize_yellow_pol_length(nv_sig):
+    '''
+    This function will sweep the pulse length for the yellow pol. pulse
+    '''
+    apd_indices = [0]
+    num_reps = 10**3
+    test_pulse_dur_list = numpy.linspace(0,10*10**3,11).tolist()
+    
+    # measure laser powers (yellow one is measured at readout power:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+    # measure shelf laser power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    # measure yellow pol power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_pol_pwr'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    yel_pol_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    # create some lists for data
+    sig_count_raw = []
+    ref_count_raw = []
+    sig_counts_avg = []
+    ref_counts_avg = []
+    snr_list = []
+    
+    # Step through the pulse lengths for the test laser
+    for test_pulse_length in test_pulse_dur_list:
+        nv_sig['yellow_pol_dur'] = test_pulse_length
+        sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
+                                    States.LOW)
+        sig_counts = [int(el) for el in sig_counts]
+        ref_counts = [int(el) for el in ref_counts]
+        
+        sig_count_raw.append(sig_counts)
+        ref_count_raw.append(ref_counts)
+        
+        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        
+        sig_counts_avg.append(numpy.average(sig_counts))
+        ref_counts_avg.append(numpy.average(ref_counts))
+        snr_list.append(avg_snr)
+ 
+    #plot
+    fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
+    ax = axes[0]
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, sig_counts_avg, 'ro', 
+           label = 'W/ pi-pulse')
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, ref_counts_avg, 'ko', 
+           label = 'W/out pi-pulse')
+    ax.set_xlabel('Pulse length (ns)')
+    ax.set_ylabel('Counts (single shot measurement)')
+    ax.set_title('Sweep yellow pol pulse length')
+    ax.legend()
+    ax = axes[1]
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, snr_list, 'ro')
+    ax.set_xlabel('Pulse length (ns)')
+    ax.set_ylabel('SNR')
+    ax.set_title('Sweep yellow pol pulse length')
+    text = 'Yellow pol. pulse power = ' + '%.0f'%(yel_pol_power * 10**3) + ' uW' 
+    ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    
+    # Save
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'shelf_optical_power': shelf_power,
+            'shelf_optical_power-units': 'mW',
+            'yel_pol_power': yel_pol_power,
+            'yel_pol_power-units': 'mW',
+            'test_pulse_dur_list': test_pulse_dur_list,
+            'test_pulse_dur_list-units': 'ns',
+            'num_reps':num_reps,
+            'sig_count_raw': sig_count_raw,
+            'sig_count_raw-units': 'counts',
+            'ref_count_raw': ref_count_raw,
+            'ref_count_raw-units': 'counts',
+            'sig_counts_avg': sig_counts_avg,
+            'sig_counts_avg-units': 'counts',
+            'ref_counts_avg': ref_counts_avg,
+            'ref_counts_avg-units': 'counts',
+            'snr_list': snr_list,
+            'snr_list-units': 'arb'
+            }
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path + '-yel_pol_dur')
+
+    tool_belt.save_figure(fig, file_path + '-yel_pol_dur')
+    
+    print(' \nRoutine complete!')
+    return
+
+# %%
+
+def optimize_yellow_pol_power(nv_sig):
+    '''
+    This function will sweep the pulse power for the yellow pol. pulse
+    '''
+    apd_indices = [0]
+    num_reps = 10**3
+    power_list = numpy.linspace(0.1,0.8,15).tolist()
+    
+    # measure laser powers (yellow one is measured at readout power:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+    # measure shelf laser power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    # create some lists for data
+    opt_power_list = []
+    sig_count_raw = []
+    ref_count_raw = []
+    sig_counts_avg = []
+    ref_counts_avg = []
+    snr_list = []
+    
+    # Step through the pulse lengths for the test laser
+    for power in power_list:
+        nv_sig['am_589_pol_power'] = power
+        # measure yellow pol power
+        optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                        AO_power_settings = nv_sig['am_589_pol_power'], 
+                                        nd_filter = nv_sig['nd_filter'])
+        yel_pol_power = tool_belt.calc_optical_power_mW(589, optical_power)
+        opt_power_list.append(yel_pol_power)
+
+        sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
+                                    States.LOW)
+        sig_counts = [int(el) for el in sig_counts]
+        ref_counts = [int(el) for el in ref_counts]
+        
+        sig_count_raw.append(sig_counts)
+        ref_count_raw.append(ref_counts)
+        
+        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        
+        sig_counts_avg.append(numpy.average(sig_counts))
+        ref_counts_avg.append(numpy.average(ref_counts))
+        snr_list.append(avg_snr)
+ 
+    #plot
+    fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
+    ax = axes[0]
+    ax.plot(numpy.array(opt_power_list)*10**3, sig_counts_avg, 'ro', 
+           label = 'W/ pi-pulse')
+    ax.plot(numpy.array(opt_power_list)*10**3, ref_counts_avg, 'ko', 
+           label = 'W/out pi-pulse')
+    ax.set_xlabel('Pulse power (uW)')
+    ax.set_ylabel('Counts (single shot measurement)')
+    ax.set_title('Sweep yellow pol pulse power')
+    ax.legend()
+    ax = axes[1]
+    ax.plot(numpy.array(opt_power_list)*10**3, snr_list, 'ro')
+    ax.set_xlabel('Pulse power (uW)')
+    ax.set_ylabel('SNR')
+    ax.set_title('Sweep yellow pol pulse power')
+    text = 'Yellow pol. pulse length = ' + '%.0f'%(nv_sig['yellow_pol_dur'] / 10**3) + ' us' 
+    ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    
+    # Save
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'shelf_optical_power': shelf_power,
+            'shelf_optical_power-units': 'mW',
+            'power_list': power_list,
+            'power_list-units': '0-1 V',
+            'opt_power_list': opt_power_list,
+            'opt_power_list-units': 'mW',
+            'num_reps':num_reps,
+            'sig_count_raw': sig_count_raw,
+            'sig_count_raw-units': 'counts',
+            'ref_count_raw': ref_count_raw,
+            'ref_count_raw-units': 'counts',
+            'sig_counts_avg': sig_counts_avg,
+            'sig_counts_avg-units': 'counts',
+            'ref_counts_avg': ref_counts_avg,
+            'ref_counts_avg-units': 'counts',
+            'snr_list': snr_list,
+            'snr_list-units': 'arb'
+            }
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path + '-yel_pol_pwr')
+
+    tool_belt.save_figure(fig, file_path + '-yel_pol_pwr')
+    
+    print(' \nRoutine complete!')
+    return
+# %%
     
 if __name__ == '__main__':
     apd_indices = [0]
@@ -303,17 +759,26 @@ if __name__ == '__main__':
             'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
+            'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.3,
             'pulsed_initial_ion_dur': 200*10**3,
             'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
-            'pulsed_ionization_dur': 400, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8, 
+            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8,
+            'ionization_rep': 13,
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
     nv_sig = ensemble
     
+#    ion_pulse_list = [400, 450, 500, 550, 600]
     # Run the program
-    optimize_num_ionizations(nv_sig)
+#    for ion_time in ion_pulse_list:
+#        nv_sig['pulsed_ionization_dur'] = ion_time
+#    optimize_num_ionizations(nv_sig)
+#    optimize_shelf_pulse_length(nv_sig)
+    optimize_shelf_power(nv_sig)
+#    optimize_yellow_pol_length(nv_sig)
+#    optimize_yellow_pol_power(nv_sig)
     
     
 # %%

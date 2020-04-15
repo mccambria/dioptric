@@ -884,8 +884,8 @@ if __name__ == '__main__':
 #    optimize_reion_pulse_length(nv_sig)
 #    optimize_reion_and_init_ion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
-    optimize_readout_pulse_power(nv_sig)
-#    optimize_shelf_pulse_length(nv_sig)
+#    optimize_readout_pulse_power(nv_sig)
+    optimize_shelf_pulse_length(nv_sig)
 #    optimize_shelf_pulse_power(nv_sig)
     
 #    sig_counts, ref_counts = main(nv_sig, apd_indices, 10**3, States.LOW)
