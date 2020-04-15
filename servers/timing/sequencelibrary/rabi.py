@@ -108,6 +108,6 @@ if __name__ == '__main__':
 #    args = tau, polarization_time, reference_time, signal_wait_time, \
 #        reference_wait_time, background_wait_time, aom_delay_time, \
 #        gate_time, max_tau
-    args = [2000, 3000, 1000, 1000, 2000, 1000, 0, 500, 2000, 0, 3]
+    args = [1000, 3000, 1000, 1000, 2000, 1000, 0, 500, 2000, 0, 3]
     seq = get_seq(wiring, args)[0]
     seq.plot()

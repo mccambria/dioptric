@@ -351,11 +351,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
-    ax.plot(taus, avg_sig_counts, 'r-')
-    ax.plot(taus, avg_ref_counts, 'g-')
+    ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
+    ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
     # ax.plot(tauArray, countsBackground, 'o-')
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
+    ax.legend()
 
     ax = axes_pack[1]
     ax.plot(taus , norm_avg_sig, 'b-')
