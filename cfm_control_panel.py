@@ -144,7 +144,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
     num_reps = 10**5
     num_runs = 1
     uwave_power = 9.0
-    uwave_pulse_dur = 50
+    uwave_pulse_dur = 125
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -519,7 +519,7 @@ if __name__ == '__main__':
             
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
-            do_determine_n_thresh_with_638(nv_sig, apd_indices)
+#            do_determine_n_thresh_with_638(nv_sig, apd_indices)
 #            for p in range(len(aom_ao_589_pwr_list)):
 #                aom_ao_589_pwr = aom_ao_589_pwr_list[p]
 #                print(aom_ao_589_pwr)
@@ -542,7 +542,7 @@ if __name__ == '__main__':
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
-            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.1)
+            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.9406, freq_range=0.05)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.200, freq_range=0.100)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)

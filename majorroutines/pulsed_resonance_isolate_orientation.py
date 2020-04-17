@@ -249,9 +249,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # useful for us here.
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
-    ref_counts = numpy.empty([num_runs, num_steps])
-    ref_counts[:] = numpy.nan
-    sig_counts = numpy.copy(ref_counts)
+    scc_ref_counts = numpy.empty([num_runs, num_steps])
+    scc_ref_counts[:] = numpy.nan
+    scc_sig_counts = numpy.copy(scc_ref_counts)
+    
+    org_ref_counts = numpy.empty([num_runs, num_steps])
+    org_ref_counts[:] = numpy.nan
+    org_sig_counts = numpy.copy(org_ref_counts)
 
     # Define some times for the sequence (in ns)
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -262,7 +266,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     yellow_pol_pwr = nv_sig['am_589_pol_power']
     shelf_time = nv_sig['pulsed_shelf_dur']
     shelf_pwr = nv_sig['am_589_shelf_power']
-    readout_time = nv_sig['pulsed_SCC_readout_dur']
+    readout_time = nv_sig['pulsed_readout_dur']
     aom_ao_589_pwr = nv_sig['am_589_power']
     nd_filter = nv_sig['nd_filter']
     init_ion_time = nv_sig['pulsed_initial_ion_dur']
@@ -286,17 +290,44 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     cxn.filter_slider_ell9k.set_filter(nd_filter)
     
     readout_sec = readout_time / (10**9)
-    seq_args = [test_uwave_pulse_dur, readout_time, yellow_pol_time, 
+    # arguements to run with the ionization sub sequence
+    SCC_seq_args = [test_uwave_pulse_dur, readout_time, yellow_pol_time, 
             shelf_time, init_ion_time, reionization_time, ionization_time, 
             target_uwave_pi_pulse, wait_time, num_ionizations, 
             laser_515_delay, aom_589_delay, laser_638_delay, rf_delay, 
             apd_indices[0], aom_ao_589_pwr, yellow_pol_pwr, shelf_pwr, 
             target_state.value, test_state.value]
-    print(seq_args)
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    print(SCC_seq_args)
+    SCC_seq_args_string = tool_belt.encode_seq_args(SCC_seq_args)
+    # arguements to run without ionization sub sequence (normal pESR)
+    org_seq_args = [test_uwave_pulse_dur, readout_time, 0, 
+            0, init_ion_time, reionization_time, 0, 
+            0, wait_time, 0, 
+            laser_515_delay, aom_589_delay, laser_638_delay, rf_delay, 
+            apd_indices[0], aom_ao_589_pwr, yellow_pol_pwr, shelf_pwr, 
+            target_state.value, test_state.value]
+    print(org_seq_args)
+    org_seq_args_string = tool_belt.encode_seq_args(org_seq_args)
 
     opti_coords_list = []
 
+    #%% Measure the laser powers
+    # measure laser powers (yellow one is measured at readout power:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+    # measure shelf laser power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_pol_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    yel_pol_power = tool_belt.calc_optical_power_mW(589, optical_power)
     # %% Turn on the taget sig generator
 
     sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, target_state)
@@ -324,9 +355,53 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = True)
         opti_coords_list.append(opti_coords)
 
-        # Load the pulse streamer (must happen after optimize since optimize
-        # loads its own sequence)
-        cxn.pulse_streamer.stream_load('pulsed_resonance_isolate_orientation.py', seq_args_string)
+        # Start the tagger stream
+        cxn.apd_tagger.start_tag_stream(apd_indices)
+
+        # Take a sample and increment the frequency
+        for step_ind in range(num_steps):
+            print(str(freqs[step_ind]) + ' GHz')
+            # Break out of the while if the user says stop
+            if tool_belt.safe_stop():
+                break
+            
+            # shine the red laser for a few seconds before the sequence
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2)
+            
+            # Load the pulse streamer for scc (with the sub sequence of ionization)
+            cxn.pulse_streamer.stream_load('pulsed_resonance_isolate_orientation.py', SCC_seq_args_string)
+            
+            # Just assume the low state
+            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, test_state)
+            sig_gen_cxn.set_freq(freqs[step_ind])
+            sig_gen_cxn.set_amp(test_uwave_power)
+            sig_gen_cxn.uwave_on()
+
+            # It takes 400 us from receipt of the command to
+            # switch frequencies so allow 1 ms total
+#            time.sleep(0.001)
+
+            # Start the timing stream
+            cxn.pulse_streamer.stream_start(num_reps)
+
+            # Get the counts
+            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+
+            sample_counts = new_counts[0]
+#            print(sample_counts)
+
+            # signal counts are even - get every second element starting from 0
+            sig_gate_counts = sample_counts[0::2]
+            scc_sig_counts[run_ind, step_ind] = sum(sig_gate_counts)
+#            print(sum(sig_gate_counts))
+
+            # ref counts are odd - sample_counts every second element starting from 1
+            ref_gate_counts = sample_counts[1::2]
+            scc_ref_counts[run_ind, step_ind] = sum(ref_gate_counts)
+#            print(sum(ref_gate_counts))
+
+        cxn.apd_tagger.stop_tag_stream()
 
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -338,6 +413,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             if tool_belt.safe_stop():
                 break
 
+            # shine the red laser for a few seconds before the sequence
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2)
+            
+            # Load the pulse streamer for org (normal ESR)
+            cxn.pulse_streamer.stream_load('pulsed_resonance_isolate_orientation.py', org_seq_args_string)
+        
             # Just assume the low state
             sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, test_state)
             sig_gen_cxn.set_freq(freqs[step_ind])
@@ -358,14 +440,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, step_ind] = sum(sig_gate_counts)
+            org_sig_counts[run_ind, step_ind] = sum(sig_gate_counts)
+#            print(sum(sig_gate_counts))
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, step_ind] = sum(ref_gate_counts)
+            org_ref_counts[run_ind, step_ind] = sum(ref_gate_counts)
+#            print(sum(ref_gate_counts))
 
         cxn.apd_tagger.stop_tag_stream()
-
         # %% Save the data we have incrementally for long measurements
 
         rawData = {'start_timestamp': start_timestamp,
@@ -385,10 +468,30 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                    'test_uwave_power-units': 'dBm',
                    'opti_coords_list': opti_coords_list,
                    'opti_coords_list-units': 'V',
-                   'sig_counts': sig_counts.astype(int).tolist(),
-                   'sig_counts-units': 'counts',
-                   'ref_counts': ref_counts.astype(int).tolist(),
-                   'ref_counts-units': 'counts'}
+                    'green_optical_power_pd': green_optical_power_pd,
+                    'green_optical_power_pd-units': 'V',
+                    'green_optical_power_mW': green_optical_power_mW,
+                    'green_optical_power_mW-units': 'mW',
+                    'red_optical_power_pd': red_optical_power_pd,
+                    'red_optical_power_pd-units': 'V',
+                    'red_optical_power_mW': red_optical_power_mW,
+                    'red_optical_power_mW-units': 'mW',
+                    'yellow_optical_power_pd': yellow_optical_power_pd,
+                    'yellow_optical_power_pd-units': 'V',
+                    'yellow_optical_power_mW': yellow_optical_power_mW,
+                    'yellow_optical_power_mW-units': 'mW',
+                    'shelf_optical_power': shelf_power,
+                    'shelf_optical_power-units': 'mW',
+                    'yel_pol_power': yel_pol_power,
+                    'yel_pol_power-units': 'mW',
+                   'org_sig_counts': org_sig_counts.astype(int).tolist(),
+                   'org_sig_counts-units': 'counts',
+                   'org_ref_counts': org_ref_counts.astype(int).tolist(),
+                   'org_ref_counts-units': 'counts',
+                   'scc_sig_counts': scc_sig_counts.astype(int).tolist(),
+                   'scc_sig_counts-units': 'counts',
+                   'scc_ref_counts': scc_ref_counts.astype(int).tolist(),
+                   'scc_ref_counts-units': 'counts'}
 
         # This will continuously be the same file path so we will overwrite
         # the existing file with the latest version
@@ -397,12 +500,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         tool_belt.save_raw_data(rawData, file_path)
 
 
-    # %% Process and plot the data
+    # %% Process and plot the data for the scc
 
     # Find the averages across runs
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    avg_ref_counts = numpy.average(scc_ref_counts, axis=0)
+    avg_sig_counts = numpy.average(scc_sig_counts, axis=0)
+    scc_norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # Convert to kilocounts per second
 
@@ -411,36 +514,70 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # Create an image with 2 plots on one row, with a specified size
     # Then draw the canvas and flush all the previous plots from the canvas
-    fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    fig_scc, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     # The first plot will display both the uwave_off and uwave_off counts
     ax = axes_pack[0]
-    ax.plot(freqs, kcps_uwave_off_avg, 'r-', label = 'Reference (w/out ionization)')
-    ax.plot(freqs, kcpsc_uwave_on_avg, 'g-', label = 'Signal (w/ ionization)')
-    ax.set_title('Non-normalized Count Rate Versus Frequency')
+    ax.plot(freqs, kcps_uwave_off_avg, 'r-', label = 'Reference (w/out test pi-pulse)')
+    ax.plot(freqs, kcpsc_uwave_on_avg, 'g-', label = 'Signal (w/ test pi-pulse)')
+    ax.set_title('Non-normalized Count Rate Versus Frequency (SCC)')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Count rate (kcps)')
     ax.legend()
     # The second plot will show their subtracted values
     ax = axes_pack[1]
-    ax.plot(freqs, norm_avg_sig, 'b-')
-    ax.set_title('Normalized Count Rate vs Frequency')
+    ax.plot(freqs, scc_norm_avg_sig, 'b-')
+    ax.set_title('Normalized Count Rate vs Frequency (SCC)')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
 
-    fig.canvas.draw()
-    fig.tight_layout()
-    fig.canvas.flush_events()
+    fig_scc.canvas.draw()
+    fig_scc.tight_layout()
+    fig_scc.canvas.flush_events()
 
-    # %% Fit the data
+    # %% Plot data for the org data
+    
+    # Find the averages across runs
+    avg_ref_counts = numpy.average(org_ref_counts, axis=0)
+    avg_sig_counts = numpy.average(org_sig_counts, axis=0)
+    org_norm_avg_sig = avg_sig_counts / avg_ref_counts
 
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, ref_counts)
-    if (fit_func is not None) and (popt is not None):
-        fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
-                                    norm_avg_sig, fit_func, popt)
-    else:
-        fit_fig = None
+    # Convert to kilocounts per second
+
+    kcps_uwave_off_avg = (avg_ref_counts / (num_reps * 1000)) / readout_sec
+    kcpsc_uwave_on_avg = (avg_sig_counts / (num_reps * 1000)) / readout_sec
+
+    # Create an image with 2 plots on one row, with a specified size
+    # Then draw the canvas and flush all the previous plots from the canvas
+    fig_org, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+
+    # The first plot will display both the uwave_off and uwave_off counts
+    ax = axes_pack[0]
+    ax.plot(freqs, kcps_uwave_off_avg, 'r-', label = 'Reference (w/out test pi-pulse)')
+    ax.plot(freqs, kcpsc_uwave_on_avg, 'g-', label = 'Signal (w/ test pi-pulse)')
+    ax.set_title('Non-normalized Count Rate Versus Frequency (normal pESR)')
+    ax.set_xlabel('Frequency (GHz)')
+    ax.set_ylabel('Count rate (kcps)')
+    ax.legend()
+    # The second plot will show their subtracted values
+    ax = axes_pack[1]
+    ax.plot(freqs, org_norm_avg_sig, 'b-')
+    ax.set_title('Normalized Count Rate vs Frequency (normal PESR)')
+    ax.set_xlabel('Frequency (GHz)')
+    ax.set_ylabel('Contrast (arb. units)')
+
+    fig_org.canvas.draw()
+    fig_org.tight_layout()
+    fig_org.canvas.flush_events()
+#    # %% Fit the data
+#
+#    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
+#                                   norm_avg_sig, org_ref_counts)
+#    if (fit_func is not None) and (popt is not None):
+#        fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
+#                                    norm_avg_sig, fit_func, popt)
+#    else:
+#        fit_fig = None
 
     # %% Clean up and save the data
 
@@ -451,7 +588,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
-               'opti_coords_list': opti_coords_list,
                'opti_coords_list-units': 'V',
                'freq_center': freq_center,
                'freq_center-units': 'GHz',
@@ -466,77 +602,77 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'num_runs': num_runs,
                'test_uwave_power': test_uwave_power,
                'test_uwave_power-units': 'dBm',
-               'sig_counts': sig_counts.astype(int).tolist(),
-               'sig_counts-units': 'counts',
-               'ref_counts': ref_counts.astype(int).tolist(),
-               'ref_counts-units': 'counts',
-               'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-               'norm_avg_sig-units': 'arb'}
+                'opti_coords_list': opti_coords_list,
+                'green_optical_power_pd': green_optical_power_pd,
+                'green_optical_power_pd-units': 'V',
+                'green_optical_power_mW': green_optical_power_mW,
+                'green_optical_power_mW-units': 'mW',
+                'red_optical_power_pd': red_optical_power_pd,
+                'red_optical_power_pd-units': 'V',
+                'red_optical_power_mW': red_optical_power_mW,
+                'red_optical_power_mW-units': 'mW',
+                'yellow_optical_power_pd': yellow_optical_power_pd,
+                'yellow_optical_power_pd-units': 'V',
+                'yellow_optical_power_mW': yellow_optical_power_mW,
+                'yellow_optical_power_mW-units': 'mW',
+                'shelf_optical_power': shelf_power,
+                'shelf_optical_power-units': 'mW',
+                'yel_pol_power': yel_pol_power,
+                'yel_pol_power-units': 'mW',
+               'org_sig_counts': org_sig_counts.astype(int).tolist(),
+               'org_sig_counts-units': 'counts',
+               'org_ref_counts': org_ref_counts.astype(int).tolist(),
+               'org_ref_counts-units': 'counts',
+               'org_norm_avg_sig': org_norm_avg_sig.astype(float).tolist(),
+               'org_norm_avg_sig-units': 'arb',
+               'scc_sig_counts': scc_sig_counts.astype(int).tolist(),
+               'scc_sig_counts-units': 'counts',
+               'scc_ref_counts': scc_ref_counts.astype(int).tolist(),
+               'scc_ref_counts-units': 'counts',
+               'scc_norm_avg_sig': scc_norm_avg_sig.astype(float).tolist(),
+               'scc_norm_avg_sig-units': 'arb'}
 
     name = nv_sig['name']
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
-    tool_belt.save_figure(fig, filePath)
+    tool_belt.save_figure(fig_scc, filePath + '-scc')
+    tool_belt.save_figure(fig_org, filePath + '-org')
     tool_belt.save_raw_data(rawData, filePath)
-    filePath = tool_belt.get_file_path(__file__, timestamp, name + '-fit')
-    if fit_fig is not None:
-        tool_belt.save_figure(fit_fig, filePath)
+#    filePath = tool_belt.get_file_path(__file__, timestamp, name + '-fit')
+#    if fit_fig is not None:
+#        tool_belt.save_figure(fit_fig, filePath)
 
     # %% Return
 
-    if fit_func == single_gaussian_dip:
-        print('Single resonance at {:.4f} GHz'.format(popt[2]))
-        print('\n')
-        return popt[2], None
-    elif fit_func == double_gaussian_dip:
-        print('Resonances at {:.4f} GHz and {:.4f} GHz'.format(popt[2], popt[5]))
-        print('Splitting of {:d} MHz'.format(int((popt[5] - popt[2]) * 1000)))
-        print('\n')
-        return popt[2], popt[5]
-    else:
-        print('No resonances found')
-        print('\n')
-        return None, None
-
+#    if fit_func == single_gaussian_dip:
+#        print('Single resonance at {:.4f} GHz'.format(popt[2]))
+#        print('\n')
+#        return popt[2], None
+#    elif fit_func == double_gaussian_dip:
+#        print('Resonances at {:.4f} GHz and {:.4f} GHz'.format(popt[2], popt[5]))
+#        print('Splitting of {:d} MHz'.format(int((popt[5] - popt[2]) * 1000)))
+#        print('\n')
+#        return popt[2], popt[5]
+#    else:
+#        print('No resonances found')
+#        print('\n')
+#        return None, None
+    return None, None
 
 # %% Run the file
 
 
 if __name__ == '__main__':
-
-#    file = '2019_10/2019_10_13-23_44_37-ayrton12-NV13_2019_06_10'
-#    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
-##    data = tool_belt.get_raw_data('resonance.py', file)
-#
-#    freq_center = data['freq_center']
-#    freq_range = data['freq_range']
-#    num_steps = data['num_steps']
-#    norm_avg_sig = numpy.array(data['norm_avg_sig'])
-#    ref_counts = numpy.array(data['ref_counts'])
-#    sig_counts = numpy.array(data['sig_counts'])
-#    avg_ref_counts = numpy.average(ref_counts, axis=0)
-#    avg_sig_counts = numpy.average(sig_counts, axis=0)
-#    norm_avg_sig = avg_sig_counts / avg_ref_counts
-#
-#
-#    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-#                                   norm_avg_sig, ref_counts)
-##    if (fit_func is not None) and (popt is not None):
-#    create_fit_figure(freq_range, freq_center, num_steps,
-#                      norm_avg_sig, fit_func, popt)
-    
-    # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
-#    simulate(2.87, 0.2, 0.1, 100, 50)
     
     apd_indices = [0]
     sample_name = 'hopper'
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
-            'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.3,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.9, 
+            'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.20,
             'pulsed_initial_ion_dur': 200*10**3,
-            'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
+            'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.20,
             'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8,
             'ionization_rep': 13,
@@ -544,7 +680,36 @@ if __name__ == '__main__':
             'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
     nv_sig = ensemble
-    
-    main(nv_sig, apd_indices, 2.87, 0.1,
-         51, 10**4, 1, 10.0, 125,
+
+    main(nv_sig, apd_indices, 2.87, 0.16,
+         201, 5*10**4, 1, 10.0, 125,
          test_state=States.HIGH)
+    
+# %%
+#    import json
+#    directory = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pulsed_resonance_isolate_orientation/'
+#    folder= 'branch_Spin_to_charge/2020_04/'
+#    
+#    file = '2020_04_16-02_36_59-hopper-ensemble'
+#
+#    # Open the specified file
+#    with open(directory + folder + file + '.txt') as json_file:
+#        # Load the data from the file
+#        data = json.load(json_file)
+#        sig_ion_counts = data["scc_norm_avg_sig"]
+#        ref_no_ion_counts = data['org_norm_avg_sig']
+#        freq_range = data["freq_range"]
+#        freq_center = data['freq_center']
+#        num_steps = data["num_steps"]
+#    half_freq_range = freq_range / 2
+#    freq_low = freq_center - half_freq_range
+#    freq_high = freq_center + half_freq_range
+#    freqs = numpy.linspace(freq_low, freq_high, num_steps)
+#        
+#    fig, ax = plt.subplots(1,1, figsize = (10, 8.5)) 
+#    ax.plot(freqs, sig_ion_counts, 'r-', label = 'SCC pESR')
+#    ax.plot(freqs, ref_no_ion_counts, 'k-', label = 'normal pESR')
+#    ax.set_xlabel('Frequency (GHz)')
+#    ax.set_ylabel('Normalized counts')
+#    ax.set_title('Pulsed ESR, compare normalized counts with and without ionization sub-routine') 
+#    ax.legend()

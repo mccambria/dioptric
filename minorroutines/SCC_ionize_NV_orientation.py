@@ -18,6 +18,7 @@ import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
 import json
+import time
 import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
@@ -292,6 +293,255 @@ def optimize_num_ionizations(nv_sig):
     return
 
 # %%
+    
+def optimize_reion_and_init_ion_length(nv_sig):
+    '''
+    This function will sweep the pulse length for the reionization and initial
+    ionization pulse
+    '''
+    apd_indices = [0]
+    num_reps = 10**3
+    test_pulse_dur_list = numpy.linspace(0,10*10**3,21).tolist()
+    reset_pulse_time = 2 #s
+    
+    # measure laser powers (yellow one is measured at readout power:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+    # measure shelf laser power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    # measure yellow pol power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_pol_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    yel_pol_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    # create some lists for data
+    sig_count_raw = []
+    ref_count_raw = []
+    sig_counts_avg = []
+    ref_counts_avg = []
+    snr_list = []
+    
+    # Step through the pulse lengths for the test laser
+    for test_pulse_length in test_pulse_dur_list:
+        # shine the red laser for a few seconds before the sequence
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(reset_pulse_time)        
+        
+        nv_sig['pulsed_reionization_dur'] = test_pulse_length
+        nv_sig['pulsed_initial_ion_dur'] = test_pulse_length
+        sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
+                                    States.LOW)
+        sig_counts = [int(el) for el in sig_counts]
+        ref_counts = [int(el) for el in ref_counts]
+        
+        sig_count_raw.append(sig_counts)
+        ref_count_raw.append(ref_counts)
+        
+        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        
+        sig_counts_avg.append(numpy.average(sig_counts))
+        ref_counts_avg.append(numpy.average(ref_counts))
+        snr_list.append(avg_snr)
+ 
+    #plot
+    fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
+    ax = axes[0]
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, sig_counts_avg, 'ro', 
+           label = 'W/ pi-pulse')
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, ref_counts_avg, 'ko', 
+           label = 'W/out pi-pulse')
+    ax.set_xlabel('Pulse length (us)')
+    ax.set_ylabel('Counts (single shot measurement)')
+    ax.set_title('Sweep reionization and initial ionization pulse length')
+    ax.legend()
+    ax = axes[1]
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, snr_list, 'ro')
+    ax.set_xlabel('Pulse length (us)')
+    ax.set_ylabel('SNR')
+    ax.set_title('Sweep reionization and initial ionization pulse length')
+#    text = 'Yellow pol. pulse power = ' + '%.0f'%(yel_pol_power * 10**3) + ' uW' 
+#    ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+    
+    # Save
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'reset_pulse_time': reset_pulse_time,
+            'reset_pulse_time-units': 's',
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'shelf_optical_power': shelf_power,
+            'shelf_optical_power-units': 'mW',
+            'yel_pol_power': yel_pol_power,
+            'yel_pol_power-units': 'mW',
+            'test_pulse_dur_list': test_pulse_dur_list,
+            'test_pulse_dur_list-units': 'ns',
+            'num_reps':num_reps,
+            'sig_count_raw': sig_count_raw,
+            'sig_count_raw-units': 'counts',
+            'ref_count_raw': ref_count_raw,
+            'ref_count_raw-units': 'counts',
+            'sig_counts_avg': sig_counts_avg,
+            'sig_counts_avg-units': 'counts',
+            'ref_counts_avg': ref_counts_avg,
+            'ref_counts_avg-units': 'counts',
+            'snr_list': snr_list,
+            'snr_list-units': 'arb'
+            }
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path + '-reion_init_ion_dur')
+
+    tool_belt.save_figure(fig, file_path + '-reion_init_ion_dur')
+    
+    print(' \nRoutine complete!')
+    return
+# %%
+    
+def optimize_reion_length(nv_sig):
+    '''
+    This function will sweep the pulse length for the reionization pulse
+    '''
+    apd_indices = [0]
+    num_reps = 10**3
+    test_pulse_dur_list = numpy.linspace(0,100*10**3,21).tolist()
+    reset_pulse_time = 10 #s
+    
+    # measure laser powers (yellow one is measured at readout power:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+    # measure shelf laser power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    # measure yellow pol power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_pol_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    yel_pol_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    # create some lists for data
+    sig_count_raw = []
+    ref_count_raw = []
+    sig_counts_avg = []
+    ref_counts_avg = []
+    snr_list = []
+    
+    # Step through the pulse lengths for the test laser
+    for test_pulse_length in test_pulse_dur_list:
+        # shine the red laser for a few seconds before the sequence
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(reset_pulse_time)        
+        
+        nv_sig['pulsed_reionization_dur'] = test_pulse_length
+        sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
+                                    States.LOW)
+        sig_counts = [int(el) for el in sig_counts]
+        ref_counts = [int(el) for el in ref_counts]
+        
+        sig_count_raw.append(sig_counts)
+        ref_count_raw.append(ref_counts)
+        
+        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        
+        sig_counts_avg.append(numpy.average(sig_counts))
+        ref_counts_avg.append(numpy.average(ref_counts))
+        snr_list.append(avg_snr)
+ 
+    #plot
+    fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
+    ax = axes[0]
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, sig_counts_avg, 'ro', 
+           label = 'W/ pi-pulse')
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, ref_counts_avg, 'ko', 
+           label = 'W/out pi-pulse')
+    ax.set_xlabel('Pulse length (us)')
+    ax.set_ylabel('Counts (single shot measurement)')
+    ax.set_title('Sweep reionization pulse length')
+    ax.legend()
+    ax = axes[1]
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, snr_list, 'ro')
+    ax.set_xlabel('Pulse length (us)')
+    ax.set_ylabel('SNR')
+    ax.set_title('Sweep reionization pulse length')
+#    text = 'Yellow pol. pulse power = ' + '%.0f'%(yel_pol_power * 10**3) + ' uW' 
+#    ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+    
+    # Save
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'reset_pulse_time': reset_pulse_time,
+            'reset_pulse_time-units': 's',
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'shelf_optical_power': shelf_power,
+            'shelf_optical_power-units': 'mW',
+            'yel_pol_power': yel_pol_power,
+            'yel_pol_power-units': 'mW',
+            'test_pulse_dur_list': test_pulse_dur_list,
+            'test_pulse_dur_list-units': 'ns',
+            'num_reps':num_reps,
+            'sig_count_raw': sig_count_raw,
+            'sig_count_raw-units': 'counts',
+            'ref_count_raw': ref_count_raw,
+            'ref_count_raw-units': 'counts',
+            'sig_counts_avg': sig_counts_avg,
+            'sig_counts_avg-units': 'counts',
+            'ref_counts_avg': ref_counts_avg,
+            'ref_counts_avg-units': 'counts',
+            'snr_list': snr_list,
+            'snr_list-units': 'arb'
+            }
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path + '-reion_dur')
+
+    tool_belt.save_figure(fig, file_path + '-reion_dur')
+    
+    print(' \nRoutine complete!')
+    return
+
+# %%
 
 def optimize_shelf_pulse_length(nv_sig):
     '''
@@ -540,7 +790,7 @@ def optimize_yellow_pol_length(nv_sig):
     
     # measure yellow pol power
     optical_power = tool_belt.opt_power_via_photodiode(589, 
-                                    AO_power_settings = nv_sig['am_589_pol_pwr'], 
+                                    AO_power_settings = nv_sig['am_589_pol_power'], 
                                     nd_filter = nv_sig['nd_filter'])
     yel_pol_power = tool_belt.calc_optical_power_mW(589, optical_power)
     
@@ -575,13 +825,13 @@ def optimize_yellow_pol_length(nv_sig):
            label = 'W/ pi-pulse')
     ax.plot(numpy.array(test_pulse_dur_list)/10**3, ref_counts_avg, 'ko', 
            label = 'W/out pi-pulse')
-    ax.set_xlabel('Pulse length (ns)')
+    ax.set_xlabel('Pulse length (us)')
     ax.set_ylabel('Counts (single shot measurement)')
     ax.set_title('Sweep yellow pol pulse length')
     ax.legend()
     ax = axes[1]
     ax.plot(numpy.array(test_pulse_dur_list)/10**3, snr_list, 'ro')
-    ax.set_xlabel('Pulse length (ns)')
+    ax.set_xlabel('Pulse length (us)')
     ax.set_ylabel('SNR')
     ax.set_title('Sweep yellow pol pulse length')
     text = 'Yellow pol. pulse power = ' + '%.0f'%(yel_pol_power * 10**3) + ' uW' 
@@ -775,8 +1025,10 @@ if __name__ == '__main__':
 #    for ion_time in ion_pulse_list:
 #        nv_sig['pulsed_ionization_dur'] = ion_time
 #    optimize_num_ionizations(nv_sig)
+#    optimize_reion_and_init_ion_length(nv_sig)
+    optimize_reion_length(nv_sig)
 #    optimize_shelf_pulse_length(nv_sig)
-    optimize_shelf_power(nv_sig)
+#    optimize_shelf_power(nv_sig)
 #    optimize_yellow_pol_length(nv_sig)
 #    optimize_yellow_pol_power(nv_sig)
     
