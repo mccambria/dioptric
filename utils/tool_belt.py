@@ -121,7 +121,7 @@ def decode_time_tags(ret_vals_string):
 # %% Matplotlib plotting utils
 
 
-def create_image_figure(imgArray, imgExtent, clickHandler=None):
+def create_image_figure(imgArray, imgExtent, color_ind, clickHandler=None):
     """
     Creates a figure containing a single grayscale image and a colorbar.
 
@@ -161,6 +161,11 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None):
 
     # Add a colorbar
     plt.colorbar(img)
+    
+    # Label axes
+    fig.xlabel('V')
+    fig.ylabel('V')
+    fig.title('Confocal scan with {} nm'.fomrat(color_ind))
 
     # Wire up the click handler to print the coordinates
     if clickHandler is not None:

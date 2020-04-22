@@ -24,6 +24,7 @@ def get_seq(pulser_wiring, args):
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_532_aom = pulser_wiring['do_532_aom']
     pulser_ao_589_aom = pulser_wiring['ao_589_aom']
+    pulser_do_638_aom = pulser_wiring['do_638_aom']
 
     # Convert the 32 bit ints into 64 bit ints
     delay = numpy.int64(delay)
@@ -66,6 +67,13 @@ def get_seq(pulser_wiring, args):
         final_digital = [3]
         final = OutputState(final_digital, 0.0, 0.0)
 
+    elif color_ind == 638:
+        
+        train = [(period, HIGH)]
+        seq.setDigital(pulser_do_638_aom, train)
+        
+        final_digital = []
+        final = OutputState(final_digital, 0.0, 0.0)
 
     return seq, final, [period]
 
@@ -73,6 +81,7 @@ def get_seq(pulser_wiring, args):
 if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 1,
+              'do_638_aom': 3,
               'do_532_aom': 2,
               'ao_589_aom': 1}
     args = [0, 100, 0.5, 0, 532]

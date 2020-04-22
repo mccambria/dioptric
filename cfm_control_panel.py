@@ -504,8 +504,8 @@ if __name__ == '__main__':
 #        set_xyz([0.0,0.0,5.0])
 #        set_xyz([-0.116, -0.073, 2.61])
         
-#        with labrad.connect() as cxn:
-#            cxn.filter_slider_ell9k.set_filter('nd_1.5')
+        with labrad.connect() as cxn:
+            cxn.filter_slider_ell9k.set_filter('nd_0.5')
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            cxn.objective_piezo.write(5.1)
 #            input('Laser currently turned off, Press enter to stop...')
@@ -531,11 +531,11 @@ if __name__ == '__main__':
 #            for p in range(len(aom_ao_589_pwr_list)):
 #                aom_ao_589_pwr = aom_ao_589_pwr_list[p]
 #                print(aom_ao_589_pwr)
-            do_time_resolved_readout(nv_sig, apd_indices,
-                             532, 638)
+#            do_time_resolved_readout(nv_sig, apd_indices,
+#                             532, 638)
             
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_stationary_count(nv_sig, 1.0, apd_indices, 532)
@@ -560,7 +560,7 @@ if __name__ == '__main__':
 #                        freq_center=nv_sig['resonance_HIGH'], freq_range=0.1)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
-            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
+#            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
 #            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 300])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)

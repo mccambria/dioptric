@@ -196,7 +196,7 @@ def reformat_plot(colorMap, save_file_type):
         # Save the file in the same file directory
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
 
-def create_figure(file_name):
+def create_figure(file_name, color_ind):
 
     data = tool_belt.get_raw_data(__file__, file_name)
     x_range = data['x_range']
@@ -232,7 +232,7 @@ def create_figure(file_name):
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
 
-    fig = tool_belt.create_image_figure(img_array_kcps, img_extent,
+    fig = tool_belt.create_image_figure(img_array_kcps, img_extent, color_ind,
                                         clickHandler=on_click_image)
     # Redraw the canvas and flush the changes to the backend
     fig.canvas.draw()
@@ -260,7 +260,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     tool_belt.reset_cfm(cxn)
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    readout = shared_params['continuous_readout_dur']
+#    readout = shared_params['continuous_readout_dur']
+    readout = 10**7
 #    readout = 100*10**6
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
@@ -343,7 +344,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
         img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                       y_low - half_pixel_size, y_high + half_pixel_size]
 
-        fig = tool_belt.create_image_figure(img_array, img_extent,
+        fig = tool_belt.create_image_figure(img_array, img_extent, color_ind,
                                             clickHandler=on_click_image)
 
     # %% Collect the data
