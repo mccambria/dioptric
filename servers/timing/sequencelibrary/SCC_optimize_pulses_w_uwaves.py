@@ -32,7 +32,7 @@ def get_seq(pulser_wiring, args):
     total_delay = laser_515_delay + aom_589_delay + laser_638_delay + rf_delay
     # Test period
     period =  total_delay + (init_ion_time + reion_time + ion_time + shelf_time + pi_pulse + \
-                           readout_time + 4 * wait_time)*2
+                           readout_time + 5 * wait_time)*2
     
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_indices)]
@@ -51,27 +51,27 @@ def get_seq(pulser_wiring, args):
     seq = Sequence()
 
     #collect photons for certain timewindow tR in APD
-    train = [(total_delay + init_ion_time + reion_time  + pi_pulse + shelf_time + ion_time + 3*wait_time, LOW), 
+    train = [(total_delay + init_ion_time + reion_time  + pi_pulse + shelf_time + ion_time + 4*wait_time, LOW), 
              (readout_time, HIGH), 
-             (init_ion_time + reion_time + pi_pulse + shelf_time + ion_time + 4*wait_time, LOW), 
+             (init_ion_time + reion_time + pi_pulse + shelf_time + ion_time + 5*wait_time, LOW), 
              (readout_time, HIGH), (wait_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
     # reionization pulse (green)
     delay = total_delay - laser_515_delay
     train = [ (delay + init_ion_time + wait_time, LOW), (reion_time, HIGH), 
-             (4*wait_time + pi_pulse + shelf_time + ion_time + readout_time + init_ion_time, LOW), 
+             (5*wait_time + pi_pulse + shelf_time + ion_time + readout_time + init_ion_time, LOW), 
              (reion_time, HIGH), 
-             (3*wait_time + pi_pulse + shelf_time + ion_time + readout_time + laser_515_delay, LOW)]  
+             (4*wait_time + pi_pulse + shelf_time + ion_time + readout_time + laser_515_delay, LOW)]  
     seq.setDigital(pulser_do_532_aom, train)
  
     # ionization pulse (red)
     delay = total_delay - laser_638_delay
     train = [(delay, LOW), (init_ion_time, HIGH), 
-             (2*wait_time + reion_time + pi_pulse + shelf_time, LOW), 
+             (3*wait_time + reion_time + pi_pulse + shelf_time, LOW), 
              (ion_time, HIGH), 
              (2*wait_time + readout_time, LOW), (init_ion_time, HIGH),
-             (2*wait_time + reion_time + pi_pulse + shelf_time, LOW), 
+             (3*wait_time + reion_time + pi_pulse + shelf_time, LOW), 
              (ion_time, HIGH), 
              (2*wait_time + readout_time + laser_638_delay, LOW)]
     seq.setDigital(pulser_do_638_aom, train)
@@ -79,17 +79,17 @@ def get_seq(pulser_wiring, args):
     # uwave pulses
     delay = total_delay - rf_delay
     train = [(delay + init_ion_time + reion_time + 2*wait_time, LOW), (pi_pulse, HIGH), 
-             (6*wait_time + 2*shelf_time + init_ion_time + pi_pulse + reion_time \
+             (8*wait_time + 2*shelf_time + init_ion_time + pi_pulse + reion_time \
               + 2*readout_time + 2*ion_time + rf_delay, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
     
     # readout with 589
     delay = total_delay - aom_589_delay
-    train = [(delay + init_ion_time + reion_time + 2*wait_time + pi_pulse, LOW), 
+    train = [(delay + init_ion_time + reion_time + 3*wait_time + pi_pulse, LOW), 
              (shelf_time, shelf_power), 
              (ion_time + wait_time, LOW), 
              (readout_time, aom_ao_589_pwr),
-             (3*wait_time + init_ion_time + reion_time + pi_pulse, LOW),
+             (4*wait_time + init_ion_time + reion_time + pi_pulse, LOW),
              (shelf_time, shelf_power),
              (ion_time + wait_time, LOW), 
              (readout_time, aom_ao_589_pwr), 
