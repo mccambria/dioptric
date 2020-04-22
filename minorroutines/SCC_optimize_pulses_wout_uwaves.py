@@ -161,7 +161,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     tool_belt.reset_cfm(cxn)
 
 # Initial Calculation and setup
-    readout_time = int(nv_sig['pulsed_SCC_readout_dur'])
+    readout_time = nv_sig['pulsed_SCC_readout_dur']
     ion_time = nv_sig['pulsed_ionization_dur']
     reion_time = nv_sig['pulsed_reionization_dur']
     init_ion_time = nv_sig['pulsed_initial_ion_dur']
@@ -597,7 +597,7 @@ if __name__ == '__main__':
         for tr in readout_time:
             print(' \nReadout power set to {} V'.format(power))
             print('Readout time set to {} ms'.format(tr/10**6))
-            nv_sig['pulsed_SCC_readout_dur'] = tr               
+            nv_sig['pulsed_SCC_readout_dur'] = int(tr)            
             optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = test_pulse_dur_list)
 #    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
