@@ -169,7 +169,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
             tool_belt.calc_optical_power_mW(589, illum_optical_power_pd)    
         illum_pulse_delay = shared_params['589_aom_delay']
     elif illum_color_ind == 638:
-        illum_optical_power_pd = tool_belt.opt_power_via_photodiode(638)        
+        illum_optical_power_pd = tool_belt.opt_power_via_photodiode(638)    
         illum_optical_power_mW = \
             tool_belt.calc_optical_power_mW(638, illum_optical_power_pd)
         illum_pulse_delay = shared_params['638_DM_laser_delay']

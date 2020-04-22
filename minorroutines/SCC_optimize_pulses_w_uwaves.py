@@ -11,6 +11,7 @@ import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
 import json
+import time
 import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
@@ -94,8 +95,8 @@ def compile_raw_data_length_sweep(nv_sig, green_optical_power_pd, green_optical_
                      yellow_optical_power_mW, test_pulse_dur_list, num_reps, 
                      sig_count_raw, ref_count_raw, sig_counts_avg, snr_list):
     
-    if type(test_pulse_dur_list) != list:
-        test_pulse_dur_list.tolist()
+
+    test_pulse_dur_list = numpy.array(test_pulse_dur_list)
         
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
@@ -113,7 +114,7 @@ def compile_raw_data_length_sweep(nv_sig, green_optical_power_pd, green_optical_
             'yellow_optical_power_pd-units': 'V',
             'yellow_optical_power_mW': yellow_optical_power_mW,
             'yellow_optical_power_mW-units': 'mW',
-            'test_pulse_dur_list': test_pulse_dur_list,
+            'test_pulse_dur_list': test_pulse_dur_list.tolist(),
             'test_pulse_dur_list-units': 'ns',
             'num_reps':num_reps,
             'sig_count_raw': sig_count_raw,
@@ -134,8 +135,7 @@ def compile_raw_data_power_sweep(nv_sig, green_optical_power_pd, green_optical_p
                      yellow_optical_power_mW, power_list, optical_power_list, num_reps, 
                      sig_count_raw, ref_count_raw, sig_counts_avg, snr_list):
 
-    if type(power_list) != list:
-        power_list.tolist()
+    power_list = numpy.array(power_list)
         
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
@@ -153,7 +153,7 @@ def compile_raw_data_power_sweep(nv_sig, green_optical_power_pd, green_optical_p
             'yellow_optical_power_pd-units': 'V',
             'yellow_optical_power_mW': yellow_optical_power_mW,
             'yellow_optical_power_mW-units': 'mW',
-            'power_list': power_list,
+            'power_list': power_list.tolist(),
             'power_list-units': '0-1 V',
             'optical_power_list': optical_power_list,
             'optical_power_list-units': 'mW',
@@ -309,7 +309,7 @@ def optimize_initial_ion_pulse_length(nv_sig):
     '''
     apd_indices = [0]
     num_reps = 10**3
-#    test_pulse_dur_list = numpy.linspace(0,10**6,11)
+#    test_pulse_dur_list = numpy.linspace(0,10**4,11)
     test_pulse_dur_list = numpy.array([0.,  10000.,  20000.,  30000.,  40000.,  50000.,  60000.,
         70000.,  80000.,  90000., 100000.,
         200000.,  300000.,  400000.,  500000.,
@@ -331,6 +331,10 @@ def optimize_initial_ion_pulse_length(nv_sig):
     
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
+        # shine the red laser before each measurement
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2) 
         nv_sig['pulsed_initial_ion_dur'] = test_pulse_length
         sig_count, ref_count = main(nv_sig, apd_indices, num_reps,
                                     States.LOW, plot = False)
@@ -375,7 +379,7 @@ def optimize_ion_pulse_length(nv_sig):
     '''
     apd_indices = [0]
     num_reps = 10**3
-    test_pulse_dur_list = numpy.linspace(0,1500,16)
+    test_pulse_dur_list = numpy.linspace(0,1500,16).tolist()
 #    test_pulse_dur_list = numpy.linspace(0,100,2)
     
     # measure laser powers:
@@ -394,6 +398,10 @@ def optimize_ion_pulse_length(nv_sig):
     
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
+        # shine the red laser before each measurement
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2) 
         nv_sig['pulsed_ionization_dur'] = test_pulse_length
         sig_count, ref_count = main(nv_sig, apd_indices, num_reps,
                                     States.LOW, plot = False)
@@ -460,6 +468,10 @@ def optimize_reion_pulse_length(nv_sig):
     
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
+        # shine the red laser before each measurement
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2) 
         nv_sig['pulsed_reionization_dur'] = test_pulse_length
         sig_count, ref_count = main(nv_sig, apd_indices, num_reps,
                                     States.LOW, plot = False)
@@ -528,6 +540,10 @@ def optimize_init_ion_and_reion_pulse_length(nv_sig):
     
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
+        # shine the red laser before each measurement
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2) 
         nv_sig['pulsed_reionization_dur'] = test_pulse_length
         nv_sig['pulsed_initial_ion_dur'] = test_pulse_length
         sig_count, ref_count = main(nv_sig, apd_indices, num_reps,
@@ -593,6 +609,10 @@ def optimize_readout_pulse_power(nv_sig):
                 tool_belt.measure_g_r_y_power( 
                                   nv_sig['am_589_power'], nv_sig['nd_filter'])
                 
+        # shine the red laser before each measurement
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2)                 
         sig_count, ref_count = main(nv_sig, apd_indices, num_reps,
                                     States.LOW, plot = False)
         optical_power_list.append(yellow_optical_power_mW)
@@ -663,6 +683,10 @@ def optimize_readout_pulse_length(nv_sig):
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
         nv_sig['pulsed_SCC_readout_dur'] = test_pulse_length
+        # shine the red laser before each measurement
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2) 
         sig_count, ref_count = main(nv_sig, apd_indices, num_reps,
                                     States.LOW, plot = False)
         sig_count = [int(el) for el in sig_count]
@@ -755,6 +779,10 @@ def optimize_shelf_pulse_length(nv_sig):
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
         nv_sig['pulsed_shelf_dur'] = test_pulse_length
+        # shine the red laser before each measurement
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2) 
         sig_count, ref_count = main(nv_sig, apd_indices, num_reps,
                                     States.LOW, plot = False)
         sig_count = [int(el) for el in sig_count]
@@ -824,6 +852,10 @@ def optimize_shelf_pulse_power(nv_sig):
                                     nd_filter = nv_sig['nd_filter'])
         shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
 #        print(shelf_power)
+        # shine the red laser before each measurement
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2) 
         optical_power_list.append(shelf_power)
 
         nv_sig['am_589_shelf_power'] = test_pulse_power
@@ -864,29 +896,29 @@ def optimize_shelf_pulse_power(nv_sig):
 if __name__ == '__main__':
     apd_indices = [0]
     sample_name = 'hopper'
-    ensemble = { 'coords': [0.0, 0.0, 5.00],
+    ensemble = { 'coords': [0.183, 0.043, 5.00],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
-            'pulsed_initial_ion_dur': 200*10**3,
-            'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
-            'pulsed_ionization_dur': 800, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8, 
+            'pulsed_initial_ion_dur':300*10**3,
+            'pulsed_shelf_dur': 100, 'am_589_shelf_power': 0.3,
+            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 300*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
+            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}     
     nv_sig = ensemble
     
     # Run the program
 #    optimize_initial_ion_pulse_length(nv_sig)
 #    optimize_ion_pulse_length(nv_sig)
 #    optimize_reion_pulse_length(nv_sig)
-#    optimize_reion_and_init_ion_pulse_length(nv_sig)
+#    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
 #    optimize_readout_pulse_power(nv_sig)
-    optimize_shelf_pulse_length(nv_sig)
-#    optimize_shelf_pulse_power(nv_sig)
+#    optimize_shelf_pulse_length(nv_sig)
+    optimize_shelf_pulse_power(nv_sig)
     
 #    sig_counts, ref_counts = main(nv_sig, apd_indices, 10**3, States.LOW)
     

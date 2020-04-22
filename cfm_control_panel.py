@@ -411,9 +411,13 @@ def do_determine_n_thresh_with_638(nv_sig, apd_indices):
     
 def do_time_resolved_readout(nv_sig, apd_indices,
                                  init_color_ind, illum_color_ind):
-#    illumination_time = 500 # turns on at 250 and turns off at 750
+    illumination_time = 500 # turns on at 250 and turns off at 750
+    num_reps = 10**5
+    num_bins = 500
+    
+#    illumination_time = 1000 # turns on at 250 and turns off at 750
 #    num_reps = 10**5
-#    num_bins = 500
+#    num_bins = 1000
     
 #    illumination_time = 10**4 
 #    num_reps = 10**4
@@ -434,9 +438,9 @@ def do_time_resolved_readout(nv_sig, apd_indices,
 #    num_bins = 1500
     
     # 2
-    illumination_time = 10*10**6    
-    num_reps = 10**3
-    num_bins = 1000
+#    illumination_time = 10*10**6    
+#    num_reps = 10**3
+#    num_bins = 1000
     
     # 3
 #    illumination_time = 5*10**6    
@@ -444,7 +448,7 @@ def do_time_resolved_readout(nv_sig, apd_indices,
 #    num_bins = 1000
     
     
-    init_pulse_duration = 10**6
+    init_pulse_duration = 3000
     num_runs = 1
     time_resolved_readout.main(nv_sig, apd_indices, 
                    illumination_time, init_pulse_duration,
@@ -467,17 +471,21 @@ if __name__ == '__main__':
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10**7, 'am_589_power': 0.25, 
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 10**7, 'cobalt_532_power': 8, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
+            'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.3,
+            'pulsed_initial_ion_dur': 200*10**3,
+            'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
+            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8,
+            'ionization_rep': 13,
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}  
+            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
   
     nv_sig_list = [ensemble]
     
     
-#    aom_ao_589_pwr = 0.3
+    aom_ao_589_pwr = 0.3
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
 #    cobalt_638_power = 30
 #    ao_638_pwr_list = numpy.linspace(0.71, 0.9, 20)
@@ -523,8 +531,8 @@ if __name__ == '__main__':
 #            for p in range(len(aom_ao_589_pwr_list)):
 #                aom_ao_589_pwr = aom_ao_589_pwr_list[p]
 #                print(aom_ao_589_pwr)
-#            do_time_resolved_readout(nv_sig, apd_indices,
-#                             532, 589)
+            do_time_resolved_readout(nv_sig, apd_indices,
+                             532, 638)
             
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
@@ -542,7 +550,7 @@ if __name__ == '__main__':
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
-            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.9406, freq_range=0.05)
+#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.9406, freq_range=0.05)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.200, freq_range=0.100)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)

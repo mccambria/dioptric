@@ -27,6 +27,7 @@ from utils.tool_belt import States
 #%%
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
+reset_pulse_time = 2#s
 # %%
 
 #def sqrt_fnct(x, alpha):
@@ -195,7 +196,7 @@ def optimize_num_ionizations(nv_sig):
 #    if not num_ion_list:
     #    num_ion_list = numpy.linspace(0,5, 6)
 #    num_ion_list = numpy.linspace(0,150, 76)
-    num_ion_list = numpy.linspace(0,30, 31)
+    num_ion_list = numpy.linspace(0,30, 16)
     
     # measure laser powers (yellow one is measured at readout power:
     green_optical_power_pd, green_optical_power_mW, \
@@ -214,10 +215,13 @@ def optimize_num_ionizations(nv_sig):
     ref_count_raw = []
     sig_counts_avg = []
     ref_counts_avg = []
-    snr_list = []
+    norm_diff_list = []
     
     # Step through the pulse lengths for the test laser
     for num_ionizations in num_ion_list:
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(reset_pulse_time) 
         nv_sig['ionization_rep'] = num_ionizations
         sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
                                     States.LOW)
@@ -227,11 +231,12 @@ def optimize_num_ionizations(nv_sig):
         sig_count_raw.append(sig_counts)
         ref_count_raw.append(ref_counts)
         
-        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        diff = numpy.average(sig_counts) - numpy.average(ref_counts)
+        norm_diff = diff / numpy.average(ref_counts)
         
         sig_counts_avg.append(numpy.average(sig_counts))
         ref_counts_avg.append(numpy.average(ref_counts))
-        snr_list.append(avg_snr)
+        norm_diff_list.append(norm_diff)
  
     #plot
     fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
@@ -245,9 +250,9 @@ def optimize_num_ionizations(nv_sig):
     ax.set_title('Number of pi-pulse/ionization repetitions')
     ax.legend()
     ax = axes[1]
-    ax.plot(num_ion_list, snr_list, 'ro')
+    ax.plot(num_ion_list, norm_diff_list, 'ro')
     ax.set_xlabel('Number of repetitions')
-    ax.set_ylabel('SNR')
+    ax.set_ylabel('(sig - ref) / ref')
     ax.set_title('Number of pi-pulse/ionization repetitions')
     
     
@@ -280,8 +285,8 @@ def optimize_num_ionizations(nv_sig):
             'sig_counts_avg-units': 'counts',
             'ref_counts_avg': ref_counts_avg,
             'ref_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
+            'norm_diff_list': norm_diff_list,
+            'norm_diff_list-units': 'arb'
             }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
@@ -302,7 +307,6 @@ def optimize_reion_and_init_ion_length(nv_sig):
     apd_indices = [0]
     num_reps = 10**3
     test_pulse_dur_list = numpy.linspace(0,10*10**3,21).tolist()
-    reset_pulse_time = 2 #s
     
     # measure laser powers (yellow one is measured at readout power:
     green_optical_power_pd, green_optical_power_mW, \
@@ -327,7 +331,7 @@ def optimize_reion_and_init_ion_length(nv_sig):
     ref_count_raw = []
     sig_counts_avg = []
     ref_counts_avg = []
-    snr_list = []
+    norm_diff_list = []
     
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
@@ -346,11 +350,12 @@ def optimize_reion_and_init_ion_length(nv_sig):
         sig_count_raw.append(sig_counts)
         ref_count_raw.append(ref_counts)
         
-        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        diff = numpy.average(sig_counts) - numpy.average(ref_counts)
+        norm_diff = diff / numpy.average(ref_counts)
         
         sig_counts_avg.append(numpy.average(sig_counts))
         ref_counts_avg.append(numpy.average(ref_counts))
-        snr_list.append(avg_snr)
+        norm_diff_list.append(norm_diff)
  
     #plot
     fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
@@ -364,9 +369,9 @@ def optimize_reion_and_init_ion_length(nv_sig):
     ax.set_title('Sweep reionization and initial ionization pulse length')
     ax.legend()
     ax = axes[1]
-    ax.plot(numpy.array(test_pulse_dur_list)/10**3, snr_list, 'ro')
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, norm_diff_list, 'ro')
     ax.set_xlabel('Pulse length (us)')
-    ax.set_ylabel('SNR')
+    ax.set_ylabel('(sig - ref) / ref')
     ax.set_title('Sweep reionization and initial ionization pulse length')
 #    text = 'Yellow pol. pulse power = ' + '%.0f'%(yel_pol_power * 10**3) + ' uW' 
 #    ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
@@ -406,8 +411,8 @@ def optimize_reion_and_init_ion_length(nv_sig):
             'sig_counts_avg-units': 'counts',
             'ref_counts_avg': ref_counts_avg,
             'ref_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
+            'norm_diff_list': norm_diff_list,
+            'norm_diff_list-units': 'arb'
             }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
@@ -417,16 +422,16 @@ def optimize_reion_and_init_ion_length(nv_sig):
     
     print(' \nRoutine complete!')
     return
+
 # %%
     
-def optimize_reion_length(nv_sig):
+def optimize_init_ion_length(nv_sig):
     '''
-    This function will sweep the pulse length for the reionization pulse
+    This function will sweep the pulse length for the ibnitial ion pulse
     '''
     apd_indices = [0]
     num_reps = 10**3
     test_pulse_dur_list = numpy.linspace(0,100*10**3,21).tolist()
-    reset_pulse_time = 10 #s
     
     # measure laser powers (yellow one is measured at readout power:
     green_optical_power_pd, green_optical_power_mW, \
@@ -451,7 +456,131 @@ def optimize_reion_length(nv_sig):
     ref_count_raw = []
     sig_counts_avg = []
     ref_counts_avg = []
-    snr_list = []
+#    snr_list = []
+    norm_diff_list = []
+    
+    # Step through the pulse lengths for the test laser
+    for test_pulse_length in test_pulse_dur_list:
+        # shine the red laser for a few seconds before the sequence
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(reset_pulse_time)        
+        
+        nv_sig['pulsed_initial_ion_dur'] = test_pulse_length
+        sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
+                                    States.LOW)
+        sig_counts = [int(el) for el in sig_counts]
+        ref_counts = [int(el) for el in ref_counts]
+        
+        sig_count_raw.append(sig_counts)
+        ref_count_raw.append(ref_counts)
+        
+        diff = numpy.average(sig_counts) - numpy.average(ref_counts)
+        norm_diff = diff / numpy.average(ref_counts)
+        
+        sig_counts_avg.append(numpy.average(sig_counts))
+        ref_counts_avg.append(numpy.average(ref_counts))
+        norm_diff_list.append(norm_diff)
+    #plot
+    fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
+    ax = axes[0]
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, sig_counts_avg, 'ro', 
+           label = 'W/ pi-pulse')
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, ref_counts_avg, 'ko', 
+           label = 'W/out pi-pulse')
+    ax.set_xlabel('Pulse length (us)')
+    ax.set_ylabel('Counts (single shot measurement)')
+    ax.set_title('Sweep initial ionization pulse length')
+    ax.legend()
+    ax = axes[1]
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, norm_diff_list, 'ro')
+    ax.set_xlabel('Pulse length (us)')
+    ax.set_ylabel('(sig - ref) / ref')
+    ax.set_title('Sweep initial ionization pulse length')
+#    text = 'Yellow pol. pulse power = ' + '%.0f'%(yel_pol_power * 10**3) + ' uW' 
+#    ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+    
+    # Save
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'reset_pulse_time': reset_pulse_time,
+            'reset_pulse_time-units': 's',
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'shelf_optical_power': shelf_power,
+            'shelf_optical_power-units': 'mW',
+            'yel_pol_power': yel_pol_power,
+            'yel_pol_power-units': 'mW',
+            'test_pulse_dur_list': test_pulse_dur_list,
+            'test_pulse_dur_list-units': 'ns',
+            'num_reps':num_reps,
+            'sig_count_raw': sig_count_raw,
+            'sig_count_raw-units': 'counts',
+            'ref_count_raw': ref_count_raw,
+            'ref_count_raw-units': 'counts',
+            'sig_counts_avg': sig_counts_avg,
+            'sig_counts_avg-units': 'counts',
+            'ref_counts_avg': ref_counts_avg,
+            'ref_counts_avg-units': 'counts',
+            'norm_diff_list': norm_diff_list,
+            'norm_diff_list-units': 'arb'
+            }
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path + '-init_ion_dur')
+
+    tool_belt.save_figure(fig, file_path + '-init_ion_dur')
+    
+    print(' \nRoutine complete!')
+    return
+# %%
+    
+def optimize_reion_length(nv_sig):
+    '''
+    This function will sweep the pulse length for the reionization pulse
+    '''
+    apd_indices = [0]
+    num_reps = 10**3
+    test_pulse_dur_list = numpy.linspace(0,15*10**3,16).tolist()
+    
+    # measure laser powers (yellow one is measured at readout power:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+    # measure shelf laser power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    # measure yellow pol power
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_pol_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    yel_pol_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
+    # create some lists for data
+    sig_count_raw = []
+    ref_count_raw = []
+    sig_counts_avg = []
+    ref_counts_avg = []
+#    snr_list = []
+    norm_diff_list = []
     
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
@@ -469,12 +598,13 @@ def optimize_reion_length(nv_sig):
         sig_count_raw.append(sig_counts)
         ref_count_raw.append(ref_counts)
         
-        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        diff = numpy.average(sig_counts) - numpy.average(ref_counts)
+        norm_diff = diff / numpy.average(ref_counts)
         
         sig_counts_avg.append(numpy.average(sig_counts))
         ref_counts_avg.append(numpy.average(ref_counts))
-        snr_list.append(avg_snr)
- 
+        norm_diff_list.append(norm_diff)
+        
     #plot
     fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
     ax = axes[0]
@@ -487,9 +617,9 @@ def optimize_reion_length(nv_sig):
     ax.set_title('Sweep reionization pulse length')
     ax.legend()
     ax = axes[1]
-    ax.plot(numpy.array(test_pulse_dur_list)/10**3, snr_list, 'ro')
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, norm_diff_list, 'ro')
     ax.set_xlabel('Pulse length (us)')
-    ax.set_ylabel('SNR')
+    ax.set_ylabel('(sig - ref) / ref')
     ax.set_title('Sweep reionization pulse length')
 #    text = 'Yellow pol. pulse power = ' + '%.0f'%(yel_pol_power * 10**3) + ' uW' 
 #    ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
@@ -529,8 +659,8 @@ def optimize_reion_length(nv_sig):
             'sig_counts_avg-units': 'counts',
             'ref_counts_avg': ref_counts_avg,
             'ref_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
+            'norm_diff_list': norm_diff_list,
+            'norm_diff_list-units': 'arb'
             }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
@@ -568,11 +698,14 @@ def optimize_shelf_pulse_length(nv_sig):
     ref_count_raw = []
     sig_counts_avg = []
     ref_counts_avg = []
-    snr_list = []
+    norm_diff_list = []
     
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
         nv_sig['pulsed_shelf_dur'] = test_pulse_length
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(reset_pulse_time)   
         sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
                                     States.LOW)
         sig_counts = [int(el) for el in sig_counts]
@@ -581,11 +714,12 @@ def optimize_shelf_pulse_length(nv_sig):
         sig_count_raw.append(sig_counts)
         ref_count_raw.append(ref_counts)
         
-        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        diff = numpy.average(sig_counts) - numpy.average(ref_counts)
+        norm_diff = diff / numpy.average(ref_counts)
         
         sig_counts_avg.append(numpy.average(sig_counts))
         ref_counts_avg.append(numpy.average(ref_counts))
-        snr_list.append(avg_snr)
+        norm_diff_list.append(norm_diff)
  
     #plot
     fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
@@ -599,9 +733,9 @@ def optimize_shelf_pulse_length(nv_sig):
     ax.set_title('Sweep shelf pulse length')
     ax.legend()
     ax = axes[1]
-    ax.plot(test_pulse_dur_list, snr_list, 'ro')
+    ax.plot(test_pulse_dur_list, norm_diff_list, 'ro')
     ax.set_xlabel('Pulse length (ns)')
-    ax.set_ylabel('SNR')
+    ax.set_ylabel('(sig - ref) / ref')
     ax.set_title('Sweep shelf pulse length')
     text = 'Shelf pulse power = ' + '%.0f'%(shelf_power * 10**3) + ' uW' 
     ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
@@ -612,6 +746,8 @@ def optimize_shelf_pulse_length(nv_sig):
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'reset_pulse_time': reset_pulse_time,
+            'reset_pulse_time-units': 's',
             'green_optical_power_pd': green_optical_power_pd,
             'green_optical_power_pd-units': 'V',
             'green_optical_power_mW': green_optical_power_mW,
@@ -637,8 +773,8 @@ def optimize_shelf_pulse_length(nv_sig):
             'sig_counts_avg-units': 'counts',
             'ref_counts_avg': ref_counts_avg,
             'ref_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
+            'norm_diff_list': norm_diff_list,
+            'norm_diff_list-units': 'arb'
             }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
@@ -677,7 +813,7 @@ def optimize_shelf_power(nv_sig):
     ref_count_raw = []
     sig_counts_avg = []
     ref_counts_avg = []
-    snr_list = []
+    norm_diff_list = []
     
     # Step through the pulse lengths for the test laser
     for power in power_list:
@@ -688,7 +824,9 @@ def optimize_shelf_power(nv_sig):
                                         nd_filter = nv_sig['nd_filter'])
         shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
         opt_power_list.append(shelf_power)
-
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(reset_pulse_time)   
         sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
                                     States.LOW)
         sig_counts = [int(el) for el in sig_counts]
@@ -697,11 +835,12 @@ def optimize_shelf_power(nv_sig):
         sig_count_raw.append(sig_counts)
         ref_count_raw.append(ref_counts)
         
-        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        diff = numpy.average(sig_counts) - numpy.average(ref_counts)
+        norm_diff = diff / numpy.average(ref_counts)
         
         sig_counts_avg.append(numpy.average(sig_counts))
         ref_counts_avg.append(numpy.average(ref_counts))
-        snr_list.append(avg_snr)
+        norm_diff_list.append(norm_diff)
  
     #plot
     fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
@@ -715,9 +854,9 @@ def optimize_shelf_power(nv_sig):
     ax.set_title('Sweep shelf pulse power')
     ax.legend()
     ax = axes[1]
-    ax.plot(numpy.array(opt_power_list)*10**3, snr_list, 'ro')
+    ax.plot(numpy.array(opt_power_list)*10**3, norm_diff_list, 'ro')
     ax.set_xlabel('Pulse power (uW)')
-    ax.set_ylabel('SNR')
+    ax.set_ylabel('(sig - ref) / ref')
     ax.set_title('Sweep shelf pulse power')
     text = 'Shelf pulse length = ' + '%.0f'%(nv_sig['pulsed_shelf_dur'] / 10**3) + ' us' 
     ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
@@ -728,6 +867,8 @@ def optimize_shelf_power(nv_sig):
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'reset_pulse_time': reset_pulse_time,
+            'reset_pulse_time-units': 's',
             'green_optical_power_pd': green_optical_power_pd,
             'green_optical_power_pd-units': 'V',
             'green_optical_power_mW': green_optical_power_mW,
@@ -755,8 +896,8 @@ def optimize_shelf_power(nv_sig):
             'sig_counts_avg-units': 'counts',
             'ref_counts_avg': ref_counts_avg,
             'ref_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
+            'norm_diff_list': norm_diff_list,
+            'norm_diff_list-units': 'arb'
             }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
@@ -799,11 +940,14 @@ def optimize_yellow_pol_length(nv_sig):
     ref_count_raw = []
     sig_counts_avg = []
     ref_counts_avg = []
-    snr_list = []
+    norm_diff_list = []
     
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
         nv_sig['yellow_pol_dur'] = test_pulse_length
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(reset_pulse_time)  
         sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
                                     States.LOW)
         sig_counts = [int(el) for el in sig_counts]
@@ -812,11 +956,12 @@ def optimize_yellow_pol_length(nv_sig):
         sig_count_raw.append(sig_counts)
         ref_count_raw.append(ref_counts)
         
-        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        diff = numpy.average(sig_counts) - numpy.average(ref_counts)
+        norm_diff = diff / numpy.average(ref_counts)
         
         sig_counts_avg.append(numpy.average(sig_counts))
         ref_counts_avg.append(numpy.average(ref_counts))
-        snr_list.append(avg_snr)
+        norm_diff_list.append(norm_diff)
  
     #plot
     fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
@@ -830,9 +975,9 @@ def optimize_yellow_pol_length(nv_sig):
     ax.set_title('Sweep yellow pol pulse length')
     ax.legend()
     ax = axes[1]
-    ax.plot(numpy.array(test_pulse_dur_list)/10**3, snr_list, 'ro')
+    ax.plot(numpy.array(test_pulse_dur_list)/10**3, norm_diff_list, 'ro')
     ax.set_xlabel('Pulse length (us)')
-    ax.set_ylabel('SNR')
+    ax.set_ylabel('(sig - ref) / ref')
     ax.set_title('Sweep yellow pol pulse length')
     text = 'Yellow pol. pulse power = ' + '%.0f'%(yel_pol_power * 10**3) + ' uW' 
     ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
@@ -843,6 +988,8 @@ def optimize_yellow_pol_length(nv_sig):
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'reset_pulse_time': reset_pulse_time,
+            'reset_pulse_time-units': 's',
             'green_optical_power_pd': green_optical_power_pd,
             'green_optical_power_pd-units': 'V',
             'green_optical_power_mW': green_optical_power_mW,
@@ -870,8 +1017,8 @@ def optimize_yellow_pol_length(nv_sig):
             'sig_counts_avg-units': 'counts',
             'ref_counts_avg': ref_counts_avg,
             'ref_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
+            'norm_diff_list': norm_diff_list,
+            'norm_diff_list-units': 'arb'
             }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
@@ -910,7 +1057,7 @@ def optimize_yellow_pol_power(nv_sig):
     ref_count_raw = []
     sig_counts_avg = []
     ref_counts_avg = []
-    snr_list = []
+    norm_diff_list = []
     
     # Step through the pulse lengths for the test laser
     for power in power_list:
@@ -921,7 +1068,9 @@ def optimize_yellow_pol_power(nv_sig):
                                         nd_filter = nv_sig['nd_filter'])
         yel_pol_power = tool_belt.calc_optical_power_mW(589, optical_power)
         opt_power_list.append(yel_pol_power)
-
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(reset_pulse_time)
         sig_counts, ref_counts = main(nv_sig, apd_indices, num_reps,
                                     States.LOW)
         sig_counts = [int(el) for el in sig_counts]
@@ -930,11 +1079,12 @@ def optimize_yellow_pol_power(nv_sig):
         sig_count_raw.append(sig_counts)
         ref_count_raw.append(ref_counts)
         
-        avg_snr = tool_belt.calc_snr(sig_counts, ref_counts)
+        diff = numpy.average(sig_counts) - numpy.average(ref_counts)
+        norm_diff = diff / numpy.average(ref_counts)
         
         sig_counts_avg.append(numpy.average(sig_counts))
         ref_counts_avg.append(numpy.average(ref_counts))
-        snr_list.append(avg_snr)
+        norm_diff_list.append(norm_diff)
  
     #plot
     fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
@@ -948,9 +1098,9 @@ def optimize_yellow_pol_power(nv_sig):
     ax.set_title('Sweep yellow pol pulse power')
     ax.legend()
     ax = axes[1]
-    ax.plot(numpy.array(opt_power_list)*10**3, snr_list, 'ro')
+    ax.plot(numpy.array(opt_power_list)*10**3, norm_diff_list, 'ro')
     ax.set_xlabel('Pulse power (uW)')
-    ax.set_ylabel('SNR')
+    ax.set_ylabel('(sig - ref) / ref')
     ax.set_title('Sweep yellow pol pulse power')
     text = 'Yellow pol. pulse length = ' + '%.0f'%(nv_sig['yellow_pol_dur'] / 10**3) + ' us' 
     ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
@@ -961,6 +1111,8 @@ def optimize_yellow_pol_power(nv_sig):
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'reset_pulse_time': reset_pulse_time,
+            'reset_pulse_time-units': 's',
             'green_optical_power_pd': green_optical_power_pd,
             'green_optical_power_pd-units': 'V',
             'green_optical_power_mW': green_optical_power_mW,
@@ -988,8 +1140,8 @@ def optimize_yellow_pol_power(nv_sig):
             'sig_counts_avg-units': 'counts',
             'ref_counts_avg': ref_counts_avg,
             'ref_counts_avg-units': 'counts',
-            'snr_list': snr_list,
-            'snr_list-units': 'arb'
+            'norm_diff_list': norm_diff_list,
+            'norm_diff_list-units': 'arb'
             }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
@@ -1006,18 +1158,18 @@ if __name__ == '__main__':
     sample_name = 'hopper'
     ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
-            'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.3,
-            'pulsed_initial_ion_dur': 200*10**3,
-            'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
-            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8,
-            'ionization_rep': 13,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.2, 
+            'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.20,
+            'pulsed_initial_ion_dur': 50*10**3,
+            'pulsed_shelf_dur': 100, 'am_589_shelf_power': 0.20,
+            'pulsed_ionization_dur': 400, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 10*10**3, 'cobalt_532_power': 8,
+            'ionization_rep': 7,
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
+            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}  
     nv_sig = ensemble
     
 #    ion_pulse_list = [400, 450, 500, 550, 600]
@@ -1026,11 +1178,12 @@ if __name__ == '__main__':
 #        nv_sig['pulsed_ionization_dur'] = ion_time
 #    optimize_num_ionizations(nv_sig)
 #    optimize_reion_and_init_ion_length(nv_sig)
-    optimize_reion_length(nv_sig)
+#    optimize_init_ion_length(nv_sig)
+#    optimize_reion_length(nv_sig)
 #    optimize_shelf_pulse_length(nv_sig)
 #    optimize_shelf_power(nv_sig)
 #    optimize_yellow_pol_length(nv_sig)
-#    optimize_yellow_pol_power(nv_sig)
+    optimize_yellow_pol_power(nv_sig)
     
     
 # %%
