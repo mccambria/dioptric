@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Rabi flopping routine. Sweeps the pulse duration of a fixed uwave frequency.
+Created on Wed Apr 22 13:40:36 2020
 
-Created on Tue Apr 23 11:49:23 2019
+This routine performs Rabi, but readouts with SCC
 
-@author: mccambria
+This routine tests rabi under various readout routines: regular green readout,
+regular yellow readout, and SCC readout.
+
+@author: agardill
 """
-
 
 # %% Imports
 
@@ -100,63 +102,6 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
 
     return fit_fig
 
-def simulate(uwave_time_range, freq, resonant_freq, contrast,
-             measured_rabi_period=None, resonant_rabi_period=None):
-
-    if measured_rabi_period is None:
-        resonant_rabi_freq = resonant_rabi_period**-1
-        res_dev = freq - resonant_freq
-        measured_rabi_freq = numpy.sqrt(res_dev**2 + resonant_rabi_freq**2)
-        measured_rabi_period = measured_rabi_freq**-1
-        print('measured_rabi_period: {} ns'.format(measured_rabi_period))
-    elif resonant_rabi_period is None:
-        measured_rabi_freq = measured_rabi_period**-1
-        res_dev = freq-resonant_freq
-        resonant_rabi_freq = numpy.sqrt(measured_rabi_freq**2 - res_dev**2)
-        resonant_rabi_period = resonant_rabi_freq**-1
-        print('resonant_rabi_period: {} ns'.format(resonant_rabi_period))
-    else:
-        raise RuntimeError('Pass either a measured_rabi_period or a ' \
-                           'resonant_rabi_period, not both/neither.')
-
-    min_uwave_time = uwave_time_range[0]
-    max_uwave_time = uwave_time_range[1]
-    smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time,
-                          num=1000, dtype=numpy.int32)
-    amp = (resonant_rabi_freq / measured_rabi_freq)**2
-    angle = measured_rabi_freq * 2 * numpy.pi * smooth_taus / 2
-    prob = amp * (numpy.sin(angle))**2
-
-    rel_counts = 1.0 - (contrast * prob)
-
-    fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    ax.plot(smooth_taus, rel_counts)
-    ax.set_xlabel('Tau (ns)')
-    ax.set_ylabel('Contrast (arb. units)')
-
-# def simulate_split(uwave_time_range, freq,
-#                    res_freq_low, res_freq_high, contrast, rabi_period):
-
-#     rabi_freq = rabi_period**-1
-
-#     min_uwave_time = uwave_time_range[0]
-#     max_uwave_time = uwave_time_range[1]
-#     smooth_taus = numpy.linspace(min_uwave_time, max_uwave_time,
-#                           num=1000, dtype=numpy.int32)
-
-#     omega = numpy.sqrt((freq-res_freq)**2 + rabi_freq**2)
-#     amp = (rabi_freq / omega)**2
-#     angle = omega * 2 * numpy.pi * smooth_taus / 2
-#     prob = amp * (numpy.sin(angle))**2
-
-#     rel_counts = 1.0 - (contrast * prob)
-
-#     fig, ax = plt.subplots(figsize=(8.5, 8.5))
-#     ax.plot(smooth_taus, rel_counts)
-#     ax.set_xlabel('Tau (ns)')
-#     ax.set_ylabel('Contrast (arb. units)')
-
-
 # %% Main
 
 
@@ -183,16 +128,22 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
 
+    # parameters from nv_sig
+    readout_time = nv_sig['pulsed_SCC_readout_dur']
+    readout_power = nv_sig['am_589_power']
+    init_ion_time = nv_sig['pulsed_initial_ion_dur']
+    reion_time = nv_sig['pulsed_reionization_dur']
+    ion_time = nv_sig['pulsed_ionization_dur']
+    shelf_time = nv_sig['pulsed_shelf_dur']
+    shelf_power = nv_sig['am_589_shelf_power']
+
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
-    polarization_time = shared_params['polarization_dur']
-    # time of illumination during which reference readout occurs
-    signal_wait_time = shared_params['post_polarization_wait_dur']
-    reference_time = signal_wait_time  # not sure what this is
-    background_wait_time = signal_wait_time  # not sure what this is
-    reference_wait_time = 2 * signal_wait_time  # not sure what this is
-    aom_delay_time = shared_params['515_laser_delay']
-    readout_time = nv_sig['pulsed_readout_dur']
+    wait_time = shared_params['post_polarization_wait_dur']
+    laser_515_delay = shared_params['515_laser_delay']
+    aom_589_delay = shared_params['589_aom_delay']
+    laser_638_delay = shared_params['638_DM_laser_delay']
+    rf_delay = shared_params['uwave_delay']
 
     # Array of times to sweep through
     # Must be ints since the pulse streamer only works with int64s
@@ -202,17 +153,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                           num=num_steps, dtype=numpy.int32)
 
     # Analyze the sequence
-    file_name = os.path.basename(__file__)
-    seq_args = [taus[0], polarization_time, reference_time,
-                signal_wait_time, reference_wait_time,
-                background_wait_time, aom_delay_time,
-                readout_time, max_uwave_time,
-                apd_indices[0], state.value]
+    file_name = 'SCC_optimize_pulses_w_uwaves.py'
+    seq_args = [readout_time, init_ion_time, reion_time, ion_time, taus[0],
+        shelf_time , wait_time, max_uwave_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
+        apd_indices[0], readout_power, shelf_power, state.value]
     seq_args = [int(el) for el in seq_args]
 #    print(seq_args)
 #    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_load(file_name, seq_args_string)
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
@@ -224,6 +172,21 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     ref_counts = numpy.copy(sig_counts)
     # norm_avg_sig = numpy.empty([num_runs, num_steps])
 
+    # %% Measure laser powers
+    
+    # measure laser powers:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                              nv_sig['am_589_power'], nv_sig['nd_filter'])
+            
+    # measure the power of the shelf pulse
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
     # %% Make some lists and variables to save at the end
 
     opti_coords_list = []
@@ -255,12 +218,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
 
-        # TEST for split resonance
-#        sig_gen_cxn = cxn.signal_generator_bnc835
-#        sig_gen_cxn.set_freq(uwave_freq + 0.008)
-#        sig_gen_cxn.set_amp(uwave_power)
-#        sig_gen_cxn.uwave_on()
-
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
@@ -273,16 +230,21 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
-#            print(taus[tau_ind])
+            
+            # shine the red laser for a few seconds before the sequence
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2)
+            
+            # Load the sequence
+            cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+            
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
 
             # Stream the sequence
-            seq_args = [taus[tau_ind], polarization_time, reference_time,
-                        signal_wait_time, reference_wait_time,
-                        background_wait_time, aom_delay_time,
-                        readout_time, max_uwave_time,
-                        apd_indices[0], state.value]
+            seq_args = [readout_time, init_ion_time, reion_time, ion_time, taus[tau_ind],
+                shelf_time , wait_time, max_uwave_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
+                apd_indices[0], readout_power, shelf_power, state.value]
             seq_args = [int(el) for el in seq_args]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             cxn.pulse_streamer.stream_immediate(file_name, num_reps,
@@ -309,6 +271,20 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'green_optical_power_pd': green_optical_power_pd,
+                    'green_optical_power_pd-units': 'V',
+                    'green_optical_power_mW': green_optical_power_mW,
+                    'green_optical_power_mW-units': 'mW',
+                    'red_optical_power_pd': red_optical_power_pd,
+                    'red_optical_power_pd-units': 'V',
+                    'red_optical_power_mW': red_optical_power_mW,
+                    'red_optical_power_mW-units': 'mW',
+                    'yellow_optical_power_pd': yellow_optical_power_pd,
+                    'yellow_optical_power_pd-units': 'V',
+                    'yellow_optical_power_mW': yellow_optical_power_mW,
+                    'yellow_optical_power_mW-units': 'mW',
+                    'shelf_power': shelf_power,
+                    'shelf_power-units': 'mW',
                     'uwave_freq': uwave_freq,
                     'uwave_freq-units': 'GHz',
                     'uwave_power': uwave_power,
@@ -353,14 +329,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     ax = axes_pack[0]
     ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
     ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
-    # ax.plot(tauArray, countsBackground, 'o-')
-    ax.set_xlabel('rf time (ns)')
+    ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Counts')
     ax.legend()
 
     ax = axes_pack[1]
     ax.plot(taus , norm_avg_sig, 'b-')
-    ax.set_title('Normalized Signal With Varying Microwave Duration')
+    ax.set_title('Rabi measurement with SCC readout')
     ax.set_xlabel('Microwave duration (ns)')
     ax.set_ylabel('Contrast (arb. units)')
 
@@ -392,6 +367,20 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                 'timeElapsed-units': 's',
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'green_optical_power_pd': green_optical_power_pd,
+                'green_optical_power_pd-units': 'V',
+                'green_optical_power_mW': green_optical_power_mW,
+                'green_optical_power_mW-units': 'mW',
+                'red_optical_power_pd': red_optical_power_pd,
+                'red_optical_power_pd-units': 'V',
+                'red_optical_power_mW': red_optical_power_mW,
+                'red_optical_power_mW-units': 'mW',
+                'yellow_optical_power_pd': yellow_optical_power_pd,
+                'yellow_optical_power_pd-units': 'V',
+                'yellow_optical_power_mW': yellow_optical_power_mW,
+                'yellow_optical_power_mW-units': 'mW',
+                'shelf_power': shelf_power,
+                'shelf_power-units': 'mW',
                 'uwave_freq': uwave_freq,
                 'uwave_freq-units': 'GHz',
                 'uwave_power': uwave_power,
@@ -423,22 +412,3 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     else:
         return None, sig_counts, ref_counts
     
-
-# %% Run the file
-
-
-if __name__ == '__main__':
-
-    # file = '2019-08-01-18_26_45-ayrton12-nv16_2019_07_25'
-    # data = tool_belt.get_raw_data('rabi.py', file)
-
-    # norm_avg_sig = data['norm_avg_sig']
-    # uwave_time_range = data['uwave_time_range']
-    # num_steps = data['num_steps']
-
-    # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    # if (fit_func is not None) and (popt is not None):
-    #     create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
-    #                       fit_func, popt)
-
-    simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)

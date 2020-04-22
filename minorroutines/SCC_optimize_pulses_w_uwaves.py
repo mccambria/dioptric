@@ -220,7 +220,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     # Estimate the lenth of the sequance            
     file_name = 'SCC_optimize_pulses_w_uwaves.py'
     seq_args = [readout_time, init_ion_time, reionization_time, ionization_time, uwave_pi_pulse,
-        shelf_time , wait_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
+        shelf_time , wait_time, uwave_pi_pulse,  laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
         apd_indices[0], aom_ao_589_pwr, shelf_power, state.value]
     print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
