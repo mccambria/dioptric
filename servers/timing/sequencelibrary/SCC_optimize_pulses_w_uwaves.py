@@ -86,12 +86,12 @@ def get_seq(pulser_wiring, args):
     # readout with 589
     delay = total_delay - aom_589_delay
     train = [(delay + init_ion_time + reion_time + 3*wait_time + pi_pulse, LOW), 
-             (shelf_time, shelf_power), 
-             (ion_time + wait_time, LOW), 
+             (shelf_time + ion_time, shelf_power), 
+             (wait_time, LOW), 
              (readout_time, aom_ao_589_pwr),
              (4*wait_time + init_ion_time + reion_time + pi_pulse, LOW),
-             (shelf_time, shelf_power),
-             (ion_time + wait_time, LOW), 
+             (shelf_time + ion_time, shelf_power),
+             (wait_time, LOW), 
              (readout_time, aom_ao_589_pwr), 
              (wait_time + aom_589_delay, LOW)]
     seq.setAnalog(pulser_ao_589_aom, train) 

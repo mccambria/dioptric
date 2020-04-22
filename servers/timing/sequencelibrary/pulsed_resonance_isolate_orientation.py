@@ -125,14 +125,14 @@ def get_seq(pulser_wiring, args):
     train = [(delay + init_ion_time + reion_time + 2*wait_time, LOW)]
     for i in range(num_ionizations):
         train.extend([(yellow_pol_time, yellow_pol_pwr), 
-                      (2*wait_time + target_pi_pulse, LOW), (shelf_time, shelf_pwr),
-                      (ion_time + wait_time, LOW)])     
+                      (2*wait_time + target_pi_pulse, LOW), (shelf_time + ion_time, shelf_pwr),
+                      (wait_time, LOW)])     
     train.extend([(tau + wait_time, LOW), (readout_time, aom_ao_589_pwr), 
                   (3*wait_time + init_ion_time + reion_time, LOW)]) 
     for i in range(num_ionizations):
         train.extend([(yellow_pol_time, yellow_pol_pwr), 
-                      (2*wait_time + target_pi_pulse, LOW), (shelf_time, shelf_pwr),
-                      (ion_time + wait_time, LOW)])    
+                      (2*wait_time + target_pi_pulse, LOW), (shelf_time + ion_time, shelf_pwr),
+                      (wait_time, LOW)])    
     train.extend([(tau + wait_time, LOW), (readout_time, aom_ao_589_pwr), 
                   (aom_589_delay, LOW)])
     seq.setAnalog(pulser_ao_589_aom, train) 
