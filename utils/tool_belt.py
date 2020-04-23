@@ -163,9 +163,9 @@ def create_image_figure(imgArray, imgExtent, color_ind, clickHandler=None):
     plt.colorbar(img)
     
     # Label axes
-    fig.xlabel('V')
-    fig.ylabel('V')
-    fig.title('Confocal scan with {} nm'.fomrat(color_ind))
+    plt.xlabel('V')
+    plt.ylabel('V')
+    plt.title('Confocal scan with {} nm'.format(color_ind))
 
     # Wire up the click handler to print the coordinates
     if clickHandler is not None:

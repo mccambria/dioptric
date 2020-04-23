@@ -19,7 +19,7 @@ from utils.tool_belt import States
 def main(nv_sig):
     apd_indices = [0]
     num_steps = 51
-    num_reps = 10**3
+    num_reps = 6*10**3 # 2 hours
     num_runs = 1
     state = States.LOW
     uwave_time_range = [0, 200]
@@ -31,10 +31,16 @@ def main(nv_sig):
     # Average the counts over the iterations
     avg_sig_counts = numpy.average(sig_counts, axis=0)
     avg_ref_counts = numpy.average(ref_counts, axis=0)
-
-    # Calculate the Rabi data, signal / reference over different Tau
-    norm_avg_sig_green = avg_sig_counts / avg_ref_counts
-
+    
+    # Replace x/0=inf with 0
+    try:
+        norm_avg_sig_green = avg_sig_counts / avg_ref_counts
+    except RuntimeWarning as e:
+        print(e)
+        inf_mask = numpy.isinf(norm_avg_sig_green)
+        # Assign to 0 based on the passed conditional array
+        norm_avg_sig_green[inf_mask] = 0
+        
     # %% Run rabi with SCC readout
     per, sig_counts, ref_counts = rabi_SCC.main(nv_sig, apd_indices, uwave_time_range, state,
          num_steps, num_reps, num_runs)
@@ -44,7 +50,14 @@ def main(nv_sig):
     avg_ref_counts = numpy.average(ref_counts, axis=0)
 
     # Calculate the Rabi data, signal / reference over different Tau
-    norm_avg_sig_scc = avg_sig_counts / avg_ref_counts  
+    # Replace x/0=inf with 0
+    try:
+        norm_avg_sig_scc = avg_sig_counts / avg_ref_counts
+    except RuntimeWarning as e:
+        print(e)
+        inf_mask = numpy.isinf(norm_avg_sig_scc)
+        # Assign to 0 based on the passed conditional array
+        norm_avg_sig_scc[inf_mask] = 0
     
     # %% Run rabi with yellow readout
     # replace SCC readout with shorter duration
@@ -63,7 +76,14 @@ def main(nv_sig):
     avg_ref_counts = numpy.average(ref_counts, axis=0)
 
     # Calculate the Rabi data, signal / reference over different Tau
-    norm_avg_sig_yellow = avg_sig_counts / avg_ref_counts      
+    # Replace x/0=inf with 0
+    try:
+        norm_avg_sig_yellow = avg_sig_counts / avg_ref_counts
+    except RuntimeWarning as e:
+        print(e)
+        inf_mask = numpy.isinf(norm_avg_sig_yellow)
+        # Assign to 0 based on the passed conditional array
+        norm_avg_sig_yellow[inf_mask] = 0     
 
     # %% Compare on a signle plot
     min_uwave_time = uwave_time_range[0]
@@ -83,16 +103,18 @@ def main(nv_sig):
 # %%
 if __name__ == '__main__':
     sample_name = 'hopper'
-    ensemble = { 'coords': [0.183, 0.043, 5.00],
+    ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.2, 
             'pulsed_initial_ion_dur': 50*10**3,
-            'pulsed_shelf_dur': 0, 'am_589_shelf_power': 0.2,#50/0.3,
+            'pulsed_shelf_dur': 100, 'am_589_shelf_power': 0.2,
             'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 10*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
     nv_sig = ensemble
+    
+    main(nv_sig)

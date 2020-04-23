@@ -19,7 +19,7 @@ def main(nv_sig, x_range, num_steps):
         delay = int(0.5 * 10**6)
         shared_params = tool_belt.get_shared_parameters_dict(cxn)
         readout = shared_params['continuous_readout_dur']
-        aom_ao_589_pwr = nv_sig['aom_ao_589_pwr']
+        aom_ao_589_pwr = nv_sig['am_589_power']
     
     
         adj_coords = (numpy.array(nv_sig['coords']) + \
@@ -28,7 +28,7 @@ def main(nv_sig, x_range, num_steps):
  
         y_range = x_range
 
-#        total_num_samples = num_steps**2  
+        total_num_samples = num_steps**2  
         
         seq_args = [delay, readout, aom_ao_589_pwr, apd_indices[0], 638]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -46,18 +46,18 @@ def main(nv_sig, x_range, num_steps):
                                                            x_range, y_range,
                                                            num_steps, period)
     
-#        x_num_steps = len(x_voltages)
-#        x_low = x_voltages[0]
-#        x_high = x_voltages[x_num_steps-1]
-#        y_num_steps = len(y_voltages)
-#        y_low = y_voltages[0]
-#        y_high = y_voltages[y_num_steps-1]
+        x_num_steps = len(x_voltages)
+        x_low = x_voltages[0]
+        x_high = x_voltages[x_num_steps-1]
+        y_num_steps = len(y_voltages)
+        y_low = y_voltages[0]
+        y_high = y_voltages[y_num_steps-1]
     
-    #    pixel_size = x_voltages[1] - x_voltages[0]
+        pixel_size = x_voltages[1] - x_voltages[0]
     
-        # Scan over the sample with green
+        # Scan over the sample with red
     
-#        cxn.pulse_streamer.stream_start(total_num_samples)
+        cxn.pulse_streamer.stream_start(total_num_samples)
         
 # %%
     
@@ -77,4 +77,4 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
     nv_sig = ensemble
     
-    main(nv_sig, 2, 51)
+    main(nv_sig, 0.1, 60)

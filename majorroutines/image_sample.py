@@ -262,12 +262,12 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 #    readout = shared_params['continuous_readout_dur']
     readout = 10**7
-#    readout = 100*10**6
+#    readout = 10**5
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
-
+    print(z_center)
     readout_sec = float(readout) / 10**9
 
     if x_range != y_range:
@@ -317,19 +317,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     img_array = numpy.empty((x_num_steps, y_num_steps))
     img_array[:] = numpy.nan
     img_write_pos = []
-    
-    
-    # %% Read the optical power for either yellow or green light
-    
-    if color_ind == 532:
-        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
-    elif color_ind == 589:
-        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind, 
-           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])
-        
-    # Convert V to mW optical power
-    optical_power_mW = tool_belt.calc_optical_power_mW(color_ind, optical_power_pd)   
-    
     
     # %% Set up the image display
 
@@ -385,7 +372,21 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
 
     # Return to center
     cxn.galvo.write(x_center, y_center)
-
+    
+    # %% Read the optical power for either yellow or green light
+    
+    if color_ind == 532:
+        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
+    elif color_ind == 589:
+        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind, 
+           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])
+    elif color_ind == 638:
+        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
+        
+    # Convert V to mW optical power
+    optical_power_mW = tool_belt.calc_optical_power_mW(color_ind, optical_power_pd)   
+    
+    
     # %% Save the data
 
     timestamp = tool_belt.get_time_stamp()

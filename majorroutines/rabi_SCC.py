@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 from random import shuffle
 from scipy.optimize import curve_fit
 import labrad
+from utils.tool_belt import States
 
 
 # %% Functions
@@ -172,21 +173,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     ref_counts = numpy.copy(sig_counts)
     # norm_avg_sig = numpy.empty([num_runs, num_steps])
 
-    # %% Measure laser powers
-    
-    # measure laser powers:
-    green_optical_power_pd, green_optical_power_mW, \
-            red_optical_power_pd, red_optical_power_mW, \
-            yellow_optical_power_pd, yellow_optical_power_mW = \
-            tool_belt.measure_g_r_y_power( 
-                              nv_sig['am_589_power'], nv_sig['nd_filter'])
-            
-    # measure the power of the shelf pulse
-    optical_power = tool_belt.opt_power_via_photodiode(589, 
-                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
-                                    nd_filter = nv_sig['nd_filter'])
-    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
-    
     # %% Make some lists and variables to save at the end
 
     opti_coords_list = []
@@ -271,18 +257,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'green_optical_power_pd': green_optical_power_pd,
-                    'green_optical_power_pd-units': 'V',
-                    'green_optical_power_mW': green_optical_power_mW,
-                    'green_optical_power_mW-units': 'mW',
-                    'red_optical_power_pd': red_optical_power_pd,
-                    'red_optical_power_pd-units': 'V',
-                    'red_optical_power_mW': red_optical_power_mW,
-                    'red_optical_power_mW-units': 'mW',
-                    'yellow_optical_power_pd': yellow_optical_power_pd,
-                    'yellow_optical_power_pd-units': 'V',
-                    'yellow_optical_power_mW': yellow_optical_power_mW,
-                    'yellow_optical_power_mW-units': 'mW',
                     'shelf_power': shelf_power,
                     'shelf_power-units': 'mW',
                     'uwave_freq': uwave_freq,
@@ -316,8 +290,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     # %% Calculate the Rabi data, signal / reference over different Tau
 
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
-
+    # Replace x/0=inf with 0
+    try:
+        norm_avg_sig = avg_sig_counts / avg_ref_counts
+    except RuntimeWarning as e:
+        print(e)
+        inf_mask = numpy.isinf(norm_avg_sig)
+        # Assign to 0 based on the passed conditional array
+        norm_avg_sig[inf_mask] = 0
+        
     # %% Fit the data and extract piPulse
 
     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
@@ -352,6 +333,22 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         rabi_period = 1/popt[2]
         print('Rabi period measured: {} ns\n'.format('%.1f'%rabi_period))
 
+
+    # %% Measure laser powers
+    
+    # measure laser powers:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power( 
+                              nv_sig['am_589_power'], nv_sig['nd_filter'])
+            
+    # measure the power of the shelf pulse
+    optical_power = tool_belt.opt_power_via_photodiode(589, 
+                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
+                                    nd_filter = nv_sig['nd_filter'])
+    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    
     # %% Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
@@ -411,4 +408,33 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         return rabi_period, sig_counts, ref_counts
     else:
         return None, sig_counts, ref_counts
+    
+    
+# %%
+if __name__ == '__main__':
+    sample_name = 'hopper'
+    ensemble = { 'coords': [0.183, 0.043, 5.00],
+            'name': '{}-ensemble'.format(sample_name),
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 50*10**3,
+            'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.2,
+            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 10*10**3, 'cobalt_532_power': 8, 
+            'magnet_angle': 0,
+            'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
+    nv_sig = ensemble
+
+    apd_indices = [0]
+    num_steps = 51
+    num_reps = 5*10**2
+    num_runs = 1
+    state = States.LOW
+    uwave_time_range = [0, 200]
+    
+    # Run rabi with SCC readout
+    main(nv_sig, apd_indices, uwave_time_range, state,
+         num_steps, num_reps, num_runs)
     
