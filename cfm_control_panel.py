@@ -535,8 +535,8 @@ if __name__ == '__main__':
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                             532, 638)
             
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
-            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638)        
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638)        
 #            with labrad.connect() as cxn:               
 #                tool_belt.set_xyz(cxn, [0.2, 0.3, 5.0])
 #                cxn.pulse_streamer.constant([],0.0,aom_ao_589_pwr)

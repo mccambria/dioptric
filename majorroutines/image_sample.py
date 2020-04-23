@@ -375,16 +375,18 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     
     # %% Read the optical power for either yellow or green light
     
-    if color_ind == 532:
-        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
-    elif color_ind == 589:
-        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind, 
-           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])
-    elif color_ind == 638:
-        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
+#    if color_ind == 532:
+#        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
+#    elif color_ind == 589:
+#        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind, 
+#           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])
+#    elif color_ind == 638:
+#        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
         
     # Convert V to mW optical power
-    optical_power_mW = tool_belt.calc_optical_power_mW(color_ind, optical_power_pd)   
+#    optical_power_mW = tool_belt.calc_optical_power_mW(color_ind, optical_power_pd)   
+    optical_power_pd = None
+    optical_power_mW = None 
     
     
     # %% Save the data
