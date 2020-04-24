@@ -19,28 +19,11 @@ from utils.tool_belt import States
 def main(nv_sig):
     apd_indices = [0]
     num_steps = 51
-    num_reps = 6*10**3 # 2 hours
+    num_reps = 10**3
     num_runs = 1
     state = States.LOW
     uwave_time_range = [0, 200]
     
-    # %% Run rabi with green readout
-    per, sig_counts, ref_counts = rabi.main(nv_sig, apd_indices, uwave_time_range, state,
-         num_steps, num_reps, num_runs)
-    
-    # Average the counts over the iterations
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    
-    # Replace x/0=inf with 0
-    try:
-        norm_avg_sig_green = avg_sig_counts / avg_ref_counts
-    except RuntimeWarning as e:
-        print(e)
-        inf_mask = numpy.isinf(norm_avg_sig_green)
-        # Assign to 0 based on the passed conditional array
-        norm_avg_sig_green[inf_mask] = 0
-        
     # %% Run rabi with SCC readout
     per, sig_counts, ref_counts = rabi_SCC.main(nv_sig, apd_indices, uwave_time_range, state,
          num_steps, num_reps, num_runs)
@@ -59,6 +42,24 @@ def main(nv_sig):
         # Assign to 0 based on the passed conditional array
         norm_avg_sig_scc[inf_mask] = 0
     
+
+   # %% Run rabi with green readout
+    per, sig_counts, ref_counts = rabi.main(nv_sig, apd_indices, uwave_time_range, state,
+         num_steps, num_reps, num_runs)
+    
+    # Average the counts over the iterations
+    avg_sig_counts = numpy.average(sig_counts, axis=0)
+    avg_ref_counts = numpy.average(ref_counts, axis=0)
+    
+    # Replace x/0=inf with 0
+    try:
+        norm_avg_sig_green = avg_sig_counts / avg_ref_counts
+    except RuntimeWarning as e:
+        print(e)
+        inf_mask = numpy.isinf(norm_avg_sig_green)
+        # Assign to 0 based on the passed conditional array
+        norm_avg_sig_green[inf_mask] = 0
+        
     # %% Run rabi with yellow readout
     # replace SCC readout with shorter duration
     nv_sig['pulsed_SCC_readout_dur'] = nv_sig['pulsed_readout_dur'] 
@@ -95,7 +96,7 @@ def main(nv_sig):
     fig, ax = plt.subplots(1,1, figsize = (10, 8.5)) 
     ax.plot(taus, norm_avg_sig_green, 'g-', label = 'Standard green readout')
     ax.plot(taus, norm_avg_sig_scc, 'r-', label = 'SSC yellow readout')
-    ax.plot(taus, norm_avg_sig_yellow, 'y-', label = 'Standard yellow readout')
+#    ax.plot(taus, norm_avg_sig_yellow, 'y-', label = 'Standard yellow readout')
     ax.set_xlabel('Tau (ns)')
     ax.set_ylabel('Normalized contrast (arb.)')
     ax.legend()

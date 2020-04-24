@@ -28,6 +28,7 @@ def get_seq(pulser_wiring, args):
     ion_time = numpy.int64(ion_time)
     pi_pulse = numpy.int64(pi_pulse)
     shelf_time = numpy.int64(shelf_time)
+    uwave_tau_max = numpy.int64(uwave_tau_max)
     
     total_delay = laser_515_delay + aom_589_delay + laser_638_delay + rf_delay
     
@@ -120,6 +121,6 @@ if __name__ == '__main__':
 
 }
 
-    args = [1000, 200, 200, 100, 100, 100, 200, 100, 0, 0, 0, 0, 0, 0.5, 0.8, 1]
+    args = [1000, 500, 100, 100, 100, 100, 100, 200, 0, 0, 0, 0, 0, 0.8, 0.8, 1]
     seq, final, _ = get_seq(wiring, args)
     seq.plot()

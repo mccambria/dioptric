@@ -358,6 +358,10 @@ def cosexp(t, offset, amp, freq, decay):
     two_pi = 2*numpy.pi
     return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
 
+def cosexp_scc(t, offset, amp, freq, decay):
+    two_pi = 2*numpy.pi
+    return offset - (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
+
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2*numpy.pi
     

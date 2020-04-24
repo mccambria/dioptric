@@ -520,11 +520,11 @@ if __name__ == '__main__':
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]                 
-#            for z in numpy.linspace(4.5, 5.5, 11):
-#                nv_sig_copy = copy.deepcopy(nv_sig)
-#                coords = nv_sig_copy['coords']
-#                nv_sig_copy['coords'] = [coords[0], coords[1], z]
-#                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 638)
+            for z in numpy.linspace(4.5, 5.5, 11):
+                nv_sig_copy = copy.deepcopy(nv_sig)
+                coords = nv_sig_copy['coords']
+                nv_sig_copy['coords'] = [coords[0], coords[1], z]
+                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 638)
             
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
@@ -535,18 +535,18 @@ if __name__ == '__main__':
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                             532, 638)
             
-            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638)        
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638) 
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
 #            with labrad.connect() as cxn:               
 #                tool_belt.set_xyz(cxn, [0.2, 0.3, 5.0])
-#                cxn.pulse_streamer.constant([],0.0,aom_ao_589_pwr)
+#                cxn.pulse_streamer.constant([3],0.0,0.0)
 #                time.sleep(0.1)
 #                cxn.pulse_streamer.constant([],0.0,0.0)
 #                tool_belt.set_xyz(cxn, [0.0, -0.3, 5.0])
 #                cxn.pulse_streamer.constant([],0.0,aom_ao_589_pwr)
 #                time.sleep(0.1)
 #                cxn.pulse_streamer.constant([],0.0,0.0)
-            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638)
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)

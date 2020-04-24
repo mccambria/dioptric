@@ -197,7 +197,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
-    rabi_period = nv_sig['rabi_{}'.format(state.name)]
+    rabi_period = float(nv_sig['rabi_{}'.format(state.name)])
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     
     # set the nd_filter for yellow
@@ -826,14 +826,22 @@ def optimize_shelf_pulse_power(nv_sig):
     apd_indices = [0]
     num_reps = 10**3
     power_list = numpy.linspace(0.1,0.8,15).tolist()
+#    power_list = [0.3]
+    
     
     # measure laser powers:
-    green_optical_power_pd, green_optical_power_mW, \
-            red_optical_power_pd, red_optical_power_mW, \
-            yellow_optical_power_pd, yellow_optical_power_mW = \
-            tool_belt.measure_g_r_y_power( 
-                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
-    
+#    green_optical_power_pd, green_optical_power_mW, \
+#            red_optical_power_pd, red_optical_power_mW, \
+#            yellow_optical_power_pd, yellow_optical_power_mW = \
+#            tool_belt.measure_g_r_y_power( 
+#                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+ 
+    green_optical_power_pd = None
+    green_optical_power_mW = None
+    yellow_optical_power_pd = None
+    yellow_optical_power_mW = None
+    red_optical_power_pd = None
+    red_optical_power_mW = None
 #    cxn.pulse_streamer.constant([], 0.0, nv_sig['am_589_shelf_power'])
     
     # create some lists for data
@@ -891,23 +899,101 @@ def optimize_shelf_pulse_power(nv_sig):
     
     print(' \nRoutine complete!')
     return
+
+# %%
+def test_pi_pulse(nv_sig):
+    from random import shuffle
+    apd_indices = [0]
+    num_reps = 10**3
+#    test_pulse_dur_list = numpy.linspace(0,200,11).tolist()
+    test_pulse_dur_list = numpy.linspace(0,400,21).tolist()
+#    test_pulse_dur_ind_list = [list(range(0, len(test_pulse_dur_list)))]
+    # measure laser powers:
+#    green_optical_power_pd, green_optical_power_mW, \
+#            red_optical_power_pd, red_optical_power_mW, \
+#            yellow_optical_power_pd, yellow_optical_power_mW = \
+#            tool_belt.measure_g_r_y_power( 
+#                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+    
+    green_optical_power_pd = None
+    green_optical_power_mW = None
+    yellow_optical_power_pd = None
+    yellow_optical_power_mW = None
+    red_optical_power_pd = None
+    red_optical_power_mW = None
+    shelf_power = None
+    
+    # create some lists for data
+    sig_count_raw = []
+    ref_count_raw = []
+    sig_counts_avg = []
+    ref_counts_avg = []
+    snr_list = []
+    
+    # measure the power of the test pulse
+#    optical_power = tool_belt.opt_power_via_photodiode(589, 
+#                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
+#                                    nd_filter = nv_sig['nd_filter'])
+#    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
+    shuffle(test_pulse_dur_list)
+    # Step through the pulse lengths for the test laser
+    for test_pulse_length in test_pulse_dur_list:
+        nv_sig['rabi_LOW'] = test_pulse_length
+        # shine the red laser before each measurement
+        with labrad.connect() as cxn:
+            cxn.pulse_streamer.constant([7], 0.0, 0.0)
+            time.sleep(2) 
+        sig_count, ref_count = main(nv_sig, apd_indices, num_reps,
+                                    States.LOW, plot = False)
+        sig_count = [int(el) for el in sig_count]
+        ref_count = [int(el) for el in ref_count]
+        
+        sig_count_raw.append(sig_count)
+        ref_count_raw.append(ref_count)
+        
+        avg_snr = tool_belt.calc_snr(sig_count, ref_count)
+        
+        sig_counts_avg.append(numpy.average(sig_count))
+        ref_counts_avg.append(numpy.average(ref_count))
+        snr_list.append(avg_snr)
+ 
+    #plot
+    title = 'Test pi pulse length'
+    fig = plot_time_sweep(numpy.array(test_pulse_dur_list) / 2, sig_counts_avg, ref_counts_avg, snr_list, title)
+    
+    # Save
+    timestamp, raw_data = compile_raw_data_length_sweep(nv_sig, 
+                     green_optical_power_pd, green_optical_power_mW, 
+                     red_optical_power_pd, red_optical_power_mW, 
+                     yellow_optical_power_pd, yellow_optical_power_mW, 
+                     test_pulse_dur_list, num_reps, 
+                     sig_count_raw, ref_count_raw, sig_counts_avg, snr_list)
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path + '-pi_pulse_test')
+
+    tool_belt.save_figure(fig, file_path + '-pi_pulse_test')
+    
+    print(' \nRoutine complete!')
+    return
+
 # %%
     
 if __name__ == '__main__':
     apd_indices = [0]
     sample_name = 'hopper'
-    ensemble = { 'coords': [0.183, 0.043, 5.00],
+    ensemble = { 'coords': [0.0, 0.0, 5.00],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
-            'pulsed_initial_ion_dur':300*10**3,
-            'pulsed_shelf_dur': 100, 'am_589_shelf_power': 0.3,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 50*10**3,
+            'pulsed_shelf_dur': 100, 'am_589_shelf_power': 0.2,
             'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 300*10**3, 'cobalt_532_power': 8, 
+            'pulsed_reionization_dur': 10*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}     
+            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}      
     nv_sig = ensemble
     
     # Run the program
@@ -918,7 +1004,8 @@ if __name__ == '__main__':
 #    optimize_readout_pulse_length(nv_sig)
 #    optimize_readout_pulse_power(nv_sig)
 #    optimize_shelf_pulse_length(nv_sig)
-    optimize_shelf_pulse_power(nv_sig)
+#    optimize_shelf_pulse_power(nv_sig)
+    test_pi_pulse(nv_sig)
     
 #    sig_counts, ref_counts = main(nv_sig, apd_indices, 10**3, States.LOW)
     
