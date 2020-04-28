@@ -96,7 +96,7 @@ def main(nv_sig):
     fig, ax = plt.subplots(1,1, figsize = (10, 8.5)) 
     ax.plot(taus, norm_avg_sig_green, 'g-', label = 'Standard green readout')
     ax.plot(taus, norm_avg_sig_scc, 'r-', label = 'SSC yellow readout')
-#    ax.plot(taus, norm_avg_sig_yellow, 'y-', label = 'Standard yellow readout')
+    ax.plot(taus, norm_avg_sig_yellow, 'y-', label = 'Standard yellow readout')
     ax.set_xlabel('Tau (ns)')
     ax.set_ylabel('Normalized contrast (arb.)')
     ax.legend()
