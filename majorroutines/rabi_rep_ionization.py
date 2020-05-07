@@ -40,7 +40,7 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
     taus, tau_step = numpy.linspace(min_uwave_time, max_uwave_time,
                             num=num_steps, dtype=numpy.int32, retstep=True)
 
-    fit_func = tool_belt.cosexp
+    fit_func = tool_belt.cosexp_scc
 
     # %% Estimated fit parameters
 
@@ -167,7 +167,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, shelf_state, test_
                           num=num_steps)
 
     # Analyze the sequence
-    file_name = 'rabi_isolate_orientation.py'
+#    file_name = 'rabi_isolate_orientation.py'
+    file_name = 'rabi_isolate_orientation_SCC.py'
             
     seq_args = [taus[0], readout_time, yellow_pol_time, shelf_time, init_ion_time, reion_time, ion_time, target_pi_pulse,
          wait_time, num_ionizations, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
@@ -433,16 +434,16 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 100, 'am_589_shelf_power': 0.20,
             'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 10*10**3, 'cobalt_532_power': 8,
-            'ionization_rep': 7,
+            'ionization_rep': 4,#7,
             'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 164.2, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.8059, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}    
+            'resonance_HIGH': 2.8059, 'rabi_HIGH': 164.2, 'uwave_power_HIGH': 10.0}    
     nv_sig = ensemble
 
     apd_indices = [0]
     num_steps = 51
-    num_reps = int(10**3)
-    num_runs = 1
+    num_reps = int(10**3/2)
+    num_runs = 2
     shelf_state = States.LOW
     test_state = States.HIGH
     uwave_time_range = [0, 200]

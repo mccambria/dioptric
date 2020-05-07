@@ -30,12 +30,12 @@ def main(cxn, aom_on_time, aom_off_time, laser_pwr_voltage):
     # %% Run the sequence
     
     file_name = os.path.basename(__file__)    
-    seq_args = [aom_on_time, aom_off_time, laser_pwr_voltage]
+    seq_args = [aom_on_time, aom_off_time]
     
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     
-    cxn.pulse_streamer.stream_immediate(file_name, 6, seq_args_string)
+    cxn.pulse_streamer.stream_immediate(file_name, 1, seq_args_string)
 #    cxn.pulse_streamer.stream_immediate(file_name, 3, seq_args_string)
     
 def on_589(cxn):
@@ -58,11 +58,11 @@ if __name__ == '__main__':
     try:
         
         with labrad.connect() as cxn:
-#            main(cxn, 1*10**8, 5*10**8, 0.1)
+            main(cxn, 100, 500, 0.1)
             
             
 #            on_589(cxn)
-            cxn.pulse_streamer.constant([3],0.0, 0.0)
+#            cxn.pulse_streamer.constant([3],0.0, 0.0)
             
 #            on_638(cxn)
             

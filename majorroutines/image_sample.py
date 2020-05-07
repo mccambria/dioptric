@@ -196,9 +196,9 @@ def reformat_plot(colorMap, save_file_type):
         # Save the file in the same file directory
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
 
-def create_figure(file_name, color_ind):
+def create_figure(file_name):
 
-    data = tool_belt.get_raw_data(__file__, file_name)
+    data = tool_belt.get_raw_data('image_sample', file_name)
     x_range = data['x_range']
     y_range = data['y_range']
     x_voltages = data['x_voltages']
@@ -225,15 +225,19 @@ def create_figure(file_name, color_ind):
     y_low = y_coord - half_y_range
     y_high = y_coord + half_y_range
 
-    img_array_kcps = (img_array / 1000) / (readout / 10**9)
+#    img_array_kcps = (img_array / 1000) / (readout / 10**9)
 
     pixel_size = x_voltages[1] - x_voltages[0]
     half_pixel_size = pixel_size / 2
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
-
-    fig = tool_belt.create_image_figure(img_array_kcps, img_extent, color_ind,
-                                        clickHandler=on_click_image)
+    
+    color_ind =  data['color_ind']
+    readout_us = readout / 10**3
+    title = 'Confocal scan with {} nm.\nReadout {} us'.format(color_ind, readout_us)
+    fig = tool_belt.create_image_figure(img_array, img_extent,
+                                        clickHandler=on_click_image,
+                                        title = title)
     # Redraw the canvas and flush the changes to the backend
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -245,30 +249,34 @@ def create_figure(file_name, color_ind):
 
 
 def main(nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr, apd_indices, 
-         color_ind, continuous=False, save_data=True, plot_data=True):
+         color_ind, save_data=True, plot_data=True, continuous=False):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr, 
-                      apd_indices, color_ind, continuous, save_data, plot_data)
+        img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range, 
+                      y_range, num_steps, aom_ao_589_pwr, 
+                      apd_indices, color_ind, save_data, plot_data, continuous)
+        
+    return img_array, x_voltages, y_voltages
 
 def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr, 
-                  apd_indices, color_ind, continuous=False, save_data=True, 
-                  plot_data=True):
+                  apd_indices, color_ind, save_data=True, 
+                  plot_data=True, continuous=False):
 
     # %% Some initial setup
 
     tool_belt.reset_cfm(cxn)
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-#    readout = shared_params['continuous_readout_dur']
-    readout = 10**7
+    readout = shared_params['continuous_readout_dur']
+#    readout = nv_sig['pulsed_SCC_readout_dur']
 #    readout = 10**5
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
-    print(z_center)
-    readout_sec = float(readout) / 10**9
+#    print(z_center)
+#    readout_sec = float(readout) / 10**9
+    readout_us = float(readout) / 10**3
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
@@ -322,7 +330,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
 
     if plot_data:
 
-        img_array_kcps = numpy.copy(img_array)
+#        img_array_kcps = numpy.copy(img_array)
 
         # For the image extent, we need to bump out the min/max x/y by half the
         # pixel size in each direction so that the center of each pixel properly
@@ -330,9 +338,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
         half_pixel_size = pixel_size / 2
         img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                       y_low - half_pixel_size, y_high + half_pixel_size]
-
-        fig = tool_belt.create_image_figure(img_array, img_extent, color_ind,
-                                            clickHandler=on_click_image)
+        title = 'Confocal scan with {} nm.\nReadout {} us'.format(color_ind, readout_us)
+        fig = tool_belt.create_image_figure(img_array, img_extent,
+                                            clickHandler=on_click_image,
+                                            title = title)
 
     # %% Collect the data
 
@@ -360,10 +369,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
             populate_img_array(new_samples, img_array, img_write_pos)
             # This is a horribly inefficient way of getting kcps, but it
             # is easy and readable and probably fine up to some resolution
-            # we likely will never try
             if plot_data:
-                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-                tool_belt.update_image_figure(fig, img_array_kcps)
+#                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
+                tool_belt.update_image_figure(fig, img_array)
             num_read_so_far += num_new_samples
 
     # %% Clean up
@@ -426,7 +434,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
 
             tool_belt.save_figure(fig, filePath)
 
-    return rawData
+    return img_array, x_voltages, y_voltages
 
 
 # %% Run the file
@@ -438,6 +446,6 @@ if __name__ == '__main__':
 #    create_figure(file_name)
 #    reformat_plot('inferno', 'svg')
 
-    file_name = '2019_11/2019_11_18-16_31_05-goeppert_mayer-lifetime'
+    file_name = 'branch_hopper_disable_opt/2020_03/2020_03_18-17_13_13-hopper-search'
     create_figure(file_name)
 
