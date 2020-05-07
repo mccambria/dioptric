@@ -60,7 +60,7 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, plot_data):
     
-    scan_range = 1.5
+#    scan_range = 1.0
 #    num_steps = 300
 #    num_steps = 120
 #    num_steps = 90
@@ -69,7 +69,7 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    num_steps = 150
 #    scan_range = 0.1
     num_steps = 90
-#    scan_range = 0.2
+    scan_range = 0.2
 #    num_steps = 60
 #    scan_range = 0.05
 #    num_steps = 60
@@ -526,23 +526,23 @@ if __name__ == '__main__':
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]    
      
-            for image_z in numpy.linspace(4.0, 4.3, 4):
-                for ion_z in numpy.linspace(4.0, 5.0, 13):
-                    ion_nv_sig_copy = copy.deepcopy(nv_sig)
-                    coords = ion_nv_sig_copy['coords']
-                    ion_nv_sig_copy['coords'] = [coords[0], coords[1], ion_z]                
-                    do_image_sample(ion_nv_sig_copy, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False)
-                
-                with labrad.connect() as cxn:      
-                    tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])
-                    cxn.pulse_streamer.constant([3],0.0,0.0)
-                    time.sleep(60)
-                    cxn.pulse_streamer.constant([],0.0,0.0)  
-                    
-                scan_nv_sig_copy = copy.deepcopy(nv_sig)
-                coords = scan_nv_sig_copy['coords']
-                scan_nv_sig_copy['coords'] = [coords[0], coords[1], image_z]                   
-                do_image_sample(scan_nv_sig_copy, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
+#            for image_z in numpy.linspace(4.0, 4.3, 4):
+#                for ion_z in numpy.linspace(4.0, 5.0, 13):
+#                    ion_nv_sig_copy = copy.deepcopy(nv_sig)
+#                    coords = ion_nv_sig_copy['coords']
+#                    ion_nv_sig_copy['coords'] = [coords[0], coords[1], ion_z]                
+#                    do_image_sample(ion_nv_sig_copy, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False)
+#                
+#                with labrad.connect() as cxn:      
+#                    tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])
+#                    cxn.pulse_streamer.constant([3],0.0,0.0)
+#                    time.sleep(60)
+#                    cxn.pulse_streamer.constant([],0.0,0.0)  
+#                    
+#                scan_nv_sig_copy = copy.deepcopy(nv_sig)
+#                coords = scan_nv_sig_copy['coords']
+#                scan_nv_sig_copy['coords'] = [coords[0], coords[1], image_z]                   
+#                do_image_sample(scan_nv_sig_copy, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
             
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
@@ -553,19 +553,6 @@ if __name__ == '__main__':
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                             532, 638)
             
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638) 
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532)
-#            with labrad.connect() as cxn:               
-#                tool_belt.set_xyz(cxn, [0.2, 0.3, 5.0])
-#                cxn.pulse_streamer.constant([3],0.0,0.0)
-#                time.sleep(60)
-#                cxn.pulse_streamer.constant([],0.0,0.0)
-#                tool_belt.set_xyz(cxn, [0.0, -0.3, 5.0])
-#                cxn.pulse_streamer.constant([],0.0,aom_ao_589_pwr)
-#                time.sleep(0.1)
-#                cxn.pulse_streamer.constant([],0.0,0.0)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638)
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_stationary_count(nv_sig, 1.0, apd_indices, 532)
@@ -574,7 +561,7 @@ if __name__ == '__main__':
             # red resets, short green pulse, then yellow readout
 #            for t in numpy.linspace(100, 10**4, 100):
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False) 
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True) 
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True) 
 #            with labrad.connect() as cxn:      
 #                tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])
 #                cxn.pulse_streamer.constant([3],0.0,0.0)

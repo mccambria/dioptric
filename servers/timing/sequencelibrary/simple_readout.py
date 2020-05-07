@@ -55,25 +55,19 @@ def get_seq(pulser_wiring, args):
         
         train = [(period, aom_ao_589_pwr)]
         seq.setAnalog(pulser_ao_589_aom, train)
-        
-        final_digital = []
-        final = OutputState(final_digital, 0.0, 0.0)
-    
+            
     elif color_ind == 532:
         
         train = [(period, HIGH)]
         seq.setDigital(pulser_do_532_aom, train)
-        
-        final_digital = []
-        final = OutputState(final_digital, 0.0, 0.0)
 
     elif color_ind == 638:
         
         train = [(period, HIGH)]
         seq.setDigital(pulser_do_638_aom, train)
         
-        final_digital = []
-        final = OutputState(final_digital, 0.0, 0.0)
+    final_digital = []
+    final = OutputState(final_digital, 0.0, 0.0)
 
     return seq, final, [period]
 

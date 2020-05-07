@@ -446,6 +446,6 @@ if __name__ == '__main__':
 #    create_figure(file_name)
 #    reformat_plot('inferno', 'svg')
 
-    file_name = 'branch_hopper_disable_opt/2020_03/2020_03_18-17_13_13-hopper-search'
+    file_name = '2020_05/2020_05_07-11_26_52-ayrton12'
     create_figure(file_name)
 
