@@ -183,7 +183,8 @@ class PulseStreamer(LabradServer):
     def reset(self, c):
         # Probably don't need to force_final right before constant but...
         self.force_final(c)
-        self.constant(c, [])
+        self.constant(c, digital_channels = [],
+                      analog_0_voltage = 0.0, analog_1_voltage = 0.0)
         self.seq = None
         self.loaded_seq_streamed = False
 

@@ -74,7 +74,7 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
-#    num_steps = 60
+#    num_steps = 30
     
 #    scan_range = 0.5 # 250
 #    scan_range = 0.25 # 125
@@ -108,7 +108,7 @@ def do_optimize_list(nv_sig_list, apd_indices, color_ind):
 
 def do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, color_ind):
 
-    run_time = 90 * 10**9  # ns
+    run_time = 30 * 10**9  # ns
 
     stationary_count.main(nv_sig, run_time, aom_ao_589_pwr, apd_indices, color_ind)
 
@@ -555,21 +555,23 @@ if __name__ == '__main__':
             
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)
-#            do_stationary_count(nv_sig, 1.0, apd_indices, 532)
+#            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 589)
             
             
             # red resets, short green pulse, then yellow readout
 #            for t in numpy.linspace(100, 10**4, 100):
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False) 
-            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True) 
 #            with labrad.connect() as cxn:      
-#                tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])
+#                tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
 #                cxn.pulse_streamer.constant([3],0.0,0.0)
-#                time.sleep(60)
+#                time.sleep(10)
 #                cxn.pulse_streamer.constant([],0.0,0.0)
+#                tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])
 #                seq_args = [10**6, 100, 532]           
 #                seq_args_string = tool_belt.encode_seq_args(seq_args)            
-#                cxn.pulse_streamer.stream_immediate('analog_sequence_test.py', 1, seq_args_string)     
+#                cxn.pulse_streamer.stream_immediate('analog_sequence_test.py', 1, seq_args_string)
+#            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True) 
 #            for p in numpy.linspace(0.3, 0.8, 6):
 #                aom_ao_589_pwr  =p
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)

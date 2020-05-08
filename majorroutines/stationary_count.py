@@ -87,10 +87,11 @@ def main_with_cxn(cxn, nv_sig, run_time, aom_power, apd_indices, color_ind, cont
     write_pos = [0]  # This is a list because we need a mutable variable
 
     # Set up the line plot
-#    x_vals = numpy.arange(totalNumSamples) + 1
-#    x_vals *= period / (10**9)  # Elapsed time in s
-#    fig = tool_belt.create_line_plot_figure(samples, x_vals)
-    fig = tool_belt.create_line_plot_figure(samples)
+    x_vals = numpy.arange(total_num_samples) + 1
+    x_vals = x_vals / (10**9) * period   # Elapsed time in s
+
+    fig = tool_belt.create_line_plot_figure(samples, x_vals)
+#    fig = tool_belt.create_line_plot_figure(samples)
 
     # Set labels
     axes = fig.get_axes()

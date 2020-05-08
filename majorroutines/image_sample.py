@@ -264,17 +264,19 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
 
     # %% Some initial setup
 
+#    tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
+#    cxn.pulse_streamer.constant([3],0.0,0.0)  
     tool_belt.reset_cfm(cxn)
+
+
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_params['continuous_readout_dur']
-#    readout = nv_sig['pulsed_SCC_readout_dur']
-#    readout = 10**5
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
-#    print(z_center)
+
 #    readout_sec = float(readout) / 10**9
     readout_us = float(readout) / 10**3
 
@@ -290,6 +292,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     # %% Load the PulseStreamer
         
     seq_args = [delay, readout, aom_ao_589_pwr, apd_indices[0], color_ind]
+#    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
@@ -380,6 +383,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
 
     # Return to center
     cxn.galvo.write(x_center, y_center)
+#    cxn.galvo.write(0.5, 0.5)
     
     # %% Read the optical power for either yellow or green light
     

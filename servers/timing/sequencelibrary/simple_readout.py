@@ -57,7 +57,7 @@ def get_seq(pulser_wiring, args):
         seq.setAnalog(pulser_ao_589_aom, train)
             
     elif color_ind == 532:
-        
+               
         train = [(period, HIGH)]
         seq.setDigital(pulser_do_532_aom, train)
 
@@ -75,10 +75,10 @@ def get_seq(pulser_wiring, args):
 if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 1,
-              'do_638_aom': 3,
+              'do_638_laser': 3,
               'do_532_aom': 2,
               'ao_589_aom': 1}
-    args = [0, 100, 0.5, 0, 532]
+    args = [500000, 10000000, 0.3, 0, 532]
 #    seq_args_string = tool_belt.encode_seq_args(args)
     seq, ret_vals, period = get_seq(wiring, args)
     seq.plot()
