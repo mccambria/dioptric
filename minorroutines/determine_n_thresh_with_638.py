@@ -155,9 +155,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
 
 #%% plot the data and the fit
 
-    # signal -> NVm, reference -> NV0
-    unique_value1, relative_frequency1 = get_Probability_distribution(list(ref_counts))
-    unique_value2, relative_frequency2 = get_Probability_distribution(list(sig_counts))
+    # signal -> NV0, reference -> NVm
+    unique_value1, relative_frequency1 = get_Probability_distribution(list(sig_counts))
+    unique_value2, relative_frequency2 = get_Probability_distribution(list(ref_counts))
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
     
@@ -185,8 +185,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
 #    ax.plot(photon_numbers2,curve2,'b')
 #    ax.plot(photon_numbers1,curve3,'y')
 #    ax.plot(photon_numbers2,curve4,'g')
-    ax.plot(unique_value2, relative_frequency2, 'ro', label='Ionization pulse')
-    ax.plot(unique_value1, relative_frequency1, 'ko', label='Ionization pulse absent')
+    ax.plot(unique_value1, relative_frequency1, 'ro', label='Ionization pulse')
+    ax.plot(unique_value2, relative_frequency2, 'ko', label='Ionization pulse absent')
     ax.set_xlabel('number of photons (n)')
     ax.set_ylabel('P(n)')
     ax.legend()
@@ -267,15 +267,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, aom_ao_589_pwr, ao_638_pwr,
             'num_reps':num_reps,
             'sig_counts': sig_counts,
             'sig_counts-units': 'counts',
-            'ref_counts':ref_counts,
-            'ref_counts-units':'counts',
-            'unique_valuesNV-': unique_value1,
+            'unique_valuesNV0': unique_value1,
             'unique_values-units': 'num of photons',
-            'relative_frequencyNV-': relative_frequency1,
+            'relative_frequencyNV0': relative_frequency1,
             'relative_frequency-units': 'occurrences',
-            'unique_valuesNV0': unique_value2,
+            'unique_valuesNV-': unique_value2,
             'unique_values-units': 'num of photons',
-            'relative_frequencyNV0': relative_frequency2,
+            'relative_frequencyNV-': relative_frequency2,
             'relative_frequency-units': 'occurrences'
             }
 

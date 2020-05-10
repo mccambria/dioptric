@@ -319,7 +319,7 @@ def get_curve_fit_NVm(readout_time,readout_power,unique_value, relative_frequenc
         return curve 
     photon_number =unique_value
     popt, pcov = curve_fit(get_photon_distribution_curve, photon_number,  relative_frequency, p0 = initial_guess)
-    return popt 
+    return popt, np.diag(pcov)
 
 def get_photon_distribution_curveNVm(photon_number,readout_time, g0,g1,y1,y0):  
     if g0 < 0:
@@ -367,7 +367,8 @@ def get_curve_fit_NV0(readout_time,readout_power,unique_value, relative_frequenc
         return curve 
     photon_number =unique_value
     popt, pcov = curve_fit(get_photon_distribution_curve, photon_number,  relative_frequency, p0 = initial_guess)
-    return popt 
+    print(np.diag(pcov))
+    return popt, np.diag(pcov)
 
 def get_photon_distribution_curveNV0(photon_number,readout_time, g0,g1,y1,y0):    
     if g0 < 0:
@@ -402,7 +403,7 @@ def get_sigle_poisson_distribution_fit(readout_time,readout_power,unique_value, 
             poissonian.append(((F*tR)**n) * (math.e ** (-F*tR)) /math.factorial(n))
         return poissonian
     popt, pcov = curve_fit(PoissonDistribution, number_of_photons,  relative_frequency)
-    return popt
+    return popt, np.diag(pcov)
 
 def get_single_poisson_distribution_curve(number_of_photons,readout_time, F):
     poissonian_curve =[]
