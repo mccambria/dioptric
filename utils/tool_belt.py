@@ -104,11 +104,24 @@ def get_pulse_streamer_wiring(cxn):
         pulse_streamer_wiring[key] = wiring[key]
     return pulse_streamer_wiring
 
+# %% adp_tagger utils
+    
+def decode_time_tags(ret_vals_string):
+    ret_vals = ret_vals_string.split('.')
+    new_tags = []
+    new_channels = []
+    if ret_vals[0] != '':
+        for val in ret_vals:
+            split_val = val.split(',')
+            new_tags.append(split_val[0])
+            new_channels.append(int(split_val[1]))
+        new_tags = numpy.array(new_tags, dtype=numpy.int64)    
+    return new_tags, new_channels
 
 # %% Matplotlib plotting utils
 
 
-def create_image_figure(imgArray, imgExtent, clickHandler=None):
+def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None):
     """
     Creates a figure containing a single grayscale image and a colorbar.
 
@@ -147,7 +160,15 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None):
         img.autoscale()
 
     # Add a colorbar
-    plt.colorbar(img)
+    clb = plt.colorbar(img)
+    clb.set_label('Counts', rotation=270)
+#    clb.set_label('kcounts/sec', rotation=270)
+    
+    # Label axes
+    plt.xlabel('V')
+    plt.ylabel('V')
+    if title:
+        plt.title(title)
 
     # Wire up the click handler to print the coordinates
     if clickHandler is not None:
@@ -155,6 +176,7 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None):
 
     # Draw the canvas and flush the events to the backend
     fig.canvas.draw()
+    plt.tight_layout()
     fig.canvas.flush_events()
 
     return fig
@@ -340,6 +362,10 @@ def cosexp(t, offset, amp, freq, decay):
     two_pi = 2*numpy.pi
     return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
 
+def cosexp_scc(t, offset, amp, freq, decay):
+    two_pi = 2*numpy.pi
+    return offset - (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
+
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2*numpy.pi
     
@@ -347,6 +373,25 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
                 amp_1 * numpy.cos(two_pi * freq_1 * t) +
                 amp_2 * numpy.cos(two_pi * freq_2 * t) +
                 amp_3 * numpy.cos(two_pi * freq_3 * t))
+    
+def calc_snr(sig_count, ref_count):
+    '''
+    Take a list of signal and reference counts, and take their average, then 
+    calculate a snr.
+    inputs:
+        sig_count = list
+        ref_counts = list
+    outputs:
+        snr = list
+    '''    
+    
+    sig_count_avg = numpy.average(sig_count)
+    ref_count_avg = numpy.average(ref_count)
+    dif = sig_count_avg - ref_count_avg
+    noise = numpy.sqrt(ref_count_avg)
+    snr = dif / noise
+    
+    return snr
 
 
 # %% LabRAD utils
@@ -647,7 +692,12 @@ def save_raw_data(rawData, filePath):
 
 def get_nv_sig_units():
     return {'coords': 'V', 'expected_count_rate': 'kcps', 
-        'pulsed_readout_dur': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz',
+        'pulsed_readout_dur': 'ns', 
+        'pulsed_SCC_readout_dur': 'ns', 'am_589_power': '0-1 V', 
+        'pulsed_shelf_dur': 'ns', 'am_589_shelf_power': '0-1 V', 
+        'pulsed_ionization_dur': 'ns', 'cobalt_638_power': 'mW', 
+        'pulsed_reionization_dur': 'ns', 'cobalt_532_power': 'mW', 
+        'magnet_angle': 'deg', 'resonance': 'GHz',
         'rabi': 'ns', 'uwave_power': 'dBm'}
 
 # Error messages
@@ -684,7 +734,7 @@ def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = No
         optical_power = cxn.photodiode.read_optical_power()
         
     elif color_ind==638:
-        cxn.pulse_streamer.constant([], AO_power_settings, 0.0) # Turn on the red laser     
+        cxn.pulse_streamer.constant([7], 0.0, 0.0) # Turn on the red laser     
         time.sleep(0.5)
         optical_power = cxn.photodiode.read_optical_power()
     
@@ -700,7 +750,28 @@ def calc_optical_power_mW(color_ind, optical_power_V):
         return 7.9* optical_power_V + 0.024
     if color_ind == 638:
         return 5.7* optical_power_V + 0.035
-    
+
+def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
+    green_optical_power_pd = opt_power_via_photodiode(532)
+
+    red_optical_power_pd = opt_power_via_photodiode(638)
+
+    yellow_optical_power_pd = opt_power_via_photodiode(589,
+           AO_power_settings = aom_ao_589_pwr, nd_filter = nd_filter)
+
+    # Convert V to mW optical power
+    green_optical_power_mW = \
+            calc_optical_power_mW(532, green_optical_power_pd)
+
+    red_optical_power_mW = \
+            calc_optical_power_mW(638, red_optical_power_pd)
+
+    yellow_optical_power_mW = \
+            calc_optical_power_mW(589, yellow_optical_power_pd)
+            
+    return green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW
     
 # %% Safe stop (TM mccambria)
 

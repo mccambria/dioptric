@@ -374,7 +374,7 @@ def main_with_cxn(cxn, nv_sig, file, aom_ao_589_pwr, aom_ao_638_pwr,
         tool_belt.set_xyz(cxn, [x_coord, y_coord, z_center])
         
         # Shine the red light for a specific duration
-        ionization_duration = 10**3 #ns
+        ionization_duration = 10**5 #ns
         seq_args = [delay, ionization_duration, aom_ao_589_pwr, 
                                                         aom_ao_638_pwr, 638]
         seq_args_string = tool_belt.encode_seq_args(seq_args)

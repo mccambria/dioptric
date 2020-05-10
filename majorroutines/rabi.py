@@ -164,10 +164,10 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
          num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
-        rabi_per = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
+        rabi_per, sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                       num_steps, num_reps, num_runs)
         
-        return rabi_per
+        return rabi_per, sig_counts, ref_counts
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                   num_steps, num_reps, num_runs):
 
@@ -273,7 +273,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
-
+#            print(taus[tau_ind])
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
 
@@ -290,6 +290,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+#            print(new_counts)
 
             sample_counts = new_counts[0]
 
@@ -350,11 +351,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
-    ax.plot(taus, avg_sig_counts, 'r-')
-    ax.plot(taus, avg_ref_counts, 'g-')
+    ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
+    ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
     # ax.plot(tauArray, countsBackground, 'o-')
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
+    ax.legend()
 
     ax = axes_pack[1]
     ax.plot(taus , norm_avg_sig, 'b-')
@@ -417,10 +419,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     tool_belt.save_raw_data(raw_data, file_path)
     
     if (fit_func is not None) and (popt is not None):
-        return rabi_period
+        return rabi_period, sig_counts, ref_counts
     else:
-        return None
-
+        return None, sig_counts, ref_counts
+    
 
 # %% Run the file
 

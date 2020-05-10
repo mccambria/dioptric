@@ -5,6 +5,7 @@ Created on Wed Nov 20 20:40:44 2019
 
 @author: yanfeili
 """
+>>>Currently broken AG 4/2/2020<<<<
 
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
@@ -15,19 +16,19 @@ LOW = 0
 HIGH = 1
 
 def get_seq(pulser_wiring, args):
-
+    
     # Unpack the args
-    readout_time, reionization_time, illumination_time, ionization_time, \
-            wait_time, laser_delay, apd_indices, aom_ao_589_pwr, ao_638_pwr = args
+    readout_time, reionization_time, ionization_time, \
+            wait_time, laser_515_delay, aom_589_delay, \
+                laser_638_delay, apd_indices, aom_ao_589_pwr = args
 
     readout_time = numpy.int64(readout_time)
-    laser_delay = numpy.int64(laser_delay)
     ionization_time = numpy.int64(ionization_time)
     reionization_time = numpy.int64(reionization_time)
-    illumination_time = numpy.int64(illumination_time)
 
     # SCC photon collection test period
-    period =  laser_delay + (reionization_time + ionization_time + \
+    total_laser_delay = laser_515_delay + aom_589_delay + laser_638_delay
+    period =  total_laser_delay + (reionization_time + ionization_time + \
                            illumination_time + 4 * wait_time)*2
     
     # Get what we need out of the wiring dictionary
@@ -40,23 +41,19 @@ def get_seq(pulser_wiring, args):
     # Make sure the ao_aom voltage to the 589 aom is within 0 and 1 V
     tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
     
-    # Make sure the ao voltage to the 638 laser is within 0 and 0.9 V
-    tool_belt.ao_638_pwr_err(ao_638_pwr)
-    
     seq = Sequence()
 
-
     #collect photons for certain timewindow tR in APD
-    train = [(laser_delay + reionization_time + ionization_time  + 2*wait_time, LOW), \
-             (readout_time, HIGH), (illumination_time - readout_time + 100 + 2*wait_time, LOW),
+    train = [(total_laser_delay + reionization_time + ionization_time  + 3*wait_time, LOW), \
+             (readout_time, HIGH), (readout_time + 100 + 2*wait_time, LOW),
              (reionization_time + ionization_time  + 2*wait_time, LOW), \
-             (readout_time, HIGH), (illumination_time - readout_time + 100 + 2*wait_time, LOW)]
+             (readout_time, HIGH), (readout_time + 100 + 2*wait_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
     #clock pulse
-    train = [(laser_delay + reionization_time + ionization_time + illumination_time + 3*wait_time, LOW), (100, HIGH), 
-             ( reionization_time + ionization_time + illumination_time + 4*wait_time, LOW), (100, HIGH), (wait_time, LOW)]
-    seq.setDigital(pulser_do_clock, train)
+#    train = [(laser_delay + reionization_time + ionization_time + illumination_time + 3*wait_time, LOW), (100, HIGH), 
+#             ( reionization_time + ionization_time + illumination_time + 4*wait_time, LOW), (100, HIGH), (wait_time, LOW)]
+#    seq.setDigital(pulser_do_clock, train)
 
     #reionize with 532
     train = [ (reionization_time, HIGH), (int(period/2) -reionization_time, LOW), 
@@ -73,7 +70,7 @@ def get_seq(pulser_wiring, args):
              (3*wait_time + illumination_time + laser_delay + 100 + int(period/2), LOW)]
     seq.setAnalog(pulser_ao_638_aom, train)
     
-    final_digital = []
+    final_digital = [pulser_do_clock]
     final = OutputState(final_digital, 0.0, 0.0)
 
     return seq, final, [period]
