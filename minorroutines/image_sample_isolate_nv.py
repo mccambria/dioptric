@@ -15,8 +15,10 @@ import copy
 # %%
 
 reset_range = 0.5
-image_range = reset_range#0.1
+image_range = 0.1
+#image_range = 0.25
 num_steps = 90
+#num_steps = 120
 apd_indices = [0]
 # %%
 
@@ -38,22 +40,16 @@ def main(nv_sig, green_pulse_time):
     x_center, y_center, z_center = adj_coords
 
     print('Resetting with red light\n...')
-    image_sample.main(nv_sig, reset_range, reset_range, num_steps, 
+    image_sample.main(nv_sig, reset_range, reset_range, 60, 
                       aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False) 
     
     # shine green light 0.2 V away from scanning center
-    with labrad.connect() as cxn:       
-#        cxn.filter_slider_ell9k.set_filter('nd_0.5') 
-#        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-#        seq_args = [10**3, 100, 638]           
-#        seq_args_string = tool_belt.encode_seq_args(seq_args)            
-#        cxn.pulse_streamer.stream_immediate('analog_sequence_test.py', 1, seq_args_string)
-        
-        print('Shining green light off center for 1 min\n...')
-        tool_belt.set_xyz(cxn, [x_center - 0.2, y_center, z_center])
-        cxn.pulse_streamer.constant([3], 0.0, 0.0)
-        time.sleep(60)
-        cxn.pulse_streamer.constant([], 0.0, 0.0)  
+#    with labrad.connect() as cxn:               
+#        print('Shining green light off center for 1 min\n...')
+#        tool_belt.set_xyz(cxn, [x_center - 0.2, y_center, z_center])
+#        cxn.pulse_streamer.constant([3], 0.0, 0.0)
+#        time.sleep(60)
+#        cxn.pulse_streamer.constant([], 0.0, 0.0)  
         
     # collect an image under yellow right after ionization
     print('Scanning yellow light\n...')
@@ -61,16 +57,16 @@ def main(nv_sig, green_pulse_time):
                       aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
 
     print('Resetting with red light\n...')
-    image_sample.main(nv_sig, reset_range, reset_range, num_steps, 
+    image_sample.main(nv_sig, reset_range, reset_range, 60, 
                       aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False) 
     
     # shine green light 0.2 V away from scanning center
     with labrad.connect() as cxn: 
-        print('Shining green light off center for 1 min\n...')
-        tool_belt.set_xyz(cxn, [x_center - 0.2, y_center, z_center])
-        cxn.pulse_streamer.constant([3], 0.0, 0.0)
-        time.sleep(60)
-        cxn.pulse_streamer.constant([], 0.0, 0.0)   
+#        print('Shining green light off center for 1 min\n...')
+#        tool_belt.set_xyz(cxn, [x_center - 0.2, y_center, z_center])
+#        cxn.pulse_streamer.constant([3], 0.0, 0.0)
+#        time.sleep(60)
+#        cxn.pulse_streamer.constant([], 0.0, 0.0)   
 
     # now pulse the green at the center of the scan for a short time        
         print('Pulsing green light for {} us'.format(green_pulse_time/10**3))
@@ -104,7 +100,7 @@ def main(nv_sig, green_pulse_time):
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
 
-    title = 'Yellow scan (green pulse vs after ionization)\nGreen pulse {} us'.format(green_pulse_time/10**3) 
+    title = 'Yellow scan (with/without green pulse)\nGreen pulse {} us'.format(green_pulse_time/10**3) 
     fig = tool_belt.create_image_figure(dif_img_array_kcps, img_extent, clickHandler=None, title = title)
     # Redraw the canvas and flush the changes to the backend
     fig.canvas.draw()
@@ -146,7 +142,7 @@ if __name__ == '__main__':
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.9, 
             'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.3,
             'pulsed_initial_ion_dur': 200*10**3,
             'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
@@ -159,11 +155,13 @@ if __name__ == '__main__':
     nv_sig = ensemble
     
 #    green_pulse_time_list = [100, 500, 10**3, 5*10**3, 10**4, 5*10**4, 10**5, 5*10**5, 10**6]
-    green_pulse_time = 10**7
+#    green_pulse_time_list = [10**6, 5*10**6, 10**7]
+    green_pulse_time = 5*10**6
     
-#    for t in green_pulse_time_list:
-        
-    main(nv_sig, green_pulse_time)
+    for i in range(1):
+        print(i)
+          
+        main(nv_sig, green_pulse_time)
     
     
         

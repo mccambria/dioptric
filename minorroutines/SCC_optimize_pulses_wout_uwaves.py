@@ -272,7 +272,7 @@ def optimize_reion_pulse_length(nv_sig, test_pulse_dur_list = None):
         snr_list.append(-snr)
         
     # Plot
-    title = 'Sweep pusle length for 515 nm'
+    title = 'Sweep pulse length for 515 nm'
     fig = plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, 
                           snr_list, title)
     # Save
@@ -343,7 +343,7 @@ def optimize_init_ion_and_reion_pulse_length(nv_sig, test_pulse_dur_list = None)
         ref_counts_avg.append(numpy.average(ref_count))
         snr_list.append(-snr)
     # Plot
-    title = 'Sweep pusle length for initial 638 nm and 515 nm'
+    title = 'Sweep pulse length for initial 638 nm and 515 nm'
     fig = plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, 
                           snr_list, title)
 
@@ -406,7 +406,7 @@ def optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = numpy.linspace(0, 10
         snr_list.append(-snr)
     
     # Plot
-    title = 'Sweep pusle length for 638 nm'
+    title = 'Sweep pulse length for 638 nm'
     text = '\n'.join(('Readout time set to {} ms'.format(nv_sig['pulsed_SCC_readout_dur']/10**6),
                       'Readout power set to ' + '%.1f'%(yellow_optical_power_mW * 10**3) + ' uW'))
     
@@ -476,8 +476,8 @@ def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list = None):
         snr_list.append(-snr)
     
     # Plot
-    title = 'Sweep pusle length for 589 nm'
-    text = 'Yellow pusle power set to ' + '%.0f'%(yellow_optical_power_mW*10**3) + ' uW'
+    title = 'Sweep pulse length for 589 nm'
+    text = 'Yellow pulse power set to ' + '%.0f'%(yellow_optical_power_mW*10**3) + ' uW'
     fig = plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, 
                           snr_list, title, text = text)
     
@@ -543,8 +543,8 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
         snr_list.append(-snr)
     
     # Plot
-    title = 'Sweep pusle power for 589 nm'
-    text = 'Yellow pusle length set to ' + str(nv_sig['pulsed_SCC_readout_dur']/10**6) + ' ms'
+    title = 'Sweep pulse power for 589 nm'
+    text = 'Yellow pulse length set to ' + str(nv_sig['pulsed_SCC_readout_dur']/10**6) + ' ms'
     fig = plot_power_sweep(optical_power_list, sig_counts_avg, ref_counts_avg, 
                           snr_list, title, text = text)
     # Save

@@ -67,10 +67,10 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    scan_range = 0.7
 #    scan_range = 0.5
 #    num_steps = 150
-#    scan_range = 0.1
-    num_steps = 90
-    scan_range = 0.2
-#    num_steps = 60
+    scan_range = 0.1
+#    num_steps = 90
+#    scan_range = 0.25
+    num_steps = 60
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
@@ -560,11 +560,11 @@ if __name__ == '__main__':
             
             # red resets, short green pulse, then yellow readout
 #            for t in numpy.linspace(100, 10**4, 100):
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False) 
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638, save_data=True, plot_data=True) 
 #            with labrad.connect() as cxn:      
-#                tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
+#                tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])
 #                cxn.pulse_streamer.constant([3],0.0,0.0)
-#                time.sleep(10)
+#                time.sleep(60)
 #                cxn.pulse_streamer.constant([],0.0,0.0)
 #                tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])
 #                seq_args = [10**6, 100, 532]           
