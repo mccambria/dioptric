@@ -58,7 +58,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     ionization_time = nv_sig['pulsed_ionization_dur']
     aom_ao_589_pwr = nv_sig['am_589_power']
 #    nd_filter = nv_sig['nd_filter']
-    
+
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     #delay of aoms and laser
@@ -81,17 +81,17 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     green_optical_power_pd, green_optical_power_mW, \
             red_optical_power_pd, red_optical_power_mW, \
             yellow_optical_power_pd, yellow_optical_power_mW = \
-            tool_belt.measure_g_r_y_power( 
+            tool_belt.measure_g_r_y_power(
                                   nv_sig['am_589_power'], nv_sig['nd_filter'])
 
     readout_power = yellow_optical_power_mW
 
 #%% Estimate the lenth of the sequance
-    
+
     # We're just going to use the sequence for testign the red/green laser pulses.
     # It is exactly what we wnat, as long as we set the test_color_ind to 638
     seq_args = [readout_time, reionization_time,
-                ionization_time, wait_time, laser_515_delay, aom_589_delay, 
+                ionization_time, wait_time, laser_515_delay, aom_589_delay,
                 laser_638_delay,apd_indices[0], aom_ao_589_pwr, 638]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('SCC_optimize_638_and_532_power_and_duration.py', seq_args_string)
@@ -128,14 +128,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     cxn.apd_tagger.start_tag_stream(apd_indices)
 
     seq_args = [readout_time, reionization_time,
-                ionization_time, wait_time, laser_515_delay, aom_589_delay, 
+                ionization_time, wait_time, laser_515_delay, aom_589_delay,
                 laser_638_delay,apd_indices[0], aom_ao_589_pwr, 638]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_immediate('SCC_optimize_638_and_532_power_and_duration.py', num_reps, seq_args_string)
 
     # Get the counts
     new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-    
+
     sample_counts = new_counts[0]
 
     cxn.apd_tagger.stop_tag_stream()
@@ -145,9 +145,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
 #%% plot the data and the fit
 
-    # signal -> NVm, reference -> NV0
-    unique_value1, relative_frequency1 = get_Probability_distribution(list(ref_counts))
-    unique_value2, relative_frequency2 = get_Probability_distribution(list(sig_counts))
+    # signal -> NV0, reference -> NVm
+    unique_value1, relative_frequency1 = get_Probability_distribution(list(sig_counts))
+    unique_value2, relative_frequency2 = get_Probability_distribution(list(ref_counts))
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
 
@@ -175,8 +175,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 #    ax.plot(photon_numbers2,curve2,'b')
 #    ax.plot(photon_numbers1,curve3,'y')
 #    ax.plot(photon_numbers2,curve4,'g')
-    ax.plot(unique_value2, relative_frequency2, 'ro', label='Ionization pulse')
-    ax.plot(unique_value1, relative_frequency1, 'ko', label='Ionization pulse absent')
+    ax.plot(unique_value1, relative_frequency1, 'ro', label='Ionization pulse')
+    ax.plot(unique_value2, relative_frequency2, 'ko', label='Ionization pulse absent')
     ax.set_xlabel('number of photons (n)')
     ax.set_ylabel('P(n)')
     ax.legend()
@@ -227,7 +227,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     ref_counts = [int(el) for el in ref_counts]
 
     raw_data = {'timestamp': timestamp,
-            'nv_sig': nv_sig,          
+            'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'green_optical_power_pd': green_optical_power_pd,
             'green_optical_power_pd-units': 'V',
@@ -248,11 +248,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
             'ref_counts-units': 'counts',
             'unique_valuesNV-': unique_value1,
             'unique_values-units': 'num of photons',
-            'relative_frequencyNV-': relative_frequency1,
+            'relative_frequencyNV0': relative_frequency1,
             'relative_frequency-units': 'occurrences',
-            'unique_valuesNV0': unique_value2,
+            'unique_valuesNV-': unique_value2,
             'unique_values-units': 'num of photons',
-            'relative_frequencyNV0': relative_frequency2,
+            'relative_frequencyNV-': relative_frequency2,
             'relative_frequency-units': 'occurrences'
             }
 
