@@ -60,15 +60,15 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, plot_data):
     
-    scan_range = 5.0
-#    num_steps = 300
+    scan_range = 4.6
+    num_steps = 400
 #    num_steps = 120
 #    num_steps = 100
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 150
 #    scan_range = 0.1
-    num_steps = 90
+#    num_steps = 90
 #    scan_range = 0.2
 #    num_steps = 60
 #    scan_range = 0.05
@@ -207,13 +207,12 @@ def do_t1_battery(nv_sig, apd_indices):
 
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
-        
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 15*10**6], 16, 2.5*10**2, 1500],
-        [[States.HIGH, States.HIGH], [0, 15*10**6], 16, 2.5*10**2, 1500],
-        [[States.ZERO, States.HIGH], [0, 15*10**6], 16, 2.5*10**2, 1500],
-        [[States.ZERO, States.ZERO], [0, 15*10**6], 16, 2.5*10**2, 1500]
-        ])
+        [[States.ZERO, States.ZERO], [0, 10*10**6], 16, 2*10**2, 1000],
+        [[States.HIGH, States.LOW], [0, 10*10**6], 16, 2*10**2, 1000],
+        [[States.HIGH, States.HIGH], [0, 10*10**6], 16, 2*10**2, 1000],
+        [[States.ZERO, States.HIGH], [0, 10*10**6], 16, 2*10**2, 1000]
+            ])
 
 
     # Loop through the experiments
@@ -482,7 +481,7 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     sample_name = 'bachman'
-    ensemble = { 'coords': [-1.907, -0.588, 4.87],
+    ensemble = { 'coords': [-0.608, -0.186, 4.87], #[-1.907, -0.588, 4.87]
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
@@ -495,7 +494,7 @@ if __name__ == '__main__':
             'ionization_rep': 13,
             'magnet_angle': 0,
             'resonance_LOW': 2.8057, 'rabi_LOW': 123.6, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9474, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
+            'resonance_HIGH': 2.9474, 'rabi_HIGH': 152.4, 'uwave_power_HIGH': 10.0}   
   
     nv_sig_list = [ensemble]
     
@@ -513,7 +512,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.0])
@@ -593,7 +592,7 @@ if __name__ == '__main__':
 ##                seq_args_string = tool_belt.encode_seq_args(seq_args)            
 ##                cxn.pulse_streamer.stream_immediate('analog_sequence_test.py', 1, seq_args_string)
 #
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)            
             
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
@@ -614,7 +613,7 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
-            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 300])
+#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 300])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)

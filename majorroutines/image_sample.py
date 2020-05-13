@@ -127,7 +127,7 @@ def reformat_plot(colorMap, save_file_type):
             # Build the image array from the data
             imgArray = []
 
-            for line in data["imgArray"]:
+            for line in data["img_array"]:
                 imgArray.append(line)
 
             counts_array = numpy.array(imgArray)
@@ -145,11 +145,11 @@ def reformat_plot(colorMap, save_file_type):
             imgResolution = data["scanStepSize"]
 
             # Read in the values for the scan ranges, centers, and resolution
-            yScanRange = data["yScanRange"]
+            yScanRange = data["y_range"]
             yCenter = xyzCenters[1]
             yImgResolution = imgResolution
 
-            xScanRange = data["xScanRange"]
+            xScanRange = data["x_range"]
             xCenter = xyzCenters[0]
             xImgResolution = imgResolution
 
@@ -452,6 +452,7 @@ if __name__ == '__main__':
 #    create_figure(file_name)
 #    reformat_plot('inferno', 'svg')
 
-    file_name = '2020_05/2020_05_07-11_26_52-ayrton12'
-    create_figure(file_name)
+    file_name = 'branch_Spin_to_charge/2020_05/2020_05_13-17_04_33-bachman-ensemble'
+    reformat_plot('inferno', 'svg')
+#    create_figure(file_name)
 
