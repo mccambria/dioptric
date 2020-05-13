@@ -18,7 +18,7 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    readout, uwave_switch_delay, apd_index, state_value = args
+    readout, am_589_power,  uwave_switch_delay, apd_index, state_value, color_ind = args
     
     readout = numpy.int64(readout)
     readout = numpy.int64(readout)
@@ -30,7 +30,13 @@ def get_seq(pulser_wiring, args):
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    pulser_do_aom = pulser_wiring['do_532_aom']
+    
+    if color_ind == 532:
+        pulser_do_aom = pulser_wiring['do_532_aom']
+    elif color_ind == 638:
+        pulser_do_aom = pulser_wiring['do_638_laser']
+    elif color_ind == 589:
+        pulser_ao_aom = pulser_wiring['ao_589_aom']
     
     sig_gen_name = tool_belt.get_signal_generator_name(States(state_value))
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
@@ -59,11 +65,15 @@ def get_seq(pulser_wiring, args):
              (readout, HIGH), (clock_buffer, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
-    # The AOM should always be on
-    train = [(period, HIGH)]
-    seq.setDigital(pulser_do_aom, train)
+    # The laser should always be on
+    if color_ind == 532 or color_ind == 638:
+        train = [(period, HIGH)]
+        seq.setDigital(pulser_do_aom, train)
+    if color_ind == 589:
+        train = [(period, am_589_power)]
+        seq.setAnalog(pulser_ao_aom, train)
 
-    final_digital = [pulser_wiring['do_532_aom']]
+    final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]
 
@@ -73,6 +83,6 @@ if __name__ == '__main__':
               'do_apd_gate_0': 1,
               'do_aom': 2,
               'do_uwave_gate_0': 3}
-    args = [10 * 10**6, 1 * 10**6, 0]
+    args = [10 * 10**6, 1.0 , 1 * 10**6, 0, 532]
     seq, ret_vals = get_seq(wiring, args)
     seq.plot()

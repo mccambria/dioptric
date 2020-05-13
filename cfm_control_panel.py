@@ -60,17 +60,17 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, plot_data):
     
-#    scan_range = 1.0
+    scan_range = 5.0
 #    num_steps = 300
 #    num_steps = 120
-#    num_steps = 90
-#    scan_range = 0.7
+#    num_steps = 100
+#    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 150
-    scan_range = 0.1
-#    num_steps = 90
-#    scan_range = 0.25
-    num_steps = 60
+#    scan_range = 0.1
+    num_steps = 90
+#    scan_range = 0.2
+#    num_steps = 60
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
@@ -108,7 +108,7 @@ def do_optimize_list(nv_sig_list, apd_indices, color_ind):
 
 def do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, color_ind):
 
-    run_time = 30 * 10**9  # ns
+    run_time = 90 * 10**9  # ns
 
     stationary_count.main(nv_sig, run_time, aom_ao_589_pwr, apd_indices, color_ind)
 
@@ -120,14 +120,24 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
     g2_measurement.main(nv_sig, run_time, diff_window,
                         apd_a_index, apd_b_index)
 
-def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
-
+def do_resonance(nv_sig, apd_indices, color_ind, freq_center=2.87, freq_range=0.2):
+#    # green @ 8 mW
+#    num_steps = 101
+#    num_runs = 5
+#    uwave_power = -7.0
+    
+    # green @ 4 mW
     num_steps = 101
-    num_runs = 5
-    uwave_power = -7.0  # -13.0 with a 1.5 ND is a good starting point
+    num_runs = 4
+    uwave_power = -16.0
+    
+    # yellow @ 40 uW
+#    num_steps = 101
+#    num_runs = 7
+#    uwave_power = -21.0  
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
-                   num_steps, num_runs, uwave_power)
+                   num_steps, num_runs, uwave_power, color_ind)
 
 def do_resonance_state(nv_sig, apd_indices, state):
 
@@ -173,9 +183,9 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     num_angle_steps = 6
     freq_center = 2.87
     freq_range = 0.3
-    num_freq_steps = 101
-    num_freq_runs = 3
-    uwave_power = -7.0
+    num_freq_steps = 151
+    num_freq_runs = 10
+    uwave_power = -14.0
     uwave_pulse_dur = None  # Set to None for CWESR
     num_freq_reps = 10**5
 
@@ -188,7 +198,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 3*10**3
-    num_runs = 1
+    num_runs = 5
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -471,21 +481,21 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    sample_name = 'hopper'
-    ensemble = { 'coords': [0.0, 0.0, 5.00],
+    sample_name = 'bachman'
+    ensemble = { 'coords': [-1.907, -0.588, 4.87],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
+            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
             'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.3,
             'pulsed_initial_ion_dur': 200*10**3,
             'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
             'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 4,
+            'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8,
             'ionization_rep': 13,
             'magnet_angle': 0,
-            'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
+            'resonance_LOW': 2.8057, 'rabi_LOW': 123.6, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9474, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
   
     nv_sig_list = [ensemble]
     
@@ -503,7 +513,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.0])
@@ -559,29 +569,37 @@ if __name__ == '__main__':
             
             
             # red resets, short green pulse, then yellow readout
-#            for t in numpy.linspace(100, 10**4, 100):
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638, save_data=True, plot_data=True) 
-#            with labrad.connect() as cxn:      
-#                tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False) 
+#            with labrad.connect() as cxn:  
+#                tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])              
 #                cxn.pulse_streamer.constant([3],0.0,0.0)
-#                time.sleep(60)
+#                time.sleep(500)
 #                cxn.pulse_streamer.constant([],0.0,0.0)
 #                tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])
-#                seq_args = [10**6, 100, 532]           
+#                seq_args = [t, 100, 532]           
 #                seq_args_string = tool_belt.encode_seq_args(seq_args)            
 #                cxn.pulse_streamer.stream_immediate('analog_sequence_test.py', 1, seq_args_string)
-#            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)
-            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True) 
-#            for p in numpy.linspace(0.3, 0.8, 6):
-#                aom_ao_589_pwr  =p
+
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
-#            
-            
+#      
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False) 
+#            with labrad.connect() as cxn:  
+#                tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])               
+#                cxn.pulse_streamer.constant([7],0.0,0.0)
+#                time.sleep(1000)
+##                cxn.pulse_streamer.constant([],0.0,0.0)
+##                tool_belt.set_xyz(cxn, [0.0, 0.0, 5.0])
+##                seq_args = [t, 100, 532]           
+##                seq_args_string = tool_belt.encode_seq_args(seq_args)            
+##                cxn.pulse_streamer.stream_immediate('analog_sequence_test.py', 1, seq_args_string)
+#
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+#            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)            
             
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2)
+#            do_resonance(nv_sig, apd_indices, 532)
+#            do_resonance(nv_sig, apd_indices, 532, freq_center=2.754, freq_range=0.04)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
@@ -596,7 +614,7 @@ if __name__ == '__main__':
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.15)
 #            do_pulsed_resonance(nv_sig, apd_indices, freq_center=3.0, freq_range=0.15)
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
-#            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 300])
+            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 300])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)

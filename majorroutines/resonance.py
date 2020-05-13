@@ -29,14 +29,14 @@ from majorroutines.pulsed_resonance import double_gaussian_dip
 
 
 def main(nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_runs, uwave_power):
+         num_steps, num_runs, uwave_power, color_ind):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-                      num_steps, num_runs, uwave_power)
+                      num_steps, num_runs, uwave_power, color_ind)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-                  num_steps, num_runs, uwave_power):
+                  num_steps, num_runs, uwave_power, color_ind):
 
     # %% Initial calculations and setup
     
@@ -51,7 +51,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     readout = 10*shared_parameters['continuous_readout_dur']
     readout_sec = readout / (10**9)
     uwave_switch_delay = 1 * 10**6  # 1 ms to switch frequencies
-    seq_args = [readout, uwave_switch_delay, apd_indices[0], state.value]
+    am_589_power = nv_sig['am_589_power']
+    seq_args = [readout, am_589_power, uwave_switch_delay, apd_indices[0], state.value, color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
     file_name = os.path.basename(__file__)
@@ -138,6 +139,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         rawData = {'start_timestamp': start_timestamp,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                   'color_ind': color_ind,
                    'opti_coords_list': opti_coords_list,
                    'opti_coords_list-units': 'V',
                    'freq_center': freq_center,
@@ -256,3 +258,33 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         print('No resonances found')
         print('\n')
         return None, None
+
+# %%
+
+if __name__ == '__main__':
+    
+    file_green = '2020_05_13-09_41_28-hopper-ensemble'
+    file_no_green = '2020_05_13-09_47_24-hopper-ensemble'
+    
+    data_green = tool_belt.get_raw_data('resonance/branch_Spin_to_charge/2020_05', file_green)
+    freq_center = data_green['freq_center']
+    freq_range = data_green['freq_range']
+    num_steps = data_green['num_steps']
+    half_freq_range = freq_range / 2
+    freq_low = freq_center - half_freq_range
+    freq_high = freq_center + half_freq_range
+    freqs = numpy.linspace(freq_low, freq_high, num_steps)
+    
+    norm_avg_sig_green = numpy.array(data_green['norm_avg_sig'])
+    
+    data_no_green = tool_belt.get_raw_data('resonance/branch_Spin_to_charge/2020_05', file_no_green)    
+    norm_avg_sig_no_green = numpy.array(data_no_green['norm_avg_sig'])   
+    
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    ax.plot(freqs, norm_avg_sig_green, 'g', label='with 1000 s green laser')
+    ax.plot(freqs, norm_avg_sig_no_green, 'b', label='without 1000 s green laser')
+    ax.set_xlabel('Frequency (GHz)')
+    ax.set_ylabel('Contrast (arb. units)')
+    ax.legend()
+    
+    

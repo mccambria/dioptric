@@ -147,7 +147,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
         else:
             angle_resonances = cwesr(cxn, nv_sig_copy, apd_indices,
                                      freq_center, freq_range, num_freq_steps,
-                                     num_freq_runs, uwave_power)
+                                     num_freq_runs, uwave_power, 532)
         resonances[ind, :] = angle_resonances
         if all(angle_resonances):
             # We got two resonances so take the difference

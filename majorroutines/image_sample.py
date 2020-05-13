@@ -273,7 +273,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_params['continuous_readout_dur']
     if color_ind == 589:
-        readout = 20*readout
+        readout = 1*readout
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
