@@ -29,27 +29,40 @@ from scipy.integrate import quad
 # %% Constants
 
 
-from numpy import pi
-from scipy.constants import Boltzmann
-from scipy.constants import hbar
-from scipy.constants import Planck
-
-im = 0+1j
-inv_sqrt_2 = 1/numpy.sqrt(2)
-gmuB = 2.8e-3  # gyromagnetic ratio in GHz / G
-
+# Plotting
 # ms = 7
 # lw = 1.75
 ms = 5.25
 lw = 5.25/4
 
-kT = Boltzmann*295  # measurement thermal energy
+from numpy import pi
+from scipy.constants import Boltzmann
+from scipy.constants import hbar
+from scipy.constants import Planck
+from analysis.extract_hamiltonian import d_gs  # in GHz
+
+static_B_z= 0.01  # GHz
+
+im = 0+1j
+inv_sqrt_2 = 1/numpy.sqrt(2)
+gmuB = 2.8e-3  # gyromagnetic ratio in GHz / G
+
+temp = 295#*(2**(1/3))
+kT = Boltzmann*temp  # measurement thermal energy
+
 Omega = (3.567e-10)**3  # unit cell volume in diamond
+# Omega = (10e-10)**3  # unit cell volume in diamond
 v_s = 1.2e4  # speed of sound in diamond
 omega_D = 2*pi*38.76e12  # Debye angular frequency in diamond
-# This rate coefficient absorbs (2*pi*hbar)**4 from the matrix elements
-rate_coeff = (8 * pi * Omega**2 * kT**5) / (v_s**6 * hbar**5 * omega_D**2)
+# v_s = 1.8e4  # speed of sound in diamond
+# omega_D = 39.39e13  # Debye angular frequency in diamond
 x_D = (hbar*omega_D) / kT  # dimensionless phonon energy limit
+
+x_0 = (Planck * 10**9 * d_gs) / kT  # dimensionless zfs energy
+
+rate_coeff = (Omega**2 * kT**5 * temp**2) / (2 * pi**3 * v_s**6 * omega_D**2 * hbar**9)
+# This rate coefficient absorbs (2*pi*hbar)**4 from the matrix elements
+# rate_coeff = (8 * pi * Omega**2 * kT**5) / (v_s**6 * hbar**5 * omega_D**2)  # /h**4
 
 # Eigenvectors and values are sorted in increasing order of eigenvalue.
 # Assume B is small enough such that there are no crossings and theta <= pi/2.
@@ -59,7 +72,7 @@ state_mapping = {-1: 1, 0: 0, +1: 2}
 # %% Phonon fitting
 
 
-def phonon_fit(nv_data):
+def phonon_fit(nv_data, p0=None):
     """
     Fits gamma and omega as functions of perp_B to a model of relaxation
     limited by two-phonon processes.
@@ -182,22 +195,45 @@ def phonon_fit(nv_data):
     
     # %% Phonon fit
     
-    gamma = lambda perp_B, popt: rate_kHz_phonon_perp_B(-1, +1, perp_B, *popt)
-    omega = lambda perp_B, popt: rate_kHz_phonon_perp_B(0, +1, perp_B, *popt)
+    # gamma = lambda perp_B, popt: rate_kHz_phonon_perp_B(-1, +1, perp_B, *popt)
+    # omega = lambda perp_B, popt: rate_kHz_phonon_perp_B(0, +1, perp_B, *popt)
+    # if p0 is None:
+    #     # p0 = [1200]*5
+    #     p0 = [476, 1333, 1016, 937, 1813]
+    # # popt = p0
+    # popt = [476.999999999999, 1333, 1016, 937, 1813]
+    # double_valued_func = double_valued_phonon_perp_B
     
-    p0 = [1300]*5
-    popt = []
-    # double_valued_perp_B = numpy.append(all_perp_B, -(all_perp_B+1))
-    # double_valued_rates = numpy.append(all_gamma, all_omega)
-    # double_valued_rates_err = numpy.append(all_gamma_err, all_omega_err)
-    # popt, pcov = curve_fit(double_valued_phonon_perp_B,
-    #                         double_valued_perp_B, double_valued_rates, p0=p0,
-    #                         sigma=double_valued_rates_err, absolute_sigma=True)
-    # print(popt)
-    # print(numpy.sqrt(numpy.diag(pcov)))
     
-    fig, axes_pack = plt.subplots(1, 2, figsize=(10,5.0))
+    
+    # Simplified
+    gamma = lambda perp_B, popt: rate_kHz_phonon_perp_B_simp2(-1, +1, perp_B, *popt)
+    omega = lambda perp_B, popt: rate_kHz_phonon_perp_B_simp2(0, +1, perp_B, *popt)
+    if p0 is None:
+        # p0 = [500,1300]
+        p0 = [1150,1150]
+    # popt = None
+    popt = p0
+    double_valued_func = double_valued_phonon_perp_B_simp2
+    
+    
+    double_valued_perp_B = numpy.append(all_perp_B, -(all_perp_B+1))
+    double_valued_rates = numpy.append(all_gamma, all_omega)
+    double_valued_rates_err = numpy.append(all_gamma_err, all_omega_err)
+    
+    if popt is None:
+        popt, pcov = curve_fit(double_valued_func,
+                        double_valued_perp_B, double_valued_rates, p0=p0,
+                        sigma=double_valued_rates_err, absolute_sigma=True)
+        # popt_hz = numpy.array(popt) / Planck
+        # print('popt_hz: {}'.format(popt_hz))
+        print(popt)
+        print(numpy.sqrt(numpy.diag(pcov)))
+    
+    fig, axes_pack = plt.subplots(1, 2, figsize=(10,7.0))
     fig.set_tight_layout(True)
+    round_popt = [round(el) for el in popt]
+    fig.suptitle('p0={}\npopt={}'.format(p0, round_popt), x=0.21, y=0.95)
     
     ax = axes_pack[0]
     ax.errorbar(all_perp_B, all_gamma, yerr=all_gamma_err,
@@ -205,6 +241,8 @@ def phonon_fit(nv_data):
     perp_B_linspace = numpy.linspace(0, max(all_perp_B))
     gammas = gamma(perp_B_linspace, popt)
     ax.plot(perp_B_linspace, gammas)
+    ax.set_xlabel('B perp (G)')
+    ax.set_ylabel('gamma (kHz)')
     
     ax = axes_pack[1]
     ax.errorbar(all_perp_B, all_omega, yerr=all_omega_err,
@@ -212,7 +250,31 @@ def phonon_fit(nv_data):
     perp_B_linspace = numpy.linspace(0, max(all_perp_B))
     omegas = omega(perp_B_linspace, popt)
     ax.plot(perp_B_linspace, omegas)
+    ax.set_xlabel('B perp (G)')
+    ax.set_ylabel('omega (kHz)')
     
+    # file_name = str(p0)
+    # file_name = file_name.replace(', ', '_')
+    # blank_file_path = 'C:/Users/matth/Desktop/lab/bulk_dq_relaxation/anisotropy/{}.svg'
+    # fig.savefig(blank_file_path.format(file_name[1:-1]))
+    # plt.close(fig)
+    
+    
+def double_valued_phonon_perp_B_simp2(perp_B, lambda_perp_prime, lambda_perp):
+    
+    noise_hamiltonian = calc_phonon_hamiltonian(0, 
+                                        lambda_perp_prime, lambda_perp_prime, 
+                                        lambda_perp, lambda_perp)
+    return double_valued_noise_hamiltonian_perp_B(perp_B, noise_hamiltonian)
+    
+    
+def double_valued_phonon_perp_B_simp3(perp_B, lambda_z,
+                                      lambda_perp_prime, lambda_perp):
+    
+    noise_hamiltonian = calc_phonon_hamiltonian(lambda_z, 
+                                        lambda_perp_prime, lambda_perp_prime,
+                                        lambda_perp, lambda_perp)
+    return double_valued_noise_hamiltonian_perp_B(perp_B, noise_hamiltonian)
     
     
 def double_valued_phonon_perp_B(perp_B, lambda_z, lambda_xz,
@@ -222,6 +284,7 @@ def double_valued_phonon_perp_B(perp_B, lambda_z, lambda_xz,
                                             lambda_yz, lambda_yx, lambda_xy)
     return double_valued_noise_hamiltonian_perp_B(perp_B, noise_hamiltonian)
     
+
 def double_valued_electric_perp_B(perp_B, mag_E, d_perp_prime):
     
     noise_hamiltonian = calc_electric_hamiltonian([mag_E]*3, d_perp_prime)
@@ -233,24 +296,31 @@ def double_valued_noise_hamiltonian_perp_B(perp_B, noise_hamiltonian):
     gamma = lambda B_field_vec: rate(-1, +1, B_field_vec, noise_hamiltonian)/1000
     omega = lambda B_field_vec: rate(0, +1, B_field_vec, noise_hamiltonian)/1000
     
-    ret_vals = []
     if (type(perp_B) is list) or (type(perp_B) is numpy.ndarray):
         rates = []
         for val in perp_B:
             if val < 0:
-                B_field_vec = [gmuB*-(val+1), 0.0, 0.1]
+                B_field_vec = [gmuB*-(val+1), 0.0, static_B_z]
                 rates.append(omega(B_field_vec))
             else:
-                B_field_vec = [gmuB*val, 0.0, 0.1]
+                B_field_vec = [gmuB*val, 0.0, static_B_z]
                 rates.append(gamma(B_field_vec))
         return numpy.array(rates)
     else:
         if perp_B < 0:
-            B_field_vec = [gmuB*-(perp_B+1), 0.0, 0.1]
+            B_field_vec = [gmuB*-(perp_B+1), 0.0, static_B_z]
             return omega(B_field_vec)
         else:
-            B_field_vec = [gmuB*perp_B, 0.0, 0.1]
+            B_field_vec = [gmuB*perp_B, 0.0, static_B_z]
             return gamma(B_field_vec)
+    
+    
+def rate_kHz_phonon_perp_B_simp2(i, j, perp_B, lambda_perp_prime, lambda_perp):
+    
+    noise_hamiltonian = calc_phonon_hamiltonian(0, 
+                                        lambda_perp_prime, lambda_perp_prime, 
+                                        lambda_perp, lambda_perp)
+    return rate_kHz_noise_hamiltonian_perp_B(i, j, perp_B, noise_hamiltonian)
     
     
 def rate_kHz_phonon_perp_B(i, j, perp_B, lambda_z, lambda_xz,
@@ -277,11 +347,11 @@ def rate_kHz_noise_hamiltonian_perp_B(i, j, perp_B, noise_hamiltonian):
     if (type(perp_B) is list) or (type(perp_B) is numpy.ndarray):
         rates = []
         for val in perp_B:
-            B_field_vec = [gmuB*val, 0.0, 0.1]
+            B_field_vec = [gmuB*val, 0.0, static_B_z]
             rates.append(rate_kHz(B_field_vec))
         return numpy.array(rates)
     else:
-        B_field_vec = [gmuB*perp_B, 0.0, 0.1]
+        B_field_vec = [gmuB*perp_B, 0.0, static_B_z]
         return rate_kHz(B_field_vec)
     
     
@@ -473,8 +543,140 @@ def calc_electric_hamiltonian(E_field_vec, d_perp_prime=17):
     return hamiltonian
     
 
-
 # %% Functions
+
+
+def get_coupling_constants(nv_data):
+    """
+    Calculate the values of the coupling constants based on the B_perp=0
+    measured rates gamma and Omega
+    """
+    
+    
+    # %% Get B_perp=0 points
+    
+    
+    on_axis_omega = []
+    on_axis_omega_err = []
+    on_axis_gamma = []
+    on_axis_gamma_err = []
+
+    for ind in range(len(nv_data)):
+        
+        nv = nv_data[ind]
+        
+        # name = nv['name']
+        # if name in ['NVA1', 'NVA2']:
+        #     continue
+        # if name != 'test':
+        #     continue
+        
+        omega = numpy.array(nv['omega'])
+        omega_err = numpy.array(nv['omega_err'])
+        gamma = numpy.array(nv['gamma'])
+        gamma_err = numpy.array(nv['gamma_err'])
+        # mag_B = numpy.array(nv['mag_B'])
+        # theta_B = numpy.array(nv['theta_B'])
+        perp_B = numpy.array(nv['perp_B'])
+        
+        # Only consider points with known B field components
+        # mask = mag_B != None
+        
+        # Only consider points with known perp_B < 1
+        mask = []
+        for el in perp_B:
+            if el is not None:
+                if el < 1:
+                    mask.append(True)
+                    continue
+            mask.append(False)
+        
+        on_axis_omega.extend(omega[mask])
+        on_axis_omega_err.extend(omega_err[mask])
+        on_axis_gamma.extend(gamma[mask])
+        on_axis_gamma_err.extend(gamma_err[mask])
+    
+    # Cast to arrays
+    on_axis_omega = numpy.array(on_axis_omega)
+    on_axis_omega_err = numpy.array(on_axis_omega_err)
+    on_axis_gamma = numpy.array(on_axis_gamma)
+    on_axis_gamma_err = numpy.array(on_axis_gamma_err)
+    
+    num_points = len(on_axis_omega)
+    
+    # Work in Hz
+    avg_on_axis_omega = 1000*numpy.average(on_axis_omega)
+    avg_on_axis_omega_err = 1000*numpy.sqrt(numpy.sum(on_axis_omega_err**2))/num_points
+    avg_on_axis_gamma = 1000*numpy.average(on_axis_gamma)
+    avg_on_axis_gamma_err = 1000*numpy.sqrt(numpy.sum(on_axis_gamma_err**2))/num_points
+    
+    # print(num_points)
+    # print(avg_on_axis_omega)
+    # print(avg_on_axis_omega_err)
+    # print(avg_on_axis_gamma)
+    # print(avg_on_axis_gamma_err)
+    
+    
+    # %% gamma and lambda_perp_prime
+    
+    # print(x_D)
+    int_val, int_error = quad(on_axis_integrand, 0, x_D)
+    # print(int_val)
+    
+    # Calculate the coefficient of lambda_perp_prime^4 in the expression
+    # for gamma
+    print(x_0)
+    gamma_coeff = 4 * rate_coeff * x_0**2 * int_val
+    lambda_perp_prime = (avg_on_axis_gamma / gamma_coeff)**(1/4)
+    lambda_perp_prime_err = (lambda_perp_prime * (1/4) * avg_on_axis_gamma_err / avg_on_axis_gamma)
+    
+    # In J
+    print('lambda_perp_prime = {} +/- {} J\n'.format(lambda_perp_prime, lambda_perp_prime_err))
+    
+    # In GHz
+    lambda_perp_prime_GHz = lambda_perp_prime/(Planck*10**9)
+    lambda_perp_prime_err_GHz = lambda_perp_prime_err/(Planck*10**9)
+    print('lambda_perp_prime = {} +/- {} GHz\n'.format(lambda_perp_prime_GHz, lambda_perp_prime_err_GHz))
+    
+
+def on_axis_integrand(x):
+    
+    # Check if we have a list or array
+    try:
+        _ = len(x)
+        x_is_multi_valued = True
+    except Exception:
+        x_is_multi_valued = False
+        
+    if x_is_multi_valued:
+        ret_vals = []
+        for val in x:
+            if x == 0:
+                ret_vals.append(1)
+            else:
+                result = x**2 * bose(x) * (bose(x)+1)
+                ret_vals.append(result)
+        ret_vals = numpy.array(ret_vals)
+        return ret_vals
+    else:
+        if x == 0:
+            return 1
+        else:
+            return x**2 * bose(x) * (bose(x)+1)
+    
+    
+    
+def bose(x):
+    return (exp(x)-1)**-1
+
+
+def plot_fx():
+    
+    fx = lambda x: x**2 * bose(x) * (bose(x)+1)
+    print(x_D)
+    fig, ax = plt.subplots()
+    linspace_x = numpy.linspace(0.1, 2*x_D, 1000)
+    ax.plot(linspace_x, fx(linspace_x))
 
 
 def get_nv_data_csv(file):
@@ -1030,5 +1232,14 @@ if __name__ == '__main__':
     # val = rate_kHz_electric_perp_B(0, +1, 0.0, mag_E, d_perp_prime)
     # print(val)  # rate in kHz
     
-    phonon_fit(nv_data)
+    # opts = [400, 1100, 1800]
+    # p0s = [[a, b, c, d, e] for a in opts for b in opts for c in opts for d in opts for e in opts]
+    # print(p0s)
+    
+    # for p0 in p0s:
+    #     phonon_fit(nv_data, p0)
+    
+    # plot_fx()
+    
+    get_coupling_constants(nv_data)
 
