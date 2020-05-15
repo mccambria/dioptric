@@ -428,7 +428,7 @@ if __name__ == '__main__':
     nd = 'nd_1.0'
     sample_name = 'ayrton12'
     
-    search = { 'coords': [0.281, -0.213, 5.0],
+    search = { 'coords': [0.0, 0.0, 5.0],
             'name': '{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
@@ -444,7 +444,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.01])
@@ -468,7 +468,7 @@ if __name__ == '__main__':
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], z]
 #                do_image_sample(nv_sig_copy, apd_indices)
-#            do_image_sample(nv_sig, apd_indices)
+            do_image_sample(nv_sig, apd_indices)
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
 #            do_opti_z(nv_sig, apd_indices)

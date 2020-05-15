@@ -501,9 +501,9 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 if __name__ == '__main__':
 
     path = 't1_double_quantum/paper_data/bulk_dq/'
-    folder = 'goeppert_mayer-nv7_2019_11_27-167MHz'
+    folder = 'bachman-ensemble'
     # folder = 'goeppert_mayer-nv7_2019_11_27-85deg'
     path += folder
 
-    gamma, ste = main(path, omega=None, omega_ste=None,
+    gamma, ste = main(path, omega=0.06, omega_ste=0.005,
                       doPlot=True, offset=False)
