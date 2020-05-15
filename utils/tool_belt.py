@@ -479,21 +479,15 @@ def ask_open_file(file_path):
                                           title = 'choose file to replot', filetypes = (("svg files","*.svg"),("all files","*.*")) )
     return file_name
 
-def get_file_list(source_name, file_ends_with, sub_folder_name = None,
+def get_file_list(path_from_nvdata, file_ends_with,
                  data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
     '''
     Creates a list of all the files in the folder for one experiment, based on
     the ending file name
     '''
-    # Parse the source_name if __file__ was passed
-    source_name = os.path.splitext(os.path.basename(source_name))[0]
     
     data_dir = Path(data_dir)
-    
-    if sub_folder_name is None:
-        file_path = data_dir / source_name 
-    else:
-        file_path = data_dir / source_name / sub_folder_name
+    file_path = data_dir / path_from_nvdata 
     
     file_list = []
     
@@ -716,7 +710,54 @@ def ao_638_pwr_err(ao_638_pwr):
     if ao_638_pwr < 0 or ao_638_pwr > 0.9:
         raise RuntimeError('Value for 638 ao must be within 0 to 0.9 V.'+
                            '\nYou entered {} V'.format(ao_638_pwr))
+ 
+def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
+    
+        if x_range != y_range:
+            raise ValueError('x_range must equal y_range for now')
+
+        x_num_steps = num_steps
+        y_num_steps = num_steps
+
+        # Force the scan to have square pixels by only applying num_steps
+        # to the shorter axis
+        half_x_range = x_range / 2
+        half_y_range = y_range / 2
+
+        x_low = x_center - half_x_range
+        x_high = x_center + half_x_range
+        y_low = y_center - half_y_range
+        y_high = y_center + half_y_range
+
+        # Apply scale and offset to get the voltages we'll apply to the galvo
+        # Note that the polar/azimuthal angles, not the actual x/y positions
+        # are linear in these voltages. For a small range, however, we don't
+        # really care.
+        x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
+        y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
+
+        ######### Works for any x_range, y_range #########
+
+        # Winding cartesian product
+        # The x values are repeated and the y values are mirrored and tiled
+        # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
+
+        # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
+        x_inter = numpy.concatenate((x_voltages_1d,
+                                     numpy.flipud(x_voltages_1d)))
+        # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
+        if y_num_steps % 2 == 0:  # Even x size
+            x_voltages = numpy.tile(x_inter, int(y_num_steps/2))
+        else:  # Odd x size
+            x_voltages = numpy.tile(x_inter, int(numpy.floor(y_num_steps/2)))
+            x_voltages = numpy.concatenate((x_voltages, x_voltages_1d))
+
+        # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
+        y_voltages = numpy.repeat(y_voltages_1d, x_num_steps)
+
+        voltages = numpy.vstack((x_voltages, y_voltages))   
         
+        return x_voltages, y_voltages
 # %% Misc
         
 def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = None):

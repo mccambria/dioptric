@@ -38,8 +38,6 @@ from utils.tool_belt import States
 
 # %% Constants
 
-data_folder = 't1_double_quantum'
-
 manual_offset_gamma = 0.0
 # %% Functions
 
@@ -72,7 +70,7 @@ def get_folder_list(keyword):
 # into main
 def get_data_lists(folder_name):
     # Get the file list from this folder
-    file_list = tool_belt.get_file_list(data_folder, '.txt', folder_name)
+    file_list = tool_belt.get_file_list(folder_name, '.txt')
 
     # Define booleans to be used later in putting data into arrays in the
     # correct order. This was mainly put in place for older data where we
@@ -100,7 +98,7 @@ def get_data_lists(folder_name):
     # Unpack the data and sort into arrays. This allows multiple measurements of
     # the same type to be correctly sorted into one array
     for file in file_list:
-        data = tool_belt.get_raw_data(data_folder, file[:-4], folder_name)
+        data = tool_belt.get_raw_data(folder_name, file[:-4])
         try:
 
             init_state_name = data['init_state']
@@ -176,6 +174,7 @@ def get_data_lists(folder_name):
                                               zero_zero_ste))
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
+            # MCC
             if init_state_name == zero_state_name and \
                                 read_state_name == high_state_name:
                 if zero_plus_bool == False:
@@ -263,6 +262,7 @@ def get_data_lists(folder_name):
                 splitting_MHz = abs(uwave_freq_init - uwave_freq_read) * 10**3
 
         except Exception:
+            print('Skipping {}'.format(str(file)))
             continue
 
     omega_exp_list = [zero_zero_counts, zero_zero_ste, \
@@ -284,6 +284,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
     if doPlot:
         fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8))
+        fig.set_tight_layout(True)
 
     omega_fit_failed = False
     gamma_fit_failed = False
@@ -302,7 +303,6 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
         zero_plus_counts = omega_exp_list[2]
         zero_plus_ste = omega_exp_list[3]
         zero_zero_time = omega_exp_list[4]
-
         zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
         zero_relaxation_ste = numpy.sqrt(zero_zero_ste**2 + zero_plus_ste**2)
 
@@ -362,7 +362,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                         'r', label = 'fit')
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
-                ax.set_title('(0,0) - (0,+1)')
+                ax.set_title('(0,0) - (0,-1)')  # MCC
+                # ax.set_title('(0,0) - (0,+1)')
                 ax.legend()
                 text = r'$\Omega = $ {} $\pm$ {} kHz'.format('%.3f'%omega,
                       '%.3f'%omega_ste)
@@ -384,7 +385,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
     plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
 
-    init_params_list = [100, 0.40]
+    init_params_list = [2*omega, 0.40]
     try:
         if offset:
 
@@ -488,45 +489,23 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                     'gamma_opti_params': gamma_opti_params.tolist(),
                     }
 
-
-
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis'
-        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
-                                                             file_name)
-
-#        tool_belt.save_raw_data(raw_data, file_path)
-
-    # Saving the figure
-
-
-        file_name = str('%.1f'%splitting_MHz) + '_MHz_splitting_rate_analysis'
-        file_path = '{}/{}/{}/{}'.format(data_dir, data_folder, folder_name,
-                                                             file_name)
-
-#        tool_belt.save_figure(fig, file_path)
+        file_name = '{}MHz_splitting_rate_analysis'.format(round(splitting_MHz))
+        file_path = '{}/{}/{}'.format(data_dir, folder_name, file_name)
+        tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_figure(fig, file_path)
 
         return gamma, gamma_ste
 # %% Run the file
 
 if __name__ == '__main__':
 
-#    folder_list = get_folder_list('nv2_2019_04_30')
-#    print(folder_list)
-#
-#    for folder in folder_list:
-#        try:
-#            main(folder,  None, None,  True, offset = False)
-#        except Exception:
-#            continue
+    path = 't1_double_quantum/data_folders/other_data/'
+    folder = 'bachman-ensemble-B1'
+    # folder = 'goeppert_mayer-nv7_2019_11_27-85deg'
+    path += folder
 
+    gamma, ste = main(path, omega=None, omega_ste=None,
+                      doPlot=True, offset=False)
+    
 
-
-    folder = 'nv1_2019_05_10_1017MHz'
-#    folder = 'nv0_2019_06_06_36MHz'
-
-
-    # folder_name, omega, omega_std, doPlot, offset
-    gamma, ste = main(folder, omega=1.0, omega_ste=0.5,
-                      doPlot=True, offset=True)
-    # gamma, ste = main(folder, omega=1.17, omega_ste=0.05,
-    #                   doPlot=True, offset=False)
+    

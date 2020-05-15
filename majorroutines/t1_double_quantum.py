@@ -30,7 +30,7 @@ from random import shuffle
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import json
-#import labrad
+import labrad
 from utils.tool_belt import States
 
 
@@ -41,10 +41,10 @@ def main(nv_sig, apd_indices, relaxation_time_range,
          num_steps, num_reps, num_runs, init_read_list):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
+        norm_avg_sig = main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                       num_steps, num_reps, num_runs, init_read_list)
 
-
+    return norm_avg_sig
 def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                   num_steps, num_reps, num_runs, init_read_list):
 
@@ -418,6 +418,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
+    
+    return norm_avg_sig
 
 # %%
 

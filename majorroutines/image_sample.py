@@ -142,16 +142,16 @@ def reformat_plot(colorMap, save_file_type):
                 xyzCenters = nv_sig["coords"]
             except Exception:
                 xyzCenters = data['xyzCenters']
-            imgResolution = data["scanStepSize"]
+            num_steps = data["num_steps"]
 
             # Read in the values for the scan ranges, centers, and resolution
             yScanRange = data["y_range"]
             yCenter = xyzCenters[1]
-            yImgResolution = imgResolution
+            yImgResolution = yScanRange / num_steps
 
             xScanRange = data["x_range"]
             xCenter = xyzCenters[0]
-            xImgResolution = imgResolution
+            xImgResolution = xScanRange / num_steps
 
         # define the readout in seconds
         readout_sec = float(readout) / 10**9
