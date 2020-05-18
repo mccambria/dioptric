@@ -121,7 +121,7 @@ def decode_time_tags(ret_vals_string):
 # %% Matplotlib plotting utils
 
 
-def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None):
+def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts'):
     """
     Creates a figure containing a single grayscale image and a colorbar.
 
@@ -161,7 +161,7 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None):
 
     # Add a colorbar
     clb = plt.colorbar(img)
-    clb.set_label('Counts', rotation=270)
+    clb.set_label(color_bar_label, rotation=270)
 #    clb.set_label('kcounts/sec', rotation=270)
     
     # Label axes

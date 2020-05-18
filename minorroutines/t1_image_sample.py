@@ -39,8 +39,8 @@ def main_with_cxn(cxn, nv_sig, scan_range, num_steps,
     
     relaxation_time_range = [relaxation_time_point, relaxation_time_point]
     t1_num_steps = 1
-    t1_num_reps = 10**3
-    t1_num_runs = 100
+    t1_num_reps = 2*10**2
+    t1_num_runs = 1000
     init_read_list = [States.ZERO, States.ZERO]
 
     # %% Initialize at the passed coordinates
@@ -52,13 +52,15 @@ def main_with_cxn(cxn, nv_sig, scan_range, num_steps,
     x_voltages, y_voltages = tool_belt.x_y_image_grid(x_center, y_center,
                                                        scan_range, scan_range,
                                                        num_steps)
+#    print(x_voltages)
+#    print(y_voltages)
 
-    x_num_steps = len(x_voltages)
+    x_num_steps = num_steps
     x_low = x_voltages[0]
     x_high = x_voltages[x_num_steps-1]
-    y_num_steps = len(y_voltages)
+    y_num_steps = num_steps
     y_low = y_voltages[0]
-    y_high = y_voltages[y_num_steps-1]
+    y_high = y_voltages[-1]
 
     pixel_size = x_voltages[1] - x_voltages[0]
     
@@ -66,26 +68,55 @@ def main_with_cxn(cxn, nv_sig, scan_range, num_steps,
 
     # Initialize imgArray and set all values to NaN so that unset values
     # are not interpreted as 0 by matplotlib's colobar
-    img_array = numpy.empty((x_num_steps, y_num_steps))
-    img_array[:] = numpy.nan
-    img_write_pos = []  
+    norm_img_array = numpy.empty((x_num_steps, y_num_steps))
+    norm_img_array[:] = numpy.nan
+    sig_img_array = numpy.copy(norm_img_array)
+    ref_img_array = numpy.copy(norm_img_array)
+#    print(img_array)
+    norm_img_write_pos = []
+    sig_img_write_pos = []
+    ref_img_write_pos = []
  
     # %% Create image
     half_pixel_size = pixel_size / 2
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
     title = 'Confocal T1 scan'
-    fig = tool_belt.create_image_figure(img_array, img_extent,
+    norm_fig = tool_belt.create_image_figure(norm_img_array, img_extent,
                                         clickHandler=on_click_image,
-                                        title = title)   
-    
+                                        title = title,
+                                        color_bar_label = 'T1 normalized signal after {} ms'.format(relaxation_time_point/10**6))   
+
+    sig_fig = tool_belt.create_image_figure(sig_img_array, img_extent,
+                                        clickHandler=on_click_image,
+                                        title = title,
+                                        color_bar_label = 'T1 signal after {} ms'.format(relaxation_time_point/10**6))   
+
+    ref_fig = tool_belt.create_image_figure(ref_img_array, img_extent,
+                                        clickHandler=on_click_image,
+                                        title = title,
+                                        color_bar_label = 'T1 reference after {} ms'.format(relaxation_time_point/10**6))   
+
+    # Start 'Press enter to stop...'
+    tool_belt.init_safe_stop()    
     for i in range(total_num_samples):
+        if tool_belt.safe_stop():
+            break
+#        print(img_write_pos)
         tool_belt.set_xyz(cxn, [x_voltages[i], y_voltages[i], z_center])
         time.sleep(0.1)
-        t1_signal = t1_double_quantum.main(nv_sig, apd_indices, relaxation_time_range,
-                       t1_num_steps, t1_num_reps, t1_num_runs, init_read_list)
-        populate_img_array(t1_signal[0], img_array, img_write_pos)
-        tool_belt.update_image_figure(fig, img_array)
+        sig, ref, norm = t1_double_quantum.main(nv_sig, apd_indices, relaxation_time_range,
+                       t1_num_steps, t1_num_reps, t1_num_runs, init_read_list,
+                       plot_data = False, save_data = True)
+#        print(t1_signal)
+        populate_img_array(norm, norm_img_array, norm_img_write_pos)
+        tool_belt.update_image_figure(norm_fig, norm_img_array)
+        
+        populate_img_array(sig, sig_img_array, sig_img_write_pos)
+        tool_belt.update_image_figure(sig_fig, sig_img_array)
+        
+        populate_img_array(ref, ref_img_array, ref_img_write_pos)
+        tool_belt.update_image_figure(ref_fig, ref_img_array)
         
     # %% Clean up
 
@@ -113,16 +144,23 @@ def main_with_cxn(cxn, nv_sig, scan_range, num_steps,
                'x_voltages-units': 'V',
                'y_voltages': y_voltages.tolist(),
                'y_voltages-units': 'V',
-               'img_array': img_array.astype(int).tolist(),
-               'img_array-units': 'counts'}
+               'norm_img_array': norm_img_array.astype(int).tolist(),
+               'norm_img_array-units': 'counts',
+               'sig_img_array': sig_img_array.astype(int).tolist(),
+               'sig_img_array-units': 'counts',
+               'ref_img_array': ref_img_array.astype(int).tolist(),
+               'ref_img_array-units': 'counts',
+               }
 
-    if save_data:
+ 
 
-        filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-        tool_belt.save_raw_data(rawData, filePath)
+    filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(rawData, filePath)
 
-        if plot_data:
+ 
 
-            tool_belt.save_figure(fig, filePath)
+    tool_belt.save_figure(norm_fig, filePath + '-norm')
+    tool_belt.save_figure(sig_fig, filePath + '-sig')
+    tool_belt.save_figure(ref_fig, filePath + '-ref')
     
     

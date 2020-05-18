@@ -29,6 +29,7 @@ import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.t1_interleave as t1_interleave
+import minorroutines.t1_image_sample as t1_image_sample
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
@@ -60,12 +61,12 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, plot_data):
     
-    scan_range = 3.0
+#    scan_range = 3.0
 #    num_steps = 400
 #    num_steps = 120
-    num_steps = 100
+#    num_steps = 100
 #    scan_range = 1.0
-#    scan_range = 0.5
+    scan_range = 0.8
 #    num_steps = 150
 #    scan_range = 0.1
 #    num_steps = 90
@@ -74,7 +75,8 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
-#    num_steps = 30
+    num_steps = 10
+#    num_steps = 5
     
 #    scan_range = 0.5 # 250
 #    scan_range = 0.25 # 125
@@ -244,6 +246,14 @@ def do_t1_interleave(nv_sig, apd_indices):
                         ])
 
     t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
+    
+def do_t1_image_sample(nv_sig, apd_indices):
+    
+    scan_range = 0.8
+    num_steps = 10
+    relaxation_time_point = 1*10**6
+    
+    t1_image_sample.main(nv_sig, scan_range, num_steps, relaxation_time_point, apd_indices)
 
 def do_lifetime(nv_sig, apd_indices):
     
@@ -481,7 +491,7 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     sample_name = 'bachman'
-    ensemble = { 'coords': [-1.560, 0.841, 4.87],
+    ensemble = { 'coords': [-1.493, 0.870, 4.87],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
@@ -615,8 +625,9 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
 #            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 200])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
-            do_t1_battery(nv_sig, apd_indices)
+#            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
+            do_t1_image_sample(nv_sig, apd_indices)
 #            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
