@@ -642,7 +642,9 @@ def get_coupling_constants(nv_data):
     # %% Omega and lambda_perp
     
     lambda_perp = lambda_perp_prime
+    lambda_perp_err = lambda_perp_prime_err
     lambda_perp_GHz = lambda_perp_prime_GHz
+    lambda_perp_err_GHz = lambda_perp_prime_err_GHz
     
     # # root_scalar method
     
@@ -662,19 +664,34 @@ def get_coupling_constants(nv_data):
     
     # quadratic formula method
     
+    omega_coeff = rate_coeff * x_0**2 * int_val
+    a = 1
+    b = -2*lambda_perp
+    c = 2*lambda_perp**2 - avg_on_axis_omega/(omega_coeff*lambda_perp_prime**2)
+    
     # Take the smaller root
     quadratic_formula = lambda a, b, c: (1/(2*a)) * (-b - numpy.sqrt(b**2 - 4*a*c))
-    omega_coeff = rate_coeff * x_0**2 * int_val
-    lambda_z = quadratic_formula(1, -2*lambda_perp, 2*lambda_perp**2 - avg_on_axis_omega/(omega_coeff*lambda_perp_prime**2))
+    lambda_z = (1/(2*a)) * (-b - numpy.sqrt(b**2 - 4*a*c))
     
     # Propagate the error
+    err_b = 2*lambda_perp_err
+    err_c = (4*lambda_perp*lambda_perp_err)**2
+    err_c += ((2*avg_on_axis_omega/(omega_coeff*lambda_perp_prime**3))*lambda_perp_prime_err)**2
+    err_c += ((1/(omega_coeff*lambda_perp_prime**2))*avg_on_axis_omega_err)**2
+    err_c = numpy.sqrt(err_c)
+    
+    delf_delb = (1/(2*a)) * (-1 - b * (b**2 - 4*a*c)**(-1/2))
+    delf_delc = (c/a) * (b**2 - 4*a*c)**(-1/2)
+    
+    lambda_z_err = numpy.sqrt((delf_delb*err_b)**2 + (delf_delc*err_c)**2)
     
     # In J
-    print('lambda_z = {} J\n'.format(lambda_z))
+    print('lambda_z = {} +/- {} J\n'.format(lambda_z, lambda_z_err))
     
     # In GHz
     lambda_z_GHz = lambda_z/(Planck*10**9)
-    print('lambda_z = {} GHz\n'.format(lambda_z_GHz))
+    lambda_z_err_GHz = lambda_z_err/(Planck*10**9)
+    print('lambda_z = {} +/- {} GHz\n'.format(lambda_z_GHz, lambda_z_err_GHz))
     
 
 def on_axis_integrand(x):
