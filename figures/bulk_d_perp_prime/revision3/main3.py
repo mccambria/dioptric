@@ -22,6 +22,7 @@ from analysis.extract_hamiltonian import calc_eig_static_cartesian_B
 from analysis.extract_hamiltonian import calc_splitting
 import scipy.stats as stats
 from scipy.optimize import curve_fit
+from scipy.optimize import root_scalar
 import matplotlib.gridspec as gridspec
 from scipy.integrate import quad
 
@@ -60,7 +61,7 @@ x_D = (hbar*omega_D) / kT  # dimensionless phonon energy limit
 
 x_0 = (Planck * 10**9 * d_gs) / kT  # dimensionless zfs energy
 
-rate_coeff = (Omega**2 * kT**5 * temp**2) / (2 * pi**3 * v_s**6 * omega_D**2 * hbar**9)
+rate_coeff = (Omega**2 * kT**5) / (2 * pi**3 * v_s**6 * omega_D**2 * hbar**9)
 # This rate coefficient absorbs (2*pi*hbar)**4 from the matrix elements
 # rate_coeff = (8 * pi * Omega**2 * kT**5) / (v_s**6 * hbar**5 * omega_D**2)  # /h**4
 
@@ -625,7 +626,6 @@ def get_coupling_constants(nv_data):
     
     # Calculate the coefficient of lambda_perp_prime^4 in the expression
     # for gamma
-    print(x_0)
     gamma_coeff = 4 * rate_coeff * x_0**2 * int_val
     lambda_perp_prime = (avg_on_axis_gamma / gamma_coeff)**(1/4)
     lambda_perp_prime_err = (lambda_perp_prime * (1/4) * avg_on_axis_gamma_err / avg_on_axis_gamma)
@@ -637,6 +637,44 @@ def get_coupling_constants(nv_data):
     lambda_perp_prime_GHz = lambda_perp_prime/(Planck*10**9)
     lambda_perp_prime_err_GHz = lambda_perp_prime_err/(Planck*10**9)
     print('lambda_perp_prime = {} +/- {} GHz\n'.format(lambda_perp_prime_GHz, lambda_perp_prime_err_GHz))
+    
+    
+    # %% Omega and lambda_perp
+    
+    lambda_perp = lambda_perp_prime
+    lambda_perp_GHz = lambda_perp_prime_GHz
+    
+    # # root_scalar method
+    
+    # # Work in GHz so the root_scalar tolerances are not too large relatively
+    # omega_coeff = (1/2) * rate_coeff * x_0**2 * int_val
+    # lambda_func = lambda lambda_z_GHz: (Planck*10**9)**4 * lambda_perp_prime_GHz**2 * (lambda_z_GHz**2 + (lambda_z_GHz - 2*lambda_perp_GHz)**2)
+    # root_func = lambda lambda_z_GHz: avg_on_axis_omega - (omega_coeff * lambda_func(lambda_z_GHz))
+    # sol = root_scalar(root_func, x0=lambda_perp_GHz/100, x1=lambda_perp_GHz/10)
+    # lambda_z_GHz = sol.root
+    
+    # # In J
+    # # print('lambda_z = {} J\n'.format(lambda_z))
+    
+    # # In GHz
+    # # lambda_z_GHz = lambda_z/(Planck*10**9)
+    # print('lambda_z = {} GHz\n'.format(lambda_z_GHz))
+    
+    # quadratic formula method
+    
+    # Take the smaller root
+    quadratic_formula = lambda a, b, c: (1/(2*a)) * (-b - numpy.sqrt(b**2 - 4*a*c))
+    omega_coeff = rate_coeff * x_0**2 * int_val
+    lambda_z = quadratic_formula(1, -2*lambda_perp, 2*lambda_perp**2 - avg_on_axis_omega/(omega_coeff*lambda_perp_prime**2))
+    
+    # Propagate the error
+    
+    # In J
+    print('lambda_z = {} J\n'.format(lambda_z))
+    
+    # In GHz
+    lambda_z_GHz = lambda_z/(Planck*10**9)
+    print('lambda_z = {} GHz\n'.format(lambda_z_GHz))
     
 
 def on_axis_integrand(x):
@@ -663,7 +701,6 @@ def on_axis_integrand(x):
             return 1
         else:
             return x**2 * bose(x) * (bose(x)+1)
-    
     
     
 def bose(x):
