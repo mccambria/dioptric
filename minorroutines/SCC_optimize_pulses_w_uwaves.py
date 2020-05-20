@@ -309,11 +309,11 @@ def optimize_initial_ion_pulse_length(nv_sig):
     '''
     apd_indices = [0]
     num_reps = 10**3
-#    test_pulse_dur_list = numpy.linspace(0,10**4,11)
-    test_pulse_dur_list = numpy.array([0.,  10000.,  20000.,  30000.,  40000.,  50000.,  60000.,
-        70000.,  80000.,  90000., 100000.,
-        200000.,  300000.,  400000.,  500000.,
-        600000.,  700000.,  800000.,  900000., 1000000.])
+    test_pulse_dur_list = numpy.linspace(0,2*10**5,11)
+#    test_pulse_dur_list = numpy.array([0.,  10000.,  20000.,  30000.,  40000.,  50000.,  60000.,
+#        70000.,  80000.,  90000., 100000.,
+#        200000.,  300000.,  400000.,  500000.,
+#        600000.,  700000.,  800000.,  900000., 1000000.])
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -446,11 +446,11 @@ def optimize_reion_pulse_length(nv_sig):
     '''
     apd_indices = [0]
     num_reps = 10**3
-    test_pulse_dur_list = [0,5*10**3, 10*10**3, 20*10**3, 30*10**3, 40*10**3, 50*10**3, 
-                           100*10**3,200*10**3,300*10**3,400*10**3,500*10**3,
-                           600*10**3, 700*10**3, 800*10**3, 900*10**3, 
-                           1*10**6, 2*10**6, 3*10**6 ]
-#    test_pulse_dur_list = [0, 1000]
+#    test_pulse_dur_list = [0,5*10**3, 10*10**3, 20*10**3, 30*10**3, 40*10**3, 50*10**3, 
+#                           100*10**3,200*10**3,300*10**3,400*10**3,500*10**3,
+#                           600*10**3, 700*10**3, 800*10**3, 900*10**3, 
+#                           1*10**6, 2*10**6, 3*10**6 ]
+    test_pulse_dur_list = numpy.linspace(0,5*10**5,11)
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -588,7 +588,8 @@ def optimize_readout_pulse_power(nv_sig):
     '''
     apd_indices = [0]
     num_reps = 10**3
-    power_list = numpy.linspace(0.1,0.8,15).tolist()
+#    power_list = numpy.linspace(0.1,0.8,15).tolist()
+    power_list = numpy.linspace(0.1,0.3,17).tolist()
     
     # create some lists for data
     optical_power_list = []
@@ -751,7 +752,7 @@ def optimize_shelf_pulse_length(nv_sig):
     '''
     apd_indices = [0]
     num_reps = 10**3
-    test_pulse_dur_list = numpy.linspace(0,200,11).tolist()
+    test_pulse_dur_list = numpy.linspace(0,500,21).tolist()
 #    test_pulse_dur_list = numpy.linspace(0,200,3)
     
     # measure laser powers:
@@ -981,19 +982,20 @@ def test_pi_pulse(nv_sig):
     
 if __name__ == '__main__':
     apd_indices = [0]
-    sample_name = 'hopper'
-    ensemble = { 'coords': [0.0, 0.0, 5.00],
-            'name': '{}-ensemble'.format(sample_name),
+    sample_name = 'bachman'
+    ensemble = { 'coords': [0.415, -0.121, 4.69],
+            'name': '{}-B5'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.2, 
-            'pulsed_initial_ion_dur': 50*10**3,
-            'pulsed_shelf_dur': 100, 'am_589_shelf_power': 0.2,
-            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 10*10**3, 'cobalt_532_power': 8, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}      
+            'resonance_LOW': 2.8019, 'rabi_LOW': 110.6, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9490, 'rabi_HIGH': 128.0, 'uwave_power_HIGH': 10.0}    
     nv_sig = ensemble
     
     # Run the program
@@ -1002,10 +1004,10 @@ if __name__ == '__main__':
 #    optimize_reion_pulse_length(nv_sig)
 #    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
-#    optimize_readout_pulse_power(nv_sig)
+    optimize_readout_pulse_power(nv_sig)
 #    optimize_shelf_pulse_length(nv_sig)
 #    optimize_shelf_pulse_power(nv_sig)
-    test_pi_pulse(nv_sig)
+#    test_pi_pulse(nv_sig)
     
 #    sig_counts, ref_counts = main(nv_sig, apd_indices, 10**3, States.LOW)
     

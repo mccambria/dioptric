@@ -39,8 +39,8 @@ def main_with_cxn(cxn, nv_sig, scan_range, num_steps,
     
     relaxation_time_range = [relaxation_time_point, relaxation_time_point]
     t1_num_steps = 1
-    t1_num_reps = 2*10**2
-    t1_num_runs = 1000
+    t1_num_reps = int(0.5*10**2)
+    t1_num_runs = 10
     init_read_list = [States.ZERO, States.ZERO]
 
     # %% Initialize at the passed coordinates

@@ -41,10 +41,11 @@ def main(nv_sig, apd_indices, relaxation_time_range,
          num_steps, num_reps, num_runs, init_read_list, plot_data = True, save_data = True):
 
     with labrad.connect() as cxn:
-        norm_avg_sig = main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
-                      num_steps, num_reps, num_runs, init_read_list, plot_data, save_data)
+        avg_sig_counts, avg_ref_counts, norm_avg_sig = main_with_cxn(cxn, nv_sig, 
+                                             apd_indices, relaxation_time_range,
+              num_steps, num_reps, num_runs, init_read_list, plot_data, save_data)
 
-    return norm_avg_sig
+    return avg_sig_counts, avg_ref_counts, norm_avg_sig
 def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                   num_steps, num_reps, num_runs, init_read_list, plot_data, save_data):
 
@@ -420,11 +421,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                 'norm_avg_sig-units': 'arb'}
 
         file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+        tool_belt.save_raw_data(raw_data, file_path)
+
+    if plot_data:
         tool_belt.save_figure(raw_fig, file_path)
-        if plot_data:
-            tool_belt.save_raw_data(raw_data, file_path)
+            
     
-    return norm_avg_sig
+    return avg_sig_counts, avg_ref_counts, norm_avg_sig
 
 # %%
 

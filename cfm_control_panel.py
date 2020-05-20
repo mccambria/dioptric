@@ -66,16 +66,16 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    num_steps = 120
 #    num_steps = 100
 #    scan_range = 1.0
-    scan_range = 0.8
+#    scan_range = 0.8
 #    num_steps = 150
-#    scan_range = 0.1
-#    num_steps = 90
+    scan_range = 0.1
+    num_steps = 90
 #    scan_range = 0.2
 #    num_steps = 60
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
-    num_steps = 10
+#    num_steps = 10
 #    num_steps = 5
     
 #    scan_range = 0.5 # 250
@@ -210,10 +210,10 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 6*10**6], 12, 2*10**2, 1000],
-        [[States.HIGH, States.HIGH], [0, 6*10**6], 12, 2*10**2, 1000],
-        [[States.ZERO, States.HIGH], [0, 6*10**6], 12, 2*10**2, 1000],
-        [[States.ZERO, States.ZERO], [0, 6*10**6], 12, 2*10**2, 1000]
+        [[States.HIGH, States.LOW], [0, 6*10**6], 11, 3*10**2, 1000],
+        [[States.HIGH, States.HIGH], [0, 6*10**6], 11, 3*10**2, 1000],
+        [[States.ZERO, States.HIGH], [0, 6*10**6], 11, 3*10**2, 1000],
+        [[States.ZERO, States.ZERO], [0, 6*10**6], 11, 3*10**2, 1000]
             ])
 
 
@@ -249,8 +249,8 @@ def do_t1_interleave(nv_sig, apd_indices):
     
 def do_t1_image_sample(nv_sig, apd_indices):
     
-    scan_range = 0.8
-    num_steps = 10
+    scan_range = 0.5
+    num_steps = 5
     relaxation_time_point = 1*10**6
     
     t1_image_sample.main(nv_sig, scan_range, num_steps, relaxation_time_point, apd_indices)
@@ -491,7 +491,7 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     sample_name = 'bachman'
-    ensemble = { 'coords': [-1.493, 0.870, 4.87],
+    ensemble = { 'coords': [0.415, -0.121, 4.69],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
@@ -503,8 +503,8 @@ if __name__ == '__main__':
             'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8,
             'ionization_rep': 13,
             'magnet_angle': 0,
-            'resonance_LOW': 2.8060, 'rabi_LOW': 126.8, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9452, 'rabi_HIGH': 164.5, 'uwave_power_HIGH': 10.0}   
+            'resonance_LOW': 2.8036, 'rabi_LOW': 128.3, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9449, 'rabi_HIGH': 172.4, 'uwave_power_HIGH': 10.0}   
   
     nv_sig_list = [ensemble]
     
@@ -625,9 +625,9 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
 #            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 200])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
-#            do_t1_battery(nv_sig, apd_indices)
+            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
-            do_t1_image_sample(nv_sig, apd_indices)
+#            do_t1_image_sample(nv_sig, apd_indices)
 #            do_lifetime(nv_sig, apd_indices)
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             

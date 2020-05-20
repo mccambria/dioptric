@@ -26,13 +26,19 @@ def exp_eq(t, offset, rate, amp):
 # %%
     
 # Area A1 
-data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-ensemble-A1/', 
-                              '2020_05_13-23_17_30-bachman-ensemble')
+data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-ensemble-B5/', 
+                              '2020_05_20-08_31_13-bachman-ensemble')
 
 relaxation_time_range = numpy.array(data['relaxation_time_range'])/10**6
 num_steps = data['num_steps']
 norm_avg_sig_A1 = data['norm_avg_sig']
 taus_A1 = numpy.linspace(relaxation_time_range[0], relaxation_time_range[1], num_steps)
+
+# manipulate the data to normalize 
+first_point = norm_avg_sig_A1[0]
+last_point = norm_avg_sig_A1[-1]
+
+norm_avg_sig_A1 = (numpy.array(norm_avg_sig_A1) - last_point)/ (first_point - last_point)
 
 offset = 0.9
 amplitude = 0.1
@@ -53,6 +59,12 @@ num_steps = data['num_steps']
 norm_avg_sig_B1 = data['norm_avg_sig']
 taus_B1 = numpy.linspace(relaxation_time_range[0], relaxation_time_range[1], num_steps)
 
+# manipulate the data to normalize 
+first_point = norm_avg_sig_B1[0]
+last_point = norm_avg_sig_B1[-1]
+
+norm_avg_sig_B1 = (numpy.array(norm_avg_sig_B1) - last_point)/(first_point - last_point)
+
 offset = 0.9
 amplitude = 0.1
 decay = 0.6*3 # inverse ns
@@ -64,10 +76,10 @@ linspace_tau_B1 = numpy.linspace(relaxation_time_range[0], relaxation_time_range
     
 fig, ax = plt.subplots(1,1, figsize=(10, 8))
 ax.semilogy(taus_A1, norm_avg_sig_A1,'ko',
-                    label = 'A1')
+                    label = 'B5')
 #ax.plot(linspace_tau_A1,
 #                    exp_eq(linspace_tau_A1, *popt_A1),
-#                    'k-', label = 'A1 fit')
+#                    'k-', label = 'B5 fit')
 ax.semilogy(taus_B1, norm_avg_sig_B1, 'ro',
                     label = 'B1')
 #ax.plot(linspace_tau_B1,
