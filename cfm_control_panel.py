@@ -28,6 +28,7 @@ import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
+import majorroutines.t1_double_quantum_scc_readout as t1_double_quantum_scc_readout
 import majorroutines.t1_interleave as t1_interleave
 import minorroutines.t1_image_sample as t1_image_sample
 import majorroutines.ramsey as ramsey
@@ -227,6 +228,27 @@ def do_t1_battery(nv_sig, apd_indices):
         num_runs = t1_exp_array[exp_ind, 4]
 
         t1_double_quantum.main(nv_sig, apd_indices, relaxation_time_range,
+                           num_steps, num_reps, num_runs, init_read_states)
+        
+def do_t1_battery_scc(nv_sig, apd_indices):
+
+    # T1 experiment parameters, formatted:
+    # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
+    t1_exp_array = numpy.array([
+        [[States.ZERO, States.ZERO], [0, 6*10**6], 11, 10**3, 12]
+            ])
+
+
+    # Loop through the experiments
+    for exp_ind in range(len(t1_exp_array)):
+
+        init_read_states = t1_exp_array[exp_ind, 0]
+        relaxation_time_range = t1_exp_array[exp_ind, 1]
+        num_steps = t1_exp_array[exp_ind, 2]
+        num_reps = t1_exp_array[exp_ind, 3]
+        num_runs = t1_exp_array[exp_ind, 4]
+
+        t1_double_quantum_scc_readout.main(nv_sig, apd_indices, relaxation_time_range,
                            num_steps, num_reps, num_runs, init_read_states)
 
 def do_t1_interleave(nv_sig, apd_indices):
@@ -492,19 +514,18 @@ if __name__ == '__main__':
     
     sample_name = 'bachman'
     ensemble = { 'coords': [0.415, -0.121, 4.69],
-            'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
+            'name': '{}-B5'.format(sample_name),
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.3, 
-            'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.3,
-            'pulsed_initial_ion_dur': 200*10**3,
-            'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
-            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8,
-            'ionization_rep': 13,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            'resonance_LOW': 2.8036, 'rabi_LOW': 128.3, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9449, 'rabi_HIGH': 172.4, 'uwave_power_HIGH': 10.0}   
+            'resonance_LOW': 2.8019, 'rabi_LOW': 110.6, 'uwave_power_LOW': 9.0, 
+            'resonance_HIGH': 2.9490, 'rabi_HIGH': 128.0, 'uwave_power_HIGH': 10.0}   
   
     nv_sig_list = [ensemble]
     
@@ -625,7 +646,8 @@ if __name__ == '__main__':
 #            do_rabi(nv_sig, apd_indices, States.LOW, [0, 200])
 #            do_rabi(nv_sig, apd_indices, States.HIGH, [0, 200])
 #            find_resonance_and_rabi(nv_sig, apd_indices)
-            do_t1_battery(nv_sig, apd_indices)
+#            do_t1_battery(nv_sig, apd_indices)
+            do_t1_battery_scc(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
 #            do_t1_image_sample(nv_sig, apd_indices)
 #            do_lifetime(nv_sig, apd_indices)
