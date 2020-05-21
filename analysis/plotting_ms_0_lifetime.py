@@ -50,9 +50,9 @@ popt_A1, pcov = curve_fit(exp_eq, taus_A1, norm_avg_sig_A1,
 linspace_tau_A1 = numpy.linspace(relaxation_time_range[0], relaxation_time_range[1], 1000)
 
     
-# Area B1
-data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-ensemble-B1/', 
-                              '2020_05_15-01_46_16-bachman-ensemble')
+# Area B5 scc
+data = tool_belt.get_raw_data('t1_double_quantum_scc_readout/branch_Spin_to_charge/2020_05/', 
+                              '2020_05_20-17_35_53-bachman-B5')
 
 relaxation_time_range = numpy.array(data['relaxation_time_range'])/10**6
 num_steps = data['num_steps']
@@ -75,13 +75,13 @@ popt_B1, pcov = curve_fit(exp_eq, taus_B1, norm_avg_sig_B1,
 linspace_tau_B1 = numpy.linspace(relaxation_time_range[0], relaxation_time_range[1], 1000)
     
 fig, ax = plt.subplots(1,1, figsize=(10, 8))
-ax.semilogy(taus_A1, norm_avg_sig_A1,'ko',
-                    label = 'B5')
+ax.plot(taus_A1, norm_avg_sig_A1,'ko',
+                    label = 'B5, normal readout')
 #ax.plot(linspace_tau_A1,
 #                    exp_eq(linspace_tau_A1, *popt_A1),
 #                    'k-', label = 'B5 fit')
-ax.semilogy(taus_B1, norm_avg_sig_B1, 'ro',
-                    label = 'B1')
+ax.plot(taus_B1, norm_avg_sig_B1, 'ro',
+                    label = 'B5, scc readout')
 #ax.plot(linspace_tau_B1,
 #                    exp_eq(linspace_tau_B1, *popt_B1),
 #                    'r-', label = 'B1 fit')
