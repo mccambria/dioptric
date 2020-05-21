@@ -235,7 +235,10 @@ def do_t1_battery_scc(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.ZERO, States.ZERO], [0, 6*10**6], 11, 10**3, 12]
+        [[States.HIGH, States.LOW], [0, 3*10**6], 13, 10**3, 18],
+        [[States.HIGH, States.HIGH], [0, 3*10**6], 13, 10**3, 18],
+        [[States.ZERO, States.HIGH], [0, 3*10**6], 13, 10**3, 18],
+        [[States.ZERO, States.ZERO], [0, 3*10**6], 13, 10**3, 18]
             ])
 
 
