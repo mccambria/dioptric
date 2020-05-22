@@ -453,6 +453,6 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
     file_name = 'branch_Spin_to_charge/2020_05/2020_05_13-17_04_33-bachman-ensemble'
-    reformat_plot('inferno', 'svg')
-#    create_figure(file_name)
+#    reformat_plot('inferno', 'svg')
+    create_figure(file_name)
 

@@ -429,16 +429,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    # file = '2019-08-01-18_26_45-ayrton12-nv16_2019_07_25'
-    # data = tool_belt.get_raw_data('rabi.py', file)
+     file = '2020_05_19-15_54_50-bachman-B5-fit.svg'
+     data = tool_belt.get_raw_data('rabi/branch_Spin_to_charge/2020_05', file)
 
-    # norm_avg_sig = data['norm_avg_sig']
-    # uwave_time_range = data['uwave_time_range']
-    # num_steps = data['num_steps']
+     norm_avg_sig = data['norm_avg_sig']
+     uwave_time_range = data['uwave_time_range']
+     num_steps = data['num_steps']
 
-    # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    # if (fit_func is not None) and (popt is not None):
-    #     create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
-    #                       fit_func, popt)
+     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+     if (fit_func is not None) and (popt is not None):
+         create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
+                           fit_func, popt)
 
-    simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)
+#    simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)

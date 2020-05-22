@@ -140,7 +140,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, detuning,
                 post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
                 gate_time, uwave_pi_half_pulse, 0,
                 max_precession_time, apd_indices[0], state.value, state.value]
-    seq_args = [int(el) for el in seq_args]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -218,7 +217,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, detuning,
                             gate_time, uwave_pi_half_pulse, 0,
                             taus[tau_ind_second],
                             apd_indices[0], state.value, state.value]
-            seq_args = [int(el) for el in seq_args]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             cxn.pulse_streamer.stream_immediate(seq_file_name, num_reps, seq_args_string)
 
