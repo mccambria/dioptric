@@ -57,6 +57,7 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
     # %% Fit
 
     init_params = [offset, amplitude, frequency, decay]
+    init_params=[1.005, -0.005, 1/118.7, 847]
 
     try:
         popt, _ = curve_fit(fit_func, taus, norm_avg_sig,
@@ -76,13 +77,18 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
                           num=num_steps, dtype=numpy.int32)
     linspaceTau = numpy.linspace(min_uwave_time, max_uwave_time, num=1000)
 
-    fit_fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    ax.plot(taus, norm_avg_sig,'bo',label='data')
-    ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', label='fit')
-    ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Contrast (arb. units)')
-    ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
-    ax.legend()
+    text = 40
+    fit_fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(taus, norm_avg_sig,'b-', linewidth = 2,label='data')
+    ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', linewidth = 4, label='fit')
+    ax.set_xlabel('Microwave duration (ns)', fontsize = text)
+    ax.set_ylabel('Normalized signal', fontsize = text)
+    ax.tick_params(which = 'both', length=8, width=2, colors='k',
+                direction='in',grid_alpha=0.7, labelsize = text)
+#    ax.set_ylim([0.982, 1.021])
+    ax.set_yticks([ 0.99, 1.0, 1.01, 1.02])
+#    ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
+    ax.legend(fontsize = text)
     text_freq = 'Resonant frequency:' + '%.3f'%(uwave_freq) + 'GHz'
     
     text_popt = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
@@ -92,10 +98,10 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
                       r'$d = $' + '%i'%(popt[3]) + ' ' + r'$ ns$'))
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.55, 0.25, text_popt, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    ax.text(0.55, 0.3, text_freq, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
+#    ax.text(0.55, 0.25, text_popt, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    ax.text(0.55, 0.3, text_freq, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
 
     fit_fig.canvas.draw()
     fit_fig.set_tight_layout(True)
@@ -434,6 +440,22 @@ if __name__ == '__main__':
     uwave_time_range = [0, 200]
     
     # Run rabi with SCC readout
-    main(nv_sig, apd_indices, uwave_time_range, state,
-         num_steps, num_reps, num_runs)
+#    main(nv_sig, apd_indices, uwave_time_range, state,
+#         num_steps, num_reps, num_runs)
+    
+    
+    file = '2020_05_19-15_54_50-bachman-B5'
+    data = tool_belt.get_raw_data('rabi_SCC/branch_Spin_to_charge/2020_05', file)
+   
+    norm_avg_sig = data['norm_avg_sig']
+    uwave_time_range = data['uwave_time_range']
+    num_steps = data['num_steps']
+    nv_sig = data['nv_sig']
+    state = data['state']
+    uwave_freq = nv_sig['resonance_{}'.format(state)]
+    
+    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    if (fit_func is not None) and (popt is not None):
+        create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
+                  fit_func, popt)
     
