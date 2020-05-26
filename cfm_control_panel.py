@@ -148,13 +148,13 @@ def do_resonance_state(nv_sig, apd_indices, state):
     freq_center = nv_sig['resonance_{}'.format(state.name)]
     freq_range = 0.07
     num_steps = 51
-    num_runs = 3
-    uwave_power = -7.0  # -7.0 for 515 nm light at 4 mW
+    num_runs = 4
+    uwave_power = -16.0  # -7.0 for 515 nm light at 4 mW
 #    uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 #    uwave_power = -5.0  # After inserting mixer
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
-                   num_steps, num_runs, uwave_power)
+                   num_steps, num_runs, uwave_power, 532)
 
 def do_pulsed_resonance(nv_sig, apd_indices,
                         freq_center=2.87, freq_range=0.2):
@@ -202,7 +202,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 5*10**3
-    num_runs = 6
+    num_runs = 12
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -236,10 +236,10 @@ def do_t1_battery_scc(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-#        [[States.HIGH, States.LOW], [0, 3*10**6], 13, 10**3, 18],
-#        [[States.HIGH, States.HIGH], [0, 3*10**6], 13, 10**3, 18],
-#        [[States.ZERO, States.HIGH], [0, 3*10**6], 13, 10**3, 18],
-        [[States.ZERO, States.ZERO], [0, 6*10**6], 11, 10**3, 12]
+        [[States.HIGH, States.LOW], [0, 3*10**6], 11, 10**3, 12],
+        [[States.HIGH, States.HIGH], [0, 3*10**6], 11, 10**3, 12],
+        [[States.ZERO, States.HIGH], [0, 3*10**6], 11, 10**3, 12],
+        [[States.ZERO, States.ZERO], [0, 3*10**6], 11, 10**3, 12]
             ])
 
 
@@ -517,8 +517,8 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     sample_name = 'bachman'
-    single_nv_1 = { 'coords': [-0.594, -1.953, 5.3],
-            'name': '{}-search'.format(sample_name),
+    ensemble = { 'coords': [0.408, -0.118,4.66],
+            'name': '{}-B5'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
@@ -528,11 +528,25 @@ if __name__ == '__main__':
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            'resonance_LOW': 2.8026, 'rabi_LOW': 110.6, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9464, 'rabi_HIGH': 128.0, 'uwave_power_HIGH': 10.0}  
+            "resonance_LOW": 2.8030,"rabi_LOW": 123.8, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9479,"rabi_HIGH": 130.1,"uwave_power_HIGH": 10.0}  
+    
+    search = { 'coords': [0.021, -2.417,4.66],
+            'name': '{}-B5'.format(sample_name),
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.8030,"rabi_LOW": 123.8, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9479,"rabi_HIGH": 130.1,"uwave_power_HIGH": 10.0}
 
   
-    nv_sig_list = [single_nv_1]
+    nv_sig_list = [search]
     
     
     aom_ao_589_pwr = 0.3
@@ -571,8 +585,8 @@ if __name__ == '__main__':
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]    
      
-            for image_z in numpy.linspace(4.6, 5.5, 10):
-                do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+#            for image_z in numpy.linspace(4.6, 5.5, 10):
+#                do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #                for ion_z in numpy.linspace(4.0, 5.0, 13):
 #                    ion_nv_sig_copy = copy.deepcopy(nv_sig)
 #                    coords = ion_nv_sig_copy['coords']
@@ -601,7 +615,7 @@ if __name__ == '__main__':
             
 #            do_image_sample_SCC(nv_sig, 1.0, apd_indices)
 #            do_optimize(nv_sig, apd_indices, 532)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 589)
             
             

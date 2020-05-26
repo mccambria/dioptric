@@ -180,7 +180,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                 apd_indices[0], 
                 init_state.value, read_state.value,
                 readout_power, shelf_power]
-    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -267,6 +266,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                     apd_indices[0], 
                     init_state.value, read_state.value,
                     readout_power, shelf_power]
+#            print(seq_args)
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             
             cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
