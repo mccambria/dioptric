@@ -79,8 +79,8 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
 
     text = 40
     fit_fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(taus, norm_avg_sig,'b-', linewidth = 2,label='data')
-    ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', linewidth = 4, label='fit')
+    ax.plot(taus, norm_avg_sig,'bo', linewidth = 3,label='data')
+    ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', linewidth = 3, label='fit')
     ax.set_xlabel('Microwave duration (ns)', fontsize = text)
     ax.set_ylabel('Normalized signal', fontsize = text)
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
@@ -250,10 +250,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
+            if sum(sig_gate_counts) == 0:
+                print('Oh no, the signals colleted at run {} and tau {} ns are exactly 0!'.format(run_ind,  taus[tau_ind]))
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
+            if sum(ref_gate_counts) == 0:
+                print('Oh no, the references colleted at run {} and tau {} ns are exactly 0!'.format(run_ind,  taus[tau_ind]))
 
         cxn.apd_tagger.stop_tag_stream()
 
@@ -417,36 +421,39 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     
 # %%
 if __name__ == '__main__':
-    sample_name = 'hopper'
-    ensemble = { 'coords': [0.183, 0.043, 5.00],
-            'name': '{}-ensemble'.format(sample_name),
+    sample_name = 'bachman'
+    ensemble = { 'coords': [0.408, -0.118,4.66],
+            'name': '{}-B5'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.2, 
-            'pulsed_initial_ion_dur': 50*10**3,
-            'pulsed_shelf_dur': 100, 'am_589_shelf_power': 0.2,
-            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 10*10**3, 'cobalt_532_power': 8, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            'resonance_LOW': 2.8059, 'rabi_LOW': 164.2, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}   
+            "resonance_LOW": 2.8030,"rabi_LOW": 123.8, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9479,"rabi_HIGH": 130.1,"uwave_power_HIGH": 10.0}   
     nv_sig = ensemble
 
     apd_indices = [0]
     num_steps = 51
-    num_reps = 10**3
-    num_runs = 1
+    num_reps = 2*10**1
+    num_runs = 50
     state = States.LOW
     uwave_time_range = [0, 200]
     
     # Run rabi with SCC readout
-#    main(nv_sig, apd_indices, uwave_time_range, state,
-#         num_steps, num_reps, num_runs)
+    main(nv_sig, apd_indices, uwave_time_range, state,
+         num_steps, num_reps, num_runs)
     
+   
     
+    # replotting data
     file = '2020_05_19-15_54_50-bachman-B5'
     data = tool_belt.get_raw_data('rabi_SCC/branch_Spin_to_charge/2020_05', file)
-   
+#   
     norm_avg_sig = data['norm_avg_sig']
     uwave_time_range = data['uwave_time_range']
     num_steps = data['num_steps']
@@ -454,8 +461,38 @@ if __name__ == '__main__':
     state = data['state']
     uwave_freq = nv_sig['resonance_{}'.format(state)]
     
-    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    if (fit_func is not None) and (popt is not None):
-        create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
-                  fit_func, popt)
+#    
+#    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+#    if (fit_func is not None) and (popt is not None):
+#        create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
+#                  fit_func, popt)
+    
+                  
+#    sig_counts = data['sig_counts']
+#    ref_counts = data['ref_counts']
+#    tau_index_master_list = data['tau_index_master_list'] 
+#    sig_counts_sorted = []
+#    ref_counts_sorted = []
+#     
+#    for i in range(len(sig_counts)):
+#         zipped_list_sig = zip(tau_index_master_list[i], sig_counts[i])
+#         zipped_list_ref = zip(tau_index_master_list[i], ref_counts[i])
+#         
+#         sorted_zipped_sig = sorted(zipped_list_sig)
+#         sorted_zipped_ref = sorted(zipped_list_ref)
+#         
+#         sig_sorted = [element for _, element in sorted_zipped_sig]
+#         ref_sorted = [element for _, element in sorted_zipped_ref]
+#         
+#         sig_counts_sorted.append(sig_sorted)
+#         ref_counts_sorted.append(ref_sorted)
+#         
+#         fig, ax = plt.subplots(figsize=(8.5, 8.5))
+#         ax.plot(sig_sorted, label = 'sig')
+#         ax.plot(ref_sorted, label = 'ref')
+#         ax.set_xlabel('Measurement index') 
+#         ax.set_ylabel('Counts (arb. units)')
+#         ax.legend()
+#         ax.set_title('Run # {}'.format(i))
+
     

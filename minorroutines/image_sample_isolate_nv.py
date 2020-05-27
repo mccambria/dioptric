@@ -14,7 +14,7 @@ import time
 import copy
 # %%
 
-reset_range = 0.5
+reset_range = 0.2
 image_range = 0.1
 #image_range = 0.25
 num_steps = 90
@@ -137,31 +137,30 @@ def main(nv_sig, green_pulse_time):
    
 # %%
 if __name__ == '__main__':
-    sample_name = 'hopper'
-    ensemble = { 'coords': [0.0, 0.0, 5.00],
-            'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0.5',
+    sample_name = 'bachman'
+    ensemble = { 'coords': [0.408, -0.118,4.66],
+            'name': '{}-B5'.format(sample_name),
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.9, 
-            'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.3,
-            'pulsed_initial_ion_dur': 200*10**3,
-            'pulsed_shelf_dur': 50, 'am_589_shelf_power': 0.3,
-            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8,
-            'ionization_rep': 7,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}    
+            "resonance_LOW": 2.8030,"rabi_LOW": 123.8, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9479,"rabi_HIGH": 130.1,"uwave_power_HIGH": 10.0}    
     nv_sig = ensemble
     
-#    green_pulse_time_list = [100, 500, 10**3, 5*10**3, 10**4, 5*10**4, 10**5, 5*10**5, 10**6]
+    green_pulse_time_list = [10**4, 5*10**4, 10**5, 5*10**5, 10**6]
 #    green_pulse_time_list = [10**6, 5*10**6, 10**7]
-    green_pulse_time = 5*10**6
+#    green_pulse_time = 5*10**3
     
-    for i in range(1):
-        print(i)
+    for t in green_pulse_time_list:
+#        print(i)
           
-        main(nv_sig, green_pulse_time)
+        main(nv_sig, t)
     
     
         
