@@ -67,11 +67,10 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    scan_range = 4.0
 #    num_steps = 600
 #    num_steps = 120
-#    num_steps = 75
+#    num_steps = 100
 #    scan_range = 1.0
-#    scan_range = 0.5
 #    num_steps = 200
-#    scan_range = 0.2
+#    scan_range = 0.1
 #    num_steps = 150
     scan_range = 0.1
 #    num_steps = 120
@@ -145,7 +144,7 @@ def do_resonance(nv_sig, apd_indices, color_ind, freq_center=2.87, freq_range=0.
 
     # green @ 4 mW
     num_steps = 101
-    num_runs = 6
+    num_runs = 4
     uwave_power = -16.0
 
     # yellow @ 40 uW
@@ -225,10 +224,10 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 6*10**6], 21, 3*10**2, 1000],
-        [[States.HIGH, States.HIGH], [0, 6*10**6], 21, 3*10**2, 1000],
-        [[States.ZERO, States.HIGH], [0, 6*10**6], 21, 3*10**2, 1000],
-        [[States.ZERO, States.ZERO], [0, 6*10**6], 21, 3*10**2, 1000]
+        [[States.HIGH, States.LOW], [0, 6*10**6], 11, 3*10**2, 1000],
+        [[States.HIGH, States.HIGH], [0, 6*10**6], 11, 3*10**2, 1000],
+        [[States.ZERO, States.HIGH], [0, 6*10**6], 11, 3*10**2, 1000],
+        [[States.ZERO, States.ZERO], [0, 6*10**6], 11, 3*10**2, 1000]
             ])
 
 
@@ -530,9 +529,9 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
 
     sample_name = 'bachman'
-    ensemble_A1 = { 'coords':[-0.407, 1.469,5.06],
-            'name': '{}-A1'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
+    ensemble = { 'coords': [0.39, -0.11,4.66],
+            'name': '{}-B5'.format(sample_name),
+            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25,
             'pulsed_initial_ion_dur': 25*10**3,
@@ -602,7 +601,7 @@ if __name__ == '__main__':
 
         # Operations that don't need an NV
 
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
 
 #        set_xyz([0.0,0.0,5.0])

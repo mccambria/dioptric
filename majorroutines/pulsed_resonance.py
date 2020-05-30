@@ -467,7 +467,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    file = 'branch_Spin_to_charge/2020_05/2020_05_29-16_51_10-bachman-A1'
+    file = 'branch_Spin_to_charge/2020_04/2020_04_27-12_28_25-hopper-ensemble'
 #    data = tool_belt.get_raw_data('pulsed_resonance.py', file)
     data = tool_belt.get_raw_data('resonance', file)
 

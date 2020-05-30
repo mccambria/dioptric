@@ -43,7 +43,7 @@ def get_seq(pulser_wiring, args):
 
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    pulser_do_clock = pulser_wiring['do_sample_clock']
+#    pulser_do_clock = pulser_wiring['do_sample_clock']
     pulser_do_532_aom = pulser_wiring['do_532_aom']
     pulser_ao_589_aom = pulser_wiring['ao_589_aom']
     pulser_do_638_aom = pulser_wiring['do_638_laser']
@@ -110,11 +110,11 @@ def get_seq(pulser_wiring, args):
         
     # If we're using red/yellow, we'll want to start in NV- each time. The
     # quickest way to implement this is to stick on a green pulse at the end
-#    if init_color_ind == 638 and illum_color_ind == 589:
-#        train = [(period + 1000, LOW), (3000, 1), (100, LOW)]
-#        seq.setDigital(pulser_do_532_aom, train)
+    if init_color_ind == 638 and illum_color_ind == 589:
+        train = [(period + 1000, LOW), (3000, 1), (100, LOW)]
+        seq.setDigital(pulser_do_532_aom, train)
         
-    final_digital = [pulser_do_clock]
+    final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]
 

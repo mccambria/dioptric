@@ -14,10 +14,10 @@ import time
 import copy
 # %%
 
-reset_range = 0.1
-image_range = 0.03
+reset_range = 0.2
+image_range = 0.1
 #image_range = 0.25
-num_steps = 60
+num_steps = 90
 #num_steps = 120
 apd_indices = [0]
 # %%
@@ -148,7 +148,7 @@ def main(nv_sig, green_pulse_time):
 # %%
 if __name__ == '__main__':
     sample_name = 'bachman'
-    ensemble = { 'coords': [0.398, -0.118,4.66],
+    ensemble = { 'coords': [0.408, -0.118,4.66],
             'name': '{}-B5'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -163,9 +163,9 @@ if __name__ == '__main__':
             'resonance_LOW': 2.8059, 'rabi_LOW': 187.8, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
     nv_sig = ensemble
-#
+
     green_pulse_time_list = [10**4, 5*10**4, 10**5, 5*10**5, 10**6]
-    green_pulse_time_list = [10**6, 5*10**6, 10**7]
+#    green_pulse_time_list = [10**6, 5*10**6, 10**7]
 #    green_pulse_time = 5*10**3
 
     for i in range(1):
