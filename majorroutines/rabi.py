@@ -266,7 +266,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
-
+        start_time = time.time()
         for tau_ind in tau_ind_list:
 #        for tau_ind in range(len(taus)):
 #            print('Tau: {} ns'. format(taus[tau_ind]))
@@ -301,7 +301,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
-
+                        
+            run_time = time.time()
+            run_elapsed_time = run_time - start_time
+            start_time = run_time
+            print('Tau: {} ns'.format(taus[tau_ind]))
+            print('Elapsed time {}'.format(run_elapsed_time))
         cxn.apd_tagger.stop_tag_stream()
 
         # %% Save the data we have incrementally for long measurements
