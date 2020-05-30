@@ -14,10 +14,10 @@ import time
 import copy
 # %%
 
-reset_range = 0.2
-image_range = 0.1
+reset_range = 0.1
+image_range = 0.03
 #image_range = 0.25
-num_steps = 90
+num_steps = 60
 #num_steps = 120
 apd_indices = [0]
 # %%
@@ -40,8 +40,13 @@ def main(nv_sig, green_pulse_time):
     x_center, y_center, z_center = adj_coords
 
     print('Resetting with red light\n...')
-    image_sample.main(nv_sig, reset_range, reset_range, 60, 
-                      aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False) 
+    with labrad.connect() as cxn:               
+        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+        cxn.pulse_streamer.constant([7], 0.0, 0.0)
+        time.sleep(5)
+        cxn.pulse_streamer.constant([], 0.0, 0.0)
+#    image_sample.main(nv_sig, reset_range, reset_range, 60, 
+#                      aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False) 
     
     # shine green light 0.2 V away from scanning center
 #    with labrad.connect() as cxn:               
@@ -57,8 +62,13 @@ def main(nv_sig, green_pulse_time):
                       aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
 
     print('Resetting with red light\n...')
-    image_sample.main(nv_sig, reset_range, reset_range, 60, 
-                      aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False) 
+    with labrad.connect() as cxn:               
+        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+        cxn.pulse_streamer.constant([7], 0.0, 0.0)
+        time.sleep(5)
+        cxn.pulse_streamer.constant([], 0.0, 0.0)
+#    image_sample.main(nv_sig, reset_range, reset_range, 60, 
+#                      aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False) 
     
     # shine green light 0.2 V away from scanning center
     with labrad.connect() as cxn: 
@@ -71,12 +81,12 @@ def main(nv_sig, green_pulse_time):
     # now pulse the green at the center of the scan for a short time        
         print('Pulsing green light for {} us'.format(green_pulse_time/10**3))
         tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-#        cxn.pulse_streamer.constant([3], 0.0, 0.0)
-#        time.sleep(green_pulse_time/ 10**9)
-#        cxn.pulse_streamer.constant([], 0.0, 0.0)
-        seq_args = [green_pulse_time, 100, 532]           
-        seq_args_string = tool_belt.encode_seq_args(seq_args)            
-        cxn.pulse_streamer.stream_immediate('analog_sequence_test.py', 1, seq_args_string)
+        cxn.pulse_streamer.constant([3], 0.0, 0.0)
+        time.sleep(green_pulse_time/ 10**9)
+        cxn.pulse_streamer.constant([], 0.0, 0.0)
+#        seq_args = [green_pulse_time, 100, 532]           
+#        seq_args_string = tool_belt.encode_seq_args(seq_args)            
+#        cxn.pulse_streamer.stream_immediate('analog_sequence_test.py', 1, seq_args_string)
         
     # collect an image under yellow after green pulse
     print('Scanning yellow light\n...')
@@ -138,7 +148,7 @@ def main(nv_sig, green_pulse_time):
 # %%
 if __name__ == '__main__':
     sample_name = 'bachman'
-    ensemble = { 'coords': [0.408, -0.118,4.66],
+    ensemble = { 'coords': [0.398, -0.118,4.66],
             'name': '{}-B5'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -152,9 +162,9 @@ if __name__ == '__main__':
             "resonance_LOW": 2.8030,"rabi_LOW": 123.8, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9479,"rabi_HIGH": 130.1,"uwave_power_HIGH": 10.0}    
     nv_sig = ensemble
-    
+#    
     green_pulse_time_list = [10**4, 5*10**4, 10**5, 5*10**5, 10**6]
-#    green_pulse_time_list = [10**6, 5*10**6, 10**7]
+    green_pulse_time_list = [10**6, 5*10**6, 10**7]
 #    green_pulse_time = 5*10**3
     
     for t in green_pulse_time_list:

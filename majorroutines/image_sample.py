@@ -272,8 +272,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_params['continuous_readout_dur']
-    if color_ind == 589:
-        readout = 1*readout
+    if color_ind == 638:
+        readout = readout/10**3
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
@@ -452,7 +452,7 @@ if __name__ == '__main__':
 #    create_figure(file_name)
 #    reformat_plot('inferno', 'svg')
 
-    file_name = 'branch_Spin_to_charge/2020_05/2020_05_13-17_04_33-bachman-ensemble'
+    file_name = 'branch_Spin_to_charge/2020_05/2020_05_28-18_48_41-bachman-search'
 #    reformat_plot('inferno', 'svg')
     create_figure(file_name)
 

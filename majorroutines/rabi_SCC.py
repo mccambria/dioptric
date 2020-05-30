@@ -238,12 +238,17 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             seq_args = [readout_time, init_ion_time, reion_time, ion_time, taus[tau_ind],
                 shelf_time , wait_time, max_uwave_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
                 apd_indices[0], readout_power, shelf_power, state.value]
+#            print(seq_args)
             seq_args_string = tool_belt.encode_seq_args(seq_args)
+            cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_immediate(file_name, num_reps,
                                                 seq_args_string)
 
             # Get the counts
+#            now = time.time()
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+#            print(new_counts)
+#            print(time.time() - now)
 
             sample_counts = new_counts[0]
 
@@ -438,9 +443,9 @@ if __name__ == '__main__':
     nv_sig = ensemble
 
     apd_indices = [0]
-    num_steps = 51
-    num_reps = 2*10**1
-    num_runs = 50
+    num_steps = 3
+    num_reps = 2*10**2
+    num_runs = 5
     state = States.LOW
     uwave_time_range = [0, 200]
     
