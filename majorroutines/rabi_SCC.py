@@ -79,8 +79,8 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
 
     text = 40
     fit_fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(taus, norm_avg_sig,'b-', linewidth = 2,label='data')
-    ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', linewidth = 4, label='fit')
+    ax.plot(taus, norm_avg_sig,'bo', linewidth = 3,label='data')
+    ax.plot(linspaceTau, fit_func(linspaceTau, *popt), 'r-', linewidth = 3, label='fit')
     ax.set_xlabel('Microwave duration (ns)', fontsize = text)
     ax.set_ylabel('Normalized signal', fontsize = text)
     ax.tick_params(which = 'both', length=8, width=2, colors='k',
@@ -90,7 +90,7 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
 #    ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
     ax.legend(fontsize = text)
     text_freq = 'Resonant frequency:' + '%.3f'%(uwave_freq) + 'GHz'
-
+    
     text_popt = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
                       r'$C = $' + '%.3f'%(popt[0]),
                       r'$A_0 = $' + '%.3f'%(popt[1]),
@@ -118,7 +118,7 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
     with labrad.connect() as cxn:
         rabi_per, sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                       num_steps, num_reps, num_runs)
-
+        
         return rabi_per, sig_counts, ref_counts
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                   num_steps, num_reps, num_runs):
@@ -150,7 +150,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     laser_515_delay = shared_params['515_laser_delay']
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
-    rf_delay = shared_params['uwave_delay']
+    rf_delay = shared_params['uwave_delay']   
     # wait time between pulses
     wait_time = shared_params['post_polarization_wait_dur']
 
@@ -223,14 +223,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
-
+            
             # shine the red laser for a few seconds before the sequence
             cxn.pulse_streamer.constant([7], 0.0, 0.0)
             time.sleep(2)
-
+            
             # Load the sequence
             cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-
+            
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
 
@@ -238,22 +238,31 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             seq_args = [readout_time, init_ion_time, reion_time, ion_time, taus[tau_ind],
                 shelf_time , wait_time, max_uwave_time, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
                 apd_indices[0], readout_power, shelf_power, state.value]
+#            print(seq_args)
             seq_args_string = tool_belt.encode_seq_args(seq_args)
+            cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_immediate(file_name, num_reps,
                                                 seq_args_string)
 
             # Get the counts
+#            now = time.time()
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+#            print(new_counts)
+#            print(time.time() - now)
 
             sample_counts = new_counts[0]
 
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
+            if sum(sig_gate_counts) == 0:
+                print('Oh no, the signals colleted at run {} and tau {} ns are exactly 0!'.format(run_ind,  taus[tau_ind]))
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
+            if sum(ref_gate_counts) == 0:
+                print('Oh no, the references colleted at run {} and tau {} ns are exactly 0!'.format(run_ind,  taus[tau_ind]))
 
         cxn.apd_tagger.stop_tag_stream()
 
@@ -303,7 +312,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         inf_mask = numpy.isinf(norm_avg_sig)
         # Assign to 0 based on the passed conditional array
         norm_avg_sig[inf_mask] = 0
-
+        
     # %% Fit the data and extract piPulse
 
     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
@@ -340,20 +349,20 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
 
     # %% Measure laser powers
-
+    
 #    # measure laser powers:
 #    green_optical_power_pd, green_optical_power_mW, \
 #            red_optical_power_pd, red_optical_power_mW, \
 #            yellow_optical_power_pd, yellow_optical_power_mW = \
-#            tool_belt.measure_g_r_y_power(
+#            tool_belt.measure_g_r_y_power( 
 #                              nv_sig['am_589_power'], nv_sig['nd_filter'])
-#
+#            
 #    # measure the power of the shelf pulse
-#    optical_power = tool_belt.opt_power_via_photodiode(589,
-#                                    AO_power_settings = nv_sig['am_589_shelf_power'],
+#    optical_power = tool_belt.opt_power_via_photodiode(589, 
+#                                    AO_power_settings = nv_sig['am_589_shelf_power'], 
 #                                    nd_filter = nv_sig['nd_filter'])
 #    shelf_power = tool_belt.calc_optical_power_mW(589, optical_power)
-
+    
     # %% Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
@@ -408,53 +417,87 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, file_path + '-fit')
     tool_belt.save_raw_data(raw_data, file_path)
-
+    
     if (fit_func is not None) and (popt is not None):
         return rabi_period, sig_counts, ref_counts
     else:
         return None, sig_counts, ref_counts
-
-
+    
+    
 # %%
 if __name__ == '__main__':
-    sample_name = 'hopper'
-    ensemble = { 'coords': [0.183, 0.043, 5.00],
-            'name': '{}-ensemble'.format(sample_name),
+    sample_name = 'bachman'
+    ensemble = { 'coords': [0.408, -0.118,4.66],
+            'name': '{}-B5'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.2,
-            'pulsed_initial_ion_dur': 50*10**3,
-            'pulsed_shelf_dur': 100, 'am_589_shelf_power': 0.2,
-            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160,
-            'pulsed_reionization_dur': 10*10**3, 'cobalt_532_power': 8,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            'resonance_LOW': 2.8059, 'rabi_LOW': 164.2, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
+            "resonance_LOW": 2.8030,"rabi_LOW": 123.8, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9479,"rabi_HIGH": 130.1,"uwave_power_HIGH": 10.0}   
     nv_sig = ensemble
 
     apd_indices = [0]
-    num_steps = 51
-    num_reps = 2*10**1
-    num_runs = 50
+    num_steps = 3
+    num_reps = 2*10**2
+    num_runs = 5
     state = States.LOW
     uwave_time_range = [0, 200]
-
+    
     # Run rabi with SCC readout
-#    main(nv_sig, apd_indices, uwave_time_range, state,
-#         num_steps, num_reps, num_runs)
-
-
+    main(nv_sig, apd_indices, uwave_time_range, state,
+         num_steps, num_reps, num_runs)
+    
+   
+    
+    # replotting data
     file = '2020_05_19-15_54_50-bachman-B5'
     data = tool_belt.get_raw_data('rabi_SCC/branch_Spin_to_charge/2020_05', file)
-
+#   
     norm_avg_sig = data['norm_avg_sig']
     uwave_time_range = data['uwave_time_range']
     num_steps = data['num_steps']
     nv_sig = data['nv_sig']
     state = data['state']
     uwave_freq = nv_sig['resonance_{}'.format(state)]
+    
+#    
+#    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+#    if (fit_func is not None) and (popt is not None):
+#        create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
+#                  fit_func, popt)
+    
+                  
+#    sig_counts = data['sig_counts']
+#    ref_counts = data['ref_counts']
+#    tau_index_master_list = data['tau_index_master_list'] 
+#    sig_counts_sorted = []
+#    ref_counts_sorted = []
+#     
+#    for i in range(len(sig_counts)):
+#         zipped_list_sig = zip(tau_index_master_list[i], sig_counts[i])
+#         zipped_list_ref = zip(tau_index_master_list[i], ref_counts[i])
+#         
+#         sorted_zipped_sig = sorted(zipped_list_sig)
+#         sorted_zipped_ref = sorted(zipped_list_ref)
+#         
+#         sig_sorted = [element for _, element in sorted_zipped_sig]
+#         ref_sorted = [element for _, element in sorted_zipped_ref]
+#         
+#         sig_counts_sorted.append(sig_sorted)
+#         ref_counts_sorted.append(ref_sorted)
+#         
+#         fig, ax = plt.subplots(figsize=(8.5, 8.5))
+#         ax.plot(sig_sorted, label = 'sig')
+#         ax.plot(ref_sorted, label = 'ref')
+#         ax.set_xlabel('Measurement index') 
+#         ax.set_ylabel('Counts (arb. units)')
+#         ax.legend()
+#         ax.set_title('Run # {}'.format(i))
 
-    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    if (fit_func is not None) and (popt is not None):
-        create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
-                  fit_func, popt)
+    

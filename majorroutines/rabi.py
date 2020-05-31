@@ -236,9 +236,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
-
     for run_ind in range(num_runs):
-
+        
         print('Run index: {}'. format(run_ind))
 
         # Break out of the while if the user says stop
@@ -266,6 +265,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
+        
         start_time = time.time()
         for tau_ind in tau_ind_list:
 #        for tau_ind in range(len(taus)):
@@ -276,7 +276,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 #            print(taus[tau_ind])
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
-
             # Stream the sequence
             seq_args = [taus[tau_ind], polarization_time, reference_time,
                         signal_wait_time, reference_wait_time,
@@ -297,11 +296,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
+#            print('Sig counts: {}'.format(sum(sig_gate_counts)))
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
-                        
+#            print('Ref counts: {}'.format(sum(ref_gate_counts)))
+            
             run_time = time.time()
             run_elapsed_time = run_time - start_time
             start_time = run_time
@@ -440,10 +441,10 @@ if __name__ == '__main__':
      norm_avg_sig = data['norm_avg_sig']
      uwave_time_range = data['uwave_time_range']
      num_steps = data['num_steps']
-
-     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-     if (fit_func is not None) and (popt is not None):
-         create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
-                           fit_func, popt)
+     
+#     fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+#     if (fit_func is not None) and (popt is not None):
+#         create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
+#                           fit_func, popt)
 
 #    simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)
