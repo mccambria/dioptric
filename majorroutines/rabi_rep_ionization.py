@@ -251,6 +251,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, shelf_state, test_
                         wait_time, num_ionizations, laser_515_delay, aom_589_delay, laser_638_delay, rf_delay,
                         apd_indices[0], readout_power, yellow_pol_pwr, shelf_power, shelf_state.value, test_state.value]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
+            # Clear the tagger buffer of any excess counts
+            cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_immediate(file_name, num_reps,
                                                 seq_args_string)
 

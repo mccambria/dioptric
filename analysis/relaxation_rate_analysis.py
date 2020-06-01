@@ -499,8 +499,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    path = 't1_double_quantum/data_folders/other_data/'
-    folder = 'bachman-ensemble-A1-2020_06_01'
+    path = 't1_double_quantum_scc_readout/data_folders/bachman/'
+    folder = '2020_05_26_bachman_B5'
     # folder = 'goeppert_mayer-nv7_2019_11_27-85deg'
     path += folder
 

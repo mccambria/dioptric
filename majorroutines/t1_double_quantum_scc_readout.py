@@ -129,7 +129,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     max_relaxation_time = int( relaxation_time_range[1] )
 
     taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
-                          num=num_steps, dtype=numpy.int32)
+                          num=num_steps)
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -180,7 +180,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                 apd_indices[0], 
                 init_state.value, read_state.value,
                 readout_power, shelf_power]
-    seq_args = [int(el) for el in seq_args]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -267,7 +266,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                     apd_indices[0], 
                     init_state.value, read_state.value,
                     readout_power, shelf_power]
-            seq_args = [int(el) for el in seq_args]
+            # Clear the tagger buffer of any excess counts
+            cxn.apd_tagger.clear_buffer()
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             
             cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),

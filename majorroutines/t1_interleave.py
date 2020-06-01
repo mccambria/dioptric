@@ -191,8 +191,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
                     post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
                     gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, max_relaxation_time,
                     apd_indices[0], init_state.value, read_state.value]
-
-        seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load('t1_double_quantum.py', seq_args_string)
         seq_time = ret_vals[0]
@@ -294,10 +292,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
                             post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
                             gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, taus[tau_ind_second],
                             apd_indices[0], init_state.value, read_state.value]
-
-                seq_args = [int(el) for el in seq_args]
                 seq_args_string = tool_belt.encode_seq_args(seq_args)
-                
+                # Clear the tagger buffer of any excess counts
+                cxn.apd_tagger.clear_buffer()                
                 cxn.pulse_streamer.stream_immediate('t1_double_quantum.py', int(num_reps),
                                                     seq_args_string)
     
