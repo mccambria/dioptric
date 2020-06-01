@@ -124,16 +124,14 @@ class ApdTagger(LabradServer):
                     counts.extend(num_remaining * [0])
                     logging.error('Timed out trying to last {} counts out ' \
                                   'of {}'.format(num_remaining, num_to_read))
+                    overflows = self.tagger.getOverflows()
+                    logging.debug('Overflows: {}'.format(overflows))
                     break
                 counts.extend(self.read_counter_internal(num_to_read))
             if len(counts) > num_to_read:
                 msg = 'Read {} samples, only requested {}'.format(len(counts),
                             num_to_read)
                 logging.error(msg)
-                
-        overflows = self.tagger.getOverflowsAndClear()
-        if overflows > 0:
-            logging.debug('Overflows: {}'.format(overflows))
                 
         return counts
         
@@ -196,7 +194,7 @@ class ApdTagger(LabradServer):
                 # signifying the falling edge
                 result = numpy.nonzero(sample_channels == gate_close_channel)
                 gate_close_click_inds = result[0].tolist()
-                
+    
                 # The number of APD clicks is simply the number of items in the
                 # buffer between gate open and gate close clicks
                 channel_counts = []
@@ -279,7 +277,7 @@ class ApdTagger(LabradServer):
         self.stream_channels = channels
         # De-duplicate the channels list
         channels = list(set(channels))
-        self.stream = TimeTagger.TimeTagStream(self.tagger, 10**9, channels)
+        self.stream = TimeTagger.TimeTagStream(self.tagger, 10**6, channels)
         # When you set up a measurement, it will not start recording data
         # immediately. It takes some time for the tagger to configure the fpga,
         # etc. The sync call waits until this process is complete. 
@@ -292,15 +290,6 @@ class ApdTagger(LabradServer):
         leftovers.
         """
         self.stop_tag_stream_internal()
-        
-    @setting(9)
-    def clear_buffer(self, c):
-        """Clear the hardware's internal buffer. Should be called before
-        starting a pulse sequence."""
-        _ = self.stream.getData()
-        # We also don't care about overflows here, so toss those
-        _ = self.tagger.getOverflowsAndClear()
-        
 
 #    @setting(3, returns='*s*i')
     @setting(3, returns='s')    
