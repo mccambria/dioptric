@@ -349,7 +349,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
                                             title = title)
 
     # %% Collect the data
-
+    cxn.apd_tagger.clear_buffer()
     cxn.pulse_streamer.stream_start(total_num_samples)
 
     timeout_duration = ((period*(10**-9)) * total_num_samples) + 10

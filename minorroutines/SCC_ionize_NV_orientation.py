@@ -195,8 +195,8 @@ def optimize_num_ionizations(nv_sig):
     num_reps = 10**3
 #    if not num_ion_list:
     #    num_ion_list = numpy.linspace(0,5, 6)
-#    num_ion_list = numpy.linspace(0,150, 76)
-    num_ion_list = numpy.linspace(0,30, 16)
+    num_ion_list = numpy.linspace(0,10, 11)
+#    num_ion_list = numpy.linspace(0,30, 16)
     
     # measure laser powers (yellow one is measured at readout power:
     green_optical_power_pd, green_optical_power_mW, \
@@ -1155,22 +1155,23 @@ def optimize_yellow_pol_power(nv_sig):
     
 if __name__ == '__main__':
     apd_indices = [0]
-    sample_name = 'bachman'
-    ensemble = { 'coords': [0.415, -0.121, 4.69],
-            'name': '{}-B5'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+    sample_name = 'bachman-2'
+    ensemble_B1 = { 'coords':[ -0.439,1.4,5.04],
+            'name': '{}-B1'.format(sample_name),
+            'expected_count_rate': 6600, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'yellow_pol_dur': 2*10**3, 'am_589_pol_power': 0.20,
             'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 'am_589_shelf_power': 0.35,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
-            'ionization_rep': 8,
             'magnet_angle': 0,
-            'resonance_LOW': 2.8019, 'rabi_LOW': 110.6, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9490, 'rabi_HIGH': 128.0, 'uwave_power_HIGH': 10.0} 
-    nv_sig = ensemble
+            'ionization_rep': 3,
+            "resonance_LOW": 2.754,"rabi_LOW": 180.0, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9877,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
+    nv_sig = ensemble_B1
     
  
     
@@ -1178,13 +1179,13 @@ if __name__ == '__main__':
     # Run the program
 #    for ion_time in ion_pulse_list:
 #        nv_sig['pulsed_ionization_dur'] = ion_time
-#    optimize_num_ionizations(nv_sig)
+    optimize_num_ionizations(nv_sig)
 #    optimize_reion_and_init_ion_length(nv_sig)
 #    optimize_init_ion_length(nv_sig)
 #    optimize_reion_length(nv_sig)
 #    optimize_shelf_pulse_length(nv_sig)
 #    optimize_shelf_power(nv_sig)
-    optimize_yellow_pol_length(nv_sig)
+#    optimize_yellow_pol_length(nv_sig)
 #    optimize_yellow_pol_power(nv_sig)
     
     

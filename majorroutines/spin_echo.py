@@ -398,7 +398,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     max_precession_time = int(precession_time_range[1])
 
     taus = numpy.linspace(min_precession_time, max_precession_time,
-                          num=num_steps, dtype=numpy.int32)
+                          num=num_steps)
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -480,7 +480,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, disable = True)
+#        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = True)
+        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices, 532)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves

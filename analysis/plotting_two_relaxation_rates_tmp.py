@@ -25,65 +25,101 @@ def exp_eq(t, rate, amp):
 
 # %%
     
-# Area B1
-data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-ensemble-B1/', 
-                              '139MHz_splitting_rate_analysis')
+init_params = [0.3, 1]
 
-zero_relaxation_counts_A1 = data['zero_relaxation_counts']
-zero_relaxation_ste_A1 = data['zero_relaxation_ste']
-zero_zero_time_A1 = data['zero_zero_time']
-plus_relaxation_counts_A1 = data['plus_relaxation_counts']
-plus_relaxation_ste_A1 = data['plus_relaxation_ste']
-plus_plus_time_A1 = data['plus_plus_time']
-omega_opti_params_A1 = data['omega_opti_params']
-omega_A1 = data['omega']
-omega_ste_A1 = data['omega_ste']
-gamma_opti_params_A1 = data['gamma_opti_params']
-gamma_A1 = data['gamma']
-gamma_ste_A1 = data['gamma_ste']
-
-omega_time_linspace_A1 = numpy.linspace(zero_zero_time_A1[0],zero_zero_time_A1[-1],1000)
-gamma_time_linspace_A1 = numpy.linspace(plus_plus_time_A1[0],plus_plus_time_A1[-1],1000)
+# %%
     
-# Area B5
-data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-ensemble-B5/', 
-                              '141MHz_splitting_rate_analysis')
+# Area B1 bachman-1
+area_name_1 = 'Bachman-1 A1'
+data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-1-ensemble-A1-142MHz/', 
+                              '142MHz_splitting_rate_analysis')
 
-zero_relaxation_counts_B1 = data['zero_relaxation_counts']
-zero_relaxation_ste_B1 = data['zero_relaxation_ste']
-zero_zero_time_B1 = data['zero_zero_time']
-plus_relaxation_counts_B1 = data['plus_relaxation_counts']
-plus_relaxation_ste_B1 = data['plus_relaxation_ste']
-plus_plus_time_B1 = data['plus_plus_time']
-omega_opti_params_B1 = data['omega_opti_params']
-omega_B1 = data['omega']
-omega_ste_B1 = data['omega_ste']
-gamma_opti_params_B1 = data['gamma_opti_params']
-gamma_B1 = data['gamma']
-gamma_ste_B1 = data['gamma_ste']
+zero_relaxation_counts_1 = data['zero_relaxation_counts']
+zero_relaxation_ste_1 = data['zero_relaxation_ste']
+zero_zero_time_1 = data['zero_zero_time']
+plus_relaxation_counts_1 = data['plus_relaxation_counts']
+plus_relaxation_ste_1 = data['plus_relaxation_ste']
+plus_plus_time_1 = data['plus_plus_time']
+omega_opti_params_1 = data['omega_opti_params']
+omega_1 = data['omega']
+omega_ste_1 = data['omega_ste']
+gamma_opti_params_1 = data['gamma_opti_params']
+gamma_1 = data['gamma']
+gamma_ste_1 = data['gamma_ste']
 
-omega_time_linspace_B1 = numpy.linspace(zero_zero_time_B1[0],zero_zero_time_B1[-1],1000)
-gamma_time_linspace_B1 = numpy.linspace(plus_plus_time_B1[0],plus_plus_time_B1[-1],1000)
+omega_time_linspace_1 = numpy.linspace(zero_zero_time_1[0],zero_zero_time_1[-1],1000)
+gamma_time_linspace_1 = numpy.linspace(plus_plus_time_1[0],plus_plus_time_1[-1],1000)
     
+# manipulate the data to normalize 
+first_point = zero_relaxation_counts_1[0]
+zero_relaxation_counts_1 = numpy.array(zero_relaxation_counts_1)/ first_point
+zero_relaxation_ste_1 = numpy.array(zero_relaxation_ste_1)/ first_point
+
+first_point = plus_relaxation_counts_1[0]
+plus_relaxation_counts_1 = numpy.array(plus_relaxation_counts_1)/ first_point
+plus_relaxation_ste_1 = numpy.array(plus_relaxation_ste_1)/ first_point
+
+# fit the normalized data
+omega_popt_1, _ = curve_fit(exp_eq, zero_zero_time_1, zero_relaxation_counts_1,
+                               p0=init_params)
+gamma_popt_1, _ = curve_fit(exp_eq, plus_plus_time_1, plus_relaxation_counts_1,
+                               p0=init_params)
+
+# Area B1 bachman-2
+area_name_2 = 'Bachman-2 B1'
+data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-2-ensemble-B1-138MHz/', 
+                              '138MHz_splitting_rate_analysis')
+
+zero_relaxation_counts_2 = data['zero_relaxation_counts']
+zero_relaxation_ste_2 = data['zero_relaxation_ste']
+zero_zero_time_2 = data['zero_zero_time']
+plus_relaxation_counts_2 = data['plus_relaxation_counts']
+plus_relaxation_ste_2 = data['plus_relaxation_ste']
+plus_plus_time_2 = data['plus_plus_time']
+#omega_opti_params_2 = data['omega_opti_params']
+omega_2 = data['omega']
+omega_ste_2 = data['omega_ste']
+#gamma_opti_params_2 = data['gamma_opti_params']
+gamma_2 = data['gamma']
+gamma_ste_2 = data['gamma_ste']
+
+omega_time_linspace_2 = numpy.linspace(zero_zero_time_2[0],zero_zero_time_2[-1],1000)
+gamma_time_linspace_2 = numpy.linspace(plus_plus_time_2[0],plus_plus_time_2[-1],1000)
+
+# manipulate the data to normalize 
+first_point = zero_relaxation_counts_2[0]
+zero_relaxation_counts_2 = numpy.array(zero_relaxation_counts_2)/ first_point
+zero_relaxation_ste_2 = numpy.array(zero_relaxation_ste_2)/ first_point
+
+first_point = plus_relaxation_counts_2[0]
+plus_relaxation_counts_2 = numpy.array(plus_relaxation_counts_2)/ first_point
+plus_relaxation_ste_2 = numpy.array(plus_relaxation_ste_2)/ first_point
+
+# fit the normalized data
+omega_popt_2, _ = curve_fit(exp_eq, zero_zero_time_2, zero_relaxation_counts_2,
+                               p0=init_params)
+gamma_popt_2, _ = curve_fit(exp_eq, plus_plus_time_2, plus_relaxation_counts_2,
+                               p0=init_params)
+
 fig, axes = plt.subplots(1, 2, figsize=(17, 8))
 ax = axes[0]
-ax.errorbar(zero_zero_time_A1, zero_relaxation_counts_A1,
-                    yerr = zero_relaxation_ste_A1,
-                    label = 'B1', fmt = 'o', color = 'orange')
-ax.plot(omega_time_linspace_A1,
-                    exp_eq(omega_time_linspace_A1, *omega_opti_params_A1),
-                    'orange', label = 'B1 fit')
-ax.errorbar(zero_zero_time_B1, zero_relaxation_counts_B1,
-                    yerr = zero_relaxation_ste_B1,
-                    label = 'B5', fmt = 'o', color = 'red')
-ax.plot(omega_time_linspace_B1,
-                    exp_eq(omega_time_linspace_B1, *omega_opti_params_B1),
-                    'red', label = 'B5 fit')
+ax.errorbar(zero_zero_time_1, zero_relaxation_counts_1,
+                    yerr = zero_relaxation_ste_1,
+                    label = area_name_1, fmt = 'o', color = 'orange')
+ax.plot(omega_time_linspace_1,
+                    exp_eq(omega_time_linspace_1, *omega_popt_1),
+                    'orange', label = '{} fit'.format(area_name_1))
+ax.errorbar(zero_zero_time_2, zero_relaxation_counts_2,
+                    yerr = zero_relaxation_ste_2,
+                    label = area_name_2, fmt = 'o', color = 'red')
+ax.plot(omega_time_linspace_2,
+                    exp_eq(omega_time_linspace_2, *omega_popt_2),
+                    'red', label = '{} fit'.format(area_name_2))
 ax.set_xlabel('Wait time (ms)')
 ax.set_ylabel('Normalized signal Counts')
 ax.legend()
-text = "\n".join((r'Area B1 $\Omega = {:.2f} \pm {:.2f}$ kHz'.format(omega_A1, omega_ste_A1),
-                  r'Area B5 $\Omega = {:.2f} \pm {:.2f}$ kHz'.format(omega_B1, omega_ste_B1),))
+text = "\n".join((r'{} $\Omega = {:.2f} \pm {:.2f}$ kHz'.format(area_name_1, omega_1, omega_ste_1),
+                  r'{} $\Omega = {:.2f} \pm {:.2f}$ kHz'.format(area_name_2, omega_2, omega_ste_2),))
 
 
 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
@@ -91,26 +127,26 @@ ax.text(0.55, 0.8, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment="top", bbox=props)
 
 ax = axes[1]
-ax.errorbar(plus_plus_time_A1, plus_relaxation_counts_A1,
-                    yerr = plus_relaxation_ste_A1,
-                    label = 'B1', fmt = 'o', color = 'purple')
-ax.plot(gamma_time_linspace_A1,
-                    exp_eq(gamma_time_linspace_A1, *gamma_opti_params_A1),
-                    'purple', label = 'B1 fit')
-ax.errorbar(plus_plus_time_B1, plus_relaxation_counts_B1,
-                    yerr = plus_relaxation_ste_B1,
-                    label = 'B5', fmt = 'o', color = 'blue')
-ax.plot(gamma_time_linspace_B1,
-                    exp_eq(gamma_time_linspace_B1, *gamma_opti_params_B1),
-                    'blue', label = 'B5 fit')
+ax.errorbar(plus_plus_time_1, plus_relaxation_counts_1,
+                    yerr = plus_relaxation_ste_1,
+                    label = area_name_1, fmt = 'o', color = 'purple')
+ax.plot(gamma_time_linspace_1,
+                    exp_eq(gamma_time_linspace_1, *gamma_popt_1),
+                    'purple', label = '{} fit'.format(area_name_1))
+ax.errorbar(plus_plus_time_2, plus_relaxation_counts_2,
+                    yerr = plus_relaxation_ste_2,
+                    label = area_name_2, fmt = 'o', color = 'blue')
+ax.plot(gamma_time_linspace_2,
+                    exp_eq(gamma_time_linspace_2, *gamma_popt_2),
+                    'blue', label = '{} fit'.format(area_name_2))
 
 ax.set_xlabel('Wait time (ms)')
 ax.set_ylabel('Normalized signal Counts')
 #ax.set_title('Comparing omega rate of bulk diamond at two splittings')
 ax.legend()
 
-text = "\n".join((r'Area B1 $\gamma = {:.2f} \pm {:.2f}$ kHz'.format(gamma_A1, gamma_ste_A1),
-                  r'Area B5 $\gamma = {:.2f} \pm {:.2f}$ kHz'.format(gamma_B1, gamma_ste_B1),))
+text = "\n".join((r'{} $\gamma = {:.2f} \pm {:.2f}$ kHz'.format(area_name_1, gamma_1, gamma_ste_1),
+                  r'{} $\gamma = {:.2f} \pm {:.2f}$ kHz'.format(area_name_2, gamma_2, gamma_ste_2),))
 
 
 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)

@@ -432,10 +432,10 @@ def optimize_init_ion_and_reion_pulse_length(nv_sig, test_pulse_dur_list = None)
 
 # %%
 
-def optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = numpy.linspace(0, 1000, 11)):
+def optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = numpy.linspace(0, 10**3, 11)):
     apd_indices = [0]
-#    num_reps = 1000
-    num_reps = 500
+    num_reps = 1000
+#    num_reps = 500
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -632,20 +632,21 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
 # %% Run the files
     
 if __name__ == '__main__':
-    sample_name = 'bachman'
-    ensemble = { 'coords': [0.415, -0.121, 4.69],
-            'name': '{}-B5'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+    sample_name = 'bachman-2'
+    ensemble_B1 = { 'coords':[ -0.439,1.4,5.04],
+            'name': '{}-B1'.format(sample_name),
+            'expected_count_rate': 6600, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**6, 'am_589_power': 0.4, 
-            'pulsed_initial_ion_dur': 50*10**3,
-            'pulsed_shelf_dur': 0, 'am_589_shelf_power': 0,#50/0.3,
-            'pulsed_ionization_dur': 450, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 200*10**3, 'cobalt_532_power': 8, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            'resonance_LOW': 2.8060, 'rabi_LOW': 126.8, 'uwave_power_LOW': 9.0, 
-            'resonance_HIGH': 2.9452, 'rabi_HIGH': 164.5, 'uwave_power_HIGH': 10.0}   
-    nv_sig = ensemble
+            "resonance_LOW": 2.754,"rabi_LOW": 180.0, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9877,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
+    nv_sig = ensemble_B1
     
 #    test_pulse_dur_list = [   
 #        0.,  100.,  200.,  300.,  400.,  500.,  600.,   800.,  1000.,  
@@ -658,7 +659,7 @@ if __name__ == '__main__':
 #    readout_time = [10**7]
 
     # Run the program
-#    optimize_ion_pulse_length(nv_sig)
+    optimize_ion_pulse_length(nv_sig)
 #    optimize_reion_pulse_length(nv_sig)
 #    optimize_init_ion_pulse_length(nv_sig)
 #    for power in readout_power:
@@ -670,5 +671,5 @@ if __name__ == '__main__':
 #            optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = test_pulse_dur_list)
 #    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
-    optimize_readout_pulse_power(nv_sig)
+#    optimize_readout_pulse_power(nv_sig)
     

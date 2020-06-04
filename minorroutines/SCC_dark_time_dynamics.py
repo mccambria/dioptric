@@ -76,7 +76,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, initial_pulse_time, dark_t
                 init_pulse_delay, aom_589_delay, 
                 aom_ao_589_pwr, apd_indices[0],
                 init_pulse_color, 589]
-#    print(seq_args)
+    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
 
@@ -249,21 +249,21 @@ def do_dark_time_w_green(nv_sig, test_pulse_dur_list = None):
     
 if __name__ == '__main__':
     sample_name = 'bachman'
-    ensemble_A1 = { 'coords':[ -0.407, 1.403,5.06],
+    ensemble_A1 = { 'coords':[ -0.439,1.4,5.04],
             'name': '{}-A1'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 1*10**6, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            "resonance_LOW": 2.8030,"rabi_LOW": 123.8, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9479,"rabi_HIGH": 130.1,"uwave_power_HIGH": 10.0}    
+            "resonance_LOW": 2.754,"rabi_LOW": 203.8, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9877,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0}   
     nv_sig = ensemble_A1
     
-#    do_dark_time_w_green(nv_sig)
-    do_dark_time_w_red(nv_sig)
+    do_dark_time_w_green(nv_sig)
+#    do_dark_time_w_red(nv_sig)
     

@@ -427,10 +427,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     
 # %%
 if __name__ == '__main__':
-    sample_name = 'bachman'
-    ensemble = { 'coords': [0.408, -0.118,4.66],
-            'name': '{}-B5'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
+    sample_name = 'bachman-2'
+    ensemble_B1 = { 'coords':[ -0.439,1.4,5.04],
+            'name': '{}-B1'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
@@ -439,19 +439,18 @@ if __name__ == '__main__':
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            "resonance_LOW": 2.8030,"rabi_LOW": 123.8, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9479,"rabi_HIGH": 130.1,"uwave_power_HIGH": 10.0}   
-    nv_sig = ensemble
+            "resonance_LOW": 2.754,"rabi_LOW": 203.8, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.988,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
 
     apd_indices = [0]
-    num_steps = 3
+    num_steps = 51
     num_reps = 2*10**2
     num_runs = 5
     state = States.LOW
     uwave_time_range = [0, 200]
     
     # Run rabi with SCC readout
-    main(nv_sig, apd_indices, uwave_time_range, state,
+    main(ensemble_B1, apd_indices, uwave_time_range, state,
          num_steps, num_reps, num_runs)
     
    
