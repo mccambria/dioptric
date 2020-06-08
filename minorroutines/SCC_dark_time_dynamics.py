@@ -23,7 +23,7 @@ def plot_time_sweep(test_pulse_dur_list, sig_count_list, title, text = None):
     test_pulse_dur_list = numpy.array(test_pulse_dur_list)
     
     fig, ax = plt.subplots(1,1, figsize = (8.5, 8.5)) 
-    ax.plot(test_pulse_dur_list / 10**3, sig_count_list, 'bo')
+    ax.plot(test_pulse_dur_list / 10**3, sig_count_list, 'b-')
     ax.set_xlabel('Dark time (us)')
     ax.set_ylabel('Counts (single shot)')
     ax.set_title(title)
@@ -113,8 +113,10 @@ def do_dark_time_w_red(nv_sig, test_pulse_dur_list = None):
     apd_indices = [0]
     num_reps = 1000
     if not test_pulse_dur_list:
-        test_pulse_dur_list = [10**3,5*10**3, 10**4,2*10**4,5*10**4,10**5,2*10**5, 5*10**5, 10**6, 5*10**6,
-                               10**7, 5*10**7]
+#        test_pulse_dur_list = [10**3,5*10**3, 10**4,2*10**4,5*10**4,10**5,2*10**5, 5*10**5, 10**6, 5*10**6,
+#                               10**7, 5*10**7]
+        test_pulse_dur_list = [10**3,2*10**3, 3*10**3, 4*10**3, 5*10**3,6*10**3, 7*10**3,
+                               8*10**3,9*10**3,10**4,2*10**4, 3*10**4, 4*10**4, 10**5]
     initial_pulse_time = 10**6
     # measure laser powers:
 #    green_optical_power_pd, green_optical_power_mW, \
@@ -150,7 +152,7 @@ def do_dark_time_w_red(nv_sig, test_pulse_dur_list = None):
     fig = plot_time_sweep(test_pulse_dur_list, sig_count_list, title)
     # Save
     timestamp = tool_belt.get_time_stamp()
-    sig_count_list = [int(el) for el in sig_count_list]    
+#    sig_count_list = [int(el) for el in sig_count_list]    
     
     raw_data = {'timestamp': timestamp,
 #                'time_elapsed': time_elapsed,
@@ -219,7 +221,7 @@ def do_dark_time_w_green(nv_sig, test_pulse_dur_list = None):
     fig = plot_time_sweep(test_pulse_dur_list, sig_count_list, title)
     # Save
     timestamp = tool_belt.get_time_stamp()
-    sig_count_list = [int(el) for el in sig_count_list]    
+#    sig_count_list = [int(el) for el in sig_count_list]    
     
     raw_data = {'timestamp': timestamp,
 #                'time_elapsed': time_elapsed,
@@ -249,7 +251,7 @@ def do_dark_time_w_green(nv_sig, test_pulse_dur_list = None):
     
 if __name__ == '__main__':
     sample_name = 'bachman'
-    ensemble_A1 = { 'coords':[ -0.439,1.4,5.04],
+    ensemble_A1 = { 'coords':[ -0.439, 1.400, 4.97],
             'name': '{}-A1'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -264,6 +266,6 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9877,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0}   
     nv_sig = ensemble_A1
     
-    do_dark_time_w_green(nv_sig)
-#    do_dark_time_w_red(nv_sig)
+#    do_dark_time_w_green(nv_sig)
+    do_dark_time_w_red(nv_sig)
     

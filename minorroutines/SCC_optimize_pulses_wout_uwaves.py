@@ -432,7 +432,7 @@ def optimize_init_ion_and_reion_pulse_length(nv_sig, test_pulse_dur_list = None)
 
 # %%
 
-def optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = numpy.linspace(0, 10**3, 11)):
+def optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = numpy.linspace(0, 2*10**5, 11)):
     apd_indices = [0]
     num_reps = 1000
 #    num_reps = 500

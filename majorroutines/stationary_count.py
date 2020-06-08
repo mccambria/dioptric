@@ -33,7 +33,7 @@ def update_line_plot(new_samples, num_read_so_far, *args):
     write_pos[0] = new_write_pos
 
     # Update the figure in k counts per sec
-    tool_belt.update_line_plot_figure(fig, (samples * 10**-3) / readout_sec)
+    tool_belt.update_line_plot_figure(fig, (samples / (10**3 * readout_sec)))
 
 
 # %% Main
@@ -69,6 +69,7 @@ def main_with_cxn(cxn, nv_sig, run_time, aom_power, apd_indices, color_ind, cont
     # %% Load the PulseStreamer
 
     seq_args = [0, readout, aom_power, apd_indices[0], color_ind]
+#    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
@@ -127,7 +128,7 @@ def main_with_cxn(cxn, nv_sig, run_time, aom_power, apd_indices, color_ind, cont
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_simple()
+        new_samples = cxn.apd_tagger.read_counter_simple()  
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             update_line_plot(new_samples, num_read_so_far, *args)

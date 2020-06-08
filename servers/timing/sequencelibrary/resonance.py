@@ -79,10 +79,11 @@ def get_seq(pulser_wiring, args):
 
 
 if __name__ == '__main__':
-    wiring = {'do_daq_clock': 0,
-              'do_apd_gate_0': 1,
+    wiring = {'do_sample_clock': 0,
+              'do_apd_0_gate': 1,
               'do_aom': 2,
-              'do_uwave_gate_0': 3}
-    args = [10 * 10**6, 1.0 , 1 * 10**6, 0, 532]
-    seq, ret_vals = get_seq(wiring, args)
+              'do_signal_generator_bnc835_gate': 3,
+              'do_532_aom': 4}
+    args = [50, 1.0 , 100 ,0, 3, 532]
+    seq, ret_vals, _ = get_seq(wiring, args)
     seq.plot()
