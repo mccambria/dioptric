@@ -64,7 +64,7 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
     
 #    scan_range = 5.0
 #    num_steps = 150
-#    scan_range = 4.0
+    scan_range = 4.0
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
@@ -73,7 +73,7 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    num_steps = 200
 #    scan_range = 0.2
 #    num_steps = 150
-    scan_range = 0.1
+#    scan_range = 0.1
 #    num_steps = 120
 #    scan_range = 0.3
 #    num_steps = 90
@@ -136,8 +136,8 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 def do_resonance(nv_sig, apd_indices, color_ind, freq_center=2.87, freq_range=0.2):
 #    # green @ 8 mW
     num_steps = 76
-    num_runs = 6
-    uwave_power = -12
+    num_runs = 9
+    uwave_power = -8
     
     # green @ 4 mW
 #    num_steps = 101
@@ -541,7 +541,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.754,"rabi_LOW": 180.0, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9877,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
    
-    ensemble_B1 = { 'coords':[ -0.439,1.4,5.04],
+    ensemble_B1 = { 'coords':[ -0.439,1.4,4.9],
             'name': '{}-B1'.format(sample_name),
             'expected_count_rate': 6600, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -570,9 +570,9 @@ if __name__ == '__main__':
             "resonance_LOW": 2.869,"rabi_LOW": 203.8, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9426,"rabi_HIGH":150,"uwave_power_HIGH": 10.0} 
 
-    ensemble_B6 = { 'coords': [1.655, 0.023, 4.76],
+    ensemble_B6 = { 'coords': [1.656, 0.092, 4.68],
             'name': '{}-B6'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'expected_count_rate': 55, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
@@ -584,7 +584,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.754,"rabi_LOW": 203.8, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.988,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0}       
   
-    nv_sig_list = [ensemble_B6]
+    nv_sig_list = [ensemble_B1]
     
     
     aom_ao_589_pwr = 0.25

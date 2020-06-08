@@ -278,16 +278,16 @@ def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, color_ind,
 # %% Main
 
 
-def main(nv_sig, apd_indices, color_ind, aom_ao_589_pwr = 1.0, 
-         set_to_opti_coords=True, save_data=False, plot_data=False, disable = False):
+def main(nv_sig, apd_indices, color_ind, aom_ao_589_pwr = 1.0, disable = False, 
+         set_to_opti_coords=True, save_data=False, plot_data=False):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, color_ind, aom_ao_589_pwr, 
-                      set_to_opti_coords, save_data, plot_data, disable)
+                      disable, set_to_opti_coords, save_data, plot_data)
 
-def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, 
+def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, disable = False, 
                   set_to_opti_coords=True, save_data=False,
-                  plot_data=False, set_drift=True,  disable = False):
+                  plot_data=False, set_drift=True):
     
     # Reset the microscope and make sure we're at the right ND
     tool_belt.reset_cfm(cxn)
