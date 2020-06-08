@@ -23,8 +23,9 @@ def get_seq(pulser_wiring, args):
     readout = numpy.int64(readout)
     readout = numpy.int64(readout)
     uwave_switch_delay = numpy.int64(uwave_switch_delay)
-    wait_time = numpy.int64(300)
-    period = readout + wait_time + uwave_switch_delay + readout + wait_time
+    clock_pulse = numpy.int64(100)
+    clock_buffer = 3 * clock_pulse
+    period = readout + clock_pulse + uwave_switch_delay + readout + clock_pulse
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
@@ -44,24 +45,24 @@ def get_seq(pulser_wiring, args):
     seq = Sequence()
 
     # Collect two samples
-#    train = [(readout + clock_pulse, LOW),
-#             (clock_pulse, HIGH),
-#             (clock_pulse, LOW),
-#             (uwave_switch_delay + readout + clock_pulse, LOW),
-#             (clock_pulse, HIGH),
-#             (clock_pulse, LOW)]
-#    seq.setDigital(pulser_do_daq_clock, train)
+    train = [(readout + clock_pulse, LOW),
+             (clock_pulse, HIGH),
+             (clock_pulse, LOW),
+             (uwave_switch_delay + readout + clock_pulse, LOW),
+             (clock_pulse, HIGH),
+             (clock_pulse, LOW)]
+    seq.setDigital(pulser_do_daq_clock, train)
     
     # Ungate the APD channel for the readouts
-    train = [(readout, HIGH), (wait_time, LOW),
+    train = [(readout, HIGH), (clock_buffer, LOW),
              (uwave_switch_delay, LOW),
-             (readout, HIGH), (wait_time, LOW)]
+             (readout, HIGH), (clock_buffer, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
 
     # Uwave should be on for the first measurement and off for the second
-    train = [(readout, LOW), (wait_time, LOW),
+    train = [(readout, LOW), (clock_buffer, LOW),
              (uwave_switch_delay, HIGH),
-             (readout, HIGH), (wait_time, LOW)]
+             (readout, HIGH), (clock_buffer, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
     # The laser should always be on
@@ -72,7 +73,7 @@ def get_seq(pulser_wiring, args):
         train = [(period, am_589_power)]
         seq.setAnalog(pulser_ao_aom, train)
 
-    final_digital = [pulser_do_daq_clock]
+    final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]
 

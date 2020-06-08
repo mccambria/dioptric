@@ -48,14 +48,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
     shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
-    readout = 10*shared_parameters['continuous_readout_dur']
+    readout = shared_parameters['continuous_readout_dur']
     readout_sec = readout / (10**9)
     uwave_switch_delay = 1 * 10**6  # 1 ms to switch frequencies
     am_589_power = nv_sig['am_589_power']
     seq_args = [readout, am_589_power, uwave_switch_delay, apd_indices[0], state.value, color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
-    file_name = os.path.basename(__file__)
+    file_name = 'resonance.py'
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -102,8 +102,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             break
         
         # Optimize and save the coords we found
-        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices, 532)
-        opti_coords_list.append(opti_coords)
+#        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices, 532)
+#        opti_coords_list.append(opti_coords)
 
         # Load the APD task with two samples for each frequency step
         cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -117,20 +117,31 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                 break
 
             # Just assume the low state
-#            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-#            sig_gen_cxn.set_freq(freqs[step_ind])
-#            sig_gen_cxn.set_amp(uwave_power)
-#            sig_gen_cxn.uwave_on()
+            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+            sig_gen_cxn.set_freq(freqs[step_ind])
+            sig_gen_cxn.set_amp(uwave_power)
+            sig_gen_cxn.uwave_on()
 
             # Start the timing stream
+            cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_start()
-
-            new_counts = cxn.apd_tagger.read_counter_simple(2)
-            if len(new_counts) != 2:
-                raise RuntimeError('There should be exactly 2 samples per freq.')
-
-            ref_counts[run_ind, step_ind] = new_counts[0]
-            sig_counts[run_ind, step_ind] = new_counts[1]
+            
+            # Previous method
+#            new_counts = cxn.apd_tagger.read_counter_simple(2)
+#            if len(new_counts) != 2:
+#                raise RuntimeError('There should be exactly 2 samples per freq.')
+#
+#            ref_counts[run_ind, step_ind] = new_counts[0]
+#            sig_counts[run_ind, step_ind] = new_counts[1]
+            
+            # New method
+            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)            
+            sample_counts = new_counts[0]
+            ref_gate_counts = sample_counts[0::2]
+            ref_counts[run_ind, step_ind]  = sum(ref_gate_counts)
+            
+            sig_gate_counts = sample_counts[1::2]
+            sig_counts[run_ind, step_ind] = sum(sig_gate_counts)
             
         cxn.apd_tagger.stop_tag_stream()
         

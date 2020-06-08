@@ -94,8 +94,7 @@ def get_seq(pulser_wiring, args):
     train = [(pre_duration, LOW), (tau, HIGH), (post_duration, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
-    final_digital = [pulser_wiring['do_532_aom'],
-                     pulser_wiring['do_sample_clock']]
+    final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]
 

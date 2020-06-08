@@ -541,19 +541,19 @@ if __name__ == '__main__':
             "resonance_LOW": 2.754,"rabi_LOW": 180.0, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9877,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
    
-#    ensemble_B1 = { 'coords':[ -0.439,1.4,5.04],
-#            'name': '{}-B1'.format(sample_name),
-#            'expected_count_rate': 6600, 'nd_filter': 'nd_0',
-#            'pulsed_readout_dur': 300,
-#            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
-#            'pulsed_initial_ion_dur': 25*10**3,
-#            'pulsed_shelf_dur': 200, 
-#            'am_589_shelf_power': 0.35,
-#            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-#            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
-#            'magnet_angle': 0,
-#            "resonance_LOW": 2.754,"rabi_LOW": 180.0, "uwave_power_LOW": 9.0,
-#            "resonance_HIGH": 2.9877,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
+    ensemble_B1 = { 'coords':[ -0.439,1.4,5.04],
+            'name': '{}-B1'.format(sample_name),
+            'expected_count_rate': 6600, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.754,"rabi_LOW": 180.0, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9877,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
     
 
     ensemble_A6 = { 'coords': [1.474, -0.676, 4.85],
@@ -570,7 +570,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.869,"rabi_LOW": 203.8, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9426,"rabi_HIGH":150,"uwave_power_HIGH": 10.0} 
 
-    ensemble_B6 = { 'coords': [1.710, 0.010, 4.86],
+    ensemble_B6 = { 'coords': [1.655, 0.023, 4.76],
             'name': '{}-B6'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -584,7 +584,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.754,"rabi_LOW": 203.8, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.988,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0}       
   
-    nv_sig_list = [no_nv]
+    nv_sig_list = [ensemble_B6]
     
     
     aom_ao_589_pwr = 0.25
@@ -642,7 +642,7 @@ if __name__ == '__main__':
             
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_opti_z(nv_sig, apd_indices, 532)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 638, save_data=True, plot_data=True)
@@ -666,7 +666,7 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)
  
-            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.25)
+#            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.25)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
