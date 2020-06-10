@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 d_gs = 2.87  # ground state zfs in GHz
 # d_gs = 1.42  # excited state zfs in GHz
 gmuB = 2.8  # gyromagnetic ratio in MHz / G
+gmuB_GHz = gmuB / 1000  # gyromagnetic ratio in GHz / G
 
 # numbers
 inv_sqrt_2 = 1/numpy.sqrt(2)
@@ -63,7 +64,7 @@ def plot_components(mag_B, popt):
     # mode = 'theta_B'
     mode = 'mag_B'
         
-    fig, axes_pack = plt.subplots(1, 3, figsize=(15, 5))
+    fig, axes_pack = plt.subplots(1, 3, figsize=(12, 5))
     # fig, ax = plt.subplots(1, 1, figsize=(7, 5))
     fig.set_tight_layout(True)
     
@@ -72,15 +73,22 @@ def plot_components(mag_B, popt):
         plot_x_data = x_data * (180/pi)
         x_label = 'B field angle (deg)'
     elif mode == 'mag_B':
-        x_data = numpy.linspace(0.001, 25.0, 1000)  # GHz
-        plot_x_data = x_data
-        x_label = 'B field magnitude (GHz)'
+        # Matching the Tetienne photodynamics paper
+        # 0-50 mT
+        plot_x_data = numpy.linspace(0.001, 50.0, 1000)  # mT
+        x_data = plot_x_data * 10  # G
+        x_data = x_data * gmuB_GHz  # GHz
+        x_label = '\(B\) (mT)'
+        
+        # x_data = numpy.linspace(0.001, 25.0, 1000)  # GHz
+        # plot_x_data = x_data
+        # x_label = 'B field magnitude (GHz)'
         # plot_x_data = x_data*1000/gmuB  # G
         # x_label = 'B field magnitude (MHz)'
     
     # theta_Bs = [6, 54.1]
     # line_styles = [None, '--']
-    labels = [['|H;0>', '|H;-1>', '|H;+1>']]
+    labels = [[r'$\ket{H;0}$', r'$\ket{H;-1}$', r'$\ket{H;+1}$']]
     for ind in range(1):
         # theta_B = theta_Bs[ind] * (pi/180)
         # line_style = line_styles[ind]
@@ -122,32 +130,32 @@ def plot_components(mag_B, popt):
         
         # |Sz;+1> projections
         ax = axes_pack[0]
-        ax.set_title('|Sz;+1> projections')
+        ax.set_title(r'$\ket{S_{z};+1}$ projections')
         ax.plot(plot_x_data, zero_plus_comps, label=labels[ind][0])
         ax.plot(plot_x_data, low_plus_comps, label=labels[ind][1])
         ax.plot(plot_x_data, high_plus_comps, label=labels[ind][2])
         ax.set_xlabel(x_label)
-        ax.set_ylabel('|<Sz;+1|psi>|^2')
+        ax.set_ylabel(r'$\abs{\bra{S_{z};+1}\ket{\Psi}}^2$')
         ax.legend()
         
         # |Sz;0> projections
         ax = axes_pack[1]
-        ax.set_title('|Sz;0> projections')
+        ax.set_title(r'$\ket{S_{z};0}$ projections')
         ax.plot(plot_x_data, zero_zero_comps, label=labels[ind][0])
         ax.plot(plot_x_data, low_zero_comps, label=labels[ind][1])
         ax.plot(plot_x_data, high_zero_comps, label=labels[ind][2])
         ax.set_xlabel(x_label)
-        ax.set_ylabel('|<Sz;0|psi>|^2')
+        ax.set_ylabel(r'$\abs{\bra{S_{z};0}\ket{\Psi}}^2$')
         ax.legend()
         
         # |Sz;-1> projections
         ax = axes_pack[2]
-        ax.set_title('|Sz;-1> projections')
+        ax.set_title(r'$\ket{S_{z};-1}$ projections')
         ax.plot(plot_x_data, zero_minus_comps, label=labels[ind][0])
         ax.plot(plot_x_data, low_minus_comps, label=labels[ind][1])
         ax.plot(plot_x_data, high_minus_comps, label=labels[ind][2])
         ax.set_xlabel(x_label)
-        ax.set_ylabel('|<Sz;-1|psi>|^2')
+        ax.set_ylabel(r'$\abs{\bra{S_{z};-1}\ket{\Psi}}^2$')
         ax.legend()
     
 
@@ -636,6 +644,18 @@ def main(name, res_descs):
 # This allows a file's functions, classes, etc to be imported without running
 # the script that you set up here.
 if __name__ == '__main__':
+    
+    # Plots with LaTeX
+    plt.rcParams['text.latex.preamble'] = [
+        r'\usepackage{physics}',
+        r'\usepackage{sfmath}',
+        r'\usepackage{upgreek}',
+        r'\usepackage{helvet}',
+       ]  
+    plt.rcParams.update({'font.size': 12})
+    # plt.rcParams.update({'font.family': 'sans-serif'})
+    # plt.rcParams.update({'font.sans-serif': ['Helvetica']})
+    plt.rc('text', usetex=True)
 
     ############ Fake ############
     
@@ -725,15 +745,15 @@ if __name__ == '__main__':
     
     # popt: theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
     
-    mag_B = 0.095
-    popt = [48*(pi/180), 0, 0, 0, 0]
-    print(calc_eigenvectors(mag_B, *popt))
+    mag_B = None
+    popt = [74*(pi/180), 0, 0, 0, 0]
+    # print(calc_eigenvectors(mag_B, *popt))
     # vecs = calc_eigenvectors(mag_B, *popt)
     # for vec in vecs:
     #     vec = numpy.array(vec)
     #     print(numpy.abs(vec)**2)
     # b_matrix_elements(name, res_descs)
-    # plot_components(mag_B, popt)
+    plot_components(mag_B, popt)
     # print(calc_res_pair(mag_B, *popt))
 
     # Fake data
