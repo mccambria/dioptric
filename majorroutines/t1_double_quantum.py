@@ -210,7 +210,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = True)
+        opti_coords = optimize. main_with_cxn(cxn, nv_sig,  apd_indices, 532, aom_ao_589_pwr = 1.0, disable = True)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves for the low and high states

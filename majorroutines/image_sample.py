@@ -273,7 +273,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_params['continuous_readout_dur']
     if color_ind == 638:
-        readout = readout/10**3
+        readout = readout / 10**3
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
@@ -371,7 +371,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
         new_samples = cxn.apd_tagger.read_counter_simple()
 #        print(new_samples)
         num_new_samples = len(new_samples)
-        if num_new_samples > 0:
+        if num_new_samples > 0:           
             populate_img_array(new_samples, img_array, img_write_pos)
             # This is a horribly inefficient way of getting kcps, but it
             # is easy and readable and probably fine up to some resolution
@@ -455,6 +455,6 @@ if __name__ == '__main__':
 
     file_name = 'branch_Spin_to_charge/2020_05/2020_05_28-18_48_41-bachman-search'
 #    file_name = 'branch_Spin_to_charge/2020_05/2020_05_12-11_14_57-hopper-ensemble'
-#    reformat_plot('inferno', 'svg')
-    create_figure(file_name)
+    reformat_plot('inferno', 'svg')
+#    create_figure(file_name)
 

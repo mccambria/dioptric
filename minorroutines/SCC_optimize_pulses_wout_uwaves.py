@@ -499,14 +499,14 @@ def optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = numpy.linspace(0, 2*
 
 # %%
 
-def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list = None):
-    apd_indices = [0]
-    num_reps = 1000
-    if not test_pulse_dur_list:
-        test_pulse_dur_list = [10*10**3, 50*10**3, 100*10**3,500*10**3, 
+def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3, 
+                               50*10**3, 100*10**3,500*10**3, 
                                1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
                                6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
-                               2*10**7,3*10**7,4*10**7,5*10**7]
+                               2*10**7,3*10**7,4*10**7,5*10**7]):
+    apd_indices = [0]
+    num_reps = 1000
+
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -632,9 +632,9 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
 # %% Run the files
     
 if __name__ == '__main__':
-    sample_name = 'bachman-2'
-    ensemble_B1 = { 'coords':[ -0.439,1.4,5.04],
-            'name': '{}-B1'.format(sample_name),
+    sample_name = 'bachman-A1'
+    ensemble_B1 = { 'coords':[-0.404, 0.587, 5.39],
+            'name': '{}-A6'.format(sample_name),
             'expected_count_rate': 6600, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
@@ -644,31 +644,31 @@ if __name__ == '__main__':
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            "resonance_LOW": 2.754,"rabi_LOW": 180.0, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9877,"rabi_HIGH": 299.2,"uwave_power_HIGH": 10.0} 
+            "resonance_LOW": 2.7555,"rabi_LOW": 385.1, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9878,"rabi_HIGH": 582.3,"uwave_power_HIGH": 10.0} 
     nv_sig = ensemble_B1
     
 #    test_pulse_dur_list = [   
 #        0.,  100.,  200.,  300.,  400.,  500.,  600.,   800.,  1000.,  
 #        2000.,  3000.,  4000.,   6000.,   8000.,  10000.,
 #        20000.,  30000.,  40000.,    60000.,   80000.,  100000.]
-#    test_pulse_dur_list = [0, 200]
-#    readout_power = numpy.linspace(0.2,0.8, 7)
+    test_pulse_dur_list = numpy.array([1, 5, 10, 15, 20 ,25, 30, 35, 40, 45, 50])*10**6
+    readout_power = numpy.linspace(0.2,0.8, 13)
 #    readout_power = [0.3]
-#    readout_time = numpy.array([1, 5, 10, 30, 50])*10**6
+    ion_time = numpy.array([0, 0.5, 1, 10, 25, 75, 150, 200])*10**3
 #    readout_time = [10**7]
 
     # Run the program
-    optimize_ion_pulse_length(nv_sig)
+#    optimize_ion_pulse_length(nv_sig)
 #    optimize_reion_pulse_length(nv_sig)
 #    optimize_init_ion_pulse_length(nv_sig)
-#    for power in readout_power:
-#        nv_sig['am_589_power'] = power
-#        for tr in readout_time:
-#            print(' \nReadout power set to {} V'.format(power))
-#            print('Readout time set to {} ms'.format(tr/10**6))
-#            nv_sig['pulsed_SCC_readout_dur'] = int(tr)            
-#            optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = test_pulse_dur_list)
+    for power in readout_power:
+        nv_sig['am_589_power'] = power
+        for ti in ion_time:
+            print(' \nReadout power set to {} V'.format(power))
+            print('Ionization time set to {} us'.format(ti/10**3))
+            nv_sig['pulsed_ionization_dur'] = int(ti)            
+            optimize_readout_pulse_length(nv_sig, test_pulse_dur_list = test_pulse_dur_list)
 #    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
 #    optimize_readout_pulse_power(nv_sig)

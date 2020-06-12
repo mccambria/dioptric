@@ -500,12 +500,12 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 if __name__ == '__main__':
 
     path = 't1_double_quantum/data_folders/other_data/'
-    folder = 'bachman-2-ensemble-B1-140MHz'
+    folder = 'bachman-A1-ensemble-B1-140MHz'
     # folder = 'goeppert_mayer-nv7_2019_11_27-85deg'
     path += folder
 
     gamma, ste = main(path, omega=None, omega_ste=None,
-                      doPlot=True, offset=False)
+                      doPlot=True, offset=True)
     
 
     

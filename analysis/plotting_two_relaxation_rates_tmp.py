@@ -30,9 +30,9 @@ init_params = [0.3, 1]
 # %%
     
 # Area B1 bachman-1
-area_name_1 = 'Bachman-1 A1'
-data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-1-ensemble-A1-142MHz/', 
-                              '142MHz_splitting_rate_analysis')
+area_name_1 = 'Bachman A1'
+data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-A1-ensemble-B1-138MHz/', 
+                              '138MHz_splitting_rate_analysis')
 
 zero_relaxation_counts_1 = data['zero_relaxation_counts']
 zero_relaxation_ste_1 = data['zero_relaxation_ste']
@@ -66,8 +66,8 @@ gamma_popt_1, _ = curve_fit(exp_eq, plus_plus_time_1, plus_relaxation_counts_1,
                                p0=init_params)
 
 # Area B1 bachman-2
-area_name_2 = 'Bachman-2 B1'
-data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-2-ensemble-B1-138MHz/', 
+area_name_2 = 'Bachman A5'
+data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-A5-ensemble-B1-138MHz/', 
                               '138MHz_splitting_rate_analysis')
 
 zero_relaxation_counts_2 = data['zero_relaxation_counts']

@@ -26,8 +26,8 @@ def exp_eq(t, offset, rate, amp):
 # %%
     
 # Area A1 
-data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-ensemble-B5/', 
-                              '2020_05_20-08_31_13-bachman-ensemble')
+data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-A1-ensemble-B1-140MHz/', 
+                              '2020_06_02-15_04_58-bachman-B1')
 
 relaxation_time_range = numpy.array(data['relaxation_time_range'])/10**6
 num_steps = data['num_steps']
@@ -51,8 +51,8 @@ linspace_tau_A1 = numpy.linspace(relaxation_time_range[0], relaxation_time_range
 
     
 # Area B5 scc
-data = tool_belt.get_raw_data('t1_double_quantum_scc_readout/branch_Spin_to_charge/2020_05', 
-                              '2020_05_22-11_46_52-bachman-search')
+data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-A1-ensemble-B1-140MHz/', 
+                              '2020_06_10-16_47_39-Bachman-A1-B1')
 
 relaxation_time_range = numpy.array(data['relaxation_time_range'])/10**6
 num_steps = data['num_steps']
@@ -76,12 +76,12 @@ linspace_tau_B1 = numpy.linspace(relaxation_time_range[0], relaxation_time_range
     
 fig, ax = plt.subplots(1,1, figsize=(10, 8))
 ax.plot(taus_A1, norm_avg_sig_A1,'ko',
-                    label = 'B5, normal readout')
+                    label = 'Area A5')
 #ax.plot(linspace_tau_A1,
 #                    exp_eq(linspace_tau_A1, *popt_A1),
 #                    'k-', label = 'B5 fit')
 ax.plot(taus_B1, norm_avg_sig_B1, 'ro',
-                    label = 'B5, scc readout')
+                    label = 'Area A1')
 #ax.plot(linspace_tau_B1,
 #                    exp_eq(linspace_tau_B1, *popt_B1),
 #                    'r-', label = 'B1 fit')
