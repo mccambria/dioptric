@@ -94,6 +94,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, initial_pulse_time, dark_t
 
     # Load the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)
+    # Clear the buffer
+    cxn.apd_tagger.clear_buffer()
     # Run the sequence
     cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
 
@@ -117,7 +119,7 @@ def do_dark_time_w_red(nv_sig, test_pulse_dur_list = None):
 #                               10**7, 5*10**7]
         test_pulse_dur_list = [10**3,2*10**3, 3*10**3, 4*10**3, 5*10**3,6*10**3, 7*10**3,
                                8*10**3,9*10**3,10**4,2*10**4, 3*10**4, 4*10**4, 10**5]
-    initial_pulse_time = 10**7
+    initial_pulse_time = 10**5
     # measure laser powers:
 #    green_optical_power_pd, green_optical_power_mW, \
 #            red_optical_power_pd, red_optical_power_mW, \
@@ -255,7 +257,7 @@ if __name__ == '__main__':
             'name': '{}-A6'.format(sample_name),
             'expected_count_rate': 6600, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 1*10**6, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,

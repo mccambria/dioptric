@@ -157,7 +157,7 @@ def do_resonance_state(nv_sig, apd_indices, state):
     freq_center = nv_sig['resonance_{}'.format(state.name)]
     freq_range = 0.07
     num_steps = 51
-    num_runs = 10
+    num_runs = 2
     uwave_power = -8.0  # for 515 nm light at 8 mW
 #    uwave_power = -16.0  # -7.0 for 515 nm light at 4 mW
 #    uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
@@ -222,10 +222,10 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 6*10**6], 15, 220, 1000],
-        [[States.HIGH, States.HIGH], [0, 6*10**6], 15, 220, 1000],
-        [[States.ZERO, States.HIGH], [0, 6*10**6], 15, 220, 1000],
-        [[States.ZERO, States.ZERO], [0, 6*10**6], 15, 220, 1000],
+        [[States.ZERO, States.HIGH], [0, 4*10**6],21, 100, 8000],
+        [[States.ZERO, States.ZERO], [0, 4*10**6], 21, 100, 8000],
+#        [[States.HIGH, States.LOW], [0, 4*10**6], 21, 100, 8000],
+#        [[States.HIGH, States.HIGH], [0, 4*10**6], 21, 100, 8000],
             ])
 
 
@@ -557,7 +557,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9447,"rabi_HIGH": 159.8,"uwave_power_HIGH": 10.0} 
     
     ensemble_B1 = { 'coords':[-0.404, 0.587, 5.39],
-            'name': '{}-A6'.format(sample_name),
+            'name': '{}-B1'.format(sample_name),
             'expected_count_rate': 6600, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
@@ -567,8 +567,8 @@ if __name__ == '__main__':
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            "resonance_LOW": 2.7555,"rabi_LOW": 385.1, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9878,"rabi_HIGH": 582.3,"uwave_power_HIGH": 10.0} 
+            "resonance_LOW": 2.7555,"rabi_LOW": 395.9, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9878,"rabi_HIGH": 549.1,"uwave_power_HIGH": 10.0} 
   
     nv_sig_list = [ensemble_B1]
     

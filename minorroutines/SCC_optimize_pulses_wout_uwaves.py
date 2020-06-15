@@ -210,6 +210,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
     # Load the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)
+    # Clear the buffer
+    cxn.apd_tagger.clear_buffer()
     # Run the sequence
     cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
 
@@ -524,7 +526,8 @@ def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3,
     
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
-        nv_sig['pulsed_SCC_readout_dur'] = test_pulse_length
+        nv_sig['pulsed_SCC_readout_dur'] = int(test_pulse_length)
+        print('Readout set to {} ms'.format(test_pulse_length/10**6))
         # shine the red laser before each measurement
         with labrad.connect() as cxn:
             cxn.pulse_streamer.constant([7], 0.0, 0.0)
@@ -652,8 +655,8 @@ if __name__ == '__main__':
 #        0.,  100.,  200.,  300.,  400.,  500.,  600.,   800.,  1000.,  
 #        2000.,  3000.,  4000.,   6000.,   8000.,  10000.,
 #        20000.,  30000.,  40000.,    60000.,   80000.,  100000.]
-    test_pulse_dur_list = numpy.array([1, 5, 10, 15, 20 ,25, 30, 35, 40, 45, 50])*10**6
-    readout_power = numpy.linspace(0.2,0.8, 13)
+    test_pulse_dur_list = numpy.array([1, 5, 10, 15, 20 ,25, 30, 35, 40, 45])*10**6
+    readout_power = numpy.linspace(0.6,0.8, 3)
 #    readout_power = [0.3]
     ion_time = numpy.array([0, 0.5, 1, 10, 25, 75, 150, 200])*10**3
 #    readout_time = [10**7]
