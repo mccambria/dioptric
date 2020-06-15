@@ -24,8 +24,8 @@ import matplotlib.pyplot as plt
 # %% Constants
 
 
-d_gs = 2.87  # ground state zfs in GHz
-# d_gs = 1.42  # excited state zfs in GHz
+# d_gs = 2.87  # ground state zfs in GHz
+d_gs = 1.42  # excited state zfs in GHz
 gmuB = 2.8  # gyromagnetic ratio in MHz / G
 gmuB_GHz = gmuB / 1000  # gyromagnetic ratio in GHz / G
 
@@ -64,7 +64,7 @@ def plot_components(mag_B, popt):
     # mode = 'theta_B'
     mode = 'mag_B'
         
-    fig, axes_pack = plt.subplots(1, 3, figsize=(12, 5))
+    fig, axes_pack = plt.subplots(1, 3, figsize=(15, 5))
     # fig, ax = plt.subplots(1, 1, figsize=(7, 5))
     fig.set_tight_layout(True)
     
