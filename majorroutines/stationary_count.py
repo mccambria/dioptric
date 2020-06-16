@@ -51,7 +51,7 @@ def main_with_cxn(cxn, nv_sig, run_time, aom_power, apd_indices, color_ind, cont
     tool_belt.reset_cfm(cxn)
 
     shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
-    readout = shared_parameters['continuous_readout_dur']
+    readout = shared_parameters['continuous_readout_dur']*10
     readout_sec = readout / 10**9
 
     # %% Optimize
@@ -65,6 +65,7 @@ def main_with_cxn(cxn, nv_sig, run_time, aom_power, apd_indices, color_ind, cont
     
     cxn.galvo.write(coords_drift[0], coords_drift[1])
     cxn.objective_piezo.write(coords_drift[2])
+    print(coords_drift)
     
     # %% Load the PulseStreamer
 
