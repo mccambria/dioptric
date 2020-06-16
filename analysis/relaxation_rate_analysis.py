@@ -130,11 +130,11 @@ def get_data_lists(folder_name):
 
             # Calculate the average signal counts over the runs, and st. error
 #            print(sig_counts)
-            avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-            ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
+            avg_sig_counts = numpy.average(sig_counts[:num_runs], axis=0)
+            ste_sig_counts = numpy.std(sig_counts[:num_runs], axis=0, ddof = 1) / numpy.sqrt(num_runs)
 
             # Assume reference is constant and can be approximated to one value
-            avg_ref = numpy.average(ref_counts[::])
+            avg_ref = numpy.average(ref_counts[:num_runs])
 
             # Divide signal by reference to get normalized counts and st error
             norm_avg_sig = avg_sig_counts / avg_ref
@@ -264,7 +264,7 @@ def get_data_lists(folder_name):
         except Exception:
             print('Skipping {}'.format(str(file)))
             continue
-
+    splitting_MHz = 232
     omega_exp_list = [zero_zero_counts, zero_zero_ste, \
                       zero_plus_counts, zero_plus_ste, \
                       zero_zero_time]
@@ -375,82 +375,82 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
     # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
     # to fit
 
-    plus_plus_counts = gamma_exp_list[0]
-    plus_plus_ste = gamma_exp_list[1]
-    plus_minus_counts = gamma_exp_list[2]
-    plus_minus_ste = gamma_exp_list[3]
-    plus_plus_time = gamma_exp_list[4]
-
-    # Define the counts for the plus relaxation equation
-    plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
-    plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
-
-    init_params_list = [2*omega, 0.40]
-    try:
-        if offset:
-
-            init_params_list.append(0)
-            init_params = tuple(init_params_list)
-            gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
-                             plus_plus_time, plus_relaxation_counts,
-                             p0 = init_params, sigma = plus_relaxation_ste,
-                             absolute_sigma=True)
-
-
-        else:
-            init_params = tuple(init_params_list)
-            gamma_opti_params, cov_arr = curve_fit(exp_eq_gamma,
-                             plus_plus_time, plus_relaxation_counts,
-                             p0 = init_params, sigma = plus_relaxation_ste,
-                             absolute_sigma=True)
-
-    except Exception:
-        gamma_fit_failed = True
-
-        if doPlot:
-            ax = axes_pack[1]
-            ax.errorbar(plus_plus_time, plus_relaxation_counts,
-                    yerr = plus_relaxation_ste,
-                    label = 'data', fmt = 'o', color = 'blue')
-            ax.set_xlabel('Relaxation time (ms)')
-            ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(-1,-1) - (-1,+1)')
-
-    if not gamma_fit_failed:
-
-        # Calculate gamma and its ste
-        gamma = (gamma_opti_params[0] - omega)/ 2.0
-        gamma_ste = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_ste**2)
-
-        print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma,
-                  '%.3f'%gamma_ste))
-
-        # Plotting
-        if doPlot:
-            plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
-            ax = axes_pack[1]
-            ax.errorbar(plus_plus_time, plus_relaxation_counts,
-                    yerr = plus_relaxation_ste,
-                    label = 'data', fmt = 'o', color = 'blue')
-            if offset:
-                ax.plot(plus_time_linspace,
-                    exp_eq_offset(plus_time_linspace, *gamma_opti_params),
-                    'r', label = 'fit')
-            else:
-                ax.plot(plus_time_linspace,
-                    exp_eq_gamma(plus_time_linspace, *gamma_opti_params),
-                    'r', label = 'fit')
-            ax.set_xlabel('Relaxation time (ms)')
-            ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(-1,-1) - (-1,+1)')
-            ax.legend()
-            text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma,
-                  '%.3f'%gamma_ste)
-#            ax.set_xlim([-0.001, 0.05])
-
-            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
-                    verticalalignment='top', bbox=props)
+#    plus_plus_counts = gamma_exp_list[0]
+#    plus_plus_ste = gamma_exp_list[1]
+#    plus_minus_counts = gamma_exp_list[2]
+#    plus_minus_ste = gamma_exp_list[3]
+#    plus_plus_time = gamma_exp_list[4]
+#
+#    # Define the counts for the plus relaxation equation
+#    plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
+#    plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
+#
+#    init_params_list = [2*omega, 0.40]
+#    try:
+#        if offset:
+#
+#            init_params_list.append(0)
+#            init_params = tuple(init_params_list)
+#            gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
+#                             plus_plus_time, plus_relaxation_counts,
+#                             p0 = init_params, sigma = plus_relaxation_ste,
+#                             absolute_sigma=True)
+#
+#
+#        else:
+#            init_params = tuple(init_params_list)
+#            gamma_opti_params, cov_arr = curve_fit(exp_eq_gamma,
+#                             plus_plus_time, plus_relaxation_counts,
+#                             p0 = init_params, sigma = plus_relaxation_ste,
+#                             absolute_sigma=True)
+#
+#    except Exception:
+#        gamma_fit_failed = True
+#
+#        if doPlot:
+#            ax = axes_pack[1]
+#            ax.errorbar(plus_plus_time, plus_relaxation_counts,
+#                    yerr = plus_relaxation_ste,
+#                    label = 'data', fmt = 'o', color = 'blue')
+#            ax.set_xlabel('Relaxation time (ms)')
+#            ax.set_ylabel('Normalized signal Counts')
+#            ax.set_title('(-1,-1) - (-1,+1)')
+#
+#    if not gamma_fit_failed:
+#
+#        # Calculate gamma and its ste
+#        gamma = (gamma_opti_params[0] - omega)/ 2.0
+#        gamma_ste = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_ste**2)
+#
+#        print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma,
+#                  '%.3f'%gamma_ste))
+#
+#        # Plotting
+#        if doPlot:
+#            plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
+#            ax = axes_pack[1]
+#            ax.errorbar(plus_plus_time, plus_relaxation_counts,
+#                    yerr = plus_relaxation_ste,
+#                    label = 'data', fmt = 'o', color = 'blue')
+#            if offset:
+#                ax.plot(plus_time_linspace,
+#                    exp_eq_offset(plus_time_linspace, *gamma_opti_params),
+#                    'r', label = 'fit')
+#            else:
+#                ax.plot(plus_time_linspace,
+#                    exp_eq_gamma(plus_time_linspace, *gamma_opti_params),
+#                    'r', label = 'fit')
+#            ax.set_xlabel('Relaxation time (ms)')
+#            ax.set_ylabel('Normalized signal Counts')
+#            ax.set_title('(-1,-1) - (-1,+1)')
+#            ax.legend()
+#            text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma,
+#                  '%.3f'%gamma_ste)
+##            ax.set_xlim([-0.001, 0.05])
+#
+#            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+#            ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
+#                    verticalalignment='top', bbox=props)
     if doPlot:
         fig.canvas.draw()
         fig.canvas.flush_events()
@@ -469,24 +469,24 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                     'omega-units': 'kHz',
                     'omega_ste': omega_ste,
                     'omega_ste-units': 'khz',
-                    'gamma': gamma,
-                    'gamma-units': 'kHz',
-                    'gamma_ste': gamma_ste,
-                    'gamma_ste-units': 'khz',
+#                    'gamma': gamma,
+#                    'gamma-units': 'kHz',
+#                    'gamma_ste': gamma_ste,
+#                    'gamma_ste-units': 'khz',
                     'zero_relaxation_counts': zero_relaxation_counts.tolist(),
                     'zero_relaxation_counts-units': 'counts',
                     'zero_relaxation_ste': zero_relaxation_ste.tolist(),
                     'zero_relaxation_ste-units': 'counts',
                     'zero_zero_time': zero_zero_time.tolist(),
                     'zero_zero_time-units': 'ms',
-                    'plus_relaxation_counts': plus_relaxation_counts.tolist(),
-                    'plus_relaxation_counts-units': 'counts',
-                    'plus_relaxation_ste': plus_relaxation_ste.tolist(),
-                    'plus_relaxation_ste-units': 'counts',
-                    'plus_plus_time': plus_plus_time.tolist(),
-                    'plus_plus_time-units': 'ms',
+#                    'plus_relaxation_counts': plus_relaxation_counts.tolist(),
+#                    'plus_relaxation_counts-units': 'counts',
+#                    'plus_relaxation_ste': plus_relaxation_ste.tolist(),
+#                    'plus_relaxation_ste-units': 'counts',
+#                    'plus_plus_time': plus_plus_time.tolist(),
+#                    'plus_plus_time-units': 'ms',
                     'omega_opti_params': omega_opti_params.tolist(),
-                    'gamma_opti_params': gamma_opti_params.tolist(),
+#                    'gamma_opti_params': gamma_opti_params.tolist(),
                     }
 
         file_name = '{}MHz_splitting_rate_analysis'.format(round(splitting_MHz))
@@ -499,8 +499,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    path = 't1_double_quantum/data_folders/other_data/'
-    folder = 'bachman-A1-ensemble-B1-140MHz'
+    path = 't1_double_quantum/data_folders/other_data/bachman/'
+    folder = 'bachman-A1-ensemble-B1-232MHz'
     # folder = 'goeppert_mayer-nv7_2019_11_27-85deg'
     path += folder
 

@@ -25,13 +25,15 @@ def exp_eq(t, offset, rate, amp):
 
 # %%
     
-# Area A1 
-data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-A1-ensemble-B1-140MHz/', 
-                              '2020_06_02-15_04_58-bachman-B1')
+# Area A5
+data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-A5-ensemble-B1-234MHz/', 
+                              '2020_06_01-07_06_15-bachman-A1')
 
 relaxation_time_range = numpy.array(data['relaxation_time_range'])/10**6
 num_steps = data['num_steps']
 norm_avg_sig_A1 = data['norm_avg_sig']
+#sig_counts_A1 = data["sig_counts"]
+#ref_counts_A1 = data["ref_counts"]
 taus_A1 = numpy.linspace(relaxation_time_range[0], relaxation_time_range[1], num_steps)
 
 # manipulate the data to normalize 
@@ -50,9 +52,9 @@ decay = 0.6*3 # inverse ns
 linspace_tau_A1 = numpy.linspace(relaxation_time_range[0], relaxation_time_range[1], 1000)
 
     
-# Area B5 scc
-data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-A1-ensemble-B1-140MHz/', 
-                              '2020_06_10-16_47_39-Bachman-A1-B1')
+# Area A1
+data = tool_belt.get_raw_data('t1_double_quantum/data_folders/other_data/bachman-A1-ensemble-B1-232MHz/', 
+                              '2020_06_16-11_58_29-Bachman-A1-B1')
 
 relaxation_time_range = numpy.array(data['relaxation_time_range'])/10**6
 num_steps = data['num_steps']
@@ -75,12 +77,12 @@ decay = 0.6*3 # inverse ns
 linspace_tau_B1 = numpy.linspace(relaxation_time_range[0], relaxation_time_range[1], 1000)
     
 fig, ax = plt.subplots(1,1, figsize=(10, 8))
-ax.plot(taus_A1, norm_avg_sig_A1,'ko',
+ax.semilogy(taus_A1, norm_avg_sig_A1,'ko',
                     label = 'Area A5')
 #ax.plot(linspace_tau_A1,
 #                    exp_eq(linspace_tau_A1, *popt_A1),
 #                    'k-', label = 'B5 fit')
-ax.plot(taus_B1, norm_avg_sig_B1, 'ro',
+ax.semilogy(taus_B1, norm_avg_sig_B1, 'ro',
                     label = 'Area A1')
 #ax.plot(linspace_tau_B1,
 #                    exp_eq(linspace_tau_B1, *popt_B1),

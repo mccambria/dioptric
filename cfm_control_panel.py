@@ -136,7 +136,7 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 def do_resonance(nv_sig, apd_indices, color_ind, freq_center=2.87, freq_range=0.2):
 #    # green @ 8 mW
     num_steps = 101
-    num_runs = 10
+    num_runs = 5
     uwave_power = -8
     
     # green @ 4 mW
@@ -222,8 +222,8 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.ZERO, States.HIGH], [0, 4*10**6],21, 100, 8000],
-        [[States.ZERO, States.ZERO], [0, 4*10**6], 21, 100, 8000],
+#        [[States.ZERO, States.HIGH], [0, 4*10**6],21, 100, 8000],
+        [[States.ZERO, States.ZERO], [0, 4*10**6], 21, 100, 6000],
 #        [[States.HIGH, States.LOW], [0, 4*10**6], 21, 100, 8000],
 #        [[States.HIGH, States.HIGH], [0, 4*10**6], 21, 100, 8000],
             ])
@@ -566,7 +566,7 @@ if __name__ == '__main__':
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
-            'magnet_angle': 0,
+            'magnet_angle': 60,
             "resonance_LOW": 2.7555,"rabi_LOW": 395.9, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9878,"rabi_HIGH": 549.1,"uwave_power_HIGH": 10.0} 
   
@@ -653,7 +653,7 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)
  
-#            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.3)
+            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.3)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
