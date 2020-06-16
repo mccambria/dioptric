@@ -64,7 +64,7 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
     
 #    scan_range = 5.0
 #    num_steps = 150
-#    scan_range = 2.0
+    scan_range = 2.0
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
@@ -73,7 +73,7 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    num_steps = 200
 #    scan_range = 0.2
 #    num_steps = 150
-    scan_range = 0.1
+#    scan_range = 0.1
 #    num_steps = 120
 #    scan_range = 0.3
     num_steps = 90
@@ -527,10 +527,8 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     sample_name = 'Bachman-A1'
-
-    sample_name = 'ayrton_12'
     
-    nv_search = { 'coords':[0.014, -0.188, 5.0],
+    nv_search = { 'coords':[0.0, 0.0, 5.0],
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -644,8 +642,8 @@ if __name__ == '__main__':
             
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_opti_z(nv_sig, apd_indices, 532)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
-            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+#            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False)
 #            with labrad.connect() as cxn:  
