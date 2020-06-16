@@ -60,9 +60,9 @@ def do_image_sample(nv_sig, apd_indices):
 #    scan_range = 0.6
 #    scan_range = 0.5
 #    scan_range = 0.3
-    scan_range = 0.2
+#    scan_range = 0.2
 #    scan_range = 0.1
-#    scan_range = 0.05
+    scan_range = 0.05
 #    scan_range = 0.025
     
 #    num_steps = 300
@@ -106,9 +106,9 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
-    num_steps = 151
+    num_steps = 51
     num_runs = 2
-    uwave_power = -13.0
+    uwave_power = -7.0
 #    uwave_power = -20.0
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
@@ -428,13 +428,12 @@ if __name__ == '__main__':
     nd = 'nd_1.0'
     sample_name = 'ayrton12'
     
-    search = { 'coords': [0.0, 0.0, 5.0],
+    search = { 'coords': [0.056, -0.121, 5.0],
             'name': '{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-    
     
     nv_sig_list = [search]
     
@@ -444,14 +443,14 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.01])
 #        set_xyz([-0.116, -0.073, 2.61])
         
-        with labrad.connect() as cxn:
-            cxn.filter_slider_ell9k.set_filter('nd_1.5')
+#        with labrad.connect() as cxn:
+#            cxn.filter_slider_ell9k.set_filter('nd_1.5')
 #            cxn.pulse_streamer.constant([], 0.0, 0.0)
 #            input('Laser currently turned off, Press enter to stop...')
         
