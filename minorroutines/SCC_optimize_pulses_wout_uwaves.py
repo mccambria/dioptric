@@ -636,9 +636,9 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
     
 if __name__ == '__main__':
     sample_name = 'bachman-A1'
-    ensemble_B1 = { 'coords':[-0.404, 0.587, 5.39],
-            'name': '{}-A6'.format(sample_name),
-            'expected_count_rate': 6600, 'nd_filter': 'nd_0',
+    ensemble_B1 = { 'coords':[0.315, 0.214, 5.0],
+            'name': '{}-B1'.format(sample_name),
+            'expected_count_rate': 8000, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
@@ -656,7 +656,7 @@ if __name__ == '__main__':
 #        2000.,  3000.,  4000.,   6000.,   8000.,  10000.,
 #        20000.,  30000.,  40000.,    60000.,   80000.,  100000.]
     test_pulse_dur_list = numpy.array([1, 5, 10, 15, 20 ,25, 30, 35, 40, 45])*10**6
-    readout_power = numpy.linspace(0.6,0.8, 3)
+    readout_power = numpy.linspace(0.1,0.8, 8)
 #    readout_power = [0.3]
     ion_time = numpy.array([0, 0.5, 1, 10, 25, 75, 150, 200])*10**3
 #    readout_time = [10**7]

@@ -245,8 +245,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             break
 
         # Optimize
-#        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
-        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices, 532)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
+#        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices, 532)
         opti_coords_list.append(opti_coords)
 
         # Apply the microwaves
