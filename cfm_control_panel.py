@@ -68,17 +68,17 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
-#    scan_range = 1.0
+    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
 #    scan_range = 0.2
 #    num_steps = 150
 #    scan_range = 0.1
-#    num_steps = 120
+    num_steps = 120
 #    scan_range = 0.3
 #    num_steps = 90
-    scan_range = 0.05
-    num_steps = 60
+#    scan_range = 0.05
+#    num_steps = 60
 #    scan_range = 0.025
 #    num_steps = 10
 #    num_steps = 5
@@ -155,7 +155,7 @@ def do_resonance(nv_sig, apd_indices, color_ind, freq_center=2.87, freq_range=0.
 def do_resonance_state(nv_sig, apd_indices, state):
 
     freq_center = nv_sig['resonance_{}'.format(state.name)]
-    freq_range = 0.07
+    freq_range = 0.05
     num_steps = 51
     num_runs = 7
     uwave_power = -8.0  # for 515 nm light at 8 mW
@@ -539,7 +539,7 @@ if __name__ == '__main__':
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 40,
-            "resonance_LOW": 2.8,"rabi_LOW": 113.5, "uwave_power_LOW": 9.0,
+            "resonance_LOW": 2.787,"rabi_LOW": 114.3, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9451,"rabi_HIGH": 159.8,"uwave_power_HIGH": 10.0} 
     
     ensemble_A6 = { 'coords':[1.664, -1.243, 5.33], 
@@ -556,9 +556,23 @@ if __name__ == '__main__':
             "resonance_LOW": 2.8063,"rabi_LOW": 113.5, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9447,"rabi_HIGH": 159.8,"uwave_power_HIGH": 10.0} 
     
-    ensemble_B1 = { 'coords':[0.315, 0.214, 5.0],
+    ensemble_A1 = { 'coords':[-2.547, -0.454, 5.0],
+            'name': '{}-A1'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
+            'magnet_angle': 0, #60
+            "resonance_LOW": 2.8235,"rabi_LOW": 110.4, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9878,"rabi_HIGH": 549.1,"uwave_power_HIGH": 10.0} 
+    
+    ensemble_B1 = { 'coords':[-2.113, 1.079, 5.06],
             'name': '{}-B1'.format(sample_name),
-            'expected_count_rate': 8000, 'nd_filter': 'nd_0',
+            'expected_count_rate': 580, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
@@ -570,7 +584,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.8235,"rabi_LOW": 110.4, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9878,"rabi_HIGH": 549.1,"uwave_power_HIGH": 10.0} 
   
-    nv_sig_list = [ensemble_B6]
+    nv_sig_list = [ensemble_B1]
     
     
     aom_ao_589_pwr = 0.25
@@ -586,7 +600,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.0])

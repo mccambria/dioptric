@@ -309,6 +309,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
+#    print(x_voltages)
 
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]
