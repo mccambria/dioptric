@@ -23,9 +23,10 @@ def plot_time_sweep(test_pulse_dur_list, sig_count_list, title, text = None):
     test_pulse_dur_list = numpy.array(test_pulse_dur_list)
     
     fig, ax = plt.subplots(1,1, figsize = (8.5, 8.5)) 
-    ax.plot(test_pulse_dur_list / 10**3, sig_count_list, 'bo')
-    ax.set_xlabel('Dark time (us)')
+    ax.plot(test_pulse_dur_list / 10**6, sig_count_list, 'bo')
+    ax.set_xlabel('Dark time (ms)')
     ax.set_ylabel('Counts (single shot)')
+    ax.set_xscale('log')
     ax.set_title(title)
 #    ax.legend()
     
@@ -109,17 +110,82 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, initial_pulse_time, dark_t
     cxn.apd_tagger.stop_tag_stream()
     
     return sig_counts
+# %% The routine if we want to moniter dark times in the second-long times.
+def main_s(nv_sig, apd_indices, num_reps, initial_pulse_time, dark_time, init_pulse_color):
+
+    with labrad.connect() as cxn:
+        sig_counts = main_with_cxn(cxn, nv_sig, apd_indices, num_reps, initial_pulse_time, dark_time,  init_pulse_color)
+        
+    return sig_counts
+def main_s_with_cxn(cxn, nv_sig, apd_indices, num_reps, initial_pulse_time, dark_time, init_pulse_color):
+
+    tool_belt.reset_cfm(cxn)
+
+# Initial Calculation and setup
+    readout_time = nv_sig['pulsed_SCC_readout_dur']
+    aom_ao_589_pwr = nv_sig['am_589_power']
+    nd_filter = nv_sig['nd_filter']
+        
+    # set the nd_filter for yellow
+    cxn.filter_slider_ell9k.set_filter(nd_filter)
+    
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+
+    #delay of aoms and laser
+    laser_515_delay = shared_params['515_laser_delay']
+    aom_589_delay = shared_params['589_aom_delay']
+    laser_638_delay = shared_params['638_DM_laser_delay']
+    
+#    wait_time = shared_params['post_polarization_wait_dur']
+
+    if init_pulse_color == 532:
+        init_pulse_delay =laser_515_delay
+    elif init_pulse_color == 638:
+        init_pulse_delay =laser_638_delay
+
+    # Estimate the lenth of the sequance            
+    file_name = 'simple_pulse.py'
+    seq_args = [readout_time, apd_indices[0], aom_ao_589_pwr,
+                init_pulse_color]
+    print(seq_args)
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    
+    #for i in range(num_reps): 
+    # Shine the light for some amoutn of time
+    # wait with time.sleep()
+    # readout out
+    
+    # Collect data
+
+    # Load the APD
+    cxn.apd_tagger.start_tag_stream(apd_indices)
+    # Clear the buffer
+    cxn.apd_tagger.clear_buffer()
+    # Run the sequence
+    cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
+
+    new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+#    print(new_counts)
+    sample_counts = new_counts[0]
+
+    # signal counts are even - get every second element starting from 0
+    sig_counts = numpy.average(sample_counts)
+    
+    cxn.apd_tagger.stop_tag_stream()
+    
+    return sig_counts
 # %%
 
 def do_dark_time_w_red(nv_sig, test_pulse_dur_list = None):
     apd_indices = [0]
-    num_reps = 1000
+    num_reps = 500
     if not test_pulse_dur_list:
 #        test_pulse_dur_list = [10**3,5*10**3, 10**4,2*10**4,5*10**4,10**5,2*10**5, 5*10**5, 10**6, 5*10**6,
 #                               10**7, 5*10**7]
         test_pulse_dur_list = [10**3,2*10**3, 3*10**3, 4*10**3, 5*10**3,6*10**3, 7*10**3,
                                8*10**3,9*10**3,10**4,2*10**4, 3*10**4, 4*10**4, 10**5]
-    initial_pulse_time = 10**5
+    initial_pulse_time = 10**6
     # measure laser powers:
 #    green_optical_power_pd, green_optical_power_mW, \
 #            red_optical_power_pd, red_optical_power_mW, \
@@ -184,7 +250,7 @@ def do_dark_time_w_red(nv_sig, test_pulse_dur_list = None):
 
 def do_dark_time_w_green(nv_sig, test_pulse_dur_list = None):
     apd_indices = [0]
-    num_reps = 1000
+    num_reps = 500
     if not test_pulse_dur_list:
         test_pulse_dur_list = [10**3,5*10**3, 10**4,2*10**4,5*10**4,10**5,2*10**5, 5*10**5, 10**6, 5*10**6,
                                10**7, 5*10**7]
@@ -253,9 +319,9 @@ def do_dark_time_w_green(nv_sig, test_pulse_dur_list = None):
     
 if __name__ == '__main__':
     sample_name = 'bachman-A1'
-    ensemble_B1 = { 'coords':[-0.404, 0.587, 5.39],
-            'name': '{}-A6'.format(sample_name),
-            'expected_count_rate': 6600, 'nd_filter': 'nd_0',
+    ensemble_B1 = { 'coords':[-2.113, 1.079, 5.06],
+            'name': '{}-B1'.format(sample_name),
+            'expected_count_rate': 580, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**6, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
@@ -268,6 +334,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9878,"rabi_HIGH": 582.3,"uwave_power_HIGH": 10.0} 
     nv_sig = ensemble_B1
     
-#    do_dark_time_w_green(nv_sig)
-    do_dark_time_w_red(nv_sig)
+    do_dark_time_w_green(nv_sig, test_pulse_dur_list = [10**3, 5*10**3, 10**4, 5*10**4,10**5, 5*10**5, 10**6, 5*10**6,
+                               10**7, 5*10**7, 10**8])
+#    do_dark_time_w_red(nv_sig)
     

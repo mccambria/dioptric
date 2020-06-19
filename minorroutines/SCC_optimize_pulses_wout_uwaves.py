@@ -636,9 +636,9 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
     
 if __name__ == '__main__':
     sample_name = 'bachman-A1'
-    ensemble_B1 = { 'coords':[0.315, 0.214, 5.0],
+    ensemble_B1 = { 'coords':[-2.113, 1.079, 5.06],
             'name': '{}-B1'.format(sample_name),
-            'expected_count_rate': 8000, 'nd_filter': 'nd_0.5',
+            'expected_count_rate': 580, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
@@ -662,16 +662,18 @@ if __name__ == '__main__':
 #    readout_time = [10**7]
 
     # Run the program
-#    optimize_ion_pulse_length(nv_sig)
+    optimize_ion_pulse_length(nv_sig)
 #    optimize_reion_pulse_length(nv_sig)
 #    optimize_init_ion_pulse_length(nv_sig)
-    for power in readout_power:
-        nv_sig['am_589_power'] = power
-        for ti in ion_time:
-            print(' \nReadout power set to {} V'.format(power))
-            print('Ionization time set to {} us'.format(ti/10**3))
-            nv_sig['pulsed_ionization_dur'] = int(ti)            
-            optimize_readout_pulse_length(nv_sig, test_pulse_dur_list = test_pulse_dur_list)
+    
+#    for power in readout_power:
+#        nv_sig['am_589_power'] = power
+#        for ti in ion_time:
+#            print(' \nReadout power set to {} V'.format(power))
+#            print('Ionization time set to {} us'.format(ti/10**3))
+#            nv_sig['pulsed_ionization_dur'] = int(ti)            
+#            optimize_readout_pulse_length(nv_sig, test_pulse_dur_list = test_pulse_dur_list)
+            
 #    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
 #    optimize_readout_pulse_power(nv_sig)

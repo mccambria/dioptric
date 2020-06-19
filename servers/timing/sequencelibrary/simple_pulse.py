@@ -35,7 +35,7 @@ def get_seq(pulser_wiring, args):
     tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
         
     # make sure only the color passed is either 532 or 589
-    tool_belt.color_ind_err(color_ind)
+#    tool_belt.color_ind_err(color_ind)
         
     # Define the sequence
     seq = Sequence()
@@ -66,7 +66,9 @@ def get_seq(pulser_wiring, args):
 if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 1,
-              'do_532_aom': 2}
-    args = [250, 500, 0]
-    seq, ret_vals = get_seq(wiring, args)
+              'do_532_aom': 2,
+              'ao_638_aom': 3,
+              'ao_589_aom': 1}
+    args = [250, 500, 0, 1.0, 532]
+    seq, ret_vals, _ = get_seq(wiring, args)
     seq.plot()
