@@ -174,7 +174,7 @@ def do_dark_time_w_red(nv_sig, test_pulse_dur_list = None):
 #                               10**7, 5*10**7]
         test_pulse_dur_list = [10**3,2*10**3, 3*10**3, 4*10**3, 5*10**3,6*10**3, 7*10**3,
                                8*10**3,9*10**3,10**4,2*10**4, 3*10**4, 4*10**4, 10**5]
-    initial_pulse_time = 10**6
+    initial_pulse_time = 10**9
         
     # create some lists for data
     sig_count_list = []
