@@ -182,7 +182,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
                 init_pulse_delay, illum_pulse_delay, 
                 aom_ao_589_pwr, apd_indices[0],
                 init_color_ind, illum_color_ind]
-    seq_args = [int(el) for el in seq_args]
+#    seq_args = [int(el) for el in seq_args]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]

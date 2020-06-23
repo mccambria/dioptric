@@ -121,7 +121,7 @@ def decode_time_tags(ret_vals_string):
 # %% Matplotlib plotting utils
 
 
-def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts'):
+def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts', min_value=None):
     """
     Creates a figure containing a single grayscale image and a colorbar.
 
@@ -143,21 +143,10 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
 
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',
-                    extent=tuple(imgExtent))
+                    extent=tuple(imgExtent), vmin = min_value)
 
-    # Check if we should clip or autoscale
-    clipAtThousand = False
-    if clipAtThousand:
-        if numpy.all(numpy.isnan(imgArray)):
-            imgMax = 0  # No data yet
-        else:
-            imgMax = numpy.nanmax(imgArray)
-        if imgMax > 1000:
-            img.set_clim(None, 1000)
-        else:
-            img.autoscale()
-    else:
-        img.autoscale()
+#    if min_value == None:
+#        img.autoscale()
 
     # Add a colorbar
     clb = plt.colorbar(img)

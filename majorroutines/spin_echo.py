@@ -257,7 +257,7 @@ def fit_data(precession_dur_range, rabi_period,
     amplitude = 0.07
     offset = 0.93
     decay_time = 2000.0
-    revival_time = 40000
+    revival_time = 20000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -480,8 +480,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
             break
 
         # Optimize
-#        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = True)
-        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices, 532)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, aom_ao_589_pwr = 1.0, disable = True)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -689,10 +688,10 @@ if __name__ == '__main__':
     center_freq = 2.8706 #hopper 03/19/20
 
     # folder = 'spin_echo/2019_12'
-    folder = 'spin_echo/branch_Spin_to_charge/2020_03'
+    folder = 'spin_echo/branch_Spin_to_charge/2020_06'
 
     # temp
-    file = '2020_03_20-10_12_56-hopper-ensemble'
+    file = '2020_06_22-14_57_44-Hopper-ensemble'
 
     # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
 

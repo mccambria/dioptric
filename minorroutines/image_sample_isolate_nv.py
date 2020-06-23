@@ -14,12 +14,37 @@ import time
 import copy
 # %%
 
-reset_range = 1.0
-image_range = 1.0
+reset_range = 1.5
+image_range = 1.5
 num_steps = 120
-num_steps_reset = 120
+num_steps_reset = 50
 apd_indices = [0]
 # %%
+
+def plot_dif_fig(coords, x_voltages, dif_img_array, readout, title ):
+    x_coord = coords[0]
+    half_x_range = image_range / 2
+    x_low = x_coord - half_x_range
+    x_high = x_coord + half_x_range
+    y_coord = coords[1]
+    half_y_range = image_range / 2
+    y_low = y_coord - half_y_range
+    y_high = y_coord + half_y_range
+    
+    dif_img_array_kcps = (dif_img_array / 1000) / (readout / 10**9)
+    
+    pixel_size = x_voltages[1] - x_voltages[0]
+    half_pixel_size = pixel_size / 2
+    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                  y_low - half_pixel_size, y_high + half_pixel_size]
+ 
+    fig = tool_belt.create_image_figure(dif_img_array_kcps, img_extent, 
+                                        clickHandler=None, title = title, 
+                                        color_bar_label = 'Difference (kcps)', 
+                                        min_value = 0)
+    fig.canvas.draw()
+    fig.canvas.flush_events()  
+    return fig
 
 def write_pos(prev_pos, num_steps):
     yDim = num_steps
@@ -59,12 +84,11 @@ def red_scan(x_voltages, y_voltages, z_center):
             # update the prev_pos
             prev_pos = [x_ind, y_ind]
             # Move to the specified x and y position
-#            print(x_voltages[x_ind], y_voltages[y_ind])
             tool_belt.set_xyz(cxn, [x_voltages[x_ind], y_voltages[y_ind], z_center])
             # Shine red light for 0.1 s
             cxn.pulse_streamer.constant([7], 0.0, 0.0)
-            time.sleep(0.01)
-            cxn.pulse_streamer.constant([], 0.0, 0.0)
+#            time.sleep(0.01)
+#            cxn.pulse_streamer.constant([], 0.0, 0.0)
   
 def green_scan(x_voltages, y_voltages, z_center):
     with labrad.connect() as cxn:       
@@ -77,7 +101,6 @@ def green_scan(x_voltages, y_voltages, z_center):
             # update the prev_pos
             prev_pos = [x_ind, y_ind]
             # Move to the specified x and y position
-#            print(x_voltages[x_ind], y_voltages[y_ind])
             tool_belt.set_xyz(cxn, [x_voltages[x_ind], y_voltages[y_ind], z_center])
             # Shine red light for 0.1 s
             cxn.pulse_streamer.constant([3], 0.0, 0.0)
@@ -92,65 +115,91 @@ def main(nv_sig, green_pulse_time):
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
+    
     # get a list of x and y voltages for the galvo to position the red light at
     with labrad.connect() as cxn:    
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        reset_range, reset_range,
                                                        num_steps_reset, 10**6)
     print('Resetting with red light\n...')
-#    print('Scanning with red light\n...')
     red_scan(x_voltages, y_voltages, z_center)
+    
+    with labrad.connect() as cxn:        
+        print('Waiting for {} us'.format(green_pulse_time/10**3))
+        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+        # Use two methods to pulse the green light, depending on pulse length
+        if green_pulse_time < 10**9:
+            seq_args = [green_pulse_time, 0, 0.0, 532]           
+            seq_args_string = tool_belt.encode_seq_args(seq_args)            
+            cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
+        else:
+            cxn.pulse_streamer.constant([], 0.0, 0.0)
+            time.sleep(green_pulse_time/ 10**9)
+        cxn.pulse_streamer.constant([], 0.0, 0.0)     
         
     # collect an image under yellow right after ionization
     print('Scanning yellow light\n...')
     ref_img_array, x_voltages, y_voltages = image_sample.main(nv_sig, image_range, image_range, num_steps, 
                       aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
-
+    
     print('Resetting with red light\n...')
     red_scan(x_voltages, y_voltages, z_center)
-#    print('Scanning with green light\n...')
-#    green_scan(x_voltages, y_voltages, z_center)
  
     # now pulse the green at the center of the scan for a short time    
     with labrad.connect() as cxn:        
         print('Pulsing green light for {} us'.format(green_pulse_time/10**3))
-        print(x_center, y_center, z_center)
         tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-        cxn.pulse_streamer.constant([3], 0.0, 0.0)
-        time.sleep(green_pulse_time/ 10**9)
+        # Use two methods to pulse the green light, depending on pulse length
+        if green_pulse_time < 10**9:
+            shared_params = tool_belt.get_shared_parameters_dict(cxn)
+            laser_515_delay = shared_params['515_laser_delay']
+            seq_args = [laser_515_delay, green_pulse_time, 0.0, 532]           
+            seq_args_string = tool_belt.encode_seq_args(seq_args)            
+            cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
+        else:
+            cxn.pulse_streamer.constant([3], 0.0, 0.0)
+            time.sleep(green_pulse_time/ 10**9)
         cxn.pulse_streamer.constant([], 0.0, 0.0)
-#        seq_args = [green_pulse_time, 100, 532]           
-#        seq_args_string = tool_belt.encode_seq_args(seq_args)            
-#        cxn.pulse_streamer.stream_immediate('analog_sequence_test.py', 1, seq_args_string)
+
         
     # collect an image under yellow after green pulse
     print('Scanning yellow light\n...')
     sig_img_array, x_voltages, y_voltages = image_sample.main(nv_sig, image_range, image_range, num_steps, 
                       aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
-    
-    dif_img_array = sig_img_array - ref_img_array
-    x_coord = coords[0]
-    half_x_range = image_range / 2
-    x_low = x_coord - half_x_range
-    x_high = x_coord + half_x_range
-    y_coord = coords[1]
-    half_y_range = image_range / 2
-    y_low = y_coord - half_y_range
-    y_high = y_coord + half_y_range
-    
-    dif_img_array_kcps = (dif_img_array / 1000) / (readout / 10**9)
-    
-    pixel_size = x_voltages[1] - x_voltages[0]
-    half_pixel_size = pixel_size / 2
-    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                  y_low - half_pixel_size, y_high + half_pixel_size]
 
-#    title = 'Yellow scan (after green scan vs after red scan)'
+    # Measure the green power
+    with labrad.connect() as cxn:  
+        cxn.pulse_streamer.constant([3], 0.0, 0.0)
+        opt_volt = tool_belt.opt_power_via_photodiode(532)
+        opt_power = tool_belt.calc_optical_power_mW(532, opt_volt)
+        time.sleep(0.1)
+        cxn.pulse_streamer.constant([], 0.0, 0.0)
+
+    # Subtract and plot
+    dif_img_array = sig_img_array - ref_img_array
+    
     title = 'Yellow scan (with/without green pulse)\nGreen pulse {} ms'.format(green_pulse_time/10**6) 
-    fig = tool_belt.create_image_figure(dif_img_array_kcps, img_extent, clickHandler=None, title = title, color_bar_label = 'Difference (kcps)')
-    # Redraw the canvas and flush the changes to the backend
-    fig.canvas.draw()
-    fig.canvas.flush_events()  
+    fig = plot_dif_fig(coords, x_voltages, dif_img_array, readout, title )
+    
+#    x_coord = coords[0]
+#    half_x_range = image_range / 2
+#    x_low = x_coord - half_x_range
+#    x_high = x_coord + half_x_range
+#    y_coord = coords[1]
+#    half_y_range = image_range / 2
+#    y_low = y_coord - half_y_range
+#    y_high = y_coord + half_y_range
+#    
+#    dif_img_array_kcps = (dif_img_array / 1000) / (readout / 10**9)
+#    
+#    pixel_size = x_voltages[1] - x_voltages[0]
+#    half_pixel_size = pixel_size / 2
+#    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+#                  y_low - half_pixel_size, y_high + half_pixel_size]
+#
+#    fig = tool_belt.create_image_figure(dif_img_array_kcps, img_extent, clickHandler=None, title = title, color_bar_label = 'Difference (kcps)', vmin = 0)
+#    fig.canvas.draw()
+#    fig.canvas.flush_events()  
     
     # Save data
     timestamp = tool_belt.get_time_stamp()
@@ -163,6 +212,10 @@ def main(nv_sig, green_pulse_time):
                'num_steps': num_steps,
                'green_pulse_time': green_pulse_time,
                'green_pulse_time-units': 'ns',
+               'green_optical_voltage': opt_volt,
+               'green_optical_voltage-units': 'V',
+               'green_opt_power': opt_power,
+               'green_opt_power-units': 'mW',
                'readout': readout,
                'readout-units': 'ns',
                'x_voltages': x_voltages.tolist(),
@@ -183,32 +236,47 @@ def main(nv_sig, green_pulse_time):
    
 # %%
 if __name__ == '__main__':
-    sample_name = 'bachman-A1'
-    ensemble_B1 = { 'coords':[-2.113, 1.079, 5.06],
-            'name': '{}-B1'.format(sample_name),
-            'expected_count_rate': 580, 'nd_filter': 'nd_0',
+    sample_name = 'Hopper'
+
+    ensemble = { 'coords':[0.0, 0.0, 5.0],
+            'name': '{}-ensemble'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 24, 
-            'magnet_angle': 0, #60
-            "resonance_LOW": 2.8235,"rabi_LOW": 110.4, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9878,"rabi_HIGH": 549.1,"uwave_power_HIGH": 10.0} 
-    nv_sig = ensemble_B1
-#    
-#    green_pulse_time_list = [10**9]
-    green_pulse_time_list = [10**6, 10**7, 10**8, 10**9, 10**10, 10**11]
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+    nv_sig = ensemble
+ 
+#    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
+    green_pulse_time_list = [10**9]
 
-#    green_pulse_time_list = [10**9, 1, 2]
-#    green_pulse_time = 5*10**3
     
-    for t in green_pulse_time_list:
-#        print(i)
-          
+    for t in green_pulse_time_list:          
         main(nv_sig, t)
+        
+    
+    # Replot dif data
+#    file_name = 'branch_Spin_to_charge/2020_06/2020_06_23-14_16_24-Hopper-ensemble_dif'
+#    
+#    data = tool_belt.get_raw_data('image_sample', file_name)
+#    nv_sig = data['nv_sig']
+#    coords = nv_sig['coords']
+#    x_voltages = data['x_voltages']
+#    dif_img_array = numpy.array(data['dif_img_array'])
+#    green_pulse_time = data['green_pulse_time']
+#    readout = data['readout']
+#    
+#    title = 'Yellow scan (with/without green pulse)\nGreen pulse {} ms'.format(green_pulse_time/10**6) 
+#    fig = plot_dif_fig(coords, x_voltages, dif_img_array, readout, title )
+
+        
+    
     
     
         
