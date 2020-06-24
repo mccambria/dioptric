@@ -87,8 +87,8 @@ def red_scan(x_voltages, y_voltages, z_center):
             tool_belt.set_xyz(cxn, [x_voltages[x_ind], y_voltages[y_ind], z_center])
             # Shine red light for 0.1 s
             cxn.pulse_streamer.constant([7], 0.0, 0.0)
-#            time.sleep(0.01)
-#            cxn.pulse_streamer.constant([], 0.0, 0.0)
+            time.sleep(0.01)
+            cxn.pulse_streamer.constant([], 0.0, 0.0)
   
 def green_scan(x_voltages, y_voltages, z_center):
     with labrad.connect() as cxn:       
@@ -104,8 +104,8 @@ def green_scan(x_voltages, y_voltages, z_center):
             tool_belt.set_xyz(cxn, [x_voltages[x_ind], y_voltages[y_ind], z_center])
             # Shine red light for 0.1 s
             cxn.pulse_streamer.constant([3], 0.0, 0.0)
-            time.sleep(0.01)
-            cxn.pulse_streamer.constant([], 0.0, 0.0)  
+#            time.sleep(0.01)
+        cxn.pulse_streamer.constant([], 0.0, 0.0)  
             
 def main(nv_sig, green_pulse_time):
     aom_ao_589_pwr = nv_sig['am_589_power']
@@ -247,14 +247,14 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     nv_sig = ensemble
  
-#    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
-    green_pulse_time_list = [10**9]
+    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
+#    green_pulse_time_list = [10**9]
 
     
     for t in green_pulse_time_list:          
