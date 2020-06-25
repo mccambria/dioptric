@@ -19,19 +19,25 @@ def get_voltages(folder_name):
     sig_voltages = []
     ref_voltages = []
     # r=root, d=directories, f = file_names
-    for r, d, f in os.walk(path):
+    for r, d, f in os.walk(path + folder_name):
         for file_name in f:
             if not file_name.endswith('.txt'):
                 continue
-            with open(os.path.join(r, folder_name, file_name)) as file:
+            with open(os.path.join(r, file_name)) as file:
                 data = json.load(file)
             temps_list = numpy.array(data['temps_list'])
+            # print(data['temps_list'])
+            # print(file_name)
+            # return
+            if len(temps_list) == 0:
+                print(file_name)
             sig_voltages.extend(temps_list[:,0])
             ref_voltages.extend(temps_list[:,1])
         
     for voltages in [sig_voltages, ref_voltages]:
         for val in voltages:
-            print(val)
+            if val > 1.0:
+                print(val)
         print()
         
     
@@ -81,6 +87,7 @@ def get_temperatures(file_name, lookup_name):
     
 if __name__ == '__main__':
     
-    # get_voltages('t1_double_quantum')
-    get_temperatures('temperature.csv', 'thermistor_lookup.csv')
+    # get_voltages('t1_double_quantum_overnight')
+    get_voltages('t1_double_quantum_week')
+    # get_temperatures('temperature.csv', 'thermistor_lookup.csv')
     

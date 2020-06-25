@@ -39,7 +39,7 @@ def main(file_names, nv_data):
     
     centers = [[96, 31], [100, 100], [50,50]]
     fig_labels = [r'(a)', r'(b)', r'(c)']
-    sample_labels = ['Sample A', 'Sample B', 'Sample E']
+    sample_labels = ['Sample A', 'Sample B', 'Sample C']
     
     for ind in range(3):
         
@@ -255,7 +255,7 @@ if __name__ == '__main__':
             'ratio_err': 0.162765942,
         },
         {
-            'name': 'NVE',  # perp_B = 0.0
+            'name': 'NVC',  # perp_B = 0.0
             'gamma': 0.12,
             'gamma_err': 0.011,
             'omega': 0.061,

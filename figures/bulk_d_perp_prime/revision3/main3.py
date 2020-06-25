@@ -1121,6 +1121,7 @@ def main(nv_data):
 
     # Legend
     ax = axes_pack[0]
+    # ax.legend()
     # Label sorting as foretold in the good book, stack overflow
     handles, labels = ax.get_legend_handles_labels()
     labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
@@ -1263,7 +1264,7 @@ if __name__ == '__main__':
     
     # print(rate_coeff)
     
-    # main(nv_data)
+    main(nv_data)
     # phonon_fit(nv_data)
     # color_scatter(nv_data)
     # plot_gamma_omega_vs_angle(nv_data)
@@ -1295,5 +1296,5 @@ if __name__ == '__main__':
     
     # plot_fx()
     
-    get_coupling_constants(nv_data)
+    # get_coupling_constants(nv_data)
 
