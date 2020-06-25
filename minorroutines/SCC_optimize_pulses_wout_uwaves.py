@@ -638,7 +638,7 @@ if __name__ == '__main__':
     sample_name = 'Hopper'
     ensemble = { 'coords':[0.0, 0.0, 5.0],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,

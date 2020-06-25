@@ -225,7 +225,7 @@ def create_figure(file_name):
     y_low = y_coord - half_y_range
     y_high = y_coord + half_y_range
 
-#    img_array_kcps = (img_array / 1000) / (readout / 10**9)
+    img_array_kcps = (img_array / 1000) / (readout / 10**9)
 
     pixel_size = x_voltages[1] - x_voltages[0]
     half_pixel_size = pixel_size / 2
@@ -235,9 +235,10 @@ def create_figure(file_name):
     color_ind =  data['color_ind']
     readout_us = readout / 10**3
     title = 'Confocal scan with {} nm.\nReadout {} us'.format(color_ind, readout_us)
-    fig = tool_belt.create_image_figure(img_array, img_extent,
+    fig = tool_belt.create_image_figure(img_array_kcps, img_extent,
                                         clickHandler=on_click_image,
-                                        title = title)
+                                        title = title, 
+                                        color_bar_label = 'kcps')
     # Redraw the canvas and flush the changes to the backend
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -454,7 +455,7 @@ if __name__ == '__main__':
 #    create_figure(file_name)
 #    reformat_plot('inferno', 'svg')
 
-    file_name = 'branch_Spin_to_charge/2020_04/2020_04_21-10_02_00-hopper-ensemble'
+    file_name = 'branch_Spin_to_charge/2020_05/2020_05_12-11_00_42-hopper-ensemble'
 #    file_name = 'branch_Spin_to_charge/2020_05/2020_05_12-11_14_57-hopper-ensemble'
 #    reformat_plot('inferno', 'svg')
     create_figure(file_name)
