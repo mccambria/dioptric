@@ -376,7 +376,8 @@ if __name__ == '__main__':
 #    sub_folder = "hopper_50s_power"
 #    sub_folder = "hopper_10s_power"
 #    sub_folder = "hopper_1s_power"
-#    folder_name = parent_folder + sub_folder
+    sub_folder = 'junk'
+    folder_name = parent_folder + sub_folder
 #    
 #    ret_vals = radial_distrbution_power(folder_name, sub_folder)
 #    ring_radius_list, ring_err_list, power_list, power_err_list, \
@@ -389,8 +390,8 @@ if __name__ == '__main__':
     
 #    sub_folder = "hopper_4mw_time"
 #    sub_folder = "hopper_8mw_time"
-    sub_folder = "hopper_12Mw_time"
-    folder_name = parent_folder + sub_folder 
+#    sub_folder = "hopper_12Mw_time"
+#    folder_name = parent_folder + sub_folder 
 #    
 #    ret_vals = radial_distrbution_time(folder_name, sub_folder)
 #    ring_radius_list, ring_err_list, green_time_list, \
@@ -404,25 +405,24 @@ if __name__ == '__main__':
     # %% Manual data fitting for power
 
     # Determined by eye from radial plots    
-    powers = [0.02, 0.04, 0.2, 0.25, 0.44, 0.55, 0.63, 0.75, 0.89, 0.98, 1.1, 1.3]   # mW
-    power_err =   numpy.ones(len(powers))
-    power_err = power_err[:]*0.02
+    powers = [0.02, 0.04, 0.2, 0.25, 0.44, 0.55, 0.63, 0.75, 0.89, 0.98, 1.1, 1.3, 3.2, 15.1]   # mW
+    power_err = [0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.07, 0.1]
     
-    radius_1 = [0.1, 1.5, 4, 7, 11, 13.5, 14.5, 14.0, 15.2, 15.0, 16.0,16.3 ] # um
-    radius_1_err = [0.1, 1, 3, 5, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ]
-    radius_10 = [0.5, 2.5, 8, 9.6, 12.8, 14.7, 15.3, 16.7, 17.3, 17.7, 17.8, 18.7] # um
+    radius_1 = [0.1, 1.5, 4, 7, 11, 13.5, 14.5, 14.0, 15.2, 15.0, 16.0,16.3, 19.4, 22.1 ] # um
+    radius_1_err = [0.1, 1, 3, 5, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ]
+    radius_10 = [0.5, 2.5, 8, 9.6, 12.8, 14.7, 15.3, 16.7, 17.3, 17.7, 17.8, 18.7, 21.8, 24.2] # um
     radius_10_err = numpy.ones(len(radius_10))
     radius_10_err = radius_10_err[:]*0.5 # um
-    radius_50 = [1.5, 3.5, 10.5, 13.6, 15.4, 16.5, 17.4, 19.3, 18.4, 19.4, 20.2,20.5, ] # um
+    radius_50 = [1.5, 3.5, 10.5, 13.6, 15.4, 16.5, 17.4, 19.3, 18.4, 19.4, 20.2,20.5, 23.5,25  ] # um
     radius_50_err =  radius_10_err
 
-#    fig, ax = plt.subplots(1,1, figsize = (8, 8))
-#    ax.errorbar(powers, radius_1, xerr = power_err, yerr = radius_1_err, fmt = 'o', label = '1 s green pulse')
-#    ax.errorbar(powers, radius_10, xerr = power_err, yerr = radius_10_err, fmt = 'o',  label = '10 s green pulse')
-#    ax.errorbar(powers, radius_50, xerr = power_err, yerr = radius_50_err, fmt = 'o',  label = '50 s green pulse')
-#    ax.set_xlabel('Green optical power (mW)')
-#    ax.set_ylabel('Charge ring radius (um)')
-#    ax.legend()
+    fig, ax = plt.subplots(1,1, figsize = (8, 8))
+    ax.errorbar(powers, radius_1, xerr = power_err, yerr = radius_1_err, fmt = 'o', label = '1 s green pulse')
+    ax.errorbar(powers, radius_10, xerr = power_err, yerr = radius_10_err, fmt = 'o',  label = '10 s green pulse')
+    ax.errorbar(powers, radius_50, xerr = power_err, yerr = radius_50_err, fmt = 'o',  label = '50 s green pulse')
+    ax.set_xlabel('Green optical power (mW)')
+    ax.set_ylabel('Charge ring radius (um)')
+    ax.legend()
     
     
     # %% Manual data fitting for green time
@@ -450,12 +450,12 @@ if __name__ == '__main__':
     radius_8mW_err = [ 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
     radius_12mW = [11, 12, 16, 17, 18.2, 18.5, 18.5, 19.7,  20.9, 21, 21.5,  22.2, 22.5, 22.9, 22.5 ]
     radius_12mW_err = [2, 2, 1.0, 0.5, 0.5, 1, 0.5, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3,0.3]
-#    print(len(radius_12mW_err))
-    fig, ax = plt.subplots(1,1, figsize = (8, 8))
-    ax.errorbar(times, radius_4mW, yerr = radius_4mW_err, fmt = 'o', label = '0.3 mW green pulse')
-    ax.errorbar(times, radius_8mW, yerr = radius_8mW_err, fmt = 'o', label = '0.75 mW green pulse')
-    ax.errorbar(times_12, radius_12mW, yerr = radius_12mW_err, fmt = 'o', label = '1.3 mW green pulse')
-    ax.set_xlabel('Green pulse time (s)')
-    ax.set_ylabel('Charge ring radius (um)')
-    ax.legend()
+    
+#    fig, ax = plt.subplots(1,1, figsize = (8, 8))
+#    ax.errorbar(times, radius_4mW, yerr = radius_4mW_err, fmt = 'o', label = '0.3 mW green pulse')
+#    ax.errorbar(times, radius_8mW, yerr = radius_8mW_err, fmt = 'o', label = '0.75 mW green pulse')
+#    ax.errorbar(times_12, radius_12mW, yerr = radius_12mW_err, fmt = 'o', label = '1.3 mW green pulse')
+#    ax.set_xlabel('Green pulse time (s)')
+#    ax.set_ylabel('Charge ring radius (um)')
+#    ax.legend()
 

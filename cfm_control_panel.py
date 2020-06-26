@@ -68,8 +68,9 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
+    scan_range = 1.5
 #    scan_range = 1.0
-    scan_range = 0.5
+#    scan_range = 0.5
 #    num_steps = 200
 #    scan_range = 0.2
 #    num_steps = 150
@@ -585,7 +586,7 @@ if __name__ == '__main__':
             with labrad.connect() as cxn:
                 cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #     
-#            for image_z in numpy.linspace(4.8, 5.7, 9):
+#            for image_z in numpy.linspace(4.5, 5.5, 6):
 #                    nv_sig_copy = copy.deepcopy(nv_sig)
 #                    coords = nv_sig_copy['coords']
 #                    nv_sig_copy['coords'] = [coords[0], coords[1], image_z]                
@@ -594,20 +595,12 @@ if __name__ == '__main__':
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
 #            do_determine_n_thresh_with_638(nv_sig, apd_indices)
-#            for p in range(len(aom_ao_589_pwr_list)):
-#                aom_ao_589_pwr = aom_ao_589_pwr_list[p]
-#                print(aom_ao_589_pwr)
-                
-            power_list = [0.3, 0.4, 0.5, 0.6, 0.7]
-            for p in power_list:
-                nv_sig_copy = copy.deepcopy(nv_sig)
-                nv_sig_copy['am_589_power'] = p 
-                do_time_resolved_readout(nv_sig_copy, apd_indices,
-                             638, 589)
+#            do_time_resolved_readout(nv_sig, apd_indices,
+#                         638, 589)
             
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_opti_z(nv_sig, apd_indices, 532)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False)
