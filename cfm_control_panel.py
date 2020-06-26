@@ -487,10 +487,10 @@ def do_time_resolved_readout(nv_sig, apd_indices,
 #    num_reps = 10**3
 #    num_bins = 500
 
-    illumination_time = 1*10**6 
-    num_reps = 10**3
-#    num_reps = 10**4
-    num_bins = 500
+#    illumination_time = 1*10**6 
+#    num_reps = 10**3
+##    num_reps = 10**4
+#    num_bins = 500
     
     # 1
 #    illumination_time = 15*10**6    
@@ -498,9 +498,9 @@ def do_time_resolved_readout(nv_sig, apd_indices,
 #    num_bins = 1500
     
     # 2
-#    illumination_time = 10*10**6    
-#    num_reps = 10**3
-#    num_bins = 1000
+    illumination_time = 10*10**6    
+    num_reps = 10**2
+    num_bins = 1000
     
     # 3
 #    illumination_time = 5*10**6    
@@ -508,8 +508,8 @@ def do_time_resolved_readout(nv_sig, apd_indices,
 #    num_bins = 1000
     
     
-    init_pulse_duration = 10**4
-    num_runs = 1
+    init_pulse_duration = 2*10**6
+    num_runs = 10
     time_resolved_readout.main(nv_sig, apd_indices, 
                    illumination_time, init_pulse_duration,
                    init_color_ind, illum_color_ind,
@@ -541,11 +541,11 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
-
     
-
+    
+    
     nv_sig_list = [ensemble]
-    
+
     
     aom_ao_589_pwr = 0.25
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
@@ -560,7 +560,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.0])
@@ -597,12 +597,17 @@ if __name__ == '__main__':
 #            for p in range(len(aom_ao_589_pwr_list)):
 #                aom_ao_589_pwr = aom_ao_589_pwr_list[p]
 #                print(aom_ao_589_pwr)
-#            do_time_resolved_readout(nv_sig, apd_indices,
-#                             532, 589)
+                
+            power_list = [0.3, 0.4, 0.5, 0.6, 0.7]
+            for p in power_list:
+                nv_sig_copy = copy.deepcopy(nv_sig)
+                nv_sig_copy['am_589_power'] = p 
+                do_time_resolved_readout(nv_sig_copy, apd_indices,
+                             638, 589)
             
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_opti_z(nv_sig, apd_indices, 532)
-            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False)

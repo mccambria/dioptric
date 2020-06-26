@@ -174,7 +174,7 @@ def do_dark_time_w_red(nv_sig, test_pulse_dur_list = None):
 #                               10**7, 5*10**7]
         test_pulse_dur_list = [10**3,2*10**3, 3*10**3, 4*10**3, 5*10**3,6*10**3, 7*10**3,
                                8*10**3,9*10**3,10**4,2*10**4, 3*10**4, 4*10**4, 10**5]
-    initial_pulse_time = 10**9
+    initial_pulse_time = 10**6
         
     # create some lists for data
     sig_count_list = []
@@ -270,21 +270,22 @@ def do_dark_time_w_green(nv_sig, test_pulse_dur_list = None):
 # %% Run the files
     
 if __name__ == '__main__':
-    sample_name = 'bachman-A1'
-    ensemble_B1 = { 'coords':[-2.113, 1.079, 5.06],
-            'name': '{}-B1'.format(sample_name),
-            'expected_count_rate': 580, 'nd_filter': 'nd_0',
+    sample_name = 'Hopper'
+
+    ensemble = { 'coords':[0.0, 0.0, 5.0],
+            'name': '{}-ensemble'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10**6, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
             'magnet_angle': 0,
-            "resonance_LOW": 2.7555,"rabi_LOW": 385.1, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9878,"rabi_HIGH": 582.3,"uwave_power_HIGH": 10.0} 
-    nv_sig = ensemble_B1
+            "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+    nv_sig = ensemble
     
 #    do_dark_time_w_green(nv_sig, test_pulse_dur_list = [10**3, 5*10**3, 10**4, 5*10**4,10**5, 5*10**5, 10**6, 5*10**6,
 #                               10**7, 5*10**7, 10**8])
