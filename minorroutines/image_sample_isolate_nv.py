@@ -19,8 +19,6 @@ image_range = 1.5
 num_steps = 120
 num_steps_reset = 50
 apd_indices = [0]
-pulser_wiring_red = 7
-pulser_wiring_green = 3
 # %%
 
 def plot_dif_fig(coords, x_voltages,range, dif_img_array, readout, title ):
@@ -116,10 +114,10 @@ def main(cxn, nv_sig, green_pulse_time):
     readout = nv_sig['pulsed_SCC_readout_dur']
     green_pulse_time = int(green_pulse_time)
     
-#    pulser_wiring = cxn.pulse_streamer.on_get_wiring('do_638_laser')
-#    print(pulser_wiring)
-#    pulser_wiring_green = pulser_wiring['do_532_aom']
-#    pulser_wiring_red = pulser_wiring['do_638_laser']
+    # get the wiring for the green and red
+    wiring = tool_belt.get_pulse_streamer_wiring(cxn)
+#    pulser_wiring_green = wiring['do_532_aom']
+    pulser_wiring_red = wiring['do_638_laser']
     
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()

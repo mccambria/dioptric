@@ -455,8 +455,8 @@ if __name__ == '__main__':
 #    create_figure(file_name)
 #    reformat_plot('inferno', 'svg')
 
-    file_name = 'branch_Spin_to_charge/2020_05/2020_05_12-11_00_42-hopper-ensemble'
+    file_name = 'branch_Spin_to_charge/2020_06/2020_06_26-15_27_36-choy-ensemble'
 #    file_name = 'branch_Spin_to_charge/2020_05/2020_05_12-11_14_57-hopper-ensemble'
-#    reformat_plot('inferno', 'svg')
-    create_figure(file_name)
+    reformat_plot('inferno', 'svg')
+#    create_figure(file_name)
 
