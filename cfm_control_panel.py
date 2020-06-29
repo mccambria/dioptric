@@ -72,14 +72,14 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
-#    scan_range = 0.2
+    scan_range = 0.28
 #    num_steps = 150
 #    scan_range = 0.1
-#    num_steps = 120
+    num_steps = 120
 #    scan_range = 0.3
 #    num_steps = 90
-    scan_range = 0.05
-    num_steps = 60
+#    scan_range = 0.05
+#    num_steps = 60
 #    scan_range = 0.025
 #    num_steps = 10
 #    num_steps = 5
@@ -558,7 +558,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9675,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
  
     nv2 = { 'coords':[0.245, -0.262, 5.0],
-            'name': '{}-nv1'.format(sample_name),
+            'name': '{}-nv2'.format(sample_name),
             'expected_count_rate': 50, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
@@ -571,7 +571,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7840,"rabi_LOW": 144, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9665,"rabi_HIGH": 282,"uwave_power_HIGH": 10.0} 
     
-    search = { 'coords':[0.221, -0.271, 5.0],
+    search = { 'coords':[0.0, 0.0, 5.0],
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -587,7 +587,7 @@ if __name__ == '__main__':
     
     
     
-    nv_sig_list = [nv2]
+    nv_sig_list = [search]
 
     
     aom_ao_589_pwr = 0.25
@@ -628,11 +628,11 @@ if __name__ == '__main__':
             with labrad.connect() as cxn:
                 cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #     
-#            for image_z in numpy.linspace(4.5, 5.5, 6):
-#                    nv_sig_copy = copy.deepcopy(nv_sig)
-#                    coords = nv_sig_copy['coords']
-#                    nv_sig_copy['coords'] = [coords[0], coords[1], image_z]                
-#                    do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)       
+            for image_z in [4.6, 5.4]:
+                nv_sig_copy = copy.deepcopy(nv_sig)
+                coords = nv_sig_copy['coords']
+                nv_sig_copy['coords'] = [coords[0], coords[1], image_z]                
+                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)  
 
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
@@ -663,7 +663,7 @@ if __name__ == '__main__':
 #                cxn.apd_tagger.clear_buffer()  
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
                 
-            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
+#            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)
  

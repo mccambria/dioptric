@@ -222,24 +222,24 @@ def main(cxn, nv_sig, green_pulse_time):
    
 # %%
 if __name__ == '__main__':
-    sample_name = 'Hopper'
+    sample_name = 'choy'
 
-    ensemble = { 'coords':[0.0, 0.0, 5.0],
-            'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
+    nv2 = { 'coords':[0.245, -0.262, 5.0],
+            'name': '{}-nv2'.format(sample_name),
+            'expected_count_rate': 50, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 60, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
-    nv_sig = ensemble
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
+            'magnet_angle': 20,
+            "resonance_LOW": 2.7840,"rabi_LOW": 144, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9665,"rabi_HIGH": 282,"uwave_power_HIGH": 10.0} 
+    nv_sig = nv2
  
-    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
+#    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
 #    green_pulse_time_list = numpy.array([0.1, 0.25,  0.5,  0.75,
 #                                        1,2.5, 5,7.5 ,
 #                                        10, 25, 50, 75,
@@ -247,7 +247,7 @@ if __name__ == '__main__':
 #                                        1000
 #                                        ])*10**9 # 8 mW, 12 mW, 4 mW
     
-#    green_pulse_time_list = [10**10]
+    green_pulse_time_list = [10**10]
     for t in green_pulse_time_list: 
         with labrad.connect() as cxn:         
             main(cxn, nv_sig, t)

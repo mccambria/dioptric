@@ -171,7 +171,8 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         calc_time_elapsed = now - start_calc_time
         time.sleep(max(sleep_time - calc_time_elapsed, 0))
         # Read the stream and convert from strings to int64s
-        ret_vals = cxn.apd_tagger.read_tag_stream()
+        ret_vals_string = cxn.apd_tagger.read_tag_stream()
+        ret_vals = tool_belt.decode_time_tags(ret_vals_string)
         buffer_timetags, buffer_channels = ret_vals
         buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
 
