@@ -32,8 +32,8 @@ def main(file_names, nv_data):
     """
     
     figwidth = 6.75
-    fig = plt.figure(figsize=(figwidth, 5.0))
-    gs = gridspec.GridSpec(2, 3, height_ratios=[0.4, 0.4])  
+    fig = plt.figure(figsize=(figwidth, 5.5))
+    gs = gridspec.GridSpec(2, 3, height_ratios=[0.4, 0.5])  
     
     # %% Sample scans
     
@@ -99,7 +99,7 @@ def main(file_names, nv_data):
         bar_text = r'2 $\upmu$m '  # Insufficient left padding...
         bar = scale_bar(trans, 2*px_per_micron, bar_text, 'upper right',
                         size_vertical=int(num_steps/100),
-                        pad=0.3, borderpad=0.5, sep=3.0,
+                        pad=0.25, borderpad=0.5, sep=4.0,
                         # frameon=False, color='white',
                         )
         ax.add_artist(bar)
@@ -107,7 +107,7 @@ def main(file_names, nv_data):
         # Labels
         fig_label = fig_labels[ind]
         ax.text(0.035, 0.88, fig_label,
-                transform=ax.transAxes, color='white', fontsize=16)
+                transform=ax.transAxes, color='white', fontsize=18)
         sample_label = sample_labels[ind]
         ax.text(0.035, 0.07, sample_label,
                 transform=ax.transAxes, color='white')
@@ -161,8 +161,8 @@ def main(file_names, nv_data):
     
     # Fig label
     fig_label = fig_labels[ind]
-    ax.text(-0.13, 0.96, '(d)', transform=ax.transAxes,
-            color='black', fontsize=16)
+    ax.text(-0.143, 0.97, '(d)', transform=ax.transAxes,
+            color='black', fontsize=18)
     
     # %% perp_B = 0 ratio
     
@@ -199,11 +199,12 @@ def main(file_names, nv_data):
     ax.set_xticks(tick_pos)
     ax.set_xticklabels(tick_labels)
     
-    plt.rcParams.update({'font.size': 13})
+    plt.rcParams.update({'font.size': 15})
     
     # %% Wrap up
         
     shift = 0.103
+    # shift = 0.125
     gs.tight_layout(fig, pad=0.3, h_pad=1.0, w_pad=0.3, rect=[-shift,0,1,1])
     pos = lower_ax.get_position().bounds
     shift += 0.02
@@ -222,7 +223,7 @@ if __name__ == '__main__':
         r'\usepackage{upgreek}',
         r'\usepackage{helvet}',
        ]  
-    plt.rcParams.update({'font.size': 13})
+    plt.rcParams.update({'font.size': 15})
     plt.rcParams.update({'font.family': 'sans-serif'})
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)

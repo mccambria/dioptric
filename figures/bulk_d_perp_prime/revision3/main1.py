@@ -165,8 +165,8 @@ def subtraction_plot(ax, analysis_file_path):
     
     trans = ax.transAxes
     # trans = ax.get_figure().transFigure  # 0.030, 0.46
-    ax.text(-0.13, 1.05, '(c)', transform=trans,
-            color='black', fontsize=16)
+    ax.text(-0.15, 1.05, '(c)', transform=trans,
+            color='black', fontsize=18)
             
 
 # %% Main
@@ -177,10 +177,10 @@ def main(folder, file_high, file_zero, file_high_to_low,
 
     # plt.rcParams.update({'font.size': 18})  # Increase font size
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
-    fig = plt.figure(figsize=(6.75,6.75))
-    gs = gridspec.GridSpec(2, 2)
+    fig = plt.figure(figsize=(6.75,7.5))
+    gs = gridspec.GridSpec(2, 2, width_ratios=[2,3])
     
-    source = 't1_double_quantum/paper_data/bulk_dq/'
+    source = 't1_double_quantum/data_folders/paper_data/bulk_dq/'
     path = source + folder
     
     # %% Level structure
@@ -188,10 +188,10 @@ def main(folder, file_high, file_zero, file_high_to_low,
     # Add a new axes, make it invisible, steal its rect
     ax = fig.add_subplot(gs[0, 0])
     ax.set_axis_off()
-    ax.text(-0.295, 1.05, '(a)', transform=ax.transAxes,
-            color='black', fontsize=16)
+    ax.text(-0.43, 1.05, '(a)', transform=ax.transAxes,
+            color='black', fontsize=18)
     
-    ax = plt.Axes(fig, [0.0, 0.51, 0.5, 0.43])
+    ax = plt.Axes(fig, [-0.03, 0.51, 0.5, 0.43])
     ax.set_axis_off()
     fig.add_axes(ax)
     # print(gs)
@@ -284,7 +284,7 @@ def main(folder, file_high, file_zero, file_high_to_low,
     ax.legend(handleheight=2.0, handlelength=0.6)
     
     ax.text(-0.25, 1.05, '(b)', transform=ax.transAxes,
-            color='black', fontsize=16)
+            color='black', fontsize=18)
 
     # %% Subtraction plots
     
@@ -310,7 +310,7 @@ if __name__ == '__main__':
         r'\usepackage{upgreek}',
         r'\usepackage{helvet}',
        ]  
-    plt.rcParams.update({'font.size': 13})
+    plt.rcParams.update({'font.size': 15})
     plt.rcParams.update({'font.family': 'sans-serif'})
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)

@@ -744,6 +744,7 @@ def get_nv_data_csv(file):
     marker_ind = 0
     markers = ['^', 'X', 'o', 's', 'D']
     colors = ['#009E73', '#E69F00', '#0072B2', '#CC79A7', '#D55E00',]
+    markerfacecolors = ['#ACECDB', '#f5b11d', '#72b5db', '#f0a3cd', '#fcbd8b',]
     
     nv_data = []
     header = True
@@ -767,6 +768,7 @@ def get_nv_data_csv(file):
                 nv['name'] = current_name
                 nv['marker'] = markers[marker_ind]
                 nv['color'] = colors[marker_ind]
+                nv['markerfacecolor'] = markerfacecolors[marker_ind]
                 marker_ind += 1
                 # Initialize a new list for each column
                 for column in columns:
@@ -1045,6 +1047,7 @@ def main(nv_data):
         nv = nv_data[ind]
         marker = nv['marker']
         color = nv['color'] 
+        markerfacecolor = nv['markerfacecolor']
         
         name = nv['name']
         # if name in ['NVA1', 'NVA2']:
@@ -1086,30 +1089,30 @@ def main(nv_data):
         ax = axes_pack[0]
         if True in mask:
             ax.errorbar(par_B[mask], omega[mask],
-                        yerr=omega_err[mask], label=name,
-                        marker=marker, color=color, linestyle='None',
-                        ms=ms, lw=lw)
+                        yerr=omega_err[mask], label=name, marker=marker, 
+                        color=color, markerfacecolor=markerfacecolor, 
+                        linestyle='None', ms=ms, lw=lw)
     
         ax = axes_pack[1]
         if True in mask:
             ax.errorbar(par_B[mask], gamma[mask],
-                        yerr=gamma_err[mask], label=name,
-                        marker=marker, color=color, linestyle='None',
-                        ms=ms, lw=lw)
+                        yerr=gamma_err[mask], label=name, marker=marker, 
+                        color=color, markerfacecolor=markerfacecolor, 
+                        linestyle='None', ms=ms, lw=lw)
     
         ax = axes_pack[2]
         if True in mask:
             ax.errorbar(perp_B[mask], omega[mask],
-                        yerr=omega_err[mask], label=name,
-                        marker=marker, color=color, linestyle='None',
-                        ms=ms, lw=lw)
+                        yerr=omega_err[mask], label=name, marker=marker, 
+                        color=color, markerfacecolor=markerfacecolor, 
+                        linestyle='None', ms=ms, lw=lw)
     
         ax = axes_pack[3]
         if True in mask:
             ax.errorbar(perp_B[mask], gamma[mask],
-                        yerr=gamma_err[mask], label=name,
-                        marker=marker, color=color, linestyle='None',
-                        ms=ms, lw=lw)
+                        yerr=gamma_err[mask], label=name, marker=marker, 
+                        color=color, markerfacecolor=markerfacecolor, 
+                        linestyle='None', ms=ms, lw=lw)
             
     # Cast to arrays
     all_omega = numpy.array(all_omega)
@@ -1125,6 +1128,9 @@ def main(nv_data):
     # Label sorting as foretold in the good book, stack overflow
     handles, labels = ax.get_legend_handles_labels()
     labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+    # Switch NVE to NVC
+    labels = list(labels)
+    labels[labels.index('NVE')] = 'NVC'
     # for el in handles:
     #     el.set_yerr_size(0.0)
     ax.legend(handles, labels, bbox_to_anchor=(0., 1.08, 1., .102),
@@ -1153,8 +1159,8 @@ def main(nv_data):
     fig_labels = ['(a)', '(b)', '(c)', '(d)']
     for ind in range(4):
         ax = axes_pack[ind]
-        ax.text(-0.15, 0.92, fig_labels[ind], transform=ax.transAxes,
-                color='black', fontsize=12)
+        ax.text(-0.16, 0.92, fig_labels[ind], transform=ax.transAxes,
+                color='black', fontsize=14)
         
         
     # Linear fits
@@ -1252,7 +1258,7 @@ if __name__ == '__main__':
         r'\usepackage{upgreek}',
         r'\usepackage{helvet}',
        ]  
-    plt.rcParams.update({'font.size': 9.75})
+    plt.rcParams.update({'font.size': 11.25})
     plt.rcParams.update({'font.family': 'sans-serif'})
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)
