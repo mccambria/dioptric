@@ -270,11 +270,11 @@ def do_dark_time_w_green(nv_sig, test_pulse_dur_list = None):
 # %% Run the files
     
 if __name__ == '__main__':
-    sample_name = 'Hopper'
+    sample_name = 'choy'
 
-    ensemble = { 'coords':[0.0, 0.0, 5.0],
-            'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
+    nv1 = { 'coords':[0.227, -0.275, 5.0],
+            'name': '{}-nv1'.format(sample_name),
+            'expected_count_rate': 140, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
@@ -282,15 +282,15 @@ if __name__ == '__main__':
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
-    nv_sig = ensemble
+            'magnet_angle': 20,
+            "resonance_LOW": 2.8181,"rabi_LOW": 137, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9675,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+    nv_sig = nv1
     
 #    do_dark_time_w_green(nv_sig, test_pulse_dur_list = [10**3, 5*10**3, 10**4, 5*10**4,10**5, 5*10**5, 10**6, 5*10**6,
 #                               10**7, 5*10**7, 10**8])
-#    do_dark_time_w_green(nv_sig, test_pulse_dur_list = [10**3,5*10**3, 10**4,5*10**4,10**5, 5*10**5, 10**6, 5*10**6,
-#                               10**7, 5*10**7, 10**8, 5*10**8, 10**9, 5*10**9, 10**10])           
+    do_dark_time_w_green(nv_sig, test_pulse_dur_list = [10**3,5*10**3, 10**4,5*10**4,10**5, 5*10**5, 10**6, 5*10**6,
+                               10**7, 5*10**7, 10**8, 5*10**8, 10**9, 5*10**9, 10**10])           
     do_dark_time_w_red(nv_sig, test_pulse_dur_list =  [10**3,5*10**3, 10**4,5*10**4,10**5, 5*10**5, 10**6, 5*10**6,
                                10**7, 5*10**7, 10**8, 5*10**8, 10**9, 5*10**9, 10**10])
     
