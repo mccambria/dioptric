@@ -22,8 +22,8 @@ def double_gaussian_dip(freq, low_constrast, low_sigma, low_center, low_offset,
     high_gauss = gaussian(freq, high_constrast, high_sigma, high_center, high_offset)
     return low_gauss + high_gauss
 
-def exponential(x, a, d):
-    return a*(1-numpy.exp(-x/d))
+def exponential(x, a, d, c):
+    return c+a*(1-numpy.exp(-x/d))
 
 def power_law(x, a, p):
     return a*x**p
@@ -536,24 +536,46 @@ if __name__ == '__main__':
     radius_50 = [1.5, 3.5, 10.5, 13.6, 15.4, 16.5, 17.4, 19.3, 18.4, 19.4, 20.2,20.5, 23.5,25  ] # um
     radius_50_err =  radius_10_err
     
-    popt_1s_exp, pcov = curve_fit(exponential, powers, radius_1, p0= (20, 1))
-    popt_1s_pwr, pcov = curve_fit(power_law, powers, radius_1, p0= (10, 0.5))
-    popt_1s_sqrt, pcov = curve_fit(sqrt, powers, radius_1, p0= (10))
-    power_linspace = numpy.linspace(powers[0], powers[-1], 1000) 
-
-    fig, ax = plt.subplots(1,1, figsize = (8, 8))
-    ax.errorbar(powers, radius_1, xerr = power_err, yerr = radius_1_err, fmt = 'ko', label = '1 s green pulse')
-    ax.plot(power_linspace, exponential(power_linspace, *popt_1s_exp), 'g-', label = '(1-exp(-x)) fit')
-    ax.plot(power_linspace, power_law(power_linspace, *popt_1s_pwr), 'b-', label = 'x^p, p={} fit'.format('%.2f'%popt_1s_pwr[1]))
-    ax.plot(power_linspace, sqrt(power_linspace, *popt_1s_sqrt), 'r-', label = 'x^0.5 fit')
-   
-#    ax.errorbar(powers, radius_10, xerr = power_err, yerr = radius_10_err, fmt = 'o',  label = '10 s green pulse')
-#    ax.errorbar(powers, radius_50, xerr = power_err, yerr = radius_50_err, fmt = 'o',  label = '50 s green pulse')
-#    ax.set_xscale('log')
-    ax.set_xlabel('Green optical power (mW)')
-    ax.set_ylabel('Charge ring radius (um)')
-    ax.legend()
-    
+#    popt_1s, pcov = curve_fit(exponential, powers, radius_1, p0= (20, 1))
+#    popt_10s, pcov = curve_fit(exponential, powers, radius_10, p0= (20, 1))
+#    popt_50s, pcov = curve_fit(exponential, powers, radius_50, p0= (20, 1))
+#    
+#    power_linspace = numpy.linspace(powers[0], powers[-1], 1000) 
+#
+#    fig, ax = plt.subplots(1,1, figsize = (8, 8))
+#    ax.errorbar(powers, radius_1, xerr = power_err, yerr = radius_1_err, fmt = 'bo', label = '1 s green pulse')
+#    ax.plot(power_linspace, exponential(power_linspace, *popt_1s), 'b-', label = '1 s fit')
+#    ax.errorbar(powers, radius_10, xerr = power_err, yerr = radius_10_err, fmt = 'ro',  label = '10 s green pulse')
+#    ax.plot(power_linspace, exponential(power_linspace, *popt_10s), 'r-', label = '10 s fit')   
+#    ax.errorbar(powers, radius_50, xerr = power_err, yerr = radius_50_err, fmt = 'go',  label = '50 s green pulse')
+#    ax.plot(power_linspace, exponential(power_linspace, *popt_50s), 'g-', label = '50 s fit')
+#
+##    ax.set_xscale('log')
+#    ax.set_xlabel('Green optical power (mW)')
+#    ax.set_ylabel('Charge ring radius (um)')
+#    ax.legend()
+#  
+#    text_eq = r'$A_0 (1- e^{-P/d})$'
+#    
+#    text_1s = '\n'.join(('1 s fit',
+#                      r'$A_0 = {}$ um'.format('%.1f'%popt_1s[0]),
+#                      r'$P = {}$ mW'.format('%.1f'%popt_1s[1])))
+#    text_10s= '\n'.join(('10 s fit',
+#                      r'$A_0 = {}$ um'.format('%.1f'%popt_10s[0]),
+#                      r'$P = {}$ mW'.format('%.2f'%popt_10s[1])))
+#    text_50s = '\n'.join(('50 s fit',
+#                      r'$A_0 = {}$ um'.format('%.1f'%popt_50s[0]),
+#                      r'$P = {}$ mW'.format('%.2f'%popt_50s[1])))  
+#    
+#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+#    ax.text(0.3, 0.6, text_eq, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    ax.text(0.3, 0.52, text_1s, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    ax.text(0.3, 0.35, text_10s, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    ax.text(0.3, 0.20, text_50s, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
     
     # %% Manual data fitting for green time
     
@@ -566,7 +588,7 @@ if __name__ == '__main__':
             1000
             ]
     times_12 = [ 
-            0.25, 0.75,
+            #0.25, 0.75,
             1, 2.5, 5, 7.5 ,
             10, 25, 50, 75,
             100, 250, 500, 
@@ -578,15 +600,49 @@ if __name__ == '__main__':
     radius_4mW_err = [ 1.0, 1, 1, 1, 0.5, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
     radius_8mW = [ 14.5, 16.2, 16.6, 17.1, 17.3, 18, 19, 19.4, 20, 20.5, 20.9, 21.3, 21.2 ]
     radius_8mW_err = [ 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
-    radius_12mW = [11, 12, 16, 17, 18.2, 18.5, 18.5, 19.7,  20.9, 21, 21.5,  22.2, 22.5, 22.9, 22.5 ]
-    radius_12mW_err = [2, 2, 1.0, 0.5, 0.5, 1, 0.5, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3,0.3]
+    radius_12mW = [#11, 12, 
+                   16, 17, 18.2, 18.5, 18.5, 19.7,  20.9, 21, 21.5,  22.2, 22.5, 22.9, 22.5 ]
+    radius_12mW_err = [#2, 2, 
+                       1.0, 0.5, 0.5, 1, 0.5, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3,0.3]
     
-#    fig, ax = plt.subplots(1,1, figsize = (8, 8))
-#    ax.errorbar(times, radius_4mW, yerr = radius_4mW_err, fmt = 'o', label = '0.3 mW green pulse')
-#    ax.errorbar(times, radius_8mW, yerr = radius_8mW_err, fmt = 'o', label = '0.75 mW green pulse')
-#    ax.errorbar(times_12, radius_12mW, yerr = radius_12mW_err, fmt = 'o', label = '1.3 mW green pulse')
+    popt_4mw, pcov = curve_fit(exponential, times, radius_4mW, p0= (20, 30, 5))
+    popt_8mw, pcov = curve_fit(exponential, times, radius_8mW, p0= (20, 30, 5))
+    popt_12mw, pcov = curve_fit(exponential, times_12, radius_12mW, p0= (20, 100, 10))
+    time_linspace = numpy.linspace(0, times_12[-1], 1000)         
+    
+    fig, ax = plt.subplots(1,1, figsize = (8, 8))
+    ax.errorbar(times, radius_4mW, yerr = radius_4mW_err, fmt = 'bo', label = '0.3 mW green pulse')
+    ax.plot(time_linspace, exponential(time_linspace, *popt_4mw), 'b-', label = '0.3 mW fit')
+    ax.errorbar(times, radius_8mW, yerr = radius_8mW_err, fmt = 'ro', label = '0.75 mW green pulse')
+    ax.plot(time_linspace, exponential(time_linspace, *popt_8mw), 'r-', label = '0.75 mW fit')
+    ax.errorbar(times_12, radius_12mW, yerr = radius_12mW_err, fmt = 'go', label = '1.3 mW green pulse')
+    ax.plot(time_linspace, exponential(time_linspace, *popt_12mw), 'g-', label = '1.3 mW fit')
 #    ax.set_xscale('log')
-#    ax.set_xlabel('Green pulse time (s)')
-#    ax.set_ylabel('Charge ring radius (um)')
-#    ax.legend()
+    ax.set_xlabel('Green pulse time (s)')
+    ax.set_ylabel('Charge ring radius (um)')
+    ax.legend()
 
+    text_eq = r'$C + A_0 (1- e^{-t/d})$'
+    
+    text_4mw = '\n'.join(('0.3 mW fit',
+                      r'$C = {}$ s'.format('%.1f'%popt_4mw[2]),
+                      r'$A_0 = {}$ um'.format('%.1f'%popt_4mw[0]),
+                      r'$d = {}$ s'.format('%.1f'%popt_4mw[1])))
+    text_8mw = '\n'.join(('0.75 mW fit',
+                      r'$C = {}$ s'.format('%.1f'%popt_8mw[2]),
+                      r'$A_0 = {}$ um'.format('%.1f'%popt_8mw[0]),
+                      r'$d = {}$ s'.format('%.2f'%popt_8mw[1])))
+    text_12mw = '\n'.join(('1.3 mW fit',
+                      r'$C = {}$ s'.format('%.1f'%popt_12mw[2]),
+                      r'$A_0 = {}$ um'.format('%.1f'%popt_12mw[0]),
+                      r'$d = {}$ s'.format('%.2f'%popt_12mw[1])))  
+    
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.3, 0.6, text_eq, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    ax.text(0.3, 0.52, text_4mw, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    ax.text(0.3, 0.35, text_8mw, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    ax.text(0.3, 0.20, text_12mw, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
