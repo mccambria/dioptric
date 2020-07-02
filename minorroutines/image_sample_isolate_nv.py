@@ -108,7 +108,7 @@ def green_scan(x_voltages, y_voltages, z_center, pulser_wiring_green):
         cxn.pulse_streamer.constant([], 0.0, 0.0)  
   
 # %%          
-def main(cxn, nv_sig, green_pulse_time):
+def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     aom_ao_589_pwr = nv_sig['am_589_power']
     coords = nv_sig['coords']
     readout = nv_sig['pulsed_SCC_readout_dur']
@@ -130,7 +130,7 @@ def main(cxn, nv_sig, green_pulse_time):
     print('Resetting with red light\n...')
     red_scan(x_voltages_r, y_voltages_r, z_center, pulser_wiring_red)
          
-    print('Waiting for {} us'.format(green_pulse_time/10**3))
+    print('Waiting for {} s, during green pulse'.format(green_pulse_time/10**9))
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
     # Use two methods to pulse the green light, depending on pulse length
     if green_pulse_time < 10**9:
@@ -140,7 +140,14 @@ def main(cxn, nv_sig, green_pulse_time):
     else:
         cxn.pulse_streamer.constant([], 0.0, 0.0)
         time.sleep(green_pulse_time/ 10**9)
-    cxn.pulse_streamer.constant([], 0.0, 0.0)     
+    cxn.pulse_streamer.constant([], 0.0, 0.0) 
+    
+    if wait_time:
+        print('Waiting for {} s, after green pulse'.format(wait_time))
+        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])  
+        cxn.pulse_streamer.constant([], 0.0, 0.0)
+        time.sleep(wait_time)
+        cxn.pulse_streamer.constant([], 0.0, 0.0) 
         
     # collect an image under yellow right after ionization
     print('Scanning yellow light\n...')
@@ -151,7 +158,7 @@ def main(cxn, nv_sig, green_pulse_time):
     red_scan(x_voltages_r, y_voltages_r, z_center, pulser_wiring_red)
  
     # now pulse the green at the center of the scan for a short time         
-    print('Pulsing green light for {} us'.format(green_pulse_time/10**3))
+    print('Pulsing green light for {} s'.format(green_pulse_time/10**9))
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
     # Use two methods to pulse the green light, depending on pulse length
     if green_pulse_time < 10**9:
@@ -164,7 +171,13 @@ def main(cxn, nv_sig, green_pulse_time):
         cxn.pulse_streamer.constant([3], 0.0, 0.0)
         time.sleep(green_pulse_time/ 10**9)
     cxn.pulse_streamer.constant([], 0.0, 0.0)
-
+    
+    if wait_time:
+        print('Waiting for {} s, after green pulse'.format(wait_time))
+        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])  
+        cxn.pulse_streamer.constant([], 0.0, 0.0)
+        time.sleep(wait_time)
+        cxn.pulse_streamer.constant([], 0.0, 0.0) 
         
     # collect an image under yellow after green pulse
     print('Scanning yellow light\n...')
@@ -181,7 +194,10 @@ def main(cxn, nv_sig, green_pulse_time):
     # Subtract and plot
     dif_img_array = sig_img_array - ref_img_array
     
-    title = 'Yellow scan (with/without green pulse)\nGreen pulse {} ms'.format(green_pulse_time/10**6) 
+    if wait_time:
+        title = 'Yellow scan (with/without green pulse)\nGreen pulse 10 s\n{} s wait'.format(wait_time) 
+    else:
+        title = 'Yellow scan (with/without green pulse)\nGreen pulse {} ms'.format(green_pulse_time/10**6) 
     fig = plot_dif_fig(coords, x_voltages,image_range,  dif_img_array, readout, title )
     
     # Save data
@@ -198,6 +214,8 @@ def main(cxn, nv_sig, green_pulse_time):
                'num_steps_reset': num_steps_reset,
                'green_pulse_time': green_pulse_time,
                'green_pulse_time-units': 'ns',
+               'wait_time': wait_time,
+               'wait_time-units': 's',
                'green_optical_voltage': opt_volt,
                'green_optical_voltage-units': 'V',
                'green_opt_power': opt_power,
@@ -222,11 +240,11 @@ def main(cxn, nv_sig, green_pulse_time):
    
 # %%
 if __name__ == '__main__':
-    sample_name = 'choy'
-
-    nv2 = { 'coords':[0.245, -0.262, 5.0],
-            'name': '{}-nv2'.format(sample_name),
-            'expected_count_rate': 50, 'nd_filter': 'nd_0',
+    sample_name = 'hopper'
+    
+    ensemble = { 'coords':[0, 0, 5.3],
+            'name': '{}-ensemble'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
@@ -234,10 +252,11 @@ if __name__ == '__main__':
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
-            'magnet_angle': 20,
-            "resonance_LOW": 2.7840,"rabi_LOW": 144, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9665,"rabi_HIGH": 282,"uwave_power_HIGH": 10.0} 
-    nv_sig = nv2
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+    
+    nv_sig = ensemble
  
 #    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
 #    green_pulse_time_list = numpy.array([0.1, 0.25,  0.5,  0.75,
@@ -247,74 +266,11 @@ if __name__ == '__main__':
 #                                        1000
 #                                        ])*10**9 # 8 mW, 12 mW, 4 mW
     
-    green_pulse_time_list = [10**10]
-    for t in green_pulse_time_list: 
+    green_pulse_time = 10**10
+    wait_time_list = numpy.array([2500, 5000, 7500
+                                        ]) # s
+#    wait_time_list = [1000]
+    for t in wait_time_list: 
         with labrad.connect() as cxn:         
-            main(cxn, nv_sig, t)
-#        
-    
-    # Replot dif data
-    file_name = '2020_06_24-16_09_33-Hopper-ensemble_dif'
-    
-    # 1 s
-#    file_list = ['2020_06_23-16_15_30-Hopper-ensemble_dif',
-#                 '2020_06_23-16_41_42-Hopper-ensemble_dif',
-#                 '2020_06_23-17_06_43-Hopper-ensemble_dif',
-#                 '2020_06_23-17_32_24-Hopper-ensemble_dif',
-#                 '2020_06_23-18_19_09-Hopper-ensemble_dif',
-#                 '2020_06_23-19_00_56-Hopper-ensemble_dif',
-#                 '2020_06_23-20_07_32-Hopper-ensemble_dif',
-#                 '2020_06_23-20_41_47-Hopper-ensemble_dif',
-#                 '2020_06_23-21_21_05-Hopper-ensemble_dif',
-#                 '2020_06_23-22_04_56-Hopper-ensemble_dif'
-#                 ]
-    
-#    # 10 s
-#    file_list = ['2020_06_23-16_22_47-Hopper-ensemble_dif',
-#                 '2020_06_23-16_48_57-Hopper-ensemble_dif',
-#                 '2020_06_23-17_14_00-Hopper-ensemble_dif',
-#                 '2020_06_23-17_40_25-Hopper-ensemble_dif',
-#                 '2020_06_23-18_29_50-Hopper-ensemble_dif',
-#                 '2020_06_23-19_08_56-Hopper-ensemble_dif',
-#                 '2020_06_23-20_18_15-Hopper-ensemble_dif',
-#                 '2020_06_23-20_52_28-Hopper-ensemble_dif',
-#                 '2020_06_23-21_31_45-Hopper-ensemble_dif',
-#                 '2020_06_23-22_15_38-Hopper-ensemble_dif',
-#            ]
-#    
-    # 50 s
-#    file_list = ['2020_06_23-16_31_26-Hopper-ensemble_dif',
-#                 '2020_06_23-16_57_33-Hopper-ensemble_dif',
-#                 '2020_06_23-17_23_22-Hopper-ensemble_dif',
-#                 '2020_06_23-17_49_46-Hopper-ensemble_dif',
-#                 '2020_06_23-18_41_50-Hopper-ensemble_dif',
-#                 '2020_06_23-19_19_04-Hopper-ensemble_dif',
-#                 '2020_06_23-20_30_18-Hopper-ensemble_dif',
-#                 '2020_06_23-21_04_28-Hopper-ensemble_dif',
-#                 '2020_06_23-21_43_49-Hopper-ensemble_dif',
-#                 '2020_06_23-22_30_11-Hopper-ensemble_dif',
-#            ]
-    
-#    file_list = [file_name]
-#    for file in file_list:
-#        file_name = 'branch_Spin_to_charge/2020_06/' + file
-#        data = tool_belt.get_raw_data('image_sample', file_name)
-#        nv_sig = data['nv_sig']
-#        coords = nv_sig['coords']
-#        mW_power = nv_sig['cobalt_532_power']
-#        range= data['image_range']
-#        x_voltages = data['x_voltages']
-#        dif_img_array = numpy.array(data['dif_img_array'])
-#        green_pulse_time = data['green_pulse_time']
-#        readout = data['readout']
-#        
-#        title = 'Yellow scan (with/without green pulse)\nGreen pulse {} ms, {} mW'.format(green_pulse_time/10**6, mW_power) 
-#        plot_dif_fig(coords, x_voltages, range, dif_img_array, readout, title )
+            main(cxn, nv_sig, green_pulse_time, t)
 
-        
-    
-    
-    
-        
-        
-    

@@ -64,7 +64,7 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
     
 #    scan_range = 5.0
 #    num_steps = 150
-#    scan_range = 2.0
+    scan_range = 3.0
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
@@ -75,11 +75,11 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    scan_range = 0.28
 #    num_steps = 150
 #    scan_range = 0.1
-#    num_steps = 120
+    num_steps = 120
 #    scan_range = 0.3
 #    num_steps = 90
-    scan_range = 0.05
-    num_steps = 60
+#    scan_range = 0.05
+#    num_steps = 60
 #    scan_range = 0.025
 #    num_steps = 10
 #    num_steps = 5
@@ -524,55 +524,13 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-#    apd_indices = [0]
-    apd_indices = [0, 1]
+    apd_indices = [0]
+#    apd_indices = [0, 1]
     
-    sample_name = 'choy'
-
-    nv0 = { 'coords':[0.314, -0.295, 5.0],
-            'name': '{}-nv0'.format(sample_name),
-            'expected_count_rate': 120, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.778,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+    sample_name = 'hopper'
     
-    nv1 = { 'coords':[0.227, -0.275, 5.0],
-            'name': '{}-nv1'.format(sample_name),
-            'expected_count_rate': 140, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
-            'magnet_angle': 20,
-            "resonance_LOW": 2.8181,"rabi_LOW": 137, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9675,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
- 
-    nv2 = { 'coords':[0.245, -0.262, 5.0],
-            'name': '{}-nv2'.format(sample_name),
-            'expected_count_rate': 50, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
-            'magnet_angle': 20,
-            "resonance_LOW": 2.7840,"rabi_LOW": 144, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9665,"rabi_HIGH": 282,"uwave_power_HIGH": 10.0} 
-    
-    search = { 'coords':[0.0, 0.0, 5.0],
-            'name': '{}-search'.format(sample_name),
+    ensemble = { 'coords':[0, 0, 5.3],
+            'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
@@ -587,7 +545,7 @@ if __name__ == '__main__':
     
     
     
-    nv_sig_list = [nv1]
+    nv_sig_list = [ensemble]
 
     
     aom_ao_589_pwr = 0.25
@@ -628,7 +586,7 @@ if __name__ == '__main__':
             with labrad.connect() as cxn:
                 cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #     
-#            for image_z in [5.4]:
+#            for image_z in numpy.linspace(4.5, 5.5, 6):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], image_z]                
@@ -640,9 +598,9 @@ if __name__ == '__main__':
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                         638, 589)
             
-            do_optimize(nv_sig, apd_indices, 532)
+#            do_optimize(nv_sig, apd_indices, 532)
 #            do_opti_z(nv_sig, apd_indices, 532)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False)
