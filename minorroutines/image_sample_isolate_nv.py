@@ -214,7 +214,7 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
                'num_steps_reset': num_steps_reset,
                'green_pulse_time': green_pulse_time,
                'green_pulse_time-units': 'ns',
-               'wait_time': wait_time,
+               'wait_time': int(wait_time),
                'wait_time-units': 's',
                'green_optical_voltage': opt_volt,
                'green_optical_voltage-units': 'V',
@@ -267,7 +267,7 @@ if __name__ == '__main__':
 #                                        ])*10**9 # 8 mW, 12 mW, 4 mW
     
     green_pulse_time = 10**10
-    wait_time_list = numpy.array([2500, 5000, 7500
+    wait_time_list = numpy.array([10000, 100000
                                         ]) # s
 #    wait_time_list = [1000]
     for t in wait_time_list: 
