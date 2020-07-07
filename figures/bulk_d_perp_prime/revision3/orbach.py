@@ -22,22 +22,34 @@ Boltzmann = 8.617e-2  # meV / K
 # from scipy.constants import Boltzmann  # J / K
 
 # Rate coefficients in s^-1
-A_1 = 0.007
-A_2 = 2.1e3
-# A_2 = 2.1e4  # test
-A_3 = 2.2e-11
-A_4 = 4.3e-6
+A_1 = 0.007  # Constant for S3
+# A_2 = 2.1e3  # Orbach
+A_2 = 2.0e3  # test
+A_3 = 2.2e-11  # T^5
+A_4 = 4.3e-6  # T^3
 
 # Quasilocalized mode activation energy
-quasi = 73.0  # meV
+quasi = 73.0  # meV, empirical fit
+# quasi = 65.0  # meV, quasilocalized resonance
 # quasi = 1.17e-20  # J
 
 
 # %% Processes and sum functions
 
 
+def bose(energy, temp):
+    return 1 / (numpy.exp(energy / (Boltzmann * temp)) - 1)
+
 def orbach(temp):
-    return A_2 / (numpy.exp(quasi / (Boltzmann * temp)) - 1)
+    """
+    This is for quasilocalized phonons interacting by a Raman process, which
+    reproduces an Orbach scaling even though it's not really an Orbach.
+    process. As such, the proper scaling is 
+    n(omega)(n(omega)+1) approx n(omega) for omega << kT
+    """
+    # return A_2 * bose(quasi, temp) * (bose(quasi, temp) + 1)
+    # return A_2 * bose(quasi, temp)
+    return A_2 / numpy.exp(quasi / (Boltzmann * temp))
 
 def raman(temp):
     return A_3 * (temp**5)
