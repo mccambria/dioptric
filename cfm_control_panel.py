@@ -64,11 +64,11 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
     
 #    scan_range = 5.0
 #    num_steps = 150
-    scan_range = 3.0
+#    scan_range = 3.0
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
-#    scan_range = 1.5
+    scan_range = 1.5
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
@@ -594,15 +594,15 @@ if __name__ == '__main__':
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
 #            do_determine_n_thresh_with_638(nv_sig, apd_indices)
-            for p in [0.3, 0.4, 0.5, 0.6, 0.7]:
-                nv_sig_copy = copy.deepcopy(nv_sig)
-                nv_sig_copy['am_589_power'] = p 
-                do_time_resolved_readout(nv_sig_copy, apd_indices,
-                         638, 589)
+#            for p in [0.3, 0.4, 0.5, 0.6, 0.7]:
+#                nv_sig_copy = copy.deepcopy(nv_sig)
+#                nv_sig_copy['am_589_power'] = p 
+#                do_time_resolved_readout(nv_sig_copy, apd_indices,
+#                         638, 589)
             
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_opti_z(nv_sig, apd_indices, 532)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False)

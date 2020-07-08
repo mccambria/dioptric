@@ -495,7 +495,7 @@ def radial_distrbution_wait_time(folder_name, sub_folder):
 
 # %% 
 if __name__ == '__main__':
-    parent_folder = "image_sample/branch_Spin_to_charge/2020_07/"
+    parent_folder = "image_sample/branch_Spin_to_charge/2020_06/"
     
 #    sub_folder = "hopper_50s_power"
 #    sub_folder = "hopper_10s_power"
@@ -512,19 +512,19 @@ if __name__ == '__main__':
 #    print(ring_radius_list, ring_err_list)
     
 #    sub_folder = "hopper_4mw_time"
-#    sub_folder = "hopper_8mw_time"
-    sub_folder = "10_s_vary_wait_time/select_data"
+    sub_folder = "hopper_8mw_time"
+#    sub_folder = "10_s_vary_wait_time/select_data"
     folder_name = parent_folder + sub_folder 
     
-    radial_distrbution_wait_time(folder_name, sub_folder)
+#    radial_distrbution_wait_time(folder_name, sub_folder)
     
-#    ret_vals = radial_distrbution_time(folder_name, sub_folder)
-#    ring_radius_list, ring_err_list, green_time_list, \
-#        nv_sig, img_range, num_steps, green_pulse_time, readout = ret_vals
-#    
-#    r_vs_time_plot(nv_sig, ring_radius_list, ring_err_list, green_time_list, 
-#                    sub_folder, 
-#                    img_range, num_steps, green_pulse_time, readout)
+    ret_vals = radial_distrbution_time(folder_name, sub_folder)
+    ring_radius_list, ring_err_list, green_time_list, \
+        nv_sig, img_range, num_steps, green_pulse_time, readout = ret_vals
+    
+    r_vs_time_plot(nv_sig, ring_radius_list, ring_err_list, green_time_list, 
+                    sub_folder, 
+                    img_range, num_steps, green_pulse_time, readout)
 #    print(ring_radius_list, ring_err_list)
 
     # %% Manual data fitting for power
