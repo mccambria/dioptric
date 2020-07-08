@@ -267,7 +267,7 @@ if __name__ == '__main__':
 #                                        ])*10**9 # 8 mW, 12 mW, 4 mW
     
     green_pulse_time = 10**10
-    wait_time_list = numpy.array([10000, 100000
+    wait_time_list = numpy.array([0
                                         ]) # s
 #    wait_time_list = [1000]
     for t in wait_time_list: 
