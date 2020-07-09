@@ -75,9 +75,9 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    scan_range = 0.28
 #    num_steps = 150
 #    scan_range = 0.1
-    num_steps = 120
+#    num_steps = 120
 #    scan_range = 0.3
-#    num_steps = 90
+    num_steps = 90
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
@@ -530,7 +530,7 @@ if __name__ == '__main__':
     
     sample_name = 'hopper'
     
-    ensemble = { 'coords':[0, 0, 5.3],
+    ensemble = { 'coords':[0.0, 0.0, 5.3],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,

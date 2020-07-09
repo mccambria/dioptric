@@ -179,47 +179,13 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
         time.sleep(wait_time)
         cxn.pulse_streamer.constant([], 0.0, 0.0) 
         
-    # Shine red light on charge ring for 1 s     
-    print('Shine red light on ring for 1 s')
-    tool_belt.set_xyz(cxn, [x_center + 0.5, y_center, z_center])
-    cxn.pulse_streamer.constant([pulser_wiring_red], 0.0, 0.0)
-    time.sleep(1)
-    cxn.pulse_streamer.constant([], 0.0, 0.0)
-    
-    # Image the sample now
-    print('Scanning yellow light\n...')
-    image_sample.main(nv_sig, image_range, image_range, num_steps, 
-                      aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
-    
-    # Pulse the green again at the center of the scan for a short time         
-    print('Pulsing green light for {} s'.format(green_pulse_time/10**9))
-    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-    # Use two methods to pulse the green light, depending on pulse length
-    if green_pulse_time < 10**9:
-        shared_params = tool_belt.get_shared_parameters_dict(cxn)
-        laser_515_delay = shared_params['515_laser_delay']
-        seq_args = [laser_515_delay, green_pulse_time, 0.0, 532]           
-        seq_args_string = tool_belt.encode_seq_args(seq_args)            
-        cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
-    else:
-        cxn.pulse_streamer.constant([3], 0.0, 0.0)
-        time.sleep(green_pulse_time/ 10**9)
-    cxn.pulse_streamer.constant([], 0.0, 0.0)
-    
-    if wait_time:
-        print('Waiting for {} s, after green pulse'.format(wait_time))
-        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])  
-        cxn.pulse_streamer.constant([], 0.0, 0.0)
-        time.sleep(wait_time)
-        cxn.pulse_streamer.constant([], 0.0, 0.0) 
-        
     # collect an image under yellow after green pulse
     print('Scanning yellow light\n...')
     sig_img_array, x_voltages, y_voltages = image_sample.main(nv_sig, image_range, image_range, num_steps, 
                       aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
 
     # Measure the green power  
-    cxn.pulse_streamer.constant([3], 0.0, 0.0)
+    cxn.pulse_streamer.constant([pulser_wiring_green], 0.0, 0.0)
     opt_volt = tool_belt.opt_power_via_photodiode(532)
     opt_power = tool_belt.calc_optical_power_mW(532, opt_volt)
     time.sleep(0.1)
@@ -292,75 +258,16 @@ if __name__ == '__main__':
     
     nv_sig = ensemble
  
-#    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
 #    green_pulse_time_list = numpy.array([0.1, 0.25,  0.5,  0.75,
 #                                        1,2.5, 5,7.5 ,
 #                                        10, 25, 50, 75,
 #                                        100, 250, 500, 750,
 #                                        1000
 #                                        ])*10**9 # 8 mW, 12 mW, 4 mW
-    
-    green_pulse_time = 100*10**9 # ns
-    wait_time_list = numpy.array([0]) # s
+    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
+#    green_pulse_time_list = [50*10**9] # ns
+#    wait_time_list = numpy.array([0]) # s
 #    wait_time_list = [1000]
-#    for t in wait_time_list: 
-#        with labrad.connect() as cxn:         
-#            main(cxn, nv_sig, green_pulse_time, t)
-
-    # %%
-    file_path = 'image_sample/branch_Spin_to_charge/2020_07'
-    file_ref = '2020_07_07-16_19_30-hopper-ensemble'
-    file_sig = '2020_07_07-02_15_24-hopper-ensemble'
-    
-    data = tool_belt.get_raw_data(file_path, file_ref)
-    ref_img_array = data['img_array']
-    nv_sig = data['nv_sig']
-    coords = nv_sig['coords']
-    x_voltages = data['x_voltages']
-    y_voltages = data['y_voltages']
-    image_range = data['x_range']
-    readout = data['readout']
-    
-    data = tool_belt.get_raw_data(file_path, file_sig)
-    sig_img_array = data['img_array']
-    
-    title = 'Yellow scan (with/without green pulse)\nGreen pulse 10 s\n100,000 s wait' 
-    dif_img_array =numpy.array( sig_img_array) - numpy.array(ref_img_array)
-    fig = plot_dif_fig(coords, x_voltages,image_range, dif_img_array, readout, title )
-
-    timestamp = tool_belt.get_time_stamp()
-
-    rawData = {'timestamp': timestamp,
-               'nv_sig': nv_sig,
-               'nv_sig-units': tool_belt.get_nv_sig_units(),
-               'image_range': image_range,
-               'image_range-units': 'V',
-               'num_steps': num_steps,
-               'reset_range': reset_range,
-               'reset_range-units': 'V',
-               'num_steps_reset': num_steps_reset,
-               'green_pulse_time': green_pulse_time,
-               'green_pulse_time-units': 'ns',
-               'wait_time': 100000,
-               'wait_time-units': 's',
-               'green_optical_voltage': 0.059851088240884705,
-               'green_optical_voltage-units': 'V',
-               'green_opt_power': 0.8150641471315012,
-               'green_opt_power-units': 'mW',
-               'readout': readout,
-               'readout-units': 'ns',
-               'x_voltages': x_voltages,
-               'x_voltages-units': 'V',
-               'y_voltages': y_voltages,
-               'y_voltages-units': 'V',
-               'ref_img_array': ref_img_array,
-               'ref_img_array-units': 'counts',
-               'sig_img_array': sig_img_array,
-               'sig_img_array-units': 'counts',
-               'dif_img_array': dif_img_array.tolist(),
-               'dif_img_array-units': 'counts'}
-
-    filePath = tool_belt.get_file_path('image_sample', timestamp, nv_sig['name'])
-    tool_belt.save_raw_data(rawData, filePath + '_dif')
-
-    tool_belt.save_figure(fig, filePath + '_dif')
+    for t in green_pulse_time_list: 
+        with labrad.connect() as cxn:         
+            main(cxn, nv_sig, t)

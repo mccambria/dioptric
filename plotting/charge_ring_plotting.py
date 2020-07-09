@@ -111,11 +111,13 @@ def r_vs_time_plot(nv_sig, ring_radius_list, ring_err_list, green_time_list,
 def radial_distrbution_power(folder_name, sub_folder):
     # create a file list of the files to analyze
     file_list  = tool_belt.get_file_list(folder_name, '.txt')
+    file_list = [ '1.txt', '5.txt','8.txt', '12.txt', '25.txt', '28.txt', '39.txt', '49.txt', '60.txt']
     # create lists to fill with data
     power_list = []
-    ring_radius_list = []
-    ring_err_list = []
+    radii_array = []
+    counts_r_array = []
     
+    fig, ax = plt.subplots(1,1, figsize = (8, 8))
     for file in file_list:
         try:
             data = tool_belt.get_raw_data(folder_name, file[:-4])
@@ -130,7 +132,7 @@ def radial_distrbution_power(folder_name, sub_folder):
             dif_img_array = numpy.array(data['dif_img_array'])
             green_pulse_time = data['green_pulse_time']
             readout = data['readout']
-            opt_volt = data['green_optical_voltage']
+#            opt_volt = data['green_optical_voltage']
             opt_power = data['green_opt_power']
             
             # Initial calculations
@@ -176,86 +178,83 @@ def radial_distrbution_power(folder_name, sub_folder):
             # define the radial values as center values of pizels along x, convert to um
             radii = numpy.array(x_voltages[int(num_steps/2):])*35
             # plot
-            fig, ax = plt.subplots(1,1, figsize = (8, 8))
-            ax.plot(radii, counts_r)
-            ax.set_xlabel('Radius (um)')
-            ax.set_ylabel('Avg counts around ring (kcps)')
-            ax.set_title('{} s, {} mW green pulse'.format(green_pulse_time/10**9, opt_power))
+            ax.plot(radii, counts_r, label  = '{} mW green pulse'.format('%.2f'%opt_power))
+            opt_power.append(green_pulse_time)
+            radii_array.append(radii.tolist())
+            counts_r_array.append(counts_r)
             
             # try to fit the radial distribution to a double gaussian(work in prog)    
-            try:
-                contrast_low = 500
-                sigma_low = 5
-                center_low = -5
-                offset_low = 100
-                contrast_high = 300
-                sigma_high = 5
-                center_high = 20
-                offset_high = 100            
-                guess_params = (contrast_low, sigma_low, center_low, offset_low,
-                                contrast_high, sigma_high, center_high, offset_high)
+#            try:
+#                contrast_low = 500
+#                sigma_low = 5
+#                center_low = -5
+#                offset_low = 100
+#                contrast_high = 300
+#                sigma_high = 5
+#                center_high = 20
+#                offset_high = 100            
+#                guess_params = (contrast_low, sigma_low, center_low, offset_low,
+#                                contrast_high, sigma_high, center_high, offset_high)
+#                
+#                popt, pcov = curve_fit(double_gaussian_dip, radii[1:], counts_r[1:], p0=guess_params)
+#                radii_linspace = numpy.linspace(radii[0], radii[-1], 1000)
+#                
+#                ax.plot(radii_linspace, double_gaussian_dip(radii_linspace, *popt))
+#                print('fit succeeded')
+#                
+#                power_list.append(opt_power)
+#                ring_radius_list.append(popt[6])
+#                ring_err_list.append(pcov[6][6])
+#                
+#            except Exception:
+#                print('fit failed' )
                 
-                popt, pcov = curve_fit(double_gaussian_dip, radii[1:], counts_r[1:], p0=guess_params)
-                radii_linspace = numpy.linspace(radii[0], radii[-1], 1000)
-                
-                ax.plot(radii_linspace, double_gaussian_dip(radii_linspace, *popt))
-                print('fit succeeded')
-                
-                power_list.append(opt_power)
-                ring_radius_list.append(popt[6])
-                ring_err_list.append(pcov[6][6])
-                
-            except Exception:
-                print('fit failed' )
-                
-            # save data from this file
-            rawData = {'timestamp': timestamp,
-                       'nv_sig': nv_sig,
-                       'nv_sig-units': tool_belt.get_nv_sig_units(),
-                       'image_range': img_range,
-                       'image_range-units': 'V',
-                       'num_steps': num_steps,
-                       'green_pulse_time': green_pulse_time,
-                       'green_pulse_time-units': 'ns',
-                       'green_optical_voltage': opt_volt,
-                       'green_optical_voltage-units': 'V',
-                       'green_opt_power': opt_power,
-                       'green_opt_power-units': 'mW',
-                       'readout': readout,
-                       'readout-units': 'ns',
-                       'x_voltages': x_voltages,
-                       'x_voltages-units': 'V',
-                       'y_voltages': y_voltages,
-                       'y_voltages-units': 'V',
-                       'ring_radius_list': radii.tolist(),
-                       'ring_radius_list-units': 'V',
-                       'counts_r': counts_r,
-                       'counts_r-units': 'kcps'}
             
-            filePath = tool_belt.get_file_path("image_sample", timestamp, nv_sig['name'], subfolder = sub_folder)
-            tool_belt.save_raw_data(rawData, filePath + '_radius')
-            
-            tool_belt.save_figure(fig, filePath + '_radius')
         except Exception:
             continue
+        
+    ax.set_xlabel('Radius (um)')
+    ax.set_ylabel('Avg counts around ring (kcps)')
+    ax.set_title('Varying green pulse power, {} s'.format(green_pulse_time / 10**9))
+    ax.legend()
+ 
+    # save data from this file
+    rawData = {'timestamp': timestamp,
+               'file_list': file_list,
+               'nv_sig': nv_sig,
+               'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'num_steps': num_steps,
+               'green_pulse_time': green_pulse_time,
+               'green_pulse_time-units': 'ns',
+               'readout': readout,
+               'readout-units': 'ns',
+               'power_list': power_list,
+               'power_list-units':'mW',
+               'radii_array': radii_array,
+               'radii_array-units': 'um',
+               'counts_r_array': counts_r_array,
+               'counts_r_array-units': 'kcps'}
     
-    # Save a list of the estimated error in power measurement (0.02 mW)
-    power_err_list = numpy.ones(len(power_list))
-    power_err_list = power_err_list[:]*0.02
+    filePath = tool_belt.get_file_path("image_sample", timestamp, nv_sig['name'], subfolder = sub_folder)
+    print(filePath)
+    tool_belt.save_raw_data(rawData, filePath + '_radius')
     
-    return ring_radius_list, ring_err_list, power_list, power_err_list, \
-                nv_sig, img_range, num_steps, green_pulse_time, readout
+    tool_belt.save_figure(fig, filePath + '_radius')
+    
+    return
                 
 # %%
 
 def radial_distrbution_time(folder_name, sub_folder):
     # create a file list of the files to analyze
     file_list  = tool_belt.get_file_list(folder_name, '.txt')
+    file_list = ['0.1.txt', '1.txt', '5.txt', '10.txt', '25.txt', '50.txt', '75.txt', '100.txt', '250.txt', '1000.txt' ]
     # create lists to fill with data
     green_time_list = []
-    ring_radius_list = []
-    ring_err_list = []
+    radii_array = []
+    counts_r_array = []
     
+    fig, ax = plt.subplots(1,1, figsize = (8, 8))
     for file in file_list:
         try:
             data = tool_belt.get_raw_data(folder_name, file[:-4])
@@ -316,71 +315,72 @@ def radial_distrbution_time(folder_name, sub_folder):
             # define the radial values as center values of pizels along x, convert to um
             radii = numpy.array(x_voltages[int(num_steps/2):])*35
             # plot
-            fig, ax = plt.subplots(1,1, figsize = (8, 8))
-            ax.plot(radii, counts_r)
-            ax.set_xlabel('Radius (um)')
-            ax.set_ylabel('Avg counts around ring (kcps)')
-            ax.set_title('{} s, {} mW green pulse'.format(green_pulse_time/10**9, opt_power))
+#            fig, ax = plt.subplots(1,1, figsize = (8, 8))
+            ax.plot(radii, counts_r, label  = '{} s green pulse'.format(green_pulse_time/10**9))
+            green_time_list.append(green_pulse_time)
+            radii_array.append(radii.tolist())
+            counts_r_array.append(counts_r)
+
             
-            # try to fit the radial distribution to a double gaussian(work in prog)    
-            try:
-                contrast_low = 500
-                sigma_low = 5
-                center_low = -5
-                offset_low = 100
-                contrast_high = 300
-                sigma_high = 5
-                center_high = 20
-                offset_high = 100            
-                guess_params = (contrast_low, sigma_low, center_low, offset_low,
-                                contrast_high, sigma_high, center_high, offset_high)
+#            # try to fit the radial distribution to a double gaussian(work in prog)    
+#            try:
+#                contrast_low = 500
+#                sigma_low = 5
+#                center_low = -5
+#                offset_low = 100
+#                contrast_high = 300
+#                sigma_high = 5
+#                center_high = 20
+#                offset_high = 100            
+#                guess_params = (contrast_low, sigma_low, center_low, offset_low,
+#                                contrast_high, sigma_high, center_high, offset_high)
+#                
+#                popt, pcov = curve_fit(double_gaussian_dip, radii[1:], counts_r[1:], p0=guess_params)
+#                radii_linspace = numpy.linspace(radii[0], radii[-1], 1000)
+#                
+#                ax.plot(radii_linspace, double_gaussian_dip(radii_linspace, *popt))
+#                print('fit succeeded')
+#                
+#                green_time_list.append(green_pulse_time)
+#                ring_radius_list.append(popt[6])
+#                ring_err_list.append(pcov[6][6])
+#                
+#            except Exception:
+#                print('fit failed' )
                 
-                popt, pcov = curve_fit(double_gaussian_dip, radii[1:], counts_r[1:], p0=guess_params)
-                radii_linspace = numpy.linspace(radii[0], radii[-1], 1000)
-                
-                ax.plot(radii_linspace, double_gaussian_dip(radii_linspace, *popt))
-                print('fit succeeded')
-                
-                green_time_list.append(green_pulse_time)
-                ring_radius_list.append(popt[6])
-                ring_err_list.append(pcov[6][6])
-                
-            except Exception:
-                print('fit failed' )
-                
-            # save data from this file
-            rawData = {'timestamp': timestamp,
-                       'nv_sig': nv_sig,
-                       'nv_sig-units': tool_belt.get_nv_sig_units(),
-                       'image_range': img_range,
-                       'image_range-units': 'V',
-                       'num_steps': num_steps,
-                       'green_pulse_time': green_pulse_time,
-                       'green_pulse_time-units': 'ns',
-                       'green_optical_voltage': opt_volt,
-                       'green_optical_voltage-units': 'V',
-                       'green_opt_power': opt_power,
-                       'green_opt_power-units': 'mW',
-                       'readout': readout,
-                       'readout-units': 'ns',
-                       'x_voltages': x_voltages,
-                       'x_voltages-units': 'V',
-                       'y_voltages': y_voltages,
-                       'y_voltages-units': 'V',
-                       'ring_radius_list': radii.tolist(),
-                       'ring_radius_list-units': 'V',
-                       'counts_r': counts_r,
-                       'counts_r-units': 'kcps'}
-            
-            filePath = tool_belt.get_file_path("image_sample", timestamp, nv_sig['name'], subfolder = sub_folder)
-            tool_belt.save_raw_data(rawData, filePath + '_radius')
-            
-            tool_belt.save_figure(fig, filePath + '_radius')
         except Exception:
             continue
     
-    return ring_radius_list, ring_err_list, green_time_list, \
-                nv_sig, img_range, num_steps, green_pulse_time, readout
+    ax.set_xlabel('Radius (um)')
+    ax.set_ylabel('Avg counts around ring (kcps)')
+    ax.set_title('Varying green pulse time, {} mW'.format('%.2f'%opt_power))
+    ax.legend()
+ 
+    # save data from this file
+    rawData = {'timestamp': timestamp,
+               'file_list': file_list,
+               'nv_sig': nv_sig,
+               'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'num_steps': num_steps,
+               'green_optical_voltage': opt_volt,
+               'green_optical_voltage-units': 'V',
+               'green_opt_power': opt_power,
+               'green_opt_power-units': 'mW',
+               'readout': readout,
+               'readout-units': 'ns',
+               'green_time_list': green_time_list,
+               'green_time_list-units':'ns',
+               'radii_array': radii_array,
+               'radii_array-units': 'um',
+               'counts_r_array': counts_r_array,
+               'counts_r_array-units': 'kcps'}
+    
+    filePath = tool_belt.get_file_path("image_sample", timestamp, nv_sig['name'], subfolder = sub_folder)
+    tool_belt.save_raw_data(rawData, filePath + '_radius')
+    
+    tool_belt.save_figure(fig, filePath + '_radius')
+            
+    return
     
 # %%
 
@@ -499,33 +499,22 @@ if __name__ == '__main__':
     
 #    sub_folder = "hopper_50s_power"
 #    sub_folder = "hopper_10s_power"
-#    sub_folder = "hopper_1s_power"
-#    folder_name = parent_folder + sub_folder
+    sub_folder = "hopper_1s_power"
+    folder_name = parent_folder + sub_folder + '/select_data'
 #    
-#    ret_vals = radial_distrbution_power(folder_name, sub_folder)
-#    ring_radius_list, ring_err_list, power_list, power_err_list, \
-#        nv_sig, img_range, num_steps, green_pulse_time, readout = ret_vals
-#    
-#    r_vs_power_plot(nv_sig, ring_radius_list, ring_err_list, power_list, 
-#                    power_err_list, sub_folder, 
-#                    img_range, num_steps, green_pulse_time, readout)
-#    print(ring_radius_list, ring_err_list)
+#    radial_distrbution_power(folder_name, sub_folder)
     
-#    sub_folder = "hopper_4mw_time"
-    sub_folder = "hopper_8mw_time"
-#    sub_folder = "10_s_vary_wait_time/select_data"
+#    sub_folder = "hopper_4mw_time/select_data"
+#    sub_folder = "hopper_8mw_time/select_data"
+    sub_folder = "hopper_12mw_time/select_data"
     folder_name = parent_folder + sub_folder 
     
+    radial_distrbution_time(folder_name, sub_folder)
+
+    
 #    radial_distrbution_wait_time(folder_name, sub_folder)
-    
-    ret_vals = radial_distrbution_time(folder_name, sub_folder)
-    ring_radius_list, ring_err_list, green_time_list, \
-        nv_sig, img_range, num_steps, green_pulse_time, readout = ret_vals
-    
-    r_vs_time_plot(nv_sig, ring_radius_list, ring_err_list, green_time_list, 
-                    sub_folder, 
-                    img_range, num_steps, green_pulse_time, readout)
-#    print(ring_radius_list, ring_err_list)
+
+
 
     # %% Manual data fitting for power
 
@@ -547,44 +536,44 @@ if __name__ == '__main__':
     
     power_linspace = numpy.linspace(powers[0], powers[-1], 1000) 
 
-    fig, ax = plt.subplots(1,1, figsize = (8, 8))
-    ax.errorbar(powers, radius_1, xerr = power_err, yerr = radius_1_err, fmt = 'bo', label = '1 s green pulse')
-    ax.plot(power_linspace, power_law(power_linspace, *popt_1s), 'b-', label = '1 s fit')
-    ax.errorbar(powers, radius_10, xerr = power_err, yerr = radius_10_err, fmt = 'ro',  label = '10 s green pulse')
-    ax.plot(power_linspace, power_law(power_linspace, *popt_10s), 'r-', label = '10 s fit')   
-    ax.errorbar(powers, radius_50, xerr = power_err, yerr = radius_50_err, fmt = 'go',  label = '50 s green pulse')
-    ax.plot(power_linspace, power_law(power_linspace, *popt_50s), 'g-', label = '50 s fit')
-
-#    ax.set_xscale('log')
-    ax.set_xlabel('Green optical power (mW)')
-    ax.set_ylabel('Charge ring radius (um)')
-    ax.legend()
-    ax.set_title('Charge ring radius vs green pulse power')
-  
-    text_eq = r'$C - A_0/P^a})$'
-    
-    text_1s = '\n'.join(('1 s fit',
-                     r'$C = {}$ um'.format('%.1f'%popt_1s[0]),
-                      r'$A_0 = {}$ um'.format('%.1f'%popt_1s[1]),
-                      r'$a = {}$'.format('%.1f'%popt_1s[2])))
-    text_10s= '\n'.join(('10 s fit',
-                     r'$C = {}$ um'.format('%.1f'%popt_10s[0]),
-                      r'$A_0 = {}$ um'.format('%.1f'%popt_10s[1]),
-                      r'$a = {}$'.format('%.1f'%popt_10s[2])))
-    text_50s = '\n'.join(('50 s fit',
-                          r'$C = {}$ um'.format('%.1f'%popt_50s[0]),
-                      r'$A_0 = {}$ um'.format('%.1f'%popt_50s[1]),
-                      r'$a = {}$'.format('%.1f'%popt_50s[2])))
-    
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.3, 0.6, text_eq, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    ax.text(0.3, 0.52, text_1s, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    ax.text(0.3, 0.35, text_10s, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    ax.text(0.3, 0.18, text_50s, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
+#    fig, ax = plt.subplots(1,1, figsize = (8, 8))
+#    ax.errorbar(powers, radius_1, xerr = power_err, yerr = radius_1_err, fmt = 'bo', label = '1 s green pulse')
+#    ax.plot(power_linspace, power_law(power_linspace, *popt_1s), 'b-', label = '1 s fit')
+#    ax.errorbar(powers, radius_10, xerr = power_err, yerr = radius_10_err, fmt = 'ro',  label = '10 s green pulse')
+#    ax.plot(power_linspace, power_law(power_linspace, *popt_10s), 'r-', label = '10 s fit')   
+#    ax.errorbar(powers, radius_50, xerr = power_err, yerr = radius_50_err, fmt = 'go',  label = '50 s green pulse')
+#    ax.plot(power_linspace, power_law(power_linspace, *popt_50s), 'g-', label = '50 s fit')
+#
+##    ax.set_xscale('log')
+#    ax.set_xlabel('Green optical power (mW)')
+#    ax.set_ylabel('Charge ring radius (um)')
+#    ax.legend()
+#    ax.set_title('Charge ring radius vs green pulse power')
+#  
+#    text_eq = r'$C - A_0/P^a})$'
+#    
+#    text_1s = '\n'.join(('1 s fit',
+#                     r'$C = {}$ um'.format('%.1f'%popt_1s[0]),
+#                      r'$A_0 = {}$ um'.format('%.1f'%popt_1s[1]),
+#                      r'$a = {}$'.format('%.1f'%popt_1s[2])))
+#    text_10s= '\n'.join(('10 s fit',
+#                     r'$C = {}$ um'.format('%.1f'%popt_10s[0]),
+#                      r'$A_0 = {}$ um'.format('%.1f'%popt_10s[1]),
+#                      r'$a = {}$'.format('%.1f'%popt_10s[2])))
+#    text_50s = '\n'.join(('50 s fit',
+#                          r'$C = {}$ um'.format('%.1f'%popt_50s[0]),
+#                      r'$A_0 = {}$ um'.format('%.1f'%popt_50s[1]),
+#                      r'$a = {}$'.format('%.1f'%popt_50s[2])))
+#    
+#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+#    ax.text(0.3, 0.6, text_eq, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    ax.text(0.3, 0.52, text_1s, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    ax.text(0.3, 0.35, text_10s, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    ax.text(0.3, 0.18, text_50s, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
     
     # %% Manual data fitting for green time
     
@@ -619,39 +608,39 @@ if __name__ == '__main__':
     popt_12mw, pcov = curve_fit(power_law, times_12, radius_12mW, p0= (20, 20, 0.1))
     time_linspace = numpy.linspace(0.1, times_12[-1], 1000)         
     
-    fig, ax = plt.subplots(1,1, figsize = (8, 8))
-    ax.errorbar(times, radius_4mW, yerr = radius_4mW_err, fmt = 'bo', label = '0.3 mW green pulse')
-    ax.plot(time_linspace, power_law(time_linspace, *popt_4mw), 'b-', label = '0.3 mW fit')
-    ax.errorbar(times, radius_8mW, yerr = radius_8mW_err, fmt = 'ro', label = '0.75 mW green pulse')
-    ax.plot(time_linspace, power_law(time_linspace, *popt_8mw), 'r-', label = '0.75 mW fit')
-    ax.errorbar(times_12, radius_12mW, yerr = radius_12mW_err, fmt = 'go', label = '1.3 mW green pulse')
-    ax.plot(time_linspace, power_law(time_linspace, *popt_12mw), 'g-', label = '1.3 mW fit')
-#    ax.set_xscale('log')
-    ax.set_xlabel('Green pulse time (s)')
-    ax.set_ylabel('Charge ring radius (um)')
-    ax.legend()
-    ax.set_title('Charge ring radius vs green pulse length')
-    text_eq = r'$C - A_0/P^a})$'
-    
-    text_4mw = '\n'.join(('0.3 mW fit',
-                      r'$C = {}$ um'.format('%.1f'%popt_4mw[0]),
-                      r'$A_0 = {}$ um'.format('%.1f'%popt_4mw[1]),
-                      r'$a = {}$'.format('%.1f'%popt_4mw[2])))
-    text_8mw = '\n'.join(('0.75 mW fit',
-                      r'$C = {}$ um'.format('%.1f'%popt_8mw[0]),
-                      r'$A_0 = {}$ um'.format('%.1f'%popt_8mw[1]),
-                      r'$a = {}$'.format('%.1f'%popt_8mw[2])))
-    text_12mw = '\n'.join(('1.3 mW fit',
-                      r'$C = {}$ um'.format('%.1f'%popt_12mw[0]),
-                      r'$A_0 = {}$ um'.format('%.1f'%popt_12mw[1]),
-                      r'$a = {}$'.format('%.1f'%popt_12mw[2])))
-    
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.3, 0.6, text_eq, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    ax.text(0.3, 0.52, text_4mw, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    ax.text(0.3, 0.35, text_8mw, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    ax.text(0.3, 0.18, text_12mw, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
+#    fig, ax = plt.subplots(1,1, figsize = (8, 8))
+#    ax.errorbar(times, radius_4mW, yerr = radius_4mW_err, fmt = 'bo', label = '0.3 mW green pulse')
+#    ax.plot(time_linspace, power_law(time_linspace, *popt_4mw), 'b-', label = '0.3 mW fit')
+#    ax.errorbar(times, radius_8mW, yerr = radius_8mW_err, fmt = 'ro', label = '0.75 mW green pulse')
+#    ax.plot(time_linspace, power_law(time_linspace, *popt_8mw), 'r-', label = '0.75 mW fit')
+#    ax.errorbar(times_12, radius_12mW, yerr = radius_12mW_err, fmt = 'go', label = '1.3 mW green pulse')
+#    ax.plot(time_linspace, power_law(time_linspace, *popt_12mw), 'g-', label = '1.3 mW fit')
+##    ax.set_xscale('log')
+#    ax.set_xlabel('Green pulse time (s)')
+#    ax.set_ylabel('Charge ring radius (um)')
+#    ax.legend()
+#    ax.set_title('Charge ring radius vs green pulse length')
+#    text_eq = r'$C - A_0/P^a})$'
+#    
+#    text_4mw = '\n'.join(('0.3 mW fit',
+#                      r'$C = {}$ um'.format('%.1f'%popt_4mw[0]),
+#                      r'$A_0 = {}$ um'.format('%.1f'%popt_4mw[1]),
+#                      r'$a = {}$'.format('%.1f'%popt_4mw[2])))
+#    text_8mw = '\n'.join(('0.75 mW fit',
+#                      r'$C = {}$ um'.format('%.1f'%popt_8mw[0]),
+#                      r'$A_0 = {}$ um'.format('%.1f'%popt_8mw[1]),
+#                      r'$a = {}$'.format('%.1f'%popt_8mw[2])))
+#    text_12mw = '\n'.join(('1.3 mW fit',
+#                      r'$C = {}$ um'.format('%.1f'%popt_12mw[0]),
+#                      r'$A_0 = {}$ um'.format('%.1f'%popt_12mw[1]),
+#                      r'$a = {}$'.format('%.1f'%popt_12mw[2])))
+#    
+#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+#    ax.text(0.3, 0.6, text_eq, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    ax.text(0.3, 0.52, text_4mw, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    ax.text(0.3, 0.35, text_8mw, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#    ax.text(0.3, 0.18, text_12mw, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
