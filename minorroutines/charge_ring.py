@@ -111,6 +111,7 @@ def green_scan(x_voltages, y_voltages, z_center, pulser_wiring_green):
 def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     aom_ao_589_pwr = nv_sig['am_589_power']
     coords = nv_sig['coords']
+    print(coords)
     readout = nv_sig['pulsed_SCC_readout_dur']
     green_pulse_time = int(green_pulse_time)
     
@@ -264,10 +265,15 @@ if __name__ == '__main__':
 #                                        100, 250, 500, 750,
 #                                        1000
 #                                        ])*10**9 # 8 mW, 12 mW, 4 mW
-    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
+#    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
 #    green_pulse_time_list = [50*10**9] # ns
 #    wait_time_list = numpy.array([0]) # s
 #    wait_time_list = [1000]
-    for t in green_pulse_time_list: 
+    
+    z_list = [3.72]
+    for z in z_list: 
+        coords = nv_sig['coords']
+        coords[2]= z
+        nv_sig['coords'] = coords
         with labrad.connect() as cxn:         
-            main(cxn, nv_sig, t)
+            main(cxn, nv_sig, 50*10**9)

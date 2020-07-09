@@ -109,17 +109,23 @@ def r_vs_time_plot(nv_sig, ring_radius_list, ring_err_list, green_time_list,
 # %%
 
 def radial_distrbution_power(folder_name, sub_folder):
-    # create a file list of the files to analyze
+    labls = ['previous data', 'z = 2.5 V', 'z = 2.6 V', 'z = 2.7 V', 'z = 2.8 V', 'z = 2.9 V', 'z = 3.0 V', 'z = 3.5 V', 'z = 3.8 V', 'z = 4.0 V', 'z = 5.0 V', 'z = 6.0 V']
+    labls = ['previous data', 'z = 3.5 V', 'z = 3.65 V','z=3.72', 'z = 3.8 V']
+   # create a file list of the files to analyze
     file_list  = tool_belt.get_file_list(folder_name, '.txt')
-    file_list = [ '1.txt', '5.txt','8.txt', '12.txt', '25.txt', '28.txt', '39.txt', '49.txt', '60.txt']
+    file_list = [ '1.txt', '3.txt', '4.txt', '5.txt', '6.txt', '8.txt', '10.txt', '12.txt', '25.txt',  '60.txt']
+    file_list = ['previous.txt', '2.5.txt', '2.6.txt', '2.7.txt', '2.8.txt', '2.9.txt', '3.0.txt','3.5.txt','3.8.txt', '4.0.txt', '5.0.txt', '6.0.txt']
+    file_list = ['previous.txt', '3.5.txt','3.65.txt', '3.72.txt', '3.8.txt']
+    
     # create lists to fill with data
     power_list = []
     radii_array = []
     counts_r_array = []
     
+    l = 0
     fig, ax = plt.subplots(1,1, figsize = (8, 8))
     for file in file_list:
-        try:
+#        try:
             data = tool_belt.get_raw_data(folder_name, file[:-4])
             # Get info from file
             timestamp = data['timestamp']
@@ -178,11 +184,11 @@ def radial_distrbution_power(folder_name, sub_folder):
             # define the radial values as center values of pizels along x, convert to um
             radii = numpy.array(x_voltages[int(num_steps/2):])*35
             # plot
-            ax.plot(radii, counts_r, label  = '{} mW green pulse'.format('%.2f'%opt_power))
-            opt_power.append(green_pulse_time)
+            ax.plot(radii, counts_r, label = labls[l])#label  = '{} mW green pulse'.format('%.2f'%opt_power))
+            power_list.append(opt_power)
             radii_array.append(radii.tolist())
             counts_r_array.append(counts_r)
-            
+            l += 1
             # try to fit the radial distribution to a double gaussian(work in prog)    
 #            try:
 #                contrast_low = 500
@@ -210,8 +216,8 @@ def radial_distrbution_power(folder_name, sub_folder):
 #                print('fit failed' )
                 
             
-        except Exception:
-            continue
+#        except Exception:
+#            continue
         
     ax.set_xlabel('Radius (um)')
     ax.set_ylabel('Avg counts around ring (kcps)')
@@ -236,7 +242,7 @@ def radial_distrbution_power(folder_name, sub_folder):
                'counts_r_array-units': 'kcps'}
     
     filePath = tool_belt.get_file_path("image_sample", timestamp, nv_sig['name'], subfolder = sub_folder)
-    print(filePath)
+#    print(filePath)
     tool_belt.save_raw_data(rawData, filePath + '_radius')
     
     tool_belt.save_figure(fig, filePath + '_radius')
@@ -497,19 +503,19 @@ def radial_distrbution_wait_time(folder_name, sub_folder):
 if __name__ == '__main__':
     parent_folder = "image_sample/branch_Spin_to_charge/2020_06/"
     
-#    sub_folder = "hopper_50s_power"
-#    sub_folder = "hopper_10s_power"
-    sub_folder = "hopper_1s_power"
-    folder_name = parent_folder + sub_folder + '/select_data'
+    sub_folder = "hopper_50s_power/depths"
+#    sub_folder = "hopper_10s_power/select_data"
+#    sub_folder = "hopper_1s_power/select_data"
+    folder_name = parent_folder + sub_folder
 #    
-#    radial_distrbution_power(folder_name, sub_folder)
+    radial_distrbution_power(folder_name, sub_folder)
     
-#    sub_folder = "hopper_4mw_time/select_data"
+    sub_folder = "hopper_4mw_time/select_data"
 #    sub_folder = "hopper_8mw_time/select_data"
-    sub_folder = "hopper_12mw_time/select_data"
+#    sub_folder = "hopper_12mw_time/select_data"
     folder_name = parent_folder + sub_folder 
     
-    radial_distrbution_time(folder_name, sub_folder)
+#    radial_distrbution_time(folder_name, sub_folder)
 
     
 #    radial_distrbution_wait_time(folder_name, sub_folder)

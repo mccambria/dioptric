@@ -75,9 +75,9 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    scan_range = 0.28
 #    num_steps = 150
 #    scan_range = 0.1
-#    num_steps = 120
+    num_steps = 120
 #    scan_range = 0.3
-    num_steps = 90
+#    num_steps = 90
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
@@ -530,7 +530,7 @@ if __name__ == '__main__':
     
     sample_name = 'hopper'
     
-    ensemble = { 'coords':[0.0, 0.0, 5.3],
+    ensemble = { 'coords':[0, 0.0, 3.0],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -600,9 +600,9 @@ if __name__ == '__main__':
 #                do_time_resolved_readout(nv_sig_copy, apd_indices,
 #                         638, 589)
             
-#            do_optimize(nv_sig, apd_indices, 532)
-#            do_opti_z(nv_sig, apd_indices, 532)
-            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
+#            do_optimize(nv_sig, apd_indices, 589)
+            do_opti_z(nv_sig, apd_indices, 638)
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False)
