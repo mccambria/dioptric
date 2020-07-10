@@ -132,12 +132,12 @@ def main(file_names, nv_data):
             label_gamma = None
             label_omega = None
             
-        gamma_plot = ax.errorbar(ind, nv['gamma'], yerr=nv['gamma_err'], 
+        gamma_plot = ax.errorbar(ind, nv['gamma']*1000, yerr=nv['gamma_err']*1000, 
                     label=label_gamma, marker='o',
                     color='#993399', markerfacecolor='#CC99CC',
                     linestyle='None', ms=ms, lw=lw)
         
-        omega_plot = ax.errorbar(ind, nv['omega'], yerr=nv['omega_err'], 
+        omega_plot = ax.errorbar(ind, nv['omega']*1000, yerr=nv['omega_err']*1000, 
                     label=label_omega, marker='^',
                     color='#FF9933', markerfacecolor='#FFCC33',
                     linestyle='None', ms=ms, lw=lw)
@@ -145,9 +145,8 @@ def main(file_names, nv_data):
         tick_pos.append(ind)
         tick_labels.append(nv['name'])
         
-    ax.set_ylabel('Relaxation rate (kHz)')
+    ax.set_ylabel('Relaxation rate (s$^{-1}$)')
     ax.set_xlabel(None)
-    # ax.set_xlim(-0.25, 2.25)
     ax.set_xlim(-0.25, 3.5)
     ax.set_xticks(tick_pos)
     ax.set_xticklabels(tick_labels)

@@ -833,7 +833,7 @@ def conf_int(ax, B_linspace, popt, pcov):
     fill_color = '#ACECDB'
     pste = numpy.sqrt(numpy.diag(pcov))
     ax.plot(B_linspace, linear(B_linspace, *popt), c=lin_color)
-    ax.fill_between(B_linspace, fit - 2*err, fit + 2*err, color=fill_color)
+    ax.fill_between(B_linspace, fit - err, fit + err, color=fill_color)
     print('{}\n{}\n'.format(popt, pste))
     
     
@@ -1003,13 +1003,17 @@ def main(nv_data):
     # x_min = -5
     # x_max = 115
     
-    omega_label = r'$\Omega$ (kHz)'
-    omega_min = 0.043
-    omega_max = 0.077
+    omega_label = r'$\Omega$ (s$^{-1}$)'
+    # omega_min = 0.043
+    # omega_max = 0.077
+    omega_min = 43
+    omega_max = 77
     
-    gamma_label = r'$\gamma$ (kHz)'
-    gamma_min = 0.09
-    gamma_max = 0.27
+    gamma_label = r'$\gamma$ (s$^{-1}$)'
+    # gamma_min = 0.09
+    # gamma_max = 0.27
+    gamma_min = 90
+    gamma_max = 270
             
     ax = axes_pack[0]
     # ax.set_xlabel(r'$B_{\parallel}$ (G)')
@@ -1055,10 +1059,11 @@ def main(nv_data):
         # if name != 'test':
         #     continue
         
-        omega = numpy.array(nv['omega'])
-        omega_err = numpy.array(nv['omega_err'])
-        gamma = numpy.array(nv['gamma'])
-        gamma_err = numpy.array(nv['gamma_err'])
+        # Convert to s-1 rather than kHz
+        omega = numpy.array(nv['omega']) * 1000
+        omega_err = numpy.array(nv['omega_err']) * 1000
+        gamma = numpy.array(nv['gamma']) * 1000
+        gamma_err = numpy.array(nv['gamma_err']) * 1000
         mag_B = numpy.array(nv['mag_B'])
         par_B = numpy.array(nv['par_B'])
         perp_B = numpy.array(nv['perp_B'])
@@ -1138,10 +1143,12 @@ def main(nv_data):
               borderaxespad=0., handlelength=0.5, )
     
     # yticks
-    ticks = numpy.linspace(0.05, 0.07, 3)  # omega
+    # ticks = numpy.linspace(0.05, 0.07, 3)  # omega
+    ticks = numpy.linspace(50, 70, 3)  # omega
     axes_pack[0].set_yticks(ticks)
     axes_pack[2].set_yticks(ticks)
-    ticks = numpy.linspace(0.1, 0.25, 4)  # gamma
+    # ticks = numpy.linspace(0.1, 0.25, 4)  # gamma
+    ticks = numpy.linspace(100, 250, 4)  # gamma
     axes_pack[1].set_yticks(ticks)
     axes_pack[3].set_yticks(ticks)
     
