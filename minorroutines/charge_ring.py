@@ -14,10 +14,10 @@ import time
 import copy
 # %%
 
-reset_range = 1.5
-image_range = 1.5
-num_steps = 120
-num_steps_reset = 50
+reset_range = 2.5
+image_range = 2.5
+num_steps = 200
+num_steps_reset = 60
 apd_indices = [0]
 # %%
 
@@ -111,7 +111,7 @@ def green_scan(x_voltages, y_voltages, z_center, pulser_wiring_green):
 def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     aom_ao_589_pwr = nv_sig['am_589_power']
     coords = nv_sig['coords']
-    print(coords)
+#    print(coords)
     readout = nv_sig['pulsed_SCC_readout_dur']
     green_pulse_time = int(green_pulse_time)
     
@@ -243,7 +243,7 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
 if __name__ == '__main__':
     sample_name = 'hopper'
     
-    ensemble = { 'coords':[0, 0, 5.3],
+    ensemble = { 'coords':[0, 0, 4.3],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -252,28 +252,20 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 4, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
     nv_sig = ensemble
  
-#    green_pulse_time_list = numpy.array([0.1, 0.25,  0.5,  0.75,
-#                                        1,2.5, 5,7.5 ,
-#                                        10, 25, 50, 75,
-#                                        100, 250, 500, 750,
-#                                        1000
-#                                        ])*10**9 # 8 mW, 12 mW, 4 mW
+    green_pulse_time_list = numpy.array([0.1, 1, 5, 10, 25, 50, 75, 100, 250, 1000
+                                         ])*10**9 # 60 mW, 16 mW, 4 mW
 #    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
 #    green_pulse_time_list = [50*10**9] # ns
 #    wait_time_list = numpy.array([0]) # s
 #    wait_time_list = [1000]
     
-    z_list = [3.72]
-    for z in z_list: 
-        coords = nv_sig['coords']
-        coords[2]= z
-        nv_sig['coords'] = coords
+    for t in green_pulse_time_list:
         with labrad.connect() as cxn:         
-            main(cxn, nv_sig, 50*10**9)
+            main(cxn, nv_sig, t)

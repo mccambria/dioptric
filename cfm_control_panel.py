@@ -68,18 +68,18 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
-    scan_range = 1.5
+#    scan_range = 1.5
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
 #    scan_range = 0.28
 #    num_steps = 150
-#    scan_range = 0.1
-    num_steps = 120
+    scan_range = 0.1
+#    num_steps = 120
 #    scan_range = 0.3
 #    num_steps = 90
 #    scan_range = 0.05
-#    num_steps = 60
+    num_steps = 60
 #    scan_range = 0.025
 #    num_steps = 10
 #    num_steps = 5
@@ -530,7 +530,7 @@ if __name__ == '__main__':
     
     sample_name = 'hopper'
     
-    ensemble = { 'coords':[0, 0.0, 3.0],
+    ensemble = { 'coords':[-0.407, 0.140, 3.235],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -560,7 +560,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.0])
@@ -585,7 +585,7 @@ if __name__ == '__main__':
             with labrad.connect() as cxn:
                 cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #     
-#            for image_z in numpy.linspace(4.5, 5.5, 6):
+#            for image_z in numpy.linspace(2.75, 2.85,3):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                coords = nv_sig_copy['coords']
 #                nv_sig_copy['coords'] = [coords[0], coords[1], image_z]                
@@ -601,7 +601,7 @@ if __name__ == '__main__':
 #                         638, 589)
             
 #            do_optimize(nv_sig, apd_indices, 589)
-            do_opti_z(nv_sig, apd_indices, 638)
+            do_opti_z(nv_sig, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
