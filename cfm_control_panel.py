@@ -530,7 +530,7 @@ if __name__ == '__main__':
     
     sample_name = 'hopper'
     
-    ensemble = { 'coords':[-0.407, 0.140, 3.235],
+    ensemble = { 'coords':[-0.407, 0.140, 3.335],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -539,7 +539,7 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 4, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 

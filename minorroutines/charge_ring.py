@@ -14,10 +14,10 @@ import time
 import copy
 # %%
 
-reset_range = 2.5
-image_range = 2.5
-num_steps = 200
-num_steps_reset = 60
+reset_range = 1.5
+image_range = 1.5
+num_steps = 120
+num_steps_reset = 50
 apd_indices = [0]
 # %%
 
@@ -252,20 +252,25 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 4, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 16, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
     nv_sig = ensemble
  
-    green_pulse_time_list = numpy.array([0.1, 1, 5, 10, 25, 50, 75, 100, 250, 1000
-                                         ])*10**9 # 60 mW, 16 mW, 4 mW
+#    green_pulse_time_list = numpy.array([0.1, 1, 5, 10, 25, 50, 75, 100, 250, 1000
+#                                         ])*10**9 # 60 mW, 16 mW, 4 mW
 #    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
-#    green_pulse_time_list = [50*10**9] # ns
+    green_pulse_time_list = [50*10**9] # ns
 #    wait_time_list = numpy.array([0]) # s
 #    wait_time_list = [1000]
     
-    for t in green_pulse_time_list:
+#    for t in green_pulse_time_list:
+    z_list = [ 2.5]
+    for z in z_list: 
+        coords = nv_sig['coords']
+        coords[2]= z
+        nv_sig['coords'] = coords
         with labrad.connect() as cxn:         
-            main(cxn, nv_sig, t)
+            main(cxn, nv_sig, 50*10**9)

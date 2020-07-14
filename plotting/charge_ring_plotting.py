@@ -251,7 +251,7 @@ def radial_distrbution_power(folder_name, sub_folder):
 def radial_distrbution_time(folder_name, sub_folder):
     # create a file list of the files to analyze
     file_list  = tool_belt.get_file_list(folder_name, '.txt')
-#    file_list = ['0.1.txt', '1.txt', '5.txt', '10.txt', '25.txt', '50.txt', '75.txt', '100.txt', '250.txt', '1000.txt' ]
+    file_list = ['0.1.txt', '1.txt', '5.txt', '10.txt', '25.txt', '50.txt', '75.txt', '100.txt', '250.txt', '1000.txt' ]
     # create lists to fill with data
     green_time_list = []
     radii_array = []
@@ -502,17 +502,17 @@ if __name__ == '__main__':
     
 #    sub_folder = "hopper_50s_power"
 #    sub_folder = "hopper_10s_power"
-#    sub_folder = "hopper_1s_power"
-#    folder_name = parent_folder + sub_folder
+    sub_folder = "hopper_1s_power"
+    folder_name = parent_folder + sub_folder
 #    
-#    radial_distrbution_power(folder_name, sub_folder)
+    radial_distrbution_power(folder_name, sub_folder)
     
-#    sub_folder = "hopper_4mw_time"
-#    sub_folder = "hopper_8mw_time"
-    sub_folder = "hopper_15mw_time"
+#    sub_folder = "hopper_0.3mw_time"
+#    sub_folder = "hopper_2mw_time"
+#    sub_folder = "hopper_15mw_time"
     folder_name = parent_folder + sub_folder 
     
-    radial_distrbution_time(folder_name, sub_folder)
+#    radial_distrbution_time(folder_name, sub_folder)
 
     
 #    radial_distrbution_wait_time(folder_name, sub_folder)
