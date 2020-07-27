@@ -362,7 +362,7 @@ def main(cxn, nv_sig, green_pulse_time, red_pulse_time, pos):
 if __name__ == '__main__':
     sample_name = 'hopper'
     
-    ensemble = { 'coords':[0, 0, 4.3],
+    ensemble = { 'coords':[0, 0, 4.47],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -389,7 +389,7 @@ if __name__ == '__main__':
     green_time_list = [1*10**9, 10*10**9, 100*10**9] # ns
     red_time_list = [1, 10,  100] # s
 
-    for x in [0.5, 0.25]:
+    for x in [0.75]:
         for tr in red_time_list:
             for tg in green_time_list:
                 with labrad.connect() as cxn:         

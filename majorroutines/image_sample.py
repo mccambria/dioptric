@@ -127,7 +127,7 @@ def reformat_plot(colorMap, save_file_type):
             # Build the image array from the data
             imgArray = []
 
-            for line in data["img_array"]:
+            for line in data["dif_img_array"]:
                 imgArray.append(line)
 
             counts_array = numpy.array(imgArray)
@@ -145,11 +145,11 @@ def reformat_plot(colorMap, save_file_type):
             num_steps = data["num_steps"]
 
             # Read in the values for the scan ranges, centers, and resolution
-            yScanRange = data["y_range"]
+            yScanRange = data["image_range"]
             yCenter = xyzCenters[1]
             yImgResolution = yScanRange / num_steps
 
-            xScanRange = data["x_range"]
+            xScanRange = data["image_range"]
             xCenter = xyzCenters[0]
             xImgResolution = xScanRange / num_steps
 

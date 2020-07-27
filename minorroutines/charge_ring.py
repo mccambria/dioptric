@@ -14,10 +14,10 @@ import time
 import copy
 # %%
 
-reset_range = 1.5
-image_range = 1.5
-num_steps = 120
-num_steps_reset = 50
+reset_range = 2.5
+image_range = 2.5
+num_steps = 200
+num_steps_reset = 60
 apd_indices = [0]
 # %%
 
@@ -243,7 +243,7 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
 if __name__ == '__main__':
     sample_name = 'hopper'
     
-    ensemble = { 'coords':[0, 0, 4.3],
+    ensemble = { 'coords':[0, 0, 4.47], #+0.04
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -266,11 +266,6 @@ if __name__ == '__main__':
 #    wait_time_list = numpy.array([0]) # s
 #    wait_time_list = [1000]
     
-#    for t in green_pulse_time_list:
-    z_list = [ 2.5]
-    for z in z_list: 
-        coords = nv_sig['coords']
-        coords[2]= z
-        nv_sig['coords'] = coords
+    for t in green_pulse_time_list:
         with labrad.connect() as cxn:         
-            main(cxn, nv_sig, 50*10**9)
+            main(cxn, nv_sig, t)

@@ -10,6 +10,7 @@ import numpy
 import utils.tool_belt as tool_belt
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
+from scipy import integrate
 
 # %%
 
@@ -109,19 +110,17 @@ def r_vs_time_plot(nv_sig, ring_radius_list, ring_err_list, green_time_list,
 # %%
 
 def radial_distrbution_power(folder_name, sub_folder):
-#    labls = ['previous data', 'z = 2.5 V', 'z = 2.6 V', 'z = 2.7 V', 'z = 2.8 V', 'z = 2.9 V', 'z = 3.0 V', 'z = 3.5 V', 'z = 3.8 V', 'z = 4.0 V', 'z = 5.0 V', 'z = 6.0 V']
-#    labls = ['previous data', 'z = 3.5 V', 'z = 3.65 V','z=3.72', 'z = 3.8 V']
+    labls = ['Area A', 'Area B', 'Area C']
    # create a file list of the files to analyze
     file_list  = tool_belt.get_file_list(folder_name, '.txt')
-    file_list = [ '1.txt', '4.txt', '8.txt', '12.txt', '16.txt', '20.txt', '30.txt', '40.txt',  '50.txt', '60.txt']
-#    file_list = ['previous.txt', '2.5.txt', '2.6.txt', '2.7.txt', '2.8.txt', '2.9.txt', '3.0.txt','3.5.txt','3.8.txt', '4.0.txt', '5.0.txt', '6.0.txt']
-#    file_list = ['previous.txt', '3.5.txt','3.65.txt', '3.72.txt', '3.8.txt']
+    file_list = [ 'A.txt','B.txt', 'C.txt']
     
     # create lists to fill with data
     power_list = []
     radii_array = []
     counts_r_array = []
     fig, ax = plt.subplots(1,1, figsize = (8, 8))
+    l = 0
     for file in file_list:
 #        try:
             data = tool_belt.get_raw_data(folder_name, file[:-4])
@@ -182,10 +181,14 @@ def radial_distrbution_power(folder_name, sub_folder):
             # define the radial values as center values of pizels along x, convert to um
             radii = numpy.array(x_voltages[int(num_steps/2):])*35
             # plot
-            ax.plot(radii, counts_r, label  = '{} mW green pulse'.format('%.2f'%opt_power))
+            ax.plot(radii, counts_r, label  = labls[l])#'{} mW green pulse'.format('%.2f'%opt_power))
             power_list.append(opt_power)
             radii_array.append(radii.tolist())
             counts_r_array.append(counts_r)
+            l = l+1
+            
+            integrated_counts = integrate.simps(counts_r, x = radii)
+            print(integrated_counts)
             # try to fit the radial distribution to a double gaussian(work in prog)    
 #            try:
 #                contrast_low = 500
@@ -218,7 +221,8 @@ def radial_distrbution_power(folder_name, sub_folder):
         
     ax.set_xlabel('Radius (um)')
     ax.set_ylabel('Avg counts around ring (kcps)')
-    ax.set_title('Varying green pulse power, {} s'.format(green_pulse_time / 10**9))
+    ax.set_title('Varying position in diamond, similar depth\n50 s, 2 mW green pulse')
+            #'Varying green pulse power, {} s'.format(green_pulse_time / 10**9))
     ax.legend()
  
     # save data from this file
@@ -323,7 +327,9 @@ def radial_distrbution_time(folder_name, sub_folder):
             green_time_list.append(green_pulse_time)
             radii_array.append(radii.tolist())
             counts_r_array.append(counts_r)
-
+            
+            integrated_counts = integrate.simps(counts_r, x = radii)
+            print(integrated_counts)
             
 #            # try to fit the radial distribution to a double gaussian(work in prog)    
 #            try:
@@ -502,18 +508,19 @@ if __name__ == '__main__':
     
 #    sub_folder = "hopper_50s_power"
 #    sub_folder = "hopper_10s_power"
-    sub_folder = "hopper_1s_power"
-    folder_name = parent_folder + sub_folder
+#    sub_folder = "hopper_1s_power"
+#    sub_folder = "spatial variation"
+#    folder_name = parent_folder + sub_folder
 #    
-    radial_distrbution_power(folder_name, sub_folder)
+#    radial_distrbution_power(folder_name, sub_folder)
     
 #    sub_folder = "hopper_0.3mw_time"
 #    sub_folder = "hopper_2mw_time"
-#    sub_folder = "hopper_15mw_time"
+    sub_folder = "hopper_15mw_time"
     folder_name = parent_folder + sub_folder 
     
-#    radial_distrbution_time(folder_name, sub_folder)
-
+    radial_distrbution_time(folder_name, sub_folder)
+#
     
 #    radial_distrbution_wait_time(folder_name, sub_folder)
 

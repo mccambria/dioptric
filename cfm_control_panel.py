@@ -68,18 +68,18 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
-#    scan_range = 1.5
+    scan_range = 1.5
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
 #    scan_range = 0.28
 #    num_steps = 150
-    scan_range = 0.1
-#    num_steps = 120
+#    scan_range = 0.1
+    num_steps = 120
 #    scan_range = 0.3
 #    num_steps = 90
 #    scan_range = 0.05
-    num_steps = 60
+#    num_steps = 60
 #    scan_range = 0.025
 #    num_steps = 10
 #    num_steps = 5
@@ -530,7 +530,7 @@ if __name__ == '__main__':
     
     sample_name = 'hopper'
     
-    ensemble = { 'coords':[-0.407, 0.140, 3.335],
+    ensemble = { 'coords':[0.0, 0.0,  4.47],#3.135],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -539,7 +539,7 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 4, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 16, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
@@ -563,8 +563,9 @@ if __name__ == '__main__':
         tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
-#        set_xyz([0.0,0.0,5.0])
-#        set_xyz([-0.116, -0.073, 2.61])
+        set_xyz([0.0,0.0,5.0])
+#        set_xyz([0.0, 0.0,  4.47])
+#        set_xyz([0.0, 0.0,  6.47])
 
       
 #        with labrad.connect() as cxn:
@@ -601,8 +602,8 @@ if __name__ == '__main__':
 #                         638, 589)
             
 #            do_optimize(nv_sig, apd_indices, 589)
-            do_opti_z(nv_sig, apd_indices, 532)
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
+#            do_opti_z(nv_sig, apd_indices, 532)
+#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False)
