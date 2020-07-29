@@ -49,6 +49,6 @@ def convert(folder_name):
             
 if __name__ == '__main__':
 
-    top_folder_name = 'C:/Users/Public/Documents/Jobin Yvon/SpectraData/10_nm_ionic_gel_tests'
+    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar/compare_objecives'
         
     convert(top_folder_name)
