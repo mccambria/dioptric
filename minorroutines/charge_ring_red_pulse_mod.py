@@ -389,10 +389,140 @@ if __name__ == '__main__':
     green_time_list = [1*10**9, 10*10**9, 100*10**9] # ns
     red_time_list = [1, 10,  100] # s
 
-    for x in [0.75]:
-        for tr in red_time_list:
-            for tg in green_time_list:
-                with labrad.connect() as cxn:         
-                    main(cxn, nv_sig, tg, tr, x)
+#    for x in [0.75]:
+#        for tr in red_time_list:
+#            for tg in green_time_list:
+#                with labrad.connect() as cxn:         
+#                    main(cxn, nv_sig, tg, tr, x)
+    
+## %% Subtract D - C
+#    file_list = ['r1_g1', 'r1_g10', 'r1_g100', 
+#                 'r10_g1', 'r10_g10', 'r10_g100', 
+#                 'r100_g1', 'r100_g10', 'r100_g100',]
+#    red_pulse_list = [1,1,1,10,10,10,100,100,100]
+#    green_pulse_list = [1,10,100,1,10,100,1,10,100]
+#    
+##    file_list = [
+##                 'r10_g1', 'r10_g10',  
+##                 'r100_g10']
+##    red_pulse_list = [10,10,100]
+##    green_pulse_list = [1,10,10]
+#    
+#    pos = 0.5
+#    folder = 'image_sample/branch_Spin_to_charge/2020_07/red_heal_x05'
+#    
+#    for i in range(len(file_list)):
+#        file_name = file_list[i]
+#        data = tool_belt.get_raw_data(folder+'/D', file_name)
+#        D_img_array = data['img_array']
+#        timestamp = data['timestamp']
+#        
+#        data = tool_belt.get_raw_data(folder+'/C', file_name)
+#        C_img_array = data['img_array']
+#        
+#        nv_sig = data['nv_sig']
+#        coords = nv_sig['coords']
+#        readout = nv_sig['pulsed_SCC_readout_dur']
+#        x_voltages = numpy.array(data['x_voltages'])
+#        x_range = data['x_range']
+#        num_steps = data['num_steps']
+#        
+#        dif_img_array = numpy.array(D_img_array) - numpy.array(C_img_array)
+#        
+#        title = 'Diff scan (with/without second green pulse)\nGreen pulse {} s, {} s red pulse on ring'.format(green_pulse_list[i], red_pulse_list[i]) 
+#        fig = plot_dif_fig(coords, x_voltages,image_range,  dif_img_array, readout, title )
+#
+#        rawData = {'timestamp': timestamp,
+#                   'nv_sig': nv_sig,
+#                   'nv_sig-units': tool_belt.get_nv_sig_units(),
+#                   'image_range': x_range,
+#                   'image_range-units': 'V',
+#                   'num_steps': num_steps,
+#                   'green_pulse_time': green_pulse_list[i],
+#                   'green_pulse_time-units': 'ns',
+#                   'red_pulse_time' : red_pulse_list[i],
+#                   'red_pulse_time-units' : 's',
+#                   'offset_pos_x_for_red': pos,
+#                   'offset_pos_x_for_red-units': 'V',
+#                   'readout': readout,
+#                   'readout-units': 'ns',
+#                   'x_voltages': x_voltages.tolist(),
+#                   'x_voltages-units': 'V',
+#                   'y_voltages': x_voltages.tolist(),
+#                   'y_voltages-units': 'V',
+#                   'C_img_array': C_img_array,
+#                   'C_img_array-units': 'counts',
+#                   'D_img_array': D_img_array,
+#                   'D_img_array-units': 'counts',
+#                   'dif_img_array': dif_img_array.tolist(),
+#                   'dif_img_array-units': 'counts'}
+#        filePath = tool_belt.get_file_path('image_sample', timestamp, nv_sig['name'], subfolder = 'red_heal_x05')
+#        tool_belt.save_raw_data(rawData, filePath + '_DC_dif')
+#    
+#        tool_belt.save_figure(fig, filePath + '_DC_dif')
+    
+# %% Subtract C - B
+    file_list = ['r1_g1', 'r1_g10', 'r1_g100', 
+                 'r10_g1', 'r10_g10', 'r10_g100', 
+                 'r100_g1', 'r100_g10', 'r100_g100',]
+    red_pulse_list = [1,1,1,10,10,10,100,100,100]
+    green_pulse_list = [1,10,100,1,10,100,1,10,100]
+    
+#    file_list = [
+#                 'r10_g1', 'r10_g10',  
+#                 'r100_g10']
+#    red_pulse_list = [10,10,100]
+#    green_pulse_list = [1,10,10]
+    
+    pos = 0.5
+    folder = 'image_sample/branch_Spin_to_charge/2020_07/red_heal_x05'
+    
+    for i in range(len(file_list)):
+        file_name = file_list[i]
+        data = tool_belt.get_raw_data(folder+'/C', file_name)
+        C_img_array = data['img_array']
+        timestamp = data['timestamp']
+        
+        data = tool_belt.get_raw_data(folder+'/B', file_name)
+        B_img_array = data['img_array']
+        
+        nv_sig = data['nv_sig']
+        coords = nv_sig['coords']
+        readout = nv_sig['pulsed_SCC_readout_dur']
+        x_voltages = numpy.array(data['x_voltages'])
+        x_range = data['x_range']
+        num_steps = data['num_steps']
+        
+        dif_img_array = numpy.array(C_img_array) - numpy.array(B_img_array)
+        
+        title = 'Diff scan (with/without red pulse)\nGreen pulse {} s, {} s red pulse on ring'.format(green_pulse_list[i], red_pulse_list[i]) 
+        fig = plot_dif_fig(coords, x_voltages,image_range,  dif_img_array, readout, title )
 
-
+        rawData = {'timestamp': timestamp,
+                   'nv_sig': nv_sig,
+                   'nv_sig-units': tool_belt.get_nv_sig_units(),
+                   'image_range': x_range,
+                   'image_range-units': 'V',
+                   'num_steps': num_steps,
+                   'green_pulse_time': green_pulse_list[i],
+                   'green_pulse_time-units': 'ns',
+                   'red_pulse_time' : red_pulse_list[i],
+                   'red_pulse_time-units' : 's',
+                   'offset_pos_x_for_red': pos,
+                   'offset_pos_x_for_red-units': 'V',
+                   'readout': readout,
+                   'readout-units': 'ns',
+                   'x_voltages': x_voltages.tolist(),
+                   'x_voltages-units': 'V',
+                   'y_voltages': x_voltages.tolist(),
+                   'y_voltages-units': 'V',
+                   'B_img_array': B_img_array,
+                   'B_img_array-units': 'counts',
+                   'C_img_array': C_img_array,
+                   'C_img_array-units': 'counts',
+                   'dif_img_array': dif_img_array.tolist(),
+                   'dif_img_array-units': 'counts'}
+        filePath = tool_belt.get_file_path('image_sample', timestamp, nv_sig['name'], subfolder = 'red_heal_x05')
+        tool_belt.save_raw_data(rawData, filePath + '_CB_dif')
+    
+        tool_belt.save_figure(fig, filePath + '_CB_dif')
