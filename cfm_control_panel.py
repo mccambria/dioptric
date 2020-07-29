@@ -530,7 +530,7 @@ if __name__ == '__main__':
     
     sample_name = '5nm_Er'
     
-    ensemble = { 'coords':[0,0,  5],#3.135],
+    ensemble = { 'coords':[0,0,  5.08],#3.135],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -563,7 +563,7 @@ if __name__ == '__main__':
         tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
-#        set_xyz([0.0,0.0,5.0])
+#        set_xyz([0.0,0.0,5.08])
 #        set_xyz([0.0, 0.0,  4.47])
 #        set_xyz([0.0, 0.0,  6.47])
 
@@ -602,7 +602,7 @@ if __name__ == '__main__':
 #                         638, 589)
             
 #            do_optimize(nv_sig, apd_indices, 589)
-            do_opti_z(nv_sig, apd_indices, 532)
+#            do_opti_z(nv_sig, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
