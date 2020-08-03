@@ -49,6 +49,6 @@ def convert(folder_name):
             
 if __name__ == '__main__':
 
-    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar/compare_objecives'
+    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar/2020_07_29 5 nm Er post anneal'
         
     convert(top_folder_name)

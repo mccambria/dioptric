@@ -249,7 +249,7 @@ def do_lifetime(nv_sig, apd_indices, readout_time_range, num_steps, num_reps,
     lifetime.main(nv_sig, apd_indices, readout_time_range,
          num_steps, num_reps, num_runs, filter, voltage, polarization_time)
     
-def do_lifetime_v2(nv_sig, apd_indices, readout_time_range, num_reps, num_bins, num_runs,
+def do_lifetime_v2(nv_sig, apd_indices, readout_time_range, num_reps, num_runs, num_bins,
                 filter, voltage, polarization_time):
     
 #    num_reps =3* 10**5
@@ -428,7 +428,7 @@ if __name__ == '__main__':
     nd = 'nd_1.0'
     sample_name = '5nmEr'
     
-    search = { 'coords': [0.0, 0.0, 5.0],
+    search = { 'coords': [0.0, 0.0, 5.14],
             'name': '{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
@@ -470,7 +470,7 @@ if __name__ == '__main__':
 #            do_image_sample(nv_sig, apd_indices)
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
-            do_opti_z(nv_sig, apd_indices)
+#            do_opti_z(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
@@ -500,15 +500,15 @@ if __name__ == '__main__':
 #            filter = 'Shortpass'
 #            filter = 'Longpass'
 #            filter = 'Sample removed'
-            voltage = 'no_graphene_yes_IG'
+            voltage = 'no_graphene_no_IG'
 #
-#            polarization_time = 600 * 10**3
-#            do_lifetime_v2(nv_sig, apd_indices, [0, 2*10**6],
-#                           0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
+            polarization_time = 600 * 10**3
+            do_lifetime_v2(nv_sig, apd_indices, [0, 2*10**6],
+                           0.5*10**6, 1, 101, filter, voltage, polarization_time) # 200 us decay
             
 #            polarization_time = 100 * 10**3
 #            do_lifetime_v2(nv_sig, apd_indices, [0, 1*10**6],
-#                           0.5*10**6, 101, 1, filter, voltage, polarization_time) # 200 us decay
+#                           0.5*10**6, 1 101, filter, voltage, polarization_time) # 200 us decay
         
             
             

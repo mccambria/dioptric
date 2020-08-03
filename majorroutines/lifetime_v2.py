@@ -193,7 +193,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
             if tool_belt.safe_stop():
                 break
     
-            new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
+            #new_tags, new_channels
+            ret_vals = cxn.apd_tagger.read_tag_stream()
+            print(len(ret_vals))
             new_tags = numpy.array(new_tags, dtype=numpy.int64)
             
             ret_vals = process_raw_buffer(new_tags, new_channels,
