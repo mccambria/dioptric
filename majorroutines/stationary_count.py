@@ -61,7 +61,7 @@ def main_with_cxn(cxn, nv_sig, run_time, aom_power, apd_indices, color_ind, cont
     drift = numpy.array(tool_belt.get_drift())
     coords = numpy.array(nv_sig['coords'])
     
-    coords_drift = coords - drift
+    coords_drift = coords + drift
     
     cxn.galvo.write(coords_drift[0], coords_drift[1])
     cxn.objective_piezo.write(coords_drift[2])
