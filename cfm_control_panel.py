@@ -137,7 +137,7 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 def do_resonance(nv_sig, apd_indices, color_ind, freq_center=2.878, freq_range=0.2):
 #    # green @ 8 mW
     num_steps = 76
-    num_runs = 12
+    num_runs = 10
     uwave_power = -8
     
     # green @ 4 mW
@@ -604,7 +604,7 @@ if __name__ == '__main__':
 #            do_optimize(nv_sig, apd_indices, 589)
 #            do_opti_z(nv_sig, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
-            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
+#            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False)
 #            with labrad.connect() as cxn:  
@@ -628,7 +628,7 @@ if __name__ == '__main__':
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)
  
-#            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.1)
+            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.1)
 #            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.22)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
