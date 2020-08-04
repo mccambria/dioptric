@@ -104,8 +104,8 @@ def green_scan(x_voltages, y_voltages, z_center, pulser_wiring_green):
             tool_belt.set_xyz(cxn, [x_voltages[x_ind], y_voltages[y_ind], z_center])
             # Shine red light for 0.01 s
             cxn.pulse_streamer.constant([pulser_wiring_green], 0.0, 0.0)
-#            time.sleep(0.01)
-        cxn.pulse_streamer.constant([], 0.0, 0.0)  
+            time.sleep(0.01)
+            cxn.pulse_streamer.constant([], 0.0, 0.0)  
   
 # %%          
 def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
@@ -128,8 +128,8 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     x_voltages_r, y_voltages_r = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                    reset_range, reset_range,
                                                    num_steps_reset, 10**6)
-    print('Resetting with red light\n...')
-    red_scan(x_voltages_r, y_voltages_r, z_center, pulser_wiring_red)
+    print('Resetting with green light\n...')
+    green_scan(x_voltages_r, y_voltages_r, z_center, pulser_wiring_green)
          
     print('Waiting for {} s, during green pulse'.format(green_pulse_time/10**9))
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
@@ -155,8 +155,8 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     ref_img_array, x_voltages, y_voltages = image_sample.main(nv_sig, image_range, image_range, num_steps, 
                       aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
     
-    print('Resetting with red light\n...')
-    red_scan(x_voltages_r, y_voltages_r, z_center, pulser_wiring_red)
+    print('Resetting with green light\n...')
+    green_scan(x_voltages_r, y_voltages_r, z_center, pulser_wiring_green)
  
     # now pulse the green at the center of the scan for a short time         
     print('Pulsing green light for {} s'.format(green_pulse_time/10**9))
@@ -247,7 +247,7 @@ if __name__ == '__main__':
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 1, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -262,7 +262,7 @@ if __name__ == '__main__':
 #    green_pulse_time_list = numpy.array([0.1, 1, 5, 10, 25, 50, 75, 100, 250, 1000
 #                                         ])*10**9 # 60 mW, 16 mW, 4 mW
 #    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
-    green_pulse_time_list = [50*10**9] # ns
+    green_pulse_time_list = [10*10**9] # ns
 #    wait_time_list = numpy.array([0]) # s
 #    wait_time_list = [1000]
     
