@@ -528,9 +528,9 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    sample_name = '5nm_Er'
+    sample_name = 'hopper'
     
-    ensemble = { 'coords':[0,0,  5.08],#3.135],
+    ensemble = { 'coords':[0,0,  5.0],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -560,7 +560,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.08])
@@ -602,9 +602,9 @@ if __name__ == '__main__':
 #                         638, 589)
             
 #            do_optimize(nv_sig, apd_indices, 589)
-            do_opti_z(nv_sig, apd_indices, 532)
+#            do_opti_z(nv_sig, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
-#            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
+            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False)
 #            with labrad.connect() as cxn:  

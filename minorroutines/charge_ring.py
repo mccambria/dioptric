@@ -243,7 +243,7 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
 if __name__ == '__main__':
     sample_name = 'hopper'
     
-    ensemble = { 'coords':[0, 0, 4.47], #+0.04
+    ensemble = { 'coords':[0, 0, 5.0], 
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
