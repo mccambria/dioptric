@@ -92,7 +92,7 @@ def do_opti_z(nv_sig_list, apd_indices):
 
 def do_stationary_count(nv_sig, apd_indices):
 
-    run_time = 90 * 10**9  # ns
+    run_time = 120 * 10**9  # ns
 
     stationary_count.main(nv_sig, run_time, apd_indices)
 
@@ -411,7 +411,7 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     nd = 'nd_0'
-    sample_name = '5nmEr'
+    sample_name = '5nmEr-noncapped'
     
     search = { 'coords': [0.0, 0.0, 5.14],
             'name': '{}'.format(sample_name),
@@ -483,7 +483,7 @@ if __name__ == '__main__':
             
             voltage = 'no_graphene_no_IG'
 #
-#            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
+            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
 #            do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = False)
 #            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = False)
         
