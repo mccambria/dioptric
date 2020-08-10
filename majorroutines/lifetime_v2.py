@@ -281,9 +281,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
 
-    ax.semilogy(bin_centers, binned_samples, 'r-')
+    ax.semilogy(numpy.array(bin_centers)/10**6, binned_samples, 'r-')
     ax.set_title('Lifetime')
-    ax.set_xlabel('Time after illumination (ns)')
+    ax.set_xlabel('Time after illumination (ms)')
     ax.set_ylabel('Counts')
     
     fig.canvas.draw()

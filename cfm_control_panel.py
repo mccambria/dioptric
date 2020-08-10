@@ -411,7 +411,8 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     nd = 'nd_0'
-    sample_name = '5nmEr-noncapped'
+#    sample_name = '5nmEr-noncapped'
+    sample_name = '5nmEr-capped'
     
     search = { 'coords': [0.0, 0.0, 5.14],
             'name': '{}'.format(sample_name),
@@ -484,8 +485,11 @@ if __name__ == '__main__':
             voltage = 'no_graphene_no_IG'
 #
             do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
-#            do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = False)
-#            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = False)
+            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)
+            do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = False)
+            do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = True)
+            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = False)
+            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = True)
         
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
