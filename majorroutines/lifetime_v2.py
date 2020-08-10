@@ -143,7 +143,24 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
     start_timestamp = tool_belt.get_time_stamp()
     
     opti_coords_list = []
-
+    
+    # %% Set the filters
+    
+    
+    if reference:
+        # shutter the objective
+        cxn.filter_slider_ell9k.set_filter('nd_0.5')
+        # put the correct color filter on
+        cxn.filter_slider_ell9k_color.set_filter(filter)
+    else:
+        # Optimize along z
+        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
+        opti_coords_list.append(opti_coords)
+        # do not shutter the objective
+        cxn.filter_slider_ell9k.set_filter('nd_0')
+        # put the correct color filter on
+        cxn.filter_slider_ell9k_color.set_filter(filter)
+    
     # %% Collect the data
     
     processed_tags = []
@@ -217,7 +234,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'filter': filter,
+                    'filter': filter,   
+                    'reference_measurement?': reference,
                     'start_readout_time': start_readout_time,
                     'start_readout_time-units': 'ns',
                     'end_readout_time': end_readout_time,
@@ -282,7 +300,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
                 'time_elapsed': time_elapsed,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'filter': filter,
+                'filter': filter,   
+                'reference_measurement?': reference,
                 'voltage': voltage,
                 'polarization_time': polarization_time,
                 'polarization_time-units': 'ns',
