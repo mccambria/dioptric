@@ -83,15 +83,15 @@ def process_raw_buffer(new_tags, new_channels,
 
 
 def main(nv_sig, apd_indices, readout_time_range,
-         num_reps, num_runs, num_bins, filter, voltage, polarization_time):
+         num_reps, num_runs, num_bins, filter, voltage, polarization_time, reference = False):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
-                      num_reps, num_runs, num_bins, filter, voltage, polarization_time)
+                      num_reps, num_runs, num_bins, filter, voltage, polarization_time, reference)
 
 
 def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
-                  num_reps, num_runs, num_bins, filter, voltage, polarization_time):
+                  num_reps, num_runs, num_bins, filter, voltage, polarization_time, reference = False):
     
     if len(apd_indices) > 1:
         msg = 'Currently lifetime only supports single APDs!!'

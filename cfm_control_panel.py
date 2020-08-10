@@ -235,32 +235,17 @@ def do_t1_interleave(nv_sig, apd_indices):
         ])
 
     t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
-
-def do_lifetime(nv_sig, apd_indices, readout_time_range, num_steps, num_reps, 
-                filter, voltage, polarization_time):
     
-#    num_reps =3* 10**5
-#    num_bins = 300
-    num_runs = 1
-#    num_bins = 150
-#    readout_time = 50 * 10**3 #ns
-#    readout_time = 1 * 10**6 #ns
+def do_lifetime(nv_sig, apd_indices, filter, voltage, reference = False):
     
-    lifetime.main(nv_sig, apd_indices, readout_time_range,
-         num_steps, num_reps, num_runs, filter, voltage, polarization_time)
-    
-def do_lifetime_v2(nv_sig, apd_indices, readout_time_range, num_reps, num_runs, num_bins,
-                filter, voltage, polarization_time):
-    
-#    num_reps =3* 10**5
-#    num_bins = 300
-#    num_runs = 1
-#    num_bins = 150
-#    readout_time = 50 * 10**3 #ns
-#    readout_time = 1 * 10**6 #ns
+    num_reps = 500
+    num_bins = 101
+    num_runs = 10
+    readout_time_range = [0, 1.5 * 10**6] #ns
+    polarization_time = 60 * 10**3 #ns
     
     lifetime_v2.main(nv_sig, apd_indices, readout_time_range,
-         num_reps, num_runs, num_bins, filter, voltage, polarization_time)
+         num_reps, num_runs, num_bins, filter, voltage, polarization_time, reference)
     
 def do_ramsey(nv_sig, apd_indices):
 
@@ -496,22 +481,12 @@ if __name__ == '__main__':
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
             
-            filter = 'No filter'
-#            filter = 'Shortpass'
-#            filter = 'Longpass'
-#            filter = 'Sample removed'
             voltage = 'no_graphene_no_IG'
 #
-            polarization_time = 600 * 10**3
-            do_lifetime_v2(nv_sig, apd_indices, [0, 2*10**6],
-                           0.5*10**6, 1, 101, filter, voltage, polarization_time) # 200 us decay
-            
-#            polarization_time = 100 * 10**3
-#            do_lifetime_v2(nv_sig, apd_indices, [0, 1*10**6],
-#                           0.5*10**6, 1 101, filter, voltage, polarization_time) # 200 us decay
+            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
+#            do_lifetime(nv_sig, apd_indices, 'shortpss', voltage ,reference = False)
+#            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = False)
         
-            
-            
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
 #            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
