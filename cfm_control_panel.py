@@ -411,7 +411,7 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     nd = 'nd_0'
-#    sample_name = '5nmEr-noncapped'
+#    sample_name = '5nmEr-noncapped-center'
     sample_name = '5nmEr-capped'
     
     search = { 'coords': [0.0, 0.0, 5.14],
