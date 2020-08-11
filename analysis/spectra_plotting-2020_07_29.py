@@ -120,52 +120,34 @@ def plot_spectra(file,folder, wavelength_range, vertical_range, plot_title):
     
 # %%
 
-# 5 nm Er 3/9
-folder_309 = '2020_03_09 5 nm Er'
-#file_309 = '545-700'
-file_309 = '550'
-# 5 nm Er 7/29
-folder_729 = '2020_07_29 5 nm Er pre anneal'
-file_72_9_MM = 'pre_anneal_MM'
+# blank y2o3
+folder_blank = 'Blank Y2O3'
+file_blank = '2020_08_03-blank_y2o3'
 
-# objective comp
-folder = 'compare_objecives'
-oil_file = 'oil'
-air_file = 'air'
-
-# pre annneal
-folder_pre = '2020_07_29 5 nm Er pre anneal'
-file_pre_MM = 'pre_anneal_MM'
-file_pre_SM = 'pre_anneal_SM_fullmanu'
-# post anneal
-folder_post = '2020_07_29 5 nm Er post anneal'
-file_post_MM = 'post_anneal_MM'
-file_post_MM_2 = 'post_anneal_MM_2'
-file_post_SM = 'post_anneal_SM_fullmanu'
+# 5nm er
+folder_Er = '2020_07_29 5 nm Er post anneal'
+file_Er = 'post_anneal_MM_2'
+file_Er = 'post_anneal_MM_8_3'
 
 
 if __name__ == '__main__':
     
-     # measurement 3/09
-    wvlngth_1, counts_1 = plot_spectra(file_pre_MM, folder_pre,  [None, None], [None, None],'pre anneal') 
-        
-     # measurement 7/29
-#    wvlngth_2, counts_2 = plot_spectra(file_n_g_y_ig_550_5nm, folder_5,  [None, None], [-100, 300],'5 nm Er')
-#    wvlngth_2, counts_2 = plot_spectra(file_n_g_y_ig_550_10nm, folder_10, [None, None], [-100, 300],'10 nm Er')
-    # 660 nm, with ionic gel
-    wvlngth_2, counts_2 = plot_spectra(file_post_MM_2, folder_post,  [None, None], [None, None],'post anneal')
-#    wvlngth_2, counts_2 = plot_spectra(file_n_g_y_ig_660_10nm, folder_10, [None, None], [-100, 300],'10 nm Er')
+    wvlngth_1, counts_1 = plot_spectra(file_Er, folder_Er,  [None, None], [None, None],'Y2O3 w/ Er implanted 5 nm') 
+
+    wvlngth_2, counts_2 = plot_spectra(file_blank, folder_blank,  [None, None], [None, None], 'Y2O3 w/out Er')
+ 
+
 
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
     
 #    print(counts_1)
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
-    ax.set_title('Spectra (compare 5nm Er from March)')
+    ax.set_title('Spectra, Y2O3 substrate comparison')
 #    ax.set_ylim([500,5000]) 
 #    ax.set_xlim([500,570]) 
-    ax.plot(wvlngth_1, numpy.array(counts_1), label ='Pre anneal, MM')
-    ax.plot(wvlngth_2, numpy.array(counts_2), label = 'Post anneal, MM')
+    ax.plot(wvlngth_1, numpy.array(counts_1), label ='Y2O3 w/ Er implanted (5 nm)')
+    ax.plot(wvlngth_2, numpy.array(counts_2), label = 'Y2O3 w/out Er')
     ax.legend()
 
     
