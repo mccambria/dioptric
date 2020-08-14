@@ -49,6 +49,10 @@ def convert(folder_name):
             
 if __name__ == '__main__':
 
-    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar/Blank Y2O3'
+    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar/2020_08_10 5 nm capped'
+        
+    convert(top_folder_name)
+
+    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar/2020_08_10 5 nm noncapped'
         
     convert(top_folder_name)

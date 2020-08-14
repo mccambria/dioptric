@@ -56,13 +56,13 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-#    scan_range = 5.0
+    scan_range = 5.0
 #    scan_range = 0.6
 #    scan_range = 0.5
 #    scan_range = 0.3
 #    scan_range = 0.2
 #    scan_range = 0.1
-    scan_range = 0.05
+#    scan_range = 0.05
 #    scan_range = 0.025
     
 #    num_steps = 300
@@ -70,8 +70,8 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 150
 #    num_steps = 135
 #    num_steps = 120
-    num_steps = 90
-#    num_steps = 60
+#    num_steps = 90
+    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -412,7 +412,9 @@ if __name__ == '__main__':
     
     nd = 'nd_0'
 #    sample_name = '5nmEr-noncapped-center'
-    sample_name = '5nmEr-capped'
+    sample_name = '5nmEr-capped-center'
+#    sample_name = '5nmEr-noncapped'
+#    sample_name = '5nmEr-capped'
     
     search = { 'coords': [0.0, 0.0, 5.14],
             'name': '{}'.format(sample_name),

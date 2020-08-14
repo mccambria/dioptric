@@ -102,7 +102,7 @@ def wavelength_range_calc(wavelength_range, wavelength_list):
 
 # %%
     
-def plot_spectra(file,folder, wavelength_range, vertical_range, plot_title):
+def plot_spectra(file,folder, wavelength_range = [None, None], vertical_range = [None, None], plot_title = ''):
     data = tool_belt.get_raw_data(folder, file,
                  nvdata_dir=data_path)
     wavelengths = numpy.array(data['wavelengths'])
@@ -117,24 +117,70 @@ def plot_spectra(file,folder, wavelength_range, vertical_range, plot_title):
         
         
         
+def plot_spectra_list(parent_folder, file_list, title, label_list, y_range, x_range = None):
+    fig, ax= plt.subplots(1, 1, figsize=(10, 8))
+    
+    for f in range(len(file_list)):
+        file = file_list[f]
+        wvlngth, counts = plot_spectra(file, parent_folder)
+        ax.plot(wvlngth, counts, label =label_list[f])
+        
+    ax.set_xlabel('Wavelength (nm)')
+    ax.set_ylabel('Counts')
+    ax.set_title(title)
+    ax.set_ylim(y_range)
+    if x_range:
+        ax.set_xlim(x_range)
+    ax.legend()    
+   
+    
+def august_cap_noncap_plots():
+    label_list = ['8/10/2020', '8/11/2020', '8/12/2020', '8/13/2020', '8/14/2020']
+    
+    # capped
+    title = 'Capped 5 nm Er'
+    parent_folder = '2020_08_10 5 nm capped'
+    file_list = ['2020_08_10-c-550','2020_08_11-c-550','2020_08_12-c-550',
+                 '2020_08_13-c-550','2020_08_14-c-550'] 
+    plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[500,1500], x_range = [547, 580] )
+
+    file_list = ['2020_08_10-c-670','2020_08_11-c-670','2020_08_12-c-670',
+                 '2020_08_13-c-670','2020_08_14-c-670'] 
+    plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[580,750], x_range = [644, 692])
+    
+    # noncapped
+    title = 'Noncapped 5 nm Er'
+    parent_folder = '2020_08_10 5 nm noncapped'
+    file_list = ['2020_08_10-nc-550','2020_08_11-nc-550','2020_08_12-nc-550',
+                 '2020_08_13-nc-550','2020_08_14-nc-550'] 
+    plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[500,1500], x_range = [547, 580])
+
+    file_list = ['2020_08_10-nc-670','2020_08_11-nc-670','2020_08_12-nc-670',
+                 '2020_08_13-nc-670','2020_08_14-nc-670'] 
+    plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[580,750], x_range = [644, 692])
+    
+    
+    
     
 # %%
+    
+# capped
+folder_c = '2020_08_10 5 nm capped'
+#file_c = '2020_08_14-c-550'
+file_c = '2020_08_14-c-670'
 
-# blank y2o3
-folder_blank = 'Blank Y2O3'
-file_blank = '2020_08_03-blank_y2o3'
-
-# 5nm er
-folder_Er = '2020_07_29 5 nm Er post anneal'
-file_Er = 'post_anneal_MM_2'
-file_Er = 'post_anneal_MM_8_3'
+# noncapped
+folder_nc = '2020_08_10 5 nm noncapped'
+#file_nc = '2020_08_14-nc-550'
+file_nc = '2020_08_14-nc-670'
 
 
 if __name__ == '__main__':
+#    august_cap_noncap_plots()
     
-    wvlngth_1, counts_1 = plot_spectra(file_Er, folder_Er,  [None, None], [None, None],'Y2O3 w/ Er implanted 5 nm') 
+    wvlngth_1, counts_1 = plot_spectra(file_c, folder_c) 
 
-    wvlngth_2, counts_2 = plot_spectra(file_blank, folder_blank,  [None, None], [None, None], 'Y2O3 w/out Er')
+    wvlngth_2, counts_2 = plot_spectra(file_nc, folder_nc)
  
 
 
@@ -143,11 +189,11 @@ if __name__ == '__main__':
 #    print(counts_1)
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
-    ax.set_title('Spectra, Y2O3 substrate comparison')
-#    ax.set_ylim([500,5000]) 
-#    ax.set_xlim([500,570]) 
-    ax.plot(wvlngth_1, numpy.array(counts_1), label ='Y2O3 w/ Er implanted (5 nm)')
-    ax.plot(wvlngth_2, numpy.array(counts_2), label = 'Y2O3 w/out Er')
+    ax.set_title('Capped vs noncapped (8/14/2020)')
+    ax.set_ylim([580, 750]) 
+    ax.set_xlim([644, 692]) 
+    ax.plot(wvlngth_1, numpy.array(counts_1), label ='capped')
+    ax.plot(wvlngth_2, numpy.array(counts_2), label = 'noncapped')
     ax.legend()
 
     
