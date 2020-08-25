@@ -238,9 +238,9 @@ def do_t1_interleave(nv_sig, apd_indices):
     
 def do_lifetime(nv_sig, apd_indices, filter, voltage, reference = False):
     
-    num_reps = 500
+    num_reps = 100
     num_bins = 101
-    num_runs = 10
+    num_runs = 50
     readout_time_range = [0, 1.5 * 10**6] #ns
     polarization_time = 60 * 10**3 #ns
     
@@ -412,8 +412,8 @@ if __name__ == '__main__':
     
     nd = 'nd_0'
 #    sample_name = '5nmEr-noncapped-center'
-    sample_name = '5nmEr-capped-center'
-#    sample_name = '5nmEr-noncapped'
+#    sample_name = '5nmEr-capped-center'
+    sample_name = '5nmEr-noncapped'
 #    sample_name = '5nmEr-capped'
     
     search = { 'coords': [0.0, 0.0, 5.14],
@@ -458,7 +458,7 @@ if __name__ == '__main__':
 #            do_image_sample(nv_sig, apd_indices)
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
-#            do_opti_z(nv_sig, apd_indices)
+            do_opti_z(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
@@ -486,12 +486,12 @@ if __name__ == '__main__':
             
             voltage = 'no_graphene_no_IG'
 #
-            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
-            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)
-            do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = False)
-            do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = True)
-            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = False)
-            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = True)
+#            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
+#            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)
+#            do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = False)
+#            do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = True)
+#            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = False)
+#            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = True)
         
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             

@@ -135,28 +135,43 @@ def plot_spectra_list(parent_folder, file_list, title, label_list, y_range, x_ra
    
     
 def august_cap_noncap_plots():
-    label_list = ['8/10/2020', '8/11/2020', '8/12/2020', '8/13/2020', '8/14/2020']
+    label_list = ['8/10/2020', '8/11/2020', '8/12/2020', 
+                  '8/13/2020', 
+                  '8/14/2020',
+                  '8/21/2020', 
+                  #'8/23/2020', '8/24/2020'
+                  ]
     
     # capped
     title = 'Capped 5 nm Er'
     parent_folder = '2020_08_10 5 nm capped'
     file_list = ['2020_08_10-c-550','2020_08_11-c-550','2020_08_12-c-550',
-                 '2020_08_13-c-550','2020_08_14-c-550'] 
-    plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[500,1500], x_range = [547, 580] )
+                 '2020_08_13-c-550','2020_08_14-c-550','2020_08_21-c-550'] 
+#    plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[500,1500], x_range = [547, 580] )
 
     file_list = ['2020_08_10-c-670','2020_08_11-c-670','2020_08_12-c-670',
-                 '2020_08_13-c-670','2020_08_14-c-670'] 
-    plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[580,750], x_range = [644, 692])
+                 '2020_08_13-c-670','2020_08_14-c-670','2020_08_21-c-670'] 
+#    plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[580,750], x_range = [644, 692])
     
     # noncapped
     title = 'Noncapped 5 nm Er'
     parent_folder = '2020_08_10 5 nm noncapped'
-    file_list = ['2020_08_10-nc-550','2020_08_11-nc-550','2020_08_12-nc-550',
-                 '2020_08_13-nc-550','2020_08_14-nc-550'] 
-    plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[500,1500], x_range = [547, 580])
+    file_list = ['2020_08_10-nc-550','2020_08_11-nc-550',
+                 '2020_08_12-nc-550',
+                 '2020_08_13-nc-550',
+                 '2020_08_14-nc-550',
+                 '2020_08_21-nc-550',
+                 #'2020_08_23-nc-550','2020_08_24-nc-550'
+                 ] 
+    plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[500,1700], x_range = [547, 580])
 
-    file_list = ['2020_08_10-nc-670','2020_08_11-nc-670','2020_08_12-nc-670',
-                 '2020_08_13-nc-670','2020_08_14-nc-670'] 
+    file_list = ['2020_08_10-nc-670','2020_08_11-nc-670',
+                 '2020_08_12-nc-670',
+                 '2020_08_13-nc-670',
+                 '2020_08_14-nc-670',
+                 '2020_08_21-nc-670',
+                 #'2020_08_23-nc-670','2020_08_24-nc-670'
+                 ] 
     plot_spectra_list(parent_folder, file_list, title, label_list, y_range =[580,750], x_range = [644, 692])
     
     
@@ -164,36 +179,47 @@ def august_cap_noncap_plots():
     
 # %%
     
-# capped
-folder_c = '2020_08_10 5 nm capped'
-#file_c = '2020_08_14-c-550'
-file_c = '2020_08_14-c-670'
+# pre anneal
+folder= '2020_08_10 5 nm noncapped/alignment tests'
+file_1 = '2020_08_25-alignment_test_1'
+file_2 = '2020_08_25-alignment_test_2'
+file_3 = '2020_08_25-alignment_test_3'
+file_4 = '2020_08_25-alignment_test_4'
+file_5 = '2020_08_25-alignment_test_5'
 
-# noncapped
-folder_nc = '2020_08_10 5 nm noncapped'
-#file_nc = '2020_08_14-nc-550'
-file_nc = '2020_08_14-nc-670'
+# post anneal
+#folder_post = '2020_08_10 5 nm noncapped'
+#file_post = '2020_08_14-nc-550'
+#file_post = '2020_08_14-nc-670'
 
 
 if __name__ == '__main__':
 #    august_cap_noncap_plots()
     
-    wvlngth_1, counts_1 = plot_spectra(file_c, folder_c) 
+    wvlngth_1, counts_1 = plot_spectra(file_1, folder) 
 
-    wvlngth_2, counts_2 = plot_spectra(file_nc, folder_nc)
+    wvlngth_2, counts_2 = plot_spectra(file_2, folder)
+    wvlngth_3, counts_3 = plot_spectra(file_3, folder)
+    wvlngth_4, counts_4 = plot_spectra(file_4, folder)
+    wvlngth_5, counts_5 = plot_spectra(file_5, folder)
  
 
 
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
     
-#    print(counts_1)
+    print(counts_1)
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
-    ax.set_title('Capped vs noncapped (8/14/2020)')
-    ax.set_ylim([580, 750]) 
-    ax.set_xlim([644, 692]) 
-    ax.plot(wvlngth_1, numpy.array(counts_1), label ='capped')
-    ax.plot(wvlngth_2, numpy.array(counts_2), label = 'noncapped')
+    ax.set_title('Spectra after realigning red path each time')
+#    ax.set_ylim([500, 1700]) 
+#    ax.set_xlim([547, 580]) 
+#    ax.set_ylim([580, 750]) 
+#    ax.set_xlim([644, 692]) 
+    ax.plot(wvlngth_1, numpy.array(counts_1), label ='#1 1265 kcps')
+    ax.plot(wvlngth_2, numpy.array(counts_2), label ='#2 1140 kcps')
+    ax.plot(wvlngth_3, numpy.array(counts_3), label ='#3 1402 kcps')
+    ax.plot(wvlngth_4, numpy.array(counts_4), label ='#4 1609 kcps')
+    ax.plot(wvlngth_5, numpy.array(counts_5), label ='#5 1655 kcps')
     ax.legend()
 
     

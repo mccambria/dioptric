@@ -53,6 +53,6 @@ if __name__ == '__main__':
         
     convert(top_folder_name)
 
-    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar/2020_08_10 5 nm noncapped'
+    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar/2020_08_10 5 nm noncapped/alignment tests'
         
     convert(top_folder_name)
