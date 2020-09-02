@@ -486,14 +486,13 @@ if __name__ == '__main__':
 #            do_t1_interleave(nv_sig, apd_indices)
             
             voltage = 'no_graphene_no_IG'
-#
+
+            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
+            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)
             do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = False)
             do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = True)
             do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = False)
             do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = True)
-            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
-            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)
-
         
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
