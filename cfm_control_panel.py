@@ -435,7 +435,7 @@ if __name__ == '__main__':
 #        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
-#        set_xyz([0.0,0.0,5.01])
+#        set_xyz([0.0,0.0,5.0])
 #        set_xyz([-0.116, -0.073, 2.61])
         
 #        with labrad.connect() as cxn:
@@ -460,6 +460,7 @@ if __name__ == '__main__':
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
             do_opti_z(nv_sig, apd_indices)
+#            cxn.filter_slider_ell9k_color.set_filter('560 bp')
             do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
@@ -489,10 +490,10 @@ if __name__ == '__main__':
 
 #            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
 #            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)
-#            do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = False)
-#            do_lifetime(nv_sig, apd_indices, 'shortpass', voltage ,reference = True)
-#            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = False)
-#            do_lifetime(nv_sig, apd_indices, 'longpass', voltage ,reference = True)
+#            do_lifetime(nv_sig, apd_indices, '560 bp', voltage ,reference = False)
+#            do_lifetime(nv_sig, apd_indices, '560 bp', voltage ,reference = True)
+#            do_lifetime(nv_sig, apd_indices, '670 bp', voltage ,reference = False)
+#            do_lifetime(nv_sig, apd_indices, '670 bp', voltage ,reference = True)
         
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
