@@ -47,7 +47,7 @@ def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_li
         ax.set_yscale("log", nonposy='clip')
     
 def main():
-    directory_mar = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_03'
+    directory_sept = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_09'
     
     directory = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_08'
     
@@ -57,21 +57,21 @@ def main():
 #        background_counts = numpy.array(data["binned_samples"])
         
     # No filter
-#    file_preanneal = '2020_03_09-15_46_02-Y2O3_no_graphene_no_IG_2'
-#    file_postanneal = '2020_08_14-09_52_49-5nmEr-noncapped'
+    file_nbp = '2020_08_21-14_15_07-5nmEr-noncapped'
+    file_bp = '2020_09_08-16_59_09-5nmEr-noncapped'
     
     # 550 Shortpass
-#    file_MM = '2020_08_25-09_29_04-5nmEr-noncapped'
-#    file_SM = '2020_08_21-14_15_44-5nmEr-noncapped'
-#    bkgd_file_list = ['2020_08_25-09_32_44-5nmEr-noncapped',
-#                      '2020_08_21-14_16_01-5nmEr-noncapped']
+#    file_nbp = '2020_08_21-14_15_44-5nmEr-noncapped'
+#    file_bp = '2020_09_08-16_59_49-5nmEr-noncapped'
+#    bkgd_file_list = ['2020_08_21-14_16_01-5nmEr-noncapped',
+#                      '2020_09_08-17_00_05-5nmEr-noncapped']
     # 630 longpass
-    file_MM = '2020_08_25-09_45_48-5nmEr-noncapped'
-    file_SM = '2020_08_21-14_16_20-5nmEr-noncapped'
-    bkgd_file_list = ['2020_08_25-09_58_35-5nmEr-noncapped',
-                      '2020_08_21-14_16_37-5nmEr-noncapped']
+#    file_nbp = '2020_08_21-14_16_20-5nmEr-noncapped'
+#    file_bp = '2020_09_08-17_00_25-5nmEr-noncapped'
+#    bkgd_file_list = ['2020_08_21-14_16_37-5nmEr-noncapped',
+#                      '2020_09_08-17_00_42-5nmEr-noncapped']
     
-    file_list = [file_MM, file_SM]
+    file_list = [file_nbp, file_bp]
 
     # Make list for the data
     
@@ -80,8 +80,8 @@ def main():
     bin_center_list =[]
     data_fmt_list = ['bo','ko']
 #    fit_fmt_list=['b--','k--']
-    directory_list = [directory, directory]
-    label_list = ['Multimode fiber', 'Singlemode fiber']
+    directory_list = [directory, directory_sept]
+    label_list = ['pre alignment', 'post alignment']
     
     fig_fit, ax= plt.subplots(1, 1, figsize=(10, 8))
     
@@ -96,10 +96,10 @@ def main():
             counts = numpy.array(data["binned_samples"])
             bin_centers = numpy.array(data["bin_centers"])/10**3
             
-        bkgd_file = bkgd_file_list[i]
-        with open(directory + '/'+ bkgd_file + '.txt') as json_file:
-            bkgd_data = json.load(json_file)
-            bkgd_counts = numpy.array(bkgd_data["binned_samples"])
+#        bkgd_file = bkgd_file_list[i]
+#        with open(directory + '/'+ bkgd_file + '.txt') as json_file:
+#            bkgd_data = json.load(json_file)
+#            bkgd_counts = numpy.array(bkgd_data["binned_samples"])
                 
         counts_list.append(counts)
         bin_center_list.append(bin_centers)
@@ -109,7 +109,7 @@ def main():
         
         counts = numpy.array(counts_list[i])
         ###################################
-        counts = counts - bkgd_counts
+#        counts = counts - bkgd_counts
         
         first_point = counts[start_num[i]]
         last_point = numpy.average(counts[-10:]) #counts[-1]
@@ -117,7 +117,7 @@ def main():
         ax.plot(bin_centers_norm[start_num[i]:], norm_counts[start_num[i]:], data_fmt_list[i],label=label_list[i])
     ax.set_xlabel('Time (us)')
     ax.set_ylabel('Counts (arb.)')
-    ax.set_title('5 nm Er fiber comparison w/ subtraction, longpass (670 nm) filter')
+    ax.set_title('5 nm Er fiber comparison w/ subtraction, pre-/post-alignment')
     ax.legend()
 #    ax.set_xlim([0,500])
     ax.set_yscale("log", nonposy='clip')

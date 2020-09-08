@@ -417,7 +417,7 @@ if __name__ == '__main__':
     sample_name = '5nmEr-noncapped'
 #    sample_name = '5nmEr-capped'
     
-    search = { 'coords': [0.0, 0.0, 5.14],
+    search = { 'coords': [0.0, 0.0, 5.0],
             'name': '{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
@@ -459,9 +459,11 @@ if __name__ == '__main__':
 #            do_image_sample(nv_sig, apd_indices)
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
-            do_opti_z(nv_sig, apd_indices)
-#            cxn.filter_slider_ell9k_color.set_filter('560 bp')
-            do_stationary_count(nv_sig, apd_indices)
+            
+#            tool_belt.set_drift([0.0, 0.0, 0.04]) # SM
+#            tool_belt.set_drift([0.0, 0.0, -0.15]) # MM
+#            do_opti_z(nv_sig, apd_indices)
+#            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
@@ -488,12 +490,12 @@ if __name__ == '__main__':
             
             voltage = 'no_graphene_no_IG'
 
-#            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
-#            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)
-#            do_lifetime(nv_sig, apd_indices, '560 bp', voltage ,reference = False)
-#            do_lifetime(nv_sig, apd_indices, '560 bp', voltage ,reference = True)
-#            do_lifetime(nv_sig, apd_indices, '670 bp', voltage ,reference = False)
-#            do_lifetime(nv_sig, apd_indices, '670 bp', voltage ,reference = True)
+            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
+            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)
+            do_lifetime(nv_sig, apd_indices, '560 bp', voltage ,reference = False)
+            do_lifetime(nv_sig, apd_indices, '560 bp', voltage ,reference = True)
+            do_lifetime(nv_sig, apd_indices, '670 bp', voltage ,reference = False)
+            do_lifetime(nv_sig, apd_indices, '670 bp', voltage ,reference = True)
         
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
