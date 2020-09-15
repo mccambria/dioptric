@@ -68,14 +68,14 @@ def do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, color_ind, save_data, p
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
-    scan_range = 1.5
+    scan_range = 2.5
 #    scan_range = 1.0
 #    scan_range = 0.5
-#    num_steps = 200
+    num_steps = 200
 #    scan_range = 0.28
 #    num_steps = 150
 #    scan_range = 0.1
-    num_steps = 120
+#    num_steps = 120
 #    scan_range = 0.3
 #    num_steps = 90
 #    scan_range = 0.05
@@ -499,9 +499,9 @@ def do_time_resolved_readout(nv_sig, apd_indices,
 #    num_bins = 1500
     
     # 2
-    illumination_time = 100*10**6    
-    num_reps = 50
-    num_bins = 10000
+    illumination_time = 50*10**6    
+    num_reps = 10#15 #4
+    num_bins = 5000
     
     # 3
 #    illumination_time = 5*10**6    
@@ -511,7 +511,7 @@ def do_time_resolved_readout(nv_sig, apd_indices,
     
     init_pulse_duration = 2*10**6
 #    init_pulse_duration = 100*10**3
-    num_runs = 20
+    num_runs = 50
     time_resolved_readout.main(nv_sig, apd_indices, 
                    illumination_time, init_pulse_duration,
                    init_color_ind, illum_color_ind,
@@ -538,8 +538,8 @@ if __name__ == '__main__':
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 16, 
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
@@ -560,7 +560,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
 #        set_xyz([0.0,0.0,5.08])
@@ -595,40 +595,46 @@ if __name__ == '__main__':
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
 #            do_determine_n_thresh_with_638(nv_sig, apd_indices)
-#            for p in [0.3, 0.4, 0.5, 0.6, 0.7]:
-#                nv_sig_copy = copy.deepcopy(nv_sig)
-#                nv_sig_copy['am_589_power'] = p 
-#                do_time_resolved_readout(nv_sig_copy, apd_indices,
-#                         638, 589)
+#            do_time_resolved_readout(nv_sig, apd_indices, 638, 638)
             
 #            do_optimize(nv_sig, apd_indices, 589)
 #            do_opti_z(nv_sig, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=False, plot_data=False)
-#            with labrad.connect() as cxn:  
-#                adj_coords = (numpy.array(nv_sig['coords']) + \
-#                          numpy.array(tool_belt.get_drift())).tolist()
-#                x_center, y_center, z_center = adj_coords
-#                tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-#                cxn.pulse_streamer.constant([7], 0.0, 0.0)
-#                time.sleep(5)
-#                cxn.pulse_streamer.constant([], 0.0, 0.0)
-                
-#                cxn.pulse_streamer.constant([3], 0.0, 0.0)
-#                input()
-#                print('shining green')
-#                time.sleep(1000)
-#                cxn.pulse_streamer.constant([], 0.0, 0.0)
-#                cxn.apd_tagger.clear_buffer()  
-#            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
+            for z in numpy.linspace(4.4,6,17):
+                print(z)
+                nv_sig_copy = copy.deepcopy(nv_sig)
+                coords = nv_sig_copy['coords']
+                nv_sig_copy['coords'] = [coords[0], coords[1], z] 
+                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False)
+                with labrad.connect() as cxn:  
+                    coords = nv_sig['coords']
+                    x_center, y_center, z_center = coords
+                    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+                    cxn.pulse_streamer.constant([], 0.0, 0.0)
+                    time.sleep(250)
+                    cxn.pulse_streamer.constant([], 0.0, 0.0)
+                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
+
+                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False)
+                with labrad.connect() as cxn:  
+                    coords = nv_sig['coords']
+                    x_center, y_center, z_center = coords
+                    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+                    cxn.pulse_streamer.constant([3], 0.0, 0.0)
+                    time.sleep(250)
+                    cxn.pulse_streamer.constant([], 0.0, 0.0)
+                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
+                            
+#                    cxn.apd_tagger.clear_buffer()  
+#                do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
                 
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)
  
-            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.1)
+#            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.1)
 #            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.22)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
