@@ -255,7 +255,7 @@ def radial_distrbution_power(folder_name, sub_folder):
 def radial_distrbution_time(folder_name, sub_folder):
     # create a file list of the files to analyze
     file_list  = tool_belt.get_file_list(folder_name, '.txt')
-    file_list = ['0.1.txt', '1.txt', '5.txt', '10.txt', '25.txt', '50.txt', '75.txt', '100.txt', '250.txt', '1000.txt' ]
+#    file_list = ['0.1.txt', '1.txt', '5.txt', '10.txt', '25.txt', '50.txt', '75.txt', '100.txt', '250.txt', '1000.txt' ]
     # create lists to fill with data
     green_time_list = []
     radii_array = []
@@ -398,7 +398,7 @@ def radial_distrbution_time(folder_name, sub_folder):
 def radial_distrbution_wait_time(folder_name, sub_folder):
     # create a file list of the files to analyze
     file_list  = tool_belt.get_file_list(folder_name, '.txt')
-    file_list = [ '0.txt', '1.txt','100.txt', '1000.txt', '10000.txt', '100000.txt']
+#    file_list = [ '0.txt', '1.txt','100.txt', '1000.txt', '10000.txt', '100000.txt']
     # create lists to fill with data
     wait_time_list = []
     radial_counts_list = []
@@ -516,9 +516,9 @@ if __name__ == '__main__':
 #    
 #    radial_distrbution_power(folder_name, sub_folder)
     
-    sub_folder = "hopper_0.8mw_green_init"
-#    sub_folder = "hopper_2mw_time"
-#    sub_folder = "hopper_15mw_time"
+#    sub_folder = "hopper_0.8mw_green_init"
+#    sub_folder = "hopper_1.9mw_time"
+    sub_folder = "hopper_0.8mw_green_init/shorter_times/dif_scans"
     folder_name = parent_folder + sub_folder 
     
     radial_distrbution_time(folder_name, sub_folder)
@@ -528,27 +528,26 @@ if __name__ == '__main__':
 
 
 
-#    # %% Manual data fitting for power
+    # %% Manual data fitting for power
 #    parent_folder = 'image_sample/branch_Spin_to_charge'
-#    data = tool_belt.get_raw_data(parent_folder + '/2020_09/hopper_0.8_mw_time', 
-#                                  '2020_09_14-10_40_03-hopper-ensemble_radial_dist')
+#    data = tool_belt.get_raw_data(parent_folder + '/2020_09/hopper_1.9mw_time', 
+#                                  '2020_09_16-03_23_25-hopper-ensemble_radial_dist')
 #    radii_array_air = data['radii']
 #    counts_r_air = data['counts_r']
 # 
 #    data = tool_belt.get_raw_data(parent_folder + '/2020_07/hopper_2mw_time', 
-##                                  '2020_07_12-03_41_49-hopper-ensemble_radial_dist') #0.3 mw
 #                                    '2020_07_11-22_50_13-hopper-ensemble_radial_dist') #2 mw
 #    radii_array_oil = data['radii']
 #    counts_r_oil = data['counts_r']
 #    
 #    
 #    fig, ax = plt.subplots(1,1, figsize = (8, 8))
-#    ax.plot(radii_array_air, counts_r_air, 'r-', label = 'air objective (0.9 mW)')
+#    ax.plot(radii_array_air, counts_r_air, 'r-', label = 'air objective (2 mW)')
 #    ax.plot(radii_array_oil, counts_r_oil, 'b-', label = 'oil objective (2 mW)')
 #
 #    ax.set_xlabel('Radius (um)')
 #    ax.set_ylabel('Avg counts (kcps)')
 #    ax.legend()
-#    ax.set_title('Charge ring, air vs oil objective')
+#    ax.set_title('Charge ring, air vs oil objective (1000 s green pulse)')
 
     
