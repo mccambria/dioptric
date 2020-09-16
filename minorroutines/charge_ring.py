@@ -116,10 +116,15 @@ def green_scan(x_voltages, y_voltages, z_center):
             cxn.pulse_streamer.constant([], 0.0, 0.0)  
   
 # %%          
-def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
+def main(cxn, nv_sig, green_pulse_time,z,  wait_time = 0):
     aom_ao_589_pwr = nv_sig['am_589_power']
     coords = nv_sig['coords']
-#    print(coords)
+    
+    nv_sig_copy = copy.deepcopy(nv_sig)
+    coords = nv_sig_copy['coords']
+    nv_sig_copy['coords'] = [coords[0], coords[1], z] 
+    
+    print(nv_sig_copy['coords'])
     readout = nv_sig['pulsed_SCC_readout_dur']
 #    green_pulse_time = int(green_pulse_time)
     
@@ -131,8 +136,8 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     x_voltages_r, y_voltages_r = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                    reset_range, reset_range,
                                                    num_steps_reset, 10**6)
-    print('Resetting with green light\n...')
-    green_scan(x_voltages_r, y_voltages_r, z_center)
+    print('Resetting with red light\n...')
+    red_scan(x_voltages_r, y_voltages_r, z)
          
     print('Waiting for {} s, during green pulse'.format(green_pulse_time))
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
@@ -155,11 +160,11 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
         
     # collect an image under yellow right after ionization
     print('Scanning yellow light\n...')
-    ref_img_array, x_voltages, y_voltages = image_sample.main(nv_sig, image_range, image_range, num_steps, 
+    ref_img_array, x_voltages, y_voltages = image_sample.main(nv_sig_copy, image_range, image_range, num_steps, 
                       aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
     
-    print('Resetting with green light\n...')
-    green_scan(x_voltages_r, y_voltages_r, z_center)
+    print('Resetting with red light\n...')
+    red_scan(x_voltages_r, y_voltages_r, z)
  
     # now pulse the green at the center of the scan for a short time         
     print('Pulsing green light for {} s'.format(green_pulse_time))
@@ -185,7 +190,7 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
         
     # collect an image under yellow after green pulse
     print('Scanning yellow light\n...')
-    sig_img_array, x_voltages, y_voltages = image_sample.main(nv_sig, image_range, image_range, num_steps, 
+    sig_img_array, x_voltages, y_voltages = image_sample.main(nv_sig_copy, image_range, image_range, num_steps, 
                       aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
 
     # Measure the green power  
@@ -203,7 +208,7 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     if wait_time:
         title = 'Yellow scan (with/without green pulse)\nGreen pulse 10 s\n{} s wait'.format(wait_time) 
     else:
-        title = 'Yellow scan (with/without green pulse)\nGreen pulse {} ms'.format(green_pulse_time*10**3) 
+        title = 'Yellow scan (with/without green pulse)\nz = {}'.format(z) 
     fig = plot_dif_fig(coords, x_voltages,image_range,  dif_img_array, readout, title )
     
     # Save data
@@ -212,6 +217,8 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'z': z,
+               'z-units': 'V',
                'image_range': image_range,
                'image_range-units': 'V',
                'num_steps': num_steps,
@@ -248,7 +255,7 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
 if __name__ == '__main__':
     sample_name = 'hopper'
     
-    ensemble = { 'coords':[0, 0, 5.0], 
+    ensemble = { 'coords':[0, 0, 6.0], 
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -257,7 +264,7 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 9, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
@@ -272,9 +279,9 @@ if __name__ == '__main__':
 #    wait_time_list = numpy.array([0]) # s
 #    wait_time_list = [1000]
     
-    for t in green_pulse_time_list:
+    for z in numpy.linspace(5.5,7.5,21):
         with labrad.connect() as cxn:         
-            main(cxn, nv_sig, t)
+            main(cxn, nv_sig, 100, z)
 
 
 # %%

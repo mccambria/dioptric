@@ -500,7 +500,7 @@ def do_time_resolved_readout(nv_sig, apd_indices,
     
     # 2
     illumination_time = 50*10**6    
-    num_reps = 10#15 #4
+    num_reps = 1#15 #4
     num_bins = 5000
     
     # 3
@@ -539,7 +539,7 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 20, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 50, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
@@ -595,37 +595,37 @@ if __name__ == '__main__':
 #            do_photon_collections_under_589(nv_sig, apd_indices)
 #            do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices)
 #            do_determine_n_thresh_with_638(nv_sig, apd_indices)
-#            do_time_resolved_readout(nv_sig, apd_indices, 638, 638)
+            do_time_resolved_readout(nv_sig, apd_indices, 532, 638)
             
 #            do_optimize(nv_sig, apd_indices, 589)
 #            do_opti_z(nv_sig, apd_indices, 532)
 #            do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 532, save_data=True, plot_data=True)
 #            do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, 532)                    
 
-            for z in numpy.linspace(4.4,6,17):
-                print(z)
-                nv_sig_copy = copy.deepcopy(nv_sig)
-                coords = nv_sig_copy['coords']
-                nv_sig_copy['coords'] = [coords[0], coords[1], z] 
-                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False)
-                with labrad.connect() as cxn:  
-                    coords = nv_sig['coords']
-                    x_center, y_center, z_center = coords
-                    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-                    cxn.pulse_streamer.constant([], 0.0, 0.0)
-                    time.sleep(250)
-                    cxn.pulse_streamer.constant([], 0.0, 0.0)
-                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
-
-                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False)
-                with labrad.connect() as cxn:  
-                    coords = nv_sig['coords']
-                    x_center, y_center, z_center = coords
-                    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-                    cxn.pulse_streamer.constant([3], 0.0, 0.0)
-                    time.sleep(250)
-                    cxn.pulse_streamer.constant([], 0.0, 0.0)
-                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
+#            for z in numpy.linspace(4.4,6,17):
+#                print(z)
+#                nv_sig_copy = copy.deepcopy(nv_sig)
+#                coords = nv_sig_copy['coords']
+#                nv_sig_copy['coords'] = [coords[0], coords[1], z] 
+#                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False)
+#                with labrad.connect() as cxn:  
+#                    coords = nv_sig['coords']
+#                    x_center, y_center, z_center = coords
+#                    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+#                    cxn.pulse_streamer.constant([], 0.0, 0.0)
+#                    time.sleep(250)
+#                    cxn.pulse_streamer.constant([], 0.0, 0.0)
+#                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
+#
+#                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 638, save_data=False, plot_data=False)
+#                with labrad.connect() as cxn:  
+#                    coords = nv_sig['coords']
+#                    x_center, y_center, z_center = coords
+#                    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+#                    cxn.pulse_streamer.constant([3], 0.0, 0.0)
+#                    time.sleep(250)
+#                    cxn.pulse_streamer.constant([], 0.0, 0.0)
+#                do_image_sample(nv_sig_copy, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True)
                             
 #                    cxn.apd_tagger.clear_buffer()  
 #                do_image_sample(nv_sig, aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
