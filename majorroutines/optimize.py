@@ -146,7 +146,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
 
     # z
     elif axis_ind == 2:
-#        cxn.filter_slider_ell9k_color.set_filter('560 bp')
+        cxn.filter_slider_ell9k_color.set_filter('560 bp')
         
         scan_range = scan_range_nm / shared_params['piezo_nm_per_volt']
         seq_args = [shared_params['objective_piezo_delay'],

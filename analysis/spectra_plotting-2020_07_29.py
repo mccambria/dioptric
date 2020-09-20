@@ -190,18 +190,13 @@ def august_cap_noncap_plots():
 # %%
     
 # bandpass filter!
-folder= '2020_08_10 5 nm noncapped/alignment tests/2020_09_08'
-file_1_550 = '2020_09_08-nc-repeatability-1-550'
-file_2_550 = '2020_09_08-nc-repeatability-2-550'
-file_3_550 = '2020_09_08-nc-repeatability-3-550'
-file_4_550 = '2020_09_08-nc-repeatability-4-550'
-file_5_550 = '2020_09_08-nc-repeatability-5-550'
+#folder_old= '2020_08_10 5 nm noncapped/alignment tests/2020_09_08'
+folder_new= '2020_09_16_sampleprep'
+file_postgraphene_550 = '2020_09_17-post_graphene-550'
+file_pregraphene_550 = '2020_09_16-post_anneal-550'
 
-file_1_670 = '2020_09_08-nc-repeatability-1-670'
-file_2_670 = '2020_09_08-nc-repeatability-2-670'
-file_3_670 = '2020_09_08-nc-repeatability-3-670'
-file_4_670 = '2020_09_08-nc-repeatability-4-670'
-file_5_670 = '2020_09_08-nc-repeatability-5-670'
+file_postgraphene_670 = '2020_09_17-post_graphene-670'
+file_pregraphene_670 = '2020_09_16-post_anneal-670'
 
 #file_best_550 = '2020_08_21-nc-550'
 #file_best_670 =  '2020_08_21-nc-670'
@@ -215,18 +210,11 @@ file_5_670 = '2020_09_08-nc-repeatability-5-670'
 if __name__ == '__main__':
 #    august_cap_noncap_plots()
     
-#    wvlngth_1, counts_1 = plot_spectra(file_1_550, folder) 
-#    wvlngth_2, counts_2 = plot_spectra(file_2_550, folder)
-#    wvlngth_3, counts_3 = plot_spectra(file_3_550, folder)
-#    wvlngth_4, counts_4 = plot_spectra(file_4_550, folder)
-#    wvlngth_5, counts_5 = plot_spectra(file_5_550, folder)
+#    wvlngth_1, counts_1 = plot_spectra(file_postgraphene_550, folder_new) 
+#    wvlngth_2, counts_2 = plot_spectra(file_pregraphene_550, folder_new)
     
-    wvlngth_1, counts_1 = plot_spectra(file_1_670, folder) 
-    wvlngth_2, counts_2 = plot_spectra(file_2_670, folder)
-    wvlngth_3, counts_3 = plot_spectra(file_3_670, folder)
-    wvlngth_4, counts_4 = plot_spectra(file_4_670, folder)
-    wvlngth_5, counts_5 = plot_spectra(file_5_670, folder)
- 
+    wvlngth_1, counts_1 = plot_spectra(file_postgraphene_670, folder_new) 
+    wvlngth_2, counts_2 = plot_spectra(file_pregraphene_670, folder_new)
 
 
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
@@ -234,16 +222,13 @@ if __name__ == '__main__':
     print(counts_1)
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
-    ax.set_title('5 nm Er spectra - repeatability')
+    ax.set_title('5 nm Er spectra pre-/post-graphene ')
 #    ax.set_ylim([500, 1700]) 
 #    ax.set_xlim([547, 580]) 
 #    ax.set_ylim([580, 750]) 
 #    ax.set_xlim([644, 692]) 
-    ax.plot(wvlngth_1, numpy.array(counts_1), label ='run 1')
-    ax.plot(wvlngth_2, numpy.array(counts_2), label ='run 2')
-    ax.plot(wvlngth_3, numpy.array(counts_3), label ='run 3')
-    ax.plot(wvlngth_4, numpy.array(counts_4), label ='run 4')
-    ax.plot(wvlngth_5, numpy.array(counts_5), label ='run 5')
+    ax.plot(wvlngth_1, numpy.array(counts_1), label ='post graphene')
+    ax.plot(wvlngth_2, numpy.array(counts_2), label ='pre graphene')
     ax.legend()
 
     

@@ -57,21 +57,23 @@ def main():
 #        background_counts = numpy.array(data["binned_samples"])
         
     # No filter
-    file_nbp = '2020_08_21-14_15_07-5nmEr-noncapped'
-    file_bp = '2020_09_08-16_59_09-5nmEr-noncapped'
+#    file_anneal = '2020_09_16-15_09_21-5nmEr-annealed'
+#    file_graphene = '2020_09_17-13_39_17-5nmEr-graphene'
+#    bkgd_file_list = ['2020_09_16-15_09_36-5nmEr-annealed',
+#                      '2020_09_17-13_39_33-5nmEr-graphene']
     
     # 550 Shortpass
-#    file_nbp = '2020_08_21-14_15_44-5nmEr-noncapped'
-#    file_bp = '2020_09_08-16_59_49-5nmEr-noncapped'
-#    bkgd_file_list = ['2020_08_21-14_16_01-5nmEr-noncapped',
-#                      '2020_09_08-17_00_05-5nmEr-noncapped']
+    file_anneal = '2020_09_16-15_09_57-5nmEr-annealed'
+    file_graphene = '2020_09_17-13_39_56-5nmEr-graphene'
+    bkgd_file_list = ['2020_09_16-15_10_13-5nmEr-annealed',
+                      '2020_09_17-13_40_13-5nmEr-graphene']
     # 630 longpass
-#    file_nbp = '2020_08_21-14_16_20-5nmEr-noncapped'
-#    file_bp = '2020_09_08-17_00_25-5nmEr-noncapped'
-#    bkgd_file_list = ['2020_08_21-14_16_37-5nmEr-noncapped',
-#                      '2020_09_08-17_00_42-5nmEr-noncapped']
+#    file_anneal = '2020_09_16-15_10_33-5nmEr-annealed'
+#    file_graphene = '2020_09_17-13_40_32-5nmEr-graphene'
+#    bkgd_file_list = ['2020_09_16-15_10_49-5nmEr-annealed',
+#                      '2020_09_17-13_40_49-5nmEr-graphene']
     
-    file_list = [file_nbp, file_bp]
+    file_list = [file_anneal, file_graphene]
 
     # Make list for the data
     
@@ -80,8 +82,8 @@ def main():
     bin_center_list =[]
     data_fmt_list = ['bo','ko']
 #    fit_fmt_list=['b--','k--']
-    directory_list = [directory, directory_sept]
-    label_list = ['pre alignment', 'post alignment']
+    directory_list = [directory_sept, directory_sept]
+    label_list = ['Sample post anneal', 'Sample post graphene']
     
     fig_fit, ax= plt.subplots(1, 1, figsize=(10, 8))
     
@@ -96,10 +98,10 @@ def main():
             counts = numpy.array(data["binned_samples"])
             bin_centers = numpy.array(data["bin_centers"])/10**3
             
-#        bkgd_file = bkgd_file_list[i]
-#        with open(directory + '/'+ bkgd_file + '.txt') as json_file:
-#            bkgd_data = json.load(json_file)
-#            bkgd_counts = numpy.array(bkgd_data["binned_samples"])
+        bkgd_file = bkgd_file_list[i]
+        with open(directory + '/'+ bkgd_file + '.txt') as json_file:
+            bkgd_data = json.load(json_file)
+            bkgd_counts = numpy.array(bkgd_data["binned_samples"])
                 
         counts_list.append(counts)
         bin_center_list.append(bin_centers)
@@ -109,7 +111,7 @@ def main():
         
         counts = numpy.array(counts_list[i])
         ###################################
-#        counts = counts - bkgd_counts
+        counts = counts - bkgd_counts
         
         first_point = counts[start_num[i]]
         last_point = numpy.average(counts[-10:]) #counts[-1]
@@ -117,7 +119,7 @@ def main():
         ax.plot(bin_centers_norm[start_num[i]:], norm_counts[start_num[i]:], data_fmt_list[i],label=label_list[i])
     ax.set_xlabel('Time (us)')
     ax.set_ylabel('Counts (arb.)')
-    ax.set_title('5 nm Er fiber comparison w/ subtraction, pre-/post-alignment')
+    ax.set_title('5 nm Er fiber comparison pre and post graphene (560 bandpass filter)')
     ax.legend()
 #    ax.set_xlim([0,500])
     ax.set_yscale("log", nonposy='clip')
