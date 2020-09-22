@@ -56,8 +56,8 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-#    scan_range = 5.0
-    scan_range = 1.2
+    scan_range = 5.0
+#    scan_range = 1.2
 #    scan_range = 0.5
 #    scan_range = 0.3
 #    scan_range = 0.2
@@ -70,8 +70,8 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 150
 #    num_steps = 135
 #    num_steps = 120
-    num_steps = 90
-#    num_steps = 60
+#    num_steps = 90
+    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -412,7 +412,7 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     nd = 'nd_0'
-    sample_name = '5nmEr-graphene'
+    sample_name = '5nmEr-ionic_gel'
 
     
     search = { 'coords': [0.0, 0.0, 5.0],
@@ -458,10 +458,10 @@ if __name__ == '__main__':
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
             
-#            tool_belt.set_drift([0.0, 0.0, 0.04]) # SM
-#            tool_belt.set_drift([0.0, 0.0, -0.15]) # MM
-            do_opti_z(nv_sig, apd_indices)
-#            do_stationary_count(nv_sig, apd_indices)
+#            tool_belt.set_drift([0.0, 0.0, -0.04]) # SM
+#            tool_belt.set_drift([0.0, 0.0, -0.20]) # MM
+#            do_opti_z(nv_sig, apd_indices)
+            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)
@@ -486,7 +486,7 @@ if __name__ == '__main__':
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
             
-            voltage = 'after_graphene'
+            voltage = '0V'
 
 #            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
 #            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)

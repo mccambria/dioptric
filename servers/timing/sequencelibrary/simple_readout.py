@@ -53,5 +53,5 @@ if __name__ == '__main__':
               'do_apd_0_gate': 1,
               'do_532_aom': 2}
     args = [250, 500, 0]
-    seq, ret_vals = get_seq(wiring, args)
+    seq, ret_vals, _ = get_seq(wiring, args)
     seq.plot()

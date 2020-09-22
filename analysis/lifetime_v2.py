@@ -59,31 +59,38 @@ def main():
     # No filter
 #    file_anneal = '2020_09_16-15_09_21-5nmEr-annealed'
 #    file_graphene = '2020_09_17-13_39_17-5nmEr-graphene'
+#    file_IG = '2020_09_22-09_46_06-5nmEr-ionic_gel'
 #    bkgd_file_list = ['2020_09_16-15_09_36-5nmEr-annealed',
-#                      '2020_09_17-13_39_33-5nmEr-graphene']
+#                      '2020_09_17-13_39_33-5nmEr-graphene',
+#                        '2020_09_22-09_46_22-5nmEr-ionic_gel']
     
     # 550 Shortpass
-    file_anneal = '2020_09_16-15_09_57-5nmEr-annealed'
-    file_graphene = '2020_09_17-13_39_56-5nmEr-graphene'
-    bkgd_file_list = ['2020_09_16-15_10_13-5nmEr-annealed',
-                      '2020_09_17-13_40_13-5nmEr-graphene']
-    # 630 longpass
-#    file_anneal = '2020_09_16-15_10_33-5nmEr-annealed'
-#    file_graphene = '2020_09_17-13_40_32-5nmEr-graphene'
-#    bkgd_file_list = ['2020_09_16-15_10_49-5nmEr-annealed',
-#                      '2020_09_17-13_40_49-5nmEr-graphene']
+#    file_anneal = '2020_09_16-15_09_57-5nmEr-annealed'
+#    file_graphene = '2020_09_17-13_39_56-5nmEr-graphene'
+#    file_IG = '2020_09_22-09_46_44-5nmEr-ionic_gel'
+#    bkgd_file_list = ['2020_09_16-15_10_13-5nmEr-annealed',
+#                      '2020_09_17-13_40_13-5nmEr-graphene',
+#                        '2020_09_22-09_47_00-5nmEr-ionic_gel']
     
-    file_list = [file_anneal, file_graphene]
+    # 630 longpass
+    file_anneal = '2020_09_16-15_10_33-5nmEr-annealed'
+    file_graphene = '2020_09_17-13_40_32-5nmEr-graphene'
+    file_IG = '2020_09_22-09_47_19-5nmEr-ionic_gel'
+    bkgd_file_list = ['2020_09_16-15_10_49-5nmEr-annealed',
+                      '2020_09_17-13_40_49-5nmEr-graphene',
+                        '2020_09_22-09_47_36-5nmEr-ionic_gel']
+    
+    file_list = [file_anneal, file_graphene, file_IG]
 
     # Make list for the data
     
-    start_num = [4,4]
+    start_num = [4,4,4]
     counts_list = []
     bin_center_list =[]
-    data_fmt_list = ['bo','ko']
+    data_fmt_list = ['bo','ko', 'go']
 #    fit_fmt_list=['b--','k--']
-    directory_list = [directory_sept, directory_sept]
-    label_list = ['Sample post anneal', 'Sample post graphene']
+    directory_list = [directory_sept, directory_sept, directory_sept]
+    label_list = ['Sample post anneal', 'Sample post graphene', 'Sample post ionic gel']
     
     fig_fit, ax= plt.subplots(1, 1, figsize=(10, 8))
     
@@ -119,7 +126,7 @@ def main():
         ax.plot(bin_centers_norm[start_num[i]:], norm_counts[start_num[i]:], data_fmt_list[i],label=label_list[i])
     ax.set_xlabel('Time (us)')
     ax.set_ylabel('Counts (arb.)')
-    ax.set_title('5 nm Er fiber comparison pre and post graphene (560 bandpass filter)')
+    ax.set_title('5 nm Er fiber preparation (670 bandpass filter)')
     ax.legend()
 #    ax.set_xlim([0,500])
     ax.set_yscale("log", nonposy='clip')

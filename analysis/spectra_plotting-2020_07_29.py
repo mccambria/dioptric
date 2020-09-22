@@ -194,9 +194,11 @@ def august_cap_noncap_plots():
 folder_new= '2020_09_16_sampleprep'
 file_postgraphene_550 = '2020_09_17-post_graphene-550'
 file_pregraphene_550 = '2020_09_16-post_anneal-550'
+file_post_IG_550 = '2020_09_22-550-post_IG-1'
 
 file_postgraphene_670 = '2020_09_17-post_graphene-670'
 file_pregraphene_670 = '2020_09_16-post_anneal-670'
+file_post_IG_670 = '2020_09_22-670-post_IG-1'
 
 #file_best_550 = '2020_08_21-nc-550'
 #file_best_670 =  '2020_08_21-nc-670'
@@ -210,11 +212,13 @@ file_pregraphene_670 = '2020_09_16-post_anneal-670'
 if __name__ == '__main__':
 #    august_cap_noncap_plots()
     
-#    wvlngth_1, counts_1 = plot_spectra(file_postgraphene_550, folder_new) 
-#    wvlngth_2, counts_2 = plot_spectra(file_pregraphene_550, folder_new)
-    
-    wvlngth_1, counts_1 = plot_spectra(file_postgraphene_670, folder_new) 
-    wvlngth_2, counts_2 = plot_spectra(file_pregraphene_670, folder_new)
+#    wvlngth_1, counts_1 = plot_spectra(file_pregraphene_550, folder_new)
+#    wvlngth_2, counts_2 = plot_spectra(file_postgraphene_550, folder_new) 
+#    wvlngth_3, counts_3 = plot_spectra(file_post_IG_550, folder_new)
+     
+    wvlngth_1, counts_1 = plot_spectra(file_pregraphene_670, folder_new)
+    wvlngth_2, counts_2 = plot_spectra(file_postgraphene_670, folder_new)
+    wvlngth_3, counts_3 = plot_spectra(file_post_IG_670, folder_new)
 
 
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
@@ -222,13 +226,14 @@ if __name__ == '__main__':
     print(counts_1)
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
-    ax.set_title('5 nm Er spectra pre-/post-graphene ')
+    ax.set_title('5 nm Er spectra preparation')
 #    ax.set_ylim([500, 1700]) 
 #    ax.set_xlim([547, 580]) 
 #    ax.set_ylim([580, 750]) 
 #    ax.set_xlim([644, 692]) 
-    ax.plot(wvlngth_1, numpy.array(counts_1), label ='post graphene')
-    ax.plot(wvlngth_2, numpy.array(counts_2), label ='pre graphene')
+    ax.plot(wvlngth_1, numpy.array(counts_1), label ='pre graphene')
+    ax.plot(wvlngth_2, numpy.array(counts_2), label ='post graphene')
+    ax.plot(wvlngth_3, numpy.array(counts_3), label ='post IG')
     ax.legend()
 
     

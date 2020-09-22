@@ -149,7 +149,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         cxn.filter_slider_ell9k_color.set_filter('560 bp')
         
         scan_range = scan_range_nm / shared_params['piezo_nm_per_volt']
-        seq_args = [shared_params['objective_piezo_delay'],
+        seq_args = [30*10**6, #shared_params['objective_piezo_delay'],
                     readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
