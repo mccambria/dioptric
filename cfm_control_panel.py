@@ -460,8 +460,8 @@ if __name__ == '__main__':
             
 #            tool_belt.set_drift([0.0, 0.0, -0.04]) # SM
 #            tool_belt.set_drift([0.0, 0.0, -0.20]) # MM
-#            do_opti_z(nv_sig, apd_indices)
-            do_stationary_count(nv_sig, apd_indices)
+            do_opti_z(nv_sig, apd_indices)
+#            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices)

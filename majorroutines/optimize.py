@@ -146,10 +146,13 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
 
     # z
     elif axis_ind == 2:
+        cxn.pulse_streamer.constant([3], 0.0, 0.0) #turn on green laser for 5 seconds before measurement to equilibrate the signal from ionic gel
+        time.sleep(5)
+        
         cxn.filter_slider_ell9k_color.set_filter('560 bp')
         
         scan_range = scan_range_nm / shared_params['piezo_nm_per_volt']
-        seq_args = [30*10**6, #shared_params['objective_piezo_delay'],
+        seq_args = [shared_params['objective_piezo_delay'],
                     readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
