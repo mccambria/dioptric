@@ -189,53 +189,88 @@ def august_cap_noncap_plots():
     
 # %%
     
-# bandpass filter!
-#folder_old= '2020_08_10 5 nm noncapped/alignment tests/2020_09_08'
-folder_new= '2020_09_16_sampleprep'
-file_postgraphene_550 = '2020_09_17-post_graphene-550'
-file_pregraphene_550 = '2020_09_16-post_anneal-550'
-file_post_IG_550 = '2020_09_22-550-post_IG-1'
+# graphene sheet with gating! take 1
+folder_1= '2020_09_22-graphene_sheet'
+file_m05_550 = '2020_09_22-graphene_sheet-m05-550-1'
+#file_000_550 = '2020_09_22-graphene_sheet-000-550-1'
+#file_p05_550 = '2020_09_22-graphene_sheet-p05-550-1'
+#file_p10_550 = '2020_09_22-graphene_sheet-p10-550-1'
+#file_p15_550 = '2020_09_22-graphene_sheet-p15-550-1'
+file_p20_550 = '2020_09_22-graphene_sheet-p20-550-1'
+file_p25_550 = '2020_09_22-graphene_sheet-p25-550-1'
+#
+file_m05_670 = '2020_09_22-graphene_sheet-m05-670-1'
+#file_000_670 = '2020_09_22-graphene_sheet-000-670-1'
+#file_p05_670 = '2020_09_22-graphene_sheet-p05-670-1'
+#file_p10_670 = '2020_09_22-graphene_sheet-p10-670-1'
+#file_p15_670 = '2020_09_22-graphene_sheet-p15-670-1'
+file_p20_670 = '2020_09_22-graphene_sheet-p20-670-1'
+file_p25_670 = '2020_09_22-graphene_sheet-p25-670-1'
 
-file_postgraphene_670 = '2020_09_17-post_graphene-670'
-file_pregraphene_670 = '2020_09_16-post_anneal-670'
-file_post_IG_670 = '2020_09_22-670-post_IG-1'
+## graphene sheet with gating! take 2
+folder_2= '2020_09_22-graphene_sheet/take 2'
+#file_p01_550 = '2020_09_22-graphene_sheet-p01-550-2'
+#file_p10_550 = '2020_09_22-graphene_sheet-p10-550-2'
+#file_p20_550 = '2020_09_22-graphene_sheet-p20-550-2'
+#file_p30_550 = '2020_09_22-graphene_sheet-p30-550-2'
 
-#file_best_550 = '2020_08_21-nc-550'
-#file_best_670 =  '2020_08_21-nc-670'
+#file_p01_670 = '2020_09_22-graphene_sheet-p01-670-2'
+#file_p10_670 = '2020_09_22-graphene_sheet-p10-670-2'
+#file_p20_670 = '2020_09_22-graphene_sheet-p20-670-2'
+#file_p30_670 = '2020_09_22-graphene_sheet-p30-670-2'
 
-# post anneal
-#folder_post = '2020_08_10 5 nm noncapped'
-#file_post = '2020_08_14-nc-550'
-#file_post = '2020_08_14-nc-670'
+## graphene sheet with gating! take 3
+folder_3= '2020_09_22-graphene_sheet/take 3'
+#file_000_550 = '2020_09_22-graphene_sheet-000-550-3'
+#file_p22_550 = '2020_09_22-graphene_sheet-p22-550-3'
+#file_p40_550 = '2020_09_22-graphene_sheet-p40-550-3'
+#file_m30_550 = '2020_09_22-graphene_sheet-m30-550-3'
+
+#file_000_670 = '2020_09_22-graphene_sheet-000-670-3'
+#file_p22_670 = '2020_09_22-graphene_sheet-p22-670-3'
+#file_p40_670 = '2020_09_22-graphene_sheet-p40-670-3'
+#file_m30_670 = '2020_09_22-graphene_sheet-m30-670-3'
 
 
 if __name__ == '__main__':
 #    august_cap_noncap_plots()
     
-#    wvlngth_1, counts_1 = plot_spectra(file_pregraphene_550, folder_new)
-#    wvlngth_2, counts_2 = plot_spectra(file_postgraphene_550, folder_new) 
-#    wvlngth_3, counts_3 = plot_spectra(file_post_IG_550, folder_new)
-     
-    wvlngth_1, counts_1 = plot_spectra(file_pregraphene_670, folder_new)
-    wvlngth_2, counts_2 = plot_spectra(file_postgraphene_670, folder_new)
-    wvlngth_3, counts_3 = plot_spectra(file_post_IG_670, folder_new)
-
+    wvlngth_1, counts_1 = plot_spectra(file_m05_550, folder_1)
+    wvlngth_2, counts_2 = plot_spectra(file_p20_550, folder_1)
+    wvlngth_3, counts_3 = plot_spectra(file_p25_550, folder_1)
+#    wvlngth_4, counts_4 = plot_spectra(file_m30_550, folder)
+#    wvlngth_5, counts_5 = plot_spectra(file_p15_550, folder)
+#    wvlngth_6, counts_6 = plot_spectra(file_p20_550, folder)
+#    wvlngth_7, counts_7 = plot_spectra(file_p25_550, folder)
 
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
-    
-    print(counts_1)
+
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
-    ax.set_title('5 nm Er spectra preparation')
-#    ax.set_ylim([500, 1700]) 
-#    ax.set_xlim([547, 580]) 
-#    ax.set_ylim([580, 750]) 
-#    ax.set_xlim([644, 692]) 
-    ax.plot(wvlngth_1, numpy.array(counts_1), label ='pre graphene')
-    ax.plot(wvlngth_2, numpy.array(counts_2), label ='post graphene')
-    ax.plot(wvlngth_3, numpy.array(counts_3), label ='post IG')
+    ax.set_title('5 nm Er, graphene sheet, measurement run 1')
+    ax.plot(wvlngth_1, numpy.array(counts_1), label = '-0.5 V (CNP)')
+    ax.plot(wvlngth_2, numpy.array(counts_2), label = '+2.0 V')
+    ax.plot(wvlngth_3, numpy.array(counts_3), label = '+2.5 V')
     ax.legend()
 
+    wvlngth_1, counts_1 = plot_spectra(file_m05_670, folder_1)
+    wvlngth_2, counts_2 = plot_spectra(file_p20_670, folder_1)
+    wvlngth_3, counts_3 = plot_spectra(file_p25_670, folder_1)
+#    wvlngth_4, counts_4 = plot_spectra(file_m30_670, folder)
+#    wvlngth_5, counts_5 = plot_spectra(file_p15_670, folder)
+#    wvlngth_6, counts_6 = plot_spectra(file_p20_670, folder)
+#    wvlngth_7, counts_7 = plot_spectra(file_p25_670, folder)
+    
+    fig2, ax= plt.subplots(1, 1, figsize=(10, 8))
+    
+    ax.set_xlabel('Wavelength (nm)')
+    ax.set_ylabel('Counts')
+    ax.set_title('5 nm Er, graphene sheet, measurement run 1')
+    ax.plot(wvlngth_1, numpy.array(counts_1), label = '-0.5 V (CNP)')
+    ax.plot(wvlngth_2, numpy.array(counts_2), label = '+2.0 V')
+    ax.plot(wvlngth_3, numpy.array(counts_3), label = '+2.5 V')
+    ax.legend()
+     
     
     
     

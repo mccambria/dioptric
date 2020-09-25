@@ -412,7 +412,7 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     nd = 'nd_0'
-    sample_name = '5nmEr-ionic_gel'
+    sample_name = '5nmEr-graphene_sheet'
 
     
     search = { 'coords': [0.0, 0.0, 5.0],
@@ -458,8 +458,9 @@ if __name__ == '__main__':
 #            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
 #            do_optimize(nv_sig, apd_indices)
             
-#            tool_belt.set_drift([0.0, 0.0, -0.04]) # SM
-#            tool_belt.set_drift([0.0, 0.0, -0.20]) # MM
+#            tool_belt.set_drift([0.0, 0.0, 0.33]) # SM
+#            tool_belt.set_drift([0.0, 0.0, .07]) # MM
+            do_opti_z(nv_sig, apd_indices)
             do_opti_z(nv_sig, apd_indices)
 #            do_stationary_count(nv_sig, apd_indices)
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
@@ -486,15 +487,15 @@ if __name__ == '__main__':
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
             
-            voltage = '0V'
+            voltage = '-3.0 V'
 
-#            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
+            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
 #            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)
 #            do_lifetime(nv_sig, apd_indices, '560 bp', voltage ,reference = False)
 #            do_lifetime(nv_sig, apd_indices, '560 bp', voltage ,reference = True)
 #            do_lifetime(nv_sig, apd_indices, '670 bp', voltage ,reference = False)
 #            do_lifetime(nv_sig, apd_indices, '670 bp', voltage ,reference = True)
-        
+#        
 #            find_resonance_and_rabi(nv_sig, apd_indices)
             
 #            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
