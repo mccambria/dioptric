@@ -21,7 +21,7 @@ def exp_decay_double(t, a, d1, d2):
 # %%
 
 def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list= None ):
-    start_num = 4
+    start_num = 5
     
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
 #    fmt_data_list = ['b.', 'y.', 'g.']
@@ -34,7 +34,9 @@ def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_li
         verticalalignment='top', bbox=props)
     
     d_list = []
-    voltage_list = [-0.5,0, 0.5, 1, 1.5, 2, 2.5, 3]
+    voltage_list_1 = [-0.5,0, 0.5, 1, 1.5, 2, 2.5, 3]
+#    voltage_list_2  = [0.1, 1, 2, 3] 
+#    voltage_list_3 = [0.1, 2.2, 4, -3]
     t_ind = 0
     
     for f in range(len(file_list)):
@@ -63,13 +65,13 @@ def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_li
 
         #fit the data to single exponential
         init_guess = [1, 100]
-        popt, pcov = curve_fit(exp_decay, bin_centers_norm[start_num+1:-66],
-                                         norm_counts[start_num+1:-66], p0=init_guess)
+        popt, pcov = curve_fit(exp_decay, bin_centers_norm[start_num:-66],
+                                         norm_counts[start_num:-66], p0=init_guess)
         
         text_popt = r'{}: $A_0 = {}, d1 = {} us$'.format(label_list[f],'%.3f'%popt[0],'%.1f'%popt[1])
         ax.text(0.55, 0.75 - t_ind, text_popt, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
-        time_linspace = numpy.linspace(bin_centers_norm[start_num+1], bin_centers_norm[-66], 1000)
+        time_linspace = numpy.linspace(bin_centers_norm[start_num], bin_centers_norm[-66], 1000)
         ax.plot(time_linspace, exp_decay(time_linspace, *popt),'-')        
         d_list.append(popt[1])
         #fit the data to double exponential
@@ -97,7 +99,7 @@ def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_li
     print(d_list)
     
     fig_decay, ax= plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(voltage_list, d_list, 'o')
+    ax.plot(voltage_list_1, d_list, 'o')
     ax.set_xlabel('gate voltage (V)')
     ax.set_ylabel('decay constant (us)')
     ax.set_title(title + ', single exponential decay constant')
@@ -323,6 +325,34 @@ def Er_graphene_sheet_3():
                  '2020_09_22-19_06_16-5nmEr-graphene_sheet', '2020_09_22-19_35_55-5nmEr-graphene_sheet']
     background_file_list =['2020_09_22-18_14_03-5nmEr-graphene_sheet', '2020_09_22-18_36_35-5nmEr-graphene_sheet',
                            '2020_09_22-19_06_33-5nmEr-graphene_sheet', '2020_09_22-19_36_11-5nmEr-graphene_sheet']
+    title = '5 nm Er graphene sheet, 670 nm bandpass filter'    
+    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
+    
+def Er_preparation():
+    file_dir = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_09'
+    label_list = ['post-anneal', 'post-graphene', 'post-ionic gel']
+    
+    # no filter
+    file_list = ['2020_09_16-15_09_21-5nmEr-annealed', '2020_09_17-13_39_17-5nmEr-graphene',
+                 '2020_09_22-09_46_06-5nmEr-ionic_gel']
+    background_file_list = ['2020_09_16-15_09_36-5nmEr-annealed','2020_09_17-13_39_33-5nmEr-graphene',
+                            '2020_09_22-09_46_22-5nmEr-ionic_gel']
+    title = '5 nm Er graphene sheet, no filter'    
+    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
+    
+    #560 bandpass
+    file_list = ['2020_09_16-15_09_57-5nmEr-annealed', '2020_09_17-13_39_56-5nmEr-graphene',
+                 '2020_09_22-09_46_44-5nmEr-ionic_gel']
+    background_file_list = ['2020_09_16-15_10_13-5nmEr-annealed','2020_09_17-13_40_13-5nmEr-graphene',
+                            '2020_09_22-09_47_00-5nmEr-ionic_gel']
+    title = '5 nm Er graphene sheet, 560 nm bandpass filter'  
+    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
+    
+    #670 bandpass 
+    file_list = ['2020_09_16-15_10_33-5nmEr-annealed', '2020_09_17-13_40_32-5nmEr-graphene',
+                 '2020_09_22-09_47_19-5nmEr-ionic_gel']
+    background_file_list = ['2020_09_16-15_10_49-5nmEr-annealed','2020_09_17-13_40_49-5nmEr-graphene',
+                            '2020_09_22-09_47_36-5nmEr-ionic_gel']
     title = '5 nm Er graphene sheet, 670 nm bandpass filter'    
     plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
 #%%
