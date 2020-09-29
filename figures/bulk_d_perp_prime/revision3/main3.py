@@ -974,6 +974,9 @@ def correlations(nv_data):
 
 def main(nv_data):
     
+    # Extended version shows all the data, not just that for B < 65
+    extended = True
+    
     # fig, axes_pack = plt.subplots(4,1, figsize=(5.0625,9.0))
     fig = plt.figure(figsize=(5.0625,7.0))
     
@@ -999,9 +1002,19 @@ def main(nv_data):
     # %% Axes setups
     
     x_min = -1.5
+    if extended:
+        x_min_par = -5
+        x_min_perp = -2
+    else:
+        x_min_par = x_min
+        x_min_perp = x_min
     x_max = 61.5
-    # x_min = -5
-    # x_max = 115
+    if extended:
+        x_max_par = 310
+        x_max_perp = 112
+    else:
+        x_max_par = x_max
+        x_max_perp = x_max
     
     omega_label = r'$\Omega$ (s$^{-1}$)'
     # omega_min = 0.043
@@ -1016,26 +1029,22 @@ def main(nv_data):
     gamma_max = 270
             
     ax = axes_pack[0]
-    # ax.set_xlabel(r'$B_{\parallel}$ (G)')
-    # ax.set_xlim(x_min, x_max)
     ax.set_ylabel(omega_label)
     ax.set_ylim(omega_min, omega_max)
     
     ax = axes_pack[1]
     ax.set_xlabel(r'$B_{\parallel}$ (G)')
-    ax.set_xlim(x_min, x_max)
+    ax.set_xlim(x_min_par, x_max_par)
     ax.set_ylabel(gamma_label)
     ax.set_ylim(gamma_min, gamma_max)
     
     ax = axes_pack[2]
-    # ax.set_xlabel(r'$B_{\perp}$ (G)')
-    # ax.set_xlim(x_min, x_max)
     ax.set_ylabel(omega_label)
     ax.set_ylim(omega_min, omega_max)
     
     ax = axes_pack[3]
     ax.set_xlabel(r'$B_{\perp}$ (G)')
-    ax.set_xlim(x_min, x_max)
+    ax.set_xlim(x_min_perp, x_max_perp)
     ax.set_ylabel(gamma_label)
     ax.set_ylim(gamma_min, gamma_max)
     
@@ -1068,13 +1077,10 @@ def main(nv_data):
         par_B = numpy.array(nv['par_B'])
         perp_B = numpy.array(nv['perp_B'])
         
-        # Only plot points with measured angles and
-        # B small enough to fit in xlims
+        # Only plot points with measured angles
         mag_B_mask = []
         for val in mag_B:
             if val is None:
-                mag_B_mask.append(False)
-            elif val > 65:
                 mag_B_mask.append(False)
             else:
                 mag_B_mask.append(True)
@@ -1170,29 +1176,36 @@ def main(nv_data):
                 color='black', fontsize=14)
         
         
-    # Linear fits
-    B_linspace = numpy.linspace(0, x_max, num=1000)
+    # %% Linear fits
+    B_linspace_par = numpy.linspace(0, x_max_par, num=1000)
+    B_linspace_perp = numpy.linspace(0, x_max_perp, num=1000)
     abs_sig = True
     
     popt, pcov = curve_fit(linear, all_par_B, all_omega,
                             sigma=all_omega_err, absolute_sigma=abs_sig,
                             p0=(0.0, numpy.average(all_omega)))
-    conf_int(axes_pack[0], B_linspace, popt, pcov)
+    conf_int(axes_pack[0], B_linspace_par, popt, pcov)
     
     popt, pcov = curve_fit(linear, all_par_B, all_gamma,
                             sigma=all_gamma_err, absolute_sigma=abs_sig,
                             p0=(0.0, numpy.average(all_omega)))
-    conf_int(axes_pack[1], B_linspace, popt, pcov)
+    conf_int(axes_pack[1], B_linspace_par, popt, pcov)
     
     popt, pcov = curve_fit(linear, all_perp_B, all_omega,
                             sigma=all_omega_err, absolute_sigma=abs_sig,
                             p0=(0.0, numpy.average(all_omega)))
-    conf_int(axes_pack[2], B_linspace, popt, pcov)
+    conf_int(axes_pack[2], B_linspace_perp, popt, pcov)
     
     popt, pcov = curve_fit(linear, all_perp_B, all_gamma,
                             sigma=all_gamma_err, absolute_sigma=abs_sig,
                             p0=(0.0, numpy.average(all_omega)))
-    conf_int(axes_pack[3], B_linspace, popt, pcov)
+    conf_int(axes_pack[3], B_linspace_perp, popt, pcov)
+    
+    # %% Vertical line for extended
+    
+    if extended:
+        for ax in axes_pack:
+            ax.axvline(x_max, color='gray')
         
     
     # %% Wrap up
