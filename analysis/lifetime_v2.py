@@ -27,7 +27,7 @@ def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_li
 #    fmt_data_list = ['b.', 'y.', 'g.']
 #    fmt_fit_list = ['b-', 'y-', 'g-']
     
-    text_eq = r'$A_0 (e^{-t/d1} + e^{-t/d2} )$'
+    text_eq = r'$A_0 (e^{-t/d1})$'
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(0.55, 0.8, text_eq, transform=ax.transAxes, fontsize=12,
