@@ -164,7 +164,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
 
     counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     count_rates = (counts / 1000) / (readout / 10**9)
-    
+#    print(voltages)
+#    print(count_rates)
     if fig is not None:
         update_figure(fig, axis_ind, voltages, count_rates)
         
