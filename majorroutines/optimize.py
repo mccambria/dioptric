@@ -119,7 +119,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
     num_steps = 61#31
     coords = nv_sig['coords']
     x_center, y_center, z_center = coords
-    scan_range_nm = 32*10**3#2 * shared_params['airy_radius']
+    scan_range_nm = 20 * shared_params['airy_radius'] #32*10**3
     readout = shared_params['continuous_readout_dur']
 
     # Reset to centers

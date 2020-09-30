@@ -264,7 +264,7 @@ if __name__ == '__main__':
     
     nv_sig = ensemble
  
-    green_pulse_time_list = numpy.array([ 1, 5, 10, 25, 50, 75, 100, 250, 1000, 0.1]) # 60 mW, 16 mW, 4 mW
+    green_pulse_time_list = numpy.array([50]) # 60 mW, 16 mW, 4 mW
         
 #    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
 #    green_pulse_time_list = [5*10**9] # ns
