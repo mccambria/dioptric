@@ -122,7 +122,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
     # readout longer than the illuination time. Below I set these readout
     # times based on the lengths of the illumination time, so that the extra 
     # time will be resolvable.
-    if illumination_time < 600*10**3:
+    if  illumination_time < 1000:
+        readout_time = illumination_time + 50
+    elif illumination_time < 600*10**3:
         readout_time = illumination_time + 500
     elif illumination_time > 4*10**6:
         readout_time = illumination_time + 500000

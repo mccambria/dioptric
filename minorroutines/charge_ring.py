@@ -7,6 +7,7 @@ Created on Thu Apr 30 10:59:44 2020
 # %%
 import majorroutines.image_sample as image_sample
 import utils.tool_belt as tool_belt
+import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import labrad
@@ -14,10 +15,12 @@ import time
 import copy
 # %%
 
-reset_range = 2.5
-image_range = 2.5
-num_steps = 200
-num_steps_reset = 60
+#reset_range = 2.5
+#image_range = 2.5
+reset_range = 0.5
+image_range = 0.5
+num_steps = 120
+num_steps_reset = 120
 apd_indices = [0]
 
 # %%
@@ -123,6 +126,9 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     readout = nv_sig['pulsed_SCC_readout_dur']
 #    green_pulse_time = int(green_pulse_time)
     
+
+#    optimize.main(nv_sig, apd_indices, 532)    
+    
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
@@ -157,7 +163,9 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     print('Scanning yellow light\n...')
     ref_img_array, x_voltages, y_voltages = image_sample.main(nv_sig, image_range, image_range, num_steps, 
                       aom_ao_589_pwr, apd_indices, 589, save_data=True, plot_data=True) 
-    
+
+
+#    optimize.main(nv_sig, apd_indices, 532)    
     print('Resetting with red light\n...')
     red_scan(x_voltages_r, y_voltages_r, z_center)
  
@@ -218,7 +226,7 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
                'reset_range': reset_range,
                'reset_range-units': 'V',
                'num_steps_reset': num_steps_reset,
-               'green_pulse_time': green_pulse_time*10**9,
+               'green_pulse_time': int(green_pulse_time*10**9),
                'green_pulse_time-units': 'ns',
                'wait_time': int(wait_time),
                'wait_time-units': 's',
@@ -246,30 +254,28 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
    
 # %%
 if __name__ == '__main__':
-    sample_name = 'hopper'
+    sample_name = 'goeppert-mayer'
     
-    ensemble = { 'coords':[0, 0, 6.0], 
+    nv1 = { 'coords':[ 0.067, 0.123,  5.6],
             'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'expected_count_rate': 152, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 50*10**6, 'am_589_power': 0.45, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
+            'pulsed_ionization_dur': 500*10**3, 'cobalt_638_power': 160, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 19, 
             'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
-    nv_sig = ensemble
- 
-    green_pulse_time_list = numpy.array([50]) # 60 mW, 16 mW, 4 mW
+    nv_sig = nv1
+#    green_pulse_time_list = numpy.array([0.001,0.01,0.1, 1, 5, 10, 25, 50, 75, 100, 250 ,1000]) # 60 mW, 16 mW, 4 mW
+  
+#    green_pulse_time_list = numpy.array([0.001, 0.005,0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1 ]) # 60 mW, 16 mW, 4 mW
         
-#    green_pulse_time_list = [10**9, 10*10**9, 50*10**9]
-#    green_pulse_time_list = [5*10**9] # ns
-#    wait_time_list = numpy.array([0]) # s
-#    wait_time_list = [1000]
+    green_pulse_time_list = [100]
     
     for t in green_pulse_time_list:
         with labrad.connect() as cxn:         

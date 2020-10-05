@@ -264,6 +264,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
                   plot_data=True, continuous=False):
 
     # %% Some initial setup
+    nv_size = 0.02 #V
 
 #    tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
 #    cxn.pulse_streamer.constant([3],0.0,0.0)  
@@ -272,16 +273,14 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
 
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    readout = shared_params['continuous_readout_dur']
-    if color_ind == 638:
-        readout = readout 
+#    readout = shared_params['continuous_readout_dur']
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
 
+    base_readout = 50*10**6
 #    readout_sec = float(readout) / 10**9
-    readout_us = float(readout) / 10**3
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
@@ -294,7 +293,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
 
     # %% Load the PulseStreamer
         
-    seq_args = [delay, readout, aom_ao_589_pwr, apd_indices[0], color_ind]
+    seq_args = [delay, base_readout, aom_ao_589_pwr, apd_indices[0], color_ind]
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
@@ -320,6 +319,17 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, aom_ao_589_pwr,
     y_high = y_voltages[y_num_steps-1]
 
     pixel_size = x_voltages[1] - x_voltages[0]
+    
+    # If we want to spend the same amount of time on an NV, regardless of the
+    # scan range or pixel size, we will scale the readout time so that we spend
+    # the same amount of time scanning over an NV, regardless of the relative 
+    #size of the pixel sizes and NV size.
+    readout = int((pixel_size/nv_size)**2 * base_readout)
+    print(pixel_size)
+    print(str(readout /10**3) + 'us')
+#    print(str(readout / 10**6) + ' ms')
+    
+    readout_us = float(readout) / 10**3
 
     # %% Set up the APD
 

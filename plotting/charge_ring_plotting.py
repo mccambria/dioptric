@@ -255,7 +255,7 @@ def radial_distrbution_power(folder_name, sub_folder):
 def radial_distrbution_time(folder_name, sub_folder):
     # create a file list of the files to analyze
     file_list  = tool_belt.get_file_list(folder_name, '.txt')
-#    file_list = ['0.1.txt', '1.txt', '5.txt', '10.txt', '25.txt', '50.txt', '75.txt', '100.txt', '250.txt', '1000.txt' ]
+    file_list = ['0.1.txt', '1.txt', '5.txt', '10.txt', '25.txt', '50.txt', '75.txt', '100.txt', '250.txt', '1000.txt' ]
     # create lists to fill with data
     green_time_list = []
     radii_array = []
@@ -506,7 +506,7 @@ def radial_distrbution_wait_time(folder_name, sub_folder):
 
 # %% 
 if __name__ == '__main__':
-    parent_folder = "image_sample/branch_Spin_to_charge/2020_09/"
+    parent_folder = "image_sample/branch_Spin_to_charge/2020_10/"
     
 #    sub_folder = "hopper_50s_power"
 #    sub_folder = "hopper_10s_power"
@@ -517,8 +517,8 @@ if __name__ == '__main__':
 #    radial_distrbution_power(folder_name, sub_folder)
     
 #    sub_folder = "hopper_0.8mw_green_init"
-#    sub_folder = "hopper_1.9mw_time"
-    sub_folder = "hopper_0.8mw_green_init/shorter_times/dif_scans"
+    sub_folder = "goeppert_mayer_3mw_time"
+#    sub_folder = "hopper_0.8mw_green_init/shorter_times/dif_scans"
     folder_name = parent_folder + sub_folder 
     
     radial_distrbution_time(folder_name, sub_folder)

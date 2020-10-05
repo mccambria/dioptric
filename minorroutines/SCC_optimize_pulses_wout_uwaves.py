@@ -434,7 +434,9 @@ def optimize_init_ion_and_reion_pulse_length(nv_sig, test_pulse_dur_list = None)
 
 # %%
 
-def optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = numpy.linspace(0, 2*10**5, 11)):
+def optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = [     0,  100, 500, 10**3,  
+                                 5*10**3, 10**4, 5*10**4, 10**5, 5*10**5, 10**6, 5*10**6]):
+                              #numpy.linspace(0, 2*10**5, 11)):
     apd_indices = [0]
     num_reps = 1000
 #    num_reps = 500
@@ -635,21 +637,21 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
 # %% Run the files
     
 if __name__ == '__main__':
-    sample_name = 'Hopper'
-    ensemble = { 'coords':[0.0, 0.0, 5.0],
+    sample_name = 'goeppert-mayer'
+    nv1 = { 'coords':[ 0.067, 0.123,  5.6],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 50*10**6, 'am_589_power': 0.45, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 8, 
+            'pulsed_ionization_dur': 500*10**3, 'cobalt_638_power': 160, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 19, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
-    nv_sig = ensemble
+    nv_sig = nv1
     
 #    test_pulse_dur_list = [   
 #        0.,  100.,  200.,  300.,  400.,  500.,  600.,   800.,  1000.,  
@@ -665,14 +667,14 @@ if __name__ == '__main__':
 #    optimize_ion_pulse_length(nv_sig)
 #    optimize_reion_pulse_length(nv_sig)
 #    optimize_init_ion_pulse_length(nv_sig)
-    
-    for power in readout_power:
-        nv_sig['am_589_power'] = power
-        for ti in ion_time:
-            print(' \nReadout power set to {} V'.format(power))
-            print('Ionization time set to {} us'.format(ti/10**3))
-            nv_sig['pulsed_ionization_dur'] = int(ti)            
-            optimize_readout_pulse_length(nv_sig, test_pulse_dur_list = test_pulse_dur_list)
+#    
+#    for power in readout_power:
+#        nv_sig['am_589_power'] = power
+#        for ti in ion_time:
+#            print(' \nReadout power set to {} V'.format(power))
+#            print('Ionization time set to {} us'.format(ti/10**3))
+#            nv_sig['pulsed_ionization_dur'] = int(ti)            
+#            optimize_readout_pulse_length(nv_sig, test_pulse_dur_list = test_pulse_dur_list)
             
 #    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)

@@ -119,7 +119,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
     num_steps = 61#31
     coords = nv_sig['coords']
     x_center, y_center, z_center = coords
-    scan_range_nm = 20 * shared_params['airy_radius'] #32*10**3
+    scan_range_nm = 4* shared_params['airy_radius'] #32*10**3
     readout = shared_params['continuous_readout_dur']
 
     # Reset to centers
@@ -149,7 +149,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
     # z
     elif axis_ind == 2:
         
-        scan_range = scan_range_nm / shared_params['piezo_nm_per_volt']
+        scan_range = 5* scan_range_nm / shared_params['piezo_nm_per_volt']
         seq_args = [shared_params['objective_piezo_delay'],
                     readout, aom_ao_589_pwr, apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
