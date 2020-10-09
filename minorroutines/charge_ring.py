@@ -251,13 +251,36 @@ def main(cxn, nv_sig, green_pulse_time, wait_time = 0):
     tool_belt.save_raw_data(rawData, filePath + '_dif')
 
     tool_belt.save_figure(fig, filePath + '_dif')
-   
+  
+def do_green_then_yellow_scan(cxn, nv_sig, green_pulse_time, wait_time = 0):
+    aom_ao_589_pwr = nv_sig['am_589_power']
+    coords = nv_sig['coords']
+#    print(coords)
+    readout = nv_sig['pulsed_SCC_readout_dur']
+#    green_pulse_time = int(green_pulse_time)
+    
+
+#    optimize.main(nv_sig, apd_indices, 532)    
+    
+    adj_coords = (numpy.array(nv_sig['coords']) + \
+                  numpy.array(tool_belt.get_drift())).tolist()
+    x_center, y_center, z_center = adj_coords
+    
+    # Get a list of x and y voltages for the red scan
+    x_voltages_r, y_voltages_r = cxn.galvo.load_sweep_scan(x_center, y_center,
+                                                   reset_range, reset_range,
+                                                   num_steps_reset, 10**6)
+    
+    green_then_yellow_scan(x_voltages_r, y_voltages_r, z_center)   
+    #park red beam, then measure with yellow. 
+    # Set up a sequence to do this?
+    
 # %%
 if __name__ == '__main__':
     sample_name = 'goeppert-mayer'
     
-    nv1 = { 'coords':[ 0.067, 0.123,  5.6],
-            'name': '{}-ensemble'.format(sample_name),
+    nv2 = { 'coords':[ 0.055, 0.170,  5.6],
+            'name': '{}-nv2'.format(sample_name),
             'expected_count_rate': 152, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 50*10**6, 'am_589_power': 0.45, 
@@ -270,12 +293,13 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
-    nv_sig = nv1
-#    green_pulse_time_list = numpy.array([0.001,0.01,0.1, 1, 5, 10, 25, 50, 75, 100, 250 ,1000]) # 60 mW, 16 mW, 4 mW
+    nv_sig = nv2
+#    green_pulse_time_list = numpy.array([0.1, 1, 5, 10, 25, 50, 75, 100, 250 ,1000]) # 60 mW, 16 mW, 4 mW
+    green_pulse_time_list = numpy.array([100, 250 ,1000]) # 60 mW, 16 mW, 4 mW
   
 #    green_pulse_time_list = numpy.array([0.001, 0.005,0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1 ]) # 60 mW, 16 mW, 4 mW
         
-    green_pulse_time_list = [100]
+#    green_pulse_time_list = [100]
     
     for t in green_pulse_time_list:
         with labrad.connect() as cxn:         
