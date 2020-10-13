@@ -103,12 +103,12 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    image_sample_SCC.main(nv_sig, scan_range, scan_range, num_steps, 
 #                              aom_ao_589_pwr, apd_indices)
     
-def do_two_pulse_image_sample(nv_sig, apd_indices, readout,
+def do_two_pulse_image_sample(nv_sig, apd_indices, readout, init_pulse_time,
                     init_color_ind, read_color_ind, save_data, plot_data):
-    scan_range = 0.1
-    num_steps = 60
+    scan_range = 0.4
+    num_steps = int(60*4)
     image_sample.two_pulse_image_sample(nv_sig, scan_range, scan_range, num_steps,
-                  apd_indices, readout, init_color_ind, read_color_ind, save_data, plot_data)
+                  apd_indices, readout,init_pulse_time,  init_color_ind, read_color_ind, save_data, plot_data)
 
 def do_optimize(nv_sig, apd_indices, color_ind):
 
@@ -127,12 +127,20 @@ def do_optimize_list(nv_sig_list, apd_indices, color_ind):
 
     optimize.optimize_list(nv_sig_list, apd_indices, color_ind)
 
-def do_stationary_count(nv_sig, aom_ao_589_pwr, apd_indices, color_ind):
+def do_stationary_count(nv_sig, apd_indices, color_ind):
 
     run_time = 90 * 10**9  # ns
 
-    stationary_count.main(nv_sig, run_time, aom_ao_589_pwr, apd_indices, color_ind)
+    stationary_count.main(nv_sig, run_time, apd_indices, color_ind)
+    
+def do_two_pulse_stationary_count(nv_sig, init_color, read_color, init_time, 
+                                  readout_time, apd_indices):
 
+    num_steps = 10**4
+
+    stationary_count.two_pulse_main(nv_sig, num_steps, init_color, read_color, init_time, readout_time, 
+                   apd_indices)
+    
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
     run_time = 60 * 5  # s
@@ -566,7 +574,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
 
-    am_589_power = 0.15
+    am_589_power = 0.2
     nv2 = { 'coords':[ 0.055, 0.170,  5.6],
             'name': '{}-ensemble'.format(sample_name),
             'expected_count_rate': 152, 'nd_filter': 'nd_0',
@@ -653,14 +661,26 @@ if __name__ == '__main__':
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, flip = False) 
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, flip = True) 
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, flip = False)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, flip = False) 
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, flip = False) 
             
-            for yellow_power in numpy.linspace(0.1, 0.5, 9):
-                nv_sig_copy = copy.deepcopy(nv_sig)
-                nv_sig_copy['am_589_power'] = yellow_power
-                for t in [10**7, 3*10**7,6*10**7,   10*10**7]:
-                    do_two_pulse_image_sample(nv_sig_copy, apd_indices,100*10**3, None, 532, save_data = False, plot_data = False)
-                    do_image_sample(nv_sig_copy,  apd_indices, 589, save_data=True, plot_data=True,readout = t) 
+#            for yellow_power in numpy.linspace(0.1, 0.5, 9):
+#                nv_sig_copy = copy.deepcopy(nv_sig)
+#                nv_sig_copy['am_589_power'] = yellow_power
+#            for t in [100*10**2, 10**3, 5*10**3, 10*10**3, 50*10**3, 100*10**3]:
+#                do_two_pulse_image_sample(nv_sig, apd_indices,2*10**7,t, 532, 589, save_data = True, plot_data = True)
+ 
+#            do_two_pulse_image_sample(nv_sig, apd_indices,10**3, None, 638, save_data = False, plot_data = False)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True,readout =10*10**7)             
+#            do_two_pulse_image_sample(nv_sig, apd_indices,1*10**3, None, 532, save_data = False, plot_data = False)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True,readout =10*10**7) 
+#            
+#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**3, None, 638, save_data = False, plot_data = False)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True,readout = 20*10**7)             
+#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**3, None, 532, save_data = True, plot_data = True)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 20*10**7) 
+                        
+#            do_two_pulse_image_sample(nv_sig, apd_indices,1*10**3, None, 532, save_data = False, plot_data = False)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True,readout =1*10**7) 
                 
             
 #            for yellow_power in numpy.linspace(0.1, 0.5, 9):
@@ -716,7 +736,11 @@ if __name__ == '__main__':
                             
 #                    cxn.apd_tagger.clear_buffer()  
 #                do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True) 
-                
+   
+#            do_stationary_count(nv_sig, apd_indices, 532)            
+            do_two_pulse_stationary_count(nv_sig, 532, 532, 10**3, 
+                                  10**7, apd_indices) 
+             
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)

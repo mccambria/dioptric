@@ -302,20 +302,20 @@ def create_figure(file_name):
 
 # %% Mains
 
-def two_pulse_image_sample(nv_sig, x_range, y_range, num_steps,  apd_indices, readout,
+def two_pulse_image_sample(nv_sig, x_range, y_range, num_steps,  apd_indices, readout, init_pulse_time,
                            init_color_ind, read_color_ind, 
          save_data=True, plot_data=True, continuous=False):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, 
                       y_range, num_steps, 
-                      apd_indices,  readout,
+                      apd_indices,  readout, init_pulse_time,
                            init_color_ind, read_color_ind, save_data, plot_data, continuous)
         
     return img_array, x_voltages, y_voltages
 
 def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  
-                  apd_indices, readout,
+                  apd_indices, readout, init_pulse_time,
                            init_color_ind, read_color_ind,  save_data=True, 
                   plot_data=True, continuous=False):
 
@@ -329,13 +329,21 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 #    readout = shared_params['continuous_readout_dur']
-    init_pulse_time = 10**5
+#    init_pulse_time = 10**5
 
-#    init_color_ind = 532
-#    read_color_ind = 589
+    if init_color_ind == 532:
+        init_delay = shared_params['515_laser_delay']
+    elif init_color_ind == 589:
+        init_delay = shared_params['589_aom_delay']
+    elif init_color_ind == 638:
+        init_delay = shared_params['638_laser_delay']
     
-    init_delay = shared_params['515_laser_delay']
-    read_delay = shared_params['589_aom_delay']
+    if read_color_ind == 532:
+        read_delay = shared_params['515_laser_delay']
+    elif read_color_ind == 589:
+        read_delay = shared_params['589_aom_delay']
+    elif read_color_ind == 638:
+        read_delay = shared_params['638_laser_delay']  
     
     aom_ao_589_pwr = nv_sig['am_589_power']
 
@@ -554,8 +562,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
 
-#    base_readout = 50*10**6
-#    readout_sec = float(readout) / 10**9
+    base_readout = 50*10**8
+    readout_sec = float(readout) / 10**9
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
@@ -565,7 +573,17 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     delay = int(0.5 * 10**6)
 
     total_num_samples = num_steps**2
-
+    
+    pixel_size_est = x_range / (num_steps - 1)
+    print(pixel_size_est)
+    
+    # If we want to spend the same amount of time on an NV, regardless of the
+    # scan range or pixel size, we will scale the readout time so that we spend
+    # the same amount of time scanning over an NV, regardless of the relative 
+    #size of the pixel sizes and NV size.
+#    readout = int((pixel_size_est/nv_size)**2 * base_readout)
+    
+    print(str(readout /10**6) + 'ms')
     # %% Load the PulseStreamer
         
     seq_args = [delay, readout, aom_ao_589_pwr, apd_indices[0], color_ind]
@@ -575,10 +593,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                                               seq_args_string)
     period = ret_vals[0]
 
+
     # %% Initialize at the passed coordinates
 
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-
+    time.sleep(1)
     # %% Set up the galvo
     if flip:
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan_flip(x_center, y_center,
@@ -602,16 +621,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     y_high = y_voltages[y_num_steps-1]
 
     pixel_size = x_voltages[1] - x_voltages[0]
-    
-    # If we want to spend the same amount of time on an NV, regardless of the
-    # scan range or pixel size, we will scale the readout time so that we spend
-    # the same amount of time scanning over an NV, regardless of the relative 
-    #size of the pixel sizes and NV size.
-#    readout = int((pixel_size/nv_size)**2 * base_readout)
-#    print(pixel_size)
-#    print(str(readout /10**3) + 'us')
+
     
     readout_us = float(readout) / 10**3
+
 
     # %% Set up the APD
 
