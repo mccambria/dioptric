@@ -302,20 +302,20 @@ def create_figure(file_name):
 
 # %% Mains
 
-def two_pulse_image_sample(nv_sig, x_range, y_range, num_steps,  apd_indices, readout, init_pulse_time,
+def two_pulse_image_sample(nv_sig, x_range, y_range, num_steps,  apd_indices, init_pulse_time, readout,
                            init_color_ind, read_color_ind, 
          save_data=True, plot_data=True, continuous=False):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, 
                       y_range, num_steps, 
-                      apd_indices,  readout, init_pulse_time,
+                      apd_indices,  init_pulse_time,readout,
                            init_color_ind, read_color_ind, save_data, plot_data, continuous)
         
     return img_array, x_voltages, y_voltages
 
 def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  
-                  apd_indices, readout, init_pulse_time,
+                  apd_indices, init_pulse_time, readout,
                            init_color_ind, read_color_ind,  save_data=True, 
                   plot_data=True, continuous=False):
 
@@ -772,7 +772,7 @@ if __name__ == '__main__':
 #    create_figure(file_name)
 #    reformat_plot('inferno', 'svg')
 
-    file_name = 'branch_Spin_to_charge/2020_10/2020_10_07-10_01_14-goeppert-mayer-ensemble'
+    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
 #    file_name = 'branch_Spin_to_charge/2020_05/2020_05_12-11_14_57-hopper-ensemble'
 #    reformat_plot('inferno', 'svg')
     create_figure(file_name)

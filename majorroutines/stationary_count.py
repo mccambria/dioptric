@@ -55,8 +55,8 @@ def two_pulse_main_with_cxn(cxn, nv_sig,num_steps, init_color, read_color, init_
     tool_belt.reset_cfm(cxn)
 
     shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
-    readout = shared_parameters['continuous_readout_dur']*10
-    readout_sec = readout / 10**9    
+#    readout = shared_parameters['continuous_readout_dur']*10
+    readout_sec = readout_time / 10**9    
     
     aom_ao_589_pwr = nv_sig['am_589_power']
     
