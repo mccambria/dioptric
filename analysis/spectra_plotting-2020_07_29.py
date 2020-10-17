@@ -196,19 +196,19 @@ file_m05_550 = '2020_09_22-graphene_sheet-m05-550-1'
 #file_p05_550 = '2020_09_22-graphene_sheet-p05-550-1'
 #file_p10_550 = '2020_09_22-graphene_sheet-p10-550-1'
 #file_p15_550 = '2020_09_22-graphene_sheet-p15-550-1'
-file_p20_550 = '2020_09_22-graphene_sheet-p20-550-1'
-file_p25_550 = '2020_09_22-graphene_sheet-p25-550-1'
+#file_p20_550 = '2020_09_22-graphene_sheet-p20-550-1'
+#file_p25_550 = '2020_09_22-graphene_sheet-p25-550-1'
 #
 file_m05_670 = '2020_09_22-graphene_sheet-m05-670-1'
 #file_000_670 = '2020_09_22-graphene_sheet-000-670-1'
 #file_p05_670 = '2020_09_22-graphene_sheet-p05-670-1'
 #file_p10_670 = '2020_09_22-graphene_sheet-p10-670-1'
 #file_p15_670 = '2020_09_22-graphene_sheet-p15-670-1'
-file_p20_670 = '2020_09_22-graphene_sheet-p20-670-1'
-file_p25_670 = '2020_09_22-graphene_sheet-p25-670-1'
+#file_p20_670 = '2020_09_22-graphene_sheet-p20-670-1'
+#file_p25_670 = '2020_09_22-graphene_sheet-p25-670-1'
 
 ## graphene sheet with gating! take 2
-folder_2= '2020_09_22-graphene_sheet/take 2'
+#folder_2= '2020_09_22-graphene_sheet/take 2'
 #file_p01_550 = '2020_09_22-graphene_sheet-p01-550-2'
 #file_p10_550 = '2020_09_22-graphene_sheet-p10-550-2'
 #file_p20_550 = '2020_09_22-graphene_sheet-p20-550-2'
@@ -220,7 +220,7 @@ folder_2= '2020_09_22-graphene_sheet/take 2'
 #file_p30_670 = '2020_09_22-graphene_sheet-p30-670-2'
 
 ## graphene sheet with gating! take 3
-folder_3= '2020_09_22-graphene_sheet/take 3'
+#folder_3= '2020_09_22-graphene_sheet/take 3'
 #file_000_550 = '2020_09_22-graphene_sheet-000-550-3'
 #file_p22_550 = '2020_09_22-graphene_sheet-p22-550-3'
 #file_p40_550 = '2020_09_22-graphene_sheet-p40-550-3'
@@ -231,13 +231,19 @@ folder_3= '2020_09_22-graphene_sheet/take 3'
 #file_p40_670 = '2020_09_22-graphene_sheet-p40-670-3'
 #file_m30_670 = '2020_09_22-graphene_sheet-m30-670-3'
 
+#ionic gel measurement
+folder_ig = '2020_09_29-ionic_gel_tests'
+file_ig = '2020_09_29-ionig_gel_sio2_surface'
+file_ig_inside = '2020_09_29-ionig_gel_in_gel'
+file_ig_low_power = '2020_09_29-ionig_gel_sio2_surface_low_power'
+
 
 if __name__ == '__main__':
 #    august_cap_noncap_plots()
     
-    wvlngth_1, counts_1 = plot_spectra(file_m05_550, folder_1)
-    wvlngth_2, counts_2 = plot_spectra(file_p20_550, folder_1)
-    wvlngth_3, counts_3 = plot_spectra(file_p25_550, folder_1)
+    wvlngth_1, counts_1 = plot_spectra(file_ig_low_power, folder_ig)
+    wvlngth_2, counts_2 = plot_spectra(file_ig_inside, folder_ig)
+    wvlngth_3, counts_3 = plot_spectra(file_ig, folder_ig)
 #    wvlngth_4, counts_4 = plot_spectra(file_m30_550, folder)
 #    wvlngth_5, counts_5 = plot_spectra(file_p15_550, folder)
 #    wvlngth_6, counts_6 = plot_spectra(file_p20_550, folder)
@@ -247,29 +253,29 @@ if __name__ == '__main__':
 
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
-    ax.set_title('5 nm Er, graphene sheet, measurement run 1')
-    ax.plot(wvlngth_1, numpy.array(counts_1), label = '-0.5 V (CNP)')
-    ax.plot(wvlngth_2, numpy.array(counts_2), label = '+2.0 V')
-    ax.plot(wvlngth_3, numpy.array(counts_3), label = '+2.5 V')
+    ax.set_title('Ionic gel on SiO2')
+#    ax.plot(wvlngth_1, numpy.array(counts_1), 'b', label = '5 nm Er sample (9/22)')
+    ax.plot(wvlngth_1, numpy.array(counts_1), 'k', label = 'Ionic gel sample (1.2 mW)' )
+    ax.plot(wvlngth_2, numpy.array(counts_2), 'r', label = 'Ionic gel sample (10 mW)')
     ax.legend()
 
-    wvlngth_1, counts_1 = plot_spectra(file_m05_670, folder_1)
-    wvlngth_2, counts_2 = plot_spectra(file_p20_670, folder_1)
-    wvlngth_3, counts_3 = plot_spectra(file_p25_670, folder_1)
-#    wvlngth_4, counts_4 = plot_spectra(file_m30_670, folder)
-#    wvlngth_5, counts_5 = plot_spectra(file_p15_670, folder)
-#    wvlngth_6, counts_6 = plot_spectra(file_p20_670, folder)
-#    wvlngth_7, counts_7 = plot_spectra(file_p25_670, folder)
-    
-    fig2, ax= plt.subplots(1, 1, figsize=(10, 8))
-    
-    ax.set_xlabel('Wavelength (nm)')
-    ax.set_ylabel('Counts')
-    ax.set_title('5 nm Er, graphene sheet, measurement run 1')
-    ax.plot(wvlngth_1, numpy.array(counts_1), label = '-0.5 V (CNP)')
-    ax.plot(wvlngth_2, numpy.array(counts_2), label = '+2.0 V')
-    ax.plot(wvlngth_3, numpy.array(counts_3), label = '+2.5 V')
-    ax.legend()
+#    wvlngth_1, counts_1 = plot_spectra(file_m05_670, folder_1)
+#    wvlngth_2, counts_2 = plot_spectra(file_p20_670, folder_1)
+#    wvlngth_3, counts_3 = plot_spectra(file_p25_670, folder_1)
+##    wvlngth_4, counts_4 = plot_spectra(file_m30_670, folder)
+##    wvlngth_5, counts_5 = plot_spectra(file_p15_670, folder)
+##    wvlngth_6, counts_6 = plot_spectra(file_p20_670, folder)
+##    wvlngth_7, counts_7 = plot_spectra(file_p25_670, folder)
+#    
+#    fig2, ax= plt.subplots(1, 1, figsize=(10, 8))
+#    
+#    ax.set_xlabel('Wavelength (nm)')
+#    ax.set_ylabel('Counts')
+#    ax.set_title('5 nm Er, graphene sheet, measurement run 1')
+#    ax.plot(wvlngth_1, numpy.array(counts_1), label = '-0.5 V (CNP)')
+#    ax.plot(wvlngth_2, numpy.array(counts_2), label = '+2.0 V')
+#    ax.plot(wvlngth_3, numpy.array(counts_3), label = '+2.5 V')
+#    ax.legend()
      
     
     
