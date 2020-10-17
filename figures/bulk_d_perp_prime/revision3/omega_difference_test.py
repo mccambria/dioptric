@@ -354,7 +354,8 @@ def supp_figure(folder, files):
     markerfacecolors = ['#ACECDB', '#f5b11d', '#72b5db', '#f0a3cd', '#fcbd8b',]
     labels = [r'$P_{0,0}-P_{0,-1}$', r'$P_{0,0}-P_{0,+1}$']
     
-    fig, ax = plt.subplots()
+    figwidth = 6.75
+    fig, ax = plt.subplots(figsize=(figwidth, 4.5))
     fig.set_tight_layout(True)
     
     for ind in range(2):
