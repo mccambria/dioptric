@@ -71,7 +71,7 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
-#    scan_range = 0.25
+#    scan_range = 0.2
 #    num_steps = 150
     scan_range = 0.1
 #    num_steps = 120
@@ -79,8 +79,8 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 90
 #    scan_range = 0.05
     num_steps = 60
-#    scan_range = 0.025
-#    num_steps =20
+#    scan_range = 0.03
+#    num_steps =30
 #    num_steps = 10
 #    num_steps = 4
     
@@ -97,7 +97,7 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    
 #
 #    scan_range = 0.2
-#    num_steps = 60
+#    num_steps = 90
 #    
 #    # For now we only support square scans so pass scan_range twice
 #    image_sample_SCC.main(nv_sig, scan_range, scan_range, num_steps, 
@@ -105,8 +105,8 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
     
 def do_two_pulse_image_sample(nv_sig, apd_indices, init_pulse_time,readout,
                     init_color_ind, read_color_ind, save_data, plot_data):
-    scan_range = 0.1
-    num_steps = 60
+    scan_range = 0.05
+    num_steps = 30
     image_sample.two_pulse_image_sample(nv_sig, scan_range, scan_range, num_steps,
                   apd_indices,init_pulse_time,  readout, init_color_ind, read_color_ind, save_data, plot_data)
 
@@ -136,7 +136,7 @@ def do_stationary_count(nv_sig, apd_indices, color_ind):
 def do_two_pulse_stationary_count(nv_sig, init_color, read_color, init_time, 
                                   readout_time, apd_indices):
 
-    num_steps = 5*100
+    num_steps = 90*50
 
     stationary_count.two_pulse_main(nv_sig, num_steps, init_color, read_color, init_time, readout_time, 
                    apd_indices)
@@ -545,49 +545,61 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
     
-    ensemble = { 'coords':[0.0, 0.0,  5.6],
-            'name': '{}-ensemble'.format(sample_name),
+    search = { 'coords':[0,0,  5.0],
+            'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.2, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':8 , 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
-    nv1 = { 'coords':[ 0.063, 0.145,  5.6],
-            'name': '{}-ensemble'.format(sample_name),
+    nv1 = { 'coords':[-0.009, 0.290,  5.0],
+            'name': '{}-nv1'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.15, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':8 , 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
-
-
-    am_589_power = 0.45
-    nv2 = { 'coords':[ 0.042, 0.205,  5.6],
-            'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 152, 'nd_filter': 'nd_0',
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
+    nv2 = { 'coords':[0.439, -0.108,  5.0],
+            'name': '{}-nv2'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power':am_589_power, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.35, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':19 , 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
+    nv3 = { 'coords':[-0.204, -0.212,  5.0],
+            'name': '{}-nv3'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.15, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+    
+
    
     nv_sig_list = [nv2]
 
@@ -633,22 +645,52 @@ if __name__ == '__main__':
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 ##    
             
-#            for z in numpy.linspace(4, 2.5, 16):
+#            for z in numpy.linspace(4.5, 5.5, 11):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]               
 #                do_image_sample(nv_sig_copy,  apd_indices, 532, save_data=True, plot_data=True) 
-           
-#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**3, None, 638, save_data = False, plot_data = False)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True,readout = 20*10**7)             
-#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**3, None, 532, save_data = True, plot_data = True)
+                       
+#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**5, None, 532, save_data = True, plot_data = True)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 20*10**7)
-  
-#            do_two_pulse_image_sample(nv_sig, apd_indices,10**7, 10**7, 532, 589, save_data = True, plot_data = True)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 10**7) 
+#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**5, None, 638, save_data = False, plot_data = False)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True,readout = 20*10**7)             
+ 
+#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 2*10**7, 532, 589, save_data = True, plot_data = True)
+#            do_two_pulse_image_sample(nv_sig, apd_indices,10**4, 2*10**7, 638, 589, save_data = True, plot_data = True)
+
+#            do_two_pulse_image_sample(nv_sig, apd_indices,100*10**3, 2*10**7, 638, 589, save_data = True, plot_data = True)
+#            do_two_pulse_image_sample(nv_sig, apd_indices,100*10**3, 2*10**7, 532, 589, save_data = True, plot_data = True)
+
+#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**5, None, 532, save_data = True, plot_data = True)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 2*10**7) 
+#            with labrad.connect() as cxn:
+#                coords = nv_sig['coords']
+#                set_xyz(coords)
+#                shared_params = tool_belt.get_shared_parameters_dict(cxn)
+#                laser_515_delay = shared_params['515_laser_delay']
+#                seq_args = [laser_515_delay, int(10**5), 0.0, 532]           
+#                seq_args_string = tool_belt.encode_seq_args(seq_args)            
+#                cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 2*10**7) 
+#  
+#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**5, None, 638, save_data = True, plot_data = True)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 2*10**7) 
+#            with labrad.connect() as cxn:
+#                coords = nv_sig['coords']
+#                set_xyz(coords)
+#                shared_params = tool_belt.get_shared_parameters_dict(cxn)
+#                laser_515_delay = shared_params['638_DM_laser_delay']
+#                seq_args = [laser_515_delay, int(10**5), 0.0, 638]           
+#                seq_args_string = tool_belt.encode_seq_args(seq_args)            
+#                cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 2*10**7)
+
+            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
+            
 #            do_stationary_count(nv_sig, apd_indices, 589)            
-            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
-                                  10**7, apd_indices) 
+#            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
+#                                  2*10**7, apd_indices) 
              
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
