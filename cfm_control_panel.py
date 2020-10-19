@@ -79,7 +79,7 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 90
 #    scan_range = 0.05
     num_steps = 60
-#    scan_range = 0.03
+#    scan_range = 0.025
 #    num_steps =30
 #    num_steps = 10
 #    num_steps = 4
@@ -572,7 +572,7 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
-    nv2 = { 'coords':[0.439, -0.108,  5.0],
+    nv2 = { 'coords':[0.414, -0.074,  5.0],
             'name': '{}-nv2'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -584,8 +584,8 @@ if __name__ == '__main__':
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
-    nv3 = { 'coords':[-0.204, -0.212,  5.0],
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
+    nv3 = { 'coords':[0.434, -0.098,  5.0],
             'name': '{}-nv3'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -601,7 +601,7 @@ if __name__ == '__main__':
     
 
    
-    nv_sig_list = [nv2]
+    nv_sig_list = [nv3]
 
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
@@ -686,6 +686,11 @@ if __name__ == '__main__':
 #                cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 2*10**7)
 
+            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
+            with labrad.connect() as cxn:
+                set_xyz([0.414, -0.074,5.0])
+                cxn.pulse_streamer.constant([3],0,0)
+                time.sleep(1)
             do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
             
 #            do_stationary_count(nv_sig, apd_indices, 589)            
