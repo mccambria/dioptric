@@ -556,7 +556,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-#    readout = 10*shared_params['continuous_readout_dur']
+#    readout = shared_params['continuous_readout_dur']
 
     aom_ao_589_pwr = nv_sig['am_589_power']
     
@@ -577,7 +577,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     total_num_samples = num_steps**2
     
     pixel_size_est = x_range / (num_steps - 1)
-    print(pixel_size_est)
+#    print(pixel_size_est)
     
     # If we want to spend the same amount of time on an NV, regardless of the
     # scan range or pixel size, we will scale the readout time so that we spend
@@ -585,7 +585,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     #size of the pixel sizes and NV size.
 #    readout = int((pixel_size_est/nv_size)**2 * base_readout)
     
-    print(str(readout /10**6) + 'ms')
+#    print(str(readout /10**6) + 'ms')
     # %% Load the PulseStreamer
         
     seq_args = [delay, readout, aom_ao_589_pwr, apd_indices[0], color_ind]
@@ -596,24 +596,34 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     period = ret_vals[0]
 
 
-    # %% Initialize at the passed coordinates
+    # %% Initialize at the starting point
 
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-    time.sleep(1)
+#    time.sleep(1)
     # %% Set up the galvo
-    if flip:
+    if flip==1:
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan_flip(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period) 
-#        print(x_voltages)
-#        x_voltages = numpy.flip(x_voltages)
+    elif flip == 2:
+        
+        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_bl(x_center, y_center,
+                                                       x_range, y_range,
+                                                       num_steps, period) 
+    elif flip == 3:
+        
+        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_ul(x_center, y_center,
+                                                       x_range, y_range,
+                                                       num_steps, period) 
+    elif flip == 4:
+        
+        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_ur(x_center, y_center,
+                                                       x_range, y_range,
+                                                       num_steps, period) 
     else:
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
-#        print(x_voltages)
-    
-#    print(x_voltages)
 
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]
@@ -681,7 +691,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:           
-            if flip:
+            if flip==1:
                 populate_img_array_bottom_left(new_samples, img_array, img_write_pos)
                 # This is a horribly inefficient way of getting kcps, but it
                 # is easy and readable and probably fine up to some resolution
@@ -723,10 +733,23 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     
     
     # %% Save the data
-    if flip:
-        fig = tool_belt.create_image_figure(numpy.fliplr(img_array), img_extent,
-                                            clickHandler=on_click_image,
-                                            title = title)
+    if plot_data:
+        if flip == 1:
+            fig = tool_belt.create_image_figure(numpy.fliplr(img_array), img_extent,
+                                                clickHandler=on_click_image,
+                                                title = title)
+        elif flip == 2:
+            fig = tool_belt.create_image_figure(numpy.rot90(img_array,3), img_extent,
+                                                clickHandler=on_click_image,
+                                                title = title)    
+        elif flip == 3:
+            fig = tool_belt.create_image_figure(numpy.rot90(img_array,2), img_extent,
+                                                clickHandler=on_click_image,
+                                                title = title)  
+        elif flip == 4:
+            fig = tool_belt.create_image_figure(numpy.rot90(img_array,1), img_extent,
+                                                clickHandler=on_click_image,
+                                                title = title)
     timestamp = tool_belt.get_time_stamp()
 
     rawData = {'timestamp': timestamp,

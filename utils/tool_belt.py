@@ -973,7 +973,10 @@ def reset_cfm(cxn=None):
         
             
 def reset_cfm_with_cxn(cxn):
-#    cxn.pulse_streamer.reset()
+#    coords_dict =[0.2, -0.2,5]
+#    cxn.pulse_streamer.constant([3],0,0)
+    cxn.pulse_streamer.reset()
+#    set_xyz(cxn, coords_dict)
     cxn.apd_tagger.reset()
     cxn.arbitrary_waveform_generator.reset()
     cxn.signal_generator_tsg4104a.reset()

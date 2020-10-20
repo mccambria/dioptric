@@ -71,9 +71,9 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
-#    scan_range = 0.2
+    scan_range = 0.2
 #    num_steps = 150
-    scan_range = 0.1
+#    scan_range = 0.1
 #    num_steps = 120
 #    scan_range = 0.3
 #    num_steps = 90
@@ -545,25 +545,25 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
     
-    search = { 'coords':[0,0,  5.0],
-            'name': '{}-search'.format(sample_name),
+    NVA = { 'coords':[0.440, -0.109,  4.8],
+            'name': '{}-NVA'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.2, 
-            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_SCC_readout_dur': 2*10**6, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
-    nv1 = { 'coords':[-0.009, 0.290,  5.0],
-            'name': '{}-nv1'.format(sample_name),
+    NVB = { 'coords':[0.441, -0.103,  5.1],
+            'name': '{}-NVB'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.15, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -572,11 +572,11 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
-    nv2 = { 'coords':[0.414, -0.074,  5.0],
-            'name': '{}-nv2'.format(sample_name),
+    dark = { 'coords':[0.434, -0.051,  5.1],
+            'name': '{}-dark_region'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.35, 
+            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -584,24 +584,11 @@ if __name__ == '__main__':
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
-    nv3 = { 'coords':[0.434, -0.098,  5.0],
-            'name': '{}-nv3'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.15, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
     
 
    
-    nv_sig_list = [nv3]
+    nv_sig_list = [NVA]
 
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
@@ -644,8 +631,9 @@ if __name__ == '__main__':
 #            with labrad.connect() as cxn:
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 ##    
+            do_optimize(nv_sig, apd_indices, 532)
             
-#            for z in numpy.linspace(4.5, 5.5, 11):
+#            for z in numpy.linspace(4.6, 5.6, 11):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]               
@@ -686,12 +674,25 @@ if __name__ == '__main__':
 #                cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 2*10**7)
 
-            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
-            with labrad.connect() as cxn:
-                set_xyz([0.414, -0.074,5.0])
-                cxn.pulse_streamer.constant([3],0,0)
-                time.sleep(1)
-            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
+#            do_image_sample(nv_sig,  apd_indices, 638, save_data=False, plot_data=False, readout =10**3, flip=2)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
+#            with labrad.connect() as cxn:
+#                cxn.pulse_streamer.constant([3],0,0)
+#                time.sleep(1)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
+#            with labrad.connect() as cxn:
+#                cxn.pulse_streamer.constant([3],0,0)
+#                time.sleep(1)
+#                cxn.pulse_streamer.constant([],0,0)
+#                time.sleep(1)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
+            
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
+#                
+#            do_image_sample(nv_sig,  apd_indices, 638, save_data=False, plot_data=False, readout =10**3)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 2*10**7)
             
 #            do_stationary_count(nv_sig, apd_indices, 589)            
 #            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 

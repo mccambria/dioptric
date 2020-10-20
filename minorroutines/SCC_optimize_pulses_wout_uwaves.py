@@ -638,20 +638,20 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
     
 if __name__ == '__main__':
     sample_name = 'goeppert-mayer'
-    nv2 = { 'coords':[0.439, -0.108,  5.0],
-            'name': '{}-nv2'.format(sample_name),
+    NVA = { 'coords':[0.422, -0.080,  5.1],
+            'name': '{}-NVA'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
-            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_SCC_readout_dur': 2*10**6, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
-    nv_sig = nv2
+    nv_sig = NVA
     
 #    test_pulse_dur_list = [   
 #        0.,  100.,  200.,  300.,  400.,  500.,  600.,   800.,  1000.,  
@@ -664,7 +664,7 @@ if __name__ == '__main__':
 #    readout_time = [10**7]
 
     # Run the program
-    optimize_ion_pulse_length(nv_sig)
+#    optimize_ion_pulse_length(nv_sig)
 #    optimize_reion_pulse_length(nv_sig)
 #    optimize_init_ion_pulse_length(nv_sig)
 #    
@@ -678,5 +678,5 @@ if __name__ == '__main__':
             
 #    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
-#    optimize_readout_pulse_power(nv_sig)
+    optimize_readout_pulse_power(nv_sig)
     

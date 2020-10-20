@@ -25,7 +25,7 @@ def get_seq(pulser_wiring, args):
     # Get what we need out of the wiring dictionary
     pulser_do_532_aom = pulser_wiring['do_532_aom']
     pulser_ao_589_aom = pulser_wiring['ao_589_aom']
-    pulser_do_638_aom = pulser_wiring['do_638_laser']
+    pulser_do_638_aom = pulser_wiring['638_DM_laser_delay']
 
     # Convert the 32 bit ints into 64 bit ints
     duration = numpy.int64(duration)
@@ -67,8 +67,8 @@ if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 1,
               'do_532_aom': 2,
-              'ao_638_aom': 3,
+              '638_DM_laser_delay': 3,
               'ao_589_aom': 1}
-    args = [250, 500, 1.0, 532]
+    args = [100, 500, 1.0, 532]
     seq, ret_vals, _ = get_seq(wiring, args)
     seq.plot()
