@@ -34,7 +34,10 @@ def get_seq(pulser_wiring, args):
     readout_time = numpy.int64(readout_time)
     init_pulse_time = numpy.int64(init_pulse_time)
     
-    period = numpy.int64(galvo_delay + init_delay + read_delay + init_pulse_time + readout_time + 400)
+    intra_pulse_delay = 100*10**6
+#    intra_pulse_delay = 100
+    
+    period = numpy.int64(galvo_delay + init_delay + read_delay + init_pulse_time + readout_time + intra_pulse_delay + 300)
     
     # Make sure the aom_ao_589_pwer is within range of +1 and 0
     tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
@@ -49,42 +52,42 @@ def get_seq(pulser_wiring, args):
     # either side. During the buffers, everything should be low. The buffers
     # account for any timing jitters/delays and ensure that everything we
     # expect to be on one side of the clock signal is indeed on that side.
-    train = [(galvo_delay +init_delay + read_delay + readout_time + init_pulse_time + 200, LOW), (100, HIGH), (100, LOW)]
+    train = [(galvo_delay +init_delay + read_delay + readout_time + init_pulse_time + intra_pulse_delay +100, LOW), (100, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_daq_clock, train)
 
-    train = [(galvo_delay +init_delay + read_delay + init_pulse_time + 100, LOW), (readout_time, HIGH), (300, LOW)]
+    train = [(galvo_delay +init_delay + read_delay + init_pulse_time + intra_pulse_delay, LOW), (readout_time, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
     
     if init_color_ind == 589:
         
-        train = [(galvo_delay +read_delay, LOW), (init_pulse_time, aom_ao_589_pwr), (200 + readout_time,LOW )]
+        train = [(galvo_delay +read_delay, LOW), (init_pulse_time, aom_ao_589_pwr), (100  + intra_pulse_delay+ readout_time,LOW )]
         seq.setAnalog(pulser_ao_589_aom, train)
             
     elif init_color_ind == 532:
                
-        train = [(galvo_delay + read_delay, LOW), (init_pulse_time, HIGH), (200 + readout_time,LOW )]
+        train = [(galvo_delay + read_delay, LOW), (init_pulse_time, HIGH), (100  + intra_pulse_delay + readout_time,LOW )]
         seq.setDigital(pulser_do_532_aom, train)
 
     elif init_color_ind == 638:
         
-        train = [(galvo_delay + read_delay, LOW), (init_pulse_time, HIGH), (200 + readout_time,LOW )]
+        train = [(galvo_delay + read_delay, LOW), (init_pulse_time, HIGH), (100  + intra_pulse_delay + readout_time,LOW )]
         seq.setDigital(pulser_do_638_aom, train)
         
         
     
     if read_color_ind == 589:
         
-        train = [(galvo_delay + init_delay + init_pulse_time + 100, LOW), (readout_time, aom_ao_589_pwr), (100 ,LOW )]
+        train = [(galvo_delay + init_delay + init_pulse_time + intra_pulse_delay, LOW), (readout_time, aom_ao_589_pwr), (100 ,LOW )]
         seq.setAnalog(pulser_ao_589_aom, train)
             
     elif read_color_ind == 532:
                
-        train = [(galvo_delay + init_delay + init_pulse_time + 100, LOW), (readout_time, HIGH), (100 ,LOW )]
+        train = [(galvo_delay + init_delay + init_pulse_time + intra_pulse_delay, LOW), (readout_time, HIGH), (100 ,LOW )]
         seq.setDigital(pulser_do_532_aom, train)
 
     elif read_color_ind == 638:
         
-        train = [(galvo_delay + init_delay + init_pulse_time + 100, LOW), (readout_time, HIGH), (100 ,LOW )]
+        train = [(galvo_delay + init_delay + init_pulse_time + intra_pulse_delay, LOW), (readout_time, HIGH), (100 ,LOW )]
         seq.setDigital(pulser_do_638_aom, train)
         
     final_digital = []
@@ -99,7 +102,7 @@ if __name__ == '__main__':
               'do_638_laser': 3,
               'do_532_aom': 2,
               'ao_589_aom': 1}
-    args = [50, 0, 0,  500,1000, 0.3, 0, None, 532]
+    args = [50, 0, 0,  500,1000, 0.3, 0, 532, 589]
 #    seq_args_string = tool_belt.encode_seq_args(args)
     seq, ret_vals, period = get_seq(wiring, args)
     seq.plot()

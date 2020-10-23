@@ -71,9 +71,9 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
-    scan_range = 0.2
+#    scan_range = 0.2
 #    num_steps = 150
-#    scan_range = 0.1
+    scan_range = 0.1
 #    num_steps = 120
 #    scan_range = 0.3
 #    num_steps = 90
@@ -105,8 +105,8 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
     
 def do_two_pulse_image_sample(nv_sig, apd_indices, init_pulse_time,readout,
                     init_color_ind, read_color_ind, save_data, plot_data):
-    scan_range = 0.05
-    num_steps = 30
+    scan_range = 0.1
+    num_steps = 60
     image_sample.two_pulse_image_sample(nv_sig, scan_range, scan_range, num_steps,
                   apd_indices,init_pulse_time,  readout, init_color_ind, read_color_ind, save_data, plot_data)
 
@@ -544,8 +544,8 @@ if __name__ == '__main__':
 #    apd_indices = [0, 1]
     
     sample_name = 'goeppert-mayer'
-    
-    NVA = { 'coords':[0.440, -0.109,  4.8],
+     
+    NVAA = { 'coords':[0.422, -0.080,  5.1],
             'name': '{}-NVA'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -557,30 +557,44 @@ if __name__ == '__main__':
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    NVB = { 'coords':[0.441, -0.103,  5.1],
+    NVA = { 'coords':[0.446, -0.107,  5.1],
+            'name': '{}-NVA'.format(sample_name),
+            'expected_count_rate': 100, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 2*10**6, 'am_589_power': 0.25, 
+            'pulsed_initial_ion_dur': 10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+    
+    NVB = { 'coords':[0.426, -0.081,  5.1],
             'name': '{}-NVB'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 2*10**6, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
-    dark = { 'coords':[0.434, -0.051,  5.1],
+    dark = { 'coords':[0.475, -0.090,  5.1],
             'name': '{}-dark_region'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 2*10**6, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
@@ -631,68 +645,17 @@ if __name__ == '__main__':
 #            with labrad.connect() as cxn:
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 ##    
-            do_optimize(nv_sig, apd_indices, 532)
+#            do_optimize(nv_sig, apd_indices, 532)
             
-#            for z in numpy.linspace(4.6, 5.6, 11):
+#            for z in numpy.linspace(4.6, 5.2, 7):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]               
 #                do_image_sample(nv_sig_copy,  apd_indices, 532, save_data=True, plot_data=True) 
                        
-#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**5, None, 532, save_data = True, plot_data = True)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 20*10**7)
-#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**5, None, 638, save_data = False, plot_data = False)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True,readout = 20*10**7)             
- 
-#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 2*10**7, 532, 589, save_data = True, plot_data = True)
-#            do_two_pulse_image_sample(nv_sig, apd_indices,10**4, 2*10**7, 638, 589, save_data = True, plot_data = True)
+#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 2*10**6, 532, 589, save_data = True, plot_data = True)
+            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 
-#            do_two_pulse_image_sample(nv_sig, apd_indices,100*10**3, 2*10**7, 638, 589, save_data = True, plot_data = True)
-#            do_two_pulse_image_sample(nv_sig, apd_indices,100*10**3, 2*10**7, 532, 589, save_data = True, plot_data = True)
-
-#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**5, None, 532, save_data = True, plot_data = True)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 2*10**7) 
-#            with labrad.connect() as cxn:
-#                coords = nv_sig['coords']
-#                set_xyz(coords)
-#                shared_params = tool_belt.get_shared_parameters_dict(cxn)
-#                laser_515_delay = shared_params['515_laser_delay']
-#                seq_args = [laser_515_delay, int(10**5), 0.0, 532]           
-#                seq_args_string = tool_belt.encode_seq_args(seq_args)            
-#                cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 2*10**7) 
-#  
-#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**5, None, 638, save_data = True, plot_data = True)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 2*10**7) 
-#            with labrad.connect() as cxn:
-#                coords = nv_sig['coords']
-#                set_xyz(coords)
-#                shared_params = tool_belt.get_shared_parameters_dict(cxn)
-#                laser_515_delay = shared_params['638_DM_laser_delay']
-#                seq_args = [laser_515_delay, int(10**5), 0.0, 638]           
-#                seq_args_string = tool_belt.encode_seq_args(seq_args)            
-#                cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = 2*10**7)
-
-#            do_image_sample(nv_sig,  apd_indices, 638, save_data=False, plot_data=False, readout =10**3, flip=2)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
-#            with labrad.connect() as cxn:
-#                cxn.pulse_streamer.constant([3],0,0)
-#                time.sleep(1)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
-#            with labrad.connect() as cxn:
-#                cxn.pulse_streamer.constant([3],0,0)
-#                time.sleep(1)
-#                cxn.pulse_streamer.constant([],0,0)
-#                time.sleep(1)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
-            
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
-#                
-#            do_image_sample(nv_sig,  apd_indices, 638, save_data=False, plot_data=False, readout =10**3)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 10**7)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 2*10**7)
             
 #            do_stationary_count(nv_sig, apd_indices, 589)            
 #            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
