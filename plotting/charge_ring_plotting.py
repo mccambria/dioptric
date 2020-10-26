@@ -78,7 +78,7 @@ def r_vs_time_plot(nv_sig, ring_radius_list, ring_err_list, green_time_list,
                      sub_folder, 
                     img_range, num_steps, green_pulse_time, readout):
     power_fig, ax = plt.subplots(1,1, figsize = (8, 8))
-    ax.errorbar(numpy.array(green_time_list)/10**9, ring_radius_list, yerr = ring_err_list, fmt = 'o')
+    ax.errorbar(numpy.array(green_time_list), ring_radius_list, yerr = ring_err_list, fmt = 'o')
     ax.set_xlabel('Green pulse time (s)')
     ax.set_ylabel('Charge ring radius (um)')
     ax.legend()
@@ -327,7 +327,7 @@ def radial_distrbution_time(folder_name, sub_folder):
             radii = numpy.array(x_voltages[int(num_steps/2):])*35
             # plot
 #            fig, ax = plt.subplots(1,1, figsize = (8, 8))
-            ax.plot(radii, counts_r, label  = '{} s green pulse'.format(green_pulse_time/10**9))
+            ax.plot(radii, counts_r, label  = '{} s green pulse'.format(green_pulse_time))
             green_time_list.append(green_pulse_time)
             radii_array.append(radii.tolist())
             counts_r_array.append(counts_r)
@@ -476,7 +476,7 @@ def radial_distrbution_wait_time(folder_name, sub_folder):
             
     ax.set_xlabel('Radius (um)')
     ax.set_ylabel('Avg counts around ring (kcps)')
-    ax.set_title('{} s, {} mW green pulse'.format(green_pulse_time/10**9, '%.2f'%opt_power))
+    ax.set_title('{} s, {} mW green pulse'.format(green_pulse_time, '%.2f'%opt_power))
     ax.legend()
     
     # save data from this file
@@ -516,12 +516,13 @@ if __name__ == '__main__':
 #    
 #    radial_distrbution_power(folder_name, sub_folder)
     
-#    sub_folder = "hopper_0.8mw_green_init"
-    sub_folder = "goeppert_mayer_3mw_time"
-#    sub_folder = "hopper_0.8mw_green_init/shorter_times/dif_scans"
-    folder_name = parent_folder + sub_folder 
+    sub_folder = ["goeppert_mayer_0.6mw_red_green", "goeppert_mayer_2mw_red_green",
+                  "goeppert_mayer_5mw_red_green", "goeppert_mayer_2mw_green_green",
+                  "goeppert_mayer_5mw_green_green"]
     
-    radial_distrbution_time(folder_name, sub_folder)
+    for f in sub_folder:
+        folder_name = parent_folder + f 
+        radial_distrbution_time(folder_name, f)
 #
     
 #    radial_distrbution_wait_time(folder_name, sub_folder)
