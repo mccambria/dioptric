@@ -71,9 +71,9 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
-    scan_range = 0.2
+#    scan_range = 0.07
 #    num_steps = 150
-#    scan_range = 0.1
+    scan_range = 0.1
 #    num_steps = 120
 #    scan_range = 0.3
 #    num_steps = 90
@@ -129,7 +129,7 @@ def do_optimize_list(nv_sig_list, apd_indices, color_ind):
 
 def do_stationary_count(nv_sig, apd_indices, color_ind):
 
-    run_time = 90 * 10**9  # ns
+    run_time =10 * 10**9  # ns
 
     stationary_count.main(nv_sig, run_time, apd_indices, color_ind)
     
@@ -545,7 +545,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    NVAA = { 'coords':[0.422, -0.080,  5.1],
+    NVAA = { 'coords':[0.450, -0.112,  5.1],
             'name': '{}-NVA'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -573,7 +573,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
-    NVA = { 'coords':[0.446, -0.107,  5.1],
+    NVA = { 'coords':[0.431, -0.095, 5.13],
             'name': '{}-NVA'.format(sample_name),
             'expected_count_rate': 100, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -600,7 +600,7 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
-    dark = { 'coords':[0.475, -0.090,  5.1],
+    dark = { 'coords':[0.436, -0.069,  5.1],
             'name': '{}-dark_region'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -659,7 +659,7 @@ if __name__ == '__main__':
 #            with labrad.connect() as cxn:
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 ##    
-#            do_optimize(nv_sig, apd_indices, 532)
+            do_optimize(nv_sig, apd_indices, 532)
             
 #            for z in numpy.linspace(5.0, 4.0, 11):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
@@ -668,8 +668,46 @@ if __name__ == '__main__':
 #                do_image_sample(nv_sig_copy,  apd_indices, 532, save_data=True, plot_data=True) 
                        
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 2*10**6, 532, 589, save_data = True, plot_data = True)
-            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 
+            set_xyz(nv_sig['coords']) 
+            time.sleep(0.001)
+            with labrad.connect() as cxn:
+                shared_params = tool_belt.get_shared_parameters_dict(cxn)
+                aom_589_delay = shared_params['589_aom_delay']
+                laser_515_delay = shared_params['515_laser_delay']
+                seq_args = [laser_515_delay, 10**7, nv_sig['am_589_power'], apd_indices[0], 532]           
+                seq_args_string = tool_belt.encode_seq_args(seq_args)            
+                cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)         
+                # collect the counts
+                cxn.apd_tagger.start_tag_stream(apd_indices)
+                # Clear the buffer
+                cxn.apd_tagger.clear_buffer()
+                # Run the sequence
+                cxn.pulse_streamer.stream_immediate('simple_readout.py', 1, seq_args_string)
+            
+                new_counts = cxn.apd_tagger.read_counter_simple(1)
+                print(new_counts)
+                cxn.apd_tagger.stop_tag_stream()
+                
+            set_xyz([0.464, -0.138,  5.13])
+            time.sleep(0.001)
+            set_xyz(nv_sig['coords'])
+            time.sleep(0.001)
+            with labrad.connect() as cxn:
+                seq_args = [laser_515_delay, 10**7, nv_sig['am_589_power'], apd_indices[0], 532]           
+                seq_args_string = tool_belt.encode_seq_args(seq_args)            
+                cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)         
+                # collect the counts
+                cxn.apd_tagger.start_tag_stream(apd_indices)
+                # Clear the buffer
+                cxn.apd_tagger.clear_buffer()
+                # Run the sequence
+                cxn.pulse_streamer.stream_immediate('simple_readout.py', 1, seq_args_string)
+            
+                new_counts = cxn.apd_tagger.read_counter_simple(1)
+                print(new_counts)
+                cxn.apd_tagger.stop_tag_stream()
             
 #            do_stationary_count(nv_sig, apd_indices, 589)            
 #            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 

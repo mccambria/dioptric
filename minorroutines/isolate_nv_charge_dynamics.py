@@ -17,8 +17,8 @@ import scipy.stats as stats
 # %%
 
 def red_scan(nv_sig, apd_indices):
-    image_sample.main(nv_sig,  0.1, 0.1, 60, apd_indices, 638, save_data=False, plot_data=False, readout =10**3)
-    time.sleep(1)
+#    image_sample.main(nv_sig,  0.1, 0.1, 60, apd_indices, 638, save_data=False, plot_data=False, readout =10**3)
+#    time.sleep(1)
     return
 
 
@@ -133,10 +133,10 @@ def charge_spot(readout_coords,target_A_coords, target_B_coords, parameters_sig,
     red_target_B = []
 
     start_timestamp = tool_belt.get_time_stamp()    
-
-    with labrad.connect() as cxn:
-        opti_coords = optimize.main_with_cxn(cxn, readout_sig, apd_indices, 532, disable=False)
-        opti_coords_list.append(opti_coords)    
+    green_scan(readout_sig, apd_indices)
+#    with labrad.connect() as cxn:
+#        opti_coords = optimize.main_with_cxn(cxn, readout_sig, apd_indices, 532, disable=False)
+#        opti_coords_list.append(opti_coords)    
         
     for run in range(num_runs):
         print('run {}'.format(run))
@@ -149,15 +149,15 @@ def charge_spot(readout_coords,target_A_coords, target_B_coords, parameters_sig,
         # Step through the experiments
     
         # control: readout NV_readout
-        if init_scan == 532:
-            green_scan(readout_sig, apd_indices)
-        elif init_scan == 638:
-            red_scan(readout_sig, apd_indices)        
-        sig_count =  main(parameters_sig, readout_sig, None, 589, apd_indices)
-        control_kcps = (sig_count  / 10**3) / readout_sec
-        control.append(control_kcps)
-        print('control: {} counts'.format(sig_count) )
-#        print('control: {} kcps'.format(control_kcps) )
+#        if init_scan == 532:
+#            green_scan(readout_sig, apd_indices)
+#        elif init_scan == 638:
+#            red_scan(readout_sig, apd_indices)        
+#        sig_count =  main(parameters_sig, readout_sig, None, 589, apd_indices)
+#        control_kcps = (sig_count  / 10**3) / readout_sec
+#        control.append(control_kcps)
+#        print('control: {} counts'.format(sig_count) )
+##        print('control: {} kcps'.format(control_kcps) )
         
         # green_readout: measure NV after green pulse on readout NV
         if init_scan == 532:
@@ -171,60 +171,60 @@ def charge_spot(readout_coords,target_A_coords, target_B_coords, parameters_sig,
 #        print('green readout: {} kcps'.format(green_readout_kcps) )
  
         # red_readout: measure NV after red pulse on readout NV
-        if init_scan == 532:
-            green_scan(readout_sig, apd_indices)
-        elif init_scan == 638:
-            red_scan(readout_sig, apd_indices)   
-        sig_count =  main(readout_sig, readout_sig, 638, 589, apd_indices)
-        red_readout_kcps = (sig_count  / 10**3) / readout_sec
-        red_readout.append(red_readout_kcps)
-        print('red_readout: {} counts'.format(sig_count) )
-#        print('red readout: {} kcps'.format(red_readout_kcps) )
-        
-        # green_target: measure NV after green pulse on target NV
-        if init_scan == 532:
-            green_scan(readout_sig, apd_indices)
-        elif init_scan == 638:
-            red_scan(readout_sig, apd_indices)   
-        sig_count =  main(target_A_sig, readout_sig, 532, 589, apd_indices)
-        green_target_A_kcps = (sig_count  / 10**3) / readout_sec
-        green_target_A.append(green_target_A_kcps)
-        print('green_target_A: {} counts'.format(sig_count) )
-#        print('green target: {} kcps'.format(green_target_kcps) )
- 
-        # red_target: measure NV after red pulse on target NV
-        if init_scan == 532:
-            green_scan(readout_sig, apd_indices)
-        elif init_scan == 638:
-            red_scan(readout_sig, apd_indices)   
-        sig_count =  main(target_A_sig, readout_sig, 638, 589, apd_indices)
-        red_target_A_kcps = (sig_count  / 10**3) / readout_sec
-        red_target_A.append(red_target_A_kcps)
-        print('red_target_A: {} counts'.format(sig_count) )
-#        print('red target: {} kcps'.format(red_target_kcps) )
-        
-        # green_B: measure NV after green pulse on dark spot
-        if init_scan == 532:
-            green_scan(readout_sig, apd_indices)
-        elif init_scan == 638:
-            red_scan(readout_sig, apd_indices)  
-        sig_count =  main(target_B_sig, readout_sig, 532, 589, apd_indices)
-        green_target_B_kcps = (sig_count  / 10**3) / readout_sec
-        green_target_B.append(green_target_B_kcps)
-        print('green_target_B: {} counts'.format(sig_count) )
-#        print('green dark: {} kcps'.format(green_dark_kcps) )
- 
-        # red_B: measure NV after red pulse on dark spot
-        if init_scan == 532:
-            green_scan(readout_sig, apd_indices)
-        elif init_scan == 638:
-            red_scan(readout_sig, apd_indices)  
-        sig_count =  main(target_B_sig, readout_sig, 638, 589, apd_indices)
-        red_target_B_kcps = (sig_count  / 10**3) / readout_sec
-        red_target_B.append(red_target_B_kcps)
-        print('red_target_B: {} counts'.format(sig_count) )
-#        print('red dark: {} kcps'.format(red_dark_kcps) )
-        
+#        if init_scan == 532:
+#            green_scan(readout_sig, apd_indices)
+#        elif init_scan == 638:
+#            red_scan(readout_sig, apd_indices)   
+#        sig_count =  main(readout_sig, readout_sig, 638, 589, apd_indices)
+#        red_readout_kcps = (sig_count  / 10**3) / readout_sec
+#        red_readout.append(red_readout_kcps)
+#        print('red_readout: {} counts'.format(sig_count) )
+##        print('red readout: {} kcps'.format(red_readout_kcps) )
+#        
+#        # green_target: measure NV after green pulse on target NV
+#        if init_scan == 532:
+#            green_scan(readout_sig, apd_indices)
+#        elif init_scan == 638:
+#            red_scan(readout_sig, apd_indices)   
+#        sig_count =  main(target_A_sig, readout_sig, 532, 589, apd_indices)
+#        green_target_A_kcps = (sig_count  / 10**3) / readout_sec
+#        green_target_A.append(green_target_A_kcps)
+#        print('green_target_A: {} counts'.format(sig_count) )
+##        print('green target: {} kcps'.format(green_target_kcps) )
+# 
+#        # red_target: measure NV after red pulse on target NV
+#        if init_scan == 532:
+#            green_scan(readout_sig, apd_indices)
+#        elif init_scan == 638:
+#            red_scan(readout_sig, apd_indices)   
+#        sig_count =  main(target_A_sig, readout_sig, 638, 589, apd_indices)
+#        red_target_A_kcps = (sig_count  / 10**3) / readout_sec
+#        red_target_A.append(red_target_A_kcps)
+#        print('red_target_A: {} counts'.format(sig_count) )
+##        print('red target: {} kcps'.format(red_target_kcps) )
+#        
+#        # green_B: measure NV after green pulse on dark spot
+#        if init_scan == 532:
+#            green_scan(readout_sig, apd_indices)
+#        elif init_scan == 638:
+#            red_scan(readout_sig, apd_indices)  
+#        sig_count =  main(target_B_sig, readout_sig, 532, 589, apd_indices)
+#        green_target_B_kcps = (sig_count  / 10**3) / readout_sec
+#        green_target_B.append(green_target_B_kcps)
+#        print('green_target_B: {} counts'.format(sig_count) )
+##        print('green dark: {} kcps'.format(green_dark_kcps) )
+# 
+#        # red_B: measure NV after red pulse on dark spot
+#        if init_scan == 532:
+#            green_scan(readout_sig, apd_indices)
+#        elif init_scan == 638:
+#            red_scan(readout_sig, apd_indices)  
+#        sig_count =  main(target_B_sig, readout_sig, 638, 589, apd_indices)
+#        red_target_B_kcps = (sig_count  / 10**3) / readout_sec
+#        red_target_B.append(red_target_B_kcps)
+#        print('red_target_B: {} counts'.format(sig_count) )
+##        print('red dark: {} kcps'.format(red_dark_kcps) )
+#        
         raw_data = {'start_time': start_timestamp,
                 'readout_coords': readout_coords,
                 'target_A_coords': target_A_coords,
@@ -369,10 +369,10 @@ def charge_spot(readout_coords,target_A_coords, target_B_coords, parameters_sig,
     
 if __name__ == '__main__':
     sample_name = 'goeppert-mayer'
-    NVA_coords = [0.432, -0.092,  5.1]
-    NVB_coords = [0.447, -0.119,  5.1]
-    dark_spot_1_coords = [0.454, -0.087,  5.1]
-    dark_spot_2_coords = [0.413, -0.090, 5.1]
+    NVA_coords = [0.432, -0.091,  5.1]
+    NVB_coords = [0.464, -0.138,  5.1]
+    dark_spot_1_coords = [0.436, -0.069,  5.1]
+    dark_spot_2_coords = [0.480, -0.138, 5.1]
     
     # The parameters that we want to run these measurements with
     base_nv_sig  = { 'coords':None,
