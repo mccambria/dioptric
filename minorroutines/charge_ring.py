@@ -17,8 +17,8 @@ import copy
 
 reset_range = 2.5
 image_range = 2.5
-#reset_range = 0.5
-#image_range = 0.5
+#reset_range = 0.75
+#image_range = 0.75
 num_steps = 200
 num_steps_reset = 60# 120
 red_num_steps_reset = 120
@@ -174,7 +174,7 @@ def main_red_green(cxn, nv_sig, green_pulse_time, wait_time = 0):
     print('Pulsing green light for {} s'.format(green_pulse_time))
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
     # Use two methods to pulse the green light, depending on pulse length
-    if green_pulse_time < 1:
+    if green_pulse_time < 1.1:
         shared_params = tool_belt.get_shared_parameters_dict(cxn)
         laser_515_delay = shared_params['515_laser_delay']
         seq_args = [laser_515_delay, int(green_pulse_time*10**9), 0.0, 532]           
@@ -227,7 +227,7 @@ def main_red_green(cxn, nv_sig, green_pulse_time, wait_time = 0):
                'reset_range': reset_range,
                'reset_range-units': 'V',
                'red_num_steps_reset': red_num_steps_reset,
-               'green_pulse_time': green_pulse_time,
+               'green_pulse_time': float(green_pulse_time),
                'green_pulse_time-units': 's',
                'wait_time': int(wait_time),
                'wait_time-units': 's',
@@ -371,7 +371,7 @@ def main_green_red(cxn, nv_sig, green_pulse_time, wait_time = 0):
                'reset_range': reset_range,
                'reset_range-units': 'V',
                'num_steps_reset': num_steps_reset,
-               'green_pulse_time': green_pulse_time,
+               'green_pulse_time': float(green_pulse_time),
                'green_pulse_time-units': 's',
                'wait_time': int(wait_time),
                'wait_time-units': 's',
@@ -435,7 +435,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
-    center = { 'coords':[ 0,0, 5.0],
+    center_30 = { 'coords':[0.019, -0.015, 6.1],
             'name': '{}-nv2'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -444,13 +444,13 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 500*10**3, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 19, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 40, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
     
-    nv = { 'coords':[ 1,0, 5.0],
+    center_12 = { 'coords':[ 0,0, 5.0],
             'name': '{}-nv2'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -465,8 +465,9 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
 
-    green_pulse_time_list = numpy.array([0.1, 1, 5, 10, 25, 50, 75, 100, 250 ,1000]) #  0.6 mW, 2 mW,  4?
-#    green_pulse_time_list = numpy.array([100]) # 60 mW, 16 mW, 4 mW
+    green_pulse_time_list = numpy.array([ 100])
+#    green_pulse_time_list = numpy.array([0.1, 1, 5, 10, 25, 50, 75, 100, 250 ,1000]) #  0.6 mW, 2 mW,  4?
+#    green_pulse_time_list = numpy.array([0.1]) # 60 mW, 16 mW, 4 mW
   
 #    green_pulse_time_list = numpy.array([0.001, 0.005,0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1 ]) # 60 mW, 16 mW, 4 mW
         
@@ -474,10 +475,13 @@ if __name__ == '__main__':
 
     with labrad.connect() as cxn:     
 #        main_red_green(cxn, nv, 100)
-        
-        for t in green_pulse_time_list:         
-            
-            main_green_red(cxn, center, t)
+        for z in numpy.linspace(5.5, 6.5, 11):
+            for t in green_pulse_time_list:  
+                nv_sig_copy = copy.deepcopy(center_12)
+                [coord_x, coord_y, coord_z] = center_12['coords']
+                nv_sig_copy['coords'] = [coord_x, coord_y, z]     
+                
+                main_red_green(cxn, nv_sig_copy, t)
             
 #    folder = 'image_sample/branch_Spin_to_charge/2020_10'
 #    file_dark_dif = '2020_10_23-20_32_23-goeppert-mayer-nv2_dif'

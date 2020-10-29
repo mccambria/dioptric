@@ -255,15 +255,15 @@ def radial_distrbution_power(folder_name, sub_folder):
 def radial_distrbution_time(folder_name, sub_folder):
     # create a file list of the files to analyze
     file_list  = tool_belt.get_file_list(folder_name, '.txt')
-    file_list = ['0.1.txt', '1.txt', '5.txt', '10.txt', '25.txt', '50.txt', '75.txt', '100.txt', '250.txt', '1000.txt' ]
+#    file_list = ['0.1.txt', '1.txt', '5.txt', '10.txt', '25.txt', '50.txt', '75.txt', '100.txt', '250.txt', '1000.txt' ]
+    file_list = ['0.001.txt', '0.005.txt', '0.01.txt', '0.05.txt', '0.1.txt', '0.5.txt', '0.75.txt', '1.txt' ]
     # create lists to fill with data
     green_time_list = []
     radii_array = []
     counts_r_array = []
-    
     fig, ax = plt.subplots(1,1, figsize = (8, 8))
     for file in file_list:
-        try:
+#        try:
             data = tool_belt.get_raw_data(folder_name, file[:-4])
             # Get info from file
             timestamp = data['timestamp']
@@ -327,6 +327,8 @@ def radial_distrbution_time(folder_name, sub_folder):
             radii = numpy.array(x_voltages[int(num_steps/2):])*35
             # plot
 #            fig, ax = plt.subplots(1,1, figsize = (8, 8))
+#            radii = radii[:-1]
+#            counts_r = counts_r[:-1]
             ax.plot(radii, counts_r, label  = '{} s green pulse'.format(green_pulse_time))
             green_time_list.append(green_pulse_time)
             radii_array.append(radii.tolist())
@@ -359,8 +361,8 @@ def radial_distrbution_time(folder_name, sub_folder):
 #            integrated_counts = integrate.simps(counts_r, x = radii)
 #            print(integrated_counts)
                 
-        except Exception:
-            continue
+#        except Exception:
+#            continue
     
     ax.set_xlabel('Radius (um)')
     ax.set_ylabel('Avg counts around ring (kcps)')
@@ -516,9 +518,8 @@ if __name__ == '__main__':
 #    
 #    radial_distrbution_power(folder_name, sub_folder)
     
-    sub_folder = ["goeppert_mayer_0.6mw_red_green", "goeppert_mayer_2mw_red_green",
-                  "goeppert_mayer_5mw_red_green", "goeppert_mayer_2mw_green_green",
-                  "goeppert_mayer_5mw_green_green"]
+    sub_folder = [
+                  "compare"]
     
     for f in sub_folder:
         folder_name = parent_folder + f 
