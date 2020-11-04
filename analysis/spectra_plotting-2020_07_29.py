@@ -190,94 +190,85 @@ def august_cap_noncap_plots():
 # %%
     
 # graphene sheet with gating! take 1
-folder_1= '2020_09_22-graphene_sheet'
-file_m05_550 = '2020_09_22-graphene_sheet-m05-550-1'
-#file_000_550 = '2020_09_22-graphene_sheet-000-550-1'
-#file_p05_550 = '2020_09_22-graphene_sheet-p05-550-1'
-#file_p10_550 = '2020_09_22-graphene_sheet-p10-550-1'
-#file_p15_550 = '2020_09_22-graphene_sheet-p15-550-1'
-#file_p20_550 = '2020_09_22-graphene_sheet-p20-550-1'
-#file_p25_550 = '2020_09_22-graphene_sheet-p25-550-1'
+folder_1= '2020_11_03-graphene_nanoribbons'
+file_m01_550 = '2020_11_03-gnr-550-m01'
+file_m02_550 = '2020_11_03-gnr-550-m02'
+file_m03_550 = '2020_11_03-gnr-550-m03'
+file_m04_550 = '2020_11_03-gnr-550-m04'
+file_m05_550 = '2020_11_03-gnr-550-m05'
+file_m06_550 = '2020_11_03-gnr-550-m06'
+file_m07_550 = '2020_11_03-gnr-550-m07'
+file_m08_550 = '2020_11_03-gnr-550-m08'
+file_m09_550 = '2020_11_03-gnr-550-m09'
+file_m10_550 = '2020_11_03-gnr-550-m10'
+file_m11_550 = '2020_11_03-gnr-550-m11'
+file_m12_550 = '2020_11_03-gnr-550-m12'
+file_m13_550 = '2020_11_03-gnr-550-m13'
+file_m14_550 = '2020_11_03-gnr-550-m14'
+file_m15_550 = '2020_11_03-gnr-550-m15'
+file_m16_550 = '2020_11_03-gnr-550-m16'
+file_m17_550 = '2020_11_03-gnr-550-m17'
+file_m18_550 = '2020_11_03-gnr-550-m18'
+file_m19_550 = '2020_11_03-gnr-550-m19'
+file_m20_550 = '2020_11_03-gnr-550-m10'
 #
-file_m05_670 = '2020_09_22-graphene_sheet-m05-670-1'
-#file_000_670 = '2020_09_22-graphene_sheet-000-670-1'
-#file_p05_670 = '2020_09_22-graphene_sheet-p05-670-1'
-#file_p10_670 = '2020_09_22-graphene_sheet-p10-670-1'
-#file_p15_670 = '2020_09_22-graphene_sheet-p15-670-1'
-#file_p20_670 = '2020_09_22-graphene_sheet-p20-670-1'
-#file_p25_670 = '2020_09_22-graphene_sheet-p25-670-1'
+file_m01_670 = '2020_11_03-gnr-670-m01'
+file_m02_670 = '2020_11_03-gnr-670-m02'
+file_m03_670 = '2020_11_03-gnr-670-m03'
+file_m04_670 = '2020_11_03-gnr-670-m04'
+file_m05_670 = '2020_11_03-gnr-670-m05'
+file_m06_670 = '2020_11_03-gnr-670-m06'
+file_m07_670 = '2020_11_03-gnr-670-m07'
+file_m08_670 = '2020_11_03-gnr-670-m08'
+file_m09_670 = '2020_11_03-gnr-670-m09'
+file_m10_670 = '2020_11_03-gnr-670-m10'
+file_m11_670 = '2020_11_03-gnr-670-m11'
+file_m12_670 = '2020_11_03-gnr-670-m12'
+file_m13_670 = '2020_11_03-gnr-670-m13'
+file_m14_670 = '2020_11_03-gnr-670-m14'
+file_m15_670 = '2020_11_03-gnr-670-m15'
+file_m16_670 = '2020_11_03-gnr-670-m16'
+file_m17_670 = '2020_11_03-gnr-670-m17'
+file_m18_670 = '2020_11_03-gnr-670-m18'
+file_m19_670 = '2020_11_03-gnr-670-m19'
+file_m20_670 = '2020_11_03-gnr-670-m10'
 
-## graphene sheet with gating! take 2
-#folder_2= '2020_09_22-graphene_sheet/take 2'
-#file_p01_550 = '2020_09_22-graphene_sheet-p01-550-2'
-#file_p10_550 = '2020_09_22-graphene_sheet-p10-550-2'
-#file_p20_550 = '2020_09_22-graphene_sheet-p20-550-2'
-#file_p30_550 = '2020_09_22-graphene_sheet-p30-550-2'
+file_550 = file_m18_550
+file_670 = file_m18_670
 
-#file_p01_670 = '2020_09_22-graphene_sheet-p01-670-2'
-#file_p10_670 = '2020_09_22-graphene_sheet-p10-670-2'
-#file_p20_670 = '2020_09_22-graphene_sheet-p20-670-2'
-#file_p30_670 = '2020_09_22-graphene_sheet-p30-670-2'
-
-## graphene sheet with gating! take 3
-#folder_3= '2020_09_22-graphene_sheet/take 3'
-#file_000_550 = '2020_09_22-graphene_sheet-000-550-3'
-#file_p22_550 = '2020_09_22-graphene_sheet-p22-550-3'
-#file_p40_550 = '2020_09_22-graphene_sheet-p40-550-3'
-#file_m30_550 = '2020_09_22-graphene_sheet-m30-550-3'
-
-#file_000_670 = '2020_09_22-graphene_sheet-000-670-3'
-#file_p22_670 = '2020_09_22-graphene_sheet-p22-670-3'
-#file_p40_670 = '2020_09_22-graphene_sheet-p40-670-3'
-#file_m30_670 = '2020_09_22-graphene_sheet-m30-670-3'
-
-#ionic gel measurement
-folder_ig = '2020_09_29-ionic_gel_tests'
-file_ig = '2020_09_29-ionig_gel_sio2_surface'
-file_ig_inside = '2020_09_29-ionig_gel_in_gel'
-file_ig_low_power = '2020_09_29-ionig_gel_sio2_surface_low_power'
-
-
+file_path_base = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar'
 if __name__ == '__main__':
 #    august_cap_noncap_plots()
     
-    wvlngth_1, counts_1 = plot_spectra(file_ig_low_power, folder_ig)
-    wvlngth_2, counts_2 = plot_spectra(file_ig_inside, folder_ig)
-    wvlngth_3, counts_3 = plot_spectra(file_ig, folder_ig)
-#    wvlngth_4, counts_4 = plot_spectra(file_m30_550, folder)
-#    wvlngth_5, counts_5 = plot_spectra(file_p15_550, folder)
-#    wvlngth_6, counts_6 = plot_spectra(file_p20_550, folder)
-#    wvlngth_7, counts_7 = plot_spectra(file_p25_550, folder)
+    wvlngth_1, counts_1 = plot_spectra(file_550, folder_1)
 
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
 
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
-    ax.set_title('Ionic gel on SiO2')
-#    ax.plot(wvlngth_1, numpy.array(counts_1), 'b', label = '5 nm Er sample (9/22)')
-    ax.plot(wvlngth_1, numpy.array(counts_1), 'k', label = 'Ionic gel sample (1.2 mW)' )
-    ax.plot(wvlngth_2, numpy.array(counts_2), 'r', label = 'Ionic gel sample (10 mW)')
+    ax.set_title('Graphene Nanoribbons')
+    ax.plot(wvlngth_1, numpy.array(counts_1), #label = '5 nm Er sample (9/22)'
+            )
+    ax.set_xlim([530, 570])
+#    ax.set_ylim([530, 2200])
     ax.legend()
 
-#    wvlngth_1, counts_1 = plot_spectra(file_m05_670, folder_1)
-#    wvlngth_2, counts_2 = plot_spectra(file_p20_670, folder_1)
-#    wvlngth_3, counts_3 = plot_spectra(file_p25_670, folder_1)
-##    wvlngth_4, counts_4 = plot_spectra(file_m30_670, folder)
-##    wvlngth_5, counts_5 = plot_spectra(file_p15_670, folder)
-##    wvlngth_6, counts_6 = plot_spectra(file_p20_670, folder)
-##    wvlngth_7, counts_7 = plot_spectra(file_p25_670, folder)
-#    
-#    fig2, ax= plt.subplots(1, 1, figsize=(10, 8))
-#    
-#    ax.set_xlabel('Wavelength (nm)')
-#    ax.set_ylabel('Counts')
-#    ax.set_title('5 nm Er, graphene sheet, measurement run 1')
-#    ax.plot(wvlngth_1, numpy.array(counts_1), label = '-0.5 V (CNP)')
-#    ax.plot(wvlngth_2, numpy.array(counts_2), label = '+2.0 V')
-#    ax.plot(wvlngth_3, numpy.array(counts_3), label = '+2.5 V')
-#    ax.legend()
-     
+    tool_belt.save_figure(fig, file_path_base + '/' + folder_1 + '/' + file_550)
+
+    wvlngth_1, counts_1 = plot_spectra(file_670, folder_1)
     
+    fig2, ax= plt.subplots(1, 1, figsize=(10, 8))
+    
+    ax.set_xlabel('Wavelength (nm)')
+    ax.set_ylabel('Counts')
+    ax.set_title('Graphene Nanoribbons')
+    ax.plot(wvlngth_1, numpy.array(counts_1), #label = '-0.5 V (CNP)'
+            )
+    ax.set_xlim([645, 695])
+#    ax.set_ylim([675, 1100])
+    ax.legend()
+     
+    tool_belt.save_figure(fig2, file_path_base + '/' + folder_1 + '/' + file_670)
     
     
     

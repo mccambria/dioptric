@@ -21,23 +21,23 @@ def exp_decay_double(t, a, d1, d2):
 # %%
 
 def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list= None ):
-    start_num = 5
+    start_num = 6
     
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
 #    fmt_data_list = ['b.', 'y.', 'g.']
 #    fmt_fit_list = ['b-', 'y-', 'g-']
     
-    text_eq = r'$A_0 (e^{-t/d1})$'
-
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.55, 0.8, text_eq, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox=props)
+#    text_eq = r'$A_0 (e^{-t/d1})$'
+#
+#    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+#    ax.text(0.55, 0.8, text_eq, transform=ax.transAxes, fontsize=12,
+#        verticalalignment='top', bbox=props)
     
-    d_list = []
-    voltage_list_1 = [-0.5,0, 0.5, 1, 1.5, 2, 2.5, 3]
+#    d_list = []
+#    voltage_list_1 = [-0.5,0, 0.5, 1, 1.5, 2, 2.5, 3]
 #    voltage_list_2  = [0.1, 1, 2, 3] 
 #    voltage_list_3 = [0.1, 2.2, 4, -3]
-    t_ind = 0
+#    t_ind = 0
     
     for f in range(len(file_list)):
         file = file_list[f] 
@@ -64,16 +64,16 @@ def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_li
         norm_counts = (counts - last_point) / (first_point - last_point)
 
         #fit the data to single exponential
-        init_guess = [1, 100]
-        popt, pcov = curve_fit(exp_decay, bin_centers_norm[start_num:-66],
-                                         norm_counts[start_num:-66], p0=init_guess)
-        
-        text_popt = r'{}: $A_0 = {}, d1 = {} us$'.format(label_list[f],'%.3f'%popt[0],'%.1f'%popt[1])
-        ax.text(0.55, 0.75 - t_ind, text_popt, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-        time_linspace = numpy.linspace(bin_centers_norm[start_num], bin_centers_norm[-66], 1000)
-        ax.plot(time_linspace, exp_decay(time_linspace, *popt),'-')        
-        d_list.append(popt[1])
+#        init_guess = [1, 100]
+#        popt, pcov = curve_fit(exp_decay, bin_centers_norm[start_num:-66],
+#                                         norm_counts[start_num:-66], p0=init_guess)
+#        
+#        text_popt = r'{}: $A_0 = {}, d1 = {} us$'.format(label_list[f],'%.3f'%popt[0],'%.1f'%popt[1])
+#        ax.text(0.55, 0.75 - t_ind, text_popt, transform=ax.transAxes, fontsize=12,
+#            verticalalignment='top', bbox=props)
+#        time_linspace = numpy.linspace(bin_centers_norm[start_num], bin_centers_norm[-66], 1000)
+#        ax.plot(time_linspace, exp_decay(time_linspace, *popt),'-')        
+#        d_list.append(popt[1])
         #fit the data to double exponential
 #        init_guess = [1, 100, 500]
 #        popt, pcov = curve_fit(exp_decay_double, bin_centers_norm[start_num+1:-50],
@@ -94,21 +94,20 @@ def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_li
         ax.set_title(title)
         ax.legend()
         ax.set_yscale("log", nonposy='clip')
-        t_ind = t_ind + 0.05
-    print(title)
-    print(d_list)
+#        t_ind = t_ind + 0.05
+
     
-    fig_decay, ax= plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(voltage_list_1, d_list, 'o')
-    ax.set_xlabel('gate voltage (V)')
-    ax.set_ylabel('decay constant (us)')
-    ax.set_title(title + ', single exponential decay constant')
+#    fig_decay, ax= plt.subplots(1, 1, figsize=(10, 8))
+#    ax.plot(voltage_list_1, d_list, 'o')
+#    ax.set_xlabel('gate voltage (V)')
+#    ax.set_ylabel('decay constant (us)')
+#    ax.set_title(title + ', single exponential decay constant')
     
     
 def main():
-    directory_sept = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_09'
+#    directory_sept = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_09'
     
-    directory = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_08'
+    directory = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_11'
     
 #    file_sample_removed_aug = '2020_08_03-15_38_07-5nmEr-search'
 #    with open(directory_aug + '/'+ file_sample_removed_aug + '.txt') as json_file:
@@ -116,40 +115,34 @@ def main():
 #        background_counts = numpy.array(data["binned_samples"])
         
     # No filter
-#    file_take_1 = '2020_09_22-12_18_14-5nmEr-graphene_sheet'
-#    file_take_2 = '2020_09_22-15_58_27-5nmEr-graphene_sheet'
-#    file_take_3 = '2020_09_22-18_12_25-5nmEr-graphene_sheet'
-#    bkgd_file_list = ['2020_09_22-12_18_30-5nmEr-graphene_sheet',
-#                      '2020_09_22-15_58_42-5nmEr-graphene_sheet',
-#                      '2020_09_22-18_12_41-5nmEr-graphene_sheet',]
+#    file_take_1 = '2020_11_03-14_28_48-5nmEr-nrg'
+#    file_take_2 = '2020_11_03-17_37_12-5nmEr-nrg'
+#    bkgd_file_list = ['2020_11_03-14_29_01-5nmEr-nrg',
+#                      '2020_11_03-17_37_29-5nmEr-nrg',]
     
     # 550 Shortpass
-#    file_take_1 = '2020_09_22-12_18_57-5nmEr-graphene_sheet'
-#    file_take_2 = '2020_09_22-15_59_08-5nmEr-graphene_sheet'
-#    file_take_3 = '2020_09_22-18_05_17-5nmEr-graphene_sheet'
-#    bkgd_file_list = ['2020_09_22-12_19_13-5nmEr-graphene_sheet',
-#                      '2020_09_22-15_59_24-5nmEr-graphene_sheet',
-#                      '2020_09_22-18_05_33-5nmEr-graphene_sheet',]
+#    file_take_1 = '2020_11_03-14_29_23-5nmEr-nrg'
+#    file_take_2 = '2020_11_03-17_37_55-5nmEr-nrg'
+#    bkgd_file_list = ['2020_11_03-14_29_37-5nmEr-nrg',
+#                      '2020_11_03-17_38_08-5nmEr-nrg',]
     
     # 630 longpass
-    file_take_1 = '2020_09_22-12_19_38-5nmEr-graphene_sheet'
-    file_take_2 = '2020_09_22-15_59_47-5nmEr-graphene_sheet'
-    file_take_3 = '2020_09_22-18_05_58-5nmEr-graphene_sheet'
-    bkgd_file_list = ['2020_09_22-15_05_55-5nmEr-graphene_sheet',
-                      '2020_09_22-16_00_04-5nmEr-graphene_sheet',
-                      '2020_09_22-18_06_15-5nmEr-graphene_sheet',]
+    file_take_1 = '2020_11_03-14_29_59-5nmEr-nrg'
+    file_take_2 = '2020_11_03-17_38_34-5nmEr-nrg'
+    bkgd_file_list = ['2020_11_03-14_30_13-5nmEr-nrg',
+                      '2020_11_03-17_38_48-5nmEr-nrg',]
     
-    file_list = [file_take_1, file_take_2, file_take_3]
+    file_list = [file_take_1, file_take_2]
 
     # Make list for the data
     
-    start_num = [4,4, 4]
+    start_num = [0, 0, 0]
     counts_list = []
     bin_center_list =[]
     data_fmt_list = ['b.','k.', 'g.']
 #    fit_fmt_list=['b--','k--']
-    directory_list = [directory_sept, directory_sept, directory_sept]
-    label_list = ['Take 1 CNP (-0.4 V)', 'Take 2 CNP (0.0 V)', 'Take 3 CNP (+0.4 V)']
+    directory_list = [directory, directory, directory]
+    label_list = ['-0.2 V', '-1.0 V']
     
     fig_fit, ax= plt.subplots(1, 1, figsize=(10, 8))
     
@@ -177,188 +170,165 @@ def main():
         
         counts = numpy.array(counts_list[i])
         ###################################
-        counts = counts - bkgd_counts
-        
-        first_point = counts[start_num[i]]
-        last_point = numpy.average(counts[-10:]) #counts[-1]
-        norm_counts = (counts - last_point) / (first_point - last_point)
-        ax.plot(bin_centers_norm[start_num[i]:], norm_counts[start_num[i]:], data_fmt_list[i],label=label_list[i])
+#        counts = counts - bkgd_counts
+#        
+#        first_point = counts[start_num[i]]
+#        last_point = numpy.average(counts[-10:]) #counts[-1]
+#        norm_counts = (counts - last_point) / (first_point - last_point)
+        ax.plot(bin_centers_norm[start_num[i]:], counts[start_num[i]:], data_fmt_list[i],label=label_list[i])
     ax.set_xlabel('Time (us)')
     ax.set_ylabel('Counts (arb.)')
-    ax.set_title('5 nm Er CNP comparison (670 nm bandpass filter)')
+    ax.set_title('5 nm Er nanoribbons (670 bandpass filter)')
     ax.legend()
 #    ax.set_xlim([0,500])
     ax.set_yscale("log", nonposy='clip')
 
-def Er_graphene_sheet_1():
-    file_dir = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_09'
-    label_list = ['-0.5 V (CNP)',
-                  '0.0 V', '+0.5 V', 
-                    '+1.0 V', '+1.5 V', 
-                    '+2.0 V', 
-                    '+2.5 V', 
-                  '+3.0 V'
+def Er_graphene_sheet_nr():
+    file_dir = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_11'
+    label_list = ['-0.1 V',
+                  '-0.2 V (CNP)', '-0.3 V', '-0.4 V', '-0.5 V','-0.6 V', '-0.7 V',
+                  '-0.8 V', '-0.9 V', '-1.0 V',  '-1.1 V', '-1.2 V', '-1.3 V',
+                  '-1.4 V', '-1.5 V', '-1.6 V', '-1.7 V', '-1.8 V', 
+                   
                   ]
     
     # no filter
-    file_list = ['2020_09_22-12_18_14-5nmEr-graphene_sheet', 
-                 '2020_09_22-12_41_19-5nmEr-graphene_sheet',
-                 '2020_09_22-12_59_34-5nmEr-graphene_sheet', 
-                    '2020_09_22-13_18_54-5nmEr-graphene_sheet',
-                 '2020_09_22-13_42_33-5nmEr-graphene_sheet',
-                 '2020_09_22-14_08_07-5nmEr-graphene_sheet',
-                 '2020_09_22-14_29_18-5nmEr-graphene_sheet', 
-                 '2020_09_22-15_04_13-5nmEr-graphene_sheet',
+    file_list = ['2020_11_03-14_07_39-5nmEr-nrg',
+                 '2020_11_03-14_28_48-5nmEr-nrg',
+                 '2020_11_03-14_49_57-5nmEr-nrg',
+                 '2020_11_03-15_21_07-5nmEr-nrg',
+                 '2020_11_03-15_42_25-5nmEr-nrg',
+                 '2020_11_03-15_59_00-5nmEr-nrg',
+                 '2020_11_03-16_17_37-5nmEr-nrg',
+                 '2020_11_03-16_37_59-5nmEr-nrg',
+                 '2020_11_03-16_57_00-5nmEr-nrg',
+                 '2020_11_03-17_37_12-5nmEr-nrg',
+                 '2020_11_03-18_01_13-5nmEr-nrg',
+                 '2020_11_03-18_35_17-5nmEr-nrg',
+                 '2020_11_03-18_54_11-5nmEr-nrg',
+                 '2020_11_03-19_10_18-5nmEr-nrg',
+                 '2020_11_03-19_24_12-5nmEr-nrg',
+                 '2020_11_03-19_39_26-5nmEr-nrg',
+                 '2020_11_03-19_54_28-5nmEr-nrg',
+                 '2020_11_03-20_09_51-5nmEr-nrg',
+                 
                  ]
-    background_file_list = ['2020_09_22-12_18_30-5nmEr-graphene_sheet', 
-                            '2020_09_22-12_41_34-5nmEr-graphene_sheet',
-                            '2020_09_22-12_59_50-5nmEr-graphene_sheet', 
-                            '2020_09_22-13_19_11-5nmEr-graphene_sheet',
-                            '2020_09_22-13_42_49-5nmEr-graphene_sheet', 
-                            '2020_09_22-14_08_24-5nmEr-graphene_sheet',
-                            '2020_09_22-14_29_34-5nmEr-graphene_sheet', 
-                            '2020_09_22-15_04_30-5nmEr-graphene_sheet',
+    background_file_list = ['2020_11_03-14_07_51-5nmEr-nrg',
+                            '2020_11_03-14_29_01-5nmEr-nrg',
+                            '2020_11_03-14_50_10-5nmEr-nrg',
+                            '2020_11_03-15_21_20-5nmEr-nrg',
+                            '2020_11_03-15_42_38-5nmEr-nrg',
+                            '2020_11_03-15_59_13-5nmEr-nrg',
+                            '2020_11_03-16_17_51-5nmEr-nrg',
+                            '2020_11_03-16_38_12-5nmEr-nrg',
+                            '2020_11_03-16_57_13-5nmEr-nrg',
+                            '2020_11_03-17_37_29-5nmEr-nrg',
+                            '2020_11_03-18_01_27-5nmEr-nrg',
+                            '2020_11_03-18_35_32-5nmEr-nrg',
+                            '2020_11_03-18_54_25-5nmEr-nrg',
+                            '2020_11_03-19_10_32-5nmEr-nrg',
+                            '2020_11_03-19_24_27-5nmEr-nrg',
+                            '2020_11_03-19_39_41-5nmEr-nrg',
+                            '2020_11_03-19_54_42-5nmEr-nrg',
+                            '2020_11_03-20_10_04-5nmEr-nrg',
+                            
                             ]
-    title = '5 nm Er graphene sheet, no filter'    
+    title = '5 nm Er graphene nanoribbons, no filter'    
     plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
     
     #560 bandpass
-    file_list = ['2020_09_22-12_18_57-5nmEr-graphene_sheet', 
-                 '2020_09_22-12_42_01-5nmEr-graphene_sheet',
-                 '2020_09_22-13_00_17-5nmEr-graphene_sheet', 
-                    '2020_09_22-13_19_38-5nmEr-graphene_sheet',
-                 '2020_09_22-13_43_14-5nmEr-graphene_sheet', 
-                           '2020_09_22-14_05_14-5nmEr-graphene_sheet',
-                 '2020_09_22-14_30_02-5nmEr-graphene_sheet', 
-                 '2020_09_22-15_04_57-5nmEr-graphene_sheet',
+    file_list = ['2020_11_03-14_08_13-5nmEr-nrg',
+                 '2020_11_03-14_29_23-5nmEr-nrg',
+                 '2020_11_03-14_50_45-5nmEr-nrg',
+                 '2020_11_03-15_21_43-5nmEr-nrg',
+                 '2020_11_03-15_43_00-5nmEr-nrg',
+                 '2020_11_03-15_59_36-5nmEr-nrg',
+                 '2020_11_03-16_18_13-5nmEr-nrg',
+                 '2020_11_03-16_38_35-5nmEr-nrg',
+                 '2020_11_03-16_57_36-5nmEr-nrg',
+                 '2020_11_03-17_37_55-5nmEr-nrg',
+                 '2020_11_03-18_01_49-5nmEr-nrg',
+                 '2020_11_03-18_35_57-5nmEr-nrg',
+                 '2020_11_03-18_54_48-5nmEr-nrg',
+                 '2020_11_03-19_10_54-5nmEr-nrg',
+                 '2020_11_03-19_24_50-5nmEr-nrg',
+                 '2020_11_03-19_40_04-5nmEr-nrg',
+                 '2020_11_03-19_55_05-5nmEr-nrg',
+                 '2020_11_03-20_10_26-5nmEr-nrg',
+                 
                  ]
-    background_file_list = ['2020_09_22-12_19_13-5nmEr-graphene_sheet', 
-                            '2020_09_22-12_42_17-5nmEr-graphene_sheet',
-                            '2020_09_22-13_00_33-5nmEr-graphene_sheet', 
-                            '2020_09_22-13_19_55-5nmEr-graphene_sheet',
-                            '2020_09_22-13_43_30-5nmEr-graphene_sheet', 
-                           '2020_09_22-14_05_31-5nmEr-graphene_sheet',
-                            '2020_09_22-14_30_18-5nmEr-graphene_sheet', 
-                            '2020_09_22-15_05_13-5nmEr-graphene_sheet',
+    background_file_list = ['2020_11_03-14_08_26-5nmEr-nrg',
+                            '2020_11_03-14_29_37-5nmEr-nrg',
+                            '2020_11_03-14_50_32-5nmEr-nrg',
+                            '2020_11_03-15_21_57-5nmEr-nrg',
+                            '2020_11_03-15_43_14-5nmEr-nrg',
+                            '2020_11_03-15_59_49-5nmEr-nrg',
+                            '2020_11_03-16_18_27-5nmEr-nrg',
+                            '2020_11_03-16_38_50-5nmEr-nrg',
+                            '2020_11_03-16_57_49-5nmEr-nrg',
+                            '2020_11_03-17_38_08-5nmEr-nrg',
+                            '2020_11_03-18_02_03-5nmEr-nrg',
+                            '2020_11_03-18_36_12-5nmEr-nrg',
+                            '2020_11_03-18_55_02-5nmEr-nrg',
+                            '2020_11_03-19_11_08-5nmEr-nrg',
+                            '2020_11_03-19_25_04-5nmEr-nrg',
+                            '2020_11_03-19_40_18-5nmEr-nrg',
+                            '2020_11_03-19_55_19-5nmEr-nrg',
+                            '2020_11_03-20_10_39-5nmEr-nrg',
+                            
                             ]
-    title = '5 nm Er graphene sheet, 560 nm bandpass filter'    
+    title = '5 nm Er graphene nanoribbons, 560 nm bandpass filter'    
     plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
     
     #670 bandpass 
-    file_list = ['2020_09_22-12_19_38-5nmEr-graphene_sheet', 
-                 '2020_09_22-12_42_40-5nmEr-graphene_sheet',
-                 '2020_09_22-13_00_57-5nmEr-graphene_sheet', 
-                '2020_09_22-13_20_19-5nmEr-graphene_sheet',
-                 '2020_09_22-13_43_55-5nmEr-graphene_sheet', 
-                           '2020_09_22-14_05_56-5nmEr-graphene_sheet',
-                 '2020_09_22-14_30_43-5nmEr-graphene_sheet', 
-                 '2020_09_22-15_05_38-5nmEr-graphene_sheet',
+    file_list = ['2020_11_03-14_08_47-5nmEr-nrg',
+                 '2020_11_03-14_29_59-5nmEr-nrg',
+                 '2020_11_03-14_51_06-5nmEr-nrg',
+                 '2020_11_03-15_21_57-5nmEr-nrg',
+                 '2020_11_03-15_43_35-5nmEr-nrg',
+                 '2020_11_03-16_00_11-5nmEr-nrg',
+                 '2020_11_03-16_18_49-5nmEr-nrg',
+                 '2020_11_03-16_39_12-5nmEr-nrg',
+                 '2020_11_03-16_58_11-5nmEr-nrg',
+                 '2020_11_03-17_38_34-5nmEr-nrg',
+                 '2020_11_03-18_02_25-5nmEr-nrg',
+                 '2020_11_03-18_36_37-5nmEr-nrg',
+                 '2020_11_03-18_55_26-5nmEr-nrg',
+                 '2020_11_03-19_11_32-5nmEr-nrg',
+                 '2020_11_03-19_25_29-5nmEr-nrg',
+                 '2020_11_03-19_40_43-5nmEr-nrg',
+                 '2020_11_03-19_55_44-5nmEr-nrg',
+                 '2020_11_03-20_11_03-5nmEr-nrg',
+                 
                  ]
-    background_file_list =['2020_09_22-12_19_55-5nmEr-graphene_sheet', 
-                           '2020_09_22-12_42_57-5nmEr-graphene_sheet',
-                           '2020_09_22-13_01_14-5nmEr-graphene_sheet', 
-                            '2020_09_22-13_20_36-5nmEr-graphene_sheet',
-                           '2020_09_22-13_44_12-5nmEr-graphene_sheet', 
-                            '2020_09_22-14_06_13-5nmEr-graphene_sheet',
-                           '2020_09_22-14_30_59-5nmEr-graphene_sheet', 
-                           '2020_09_22-15_05_55-5nmEr-graphene_sheet',
+    background_file_list =['2020_11_03-14_09_00-5nmEr-nrg',
+                           '2020_11_03-14_30_13-5nmEr-nrg',
+                           '2020_11_03-14_51_19-5nmEr-nrg',
+                           '2020_11_03-15_22_19-5nmEr-nrg',
+                           '2020_11_03-15_43_49-5nmEr-nrg',
+                           '2020_11_03-16_00_25-5nmEr-nrg',
+                           '2020_11_03-16_19_03-5nmEr-nrg',
+                           '2020_11_03-16_39_27-5nmEr-nrg',
+                           '2020_11_03-16_58_25-5nmEr-nrg',
+                           '2020_11_03-17_38_48-5nmEr-nrg',
+                           '2020_11_03-18_02_40-5nmEr-nrg',
+                           '2020_11_03-18_36_53-5nmEr-nrg',
+                           '2020_11_03-18_55_41-5nmEr-nrg',
+                           '2020_11_03-19_11_47-5nmEr-nrg',
+                           '2020_11_03-19_25_44-5nmEr-nrg',
+                           '2020_11_03-19_40_59-5nmEr-nrg',
+                           '2020_11_03-19_55_58-5nmEr-nrg',
+                           '2020_11_03-20_11_16-5nmEr-nrg',
+                           
                            ]
-    title = '5 nm Er graphene sheet, 670 nm bandpass filter'    
+    title = '5 nm Er graphene nanoribbons, 670 nm bandpass filter'    
     plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
     
-def Er_graphene_sheet_2():
-    file_dir = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_09'
-    label_list = ['+0.1 V (CNP)', '+1.0 V', '+2.0 V', '+3.0 V']
-    
-    # no filter
-    file_list = ['2020_09_22-15_58_27-5nmEr-graphene_sheet' , '2020_09_22-16_33_30-5nmEr-graphene_sheet',
-                 '2020_09_22-16_56_56-5nmEr-graphene_sheet', '2020_09_22-17_21_44-5nmEr-graphene_sheet',
-                 ]
-    background_file_list = ['2020_09_22-15_58_42-5nmEr-graphene_sheet', '2020_09_22-16_33_46-5nmEr-graphene_sheet',
-                            '2020_09_22-16_57_12-5nmEr-graphene_sheet', '2020_09_22-17_22_00-5nmEr-graphene_sheet',
-                            ]
-    title = '5 nm Er graphene sheet, no filter'    
-    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
-    
-    #560 bandpass
-    file_list = ['2020_09_22-15_59_08-5nmEr-graphene_sheet' , '2020_09_22-16_34_12-5nmEr-graphene_sheet',
-                 '2020_09_22-16_57_39-5nmEr-graphene_sheet', '2020_09_22-17_22_27-5nmEr-graphene_sheet',
-                 ]
-    background_file_list = ['2020_09_22-15_59_24-5nmEr-graphene_sheet', '2020_09_22-16_34_28-5nmEr-graphene_sheet',
-                            '2020_09_22-16_57_55-5nmEr-graphene_sheet', '2020_09_22-17_22_44-5nmEr-graphene_sheet',
-                            ]
-    title = '5 nm Er graphene sheet, 560 nm bandpass filter'    
-    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
-    
-    #670 bandpass 
-    file_list = ['2020_09_22-15_59_47-5nmEr-graphene_sheet', '2020_09_22-16_34_52-5nmEr-graphene_sheet',
-                 '2020_09_22-16_58_19-5nmEr-graphene_sheet', '2020_09_22-17_23_08-5nmEr-graphene_sheet',
-                 ]
-    background_file_list =['2020_09_22-16_00_04-5nmEr-graphene_sheet', '2020_09_22-16_35_09-5nmEr-graphene_sheet',
-                           '2020_09_22-16_58_35-5nmEr-graphene_sheet', '2020_09_22-17_23_25-5nmEr-graphene_sheet',
-                           ]
-    title = '5 nm Er graphene sheet, 670 nm bandpass filter'    
-    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
-    
-def Er_graphene_sheet_3():
-    file_dir = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_09'
-    label_list = ['+0.1 V (CNP)', '+2.2 V', '+4.0 V', '-3.0 V']
-    
-    # no filter
-    file_list = ['2020_09_22-18_12_25-5nmEr-graphene_sheet', '2020_09_22-18_34_53-5nmEr-graphene_sheet',
-                 '2020_09_22-19_04_51-5nmEr-graphene_sheet', '2020_09_22-19_34_29-5nmEr-graphene_sheet']
-    background_file_list = ['2020_09_22-18_12_41-5nmEr-graphene_sheet','2020_09_22-18_35_09-5nmEr-graphene_sheet',
-                            '2020_09_22-19_05_07-5nmEr-graphene_sheet', '2020_09_22-19_34_46-5nmEr-graphene_sheet',]
-    title = '5 nm Er graphene sheet, no filter'    
-    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
-    
-    #560 bandpass
-    file_list = ['2020_09_22-18_13_07-5nmEr-graphene_sheet' , '2020_09_22-18_35_37-5nmEr-graphene_sheet',
-                 '2020_09_22-19_05_35-5nmEr-graphene_sheet', '2020_09_22-19_35_14-5nmEr-graphene_sheet']
-    background_file_list = ['2020_09_22-18_13_23-5nmEr-graphene_sheet', '2020_09_22-18_35_54-5nmEr-graphene_sheet',
-                            '2020_09_22-19_05_52-5nmEr-graphene_sheet', '2020_09_22-19_35_31-5nmEr-graphene_sheet']
-    title = '5 nm Er graphene sheet, 560 nm bandpass filter'  
-    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
-    
-    #670 bandpass 
-    file_list = ['2020_09_22-18_13_47-5nmEr-graphene_sheet', '2020_09_22-18_36_18-5nmEr-graphene_sheet',
-                 '2020_09_22-19_06_16-5nmEr-graphene_sheet', '2020_09_22-19_35_55-5nmEr-graphene_sheet']
-    background_file_list =['2020_09_22-18_14_03-5nmEr-graphene_sheet', '2020_09_22-18_36_35-5nmEr-graphene_sheet',
-                           '2020_09_22-19_06_33-5nmEr-graphene_sheet', '2020_09_22-19_36_11-5nmEr-graphene_sheet']
-    title = '5 nm Er graphene sheet, 670 nm bandpass filter'    
-    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
-    
-def Er_preparation():
-    file_dir = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_09'
-    label_list = ['post-anneal', 'post-graphene', 'post-ionic gel']
-    
-    # no filter
-    file_list = ['2020_09_16-15_09_21-5nmEr-annealed', '2020_09_17-13_39_17-5nmEr-graphene',
-                 '2020_09_22-09_46_06-5nmEr-ionic_gel']
-    background_file_list = ['2020_09_16-15_09_36-5nmEr-annealed','2020_09_17-13_39_33-5nmEr-graphene',
-                            '2020_09_22-09_46_22-5nmEr-ionic_gel']
-    title = '5 nm Er graphene sheet, no filter'    
-    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
-    
-    #560 bandpass
-    file_list = ['2020_09_16-15_09_57-5nmEr-annealed', '2020_09_17-13_39_56-5nmEr-graphene',
-                 '2020_09_22-09_46_44-5nmEr-ionic_gel']
-    background_file_list = ['2020_09_16-15_10_13-5nmEr-annealed','2020_09_17-13_40_13-5nmEr-graphene',
-                            '2020_09_22-09_47_00-5nmEr-ionic_gel']
-    title = '5 nm Er graphene sheet, 560 nm bandpass filter'  
-    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
-    
-    #670 bandpass 
-    file_list = ['2020_09_16-15_10_33-5nmEr-annealed', '2020_09_17-13_40_32-5nmEr-graphene',
-                 '2020_09_22-09_47_19-5nmEr-ionic_gel']
-    background_file_list = ['2020_09_16-15_10_49-5nmEr-annealed','2020_09_17-13_40_49-5nmEr-graphene',
-                            '2020_09_22-09_47_36-5nmEr-ionic_gel']
-    title = '5 nm Er graphene sheet, 670 nm bandpass filter'    
-    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
+
 #%%
     
 if __name__ == '__main__':
-    Er_graphene_sheet_1()
+    Er_graphene_sheet_nr()
 #    main()
 
 

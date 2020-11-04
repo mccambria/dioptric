@@ -114,7 +114,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
                      apd_indices, fig=None):
     
     seq_file_name = 'simple_readout.py'
-    num_steps = 31
+    num_steps = 61#31
     coords = nv_sig['coords']
     x_center, y_center, z_center = coords
     scan_range_nm = 5000 #2 * shared_params['airy_radius']
@@ -151,7 +151,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         
         cxn.filter_slider_ell9k_color.set_filter('560 bp')
         
-        scan_range = scan_range_nm / shared_params['piezo_nm_per_volt']
+        scan_range =2*scan_range_nm / shared_params['piezo_nm_per_volt']
         seq_args = [shared_params['objective_piezo_delay'],
                     readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
