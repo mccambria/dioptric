@@ -21,7 +21,7 @@ def exp_decay_double(t, a, d1, d2):
 # %%
 
 def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list= None ):
-    start_num = 6
+    start_num = 0
     
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
 #    fmt_data_list = ['b.', 'y.', 'g.']
@@ -87,7 +87,7 @@ def plot_lifetime_list(file_list, file_dir, title,label_list, background_file_li
 #        ax.plot(time_linspace, exp_decay_double(time_linspace, *popt),fmt_fit_list[f])
 
         
-        ax.plot(bin_centers_norm[start_num:], norm_counts[start_num:],'.' ,label=label_list[f])
+        ax.plot(bin_centers_norm[start_num:], counts[start_num:],'.' ,label=label_list[f])
 
         ax.set_xlabel('Time (us)')
         ax.set_ylabel('Counts (arb.)')
@@ -185,51 +185,68 @@ def main():
 
 def Er_graphene_sheet_nr():
     file_dir = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_11'
-    label_list = ['-0.1 V',
-                  '-0.2 V (CNP)', '-0.3 V', '-0.4 V', '-0.5 V','-0.6 V', '-0.7 V',
-                  '-0.8 V', '-0.9 V', '-1.0 V',  '-1.1 V', '-1.2 V', '-1.3 V',
-                  '-1.4 V', '-1.5 V', '-1.6 V', '-1.7 V', '-1.8 V', 
+    label_list = [
+                   # '-0.1 V',
+                  # '-0.2 V (CNP)', 
+                  # '-0.3 V', 
+                  # '-0.4 V', 
+                  # '-0.5 V',
+                  # '-0.6 V', 
+                  # '-0.7 V',
+                  # '-0.8 V', 
+                  # '-0.9 V', 
+                  # '-1.0 V',  
+                  # '-1.1 V', 
+                  # '-1.2 V', 
+                  # '-1.3 V',
+                  # '-1.4 V', 
+                  # '-1.5 V', 
+                  # '-1.6 V', 
+                  # '-1.7 V', 
+                  # '-1.8 V', 
                    
                   ]
     
     # no filter
-    file_list = ['2020_11_03-14_07_39-5nmEr-nrg',
+    file_list = [
+        # '2020_11_03-14_07_39-5nmEr-nrg',
                  '2020_11_03-14_28_48-5nmEr-nrg',
-                 '2020_11_03-14_49_57-5nmEr-nrg',
-                 '2020_11_03-15_21_07-5nmEr-nrg',
+                 # '2020_11_03-14_49_57-5nmEr-nrg',
+                 # '2020_11_03-15_21_07-5nmEr-nrg',
                  '2020_11_03-15_42_25-5nmEr-nrg',
-                 '2020_11_03-15_59_00-5nmEr-nrg',
-                 '2020_11_03-16_17_37-5nmEr-nrg',
-                 '2020_11_03-16_37_59-5nmEr-nrg',
-                 '2020_11_03-16_57_00-5nmEr-nrg',
+                 # '2020_11_03-15_59_00-5nmEr-nrg',
+                 # '2020_11_03-16_17_37-5nmEr-nrg',
+                 # '2020_11_03-16_37_59-5nmEr-nrg',
+                 # '2020_11_03-16_57_00-5nmEr-nrg',
                  '2020_11_03-17_37_12-5nmEr-nrg',
-                 '2020_11_03-18_01_13-5nmEr-nrg',
-                 '2020_11_03-18_35_17-5nmEr-nrg',
-                 '2020_11_03-18_54_11-5nmEr-nrg',
-                 '2020_11_03-19_10_18-5nmEr-nrg',
+                 # '2020_11_03-18_01_13-5nmEr-nrg',
+                 # '2020_11_03-18_35_17-5nmEr-nrg',
+                 # '2020_11_03-18_54_11-5nmEr-nrg',
+                 # '2020_11_03-19_10_18-5nmEr-nrg',
                  '2020_11_03-19_24_12-5nmEr-nrg',
-                 '2020_11_03-19_39_26-5nmEr-nrg',
-                 '2020_11_03-19_54_28-5nmEr-nrg',
+                 # '2020_11_03-19_39_26-5nmEr-nrg',
+                 # '2020_11_03-19_54_28-5nmEr-nrg',
                  '2020_11_03-20_09_51-5nmEr-nrg',
                  
                  ]
-    background_file_list = ['2020_11_03-14_07_51-5nmEr-nrg',
+    background_file_list = [
+        # '2020_11_03-14_07_51-5nmEr-nrg',
                             '2020_11_03-14_29_01-5nmEr-nrg',
-                            '2020_11_03-14_50_10-5nmEr-nrg',
-                            '2020_11_03-15_21_20-5nmEr-nrg',
+                            # '2020_11_03-14_50_10-5nmEr-nrg',
+                            # '2020_11_03-15_21_20-5nmEr-nrg',
                             '2020_11_03-15_42_38-5nmEr-nrg',
-                            '2020_11_03-15_59_13-5nmEr-nrg',
-                            '2020_11_03-16_17_51-5nmEr-nrg',
-                            '2020_11_03-16_38_12-5nmEr-nrg',
-                            '2020_11_03-16_57_13-5nmEr-nrg',
+                            # '2020_11_03-15_59_13-5nmEr-nrg',
+                            # '2020_11_03-16_17_51-5nmEr-nrg',
+                            # '2020_11_03-16_38_12-5nmEr-nrg',
+                            # '2020_11_03-16_57_13-5nmEr-nrg',
                             '2020_11_03-17_37_29-5nmEr-nrg',
-                            '2020_11_03-18_01_27-5nmEr-nrg',
-                            '2020_11_03-18_35_32-5nmEr-nrg',
-                            '2020_11_03-18_54_25-5nmEr-nrg',
-                            '2020_11_03-19_10_32-5nmEr-nrg',
+                            # '2020_11_03-18_01_27-5nmEr-nrg',
+                            # '2020_11_03-18_35_32-5nmEr-nrg',
+                            # '2020_11_03-18_54_25-5nmEr-nrg',
+                            # '2020_11_03-19_10_32-5nmEr-nrg',
                             '2020_11_03-19_24_27-5nmEr-nrg',
-                            '2020_11_03-19_39_41-5nmEr-nrg',
-                            '2020_11_03-19_54_42-5nmEr-nrg',
+                            # '2020_11_03-19_39_41-5nmEr-nrg',
+                            # '2020_11_03-19_54_42-5nmEr-nrg',
                             '2020_11_03-20_10_04-5nmEr-nrg',
                             
                             ]
@@ -237,43 +254,45 @@ def Er_graphene_sheet_nr():
     plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
     
     #560 bandpass
-    file_list = ['2020_11_03-14_08_13-5nmEr-nrg',
+    file_list = [
+        # '2020_11_03-14_08_13-5nmEr-nrg',
                  '2020_11_03-14_29_23-5nmEr-nrg',
-                 '2020_11_03-14_50_45-5nmEr-nrg',
-                 '2020_11_03-15_21_43-5nmEr-nrg',
+                 # '2020_11_03-14_50_45-5nmEr-nrg',
+                 # '2020_11_03-15_21_43-5nmEr-nrg',
                  '2020_11_03-15_43_00-5nmEr-nrg',
-                 '2020_11_03-15_59_36-5nmEr-nrg',
-                 '2020_11_03-16_18_13-5nmEr-nrg',
-                 '2020_11_03-16_38_35-5nmEr-nrg',
-                 '2020_11_03-16_57_36-5nmEr-nrg',
+                 # '2020_11_03-15_59_36-5nmEr-nrg',
+                 # '2020_11_03-16_18_13-5nmEr-nrg',
+                 # '2020_11_03-16_38_35-5nmEr-nrg',
+                 # '2020_11_03-16_57_36-5nmEr-nrg',
                  '2020_11_03-17_37_55-5nmEr-nrg',
-                 '2020_11_03-18_01_49-5nmEr-nrg',
-                 '2020_11_03-18_35_57-5nmEr-nrg',
-                 '2020_11_03-18_54_48-5nmEr-nrg',
-                 '2020_11_03-19_10_54-5nmEr-nrg',
+                 # '2020_11_03-18_01_49-5nmEr-nrg',
+                 # '2020_11_03-18_35_57-5nmEr-nrg',
+                 # '2020_11_03-18_54_48-5nmEr-nrg',
+                 # '2020_11_03-19_10_54-5nmEr-nrg',
                  '2020_11_03-19_24_50-5nmEr-nrg',
-                 '2020_11_03-19_40_04-5nmEr-nrg',
-                 '2020_11_03-19_55_05-5nmEr-nrg',
+                 # '2020_11_03-19_40_04-5nmEr-nrg',
+                 # '2020_11_03-19_55_05-5nmEr-nrg',
                  '2020_11_03-20_10_26-5nmEr-nrg',
                  
                  ]
-    background_file_list = ['2020_11_03-14_08_26-5nmEr-nrg',
+    background_file_list = [
+        # '2020_11_03-14_08_26-5nmEr-nrg',
                             '2020_11_03-14_29_37-5nmEr-nrg',
-                            '2020_11_03-14_50_32-5nmEr-nrg',
-                            '2020_11_03-15_21_57-5nmEr-nrg',
+                            # '2020_11_03-14_50_32-5nmEr-nrg',
+                            # '2020_11_03-15_21_57-5nmEr-nrg',
                             '2020_11_03-15_43_14-5nmEr-nrg',
-                            '2020_11_03-15_59_49-5nmEr-nrg',
-                            '2020_11_03-16_18_27-5nmEr-nrg',
-                            '2020_11_03-16_38_50-5nmEr-nrg',
-                            '2020_11_03-16_57_49-5nmEr-nrg',
+                            # '2020_11_03-15_59_49-5nmEr-nrg',
+                            # '2020_11_03-16_18_27-5nmEr-nrg',
+                            # '2020_11_03-16_38_50-5nmEr-nrg',
+                            # '2020_11_03-16_57_49-5nmEr-nrg',
                             '2020_11_03-17_38_08-5nmEr-nrg',
-                            '2020_11_03-18_02_03-5nmEr-nrg',
-                            '2020_11_03-18_36_12-5nmEr-nrg',
-                            '2020_11_03-18_55_02-5nmEr-nrg',
-                            '2020_11_03-19_11_08-5nmEr-nrg',
+                            # '2020_11_03-18_02_03-5nmEr-nrg',
+                            # '2020_11_03-18_36_12-5nmEr-nrg',
+                            # '2020_11_03-18_55_02-5nmEr-nrg',
+                            # '2020_11_03-19_11_08-5nmEr-nrg',
                             '2020_11_03-19_25_04-5nmEr-nrg',
-                            '2020_11_03-19_40_18-5nmEr-nrg',
-                            '2020_11_03-19_55_19-5nmEr-nrg',
+                            # '2020_11_03-19_40_18-5nmEr-nrg',
+                            # '2020_11_03-19_55_19-5nmEr-nrg',
                             '2020_11_03-20_10_39-5nmEr-nrg',
                             
                             ]
@@ -281,54 +300,167 @@ def Er_graphene_sheet_nr():
     plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
     
     #670 bandpass 
-    file_list = ['2020_11_03-14_08_47-5nmEr-nrg',
+    file_list = [
+        # '2020_11_03-14_08_47-5nmEr-nrg',
                  '2020_11_03-14_29_59-5nmEr-nrg',
-                 '2020_11_03-14_51_06-5nmEr-nrg',
-                 '2020_11_03-15_21_57-5nmEr-nrg',
+                 # '2020_11_03-14_51_06-5nmEr-nrg',
+                 # '2020_11_03-15_21_57-5nmEr-nrg',
                  '2020_11_03-15_43_35-5nmEr-nrg',
-                 '2020_11_03-16_00_11-5nmEr-nrg',
-                 '2020_11_03-16_18_49-5nmEr-nrg',
-                 '2020_11_03-16_39_12-5nmEr-nrg',
-                 '2020_11_03-16_58_11-5nmEr-nrg',
+                 # '2020_11_03-16_00_11-5nmEr-nrg',
+                 # '2020_11_03-16_18_49-5nmEr-nrg',
+                 # '2020_11_03-16_39_12-5nmEr-nrg',
+                 # '2020_11_03-16_58_11-5nmEr-nrg',
                  '2020_11_03-17_38_34-5nmEr-nrg',
-                 '2020_11_03-18_02_25-5nmEr-nrg',
-                 '2020_11_03-18_36_37-5nmEr-nrg',
-                 '2020_11_03-18_55_26-5nmEr-nrg',
-                 '2020_11_03-19_11_32-5nmEr-nrg',
+                 # '2020_11_03-18_02_25-5nmEr-nrg',
+                 # '2020_11_03-18_36_37-5nmEr-nrg',
+                 # '2020_11_03-18_55_26-5nmEr-nrg',
+                 # '2020_11_03-19_11_32-5nmEr-nrg',
                  '2020_11_03-19_25_29-5nmEr-nrg',
-                 '2020_11_03-19_40_43-5nmEr-nrg',
-                 '2020_11_03-19_55_44-5nmEr-nrg',
+                 # '2020_11_03-19_40_43-5nmEr-nrg',
+                 # '2020_11_03-19_55_44-5nmEr-nrg',
                  '2020_11_03-20_11_03-5nmEr-nrg',
                  
                  ]
-    background_file_list =['2020_11_03-14_09_00-5nmEr-nrg',
+    background_file_list =[
+        # '2020_11_03-14_09_00-5nmEr-nrg',
                            '2020_11_03-14_30_13-5nmEr-nrg',
-                           '2020_11_03-14_51_19-5nmEr-nrg',
-                           '2020_11_03-15_22_19-5nmEr-nrg',
+                           # '2020_11_03-14_51_19-5nmEr-nrg',
+                           # '2020_11_03-15_22_19-5nmEr-nrg',
                            '2020_11_03-15_43_49-5nmEr-nrg',
-                           '2020_11_03-16_00_25-5nmEr-nrg',
-                           '2020_11_03-16_19_03-5nmEr-nrg',
-                           '2020_11_03-16_39_27-5nmEr-nrg',
-                           '2020_11_03-16_58_25-5nmEr-nrg',
+                           # '2020_11_03-16_00_25-5nmEr-nrg',
+                           # '2020_11_03-16_19_03-5nmEr-nrg',
+                           # '2020_11_03-16_39_27-5nmEr-nrg',
+                           # '2020_11_03-16_58_25-5nmEr-nrg',
                            '2020_11_03-17_38_48-5nmEr-nrg',
-                           '2020_11_03-18_02_40-5nmEr-nrg',
-                           '2020_11_03-18_36_53-5nmEr-nrg',
-                           '2020_11_03-18_55_41-5nmEr-nrg',
-                           '2020_11_03-19_11_47-5nmEr-nrg',
+                           # '2020_11_03-18_02_40-5nmEr-nrg',
+                           # '2020_11_03-18_36_53-5nmEr-nrg',
+                           # '2020_11_03-18_55_41-5nmEr-nrg',
+                           # '2020_11_03-19_11_47-5nmEr-nrg',
                            '2020_11_03-19_25_44-5nmEr-nrg',
-                           '2020_11_03-19_40_59-5nmEr-nrg',
-                           '2020_11_03-19_55_58-5nmEr-nrg',
+                           # '2020_11_03-19_40_59-5nmEr-nrg',
+                           # '2020_11_03-19_55_58-5nmEr-nrg',
                            '2020_11_03-20_11_16-5nmEr-nrg',
                            
                            ]
     title = '5 nm Er graphene nanoribbons, 670 nm bandpass filter'    
     plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
     
-
+def Er_graphene_sheet_nr_2():
+    file_dir = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_11'
+    label_list = [
+                   '-1.8 V', 
+                   '-1.5 V', 
+                   '-1.0 V', 
+                   '-0.5 V',
+                   '0.0 V (CNP)'
+                   
+                  ]
+    
+    # no filter
+    file_list = ['2020_11_03-20_09_51-5nmEr-nrg',
+                   '2020_11_03-20_30_06-5nmEr-nrg',
+                   '2020_11_03-20_50_00-5nmEr-nrg',
+                   '2020_11_03-21_08_50-5nmEr-nrg',
+                   '2020_11_03-21_24_56-5nmEr-nrg'
+                 ]
+    background_file_list = [
+                            
+                 '2020_11_03-20_10_04-5nmEr-nrg',
+                            '2020_11_03-20_30_20-5nmEr-nrg',
+                            '2020_11_03-20_50_14-5nmEr-nrg',
+                            '2020_11_03-21_09_03-5nmEr-nrg',
+                            '2020_11_03-21_25_09-5nmEr-nrg'
+                            ]
+    title = '5 nm Er graphene nanoribbons, no filter'    
+    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
+    
+    #560 bandpass
+    file_list = [
+                 
+                            '2020_11_03-20_10_26-5nmEr-nrg',
+                            '2020_11_03-20_30_43-5nmEr-nrg',
+                            '2020_11_03-20_50_38-5nmEr-nrg',
+                            '2020_11_03-21_09_25-5nmEr-nrg',
+                            '2020_11_03-21_25_30-5nmEr-nrg'
+                 ]
+    background_file_list = [
+                            
+                 '2020_11_03-20_10_39-5nmEr-nrg',
+                 '2020_11_03-20_30_57-5nmEr-nrg',
+                 '2020_11_03-20_50_52-5nmEr-nrg',
+                 '2020_11_03-21_09_38-5nmEr-nrg',
+                 '2020_11_03-21_25_43-5nmEr-nrg'
+                            ]
+    title = '5 nm Er graphene nanoribbons, 560 nm bandpass filter'    
+    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
+    
+    #670 bandpass 
+    file_list = [
+                 '2020_11_03-20_11_03-5nmEr-nrg',
+                 '2020_11_03-20_31_21-5nmEr-nrg',
+                 '2020_11_03-20_51_16-5nmEr-nrg',
+                 '2020_11_03-21_10_01-5nmEr-nrg',
+                 '2020_11_03-21_26_05-5nmEr-nrg'
+                 ]
+    background_file_list =['2020_11_03-20_11_16-5nmEr-nrg',
+                           '2020_11_03-20_31_35-5nmEr-nrg',
+                           '2020_11_03-20_51_30-5nmEr-nrg',
+                           '2020_11_03-21_10_15-5nmEr-nrg',
+                           '2020_11_03-21_26_19-5nmEr-nrg'
+                           ]
+    title = '5 nm Er graphene nanoribbons, 670 nm bandpass filter'    
+    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
+    
+def Er_graphene_sheet_nr_3():
+    file_dir = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/lifetime_v2/2020_11'
+    label_list = [
+                   '0.0 V (CNP)',
+                   '-1.0 V',
+                   '-1.8 V'
+                   
+                  ]
+    
+    # no filter
+    file_list = ['2020_11_03-21_24_56-5nmEr-nrg',
+                 '2020_11_03-21_43_40-5nmEr-nrg',
+                 '2020_11_03-22_07_04-5nmEr-nrg',
+                   
+                 ]
+    background_file_list = ['2020_11_03-21_25_09-5nmEr-nrg',
+                            '2020_11_03-21_43_52-5nmEr-nrg',
+                            '2020_11_03-22_07_18-5nmEr-nrg',
+                            ]
+    title = '5 nm Er graphene nanoribbons, no filter'    
+    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
+    
+    #560 bandpass
+    file_list = ['2020_11_03-21_25_30-5nmEr-nrg',
+                 '2020_11_03-21_44_14-5nmEr-nrg',
+                 '2020_11_03-22_07_41-5nmEr-nrg',
+                 ]
+    background_file_list = ['2020_11_03-21_25_43-5nmEr-nrg',
+                            '2020_11_03-21_44_28-5nmEr-nrg',
+                            '2020_11_03-22_07_54-5nmEr-nrg',
+                            ]
+    title = '5 nm Er graphene nanoribbons, 560 nm bandpass filter'    
+    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
+    
+    #670 bandpass 
+    file_list = ['2020_11_03-21_26_05-5nmEr-nrg',
+                 '2020_11_03-21_44_50-5nmEr-nrg',
+                 '2020_11_03-22_08_17-5nmEr-nrg',
+                 ]
+    background_file_list =['2020_11_03-21_26_19-5nmEr-nrg',
+                           '2020_11_03-21_45_04-5nmEr-nrg',
+                           '2020_11_03-22_08_32-5nmEr-nrg'
+                           ]
+    title = '5 nm Er graphene nanoribbons, 670 nm bandpass filter'    
+    plot_lifetime_list(file_list, file_dir, title,label_list, background_file_list )
 #%%
     
 if __name__ == '__main__':
-    Er_graphene_sheet_nr()
+    Er_graphene_sheet_nr_2()
+    Er_graphene_sheet_nr_3()
 #    main()
 
 

@@ -191,6 +191,7 @@ def august_cap_noncap_plots():
     
 # graphene sheet with gating! take 1
 folder_1= '2020_11_03-graphene_nanoribbons'
+
 file_m01_550 = '2020_11_03-gnr-550-m01'
 file_m02_550 = '2020_11_03-gnr-550-m02'
 file_m03_550 = '2020_11_03-gnr-550-m03'
@@ -209,8 +210,14 @@ file_m15_550 = '2020_11_03-gnr-550-m15'
 file_m16_550 = '2020_11_03-gnr-550-m16'
 file_m17_550 = '2020_11_03-gnr-550-m17'
 file_m18_550 = '2020_11_03-gnr-550-m18'
-file_m19_550 = '2020_11_03-gnr-550-m19'
-file_m20_550 = '2020_11_03-gnr-550-m10'
+
+file_000_550_2 = '2020_11_03-gnr2-550-000'
+file_m05_550_2 = '2020_11_03-gnr2-550-m05'
+file_m10_550_2 = '2020_11_03-gnr2-550-m10'
+file_m15_550_2 = '2020_11_03-gnr2-550-m15'
+
+file_m10_550_3 = '2020_11_03-gnr3-550-m10'
+file_m18_550_3 = '2020_11_03-gnr3-550-m18'
 #
 file_m01_670 = '2020_11_03-gnr-670-m01'
 file_m02_670 = '2020_11_03-gnr-670-m02'
@@ -230,45 +237,69 @@ file_m15_670 = '2020_11_03-gnr-670-m15'
 file_m16_670 = '2020_11_03-gnr-670-m16'
 file_m17_670 = '2020_11_03-gnr-670-m17'
 file_m18_670 = '2020_11_03-gnr-670-m18'
-file_m19_670 = '2020_11_03-gnr-670-m19'
-file_m20_670 = '2020_11_03-gnr-670-m10'
 
-file_550 = file_m18_550
-file_670 = file_m18_670
+file_000_670_2 = '2020_11_03-gnr2-670-000'
+file_m05_670_2 = '2020_11_03-gnr2-670-m05'
+file_m10_670_2 = '2020_11_03-gnr2-670-m10'
+file_m15_670_2 = '2020_11_03-gnr2-670-m15'
+
+file_m10_670_3 = '2020_11_03-gnr3-670-m10'
+file_m18_670_3 = '2020_11_03-gnr3-670-m18'
+
+# file_550 = file_m18_550
+# file_670 = file_m18_670
 
 file_path_base = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar'
 if __name__ == '__main__':
 #    august_cap_noncap_plots()
     
-    wvlngth_1, counts_1 = plot_spectra(file_550, folder_1)
+    wvlngth_1, counts_1 = plot_spectra(file_m08_550, folder_1)
+    wvlngth_2, counts_2 = plot_spectra(file_m09_550, folder_1)
+    wvlngth_3, counts_3 = plot_spectra(file_m10_550, folder_1)
+    wvlngth_4, counts_4 = plot_spectra(file_m11_550, folder_1)
+    wvlngth_5, counts_5 = plot_spectra(file_m12_550, folder_1)    
+    # wvlngth_6, counts_6 = plot_spectra(file_m18_550, folder_1)
 
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
 
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
     ax.set_title('Graphene Nanoribbons')
-    ax.plot(wvlngth_1, numpy.array(counts_1), #label = '5 nm Er sample (9/22)'
-            )
-    ax.set_xlim([530, 570])
+    ax.plot(wvlngth_1, numpy.array(counts_1), label = '-0.8 V')
+    ax.plot(wvlngth_2, numpy.array(counts_2), label = '-0.9 V')
+    ax.plot(wvlngth_3, numpy.array(counts_3), label = '-1.0 V')
+    ax.plot(wvlngth_4, numpy.array(counts_4), label = '-1.1 V')
+    ax.plot(wvlngth_5, numpy.array(counts_5), label = '-1.2 V')
+    # ax.plot(wvlngth_5, numpy.array(counts_5), label = '-1.8 V')
+    ax.set_xlim([530, 620])
 #    ax.set_ylim([530, 2200])
     ax.legend()
 
-    tool_belt.save_figure(fig, file_path_base + '/' + folder_1 + '/' + file_550)
-
-    wvlngth_1, counts_1 = plot_spectra(file_670, folder_1)
+    # tool_belt.save_figure(fig, file_path_base + '/' + folder_1 + '/' + file_550)
+    
+    wvlngth_1, counts_1 = plot_spectra(file_m08_670, folder_1)
+    wvlngth_2, counts_2 = plot_spectra(file_m09_670, folder_1)
+    wvlngth_3, counts_3 = plot_spectra(file_m10_670, folder_1)
+    wvlngth_4, counts_4 = plot_spectra(file_m11_670, folder_1)
+    wvlngth_5, counts_5 = plot_spectra(file_m12_670, folder_1)    
+    # wvlngth_6, counts_6 = plot_spectra(file_m18_670, folder_1)
     
     fig2, ax= plt.subplots(1, 1, figsize=(10, 8))
     
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Counts')
     ax.set_title('Graphene Nanoribbons')
-    ax.plot(wvlngth_1, numpy.array(counts_1), #label = '-0.5 V (CNP)'
-            )
-    ax.set_xlim([645, 695])
+    ax.plot(wvlngth_1, numpy.array(counts_1), label = '-0.8 V')
+    ax.plot(wvlngth_2, numpy.array(counts_2), label = '-0.9 V')
+    ax.plot(wvlngth_3, numpy.array(counts_3), label = '-1.0 V')
+    ax.plot(wvlngth_4, numpy.array(counts_4), label = '-1.1 V')
+    ax.plot(wvlngth_5, numpy.array(counts_5), label = '-1.2 V')
+    # ax.plot(wvlngth_5, numpy.array(counts_5), label = '-1.8 V')
+    # ax.set_xlim([645, 695])
 #    ax.set_ylim([675, 1100])
     ax.legend()
      
-    tool_belt.save_figure(fig2, file_path_base + '/' + folder_1 + '/' + file_670)
+    # tool_belt.save_figure(fig2, file_path_base + '/' + folder_1 + '/' + file_670)
     
     
     
