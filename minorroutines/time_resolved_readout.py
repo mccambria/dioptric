@@ -241,10 +241,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
                 init_color_ind, illum_color_ind]
 #        print(seq_args)
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        
         cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
                                             seq_args_string)
-        
         # Initialize state
         current_tags = []
         current_channels = []
@@ -272,6 +270,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
                 print('Turn down the reps and turn up the runs so that the Time Tagger can catch up!')
             
 #            dur_start = time.time()
+                
             ret_vals = process_raw_buffer(new_tags, new_channels,
                                    current_tags, current_channels,
                                    gate_open_channel, gate_close_channel)
@@ -318,6 +317,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
         file_path = tool_belt.get_file_path(__file__, start_timestamp,
                                             nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(raw_data, file_path)
+        
 
     # %% Hardware clean up
 

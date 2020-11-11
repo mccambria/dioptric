@@ -205,7 +205,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     # Collect data
 
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=True)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
     opti_coords_list.append(opti_coords)
 
     # Load the APD
@@ -637,33 +637,21 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
 # %% Run the files
     
 if __name__ == '__main__':
-    sample_name = 'goeppert-mayer'
-    NVA = { 'coords':[0.446, -0.107,  5.1],
-            'name': '{}-NVA'.format(sample_name),
-            'expected_count_rate': 100, 'nd_filter': 'nd_0',
+    sample_name = 'johnson'
+    
+    nv1_2020_11_05 = { 'coords':[0.087, -0.037, 5.5], 
+            'name': '{}-nv1_2020_11_05'.format(sample_name),
+            'expected_count_rate': 45, 'nd_filter': 'nd_0.5',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 2*10**6, 'am_589_power': 0.25, 
-            'pulsed_initial_ion_dur': 10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
-    dark = { 'coords':[0.475, -0.090,  5.1],
-            'name': '{}-dark_region'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 1*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 40*10**6, 'am_589_power': 0.2, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':18, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
 #    nv_sig = NVA
     
 #    test_pulse_dur_list = [   
@@ -691,7 +679,6 @@ if __name__ == '__main__':
             
 #    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
-    optimize_readout_pulse_length(NVA)
-    optimize_readout_pulse_length(dark)
-#    optimize_readout_pulse_power(dark)
+#    optimize_readout_pulse_length(nv1_2020_11_05)
+    optimize_readout_pulse_power(nv1_2020_11_05)
     

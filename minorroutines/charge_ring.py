@@ -407,65 +407,22 @@ def main_green_red(cxn, nv_sig, green_pulse_time, wait_time = 0):
 if __name__ == '__main__':
     sample_name = 'goeppert-mayer'
     
-    dark_3 = { 'coords':[ 0.015, 0.019, 5.0],
-            'name': '{}-nv2'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
+    nv1_2020_11_05 = { 'coords':[0.169, 0.014, 5.2], 
+            'name': '{}-nv1_2020_11_05'.format(sample_name),
+            'expected_count_rate': 45, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**6, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500*10**3, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 19, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
-            "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
-        
-    nv_center = { 'coords':[ -0.079, -0.019, 5.0],
-            'name': '{}-nv2'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**6, 'am_589_power': 0.25, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500*10**3, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 19, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
-    
-    center_30 = { 'coords':[0.019, -0.015, 6.1],
-            'name': '{}-nv2'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**6, 'am_589_power': 0.25, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500*10**3, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 40, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
-    
-    
-    center_12 = { 'coords':[ 0,0, 5.0],
-            'name': '{}-nv2'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**6, 'am_589_power': 0.25, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 500*10**3, 'cobalt_638_power': 160, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power': 19, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7666,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
 
-    green_pulse_time_list = numpy.array([ 100])
+#    green_pulse_time_list = numpy.array([ 100])
 #    green_pulse_time_list = numpy.array([0.1, 1, 5, 10, 25, 50, 75, 100, 250 ,1000]) #  0.6 mW, 2 mW,  4?
 #    green_pulse_time_list = numpy.array([0.1]) # 60 mW, 16 mW, 4 mW
   
@@ -474,14 +431,9 @@ if __name__ == '__main__':
 #    green_pulse_time_list = [100]
 
     with labrad.connect() as cxn:     
-#        main_red_green(cxn, nv, 100)
-        for z in numpy.linspace(5.5, 6.5, 11):
-            for t in green_pulse_time_list:  
-                nv_sig_copy = copy.deepcopy(center_12)
-                [coord_x, coord_y, coord_z] = center_12['coords']
-                nv_sig_copy['coords'] = [coord_x, coord_y, z]     
+#        main_red_green(cxn, nv, 100) 
                 
-                main_red_green(cxn, nv_sig_copy, t)
+        main_red_green(cxn, nv1_2020_11_05, 1)
             
 #    folder = 'image_sample/branch_Spin_to_charge/2020_10'
 #    file_dark_dif = '2020_10_23-20_32_23-goeppert-mayer-nv2_dif'

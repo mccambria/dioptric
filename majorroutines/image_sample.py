@@ -564,7 +564,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
 
-    base_readout = 50*10**8
+    base_readout = readout
     readout_sec = float(readout) / 10**9
 
     if x_range != y_range:
@@ -798,37 +798,37 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-#    file_name = 'branch_Spin_to_charge/2020_05/2020_05_12-11_14_57-hopper-ensemble'
-#    reformat_plot('inferno', 'svg')
-#    create_figure(file_name)
+    file_name = 'branch_Spin_to_charge/2020_11/2020_11_10-10_36_27-johnson-nv2_2020_11_05'
+#    reformat_plot('inferno', 'png')
+    create_figure(file_name)
     
-    sub_folder = 'branch_Spin_to_charge/2020_10/'
-    green_file = '2020_10_14-16_47_42-goeppert-mayer-nv1'
-    red_file = '2020_10_14-16_49_03-goeppert-mayer-nv1'
-    
-    data = tool_belt.get_raw_data('image_sample', sub_folder+green_file)
-    green_img_array = numpy.array(data['img_array'])
-    
-    data = tool_belt.get_raw_data('image_sample', sub_folder+red_file)
-    red_img_array = numpy.array(data['img_array'])
-    x_voltages = data['x_voltages']
-    y_voltages = data['y_voltages']
-    
-    dif_img_array = green_img_array - red_img_array
-
-    x_num_steps = len(x_voltages)
-    x_low = x_voltages[0]
-    x_high = x_voltages[x_num_steps-1]
-    y_num_steps = len(y_voltages)
-    y_low = y_voltages[0]
-    y_high = y_voltages[y_num_steps-1]
-    
-    pixel_size = x_voltages[1] - x_voltages[0]
-    half_pixel_size = pixel_size / 2
-    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                  y_low - half_pixel_size, y_high + half_pixel_size]
-        
-    title = 'Dif image yellow scan after green initialization and red initialization'
-    tool_belt.create_image_figure(numpy.fliplr(dif_img_array), img_extent,
-                                            clickHandler=on_click_image,
-                                            title = title)
+#    sub_folder = 'branch_Spin_to_charge/2020_10/'
+#    green_file = '2020_10_14-16_47_42-goeppert-mayer-nv1'
+#    red_file = '2020_10_14-16_49_03-goeppert-mayer-nv1'
+#    
+#    data = tool_belt.get_raw_data('image_sample', sub_folder+green_file)
+#    green_img_array = numpy.array(data['img_array'])
+#    
+#    data = tool_belt.get_raw_data('image_sample', sub_folder+red_file)
+#    red_img_array = numpy.array(data['img_array'])
+#    x_voltages = data['x_voltages']
+#    y_voltages = data['y_voltages']
+#    
+#    dif_img_array = green_img_array - red_img_array
+#
+#    x_num_steps = len(x_voltages)
+#    x_low = x_voltages[0]
+#    x_high = x_voltages[x_num_steps-1]
+#    y_num_steps = len(y_voltages)
+#    y_low = y_voltages[0]
+#    y_high = y_voltages[y_num_steps-1]
+#    
+#    pixel_size = x_voltages[1] - x_voltages[0]
+#    half_pixel_size = pixel_size / 2
+#    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+#                  y_low - half_pixel_size, y_high + half_pixel_size]
+#        
+#    title = 'Dif image yellow scan after green initialization and red initialization'
+#    tool_belt.create_image_figure(numpy.fliplr(dif_img_array), img_extent,
+#                                            clickHandler=on_click_image,
+#                                            title = title)
