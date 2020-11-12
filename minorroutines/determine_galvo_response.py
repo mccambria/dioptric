@@ -184,6 +184,7 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, illumination_tim
                              num_steps,int( bin_size)) #is this really doing what we want?
                                                         # might need to send clock pulses for the galvo to advance?
         
+        # 
         cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
                                             seq_args_string)
         
@@ -200,8 +201,9 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, illumination_tim
             
 #            dur_start = time.time()
 #            new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
-            ret_vals_string = cxn.apd_tagger.read_tag_stream()
+            ret_vals_string = cxn.apd_tagger.read_tag_stream() 
             new_tags,new_channels = tool_belt.decode_time_tags(ret_vals_string)
+            # new_channels.index(clock_pulse_channel)
             if new_tags == []:
                 continue
 #            print()
