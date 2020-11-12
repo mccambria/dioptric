@@ -736,7 +736,7 @@ def charge_spot_list(target_coords,readout_coords_list, parameters_sig, num_runs
     fig, ax = plt.subplots(1, 1, figsize=(17, 8.5))
     ax.errorbar(rad_dist_list_um, control_avg, yerr = control_ste,fmt = 'ko', label = 'control measurement (no initial pulse)')
     ax.errorbar(rad_dist_list_um, green_readout_avg, yerr = green_readout_ste,fmt = 'go', label = 'initial green pulse on individual NV')
-    ax.errorbar(rad_dist_list_um, green_target_avg, yerr = green_target_ste, fmt = 'bo',label = 'initial green pulse on dingle target NV')
+    ax.errorbar(rad_dist_list_um, green_target_avg, yerr = green_target_ste, fmt = 'bo',label = 'initial green pulse on single target NV')
     ax.set_title('Pulsed charge measurements on multiple NVs (green pulses are {} s)'.format(pulse_time/10**9))
     ax.set_xlabel('Distance from central target NV (um)')
     ax.set_ylabel('Average counts')
@@ -815,44 +815,45 @@ if __name__ == '__main__':
                 'magnet_angle': 0}
 #        charge_spot(NVA_coords, NVB_coords, dark_spot_1_coords, base_nv_sig, num_runs, 638)
 #        charge_spot(dark_spot_1_coords, NVA_coords, dark_spot_2_coords,base_nv_sig, num_runs, 638)
-#        charge_spot_list(NV_target, nv_readout_list, base_nv_sig, num_runs, 638)
+        charge_spot_list(NV_target, nv_readout_list, base_nv_sig, num_runs, 532)
     
-    file_1s = '2020_11_11-01_07_19-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-    file_10ms = '2020_11_11-08_15_52-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-    file_1ms = '2020_11_11-05_53_03-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-    file_100us = '2020_11_11-03_30_38-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-    file_list = [file_1s, file_10ms, file_1ms, file_100us]
-    
-    sub_folder = 'isolate_nv_charge_dynamics/branch_Spin_to_charge/2020_11'
-    
-    for f in file_list:
-        data = tool_belt.get_raw_data(sub_folder, f)
-        
-        parameters_sig = data['parameters_sig']
-        readout_coords_list = data['readout_coords_list']
-        target_coords = data['target_coords']
-        control_avg = data['control_avg']
-        control_ste = data['control_ste']
-        green_readout_avg = data['green_readout_avg']
-        green_readout_ste = data['green_readout_ste']
-        green_target_avg = data['green_target_avg']
-        green_target_ste = data['green_target_ste']
-        
-        rad_dist_list = []
-        for coords in readout_coords_list:
-            coords_diff = numpy.array(target_coords) - numpy.array(coords)
-            coords_diff_sqrd = coords_diff**2
-            rad_dist = numpy.sqrt(sum(coords_diff_sqrd))
-            rad_dist_list.append(rad_dist)
-        
-        rad_dist_list_um = numpy.array(rad_dist_list)*35
-        pulse_time = parameters_sig['pulsed_reionization_dur']
-        
-        fig, ax = plt.subplots(1, 1, figsize=(17, 8.5))
-        ax.errorbar(rad_dist_list_um, control_avg, yerr = control_ste,fmt = 'ko', label = 'control measurement (no initial pulse)')
-        ax.errorbar(rad_dist_list_um, green_readout_avg, yerr = green_readout_ste,fmt = 'go', label = 'initial green pulse on individual NV')
-        ax.errorbar(rad_dist_list_um, green_target_avg, yerr = green_target_ste, fmt = 'bo',label = 'initial green pulse on dingle target NV')
-        ax.set_title('Pulsed charge measurements on multiple NVs (green pulses are {} ms)'.format(pulse_time/10**6))
-        ax.set_xlabel('Distance from central target NV (um)')
-        ax.set_ylabel('Average counts')
-        ax.legend()
+    # %%
+#    file_1s = '2020_11_11-01_07_19-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+#    file_10ms = '2020_11_11-08_15_52-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+#    file_1ms = '2020_11_11-05_53_03-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+#    file_100us = '2020_11_11-03_30_38-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+#    file_list = [file_1s, file_10ms, file_1ms, file_100us]
+#    
+#    sub_folder = 'isolate_nv_charge_dynamics/branch_Spin_to_charge/2020_11'
+#    
+#    for f in file_list:
+#        data = tool_belt.get_raw_data(sub_folder, f)
+#        
+#        parameters_sig = data['parameters_sig']
+#        readout_coords_list = data['readout_coords_list']
+#        target_coords = data['target_coords']
+#        control_avg = data['control_avg']
+#        control_ste = data['control_ste']
+#        green_readout_avg = data['green_readout_avg']
+#        green_readout_ste = data['green_readout_ste']
+#        green_target_avg = data['green_target_avg']
+#        green_target_ste = data['green_target_ste']
+#        
+#        rad_dist_list = []
+#        for coords in readout_coords_list:
+#            coords_diff = numpy.array(target_coords) - numpy.array(coords)
+#            coords_diff_sqrd = coords_diff**2
+#            rad_dist = numpy.sqrt(sum(coords_diff_sqrd))
+#            rad_dist_list.append(rad_dist)
+#        
+#        rad_dist_list_um = numpy.array(rad_dist_list)*35
+#        pulse_time = parameters_sig['pulsed_reionization_dur']
+#        
+#        fig, ax = plt.subplots(1, 1, figsize=(17, 8.5))
+#        ax.errorbar(rad_dist_list_um, control_avg, yerr = control_ste,fmt = 'ko', label = 'control measurement (no initial pulse)')
+#        ax.errorbar(rad_dist_list_um, green_readout_avg, yerr = green_readout_ste,fmt = 'go', label = 'initial green pulse on individual NV')
+#        ax.errorbar(rad_dist_list_um, green_target_avg, yerr = green_target_ste, fmt = 'bo',label = 'initial green pulse on dingle target NV')
+#        ax.set_title('Pulsed charge measurements on multiple NVs (green pulses are {} ms)'.format(pulse_time/10**6))
+#        ax.set_xlabel('Distance from central target NV (um)')
+#        ax.set_ylabel('Average counts')
+#        ax.legend()
