@@ -182,7 +182,7 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, readout_time,
             # new_tags,new_channels = tool_belt.decode_time_tags(ret_vals_string) # hmmm, we don't have this in master...
  
             # There will be a clock pulse at the beginning of the measurement 
-            #that we don't want to include. Take only the tags after this
+            #that we don't want to include. Take only the tags after this clock pulse
             clock_indices = new_channels.index(tagger_clock_channel)
             new_tags = new_tags[clock_indices+1:]
             new_channels = new_channels[clock_indices+1:]
