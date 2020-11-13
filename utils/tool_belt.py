@@ -104,7 +104,19 @@ def get_pulse_streamer_wiring(cxn):
         pulse_streamer_wiring[key] = wiring[key]
     return pulse_streamer_wiring
 
-
+def get_tagger_wiring(cxn):
+    cxn.registry.cd(['', 'Config', 'Wiring', 'Tagger'])
+    sub_folders, keys = cxn.registry.dir()
+    if keys == []:
+        return {}
+    p = cxn.registry.packet()
+    for key in keys:
+        p.get(key, key=key)  # Return as a dictionary
+    wiring = p.send()
+    tagger_wiring = {}
+    for key in keys:
+        tagger_wiring[key] = wiring[key]
+    return tagger_wiring
 # %% Matplotlib plotting utils
 
 

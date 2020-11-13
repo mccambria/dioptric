@@ -359,8 +359,27 @@ class Galvo(LabradServer):
         self.load_stream_writer(c, 'Galvo-load_y_scan', voltages, period)
 
         return y_voltages
+    
+    @setting(6, x_points='*v[]', y_points='*v[]', period='i')
+    def load_two_point_scan(self, c, x_points, y_points, period):
+        """Load a scan that goes between two points. E.i., starts at [1,1] and 
+        then on a clock pulse, moves to [2,1].
 
+        Params
+            x_points: list(float)
+                X values correspnding to the initial and final point
+            y_points: list(float)
+                Y values correspnding to the initial and final point
+            period: int
+                Expected period between clock signals in ns
 
+        """
+
+        voltages = numpy.vstack((x_points, y_points))
+
+        self.load_stream_writer(c, 'Galvo-load_two_point_scan', voltages, period)
+
+        return
 __server__ = Galvo()
 
 if __name__ == '__main__':
