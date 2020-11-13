@@ -10,7 +10,7 @@ import majorroutines.optimize as optimize
 import numpy
 import time
 import matplotlib.pyplot as plt
-import labrad
+# import labrad
 import majorroutines.image_sample as image_sample
 import copy
 import scipy.stats as stats
@@ -817,13 +817,14 @@ if __name__ == '__main__':
 #        charge_spot(dark_spot_1_coords, NVA_coords, dark_spot_2_coords,base_nv_sig, num_runs, 638)
 #        charge_spot_list(NV_target, nv_readout_list, base_nv_sig, num_runs, 638)
 
-    file_1s = '2020_11_11-01_07_19-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-    file_10ms = '2020_11_11-08_15_52-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-    file_1ms = '2020_11_11-05_53_03-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-    file_100us = '2020_11_11-03_30_38-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-    file_100ms = '2020_11_11-12_09_13-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-    file_list = [file_1s, file_100ms, file_10ms, file_1ms, file_100us]
-    fmt_list = ['o', '^', 's', 'x', '+']
+    file_1s = '2020_11_12-01_30_37-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_10ms = '2020_11_12-08_42_14-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_1ms = '2020_11_12-06_18_47-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_100us = '2020_11_12-03_54_57-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    # file_100ms = '2020_11_11-12_09_13-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_list = [file_1s, file_10ms, file_1ms, file_100us]
+    fmt_list = ['o', '^', 's','x',  ]
+                # '+']
 
     sub_folder = 'isolate_nv_charge_dynamics/branch_Spin_to_charge/2020_11'
 
@@ -842,7 +843,7 @@ if __name__ == '__main__':
         green_readout_ste = numpy.array(data['green_readout_ste'])
         green_target_avg = numpy.array(data['green_target_avg'])
         green_target_ste = numpy.array(data['green_target_ste'])
-
+        
         rad_dist_list = []
         for coords in readout_coords_list:
             coords_diff = numpy.array(target_coords) - numpy.array(coords)
@@ -867,6 +868,10 @@ if __name__ == '__main__':
         paired_data = list(zip(rad_dist_list_um, normalized_counts, normalized_unc))
         sorted_paired_data = sorted(paired_data, key=lambda x: x[0])
 
+        if f == file_1ms:
+            print(sorted_paired_data[12])
+            # sorted_paired_data[12]=(0,0,0)
+            
         sorted_rad_dist_list_um = [x[0] for x in sorted_paired_data]
         sorted_normalized_counts = [x[1] for x in sorted_paired_data]
         sorted_normalized_unc = [x[2] for x in sorted_paired_data]
@@ -874,8 +879,8 @@ if __name__ == '__main__':
         #             yerr = sorted_normalized_unc,
         #             label = '{} ms green pulse'.format(pulse_time/10**6))
         ax.plot(sorted_rad_dist_list_um, sorted_normalized_counts, fmt_list[i],
-                    # yerr = sorted_normalized_unc,
                     label = '{} ms green pulse'.format(pulse_time/10**6))
+        ax.set_ylim([-1.5,2])
         i += 1
 
     ax.set_title('Pulsed charge measurements on multiple NVs')
