@@ -341,7 +341,7 @@ if __name__ == '__main__':
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-    
+     
     main( search_sig,start_coords, end_coords, apd_indices, 10**6,
                   num_runs,100)
     
