@@ -75,18 +75,18 @@ def process_raw_buffer(new_tags, new_channels,
 # %% Main
 
 
-def main ( nv_sig,x_range, num_steps, apd_indices, readout_time,
-                  num_reps, num_runs, num_bins, plot = True):
+def main ( nv_sig,start_coords, end_coords, apd_indices, readout_time,
+                  num_runs, num_bins, plot = True):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, 
-                   nv_sig, x_range, num_steps,  apd_indices, readout_time,
-                  num_reps, num_runs, num_bins, plot)
+                   nv_sig,start_coords, end_coords,  apd_indices, readout_time,
+                  num_runs, num_bins, plot)
 
     return 
 
-def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, readout_time,
-                  num_reps, num_runs, num_bins, plot):
+def main_with_cxn(cxn,nv_sig,start_coords, end_coords, apd_indices, readout_time,
+                  num_runs, num_bins, plot):
     
     if len(apd_indices) > 1:
         msg = 'Currently lifetime only supports single APDs!!'
@@ -101,18 +101,26 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, readout_time,
     laser_delay = shared_params['515_laser_delay']
     
     tagger_wiring = tool_belt.get_tagger_wiring(cxn)
-    tagger_clock_channel = tagger_wiring('di_clock')
+    tagger_clock_channel = tagger_wiring['di_clock']
 
     drift = tool_belt.get_drift()
     start_coords = nv_sig['coords']
     start_coords_drift = numpy.array(start_coords) + numpy.array(drift)
+    end_coords_drift = numpy.array(end_coords) + numpy.array(drift)
     x_start = start_coords_drift[0]
     y_start = start_coords_drift[1]
-    x_end = start_coords_drift[0] + x_range
-    y_end = y_start
+    x_end = end_coords_drift[0]
+    y_end =  end_coords_drift[1]
     bin_size = readout_time / num_bins
     
+    num_reps = 1
+    
     opti_coords_list = []
+    
+    # calculate the distance between the points
+    x_dif = x_end - x_start
+    y_dif = y_end - y_start
+    distance  = numpy.sqrt( x_dif**2 + y_dif**2)
 
     # %% Analyze the sequence
 
@@ -126,7 +134,8 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, readout_time,
     # %% Collect the data
     
     processed_tags = []
-
+    startFunctionTime = time.time()
+    
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
 
@@ -142,8 +151,8 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, readout_time,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=True)
-        opti_coords_list.append(opti_coords)
+#        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+#        opti_coords_list.append(opti_coords)
         
         
         # Expose the stream
@@ -158,7 +167,7 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, readout_time,
         # Stream the sequence
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         
-        cxn.galvo.load_two_point_scan([x_start, x_end], [y_start, y_end], 
+        cxn.galvo.load_two_point_scan([x_start, x_end, x_end], [y_start, y_end, y_end], 
                           int(readout_time)) 
          
         cxn.pulse_streamer.stream_immediate(file_name, 1,
@@ -177,18 +186,19 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, readout_time,
             
             new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
             new_tags = numpy.array(new_tags, dtype=numpy.int64)
-            
+
             # ret_vals_string = cxn.apd_tagger.read_tag_stream() 
             # new_tags,new_channels = tool_belt.decode_time_tags(ret_vals_string) # hmmm, we don't have this in master...
  
             # There will be a clock pulse at the beginning of the measurement 
             #that we don't want to include. Take only the tags after this clock pulse
-            clock_indices = new_channels.index(tagger_clock_channel)
-            new_tags = new_tags[clock_indices+1:]
-            new_channels = new_channels[clock_indices+1:]
-            
-            # if new_tags == []:
-            #     continue
+            try:
+#                print(new_channels)
+                clock_indices = numpy.where(new_channels==tagger_clock_channel)[0][0]
+                new_tags = new_tags[clock_indices+1:]
+                new_channels = new_channels[clock_indices+1:] #should add boolean in for second clock pulse
+            except Exception:
+                pass
             
             ret_vals = process_raw_buffer(new_tags, new_channels,
                                    current_tags, current_channels,
@@ -208,38 +218,33 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, readout_time,
         cxn.apd_tagger.stop_tag_stream()
         
         # %% Save the data we have incrementally for long measurements
-#        processed_tags = [int(el) for el in processed_tags]
-#        raw_data = {'start_timestamp': start_timestamp,
-#                    'nv_sig': nv_sig,
-#                    'nv_sig-units': tool_belt.get_nv_sig_units(),
-#                    'init_color_ind': init_color_ind,
-#                    'init_optical_power_pd': init_optical_power_pd,
-#                    'init_optical_power_pd-units': 'V',
-#                    'init_optical_power_mW': init_optical_power_mW,
-#                    'init_optical_power_mW-units': 'mW',
-#                    'illum_color_ind': illum_color_ind,
-#                    'illum_optical_power_pd': illum_optical_power_pd,
-#                    'illum_optical_power_pd-units': 'V',
-#                    'illum_optical_power_mW': illum_optical_power_mW,
-#                    'illum_optical_power_mW-units': 'mW',
-#                    'illumination_time': illumination_time,
-#                    'illumination_time-units': 'ns',
-#                    'init_pulse_duration': init_pulse_duration,
-#                    'init_pulse_duration-units': 'ns',
-#                    'num_reps': num_reps,
-#                    'num_runs': num_runs,
-#                    'run_ind': run_ind,
-#                    'opti_coords_list': opti_coords_list,
-#                    'opti_coords_list-units': 'V',
-#                    'processed_tags': processed_tags,
-#                    'processed_tags-units': 'ps',
-#                    }
-#
-#        # This will continuously be the same file path so we will overwrite
-#        # the existing file with the latest version
-#        file_path = tool_belt.get_file_path(__file__, start_timestamp,
-#                                            nv_sig['name'], 'incremental')
-#        tool_belt.save_raw_data(raw_data, file_path)
+        start_timestamp = tool_belt.get_time_stamp()
+        processed_tags = [int(el) for el in processed_tags]
+        raw_data = {'start_timestamp': start_timestamp,
+                    'nv_sig': nv_sig,
+                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'start_coords': start_coords,
+                    'start_coords-units': 'V',
+                    'end_coords': end_coords,
+                    'end_coords-units': 'V',
+                    'distance': distance,
+                    'distance-units': 'V',
+                    'readout_time': readout_time,
+                    'readout_time-units': 'ns',
+                    'num_runs': num_runs,
+                    'run_ind': run_ind,
+                    'num_bins': num_bins,
+                    'opti_coords_list': opti_coords_list,
+                    'opti_coords_list-units': 'V',
+                    'processed_tags': processed_tags,
+                    'processed_tags-units': 'ps',
+                    }
+
+        # This will continuously be the same file path so we will overwrite
+        # the existing file with the latest version
+        file_path = tool_belt.get_file_path(__file__, start_timestamp,
+                                            nv_sig['name'], 'incremental')
+        tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Hardware clean up
 
@@ -269,9 +274,9 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, readout_time,
         ax.set_title('Lifetime')
         ax.set_xlabel('Readout time (ms)')
         ax.set_ylabel('Counts')
-        ax.set_title('Time resolved readout while scanning galvo')
+        ax.set_title('Time resolved readout while scanning galvo of NVs {} V apart'.format(distance))
            
-        params_text = 'bin size: ' + '%.1f'%(bin_size) + 'ns'
+        params_text = 'bin size: ' + '%.1f'%(bin_size/10**3) + 'us'
     
         ax.text(0.55, 0.85, params_text, transform=ax.transAxes, fontsize=12,
                 verticalalignment='top', bbox=props)
@@ -282,44 +287,73 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, readout_time,
 
     # %% Save the data
 
-#    endFunctionTime = time.time()
-#    time_elapsed = endFunctionTime - startFunctionTime
-#    timestamp = tool_belt.get_time_stamp()
-#    
-#    raw_data = {'timestamp': timestamp,
-#                'time_elapsed': time_elapsed,
-#                'nv_sig': nv_sig,
-#                'nv_sig-units': tool_belt.get_nv_sig_units(),
-#                'init_color_ind': init_color_ind,
-#                'init_optical_power_pd': init_optical_power_pd,
-#                'init_optical_power_pd-units': 'V',
-#                'init_optical_power_mW': init_optical_power_mW,
-#                'init_optical_power_mW-units': 'mW',
-#                'illum_color_ind': illum_color_ind,
-#                'illum_optical_power_pd': illum_optical_power_pd,
-#                'illum_optical_power_pd-units': 'V',
-#                'illum_optical_power_mW': illum_optical_power_mW,
-#                'illum_optical_power_mW-units': 'mW',
-#                'readout_time': readout_time,
-#                'readout_time-units': 'ns',
-#                'init_pulse_duration': init_pulse_duration,
-#                'init_pulse_duration-units': 'ns',
-#                'num_bins': num_bins,
-#                'num_reps': num_reps,
-#                'num_runs': num_runs,
-#                'opti_coords_list': opti_coords_list,
-#                'opti_coords_list-units': 'V',
-#                'binned_samples': binned_samples.tolist(),
-#                'bin_centers': bin_centers.tolist(),
-#                'processed_tags': processed_tags,
-#                'processed_tags-units': 'ps',
-#                }
-#
-#    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-#    if plot:
-#        tool_belt.save_figure(fig, file_path)
-#    tool_belt.save_raw_data(raw_data, file_path)
+    endFunctionTime = time.time()
+    time_elapsed = endFunctionTime - startFunctionTime
+    timestamp = tool_belt.get_time_stamp()
+    
+    raw_data = {'timestamp': timestamp,
+                'time_elapsed': time_elapsed,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'start_coords': start_coords,
+                'start_coords-units': 'V',
+                'end_coords': end_coords,
+                'end_coords-units': 'V',
+                'distance': distance,
+                'distance-units': 'V',
+                'readout_time': readout_time,
+                'readout_time-units': 'ns',
+                'num_bins': num_bins,
+                'num_runs': num_runs,
+                'opti_coords_list': opti_coords_list,
+                'opti_coords_list-units': 'V',
+                'binned_samples': binned_samples.tolist(),
+                'bin_centers': bin_centers.tolist(),
+                'processed_tags': processed_tags,
+                'processed_tags-units': 'ps',
+                }
+
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    if plot:
+        tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(raw_data, file_path)
+    
+    tool_belt.reset_cfm(cxn)
     
     return 
 
 
+# %% Run the file
+
+
+if __name__ == '__main__':
+    
+    apd_indices = [0]
+    sample_name = 'johnson'
+    num_runs = 100
+    
+    start_coords = [0.128, 0.044, 5.0]
+    end_coords = [-0.190, 0.083, 5.0]
+    
+    search_sig = { 'coords': start_coords,
+            'name': '{}'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
+            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    
+    main( search_sig,start_coords, end_coords, apd_indices, 10**6,
+                  num_runs,100)
+    
+#    start_coords = [0.128, 0.044, 5.0]
+    end_coords = [-0.346, 0.035, 5.0]
+    
+    search_sig = { 'coords': start_coords,
+            'name': '{}'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
+            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    
+    main( search_sig,start_coords, end_coords, apd_indices, 10**6,
+                  num_runs,100)

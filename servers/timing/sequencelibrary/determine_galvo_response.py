@@ -26,16 +26,17 @@ def get_seq(pulser_wiring, args):
     # Convert the 32 bit ints into 64 bit ints
     delay = numpy.int64(delay)
     readout = numpy.int64(readout)
-    period = numpy.int64(delay + readout + 500)
+    period = numpy.int64(delay + readout + 100)
 
     seq = Sequence()
 
     # Clock signal (one at the beginning of the sequence and one at the end)
-    train = [(delay, LOW), (100, HIGH), (100 + readout + 100, LOW), (100, HIGH), (100, LOW)]
+    train = [(delay, LOW), (100, HIGH), (readout-100, LOW), (100, HIGH)]
     seq.setDigital(pulser_do_daq_clock, train)
     # Gate
-    train = [(delay + 100 + 100, LOW), (readout, HIGH), (300, LOW)]
+    train = [(delay, LOW), (100 + readout, HIGH)]
     seq.setDigital(pulser_do_daq_gate, train)
+    
     # Leave the laser on all the time
     train = [(period, HIGH)]
     seq.setDigital(pulser_do_aom, train)

@@ -60,8 +60,8 @@ def do_image_sample(nv_sig, apd_indices):
 #    scan_range = 1.2
 #    scan_range = 0.5
 #    scan_range = 0.3
-    scan_range = 0.2
-#    scan_range = 0.1
+#    scan_range = 0.2
+    scan_range = 0.1
 #    scan_range = 0.05
 #    scan_range = 0.025
     
@@ -70,8 +70,8 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 150
 #    num_steps = 135
 #    num_steps = 120
-    num_steps = 90
-#    num_steps = 60
+#    num_steps = 90
+    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -413,9 +413,9 @@ if __name__ == '__main__':
     
     nd = 'nd_0'
 #    sample_name = '5nmEr-nrg'
-    sample_name = 'goeppert-mayer'
+    sample_name = 'johnson'
     
-    search = { 'coords': [0.0, 0.0, 5.0],
+    search = { 'coords':[-0.342, 0.065, 5.0],
             'name': '{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,

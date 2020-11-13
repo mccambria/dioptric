@@ -367,9 +367,9 @@ class Galvo(LabradServer):
 
         Params
             x_points: list(float)
-                X values correspnding to the initial and final point
+                X values correspnding to the initial and final points
             y_points: list(float)
-                Y values correspnding to the initial and final point
+                Y values correspnding to the initial and final points
             period: int
                 Expected period between clock signals in ns
 
