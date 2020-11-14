@@ -69,15 +69,15 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 120
 #    num_steps = 75
 #    scan_range = 2.5
-    scan_range = 1.0
+#    scan_range = 1.0
 #    scan_range = 0.5
-    num_steps = 200
+#    num_steps = 200
 #    scan_range = 0.07
 #    num_steps = 125
 #    scan_range = 0.1
 #    num_steps = 120
-#    scan_range = 0.25
-#    num_steps = 90
+    scan_range = 0.2
+    num_steps = 90
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.025
@@ -598,7 +598,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
-    nv1_2020_11_10 = { 'coords':[0.047, 0.030, 5.22], 
+    nv1_2020_11_10 = { 'coords':[0.058, 0.032, 5.22], 
             'name': '{}-nv2_2020_11_10'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -731,7 +731,7 @@ if __name__ == '__main__':
 #            with labrad.connect() as cxn:
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 ##    
-            do_optimize(nv_sig, apd_indices, 532)
+#            do_optimize(nv_sig, apd_indices, 532)
 #            for z in numpy.linspace(5.5, 2.5, 31):
 #                    nv_sig_copy = copy.deepcopy(nv_sig)
 #                    [coord_x, coord_y, coord_z] = nv_sig['coords']
@@ -743,7 +743,7 @@ if __name__ == '__main__':
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = nv_sig['pulsed_SCC_readout_dur'])
 
 #            do_determine_galvo_response(nv_sig, apd_indices)

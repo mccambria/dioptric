@@ -300,7 +300,6 @@ def simple_pulse_list_with_cxn(cxn, coords_list, pulse_time, pulse_color):
     # cxn.filter_slider_ell9k.set_filter(nd_filter)
 
     drift = tool_belt.get_drift()
-
     for coords in coords_list:
         coords_drift = numpy.array(coords) + numpy.array(drift)
        # move the galvo to the readout
@@ -326,6 +325,7 @@ def simple_pulse_list_with_cxn(cxn, coords_list, pulse_time, pulse_color):
             seq_args = [laser_delay,int( pulse_time), 0.0, pulse_color]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
+            
     return
 #%%
 def charge_spot(readout_coords,target_A_coords, target_B_coords, parameters_sig, num_runs, init_scan):
@@ -620,7 +620,7 @@ def charge_spot_list(target_coords,readout_coords_list, parameters_sig, num_runs
     target_sig['coords'] = target_coords
     
     # Have a list of all coords to use with initialization
-    all_coords_list = readout_coords_list.append(target_coords)
+    all_coords_list = readout_coords_list + [target_coords]
     
     #calculate the distances from the target to each readout:
     rad_dist_list = []
@@ -825,7 +825,7 @@ if __name__ == '__main__':
 #    dark_spot_2_coords = [0.108, 0.007, 5.2]
     NV_target = [0.047, 0.030, 5.22]
 
-    nv_readout_list = [[0.047, 0.031, 5.21],
+    nv_readout_list = [ [0.047, 0.031, 5.21],
     [0.051, 0.007, 5.21],
     [0.020, 0.066, 5.22],
     [0.072, 0.076, 5.22],
@@ -865,8 +865,8 @@ if __name__ == '__main__':
 
 
     # run the measurements!
-    for t_g in [10**9, 10**5, 10**6, 10**7, 10**8, 10**10]:
-#    for t_g in [10**9]:
+#    for t_g in [10**9, 10**5, 10**6, 10**7, 10**8, 10**10]:
+    for t_g in [10**9]:
         base_nv_sig  = { 'coords':None,
                 'name': '{}-NVA'.format(sample_name),
                 'expected_count_rate': 70, 'nd_filter': 'nd_0',
