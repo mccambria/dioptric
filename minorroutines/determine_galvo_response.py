@@ -332,8 +332,8 @@ if __name__ == '__main__':
     sample_name = 'johnson'
     num_runs = 100
     
-    start_coords = [0.128, 0.044, 5.0]
-    end_coords = [-0.190, 0.083, 5.0]
+    start_coords = [-0.785, 0.320, 5.0]
+    end_coords = [0.248, 0.379, 5.0]
     
     search_sig = { 'coords': start_coords,
             'name': '{}'.format(sample_name),
@@ -342,18 +342,18 @@ if __name__ == '__main__':
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
      
-    main( search_sig,start_coords, end_coords, apd_indices, 10**6,
-                  num_runs,100)
+    main( search_sig,start_coords, end_coords, apd_indices, 4*10**6,
+                  num_runs,4*100)
     
 #    start_coords = [0.128, 0.044, 5.0]
-    end_coords = [-0.346, 0.035, 5.0]
-    
-    search_sig = { 'coords': start_coords,
-            'name': '{}'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
-            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-    
-    main( search_sig,start_coords, end_coords, apd_indices, 10**6,
-                  num_runs,100)
+#    end_coords = [-0.346, 0.035, 5.0]
+#    
+#    search_sig = { 'coords': start_coords,
+#            'name': '{}'.format(sample_name),
+#            'expected_count_rate': None, 'nd_filter': 'nd_0',
+#            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
+#            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+#            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+#    
+#    main( search_sig,start_coords, end_coords, apd_indices, 3*10**6,
+#                  num_runs,3*100)

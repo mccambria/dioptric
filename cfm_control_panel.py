@@ -415,14 +415,20 @@ if __name__ == '__main__':
 #    sample_name = '5nmEr-nrg'
     sample_name = 'johnson'
     
-    search = { 'coords':[-0.342, 0.065, 5.0],
+    search = { 'coords':[0.248-0.5, 0.379, 5.0],
+            'name': '{}'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': nd,
+            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
+            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    search2 = { 'coords':[-0.785, 0.320, 5.0],
             'name': '{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
     
-    nv_sig_list = [search]
+    nv_sig_list = [search2]
     
     # %% Functions to run
 
