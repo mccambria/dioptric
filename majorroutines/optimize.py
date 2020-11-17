@@ -130,7 +130,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
     # x/y
     if axis_ind in [0, 1]:
         scan_range = scan_range_nm / shared_params['galvo_nm_per_volt']
-        seq_args = [shared_params['galvo_delay'], readout, aom_ao_589_pwr, 
+        seq_args = [shared_params['small_angle_galvo_delay'], readout, aom_ao_589_pwr, 
                     apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,

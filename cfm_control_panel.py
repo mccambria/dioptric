@@ -68,18 +68,18 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
-#    scan_range = 2.5
+#    scan_range = 1.5
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
 #    scan_range = 0.07
 #    num_steps = 125
-#    scan_range = 0.1
+    scan_range = 0.1
 #    num_steps = 120
-    scan_range = 0.2
-    num_steps = 90
+#    scan_range = 0.2
+#    num_steps = 90
 #    scan_range = 0.05
-#    num_steps = 60
+    num_steps = 60
 #    scan_range = 0.025
 #    num_steps =30
 #    num_steps = 10
@@ -598,7 +598,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
-    nv1_2020_11_10 = { 'coords':[0.058, 0.032, 5.22], 
+    nv1_2020_11_10 = { 'coords':[0.047, 0.030, 5.22], 
             'name': '{}-nv2_2020_11_10'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
@@ -612,6 +612,47 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
 
+    nv0_2020_11_13 = { 'coords':[-0.971, 0.064, 5.22], 
+            'name': '{}-nv0_2020_11_13'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
+    nv35_2020_11_13 = { 'coords':[-0.977, -0.308, 5.22], 
+            'name': '{}-nv35_2020_11_13'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
+    
+   
+    dark_spot_2020_11_10 = { 'coords': [0.078- 0.018, 0.056 - 0.003, 5.22 + 0.04], 
+            'name': '{}-dark_spot_2020_11_10'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 #[0.047, 0.031, 5.21],
 #[0.051, 0.007, 5.21],
 #[0.020, 0.066, 5.22],
@@ -639,37 +680,18 @@ if __name__ == '__main__':
 #[0.354, 0.198, 5.28],
 #[0.264, -0.032, 5.25],
 
-    coords_list= [[0.047, 0.032],
-[0.050, 0.008],
-[0.020, 0.065],
-[0.072, 0.077],
-[0.117, 0.022],
-[0.084, -0.014],
-[0.009, 0.100],
-[-0.016, 0.113],
-[0.110, 0.102],
-[0.173, 0.013],
-[0.155, 0.147],
-[0.143, 0.121],
-[0.170, 0.105],
-[0.055, -0.125],
-[-0.037, -0.141],
-[0.155, 0.145],
-[0.181, 0.250],
-[0.174, 0.011],
-[0.266, -0.031],
-[0.294, 0.067],
-[0.290, -0.143],
-[0.360, 0.067],
-[0.405, -0.085],
-[0.401, -0.167],
-[0.356, 0.204],
-[0.266, -0.032]]    
-    i = 2
+    coords_list= [
+[-0.839, -0.345,5.2],
+
+            ]
+    
+    
+    
+    i = 1
     nv_sig_list = []
     for c in coords_list:
         nv_sig = { 'coords':[0.047, 0.032, 5.2], 
-            'name': '{}-nv{}_2020_11_10'.format(sample_name, i),
+            'name': '{}-nv{}_2020_11_13'.format(sample_name, i),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
@@ -688,7 +710,7 @@ if __name__ == '__main__':
         nv_sig_list.append(nv_sig_temp)
         i = i+1
    
-    nv_sig_list = [nv1_2020_11_10]
+    nv_sig_list = [dark_spot_2020_11_10]
 
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
@@ -703,10 +725,10 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        tool_belt.set_drift([0.0, 0.0,0.0])  # Totally reset
+#        tool_belt.set_drift([0.012, 0.0,0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
-#        set_xyz([0.0,0.0,5.0])
+#        set_xyz([0.018,0.003,5.0])
 #        set_xyz([0.0, 0.0,  4.47])
         
 #        set_xyz([-0.126, 0.359,  5.6])
@@ -719,7 +741,7 @@ if __name__ == '__main__':
 #            cxn.objective_piezo.write(5.1)
 #            input('Laser currently turned off, Press enter to stop...')
         
-        # Routines that expect lists of NVs
+#         Routines that expect lists of NVs
 #        do_optimize_list(nv_sig_list, apd_indices,532)
 #        do_sample_nvs(nv_sig_list, apd_indices)
 #        do_g2_measurement(nv_sig_list, apd_indices[0], apd_indices[1])

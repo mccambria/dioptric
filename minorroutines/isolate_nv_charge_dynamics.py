@@ -166,6 +166,7 @@ def readout_list_with_cxn(cxn, readout_coords_list, parameters_sig, apd_indices,
     laser_515_delay = shared_params['515_laser_delay']
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
+    galvo_delay = shared_params['large_angle_galvo_delay']
 
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
     pulser_wiring_red = wiring['do_638_laser']
@@ -182,7 +183,6 @@ def readout_list_with_cxn(cxn, readout_coords_list, parameters_sig, apd_indices,
         readout_coords_drift = numpy.array(coords) + numpy.array(drift)
        # move the galvo to the readout
         tool_belt.set_xyz(cxn, readout_coords_drift)
-        time.sleep(0.01)
 
         # if we want to have an initial pulseo on the NV, pulse green or red
         if initial_pulse:
@@ -197,12 +197,13 @@ def readout_list_with_cxn(cxn, readout_coords_list, parameters_sig, apd_indices,
                 pulser_wiring_value = pulser_wiring_red
             # based on length scale, pusle in two different ways
             if pulse_time >= 10**9:
+                time.sleep(0.002)
                 cxn.pulse_streamer.constant([pulser_wiring_value], 0.0, 0.0)
                 time.sleep(pulse_time/10**9)
                 cxn.pulse_streamer.constant([], 0.0, 0.0)
             else:
                 # Pusle the green laser on NV_readout
-                seq_args = [laser_delay,int( pulse_time), 0.0, initial_pulse]
+                seq_args = [laser_delay+galvo_delay,int( pulse_time), 0.0, initial_pulse]
                 seq_args_string = tool_belt.encode_seq_args(seq_args)
                 cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
 
@@ -287,8 +288,8 @@ def simple_pulse_list_with_cxn(cxn, coords_list, pulse_time, pulse_color):
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     # aom_589_delay = shared_params['589_aom_delay']
     laser_515_delay = shared_params['515_laser_delay']
-    # aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
+    galvo_delay = shared_params['large_angle_galvo_delay']
 
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
     pulser_wiring_red = wiring['do_638_laser']
@@ -304,7 +305,6 @@ def simple_pulse_list_with_cxn(cxn, coords_list, pulse_time, pulse_color):
         coords_drift = numpy.array(coords) + numpy.array(drift)
        # move the galvo to the readout
         tool_belt.set_xyz(cxn, coords_drift)
-        time.sleep(0.01)
 
         # pulse on each NV
         # These parameters might not be used, but let's just keep them in
@@ -317,16 +317,18 @@ def simple_pulse_list_with_cxn(cxn, coords_list, pulse_time, pulse_color):
             
         # based on length scale, pusle in two different ways
         if pulse_time >= 10**9:
+            time.sleep(0.002)
             cxn.pulse_streamer.constant([pulser_wiring_value], 0.0, 0.0)
             time.sleep(pulse_time/10**9)
             cxn.pulse_streamer.constant([], 0.0, 0.0)
         else:
             # Pusle the laser on NV_readout
-            seq_args = [laser_delay,int( pulse_time), 0.0, pulse_color]
+            seq_args = [laser_delay+galvo_delay,int( pulse_time), 0.0, pulse_color]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
             
     return
+
 #%%
 def charge_spot(readout_coords,target_A_coords, target_B_coords, parameters_sig, num_runs, init_scan):
     startFunctionTime = time.time()
@@ -605,7 +607,7 @@ def charge_spot(readout_coords,target_A_coords, target_B_coords, parameters_sig,
     return
 
 #%%
-def charge_spot_list(target_coords,readout_coords_list, parameters_sig, num_runs, init_scan):
+def charge_spot_list(target_coords, optimize_coords, readout_coords_list, parameters_sig, num_runs, init_scan):
     startFunctionTime = time.time()
     init_pulse_time = 5 * 10**3 # initial time to pulse laser to initialize NVs
 
@@ -618,6 +620,10 @@ def charge_spot_list(target_coords,readout_coords_list, parameters_sig, num_runs
     # add the coords to the dictionry of measurement paramters
     target_sig = copy.deepcopy(parameters_sig)
     target_sig['coords'] = target_coords
+    
+    optimize_sig = copy.deepcopy(parameters_sig)
+    optimize_sig['coords'] = optimize_coords
+    
     
     # Have a list of all coords to use with initialization
     all_coords_list = readout_coords_list + [target_coords]
@@ -641,6 +647,12 @@ def charge_spot_list(target_coords,readout_coords_list, parameters_sig, num_runs
     # ratio between this distance and 0.05 V (which I was previously using 0.1 V as the scan range)
     scan_range_scaling = (max_rad_dist*1.05)/0.05
 
+#    fig, ax = plt.subplots(1, 1, figsize=(17, 8.5))
+#    ax.plot(rad_dist_list_um, rad_dist_list_um, 'o')
+#    ax.set_xlabel('Distance from central target NV (um)')
+#    ax.legend()
+#    return
+
     # create some lists for dataopti_coords_list
     opti_coords_list = []
     control_array = []
@@ -650,7 +662,7 @@ def charge_spot_list(target_coords,readout_coords_list, parameters_sig, num_runs
     start_timestamp = tool_belt.get_time_stamp()
     #optimize at the beginning of the measurement
     with labrad.connect() as cxn:
-        opti_coords = optimize.main_with_cxn(cxn, target_sig, apd_indices, 532, disable=False)
+        opti_coords = optimize.main_with_cxn(cxn, optimize_sig, apd_indices, 532, disable=False)
         opti_coords_list.append(opti_coords)
     # record the time starting at the beginning of the runs
     run_start_time = time.time()
@@ -665,7 +677,7 @@ def charge_spot_list(target_coords,readout_coords_list, parameters_sig, num_runs
         if current_time - run_start_time >= 5*60:
 #        if run % 3 == 0:
             with labrad.connect() as cxn:
-                opti_coords = optimize.main_with_cxn(cxn, target_sig, apd_indices, 532, disable=False)
+                opti_coords = optimize.main_with_cxn(cxn, optimize_sig, apd_indices, 532, disable=False)
                 opti_coords_list.append(opti_coords)
             run_start_time = current_time
 
@@ -704,6 +716,7 @@ def charge_spot_list(target_coords,readout_coords_list, parameters_sig, num_runs
         raw_data = {'start_time': start_timestamp,
                 'readout_coords_list': readout_coords_list,
                 'target_coords': target_coords,
+            'optimize_sig': optimize_sig,
                 'parameters_sig': parameters_sig,
                 'parameters_sig-units': tool_belt.get_nv_sig_units(),
             'init_pulse_time': init_pulse_time,
@@ -750,6 +763,7 @@ def charge_spot_list(target_coords,readout_coords_list, parameters_sig, num_runs
                 'timeElapsed': timeElapsed,
             'readout_coords_list': readout_coords_list,
             'target_coords': target_coords,
+            'optimize_sig': optimize_sig,
             'parameters_sig': parameters_sig,
             'parameters_sig-units': tool_belt.get_nv_sig_units(),
             'init_pulse_time': init_pulse_time,
@@ -818,12 +832,15 @@ def charge_spot_list(target_coords,readout_coords_list, parameters_sig, num_runs
 # %% Run the files
 
 if __name__ == '__main__':
-    sample_name = 'goeppert-mayer'
+    sample_name = 'johnson'
 #    NVA_coords = [0.169, 0.014, 5.2]
 #    NVB_coords = [0.396, -0.081, 5.2]
 #    dark_spot_1_coords = [0.392, -0.110,  5.2]
 #    dark_spot_2_coords = [0.108, 0.007, 5.2]
-    NV_target = [0.047, 0.030, 5.22]
+    
+    NV_target = [0.078- 0.018, 0.054 - 0.003, 5.22 + 0.04] #account for the drift on 11/16
+    NV_opti = [0.047, 0.030, 5.22]
+#    NV_target = [-0.971, 0.064, 5.22]
 
     nv_readout_list = [ [0.047, 0.031, 5.21],
     [0.051, 0.007, 5.21],
@@ -851,6 +868,45 @@ if __name__ == '__main__':
     [0.402, -0.169, 5.21],
     [0.354, 0.198, 5.28],
     [0.264, -0.032, 5.25],]
+    
+#    nv_readout_list = [[-0.955, 0.024, 5.24], 
+#                       [-0.970, 0.060, 5.20],
+#[-0.880, 0.005, 5.17],
+#[-1.151, 0.019, 5.18],
+#[-1.070, -0.053, 5.19],
+#[-0.852, -0.048, 5.15],
+#[-0.898, -0.105, 5.18],
+#[-1.139, -0.147, 5.20],
+#[-0.913, -0.169, 5.17],
+#[-0.973, -0.285, 5.25],
+#[-1.141, -0.316, 5.21],
+#[-0.833, -0.344, 5.22],
+#[-0.698, -0.220, 5.17],
+#[-1.033, -0.467, 5.17],
+#[-0.963, -0.468, 5.22],
+#[-1.143, -0.494, 5.25],
+#[-0.796, -0.561, 5.15],
+#[-0.806, -0.629, 5.25],
+#[-1.070, -0.682, 5.18],
+#[-0.796, -0.703, 5.20],
+#[-0.979, -0.773, 5.15],
+#[-1.174, -0.722, 5.19],
+#[-1.008, -0.831, 5.20],
+#[-1.102, -0.875, 5.15],
+#[-0.994, -0.925, 5.20],
+#[-0.954, -0.951, 5.18],
+#[-0.995, -1.035, 5.21],
+#[-1.008, -1.094, 5.19],
+#[-1.168, -1.170, 5.22],
+#[-1.250, -1.108, 5.19],
+#[-0.821, -1.187, 5.22],
+#[-0.844, -1.264, 5.25],
+#[-1.102, -1.304, 5.21],
+#[-0.996, -1.356, 5.19],
+#[-0.945, -1.391, 5.25],
+#[-1.318, -1.308, 5.25],
+#            
+#            ]
 
     num_runs = 60
 
@@ -865,86 +921,87 @@ if __name__ == '__main__':
 
 
     # run the measurements!
-#    for t_g in [10**9, 10**5, 10**6, 10**7, 10**8, 10**10]:
-    for t_g in [10**9]:
+    for t_g in [10**5, 10**6, 10**7, 10**8, 10**9, 10**10]:
+#    for t_g in [10**9]:
         base_nv_sig  = { 'coords':None,
                 'name': '{}-NVA'.format(sample_name),
-                'expected_count_rate': 70, 'nd_filter': 'nd_0',
+                'expected_count_rate': 60, 'nd_filter': 'nd_0',
                 'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2,
                 'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120,
                 'pulsed_reionization_dur': t_g, 'cobalt_532_power':20,
                 'magnet_angle': 0}
 #        charge_spot(NVA_coords, NVB_coords, dark_spot_1_coords, base_nv_sig, num_runs, 638)
 #        charge_spot(dark_spot_1_coords, NVA_coords, dark_spot_2_coords,base_nv_sig, num_runs, 638)
-        charge_spot_list(NV_target, nv_readout_list, base_nv_sig, num_runs, 638)
+        charge_spot_list(NV_target, NV_opti, nv_readout_list, base_nv_sig, num_runs, 638)
 
-    # file_1s = '2020_11_12-01_30_37-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
-    # file_10ms = '2020_11_12-08_42_14-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
-    # file_1ms = '2020_11_12-06_18_47-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
-    # file_100us = '2020_11_12-03_54_57-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
-    # # file_100ms = '2020_11_11-12_09_13-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-    # file_list = [file_1s, file_10ms, file_1ms, file_100us]
-    # fmt_list = ['o', '^', 's','x',  ]
-    #             # '+']
-
-    # sub_folder = 'isolate_nv_charge_dynamics/branch_Spin_to_charge/2020_11'
-
-
-    # fig, ax = plt.subplots(1, 1, figsize=(17, 8.5))
-    # i = 0
-    # for f in file_list:
-    #     data = tool_belt.get_raw_data(sub_folder, f)
-
-    #     parameters_sig = data['parameters_sig']
-    #     readout_coords_list = data['readout_coords_list']
-    #     target_coords = data['target_coords']
-    #     control_avg = numpy.array(data['control_avg'])
-    #     control_ste = numpy.array(data['control_ste'])
-    #     green_readout_avg = numpy.array(data['green_readout_avg'])
-    #     green_readout_ste = numpy.array(data['green_readout_ste'])
-    #     green_target_avg = numpy.array(data['green_target_avg'])
-    #     green_target_ste = numpy.array(data['green_target_ste'])
-
-    #     rad_dist_list = []
-    #     for coords in readout_coords_list:
-    #         coords_diff = numpy.array(target_coords) - numpy.array(coords)
-    #         coords_diff_sqrd = coords_diff**2
-    #         rad_dist = numpy.sqrt(sum(coords_diff_sqrd))
-    #         rad_dist_list.append(rad_dist)
-
-    #     rad_dist_list_um = numpy.array(rad_dist_list)*35
-    #     pulse_time = parameters_sig['pulsed_reionization_dur']
-
-    #     normalized_counts = (green_target_avg - control_avg) / \
-    #                                         (green_readout_avg - control_avg)
-
-    #     # calculating uncertainty
-    #     n = green_target_avg - control_avg
-    #     d = green_readout_avg - control_avg
-    #     term_1 = numpy.sqrt(green_target_ste**2 + control_ste**2)/n
-    #     term_2 = numpy.sqrt(green_readout_ste**2 + control_ste**2)/d
-    #     normalized_unc = normalized_counts*numpy.sqrt(term_1**2 + term_2**2)
-
-    #     # sorting the list based on the radial distance so we can do a line plot
-    #     paired_data = list(zip(rad_dist_list_um, normalized_counts, normalized_unc))
-    #     sorted_paired_data = sorted(paired_data, key=lambda x: x[0])
-
-    #     if f == file_1ms:
-    #         print(sorted_paired_data[12])
-    #         # sorted_paired_data[12]=(0,0,0)
-
-    #     sorted_rad_dist_list_um = [x[0] for x in sorted_paired_data]
-    #     sorted_normalized_counts = [x[1] for x in sorted_paired_data]
-    #     sorted_normalized_unc = [x[2] for x in sorted_paired_data]
-    #     # ax.errorbar(sorted_rad_dist_list_um, sorted_normalized_counts, fmt = fmt_list[i],
-    #     #             yerr = sorted_normalized_unc,
-    #     #             label = '{} ms green pulse'.format(pulse_time/10**6))
-    #     ax.plot(sorted_rad_dist_list_um, sorted_normalized_counts, fmt_list[i],
-    #                 label = '{} ms green pulse'.format(pulse_time/10**6))
-    #     ax.set_ylim([-1.5,2])
-    #     i += 1
-
-    # ax.set_title('Pulsed charge measurements on multiple NVs')
-    # ax.set_xlabel('Distance from central target NV (um)')
-    # ax.set_ylabel('Average counts')
-    # ax.legend()
+#    file_10s = '2020_11_14-08_53_17-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+#    file_1s = '2020_11_14-00_46_37-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+#    file_100ms = '2020_11_15-18_33_43-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+#    file_10ms = '2020_11_15-16_39_55-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+#    file_1ms = '2020_11_15-14_46_07-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+#    file_100us = '2020_11_15-12_51_40-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+#    file_list = [file_10s, file_1s,file_100ms, file_10ms, file_1ms, file_100us]
+#    fmt_list = ['D', 'o', '^', 's','x',  
+#                  '+']
+#
+#    sub_folder = 'isolate_nv_charge_dynamics/branch_Spin_to_charge/2020_11'
+#
+#
+#    fig, ax = plt.subplots(1, 1, figsize=(17, 8.5))
+#    i = 0
+#    for f in file_list:
+#         data = tool_belt.get_raw_data(sub_folder, f)
+#
+#         parameters_sig = data['parameters_sig']
+#         readout_coords_list = data['readout_coords_list']
+#         target_coords = data['target_coords']
+#         control_avg = numpy.array(data['control_avg'])
+#         control_ste = numpy.array(data['control_ste'])
+#         green_readout_avg = numpy.array(data['green_readout_avg'])
+#         green_readout_ste = numpy.array(data['green_readout_ste'])
+#         green_target_avg = numpy.array(data['green_target_avg'])
+#         green_target_ste = numpy.array(data['green_target_ste'])
+#
+#         rad_dist_list = []
+#         for coords in readout_coords_list:
+#             coords_diff = numpy.array(target_coords) - numpy.array(coords)
+#             coords_diff_sqrd = coords_diff**2
+#             rad_dist = numpy.sqrt(sum(coords_diff_sqrd))
+#             rad_dist_list.append(rad_dist)
+#
+#         rad_dist_list_um = numpy.array(rad_dist_list)*35
+#         pulse_time = parameters_sig['pulsed_reionization_dur']
+#
+#         normalized_counts = (green_target_avg - control_avg) / \
+#                                             (green_readout_avg - control_avg)
+#
+#         # calculating uncertainty
+#         n = green_target_avg - control_avg
+#         d = green_readout_avg - control_avg
+#         term_1 = numpy.sqrt(green_target_ste**2 + control_ste**2)/n
+#         term_2 = numpy.sqrt(green_readout_ste**2 + control_ste**2)/d
+#         normalized_unc = normalized_counts*numpy.sqrt(term_1**2 + term_2**2)
+#
+#         # sorting the list based on the radial distance so we can do a line plot
+#         paired_data = list(zip(rad_dist_list_um, normalized_counts, normalized_unc))
+#         sorted_paired_data = sorted(paired_data, key=lambda x: x[0])
+#
+#         if f == file_1ms:
+#             print(sorted_paired_data[12])
+#             # sorted_paired_data[12]=(0,0,0)
+#
+#         sorted_rad_dist_list_um = [x[0] for x in sorted_paired_data]
+#         sorted_normalized_counts = [x[1] for x in sorted_paired_data]
+#         sorted_normalized_unc = [x[2] for x in sorted_paired_data]
+#         ax.errorbar(sorted_rad_dist_list_um, sorted_normalized_counts, fmt = fmt_list[i],
+#                      yerr = sorted_normalized_unc,
+#                      label = '{} ms green pulse'.format(pulse_time/10**6))
+##         ax.plot(sorted_rad_dist_list_um, sorted_normalized_counts, fmt_list[i],
+##                     label = '{} ms green pulse'.format(pulse_time/10**6))
+##         ax.set_ylim([-1.5,2])
+#         i += 1
+#
+#    ax.set_title('Pulsed charge measurements on multiple NVs')
+#    ax.set_xlabel('Distance from central target NV (um)')
+#    ax.set_ylabel('Average counts')
+#    ax.legend()
