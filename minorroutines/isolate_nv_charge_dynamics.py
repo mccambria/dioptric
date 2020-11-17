@@ -10,7 +10,7 @@ import majorroutines.optimize as optimize
 import numpy
 import time
 import matplotlib.pyplot as plt
-import labrad
+# import labrad
 import majorroutines.image_sample as image_sample
 import copy
 import scipy.stats as stats
@@ -932,76 +932,125 @@ if __name__ == '__main__':
                 'magnet_angle': 0}
 #        charge_spot(NVA_coords, NVB_coords, dark_spot_1_coords, base_nv_sig, num_runs, 638)
 #        charge_spot(dark_spot_1_coords, NVA_coords, dark_spot_2_coords,base_nv_sig, num_runs, 638)
-        charge_spot_list(NV_target, NV_opti, nv_readout_list, base_nv_sig, num_runs, 638)
+        # charge_spot_list(NV_target, NV_opti, nv_readout_list, base_nv_sig, num_runs, 638)
 
-#    file_10s = '2020_11_14-08_53_17-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-#    file_1s = '2020_11_14-00_46_37-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-#    file_100ms = '2020_11_15-18_33_43-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-#    file_10ms = '2020_11_15-16_39_55-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-#    file_1ms = '2020_11_15-14_46_07-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-#    file_100us = '2020_11_15-12_51_40-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
-#    file_list = [file_10s, file_1s,file_100ms, file_10ms, file_1ms, file_100us]
-#    fmt_list = ['D', 'o', '^', 's','x',  
-#                  '+']
-#
-#    sub_folder = 'isolate_nv_charge_dynamics/branch_Spin_to_charge/2020_11'
-#
-#
-#    fig, ax = plt.subplots(1, 1, figsize=(17, 8.5))
-#    i = 0
-#    for f in file_list:
-#         data = tool_belt.get_raw_data(sub_folder, f)
-#
-#         parameters_sig = data['parameters_sig']
-#         readout_coords_list = data['readout_coords_list']
-#         target_coords = data['target_coords']
-#         control_avg = numpy.array(data['control_avg'])
-#         control_ste = numpy.array(data['control_ste'])
-#         green_readout_avg = numpy.array(data['green_readout_avg'])
-#         green_readout_ste = numpy.array(data['green_readout_ste'])
-#         green_target_avg = numpy.array(data['green_target_avg'])
-#         green_target_ste = numpy.array(data['green_target_ste'])
-#
-#         rad_dist_list = []
-#         for coords in readout_coords_list:
-#             coords_diff = numpy.array(target_coords) - numpy.array(coords)
-#             coords_diff_sqrd = coords_diff**2
-#             rad_dist = numpy.sqrt(sum(coords_diff_sqrd))
-#             rad_dist_list.append(rad_dist)
-#
-#         rad_dist_list_um = numpy.array(rad_dist_list)*35
-#         pulse_time = parameters_sig['pulsed_reionization_dur']
-#
-#         normalized_counts = (green_target_avg - control_avg) / \
-#                                             (green_readout_avg - control_avg)
-#
-#         # calculating uncertainty
-#         n = green_target_avg - control_avg
-#         d = green_readout_avg - control_avg
-#         term_1 = numpy.sqrt(green_target_ste**2 + control_ste**2)/n
-#         term_2 = numpy.sqrt(green_readout_ste**2 + control_ste**2)/d
-#         normalized_unc = normalized_counts*numpy.sqrt(term_1**2 + term_2**2)
-#
-#         # sorting the list based on the radial distance so we can do a line plot
-#         paired_data = list(zip(rad_dist_list_um, normalized_counts, normalized_unc))
-#         sorted_paired_data = sorted(paired_data, key=lambda x: x[0])
-#
-#         if f == file_1ms:
-#             print(sorted_paired_data[12])
-#             # sorted_paired_data[12]=(0,0,0)
-#
-#         sorted_rad_dist_list_um = [x[0] for x in sorted_paired_data]
-#         sorted_normalized_counts = [x[1] for x in sorted_paired_data]
-#         sorted_normalized_unc = [x[2] for x in sorted_paired_data]
-#         ax.errorbar(sorted_rad_dist_list_um, sorted_normalized_counts, fmt = fmt_list[i],
-#                      yerr = sorted_normalized_unc,
-#                      label = '{} ms green pulse'.format(pulse_time/10**6))
-##         ax.plot(sorted_rad_dist_list_um, sorted_normalized_counts, fmt_list[i],
-##                     label = '{} ms green pulse'.format(pulse_time/10**6))
-##         ax.set_ylim([-1.5,2])
-#         i += 1
-#
-#    ax.set_title('Pulsed charge measurements on multiple NVs')
-#    ax.set_xlabel('Distance from central target NV (um)')
-#    ax.set_ylabel('Average counts')
-#    ax.legend()
+    norm_sub_folder = 'collect_charge_counts/branch_Spin_to_charge/2020_11'
+    # norm_file = '2020_11_16-16_04_47-johnson-2020_11_10-nv_list' # 11/10 - 15 um
+    norm_file = '2020_11_16-15_49_59-johnson-2020_11_13-nv_list' # 11/13 - 50 um
+
+
+    file_10s_dark = '2020_11_17-10_17_37-johnson-NVA-isoalted_nv_charge_list-red_init'
+    file_10s_ggNV ='2020_11_12-18_02_49-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_10s_grNV ='2020_11_13-09_17_25-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_10s_rgNV_extent = '2020_11_14-08_53_17-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    
+    file_1s_NV = '2020_11_11-01_07_19-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_1s_dark = '2020_11_17-04_23_50-johnson-NVA-isoalted_nv_charge_list-red_init'
+    file_1s_ggNV ='2020_11_12-01_30_37-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_1s_grNV ='2020_11_12-21_16_25-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_1s_rgNV_extent = '2020_11_14-00_46_37-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    
+    file_100ms_NV = '2020_11_11-12_09_13-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_100ms_dark = '2020_11_17-02_35_42-johnson-NVA-isoalted_nv_charge_list-red_init'
+    file_100ms_ggNV ='2020_11_12-11_05_05-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_100ms_grNV ='2020_11_13-06_52_53-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_100ms_rgNV_extent = '2020_11_15-18_33_43-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    
+    file_10ms_NV = '2020_11_11-08_15_52-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_10ms_dark = '2020_11_17-01_14_10-johnson-NVA-isoalted_nv_charge_list-red_init'
+    file_10ms_ggNV ='2020_11_12-08_42_14-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_10ms_grNV ='2020_11_13-04_28_42-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_10ms_rgNV_extent = '2020_11_15-16_39_55-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    
+    file_1ms_NV = '2020_11_11-05_53_03-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_1ms_dark = '2020_11_16-23_52_36-johnson-NVA-isoalted_nv_charge_list-red_init'
+    file_1ms_ggNV ='2020_11_12-06_18_47-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_1ms_grNV ='2020_11_13-02_04_51-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_1ms_rgNV_extent = '2020_11_15-14_46_07-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    
+    file_100us_NV = '2020_11_11-03_30_38-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_100us_dark = '2020_11_16-22_30_50-johnson-NVA-isoalted_nv_charge_list-red_init'
+    file_100us_ggNV= '2020_11_12-03_54_57-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_100us_grNV ='2020_11_12-23_40_33-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
+    file_10ous_rgNV_extent = '2020_11_15-12_51_40-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    
+    file_list = [file_10s_rgNV_extent, file_1s_rgNV_extent, file_100ms_rgNV_extent, 
+                 file_10ms_rgNV_extent, file_1ms_rgNV_extent, file_10ous_rgNV_extent]
+    fmt_list = ['D', 
+                'o', 
+                '^', 's','x',  
+                   '+']
+    # label_list = ['1 s green, new normalization']
+
+    sub_folder = 'isolate_nv_charge_dynamics/branch_Spin_to_charge/2020_11'
+
+
+    fig, ax = plt.subplots(1, 1, figsize=(17, 8.5))
+    norm_data = tool_belt.get_raw_data(norm_sub_folder, norm_file)
+
+    control_avg = numpy.array(norm_data['nv0_avg_list'])
+    control_ste = numpy.array(norm_data['nv0_ste_list'])
+    green_readout_avg = numpy.array(norm_data['nvm_avg_list'])
+    green_readout_ste = numpy.array(norm_data['nvm_ste_list'])    
+    
+    i = 0
+    for f in file_list:
+        data = tool_belt.get_raw_data(sub_folder, f)
+
+        parameters_sig = data['parameters_sig']
+        readout_coords_list = data['readout_coords_list']
+        target_coords = data['target_coords']
+        # control_avg = numpy.array(data['control_avg'])
+        # control_ste = numpy.array(data['control_ste'])
+        # green_readout_avg = numpy.array(data['green_readout_avg'])
+        # green_readout_ste = numpy.array(data['green_readout_ste'])
+        green_target_avg = numpy.array(data['green_target_avg'])
+        green_target_ste = numpy.array(data['green_target_ste'])
+        # rad_dist_list = data['rad_dist_list']
+        
+        rad_dist_list = []
+        for coords in readout_coords_list:
+            coords_diff = numpy.array(target_coords) - numpy.array(coords)
+            coords_diff_sqrd = coords_diff**2
+            rad_dist = numpy.sqrt(sum(coords_diff_sqrd))
+            rad_dist_list.append(rad_dist)
+
+        rad_dist_list_um = numpy.array(rad_dist_list)*35
+        pulse_time = parameters_sig['pulsed_reionization_dur']
+
+        normalized_counts = (green_target_avg - control_avg) / (green_readout_avg - control_avg)
+
+        # calculating uncertainty
+        n = green_target_avg - control_avg
+        d = green_readout_avg - control_avg
+        term_1 = numpy.sqrt(green_target_ste**2 + control_ste**2)/n
+        term_2 = numpy.sqrt(green_readout_ste**2 + control_ste**2)/d
+        normalized_unc = normalized_counts*numpy.sqrt(term_1**2 + term_2**2)
+        
+        # sorting the list based on the radial distance so we can do a line plot
+        paired_data = list(zip(rad_dist_list_um, normalized_counts, normalized_unc))
+        sorted_paired_data = sorted(paired_data, key=lambda x: x[0])
+
+        sorted_rad_dist_list_um = [x[0] for x in sorted_paired_data]
+        sorted_normalized_counts = [x[1] for x in sorted_paired_data]
+        sorted_normalized_unc = [x[2] for x in sorted_paired_data]
+        
+        ax.errorbar(rad_dist_list_um, normalized_counts, fmt = fmt_list[i],
+                      yerr = normalized_unc,
+                # label = label_list[i])
+                      label = '{} ms green pulse'.format(pulse_time/10**6))
+        
+        # ax.plot(rad_dist_list_um, normalized_counts, fmt_list[i],
+        #         # label = label_list[i])
+        #                 label = '{} ms green pulse'.format(pulse_time/10**6))
+                    
+        # ax.errorbar(rad_dist_list_um, green_target_avg, yerr=green_target_ste, fmt ='o', label = 'target')
+        # ax.errorbar(rad_dist_list_um, green_readout_avg, yerr=green_readout_ste, fmt='o', label = 'nv-')
+        # ax.errorbar(rad_dist_list_um, control_avg, yerr=control_ste, fmt='o', label = 'nv0')
+#         ax.set_ylim([-1.5,2])
+        i += 1
+
+    ax.set_title('Pulsed charge measurements on multiple NVs (red initialization, green pulse), on NV')
+    ax.set_xlabel('Distance from central target NV (um)')
+    ax.set_ylabel('Average counts')
+    ax.legend()
