@@ -935,52 +935,58 @@ if __name__ == '__main__':
         # charge_spot_list(NV_target, NV_opti, nv_readout_list, base_nv_sig, num_runs, 638)
 
     norm_sub_folder = 'collect_charge_counts/branch_Spin_to_charge/2020_11'
-    # norm_file = '2020_11_16-16_04_47-johnson-2020_11_10-nv_list' # 11/10 - 15 um
-    norm_file = '2020_11_16-15_49_59-johnson-2020_11_13-nv_list' # 11/13 - 50 um
+    norm_file = '2020_11_16-16_04_47-johnson-2020_11_10-nv_list' # 11/10 - 15 um
+    # norm_file = '2020_11_16-15_49_59-johnson-2020_11_13-nv_list' # 11/13 - 50 um
 
 
     file_10s_dark = '2020_11_17-10_17_37-johnson-NVA-isoalted_nv_charge_list-red_init'
     file_10s_ggNV ='2020_11_12-18_02_49-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_10s_grNV ='2020_11_13-09_17_25-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_10s_rgNV_extent = '2020_11_14-08_53_17-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_10s_rrNV = '2020_11_18-00_58_36-johnson-NVA-isoalted_nv_charge_list-red_init'
     
     file_1s_NV = '2020_11_11-01_07_19-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
     file_1s_dark = '2020_11_17-04_23_50-johnson-NVA-isoalted_nv_charge_list-red_init'
     file_1s_ggNV ='2020_11_12-01_30_37-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_1s_grNV ='2020_11_12-21_16_25-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_1s_rgNV_extent = '2020_11_14-00_46_37-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_1s_rrNV = '2020_11_17-23_35_21-johnson-NVA-isoalted_nv_charge_list-red_init'
     
     file_100ms_NV = '2020_11_11-12_09_13-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
     file_100ms_dark = '2020_11_17-02_35_42-johnson-NVA-isoalted_nv_charge_list-red_init'
     file_100ms_ggNV ='2020_11_12-11_05_05-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_100ms_grNV ='2020_11_13-06_52_53-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_100ms_rgNV_extent = '2020_11_15-18_33_43-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_100ms_rrNV = '2020_11_17-22_12_11-johnson-NVA-isoalted_nv_charge_list-red_init'
     
     file_10ms_NV = '2020_11_11-08_15_52-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
     file_10ms_dark = '2020_11_17-01_14_10-johnson-NVA-isoalted_nv_charge_list-red_init'
     file_10ms_ggNV ='2020_11_12-08_42_14-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_10ms_grNV ='2020_11_13-04_28_42-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_10ms_rgNV_extent = '2020_11_15-16_39_55-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_10ms_rrNV = '2020_11_17-20_49_00-johnson-NVA-isoalted_nv_charge_list-red_init'
     
     file_1ms_NV = '2020_11_11-05_53_03-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
     file_1ms_dark = '2020_11_16-23_52_36-johnson-NVA-isoalted_nv_charge_list-red_init'
     file_1ms_ggNV ='2020_11_12-06_18_47-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_1ms_grNV ='2020_11_13-02_04_51-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_1ms_rgNV_extent = '2020_11_15-14_46_07-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_1ms_rrNV = '2020_11_17-19_25_37-johnson-NVA-isoalted_nv_charge_list-red_init'
     
     file_100us_NV = '2020_11_11-03_30_38-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
     file_100us_dark = '2020_11_16-22_30_50-johnson-NVA-isoalted_nv_charge_list-red_init'
     file_100us_ggNV= '2020_11_12-03_54_57-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
     file_100us_grNV ='2020_11_12-23_40_33-goeppert-mayer-NVA-isoalted_nv_charge_list-green_init'
-    file_10ous_rgNV_extent = '2020_11_15-12_51_40-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_100us_rgNV_extent = '2020_11_15-12_51_40-goeppert-mayer-NVA-isoalted_nv_charge_list-red_init'
+    file_100us_rrNV = '2020_11_17-18_02_27-johnson-NVA-isoalted_nv_charge_list-red_init'
     
-    file_list = [file_10s_rgNV_extent, file_1s_rgNV_extent, file_100ms_rgNV_extent, 
-                 file_10ms_rgNV_extent, file_1ms_rgNV_extent, file_10ous_rgNV_extent]
+    file_list = [file_10s_dark,file_1s_dark,file_100ms_dark, 
+                 file_10ms_dark, file_1ms_dark, file_100us_dark]
     fmt_list = ['D', 
                 'o', 
                 '^', 's','x',  
                    '+']
-    # label_list = ['1 s green, new normalization']
+    # label_list = ['target data', 'nv0', 'nv-']
 
     sub_folder = 'isolate_nv_charge_dynamics/branch_Spin_to_charge/2020_11'
 
@@ -1035,10 +1041,21 @@ if __name__ == '__main__':
         sorted_normalized_counts = [x[1] for x in sorted_paired_data]
         sorted_normalized_unc = [x[2] for x in sorted_paired_data]
         
-        ax.errorbar(rad_dist_list_um, normalized_counts, fmt = fmt_list[i],
-                      yerr = normalized_unc,
+        # For plotting things a little clearer, exclude NVs withlarge uncertainty
+        del_list = []
+        for u in range(len(sorted_normalized_unc)):
+            unc= abs(sorted_normalized_unc[u])
+            if unc > 1:
+                del_list.append(u)
+        for d in sorted(del_list, reverse=True):
+            del sorted_rad_dist_list_um[d]
+            del sorted_normalized_counts[d]
+            del sorted_normalized_unc[d]
+            
+        ax.errorbar(sorted_rad_dist_list_um, sorted_normalized_counts, fmt = fmt_list[i],
+                      yerr = sorted_normalized_unc,
                 # label = label_list[i])
-                      label = '{} ms green pulse'.format(pulse_time/10**6))
+                        label = '{} ms green pulse'.format(pulse_time/10**6))
         
         # ax.plot(rad_dist_list_um, normalized_counts, fmt_list[i],
         #         # label = label_list[i])
@@ -1047,10 +1064,10 @@ if __name__ == '__main__':
         # ax.errorbar(rad_dist_list_um, green_target_avg, yerr=green_target_ste, fmt ='o', label = 'target')
         # ax.errorbar(rad_dist_list_um, green_readout_avg, yerr=green_readout_ste, fmt='o', label = 'nv-')
         # ax.errorbar(rad_dist_list_um, control_avg, yerr=control_ste, fmt='o', label = 'nv0')
-#         ax.set_ylim([-1.5,2])
+        # ax.set_ylim([-1.5,2])
         i += 1
 
-    ax.set_title('Pulsed charge measurements on multiple NVs (red initialization, green pulse), on NV')
+    ax.set_title('Pulsed charge measurements on multiple NVs (red initialization, green pulse), on dark spot')
     ax.set_xlabel('Distance from central target NV (um)')
-    ax.set_ylabel('Average counts')
+    ax.set_ylabel('Normalized counts')
     ax.legend()
