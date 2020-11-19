@@ -710,7 +710,7 @@ if __name__ == '__main__':
         nv_sig_list.append(nv_sig_temp)
         i = i+1
    
-    nv_sig_list = [dark_spot_2020_11_10]
+    nv_sig_list = [nv1_2020_11_10]
 
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
@@ -753,7 +753,7 @@ if __name__ == '__main__':
 #            with labrad.connect() as cxn:
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 ##    
-#            do_optimize(nv_sig, apd_indices, 532)
+            do_optimize(nv_sig, apd_indices, 532)
 #            for z in numpy.linspace(5.5, 2.5, 31):
 #                    nv_sig_copy = copy.deepcopy(nv_sig)
 #                    [coord_x, coord_y, coord_z] = nv_sig['coords']
@@ -765,7 +765,7 @@ if __name__ == '__main__':
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = nv_sig['pulsed_SCC_readout_dur'])
 
 #            do_determine_galvo_response(nv_sig, apd_indices)

@@ -381,6 +381,29 @@ class ApdTagger(LabradServer):
     @setting(8)
     def reset(self, c):
         self.stop_tag_stream_internal()
+        
+    @setting(10, returns='*s*i')    
+    def read_tag_stream_master(self, c):
+        """Read the stream started with start_tag_stream. Returns two lists,
+        each as long as the number of counts that have occurred since the
+        buffer was refreshed. First list is timestamps in ps, second is
+        channel indices. The list is now a string, so that transferring it 
+        thru labrad is quicker.
+        """
+        if self.stream is None:
+            logging.error('read_tag_stream attempted while stream is None.')
+            return
+        timestamps, channels = self.read_raw_stream()
+        # Convert timestamps to strings since labrad does not support int64s
+        # It must be converted to int64s back on the client
+        timestamps = timestamps.astype(str).tolist()
+        return timestamps, channels
+#        ret_vals = []  # List of comma delimited strings to minimize data
+#        for ind in range(len(timestamps)):
+#            ret_vals.append('{},{}'.format(timestamps[ind], channels[ind]))
+#        delim = '.'
+#        ret_vals_string = delim.join(ret_vals)
+#        return ret_vals_string
 
 __server__ = ApdTagger()
 

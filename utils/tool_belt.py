@@ -104,6 +104,20 @@ def get_pulse_streamer_wiring(cxn):
         pulse_streamer_wiring[key] = wiring[key]
     return pulse_streamer_wiring
 
+def get_time_tagger_wiring(cxn):
+    cxn.registry.cd(['', 'Config', 'Wiring', 'Tagger'])
+    sub_folders, keys = cxn.registry.dir()
+    if keys == []:
+        return {}
+    p = cxn.registry.packet()
+    for key in keys:
+        p.get(key, key=key)  # Return as a dictionary
+    wiring = p.send()
+    pulse_streamer_wiring = {}
+    for key in keys:
+        pulse_streamer_wiring[key] = wiring[key]
+    return pulse_streamer_wiring
+
 # %% adp_tagger utils
     
 def decode_time_tags(ret_vals_string):
