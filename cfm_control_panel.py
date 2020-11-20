@@ -753,7 +753,7 @@ if __name__ == '__main__':
 #            with labrad.connect() as cxn:
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 ##    
-            do_optimize(nv_sig, apd_indices, 532)
+#            do_optimize(nv_sig, apd_indices, 532)
 #            for z in numpy.linspace(5.5, 2.5, 31):
 #                    nv_sig_copy = copy.deepcopy(nv_sig)
 #                    [coord_x, coord_y, coord_z] = nv_sig['coords']
@@ -771,7 +771,7 @@ if __name__ == '__main__':
 #            do_determine_galvo_response(nv_sig, apd_indices)
 
             
-#            do_stationary_count(nv_sig, apd_indices, 532)            
+            do_stationary_count(nv_sig, apd_indices, 532)            
 #            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
 #                                  2*10**7, apd_indices) 
 #            do_time_resolved_readout(nv_sig, apd_indices,

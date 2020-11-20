@@ -93,13 +93,18 @@ def get_seq(pulser_wiring, args):
     seq = Sequence()
     
     # APD 
-    train = [(period - readout_time - 100, LOW), (readout_time, HIGH), (100, LOW)]
+#    train = [(period - readout_time - 100, LOW), (readout_time, HIGH), (100, LOW)]
+    train = [(total_laser_delay, LOW), (initialization_time, HIGH),
+             (100 + galvo_time, LOW), (pulse_time, HIGH),
+             (100 + galvo_time, LOW), (readout_time, HIGH),
+             (100, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
     # clock
-    train = [(total_laser_delay + initialization_time, LOW),(100, HIGH),
-             (galvo_time + pulse_time, LOW), (100, HIGH), 
-             (galvo_time + readout_time, LOW), (100, HIGH)] 
+#    train = [(total_laser_delay + initialization_time, LOW),(100, HIGH),
+#             (galvo_time + pulse_time, LOW), (100, HIGH), 
+#             (galvo_time + readout_time, LOW), (100, HIGH)] 
+    train = [(period - 100, LOW), (100, HIGH)]
     seq.setDigital(pulser_do_clock, train)
     
     # start each laser sequence
