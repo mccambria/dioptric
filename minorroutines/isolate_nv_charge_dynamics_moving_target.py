@@ -19,17 +19,98 @@ import copy
 import scipy.stats as stats
 
 
-def moving_target(nv_sig, x_range, num_steps, init_color, pulse_color):
+def moving_target(nv_sig, x_range, num_steps, num_runs, init_color, pulse_color):
+    with labrad.connect() as cxn:
+        moving_target_with_cxn(cxn, nv_sig, x_range, num_steps,num_runs,  init_color, pulse_color)
+    return
+        
+def moving_target_with_cxn(cxn, nv_sig, x_range, num_steps,num_runs, init_color, pulse_color):
+        
     # Define paramters
+    apd_indices = [0]
     
-    # optimize on the readout NV
+    opti_coords_list = []
     
-    # for the values we want to pulse the laser at
+    drift = numpy.array(tool_belt.det_drift())
+    # make a list of the coords that we'll send to the glavo
+    # we want this list to have the pattern [[target], [readout], [readout], ...]
+    coords_to_step_thru = []
     
-        # initialize the readout NV
+    # get the readout coords with drift
+    readout_coords = numpy.array(nv_sig['coords'])
+    readout_coords_drift = readout_coords + drift
+    
+    # calculate the x values we want to step thru
+    start_x_value = readout_coords_drift[0]
+    end_x_value = start_x_value + x_range
+    target_x_values = numpy.linspace(start_x_value, end_x_value, num_steps)
+    
+    # now create a list of all the coords we want to feed to the galvo
+    for x in target_x_values:
+        target_coords_drift  = [x, readout_coords_drift[1], readout_coords_drift[2]]
+        coords_to_step_thru.append(target_coords_drift)
+        coords_to_step_thru.append(readout_coords_drift)
+        coords_to_step_thru.append(readout_coords_drift)       
+        # might need to add one last coord for it to work, we'll see
+    
+    for r in num_runs:    
+        # optimize on the readout NV
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
+        opti_coords_list.append(opti_coords)
+            
+        # start on the readout NV
+        tool_belt.set_xyx(readout_coords_drift)
         
-        # pulse the laser some distance away from the readout NV
+        # define the sequence paramters
+        file_name = 'isolate_nv_charge_dynamics_moving_target.py'
+        seq_args = [ initialization_time, pulse_time, readout_time, 
+            delay_532, delay_589, delay_638, 
+            galvo_time, am_589_power, apd_indices[0], init_color, pulse_color, 589]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
         
-        # readout the counts
+        
+        # stream the galvo
+        
+        # stream the sequence, the number of reps are euqal to the number of steps for the target
+        cxn.pulse_streamer.stream_immediate(file_name, num_steps, seq_args_string)
+        
+        #  Set up the APD
+        cxn.apd_tagger.start_tag_stream(apd_indices)
+        
+         cxn.apd_tagger.clear_buffer()
+         
+         @ Taken from image_sample
+#     cxn.pulse_streamer.stream_start(total_num_samples)
+#
+#    timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
+#    timeout_inst = time.time() + timeout_duration
+#
+#    num_read_so_far = 0
+#
+#    tool_belt.init_safe_stop()
+#
+#    while num_read_so_far < total_num_samples:
+#
+#        if time.time() > timeout_inst:
+#            break
+#
+#        if tool_belt.safe_stop():
+#            break
+#
+#        # Read the samples and update the image
+#        new_samples = cxn.apd_tagger.read_counter_simple()
+##        print(new_samples)
+#        num_new_samples = len(new_samples)
+#        if num_new_samples > 0:           
+#            populate_img_array(new_samples, img_array, img_write_pos)
+#            # This is a horribly inefficient way of getting kcps, but it
+#            # is easy and readable and probably fine up to some resolution
+#            if plot_data:
+##                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
+#                tool_belt.update_image_figure(fig, img_array)
+#            num_read_so_far += num_new_samples
+        
+   
+
     
     return
