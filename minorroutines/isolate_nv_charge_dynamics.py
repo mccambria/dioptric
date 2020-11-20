@@ -211,104 +211,104 @@ def readout_list_with_cxn(cxn, readout_coords_list, parameters_sig, apd_indices,
 
         # readout on NV in yellow
         
-        seq_args = [aom_589_delay, int(readout_pulse_time), aom_ao_589_pwr, apd_index, 589]    #simple readout
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
-        
-        cxn.pulse_streamer.stream_load(readout_file_name, seq_args_string) # 0.01 s
-                
-        # collect the counts
-        cxn.apd_tagger.start_tag_stream(apd_indices) # 0.2 s
-        # Clear the buffer
-        cxn.apd_tagger.clear_buffer() #0.12 s
-        # Run the sequence
-        cxn.pulse_streamer.stream_immediate(readout_file_name, 1, seq_args_string) #0.05 s
-
-        new_counts = cxn.apd_tagger.read_counter_simple(1) # 0.25 s
-        sig_counts = new_counts[0]
-        signal_counts_list.append(int(sig_counts))
-
-        cxn.apd_tagger.stop_tag_stream() # 0.01 s
+#        seq_args = [aom_589_delay, int(readout_pulse_time), aom_ao_589_pwr, apd_index, 589]    #simple readout
+#        seq_args_string = tool_belt.encode_seq_args(seq_args)
+#        
+#        cxn.pulse_streamer.stream_load(readout_file_name, seq_args_string) # 0.01 s
+#                
+#        # collect the counts
+#        cxn.apd_tagger.start_tag_stream(apd_indices) # 0.2 s
+#        # Clear the buffer
+#        cxn.apd_tagger.clear_buffer() #0.12 s
+#        # Run the sequence
+#        cxn.pulse_streamer.stream_immediate(readout_file_name, 1, seq_args_string) #0.05 s
+#
+#        new_counts = cxn.apd_tagger.read_counter_simple(1) # 0.25 s
+#        sig_counts = new_counts[0]
+#        signal_counts_list.append(int(sig_counts))
+#
+#        cxn.apd_tagger.stop_tag_stream() # 0.01 s
                 
         ############### try time resolved readout
-#        
-#        processed_tags = []
-#        num_reps=1
-#        # Expose the stream
-#        cxn.apd_tagger.start_tag_stream(apd_indices, apd_indices, False)
-#    
-#        # Find the gate channel
-#        # The order of channel_mapping is APD, APD gate open, APD gate close
-#        channel_mapping = cxn.apd_tagger.get_channel_mapping()
-#        gate_open_channel = channel_mapping[1]
-#        gate_close_channel = channel_mapping[2]
-#        # Get the channel number for the clock on the tagger
-#        clock_wiring = tool_belt.get_time_tagger_wiring(cxn)
-#        clock_channel = clock_wiring['di_clock']
-#            
-#        # Stream the sequence
-#        seq_args = [readout_pulse_time, aom_589_delay ,
-#                aom_ao_589_pwr, apd_index,
-#                589]
-##        print(seq_args)
-#        seq_args_string = tool_belt.encode_seq_args(seq_args)
-#        cxn.pulse_streamer.stream_immediate('time_resolved_readout_clock_in_seq.py', int(num_reps),
-#                                            seq_args_string)
-#        time.sleep(1)
-##        time.sleep(10)
-#        # Initialize state
-#        current_tags = []
-#        current_channels = []
-#        num_processed_reps = 0
-#
-#        while num_processed_reps < num_reps:
-#            
-#            # Break out of the while if the user says stop
-#            if tool_belt.safe_stop():
-#                break
-#            
-##            ret_vals_string = cxn.apd_tagger.read_tag_stream()
-##            new_tags,new_channels = tool_belt.decode_time_tags(ret_vals_string)
-#            new_tags, new_channels = cxn.apd_tagger.read_tag_stream_master()
-#            new_tags = numpy.array(new_tags, dtype=numpy.int64)
-#            print(new_tags)
-#            print(new_channels)
-#            if new_tags == []:
-#                continue
-#                        
-#            # MCC test
-#            if len(new_tags) > 750000:
-#                print()
-#                print('Received {} tags out of 10^6 max'.format(len(new_tags)))
-#                print('Turn down the reps and turn up the runs so that the Time Tagger can catch up!')
-#            
-#            ret_vals = time_resolved_readout.process_raw_buffer(new_tags, new_channels,
-#                                   current_tags, current_channels,
-#                                   gate_open_channel, gate_close_channel)
-#            new_processed_tags, num_new_processed_reps = ret_vals
-#            
-#            num_processed_reps += num_new_processed_reps
-#            
-#            processed_tags.extend(new_processed_tags)
-#            
-#            
-#        initial_clock = numpy.where(new_channels==clock_channel )[0][0]
-#        initial_gate = numpy.where(new_channels==gate_open_channel )[0][0]
-#        print(initial_clock)
-#        time_passed_ps = processed_tags[initial_clock] - processed_tags[initial_gate]
-#        print(time_passed_ps/10**12)
-#        
-#        processed_tags = [int(el) for el in processed_tags]
-#        readout_time_ps = 1000*readout_pulse_time
-#        num_bins = 100
-#        binned_samples, bin_edges = numpy.histogram(processed_tags, num_bins,
-#                                    (0, readout_time_ps))
-#        signal_counts_list.append(int(sum(binned_samples)))
-#        
-#        # Compute the centers of the bins
-#    bin_size = readout_pulse_time / num_bins
-#    bin_center_offset = bin_size / 2
-#    bin_centers = numpy.linspace(0, readout_pulse_time, num_bins) + bin_center_offset
-##    print(bin_centers)
+        
+        processed_tags = []
+        num_reps=1
+        # Expose the stream
+        cxn.apd_tagger.start_tag_stream(apd_indices, apd_indices, False)
+    
+        # Find the gate channel
+        # The order of channel_mapping is APD, APD gate open, APD gate close
+        channel_mapping = cxn.apd_tagger.get_channel_mapping()
+        gate_open_channel = channel_mapping[1]
+        gate_close_channel = channel_mapping[2]
+        # Get the channel number for the clock on the tagger
+        clock_wiring = tool_belt.get_time_tagger_wiring(cxn)
+        clock_channel = clock_wiring['di_clock']
+            
+        # Stream the sequence
+        seq_args = [readout_pulse_time, aom_589_delay ,
+                aom_ao_589_pwr, apd_index,
+                589]
+#        print(seq_args)
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.pulse_streamer.stream_immediate('time_resolved_readout_clock_in_seq.py', int(num_reps),
+                                            seq_args_string)
+        time.sleep(1)
+#        time.sleep(10)
+        # Initialize state
+        current_tags = []
+        current_channels = []
+        num_processed_reps = 0
+
+        while num_processed_reps < num_reps:
+            
+            # Break out of the while if the user says stop
+            if tool_belt.safe_stop():
+                break
+            
+#            ret_vals_string = cxn.apd_tagger.read_tag_stream()
+#            new_tags,new_channels = tool_belt.decode_time_tags(ret_vals_string)
+            new_tags, new_channels = cxn.apd_tagger.read_tag_stream_master()
+            new_tags = numpy.array(new_tags, dtype=numpy.int64)
+            print(new_tags)
+            print(new_channels)
+            if new_tags == []:
+                continue
+                        
+            # MCC test
+            if len(new_tags) > 750000:
+                print()
+                print('Received {} tags out of 10^6 max'.format(len(new_tags)))
+                print('Turn down the reps and turn up the runs so that the Time Tagger can catch up!')
+            
+            ret_vals = time_resolved_readout.process_raw_buffer(new_tags, new_channels,
+                                   current_tags, current_channels,
+                                   gate_open_channel, gate_close_channel)
+            new_processed_tags, num_new_processed_reps = ret_vals
+            
+            num_processed_reps += num_new_processed_reps
+            
+            processed_tags.extend(new_processed_tags)
+            
+            
+        initial_clock = numpy.where(new_channels==clock_channel )[0][0]
+        initial_gate = numpy.where(new_channels==gate_open_channel )[0][0]
+        print(initial_clock)
+        time_passed_ps = processed_tags[initial_clock] - processed_tags[initial_gate]
+        print(time_passed_ps/10**12)
+        
+        processed_tags = [int(el) for el in processed_tags]
+        readout_time_ps = 1000*readout_pulse_time
+        num_bins = 100
+        binned_samples, bin_edges = numpy.histogram(processed_tags, num_bins,
+                                    (0, readout_time_ps))
+        signal_counts_list.append(int(sum(binned_samples)))
+        
+        # Compute the centers of the bins
+    bin_size = readout_pulse_time / num_bins
+    bin_center_offset = bin_size / 2
+    bin_centers = numpy.linspace(0, readout_pulse_time, num_bins) + bin_center_offset
+#    print(bin_centers)
 #
 #    # Plot
 #
@@ -957,22 +957,22 @@ if __name__ == '__main__':
     [0.117, 0.023, 5.21],
     [0.084, -0.016, 5.21],
     [0.009, 0.100, 5.24],
-    [-0.016, 0.115, 5.22],
-    [0.110, 0.102, 5.21],
-    [0.174, 0.010, 5.24],
-    [0.156, 0.143, 5.24],
-    [0.143, 0.119, 5.21],
-    [0.170, 0.104, 5.21],
-    [0.055, -0.126, 5.21],
-    [-0.037, -0.143, 5.21],
-    [0.157, 0.143, 5.23],
-    [0.179, 0.247, 5.26],
-    [0.174, 0.010, 5.23],
-    [0.265, -0.032, 5.24],
-    [0.291, 0.066, 5.22],
-    [0.291, -0.142, 5.21],
-    [0.363, 0.066, 5.22],
-    [0.402, -0.085, 5.21],
+#    [-0.016, 0.115, 5.22],
+#    [0.110, 0.102, 5.21],
+#    [0.174, 0.010, 5.24],
+#    [0.156, 0.143, 5.24],
+#    [0.143, 0.119, 5.21],
+#    [0.170, 0.104, 5.21],
+#    [0.055, -0.126, 5.21],
+#    [-0.037, -0.143, 5.21],
+#    [0.157, 0.143, 5.23],
+#    [0.179, 0.247, 5.26],
+#    [0.174, 0.010, 5.23],
+#    [0.265, -0.032, 5.24],
+#    [0.291, 0.066, 5.22],
+#    [0.291, -0.142, 5.21],
+#    [0.363, 0.066, 5.22],
+#    [0.402, -0.085, 5.21],
     [0.402, -0.169, 5.21],
     [0.354, 0.198, 5.28],
     [0.264, -0.032, 5.25],]
@@ -1016,7 +1016,7 @@ if __name__ == '__main__':
 #
 #            ]
 
-    num_runs =60
+    num_runs =2#60
     init_color = 532
     pulse_color = 638
 
