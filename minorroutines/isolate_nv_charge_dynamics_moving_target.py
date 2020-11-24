@@ -145,6 +145,7 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
     period = ret_vals[0]
     period_s = period/10**9
     period_s_total = (period_s*num_samples + 1)*num_runs
+    print('{} ms pulse time'.format(pulse_time/10**6))
     print('Expected total run time: {:.0f} s'.format(period_s_total))
 #    return
 
@@ -158,7 +159,7 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
     run_start_time = time.time()
     
     for r in range(num_runs):  
-        print( 'run {}'.format(r))
+#        print( 'run {}'.format(r))
         #optimize every 5 min or so
         # So first check the time. If the time that has passed since the last
         # optimize is longer that 5 min, optimize again

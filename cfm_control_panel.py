@@ -74,11 +74,11 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 200
 #    scan_range = 0.07
 #    num_steps = 125
-    scan_range = 0.2
+#    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.1
 #    num_steps = 90
-#    scan_range = 0.05
+    scan_range = 0.05
     num_steps = 60
 #    scan_range = 0.025
 #    num_steps =30
@@ -626,6 +626,34 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
     
+    nv18_2020_11_10_other_nv = { 'coords':[0.224 - 0.041, 0.285 - 0.009, 5.26], 
+            'name': '{}-nv18_2020_11_10_other_nv'.format(sample_name),
+            'expected_count_rate': 30, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
+    
+    nv18_2020_11_10_dark = { 'coords':[0.193 - 0.041, 0.246 - 0.009, 5.26], 
+            'name': '{}-nv18_2020_11_10_dark'.format(sample_name),
+            'expected_count_rate': 30, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
+    
     nv0_2020_11_13 = { 'coords':[-0.971, 0.064, 5.22], 
             'name': '{}-nv0_2020_11_13'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
@@ -724,7 +752,7 @@ if __name__ == '__main__':
         nv_sig_list.append(nv_sig_temp)
         i = i+1
    
-    nv_sig_list = [nv18_2020_11_10]
+    nv_sig_list = [nv18_2020_11_10, nv18_2020_11_10_other_nv, nv18_2020_11_10_dark]
 
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
