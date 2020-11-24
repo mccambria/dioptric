@@ -48,38 +48,6 @@ def get_seq(pulser_wiring, args):
     pulser_ao_589_aom = pulser_wiring['ao_589_aom']
     pulser_do_638_aom = pulser_wiring['do_638_laser']
     
-    # Define params for the laser color
-            
-#    if init_color == 532:
-#        init_pulse_channel = pulser_do_532_aom
-#        init_high = HIGH
-#    elif init_color == 589:
-#        init_pulse_channel = pulser_ao_589_aom
-#        init_high = aom_ao_589_pwr
-#    elif init_color == 638:
-#        init_pulse_channel = pulser_do_638_aom
-#        init_high = HIGH
-#        
-#    if pulse_color == 532:
-#        pulse_pulse_channel = pulser_do_532_aom
-#        pulse_high = HIGH
-#    elif pulse_color == 589:
-#        pulse_pulse_channel = pulser_ao_589_aom
-#        pulse_high = aom_ao_589_pwr
-#    elif pulse_color == 638:
-#        pulse_pulse_channel = pulser_do_638_aom
-#        pulse_high = HIGH
-#        
-#    if read_color == 532:
-#        read_pulse_channel = pulser_do_532_aom
-#        read_high = HIGH
-#    elif read_color == 589:
-#        read_pulse_channel = pulser_ao_589_aom
-#        read_high = aom_ao_589_pwr
-#    elif read_color == 638:
-#        read_pulse_channel = pulser_do_638_aom
-#        read_high = HIGH
-        
     total_laser_delay = delay_532 + delay_589 + delay_638
 
     # %% Calclate total period.
@@ -94,18 +62,25 @@ def get_seq(pulser_wiring, args):
     
     # APD 
 #    train = [(period - readout_time - 100, LOW), (readout_time, HIGH), (100, LOW)]
+#    train = [(readout_time, HIGH), (100, LOW)]
     train = [(total_laser_delay, LOW), (initialization_time, HIGH),
              (100 + galvo_time, LOW), (pulse_time, HIGH),
              (100 + galvo_time, LOW), (readout_time, HIGH),
              (100, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
-    # clock
-#    train = [(total_laser_delay + initialization_time, LOW),(100, HIGH),
-#             (galvo_time + pulse_time, LOW), (100, HIGH), 
-#             (galvo_time + readout_time, LOW), (100, HIGH)] 
-    train = [(period - 100, LOW), (100, HIGH)]
+    # clock 
+    # I needed to add 100 ns between the redout and the clock pulse, otherwise 
+    # the tagger misses some of the gate open/close clicks
+    train = [(total_laser_delay + initialization_time+ 100, LOW),(100, HIGH),
+             (galvo_time + pulse_time, LOW), (100, HIGH), 
+             (galvo_time + readout_time, LOW), (100, HIGH),
+             (100, LOW)] 
+#    train = [(period + 100, LOW), (100, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_clock, train)
+    
+#    train = [(period, HIGH)]
+#    seq.setDigital(pulser_do_532_aom, train)
     
     # start each laser sequence
     train_532 = [(total_laser_delay - delay_532 , LOW)]
@@ -181,25 +156,7 @@ def get_seq(pulser_wiring, args):
 
     seq.setDigital(pulser_do_532_aom, train_532)
     seq.setAnalog(pulser_ao_589_aom, train_589)
-    seq.setDigital(pulser_do_638_aom, train_638)
-   
-#    # pulse pulse sequence.
-#    train = [(total_laser_delay - pulse_delay + initialization_time + 100 + galvo_time, LOW),
-#             (pulse_time, pulse_high), 
-#             (100+galvo_time + readout_time + 100, LOW)]
-#    if pulse_color == 589:
-#        seq.setAnalog(pulser_ao_589_aom, train)
-#    else:
-#        seq.setDigital(pulse_pulse_channel, train)
-#   
-#    # pulse pulse sequence.
-#    train = [(total_laser_delay - readout_delay + initialization_time + 200 + 2*galvo_time + pulse_time, LOW),
-#             (readout_time, read_high), 
-#             (100, LOW)]
-#    if read_color == 589:
-#        seq.setAnalog(pulser_ao_589_aom, train)
-#    else:
-#        seq.setDigital(read_pulse_channel, train)        
+    seq.setDigital(pulser_do_638_aom, train_638)    
         
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -214,7 +171,9 @@ if __name__ == '__main__':
               'do_638_laser': 7
               }
 
-    seq_args = [1000, 1500, 3000, 0, 0, 0, 500, 0.5, 0, 638, 638, 589]
+#    seq_args = [1000, 1500, 3000, 0, 0, 0, 500, 0.5, 0, 638, 532, 589]
+    seq_args = [1000, 100000, 20000000, 140, 1080, 90, 2000000, 0.7, 0, 638, 532, 589]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()
+    print(ret_vals)

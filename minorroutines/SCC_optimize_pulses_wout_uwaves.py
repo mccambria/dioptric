@@ -14,6 +14,7 @@ import numpy
 import time
 import matplotlib.pyplot as plt
 import labrad
+import copy
 
 #%%
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -205,7 +206,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     # Collect data
 
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=True)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
     opti_coords_list.append(opti_coords)
 
     # Load the APD
@@ -639,11 +640,12 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
 if __name__ == '__main__':
     sample_name = 'johnson'
     
-    nv1_2020_11_05 = { 'coords':[0.087, -0.037, 5.5], 
-            'name': '{}-nv1_2020_11_05'.format(sample_name),
-            'expected_count_rate': 45, 'nd_filter': 'nd_0.5',
+    
+    nv18_2020_11_10 = { 'coords':[0.179, 0.247, 5.26], 
+            'name': '{}-nv18_2020_11_10'.format(sample_name),
+            'expected_count_rate': 60, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 40*10**6, 'am_589_power': 0.2, 
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -679,6 +681,12 @@ if __name__ == '__main__':
             
 #    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
-#    optimize_readout_pulse_length(nv1_2020_11_05)
-    optimize_readout_pulse_power(nv1_2020_11_05)
+    for nd in ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']:
+        for p in numpy.linspace(0.2, 0.7, 6):
+            nv_sig = copy.deepcopy(nv18_2020_11_10)
+            nv_sig['nd_filter'] = nd
+            nv_sig['am_589_power'] = p
+            optimize_readout_pulse_length(nv_sig)
+        
+#    optimize_readout_pulse_power(nv18_2020_11_10)
     

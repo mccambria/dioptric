@@ -680,6 +680,30 @@ class Galvo(LabradServer):
 
         return x_voltages_1d, y_voltages_1d
     
+    @setting(10, x_points='*v[]', y_points='*v[]', period='i')
+    def load_arb_points_scan(self, c, x_points, y_points, period):
+        """Load a scan that will step through scan_range in x keeping y
+        constant at its center.
+
+        Params
+            x_points: list(float)
+                X values to step thru
+            y_points: list(float)
+                Y values to step thru
+            period: int
+                Expected period between clock signals in ns
+
+        Returns
+            none
+        """
+        voltages = numpy.vstack((x_points, y_points))
+#        logging.debug(voltages)
+
+        self.load_stream_writer(c, 'Galvo-load_arb_points_scan', voltages, period)
+        
+        
+
+        return    
 __server__ = Galvo()
 
 if __name__ == '__main__':

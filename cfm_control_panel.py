@@ -68,18 +68,18 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
-#    scan_range = 1.5
+    scan_range = 1.5
 #    scan_range = 1.0
 #    scan_range = 0.5
-#    num_steps = 200
+    num_steps = 200
 #    scan_range = 0.07
 #    num_steps = 125
-    scan_range = 0.1
-#    num_steps = 120
 #    scan_range = 0.2
+#    num_steps = 120
+#    scan_range = 0.1
 #    num_steps = 90
 #    scan_range = 0.05
-    num_steps = 60
+#    num_steps = 60
 #    scan_range = 0.025
 #    num_steps =30
 #    num_steps = 10
@@ -599,7 +599,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
     nv1_2020_11_10 = { 'coords':[0.047, 0.030, 5.22], 
-            'name': '{}-nv2_2020_11_10'.format(sample_name),
+            'name': '{}-nv1_2020_11_10'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
@@ -611,7 +611,21 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
-
+    
+    nv18_2020_11_10 = { 'coords':[0.179, 0.247, 5.26], 
+            'name': '{}-nv18_2020_11_10'.format(sample_name),
+            'expected_count_rate': 30, 'nd_filter': 'nd_0',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
+    
     nv0_2020_11_13 = { 'coords':[-0.971, 0.064, 5.22], 
             'name': '{}-nv0_2020_11_13'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
@@ -710,7 +724,7 @@ if __name__ == '__main__':
         nv_sig_list.append(nv_sig_temp)
         i = i+1
    
-    nv_sig_list = [nv1_2020_11_10]
+    nv_sig_list = [nv18_2020_11_10]
 
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
@@ -725,9 +739,10 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        tool_belt.set_drift([0.012, 0.0,0.0])  # Totally reset
+#        drift = [0.029477007677053052, 0.005741868423373174, -0.077214450473293]# nv1_2020_11_10
+#        tool_belt.set_drift(drift)  # Totally reset
+#        tool_belt.set_drift([0.0, 0.0,0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        
 #        set_xyz([0.018,0.003,5.0])
 #        set_xyz([0.0, 0.0,  4.47])
         
@@ -765,13 +780,13 @@ if __name__ == '__main__':
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = nv_sig['pulsed_SCC_readout_dur'])
 
 #            do_determine_galvo_response(nv_sig, apd_indices)
 
             
-            do_stationary_count(nv_sig, apd_indices, 532)            
+#            do_stationary_count(nv_sig, apd_indices, 532)            
 #            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
 #                                  2*10**7, apd_indices) 
 #            do_time_resolved_readout(nv_sig, apd_indices,

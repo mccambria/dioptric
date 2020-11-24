@@ -176,7 +176,11 @@ def collect_charge_counts_with_cxn(cxn, nv_sig, num_reps, save_data = True):
 
 # %%
 def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indices):
+    with labrad.connect() as cxn:
+        tool_belt.reset_cfm(cxn)
     
+    nv0_list = []
+    nvm_list = []
     nv0_avg_list = []
     nv0_ste_list = []
     nvm_avg_list = []
@@ -184,14 +188,18 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
     
     
     for coords in coords_list:
+        print(coords)
         nv_sig = copy.deepcopy(parameters_sig)
         nv_sig['coords'] = coords
-        time.sleep(0.002)
+#        time.sleep(0.002)
         
         ret_vals = SCC_optimize_pulses_wout_uwaves.main(nv_sig,  apd_indices,num_reps)
         nv0_counts, nvm_counts = ret_vals
         nv0_counts = [int(el) for el in nv0_counts]
         nvm_counts = [int(el) for el in nvm_counts]
+        
+        nv0_list.append(nv0_counts)
+        nvm_list.append(nvm_counts)
         
         nv0_avg = numpy.average(nv0_counts)
         nv0_ste = stats.sem(nv0_counts)
@@ -229,6 +237,10 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
                 'yellow_optical_power_mW': yellow_optical_power_mW,
                 'yellow_optical_power_mW-units': 'mW',
                 'num_runs':num_reps,
+                'nv0_list': nv0_list,
+                'nv0_list-units': 'counts',
+                'nvm_list': nvm_list,
+                'nvm_list-units': 'counts',                
                 'nv0_avg_list': nv0_avg_list,
                 'nv0_avg_list-units': 'counts',
                 'nv0_ste_list': nv0_ste_list,
@@ -239,8 +251,8 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
                 'nvm_ste_list-units': 'counts'
                 }
         
-    print(nv0_avg_list)
-    print(nvm_avg_list)
+#    print(nv0_avg_list)
+#    print(nvm_avg_list)
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path + '-nv_list')
     
