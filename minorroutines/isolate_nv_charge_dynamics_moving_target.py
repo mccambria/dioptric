@@ -120,9 +120,9 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
     
     readout_pulse_time = nv_sig['pulsed_SCC_readout_dur']
     if init_color == 532:
-        initialization_time = nv_sig['pulsed_reionization_dur']
+        initialization_time = 10**5
     elif init_color == 638:
-        initialization_time = nv_sig['pulsed_ionization_dur']
+        initialization_time = 10**3
     if pulse_color == 532:
         pulse_time = nv_sig['pulsed_reionization_dur']
     elif pulse_color == 638:
@@ -220,6 +220,10 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'num_runs':num_runs,
+            'initialization_time': initialization_time,
+            'initialization_time-units': 'ns',
+            'pulse_time': pulse_time,
+            'pulse_time-units': 'ns',
             'opti_coords_list': opti_coords_list,
             'readout_counts_array': readout_counts_array,
             'readout_counts_array-units': 'counts',
@@ -298,6 +302,10 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
             'yellow_optical_power_mW': yellow_optical_power_mW,
             'yellow_optical_power_mW-units': 'mW',
             'num_runs':num_runs,
+            'initialization_time': initialization_time,
+            'initialization_time-units': 'ns',
+            'pulse_time': pulse_time,
+            'pulse_time-units': 'ns',
             'opti_coords_list': opti_coords_list,
             'rad_dist': rad_dist.tolist(),
             'rad_dist-units': 'V',
@@ -563,7 +571,8 @@ def plot_times_on_off_nv(nv_sig, readout_coords,  target_nv_coords, dark_coords,
     dark_avg_list = []
     dark_ste_list = []
     
-    time_list = numpy.array([10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10**9])
+#    time_list = numpy.array([10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10**9])
+    time_list = numpy.array([10**3, 5*10**3, 10**4, 2*10**4, 5*10**4, 7*10**4, 10**5, 2*10**5, 5*10**5, 7*10**5, 10**6, 10**7, 10**8, 10**9])
 #    time_list = numpy.array([10**3])
     coords_list = [target_nv_coords, dark_coords]
     # run various times#    
@@ -645,17 +654,27 @@ if __name__ == '__main__':
     dy = 0.2
     end_coords=[0.179, 0.247 + dy, 5.26]
     num_steps = 101
-    init_color = 638
-    pulse_color = 532
+#    init_color = 638
+    # init_color = 532
+    pulse_color = 638
     num_runs = 200
     
-    target_nv_coords= [0.224 - 0.041, 0.285 - 0.009, 5.26]
-    dark_coords = [0.193 - 0.041, 0.246 - 0.009, 5.26]
+    drift = tool_belt.get_drift()
+#    print(drift)
+    target_nv_coords= [0.224 - drift[0], 0.285 - drift[1], 5.26]
+    
+    target_nv_coords_2 = [0.237 - drift[0], 0.227 - drift[1], 5.26]
+    dark_coords = [0.193 - drift[0], 0.246 - drift[1], 5.26]
  
 #    moving_target(nv18_2020_11_10,start_coords,  end_coords, num_steps, num_runs, init_color, pulse_color)    
        
-    plot_times_on_off_nv(nv18_2020_11_10, start_coords,  target_nv_coords, dark_coords, num_runs, init_color, pulse_color)
-    
+    plot_times_on_off_nv(nv18_2020_11_10, start_coords,  target_nv_coords, dark_coords, num_runs, 532, pulse_color)
+    plot_times_on_off_nv(nv18_2020_11_10, start_coords,  target_nv_coords_2, dark_coords, num_runs, 532, pulse_color)
+  
+    plot_times_on_off_nv(nv18_2020_11_10, start_coords,  target_nv_coords, dark_coords, num_runs, 638, pulse_color)
+    plot_times_on_off_nv(nv18_2020_11_10, start_coords,  target_nv_coords_2, dark_coords, num_runs, 638, pulse_color)
+  
+   
                     
          
     

@@ -74,15 +74,15 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 200
 #    scan_range = 0.07
 #    num_steps = 125
-#    scan_range = 0.2
+    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.1
 #    num_steps = 90
-    scan_range = 0.05
-    num_steps = 60
+#    scan_range = 0.05
+#    num_steps = 60
 #    scan_range = 0.025
 #    num_steps =30
-#    num_steps = 10
+    num_steps = 40
 #    num_steps = 4
     
 #    scan_range = 0.5 # 250
@@ -752,7 +752,7 @@ if __name__ == '__main__':
         nv_sig_list.append(nv_sig_temp)
         i = i+1
    
-    nv_sig_list = [nv18_2020_11_10, nv18_2020_11_10_other_nv, nv18_2020_11_10_dark]
+    nv_sig_list = [nv18_2020_11_10]
 
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)

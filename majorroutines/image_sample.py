@@ -250,9 +250,11 @@ def reformat_plot(colorMap, save_file_type):
         # Save the file in the same file directory
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
 
-def create_figure(file_name):
-
-    data = tool_belt.get_raw_data('image_sample', file_name)
+def create_figure(file_name, sub_folder = None):
+#    if sub_folder:
+    data = tool_belt.get_raw_data('image_sample' + sub_folder, file_name)
+#    else:
+#        data = tool_belt.get_raw_data('image_sample', file_name)
     x_range = data['x_range']
     y_range = data['y_range']
     x_voltages = data['x_voltages']
