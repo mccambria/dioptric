@@ -74,15 +74,16 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 200
 #    scan_range = 0.07
 #    num_steps = 125
-    scan_range = 0.2
+#    scan_range = 0.2
 #    num_steps = 120
+    scan_range = 0.15
 #    scan_range = 0.1
 #    num_steps = 90
 #    scan_range = 0.05
-#    num_steps = 60
+    num_steps = 60
 #    scan_range = 0.025
 #    num_steps =30
-    num_steps = 40
+#    num_steps = 40
 #    num_steps = 4
     
 #    scan_range = 0.5 # 250
@@ -612,7 +613,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
     
-    nv18_2020_11_10 = { 'coords':[0.179, 0.247, 5.26], 
+    nv18_2020_11_10 = { 'coords':[0.236, 0.261, 5.26], 
             'name': '{}-nv18_2020_11_10'.format(sample_name),
             'expected_count_rate': 30, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 300,

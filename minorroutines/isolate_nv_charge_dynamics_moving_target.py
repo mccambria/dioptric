@@ -226,6 +226,7 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
     # Define paramters
     apd_indices = [0]
     readout_color = 589
+#    print(coords_list)
     
     num_samples = len(coords_list)
     
@@ -271,8 +272,8 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
     period = ret_vals[0]
     period_s = period/10**9
     period_s_total = (period_s*num_samples + 1)*num_runs
-    # print('{} ms pulse time'.format(pulse_time/10**6))
-    # print('Expected total run time: {:.0f} s'.format(period_s_total))
+    print('{} ms pulse time'.format(pulse_time/10**6))
+    print('Expected total run time: {:.0f} s'.format(period_s_total))
 #    return
 
     # Optimize at the start of the routine
@@ -285,7 +286,7 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
     run_start_time = time.time()
     
     for r in range(num_runs):  
-#        print( 'run {}'.format(r))
+        print( 'run {}'.format(r))
         #optimize every 5 min or so
         # So first check the time. If the time that has passed since the last
         # optimize is longer that 5 min, optimize again
@@ -304,7 +305,6 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
                     
         # start on the readout NV
         tool_belt.set_xyz(cxn, start_coords_drift)
-        
                
         # load the sequence
         ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -370,11 +370,15 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
     y_diffs = (y_target_coords- start_coords_drift[1])
     rad_dist = numpy.sqrt(x_diffs**2 + y_diffs**2)
     
+#    print(readout_counts_array)
+#    print(target_counts_array)
     # Statistics
     readout_counts_avg = numpy.average(readout_counts_array, axis=0)
     readout_counts_ste = stats.sem(readout_counts_array, axis=0)
     target_counts_avg = numpy.average(target_counts_array, axis=0)
     target_counts_ste = stats.sem(target_counts_array, axis=0)
+#    print(readout_counts_avg)
+#    print(target_counts_avg)
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -382,6 +386,7 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
             yellow_optical_power_pd, yellow_optical_power_mW = \
             tool_belt.measure_g_r_y_power(
                               nv_sig['am_589_power'], nv_sig['nd_filter'])
+            
     
 #    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 #    ax.plot(rad_dist*35,readout_counts_avg, label = 'counts on readout after each pulse on target spot')
@@ -450,13 +455,12 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
             'target_counts_ste-units': 'counts',
             }
     
-    file_path = tool_belt.get_file_path(__file__, start_timestamp, nv_sig['name'])
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path)
 #    tool_belt.save_figure(fig, file_path)
 #    tool_belt.save_figure(fig_temp, file_path + '-path_compare')
     
-    return readout_counts_avg, readout_counts_ste, target_counts_avg, \
-                        target_counts_ste
+    return readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste
                         
    # %% UNTESTED
 def moving_target_image(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color):
@@ -1001,49 +1005,76 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
     ret_vals= build_voltages_image(start_coords, img_range, num_steps)
     x_voltages, y_voltages, x_voltages_1d, y_voltages_1d  = ret_vals
     
+    z_voltages =  [start_coords[2] for el in x_voltages]
+    
     # Combine the x and y voltages together into pairs
-    coords_voltages = list(zip(x_voltages, y_voltages))
+    coords_voltages = list(zip(x_voltages, y_voltages, z_voltages))
     
     # Create some empty data lists
     readout_avg_list = numpy.empty(len(coords_voltages))
-    readout_avg_list[:] = numpy.nan
-    readout_ste_list = readout_avg_list
-    target_avg_list = readout_avg_list
-    target_ste_list = readout_avg_list
+    readout_ste_list =  numpy.empty(len(coords_voltages))
+    target_avg_list =  numpy.empty(len(coords_voltages))
+    target_ste_list =  numpy.empty(len(coords_voltages))
     
     readout_image_array = numpy.empty([num_steps, num_steps])
     readout_image_array[:] = numpy.nan
-    target_image_array = readout_image_array
+    target_image_array = numpy.empty([num_steps, num_steps])
+    target_image_array[:] = numpy.nan
     
     # shuffle the voltages that we're stepping thru
     ind_list = list(range(len(coords_voltages)))
     shuffle(ind_list)
     
-    # step thru each index, run the measurement and then place the counts in the corresponding index in the data list
+    # shuffle the voltages to run
+    coords_voltages_shuffle = []
     for i in ind_list:
-        # I technically could just pass the list of shuffled voltages into this function and get the data through that... 
-        ret_vals = target_list(nv_sig, start_coords, [coords_voltages[i]], 
+        coords_voltages_shuffle.append(coords_voltages[i])
+    
+    coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
+    
+    ret_vals = target_list(nv_sig, start_coords, coords_voltages_shuffle_list, 
                                num_runs, init_color, pulse_color)
-        readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste = ret_vals
-        
-        readout_avg_list[i] = readout_counts_avg[0]
-        readout_ste_list[i] = readout_counts_ste[0]
-        target_avg_list[i] = target_counts_avg[0]
-        target_ste_list[i] = target_counts_ste[0]
+    readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste = ret_vals
+
+    # unshuffle the data
+    list_ind = 0
+    for f in ind_list:
+        readout_avg_list[f] = readout_counts_avg[list_ind]
+        readout_ste_list[f] = readout_counts_ste[list_ind]
+        target_avg_list[f] = target_counts_avg[list_ind]
+        target_ste_list[f] = target_counts_ste[list_ind]
+        list_ind += 1
+    
+#    count = 0
+#    
+#    # step thru each index, run the measurement and then place the counts in the corresponding index in the data list
+#    for i in ind_list:
+#        print(count)
+#        # I technically could just pass the list of shuffled voltages into this function and get the data through that... 
+#        ret_vals = target_list(nv_sig, start_coords, [list(coords_voltages[i])], 
+#                               num_runs, init_color, pulse_color)
+#        readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste = ret_vals
+#        
+#        readout_avg_list[i] = readout_counts_avg[0]
+#        readout_ste_list[i] = readout_counts_ste[0]
+#        target_avg_list[i] = target_counts_avg[0]
+#        target_ste_list[i] = target_counts_ste[0]
+#        
+#        count += 1
         
     # create the img arrays
     writePos = []
-    image_sample.populate_img_array(readout_avg_list, readout_image_array, writePos)
+    readout_image_array = image_sample.populate_img_array(readout_avg_list, readout_image_array, writePos)
     writePos = []
-    image_sample.populate_img_array(target_avg_list, target_image_array, writePos)
+    target_image_array = image_sample.populate_img_array(target_avg_list, target_image_array, writePos)
     
-    # image extent, converted to um
-    x_low = x_voltages_1d[0]*35
-    x_high = x_voltages_1d[num_steps-1]*35
-    y_low = y_voltages_1d[0]*35
-    y_high = y_voltages_1d[num_steps-1]*35
+    # image extent
+    x_low = x_voltages_1d[0]
+    x_high = x_voltages_1d[num_steps-1]
+    y_low = y_voltages_1d[0]
+    y_high = y_voltages_1d[num_steps-1]
 
-    pixel_size = (x_voltages_1d[1] - x_voltages_1d[0])*35
+    pixel_size = (x_voltages_1d[1] - x_voltages_1d[0])
     
     half_pixel_size = pixel_size / 2
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
@@ -1054,7 +1085,7 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
     elif pulse_color == 638:
         pulse_time = nv_sig['pulsed_ionization_dur']
     
-    title = 'Counts on readout NV from moving target {} nm {} ms pulse'.format(pulse_color, pulse_time)
+    title = 'Counts on readout NV from moving target {} nm {} ms pulse'.format(pulse_color, pulse_time/10**6)
     fig_readout = tool_belt.create_image_figure(readout_image_array, img_extent,
                                                 title = title)
     title = 'Counts on target {} nm {} ms pulse'.format(pulse_color, pulse_time)
@@ -1068,7 +1099,7 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
             tool_belt.measure_g_r_y_power(
                               nv_sig['am_589_power'], nv_sig['nd_filter'])
     
-    time.sleep(1)
+    time.sleep(2)
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
                 'init_color': init_color,
@@ -1092,13 +1123,13 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
             'yellow_optical_power_mW': yellow_optical_power_mW,
             'yellow_optical_power_mW-units': 'mW',
             'num_runs':num_runs,
-            'coords_voltages': coords_voltages.tolist(),
+            'coords_voltages': coords_voltages,
             'coords_voltages-units': '[V, V]',
             'ind_list': ind_list,
             'x_voltages_1d': x_voltages_1d.tolist(),
             'y_voltages_1d': y_voltages_1d.tolist(),
             'img_extent': img_extent,
-            'img_extent-units': 'um',
+            'img_extent-units': 'V',
             'readout_image_array': readout_image_array.tolist(),
             'readout_image_array-units': 'counts',
             'target_image_array': target_image_array.tolist(),
@@ -1116,9 +1147,9 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
             }
         
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_raw_data(raw_data, file_path)
-    tool_belt.save_figure(fig_readout, file_path)
-    tool_belt.save_figure(fig_target, file_path + '-pulsed_counts')
+    tool_belt.save_raw_data(raw_data, file_path + '-img')
+    tool_belt.save_figure(fig_readout, file_path + '-img')
+    tool_belt.save_figure(fig_target, file_path + '-img_pulsed_counts')
     
     return
     
@@ -1130,9 +1161,10 @@ if __name__ == '__main__':
             'name': '{}-nv18_2020_11_10'.format(sample_name),
             'expected_count_rate': 30, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 20*10**6, 'am_589_power': 0.7, 
+            'pulsed_SCC_readout_dur': 20*10**6, 
+            'am_589_power': 0.7, 
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 200*10**3,
+            'pulsed_reionization_dur': 100*10**3,
             'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
@@ -1146,7 +1178,7 @@ if __name__ == '__main__':
     num_steps = 40
     init_color = 638
     pulse_color = 532
-    num_runs = 200
+    num_runs =  200
     img_range = 0.15
     
     # drift = tool_belt.get_drift()
@@ -1157,8 +1189,24 @@ if __name__ == '__main__':
     # dark_coords = [0.193 - drift[0], 0.246 - drift[1], 5.26]
     
  
-
-    image_indiv_points(nv18_2020_11_10, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+    for t in [10**3, 10**4, 10**6, 10**7, 10**8, 10**9]:
+        nv_sig = copy.deepcopy(nv18_2020_11_10)
+        if pulse_color == 532:
+            nv_sig['pulsed_reionization_dur'] = t
+        if pulse_color == 638:
+            nv_sig['pulsed_ionization_dur'] = t 
+        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+        
+        
+    for t in [10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10**9]:
+        init_color = 532
+        pulse_color = 638    
+        nv_sig = copy.deepcopy(nv18_2020_11_10)
+        if pulse_color == 532:
+            nv_sig['pulsed_reionization_dur'] = t
+        if pulse_color == 638:
+            nv_sig['pulsed_ionization_dur'] = t 
+        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
         
  
     

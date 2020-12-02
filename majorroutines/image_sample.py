@@ -129,7 +129,7 @@ def populate_img_array(valsToAdd, imgArray, writePos):
                 imgArray[yPos, xPos] = val
     writePos[:] = [xPos, yPos]
 
-
+    return imgArray
 def on_click_image(event):
     """
     Click handler for images. Prints the click coordinates to the console.
