@@ -208,6 +208,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     # Optimize
     opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
     opti_coords_list.append(opti_coords)
+    
+    
+    cxn.filter_slider_ell9k.set_filter(nd_filter)
 
     # Load the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)

@@ -263,7 +263,7 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    nv_coords_list = [ [0.179, 0.247, 5.26]]
+    nv_coords_list = [[0.236, 0.261, 5.26]]
 
     
     base_nv_sig  = { 'coords':None,
@@ -272,6 +272,7 @@ if __name__ == '__main__':
             'expected_count_rate': 30, 'nd_filter': 'nd_1.0',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 20*10**6, 'am_589_power': 0.7, 
+            'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
             'pulsed_reionization_dur': 100*10**3,
             'cobalt_532_power':20, 
