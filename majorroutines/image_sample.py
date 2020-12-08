@@ -18,7 +18,7 @@ import time
 
 import json
 import matplotlib.pyplot as plt
-import labrad
+# import labrad
 
 def populate_img_array_bottom_left(valsToAdd, imgArray, writePos):
     """
@@ -252,7 +252,7 @@ def reformat_plot(colorMap, save_file_type):
 
 def create_figure(file_name, sub_folder = None):
 #    if sub_folder:
-    data = tool_belt.get_raw_data('image_sample' + sub_folder, file_name)
+    data = tool_belt.get_raw_data('image_sample', file_name)
 #    else:
 #        data = tool_belt.get_raw_data('image_sample', file_name)
     x_range = data['x_range']
@@ -800,7 +800,7 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-    file_name = 'branch_Spin_to_charge/2020_11/2020_11_10-10_36_27-johnson-nv2_2020_11_05'
+    file_name = 'branch_Spin_to_charge/2020_12/2020_12_02-17_23_39-goeppert-mayer-search'
 #    reformat_plot('inferno', 'png')
     create_figure(file_name)
     
