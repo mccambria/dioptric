@@ -176,7 +176,7 @@ if __name__ == '__main__':
     
     top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/isolate_nv_charge_dynamics_moving_target/branch_Spin_to_charge/2020_12/{}'
         
-    sub_folder_names = ['2020_12_08-goeppert-mayer_10us'
+    sub_folder_names = ['2020_12_08-goeppert-mayer_10us_NV'
                         ]
 #    
     for el in sub_folder_names:
