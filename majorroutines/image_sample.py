@@ -18,7 +18,7 @@ import time
 
 import json
 import matplotlib.pyplot as plt
-import labrad
+# import labrad
 
 def populate_img_array_bottom_left(valsToAdd, imgArray, writePos):
     """
@@ -74,7 +74,7 @@ def populate_img_array_bottom_left(valsToAdd, imgArray, writePos):
                 imgArray[yPos, xPos] = val
 #    print([xPos, yPos])
     writePos[:] = [xPos, yPos]
-    
+
 def populate_img_array(valsToAdd, imgArray, writePos):
     """
     We scan the sample in a winding pattern. This function takes a chunk
@@ -287,13 +287,13 @@ def create_figure(file_name, sub_folder = None):
     half_pixel_size = pixel_size / 2
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
-    
+
 #    color_ind =  data['color_ind']
     readout_us = readout / 10**3
     title = 'Confocal scan.\nReadout {} us'.format(readout_us)
     fig = tool_belt.create_image_figure(img_array_kcps, img_extent,
                                         clickHandler=on_click_image,
-                                        title = title, 
+                                        title = title,
                                         color_bar_label = 'kcps')
     # Redraw the canvas and flush the changes to the backend
     fig.canvas.draw()
@@ -305,29 +305,29 @@ def create_figure(file_name, sub_folder = None):
 # %% Mains
 
 def two_pulse_image_sample(nv_sig, x_range, y_range, num_steps,  apd_indices, init_pulse_time, readout,
-                           init_color_ind, read_color_ind, 
+                           init_color_ind, read_color_ind,
          save_data=True, plot_data=True, continuous=False):
 
     with labrad.connect() as cxn:
-        img_array, x_voltages, y_voltages = two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, 
-                      y_range, num_steps, 
+        img_array, x_voltages, y_voltages = two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range,
+                      y_range, num_steps,
                       apd_indices,  init_pulse_time,readout,
                            init_color_ind, read_color_ind, save_data, plot_data, continuous)
-        
+
     return img_array, x_voltages, y_voltages
 
-def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  
+def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   apd_indices, init_pulse_time, readout,
-                           init_color_ind, read_color_ind,  save_data=True, 
+                           init_color_ind, read_color_ind,  save_data=True,
                   plot_data=True, continuous=False):
 
     # %% Some initial setup
     nv_size = 0.02 #V
 #    tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
-#    cxn.pulse_streamer.constant([3],0.0,0.0)  
+#    cxn.pulse_streamer.constant([3],0.0,0.0)
     tool_belt.reset_cfm(cxn)
     color_filter = nv_sig['color_filter']
-    cxn.filter_slider_ell9k_color.set_filter(color_filter)  
+    cxn.filter_slider_ell9k_color.set_filter(color_filter)
 
 
 
@@ -343,14 +343,14 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         init_delay = shared_params['638_DM_laser_delay']
     else:
         init_delay = 0
-    
+
     if read_color_ind == 532:
         read_delay = shared_params['515_laser_delay']
     elif read_color_ind == 589:
         read_delay = shared_params['589_aom_delay']
     elif read_color_ind == 638:
-        read_delay = shared_params['638_DM_laser_delay']  
-    
+        read_delay = shared_params['638_DM_laser_delay']
+
     aom_ao_589_pwr = nv_sig['am_589_power']
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
@@ -397,15 +397,15 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     y_high = y_voltages[y_num_steps-1]
 
     pixel_size = x_voltages[1] - x_voltages[0]
-    
+
     # If we want to spend the same amount of time on an NV, regardless of the
     # scan range or pixel size, we will scale the readout time so that we spend
-    # the same amount of time scanning over an NV, regardless of the relative 
+    # the same amount of time scanning over an NV, regardless of the relative
     #size of the pixel sizes and NV size.
 #    readout = int((pixel_size/nv_size)**2 * base_readout)
 #    print(pixel_size)
 #    print(str(readout /10**3) + 'us')
-    
+
     readout_us = float(readout) / 10**3
 
     # %% Set up the APD
@@ -419,7 +419,7 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     img_array = numpy.empty((x_num_steps, y_num_steps))
     img_array[:] = numpy.nan
     img_write_pos = []
-    
+
     # %% Set up the image display
 
     if plot_data:
@@ -459,7 +459,7 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         new_samples = cxn.apd_tagger.read_counter_simple()
 #        print(new_samples)
         num_new_samples = len(new_samples)
-        if num_new_samples > 0:           
+        if num_new_samples > 0:
             populate_img_array(new_samples, img_array, img_write_pos)
             # This is a horribly inefficient way of getting kcps, but it
             # is easy and readable and probably fine up to some resolution
@@ -475,25 +475,25 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # Return to center
     cxn.galvo.write(x_center, y_center)
 #    cxn.galvo.write(0.5, 0.5)
-    
+
     # %% Read the optical power for either yellow or green light
-    
+
 #    if color_ind == 532:
 #        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
 #    elif color_ind == 589:
-#        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind, 
+#        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind,
 #           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])
 #    elif color_ind == 638:
 #        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
-        
+
     # Convert V to mW optical power
-#    optical_power_mW = tool_belt.calc_optical_power_mW(color_ind, optical_power_pd)   
+#    optical_power_mW = tool_belt.calc_optical_power_mW(color_ind, optical_power_pd)
     optical_power_pd = None
-    optical_power_mW = None 
-    
-    
-    # %% Save the data   
-    
+    optical_power_mW = None
+
+
+    # %% Save the data
+
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
             red_optical_power_pd, red_optical_power_mW, \
@@ -523,7 +523,7 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                'readout-units': 'ns',
                'init_pulse_time': init_pulse_time,
                'init_pulse_time-units': 'ns',
-               
+
             'green_optical_power_pd': green_optical_power_pd,
             'green_optical_power_pd-units': 'V',
             'green_optical_power_mW': green_optical_power_mW,
@@ -556,29 +556,29 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
 # %%
 
-def main(nv_sig, x_range, y_range, num_steps,  apd_indices,  
+def main(nv_sig, x_range, y_range, num_steps,  apd_indices,
          color_ind, save_data=True, plot_data=True, readout = 10**7 ,flip = False, continuous=False):
 
     with labrad.connect() as cxn:
-        img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range, 
-                      y_range, num_steps,  
+        img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
+                      y_range, num_steps,
                       apd_indices,  color_ind, save_data, plot_data, readout, flip,  continuous)
-        
+
     return img_array, x_voltages, y_voltages
 
-def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  
-                  apd_indices,  color_ind, save_data=True, 
+def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
+                  apd_indices,  color_ind, save_data=True,
                   plot_data=True, readout = 10**7, flip = False, continuous=False):
 
     # %% Some initial setup
     nv_size = 0.02 #V
 
 #    tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
-#    cxn.pulse_streamer.constant([3],0.0,0.0)  
+#    cxn.pulse_streamer.constant([3],0.0,0.0)
     tool_belt.reset_cfm(cxn)
-    
+
     color_filter = nv_sig['color_filter']
-    cxn.filter_slider_ell9k_color.set_filter(color_filter)  
+    cxn.filter_slider_ell9k_color.set_filter(color_filter)
 #    cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
 
 
@@ -587,7 +587,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 #    readout = shared_params['continuous_readout_dur']
 
     aom_ao_589_pwr = nv_sig['am_589_power']
-    
+
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
@@ -603,19 +603,19 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     delay = int(0.5 * 10**6)
 
     total_num_samples = num_steps**2
-    
+
     pixel_size_est = x_range / (num_steps - 1)
 #    print(pixel_size_est)
-    
+
     # If we want to spend the same amount of time on an NV, regardless of the
     # scan range or pixel size, we will scale the readout time so that we spend
-    # the same amount of time scanning over an NV, regardless of the relative 
+    # the same amount of time scanning over an NV, regardless of the relative
     #size of the pixel sizes and NV size.
 #    readout = int((pixel_size_est/nv_size)**2 * base_readout)
-    
+
 #    print(str(readout /10**6) + 'ms')
     # %% Load the PulseStreamer
-        
+
     seq_args = [delay, readout, aom_ao_589_pwr, apd_indices[0], color_ind]
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -632,22 +632,22 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     if flip==1:
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan_flip(x_center, y_center,
                                                        x_range, y_range,
-                                                       num_steps, period) 
+                                                       num_steps, period)
     elif flip == 2:
-        
+
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan_bl(x_center, y_center,
                                                        x_range, y_range,
-                                                       num_steps, period) 
+                                                       num_steps, period)
     elif flip == 3:
-        
+
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan_ul(x_center, y_center,
                                                        x_range, y_range,
-                                                       num_steps, period) 
+                                                       num_steps, period)
     elif flip == 4:
-        
+
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan_ur(x_center, y_center,
                                                        x_range, y_range,
-                                                       num_steps, period) 
+                                                       num_steps, period)
     else:
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        x_range, y_range,
@@ -662,7 +662,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     pixel_size = x_voltages[1] - x_voltages[0]
 
-    
+
     readout_us = float(readout) / 10**3
 
 
@@ -677,7 +677,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     img_array = numpy.empty((x_num_steps, y_num_steps))
     img_array[:] = numpy.nan
     img_write_pos = []
-    
+
     # %% Set up the image display
 
     if plot_data:
@@ -718,7 +718,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         new_samples = cxn.apd_tagger.read_counter_simple()
 #        print(new_samples)
         num_new_samples = len(new_samples)
-        if num_new_samples > 0:           
+        if num_new_samples > 0:
             if flip==1:
                 populate_img_array_bottom_left(new_samples, img_array, img_write_pos)
                 # This is a horribly inefficient way of getting kcps, but it
@@ -735,7 +735,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     #                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
                     tool_belt.update_image_figure(fig, img_array)
                 num_read_so_far += num_new_samples
-                
+
     # %% Clean up
 
     tool_belt.reset_cfm(cxn)
@@ -743,23 +743,23 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # Return to center
     cxn.galvo.write(x_center, y_center)
 #    cxn.galvo.write(0.5, 0.5)
-    
+
     # %% Read the optical power for either yellow or green light
-    
+
 #    if color_ind == 532:
 #        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
 #    elif color_ind == 589:
-#        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind, 
+#        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind,
 #           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])
 #    elif color_ind == 638:
 #        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
-        
+
     # Convert V to mW optical power
-#    optical_power_mW = tool_belt.calc_optical_power_mW(color_ind, optical_power_pd)   
+#    optical_power_mW = tool_belt.calc_optical_power_mW(color_ind, optical_power_pd)
     optical_power_pd = None
-    optical_power_mW = None 
-    
-    
+    optical_power_mW = None
+
+
     # %% Save the data
     if plot_data:
         if flip == 1:
@@ -769,23 +769,23 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         elif flip == 2:
             fig = tool_belt.create_image_figure(numpy.rot90(img_array,3), img_extent,
                                                 clickHandler=on_click_image,
-                                                title = title)    
+                                                title = title)
         elif flip == 3:
             fig = tool_belt.create_image_figure(numpy.rot90(img_array,2), img_extent,
                                                 clickHandler=on_click_image,
-                                                title = title)  
+                                                title = title)
         elif flip == 4:
             fig = tool_belt.create_image_figure(numpy.rot90(img_array,1), img_extent,
                                                 clickHandler=on_click_image,
                                                 title = title)
-                
+
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
             red_optical_power_pd, red_optical_power_mW, \
             yellow_optical_power_pd, yellow_optical_power_mW = \
             tool_belt.measure_g_r_y_power(
                               nv_sig['am_589_power'], nv_sig['nd_filter'])
-            
+
     timestamp = tool_belt.get_time_stamp()
 
     rawData = {'timestamp': timestamp,
@@ -850,19 +850,19 @@ if __name__ == '__main__':
     file_name = 'branch_Spin_to_charge/2020_12/2020_12_04-16_02_43-goeppert-mayer-nv1_2020_12_02'
 #    reformat_plot('inferno', 'png')
     create_figure(file_name)
-    
+
 #    sub_folder = 'branch_Spin_to_charge/2020_10/'
 #    green_file = '2020_10_14-16_47_42-goeppert-mayer-nv1'
 #    red_file = '2020_10_14-16_49_03-goeppert-mayer-nv1'
-#    
+#
 #    data = tool_belt.get_raw_data('image_sample', sub_folder+green_file)
 #    green_img_array = numpy.array(data['img_array'])
-#    
+#
 #    data = tool_belt.get_raw_data('image_sample', sub_folder+red_file)
 #    red_img_array = numpy.array(data['img_array'])
 #    x_voltages = data['x_voltages']
 #    y_voltages = data['y_voltages']
-#    
+#
 #    dif_img_array = green_img_array - red_img_array
 #
 #    x_num_steps = len(x_voltages)
@@ -871,12 +871,12 @@ if __name__ == '__main__':
 #    y_num_steps = len(y_voltages)
 #    y_low = y_voltages[0]
 #    y_high = y_voltages[y_num_steps-1]
-#    
+#
 #    pixel_size = x_voltages[1] - x_voltages[0]
 #    half_pixel_size = pixel_size / 2
 #    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
 #                  y_low - half_pixel_size, y_high + half_pixel_size]
-#        
+#
 #    title = 'Dif image yellow scan after green initialization and red initialization'
 #    tool_belt.create_image_figure(numpy.fliplr(dif_img_array), img_extent,
 #                                            clickHandler=on_click_image,
