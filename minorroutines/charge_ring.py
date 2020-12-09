@@ -119,6 +119,25 @@ def green_scan(x_voltages, y_voltages, z_center):
             time.sleep(0.01)
             cxn.pulse_streamer.constant([], 0.0, 0.0)  
   
+def yellow_scan(x_voltages, y_voltages, z_center):
+    with labrad.connect() as cxn:      
+        # get the wiring for the green
+#        wiring = tool_belt.get_pulse_streamer_wiring(cxn)
+#        pulser_wiring_yellow = wiring['ao_589_aom']
+        # Define the previous position as null
+        prev_pos = []
+        # step thru every "pixel" of the reset area
+        for i in range(num_steps_reset**2):
+            # get the new index of the x and y positions
+            x_ind, y_ind = write_pos(prev_pos, num_steps_reset)
+            # update the prev_pos
+            prev_pos = [x_ind, y_ind]
+            # Move to the specified x and y position
+            tool_belt.set_xyz(cxn, [x_voltages[x_ind], y_voltages[y_ind], z_center])
+            # Shine red light for 0.01 s
+            cxn.pulse_streamer.constant([], 0.0, 1.0)
+            time.sleep(0.01)
+            cxn.pulse_streamer.constant([], 0.0, 0.0)  
 # %%          
 def main_red_green(cxn, nv_sig, green_pulse_time, wait_time = 0):
 #    aom_ao_589_pwr = nv_sig['am_589_power']
@@ -126,9 +145,10 @@ def main_red_green(cxn, nv_sig, green_pulse_time, wait_time = 0):
 #    print(coords)
     readout = nv_sig['pulsed_SCC_readout_dur']
 #    green_pulse_time = int(green_pulse_time)
+    color_filter = nv_sig['color_filter'] 
     
 
-#    optimize.main(nv_sig, apd_indices, 532)    
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)  
     
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
@@ -166,7 +186,8 @@ def main_red_green(cxn, nv_sig, green_pulse_time, wait_time = 0):
                       apd_indices, 589,readout = readout, save_data=True, plot_data=True) 
 
 
-#    optimize.main(nv_sig, apd_indices, 532)    
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)  
+    
     print('Resetting with red light\n...')
     red_scan(x_voltages_r, y_voltages_r, z_center)
  
@@ -221,6 +242,7 @@ def main_red_green(cxn, nv_sig, green_pulse_time, wait_time = 0):
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'color_filter' : color_filter,
                'image_range': image_range,
                'image_range-units': 'V',
                'num_steps': num_steps,
@@ -402,27 +424,154 @@ def main_green_red(cxn, nv_sig, green_pulse_time, wait_time = 0):
     tool_belt.save_figure(fig, filePath + '_dif')
     
     return coords, x_voltages,image_range , dif_img_array, readout
+
+         
+def main_green_green_red_scan(cxn, nv_sig, pulse_time):
+    coords = nv_sig['coords']
+#    print(coords)
+    readout = nv_sig['pulsed_SCC_readout_dur']
+    color_filter = nv_sig['color_filter'] 
+    am_589_power = nv_sig['am_589_power']
+    
+
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)  
+    
+    adj_coords = (numpy.array(nv_sig['coords']) + \
+                  numpy.array(tool_belt.get_drift())).tolist()
+    x_center, y_center, z_center = adj_coords
+    
+    # Get a list of x and y voltages for the red scan
+    x_voltages_r, y_voltages_r = cxn.galvo.load_sweep_scan(x_center, y_center,
+                                                   reset_range, reset_range,
+                                                   red_num_steps_reset, 10**6)
+    print('Resetting with green light\n...')
+    green_scan(x_voltages_r, y_voltages_r, z_center)
+         
+    print('Waiting for {} s, during green pulse'.format(pulse_time))
+    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+    # Use two methods to pulse the green light, depending on pulse length
+    if pulse_time < 1:
+        seq_args = [int(pulse_time*10**9), 0, 0.0, 532]           
+        seq_args_string = tool_belt.encode_seq_args(seq_args)            
+        cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
+    else:
+        cxn.pulse_streamer.constant([], 0.0, 0.0)
+        time.sleep(pulse_time)
+    cxn.pulse_streamer.constant([], 0.0, 0.0) 
+        
+    # collect an image under yellow right after ionization
+    print('Scanning red light\n...')
+    ref_img_array, x_voltages, y_voltages = image_sample.main(nv_sig, image_range, image_range, num_steps, 
+                      apd_indices, 638,readout = readout, save_data=True, plot_data=True) 
+
+
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)  
+    
+    print('Resetting with green light\n...')
+    green_scan(x_voltages_r, y_voltages_r, z_center)
+ 
+    # now pulse the yellow at the center of the scan for a short time         
+    print('Pulsing green light for {} s'.format(pulse_time))
+    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+    # Use two methods to pulse the green light, depending on pulse length
+    if pulse_time < 1.1:
+        shared_params = tool_belt.get_shared_parameters_dict(cxn)
+        laser_589_delay = shared_params['515_laser_delay']
+        seq_args = [laser_589_delay, int(pulse_time*10**9), 0.0, 532]           
+        seq_args_string = tool_belt.encode_seq_args(seq_args)            
+        cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
+    else:
+        cxn.pulse_streamer.constant([3], 0.0)
+        time.sleep(pulse_time)
+    cxn.pulse_streamer.constant([], 0.0, 0.0)
+    
+
+        
+    # collect an image under yellow after green pulse
+    print('Scanning red light\n...')
+    sig_img_array, x_voltages, y_voltages = image_sample.main(nv_sig, image_range, image_range, num_steps, 
+                      apd_indices, 638, readout = readout, save_data=True, plot_data=True) 
+
+
+    # measure laser powers:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power(
+                              nv_sig['am_589_power'], nv_sig['nd_filter'])
+
+    # Subtract and plot
+    dif_img_array = sig_img_array - ref_img_array
+    
+ 
+    title = 'Red scan (with/without green pulse)\Green pulse {} s'.format(pulse_time) 
+    fig = plot_dif_fig(coords, x_voltages,image_range,  dif_img_array, readout, title )
+    
+    # Save data
+    timestamp = tool_belt.get_time_stamp()
+
+    rawData = {'timestamp': timestamp,
+               'nv_sig': nv_sig,
+               'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'color_filter' : color_filter,
+               'image_range': image_range,
+               'image_range-units': 'V',
+               'num_steps': num_steps,
+               'reset_range': reset_range,
+               'reset_range-units': 'V',
+               'red_num_steps_reset': red_num_steps_reset,
+               'pulse_time': float(pulse_time),
+               'green_pulse_time-units': 's',
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+               'readout': readout,
+               'readout-units': 'ns',
+               'x_voltages': x_voltages.tolist(),
+               'x_voltages-units': 'V',
+               'y_voltages': y_voltages.tolist(),
+               'y_voltages-units': 'V',
+               'ref_img_array': ref_img_array.tolist(),
+               'ref_img_array-units': 'counts',
+               'sig_img_array': sig_img_array.tolist(),
+               'sig_img_array-units': 'counts',
+               'dif_img_array': dif_img_array.tolist(),
+               'dif_img_array-units': 'counts'}
+
+    filePath = tool_belt.get_file_path('image_sample', timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(rawData, filePath + '_dif')
+
+    tool_belt.save_figure(fig, filePath + '_dif')
+    
+    return coords, x_voltages,image_range , dif_img_array, readout
   
 # %%
 if __name__ == '__main__':
     sample_name = 'goeppert-mayer'
     
-    nv1_2020_11_05 = { 'coords':[0.169, 0.014, 5.2], 
-            'name': '{}-nv1_2020_11_05'.format(sample_name),
-            'expected_count_rate': 45, 'nd_filter': 'nd_0',
+    nv1_2020_12_02 = { 'coords':[0.225, 0.242, 5.20], 
+            'name': '{}-nv1_2020_12_02'.format(sample_name),
+            'expected_count_rate': 50, 'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_SCC_readout_dur': 20000000, 'am_589_power': 1.0, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 50, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
 
-#    green_pulse_time_list = numpy.array([ 100])
+    green_pulse_time_list = numpy.array([ 10, 100])
 #    green_pulse_time_list = numpy.array([0.1, 1, 5, 10, 25, 50, 75, 100, 250 ,1000]) #  0.6 mW, 2 mW,  4?
 #    green_pulse_time_list = numpy.array([0.1]) # 60 mW, 16 mW, 4 mW
   
@@ -430,10 +579,15 @@ if __name__ == '__main__':
         
 #    green_pulse_time_list = [100]
 
-    with labrad.connect() as cxn:     
-#        main_red_green(cxn, nv, 100) 
-                
-        main_red_green(cxn, nv1_2020_11_05, 1)
+    with labrad.connect() as cxn:
+        for t in green_pulse_time_list:
+            nv_sig = copy.deepcopy(nv1_2020_12_02)
+            nv_sig['color_filter'] = '715 lp' 
+            main_green_green_red_scan(cxn, nv_sig, t)
+            
+            nv_sig = copy.deepcopy(nv1_2020_12_02) 
+            nv_sig['color_filter'] = '635-715 bp'
+            main_green_green_red_scan(cxn, nv_sig, t)
             
 #    folder = 'image_sample/branch_Spin_to_charge/2020_10'
 #    file_dark_dif = '2020_10_23-20_32_23-goeppert-mayer-nv2_dif'

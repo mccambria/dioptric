@@ -119,7 +119,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
     num_steps = 31
     coords = nv_sig['coords']
     x_center, y_center, z_center = coords
-    scan_range_nm = 5*shared_params['airy_radius'] #32*10**3
+    scan_range_nm = 2*shared_params['airy_radius'] #32*10**3
     readout = shared_params['continuous_readout_dur']
 
     # Reset to centers
@@ -277,14 +277,14 @@ def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, color_ind,
 # %% Main
 
 
-def main(nv_sig, apd_indices, color_ind, aom_ao_589_pwr = 1.0, disable = False, 
+def main(nv_sig, apd_indices, color_ind, aom_ao_589_pwr = 1.0, color_filter = 'NV', disable = False, 
          set_to_opti_coords=True, save_data=False, plot_data=False):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, color_ind, aom_ao_589_pwr, 
+        main_with_cxn(cxn, nv_sig, apd_indices, color_ind, aom_ao_589_pwr, color_filter,
                       disable, set_to_opti_coords, save_data, plot_data)
 
-def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, disable = False, 
+def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, color_filter = 'NV', disable = False, 
                   set_to_opti_coords=True, save_data=False,
                   plot_data=False, set_drift=True):
     
@@ -293,6 +293,12 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, di
     
     # Be sure the right ND is in place and the magnet aligned
     cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
+    # Make sure the color filter is set
+    if color_filter == 'NV':
+        cxn.filter_slider_ell9k_color.set_filter('635-715 bp')  
+    elif color_filter == 'SiV':
+        cxn.filter_slider_ell9k_color.set_filter('715 lp')
+        
     magnet_angle = nv_sig['magnet_angle']
     if magnet_angle is not None:
         cxn.rotation_stage_ell18k.set_angle(magnet_angle)
@@ -317,6 +323,9 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, di
     if disable:
         coords = adjusted_nv_sig['coords']
         tool_belt.set_xyz(cxn, coords)
+        # After we've optimized, set the color filter back to what we want
+        measure_color_filter = nv_sig['color_filter']
+        cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)  
         
         return coords
     
@@ -418,6 +427,10 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, di
             print('Optimization failed.')
             
     print('\n')
+    
+    # After we've optimized, set the color filter back to what we want
+    measure_color_filter = nv_sig['color_filter']
+    cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)  
                                
     # %% Clean up and save the data
     
@@ -432,6 +445,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, di
         rawData = {'timestamp': timestamp,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                   'color_filter': color_filter,
                    'readout': shared_params['continuous_readout_dur'],
                    'readout-units': 'ns',
                    'opti_coords': opti_coords,

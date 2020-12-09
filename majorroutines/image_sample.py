@@ -252,7 +252,7 @@ def reformat_plot(colorMap, save_file_type):
 
 def create_figure(file_name, sub_folder = None):
 #    if sub_folder:
-    data = tool_belt.get_raw_data('image_sample' + sub_folder, file_name)
+    data = tool_belt.get_raw_data('image_sample', file_name)
 #    else:
 #        data = tool_belt.get_raw_data('image_sample', file_name)
     x_range = data['x_range']
@@ -288,9 +288,9 @@ def create_figure(file_name, sub_folder = None):
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
     
-    color_ind =  data['color_ind']
+#    color_ind =  data['color_ind']
     readout_us = readout / 10**3
-    title = 'Confocal scan with {} nm.\nReadout {} us'.format(color_ind, readout_us)
+    title = 'Confocal scan.\nReadout {} us'.format(readout_us)
     fig = tool_belt.create_image_figure(img_array_kcps, img_extent,
                                         clickHandler=on_click_image,
                                         title = title, 
@@ -326,6 +326,8 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 #    tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
 #    cxn.pulse_streamer.constant([3],0.0,0.0)  
     tool_belt.reset_cfm(cxn)
+    color_filter = nv_sig['color_filter']
+    cxn.filter_slider_ell9k_color.set_filter(color_filter)  
 
 
 
@@ -490,7 +492,14 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     optical_power_mW = None 
     
     
-    # %% Save the data
+    # %% Save the data   
+    
+    # measure laser powers:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power(
+                              nv_sig['am_589_power'], nv_sig['nd_filter'])
 
     timestamp = tool_belt.get_time_stamp()
 
@@ -514,6 +523,19 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                'readout-units': 'ns',
                'init_pulse_time': init_pulse_time,
                'init_pulse_time-units': 'ns',
+               
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
                'x_voltages': x_voltages.tolist(),
                'x_voltages-units': 'V',
                'y_voltages': y_voltages.tolist(),
@@ -554,6 +576,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 #    tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
 #    cxn.pulse_streamer.constant([3],0.0,0.0)  
     tool_belt.reset_cfm(cxn)
+    
+    color_filter = nv_sig['color_filter']
+    cxn.filter_slider_ell9k_color.set_filter(color_filter)  
+#    cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
 
 
 
@@ -752,11 +778,20 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             fig = tool_belt.create_image_figure(numpy.rot90(img_array,1), img_extent,
                                                 clickHandler=on_click_image,
                                                 title = title)
+                
+    # measure laser powers:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power(
+                              nv_sig['am_589_power'], nv_sig['nd_filter'])
+            
     timestamp = tool_belt.get_time_stamp()
 
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'color_filter': color_filter,
                'color_ind': color_ind,
                'optical_power_pd': optical_power_pd,
                'optical_power_pd-units': 'V',
@@ -764,6 +799,18 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                'optical_power_mW-units': 'mW',
                'aom_ao_589_pwr': aom_ao_589_pwr,
                'aom_ao_589_pwr-units': 'V',
+                'green_optical_power_pd': green_optical_power_pd,
+                'green_optical_power_pd-units': 'V',
+                'green_optical_power_mW': green_optical_power_mW,
+                'green_optical_power_mW-units': 'mW',
+                'red_optical_power_pd': red_optical_power_pd,
+                'red_optical_power_pd-units': 'V',
+                'red_optical_power_mW': red_optical_power_mW,
+                'red_optical_power_mW-units': 'mW',
+                'yellow_optical_power_pd': yellow_optical_power_pd,
+                'yellow_optical_power_pd-units': 'V',
+                'yellow_optical_power_mW': yellow_optical_power_mW,
+                'yellow_optical_power_mW-units': 'mW',
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,
@@ -800,7 +847,7 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-    file_name = 'branch_Spin_to_charge/2020_11/2020_11_10-10_36_27-johnson-nv2_2020_11_05'
+    file_name = 'branch_Spin_to_charge/2020_12/2020_12_04-16_02_43-goeppert-mayer-nv1_2020_12_02'
 #    reformat_plot('inferno', 'png')
     create_figure(file_name)
     

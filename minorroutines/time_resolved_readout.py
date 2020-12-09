@@ -112,6 +112,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
         raise NotImplementedError(msg)
     
     tool_belt.reset_cfm(cxn)
+    
+
 
     # %% Define the times to be used in the sequence
     
@@ -223,6 +225,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
         # Optimize
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=True)
         opti_coords_list.append(opti_coords)
+        color_filter = nv_sig['color_filter']
+        cxn.filter_slider_ell9k_color.set_filter(color_filter)  
+        time.sleep(0.1)
         
         
         # Expose the stream

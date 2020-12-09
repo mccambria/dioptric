@@ -244,6 +244,8 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
     am_589_power = nv_sig['am_589_power']
     nd_filter = nv_sig['nd_filter']
     cxn.filter_slider_ell9k.set_filter(nd_filter)
+    color_filter = nv_sig['color_filter']
+    cxn.filter_slider_ell9k_color.set_filter(color_filter)  
     
     readout_pulse_time = nv_sig['pulsed_SCC_readout_dur']
     if init_color == 532:
@@ -293,7 +295,7 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
         current_time = time.time()
         if current_time - run_start_time >= 5*60:
             opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=False)
-            opti_coords_list.append(opti_coords)
+            opti_coords_list.append(opti_coords) 
             run_start_time = current_time
         
         drift = numpy.array(tool_belt.get_drift())
@@ -339,6 +341,7 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
         raw_data = {'start_timestamp': start_timestamp,
                 'init_color': init_color,
                 'pulse_color': pulse_color,
+                'color_filter': color_filter,
                 'readout_color': readout_color,
             'start_coords': start_coords,
             'coords_list': coords_list,
@@ -415,6 +418,7 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
                 'init_color': init_color,
                 'pulse_color': pulse_color,
                 'readout_color': readout_color,
+                'color_filter': color_filter,
             'start_coords': start_coords,
             'coords_list': coords_list,
             'nv_sig': nv_sig,
@@ -1001,6 +1005,7 @@ def plot_times_on_off_nv(nv_sig, readout_coords,  target_nv_coords, dark_coords,
     return
 
 def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color):
+    color_filter = nv_sig['color_filter']
     # calculate the list of x and y voltages we'll need to step through
     ret_vals= build_voltages_image(start_coords, img_range, num_steps)
     x_voltages, y_voltages, x_voltages_1d, y_voltages_1d  = ret_vals
@@ -1108,6 +1113,7 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
             'img_range': img_range,
             'img_range-units': 'V',
             'num_steps': num_steps,
+            'color_filter': color_filter, 
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
             'green_optical_power_pd': green_optical_power_pd,
@@ -1156,57 +1162,78 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
 # %% Run the files
 
 if __name__ == '__main__':
-    sample_name= 'johnson'
-    nv18_2020_11_10 = { 'coords':None, 
-            'name': '{}-nv18_2020_11_10'.format(sample_name),
-            'expected_count_rate': 30, 'nd_filter': 'nd_1.0',
+    sample_name= 'goeppert-mayer'
+
+    nv1_2020_12_02 = { 'coords':[0.225, 0.242, 5.20], 
+            'name': '{}-nv1_2020_12_02'.format(sample_name),
+            'expected_count_rate': 50, 'nd_filter': 'nd_1.0',
+            'color_filter': '635-715 bp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 20*10**6, 
-            'am_589_power': 0.7, 
+            'pulsed_SCC_readout_dur': 20000000, 'am_589_power': 0.7, 
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3,
-            'cobalt_532_power':20, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
 
 
     
-    start_coords = [0.179, 0.247, 5.26]
-    # dy = 0.2
-    # end_coords=[0.179, 0.247 + dy, 5.26]
+    start_coords =[0.225, 0.242, 5.20]
     num_steps = 40
-    init_color = 638
-    pulse_color = 532
     num_runs =  200
-    img_range = 0.15
-    
-    # drift = tool_belt.get_drift()
-#    print(drift)
-    # target_nv_coords= [0.224 - drift[0], 0.285 - drift[1], 5.26]
-    
-    # target_nv_coords_2 = [0.237 - drift[0], 0.227 - drift[1], 5.26]
-    # dark_coords = [0.193 - drift[0], 0.246 - drift[1], 5.26]
+    img_range = 0.06 #0.35
     
  
-    for t in [10**3, 10**4, 10**6, 10**7, 10**8, 10**9]:
-        nv_sig = copy.deepcopy(nv18_2020_11_10)
-        if pulse_color == 532:
-            nv_sig['pulsed_reionization_dur'] = t
-        if pulse_color == 638:
-            nv_sig['pulsed_ionization_dur'] = t 
-        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+    for t in [10**4]:
+#        init_color = 638
+#        pulse_color = 532
+#        nv_sig = copy.deepcopy(nv1_2020_12_02)
+#        if pulse_color == 532:
+#            nv_sig['pulsed_reionization_dur'] = t
+#        if pulse_color == 638:
+#            nv_sig['pulsed_ionization_dur'] = t 
+#        nv_sig['color_filter'] = '635-715 bp'
+#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
         
-        
-    for t in [10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10**9]:
         init_color = 532
-        pulse_color = 638    
-        nv_sig = copy.deepcopy(nv18_2020_11_10)
+        pulse_color = 638
+        nv_sig = copy.deepcopy(nv1_2020_12_02)
         if pulse_color == 532:
             nv_sig['pulsed_reionization_dur'] = t
         if pulse_color == 638:
             nv_sig['pulsed_ionization_dur'] = t 
+        nv_sig['color_filter'] = '635-715 bp'
         image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+#        
+#        init_color = 532
+#        pulse_color = 532
+#        nv_sig = copy.deepcopy(nv1_2020_12_02)
+#        if pulse_color == 532:
+#            nv_sig['pulsed_reionization_dur'] = t
+#        if pulse_color == 638:
+#            nv_sig['pulsed_ionization_dur'] = t 
+#        nv_sig['color_filter'] = '635-715 bp'
+#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+#        
+#        init_color = 638
+#        pulse_color = 638
+#        nv_sig = copy.deepcopy(nv1_2020_12_02)
+#        if pulse_color == 532:
+#            nv_sig['pulsed_reionization_dur'] = t
+#        if pulse_color == 638:
+#            nv_sig['pulsed_ionization_dur'] = t 
+##        nv_sig['color_filter'] = '635-715 bp'
+##        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+        
+
         
  
     
