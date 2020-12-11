@@ -216,9 +216,9 @@ def target_list(nv_sig, start_coords, coords_list, num_runs, init_color, pulse_c
     with labrad.connect() as cxn:
         ret_vals = target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_color, pulse_color)
     
-    readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste = ret_vals
+    readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste, readout_counts_array, target_counts_array, rad_dist= ret_vals
                         
-    return readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste
+    return readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste, readout_counts_array, target_counts_array, rad_dist
         
 def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_color, pulse_color):
     tool_belt.reset_cfm(cxn)
@@ -464,7 +464,7 @@ def target_list_with_cxn(cxn, nv_sig, start_coords, coords_list, num_runs, init_
 #    tool_belt.save_figure(fig, file_path)
 #    tool_belt.save_figure(fig_temp, file_path + '-path_compare')
     
-    return readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste
+    return readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste, readout_counts_array, target_counts_array, rad_dist
                         
    # %% UNTESTED
 def moving_target_image(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color):
@@ -1221,7 +1221,7 @@ def plot_times_on_off_nv(nv_sig, readout_coords,  target_nv_coords, dark_coords,
     tool_belt.save_figure(fig, file_path)
 
     return
-
+# %%
 def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color):
     color_filter = nv_sig['color_filter']
     # calculate the list of x and y voltages we'll need to step through
@@ -1257,9 +1257,9 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
     
     ret_vals = target_list(nv_sig, start_coords, coords_voltages_shuffle_list, 
                                num_runs, init_color, pulse_color)
-    readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste = ret_vals
+    readout_counts_avg, readout_counts_ste, target_counts_avg, target_counts_ste, readout_counts_array, target_counts_array, rad_dist = ret_vals
 
-    # unshuffle the data
+    # unshuffle the averaged data
     list_ind = 0
     for f in ind_list:
         readout_avg_list[f] = readout_counts_avg[list_ind]
@@ -1267,7 +1267,30 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
         target_avg_list[f] = target_counts_avg[list_ind]
         target_ste_list[f] = target_counts_ste[list_ind]
         list_ind += 1
+        
+    # Unshuffle the raw data
+    # create unshuffled arrays to fill with the data
+    readout_counts_array_unsh = numpy.empty([num_steps*num_steps, num_runs])
+    target_counts_array_unsh = numpy.empty([num_steps*num_steps, num_runs])
+    rad_dist_unsh = numpy.empty(len(rad_dist))
     
+    # transpose the data so that the elements correspond to the coordinate, not the run
+    readout_counts_array_sh = copy.deepcopy(readout_counts_array)
+    readout_counts_array_sh = numpy.transpose(readout_counts_array_sh)
+    target_counts_array_sh = copy.deepcopy(target_counts_array)
+    target_counts_array_sh = numpy.transpose(target_counts_array_sh)
+    
+    # unshuffle the data
+    list_ind = 0
+    for f in ind_list:
+        readout_counts_array_unsh[f] = readout_counts_array_sh[list_ind]
+        target_counts_array_unsh[f] = target_counts_array_sh[list_ind]
+        rad_dist_unsh[f] = rad_dist[list_ind]
+        list_ind += 1
+    
+    # flip the matrix again so that the elemetns correspond to the run
+    readout_counts_array_unsh = numpy.transpose(readout_counts_array_unsh)
+    target_counts_array_unsh = numpy.transpose(target_counts_array_unsh)
 #    count = 0
 #    
 #    # step thru each index, run the measurement and then place the counts in the corresponding index in the data list
@@ -1352,12 +1375,21 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
             'ind_list': ind_list,
             'x_voltages_1d': x_voltages_1d.tolist(),
             'y_voltages_1d': y_voltages_1d.tolist(),
+            'rad_dist': rad_dist,
+            'rad_dist-units': 'V',
+            
             'img_extent': img_extent,
             'img_extent-units': 'V',
+            
             'readout_image_array': readout_image_array.tolist(),
             'readout_image_array-units': 'counts',
             'target_image_array': target_image_array.tolist(),
             'target_image_array-units': 'counts',
+                    
+            'readout_counts_array_unsh': readout_counts_array_unsh,
+            'readout_counts_array_unsh-units': 'counts',
+            'target_counts_array_unsh': target_counts_array_unsh,
+            'target_counts_array_unsh-units': 'counts',
 
             'readout_avg_list': readout_avg_list.tolist(),
             'readout_avg_list-units': 'counts',
