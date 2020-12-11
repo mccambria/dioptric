@@ -61,7 +61,7 @@ def set_xyz(cxn, coords):
     cxn.objective_piezo.write(coords[2])
     # Force some delay before proceeding to account 
     # for the effective write time
-    time.sleep(0.001)
+    time.sleep(0.002)
 
 
 def set_xyz_zero(cxn):
