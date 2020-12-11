@@ -824,9 +824,9 @@ def moving_target_with_cxn(cxn, nv_sig,start_coords,  end_coords, num_steps,num_
         
         # save incrimentally 
         raw_data = {'start_timestamp': start_timestamp,
-                'init_color': init_color,
-                'pulse_color': pulse_color,
-                'readout_colo': readout_color,
+            'init_color': init_color,
+            'pulse_color': pulse_color,
+            'readout_colo': readout_color,
             'start_coords': start_coords,
             'end_coords': end_coords,
             'num_steps': num_steps,
@@ -875,14 +875,14 @@ def moving_target_with_cxn(cxn, nv_sig,start_coords,  end_coords, num_steps,num_
                                     format(init_color, pulse_time/10**6, pulse_color))
     ax.legend()
     
-    fig_temp, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.plot(rad_dist*35,readout_counts_avg, label = 'counts on readout after each pulse on target spot')
-    ax.plot(rad_dist*35,target_counts_avg, label = 'counts on target spot' )
-    ax.set_xlabel('Distance from readout NV (um)')
-    ax.set_ylabel('Average counts')
-    ax.set_title('Stationary readout NV, moving target ({} init, {} ms {} pulse)'.\
-                                    format(init_color, pulse_time/10**6, pulse_color))
-    ax.legend()
+#    fig_temp, ax = plt.subplots(1, 1, figsize=(10, 10))
+#    ax.plot(rad_dist*35,readout_counts_avg, label = 'counts on readout after each pulse on target spot')
+#    ax.plot(rad_dist*35,target_counts_avg, label = 'counts on target spot' )
+#    ax.set_xlabel('Distance from readout NV (um)')
+#    ax.set_ylabel('Average counts')
+#    ax.set_title('Stationary readout NV, moving target ({} init, {} ms {} pulse)'.\
+#                                    format(init_color, pulse_time/10**6, pulse_color))
+#    ax.legend()
     
     endFunctionTime = time.time()
 
@@ -892,7 +892,7 @@ def moving_target_with_cxn(cxn, nv_sig,start_coords,  end_coords, num_steps,num_
                 'timeElapsed': timeElapsed,
                 'init_color': init_color,
                 'pulse_color': pulse_color,
-                'readout_colo': readout_color,
+                'readout_color': readout_color,
             'start_coords': start_coords,
             'end_coords': end_coords,
             'num_steps': num_steps,
@@ -933,7 +933,225 @@ def moving_target_with_cxn(cxn, nv_sig,start_coords,  end_coords, num_steps,num_
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path)
     tool_belt.save_figure(fig, file_path)
-    tool_belt.save_figure(fig_temp, file_path + '-path_compare')
+#    tool_belt.save_figure(fig_temp, file_path + '-path_compare')
+    
+    return
+# %%
+def moving_target_long_t_line(nv_sig, start_coords, end_point, num_steps, num_runs, init_color, pulse_color, point_list = None):
+    with labrad.connect() as cxn:
+        moving_target_long_t_line_with_cxn(cxn, nv_sig,start_coords,  end_point, num_steps,num_runs,  init_color, pulse_color, point_list)
+    return
+                
+def moving_target_long_t_line_with_cxn(cxn, nv_sig,start_coords,  end_coords, num_steps,num_runs, init_color, pulse_color, point_list = None):
+    tool_belt.reset_cfm(cxn)
+        
+    # Define paramters
+    apd_indices = [0]
+    readout_color = 589
+    
+    #delay of aoms and laser, parameters, etc
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    laser_515_delay = shared_params['515_laser_delay']
+    aom_589_delay = shared_params['589_aom_delay']
+    laser_638_delay = shared_params['638_DM_laser_delay']
+#    galvo_delay = 1*shared_params['large_angle_galvo_delay']
+    
+    wiring = tool_belt.get_pulse_streamer_wiring(cxn)
+    pulser_wiring_green = wiring['do_532_aom']
+#    pulser_wiring_yellow = wiring['ao_589_aom']
+    pulser_wiring_red = wiring['do_638_laser']
+    
+    # copy the start coords onto the nv_sig
+    start_nv_sig = copy.deepcopy(nv_sig)
+    start_nv_sig['coords'] = start_coords
+
+    am_589_power = nv_sig['am_589_power']
+    nd_filter = nv_sig['nd_filter']
+    cxn.filter_slider_ell9k.set_filter(nd_filter)
+    
+    readout_pulse_time = nv_sig['pulsed_SCC_readout_dur']
+    
+    if init_color == 532:
+        initialization_time = 10**5
+        init_laser_delay = laser_515_delay
+    elif init_color == 638:
+        initialization_time = 10**3
+        init_laser_delay = laser_638_delay
+        
+    if pulse_color == 532:
+        pulse_time = nv_sig['pulsed_reionization_dur']
+        direct_wiring = pulser_wiring_green
+#        laser_delay = laser_515_delay
+    elif pulse_color == 638:
+        pulse_time = nv_sig['pulsed_ionization_dur']
+        direct_wiring = pulser_wiring_red
+#        laser_delay = laser_638_delay
+    
+    opti_coords_list = []
+    readout_counts_array = numpy.empty([num_steps, num_runs])
+
+    startFunctionTime = time.time()
+
+
+    # Optimize at the start of the routine
+    opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=False)
+    opti_coords_list.append(opti_coords)
+    
+    start_timestamp = tool_belt.get_time_stamp()
+    
+    # record the time starting at the beginning of the runs
+    run_start_time = time.time()
+    
+    for r in range(num_runs):  
+        print( 'run {}'.format(r))
+        #optimize every 5 min or so
+        # So first check the time. If the time that has passed since the last
+        # optimize is longer that 5 min, optimize again
+        current_time = time.time()
+        if current_time - run_start_time >= 5*60:
+            opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=False)
+            opti_coords_list.append(opti_coords)
+            run_start_time = current_time
+            
+        drift = numpy.array(tool_belt.get_drift())
+        
+        # get the readout coords with drift
+        start_coords_drift = start_coords + drift
+        end_coords_drift = end_coords + drift
+        
+        x_voltages = numpy.linspace(start_coords_drift[0], end_coords_drift[0], num_steps)
+        y_voltages = numpy.linspace(start_coords_drift[1], end_coords_drift[1], num_steps)
+        
+        for i in range(num_steps):
+            # start on the readout NV
+            tool_belt.set_xyz(cxn, start_coords_drift)
+            
+            # pulse the laser at the readout
+            seq_args = [init_laser_delay, int(initialization_time), 0.0, init_color]           
+            seq_args_string = tool_belt.encode_seq_args(seq_args)            
+            cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string) 
+            
+            # move to next spot
+            tool_belt.set_xyz(cxn, [x_voltages[i], y_voltages[i], start_coords_drift[2]])
+            
+            # pulse laser for X time with time.sleep
+            
+            if pulse_color == 532 or pulse_color==638:
+                cxn.pulse_streamer.constant([direct_wiring], 0.0, 0.0)
+                time.sleep(pulse_time/10**9)
+                cxn.pulse_streamer.constant([], 0.0, 0.0)
+            else:
+                print('Please use green or red pulses only!')
+            
+            # Move galvo to center NV
+            tool_belt.set_xyz(cxn, start_coords_drift)
+            
+            # measure the counts
+            seq_args = [aom_589_delay, readout_pulse_time, am_589_power, apd_indices[0], readout_color]       
+            seq_args_string = tool_belt.encode_seq_args(seq_args)  
+            cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)  
+                   
+            cxn.apd_tagger.start_tag_stream(apd_indices) 
+            cxn.pulse_streamer.stream_immediate('simple_readout.py', 1, seq_args_string) 
+             
+            new_samples = cxn.apd_tagger.read_counter_simple(1)
+            # The last of the triplet of readout windows is the counts we are interested in
+            counts = new_samples[0]
+            
+            readout_counts_array[i][r] = counts
+            
+            cxn.apd_tagger.stop_tag_stream()
+            
+        # save incrimentally 
+        raw_data = {'start_timestamp': start_timestamp,
+            'init_color': init_color,
+            'pulse_color': pulse_color,
+            'readout_colo': readout_color,
+            'start_coords': start_coords,
+            'end_coords': end_coords,
+            'num_steps': num_steps,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'num_runs':num_runs,
+            'opti_coords_list': opti_coords_list,
+            'readout_counts_array': readout_counts_array.tolist(),
+            'readout_counts_array-units': 'counts',
+            }
+                
+        file_path = tool_belt.get_file_path(__file__, start_timestamp, nv_sig['name'], 'incremental')
+        tool_belt.save_raw_data(raw_data, file_path)
+    
+    # calculate the radial distances from the readout NV to the target points
+    x_target_coords = numpy.array(x_voltages)
+    y_target_coords = numpy.array(y_voltages)
+    x_diffs = (x_target_coords - start_coords_drift[0])
+    y_diffs = (y_target_coords- start_coords_drift[1])
+    rad_dist = numpy.sqrt(x_diffs**2 + y_diffs**2)
+    
+    # Statistics
+    readout_counts_avg = numpy.average(readout_counts_array, axis=1)
+    readout_counts_ste = stats.sem(readout_counts_array, axis=1)
+    
+    # measure laser powers:
+    green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW = \
+            tool_belt.measure_g_r_y_power(
+                              nv_sig['am_589_power'], nv_sig['nd_filter'])
+    
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    ax.plot(rad_dist*35,readout_counts_avg, label = 'counts on readout after each pulse on target spot')
+    ax.set_xlabel('Distance from readout NV (um)')
+    ax.set_ylabel('Average counts')
+    ax.set_title('Stationary readout NV, moving target ({} init, {} s {} pulse)'.\
+                                    format(init_color, pulse_time/10**9, pulse_color))
+    ax.legend()
+    
+    
+    endFunctionTime = time.time()
+
+    timeElapsed = endFunctionTime - startFunctionTime
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+                'timeElapsed': timeElapsed,
+                'init_color': init_color,
+                'pulse_color': pulse_color,
+                'readout_color': readout_color,
+            'start_coords': start_coords,
+            'end_coords': end_coords,
+            'num_steps': num_steps,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'num_runs':num_runs,
+            'opti_coords_list': opti_coords_list,
+            'rad_dist': rad_dist.tolist(),
+            'rad_dist-units': 'V',
+            'readout_counts_array': readout_counts_array.tolist(),
+            'readout_counts_array-units': 'counts',
+
+            'readout_counts_avg': readout_counts_avg.tolist(),
+            'readout_counts_avg-units': 'counts',
+
+            'readout_counts_ste': readout_counts_ste.tolist(),
+            'readout_counts_ste-units': 'counts',
+            }
+    
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path)
+    tool_belt.save_figure(fig, file_path)
+#    tool_belt.save_figure(fig_temp, file_path + '-path_compare')
     
     return
 # %%
@@ -1196,9 +1414,21 @@ def image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, ini
 if __name__ == '__main__':
     sample_name= 'goeppert-mayer'
 
-    nv1_2020_12_02 = { 'coords':[0.225, 0.242, 5.20], 
-            'name': '{}-nv1_2020_12_02'.format(sample_name),
-            'expected_count_rate': 50, 'nd_filter': 'nd_1.0',
+#    nv1_2020_12_02 = { 'coords':[0.225, 0.242, 5.20], 
+#            'name': '{}-nv1_2020_12_02'.format(sample_name),
+#            'expected_count_rate': 50, 'nd_filter': 'nd_1.0',
+#            'color_filter': '635-715 bp',
+#            'pulsed_readout_dur': 300,
+#            'pulsed_SCC_readout_dur': 20000000, 'am_589_power': 0.7, 
+#            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+#            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+#            'magnet_angle': 0,
+#            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+#            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
+
+    nv2_2020_12_10 = { 'coords':[0.216,0.196,5.15], 
+            'name': '{}-nv2_2020_12_10'.format(sample_name),
+            'expected_count_rate': 55, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 20000000, 'am_589_power': 0.7, 
@@ -1206,17 +1436,41 @@ if __name__ == '__main__':
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
-
-
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
     
-    start_coords =[0.225, 0.242, 5.20]
-    num_steps = 40
-    num_runs =  200
-    img_range = 0.06 #0.35
+    start_coords =[0.216,0.196,5.15]
+    end_point = numpy.array(start_coords) + [1,0,0]
+    end_point = end_point.tolist()
+    num_steps = 20
+    num_runs =  25
+#    img_range = 0.35
     
+    
+    for t in [100*10**9]:        
+        init_color = 532
+        pulse_color = 532
+        nv_sig = copy.deepcopy(nv2_2020_12_10)
+        if pulse_color == 532:
+            nv_sig['pulsed_reionization_dur'] = t
+        if pulse_color == 638:
+            nv_sig['pulsed_ionization_dur'] = t 
+        nv_sig['color_filter'] = '635-715 bp'
+        moving_target_long_t_line(nv_sig, start_coords, end_point, num_steps, num_runs,
+                      init_color, pulse_color)
+        
+        init_color = 638
+        pulse_color = 532
+        nv_sig = copy.deepcopy(nv2_2020_12_10)
+        if pulse_color == 532:
+            nv_sig['pulsed_reionization_dur'] = t
+        if pulse_color == 638:
+            nv_sig['pulsed_ionization_dur'] = t 
+        nv_sig['color_filter'] = '635-715 bp'
+        moving_target_long_t_line(nv_sig, start_coords, end_point, num_steps, num_runs,
+                      init_color, pulse_color)
+        
  
-    for t in [10**4]:
+#    for t in [10**6]:
 #        init_color = 638
 #        pulse_color = 532
 #        nv_sig = copy.deepcopy(nv1_2020_12_02)
@@ -1229,15 +1483,15 @@ if __name__ == '__main__':
 #        nv_sig['color_filter'] = '715 lp'
 #        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
         
-        init_color = 532
-        pulse_color = 638
-        nv_sig = copy.deepcopy(nv1_2020_12_02)
-        if pulse_color == 532:
-            nv_sig['pulsed_reionization_dur'] = t
-        if pulse_color == 638:
-            nv_sig['pulsed_ionization_dur'] = t 
-        nv_sig['color_filter'] = '635-715 bp'
-        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
+#        init_color = 532
+#        pulse_color = 638
+#        nv_sig = copy.deepcopy(nv1_2020_12_02)
+#        if pulse_color == 532:
+#            nv_sig['pulsed_reionization_dur'] = t
+#        if pulse_color == 638:
+#            nv_sig['pulsed_ionization_dur'] = t 
+#        nv_sig['color_filter'] = '635-715 bp'
+#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
 #        nv_sig['color_filter'] = '715 lp'
 #        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
 #        
@@ -1255,7 +1509,7 @@ if __name__ == '__main__':
 #        
 #        init_color = 638
 #        pulse_color = 638
-#        nv_sig = copy.deepcopy(nv1_2020_12_02)
+#        nv_sig = copy.deepcopy(nv1_2020_12_10)
 #        if pulse_color == 532:
 #            nv_sig['pulsed_reionization_dur'] = t
 #        if pulse_color == 638:
