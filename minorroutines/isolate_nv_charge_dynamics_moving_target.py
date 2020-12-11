@@ -989,6 +989,10 @@ def moving_target_long_t_line_with_cxn(cxn, nv_sig,start_coords,  end_coords, nu
     
     opti_coords_list = []
     readout_counts_array = numpy.empty([num_steps, num_runs])
+    
+    period_s = pulse_time/10**9
+    period_s_total = (period_s*num_steps + 5)*num_runs*num_steps
+    print('Expected total run time: {:.0f} min'.format(period_s_total/60))
 
     startFunctionTime = time.time()
 
@@ -1446,7 +1450,7 @@ if __name__ == '__main__':
 #    img_range = 0.35
     
     
-    for t in [100*10**9]:        
+    for t in [10**9]:        
         init_color = 532
         pulse_color = 532
         nv_sig = copy.deepcopy(nv2_2020_12_10)
@@ -1457,17 +1461,17 @@ if __name__ == '__main__':
         nv_sig['color_filter'] = '635-715 bp'
         moving_target_long_t_line(nv_sig, start_coords, end_point, num_steps, num_runs,
                       init_color, pulse_color)
-        
-        init_color = 638
-        pulse_color = 532
-        nv_sig = copy.deepcopy(nv2_2020_12_10)
-        if pulse_color == 532:
-            nv_sig['pulsed_reionization_dur'] = t
-        if pulse_color == 638:
-            nv_sig['pulsed_ionization_dur'] = t 
-        nv_sig['color_filter'] = '635-715 bp'
-        moving_target_long_t_line(nv_sig, start_coords, end_point, num_steps, num_runs,
-                      init_color, pulse_color)
+#        
+#        init_color = 638
+#        pulse_color = 532
+#        nv_sig = copy.deepcopy(nv2_2020_12_10)
+#        if pulse_color == 532:
+#            nv_sig['pulsed_reionization_dur'] = t
+#        if pulse_color == 638:
+#            nv_sig['pulsed_ionization_dur'] = t 
+#        nv_sig['color_filter'] = '635-715 bp'
+#        moving_target_long_t_line(nv_sig, start_coords, end_point, num_steps, num_runs,
+#                      init_color, pulse_color)
         
  
 #    for t in [10**6]:
