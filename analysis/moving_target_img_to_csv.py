@@ -34,6 +34,8 @@ def convert(folder_name):
                     center_coords = data['start_coords']
                     ind_list = data['ind_list']
                     num_steps = data['num_steps']
+                    x_voltages_1d = data['x_voltages_1d']
+                    y_voltages_1d = data['y_voltages_1d']
                     num_runs = data['num_runs']
                     coords_voltages = data['coords_voltages']
                     timestamp = data['timestamp']
@@ -119,6 +121,8 @@ def convert(folder_name):
             'yellow_optical_power_mW': yellow_optical_power_mW,
             'yellow_optical_power_mW-units': 'mW',
             'num_runs':num_runs,
+            'x_voltages_1d': x_voltages_1d,
+            'y_voltages_1d': y_voltages_1d,
             'coords_voltages': coords_voltages,
             'coords_voltages-units': '[V, V]',
             'ind_list': ind_list,
