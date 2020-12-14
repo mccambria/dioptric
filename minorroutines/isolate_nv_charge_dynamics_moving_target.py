@@ -991,7 +991,7 @@ def moving_target_long_t_line_with_cxn(cxn, nv_sig,start_coords,  end_coords, nu
     readout_counts_array = numpy.empty([num_steps, num_runs])
     
     period_s = pulse_time/10**9
-    period_s_total = (period_s*num_steps + 5)*num_runs*num_steps
+    period_s_total = period_s*num_runs*num_steps
     print('Expected total run time: {:.0f} min'.format(period_s_total/60))
 
     startFunctionTime = time.time()
@@ -1451,7 +1451,7 @@ if __name__ == '__main__':
     
     
     for t in [10**9]:        
-        init_color = 532
+        init_color = 638
         pulse_color = 532
         nv_sig = copy.deepcopy(nv2_2020_12_10)
         if pulse_color == 532:
