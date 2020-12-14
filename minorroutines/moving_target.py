@@ -874,15 +874,15 @@ if __name__ == '__main__':
 #    img_range = 0.35
     
     
-    for t in [10**9]:        
-        init_color = 532
-        pulse_color = 532
-        nv_sig = copy.deepcopy(nv2_2020_12_10)
-        nv_sig['color_filter'] = '635-715 bp'
-        # moving_target_long_t_line(nv_sig, start_coords, end_point, num_steps, num_runs,
-        #               init_color, pulse_color)
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
+    # for t in [10**9]:        
+    #     init_color = 532
+    #     pulse_color = 532
+    #     nv_sig = copy.deepcopy(nv2_2020_12_10)
+    #     nv_sig['color_filter'] = '635-715 bp'
+    #     # moving_target_long_t_line(nv_sig, start_coords, end_point, num_steps, num_runs,
+    #     #               init_color, pulse_color)
+    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+    #                          num_steps, num_runs, init_color, pulse_color)
 #        
 #        init_color = 638
 #        pulse_color = 532
@@ -995,36 +995,76 @@ if __name__ == '__main__':
 #        moving_target(nv_sig,start_coords,  end_coords, num_steps, num_runs, init_color, pulse_color)
 
 # %%
-#    file = '2020_11_23-16_57_06-johnson-nv18_2020_11_10'
-#    sub_folder = 'isolate_nv_charge_dynamics_moving_target/branch_Spin_to_charge/2020_11'
-#    
-#    data = tool_belt.get_raw_data(sub_folder, file)
-#    
-#    rad_dist = data['rad_dist']
-#    readout_counts_avg = data['readout_counts_avg']
-#    target_counts_avg = data['target_counts_avg']
-#    init_color = data['init_color']
-#    pulse_color = data['pulse_color']
-#    nv_sig = data['nv_sig']
-#    
-#    if init_color == 532:
-#        initialization_time = nv_sig['pulsed_reionization_dur']
-#    elif init_color == 638:
-#        initialization_time = nv_sig['pulsed_ionization_dur']
-#    if pulse_color == 532:
-#        pulse_time = nv_sig['pulsed_reionization_dur']
-#    elif pulse_color == 638:
-#        pulse_time = nv_sig['pulsed_ionization_dur']
-#    
-#    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-#    ax.plot(numpy.array(rad_dist)*35,readout_counts_avg, label = 'counts on readout after each pulse on target spot')
-#    ax.plot(numpy.array(rad_dist)*35,numpy.array(target_counts_avg)/100, label = 'counts on target spot')
-#    ax.set_xlabel('Distance from readout NV (um)')
-#    ax.set_ylabel('Average counts')
-#    ax.set_title('Stationary readout NV, moving target ({} init, {} ms {} pulse)'.\
-#                                    format(init_color, pulse_time/10**6, pulse_color))
-#    ax.legend()
-#    ax.set_xlim([-0.5,7])
+    # data = tool_belt.get_raw_data('moving_target/branch_Spin_to_charge/2020_12/incremental', '2020_12_13-10_04_20-goeppert-mayer-nv2_2020_12_10')
+    # readout_color = 589
+    
+    # readout_counts_array = data['readout_counts_array']
+    # target_counts_array = data['target_counts_array']
+    # opti_coords_list = data['opti_coords_list']
+    # start_coords = data['start_coords']
+    # coords_list = data['coords_list']
+    # end_coords = coords_list[-1]
+    # num_steps = data['num_steps']
+    # init_color= data['init_color']
+    # pulse_time = data['pulse_time']
+    # pulse_color = data['pulse_color']
+    # nv_sig = data['nv_sig']
+    
+    # x_voltages = numpy.linspace(start_coords[0], 
+    #                             end_coords[0], num_steps)
+    # y_voltages = numpy.linspace(start_coords[1], 
+    #                             end_coords[1], num_steps)
+    
+            
+    # # calculate the radial distances from the readout NV to the target points
+    # x_diffs = (x_voltages - start_coords[0])
+    # y_diffs = (y_voltages- start_coords[1])
+    # rad_dist = numpy.sqrt(x_diffs**2 + y_diffs**2)
+    
+    # # Statistics
+    # readout_counts_avg = numpy.average(readout_counts_array, axis=1)
+    # readout_counts_ste = stats.sem(readout_counts_array, axis=1)
+    
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(rad_dist*35,readout_counts_avg, label = 'counts on readout after each pulse on target spot')
+    # ax.set_xlabel('Distance from readout NV (um)')
+    # ax.set_ylabel('Average counts')
+    # ax.set_title('Stationary readout NV, moving target ({} init, {} s {} pulse)'.\
+    #                                 format(init_color, pulse_time/10**9, pulse_color))
+    # ax.legend()
+    
+    
+    # endFunctionTime = time.time()
+
+    # timestamp = tool_belt.get_time_stamp()
+    # raw_data = {'timestamp': timestamp,
+    #             # 'timeElapsed': timeElapsed,
+    #             'init_color': init_color,
+    #             'pulse_color': pulse_color,
+    #             'readout_color': readout_color,
+    #         'start_coords': start_coords,
+    #         'end_coords': end_coords,
+    #         'num_steps': num_steps,
+    #         'nv_sig': nv_sig,
+    #         'nv_sig-units': tool_belt.get_nv_sig_units(),
+    #         'num_runs':num_runs,
+    #         'opti_coords_list': opti_coords_list,
+    #         'rad_dist': rad_dist.tolist(),
+    #         'rad_dist-units': 'V',
+    #         'readout_counts_array': readout_counts_array,
+    #         'readout_counts_array-units': 'counts',
+
+    #         'readout_counts_avg': readout_counts_avg.tolist(),
+    #         'readout_counts_avg-units': 'counts',
+
+    #         'readout_counts_ste': readout_counts_ste.tolist(),
+    #         'readout_counts_ste-units': 'counts',
+    #         }
+    
+    # file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    # tool_belt.save_raw_data(raw_data, file_path)
+    # tool_belt.save_figure(fig, file_path)
+
     
     
     
