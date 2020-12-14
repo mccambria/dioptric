@@ -68,23 +68,23 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
-#    scan_range = 1.5
+    scan_range = 1.5
 #    scan_range = 1.0
 #    scan_range = 0.5
 #    num_steps = 200
 #    scan_range = 0.07
 #    num_steps = 125
 #    scan_range = 0.2
-#    num_steps = 120
+    num_steps = 120
 #    scan_range = 0.15
-    scan_range = 0.1
+#    scan_range = 0.1
 #    num_steps = 90
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
-    num_steps = 40
+#    num_steps = 40
     
 #    scan_range = 0.5 # 250
 #    scan_range = 0.25 # 125
@@ -701,7 +701,7 @@ if __name__ == '__main__':
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 1*10**7, flip=2)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = nv_sig['pulsed_SCC_readout_dur'])
 
 #            do_determine_galvo_response(nv_sig, apd_indices)
