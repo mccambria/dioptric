@@ -249,7 +249,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         expected count rate, nd filter, color filter, etc
     start_coords : list (float)
         The coordinates that will be read out from. Note that the routine takes
-        this coord from this input not the nv_sig.
+        this coord from this input not the nv_sig. [x,y,z]
     coords_list : 2D list (float)
         A list of each coordinate that we will pulse the laser at.
     pulse_time: int
@@ -371,7 +371,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         target_counts_array = readout_counts_array
             
         period_s = pulse_time/10**9
-        period_s_total = (period_s*num_samples + 5)*num_runs*num_samples
+        period_s_total = (period_s*num_samples + 5)*num_runs
         print('Expected total run time: {:.0f} min'.format(period_s_total/60))
     
     ### Backto the same
@@ -399,7 +399,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
             
         # get the readout coords with drift
         start_coords_drift = start_coords + drift
-        coords_list_drift = numpy.array(coords_list) + drift
+        coords_list_drift = numpy.array(coords_list) + [drift[0], drift[1]]
                             
         # Different ways of stepping thru coords and recording data                   
         if pulse_time < 10**9:
@@ -867,86 +867,48 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
     
     start_coords =[0.216,0.196,5.15]
-    end_coords = numpy.array(start_coords) + [1,0,0]
+    end_coords = numpy.array(start_coords) + [1.5,0,0]
     end_coords = end_coords.tolist()
-    num_steps = 20
-    num_runs =  25
+    num_steps = 30
+    num_runs =  50
 #    img_range = 0.35
     
     
-    # for t in [10**9]:        
-    #     init_color = 532
-    #     pulse_color = 532
-    #     nv_sig = copy.deepcopy(nv2_2020_12_10)
-    #     nv_sig['color_filter'] = '635-715 bp'
-    #     # moving_target_long_t_line(nv_sig, start_coords, end_point, num_steps, num_runs,
-    #     #               init_color, pulse_color)
-    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-    #                          num_steps, num_runs, init_color, pulse_color)
-#        
-#        init_color = 638
-#        pulse_color = 532
-#        nv_sig = copy.deepcopy(nv2_2020_12_10)
-#        if pulse_color == 532:
-#            nv_sig['pulsed_reionization_dur'] = t
-#        if pulse_color == 638:
-#            nv_sig['pulsed_ionization_dur'] = t 
-#        nv_sig['color_filter'] = '635-715 bp'
-#        moving_target_long_t_line(nv_sig, start_coords, end_point, num_steps, num_runs,
-#                      init_color, pulse_color)
+    for t in [10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10*10**9]:        
+        init_color = 532
+        pulse_color = 532
+        nv_sig = copy.deepcopy(nv2_2020_12_10)
+        nv_sig['color_filter'] = '635-715 bp'
+        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+                             num_steps, num_runs, init_color, pulse_color)
+        nv_sig['color_filter'] = '715 lp'
+        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+                             num_steps, num_runs, init_color, pulse_color)
         
+    for t in [10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10*10**9]:        
+        init_color = 638
+        pulse_color = 532
+        nv_sig = copy.deepcopy(nv2_2020_12_10)
+        nv_sig['color_filter'] = '635-715 bp'
+        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+                             num_steps, num_runs, init_color, pulse_color)
+        nv_sig['color_filter'] = '715 lp'
+        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+                             num_steps, num_runs, init_color, pulse_color)
+        
+    for t in [100*10**9]: 
+        num_runs = 25
+        init_color = 638
+        pulse_color = 532
+        nv_sig = copy.deepcopy(nv2_2020_12_10)
+        nv_sig['color_filter'] = '635-715 bp'
+        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+                             num_steps, num_runs, init_color, pulse_color)
+        nv_sig['color_filter'] = '715 lp'
+        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+                             num_steps, num_runs, init_color, pulse_color)
  
-#    for t in [10**6]:
-#        init_color = 638
-#        pulse_color = 532
-#        nv_sig = copy.deepcopy(nv1_2020_12_02)
-#        if pulse_color == 532:
-#            nv_sig['pulsed_reionization_dur'] = t
-#        if pulse_color == 638:
-#            nv_sig['pulsed_ionization_dur'] = t 
-#        nv_sig['color_filter'] = '635-715 bp'
-#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
-#        nv_sig['color_filter'] = '715 lp'
-#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
-        
-#        init_color = 532
-#        pulse_color = 638
-#        nv_sig = copy.deepcopy(nv1_2020_12_02)
-#        if pulse_color == 532:
-#            nv_sig['pulsed_reionization_dur'] = t
-#        if pulse_color == 638:
-#            nv_sig['pulsed_ionization_dur'] = t 
-#        nv_sig['color_filter'] = '635-715 bp'
-#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
-#        nv_sig['color_filter'] = '715 lp'
-#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
-#        
-#        init_color = 532
-#        pulse_color = 532
-#        nv_sig = copy.deepcopy(nv1_2020_12_02)
-#        if pulse_color == 532:
-#            nv_sig['pulsed_reionization_dur'] = t
-#        if pulse_color == 638:
-#            nv_sig['pulsed_ionization_dur'] = t 
-#        nv_sig['color_filter'] = '635-715 bp'
-#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
-#        nv_sig['color_filter'] = '715 lp'
-#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
-#        
-#        init_color = 638
-#        pulse_color = 638
-#        nv_sig = copy.deepcopy(nv1_2020_12_10)
-#        if pulse_color == 532:
-#            nv_sig['pulsed_reionization_dur'] = t
-#        if pulse_color == 638:
-#            nv_sig['pulsed_ionization_dur'] = t 
-##        nv_sig['color_filter'] = '635-715 bp'
-##        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
-#        nv_sig['color_filter'] = '715 lp'
-#        image_indiv_points(nv_sig, start_coords, img_range, num_steps, num_runs, init_color, pulse_color)
-        
 
-        
  
     
 #    moving_target(nv18_2020_11_10,start_coords,  end_coords, num_steps, num_runs, init_color, pulse_color)    
@@ -1065,6 +1027,5 @@ if __name__ == '__main__':
     # tool_belt.save_raw_data(raw_data, file_path)
     # tool_belt.save_figure(fig, file_path)
 
-    
     
     
