@@ -277,10 +277,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
-
-    # The galvo's small angle step response is 400 us
-    # Let's give ourselves a buffer of 500 us (500000 ns)
-    delay = int(0.5 * 10**6)
+    
+    # Get the xy response time
+    delay = int(shared_params['xy_delay'])
 
     total_num_samples = num_steps**2
 
@@ -298,7 +297,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
     # %% Set up the galvo
 
-    x_voltages, y_voltages = cxn.galvo.load_sweep_xy_scan(x_center, y_center,
+    xy_server = tool_belt.get_xy_server()
+    x_voltages, y_voltages = xy_server.load_sweep_xy_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
 
@@ -376,7 +376,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
     tool_belt.reset_cfm(cxn)
 
     # Return to center
-    cxn.galvo.write_xy(x_center, y_center)
+    xy_server.write_xy(x_center, y_center)
 
     # %% Save the data
 

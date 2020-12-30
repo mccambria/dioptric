@@ -57,26 +57,31 @@ def get_signal_generator_cxn(cxn, state):
 
 
 def set_xyz(cxn, coords):
-    
-    cxn.galvo.write_xy(coords[0], coords[1])
-    cxn.objective_piezo.write_z(coords[2])
+    xy_server = get_xy_server()
+    z_server = get_z_server()
+    xy_server.write_xy(coords[0], coords[1])
+    z_server.write_z(coords[2])
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
 
 
 def set_xyz_center(cxn):
-    cxn.galvo.write_xy(0.0, 0.0)
-    cxn.objective_piezo.write_z(5.0)
+    xy_server = get_xy_server()
+    z_server = get_z_server()
+    xy_server.write_xy(0.0, 0.0)
+    z_server.write_z(5.0)
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
 
 
 def set_xyz_on_nv(cxn, nv_sig):
+    xy_server = get_xy_server()
+    z_server = get_z_server()
     coords = nv_sig['coords']
-    cxn.galvo.write_xy(coords[0], coords[1])
-    cxn.objective_piezo.write_z(coords[2])
+    xy_server.write_xy(coords[0], coords[1])
+    z_server.write_z(coords[2])
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
@@ -428,23 +433,32 @@ def get_shared_parameters_dict(cxn):
 
 def get_xy_server(cxn):
     """
-    Talk to the registry to get the fine xy control server for this machine.
-    eg for rabi it is probably galvo
+    Talk to the registry to get the fine xy control server for this setup.
+    eg for rabi it is probably galvo. See optimize for some examples.
     """
     
-    p = cxn.registry.packet()
-    p.cd('', 'Config')
-    p.get('xy_server')
-    return p.send()['get']
+    return get_server(cxn, 'xy_server')
 
 
 def get_z_server(cxn):
     """Same as get_xy_server but for the fine z control server"""
     
+    return get_server(cxn, 'z_server')
+
+
+def get_server(cxn, server_key):
+    """
+    Retrieve whatever server. Should just be used as a sub-function, probably
+    """
+    
     p = cxn.registry.packet()
     p.cd('', 'Config')
-    p.get('z_server')
-    return p.send()['get']
+    p.get(server_key)
+    server_name = p.send()['get']
+    # return an actual reference to the appropriate server so it can just
+    # be used directly
+    return getattr(cxn, server_name)
+    
 
 
 # %% Open utils

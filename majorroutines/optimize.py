@@ -128,18 +128,19 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     # x/y
     if axis_ind in [0, 1]:
         
-        scan_range = scan_range_nm / shared_params['galvo_nm_per_volt']
-        seq_args = [shared_params['galvo_delay'], readout, apd_indices[0]]
+        scan_range = scan_range_nm / shared_params['xy_nm_per_volt']
+        seq_args = [shared_params['xy_delay'], readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string)
         period = ret_vals[0]
 
         # Get the proper scan function
+        xy_server = tool_belt.get_xy_server()
         if axis_ind == 0:
-            scan_func = cxn.galvo.load_x_scan
+            scan_func = xy_server.load_x_scan
         elif axis_ind == 1:
-            scan_func = cxn.galvo.load_y_scan
+            scan_func = xy_server.load_y_scan
             
         voltages = scan_func(x_center, y_center, scan_range,
                              num_steps, period)
@@ -151,8 +152,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         
         cxn.filter_slider_ell9k_color.set_filter('560 bp')
         
-        scan_range =2*scan_range_nm / shared_params['piezo_nm_per_volt']
-        seq_args = [shared_params['objective_piezo_delay'],
+        scan_range =2*scan_range_nm / shared_params['z_nm_per_volt']
+        seq_args = [shared_params['z_delay'],
                     readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
