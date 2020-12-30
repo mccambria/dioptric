@@ -32,13 +32,18 @@ HIGH = 1
 def constant(digital_channels, analog_0_voltage, analog_1_voltage):
     
     with labrad.connect() as cxn:
-        cxn.pulse_streamer.constant(digital_channels,
+        pulser = cxn.pulse_streamer
+        pulser.constant(digital_channels,
                                     analog_0_voltage, analog_1_voltage)
 #        val = 0.0
 #        cxn.pulse_streamer.constant([], 0.0, 0.0)
 #        cxn.pulse_streamer.constant([], val, 0.0)
 #        cxn.pulse_streamer.constant([7], 0.0, val)
 #        cxn.pulse_streamer.constant([], val, val)
+
+        input('Press enter to stop...')
+        
+        pulser.constant([], 0.0, 0.0)
 
 
 # %% Main
@@ -84,5 +89,5 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     # Run the script
-    main()
-#    constant([3], 0.0, 0.0)
+    # main()
+    constant([3], 0.0, 0.0)

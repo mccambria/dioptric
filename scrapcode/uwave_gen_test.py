@@ -11,7 +11,7 @@ Created on Sun Jun 16 11:22:40 2019
 # %% Imports
 
 
-import visa
+import pyvisa as visa
 import nidaqmx
 import labrad
 import time
@@ -34,6 +34,12 @@ def main(cxn=None):
     """When you run the file, we'll call into main, which should contain the
     body of the script.
     """
+    
+    instr = cxn.signal_generator_sg394
+    instr.set_amp(0.0)
+    instr.set_freq(2.87)
+    instr.uwave_on()
+    input('Press enter to stop...')
     
 #    cxn.signal_generator_bnc835.reset()
 #            
@@ -61,9 +67,10 @@ def main(cxn=None):
     
     # %% Sig gen tests
     
-    resource_manager = visa.ResourceManager()
-    address = 'TCPIP::128.104.160.114::inst0::INSTR'
-    sig_gen = resource_manager.open_resource(address)
+    # resource_manager = visa.ResourceManager()
+    # address = 'TCPIP::128.104.160.115::5025::SOCKET'
+    # sig_gen = resource_manager.open_resource(address)
+    # print(sig_gen)
     # Set the VISA read and write termination. This is specific to the
     # instrument - you can find it in the instrument's programming manual
 #    sig_gen.read_termination = '\r\n'
@@ -75,15 +82,15 @@ def main(cxn=None):
 #    print(sig_gen.query('FDEV?'))
 #    print(sig_gen.query('ENBR?'))
     
-    print(sig_gen.query('OUTP?'))
-    print(sig_gen.query('FREQ?'))
-    print(sig_gen.query('FREQ:MODE?'))
-    print(sig_gen.query('POW?'))
-    print(sig_gen.query('POW:MODE?'))
-    print(sig_gen.query('AM:STAT?'))
-    print(sig_gen.query('FM:STAT?'))
+    # print(sig_gen.query('OUTP?'))
+    # print(sig_gen.query('FREQ?'))
+    # print(sig_gen.query('FREQ:MODE?'))
+    # print(sig_gen.query('POW?'))
+    # print(sig_gen.query('POW:MODE?'))
+    # print(sig_gen.query('AM:STAT?'))
+    # print(sig_gen.query('FM:STAT?'))
     
-    sig_gen.close()
+    # sig_gen.close()
     
     # %% DAQ tests
     
@@ -104,11 +111,11 @@ if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here
     
-    main()
+    # main()
     
     # Run the script
-#    with labrad.connect() as cxn:
-#        try:
-#            main(cxn)
-#        finally:
-#            cxn.signal_generator_bnc835.reset()
+    with labrad.connect() as cxn:
+        try:
+            main(cxn)
+        finally:
+            cxn.signal_generator_sg394.reset()

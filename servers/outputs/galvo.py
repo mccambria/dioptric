@@ -56,6 +56,8 @@ class Galvo(LabradServer):
         self.daq_ao_galvo_x = config[0]
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
+        # logging.debug(self.daq_di_clock)
+        
 
     def stopServer(self):
         self.close_task_internal()
