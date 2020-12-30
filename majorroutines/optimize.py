@@ -160,8 +160,9 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
                                                   seq_args_string)
         period = ret_vals[0]
 
-        voltages = cxn.objective_piezo.load_z_scan(z_center, scan_range,
-                                                   num_steps, period)
+        z_server = tool_belt.get_z_server()
+        voltages = z_server.load_z_scan(z_center, scan_range,
+                                        num_steps, period)
 
     counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     count_rates = (counts / 1000) / (readout / 10**9)
