@@ -116,7 +116,7 @@ class ObjectivePiezo(LabradServer):
         return 0
 
     @setting(2, voltage='v[]')
-    def write(self, c, voltage):
+    def write_z(self, c, voltage):
         """Write the specified voltage to the piezo"""
 
         # Close the stream task if it exists
@@ -131,7 +131,7 @@ class ObjectivePiezo(LabradServer):
             task.write(voltage)
 
     @setting(1, returns='v[]')
-    def read(self, c):
+    def read_z(self, c):
         """Return the current voltages on the piezo's DAQ channel"""
         with nidaqmx.Task() as task:
             # Set up the internal channels - to do: actual parsing...

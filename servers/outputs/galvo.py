@@ -112,7 +112,7 @@ class Galvo(LabradServer):
         return 0
 
     @setting(0, xVoltage='v[]', yVoltage='v[]')
-    def write(self, c, xVoltage, yVoltage):
+    def write_xy(self, c, xVoltage, yVoltage):
         """Write the specified voltages to the galvo.
 
         Params
@@ -136,7 +136,7 @@ class Galvo(LabradServer):
             task.write([xVoltage, yVoltage])
 
     @setting(1, returns='*v[]')
-    def read(self, c):
+    def read_xy(self, c):
         """Return the current voltages on the x and y channels.
 
         Returns
@@ -161,7 +161,7 @@ class Galvo(LabradServer):
     @setting(2, x_center='v[]', y_center='v[]',
              x_range='v[]', y_range='v[]', num_steps='i', period='i',
              returns='*v[]*v[]')
-    def load_sweep_scan(self, c, x_center, y_center,
+    def load_sweep_xy_scan(self, c, x_center, y_center,
                         x_range, y_range, num_steps, period):
         """Load a scan that will wind through the grid defined by the passed
         parameters. Samples are advanced by the clock. Currently x_range
@@ -240,7 +240,7 @@ class Galvo(LabradServer):
 
     @setting(3, x_center='v[]', y_center='v[]', xy_range='v[]',
              num_steps='i', period='i', returns='*v[]*v[]')
-    def load_cross_scan(self, c, x_center, y_center,
+    def load_cross_xy_scan(self, c, x_center, y_center,
                         xy_range, num_steps, period):
         """Load a scan that will first step through xy_range in x keeping y
         constant at its center, then step through xy_range in y keeping x
@@ -363,7 +363,7 @@ class Galvo(LabradServer):
         return y_voltages
     
     @setting(6, x_points='*v[]', y_points='*v[]', period='i')
-    def load_two_point_scan(self, c, x_points, y_points, period):
+    def load_two_point_xy_scan(self, c, x_points, y_points, period):
         """Load a scan that goes between two points. E.i., starts at [1,1] and 
         then on a clock pulse, moves to [2,1].
 

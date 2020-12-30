@@ -298,7 +298,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
     # %% Set up the galvo
 
-    x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
+    x_voltages, y_voltages = cxn.galvo.load_sweep_xy_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
 
@@ -376,7 +376,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
     tool_belt.reset_cfm(cxn)
 
     # Return to center
-    cxn.galvo.write(x_center, y_center)
+    cxn.galvo.write_xy(x_center, y_center)
 
     # %% Save the data
 
