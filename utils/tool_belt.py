@@ -57,16 +57,17 @@ def get_signal_generator_cxn(cxn, state):
 
 
 def set_xyz(cxn, coords):
-    cxn.galvo.write(coords[0], coords[1])
-    cxn.objective_piezo.write(coords[2])
+    
+    cxn.galvo.write_xy(coords[0], coords[1])
+    cxn.objective_piezo.write_z(coords[2])
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
 
 
 def set_xyz_center(cxn):
-    cxn.galvo.write(0.0, 0.0)
-    cxn.objective_piezo.write(5.0)
+    cxn.galvo.write_xy(0.0, 0.0)
+    cxn.objective_piezo.write_z(5.0)
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
@@ -74,8 +75,8 @@ def set_xyz_center(cxn):
 
 def set_xyz_on_nv(cxn, nv_sig):
     coords = nv_sig['coords']
-    cxn.galvo.write(coords[0], coords[1])
-    cxn.objective_piezo.write(coords[2])
+    cxn.galvo.write_xy(coords[0], coords[1])
+    cxn.objective_piezo.write_z(coords[2])
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
@@ -117,6 +118,8 @@ def get_tagger_wiring(cxn):
     for key in keys:
         tagger_wiring[key] = wiring[key]
     return tagger_wiring
+
+
 # %% Matplotlib plotting utils
 
 
@@ -421,6 +424,27 @@ def get_shared_parameters_dict(cxn):
         reg_dict[key] = val
 
     return reg_dict
+
+
+def get_xy_server(cxn):
+    """
+    Talk to the registry to get the fine xy control server for this machine.
+    eg for rabi it is probably galvo
+    """
+    
+    p = cxn.registry.packet()
+    p.cd('', 'Config')
+    p.get('xy_server')
+    return p.send()['get']
+
+
+def get_z_server(cxn):
+    """Same as get_xy_server but for the fine z control server"""
+    
+    p = cxn.registry.packet()
+    p.cd('', 'Config')
+    p.get('z_server')
+    return p.send()['get']
 
 
 # %% Open utils
