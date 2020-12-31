@@ -85,6 +85,35 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
     
     return numpy.array(counts, dtype=int)
 
+
+def read_manual_counts(cxn, num_steps, period, apd_indices,
+                       axis_write_func, scan_vals):
+
+    cxn.apd_tagger.start_tag_stream(apd_indices)
+    counts = []
+
+    for ind in range(num_steps):
+
+        # Break out of the while if the user says stop
+        if tool_belt.safe_stop():
+            break
+        
+        # Write the new value to the axis and run a rep. The delay to account 
+        # for the time it takes the axis to move is already handled in the 
+        # sequence loaded on the pulse streamer. Also note that server calls
+        # are synchronous so if the write function has a built-in wait until
+        # the write completes, then no delay is necessary in the sequence
+        axis_write_func(scan_vals[ind])
+        cxn.pulse_streamer.stream_start(1)
+
+        # Read the samples and update the image
+        new_samples = cxn.apd_tagger.read_counter_simple(1)
+        counts.extend(new_samples)
+
+    cxn.apd_tagger.stop_tag_stream()
+    
+    return numpy.array(counts, dtype=int)
+
     
 def stationary_count_lite(cxn, coords, shared_params, apd_indices):
     
@@ -117,7 +146,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     num_steps = 61#31
     coords = nv_sig['coords']
     x_center, y_center, z_center = coords
-    scan_range_nm = 2 * shared_params['airy_radius'] #5000
+    # scan_range_nm = 2 * shared_params['airy_radius'] #5000
     readout = shared_params['continuous_readout_dur']
 
     # Reset to centers
@@ -125,10 +154,12 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     
     tool_belt.init_safe_stop()
     
-    # x/y
+    # xy
     if axis_ind in [0, 1]:
         
-        scan_range = scan_range_nm / shared_params['xy_nm_per_volt']
+        # scan_range = scan_range_nm / shared_params['xy_nm_per_unit']
+        scan_range = shared_params['xy_optimize_range']
+        scan_dtype = shared_params['xy_dtype']
         seq_args = [shared_params['xy_delay'], readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
@@ -142,14 +173,16 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         elif axis_ind == 1:
             scan_func = xy_server.load_y_scan
             
-        voltages = scan_func(x_center, y_center, scan_range,
+        scan_vals = scan_func(x_center, y_center, scan_range,
                              num_steps, period)
-        # auto_scan_mode = True
+        auto_scan = True
 
     # z
     elif axis_ind == 2:
         
-        scan_range = scan_range_nm / shared_params['z_nm_per_volt']
+        # scan_range = 2*scan_range_nm / shared_params['z_nm_per_unit']
+        scan_range = shared_params['z_optimize_range']
+        scan_dtype = shared_params['z_dtype']
         seq_args = [shared_params['z_delay'],
                     readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -158,33 +191,37 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         period = ret_vals[0]
 
         z_server = tool_belt.get_z_server()
-        voltages = z_server.load_z_scan(z_center, scan_range,
+        scan_vals = z_server.load_z_scan(z_center, scan_range,
                                         num_steps, period)
-        # if z_server.has_load_z_scan():
-        #     voltages = z_server.load_z_scan(z_center, scan_range,
-        #                                     num_steps, period)
-        #     auto_scan_mode = True
-        # else:
-        #     auto_scan_mode = False
-        
-        # manual_write_func = z_server.write_z
+        if z_server.hasattr('load_z_scan'):
+            scan_vals = z_server.load_z_scan(z_center, scan_range,
+                                            num_steps, period)
+            auto_scan = True
+        else:
+            manual_write_func = z_server.write_z
+            # MCC change the dtype to update dynamically and update units 
+            # away from voltages
+            scan_vals = tool_belt.get_scan_range(z_center, scan_range,
+                                                 num_steps, scan_dtype)
+            auto_scan = False
 
-    # if auto_scan_mode:
-    #     counts = read_timed_counts(cxn, num_steps, period, apd_indices)
-    # else:
-    #     counts = read_manual_counts(cxn, num_steps, period, apd_indices)
-    counts = read_timed_counts(cxn, num_steps, period, apd_indices)
+    if auto_scan:
+        counts = read_timed_counts(cxn, num_steps, period, apd_indices)
+    else:
+        counts = read_manual_counts(cxn, num_steps, period, apd_indices,
+                                    manual_write_func, scan_vals)
+    # counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     count_rates = (counts / 1000) / (readout / 10**9)
 
     if fig is not None:
-        update_figure(fig, axis_ind, voltages, count_rates)
+        update_figure(fig, axis_ind, scan_vals, count_rates)
         
-    opti_coord = fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig)
+    opti_coord = fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig)
         
-    return opti_coord, voltages, counts
+    return opti_coord, scan_vals, counts
     
     
-def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
+def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
         
     fit_func = tool_belt.gaussian
     
@@ -202,8 +239,8 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
 #        background_count_rate = 0  # Guess 0
 #    background_count_rate = float(background_count_rate)
     background_count_rate = 0.0  # Guess 0
-    low_voltage = voltages[0]
-    high_voltage = voltages[-1]
+    low_voltage = scan_vals[0]
+    high_voltage = scan_vals[-1]
     scan_range = high_voltage - low_voltage
     coords = nv_sig['coords']
     init_fit = (expected_count_rate - background_count_rate,
@@ -215,7 +252,7 @@ def fit_gaussian(nv_sig, voltages, count_rates, axis_ind, fig=None):
         inf = numpy.inf
         low_bounds = [0, low_voltage, 0, 0]
         high_bounds = [inf, high_voltage, inf, inf]
-        opti_params, cov_arr = curve_fit(fit_func, voltages,
+        opti_params, cov_arr = curve_fit(fit_func, scan_vals,
                                          count_rates, p0=init_fit,
                                          bounds=(low_bounds, high_bounds))
         # Consider it a failure if we railed or somehow got out of bounds
@@ -337,13 +374,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         
         # Optimize on each axis
         opti_coords = []
-        voltages_by_axis = []
+        scan_vals_by_axis = []
         counts_by_axis = []
         for axis_ind in range(3):
             ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
                                         shared_params, apd_indices, fig)
             opti_coords.append(ret_vals[0])
-            voltages_by_axis.append(ret_vals[1])
+            scan_vals_by_axis.append(ret_vals[1])
             counts_by_axis.append(ret_vals[2])
             
         # We failed to get optimized coordinates, try again
@@ -432,16 +469,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         rawData = {'timestamp': timestamp,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
-                   'readout': shared_params['continuous_readout_dur'],
-                   'readout-units': 'ns',
                    'opti_coords': opti_coords,
-                   'opti_coords-units': 'V',
-                   'x_voltages': voltages_by_axis[0].tolist(),
-                   'x_voltages-units': 'V',
-                   'y_voltages': voltages_by_axis[1].tolist(),
-                   'y_voltages-units': 'V',
-                   'z_voltages': voltages_by_axis[2].tolist(),
-                   'z_voltages-units': 'V',
+                   'x_scan_vals': scan_vals_by_axis[0].tolist(),
+                   'y_scan_vals': scan_vals_by_axis[1].tolist(),
+                   'z_scan_vals': scan_vals_by_axis[2].tolist(),
                    'x_counts': counts_by_axis[0].tolist(),
                    'x_counts-units': 'number',
                    'y_counts': counts_by_axis[1].tolist(),

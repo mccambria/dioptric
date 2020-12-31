@@ -372,10 +372,21 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
                 amp_3 * numpy.cos(two_pi * freq_3 * t))
 
 
+def get_scan_range(center, scan_range, num_steps, dtype=float):
+    """
+    Returns a linspace for a scan centered about specified point
+    """
+    
+    half_scan_range = scan_range / 2
+    low = center - half_scan_range
+    high = center + half_scan_range
+    return numpy.linspace(low, high, num_steps, dtype=dtype)
+
+
 # %% LabRAD utils
 
 
-def get_shared_parameters_dict(cxn):
+def get_shared_parameters_dict(cxn=None):
     """Get the shared parameters from the registry. These parameters are not
     specific to any experiment, but are instead used across experiments. They
     may depend on the current alignment (eg aom_delay) or they may just be
@@ -411,6 +422,15 @@ def get_shared_parameters_dict(cxn):
         piezo_nm_per_volt: Conversion factor between objective piezo voltage
             and z position
     """
+    
+    if cxn is None:
+        with labrad.connect() as cxn:
+            return get_shared_parameters_dict_sub(cxn)
+    else:
+        get_shared_parameters_dict_sub(cxn)
+    
+    
+def get_shared_parameters_dict_sub(cxn):
 
     # Get what we need out of the registry
     cxn.registry.cd(['', 'SharedParameters'])
@@ -703,7 +723,7 @@ def save_figure(fig, file_path):
 def save_raw_data(rawData, filePath):
     """
     Save raw data in the form of a dictionary to a text file. New lines
-    will be printed between entries in the dictionary.
+    will be printed between entries in the dictionary. 
 
     Params:
         rawData: dict
@@ -713,6 +733,13 @@ def save_raw_data(rawData, filePath):
             extension
     """
 
+    # Add in a few things that should always be saved here. In particular,
+    # sharedparameters so we have as snapshot of the configuration and 
+    # nv_sig_units. If these have already been defined in the routine,
+    # then they'll just be overwritten. 
+    rawData['nv_sig_units'] = get_nv_sig_units()
+    rawData['shared_parameters'] = get_shared_parameters_dict()
+    
     with open(filePath + '.txt', 'w') as file:
         json.dump(rawData, file, indent=2)
 

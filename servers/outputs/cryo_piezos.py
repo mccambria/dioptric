@@ -108,12 +108,6 @@ class CryoPiezos(LabradServer):
         self.send_cmd('setm', 3, 'gnd')
 
     
-    @setting(6)
-    def has_load_z_scan(self, c):
-        """Check if the server has a z scan feature"""
-        return False
-
-    
     # @setting(3, center='v[]', scan_range='v[]',
     #          num_steps='i', period='i', returns='*v[]')
     # def load_z_scan(self, c, center, scan_range, num_steps, period):
