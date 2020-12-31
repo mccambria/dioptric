@@ -128,7 +128,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     # x/y
     if axis_ind in [0, 1]:
         
-        scan_range = scan_range_nm / shared_params['xy_nm_per_volt']
+        scan_range = scan_range_nm / shared_params['xy_nm_per_unit']
         seq_args = [shared_params['xy_delay'], readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
@@ -144,15 +144,12 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
             
         voltages = scan_func(x_center, y_center, scan_range,
                              num_steps, period)
+        auto_scan_mode = True
 
     # z
     elif axis_ind == 2:
-        cxn.pulse_streamer.constant([3], 0.0, 0.0) #turn on green laser for 5 seconds before measurement to equilibrate the signal from ionic gel
-        time.sleep(5)
         
-        cxn.filter_slider_ell9k_color.set_filter('560 bp')
-        
-        scan_range =2*scan_range_nm / shared_params['z_nm_per_volt']
+        scan_range = scan_range_nm / shared_params['z_nm_per_unit']
         seq_args = [shared_params['z_delay'],
                     readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -161,13 +158,21 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         period = ret_vals[0]
 
         z_server = tool_belt.get_z_server()
-        voltages = z_server.load_z_scan(z_center, scan_range,
-                                        num_steps, period)
+        if z_server.has_load_z_scan():
+            voltages = z_server.load_z_scan(z_center, scan_range,
+                                            num_steps, period)
+            auto_scan_mode = True
+        else:
+            auto_scan_mode = False
+        
+        manual_write_func = z_server.write_z
 
-    counts = read_timed_counts(cxn, num_steps, period, apd_indices)
+    if auto_scan_mode:
+        counts = read_timed_counts(cxn, num_steps, period, apd_indices)
+    else:
+        counts = read_manual_counts(cxn, num_steps, period, apd_indices)
     count_rates = (counts / 1000) / (readout / 10**9)
-#    print(voltages)
-#    print(count_rates)
+
     if fig is not None:
         update_figure(fig, axis_ind, voltages, count_rates)
         

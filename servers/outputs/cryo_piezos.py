@@ -29,9 +29,9 @@ from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 import socket
 import logging
-
 # telnetlib is a package for connecting to networked device over the telnet
-# protocol. See the ANC150 section of the cryostat manual for more details
+# protocol. See the ANC150 section of the cryostat manual for more details on
+# this connection
 from telnetlib import Telnet  
 
 
@@ -106,6 +106,12 @@ class CryoPiezos(LabradServer):
         # Set to ground mode once we're done stepping
         self.send_cmd('stepw', 3, 'gnd')
         self.send_cmd('setm', 3, 'gnd')
+
+    
+    @setting(6)
+    def has_load_z_scan(self, c):
+        """Check if the server has a z scan feature"""
+        return False
 
     
     # @setting(3, center='v[]', scan_range='v[]',

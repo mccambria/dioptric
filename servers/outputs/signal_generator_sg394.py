@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the Tektronix TSG4104A microwave signal generator.
+Output server for the SRS SG394 microwave signal generator.
 
 Created on Wed Apr 10 12:53:38 2019
 
@@ -8,7 +8,7 @@ Created on Wed Apr 10 12:53:38 2019
 
 ### BEGIN NODE INFO
 [info]
-name = signal_generator_tsg4104a
+name = signal_generator_sg394
 version = 1.0
 description =
 

@@ -143,6 +143,13 @@ class ObjectivePiezo(LabradServer):
                                                  min_val=0.0, max_val=10.0)
             voltage = task.read()
         return voltage
+
+    
+    @setting(4)
+    def has_load_z_scan(self, c):
+        """Check if the server has a z scan feature"""
+        return True
+    
     
     @setting(3, center='v[]', scan_range='v[]',
              num_steps='i', period='i', returns='*v[]')
