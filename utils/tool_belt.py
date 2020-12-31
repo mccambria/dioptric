@@ -29,6 +29,7 @@ from git import Repo
 from pathlib import Path
 from pathlib import PurePath
 from enum import Enum, auto
+import socket
 
 
 # %% Constants
@@ -437,29 +438,28 @@ def get_xy_server(cxn):
     eg for rabi it is probably galvo. See optimize for some examples.
     """
     
-    return get_server(cxn, 'xy_server')
+    # return an actual reference to the appropriate server so it can just
+    # be used directly
+    return getattr(cxn, get_registry_entry(cxn, 'xy_server', 'Config'))
 
 
 def get_z_server(cxn):
     """Same as get_xy_server but for the fine z control server"""
     
-    return get_server(cxn, 'z_server')
+    return getattr(cxn, get_registry_entry(cxn, 'z_server', 'Config'))
 
 
-def get_server(cxn, server_key):
+def get_registry_entry(cxn, key, *directory):
     """
-    Retrieve whatever server. Should just be used as a sub-function, probably
+    Return the value for the specified key. The directory is specified from 
+    the top of the registry
     """
     
     p = cxn.registry.packet()
-    p.cd('', 'Config')
-    p.get(server_key)
-    server_name = p.send()['get']
-    # return an actual reference to the appropriate server so it can just
-    # be used directly
-    return getattr(cxn, server_name)
+    p.cd('', *directory)
+    p.get(key)
+    return p.send()['get']
     
-
 
 # %% Open utils
 
@@ -572,18 +572,24 @@ def get_folder_dir(source_name, subfolder):
     source_name = os.path.splitext(source_name)[0]
 
     branch_name = get_branch_name()
+    pc_name = socket.gethostname()
 
-    # Check where we should save to
-    if branch_name == 'master':
-        # master should save without a branch sub-folder
-        joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
-                                   source_name)
-    else:
-        # Otherwise we want a branch sub-folder so that we know this data was
-        # produced by code that's under development
-        joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
-                                   source_name,
-                                   'branch_{}'.format(branch_name))
+    # # Check where we should save to
+    # if branch_name == 'master':
+    #     # master should save without a branch sub-folder
+    #     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
+    #                                source_name)
+    # else:
+    #     # Otherwise we want a branch sub-folder so that we know this data was
+    #     # produced by code that's under development
+    #     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
+    #                                source_name,
+    #                                'branch_{}'.format(branch_name))
+        
+    joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
+                               'pc_{}'.format(pc_name),
+                               'branch_{}'.format(branch_name),
+                               source_name)
     
     if subfolder is not None:
         joined_path = os.path.join(joined_path, subfolder)
