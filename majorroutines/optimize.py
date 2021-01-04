@@ -159,7 +159,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         
         # scan_range = scan_range_nm / shared_params['xy_nm_per_unit']
         scan_range = shared_params['xy_optimize_range']
-        scan_dtype = shared_params['xy_dtype']
+        scan_dtype = eval(shared_params['xy_dtype'])
         seq_args = [shared_params['xy_delay'], readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
@@ -182,7 +182,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         
         # scan_range = 2*scan_range_nm / shared_params['z_nm_per_unit']
         scan_range = shared_params['z_optimize_range']
-        scan_dtype = shared_params['z_dtype']
+        scan_dtype = eval(shared_params['z_dtype'])
         seq_args = [shared_params['z_delay'],
                     readout, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -191,18 +191,14 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         period = ret_vals[0]
 
         z_server = tool_belt.get_z_server()
-        scan_vals = z_server.load_z_scan(z_center, scan_range,
-                                        num_steps, period)
         if z_server.hasattr('load_z_scan'):
             scan_vals = z_server.load_z_scan(z_center, scan_range,
-                                            num_steps, period)
+                                             num_steps, period)
             auto_scan = True
         else:
             manual_write_func = z_server.write_z
-            # MCC change the dtype to update dynamically and update units 
-            # away from voltages
-            scan_vals = tool_belt.get_scan_range(z_center, scan_range,
-                                                 num_steps, scan_dtype)
+            scan_vals = tool_belt.get_scan_vals(z_center, scan_range,
+                                                num_steps, scan_dtype)
             auto_scan = False
 
     if auto_scan:

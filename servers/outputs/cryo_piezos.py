@@ -104,7 +104,7 @@ class CryoPiezos(LabradServer):
         self.pos[2] = pos_in_steps
         
         # Set to ground mode once we're done stepping
-        self.send_cmd('stepw', 3, 'gnd')
+        self.send_cmd('stepw', 3)
         self.send_cmd('setm', 3, 'gnd')
 
     

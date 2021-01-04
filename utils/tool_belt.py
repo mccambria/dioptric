@@ -372,7 +372,7 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
                 amp_3 * numpy.cos(two_pi * freq_3 * t))
 
 
-def get_scan_range(center, scan_range, num_steps, dtype=float):
+def get_scan_vals(center, scan_range, num_steps, dtype=float):
     """
     Returns a linspace for a scan centered about specified point
     """
@@ -380,7 +380,10 @@ def get_scan_range(center, scan_range, num_steps, dtype=float):
     half_scan_range = scan_range / 2
     low = center - half_scan_range
     high = center + half_scan_range
-    return numpy.linspace(low, high, num_steps, dtype=dtype)
+    scan_vals = numpy.linspace(low, high, num_steps, dtype=dtype)
+    # Deduplicate - may be necessary for ints and low scan ranges
+    scan_vals = numpy.unique(scan_vals)
+    return scan_vals
 
 
 # %% LabRAD utils
@@ -450,6 +453,10 @@ def get_shared_parameters_dict_sub(cxn):
         reg_dict[key] = val
 
     return reg_dict
+
+
+def get_nv_sig_units():
+    return 'in shared_parameters'
 
 
 def get_xy_server(cxn):
@@ -742,12 +749,6 @@ def save_raw_data(rawData, filePath):
     
     with open(filePath + '.txt', 'w') as file:
         json.dump(rawData, file, indent=2)
-
-
-def get_nv_sig_units():
-    return {'coords': 'V', 'expected_count_rate': 'kcps', 
-        'pulsed_readout_dur': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz',
-        'rabi': 'ns', 'uwave_power': 'dBm'}
 
 
 # %% Safe stop (TM mccambria)
