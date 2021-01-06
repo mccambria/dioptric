@@ -22,16 +22,16 @@ import copy
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
 # %%
-def plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, snr_list, title, text = None):
+def plot_time_sweep(test_pulse_dur_list,test_color, sig_counts_avg, ref_counts_avg, snr_list, title, text = None):
     # turn the list into an array, so we can convert into us
     test_pulse_dur_list = numpy.array(test_pulse_dur_list)
     
     fig, axes = plt.subplots(1,2, figsize = (17, 8.5)) 
     ax = axes[0]
     ax.plot(test_pulse_dur_list / 10**3, sig_counts_avg, 'ro', 
-           label = 'W/ 638 nm pulse')
+           label = 'W/ {} nm pulse'.format(test_color))
     ax.plot(test_pulse_dur_list / 10**3, ref_counts_avg, 'ko', 
-           label = 'W/out 638 nm pulse')
+           label = 'W/out {} nm pulse'.format(test_color))
     ax.set_xlabel('Test pulse length (us)')
     ax.set_ylabel('Counts (single shot measurement)')
     ax.set_title(title)
@@ -186,9 +186,9 @@ def main_data_collect_with_cxn(cxn, nv_sig, apd_indices, num_reps, init_pulse_ti
     # Initial Setup
     aom_ao_589_pwr = nv_sig['am_589_power']
     nd_filter = nv_sig['nd_filter']
-        
-    # set the nd_filter for yellow
     cxn.filter_slider_ell9k.set_filter(nd_filter)
+    color_filter = nv_sig['color_filter']
+    cxn.filter_slider_ell9k_color.set_filter(color_filter)  
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
@@ -242,7 +242,9 @@ def main_data_collect_with_cxn(cxn, nv_sig, apd_indices, num_reps, init_pulse_ti
 
 # %%
 
-def optimize_readout_pulse_length(nv_sig, init_pulse_time, init_color, test_pulse_time, test_color, readout_color, test_pulse_dur_list  = [10*10**3, 
+def optimize_readout_pulse_length(nv_sig, init_pulse_time, init_color, 
+                          test_pulse_time, test_color, readout_color,
+                          test_pulse_dur_list  = [10*10**3, 
                                50*10**3, 100*10**3,500*10**3, 
                                1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
                                6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
@@ -264,7 +266,7 @@ def optimize_readout_pulse_length(nv_sig, init_pulse_time, init_color, test_puls
         print('Readout set to {} ms'.format(test_pulse_length/10**6))
         
         # Collect the counts
-        sig_count, ref_count = main_data_collect(nv_sig, apd_indices, num_reps, 
+        sig_count ,ref_count = main_data_collect(nv_sig, apd_indices, num_reps, 
                      init_pulse_time, test_pulse_time, test_pulse_length,
                       init_color, test_color, readout_color)
         
@@ -296,9 +298,9 @@ def optimize_readout_pulse_length(nv_sig, init_pulse_time, init_color, test_puls
     # Plot
     title = 'Sweep pulse length for {} nm\n{} nm init pulse, {} nm test pulse'.format(readout_color, init_color, test_color)
     text = 'Readout pulse power set to ' + '%.0f'%(optical_power*10**3) + ' uW'
-    fig = plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, 
+    fig = plot_time_sweep(test_pulse_dur_list, test_color, sig_counts_avg, ref_counts_avg, 
                           snr_list, title, text = text)
-    
+    test_pulse_dur_list = numpy.array(test_pulse_dur_list)
     # Save
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
@@ -352,28 +354,32 @@ if __name__ == '__main__':
     sample_name = 'goeppert-mayer'
     
     
-    nv18_2020_11_10 = { 'coords':[0.179, 0.247, 5.26], 
-            'name': '{}-nv18_2020_11_10'.format(sample_name),
-            'expected_count_rate': 60, 'nd_filter': 'nd_0',
+    nv2_2020_12_10 = { 'coords':[0.216,0.196,5.15], 
+            'name': '{}-nv2_2020_12_10'.format(sample_name),
+            'expected_count_rate': 55, 'nd_filter': 'nd_1.0',
+            'color_filter': '635-715 bp',
+#            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
+            'pulsed_SCC_readout_dur': 20000000, 'am_589_power': 0.7, 
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
 
-    init_color = 638
-    test_color = 532
-    readout_color = 638
+    init_color = 532
+    test_color = 638
+    readout_color = 589
     
-    init_pulse_time = 10**3
+    init_pulse_time = 10**5
     test_pulse_time = 10**3
+    
+    test_pulse_dur_list  = [100, 200, 500,700, 
+                            10**3,2*10**3, 5*10**3,7*10**3, 
+                            10*10**3, 20*10**3,50*10**3, 70*10**3, 
+                            100*10**3,200*10**3,500*10**3,700*10**3,]
 
     # Run the program
-    optimize_readout_pulse_length(nv18_2020_11_10, init_pulse_time, init_color, 
+    optimize_readout_pulse_length(nv2_2020_12_10, init_pulse_time, init_color, 
                                   test_pulse_time, test_color, readout_color)
     

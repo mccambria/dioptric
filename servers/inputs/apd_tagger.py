@@ -30,14 +30,16 @@ import numpy
 import logging
 import re
 import time
+import socket
 
 
 class ApdTagger(LabradServer):
     name = 'apd_tagger'
+    pc_name = socket.gethostname()
     logging.basicConfig(level=logging.DEBUG, 
                 format='%(asctime)s %(levelname)-8s %(message)s',
                 datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
+                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
         self.reset_tag_stream_state()

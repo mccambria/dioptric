@@ -216,18 +216,18 @@ def populate_img_array(valsToAdd, imgArray, run_num):
     
        # %%
 def main_data_collection(nv_sig, start_coords, coords_list, pulse_time, 
-                         num_runs, init_color, pulse_color, readout_color):
+                         num_runs, init_color, pulse_color, readout_color, index_list = []):
     with labrad.connect() as cxn:
         ret_vals = main_data_collection_with_cxn(cxn, nv_sig, 
                         start_coords, coords_list,pulse_time, 
-                        num_runs, init_color, pulse_color, readout_color)
+                        num_runs, init_color, pulse_color, readout_color, index_list)
     
     readout_counts_array, target_counts_array, opti_coords_list = ret_vals
                         
     return readout_counts_array, target_counts_array, opti_coords_list
         
 def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
-                     pulse_time, num_runs, init_color, pulse_color, readout_color):
+                     pulse_time, num_runs, init_color, pulse_color, readout_color, index_list = []):
     '''
     Runs a measurement where an initial pulse is pulsed on the start coords, 
     then a pulse is set on the first point in the coords list, then the 
@@ -266,6 +266,10 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
     readout_color : str
         Preferably '589'. This is the color that we will readout with on 
         start coord
+    index_list: list( int)
+        A list of the indexing of the voltages passed. Used for the 2D image. 
+        In the case of a crash during the measuremnt, the incrimental data will 
+        have the indexing and we can replot the partial data
 
     Returns
     -------
@@ -374,6 +378,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         period_s_total = (period_s*num_samples + 5)*num_runs
         print('Expected total run time: {:.0f} min'.format(period_s_total/60))
     
+#    return
     ### Backto the same
     # Optimize at the start of the routine
     opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=False)
@@ -390,7 +395,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         # So first check the time. If the time that has passed since the last
         # optimize is longer that 5 min, optimize again
         current_time = time.time()
-        if current_time - run_start_time >= 5*60:
+        if current_time - run_start_time >= 0.7*60:#5*60:
             opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=False)
             opti_coords_list.append(opti_coords) 
             run_start_time = current_time
@@ -501,6 +506,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
             'pulse_time': pulse_time,
             'pulse_time-units': 'ns',
             'opti_coords_list': opti_coords_list,
+            'index_list': index_list,
             'readout_counts_array': readout_counts_array.tolist(),
             'readout_counts_array-units': 'counts',
             'target_counts_array': target_counts_array.tolist(),
@@ -685,14 +691,15 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
     ret_vals= build_voltages_image(start_coords, img_range, num_steps)
     x_voltages, y_voltages, x_voltages_1d, y_voltages_1d  = ret_vals
     
-    z_voltages =  [start_coords[2] for el in x_voltages]
+#    z_voltages =  [start_coords[2] for el in x_voltages]
     
     # Combine the x and y voltages together into pairs
-    coords_voltages = list(zip(x_voltages, y_voltages, z_voltages))
+    coords_voltages = list(zip(x_voltages, y_voltages))
+    num_samples = len(coords_voltages)
     
     # Create some empty data lists
-    readout_counts_array = numpy.empty(len(coords_voltages))
-    target_counts_array = numpy.empty(len(coords_voltages))
+    readout_counts_array = numpy.empty([num_samples, num_runs])
+    target_counts_array = numpy.empty([num_samples, num_runs])
     
     readout_image_array = numpy.empty([num_steps, num_steps])
     readout_image_array[:] = numpy.nan
@@ -700,7 +707,7 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
     target_image_array[:] = numpy.nan
     
     # shuffle the voltages that we're stepping thru
-    ind_list = list(range(len(coords_voltages)))
+    ind_list = list(range(num_samples))
     shuffle(ind_list)
     
     # shuffle the voltages to run
@@ -712,12 +719,16 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
 
     # Run the data collection
     ret_vals = main_data_collection(nv_sig, start_coords, coords_voltages_shuffle_list,
-                            pulse_time, num_runs, init_color, pulse_color, readout_color)
+                            pulse_time, num_runs, init_color, pulse_color, readout_color, index_list = ind_list)
     
     readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
+#    readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
+#    target_counts_array_shfl = numpy.array(target_counts_array_shfl)
     
     # unshuffle the raw data
     list_ind = 0
+#    print(readout_counts_array_shfl[0])
+#    print(readout_counts_array)
     for f in ind_list:
         readout_counts_array[f] = readout_counts_array_shfl[list_ind]
         target_counts_array[f] = target_counts_array_shfl[list_ind]
@@ -780,6 +791,8 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
                 'init_color': init_color,
                 'pulse_color': pulse_color,
                 'readout_color': readout_color,
+                'pulse_time': pulse_time,
+                'pulse_time-units': 'ns',
             'start_coords': start_coords,
             'img_range': img_range,
             'img_range-units': 'V',
@@ -813,9 +826,9 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
             'target_image_array': target_image_array.tolist(),
             'target_image_array-units': 'counts',
                     
-            'readout_counts_array': readout_counts_array,
+            'readout_counts_array': readout_counts_array.tolist(),
             'readout_counts_array-units': 'counts',
-            'target_counts_array': target_counts_array,
+            'target_counts_array': target_counts_array.tolist(),
             'target_counts_array-units': 'counts',
 
             'readout_counts_avg': readout_counts_avg.tolist(),
@@ -842,22 +855,13 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
 if __name__ == '__main__':
     sample_name= 'goeppert-mayer'
 
-#    nv1_2020_12_02 = { 'coords':[0.225, 0.242, 5.20], 
-#            'name': '{}-nv1_2020_12_02'.format(sample_name),
-#            'expected_count_rate': 50, 'nd_filter': 'nd_1.0',
-#            'color_filter': '635-715 bp',
-#            'pulsed_readout_dur': 300,
-#            'pulsed_SCC_readout_dur': 20000000, 'am_589_power': 0.7, 
-#            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-#            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
-#            'magnet_angle': 0,
-#            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-#            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
 
-    nv2_2020_12_10 = { 'coords':[0.216,0.196,5.15], 
-            'name': '{}-nv2_2020_12_10'.format(sample_name),
-            'expected_count_rate': 55, 'nd_filter': 'nd_1.0',
-            'color_filter': '635-715 bp',
+
+    nv0_2020_12_20 = { 'coords':[0.061, 0.356,5.31], 
+            'name': '{}-nv0_2020_12_20'.format(sample_name),
+            'expected_count_rate': 45,'nd_filter': 'nd_1.0',
+#            'color_filter': '635-715 bp',
+            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 20000000, 'am_589_power': 0.7, 
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
@@ -866,48 +870,74 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
     
-    start_coords =[0.216,0.196,5.15]
-    end_coords = numpy.array(start_coords) + [1.5,0,0]
+    start_coords =[0.061, 0.356,5.31]
+    end_coords = numpy.array(start_coords) + [1.0,0,0]
     end_coords = end_coords.tolist()
-    num_steps = 30
+    num_steps = 40 #20
     num_runs =  50
-#    img_range = 0.35
+#    img_range = 0.45
     
     
-    for t in [10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10*10**9]:        
+    for t in [10**6]:        
         init_color = 532
         pulse_color = 532
-        nv_sig = copy.deepcopy(nv2_2020_12_10)
+        nv_sig = copy.deepcopy(nv0_2020_12_20)
         nv_sig['color_filter'] = '635-715 bp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
+        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
         nv_sig['color_filter'] = '715 lp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
-        
-    for t in [10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10*10**9]:        
-        init_color = 638
+        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
+    for t in [10**7]:        
+        init_color = 532
         pulse_color = 532
-        nv_sig = copy.deepcopy(nv2_2020_12_10)
+        nv_sig = copy.deepcopy(nv0_2020_12_20)
         nv_sig['color_filter'] = '635-715 bp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
+        do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, num_runs, init_color, pulse_color)
         nv_sig['color_filter'] = '715 lp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
+        do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, num_runs, init_color, pulse_color)
+        
+#    num_runs =  20*5
+#    for t in [10**6]:        
+#        init_color = 532
+#        pulse_color = 532
+#        nv_sig = copy.deepcopy(nv1_2020_12_17)
+#        nv_sig['color_filter'] = '635-715 bp'
+#        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
+#    for t in [10**7]:        
+#        init_color = 532
+#        pulse_color = 532
+#        nv_sig = copy.deepcopy(nv1_2020_12_17)
+#        nv_sig['color_filter'] = '635-715 bp'
+#        do_moving_target_2D_image(nv_sig, start_coords, 0.55, t, num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        do_moving_target_2D_image(nv_sig, start_coords, 0.55, t, num_steps, num_runs, init_color, pulse_color)
+        
+        
+        
+#    for t in [1*10**9]:        
+#        init_color = 638
+#        pulse_color = 532
+#        nv_sig = copy.deepcopy(nv2_2020_12_10)
+##        nv_sig['color_filter'] = '635-715 bp'
+##        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+##                             num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+#                             num_steps, num_runs, init_color, pulse_color)
  
         
-    for t in [100*10**9]: 
-        num_runs = 25
-        init_color = 638
-        pulse_color = 532
-        nv_sig = copy.deepcopy(nv2_2020_12_10)
-        nv_sig['color_filter'] = '635-715 bp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
-        nv_sig['color_filter'] = '715 lp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
+#    for t in [100*10**9]: 
+#        num_runs = 25
+#        init_color = 638
+#        pulse_color = 532
+#        nv_sig = copy.deepcopy(nv2_2020_12_10)
+#        nv_sig['color_filter'] = '635-715 bp'
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+#                             num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+#                             num_steps, num_runs, init_color, pulse_color)
     
     
     

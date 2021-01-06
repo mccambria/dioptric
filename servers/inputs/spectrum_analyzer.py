@@ -26,10 +26,17 @@ from labrad.server import LabradServer
 from labrad.server import setting
 import numpy
 import rsa_api
+import socket
+import logging
 
 
 class SpectrumAnalyzer(LabradServer):
     name = 'spectrum_analyzer'
+    pc_name = socket.gethostname()
+    logging.basicConfig(level=logging.DEBUG, 
+                format='%(asctime)s %(levelname)-8s %(message)s',
+                datefmt='%y-%m-%d_%H-%M-%S',
+                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
         # Connect to the device - assume there is only one
