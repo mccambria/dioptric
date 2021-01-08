@@ -35,7 +35,6 @@ import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
-import minorroutines.photon_collections_under_589 as photon_collections_under_589
 import minorroutines.determine_n_thresh as determine_n_thresh
 import minorroutines.determine_n_thresh_with_638 as determine_n_thresh_with_638
 import minorroutines.time_resolved_readout as time_resolved_readout
@@ -70,17 +69,17 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 75
 #    scan_range = 1.5
 #    scan_range = 1.0
-#    scan_range = 0.5
-#    num_steps = 200
+#    scan_range = 0.85
+#    num_steps = 250
 #    scan_range = 0.3
 #    num_steps = 125
 #    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.15
     scan_range = 0.1
-    num_steps = 90
+#    num_steps = 90
 #    scan_range = 0.05
-#    num_steps = 60
+    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
@@ -557,7 +556,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0,0, 5.20], 
+    search = { 'coords':[0.3,0.3,5.3], 
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -571,29 +570,11 @@ if __name__ == '__main__':
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
-
-    nv0_2020_12_20 = { 'coords':[0.061, 0.356,5.3], 
-            'name': '{}-nv0_2020_12_20'.format(sample_name),
-            'expected_count_rate': 45, 'nd_filter': 'nd_0',
-            'color_filter': '635-715 bp', 
-#            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
-
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
  
-
-    nv0_2021_01_05 = { 'coords':[-0.017, 0.267,5.3], 
-            'name': '{}-nv0_2021_01_05'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
+    nv0_2021_01_07 = { 'coords':[-0.055, -0.042, 5.28], 
+            'name': '{}-nv0_2021_01_07'.format(sample_name),
+            'expected_count_rate': 50, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -605,9 +586,60 @@ if __name__ == '__main__':
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
-    nv_sig_list = [nv0_2021_01_05]
+ 
+    nv1_2021_01_07 = { 'coords':[0.648, -0.110, 5.26], 
+            'name': '{}-nv1_2021_01_07'.format(sample_name),
+            'expected_count_rate': 42, 'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp', 
+#            'color_filter': '715 lp',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
+    
+    nv2_2021_01_07 = { 'coords':[0.642, 0.479, 5.24], 
+            'name': '{}-nv2_2021_01_07'.format(sample_name),
+            'expected_count_rate': 42, 'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp', 
+#            'color_filter': '715 lp',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
+    
+    nv3_2021_01_07 = { 'coords':[0.130, 0.590, 5.24], 
+            'name': '{}-nv3_2021_01_07'.format(sample_name),
+            'expected_count_rate': 42, 'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp', 
+#            'color_filter': '715 lp',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+   
+    
+    nv_sig_list = [nv0_2021_01_07]
+    #, nv1_2021_01_07, nv2_2021_01_07, nv3_2021_01_07]
 
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
@@ -622,7 +654,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        drift = [0.0116, 0.004,0.0]# nv1_2020_11_10
+#        drift = [0.038, -0.04,-0.05]# nv0_2021_01_07
 #        tool_belt.set_drift(drift)  
 #        tool_belt.set_drift([0.0, 0.0,0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
@@ -652,13 +684,15 @@ if __name__ == '__main__':
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #                cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
 ##    
-            do_optimize(nv_sig, apd_indices, 532)
+#            do_optimize(nv_sig, apd_indices, 532)
+#            for x in [-1, 0 ,1]:
+#                for y in [-1, 0, 1]:
 #            for z in numpy.linspace(5.0, 5.6, 7):
-#                    nv_sig_copy = copy.deepcopy(nv_sig)
-#                    [coord_x, coord_y, coord_z] = nv_sig['coords']
-#                    nv_sig_copy['coords'] = [coord_x, coord_y, z]  
-#                    do_image_sample(nv_sig_copy,  apd_indices, 532, save_data=True, plot_data=True) 
-                       
+#                nv_sig_copy = copy.deepcopy(nv_sig)
+#                [coord_x, coord_y, coord_z] = nv_sig['coords']
+#                nv_sig_copy['coords'] = [coord_x, coord_y, z]  
+#                do_image_sample(nv_sig_copy,  apd_indices, 532, save_data=True, plot_data=True) 
+                               
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 532, 638, save_data = True, plot_data = True)
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 589, 638, save_data = True, plot_data = True)
 #            with labrad.connection() as cxn:

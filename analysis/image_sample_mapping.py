@@ -26,15 +26,13 @@ from pathlib import Path
 # %% Functions
 
 
-def illustrate_mapping(file_name, sub_folder, nv_indices=None):
-    print(sub_folder)
-    print(file_name)
-    data = tool_belt.get_raw_data(sub_folder, file_name + '-untitled')
+def illustrate_mapping(file_name, mapping_sub_folder, image_sub_folder, nv_indices=None):
+    data = tool_belt.get_raw_data(mapping_sub_folder, file_name + '-untitled')
     image_sample_file_name = data['image_sample_file_name']
     nv_sig_list = data['nv_sig_list']
 
-    image_sub_folder = '/branch_Spin_to_charge/2020_11'
-    fig = image_sample.create_figure(image_sample_file_name, image_sub_folder)
+    mapping_full_file = image_sub_folder + '/' + image_sample_file_name
+    fig = image_sample.create_figure(mapping_full_file )
     axes = fig.get_axes()
     ax = axes[0]
     images = ax.get_images()
@@ -68,7 +66,7 @@ def illustrate_mapping(file_name, sub_folder, nv_indices=None):
     return fig
 
 def generate_mapping_files(sample_name, micrometer_coords,
-                           image_sample_file_name, sub_folder, nv_sig_list):
+                           image_sample_file_name, branch, month_folder, nv_sig_list):
 
     raw_data = {
             'sample_name': sample_name,
@@ -81,9 +79,12 @@ def generate_mapping_files(sample_name, micrometer_coords,
 
     file_name = '{}-mapping'.format(image_sample_file_name)
     file_path = tool_belt.get_file_path(__file__, file_name)
-
+    print(file_path)
+    
+    mapping_sub_folder = 'pc_rabi/{}/image_sample_mapping/{}'.format(branch,month_folder )
+    image_sub_folder = 'pc_rabi/{}/image_sample/{}'.format(branch,month_folder )
     tool_belt.save_raw_data(raw_data, file_path)
-    fig = illustrate_mapping(file_name, sub_folder)
+    fig = illustrate_mapping(file_name,  mapping_sub_folder, image_sub_folder,)
 
     tool_belt.save_figure(fig, file_path)
 
@@ -102,15 +103,17 @@ if __name__ == '__main__':
 #    illustrate_mapping(file_name, [13])
 #    else:
 
-    coords_list = [[0.179, 0.247, 5.26],
-                   [0.224 - 0.041, 0.285 - 0.009, 5.26],
-                   [0.193 - 0.041, 0.246 - 0.009, 5.26],
-            ] 
+    coords_list = [[-0.055, -0.042, 5.28],
+                      [0.648, -0.110, 5.26], 
+                      [0.642, 0.479, 5.24],
+                      [0.130, 0.590, 5.24], 
+            ]
 
-    sample_name = 'johnson'
+    sample_name = 'goeppert-mayer'
     micrometer_coords = [3.154, 2.193, 11.118, 120.21]
-    image_sample_file_name = '2020_11_24-15_07_14-johnson-nv18_2020_11_10'
-    sub_folder = 'image_sample_mapping/branch_Spin_to_charge/2020_11'
+    image_sample_file_name = '2021_01_07-16_01_18-goeppert-mayer-search'
+    branch = 'branch_Spin_to_charge'
+    month_folder = '2021_01'
 
     nv_sig_list = []
     for ind in range(len(coords_list)):
@@ -120,4 +123,4 @@ if __name__ == '__main__':
         nv_sig = {'coords': coords, 'name': name, nd_filter: nd_filter}
         nv_sig_list.append(nv_sig)
     generate_mapping_files(sample_name, micrometer_coords,
-                          image_sample_file_name, sub_folder,  nv_sig_list)
+                          image_sample_file_name, branch, month_folder,  nv_sig_list)

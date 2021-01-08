@@ -291,6 +291,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
 
     '''
     tool_belt.reset_cfm(cxn)
+    disable_boo = False # can disable the optimize function here.
     
     # Some checking of the initial pulse colors
     if init_color == 532 or init_color==638:
@@ -381,7 +382,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
 #    return
     ### Backto the same
     # Optimize at the start of the routine
-    opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=False)
+    opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
     opti_coords_list.append(opti_coords)
         
         
@@ -396,7 +397,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         # optimize is longer that 5 min, optimize again
         current_time = time.time()
         if current_time - run_start_time >= 0.7*60:#5*60:
-            opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=False)
+            opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
             opti_coords_list.append(opti_coords) 
             run_start_time = current_time
             
@@ -857,39 +858,47 @@ if __name__ == '__main__':
 
 
 
-    nv0_2020_12_20 = { 'coords':[0.061, 0.356,5.31], 
-            'name': '{}-nv0_2020_12_20'.format(sample_name),
+    base_sig = { 'coords':[-0.049, -0.131,5.3], 
+            'name': '{}-name'.format(sample_name),
             'expected_count_rate': 45,'nd_filter': 'nd_1.0',
 #            'color_filter': '635-715 bp',
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 20000000, 'am_589_power': 0.7, 
+            'pulsed_SCC_readout_dur': 30000000, 'am_589_power': 0.7, 
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
     
-    start_coords =[0.061, 0.356,5.31]
-    end_coords = numpy.array(start_coords) + [1.0,0,0]
-    end_coords = end_coords.tolist()
+#    start_coords = base_sig['coords']
+    start_coords_list = [[-0.055, -0.042, 5.28],
+                      [0.648, -0.110, 5.26], 
+                      [0.642, 0.479, 5.24],
+                      [0.130, 0.590, 5.24], 
+            ]
+#    end_coords = numpy.array(start_coords) + [1.0,0,0]
+#    end_coords = end_coords.tolist()
     num_steps = 40 #20
     num_runs =  50
 #    img_range = 0.45
     
     
-    for t in [10**6]:        
+#    for t in [10**6]:        
+#        init_color = 532
+#        pulse_color = 532
+#        nv_sig = copy.deepcopy(nv0_2020_12_20)
+#        nv_sig['color_filter'] = '635-715 bp'
+#        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
+    for s in [0,3]: 
+        start_coords = start_coords_list[s]
+        t= 10**7
         init_color = 532
         pulse_color = 532
-        nv_sig = copy.deepcopy(nv0_2020_12_20)
-        nv_sig['color_filter'] = '635-715 bp'
-        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
-        nv_sig['color_filter'] = '715 lp'
-        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
-    for t in [10**7]:        
-        init_color = 532
-        pulse_color = 532
-        nv_sig = copy.deepcopy(nv0_2020_12_20)
+        nv_sig = copy.deepcopy(base_sig)
+        nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_07'.format(s)
         nv_sig['color_filter'] = '635-715 bp'
         do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, num_runs, init_color, pulse_color)
         nv_sig['color_filter'] = '715 lp'
