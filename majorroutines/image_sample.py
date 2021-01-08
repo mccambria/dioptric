@@ -252,7 +252,7 @@ def reformat_plot(colorMap, save_file_type):
 
 def create_figure(file_name, sub_folder = None):
 #    if sub_folder:
-    data = tool_belt.get_raw_data('image_sample', file_name)
+    data = tool_belt.get_raw_data('', file_name)
 #    else:
 #        data = tool_belt.get_raw_data('image_sample', file_name)
     x_range = data['x_range']
@@ -847,7 +847,7 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-    file_name = 'branch_Spin_to_charge/2020_12/2020_12_04-16_02_43-goeppert-mayer-nv1_2020_12_02'
+    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_01/2021_01_07-16_01_18-goeppert-mayer-search'
 #    reformat_plot('inferno', 'png')
     create_figure(file_name)
 

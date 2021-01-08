@@ -27,14 +27,16 @@ from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 import visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 import logging
+import socket
 
 
 class SignalGeneratorBnc835(LabradServer):
     name = 'signal_generator_bnc835'
+    pc_name = socket.gethostname()
     logging.basicConfig(level=logging.DEBUG, 
                 format='%(asctime)s %(levelname)-8s %(message)s',
                 datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
+                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
         config = ensureDeferred(self.get_config())

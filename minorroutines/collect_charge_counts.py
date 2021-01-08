@@ -263,23 +263,27 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    nv_coords_list = [[0.236, 0.261, 5.26]]
+    nv_coords_list = [[-0.055, -0.042, 5.28],
+                      [0.648, -0.110, 5.26], 
+                      [0.642, 0.479, 5.24],
+                      [0.130, 0.590, 5.24], 
+                      ]
 
     
     base_nv_sig  = { 'coords':None,
-    # nv18_2020_11_10 = { 'coords':None, 
-            'name': '{}-nv18_2020_11_10'.format('johnson'),
-            'expected_count_rate': 30, 'nd_filter': 'nd_1.0',
+            'name': '{}-nv0_2021_01_07'.format('goeppert-mayer'),
+            'expected_count_rate': None,'nd_filter': 'nd_1.0',
+#            'color_filter': '635-715 bp',
+            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 20*10**6, 'am_589_power': 0.7, 
-            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_SCC_readout_dur': 30000000, 'am_589_power': 0.7, 
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3,
-            'cobalt_532_power':20, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
     
     
-    collect_charge_counts_list(nv_coords_list, base_nv_sig, 60, apd_indicies)
+#    collect_charge_counts_list(nv_coords_list, base_nv_sig, 60, apd_indicies)
     collect_charge_counts_list(nv_coords_list, base_nv_sig, 1000, apd_indicies)

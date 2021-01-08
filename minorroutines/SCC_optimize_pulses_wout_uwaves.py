@@ -641,12 +641,13 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
 # %% Run the files
     
 if __name__ == '__main__':
-    sample_name = 'johnson'
+    sample_name = 'goepert-mayer'
     
     
-    nv18_2020_11_10 = { 'coords':[0.179, 0.247, 5.26], 
-            'name': '{}-nv18_2020_11_10'.format(sample_name),
-            'expected_count_rate': 60, 'nd_filter': 'nd_0',
+    nv0_2021_01_07 = { 'coords':[-0.055, -0.042, 5.28], 
+            'name': '{}-nv0_2021_01_07'.format(sample_name),
+            'expected_count_rate': 50, 'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp', 
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
             'pulsed_initial_ion_dur': 25*10**3,
@@ -656,17 +657,61 @@ if __name__ == '__main__':
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
+    nv1_2021_01_07 = { 'coords':[0.648, -0.110, 5.26], 
+            'name': '{}-nv1_2021_01_07'.format(sample_name),
+            'expected_count_rate': 42, 'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp', 
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
+    nv2_2021_01_07 = { 'coords':[0.642, 0.479, 5.24], 
+            'name': '{}-nv2_2021_01_07'.format(sample_name),
+            'expected_count_rate': 42,  'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp', 
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
+    nv3_2021_01_07 = { 'coords':[0.130, 0.590, 5.24], 
+            'name': '{}-nv3_2021_01_07'.format(sample_name),
+            'expected_count_rate': 42, 'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp', 
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
 #    nv_sig = NVA
+    
+    nv_sig_list = [nv0_2021_01_07, nv1_2021_01_07, nv2_2021_01_07, nv3_2021_01_07]
     
 #    test_pulse_dur_list = [   
 #        0.,  100.,  200.,  300.,  400.,  500.,  600.,   800.,  1000.,  
 #        2000.,  3000.,  4000.,   6000.,   8000.,  10000.,
 #        20000.,  30000.,  40000.,    60000.,   80000.,  100000.]
-    test_pulse_dur_list = numpy.array([1, 5, 10, 15, 20 ,25, 30, 35, 40, 45])*10**6
-    readout_power = numpy.linspace(0.1,0.8, 8)
+#    test_pulse_dur_list = numpy.array([1, 5, 10, 15, 20 ,25, 30, 35, 40, 45])*10**6
+#    readout_power = numpy.linspace(0.1,0.8, 8)
 #    readout_power = [0.3]
-    ion_time = numpy.array([0, 0.5, 1, 10, 25, 75, 150, 200])*10**3
+#    ion_time = numpy.array([0, 0.5, 1, 10, 25, 75, 150, 200])*10**3
 #    readout_time = [10**7]
 
     # Run the program
@@ -684,12 +729,13 @@ if __name__ == '__main__':
             
 #    optimize_init_ion_and_reion_pulse_length(nv_sig)
 #    optimize_readout_pulse_length(nv_sig)
-    for nd in ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']:
-        for p in numpy.linspace(0.2, 0.7, 6):
-            nv_sig = copy.deepcopy(nv18_2020_11_10)
-            nv_sig['nd_filter'] = nd
-            nv_sig['am_589_power'] = p
-            optimize_readout_pulse_length(nv_sig)
+    for nv_sig_main in nv_sig_list:
+        for nd in ['nd_1.0']:
+            for p in [0.7]:
+                nv_sig = copy.deepcopy(nv_sig_main)
+                nv_sig['nd_filter'] = nd
+                nv_sig['am_589_power'] = p
+                optimize_readout_pulse_length(nv_sig)
         
 #    optimize_readout_pulse_power(nv18_2020_11_10)
     
