@@ -110,8 +110,12 @@ def plot_radial_avg_moving_readout(file, pc_name, branch_name, data_folder,
     except Exception:
         pulse_time = data['green_pulse_time']
     readout = data['readout']
-    opt_volt = data['green_optical_voltage']
-    opt_power = data['green_opt_power']
+    try:
+        opt_volt = data['green_optical_voltage']
+        opt_power = data['green_opt_power']
+    except Exception:
+        opt_volt = data['green_optical_power_pd']
+        opt_power = data['green_optical_power_mW']
         
     
     # plot
@@ -147,7 +151,7 @@ def plot_radial_avg_moving_readout(file, pc_name, branch_name, data_folder,
                        'pulse_time-units':'s',
                        'radii': radii.tolist(),
                        'radii-units': 'um',
-                       'counts_r': counts_r,
+                       'counts_r': counts_r.tolist(),
                        'counts_r-units': 'kcps'}
                 
             filePath = tool_belt.get_file_path(parent_folder, timestamp, nv_sig['name'], subfolder = sub_folder)
@@ -334,6 +338,7 @@ def plot_moving_target_1D_line_2_data(file_list, pulse_length):
     
 # %% 
 if __name__ == '__main__':
+    # %% Moving target 2D
     
     nv_file_list = ['2021_01_07-17_34_54-goeppert-mayer-nv0_2021_01_07',
                     '2021_01_07-19_46_59-goeppert-mayer-nv1_2021_01_07',
@@ -349,10 +354,169 @@ if __name__ == '__main__':
     data_folder = 'image_sample'
     sub_folder = '2021/01'
     
-    for i in range(len(nv_file_list)):
-        file = nv_file_list[i]
+    sub_folder = 'branch_Spin_to_charge/2020_12'
     
-        plot_radial_avg_moving_readout(file, pc_name, branch_name, data_folder, sub_folder)        
+    label_list = ['NV band', 'SiV band']
+    fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
+    
+    color = 'tab:blue'
+    file = file_list[0]
+    radii, counts_r=plot_radial_avg_moving_target(file, 'isolate_nv_charge_dynamics_moving_target', 
+                                                  sub_folder, do_plot = False, save_plot =  False)
+    ax1.plot(radii, counts_r, color = color)
+    ax1.set_xlabel('Radial distance (um)')
+    ax1.set_ylabel('Azimuthal avg counts (kcps) [635-715 nm bandpass]', color = color)
+    ax1.set_title('Radial plot of moving target\n638 nm init pulse\n1 ms 532 nm pulse')
+    ax1.tick_params(axis = 'y', labelcolor=color)
+
+    color = 'tab:red'
+    ax2 = ax1.twinx()
+    file = file_list[1]
+    radii, counts_r=plot_radial_avg_moving_target(file, 'isolate_nv_charge_dynamics_moving_target', 
+                                                  sub_folder, do_plot = False, save_plot =  False)
+    ax2.plot(radii, counts_r, color = color)
+    ax2.set_xlabel('Radial distance (um)')
+    ax2.set_ylabel('Azimuthal avg counts (kcps) [715 nm longpass]', color = color)
+    ax2.tick_params(axis = 'y', labelcolor=color)
+    
+    #%% Moving readout
+    
+    # file_list = ['2020_12_09-15_14_24-goeppert-mayer-nv1_2020_12_02_dif',
+    #              '2020_12_09-13_39_43-goeppert-mayer-nv1_2020_12_02_dif',
+    #              '2020_12_09-14_25_43-goeppert-mayer-nv1_2020_12_02_dif']
+    # fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
+    # sub_folder = 'branch_Spin_to_charge/2020_12'
+    # label_list = ['10 ms pulse', '10 s pulse', '100 s pulse']
+    
+    # for i in range(len(file_list)):
+    #     file = file_list[i]
+    #     radii, counts_r=plot_radial_avg_moving_readout(file, 'image_sample', 
+    #                                                   sub_folder, do_plot = True, save_plot =  True)
+    #     ax1.plot(radii, counts_r, label = label_list[i])
+    #     ax1.set_xlabel('Radial distance (um)')
+    #     ax1.set_ylabel('Azimuthal avg counts (kcps) [715 nm longpass]')
+    #     ax1.set_title('Radial plot of moving readout\n638 nm init pulse\n532 nm pulse')
+    # ax1.legend()
+
+    
+    
+    # %%  Moving target 1 D
+    # master_pulse_time_list = [
+                        # '1 us', '10 us', '100 us', 
+                        # '1 ms', '10 ms', '100 ms', 
+                        # '1 s', '10 s', 
+                        # '100 s', 
+                        # ]   
+                       
+    # g/g NV band
+    # file_list = ['2020_12_11-17_42_22-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-17_45_26-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-17_48_33-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-17_51_43-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-17_55_08-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-18_01_04-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-13_40_46-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-22_42_38-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-10_08_11-goeppert-mayer-nv2_2020_12_10',]    
+    
+    # pulse_time_list = ['1 us', '10 us', '100 us', 
+    #                    '1 ms', '10 ms', '100 ms', 
+    #                    '1 s', '10 s', '100 s', 
+                       # ]         
+    # g/g SiV band
+    # file_list = ['2020_12_11-17_43_54-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_11-17_46_59-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_11-17_50_06-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_11-17_53_18-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_11-17_56_57-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_11-18_05_12-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_14-15_57_55-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_20_56-goeppert-mayer-nv2_2020_12_10',
+    #                 '2020_12_15-07_26_11-goeppert-mayer-nv2_2020_12_10'
+    #         ]
+
+    # pulse_time_list = ['1 us', '10 us', '100 us', 
+    #                     '1 ms', '10 ms', '100 ms', 
+    #                     '1 s', '10 s', '100 s'
+    #                     ]     
+
+    # master_file_list = [
+                        # ['2020_12_11-17_42_22-goeppert-mayer-nv2_2020_12_10', 
+                        #   '2020_12_11-17_43_54-goeppert-mayer-nv2_2020_12_10'] ,
+                        # ['2020_12_11-17_45_26-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_11-17_46_59-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-17_48_33-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_11-17_50_06-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-17_51_43-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_11-17_53_18-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-17_55_08-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_11-17_56_57-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-18_01_04-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_11-18_05_12-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-13_40_46-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_14-15_57_55-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-22_42_38-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_12-03_20_56-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-10_08_11-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_15-07_26_11-goeppert-mayer-nv2_2020_12_10']
+                        # ]
+    
+    # r/g NV band
+    # file_list = ['2020_12_12-03_22_30-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-03_25_40-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-03_28_50-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-03_32_05-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-03_35_34-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-03_41_34-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-16_09_52-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-08_22_16-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_13-10_04_13-goeppert-mayer-nv2_2020_12_10',
+    #     ]
+    # pulse_time_list = ['1 us', '10 us', '100 us', 
+    #                     '1 ms', '10 ms', '100 ms', 
+    #                     '1 s', '10 s', '100 s', 
+    #                     ]    
+    
+    # r/g SiV band
+    # file_list = ['2020_12_12-03_24_06-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_27_15-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_30_27-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_33_43-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_37_26-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_45_42-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_14-16_26_34-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-13_00_36-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_14-13_01_52-goeppert-mayer-nv2_2020_12_10'
+    #     ]
+    # pulse_time_list = ['1 us', '10 us', '100 us', 
+    #                     '1 ms', '10 ms', '100 ms', 
+    #                     '1 s', '10 s', '100 s', 
+    #                     ]    
+    # master_file_list = [['2020_12_12-03_22_30-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_24_06-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-03_25_40-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_27_15-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-03_28_50-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_30_27-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-03_32_05-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_33_43-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-03_35_34-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_37_26-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-03_41_34-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_45_42-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_11-16_09_52-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_14-16_26_34-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-08_22_16-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-13_00_36-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_13-10_04_13-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_14-13_01_52-goeppert-mayer-nv2_2020_12_10']
+    #                 ]
+    
+    # for i in range(len(master_file_list)):
+    #     file_list = master_file_list[i]
+    #     pulse_time = master_pulse_time_list[i]
+    
+    #     plot_moving_target_1D_line_2_data(file_list, pulse_time)    
     
 
     

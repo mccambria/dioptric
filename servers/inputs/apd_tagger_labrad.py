@@ -30,16 +30,14 @@ import numpy
 import logging
 import re
 import time
-import socket
 
 
 class ApdTagger(LabradServer):
     name = 'apd_tagger'
-    pc_name = socket.gethostname()
     logging.basicConfig(level=logging.DEBUG, 
                 format='%(asctime)s %(levelname)-8s %(message)s',
                 datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
+                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/labrad_logging/{}.log'.format(name))
 
     def initServer(self):
         self.reset_tag_stream_state()
@@ -107,7 +105,7 @@ class ApdTagger(LabradServer):
         timestamps = buffer.getTimestamps()
         channels = buffer.getChannels()
         return timestamps, channels
-    
+    #
     def read_counter_setting_internal(self, num_to_read):
         if self.stream is None:
             logging.error('read_counter attempted while stream is None.')
@@ -240,99 +238,9 @@ class ApdTagger(LabradServer):
         self.leftover_timestamps = []
         self.leftover_channels = []
 
-    @setting(0, returns='*i')
-    def get_channel_mapping(self, c):
-        """As a regexp, the order is:
-        [+APD, *[gate open, gate close], ?clock]
-        Whether certain channels will be present/how many channels of a given
-        type will be present is based on the channels passed to
-        start_tag_stream.
-        """
-        return self.stream_channels
+# %%
 
-    @setting(1, apd_indices='*i', gate_indices='*i', clock='b')
-    def start_tag_stream(self, c, apd_indices, gate_indices=None, clock=True):
-        """Expose a raw tag stream which can be read with read_tag_stream and
-        closed with stop_tag_stream.
-        """
-        
-        # Make sure the existing stream is stopped and we have fresh state
-        if self.stream is not None:
-            logging.warning('New stream started before existing stream was ' \
-                            'stopped. Stopping existing stream.')
-            self.stop_tag_stream_internal()
-        else:
-            self.reset_tag_stream_state()
-        
-        channels = []
-        for ind in apd_indices:
-            channels.append(self.tagger_di_apd[ind])
-        # If gate_indices is unspecified, add gates for all the 
-        # passed APDs by default
-        if gate_indices is None:
-            gate_indices = apd_indices
-        for ind in gate_indices:
-            gate_channel = self.tagger_di_gate[ind]
-            channels.append(gate_channel)  # rising edge
-            channels.append(-gate_channel)  # falling edge
-        if clock:
-            channels.append(self.tagger_di_clock)
-        # Store in state before de-duplication to preserve order
-        self.stream_channels = channels
-        # De-duplicate the channels list
-        channels = list(set(channels))
-        self.stream = TimeTagger.TimeTagStream(self.tagger, 10**9, channels)
-        # When you set up a measurement, it will not start recording data
-        # immediately. It takes some time for the tagger to configure the fpga,
-        # etc. The sync call waits until this process is complete. 
-        self.tagger.sync()
-        self.stream_apd_indices = apd_indices
-        
-    @setting(2)
-    def stop_tag_stream(self, c):
-        """Closes the stream started with start_tag_stream. Resets
-        leftovers.
-        """
-        self.stop_tag_stream_internal()
-        
-    @setting(9)
-    def clear_buffer(self, c):
-        """Clear the hardware's internal buffer. Should be called before
-        starting a pulse sequence."""
-        _ = self.stream.getData()
-        # We also don't care about overflows here, so toss those
-        _ = self.tagger.getOverflowsAndClear()
-        
-
-#    @setting(3, returns='*s*i')
-    @setting(3, returns='s')    
-    def read_tag_stream(self, c):
-        """Read the stream started with start_tag_stream. Returns two lists,
-        each as long as the number of counts that have occurred since the
-        buffer was refreshed. First list is timestamps in ps, second is
-        channel indices. The list is now a string, so that transferring it 
-        thru labrad is quicker.
-        """
-        if self.stream is None:
-            logging.error('read_tag_stream attempted while stream is None.')
-            return
-        timestamps, channels = self.read_raw_stream()
-        # Convert timestamps to strings since labrad does not support int64s
-        # It must be converted to int64s back on the client
-#        timestamps = timestamps.astype(str).tolist()
-#        return timestamps, channels
-        ret_vals = []  # List of comma delimited strings to minimize data
-        for ind in range(len(timestamps)):
-            ret_vals.append('{},{}'.format(timestamps[ind], channels[ind]))
-        delim = '.'
-        ret_vals_string = delim.join(ret_vals)
-        return ret_vals_string
-
-    @setting(4, num_to_read='i', returns='*3w')
-    def read_counter_complete(self, c, num_to_read=None):
-        return self.read_counter_setting_internal(num_to_read)
-
-    @setting(5, num_to_read='i', returns='*w')
+    @setting(0, num_to_read='i', returns='*w')
     def read_counter_simple(self, c, num_to_read=None):
         
         complete_counts = self.read_counter_setting_internal(num_to_read)
@@ -349,63 +257,6 @@ class ApdTagger(LabradServer):
                          in complete_counts]
             
         return return_counts
-
-    @setting(6, num_to_read='i', returns='*2w')
-    def read_counter_separate_gates(self, c, num_to_read=None):
-        
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-        
-        # To combine APDs we assume all the APDs have the same gate
-        gate_channels = list(self.tagger_di_gate.values())
-        first_gate_channel = gate_channels[0]
-        if not all(val == first_gate_channel for val in gate_channels):
-            logging.critical('Combined counts from APDs with ' \
-                             'different gates.')
-        
-        # Add the APD counts as vectors for each sample in complete_counts
-        return_counts = [numpy.sum(sample, 0, dtype=int).tolist() for sample
-                         in complete_counts]
-            
-        return return_counts
-
-    @setting(7, num_to_read='i', returns='*2w')
-    def read_counter_separate_apds(self, c, num_to_read=None):
-        
-        complete_counts = self.read_counter_setting_internal(num_to_read)
-        
-        # Just find the sum of the counts for each APD for each
-        # sample in complete_counts
-        return_counts = [[numpy.sum(apd_counts, dtype=int) for apd_counts
-                          in sample] for sample in complete_counts]
-            
-        return return_counts
-
-    @setting(8)
-    def reset(self, c):
-        self.stop_tag_stream_internal()
-        
-    @setting(10, returns='*s*i')    
-    def read_tag_stream_master(self, c):
-        """Read the stream started with start_tag_stream. Returns two lists,
-        each as long as the number of counts that have occurred since the
-        buffer was refreshed. First list is timestamps in ps, second is
-        channel indices. The list is now a string, so that transferring it 
-        thru labrad is quicker.
-        """
-        if self.stream is None:
-            logging.error('read_tag_stream attempted while stream is None.')
-            return
-        timestamps, channels = self.read_raw_stream()
-        # Convert timestamps to strings since labrad does not support int64s
-        # It must be converted to int64s back on the client
-        timestamps = timestamps.astype(str).tolist()
-        return timestamps, channels
-#        ret_vals = []  # List of comma delimited strings to minimize data
-#        for ind in range(len(timestamps)):
-#            ret_vals.append('{},{}'.format(timestamps[ind], channels[ind]))
-#        delim = '.'
-#        ret_vals_string = delim.join(ret_vals)
-#        return ret_vals_string
 
 __server__ = ApdTagger()
 

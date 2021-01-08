@@ -27,10 +27,17 @@ from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 import numpy
 import nidaqmx
+import socket
+import logging
 
 
 class photodiode(LabradServer):
     name = 'photodiode'
+    pc_name = socket.gethostname()
+    logging.basicConfig(level=logging.DEBUG, 
+                format='%(asctime)s %(levelname)-8s %(message)s',
+                datefmt='%y-%m-%d_%H-%M-%S',
+                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
         config = ensureDeferred(self.get_config())
