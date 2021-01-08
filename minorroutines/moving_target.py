@@ -14,7 +14,7 @@ import majorroutines.optimize as optimize
 import numpy
 import time
 import matplotlib.pyplot as plt
-import labrad
+# import labrad
 from random import shuffle
 import majorroutines.image_sample as image_sample
 import copy
@@ -876,39 +876,39 @@ if __name__ == '__main__':
 #    img_range = 0.35
     
     
-    for t in [10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10*10**9]:        
-        init_color = 532
-        pulse_color = 532
-        nv_sig = copy.deepcopy(nv2_2020_12_10)
-        nv_sig['color_filter'] = '635-715 bp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
-        nv_sig['color_filter'] = '715 lp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
+    # for t in [10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10*10**9]:        
+    #     init_color = 532
+    #     pulse_color = 532
+    #     nv_sig = copy.deepcopy(nv2_2020_12_10)
+    #     nv_sig['color_filter'] = '635-715 bp'
+    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+    #                          num_steps, num_runs, init_color, pulse_color)
+    #     nv_sig['color_filter'] = '715 lp'
+    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+    #                          num_steps, num_runs, init_color, pulse_color)
         
-    for t in [10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10*10**9]:        
-        init_color = 638
-        pulse_color = 532
-        nv_sig = copy.deepcopy(nv2_2020_12_10)
-        nv_sig['color_filter'] = '635-715 bp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
-        nv_sig['color_filter'] = '715 lp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
+    # for t in [10**3, 10**4, 10**5, 10**6, 10**7, 10**8, 10*10**9]:        
+    #     init_color = 638
+    #     pulse_color = 532
+    #     nv_sig = copy.deepcopy(nv2_2020_12_10)
+    #     nv_sig['color_filter'] = '635-715 bp'
+    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+    #                          num_steps, num_runs, init_color, pulse_color)
+    #     nv_sig['color_filter'] = '715 lp'
+    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+    #                          num_steps, num_runs, init_color, pulse_color)
         
-    for t in [100*10**9]: 
-        num_runs = 25
-        init_color = 638
-        pulse_color = 532
-        nv_sig = copy.deepcopy(nv2_2020_12_10)
-        nv_sig['color_filter'] = '635-715 bp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
-        nv_sig['color_filter'] = '715 lp'
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-                             num_steps, num_runs, init_color, pulse_color)
+    # for t in [100*10**9]: 
+    #     num_runs = 25
+    #     init_color = 638
+    #     pulse_color = 532
+    #     nv_sig = copy.deepcopy(nv2_2020_12_10)
+    #     nv_sig['color_filter'] = '635-715 bp'
+    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+    #                          num_steps, num_runs, init_color, pulse_color)
+    #     nv_sig['color_filter'] = '715 lp'
+    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
+    #                          num_steps, num_runs, init_color, pulse_color)
  
 
  
@@ -959,75 +959,46 @@ if __name__ == '__main__':
 #        moving_target(nv_sig,start_coords,  end_coords, num_steps, num_runs, init_color, pulse_color)
 
 # %%
-    # data = tool_belt.get_raw_data('moving_target/branch_Spin_to_charge/2020_12/incremental', '2020_12_13-10_04_20-goeppert-mayer-nv2_2020_12_10')
-    # readout_color = 589
+    # 1 ms, NV band, 50 reps
+    # file_list = ['2020_12_22-19_44_53-goeppert-mayer-nv0_2020_12_20',
+    #                     '2020_12_23-10_36_36-goeppert-mayer-nv0_2020_12_20',]
+    # 1 ms, SiV band, 50 reps
+    # file_list = ['2020_12_22-20_25_00-goeppert-mayer-nv0_2020_12_20',
+    #                     '2020_12_23-11_16_27-goeppert-mayer-nv0_2020_12_20',]
     
-    # readout_counts_array = data['readout_counts_array']
-    # target_counts_array = data['target_counts_array']
-    # opti_coords_list = data['opti_coords_list']
-    # start_coords = data['start_coords']
-    # coords_list = data['coords_list']
-    # end_coords = coords_list[-1]
-    # num_steps = data['num_steps']
-    # init_color= data['init_color']
-    # pulse_time = data['pulse_time']
-    # pulse_color = data['pulse_color']
-    # nv_sig = data['nv_sig']
+    # 10 ms, NV band, 50 reps
+    # file_list = ['2020_12_22-21_16_12-goeppert-mayer-nv0_2020_12_20', 
+    #                     '2020_12_23-12_07_29-goeppert-mayer-nv0_2020_12_20']
+    # 10 ms, SiV band, 50 reps
+    file_list = ['2020_12_22-22_08_20-goeppert-mayer-nv0_2020_12_20', 
+                        '2020_12_23-12_59_27-goeppert-mayer-nv0_2020_12_20']
     
-    # x_voltages = numpy.linspace(start_coords[0], 
-    #                             end_coords[0], num_steps)
-    # y_voltages = numpy.linspace(start_coords[1], 
-    #                             end_coords[1], num_steps)
-    
-            
-    # # calculate the radial distances from the readout NV to the target points
-    # x_diffs = (x_voltages - start_coords[0])
-    # y_diffs = (y_voltages- start_coords[1])
-    # rad_dist = numpy.sqrt(x_diffs**2 + y_diffs**2)
-    
-    # # Statistics
-    # readout_counts_avg = numpy.average(readout_counts_array, axis=1)
-    # readout_counts_ste = stats.sem(readout_counts_array, axis=1)
-    
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(rad_dist*35,readout_counts_avg, label = 'counts on readout after each pulse on target spot')
-    # ax.set_xlabel('Distance from readout NV (um)')
-    # ax.set_ylabel('Average counts')
-    # ax.set_title('Stationary readout NV, moving target ({} init, {} s {} pulse)'.\
-    #                                 format(init_color, pulse_time/10**9, pulse_color))
-    # ax.legend()
-    
-    
-    # endFunctionTime = time.time()
 
-    # timestamp = tool_belt.get_time_stamp()
-    # raw_data = {'timestamp': timestamp,
-    #             # 'timeElapsed': timeElapsed,
-    #             'init_color': init_color,
-    #             'pulse_color': pulse_color,
-    #             'readout_color': readout_color,
-    #         'start_coords': start_coords,
-    #         'end_coords': end_coords,
-    #         'num_steps': num_steps,
-    #         'nv_sig': nv_sig,
-    #         'nv_sig-units': tool_belt.get_nv_sig_units(),
-    #         'num_runs':num_runs,
-    #         'opti_coords_list': opti_coords_list,
-    #         'rad_dist': rad_dist.tolist(),
-    #         'rad_dist-units': 'V',
-    #         'readout_counts_array': readout_counts_array,
-    #         'readout_counts_array-units': 'counts',
 
-    #         'readout_counts_avg': readout_counts_avg.tolist(),
-    #         'readout_counts_avg-units': 'counts',
-
-    #         'readout_counts_ste': readout_counts_ste.tolist(),
-    #         'readout_counts_ste-units': 'counts',
-    #         }
     
-    # file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    # tool_belt.save_raw_data(raw_data, file_path)
-    # tool_belt.save_figure(fig, file_path)
+    
+    # + 120 V
+    data = tool_belt.get_raw_data('moving_target/branch_Spin_to_charge/2020_12', file_list[0])
+
+    readout_image_array_p = numpy.array(data['readout_image_array'])
+    img_extent = data['img_extent']
+    
+    # print(readout_counts_array_p.shape)
+    
+    # 0 V
+    data = tool_belt.get_raw_data('moving_target/branch_Spin_to_charge/2020_12', file_list[1])
+
+    readout_image_array_m = numpy.array(data['readout_image_array'])
+    img_extent = data['img_extent']
+    
+    dif_array = readout_image_array_p - readout_image_array_m
+    
+    pulse_time = 10**7
+    title = 'Dif moving target, (120 - 0) V,  SiV band, {} nm init pulse \n{} nm {} ms pulse'.format(532, 532, pulse_time/10**6)
+    fig_target = tool_belt.create_image_figure(dif_array, img_extent,
+                                                    title = title)
+    
+    
 
     
     

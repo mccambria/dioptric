@@ -109,8 +109,12 @@ def plot_radial_avg_moving_readout(file, parent_folder, sub_folder, do_plot = Tr
     except Exception:
         pulse_time = data['green_pulse_time']
     readout = data['readout']
-    opt_volt = data['green_optical_voltage']
-    opt_power = data['green_opt_power']
+    try:
+        opt_volt = data['green_optical_voltage']
+        opt_power = data['green_opt_power']
+    except Exception:
+        opt_volt = data['green_optical_power_pd']
+        opt_power = data['green_optical_power_mW']
         
     
     # plot
@@ -146,7 +150,7 @@ def plot_radial_avg_moving_readout(file, parent_folder, sub_folder, do_plot = Tr
                        'pulse_time-units':'s',
                        'radii': radii.tolist(),
                        'radii-units': 'um',
-                       'counts_r': counts_r,
+                       'counts_r': counts_r.tolist(),
                        'counts_r-units': 'kcps'}
                 
             filePath = tool_belt.get_file_path(parent_folder, timestamp, nv_sig['name'], subfolder = sub_folder)
@@ -333,36 +337,77 @@ def plot_moving_target_1D_line_2_data(file_list, pulse_length):
     
 # %% 
 if __name__ == '__main__':
+    # %% Moving target 2D
     
-    # file = '2020_12_08-18_04_02-goeppert-mayer-nv1_2020_12_02-img'
-    # file_list = ['2020_11_27-13_50_28-johnson-nv18_2020_11_10-img', # NV in johnson
-    #              '2020_12_07-20_35_40-goeppert-mayer-nv1_2020_12_02-img'] # NV in goeppert mayer
-    # # file = '2020_12_08-03_01_48-goeppert-mayer-nv1_2020_12_02-img'
-    # sub_folder_list = ['branch_Spin_to_charge/2020_11', 'branch_Spin_to_charge/2020_12']
+    # g/r 12/7
+    file_list = ['2020_12_07-20_35_40-goeppert-mayer-nv1_2020_12_02-img', # NV
+                  '2020_12_07-23_48_59-goeppert-mayer-nv1_2020_12_02-img'] # SiV
+    # g/r 12/6 (smaller)
+    file_list = ['2020_12_06-14_49_22-goeppert-mayer-nv1_2020_12_02-img', # NV
+                  '2020_12_06-18_02_58-goeppert-mayer-nv1_2020_12_02-img'] # SiV
+    # g/g
+    file_list = ['2020_12_08-03_01_48-goeppert-mayer-nv1_2020_12_02-img', # NV
+                  '2020_12_08-06_15_12-goeppert-mayer-nv1_2020_12_02-img'] # SiV
+    # r/r
+    file_list = ['2020_12_10-15_52_19-goeppert-mayer-nv1_2020_12_10-img', # NV
+                  '2020_12_10-16_06_28-goeppert-mayer-nv1_2020_12_10-img'] # SiV
+    # r/g
+    file_list = ['2020_12_04-20_06_58-goeppert-mayer-nv1_2020_12_02-img', # NV
+                  '2020_12_04-22_31_04-goeppert-mayer-nv1_2020_12_02-img'] # SiV
     
-    # label_list = ['E6 sample (Johnson)', 'Indian sample (Goeppert Mayer)']
-    # fig, ax = plt.subplots(1,1, figsize = (8, 8))
+    sub_folder = 'branch_Spin_to_charge/2020_12'
+    
+    label_list = ['NV band', 'SiV band']
+    fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
+    
+    color = 'tab:blue'
+    file = file_list[0]
+    radii, counts_r=plot_radial_avg_moving_target(file, 'isolate_nv_charge_dynamics_moving_target', 
+                                                  sub_folder, do_plot = False, save_plot =  False)
+    ax1.plot(radii, counts_r, color = color)
+    ax1.set_xlabel('Radial distance (um)')
+    ax1.set_ylabel('Azimuthal avg counts (kcps) [635-715 nm bandpass]', color = color)
+    ax1.set_title('Radial plot of moving target\n638 nm init pulse\n1 ms 532 nm pulse')
+    ax1.tick_params(axis = 'y', labelcolor=color)
+    
+    color = 'tab:red'
+    ax2 = ax1.twinx()
+    file = file_list[1]
+    radii, counts_r=plot_radial_avg_moving_target(file, 'isolate_nv_charge_dynamics_moving_target', 
+                                                  sub_folder, do_plot = False, save_plot =  False)
+    ax2.plot(radii, counts_r, color = color)
+    ax2.set_xlabel('Radial distance (um)')
+    ax2.set_ylabel('Azimuthal avg counts (kcps) [715 nm longpass]', color = color)
+    ax2.tick_params(axis = 'y', labelcolor=color)
+    
+    #%% Moving readout
+    
+    # file_list = ['2020_12_09-15_14_24-goeppert-mayer-nv1_2020_12_02_dif',
+    #              '2020_12_09-13_39_43-goeppert-mayer-nv1_2020_12_02_dif',
+    #              '2020_12_09-14_25_43-goeppert-mayer-nv1_2020_12_02_dif']
+    # fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
+    # sub_folder = 'branch_Spin_to_charge/2020_12'
+    # label_list = ['10 ms pulse', '10 s pulse', '100 s pulse']
     
     # for i in range(len(file_list)):
     #     file = file_list[i]
-    #     sub_folder = sub_folder_list[i]
-    #     radii, counts_r=plot_radial_avg_moving_target(file, 'isolate_nv_charge_dynamics_moving_target', sub_folder, save_plot =  False)
+    #     radii, counts_r=plot_radial_avg_moving_readout(file, 'image_sample', 
+    #                                                   sub_folder, do_plot = True, save_plot =  True)
+    #     ax1.plot(radii, counts_r, label = label_list[i])
+    #     ax1.set_xlabel('Radial distance (um)')
+    #     ax1.set_ylabel('Azimuthal avg counts (kcps) [715 nm longpass]')
+    #     ax1.set_title('Radial plot of moving readout\n638 nm init pulse\n532 nm pulse')
+    # ax1.legend()
 
-    #     ax.plot(radii, counts_r, label = label_list[i])
-    #     ax.set_xlabel('Radial distance (um)')
-    #     ax.set_ylabel('Azimuthal avg counts (kcps)')
-    # ax.set_title('Radial plot of moving target\n532 nm init pulse\n0.01 s 638 nm pulse')#' at 3 mW')
-    # ax.legend()
     
-    # filePath = tool_belt.get_file_path('isolate_nv_charge_dynamics_moving_target', timestamp, nv_sig['name'], subfolder = sub_folder)
-    # tool_belt.save_figure(fig, filePath + '_radial_dist_comp')
-  
-    master_pulse_time_list = [
+    
+    # %%  Moving target 1 D
+    # master_pulse_time_list = [
                         # '1 us', '10 us', '100 us', 
                         # '1 ms', '10 ms', '100 ms', 
                         # '1 s', '10 s', 
-                        '100 s', 
-                        ]   
+                        # '100 s', 
+                        # ]   
                        
     # g/g NV band
     # file_list = ['2020_12_11-17_42_22-goeppert-mayer-nv2_2020_12_10',
@@ -396,7 +441,7 @@ if __name__ == '__main__':
     #                     '1 s', '10 s', '100 s'
     #                     ]     
 
-    master_file_list = [
+    # master_file_list = [
                         # ['2020_12_11-17_42_22-goeppert-mayer-nv2_2020_12_10', 
                         #   '2020_12_11-17_43_54-goeppert-mayer-nv2_2020_12_10'] ,
                         # ['2020_12_11-17_45_26-goeppert-mayer-nv2_2020_12_10',
@@ -413,9 +458,9 @@ if __name__ == '__main__':
                         #   '2020_12_14-15_57_55-goeppert-mayer-nv2_2020_12_10'],
                         # ['2020_12_11-22_42_38-goeppert-mayer-nv2_2020_12_10',
                         #   '2020_12_12-03_20_56-goeppert-mayer-nv2_2020_12_10'],
-                        ['2020_12_11-10_08_11-goeppert-mayer-nv2_2020_12_10',
-                          '2020_12_15-07_26_11-goeppert-mayer-nv2_2020_12_10']
-                        ]
+                        # ['2020_12_11-10_08_11-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_15-07_26_11-goeppert-mayer-nv2_2020_12_10']
+                        # ]
     
     # r/g NV band
     # file_list = ['2020_12_12-03_22_30-goeppert-mayer-nv2_2020_12_10',
@@ -468,11 +513,11 @@ if __name__ == '__main__':
     #                       '2020_12_14-13_01_52-goeppert-mayer-nv2_2020_12_10']
     #                 ]
     
-    for i in range(len(master_file_list)):
-        file_list = master_file_list[i]
-        pulse_time = master_pulse_time_list[i]
+    # for i in range(len(master_file_list)):
+    #     file_list = master_file_list[i]
+    #     pulse_time = master_pulse_time_list[i]
     
-        plot_moving_target_1D_line_2_data(file_list, pulse_time)         
+    #     plot_moving_target_1D_line_2_data(file_list, pulse_time)         
     
 
     
