@@ -260,32 +260,219 @@ def plot_radial_avg_moving_target(file, parent_folder, sub_folder, do_plot = Tru
 
     return radii, counts_r
        
+
+def plot_moving_target_1D_line(file_list, pulse_time_list):
+    folder = 'moving_target/branch_Spin_to_charge/2020_12'
+    
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    
+    for i in range(len(file_list)):
+        file = file_list[i]
+        data = tool_belt.get_raw_data(folder, file)
+        readout_counts_avg = data['readout_counts_avg']
+        rad_dist = numpy.array(data['rad_dist'])
+        init_color = data['init_color']
+        pulse_color = data['pulse_color']
+        pulse_length = pulse_time_list[i]
+        nv_sig = data['nv_sig']
+        color_filter = nv_sig['color_filter']
+        
+        ax.plot(rad_dist*35,readout_counts_avg, label = '{} pulse length'.format(pulse_length))
+        
+        
+    ax.set_xlabel('Distance from readout NV (um)')
+    ax.set_ylabel('Average counts')
+    ax.set_title('1D moving target data ({} init, {} pulse) {} filter'.\
+                                    format(init_color, pulse_color, color_filter))
+    ax.legend()
+    return
+
+def plot_moving_target_1D_line_2_data(file_list, pulse_length):
+    folder = 'moving_target/branch_Spin_to_charge/2020_12'
+    
+    fig, ax1 = plt.subplots(1, 1, figsize=(10, 10))
+    
+    # NV
+    color = 'tab:blue'
+    file = file_list[0]
+    data = tool_belt.get_raw_data(folder, file)
+    readout_counts_avg = data['readout_counts_avg']
+    rad_dist = numpy.array(data['rad_dist'])
+    init_color = data['init_color']
+    pulse_color = data['pulse_color']
+    nv_sig = data['nv_sig']
+    color_filter = nv_sig['color_filter']
+    
+    ax1.plot(rad_dist*35,readout_counts_avg, color = color)
+    ax1.set_xlabel('Distance from readout NV (um)')
+    ax1.set_ylabel('Average counts ({} filter)'.format(color_filter), color = color)
+    ax1.tick_params(axis = 'y', labelcolor=color)
+    ax1.set_ylim([1,13])
+    # ax1.set_xlim([-1,53])
+    ax1.set_title('1D moving target data ({} init, {} {} pulse)'.\
+                                    format(init_color, pulse_length, pulse_color))
+    
+    # SiV
+    color = 'tab:red'
+    file = file_list[1]
+    data = tool_belt.get_raw_data(folder, file)
+    readout_counts_avg = data['readout_counts_avg']
+    rad_dist = numpy.array(data['rad_dist'])
+    init_color = data['init_color']
+    pulse_color = data['pulse_color']
+    nv_sig = data['nv_sig']
+    color_filter = nv_sig['color_filter']
+    
+    ax2 = ax1.twinx()
+    ax2.plot(rad_dist*35,readout_counts_avg, color = color)
+    ax2.set_ylabel('Average counts ({} filter)'.format(color_filter), color = color)
+    ax2.tick_params(axis = 'y', labelcolor=color)
+    ax2.set_ylim([2,62])
+    
+    return
+    
 # %% 
 if __name__ == '__main__':
     
     # file = '2020_12_08-18_04_02-goeppert-mayer-nv1_2020_12_02-img'
-    file_list = ['2020_11_27-13_50_28-johnson-nv18_2020_11_10-img', # NV in johnson
-                 '2020_12_07-20_35_40-goeppert-mayer-nv1_2020_12_02-img'] # NV in goeppert mayer
-    # file = '2020_12_08-03_01_48-goeppert-mayer-nv1_2020_12_02-img'
-    sub_folder_list = ['branch_Spin_to_charge/2020_11', 'branch_Spin_to_charge/2020_12']
+    # file_list = ['2020_11_27-13_50_28-johnson-nv18_2020_11_10-img', # NV in johnson
+    #              '2020_12_07-20_35_40-goeppert-mayer-nv1_2020_12_02-img'] # NV in goeppert mayer
+    # # file = '2020_12_08-03_01_48-goeppert-mayer-nv1_2020_12_02-img'
+    # sub_folder_list = ['branch_Spin_to_charge/2020_11', 'branch_Spin_to_charge/2020_12']
     
-    label_list = ['E6 sample (Johnson)', 'Indian sample (Goeppert Mayer)']
-    fig, ax = plt.subplots(1,1, figsize = (8, 8))
+    # label_list = ['E6 sample (Johnson)', 'Indian sample (Goeppert Mayer)']
+    # fig, ax = plt.subplots(1,1, figsize = (8, 8))
     
-    for i in range(len(file_list)):
-        file = file_list[i]
-        sub_folder = sub_folder_list[i]
-        radii, counts_r=plot_radial_avg_moving_target(file, 'isolate_nv_charge_dynamics_moving_target', sub_folder, save_plot =  False)
+    # for i in range(len(file_list)):
+    #     file = file_list[i]
+    #     sub_folder = sub_folder_list[i]
+    #     radii, counts_r=plot_radial_avg_moving_target(file, 'isolate_nv_charge_dynamics_moving_target', sub_folder, save_plot =  False)
 
-        ax.plot(radii, counts_r, label = label_list[i])
-        ax.set_xlabel('Radial distance (um)')
-        ax.set_ylabel('Azimuthal avg counts (kcps)')
-    ax.set_title('Radial plot of moving target\n532 nm init pulse\n0.01 s 638 nm pulse')#' at 3 mW')
-    ax.legend()
+    #     ax.plot(radii, counts_r, label = label_list[i])
+    #     ax.set_xlabel('Radial distance (um)')
+    #     ax.set_ylabel('Azimuthal avg counts (kcps)')
+    # ax.set_title('Radial plot of moving target\n532 nm init pulse\n0.01 s 638 nm pulse')#' at 3 mW')
+    # ax.legend()
     
     # filePath = tool_belt.get_file_path('isolate_nv_charge_dynamics_moving_target', timestamp, nv_sig['name'], subfolder = sub_folder)
     # tool_belt.save_figure(fig, filePath + '_radial_dist_comp')
-                         
+  
+    master_pulse_time_list = [
+                        # '1 us', '10 us', '100 us', 
+                        # '1 ms', '10 ms', '100 ms', 
+                        # '1 s', '10 s', 
+                        '100 s', 
+                        ]   
+                       
+    # g/g NV band
+    # file_list = ['2020_12_11-17_42_22-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-17_45_26-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-17_48_33-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-17_51_43-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-17_55_08-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-18_01_04-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-13_40_46-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-22_42_38-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-10_08_11-goeppert-mayer-nv2_2020_12_10',]    
+    
+    # pulse_time_list = ['1 us', '10 us', '100 us', 
+    #                    '1 ms', '10 ms', '100 ms', 
+    #                    '1 s', '10 s', '100 s', 
+                       # ]         
+    # g/g SiV band
+    # file_list = ['2020_12_11-17_43_54-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_11-17_46_59-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_11-17_50_06-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_11-17_53_18-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_11-17_56_57-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_11-18_05_12-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_14-15_57_55-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_20_56-goeppert-mayer-nv2_2020_12_10',
+    #                 '2020_12_15-07_26_11-goeppert-mayer-nv2_2020_12_10'
+    #         ]
+
+    # pulse_time_list = ['1 us', '10 us', '100 us', 
+    #                     '1 ms', '10 ms', '100 ms', 
+    #                     '1 s', '10 s', '100 s'
+    #                     ]     
+
+    master_file_list = [
+                        # ['2020_12_11-17_42_22-goeppert-mayer-nv2_2020_12_10', 
+                        #   '2020_12_11-17_43_54-goeppert-mayer-nv2_2020_12_10'] ,
+                        # ['2020_12_11-17_45_26-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_11-17_46_59-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-17_48_33-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_11-17_50_06-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-17_51_43-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_11-17_53_18-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-17_55_08-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_11-17_56_57-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-18_01_04-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_11-18_05_12-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-13_40_46-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_14-15_57_55-goeppert-mayer-nv2_2020_12_10'],
+                        # ['2020_12_11-22_42_38-goeppert-mayer-nv2_2020_12_10',
+                        #   '2020_12_12-03_20_56-goeppert-mayer-nv2_2020_12_10'],
+                        ['2020_12_11-10_08_11-goeppert-mayer-nv2_2020_12_10',
+                          '2020_12_15-07_26_11-goeppert-mayer-nv2_2020_12_10']
+                        ]
+    
+    # r/g NV band
+    # file_list = ['2020_12_12-03_22_30-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-03_25_40-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-03_28_50-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-03_32_05-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-03_35_34-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-03_41_34-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_11-16_09_52-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_12-08_22_16-goeppert-mayer-nv2_2020_12_10',
+    #              '2020_12_13-10_04_13-goeppert-mayer-nv2_2020_12_10',
+    #     ]
+    # pulse_time_list = ['1 us', '10 us', '100 us', 
+    #                     '1 ms', '10 ms', '100 ms', 
+    #                     '1 s', '10 s', '100 s', 
+    #                     ]    
+    
+    # r/g SiV band
+    # file_list = ['2020_12_12-03_24_06-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_27_15-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_30_27-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_33_43-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_37_26-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-03_45_42-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_14-16_26_34-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_12-13_00_36-goeppert-mayer-nv2_2020_12_10',
+    #               '2020_12_14-13_01_52-goeppert-mayer-nv2_2020_12_10'
+    #     ]
+    # pulse_time_list = ['1 us', '10 us', '100 us', 
+    #                     '1 ms', '10 ms', '100 ms', 
+    #                     '1 s', '10 s', '100 s', 
+    #                     ]    
+    # master_file_list = [['2020_12_12-03_22_30-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_24_06-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-03_25_40-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_27_15-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-03_28_50-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_30_27-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-03_32_05-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_33_43-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-03_35_34-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_37_26-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-03_41_34-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-03_45_42-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_11-16_09_52-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_14-16_26_34-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_12-08_22_16-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_12-13_00_36-goeppert-mayer-nv2_2020_12_10'],
+    #                     ['2020_12_13-10_04_13-goeppert-mayer-nv2_2020_12_10',
+    #                       '2020_12_14-13_01_52-goeppert-mayer-nv2_2020_12_10']
+    #                 ]
+    
+    for i in range(len(master_file_list)):
+        file_list = master_file_list[i]
+        pulse_time = master_pulse_time_list[i]
+    
+        plot_moving_target_1D_line_2_data(file_list, pulse_time)         
     
 
     
