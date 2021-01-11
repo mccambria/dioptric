@@ -86,13 +86,13 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
     return numpy.array(counts, dtype=int)
 
 
-def read_manual_counts(cxn, num_steps, period, apd_indices,
+def read_manual_counts(cxn, period, apd_indices,
                        axis_write_func, scan_vals):
 
     cxn.apd_tagger.start_tag_stream(apd_indices)
     counts = []
 
-    for ind in range(num_steps):
+    for ind in range(len(scan_vals)):
 
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
@@ -167,7 +167,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         period = ret_vals[0]
 
         # Get the proper scan function
-        xy_server = tool_belt.get_xy_server()
+        xy_server = tool_belt.get_xy_server(cxn)
         if axis_ind == 0:
             scan_func = xy_server.load_x_scan
         elif axis_ind == 1:
@@ -190,8 +190,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
                                                   seq_args_string)
         period = ret_vals[0]
 
-        z_server = tool_belt.get_z_server()
-        if z_server.hasattr('load_z_scan'):
+        z_server = tool_belt.get_z_server(cxn)
+        if hasattr(z_server, 'load_z_scan'):
             scan_vals = z_server.load_z_scan(z_center, scan_range,
                                              num_steps, period)
             auto_scan = True
@@ -200,11 +200,21 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
             scan_vals = tool_belt.get_scan_vals(z_center, scan_range,
                                                 num_steps, scan_dtype)
             auto_scan = False
+            
+            # Flip order of manual scans to prevent biased drifts
+            cxn.registry.cd(['', 'State'])
+            parity = cxn.registry.get('OPTIMIZE_PARITY')
+            # Flip on even
+            if parity % 2 == 0:
+                scan_vals = numpy.flip(scan_vals)
+            # Switch parity on the registry
+            cxn.registry.cd(['', 'State'])
+            cxn.registry.set('OPTIMIZE_PARITY', (parity+1) % 2)
 
     if auto_scan:
         counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     else:
-        counts = read_manual_counts(cxn, num_steps, period, apd_indices,
+        counts = read_manual_counts(cxn, period, apd_indices,
                                     manual_write_func, scan_vals)
     # counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     count_rates = (counts / 1000) / (readout / 10**9)
@@ -335,9 +345,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     tool_belt.reset_cfm(cxn)
     
     # Be sure the right ND is in place and the magnet aligned
-    cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
+    if hasattr(cxn, 'filter_slider_ell9k'):
+        cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
     magnet_angle = nv_sig['magnet_angle']
-    if magnet_angle is not None:
+    if (magnet_angle is not None) and hasattr(cxn, 'rotation_stage_ell18k'):
         cxn.rotation_stage_ell18k.set_angle(magnet_angle)
     
     # Adjust the sig we use for drift
@@ -513,7 +524,9 @@ def opti_z_cxn(cxn, nv_sig, apd_indices,
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
     passed_coords = nv_sig['coords']
-    adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
+    adjusted_coords = []
+    for i in range(3):
+        adjusted_coords.append(passed_coords[i] + drift[i])
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig['coords'] = adjusted_coords
     

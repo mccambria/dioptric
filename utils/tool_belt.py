@@ -43,9 +43,9 @@ class States(Enum):
     
 def get_signal_generator_name(state):
     if state.value == States.LOW.value:
-        signal_generator_name = 'signal_generator_tsg4104a'
+        signal_generator_name = 'signal_generator_sg394'
     elif state.value == States.HIGH.value:
-        signal_generator_name = 'signal_generator_bnc835'
+        signal_generator_name = 'signal_generator_sg394'
     return signal_generator_name
     
 def get_signal_generator_cxn(cxn, state):
@@ -58,31 +58,44 @@ def get_signal_generator_cxn(cxn, state):
 
 
 def set_xyz(cxn, coords):
-    xy_server = get_xy_server()
-    z_server = get_z_server()
-    xy_server.write_xy(coords[0], coords[1])
-    z_server.write_z(coords[2])
+    xy_dtype = eval(get_registry_entry(cxn, 'xy_dtype', 
+                                       ['', 'SharedParameters']))
+    z_dtype = eval(get_registry_entry(cxn, 'z_dtype', 
+                                      ['', 'SharedParameters']))
+    xy_server = get_xy_server(cxn)
+    z_server = get_z_server(cxn)
+    xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
+    z_server.write_z(z_dtype(coords[2]))
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
 
 
 def set_xyz_center(cxn):
-    xy_server = get_xy_server()
-    z_server = get_z_server()
-    xy_server.write_xy(0.0, 0.0)
-    z_server.write_z(5.0)
+    xy_dtype = eval(get_registry_entry(cxn, 'xy_dtype', 
+                                       ['', 'SharedParameters']))
+    z_dtype = eval(get_registry_entry(cxn, 'z_dtype', 
+                                      ['', 'SharedParameters']))
+    xy_server = get_xy_server(cxn)
+    z_server = get_z_server(cxn)
+    xy_server.write_xy(xy_dtype(0), xy_dtype(0))
+    # MCC Generalize this for Hahn
+    z_server.write_z(z_dtype(5))
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
 
 
 def set_xyz_on_nv(cxn, nv_sig):
-    xy_server = get_xy_server()
-    z_server = get_z_server()
+    xy_dtype = eval(get_registry_entry(cxn, 'xy_dtype', 
+                                       ['', 'SharedParameters']))
+    z_dtype = eval(get_registry_entry(cxn, 'z_dtype', 
+                                      ['', 'SharedParameters']))
+    xy_server = get_xy_server(cxn)
+    z_server = get_z_server(cxn)
     coords = nv_sig['coords']
-    xy_server.write_xy(coords[0], coords[1])
-    z_server.write_z(coords[2])
+    xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
+    z_server.write_z(z_dtype(coords[2]))
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
@@ -430,7 +443,7 @@ def get_shared_parameters_dict(cxn=None):
         with labrad.connect() as cxn:
             return get_shared_parameters_dict_sub(cxn)
     else:
-        get_shared_parameters_dict_sub(cxn)
+        return get_shared_parameters_dict_sub(cxn)
     
     
 def get_shared_parameters_dict_sub(cxn):
@@ -467,25 +480,36 @@ def get_xy_server(cxn):
     
     # return an actual reference to the appropriate server so it can just
     # be used directly
-    return getattr(cxn, get_registry_entry(cxn, 'xy_server', 'Config'))
+    return getattr(cxn, get_registry_entry(cxn, 'xy_server', ['Config']))
 
 
 def get_z_server(cxn):
     """Same as get_xy_server but for the fine z control server"""
     
-    return getattr(cxn, get_registry_entry(cxn, 'z_server', 'Config'))
+    return getattr(cxn, get_registry_entry(cxn, 'z_server', ['Config']))
 
 
-def get_registry_entry(cxn, key, *directory):
+def get_registry_entry(cxn, key, directory):
     """
     Return the value for the specified key. The directory is specified from 
-    the top of the registry
+    the top of the registry. Directory as a list
     """
     
     p = cxn.registry.packet()
     p.cd('', *directory)
     p.get(key)
     return p.send()['get']
+
+
+def get_registry_entry_no_cxn(key, directory):
+    """
+    Same as above
+    """
+    with labrad.connect() as cxn:
+        p = cxn.registry.packet()
+        p.cd('', *directory)
+        p.get(key)
+        return p.send()['get']
     
 
 # %% Open utils
@@ -864,6 +888,10 @@ def get_drift():
     with labrad.connect() as cxn:
         cxn.registry.cd(['', 'State'])
         drift = cxn.registry.get('DRIFT')
+        # MCC where should this stuff live?
+        cxn.registry.cd(['', 'SharedParameters'])
+        xy_dtype = eval(cxn.registry.get('xy_dtype'))
+        z_dtype = eval(cxn.registry.get('z_dtype'))
     len_drift = len(drift)
     if len_drift != 3:
         print('Got drift of length {}.'.format(len_drift))
@@ -873,7 +901,11 @@ def get_drift():
                 drift.append(0.0)
         elif len_drift > 3:
             drift = drift[0:3]
-    drift_to_return = [float(el) for el in drift]  # Cast to float
+    # Cast to appropriate type
+    # MCC round instead of int? 
+    drift_to_return = [xy_dtype(drift[0]), 
+                       xy_dtype(drift[1]), 
+                       z_dtype(drift[2])]
     return drift_to_return
 
 
@@ -882,11 +914,13 @@ def set_drift(drift):
     if len_drift != 3:
         print('Attempted to set drift of length {}.'.format(len_drift))
         print('Set drift unsuccessful.')
-    for el in drift:
-        type_el = type(el)
-        if type_el is not float:
-            print('Attempted to set drift element of type {}.'.format(type_el))
-            print('Set drift unsuccessful.')
+    # Cast to the proper types
+    
+    xy_dtype = eval(get_registry_entry_no_cxn('xy_dtype', 
+                                              ['', 'SharedParameters']))
+    z_dtype = eval(get_registry_entry_no_cxn('z_dtype', 
+                                             ['', 'SharedParameters']))
+    drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
     with labrad.connect() as cxn:
         cxn.registry.cd(['', 'State'])
         return cxn.registry.set('DRIFT', drift)
@@ -914,11 +948,20 @@ def reset_cfm(cxn=None):
         
             
 def reset_cfm_with_cxn(cxn):
-    cxn.pulse_streamer.reset()
-    cxn.apd_tagger.reset()
-    cxn.arbitrary_waveform_generator.reset()
-    cxn.signal_generator_tsg4104a.reset()
-    cxn.signal_generator_bnc835.reset()
+    if hasattr(cxn, 'pulse_streamer'):
+        cxn.pulse_streamer.reset()
+    if hasattr(cxn, 'apd_tagger'):
+        cxn.apd_tagger.reset()
+    if hasattr(cxn, 'arbitrary_waveform_generator'):
+        cxn.arbitrary_waveform_generator.reset()
+    if hasattr(cxn, 'signal_generator_tsg4104a'):
+        cxn.signal_generator_tsg4104a.reset()
+    if hasattr(cxn, 'signal_generator_sg394'):
+        cxn.signal_generator_sg394.reset()
+    if hasattr(cxn, 'signal_generator_bnc835'):
+        cxn.signal_generator_bnc835.reset()
     # 8/10/2020, mainly for Er lifetime measurements
-    cxn.filter_slider_ell9k_color.set_filter('none')
-    cxn.filter_slider_ell9k.set_filter('nd_0')
+    if hasattr(cxn, 'filter_slider_ell9k_color'):
+        cxn.filter_slider_ell9k_color.set_filter('none')
+    if hasattr(cxn, 'filter_slider_ell9k'):
+        cxn.filter_slider_ell9k.set_filter('nd_0')

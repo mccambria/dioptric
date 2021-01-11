@@ -91,21 +91,42 @@ class CryoPiezos(LabradServer):
         common and important routines (eg optimize)
         """
         
+        self.write_ax(pos_in_steps, 3)
+
+
+    @setting(3, x_pos_in_steps='i', y_pos_in_steps='i')
+    def write_xy(self, c, x_pos_in_steps, y_pos_in_steps):
+        """
+        Specify the absolute position in steps relative to 0. There will be 
+        hysteresis on this value, but it's repeatable enough for the 
+        common and important routines (eg optimize)
+        """
+        
+        self.write_ax(x_pos_in_steps, 1)
+        self.write_ax(y_pos_in_steps, 2)
+        
+    
+    def write_ax(self, pos_in_steps, ax):
+        
+        steps_to_move = pos_in_steps - self.pos[ax-1]
+        if steps_to_move == 0:
+            return
+        
         # Set to step mode
-        self.send_cmd('setm', 3, 'stp')
+        self.send_cmd('setm', ax, 'stp')
         
         # Calculate the differential number of steps from where we're at
-        steps_to_move = pos_in_steps - self.pos[2]
         abs_steps_to_move = abs(steps_to_move)
         if steps_to_move > 0: 
-            self.send_cmd('stepu', 3, abs_steps_to_move)
+            self.send_cmd('stepu', ax, abs_steps_to_move)
         else:
-            self.send_cmd('stepd', 3, abs_steps_to_move)
-        self.pos[2] = pos_in_steps
+            self.send_cmd('stepd', ax, abs_steps_to_move)
+        self.pos[ax-1] = pos_in_steps
         
         # Set to ground mode once we're done stepping
-        self.send_cmd('stepw', 3)
-        self.send_cmd('setm', 3, 'gnd')
+        self.send_cmd('stepw', ax)
+        self.send_cmd('setm', ax, 'gnd')
+        
 
     
     # @setting(3, center='v[]', scan_range='v[]',

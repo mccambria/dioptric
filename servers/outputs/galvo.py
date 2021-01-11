@@ -72,7 +72,7 @@ class Galvo(LabradServer):
 
         # Write the initial voltages and stream the rest
         num_voltages = voltages.shape[1]
-        self.write(c, voltages[0, 0], voltages[1, 0])
+        self.write_xy(c, voltages[0, 0], voltages[1, 0])
         stream_voltages = voltages[:, 1:num_voltages]
         stream_voltages = numpy.ascontiguousarray(stream_voltages)
         num_stream_voltages = num_voltages - 1

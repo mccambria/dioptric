@@ -268,9 +268,12 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_params['continuous_readout_dur']
-
-    adj_coords = (numpy.array(nv_sig['coords']) + \
-                  numpy.array(tool_belt.get_drift())).tolist()
+    
+    coords = nv_sig['coords']
+    drift = tool_belt.get_drift()
+    adj_coords = []
+    for i in range(3):
+        adj_coords.append(coords[i] + drift[i])
     x_center, y_center, z_center = adj_coords
 
     readout_sec = float(readout) / 10**9
@@ -297,10 +300,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
     # %% Set up the galvo
 
-    xy_server = tool_belt.get_xy_server()
+    xy_server = tool_belt.get_xy_server(cxn)
     x_voltages, y_voltages = xy_server.load_sweep_xy_scan(x_center, y_center,
-                                                       x_range, y_range,
-                                                       num_steps, period)
+                                                          x_range, y_range,
+                                                          num_steps, period)
 
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]

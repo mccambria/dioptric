@@ -91,3 +91,5 @@ if __name__ == '__main__':
     # Run the script
     # main()
     constant([3], 0.0, 0.0)
+    input('Press enter to stop...')
+    constant([], 0.0, 0.0)

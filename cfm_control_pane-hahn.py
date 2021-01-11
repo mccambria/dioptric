@@ -32,7 +32,7 @@ import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
 import majorroutines.lifetime_v2 as lifetime_v2
-import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
+# import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
 
@@ -56,22 +56,25 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-#    scan_range = 5.0
+    scan_range = 5.0
 #    scan_range = 1.2
-#    scan_range = 0.5
-#    scan_range = 0.3
-#    scan_range = 0.2
-    scan_range = 0.1
+    # scan_range = 1.0
+    # scan_range = 0.5
+    # scan_range = 0.3
+    # scan_range = 0.2
+    # scan_range = 0.15
+    # scan_range = 0.1
 #    scan_range = 0.05
 #    scan_range = 0.025
     
 #    num_steps = 300
 #    num_steps = 200
-#    num_steps = 150
+    # num_steps = 150
 #    num_steps = 135
-#    num_steps = 120
-#    num_steps = 90
-    num_steps = 60
+    num_steps = 120
+    # num_steps = 90
+    # num_steps = 60
+    # num_steps = 20
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -107,9 +110,9 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
-    num_runs = 2
-    uwave_power = -7.0
-#    uwave_power = -20.0
+    num_runs = 5
+    uwave_power = 0.0
+    # uwave_power = -20.0
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                    num_steps, num_runs, uwave_power)
@@ -184,7 +187,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 10**5
-    num_runs = 2
+    num_runs = 1
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -386,12 +389,12 @@ def find_resonance_and_rabi(nv_sig, apd_indices):
 
     return fail_bool
 
-def do_set_drift_from_reference_image(nv_sig, apd_indices):
+# def do_set_drift_from_reference_image(nv_sig, apd_indices):
 
-    # ref_file_name = '2019-06-10_15-22-25_ayrton12'  # 60 x 60
-    ref_file_name = '2019-06-27_16-37-18_johnson1' # bulk nv, first one we saw
+#     # ref_file_name = '2019-06-10_15-22-25_ayrton12'  # 60 x 60
+#     ref_file_name = '2019-06-27_16-37-18_johnson1' # bulk nv, first one we saw
 
-    set_drift_from_reference_image.main(ref_file_name, nv_sig, apd_indices)
+#     set_drift_from_reference_image.main(ref_file_name, nv_sig, apd_indices)
 
 def do_test_major_routines(nv_sig, apd_indices):
     """Run this whenver you make a significant code change. It'll make sure
@@ -411,16 +414,22 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    nd = 'nd_0'
-#    sample_name = '5nmEr-nrg'
+    nd = 'nd_1.0'
     sample_name = 'johnson'
     
-    nv_sig = { 'coords':[0.0, 0.0, 5.0],
-            'name': '{}'.format(sample_name),
+    nv_sig = { 'coords':[0.0, 0.0, 5],
+            'name': 'search_{}'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
             'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    
+    # nv_sig = { 'coords':[0.083, 0.279, 5],
+    #         'name': 'search2_{}'.format(sample_name),
+    #         'expected_count_rate': None, 'nd_filter': nd,
+    #         'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
+    #         'resonance_LOW': 2.87, 'rabi_LOW': None, 'uwave_power_LOW': 5.0,
+    #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 0.0}
     
     # %% Functions to run
 
@@ -438,13 +447,45 @@ if __name__ == '__main__':
 #        do_optimize_list(nv_sig_list, apd_indices)
 #        do_sample_nvs(nv_sig_list, apd_indices)
 #        do_g2_measurement(nv_sig_list, apd_indices[0], apd_indices[1])
+
+        # for z in [0,0,1,0,0,-1]:
+        # for z in numpy.linspace(-400, 400, 5):
+        # for z in numpy.linspace(-1400, 600, 5):
+        # for z in numpy.linspace(2, 6, 5):
+        #     nv_sig['coords'][2] = int(z)
+        #     do_image_sample(nv_sig, apd_indices)
+            
+        # for x in numpy.linspace(-150, 150, 5):
+        #     for y in numpy.linspace(-150, 150, 5):
+        #         for z in numpy.linspace(-150, 150, 5):
+        #             print(tool_belt.get_time_stamp())
+        #             print([x,y,z])
         
+        #             with labrad.connect() as cxn:
+        #                 cxn.cryo_piezos.write_xy(int(x),int(y))
+        #             nv_sig['coords'][2] = int(z)
+        #             do_image_sample(nv_sig, apd_indices)
+        # for z in numpy.linspace(-400, 400, 5)
+        # with labrad.connect() as cxn:
+        #     cxn.cryo_piezos.write_z(0)
+        #     cxn.cryo_piezos.write_xy(0,0)
+        # with labrad.connect() as cxn:
+        #     cxn.cryo_piezos.write_xy(0,0)
+        
+        # do_optimize(nv_sig, apd_indices)
         do_image_sample(nv_sig, apd_indices)
+        
+        # do_stationary_count(nv_sig, apd_indices)
+        # do_resonance(nv_sig, apd_indices, 2.87, 0.2)
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
 
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here
         tool_belt.reset_cfm()
+        # Leave green on
+        # with labrad.connect() as cxn:
+        #     cxn.pulse_streamer.constant([3], 0.0, 0.0)
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
             print('\n\nRoutine complete. Press enter to exit.')
