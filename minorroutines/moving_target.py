@@ -892,7 +892,7 @@ if __name__ == '__main__':
 #        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
 #        nv_sig['color_filter'] = '715 lp'
 #        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
-    for s in [0,3]: 
+    for s in [2,1,3,0]: 
         start_coords = start_coords_list[s]
         t= 10**7
         init_color = 532

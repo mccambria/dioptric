@@ -556,7 +556,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0.3,0.3,5.3], 
+    search = { 'coords':[0.0,0.0,5.2], 
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -638,7 +638,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
    
     
-    nv_sig_list = [nv0_2021_01_07]
+    nv_sig_list = [nv0_2021_01_07, nv1_2021_01_07, nv2_2021_01_07, nv3_2021_01_07]
     #, nv1_2021_01_07, nv2_2021_01_07, nv3_2021_01_07]
 
     
@@ -654,7 +654,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        drift = [0.038, -0.04,-0.05]# nv0_2021_01_07
+#        drift = [0.08, -0.07,-0.058]# nv0_2021_01_07
 #        tool_belt.set_drift(drift)  
 #        tool_belt.set_drift([0.0, 0.0,0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
