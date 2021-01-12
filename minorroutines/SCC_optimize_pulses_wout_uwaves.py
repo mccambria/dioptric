@@ -644,8 +644,8 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
     
-    nv0_2021_01_07 = { 'coords':[-0.055, -0.042, 5.28], 
-            'name': '{}-nv0_2021_01_07'.format(sample_name),
+    nv0_2021_01_11 = { 'coords':[0.274, 0.380, 5.15], 
+            'name': '{}-nv0_2021_01_11'.format(sample_name),
             'expected_count_rate': 50, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
             'pulsed_readout_dur': 300,
@@ -658,9 +658,9 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
-    nv1_2021_01_07 = { 'coords':[0.648, -0.110, 5.26], 
-            'name': '{}-nv1_2021_01_07'.format(sample_name),
-            'expected_count_rate': 42, 'nd_filter': 'nd_0',
+    nv1_2021_01_11 = { 'coords':[-0.268, 0.340, 5.13], 
+            'name': '{}-nv1_2021_01_11'.format(sample_name),
+            'expected_count_rate': 60, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
@@ -672,9 +672,9 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
-    nv2_2021_01_07 = { 'coords':[0.642, 0.479, 5.24], 
-            'name': '{}-nv2_2021_01_07'.format(sample_name),
-            'expected_count_rate': 42,  'nd_filter': 'nd_0',
+    nv2_2021_01_11 = { 'coords': [-0.262, -0.299, 5.13], 
+            'name': '{}-nv2_2021_01_11'.format(sample_name),
+            'expected_count_rate': 40, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
@@ -686,9 +686,9 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
-    nv3_2021_01_07 = { 'coords':[0.130, 0.590, 5.24], 
-            'name': '{}-nv3_2021_01_07'.format(sample_name),
-            'expected_count_rate': 42, 'nd_filter': 'nd_0',
+    nv3_2021_01_11 = { 'coords':[0.375, -0.270, 5.14], 
+            'name': '{}-nv3_2021_01_11'.format(sample_name),
+            'expected_count_rate': 48, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.2, 
@@ -702,7 +702,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
 #    nv_sig = NVA
     
-    nv_sig_list = [nv0_2021_01_07, nv1_2021_01_07, nv2_2021_01_07, nv3_2021_01_07]
+    nv_sig_list = [nv0_2021_01_11,]
     
 #    test_pulse_dur_list = [   
 #        0.,  100.,  200.,  300.,  400.,  500.,  600.,   800.,  1000.,  

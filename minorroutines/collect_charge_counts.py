@@ -263,15 +263,15 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    nv_coords_list = [[-0.055, -0.042, 5.28],
-                      [0.648, -0.110, 5.26], 
-                      [0.642, 0.479, 5.24],
-                      [0.130, 0.590, 5.24], 
+    nv_coords_list = [[0.274, 0.380, 5.15],
+                      [-0.268, 0.340, 5.13], 
+                     [-0.262, -0.299, 5.13],
+                      [0.375, -0.270, 5.14],
                       ]
 
     
     base_nv_sig  = { 'coords':None,
-            'name': '{}-nv0_2021_01_07'.format('goeppert-mayer'),
+            'name': '{}-nv_2021_01_11'.format('goeppert-mayer'),
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
 #            'color_filter': '635-715 bp',
             'color_filter': '715 lp',
