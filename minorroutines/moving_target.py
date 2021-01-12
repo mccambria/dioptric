@@ -858,9 +858,9 @@ if __name__ == '__main__':
 
 
 
-    base_sig = { 'coords':[-0.049, -0.131,5.3], 
+    base_sig = { 'coords':[], 
             'name': '{}-name'.format(sample_name),
-            'expected_count_rate': 45,'nd_filter': 'nd_1.0',
+            'expected_count_rate': None,'nd_filter': 'nd_1.0',
 #            'color_filter': '635-715 bp',
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -872,15 +872,16 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
     
 #    start_coords = base_sig['coords']
-    start_coords_list = [[-0.055, -0.042, 5.28],
-                      [0.648, -0.110, 5.26], 
-                      [0.642, 0.479, 5.24],
-                      [0.130, 0.590, 5.24], 
+    start_coords_list = [[0.274, 0.380, 5.15],
+                      [-0.268, 0.340, 5.13], 
+                     [-0.262, -0.299, 5.13],
+                      [0.375, -0.270, 5.14], 
             ]
+    expected_count_list = [50, 65, 42, 48]
 #    end_coords = numpy.array(start_coords) + [1.0,0,0]
 #    end_coords = end_coords.tolist()
     num_steps = 40 #20
-    num_runs =  50
+    num_runs =  30
 #    img_range = 0.45
     
     
@@ -892,17 +893,23 @@ if __name__ == '__main__':
 #        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
 #        nv_sig['color_filter'] = '715 lp'
 #        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
-    for s in [2,1,3,0]: 
+    for s in [1,0,3, 2]: 
         start_coords = start_coords_list[s]
-        t= 10**7
         init_color = 532
         pulse_color = 532
         nv_sig = copy.deepcopy(base_sig)
         nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_07'.format(s)
-        nv_sig['color_filter'] = '635-715 bp'
-        do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, num_runs, init_color, pulse_color)
+        nv_sig['expected_count_rate'] = expected_count_list[s]
         nv_sig['color_filter'] = '715 lp'
+        t =10**5
+        do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, num_runs, init_color, pulse_color)
+        t =10**6
+        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
+        t =10**7
         do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, num_runs, init_color, pulse_color)
+        t= 10**7
+        nv_sig['color_filter'] = '635-715 bp'
+        do_moving_target_2D_image(nv_sig, start_coords, 0.5, t, num_steps, num_runs, init_color, pulse_color)
         
 #    num_runs =  20*5
 #    for t in [10**6]:        
