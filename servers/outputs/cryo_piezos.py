@@ -52,14 +52,17 @@ class CryoPiezos(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
+        p.cd(['', 'Config'])
         p.get('cryo_piezos_ip')
+        p.cd(['', 'SharedParameters'])
+        p.get('z_gravity_adjust')
         result = await p.send()
-        return result
+        return result['get']
 
 
-    def on_get_config(self, config):
-        ip_address = config['get']
+    def on_get_config(self, reg_vals):
+        ip_address = reg_vals[0]
+        self.z_gravity_adjust = reg_vals[1]
         # Connect via telnet
         try:
             self.piezos = Telnet(ip_address, 7230)
@@ -117,15 +120,27 @@ class CryoPiezos(LabradServer):
         
         # Calculate the differential number of steps from where we're at
         abs_steps_to_move = abs(steps_to_move)
+        # Compensate for gravity by an empirical 1.2x or 0.8x factor
+        # These values will preseve single step movements
         if steps_to_move > 0: 
-            self.send_cmd('stepu', ax, abs_steps_to_move)
+            cmd = 'stepu'
+            abs_steps_to_move = round((1+self.z_gravity_adjust)*abs_steps_to_move)
         else:
-            self.send_cmd('stepd', ax, abs_steps_to_move)
-        self.pos[ax-1] = pos_in_steps
+            cmd = 'stepd'
+            abs_steps_to_move = round((1-self.z_gravity_adjust)*abs_steps_to_move)
+        self.send_cmd(cmd, ax, abs_steps_to_move)
+            
+        # # Move one step at a time to mitigate hysteresis
+        # for ind in range(abs_steps_to_move):
+        #     self.send_cmd(cmd, ax, 1)
+        #     self.send_cmd('stepw', ax)
         
         # Set to ground mode once we're done stepping
         self.send_cmd('stepw', ax)
         self.send_cmd('setm', ax, 'gnd')
+            
+        # Cache the position
+        self.pos[ax-1] = pos_in_steps
         
 
     

@@ -64,7 +64,7 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
         if seq_file == 'aom_delay.py':
             seq_args = [tau, readout, apd_indices[0]]
         elif seq_file == 'uwave_delay.py':
-            polarization_time = 1000
+            polarization_time = 1100
             wait_time = 1000
             seq_args = [tau, readout, pi_pulse, aom_delay, 
                         polarization_time, wait_time, state.value, apd_indices[0]]
@@ -164,8 +164,8 @@ def uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here 
-    sample_name = 'ayrton12'
-    nd_filter = 'nd_1.0'
+    sample_name = 'johnson'
+    nd_filter = 'nd_0.5'
     expected_count_rate = {
             'nd_0': 95,
             'nd_0.5': 85,
@@ -178,32 +178,32 @@ if __name__ == '__main__':
             'nd_1.0': 420,
             'nd_1.5': 420,
             }
-    nv2_2019_04_30  = { 'coords': [-0.065, 0.087, 5.01],
-            'name': '{}-nv2_2019_04_30'.format(sample_name),
-            'expected_count_rate': expected_count_rate[nd_filter], 'nd_filter': nd_filter,
-            'pulsed_readout_dur': pulsed_readout_dur[nd_filter], 'magnet_angle': 170.7,
-            'resonance_LOW': 2.8542, 'rabi_LOW': 191.5, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 2.8849, 'rabi_HIGH': 199.5, 'uwave_power_HIGH': 10.0}
+    nv_sig = { 'coords':[0.637, 0.174, 164],
+            'name': 'search2_{}'.format(sample_name),
+            'expected_count_rate': 25, 'nd_filter': nd_filter,
+            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
+            'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 10.0,
+            'resonance_HIGH': None, 'rabi_HIGH': 150, 'uwave_power_HIGH': 10.0}
     apd_indices = [0]
     num_reps = 2*10**5
     readout = 2000
-    nv_sig = nv2_2019_04_30
+    # nv_sig = nv2_2019_04_30
 
     # aom_delay
-    delay_range = [900, 1500]
-    num_steps = 51
-    with labrad.connect() as cxn:
-        aom_delay(cxn, nv_sig, readout, apd_indices,
-                  delay_range, num_steps, num_reps)
+    # delay_range = [900, 1500]
+    # num_steps = 51
+    # with labrad.connect() as cxn:
+    #     aom_delay(cxn, nv_sig, readout, apd_indices,
+    #               delay_range, num_steps, num_reps)
 
     # uwave_delay
-#    delay_range = [500, 2500]
-#    num_steps = 101
-#    # tsg4104a
-##    state = States.LOW
-#    # bnc851
-#    state = States.HIGH
-#    aom_delay_time = 1000
-#    with labrad.connect() as cxn:
-#        uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
-#              delay_range, num_steps, num_reps)
+    delay_range = [500, 2500]
+    num_steps = 51
+    # tsg4104a
+    state = States.LOW
+    # bnc851
+    # state = States.HIGH
+    aom_delay_time = 1060
+    with labrad.connect() as cxn:
+        uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
+              delay_range, num_steps, num_reps)

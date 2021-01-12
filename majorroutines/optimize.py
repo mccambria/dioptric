@@ -197,19 +197,20 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
             auto_scan = True
         else:
             manual_write_func = z_server.write_z
-            scan_vals = tool_belt.get_scan_vals(z_center, scan_range,
+            
+            # Get the scan vals, adjusting for gravity if necessary
+            # This is necessary to do here as well as on the server since
+            # the adjustment on the server end doesn't do anything for small 
+            # integer steps (ie steps of 1)
+            if ('z_gravity_adjust' in shared_params) and (scan_dtype is int):
+                z_gravity_adjust = shared_params['z_gravity_adjust']
+                adj_z_center = round(z_center + z_gravity_adjust*scan_range)
+            else:
+                adj_z_center = z_center
+                
+            scan_vals = tool_belt.get_scan_vals(adj_z_center, scan_range,
                                                 num_steps, scan_dtype)
             auto_scan = False
-            
-            # Flip order of manual scans to prevent biased drifts
-            cxn.registry.cd(['', 'State'])
-            parity = cxn.registry.get('OPTIMIZE_PARITY')
-            # Flip on even
-            if parity % 2 == 0:
-                scan_vals = numpy.flip(scan_vals)
-            # Switch parity on the registry
-            cxn.registry.cd(['', 'State'])
-            cxn.registry.set('OPTIMIZE_PARITY', (parity+1) % 2)
 
     if auto_scan:
         counts = read_timed_counts(cxn, num_steps, period, apd_indices)
@@ -245,8 +246,8 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
 #        background_count_rate = 0  # Guess 0
 #    background_count_rate = float(background_count_rate)
     background_count_rate = 0.0  # Guess 0
-    low_voltage = scan_vals[0]
-    high_voltage = scan_vals[-1]
+    low_voltage = numpy.min(scan_vals)
+    high_voltage = numpy.max(scan_vals)
     scan_range = high_voltage - low_voltage
     coords = nv_sig['coords']
     init_fit = (expected_count_rate - background_count_rate,
@@ -266,8 +267,9 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
             param = opti_params[ind]
             if not (low_bounds[ind] < param < high_bounds[ind]):
                 opti_params = None
-    except Exception:
-        pass
+    except Exception as ex:
+        print(ex)
+        # pass
         
     if opti_params is None:
         print('Optimization failed for axis {}'.format(axis_ind))
@@ -383,12 +385,26 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         opti_coords = []
         scan_vals_by_axis = []
         counts_by_axis = []
-        for axis_ind in range(3):
+        
+        # xy
+        for axis_ind in range(2):
             ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
                                         shared_params, apd_indices, fig)
             opti_coords.append(ret_vals[0])
             scan_vals_by_axis.append(ret_vals[1])
             counts_by_axis.append(ret_vals[2])
+            
+        # z
+        # Help z out by ensuring we're centered in xy first
+        if None not in opti_coords:
+            int_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
+            tool_belt.set_xyz(cxn, int_coords)
+        axis_ind = 2
+        ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
+                                    shared_params, apd_indices, fig)
+        opti_coords.append(ret_vals[0])
+        scan_vals_by_axis.append(ret_vals[1])
+        counts_by_axis.append(ret_vals[2])
             
         # We failed to get optimized coordinates, try again
         if None in opti_coords:
@@ -402,8 +418,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         # the count rate at the center against the expected count rate
         if expected_count_rate is not None:
             
-            lower_threshold = expected_count_rate * 2/4
-            upper_threshold = expected_count_rate * 6/4
+            lower_threshold = expected_count_rate * 3/4
+            upper_threshold = expected_count_rate * 5/4
             
             if ind == 0:
                 print('Expected count rate: {}'.format(expected_count_rate))
