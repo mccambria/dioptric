@@ -18,7 +18,7 @@ import time
 
 import json
 import matplotlib.pyplot as plt
-import labrad
+# import labrad
 
 def populate_img_array_bottom_left(valsToAdd, imgArray, writePos):
     """
