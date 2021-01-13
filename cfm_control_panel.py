@@ -67,9 +67,9 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 600
 #    num_steps = 120
 #    num_steps = 75
-#    scan_range = 1.5
+#    scan_range = 1.2
 #    scan_range = 1.0
-#    scan_range = 0.80
+#    scan_range = 0.8
 #    num_steps = 250
 #    scan_range = 0.3
 #    num_steps = 125
@@ -549,7 +549,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0,0,5.15], 
+    search = { 'coords':[0.0, 0.0 ,5.28], 
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -565,9 +565,9 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
  
-    nv0_2021_01_11 = { 'coords':[0.274, 0.380, 5.15], 
+    nv0_2021_01_11 = { 'coords':[0.205, 0.571, 5.27], 
             'name': '{}-nv0_2021_01_11'.format(sample_name),
-            'expected_count_rate': 50, 'nd_filter': 'nd_0',
+            'expected_count_rate': 45, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -582,9 +582,9 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
  
-    nv1_2021_01_11 = { 'coords':[-0.268, 0.340, 5.13], 
+    nv1_2021_01_11 = { 'coords':[-0.333, 0.534, 5.3], 
             'name': '{}-nv1_2021_01_11'.format(sample_name),
-            'expected_count_rate': 60, 'nd_filter': 'nd_0',
+            'expected_count_rate': 50, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -598,7 +598,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
     
-    nv2_2021_01_11 = { 'coords': [-0.262, -0.299, 5.13], 
+    nv2_2021_01_11 = { 'coords': [-0.330, -0.112, 5.27], 
             'name': '{}-nv2_2021_01_11'.format(sample_name),
             'expected_count_rate': 40, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -614,7 +614,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
     
-    nv3_2021_01_11 = { 'coords':[0.375, -0.270, 5.14], 
+    nv3_2021_01_11 = { 'coords':[0.309, -0.080, 5.29], 
             'name': '{}-nv3_2021_01_11'.format(sample_name),
             'expected_count_rate': 48, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -631,7 +631,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
    
     
-    nv_sig_list = [ nv0_2021_01_11 ]
+    nv_sig_list = [ nv0_2021_01_11, nv1_2021_01_11, nv2_2021_01_11, nv3_2021_01_11]
 
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
@@ -646,7 +646,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        drift = [0.08, -0.07,-0.058]# nv0_2021_01_07
+#        drift = [-0.064, 0.191,0.0]# nv0_2021_01_07
 #        tool_belt.set_drift(drift)  
 #        tool_belt.set_drift([0.0, 0.0,0.0])  # Totally reset
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
@@ -676,10 +676,10 @@ if __name__ == '__main__':
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #                cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
 ##    
-            do_optimize(nv_sig, apd_indices, 532)
+#            do_optimize(nv_sig, apd_indices, 532)
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
-#            for z in numpy.linspace(5.0, 5.6, 7):
+#            for z in numpy.linspace(5.3,5.5, 5):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]  

@@ -36,8 +36,8 @@ import json
 
 ####################### Files #######################
 
-#directory = 'G:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
-directory = 'E:\\Team Drives\\Kolkowitz Lab Group\\nvdata\\image_sample\\'
+#directory = 'E:\Shared drives\Kolkowitz Lab Group\nvdata\pc_rabi\branch_Spin_to_charge\image_sample\2021_01'
+directory = 'E:\\Shared Drives\\Kolkowitz Lab Group\\nvdata\pc_rabi\branch_Spin_to_charge\image_sample\\'
 
 file_name = '2019-04-30_14-45-29_ayrton12.svg'
 
