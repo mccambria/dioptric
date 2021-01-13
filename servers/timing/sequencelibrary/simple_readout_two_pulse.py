@@ -34,8 +34,8 @@ def get_seq(pulser_wiring, args):
     readout_time = numpy.int64(readout_time)
     init_pulse_time = numpy.int64(init_pulse_time)
     
-    intra_pulse_delay = 100*10**6
-#    intra_pulse_delay = 100
+#    intra_pulse_delay = 100*10**6
+    intra_pulse_delay = 1000
     
     period = numpy.int64(galvo_delay + init_delay + read_delay + init_pulse_time + readout_time + intra_pulse_delay + 300)
     
@@ -102,7 +102,7 @@ if __name__ == '__main__':
               'do_638_laser': 3,
               'do_532_aom': 2,
               'ao_589_aom': 1}
-    args = [50, 0, 0,  500,1000, 0.3, 0, 532, 589]
+    args = [50, 0, 0,  500,500, 1.0, 0, 532, 589]
 #    seq_args_string = tool_belt.encode_seq_args(args)
     seq, ret_vals, period = get_seq(wiring, args)
     seq.plot()

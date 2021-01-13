@@ -175,6 +175,187 @@ def collect_charge_counts_with_cxn(cxn, nv_sig, num_reps, save_data = True):
     return nv0_avg, nv0_ste, nvm_avg, nvm_ste
 
 # %%
+def collect_charge_counts_yellow_pwr(coords, parameters_sig, nd_filter, aom_power_list, num_reps, apd_indices ):
+    with labrad.connect() as cxn:
+        tool_belt.reset_cfm(cxn)
+    
+    nv0_list = []
+    nvm_list = []
+    nv0_avg_list = []
+    nv0_ste_list = []
+    nvm_avg_list = []
+    nvm_ste_list = []
+    yellow_power_list = []
+    print(nd_filter)
+    
+    for power in aom_power_list:
+        print(power)
+        nv_sig = copy.deepcopy(parameters_sig)
+        nv_sig['coords'] = coords
+        nv_sig['am_589_power'] = power
+        nv_sig['nd_filter'] = nd_filter
+#        time.sleep(0.002)
+        
+        ret_vals = SCC_optimize_pulses_wout_uwaves.main(nv_sig,  apd_indices,num_reps)
+        nv0_counts, nvm_counts = ret_vals
+        nv0_counts = [int(el) for el in nv0_counts]
+        nvm_counts = [int(el) for el in nvm_counts]
+        
+        nv0_list.append(nv0_counts)
+        nvm_list.append(nvm_counts)
+        
+        nv0_avg = numpy.average(nv0_counts)
+        nv0_ste = stats.sem(nv0_counts)
+        nv0_avg_list.append(nv0_avg)
+        nv0_ste_list.append(nv0_ste)
+        
+        nvm_avg = numpy.average(nvm_counts)
+        nvm_ste = stats.sem(nvm_counts)
+        nvm_avg_list.append(nvm_avg)
+        nvm_ste_list.append(nvm_ste)    
+    
+        # measure laser powers:
+        green_optical_power_pd, green_optical_power_mW, \
+                red_optical_power_pd, red_optical_power_mW, \
+                yellow_optical_power_pd, yellow_optical_power_mW = \
+                tool_belt.measure_g_r_y_power(
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+        yellow_power_list.append(yellow_optical_power_mW)
+        
+    
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'parameters_sig': parameters_sig,
+            'parameters_sig-units': tool_belt.get_nv_sig_units(),
+            'coords': coords,
+            'nd_filter': nd_filter,
+            'aom_power_list': aom_power_list,
+            'aom_power_list-units': 'V',
+            'yellow_power_list': yellow_power_list,
+            'yellow_power_list-units': 'mW',
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'num_runs':num_reps,
+            'nv0_list': nv0_list,
+            'nv0_list-units': 'counts',
+            'nvm_list': nvm_list,
+            'nvm_list-units': 'counts',                
+            'nv0_avg_list': nv0_avg_list,
+            'nv0_avg_list-units': 'counts',
+            'nv0_ste_list': nv0_ste_list,
+            'nv0_ste_list-units': 'counts',
+            'nvm_avg_list': nvm_avg_list,
+            'nvm_avg_list-units': 'counts',
+            'nvm_ste_list': nvm_ste_list,
+            'nvm_ste_list-units': 'counts'
+            }
+            
+#    print(nv0_avg_list)
+#    print(nvm_avg_list)
+    file_path = tool_belt.get_file_path(__file__, timestamp, parameters_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path)
+    
+    return
+
+
+# %%
+def collect_charge_counts_yellow_time(coords, parameters_sig, readout_time_list, num_reps, apd_indices ):
+    with labrad.connect() as cxn:
+        tool_belt.reset_cfm(cxn)
+    
+    nv0_list = []
+    nvm_list = []
+    nv0_avg_list = []
+    nv0_ste_list = []
+    nvm_avg_list = []
+    nvm_ste_list = []
+#    yellow_power_list = []
+    
+    for readout_time in readout_time_list:
+        print(str(readout_time/10**6) + ' ms')
+        nv_sig = copy.deepcopy(parameters_sig)
+        nv_sig['coords'] = coords
+        nv_sig['pulsed_SCC_readout_dur'] = readout_time
+#        time.sleep(0.002)
+        
+        ret_vals = SCC_optimize_pulses_wout_uwaves.main(nv_sig,  apd_indices,num_reps)
+        nv0_counts, nvm_counts = ret_vals
+        nv0_counts = [int(el) for el in nv0_counts]
+        nvm_counts = [int(el) for el in nvm_counts]
+        
+        nv0_list.append(nv0_counts)
+        nvm_list.append(nvm_counts)
+        
+        nv0_avg = numpy.average(nv0_counts)
+        nv0_ste = stats.sem(nv0_counts)
+        nv0_avg_list.append(nv0_avg)
+        nv0_ste_list.append(nv0_ste)
+        
+        nvm_avg = numpy.average(nvm_counts)
+        nvm_ste = stats.sem(nvm_counts)
+        nvm_avg_list.append(nvm_avg)
+        nvm_ste_list.append(nvm_ste)    
+    
+        # measure laser powers:
+        green_optical_power_pd, green_optical_power_mW, \
+                red_optical_power_pd, red_optical_power_mW, \
+                yellow_optical_power_pd, yellow_optical_power_mW = \
+                tool_belt.measure_g_r_y_power(
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+        
+    
+    timestamp = tool_belt.get_time_stamp()
+    raw_data = {'timestamp': timestamp,
+            'parameters_sig': parameters_sig,
+            'parameters_sig-units': tool_belt.get_nv_sig_units(),
+            'coords': coords,
+            'readout_time_list': readout_time_list,
+            'readout_time_list-units': 'ns',
+            'green_optical_power_pd': green_optical_power_pd,
+            'green_optical_power_pd-units': 'V',
+            'green_optical_power_mW': green_optical_power_mW,
+            'green_optical_power_mW-units': 'mW',
+            'red_optical_power_pd': red_optical_power_pd,
+            'red_optical_power_pd-units': 'V',
+            'red_optical_power_mW': red_optical_power_mW,
+            'red_optical_power_mW-units': 'mW',
+            'yellow_optical_power_pd': yellow_optical_power_pd,
+            'yellow_optical_power_pd-units': 'V',
+            'yellow_optical_power_mW': yellow_optical_power_mW,
+            'yellow_optical_power_mW-units': 'mW',
+            'num_runs':num_reps,
+            'nv0_list': nv0_list,
+            'nv0_list-units': 'counts',
+            'nvm_list': nvm_list,
+            'nvm_list-units': 'counts',                
+            'nv0_avg_list': nv0_avg_list,
+            'nv0_avg_list-units': 'counts',
+            'nv0_ste_list': nv0_ste_list,
+            'nv0_ste_list-units': 'counts',
+            'nvm_avg_list': nvm_avg_list,
+            'nvm_avg_list-units': 'counts',
+            'nvm_ste_list': nvm_ste_list,
+            'nvm_ste_list-units': 'counts'
+            }
+            
+#    print(nv0_avg_list)
+#    print(nvm_avg_list)
+    file_path = tool_belt.get_file_path(__file__, timestamp, parameters_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path)
+    
+    return
+
+# %%
 def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indices):
     with labrad.connect() as cxn:
         tool_belt.reset_cfm(cxn)
@@ -263,15 +444,16 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    nv_coords_list = [[0.274, 0.380, 5.15],
-                      [-0.268, 0.340, 5.13], 
-                     [-0.262, -0.299, 5.13],
-                      [0.375, -0.270, 5.14],
-                      ]
+    nv_coords_list = [[0.205, 0.571, 5.27],
+                      [-0.333, 0.534, 5.3], 
+                     [-0.330, -0.112, 5.27],
+                     [0.309, -0.080, 5.29], 
+            ]
+    expected_count_list = [45, 50, 40, 48]
 
     
     base_nv_sig  = { 'coords':None,
-            'name': '{}-nv_2021_01_11'.format('goeppert-mayer'),
+            'name': 'goeppert-mayer-nv_2021_01_11',
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
 #            'color_filter': '635-715 bp',
             'color_filter': '715 lp',
@@ -286,4 +468,26 @@ if __name__ == '__main__':
     
     
 #    collect_charge_counts_list(nv_coords_list, base_nv_sig, 60, apd_indicies)
-    collect_charge_counts_list(nv_coords_list, base_nv_sig, 1000, apd_indicies)
+#    collect_charge_counts_list(nv_coords_list, base_nv_sig, 1000, apd_indicies)
+    
+    nd_filter = 'nd_0.5'
+    aom_power_list = [0.2,0.3,0.4,0.5,0.6,0.7]
+    for i in [0,1,2,3]:
+        coords = nv_coords_list[i]
+        base_nv_sig['expected_count_rate'] = expected_count_list[i]
+        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_11'.format(i)
+        collect_charge_counts_yellow_pwr(coords, base_nv_sig, nd_filter, aom_power_list, 1000, apd_indicies )
+        
+    nd_filter = 'nd_1.0'
+    for i in [0,1,2,3]:
+        coords = nv_coords_list[i]
+        base_nv_sig['expected_count_rate'] = expected_count_list[i]
+        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_11'.format(i)
+        collect_charge_counts_yellow_pwr(coords, base_nv_sig, nd_filter, aom_power_list, 1000, apd_indicies )
+        
+    nd_filter = 'nd_1.5'
+    for i in [0,1,2,3]:
+        coords = nv_coords_list[i]
+        base_nv_sig['expected_count_rate'] = expected_count_list[i]
+        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_11'.format(i)
+        collect_charge_counts_yellow_pwr(coords, base_nv_sig, nd_filter, aom_power_list, 1000, apd_indicies )

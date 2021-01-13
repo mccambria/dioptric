@@ -103,15 +103,15 @@ if __name__ == '__main__':
 #    illustrate_mapping(file_name, [13])
 #    else:
 
-    coords_list = [[0.274, 0.380, 5.15],
-                      [-0.268, 0.340, 5.13], 
-                     [-0.262, -0.299, 5.13],
-                      [0.375, -0.270, 5.14], 
+    coords_list = [[0.205, 0.571, 5.27],
+                      [-0.333, 0.534, 5.3], 
+                     [-0.330, -0.112, 5.27],
+                     [0.309, -0.080, 5.29], 
             ]
 
     sample_name = 'goeppert-mayer'
     micrometer_coords = [3.154, 2.193, 11.118, 120.21]
-    image_sample_file_name = '2021_01_11-14_25_54-goeppert-mayer-search'
+    image_sample_file_name = '2021_01_12-16_17_55-goeppert-mayer-search'
     branch = 'branch_Spin_to_charge'
     month_folder = '2021_01'
 
