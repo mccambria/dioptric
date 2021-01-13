@@ -22,7 +22,9 @@ def radial_distrbution_data(center_coords, x_voltages, y_voltages, num_steps, im
     half_x_range = img_range / 2
     # x_high = x_coord + half_x_range
     
-    pixel_size = x_voltages[1] - x_voltages[0]
+    # Having trouble with very small differences in pixel values. (10**-15 V)
+    # Let's round to a relatively safe value and see if that helps
+    pixel_size = round(x_voltages[1] - x_voltages[0], 10)
     half_pixel_size = pixel_size / 2
     
     # List to hold the values of each pixel within the ring
@@ -41,9 +43,10 @@ def radial_distrbution_data(center_coords, x_voltages, y_voltages, num_steps, im
     # define bounds on each ring radial values, which will be one pixel in size
     low_r = 0
     high_r = pixel_size
-    
     # step throguh the radial ranges for each ring, add pixel within ring to list
-    while high_r <= (half_x_range + half_pixel_size):
+    # Note, I was runnign into rounding issue with the uper bound, probably a 
+    # poor fix of just adding a small bit to the bound
+    while high_r <= (half_x_range + half_pixel_size + 10**-9):
         ring_counts = []
         for i in range(num_steps):
             for j in range(num_steps): 
@@ -54,7 +57,7 @@ def radial_distrbution_data(center_coords, x_voltages, y_voltages, num_steps, im
         counts_r.append(numpy.average(ring_counts))
         # advance the radial bounds
         low_r = high_r
-        high_r = high_r + pixel_size
+        high_r = round(high_r + pixel_size, 10)
     
     # define the radial values as center values of pixels along x, convert to um
     # we need to subtract the center value from the x voltages
@@ -208,7 +211,7 @@ def plot_radial_avg_moving_target(file,  pc_name, branch_name, data_folder,
     init_color = data['init_color']
     pulse_color = data['pulse_color']
     nv_sig = data['nv_sig']
-    coords = numpy.array(data['start_coords']) #-[0.005,0,0]
+    coords = numpy.array(data['start_coords'])
     try:
         x_voltages = data['x_voltages_1d']
         y_voltages = data['y_voltages_1d']
@@ -346,27 +349,23 @@ def plot_moving_target_1D_line_2_data(file_list, pulse_length):
     
 # %% 
 if __name__ == '__main__':
-    # %% Moving target 2D 1/7
-    nv_file_list_7 = ['2021_01_07-17_34_54-goeppert-mayer-nv0_2021_01_07',
-                    '2021_01_07-19_46_59-goeppert-mayer-nv1_2021_01_07',
-                    '2021_01_07-21_59_20-goeppert-mayer-nv2_2021_01_07',
-                    '2021_01_08-00_11_58-goeppert-mayer-nv3_2021_01_07']
-    siv_file_list_7 = ['2021_01_07-18_41_23-goeppert-mayer-nv0_2021_01_07',
-                     '2021_01_07-20_53_37-goeppert-mayer-nv1_2021_01_07',
-                     '2021_01_07-23_05_56-goeppert-mayer-nv2_2021_01_07',
-                     '2021_01_08-01_18_29-goeppert-mayer-nv3_2021_01_07',]    
-    # Moving target 2D 1/9
-    nv_file_list_9 = ['2021_01_09-22_58_35-goeppert-mayer-nv0_2021_01_07',
-                    '2021_01_09-18_33_53-goeppert-mayer-nv1_2021_01_07',
-                    '2021_01_09-16_21_29-goeppert-mayer-nv2_2021_01_07',
-                    '2021_01_09-20_46_16-goeppert-mayer-nv3_2021_01_07',
-                    
-        ]
-    siv_file_list_9 = ['2021_01_10-00_05_19-goeppert-mayer-nv0_2021_01_07',
-                     '2021_01_09-19_40_28-goeppert-mayer-nv1_2021_01_07',
-                     '2021_01_09-17_28_08-goeppert-mayer-nv2_2021_01_07',
-                     '2021_01_09-21_52_52-goeppert-mayer-nv3_2021_01_07'
-        ]
+    # %% Moving target 2D 1/11
+    nv_file_list = ['2021_01_12-01_20_51-goeppert-mayer-nv0_2021_01_07',
+                    '2021_01_11-22_56_44-goeppert-mayer-nv1_2021_01_07',
+                    '2021_01_12-06_09_27-goeppert-mayer-nv2_2021_01_07',
+                    '2021_01_12-03_45_08-goeppert-mayer-nv3_2021_01_07',]
+    siv_file_list_100us = ['2021_01_11-23_28_42-goeppert-mayer-nv0_2021_01_07',
+                           '2021_01_11-21_04_45-goeppert-mayer-nv1_2021_01_07',
+                           '2021_01_12-04_17_13-goeppert-mayer-nv2_2021_01_07',
+                           '2021_01_12-01_52_52-goeppert-mayer-nv3_2021_01_07',]
+    siv_file_list_1ms = ['2021_01_12-00_01_26-goeppert-mayer-nv0_2021_01_07',
+                         '2021_01_11-21_37_25-goeppert-mayer-nv1_2021_01_07',
+                         '2021_01_12-04_49_59-goeppert-mayer-nv2_2021_01_07',
+                         '2021_01_12-02_25_41-goeppert-mayer-nv3_2021_01_07',]
+    siv_file_list_10ms = ['2021_01_12-00_41_25-goeppert-mayer-nv0_2021_01_07',
+                          '2021_01_11-22_17_21-goeppert-mayer-nv1_2021_01_07',
+                          '2021_01_12-05_29_57-goeppert-mayer-nv2_2021_01_07',
+                          '2021_01_12-03_05_43-goeppert-mayer-nv3_2021_01_07']
     
     pc_name = 'pc_rabi'
     branch_name = 'branch_Spin_to_charge'
@@ -375,20 +374,39 @@ if __name__ == '__main__':
     
     color = 'tab:blue'
     
-    for i in range(len(nv_file_list_7)):
-        fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
-        file_7 = nv_file_list_7[i]
-        file_9 = nv_file_list_9[i]
-        radii_7, counts_r_7=plot_radial_avg_moving_target(file_7, pc_name, branch_name, data_folder, 
-                                                      sub_folder, do_plot = False, save_plot =  False)
-        radii_9, counts_r_9=plot_radial_avg_moving_target(file_9, pc_name, branch_name, data_folder, 
-                                                      sub_folder, do_plot = False, save_plot =  False)
-        ax1.plot(radii_7, counts_r_7, label = '1/7')
-        ax1.plot(radii_9, counts_r_9, label = '1/9')
-        ax1.set_xlabel('Radial distance (um)')
-        ax1.set_ylabel('Azimuthal avg counts (kcps) [635-715 nm bandpass]')
-        ax1.set_title('Radial plot of moving target nv{}\n532 nm init pulse\n10 ms 532 nm pulse'.format(i))
-        ax1.legend()
+    fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
+    for i in [0,1,2,3]:
+        try:
+            file = siv_file_list_1ms[i]
+            # file_9 = nv_file_list_9[i]
+            radii, counts_r=plot_radial_avg_moving_target(file, pc_name, branch_name, data_folder, 
+                                                          sub_folder, do_plot = False, save_plot =  False)
+            print(len(counts_r))
+            # radii_9, counts_r_9=plot_radial_avg_moving_target(file_9, pc_name, branch_name, data_folder, 
+            #                                               sub_folder, do_plot = False, save_plot =  False)
+            ax1.plot(radii, counts_r, label = 'nv{}'.format(i))
+            # ax1.plot(radii_9, counts_r_9, label = '1/9')
+        except Exception:
+            continue
+    ax1.set_xlabel('Radial distance (um)')
+    ax1.set_ylabel('Azimuthal avg counts (kcps) [715 nm longpass]')
+    ax1.set_title('Radial plot of moving target SiV band\n532 nm init pulse\n1 ms 532 nm pulse')
+    ax1.legend()
+    
+    # for i in range(len(nv_file_list)):
+    #     fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
+    #     file_7 = nv_file_list_7[i]
+    #     file_9 = nv_file_list_9[i]
+    #     radii_7, counts_r_7=plot_radial_avg_moving_target(file_7, pc_name, branch_name, data_folder, 
+    #                                                   sub_folder, do_plot = False, save_plot =  False)
+    #     radii_9, counts_r_9=plot_radial_avg_moving_target(file_9, pc_name, branch_name, data_folder, 
+    #                                                   sub_folder, do_plot = False, save_plot =  False)
+    #     ax1.plot(radii_7, counts_r_7, label = '1/7')
+    #     ax1.plot(radii_9, counts_r_9, label = '1/9')
+    #     ax1.set_xlabel('Radial distance (um)')
+    #     ax1.set_ylabel('Azimuthal avg counts (kcps) [635-715 nm bandpass]')
+    #     ax1.set_title('Radial plot of moving target nv{}\n532 nm init pulse\n10 ms 532 nm pulse'.format(i))
+    #     ax1.legend()
         
     # label_list = ['NV band', 'SiV band']
     # fig, ax1 = plt.subplots(1,1, figsize = (8, 8))

@@ -893,23 +893,24 @@ if __name__ == '__main__':
 #        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
 #        nv_sig['color_filter'] = '715 lp'
 #        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
-    for s in [3,1,2,0]: 
-        start_coords = start_coords_list[s]
-        init_color = 532
-        pulse_color = 532
-        nv_sig = copy.deepcopy(base_sig)
-        nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_07'.format(s)
-        nv_sig['expected_count_rate'] = expected_count_list[s]
-        nv_sig['color_filter'] = '715 lp'
-        t =10**5
-        do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, num_runs, init_color, pulse_color)
-        t =10**6
-        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
-        t =10**7
-        do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, num_runs, init_color, pulse_color)
-        t= 10**7
-        nv_sig['color_filter'] = '635-715 bp'
-        do_moving_target_2D_image(nv_sig, start_coords, 0.5, t, num_steps, num_runs, init_color, pulse_color)
+
+    # for s in [3,1,2,0]: 
+    #     start_coords = start_coords_list[s]
+    #     init_color = 532
+    #     pulse_color = 532
+    #     nv_sig = copy.deepcopy(base_sig)
+    #     nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_07'.format(s)
+    #     nv_sig['expected_count_rate'] = expected_count_list[s]
+    #     nv_sig['color_filter'] = '715 lp'
+    #     t =10**5
+    #     do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, num_runs, init_color, pulse_color)
+    #     t =10**6
+    #     do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
+    #     t =10**7
+    #     do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, num_runs, init_color, pulse_color)
+    #     t= 10**7
+    #     nv_sig['color_filter'] = '635-715 bp'
+    #     do_moving_target_2D_image(nv_sig, start_coords, 0.5, t, num_steps, num_runs, init_color, pulse_color)
         
 #    num_runs =  20*5
 #    for t in [10**6]:        
@@ -950,47 +951,61 @@ if __name__ == '__main__':
     sub_folder = '2021_01'
     folder = pc_name + '/' + branch_name + '/' + data_folder + '/' + sub_folder
     
-    # Moving target 2D 1/7
-    nv_file_list_7 = ['2021_01_07-17_34_54-goeppert-mayer-nv0_2021_01_07',
-                    '2021_01_07-19_46_59-goeppert-mayer-nv1_2021_01_07',
-                    '2021_01_07-21_59_20-goeppert-mayer-nv2_2021_01_07',
-                    '2021_01_08-00_11_58-goeppert-mayer-nv3_2021_01_07']
-    siv_file_list_7 = ['2021_01_07-18_41_23-goeppert-mayer-nv0_2021_01_07',
-                     '2021_01_07-20_53_37-goeppert-mayer-nv1_2021_01_07',
-                     '2021_01_07-23_05_56-goeppert-mayer-nv2_2021_01_07',
-                     '2021_01_08-01_18_29-goeppert-mayer-nv3_2021_01_07',]    
-    # -120 V applied
-    nv_file_120V = ['2021_01_08-10_28_08-goeppert-mayer-nv0_2021_01_07',
-                    '',
-                    '',
-                    '2021_01_08-12_39_33-goeppert-mayer-nv3_2021_01_07'
-        ]
-    
-    # Moving target 2D 1/9
-    nv_file_list_9 = ['2021_01_09-22_58_35-goeppert-mayer-nv0_2021_01_07',
-                    '2021_01_09-18_33_53-goeppert-mayer-nv1_2021_01_07',
-                    '2021_01_09-16_21_29-goeppert-mayer-nv2_2021_01_07',
-                    '2021_01_09-20_46_16-goeppert-mayer-nv3_2021_01_07',
-                    
-        ]
-    siv_file_list_9 = ['2021_01_10-00_05_19-goeppert-mayer-nv0_2021_01_07',
-                     '2021_01_09-19_40_28-goeppert-mayer-nv1_2021_01_07',
-                     '2021_01_09-17_28_08-goeppert-mayer-nv2_2021_01_07',
-                     '2021_01_09-21_52_52-goeppert-mayer-nv3_2021_01_07'
-        ]
-    
-    for i in [0,3]:
-        data = tool_belt.get_raw_data(folder, nv_file_list_7[i]) 
+    nv_file_list_12 = ['2021_01_12-01_20_51-goeppert-mayer-nv0_2021_01_07',
+                    '2021_01_11-22_56_44-goeppert-mayer-nv1_2021_01_07',
+                    '2021_01_12-06_09_27-goeppert-mayer-nv2_2021_01_07',
+                    '2021_01_12-03_45_08-goeppert-mayer-nv3_2021_01_07',]
+    siv_file_list_100us_12 = ['2021_01_11-23_28_42-goeppert-mayer-nv0_2021_01_07',
+                           '2021_01_11-21_04_45-goeppert-mayer-nv1_2021_01_07',
+                           '2021_01_12-04_17_13-goeppert-mayer-nv2_2021_01_07',
+                           '2021_01_12-01_52_52-goeppert-mayer-nv3_2021_01_07',]
+    siv_file_list_1ms_12 = ['2021_01_12-00_01_26-goeppert-mayer-nv0_2021_01_07',
+                         '2021_01_11-21_37_25-goeppert-mayer-nv1_2021_01_07',
+                         '2021_01_12-04_49_59-goeppert-mayer-nv2_2021_01_07',
+                         '2021_01_12-02_25_41-goeppert-mayer-nv3_2021_01_07',]
+    siv_file_list_10ms_12 = ['2021_01_12-00_41_25-goeppert-mayer-nv0_2021_01_07',
+                          '2021_01_11-22_17_21-goeppert-mayer-nv1_2021_01_07',
+                          '2021_01_12-05_29_57-goeppert-mayer-nv2_2021_01_07',
+                          '2021_01_12-03_05_43-goeppert-mayer-nv3_2021_01_07']
+        
+    nv_file_list_13 = ['2021_01_13-02_10_57-goeppert-mayer-nv0_2021_01_07',
+                       '2021_01_12-21_27_08-goeppert-mayer-nv1_2021_01_07',
+                       '2021_01_12-23_49_13-goeppert-mayer-nv2_2021_01_07',
+                       '2021_01_12-19_05_01-goeppert-mayer-nv3_2021_01_07']
+    siv_file_list_100us_13 = ['2021_01_13-00_20_42-goeppert-mayer-nv0_2021_01_07',
+                              '2021_01_12-19_36_43-goeppert-mayer-nv1_2021_01_07',
+                              '2021_01_12-21_58_43-goeppert-mayer-nv2_2021_01_07',
+                              '2021_01_12-17_14_51-goeppert-mayer-nv3_2021_01_07']
+    siv_file_list_1ms_13 = ['2021_01_13-00_52_49-goeppert-mayer-nv0_2021_01_07',
+                            '2021_01_12-20_09_00-goeppert-mayer-nv1_2021_01_07',
+                            '2021_01_12-22_30_53-goeppert-mayer-nv2_2021_01_07',
+                            '2021_01_12-17_46_57-goeppert-mayer-nv3_2021_01_07']
+    siv_file_list_10ms_13 = ['2021_01_13-01_32_07-goeppert-mayer-nv0_2021_01_07',
+                             '2021_01_12-20_48_21-goeppert-mayer-nv1_2021_01_07',
+                             '2021_01_12-23_10_25-goeppert-mayer-nv2_2021_01_07',
+                             '2021_01_12-18_26_14-goeppert-mayer-nv3_2021_01_07']
+    # for i in [0,3]:
+    #     data = tool_belt.get_raw_data(folder, nv_file_list_7[i]) 
+    #     readout_image_array_7 = numpy.array(data['readout_image_array'])
+    #     data = tool_belt.get_raw_data(folder, nv_file_120V[i])
+    #     readout_image_array_9 = numpy.array(data['readout_image_array'])
+    #     img_extent = data['img_extent']
+    #     dif_image_array = readout_image_array_7 - readout_image_array_9
+    #     # Create the figure
+    #     title = 'Dif between moving target nv{} with 0 V and -120 V'.format(i)
+    #     fig_readout = tool_belt.create_image_figure(dif_image_array, img_extent,
+    #                                                 title = title)
+    for i in [0,1, 2, 3]:
+        data = tool_belt.get_raw_data(folder, siv_file_list_10ms_12[i]) 
         readout_image_array_7 = numpy.array(data['readout_image_array'])
-        data = tool_belt.get_raw_data(folder, nv_file_120V[i])
+        data = tool_belt.get_raw_data(folder, siv_file_list_10ms_13[i])
         readout_image_array_9 = numpy.array(data['readout_image_array'])
         img_extent = data['img_extent']
         dif_image_array = readout_image_array_7 - readout_image_array_9
         # Create the figure
-        title = 'Dif between moving target nv{} with 0 V and -120 V'.format(i)
+        title = 'Dif between moving target nv{}, SiV band 10 ms green pulse (1/12 - 1/13)'.format(i)
         fig_readout = tool_belt.create_image_figure(dif_image_array, img_extent,
                                                     title = title)
-    
     
     
     
