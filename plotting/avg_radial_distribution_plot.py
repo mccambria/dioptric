@@ -76,8 +76,12 @@ def plot_radial_avg_moving_readout(file, pc_name, branch_name, data_folder,
     ----------
     file : str
         file name, excluding the .txt
-    parent_folder : str
-        The file directly under nv_data. For this, it should be "image_sample".
+    pc_name : str
+        name of the pc, either 'pc_rbi' or 'pc_hahn'
+    branch_anme: str
+        the name of the branch that the data is saved under
+    data_folder: str
+        data folder that file is saved in, ex: 'moving_target'
     sub_folder : str
         the path from the parent folder to the folder containing the file.
     do_plot : Boolean, optional
@@ -154,7 +158,7 @@ def plot_radial_avg_moving_readout(file, pc_name, branch_name, data_folder,
                        'counts_r': counts_r.tolist(),
                        'counts_r-units': 'kcps'}
                 
-            filePath = tool_belt.get_file_path(parent_folder, timestamp, nv_sig['name'], subfolder = sub_folder)
+            filePath = tool_belt.get_file_path(data_folder, timestamp, nv_sig['name'])
             tool_belt.save_raw_data(rawData, filePath + '_radial_dist')
             tool_belt.save_figure(fig, filePath + '_radial_dist')
         
@@ -162,7 +166,8 @@ def plot_radial_avg_moving_readout(file, pc_name, branch_name, data_folder,
     return radii, counts_r
      
 # %% data from moving target
-def plot_radial_avg_moving_target(file, parent_folder, sub_folder, do_plot = True, save_plot = True):
+def plot_radial_avg_moving_target(file,  pc_name, branch_name, data_folder, 
+                                  sub_folder, do_plot = True, save_plot = True):
     '''
     Use this function to plot the azimuthal averaged counts as a function of radius 
     from the moving target data. 
@@ -174,9 +179,12 @@ def plot_radial_avg_moving_target(file, parent_folder, sub_folder, do_plot = Tru
     ----------
     file : str
         file name, excluding the .txt
-    parent_folder : str
-        The file directly under nv_data. For this, 
-        it should be "isolate_nv_charge_dynamics_moving_target".
+    pc_name : str
+        name of the pc, either 'pc_rbi' or 'pc_hahn'
+    branch_anme: str
+        the name of the branch that the data is saved under
+    data_folder: str
+        data folder that file is saved in, ex: 'moving_target'
     sub_folder : str
         the path from the parent folder to the folder containing the file.
     do_plot : Boolean, optional
@@ -192,7 +200,7 @@ def plot_radial_avg_moving_target(file, parent_folder, sub_folder, do_plot = Tru
         The averaged azimuthal counts at each radial distance from the center.
 
     '''
-    folder = parent_folder + '/' + sub_folder
+    folder = pc_name + '/' + branch_name + '/' + data_folder + '/' + sub_folder
     
     # Get data from the file
     data = tool_belt.get_raw_data(folder, file) 
@@ -258,7 +266,7 @@ def plot_radial_avg_moving_target(file, parent_folder, sub_folder, do_plot = Tru
                         'counts_r': counts_r,
                         'counts_r-units': 'kcps'}
                 
-            filePath = tool_belt.get_file_path(parent_folder, timestamp, nv_sig['name'], subfolder = sub_folder)
+            filePath = tool_belt.get_file_path(data_folder, timestamp, nv_sig['name'])
             tool_belt.save_raw_data(rawData, filePath + '_radial_dist')
             tool_belt.save_figure(fig, filePath + '_radial_dist')
         
@@ -338,185 +346,71 @@ def plot_moving_target_1D_line_2_data(file_list, pulse_length):
     
 # %% 
 if __name__ == '__main__':
-    # %% Moving target 2D
-    
-    nv_file_list = ['2021_01_07-17_34_54-goeppert-mayer-nv0_2021_01_07',
+    # %% Moving target 2D 1/7
+    nv_file_list_7 = ['2021_01_07-17_34_54-goeppert-mayer-nv0_2021_01_07',
                     '2021_01_07-19_46_59-goeppert-mayer-nv1_2021_01_07',
                     '2021_01_07-21_59_20-goeppert-mayer-nv2_2021_01_07',
                     '2021_01_08-00_11_58-goeppert-mayer-nv3_2021_01_07']
-    siv_file_list = ['2021_01_07-18_41_23-goeppert-mayer-nv0_2021_01_07',
+    siv_file_list_7 = ['2021_01_07-18_41_23-goeppert-mayer-nv0_2021_01_07',
                      '2021_01_07-20_53_37-goeppert-mayer-nv1_2021_01_07',
                      '2021_01_07-23_05_56-goeppert-mayer-nv2_2021_01_07',
-                     '2021_01_08-01_18_29-goeppert-mayer-nv3_2021_01_07',]
+                     '2021_01_08-01_18_29-goeppert-mayer-nv3_2021_01_07',]    
+    # Moving target 2D 1/9
+    nv_file_list_9 = ['2021_01_09-22_58_35-goeppert-mayer-nv0_2021_01_07',
+                    '2021_01_09-18_33_53-goeppert-mayer-nv1_2021_01_07',
+                    '2021_01_09-16_21_29-goeppert-mayer-nv2_2021_01_07',
+                    '2021_01_09-20_46_16-goeppert-mayer-nv3_2021_01_07',
+                    
+        ]
+    siv_file_list_9 = ['2021_01_10-00_05_19-goeppert-mayer-nv0_2021_01_07',
+                     '2021_01_09-19_40_28-goeppert-mayer-nv1_2021_01_07',
+                     '2021_01_09-17_28_08-goeppert-mayer-nv2_2021_01_07',
+                     '2021_01_09-21_52_52-goeppert-mayer-nv3_2021_01_07'
+        ]
     
     pc_name = 'pc_rabi'
-    branch_name - 'branch_Spin_to_charge'
-    data_folder = 'image_sample'
-    sub_folder = '2021/01'
-    
-    sub_folder = 'branch_Spin_to_charge/2020_12'
-    
-    label_list = ['NV band', 'SiV band']
-    fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
+    branch_name = 'branch_Spin_to_charge'
+    data_folder = 'moving_target'
+    sub_folder = '2021_01'
     
     color = 'tab:blue'
-    file = file_list[0]
-    radii, counts_r=plot_radial_avg_moving_target(file, 'isolate_nv_charge_dynamics_moving_target', 
-                                                  sub_folder, do_plot = False, save_plot =  False)
-    ax1.plot(radii, counts_r, color = color)
-    ax1.set_xlabel('Radial distance (um)')
-    ax1.set_ylabel('Azimuthal avg counts (kcps) [635-715 nm bandpass]', color = color)
-    ax1.set_title('Radial plot of moving target\n638 nm init pulse\n1 ms 532 nm pulse')
-    ax1.tick_params(axis = 'y', labelcolor=color)
-
-    color = 'tab:red'
-    ax2 = ax1.twinx()
-    file = file_list[1]
-    radii, counts_r=plot_radial_avg_moving_target(file, 'isolate_nv_charge_dynamics_moving_target', 
-                                                  sub_folder, do_plot = False, save_plot =  False)
-    ax2.plot(radii, counts_r, color = color)
-    ax2.set_xlabel('Radial distance (um)')
-    ax2.set_ylabel('Azimuthal avg counts (kcps) [715 nm longpass]', color = color)
-    ax2.tick_params(axis = 'y', labelcolor=color)
     
-    #%% Moving readout
-    
-    # file_list = ['2020_12_09-15_14_24-goeppert-mayer-nv1_2020_12_02_dif',
-    #              '2020_12_09-13_39_43-goeppert-mayer-nv1_2020_12_02_dif',
-    #              '2020_12_09-14_25_43-goeppert-mayer-nv1_2020_12_02_dif']
+    for i in range(len(nv_file_list_7)):
+        fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
+        file_7 = nv_file_list_7[i]
+        file_9 = nv_file_list_9[i]
+        radii_7, counts_r_7=plot_radial_avg_moving_target(file_7, pc_name, branch_name, data_folder, 
+                                                      sub_folder, do_plot = False, save_plot =  False)
+        radii_9, counts_r_9=plot_radial_avg_moving_target(file_9, pc_name, branch_name, data_folder, 
+                                                      sub_folder, do_plot = False, save_plot =  False)
+        ax1.plot(radii_7, counts_r_7, label = '1/7')
+        ax1.plot(radii_9, counts_r_9, label = '1/9')
+        ax1.set_xlabel('Radial distance (um)')
+        ax1.set_ylabel('Azimuthal avg counts (kcps) [635-715 nm bandpass]')
+        ax1.set_title('Radial plot of moving target nv{}\n532 nm init pulse\n10 ms 532 nm pulse'.format(i))
+        ax1.legend()
+        
+    # label_list = ['NV band', 'SiV band']
     # fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
-    # sub_folder = 'branch_Spin_to_charge/2020_12'
-    # label_list = ['10 ms pulse', '10 s pulse', '100 s pulse']
     
-    # for i in range(len(file_list)):
-    #     file = file_list[i]
-    #     radii, counts_r=plot_radial_avg_moving_readout(file, 'image_sample', 
-    #                                                   sub_folder, do_plot = True, save_plot =  True)
-    #     ax1.plot(radii, counts_r, label = label_list[i])
-    #     ax1.set_xlabel('Radial distance (um)')
-    #     ax1.set_ylabel('Azimuthal avg counts (kcps) [715 nm longpass]')
-    #     ax1.set_title('Radial plot of moving readout\n638 nm init pulse\n532 nm pulse')
-    # ax1.legend()
+    # color = 'tab:blue'
+    # file = nv_file_list[0]
+    # radii, counts_r=plot_radial_avg_moving_target(file, pc_name, branch_name, data_folder, 
+    #                                               sub_folder, do_plot = False, save_plot =  False)
+    # ax1.plot(radii, counts_r, color = color)
+    # ax1.set_xlabel('Radial distance (um)')
+    # ax1.set_ylabel('Azimuthal avg counts (kcps) [635-715 nm bandpass]', color = color)
+    # ax1.set_title('Radial plot of moving target\n532 nm init pulse\n10 ms 532 nm pulse')
+    # ax1.tick_params(axis = 'y', labelcolor=color)
 
-    
-    
-    # %%  Moving target 1 D
-    # master_pulse_time_list = [
-                        # '1 us', '10 us', '100 us', 
-                        # '1 ms', '10 ms', '100 ms', 
-                        # '1 s', '10 s', 
-                        # '100 s', 
-                        # ]   
-                       
-    # g/g NV band
-    # file_list = ['2020_12_11-17_42_22-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_11-17_45_26-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_11-17_48_33-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_11-17_51_43-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_11-17_55_08-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_11-18_01_04-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_11-13_40_46-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_11-22_42_38-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_11-10_08_11-goeppert-mayer-nv2_2020_12_10',]    
-    
-    # pulse_time_list = ['1 us', '10 us', '100 us', 
-    #                    '1 ms', '10 ms', '100 ms', 
-    #                    '1 s', '10 s', '100 s', 
-                       # ]         
-    # g/g SiV band
-    # file_list = ['2020_12_11-17_43_54-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_11-17_46_59-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_11-17_50_06-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_11-17_53_18-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_11-17_56_57-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_11-18_05_12-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_14-15_57_55-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_12-03_20_56-goeppert-mayer-nv2_2020_12_10',
-    #                 '2020_12_15-07_26_11-goeppert-mayer-nv2_2020_12_10'
-    #         ]
-
-    # pulse_time_list = ['1 us', '10 us', '100 us', 
-    #                     '1 ms', '10 ms', '100 ms', 
-    #                     '1 s', '10 s', '100 s'
-    #                     ]     
-
-    # master_file_list = [
-                        # ['2020_12_11-17_42_22-goeppert-mayer-nv2_2020_12_10', 
-                        #   '2020_12_11-17_43_54-goeppert-mayer-nv2_2020_12_10'] ,
-                        # ['2020_12_11-17_45_26-goeppert-mayer-nv2_2020_12_10',
-                        #   '2020_12_11-17_46_59-goeppert-mayer-nv2_2020_12_10'],
-                        # ['2020_12_11-17_48_33-goeppert-mayer-nv2_2020_12_10',
-                        #   '2020_12_11-17_50_06-goeppert-mayer-nv2_2020_12_10'],
-                        # ['2020_12_11-17_51_43-goeppert-mayer-nv2_2020_12_10',
-                        #   '2020_12_11-17_53_18-goeppert-mayer-nv2_2020_12_10'],
-                        # ['2020_12_11-17_55_08-goeppert-mayer-nv2_2020_12_10',
-                        #   '2020_12_11-17_56_57-goeppert-mayer-nv2_2020_12_10'],
-                        # ['2020_12_11-18_01_04-goeppert-mayer-nv2_2020_12_10',
-                        #   '2020_12_11-18_05_12-goeppert-mayer-nv2_2020_12_10'],
-                        # ['2020_12_11-13_40_46-goeppert-mayer-nv2_2020_12_10',
-                        #   '2020_12_14-15_57_55-goeppert-mayer-nv2_2020_12_10'],
-                        # ['2020_12_11-22_42_38-goeppert-mayer-nv2_2020_12_10',
-                        #   '2020_12_12-03_20_56-goeppert-mayer-nv2_2020_12_10'],
-                        # ['2020_12_11-10_08_11-goeppert-mayer-nv2_2020_12_10',
-                        #   '2020_12_15-07_26_11-goeppert-mayer-nv2_2020_12_10']
-                        # ]
-    
-    # r/g NV band
-    # file_list = ['2020_12_12-03_22_30-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_12-03_25_40-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_12-03_28_50-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_12-03_32_05-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_12-03_35_34-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_12-03_41_34-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_11-16_09_52-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_12-08_22_16-goeppert-mayer-nv2_2020_12_10',
-    #              '2020_12_13-10_04_13-goeppert-mayer-nv2_2020_12_10',
-    #     ]
-    # pulse_time_list = ['1 us', '10 us', '100 us', 
-    #                     '1 ms', '10 ms', '100 ms', 
-    #                     '1 s', '10 s', '100 s', 
-    #                     ]    
-    
-    # r/g SiV band
-    # file_list = ['2020_12_12-03_24_06-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_12-03_27_15-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_12-03_30_27-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_12-03_33_43-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_12-03_37_26-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_12-03_45_42-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_14-16_26_34-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_12-13_00_36-goeppert-mayer-nv2_2020_12_10',
-    #               '2020_12_14-13_01_52-goeppert-mayer-nv2_2020_12_10'
-    #     ]
-    # pulse_time_list = ['1 us', '10 us', '100 us', 
-    #                     '1 ms', '10 ms', '100 ms', 
-    #                     '1 s', '10 s', '100 s', 
-    #                     ]    
-    # master_file_list = [['2020_12_12-03_22_30-goeppert-mayer-nv2_2020_12_10',
-    #                       '2020_12_12-03_24_06-goeppert-mayer-nv2_2020_12_10'],
-    #                     ['2020_12_12-03_25_40-goeppert-mayer-nv2_2020_12_10',
-    #                       '2020_12_12-03_27_15-goeppert-mayer-nv2_2020_12_10'],
-    #                     ['2020_12_12-03_28_50-goeppert-mayer-nv2_2020_12_10',
-    #                       '2020_12_12-03_30_27-goeppert-mayer-nv2_2020_12_10'],
-    #                     ['2020_12_12-03_32_05-goeppert-mayer-nv2_2020_12_10',
-    #                       '2020_12_12-03_33_43-goeppert-mayer-nv2_2020_12_10'],
-    #                     ['2020_12_12-03_35_34-goeppert-mayer-nv2_2020_12_10',
-    #                       '2020_12_12-03_37_26-goeppert-mayer-nv2_2020_12_10'],
-    #                     ['2020_12_12-03_41_34-goeppert-mayer-nv2_2020_12_10',
-    #                       '2020_12_12-03_45_42-goeppert-mayer-nv2_2020_12_10'],
-    #                     ['2020_12_11-16_09_52-goeppert-mayer-nv2_2020_12_10',
-    #                       '2020_12_14-16_26_34-goeppert-mayer-nv2_2020_12_10'],
-    #                     ['2020_12_12-08_22_16-goeppert-mayer-nv2_2020_12_10',
-    #                       '2020_12_12-13_00_36-goeppert-mayer-nv2_2020_12_10'],
-    #                     ['2020_12_13-10_04_13-goeppert-mayer-nv2_2020_12_10',
-    #                       '2020_12_14-13_01_52-goeppert-mayer-nv2_2020_12_10']
-    #                 ]
-    
-    # for i in range(len(master_file_list)):
-    #     file_list = master_file_list[i]
-    #     pulse_time = master_pulse_time_list[i]
-    
-    #     plot_moving_target_1D_line_2_data(file_list, pulse_time)    
-    
+    # color = 'tab:red'
+    # ax2 = ax1.twinx()
+    # file = siv_file_list[0]
+    # radii, counts_r=plot_radial_avg_moving_target(file, pc_name, branch_name, data_folder, 
+    #                                               sub_folder, do_plot = False, save_plot =  False)
+    # ax2.plot(radii, counts_r, color = color)
+    # ax2.set_xlabel('Radial distance (um)')
+    # ax2.set_ylabel('Azimuthal avg counts (kcps) [715 nm longpass]', color = color)
+    # ax2.tick_params(axis = 'y', labelcolor=color)
 
     
