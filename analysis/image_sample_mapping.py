@@ -20,6 +20,7 @@ import utils.tool_belt as tool_belt
 import matplotlib.pyplot as plt
 import os
 import labrad
+import numpy
 from pathlib import Path
 
 
@@ -103,15 +104,28 @@ if __name__ == '__main__':
 #    illustrate_mapping(file_name, [13])
 #    else:
 
-    coords_list = [[0.205, 0.571, 5.27],
-                      [-0.333, 0.534, 5.3], 
-                     [-0.330, -0.112, 5.27],
-                     [0.309, -0.080, 5.29], 
-            ]
+    coords_list = [[0.040, 0.371, 5.19],
+[-0.327, 0.357, 5.20],
+[-0.191, 0.328, 5.19],
+[0.124, 0.297, 5.20],
+[0.337, 0.233, 5.26],
+[0.123, 0.223, 5.19],
+[-0.040, 0.202, 5.24],
+[0.259, 0.126, 5.22],
+[0.248, 0.113, 5.26],
+[0.074, 0.059, 5.21],
+[-0.039, -0.122, 5.23],
+[-0.235, -0.146, 5.23],
+[-0.091, -0.165, 5.19],
+[0.194, -0.191, 5.25],
+[0.066, -0.292, 5.20],
+[0.361, -0.318, 5.23],
+]
+
 
     sample_name = 'goeppert-mayer'
     micrometer_coords = [3.154, 2.193, 11.118, 120.21]
-    image_sample_file_name = '2021_01_12-16_17_55-goeppert-mayer-search'
+    image_sample_file_name = '2021_01_14-09_44_56-goeppert-mayer-search'
     branch = 'branch_Spin_to_charge'
     month_folder = '2021_01'
 

@@ -69,15 +69,15 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 75
 #    scan_range = 1.2
 #    scan_range = 1.0
-#    scan_range = 0.8
-#    num_steps = 250
+    scan_range = 0.8
+    num_steps = 250
 #    scan_range = 0.3
 #    num_steps = 125
 #    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.15
-    scan_range = 0.1
-    num_steps = 90
+#    scan_range = 0.1
+#    num_steps = 90
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.06
@@ -549,7 +549,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0.0, 0.0 ,5.28], 
+    search = { 'coords':[0.0, 0.0 ,5.23], 
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -629,10 +629,50 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
-   
-    
-    nv_sig_list = [ nv0_2021_01_11, nv1_2021_01_11, nv2_2021_01_11, nv3_2021_01_11]
-
+       
+    nv8_2021_01_14 = { 'coords':[0.248, 0.113, 5.26], 
+            'name': '{}-nv8_2021_01_14'.format(sample_name),
+            'expected_count_rate': 48, 'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp', 
+#            'color_filter': '715 lp',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+    nv_list_2021_01_14 = [[0.040, 0.371, 5.19],
+[-0.327, 0.357, 5.20],
+[-0.191, 0.328, 5.19],
+[0.124, 0.297, 5.20],
+[0.337, 0.233, 5.26],
+[0.123, 0.223, 5.19],
+[-0.040, 0.202, 5.24],
+[0.259, 0.126, 5.22],
+[0.248, 0.113, 5.26],
+[0.074, 0.059, 5.21],
+[-0.039, -0.122, 5.23],
+[-0.235, -0.146, 5.23],
+[-0.091, -0.165, 5.19],
+[0.194, -0.191, 5.25],
+[0.066, -0.292, 5.20],
+[0.361, -0.318, 5.23],
+]
+    expected_count_list = [46, 43, 40, 40, 50, 48, 40, 45, 48, 48, 38, 45, 40, 48, 48, 49]
+    nv_sig_list =[]
+    i = 0
+    for nv_coords in nv_list_2021_01_14:
+        nv_sig = copy.deepcopy(search)
+        nv_sig['coords'] = nv_coords
+        nv_sig['expected_count_rate'] = expected_count_list[i]
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_14'.format(i)
+        nv_sig_list.append(nv_sig)
+        i = i+1
+    nv_sig_list = [search]
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
 #    cobalt_638_power = 30

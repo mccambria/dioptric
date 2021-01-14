@@ -557,7 +557,7 @@ def do_moving_target_1D_line(nv_sig, start_coords, end_coords, pulse_time,
                               nv_sig['am_589_power'], nv_sig['nd_filter'])
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.plot(rad_dist*35,readout_counts_avg, label = 'counts on readout after each pulse on target spot')
+    ax.plot(rad_dist*35,readout_counts_avg, label = nv_sig['name'])
     ax.set_xlabel('Distance from readout NV (um)')
     ax.set_ylabel('Average counts')
     ax.set_title('Stationary readout NV, moving target ({} init, {} s {} pulse)'.\
@@ -859,10 +859,10 @@ if __name__ == '__main__':
 
 
     base_sig = { 'coords':[], 
-            'name': '{}-name'.format(sample_name),
+            'name': '{}-test'.format(sample_name),
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
-#            'color_filter': '635-715 bp',
-            'color_filter': '715 lp',
+            'color_filter': '635-715 bp',
+#            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
             'pulsed_SCC_readout_dur': 30000000, 'am_589_power': 0.7, 
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
@@ -872,16 +872,28 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
     
 #    start_coords = base_sig['coords']
-    start_coords_list = [[0.205, 0.571, 5.27],
-                      [-0.333, 0.534, 5.3], 
-                     [-0.330, -0.112, 5.27],
-                     [0.309, -0.080, 5.29], 
-            ]
-    expected_count_list = [45, 50, 40, 48]
-#    end_coords = numpy.array(start_coords) + [1.0,0,0]
+    start_coords_list = [[0.040, 0.371, 5.19],
+[-0.327, 0.357, 5.20],
+[-0.191, 0.328, 5.19],
+[0.124, 0.297, 5.20],
+[0.337, 0.233, 5.26],
+[0.123, 0.223, 5.19],
+[-0.040, 0.202, 5.24],
+[0.259, 0.126, 5.22],
+[0.248, 0.113, 5.26],
+[0.074, 0.059, 5.21],
+#
+[-0.039, -0.122, 5.23],
+[-0.235, -0.146, 5.23],
+[-0.091, -0.165, 5.19],
+[0.194, -0.191, 5.25],
+[0.066, -0.292, 5.20],
+[0.361, -0.318, 5.23],
+]
+    expected_count_list = [46, 43, 40, 40, 50, 48, 40, 45, 48, 48, 42, 45, 40, 48, 48, 49]
 #    end_coords = end_coords.tolist()
-    num_steps = 40 #20
-    num_runs =  30
+#    num_steps = 40 #20
+#    num_runs =  60
 #    img_range = 0.45
     
     
@@ -930,82 +942,106 @@ if __name__ == '__main__':
 #        nv_sig['color_filter'] = '715 lp'
 #        do_moving_target_2D_image(nv_sig, start_coords, 0.55, t, num_steps, num_runs, init_color, pulse_color)
         
+       
+    init_color = 532
+    pulse_color = 532        
+    for s in range(8, 15): 
+        start_coords = start_coords_list[s]            
+        nv_sig = copy.deepcopy(base_sig)
+        nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_14'.format(s)
+        nv_sig['expected_count_rate'] = expected_count_list[s]
+        nv_sig['color_filter'] = '635-715 bp'
         
+        t = 10**6
+        num_steps = 41
+        num_runs =  60
+        end_coords = numpy.array(start_coords) - [0.1,0,0]
+        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+                                 num_steps, num_runs, init_color, pulse_color)
+        t = 5*10**6
+        num_steps = 51
+        num_runs =  50
+        end_coords = numpy.array(start_coords) - [0.2,0,0]
+        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+                                 num_steps, num_runs, init_color, pulse_color)
         
-#    for t in [1*10**9]:        
-#        init_color = 638
-#        pulse_color = 532
-#        nv_sig = copy.deepcopy(nv2_2020_12_10)
-##        nv_sig['color_filter'] = '635-715 bp'
-##        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-##                             num_steps, num_runs, init_color, pulse_color)
-#        nv_sig['color_filter'] = '715 lp'
-#        do_moving_target_1D_line(nv_sig, start_coords, end_coords, t, 
-#                             num_steps, num_runs, init_color, pulse_color)
+        t = 10**7
+        num_steps = 51
+        num_runs =  50
+        end_coords = numpy.array(start_coords) - [0.3,0,0]
+        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+                                 num_steps, num_runs, init_color, pulse_color)
+                
+        t = 5*10**7
+        num_steps = 51
+        num_runs =  50
+        end_coords = numpy.array(start_coords) - [0.55,0,0]
+        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+                                 num_steps, num_runs, init_color, pulse_color)
 
  
     #%%
-    pc_name = 'pc_rabi'
-    branch_name = 'branch_Spin_to_charge'
-    data_folder = 'moving_target'
-    sub_folder = '2021_01'
-    folder = pc_name + '/' + branch_name + '/' + data_folder + '/' + sub_folder
-    
-    nv_file_list_12 = ['2021_01_12-01_20_51-goeppert-mayer-nv0_2021_01_07',
-                    '2021_01_11-22_56_44-goeppert-mayer-nv1_2021_01_07',
-                    '2021_01_12-06_09_27-goeppert-mayer-nv2_2021_01_07',
-                    '2021_01_12-03_45_08-goeppert-mayer-nv3_2021_01_07',]
-    siv_file_list_100us_12 = ['2021_01_11-23_28_42-goeppert-mayer-nv0_2021_01_07',
-                           '2021_01_11-21_04_45-goeppert-mayer-nv1_2021_01_07',
-                           '2021_01_12-04_17_13-goeppert-mayer-nv2_2021_01_07',
-                           '2021_01_12-01_52_52-goeppert-mayer-nv3_2021_01_07',]
-    siv_file_list_1ms_12 = ['2021_01_12-00_01_26-goeppert-mayer-nv0_2021_01_07',
-                         '2021_01_11-21_37_25-goeppert-mayer-nv1_2021_01_07',
-                         '2021_01_12-04_49_59-goeppert-mayer-nv2_2021_01_07',
-                         '2021_01_12-02_25_41-goeppert-mayer-nv3_2021_01_07',]
-    siv_file_list_10ms_12 = ['2021_01_12-00_41_25-goeppert-mayer-nv0_2021_01_07',
-                          '2021_01_11-22_17_21-goeppert-mayer-nv1_2021_01_07',
-                          '2021_01_12-05_29_57-goeppert-mayer-nv2_2021_01_07',
-                          '2021_01_12-03_05_43-goeppert-mayer-nv3_2021_01_07']
-        
-    nv_file_list_13 = ['2021_01_13-02_10_57-goeppert-mayer-nv0_2021_01_07',
-                       '2021_01_12-21_27_08-goeppert-mayer-nv1_2021_01_07',
-                       '2021_01_12-23_49_13-goeppert-mayer-nv2_2021_01_07',
-                       '2021_01_12-19_05_01-goeppert-mayer-nv3_2021_01_07']
-    siv_file_list_100us_13 = ['2021_01_13-00_20_42-goeppert-mayer-nv0_2021_01_07',
-                              '2021_01_12-19_36_43-goeppert-mayer-nv1_2021_01_07',
-                              '2021_01_12-21_58_43-goeppert-mayer-nv2_2021_01_07',
-                              '2021_01_12-17_14_51-goeppert-mayer-nv3_2021_01_07']
-    siv_file_list_1ms_13 = ['2021_01_13-00_52_49-goeppert-mayer-nv0_2021_01_07',
-                            '2021_01_12-20_09_00-goeppert-mayer-nv1_2021_01_07',
-                            '2021_01_12-22_30_53-goeppert-mayer-nv2_2021_01_07',
-                            '2021_01_12-17_46_57-goeppert-mayer-nv3_2021_01_07']
-    siv_file_list_10ms_13 = ['2021_01_13-01_32_07-goeppert-mayer-nv0_2021_01_07',
-                             '2021_01_12-20_48_21-goeppert-mayer-nv1_2021_01_07',
-                             '2021_01_12-23_10_25-goeppert-mayer-nv2_2021_01_07',
-                             '2021_01_12-18_26_14-goeppert-mayer-nv3_2021_01_07']
-    # for i in [0,3]:
-    #     data = tool_belt.get_raw_data(folder, nv_file_list_7[i]) 
-    #     readout_image_array_7 = numpy.array(data['readout_image_array'])
-    #     data = tool_belt.get_raw_data(folder, nv_file_120V[i])
-    #     readout_image_array_9 = numpy.array(data['readout_image_array'])
-    #     img_extent = data['img_extent']
-    #     dif_image_array = readout_image_array_7 - readout_image_array_9
-    #     # Create the figure
-    #     title = 'Dif between moving target nv{} with 0 V and -120 V'.format(i)
-    #     fig_readout = tool_belt.create_image_figure(dif_image_array, img_extent,
-    #                                                 title = title)
-    for i in [0,1, 2, 3]:
-        data = tool_belt.get_raw_data(folder, siv_file_list_10ms_12[i]) 
-        readout_image_array_7 = numpy.array(data['readout_image_array'])
-        data = tool_belt.get_raw_data(folder, siv_file_list_10ms_13[i])
-        readout_image_array_9 = numpy.array(data['readout_image_array'])
-        img_extent = data['img_extent']
-        dif_image_array = readout_image_array_7 - readout_image_array_9
-        # Create the figure
-        title = 'Dif between moving target nv{}, SiV band 10 ms green pulse (1/12 - 1/13)'.format(i)
-        fig_readout = tool_belt.create_image_figure(dif_image_array, img_extent,
-                                                    title = title)
+#    pc_name = 'pc_rabi'
+#    branch_name = 'branch_Spin_to_charge'
+#    data_folder = 'moving_target'
+#    sub_folder = '2021_01'
+#    folder = pc_name + '/' + branch_name + '/' + data_folder + '/' + sub_folder
+#    
+#    nv_file_list_12 = ['2021_01_12-01_20_51-goeppert-mayer-nv0_2021_01_07',
+#                    '2021_01_11-22_56_44-goeppert-mayer-nv1_2021_01_07',
+#                    '2021_01_12-06_09_27-goeppert-mayer-nv2_2021_01_07',
+#                    '2021_01_12-03_45_08-goeppert-mayer-nv3_2021_01_07',]
+#    siv_file_list_100us_12 = ['2021_01_11-23_28_42-goeppert-mayer-nv0_2021_01_07',
+#                           '2021_01_11-21_04_45-goeppert-mayer-nv1_2021_01_07',
+#                           '2021_01_12-04_17_13-goeppert-mayer-nv2_2021_01_07',
+#                           '2021_01_12-01_52_52-goeppert-mayer-nv3_2021_01_07',]
+#    siv_file_list_1ms_12 = ['2021_01_12-00_01_26-goeppert-mayer-nv0_2021_01_07',
+#                         '2021_01_11-21_37_25-goeppert-mayer-nv1_2021_01_07',
+#                         '2021_01_12-04_49_59-goeppert-mayer-nv2_2021_01_07',
+#                         '2021_01_12-02_25_41-goeppert-mayer-nv3_2021_01_07',]
+#    siv_file_list_10ms_12 = ['2021_01_12-00_41_25-goeppert-mayer-nv0_2021_01_07',
+#                          '2021_01_11-22_17_21-goeppert-mayer-nv1_2021_01_07',
+#                          '2021_01_12-05_29_57-goeppert-mayer-nv2_2021_01_07',
+#                          '2021_01_12-03_05_43-goeppert-mayer-nv3_2021_01_07']
+#        
+#    nv_file_list_13 = ['2021_01_13-02_10_57-goeppert-mayer-nv0_2021_01_07',
+#                       '2021_01_12-21_27_08-goeppert-mayer-nv1_2021_01_07',
+#                       '2021_01_12-23_49_13-goeppert-mayer-nv2_2021_01_07',
+#                       '2021_01_12-19_05_01-goeppert-mayer-nv3_2021_01_07']
+#    siv_file_list_100us_13 = ['2021_01_13-00_20_42-goeppert-mayer-nv0_2021_01_07',
+#                              '2021_01_12-19_36_43-goeppert-mayer-nv1_2021_01_07',
+#                              '2021_01_12-21_58_43-goeppert-mayer-nv2_2021_01_07',
+#                              '2021_01_12-17_14_51-goeppert-mayer-nv3_2021_01_07']
+#    siv_file_list_1ms_13 = ['2021_01_13-00_52_49-goeppert-mayer-nv0_2021_01_07',
+#                            '2021_01_12-20_09_00-goeppert-mayer-nv1_2021_01_07',
+#                            '2021_01_12-22_30_53-goeppert-mayer-nv2_2021_01_07',
+#                            '2021_01_12-17_46_57-goeppert-mayer-nv3_2021_01_07']
+#    siv_file_list_10ms_13 = ['2021_01_13-01_32_07-goeppert-mayer-nv0_2021_01_07',
+#                             '2021_01_12-20_48_21-goeppert-mayer-nv1_2021_01_07',
+#                             '2021_01_12-23_10_25-goeppert-mayer-nv2_2021_01_07',
+#                             '2021_01_12-18_26_14-goeppert-mayer-nv3_2021_01_07']
+#    # for i in [0,3]:
+#    #     data = tool_belt.get_raw_data(folder, nv_file_list_7[i]) 
+#    #     readout_image_array_7 = numpy.array(data['readout_image_array'])
+#    #     data = tool_belt.get_raw_data(folder, nv_file_120V[i])
+#    #     readout_image_array_9 = numpy.array(data['readout_image_array'])
+#    #     img_extent = data['img_extent']
+#    #     dif_image_array = readout_image_array_7 - readout_image_array_9
+#    #     # Create the figure
+#    #     title = 'Dif between moving target nv{} with 0 V and -120 V'.format(i)
+#    #     fig_readout = tool_belt.create_image_figure(dif_image_array, img_extent,
+#    #                                                 title = title)
+#    for i in [0,1, 2, 3]:
+#        data = tool_belt.get_raw_data(folder, siv_file_list_10ms_12[i]) 
+#        readout_image_array_7 = numpy.array(data['readout_image_array'])
+#        data = tool_belt.get_raw_data(folder, siv_file_list_10ms_13[i])
+#        readout_image_array_9 = numpy.array(data['readout_image_array'])
+#        img_extent = data['img_extent']
+#        dif_image_array = readout_image_array_7 - readout_image_array_9
+#        # Create the figure
+#        title = 'Dif between moving target nv{}, SiV band 10 ms green pulse (1/12 - 1/13)'.format(i)
+#        fig_readout = tool_belt.create_image_figure(dif_image_array, img_extent,
+#                                                    title = title)
     
     
     
