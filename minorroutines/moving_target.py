@@ -890,7 +890,7 @@ if __name__ == '__main__':
 [0.066, -0.292, 5.20],
 [0.361, -0.318, 5.23],
 ]
-    expected_count_list = [46, 43, 40, 40, 50, 48, 40, 45, 48, 48, 42, 45, 40, 48, 48, 49]
+    expected_count_list = [46, 43, 40, 40, 50, 48, 40, 45, 48, 48, 42, 45, 48, 48, 48, 49]
 #    end_coords = end_coords.tolist()
 #    num_steps = 40 #20
 #    num_runs =  60
@@ -945,7 +945,7 @@ if __name__ == '__main__':
        
     init_color = 532
     pulse_color = 532        
-    for s in range(8, 15): 
+    for s in range(len(start_coords_list)): 
         start_coords = start_coords_list[s]            
         nv_sig = copy.deepcopy(base_sig)
         nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_14'.format(s)
@@ -954,30 +954,30 @@ if __name__ == '__main__':
         
         t = 10**6
         num_steps = 41
-        num_runs =  60
+        num_runs= 500
         end_coords = numpy.array(start_coords) - [0.1,0,0]
         do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
                                  num_steps, num_runs, init_color, pulse_color)
-        t = 5*10**6
-        num_steps = 51
-        num_runs =  50
-        end_coords = numpy.array(start_coords) - [0.2,0,0]
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
-                                 num_steps, num_runs, init_color, pulse_color)
-        
-        t = 10**7
-        num_steps = 51
-        num_runs =  50
-        end_coords = numpy.array(start_coords) - [0.3,0,0]
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
-                                 num_steps, num_runs, init_color, pulse_color)
-                
-        t = 5*10**7
-        num_steps = 51
-        num_runs =  50
-        end_coords = numpy.array(start_coords) - [0.55,0,0]
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
-                                 num_steps, num_runs, init_color, pulse_color)
+#        t = 5*10**6
+#        num_steps = 51
+#        num_runs =  50
+#        end_coords = numpy.array(start_coords) - [0.2,0,0]
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+#                                 num_steps, num_runs, init_color, pulse_color)
+#        
+#        t = 10**7
+#        num_steps = 51
+#        num_runs =  50
+#        end_coords = numpy.array(start_coords) - [0.3,0,0]
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+#                                 num_steps, num_runs, init_color, pulse_color)
+#                
+#        t = 5*10**7
+#        num_steps = 51
+#        num_runs =  50
+#        end_coords = numpy.array(start_coords) - [0.55,0,0]
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+#                                 num_steps, num_runs, init_color, pulse_color)
 
  
     #%%
