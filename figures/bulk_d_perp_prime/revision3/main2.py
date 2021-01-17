@@ -21,6 +21,97 @@ ms = 7
 lw = 1.75
 
 
+# %% Functions
+
+
+def blurb(file_names, nv_data):
+    
+    fig, ax = plt.subplots(figsize=(5.5, 5))
+    # fig.set_tight_layout(True)
+    lower_ax = ax
+    
+    tick_pos = []
+    tick_labels = []
+    
+    for ind in range(len(nv_data)):
+        
+        nv = nv_data[ind]
+        
+        if ind == 0:
+            label_gamma = r'$\gamma$'
+            label_omega = r'$\Omega$'
+        else:
+            label_gamma = None
+            label_omega = None
+            
+        gamma_plot = ax.errorbar(ind, nv['gamma']*1000, yerr=nv['gamma_err']*1000, 
+                    label=label_gamma, marker='o',
+                    color='#993399', markerfacecolor='#CC99CC',
+                    linestyle='None', ms=ms, lw=lw)
+        
+        omega_plot = ax.errorbar(ind, nv['omega']*1000, yerr=nv['omega_err']*1000, 
+                    label=label_omega, marker='^',
+                    color='#FF9933', markerfacecolor='#FFCC33',
+                    linestyle='None', ms=ms, lw=lw)
+        
+        tick_pos.append(ind)
+        tick_labels.append(nv['name'])
+        
+    ax.set_ylabel('Relaxation rate (s$^{-1}$)')
+    ax.set_ylim(45, 135)
+    ax.set_xlabel(None)
+    ax.set_xlim(-0.35, 4.4)
+    ax.set_xticks(tick_pos)
+    ax.set_xticklabels(tick_labels)
+    ax.legend(loc='upper right')
+    # r = matplotlib.patches.Rectangle((0,0), 1, 1, fill=False, edgecolor='none',
+    #                               visible=False)
+    # legend = ax.legend([r, omega_plot, r, r, gamma_plot, r],
+    #                     ['', r'$\Omega$', '', '', r'$\gamma$', ''],
+    #                     bbox_to_anchor=(0., 1.02, 1., .1), loc='lower left',
+    #                     ncol=6, mode='expand', borderaxespad=0.0, handlelength=0.5)
+    
+    
+    # %% perp_B = 0 ratio
+    
+    plt.rcParams.update({'font.size': 12})
+
+    # Create inset of width 30% and height 40% of the parent axes' bounding box
+    # at the lower left corner (loc=3)
+    ax = inset_axes(ax, width="100%", height="100%",
+                    bbox_to_anchor=(0.695, 0.10, 0.3, 0.30), bbox_transform=ax.transAxes
+                    # loc='lower right',
+                    )
+    
+    # ax = fig.add_subplot(gs[2:5, 3:6])
+    
+    tick_pos = []
+    tick_labels = []
+    
+    for ind in range(len(nv_data)):
+        
+        nv = nv_data[ind]
+        
+        ax.errorbar(ind, nv['ratio'], yerr=nv['ratio_err'], 
+                    label=label_gamma, marker='o',
+                    color='#EF2424', markerfacecolor='#FB9898',
+                    linestyle='None', ms=ms, lw=lw)
+        
+        tick_pos.append(ind)
+        tick_labels.append(nv['name'])
+        
+    ax.set_ylabel(r'$\gamma / \Omega$')
+    ax.set_yticks([1.8,2.0,2.2])
+    ax.set_xlabel(None)
+    ax.set_xlim(-0.25, 2.25)
+    ax.set_xticks(tick_pos)
+    ax.set_xticklabels(tick_labels)
+    
+    plt.rcParams.update({'font.size': 15})
+    # fig.tight_layout()
+    fig.tight_layout(pad=0.3, h_pad=1.0, w_pad=0.3, rect=[0,0,1,1])
+    
+
 # %% Main
 
 
@@ -227,7 +318,7 @@ if __name__ == '__main__':
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)
 
-    path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/image_sample/'
+    path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_master/image_sample/'
     file_names = ['2019_07/2019-07-23_17-39-48_johnson1.txt',
                   '2019_10/2019-10-02-15_12_01-goeppert_mayer-nv_search.txt',
                   '2019_04/2019-04-15_16-42-08_Hopper.txt']
@@ -265,4 +356,5 @@ if __name__ == '__main__':
         }
     ]
     
-    main(file_names, nv_data)
+    # main(file_names, nv_data)
+    blurb(file_names, nv_data)
