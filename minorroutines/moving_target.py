@@ -815,7 +815,7 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
             'yellow_optical_power_mW-units': 'mW',
             'coords_voltages': coords_voltages,
             'coords_voltages-units': '[V, V]',
-            # 'ind_list': ind_list,
+             'ind_list': ind_list,
             'x_voltages_1d': x_voltages_1d.tolist(),
             'y_voltages_1d': y_voltages_1d.tolist(),
             
@@ -892,37 +892,38 @@ if __name__ == '__main__':
 ]
     expected_count_list = [46, 43, 40, 40, 50, 48, 40, 45, 48, 48, 42, 45, 48, 48, 48, 49]
 #    end_coords = end_coords.tolist()
-#    num_steps = 40 #20
-#    num_runs =  60
+    num_steps = 40 #20
+#    num_runs = 50
 #    img_range = 0.45
     
-    
-#    for t in [10**6]:        
-#        init_color = 532
-#        pulse_color = 532
-#        nv_sig = copy.deepcopy(nv0_2020_12_20)
-#        nv_sig['color_filter'] = '635-715 bp'
-#        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
-#        nv_sig['color_filter'] = '715 lp'
-#        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
-
-    # for s in [3,1,2,0]: 
-    #     start_coords = start_coords_list[s]
-    #     init_color = 532
-    #     pulse_color = 532
-    #     nv_sig = copy.deepcopy(base_sig)
-    #     nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_07'.format(s)
-    #     nv_sig['expected_count_rate'] = expected_count_list[s]
-    #     nv_sig['color_filter'] = '715 lp'
-    #     t =10**5
-    #     do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, num_runs, init_color, pulse_color)
-    #     t =10**6
-    #     do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
-    #     t =10**7
-    #     do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, num_runs, init_color, pulse_color)
-    #     t= 10**7
-    #     nv_sig['color_filter'] = '635-715 bp'
-    #     do_moving_target_2D_image(nv_sig, start_coords, 0.5, t, num_steps, num_runs, init_color, pulse_color)
+ 
+    for s in [15]: 
+         start_coords = start_coords_list[s]
+         init_color = 532
+         pulse_color = 532
+         nv_sig = copy.deepcopy(base_sig)
+         nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_07'.format(s)
+         nv_sig['expected_count_rate'] = expected_count_list[s]
+#         t =10**6
+#         nv_sig['color_filter'] = '635-715 bp'
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 100, init_color, pulse_color)
+#         nv_sig['color_filter'] = '715 lp'
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 100, init_color, pulse_color)
+         t =5*10**6
+         nv_sig['color_filter'] = '635-715 bp'
+         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 50, init_color, pulse_color)
+         nv_sig['color_filter'] = '715 lp'
+         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 50, init_color, pulse_color)
+         t =10**7
+         nv_sig['color_filter'] = '635-715 bp'
+         do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, 50, init_color, pulse_color)
+         nv_sig['color_filter'] = '715 lp'
+         do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, 50, init_color, pulse_color)
+#         t= 5*10**7
+#         nv_sig['color_filter'] = '635-715 bp'
+#         do_moving_target_2D_image(nv_sig, start_coords, 1.0, t, num_steps, 50, init_color, pulse_color)
+#         nv_sig['color_filter'] = '715 lp'
+#         do_moving_target_2D_image(nv_sig, start_coords, 1.0, t, num_steps, 50, init_color, pulse_color)
         
 #    num_runs =  20*5
 #    for t in [10**6]:        
@@ -943,21 +944,22 @@ if __name__ == '__main__':
 #        do_moving_target_2D_image(nv_sig, start_coords, 0.55, t, num_steps, num_runs, init_color, pulse_color)
         
        
-    init_color = 532
-    pulse_color = 532        
-    for s in range(len(start_coords_list)): 
-        start_coords = start_coords_list[s]            
-        nv_sig = copy.deepcopy(base_sig)
-        nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_14'.format(s)
-        nv_sig['expected_count_rate'] = expected_count_list[s]
-        nv_sig['color_filter'] = '635-715 bp'
-        
-        t = 10**6
-        num_steps = 41
-        num_runs= 500
-        end_coords = numpy.array(start_coords) - [0.1,0,0]
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
-                                 num_steps, num_runs, init_color, pulse_color)
+#    init_color = 532
+#    pulse_color = 532        
+#    for s in [0]: 
+#        start_coords = start_coords_list[s]            
+#        nv_sig = copy.deepcopy(base_sig)
+#        nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_14'.format(s)
+#        nv_sig['expected_count_rate'] = expected_count_list[s]
+#        nv_sig['color_filter'] = '635-715 bp'
+##        nv_sig['color_filter'] = '715 lp'
+#        
+#        t = 10**6
+#        num_steps = 41
+#        num_runs= 200
+#        end_coords = numpy.array(start_coords) - [0.15,0,0]
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+#                              num_steps, num_runs, init_color, pulse_color)
 #        t = 5*10**6
 #        num_steps = 51
 #        num_runs =  50
@@ -971,7 +973,7 @@ if __name__ == '__main__':
 #        end_coords = numpy.array(start_coords) - [0.3,0,0]
 #        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
 #                                 num_steps, num_runs, init_color, pulse_color)
-#                
+##                
 #        t = 5*10**7
 #        num_steps = 51
 #        num_runs =  50

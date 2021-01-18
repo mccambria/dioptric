@@ -580,6 +580,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     color_filter = nv_sig['color_filter']
     cxn.filter_slider_ell9k_color.set_filter(color_filter)
 #    cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
+    
+    nd_filter = nv_sig['nd_filter']
+    cxn.filter_slider_ell9k.set_filter(nd_filter)
 
 
 
