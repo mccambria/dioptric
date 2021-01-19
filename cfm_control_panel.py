@@ -70,16 +70,16 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    scan_range = 1.2
 #    scan_range = 1.0
 #    scan_range = 0.8
-    num_steps = 250
-    scan_range = 0.5
+#    num_steps = 250
+#    scan_range = 0.5
 #    num_steps = 125
 #    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.15
 #    scan_range = 0.1
 #    num_steps = 90
-#    scan_range = 0.05
-#    num_steps = 60
+    scan_range = 0.05
+    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
@@ -115,7 +115,7 @@ def do_optimize(nv_sig, apd_indices, color_ind):
 
 #    aom_power
     
-    optimize.main_xy(nv_sig, apd_indices, color_ind,
+    optimize.main(nv_sig, apd_indices, color_ind,
               set_to_opti_coords=False, save_data=True, plot_data=True)
     
 def do_opti_z(nv_sig, apd_indices, color_ind):
@@ -565,7 +565,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
  
-    nv0_2021_01_11 = { 'coords':[0.205, 0.571, 5.27], 
+    nv0_2021_01_11 = { 'coords':[0.205 + 0.03, 0.571-.02, 5.27-.05], 
             'name': '{}-nv0_2021_01_11'.format(sample_name),
             'expected_count_rate': 45, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -598,7 +598,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
     
-    nv2_2021_01_11 = { 'coords': [-0.330, -0.112, 5.27], 
+    nv2_2021_01_11 = { 'coords': [-0.330 + 0.03, -0.112 - 0.02, 5.27 - 0.04], 
             'name': '{}-nv2_2021_01_11'.format(sample_name),
             'expected_count_rate': 40, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -646,8 +646,8 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    nv14_2021_01_14 = { 'coords':[0.066, -0.292, 5.20],
-            'name': '{}-nv14_2021_01_14'.format(sample_name),
+    nv12_2021_01_14 = { 'coords':[-0.091, -0.165, 5.19],
+            'name': '{}-nv14_2021_01_12'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
@@ -662,7 +662,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    nv15_2021_01_14 = { 'coords':[0.361, -0.318, 5.23],
+    nv15_2021_01_14 = { 'coords':[0.381, -0.338, 5.18],
             'name': '{}-nv15_021_01_14'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -684,7 +684,7 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -795,7 +795,6 @@ if __name__ == '__main__':
 [0.517, -0.489, 5.17],# NV2
 [0.491, -0.181, 5.13],# NV3
 [0.697, -0.420, 5.16],# NV4
-[0.517, -0.488, 5.15], #NV5 (Same as NV2...)
 [0.381, -0.338, 5.18], # nv15_2021_01_14
             ]
 #    expected_count_list = [46, 43, 40, 40, 50, 48, 40, 45, 48, 48, 38, 45, 40, 48, 48, 49] # 1/14/2021
@@ -809,7 +808,7 @@ if __name__ == '__main__':
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_14'.format(i)
         nv_sig_list.append(nv_sig)
         i = i+1
-    nv_sig_list = [nv0_2021_01_18]
+    nv_sig_list = [nv15_2021_01_14]
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
 #    cobalt_638_power = 30
@@ -825,7 +824,7 @@ if __name__ == '__main__':
         
 #        drift = [0.023,-0.02,0.03]# 1/18/2021, 12:56 am
 #        tool_belt.set_drift(drift)  
-#        tool_belt.set_drift([0.0, 0.0,0.0])  # Totally reset
+#        tool_belt.set_drift([0.02, -0.024,-0.05])  # Totally reset
 #        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
 #        set_xyz([0.018,0.003,5.0])

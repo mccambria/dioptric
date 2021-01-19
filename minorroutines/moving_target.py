@@ -862,7 +862,7 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp',
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 30000000, 'am_589_power': 0.7, 
+            'pulsed_SCC_readout_dur': 30000000, 'am_589_power': 0.3, 
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
             'magnet_angle': 0,
@@ -878,14 +878,14 @@ if __name__ == '__main__':
 [0.491, -0.181, 5.13],
 [0.697, -0.420, 5.16],
             ]
-    expected_count_list = [49,   47, 43, 46, 45, 39, 45,] # 1/18/2021
+    expected_count_list = [52,   47, 43, 46, 45, 39, 45,] # 1/18/2021
 #    end_coords = end_coords.tolist()
     num_steps = 40 #20
 #    num_runs = 50
 #    img_range = 0.45
     
  
-    for s in [2,3,4,5,6]: 
+    for s in [0]: 
          start_coords = start_coords_list[s]
          init_color = 532
          pulse_color = 532
@@ -902,10 +902,10 @@ if __name__ == '__main__':
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 100, init_color, pulse_color)
          t =5*10**6
          nv_sig['color_filter'] = '635-715 bp'
-         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 50,
+         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 20,#50,
                                    init_color, pulse_color)
-         nv_sig['color_filter'] = '715 lp'
-         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 50, init_color, pulse_color)
+#         nv_sig['color_filter'] = '715 lp'
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 50, init_color, pulse_color)
 #         t =10**7
 #         nv_sig['color_filter'] = '635-715 bp'
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, 50, init_color, pulse_color)

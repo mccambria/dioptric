@@ -103,29 +103,31 @@ if __name__ == '__main__':
 #        file_name = '2019-06-10_15-26-39_ayrton12_mapping'
 #    illustrate_mapping(file_name, [13])
 #    else:
-
+    drift_x = 0.005
     coords_list = [
-[0.381, -0.338, 5.18],  # nv15_2021_01_14
-[0.554, -0.325, 5.25],
-[0.481, -0.426, 5.21],
-[0.517, -0.489, 5.17],
-[0.491, -0.181, 5.13],
-[0.697, -0.420, 5.16],
+[0.38+drift_x, -0.338, 5.18],  # nv15_2021_01_14
+[0.553+drift_x, -0.325, 5.25],
+[0.48+drift_x, -0.426, 5.21],
+[0.516+drift_x, -0.489, 5.17],
+[0.49+drift_x, -0.181, 5.13],
+[0.696+drift_x, -0.420, 5.16],
             ]
-
+#    coords_list = numpy.array(coords_list) + numpy.array([-0.007710279036012624, -0.003293695710258837, -0.012155496756263595])
 
     sample_name = 'goeppert-mayer'
     micrometer_coords = [3.154, 2.193, 11.118, 120.21]
-    image_sample_file_name = '2021_01_14-15_09_50-goeppert-mayer-search'
+    image_sample_file_name = '2021_01_19-10_32_33-goeppert-mayer-nv0_2021_01_18'
     branch = 'branch_Spin_to_charge'
     month_folder = '2021_01'
 
     nv_sig_list = []
     for ind in range(len(coords_list)):
         coords = coords_list[ind]
-        name = '{}-nv{}_2020_11_10'.format(sample_name, ind)
+        name = '{}-nv{}_2020_11_18'.format(sample_name, ind)
         nd_filter = 'nd_1.0'
         nv_sig = {'coords': coords, 'name': name, nd_filter: nd_filter}
         nv_sig_list.append(nv_sig)
     generate_mapping_files(sample_name, micrometer_coords,
                           image_sample_file_name, branch, month_folder,  nv_sig_list)
+
+    # Would be great to include the ability to adjust due to drift...
