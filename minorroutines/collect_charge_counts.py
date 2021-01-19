@@ -523,28 +523,20 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    nv_coords_list = [[0.040, 0.371, 5.19],
-[-0.327, 0.357, 5.20],
-[-0.191, 0.328, 5.19],
-[0.124, 0.297, 5.20],
-[0.337, 0.233, 5.26],
-[0.123, 0.223, 5.19],
-[-0.040, 0.202, 5.24],
-[0.259, 0.126, 5.22],
-[0.248, 0.113, 5.26],
-[0.074, 0.059, 5.21],
-[-0.039, -0.122, 5.23], 
-[-0.235, -0.146, 5.23], 
-[-0.091, -0.165, 5.19],
-[0.194, -0.191, 5.25],
-[0.066, -0.292, 5.20],
-[0.361, -0.318, 5.23],
-]
-    expected_count_list = [46, 43, 40, 40, 50, 48, 40, 45, 48, 48, 42, 45, 48, 48, 48, 49]
+    start_coords_list =[
+[0.381, -0.338, 5.18],  # nv15_2021_01_14
+[0.554, -0.325, 5.25],
+[0.481, -0.426, 5.21],
+[0.517, -0.489, 5.17],
+[0.491, -0.181, 5.13],
+[0.697, -0.420, 5.16],
+[0.517, -0.488, 5.15],
+            ]
+    expected_count_list = [49,   47, 43, 46, 45, 39, 45,] # 1/18/2021
 
     
     base_nv_sig  = { 'coords':None,
-            'name': 'goeppert-mayer-nv_2021_01_11',
+            'name': 'goeppert-mayer-nv_2021_01_18',
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp',
 #            'color_filter': '715 lp',
@@ -556,9 +548,9 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
-    list_ = [ nv_coords_list[0], nv_coords_list[3],nv_coords_list[8], nv_coords_list[12],nv_coords_list[15]]
+#    list_ = [ nv_coords_list[0], nv_coords_list[3],nv_coords_list[8], nv_coords_list[12],nv_coords_list[15]]
 #    collect_charge_counts_list(nv_coords_list, base_nv_sig, 60, apd_indicies)
-    collect_charge_counts_list(list_, base_nv_sig, 100, apd_indicies)
+    collect_charge_counts_list(start_coords_list, base_nv_sig, 1000, apd_indicies)
   
 #    nd_filter = 'nd_0.5'
 #    aom_power_list = [0.2,0.3,0.4,0.5,0.6,0.7]

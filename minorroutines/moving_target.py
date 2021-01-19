@@ -382,7 +382,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
 #    return
     ### Backto the same
     # Optimize at the start of the routine
-    opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
+    opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
     opti_coords_list.append(opti_coords)
         
         
@@ -397,7 +397,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         # optimize is longer that 5 min, optimize again
         current_time = time.time()
         if current_time - run_start_time >= 0.7*60:#5*60:
-            opti_coords = optimize.main_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
+            opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
             opti_coords_list.append(opti_coords) 
             run_start_time = current_time
             
@@ -715,7 +715,7 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
     coords_voltages_shuffle = []
     for i in ind_list:
         coords_voltages_shuffle.append(coords_voltages[i])
-    
+#    
     coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
     # Run the data collection
@@ -723,13 +723,11 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
                             pulse_time, num_runs, init_color, pulse_color, readout_color, index_list = ind_list)
     
     readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
-#    readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
-#    target_counts_array_shfl = numpy.array(target_counts_array_shfl)
+    readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
+    target_counts_array_shfl = numpy.array(target_counts_array_shfl)
     
     # unshuffle the raw data
     list_ind = 0
-#    print(readout_counts_array_shfl[0])
-#    print(readout_counts_array)
     for f in ind_list:
         readout_counts_array[f] = readout_counts_array_shfl[list_ind]
         target_counts_array[f] = target_counts_array_shfl[list_ind]
@@ -872,37 +870,30 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
     
 #    start_coords = base_sig['coords']
-    start_coords_list = [[0.040, 0.371, 5.19],
-[-0.327, 0.357, 5.20],
-[-0.191, 0.328, 5.19],
-[0.124, 0.297, 5.20],
-[0.337, 0.233, 5.26],
-[0.123, 0.223, 5.19],
-[-0.040, 0.202, 5.24],
-[0.259, 0.126, 5.22],
-[0.248, 0.113, 5.26],
-[0.074, 0.059, 5.21],
-#
-[-0.039, -0.122, 5.23],
-[-0.235, -0.146, 5.23],
-[-0.091, -0.165, 5.19],
-[0.194, -0.191, 5.25],
-[0.066, -0.292, 5.20],
-[0.361, -0.318, 5.23],
-]
-    expected_count_list = [46, 43, 40, 40, 50, 48, 40, 45, 48, 48, 42, 45, 48, 48, 48, 49]
+    start_coords_list =[
+[0.381, -0.338, 5.18],  # nv15_2021_01_14
+[0.554, -0.325, 5.25],
+[0.481, -0.426, 5.21],
+[0.517, -0.489, 5.17],
+[0.491, -0.181, 5.13],
+[0.697, -0.420, 5.16],
+            ]
+    expected_count_list = [49,   47, 43, 46, 45, 39, 45,] # 1/18/2021
 #    end_coords = end_coords.tolist()
     num_steps = 40 #20
 #    num_runs = 50
 #    img_range = 0.45
     
  
-    for s in [15]: 
+    for s in [2,3,4,5,6]: 
          start_coords = start_coords_list[s]
          init_color = 532
          pulse_color = 532
          nv_sig = copy.deepcopy(base_sig)
-         nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_07'.format(s)
+         if s == 0:
+             nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_14'.format(15)
+         else:
+             nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_18'.format(s-1)
          nv_sig['expected_count_rate'] = expected_count_list[s]
 #         t =10**6
 #         nv_sig['color_filter'] = '635-715 bp'
@@ -911,14 +902,15 @@ if __name__ == '__main__':
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 100, init_color, pulse_color)
          t =5*10**6
          nv_sig['color_filter'] = '635-715 bp'
-         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 50, init_color, pulse_color)
+         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 50,
+                                   init_color, pulse_color)
          nv_sig['color_filter'] = '715 lp'
          do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 50, init_color, pulse_color)
-         t =10**7
-         nv_sig['color_filter'] = '635-715 bp'
-         do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, 50, init_color, pulse_color)
-         nv_sig['color_filter'] = '715 lp'
-         do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, 50, init_color, pulse_color)
+#         t =10**7
+#         nv_sig['color_filter'] = '635-715 bp'
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, 50, init_color, pulse_color)
+#         nv_sig['color_filter'] = '715 lp'
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, 50, init_color, pulse_color)
 #         t= 5*10**7
 #         nv_sig['color_filter'] = '635-715 bp'
 #         do_moving_target_2D_image(nv_sig, start_coords, 1.0, t, num_steps, 50, init_color, pulse_color)
