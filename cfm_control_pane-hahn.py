@@ -56,11 +56,12 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-    # scan_range = 0.5
+    scan_range = 0.5
     # num_steps = 90
+    num_steps = 120
     
-    scan_range = 0.1
-    num_steps = 60
+    # scan_range = 0.1
+    # num_steps = 60
     
     # scan_range = 5.0
     # scan_range = 3.0
@@ -107,7 +108,7 @@ def do_stationary_count(nv_sig, apd_indices):
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 60 * 5  # s
+    run_time = 60 * 10  # s
     diff_window = 150  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
@@ -421,19 +422,19 @@ if __name__ == '__main__':
     # apd_indices = [1]
     apd_indices = [0, 1]
     
-    nd = 'nd_0'
+    nd = 'nd_0.5'
     sample_name = 'johnson'
     
-    # nv_sig = { 'coords':[0.0, 0.750, -3],
+    # nv_sig = { 'coords':[0.0, 0.750, -2],
     #         'name': 'search2_{}'.format(sample_name),
     #         'expected_count_rate': 30, 'nd_filter': nd,
     #         'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 12.0,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 12.0}
     
-    nv_sig = { 'coords':[-0.022, 0.954, -5],
+    nv_sig = { 'coords':[-0.157, 0.734, -14],
             'name': 'search_{}'.format(sample_name),
-            'expected_count_rate': 35, 'nd_filter': nd,
+            'expected_count_rate': 20, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
             'resonance_LOW': 2.87, 'rabi_LOW': None, 'uwave_power_LOW': 12.0,
             'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 12.0}
@@ -449,13 +450,13 @@ if __name__ == '__main__':
 
     try:
         
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.1)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.2)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_g2_measurement(nv_sig, 0, 1)
+        do_g2_measurement(nv_sig, 0, 1)
         
         # tool_belt.init_safe_stop()
         # while True:

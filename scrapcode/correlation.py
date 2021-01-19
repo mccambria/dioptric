@@ -74,7 +74,7 @@ try:
     int_rates = [int(rate) for rate in count_rates]
     print('Hardware channel A: {} counts per second'.format(int_rates[0]))
     print('Hardware channel B: {} counts per second'.format(int_rates[1]))
-    print('Coincidences: {:d} coincidences per second'.format(int_rates[2]))
+    print('Coincidences: {} coincidences per second'.format(int_rates[2]))
 
 finally:  # Do this even if we crash
     # Release the connection to the Time Tagger

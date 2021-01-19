@@ -180,8 +180,11 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
             time_remaining = new_time_remaining
             
         # Optimize every 5 minutes
-        if (run_time - new_time_remaining) % 300 == 0:
+        if ((run_time - new_time_remaining) % 300 == 0) and (new_time_remaining > 0):
+            cxn.apd_tagger.stop_tag_stream()
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            cxn.pulse_streamer.constant([wiring['do_532_aom']])
+            cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
 
         # Process data
         process_raw_buffer(buffer_timetags, buffer_channels,
