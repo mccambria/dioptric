@@ -207,6 +207,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
                 adj_z_center = round(z_center + z_gravity_adjust*scan_range)
             else:
                 adj_z_center = z_center
+            # adj_z_center = z_center
                 
             scan_vals = tool_belt.get_scan_vals(adj_z_center, scan_range,
                                                 num_steps, scan_dtype)

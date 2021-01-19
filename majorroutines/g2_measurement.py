@@ -178,6 +178,10 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         elif new_time_remaining < time_remaining:  
             print(new_time_remaining)
             time_remaining = new_time_remaining
+            
+        # Optimize every 5 minutes
+        if (run_time - new_time_remaining) % 300 == 0:
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
         # Process data
         process_raw_buffer(buffer_timetags, buffer_channels,
@@ -188,7 +192,8 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         # Create/update the histogram
         if collection_index == 0:
             fig, ax = plt.subplots()
-            hist, bin_edges = numpy.histogram(differences, num_bins)
+            hist, bin_edges = numpy.histogram(differences, num_bins,
+                                      (-1000*diff_window,1000*diff_window))
             bin_edges = bin_edges / 1000  # ps to ns
             bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
             bin_centers = bin_edges[0: num_bins] + bin_center_offset

@@ -56,15 +56,21 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
+    # scan_range = 0.5
+    # num_steps = 90
+    
+    scan_range = 0.1
+    num_steps = 60
+    
     # scan_range = 5.0
+    # scan_range = 3.0
 #    scan_range = 1.2
     # scan_range = 1.0
-    # scan_range = 0.5
     # scan_range = 0.3
     # scan_range = 0.2
     # scan_range = 0.15
     # scan_range = 0.1
-    scan_range = 0.075
+    # scan_range = 0.075
 #    scan_range = 0.025
     
 #    num_steps = 300
@@ -72,9 +78,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 150
 #    num_steps = 135
     # num_steps = 120
-    # num_steps = 90
     # num_steps = 60
-    num_steps = 50
+    # num_steps = 50
     # num_steps = 20
 
     # For now we only support square scans so pass scan_range twice
@@ -112,7 +117,7 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
     num_runs = 5
-    uwave_power = 0.0
+    uwave_power = -5.0
     # uwave_power = -20.0
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
@@ -188,7 +193,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 10**5
-    num_runs = 10
+    num_runs = 5
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -412,35 +417,45 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-    apd_indices = [0]
-#    apd_indices = [0, 1]
+    # apd_indices = [0]
+    # apd_indices = [1]
+    apd_indices = [0, 1]
     
-    nd = 'nd_0.5'
+    nd = 'nd_0'
     sample_name = 'johnson'
     
-    # nv_sig = { 'coords':[0.5, 0.2, -5],
-    #         'name': 'search_{}'.format(sample_name),
-    #         'expected_count_rate': None, 'nd_filter': nd,
+    # nv_sig = { 'coords':[0.0, 0.750, -3],
+    #         'name': 'search2_{}'.format(sample_name),
+    #         'expected_count_rate': 30, 'nd_filter': nd,
     #         'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
-    #         'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
-    #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
+    #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 12.0,
+    #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 12.0}
     
-    nv_sig = { 'coords':[0.637, 0.174, 164],
-            'name': 'search2_{}'.format(sample_name),
-            'expected_count_rate': 25, 'nd_filter': nd,
+    nv_sig = { 'coords':[-0.022, 0.954, -5],
+            'name': 'search_{}'.format(sample_name),
+            'expected_count_rate': 35, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
-            'resonance_LOW': 2.87, 'rabi_LOW': None, 'uwave_power_LOW': 10.0,
-            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 0.0}
+            'resonance_LOW': 2.87, 'rabi_LOW': None, 'uwave_power_LOW': 12.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 12.0}
+    
+    # nv_sig = { 'coords': [0.133, 0.631, 8],
+    #         'name': 'search_{}'.format(sample_name),
+    #         'expected_count_rate': 45, 'nd_filter': nd,
+    #         'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
+    #         'resonance_LOW': 2.87, 'rabi_LOW': None, 'uwave_power_LOW': 12.0,
+    #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 12.0}
     
     # %% Functions to run
 
     try:
         
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices)
-        # do_resonance(nv_sig, apd_indices, 2.87, 0.2)
-        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 1500])
+        # do_resonance(nv_sig, apd_indices, 2.87, 0.1)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.2)
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        # do_g2_measurement(nv_sig, 0, 1)
         
         # tool_belt.init_safe_stop()
         # while True:
@@ -450,7 +465,9 @@ if __name__ == '__main__':
         #     time.sleep(60)
         
         # tool_belt.init_safe_stop()
-        # for z in numpy.tile([0,15],10):
+        
+        # # for z in numpy.tile([0, -15],10):  # room temperature
+        # for z in numpy.tile([0, -30],10):  # 5 K
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig['coords'][2] = int(z)
@@ -459,9 +476,9 @@ if __name__ == '__main__':
         # Operations that don't need an NV
         
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
-#        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         
-#        set_xyz([0.0,0.0,5.0])
+        # set_xyz([0.0, 0.0 , 0])
 #        set_xyz([-0.116, -0.073, 2.61])
         
         # Routines that expect lists of NVs
@@ -472,7 +489,7 @@ if __name__ == '__main__':
         # for z in [0,0,1,0,0,-1]:
         # for z in numpy.linspace(-400, 400, 5):
         # for z in numpy.linspace(-1400, 600, 5):
-        # for z in numpy.linspace(-25, 15, 9):
+        # for z in numpy.linspace(-15, 15, 11):
         #     nv_sig['coords'][2] = int(z)
         #     do_image_sample(nv_sig, apd_indices)
         # for y in numpy.linspace(2, -2, 9):

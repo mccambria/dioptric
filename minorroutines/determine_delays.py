@@ -165,7 +165,7 @@ if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here 
     sample_name = 'johnson'
-    nd_filter = 'nd_0.5'
+    nd = 'nd_0'
     expected_count_rate = {
             'nd_0': 95,
             'nd_0.5': 85,
@@ -178,14 +178,14 @@ if __name__ == '__main__':
             'nd_1.0': 420,
             'nd_1.5': 420,
             }
-    nv_sig = { 'coords':[0.637, 0.174, 164],
+    nv_sig = { 'coords':[0.103, 0.340, -63],
             'name': 'search2_{}'.format(sample_name),
-            'expected_count_rate': 25, 'nd_filter': nd_filter,
+            'expected_count_rate': 40, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
-            'resonance_LOW': 2.87, 'rabi_LOW': 200, 'uwave_power_LOW': 10.0,
-            'resonance_HIGH': None, 'rabi_HIGH': 150, 'uwave_power_HIGH': 10.0}
+            'resonance_LOW': 2.87, 'rabi_LOW': 140, 'uwave_power_LOW': 12.0,
+            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 0.0}
     apd_indices = [0]
-    num_reps = 2*10**5
+    num_reps = 3*10**5
     readout = 2000
     # nv_sig = nv2_2019_04_30
 
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     #               delay_range, num_steps, num_reps)
 
     # uwave_delay
-    delay_range = [500, 2500]
+    delay_range = [0, 1000]
     num_steps = 51
     # tsg4104a
     state = States.LOW

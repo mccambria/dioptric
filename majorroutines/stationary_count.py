@@ -60,6 +60,12 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, continuous=False):
     # %% Optimize
 
 #    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    coords = nv_sig['coords']
+    drift = tool_belt.get_drift()
+    adj_coords = []
+    for i in range(3):
+        adj_coords.append(coords[i] + drift[i])
+    tool_belt.set_xyz(cxn, adj_coords)
 
     # %% Load the PulseStreamer
 

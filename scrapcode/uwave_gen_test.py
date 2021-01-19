@@ -36,7 +36,7 @@ def main(cxn=None):
     """
     
     instr = cxn.signal_generator_sg394
-    instr.set_amp(-10.0)
+    instr.set_amp(0.0)
     instr.set_freq(2.87)
     instr.uwave_on()
     pulser = cxn.pulse_streamer

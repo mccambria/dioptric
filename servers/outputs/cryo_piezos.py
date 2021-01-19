@@ -54,6 +54,7 @@ class CryoPiezos(LabradServer):
         p = self.client.registry.packet()
         p.cd(['', 'Config'])
         p.get('cryo_piezos_ip')
+        p.get('cryo_piezos_voltage')
         p.cd(['', 'SharedParameters'])
         p.get('z_gravity_adjust')
         result = await p.send()
@@ -62,7 +63,8 @@ class CryoPiezos(LabradServer):
 
     def on_get_config(self, reg_vals):
         ip_address = reg_vals[0]
-        self.z_gravity_adjust = reg_vals[1]
+        cryo_piezos_voltage = reg_vals[1]
+        self.z_gravity_adjust = reg_vals[2]
         # Connect via telnet
         try:
             self.piezos = Telnet(ip_address, 7230)
@@ -79,7 +81,7 @@ class CryoPiezos(LabradServer):
         # frequency and voltage of 1000 Hz and 30 V
         self.send_cmd_all('setm', 'gnd')
         self.send_cmd_all('setf', 1000)
-        self.send_cmd_all('setv', 30)
+        self.send_cmd_all('setv', cryo_piezos_voltage)
         # Initialize positions to 0 steps
         self.pos = [0,0,0]
         # Done
@@ -197,7 +199,7 @@ class CryoPiezos(LabradServer):
             
     def send_cmd_all(self, cmd, arg=None):
         """Send a command to all three axes"""
-        for axis in range(3):
+        for axis in [1,2,3]:
             self.send_cmd(cmd, axis, arg)
         
 
