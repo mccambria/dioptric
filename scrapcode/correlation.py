@@ -83,8 +83,6 @@ finally:  # Do this even if we crash
 # %% Stuff specific to Kolkowitz lab
 
 
-import labrad
-
 # Turn off the laser
 with labrad.connect() as cxn:
     cxn.pulse_streamer.constant([])
