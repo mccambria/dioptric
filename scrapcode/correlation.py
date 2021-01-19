@@ -41,10 +41,13 @@ with labrad.connect() as cxn:
 
 # Connect to the Time Tagger and reset it
 tagger = TimeTagger.createTimeTagger(tagger_serial)
+tagger.reset()
+
+# Wrap everything else up in a try block so that if something goes wrong
+# we release the tagger and can reconnect to it next time without issues.
 try:
-    tagger.reset()
     
-    # Set up a virtual coincidence channel between the hardward channels
+    # Set up a virtual coincidence channel between the hardware channels
     coincidence_window_ps = coincidence_window * 1000
     coincidence_channel = TimeTagger.Coincidence(tagger, hardware_channels, 
                                                  coincidence_window_ps)
@@ -52,7 +55,6 @@ try:
     # Start a countrate measurement using the two hardware channels and the
     # virtual coincidence channel
     channels = [*hardware_channels, coincidence_channel.getChannel()]
-    # channels = hardware_channels
     measurement = TimeTagger.Countrate(tagger, channels)
     
     # When you set up a measurement, it will not start recording data
@@ -60,15 +62,12 @@ try:
     # etc. The sync call waits until this process is complete. 
     tagger.sync()
     
-    # Run the measurement for the duration of run_time
-    start_time = time.time()
-    time_remaining = run_time
-    while time_remaining > 0:
-        time_remaining = (start_time + run_time) - time.time()
+    # Let the measurement run for the duration of run_time
+    time.sleep(run_time)
         
-    # Record the data and stop the measurement
-    count_rates = measurement.getData()
+    # Stop the measurement and record the data
     measurement.stop()
+    count_rates = measurement.getData()
     
     # Print the results
     int_rates = [int(rate) for rate in count_rates]
@@ -83,6 +82,8 @@ finally:  # Do this even if we crash
 
 # %% Stuff specific to Kolkowitz lab
 
+
+import labrad
 
 # Turn off the laser
 with labrad.connect() as cxn:
