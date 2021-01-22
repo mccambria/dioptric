@@ -69,8 +69,8 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 75
 #    scan_range = 1.2
 #    scan_range = 1.0
-#    scan_range = 0.8
-#    num_steps = 250
+    scan_range = 0.8
+    num_steps = 250
 #    scan_range = 0.5
 #    num_steps = 125
 #    scan_range = 0.2
@@ -78,8 +78,8 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    scan_range = 0.15
 #    scan_range = 0.1
 #    num_steps = 90
-    scan_range = 0.05
-    num_steps = 60
+#    scan_range = 0.05
+#    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
@@ -549,7 +549,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0.0, 0.0 ,5.23], 
+    search = { 'coords':[-.3,-.3 ,5.1], 
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -662,7 +662,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    nv15_2021_01_14 = { 'coords':[0.381, -0.338, 5.18],
+    nv15_2021_01_14 = { 'coords':[0.382, -0.338, 5.18],
             'name': '{}-nv15_021_01_14'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -808,7 +808,8 @@ if __name__ == '__main__':
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_14'.format(i)
         nv_sig_list.append(nv_sig)
         i = i+1
-    nv_sig_list = [nv15_2021_01_14]
+#    nv_sig_list = [nv0_2021_01_18] 
+    nv_sig_list = [search]
     
 #    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
 #    cobalt_638_power = 30
@@ -822,9 +823,9 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        drift = [0.023,-0.02,0.03]# 1/18/2021, 12:56 am
+#        drift = [0.023,-0.02,0.1]# 1/18/2021, 12:56 am
 #        tool_belt.set_drift(drift)  
-#        tool_belt.set_drift([0.02, -0.024,-0.05])  # Totally reset
+#        tool_belt.set_drift([0.0,0.0,+0.15])  # Totally reset
 #        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
 #        set_xyz([0.018,0.003,5.0])
@@ -856,26 +857,26 @@ if __name__ == '__main__':
 #            do_optimize(nv_sig, apd_indices, 532)
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
-#            for z in numpy.linspace(5.0,5.6, 7):
-#                nv_sig_copy = copy.deepcopy(nv_sig)
-#                [coord_x, coord_y, coord_z] = nv_sig['coords']
-#                nv_sig_copy['coords'] = [coord_x, coord_y, z]  
-#                do_image_sample(nv_sig_copy,  apd_indices, 532, save_data=True, plot_data=True) 
-                               
+            for z in numpy.linspace(4.9,5.5,7):
+                nv_sig_copy = copy.deepcopy(nv_sig)
+                [coord_x, coord_y, coord_z] = nv_sig['coords']
+                nv_sig_copy['coords'] = [coord_x, coord_y, z]  
+                do_image_sample(nv_sig_copy,  apd_indices, 532, save_data=True, plot_data=True) 
+##                               
 #            do_two_pulse_image_sample(nv_sig, apd_indices,5*10**5, 3*10**7, 532, 589, save_data = True, plot_data = True)
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 589, 638, save_data = True, plot_data = True)
 #            with labrad.connection() as cxn:
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=False, plot_data=False, readout = 10**3)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = nv_sig['pulsed_SCC_readout_dur'])
 
 #            do_determine_galvo_response(nv_sig, apd_indices)
 
             
-#            do_stationary_count(nv_sig, apd_indices, 589)            
+#            do_stationary_count(nv_sig, apd_indices, 532)            
 #            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
 #                                  2*10**7, apd_indices) 
             

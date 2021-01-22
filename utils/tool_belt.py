@@ -772,35 +772,43 @@ def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
         
 def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = None):
     cxn = labrad.connect()
-    
+    optical_power_list = []
     if color_ind==532:
         cxn.pulse_streamer.constant([3],0.0, 0.0) # Turn on the green laser  
-        time.sleep(0.5)
-        optical_power = cxn.photodiode.read_optical_power()
-        
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+            optical_power = numpy.average(optical_power_list)
     elif color_ind==589:
         cxn.filter_slider_ell9k.set_filter(nd_filter) # Change the nd filter for the yellow laser
         cxn.pulse_streamer.constant([],0.0, AO_power_settings) # Turn on the yellow laser       
-        time.sleep(0.5)
-        optical_power = cxn.photodiode.read_optical_power()
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+            optical_power = numpy.average(optical_power_list)
         
     elif color_ind==638:
         cxn.pulse_streamer.constant([7], 0.0, 0.0) # Turn on the red laser     
-        time.sleep(0.5)
-        optical_power = cxn.photodiode.read_optical_power()
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+            optical_power = numpy.average(optical_power_list)
     
-    time.sleep(0.5)
+    time.sleep(0.1)
     cxn.pulse_streamer.constant([], 0.0, 0.0)
     return optical_power
 
 def calc_optical_power_mW(color_ind, optical_power_V):
     # Values found from experiments. See Notebook entry 3/19/2020 and 3/20/2020
     if color_ind == 532:
-        return 13* optical_power_V + 0.037
+        return 14.3* optical_power_V + 0.34
     elif color_ind == 589:
-        return 7.9* optical_power_V + 0.024
+        return 33.5* optical_power_V + 0.16
     if color_ind == 638:
-        return 5.7* optical_power_V + 0.035
+        return 6.7* optical_power_V + 0.78
 
 def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
     green_optical_power_pd = opt_power_via_photodiode(532)
