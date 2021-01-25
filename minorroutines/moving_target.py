@@ -757,7 +757,7 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
     
     # Create the figure
     title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse'.format(init_color, pulse_color, pulse_time/10**6)
-    fig_readout = tool_belt.create_image_figure(readout_image_array, img_extent,
+    fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
                                                 title = title)
     # If the pusle time is longer that 1 s, we don't have target count data
     if pulse_time < 10**9:
@@ -770,7 +770,7 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
         target_image_array = image_sample.populate_img_array(target_counts_avg, target_image_array, writePos)
         
         title = 'Counts on target  {} nm init pulse \n{} nm {} ms pulse'.format(init_color, pulse_color, pulse_time/10**6)
-        fig_target = tool_belt.create_image_figure(target_image_array, img_extent,
+        fig_target = tool_belt.create_image_figure(target_image_array, numpy.array(img_extent)*35,
                                                     title = title)
     
     # measure laser powers:

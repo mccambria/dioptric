@@ -136,7 +136,7 @@ def decode_time_tags(ret_vals_string):
 # %% Matplotlib plotting utils
 
 
-def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts', min_value=None):
+def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts', min_value=None, um_scaled = False):
     """
     Creates a figure containing a single grayscale image and a colorbar.
 
@@ -152,10 +152,12 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
     Returns:
         matplotlib.figure.Figure
     """
-
+    axes_label = 'v'
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
-
+    if um_scaled:
+        axes_label = 'um'
+        
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',
                     extent=tuple(imgExtent), vmin = min_value)
@@ -169,8 +171,8 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
 #    clb.set_label('kcounts/sec', rotation=270)
     
     # Label axes
-    plt.xlabel('V')
-    plt.ylabel('V')
+    plt.xlabel(axes_label)
+    plt.ylabel(axes_label)
     if title:
         plt.title(title)
 
@@ -208,7 +210,7 @@ def update_image_figure(fig, imgArray):
     ax = axes[0]
     images = ax.get_images()
     img = images[0]
-
+    
     # Set the data for the image to display
     img.set_data(imgArray)
 
