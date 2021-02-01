@@ -523,36 +523,59 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    start_coords_list =[
-[0.205 + 0.03, 0.571-.02, 5.27-.05]
-            ]
-    expected_count_list = [44]
+    start_coords_list =[    
+    [0.317, 0.338, 5.09],
+[0.190, 0.345, 5.00],
+[-0.031, 0.299, 4.94],
+[-0.042, 0.265, 4.98],
+[-0.082, 0.266, 4.96], #
+[0.333, 0.277, 4.93],
+[0.32, 0.223, 5.01],
+[-0.060, 0.179, 4.93], #
+[0.187, 0.127, 4.97],
+[0.172, 0.140, 4.91],
+[0.033, 0.085, 4.93],
+[0.125, 0.049, 4.97],
+[-0.010, 0.052, 4.97],
+[0.057, -0.106, 4.95],
+[0.385, -0.174, 4.99],
+[0.134, -0.192, 4.93],
+[0.400, -0.299, 4.97],
+[0.374, -0.296, 4.96],
+[-0.194, -0.326, 4.97],
+[0.260, -0.382, 4.98],
+]
+    expected_count_list = [75, 52, 40, 48, 46, 45, 50, 56, 45, 53, 44, 36, 
+                           57, 63, 44, 72, 60, 40, 40, 45]
 
     
     base_nv_sig  = { 'coords':None,
-            'name': 'goeppert-mayer-nv_2021_01_18',
+            'name': 'goeppert-mayer-nv_2021_01_26',
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
-            'color_filter': '635-715 bp',
+            'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 30000000, 'am_589_power': 0.7, 
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_reionization_dur': 10**7, 'cobalt_532_power':20, 
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+    
 #    list_ = [ nv_coords_list[0], nv_coords_list[3],nv_coords_list[8], nv_coords_list[12],nv_coords_list[15]]
 #    collect_charge_counts_list(nv_coords_list, base_nv_sig, 60, apd_indicies)
-#    collect_charge_counts_list(start_coords_list, base_nv_sig, 1000, apd_indicies)
+    collect_charge_counts_list(start_coords_list, base_nv_sig, 500, apd_indicies)
 
-    nd_filter = 'nd_0'
-    aom_power_list = [0.2,0.3,0.4,0.5,0.6,0.7]
-    for i in [0]:
-        coords = start_coords_list[i]
-        base_nv_sig['expected_count_rate'] = expected_count_list[i]
-        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_11'.format(0)
-        collect_charge_counts_yellow_pwr(coords, base_nv_sig, nd_filter, aom_power_list, 1000, apd_indicies )        
+#    nd_filter = 'nd_0'
+#    aom_power_list = [0.2,0.3,0.4,0.5,0.6,0.7]
+#    for i in [0]:
+#        coords = start_coords_list[i]
+#        base_nv_sig['expected_count_rate'] = expected_count_list[i]
+#        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_11'.format(0)
+#        collect_charge_counts_yellow_pwr(coords, base_nv_sig, nd_filter, aom_power_list, 1000, apd_indicies )        
 #    nd_filter = 'nd_0.5'
 #    aom_power_list = [0.2,0.3,0.4,0.5,0.6,0.7]
 #    for i in [0,1,2,3]:

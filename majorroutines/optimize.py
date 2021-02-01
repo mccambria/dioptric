@@ -289,7 +289,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, co
                   plot_data=False, set_drift=True):
  
     # Reset the microscope and make sure we're at the right ND
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
     
     # Be sure the right ND is in place and the magnet aligned
     cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
@@ -434,7 +434,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, co
                                
     # %% Clean up and save the data
     
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates
@@ -494,7 +494,7 @@ def main_xy_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0,
 #    print('HERE')
     
     # Reset the microscope and make sure we're at the right ND
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
     
     # Be sure the right ND is in place and the magnet aligned
     cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
@@ -640,7 +640,7 @@ def main_xy_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0,
                                
     # %% Clean up and save the data
     
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates
@@ -698,7 +698,7 @@ def opti_z_cxn(cxn, nv_sig, apd_indices, color_ind, aom_ao_589_pwr = 1.0,
                   plot_data=False, set_drift=True):
     
     # Reset the microscope and make sure we're at the right ND
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
     
     # Be sure the right ND is in place and the magnet aligned
     cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
@@ -824,7 +824,7 @@ def opti_z_cxn(cxn, nv_sig, apd_indices, color_ind, aom_ao_589_pwr = 1.0,
                                
     # %% Clean up and save the data
     
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates

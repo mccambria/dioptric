@@ -1009,3 +1009,24 @@ def reset_cfm_with_cxn(cxn):
     cxn.arbitrary_waveform_generator.reset()
     cxn.signal_generator_tsg4104a.reset()
     cxn.signal_generator_bnc835.reset()
+    
+    
+def reset_cfm_wout_uwaves(cxn=None):
+    """Reset our cfm so that it's ready to go for a new experiment. Avoids
+    unnecessarily resetting components that may suffer hysteresis (ie the 
+    components that control xyz since these need to be reset in any
+    routine where they matter anyway).
+    
+    Exclude the uwaves
+    """
+    
+    if cxn == None:
+        with labrad.connect() as cxn:
+            reset_cfm_without_uwaves_with_cxn(cxn)
+    else:
+        reset_cfm_without_uwaves_with_cxn(cxn)
+        
+            
+def reset_cfm_without_uwaves_with_cxn(cxn):
+    cxn.pulse_streamer.reset()
+    cxn.apd_tagger.reset()

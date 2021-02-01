@@ -73,12 +73,12 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  read
 #    num_steps = 250
 #    scan_range = 0.5
 #    num_steps = 125
-    scan_range = 0.2
+#    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.15
 #    scan_range = 0.1
 #    num_steps = 90
-#    scan_range = 0.05
+    scan_range = 0.05
     num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
@@ -549,7 +549,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[-0.04, -0.07 ,5.0], 
+    search = { 'coords':[0,0 ,5.0], 
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -565,18 +565,56 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
 
-#    expected_count_list = [46, 43, 40, 40, 50, 48, 40, 45, 48, 48, 38, 45, 40, 48, 48, 49] # 1/14/2021
-
+    nv0_2021_01_26 = { 'coords':[0.316, 0.337, 5.00], 
+            'name': '{}-nv0_2021_01_26'.format(sample_name),
+            'expected_count_rate': 75, 'nd_filter': 'nd_1.0',
+            'color_filter': '635-715 bp', 
+#            'color_filter': '715 lp',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.3, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+    
+    expected_count_list = [75, 52, 40, 48, 46, 45, 50, 56, 45, 53, 44, 36, 
+                           57, 63, 44, 72, 60, 40, 40, 45] # 1/26/2021 Check optimize again
+    nv_list_2021_01_26 = [    
+    [0.317, 0.338, 5.00],
+[0.190, 0.345, 5.00],
+[-0.031, 0.299, 4.94],
+[-0.042, 0.265, 4.98],
+[-0.082, 0.266, 4.96], #
+[0.333, 0.277, 4.93],
+[0.32, 0.223, 5.01],
+[-0.060, 0.179, 4.93], #
+[0.187, 0.127, 4.97],
+[0.172, 0.140, 4.91],
+[0.033, 0.085, 4.93],
+[0.125, 0.049, 4.97],
+[-0.010, 0.052, 4.97],
+[0.057, -0.106, 4.95],
+[0.385, -0.174, 4.99],
+[0.134, -0.192, 4.93],
+[0.400, -0.299, 4.97],
+[0.374, -0.296, 4.96],
+[-0.194, -0.326, 4.97],
+[0.260, -0.382, 4.98],
+]
     nv_sig_list =[]
-#    for i in [0]:#range(len(nv_list_2021_01_18)):
-#        nv_coords = nv_list_2021_01_18[i]
-#        nv_sig = copy.deepcopy(search)
-#        nv_sig['coords'] = nv_coords
-##        nv_sig['expected_count_rate'] = expected_count_list[i]
-#        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_14'.format(i)
-#        nv_sig_list.append(nv_sig)
-#        i = i+1
-    nv_sig_list = [search]
+    for i in [2]:#range(len(nv_list_2021_01_26)):
+        nv_coords = nv_list_2021_01_26[i]
+        nv_sig = copy.deepcopy(search)
+        nv_sig['coords'] = nv_coords
+        nv_sig['expected_count_rate'] = expected_count_list[i]
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
+        nv_sig_list.append(nv_sig)
+        
+#    nv_sig_list = [nv0_2021_01_26]
     
 
     # %% Functions to run
@@ -616,10 +654,10 @@ if __name__ == '__main__':
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #                cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
 ##    
-#            do_optimize(nv_sig, apd_indices, 532)
+            do_optimize(nv_sig, apd_indices, 532)
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
-#            for z in numpy.linspace(4.9,5.5,7):
+#            for z in numpy.linspace(4.7,5.0,7):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]  
@@ -631,7 +669,7 @@ if __name__ == '__main__':
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=False, plot_data=False, readout = 10**3)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = nv_sig['pulsed_SCC_readout_dur'])
 
@@ -702,7 +740,7 @@ if __name__ == '__main__':
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here
-        tool_belt.reset_cfm()
+#        tool_belt.reset_cfm()
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
             print('\n\nRoutine complete. Press enter to exit.')
