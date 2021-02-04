@@ -59,7 +59,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     opti_coords_list = []
     
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
+    opti_coords = optimize.main_xy_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
     opti_coords_list.append(opti_coords)
 
     # Estimate the lenth of the sequance            
@@ -437,7 +437,7 @@ def collect_charge_counts_yellow_time(coords, parameters_sig, readout_time_list,
 # %%
 def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indices):
     with labrad.connect() as cxn:
-        tool_belt.reset_cfm(cxn)
+        tool_belt.reset_cfm_wout_uwaves(cxn)
     
     nv0_list = []
     nvm_list = []
@@ -568,25 +568,25 @@ if __name__ == '__main__':
     
 #    list_ = [ nv_coords_list[0], nv_coords_list[3],nv_coords_list[8], nv_coords_list[12],nv_coords_list[15]]
 #    collect_charge_counts_list(nv_coords_list, base_nv_sig, 60, apd_indicies)
-#    collect_charge_counts_list(start_coords_list, base_nv_sig, 200, apd_indicies)
+    collect_charge_counts_list(nv_coords_list, base_nv_sig, 200, apd_indicies)
        
-    readout_time_list = [10**6, 5*10**6, 10*10**6, 30*10**6, 50*10**6, 80*10**6, 100*10**6, 120*10**6]
-    for i in [2, 3, 5, 7, 9]:
-        coords = nv_coords_list[i]
-        base_nv_sig['expected_count_rate'] = expected_count_list[i]
-        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
-        base_nv_sig['am_589_power'] = 0.3
-        base_nv_sig['nd_filter'] = 'nd_0'
-        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
-        base_nv_sig['am_589_power'] = 0.4
-        base_nv_sig['nd_filter'] = 'nd_0'
-        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
-        base_nv_sig['am_589_power'] = 0.5
-        base_nv_sig['nd_filter'] = 'nd_0'
-        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
-        base_nv_sig['nd_filter'] = 'nd_0.5'
-        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
-        base_nv_sig['nd_filter'] = 'nd_1.0'
-        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
-        base_nv_sig['nd_filter'] = 'nd_1.5'
-        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#    readout_time_list = [10**6, 5*10**6, 10*10**6, 30*10**6, 50*10**6, 80*10**6, 100*10**6, 120*10**6]
+#    for i in [2, 3, 5, 7, 9]:
+#        coords = nv_coords_list[i]
+#        base_nv_sig['expected_count_rate'] = expected_count_list[i]
+#        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
+#        base_nv_sig['am_589_power'] = 0.3
+#        base_nv_sig['nd_filter'] = 'nd_0'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#        base_nv_sig['am_589_power'] = 0.4
+#        base_nv_sig['nd_filter'] = 'nd_0'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#        base_nv_sig['am_589_power'] = 0.5
+#        base_nv_sig['nd_filter'] = 'nd_0'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#        base_nv_sig['nd_filter'] = 'nd_0.5'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#        base_nv_sig['nd_filter'] = 'nd_1.0'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#        base_nv_sig['nd_filter'] = 'nd_1.5'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )

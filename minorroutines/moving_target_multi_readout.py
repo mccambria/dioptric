@@ -232,12 +232,6 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
         measured on the start coord.
         The first index refers to the coordinate, the second index refers to the 
         run.        
-    target_counts_array : numpy.array
-        2D array with the raw counts from each run for each target coordinate 
-        measured on the target coordinates.
-        The first index refers to the coordinate, the secon index refers to the 
-        run.        
-        If the pusle length is 1 s or longer, then this is just an empty array
         
     opti_coords_list : list(float)
         A list of the optimized coordinates recorded during the measurement.
@@ -269,12 +263,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
     galvo_delay = shared_params['large_angle_galvo_delay']
-      
-    # Get the pulser wiring
-    wiring = tool_belt.get_pulse_streamer_wiring(cxn)
-    pulser_wiring_green = wiring['do_532_aom']
-    pulser_wiring_red = wiring['do_638_laser']
-    
+         
     # copy the first start coord onto the nv_sig
     start_nv_sig = copy.deepcopy(nv_sig)
     start_nv_sig['coords'] = start_coords_list[0]
@@ -292,49 +281,29 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
 #        init_laser_delay = laser_515_delay
     elif init_color == 638:
         initialization_time = nv_sig['pulsed_ionization_dur']
-#        init_laser_delay = laser_638_delay        
-#    if pulse_color == 532:
-#        direct_wiring = pulser_wiring_green
-#    elif pulse_color == 638:
-#        direct_wiring = pulser_wiring_red
     
     opti_coords_list = []
     
     ### different building of readout array and estimating measurement time
-    if pulse_time < 10**9:
-        # Readout array will be a list in this case. This will be a matrix with 
-        # dimensions [num_readout][num_runs][num_samples]. We'll transpose this in the end
-        readout_counts_array_transp = numpy.zeros([num_readout,num_runs, num_samples])
+    # Readout array will be a list in this case. This will be a matrix with 
+    # dimensions [num_readout][num_runs][num_samples]. We'll transpose this in the end
+    readout_counts_array_transp = numpy.zeros([num_readout,num_runs, num_samples])
 #        target_counts_array_transp = []
-        
-        # define the sequence paramters
-        file_name = 'moving_target_multi_readout.py'
-        seq_args = [ initialization_time, pulse_time, readout_pulse_time, 
-            laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay, 
-            am_589_power, apd_indices[0], init_color, pulse_color, readout_color, num_readout]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-        
-        # print the expected run time
-        period = ret_vals[0]
-        period_s = period/10**9
-        period_s_total = (period_s*num_samples + 1)*num_runs
-        print('{} ms pulse time'.format(pulse_time/10**6))
-        print('Expected total run time: {:.0f} m'.format(period_s_total/60))
     
-    else:
-        return
-#        # Readout array will be an empty array in this case. These dimensions
-#        # are [num_samples][num_runs]
-#        readout_counts_array = numpy.empty([num_samples, num_runs])
-#        # in this scheme, we don't save countso n the target, but we'll still 
-#        # save it as an empty array
-#        target_counts_array = readout_counts_array
-#            
-#        period_s = pulse_time/10**9
-#        period_s_total = (period_s*num_samples + 5)*num_runs
-#        print('Expected total run time: {:.0f} min'.format(period_s_total/60))
+    # define the sequence paramters
+    file_name = 'moving_target_multi_readout.py'
+    seq_args = [ initialization_time, pulse_time, readout_pulse_time, 
+        laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay, 
+        am_589_power, apd_indices[0], init_color, pulse_color, readout_color, num_readout]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     
+    # print the expected run time
+    period = ret_vals[0]
+    period_s = period/10**9
+    period_s_total = (period_s*num_samples + 1)*num_runs
+    print('{} ms pulse time'.format(pulse_time/10**6))
+    print('Expected total run time: {:.0f} m'.format(period_s_total/60))
     ### Backto the same
     # Optimize at the start of the routine
     opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
@@ -362,94 +331,56 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
         start_coords_list_drift = numpy.array(start_coords_list) + drift
         sample_coords_list_drift = numpy.array(sample_coords_list) + [drift[0], drift[1]]
                             
-        # Different ways of stepping thru coords and recording data                   
-        if pulse_time < 10**9:
-            # start on the readout NV
-            tool_belt.set_xyz(cxn, start_coords_list_drift[0])
-            
-            # load the sequence
-            ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-            
-            # Build the list to step through the coords on readout NV and targets
-            x_voltages, y_voltages = build_voltages_from_list(start_coords_list_drift, sample_coords_list_drift)
-            # Load the galvo
-            cxn.galvo.load_arb_points_scan(x_voltages, y_voltages, int(period))
-            
-            #  Set up the APD
-            cxn.apd_tagger.start_tag_stream(apd_indices)
-            
-            cxn.pulse_streamer.stream_start(num_samples)
-            
-            # There will be the number of clock pulses of samples, multiplied 
-            # the number of coordinates that we are measuring.
-            # That wil look like the following:
-            num_clk_pulses = 2*num_readout + 1
-            total_num_samples = num_clk_pulses*num_samples
-            tool_belt.init_safe_stop()
-            
-            # Read the counts
-            new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
-            # The last of the triplet of readout windows is the counts we are interested in
-            for i in range(num_readout):
-                gate_ind = num_readout + 1 + i
-                readout_counts = new_samples[gate_ind::num_clk_pulses]
-                readout_counts = [int(el) for el in readout_counts]
-#                print(readout_counts)
-            
-                readout_counts_array_transp[i][r] = readout_counts
-            
-            cxn.apd_tagger.stop_tag_stream()
-
-        ### Different way of measuring counts if s long pulses
-        else:
-            return
-#            # Get the x voltages and y voltages to step thru the target coords
-#            x_voltages, y_voltages = list(zip(*coords_list_drift))
-#            
-#            
-#            # Step throguh each coordinate in the coords list
-#            for i in range(num_samples):
-#                # start on the readout NV
-#                tool_belt.set_xyz(cxn, start_coords_drift)
-#                
-#                # pulse the laser at the readout
-#                seq_args = [init_laser_delay, int(initialization_time), 0.0, init_color]           
-#                seq_args_string = tool_belt.encode_seq_args(seq_args)            
-#                cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string) 
-#                
-#                # move to next target spot
-#                tool_belt.set_xyz(cxn, [x_voltages[i], y_voltages[i], start_coords_drift[2]])
-#                
-#                # pulse laser for X time with time.sleep
-#                cxn.pulse_streamer.constant([direct_wiring], 0.0, 0.0)
-#                time.sleep(pulse_time/10**9)
-#                cxn.pulse_streamer.constant([], 0.0, 0.0)
-#                
-#                # Move galvo to start coords
-#                tool_belt.set_xyz(cxn, start_coords_drift)
-#                
-#                # measure the counts
-#                seq_args = [aom_589_delay, readout_pulse_time, am_589_power, apd_indices[0], readout_color]       
-#                seq_args_string = tool_belt.encode_seq_args(seq_args)  
-#                cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)  
-#                       
-#                cxn.apd_tagger.start_tag_stream(apd_indices) 
-#                cxn.pulse_streamer.stream_immediate('simple_readout.py', 1, seq_args_string) 
-#                 
-#                new_samples = cxn.apd_tagger.read_counter_simple(1)
-#                counts = new_samples[0]
-#                
-#                readout_counts_array[i][r] = counts
-#                
-#                cxn.apd_tagger.stop_tag_stream()
-            
-        # save the arrays as a transpose (or flip the 1st and 2nd index) ,
-        # so that the 0th index refers to readout NV,
-        # the first index refers to the target coordinate, 
-        # and the 2dn index refers to the number of run
-        readout_counts_array = numpy.transpose(readout_counts_array_transp, (0, 2, 1))   
+        # start on the readout NV
+        tool_belt.set_xyz(cxn, start_coords_list_drift[0])
         
-        # save incrimentally 
+        # load the sequence
+        ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+        
+        # Build the list to step through the coords on readout NV and targets
+        x_voltages, y_voltages = build_voltages_from_list(start_coords_list_drift, sample_coords_list_drift)
+        # Load the galvo
+        cxn.galvo.load_arb_points_scan(x_voltages, y_voltages, int(period))
+        
+        #  Set up the APD
+        cxn.apd_tagger.start_tag_stream(apd_indices)
+        
+        cxn.pulse_streamer.stream_start(num_samples)
+        # There will be the number of clock pulses of samples, multiplied 
+        # the number of coordinates that we are measuring.
+        # That wil look like the following:
+        num_clk_pulses = 2*num_readout + 1
+        total_num_samples = num_clk_pulses*num_samples
+        num_read_so_far = 0
+        
+        total_samples_list = []
+
+        tool_belt.init_safe_stop()
+
+        while num_read_so_far < total_num_samples:
+
+            if tool_belt.safe_stop():
+                break
+    
+            # Read the samples and update the image
+            new_samples = cxn.apd_tagger.read_counter_simple()
+            num_new_samples = len(new_samples)
+            
+            if num_new_samples > 0:
+                for el in new_samples:
+                    total_samples_list.append(int(el))
+                num_read_so_far += num_new_samples
+        
+        # Sort the counts that we care about
+        for i in range(num_readout):
+            gate_ind = num_readout + 1 + i
+            readout_counts = total_samples_list[gate_ind::num_clk_pulses]
+        
+            readout_counts_array_transp[i][r] = readout_counts
+        
+        cxn.apd_tagger.stop_tag_stream()
+        
+                # save incrimentally 
         raw_data = {'start_timestamp': start_timestamp,
             'init_color': init_color,
             'pulse_color': pulse_color,
@@ -466,12 +397,18 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
             'pulse_time-units': 'ns',
             'opti_coords_list': opti_coords_list,
             'index_list': index_list,
-            'readout_counts_array': readout_counts_array.tolist(),
-            'readout_counts_array-units': 'counts',
+            'readout_counts_array_transp': readout_counts_array_transp.tolist(),
+            'readout_counts_array_transp-units': 'counts',
             }
                 
         file_path = tool_belt.get_file_path(__file__, start_timestamp, nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(raw_data, file_path)
+        
+    # save the arrays as a transpose (or flip the 1st and 2nd index) ,
+    # so that the 0th index refers to readout NV,
+    # the first index refers to the target coordinate, 
+    # and the 2nd index refers to the number of run
+    readout_counts_array = numpy.transpose(readout_counts_array_transp, (0, 2, 1))   
             
     return readout_counts_array, opti_coords_list
 
@@ -536,7 +473,7 @@ def do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, i
         
         # Create the figure
         
-        title = 'Counts recorded on {} with {} nm {} ms pulse'.format(title_list[i], pulse_color, pulse_time/10**6)
+        title = '{}\nwith {} nm {} ms pulse'.format(title_list[i], pulse_color, pulse_time/10**6)
         fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
                                                     title = title, um_scaled = True)
     
@@ -621,31 +558,32 @@ if __name__ == '__main__':
     
 
     start_coords_list =[[0.033, 0.085, 4.93],
-[0.125, 0.049, 4.97],
-[-0.010, 0.052, 4.97],
-[0.057, -0.106, 4.95],   ]
+#[0.125, 0.049, 4.97],
+#[-0.010, 0.052, 4.97],
+#[0.057, -0.106, 4.95],   
+]
     
     title_list = ['goeppert-mayer-nv10_2021_01_26',
                   'goeppert-mayer-nv11_2021_01_26',
                   'goeppert-mayer-nv12_2021_01_26',
                   'goeppert-mayer-nv13_2021_01_26']
-#    central_img_coord = [0.0, 0.0, 4.98]
+    central_img_coord = [0.0, 0.0, 4.98]
     expected_count = 44
-    num_steps = 20
-    num_runs = 50
-    img_range = 0.1
-    pulse_time = 10**7
+    num_steps = 20#50
+    num_runs = 15#50
+    img_range = 0.3
+    pulse_time = 5*10**7
     init_color = 532
     pulse_color = 532
     
     nv_sig = copy.deepcopy(base_sig)
     nv_sig['expected_count_rate'] = expected_count
-    
-    for x in [-img_range, 0, img_range]:
-        for y in [-img_range, 0, img_range]:
-                central_img_coord = [x, y, 4.98]
-                print(central_img_coord)
-                do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
-                                  num_steps, num_runs, init_color, pulse_color, title_list)
+
+#    pulse_time = 5*10**7
+    do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
+                      num_steps, num_runs, init_color, pulse_color, title_list)
+#    pulse_time = 10**8
+#    do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
+#                      num_steps, num_runs, init_color, pulse_color, title_list)
     
    

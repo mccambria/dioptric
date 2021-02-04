@@ -428,15 +428,33 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
             # We'll be lookign for three samples each repetition with how I have
             # the sequence set up
             total_num_samples = 3*num_samples
-            tool_belt.init_safe_stop()
             
-            # Read the counts
-            new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
+            total_samples_list = []
+            num_read_so_far = 0
+# NEWLY ADDED 2/4/2021           
+            tool_belt.init_safe_stop()
+    
+            while num_read_so_far < total_num_samples:
+    
+                if tool_belt.safe_stop():
+                    break
+        
+                # Read the samples and update the image
+                new_samples = cxn.apd_tagger.read_counter_simple()
+                num_new_samples = len(new_samples)
+                
+                if num_new_samples > 0:
+                    for el in new_samples:
+                        total_samples_list.append(int(el))
+                    num_read_so_far += num_new_samples
+                
+#            # Read the counts
+#            new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
             
             # The last of the triplet of readout windows is the counts we are interested in
-            readout_counts = new_samples[2::3]
+            readout_counts = total_samples_list[2::3]
             readout_counts = [int(el) for el in readout_counts]
-            target_counts = new_samples[1::3]
+            target_counts = total_samples_list[1::3]
             target_counts = [int(el) for el in target_counts]
             
             readout_counts_array_transp.append(readout_counts)

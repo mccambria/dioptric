@@ -71,15 +71,15 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  read
 #    scan_range = 1.0
 #    scan_range = 0.8
 #    num_steps = 250
-    scan_range = 0.5
+#    scan_range = 0.5
 #    num_steps = 125
 #    scan_range = 0.2
-    num_steps = 120
+#    num_steps = 120
 #    scan_range = 0.15
 #    scan_range = 0.1
 #    num_steps = 90
-#    scan_range = 0.05
-#    num_steps = 60
+    scan_range = 0.05
+    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
@@ -582,32 +582,32 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    expected_count_list = [75, 52, 40, 48, 46, 45, 50, 56, 45, 53, 44, 36, 
-                           57, 63, 44, 72, 60, 40, 40, 45] # 1/26/2021 Check optimize again
+    expected_count_list = [60, 43, 38, 38, 38, 45, 50, 48, 42, 42, 38, 36, 
+                           57, 58, 44, 72, 60, 40, 45, 45] # 2/4/21
     nv_list_2021_01_26 = [    
-    [0.317, 0.338, 5.00],
-[0.190, 0.345, 5.00],
-[-0.031, 0.299, 4.94],
-[-0.042, 0.265, 4.98],
-[-0.082, 0.266, 4.96], #
-[0.333, 0.277, 4.93],
-[0.32, 0.223, 5.01],
-[-0.060, 0.179, 4.93], #
-[0.187, 0.127, 4.97],
-[0.172, 0.140, 4.91],
-[0.033, 0.085, 4.93],
-[0.125, 0.049, 4.97],
-[-0.010, 0.052, 4.97],
-[0.057, -0.106, 4.95],
-[0.385, -0.174, 4.99],
-[0.134, -0.192, 4.93],
-[0.400, -0.299, 4.97],
-[0.374, -0.296, 4.96],
-[-0.194, -0.326, 4.97],
-[0.260, -0.382, 4.98],
+    [0.348, 0.349, 5.06],
+[0.222, 0.359, 5.03],
+[-0.001, 0.310, 4.97],
+[-0.010, 0.277, 5.03],
+[-0.053, 0.277, 4.99],
+[0.365, 0.288, 4.96],
+[0.350, 0.235, 5.04],
+[-0.028, 0.189, 4.96],
+[0.219, 0.139, 5.03],
+[0.204, 0.150, 4.94],
+[0.065, 0.094, 4.99],
+[0.159, 0.061, 5.03],
+[0.020, 0.061, 5.00],
+[0.088, -0.095, 4.98],
+[0.419, -0.164, 5.05],
+[0.166, -0.181, 4.96],
+[0.433, -0.289, 5.02],
+[0.409, -0.286, 5.02],
+[-0.164, -0.314, 5.01],
+[0.292, -0.370, 5.01],
 ]
     nv_sig_list =[]
-    for i in [19]:#range(len(nv_list_2021_01_26)):
+    for i in [10]:#range(len(nv_list_2021_01_26)):
         nv_coords = nv_list_2021_01_26[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
@@ -615,7 +615,7 @@ if __name__ == '__main__':
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
         nv_sig_list.append(nv_sig)
         
-    nv_sig_list = [search]
+#    nv_sig_list = [search]
     
 
     # %% Functions to run
@@ -626,7 +626,7 @@ if __name__ == '__main__':
         
 #        drift = [0.023,-0.02,0.1]# 1/18/2021, 12:56 am
 #        tool_belt.set_drift(drift)  
-#        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset
+        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset
 #        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
 #        set_xyz([0.018,0.003,5.0])
