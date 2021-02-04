@@ -130,9 +130,9 @@ if __name__ == '__main__':
 
     sample_name = 'goeppert-mayer'
     micrometer_coords = [3.154, 2.193, 11.118, 120.21]
-    image_sample_file_name = '2021_01_26-10_41_58-goeppert-mayer-search'
+    image_sample_file_name = '2021_02_03-13_05_48-goeppert-mayer-search'
     branch = 'branch_Spin_to_charge'
-    month_folder = '2021_01'
+    month_folder = '2021_02'
 
     nv_sig_list = []
     for ind in range(len(coords_list)):

@@ -706,11 +706,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Save the data
 
     # measure laser powers:
-    green_optical_power_pd, green_optical_power_mW, \
-            red_optical_power_pd, red_optical_power_mW, \
-            yellow_optical_power_pd, yellow_optical_power_mW = \
-            tool_belt.measure_g_r_y_power(
-                              nv_sig['am_589_power'], nv_sig['nd_filter'])
+#    green_optical_power_pd, green_optical_power_mW, \
+#            red_optical_power_pd, red_optical_power_mW, \
+#            yellow_optical_power_pd, yellow_optical_power_mW = \
+#            tool_belt.measure_g_r_y_power(
+#                              nv_sig['am_589_power'], nv_sig['nd_filter'])
 
     timestamp = tool_belt.get_time_stamp()
 
@@ -721,18 +721,18 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                'color_ind': color_ind,
                'aom_ao_589_pwr': aom_ao_589_pwr,
                'aom_ao_589_pwr-units': 'V',
-                'green_optical_power_pd': green_optical_power_pd,
-                'green_optical_power_pd-units': 'V',
-                'green_optical_power_mW': green_optical_power_mW,
-                'green_optical_power_mW-units': 'mW',
-                'red_optical_power_pd': red_optical_power_pd,
-                'red_optical_power_pd-units': 'V',
-                'red_optical_power_mW': red_optical_power_mW,
-                'red_optical_power_mW-units': 'mW',
-                'yellow_optical_power_pd': yellow_optical_power_pd,
-                'yellow_optical_power_pd-units': 'V',
-                'yellow_optical_power_mW': yellow_optical_power_mW,
-                'yellow_optical_power_mW-units': 'mW',
+#                'green_optical_power_pd': green_optical_power_pd,
+#                'green_optical_power_pd-units': 'V',
+#                'green_optical_power_mW': green_optical_power_mW,
+#                'green_optical_power_mW-units': 'mW',
+#                'red_optical_power_pd': red_optical_power_pd,
+#                'red_optical_power_pd-units': 'V',
+#                'red_optical_power_mW': red_optical_power_mW,
+#                'red_optical_power_mW-units': 'mW',
+#                'yellow_optical_power_pd': yellow_optical_power_pd,
+#                'yellow_optical_power_pd-units': 'V',
+#                'yellow_optical_power_mW': yellow_optical_power_mW,
+#                'yellow_optical_power_mW-units': 'mW',
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,
@@ -770,8 +770,8 @@ if __name__ == '__main__':
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
     file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_01/2021_01_20-13_34_55-goeppert-mayer-nv0_2021_01_18'
-#    reformat_plot('inferno', 'png')
-    create_figure(file_name)
+    reformat_plot('inferno', 'png')
+#    create_figure(file_name)
 
 #    sub_folder = 'branch_Spin_to_charge/2020_10/'
 #    green_file = '2020_10_14-16_47_42-goeppert-mayer-nv1'

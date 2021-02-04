@@ -71,18 +71,19 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  read
 #    scan_range = 1.0
 #    scan_range = 0.8
 #    num_steps = 250
-#    scan_range = 0.5
+    scan_range = 0.5
 #    num_steps = 125
 #    scan_range = 0.2
-#    num_steps = 120
+    num_steps = 120
 #    scan_range = 0.15
 #    scan_range = 0.1
 #    num_steps = 90
-    scan_range = 0.05
-    num_steps = 60
+#    scan_range = 0.05
+#    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
+#    scan_range = 0.3
 #    num_steps = 40
     
 #    scan_range = 0.5 # 250
@@ -559,7 +560,7 @@ if __name__ == '__main__':
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 50, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
@@ -575,7 +576,7 @@ if __name__ == '__main__':
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
@@ -606,7 +607,7 @@ if __name__ == '__main__':
 [0.260, -0.382, 4.98],
 ]
     nv_sig_list =[]
-    for i in [2]:#range(len(nv_list_2021_01_26)):
+    for i in [19]:#range(len(nv_list_2021_01_26)):
         nv_coords = nv_list_2021_01_26[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
@@ -614,7 +615,7 @@ if __name__ == '__main__':
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
         nv_sig_list.append(nv_sig)
         
-#    nv_sig_list = [nv0_2021_01_26]
+    nv_sig_list = [search]
     
 
     # %% Functions to run
@@ -635,6 +636,7 @@ if __name__ == '__main__':
 
       
 #        with labrad.connect() as cxn:
+#            set_xyz([-0.031+0.25, 0.299, 4.94])
 #            cxn.filter_slider_ell9k.set_filter('nd_0')           
 #            cxn.pulse_streamer.constant([3], 0.0, 0.0)
 #            time.sleep(1)
@@ -654,10 +656,10 @@ if __name__ == '__main__':
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #                cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
 ##    
-            do_optimize(nv_sig, apd_indices, 532)
+#            do_optimize(nv_sig, apd_indices, 532)
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
-#            for z in numpy.linspace(4.7,5.0,7):
+#            for z in numpy.linspace(4.8,5.2,5):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]  
@@ -669,14 +671,14 @@ if __name__ == '__main__':
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
-#            do_image_sample(nv_sig,  apd_indices, 638, save_data=False, plot_data=False, readout = 10**3)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = nv_sig['pulsed_SCC_readout_dur'])
+            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =10**7)
 
 #            do_determine_galvo_response(nv_sig, apd_indices)
 
             
-#            do_stationary_count(nv_sig, apd_indices, 532)            
+#            do_stationary_count(nv_sig, apd_indices, 638)            
 #            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
 #                                  2*10**7, apd_indices) 
             

@@ -152,7 +152,7 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
     Returns:
         matplotlib.figure.Figure
     """
-    axes_label = 'v'
+    axes_label = 'V'
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
     if um_scaled:

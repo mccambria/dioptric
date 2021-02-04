@@ -52,7 +52,7 @@ def two_pulse_main_with_cxn(cxn, nv_sig,num_steps, init_color, read_color, init_
 
     # %% Some initial setup
     
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
     shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
 #    readout = shared_parameters['continuous_readout_dur']*10
@@ -158,7 +158,7 @@ def two_pulse_main_with_cxn(cxn, nv_sig,num_steps, init_color, read_color, init_
 
     # %% Clean up and report the data
     
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
     
     # Replace x/0=inf with 0
     try:
@@ -194,7 +194,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind, continuous=Fals
 
     # %% Some initial setup
     
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
     shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_parameters['continuous_readout_dur']*10
@@ -286,7 +286,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind, continuous=Fals
 
     # %% Clean up and report the data
     
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
     
     # Replace x/0=inf with 0
     try:

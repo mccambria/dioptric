@@ -124,15 +124,15 @@ def build_voltage_list(start_coords_drift, signal_coords_drift, num_reps):
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, num_reps, green_pulse_time, dx):
+def main(nv_sig, apd_indices, num_reps, green_pulse_time, dx, readout_color):
 
     with labrad.connect() as cxn:
-        sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices, num_reps, green_pulse_time, dx)
+        sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices, num_reps, green_pulse_time, dx, readout_color)
         
     return sig_counts, ref_counts
-def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, green_pulse_time, dx):
+def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, green_pulse_time, dx, readout_color):
 
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
     # Initial Calculation and setup
     readout_time = nv_sig['pulsed_SCC_readout_dur']
@@ -159,9 +159,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, green_pulse_time, dx):
 
     # Estimate the lenth of the sequance , load the sequence          
     file_name = 'isolate_nv_charge_dynamics_moving_target.py'
-    seq_args = [10**3, green_pulse_time, readout_time, 
+    seq_args = [10**5, green_pulse_time, readout_time, 
             laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay, 
-            aom_ao_589_pwr, apd_indices[0], 638, 532, 589]
+            aom_ao_589_pwr, apd_indices[0], 532, 532, readout_color]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_dur = ret_vals[0]
@@ -198,6 +198,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, green_pulse_time, dx):
     new_samples = cxn.apd_tagger.read_counter_simple(total_num_reps)
     # The last of the triplet of readout windows is the counts we are interested in
     ref_counts = new_samples[2::6]
+#    print(ref_counts)
     ref_counts = [int(el) for el in ref_counts]
     sig_counts = new_samples[5::6]
     sig_counts = [int(el) for el in sig_counts]
@@ -208,7 +209,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, green_pulse_time, dx):
 
 # %%
 
-def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3, 
+def optimize_readout_pulse_length(nv_sig,readout_color,  test_pulse_dur_list  = [10*10**3, 
                                50*10**3, 100*10**3,500*10**3, 
                                1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
                                6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
@@ -219,8 +220,9 @@ def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3,
     # Make sure that we are in the SiV band
     nv_sig['color_filter'] = '715 lp'
 #    nv_sig['color_filter'] = '635-715 bp'
-    green_pulse_time = 10**6    
+    green_pulse_time = 10**6
     dx = 0.056
+#    dx = 0.25
         
     # create some lists for data
     # signal will be green pulse off readout spot
@@ -235,7 +237,7 @@ def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3,
     for test_pulse_length in test_pulse_dur_list:
         nv_sig['pulsed_SCC_readout_dur'] = int(test_pulse_length)
         print('Readout set to {} ms'.format(test_pulse_length/10**6))
-        sig_count, ref_count = main(nv_sig, apd_indices, num_reps, green_pulse_time, dx)
+        sig_count, ref_count = main(nv_sig, apd_indices, num_reps, green_pulse_time, dx, readout_color)
         
         sig_count = [int(el) for el in sig_count]
         ref_count = [int(el) for el in ref_count]
@@ -256,8 +258,13 @@ def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3,
                                   nv_sig['am_589_power'], nv_sig['nd_filter'])
             
     # Plot
-    title = 'Sweep pulse length for 589 nm readout, SiV band'
-    text = 'Yellow pulse power set to ' + '%.0f'%(yellow_optical_power_mW*10**3) + ' uW'
+    if readout_color == 638:
+        title = 'Sweep pulse length for 638 nm readout, SiV band'
+        text = 'Red readout pulse power set to ' + '%.0f'%(red_optical_power_mW) + ' mW'
+        
+    if readout_color == 589:
+        title = 'Sweep pulse length for 589 nm readout, SiV band'
+        text = 'Yellow readout pulse power set to ' + '%.0f'%(yellow_optical_power_mW*10**3) + ' uW'
     fig = plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, 
                           snr_list, title, text = text)
     
@@ -317,21 +324,21 @@ if __name__ == '__main__':
 #            'color_filter': '635-715 bp', 
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.6, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
        
-    for nd in ['nd_1.0']:
-        for p in [0.3]:
+#    for nd in ['nd_1.0']:
+#        for p in [0.3]:
 #    for nd in ['nd_1.0']:
 #        for p in [ 0.3]:
-            nv_sig = copy.deepcopy(nv0_2021_01_26)
-            nv_sig['nd_filter'] = nd
-            nv_sig['am_589_power'] = p
-            optimize_readout_pulse_length(nv_sig) 
+#            nv_sig = copy.deepcopy(nv0_2021_01_26)
+#            nv_sig['nd_filter'] = nd
+#            nv_sig['am_589_power'] = p
+    optimize_readout_pulse_length(nv0_2021_01_26, 638) 
