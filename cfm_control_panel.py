@@ -76,10 +76,10 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  read
 #    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.15
-#    scan_range = 0.1
-#    num_steps = 90
-    scan_range = 0.05
-    num_steps = 60
+    scan_range = 0.1
+    num_steps = 90
+#    scan_range = 0.05
+#    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
@@ -607,7 +607,7 @@ if __name__ == '__main__':
 [0.292, -0.370, 5.01],
 ]
     nv_sig_list =[]
-    for i in [10]:#range(len(nv_list_2021_01_26)):
+    for i in [3]:#range(len(nv_list_2021_01_26)):
         nv_coords = nv_list_2021_01_26[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
@@ -626,7 +626,7 @@ if __name__ == '__main__':
         
 #        drift = [0.023,-0.02,0.1]# 1/18/2021, 12:56 am
 #        tool_belt.set_drift(drift)  
-        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset
+#        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset
 #        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
 #        set_xyz([0.018,0.003,5.0])

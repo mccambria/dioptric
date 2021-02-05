@@ -557,20 +557,19 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 
-    start_coords_list =[[0.033, 0.085, 4.93],
-#[0.125, 0.049, 4.97],
-#[-0.010, 0.052, 4.97],
-#[0.057, -0.106, 4.95],   
-]
+    start_coords_list =[[0.065, 0.094, 4.99],
+[0.159, 0.061, 5.03],
+[0.020, 0.061, 5.00],
+[0.088, -0.095, 4.98],]
     
     title_list = ['goeppert-mayer-nv10_2021_01_26',
                   'goeppert-mayer-nv11_2021_01_26',
                   'goeppert-mayer-nv12_2021_01_26',
                   'goeppert-mayer-nv13_2021_01_26']
     central_img_coord = [0.0, 0.0, 4.98]
-    expected_count = 44
-    num_steps = 20#50
-    num_runs = 15#50
+    expected_count = 42
+    num_steps = 50
+    num_runs = 50
     img_range = 0.3
     pulse_time = 5*10**7
     init_color = 532
@@ -579,11 +578,11 @@ if __name__ == '__main__':
     nv_sig = copy.deepcopy(base_sig)
     nv_sig['expected_count_rate'] = expected_count
 
-#    pulse_time = 5*10**7
+    pulse_time = 5*10**7
     do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
                       num_steps, num_runs, init_color, pulse_color, title_list)
-#    pulse_time = 10**8
-#    do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
-#                      num_steps, num_runs, init_color, pulse_color, title_list)
+    pulse_time = 10**8
+    do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
+                      num_steps, num_runs, init_color, pulse_color, title_list)
     
    
