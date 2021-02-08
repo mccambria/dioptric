@@ -565,9 +565,9 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    list_ = [ nv_coords_list[10], nv_coords_list[11],nv_coords_list[12],nv_coords_list[13]]
+#    list_ = [ nv_coords_list[10], nv_coords_list[11],nv_coords_list[12],nv_coords_list[13]]
 #    collect_charge_counts_list(nv_coords_list, base_nv_sig, 60, apd_indicies)
-    collect_charge_counts_list(list_, base_nv_sig, 200, apd_indicies)
+    collect_charge_counts_list(nv_coords_list, base_nv_sig, 200, apd_indicies)
        
 #    readout_time_list = [10**6, 5*10**6, 10*10**6, 30*10**6, 50*10**6, 80*10**6, 100*10**6, 120*10**6]
 #    for i in [2, 3, 5, 7, 9]:

@@ -304,7 +304,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
     period_s_total = (period_s*num_samples + 1)*num_runs
     print('{} ms pulse time'.format(pulse_time/10**6))
     print('Expected total run time: {:.0f} m'.format(period_s_total/60))
-    ### Backto the same
+#    return
     # Optimize at the start of the routine
     opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
     opti_coords_list.append(opti_coords)
@@ -557,19 +557,28 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 
-    start_coords_list =[[0.065, 0.094, 4.99],
-[0.159, 0.061, 5.03],
-[0.020, 0.061, 5.00],
-[0.088, -0.095, 4.98],]
+    start_coords_list =[[0.065, 0.094, 4.99], # 10
+[0.159, 0.061, 5.03], # 11
+[0.020, 0.061, 5.00], # 12
+[0.088, -0.095, 4.98], # 13
+[-0.028, 0.189, 4.96], # 7
+[0.219, 0.139, 5.03], # 8
+[0.204, 0.150, 4.94], # 9
+[0.166, -0.181, 4.96], # 15
+]
     
     title_list = ['goeppert-mayer-nv10_2021_01_26',
                   'goeppert-mayer-nv11_2021_01_26',
                   'goeppert-mayer-nv12_2021_01_26',
-                  'goeppert-mayer-nv13_2021_01_26']
+                  'goeppert-mayer-nv13_2021_01_26',
+                  'goeppert-mayer-nv7_2021_01_26',
+                  'goeppert-mayer-nv8_2021_01_26',
+                  'goeppert-mayer-nv9_2021_01_26',
+                  'goeppert-mayer-nv15_2021_01_26']
     central_img_coord = [0.0, 0.0, 4.98]
     expected_count = 42
-    num_steps = 50
-    num_runs = 10#50
+    num_steps = 70
+    num_runs = 30
     img_range = 1.0
 #    pulse_time = 5*10**7
     init_color = 532
@@ -581,7 +590,7 @@ if __name__ == '__main__':
 #    pulse_time = 5*10**7
 #    do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
 #                      num_steps, num_runs, init_color, pulse_color, title_list)
-    pulse_time = 10**8
+    pulse_time = 25*10**6
     do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
                       num_steps, num_runs, init_color, pulse_color, title_list)
     
