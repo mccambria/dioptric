@@ -69,6 +69,8 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
             seq_args = [tau, readout, pi_pulse, aom_delay, 
                         polarization_time, wait_time, state.value, apd_indices[0]]
         seq_args = [int(el) for el in seq_args]
+        # print(seq_args)
+        # return
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate(seq_file, num_reps,
                                             seq_args_string)
@@ -166,27 +168,27 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here 
     sample_name = 'johnson'
     nd = 'nd_0'
-    expected_count_rate = {
-            'nd_0': 95,
-            'nd_0.5': 85,
-            'nd_1.0': 60,
-            'nd_1.5': 25,
-            }
-    pulsed_readout_dur = {
-            'nd_0': 215,
-            'nd_0.5': 280,
-            'nd_1.0': 420,
-            'nd_1.5': 420,
-            }
-    nv_sig = { 'coords':[0.103, 0.340, -63],
-            'name': 'search2_{}'.format(sample_name),
-            'expected_count_rate': 40, 'nd_filter': nd,
-            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
-            'resonance_LOW': 2.87, 'rabi_LOW': 140, 'uwave_power_LOW': 12.0,
-            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 0.0}
-    apd_indices = [0]
+    # expected_count_rate = {
+    #         'nd_0': 35,
+    #         'nd_0.5': 85,
+    #         'nd_1.0': 60,
+    #         'nd_1.5': 25,
+    #         }
+    # pulsed_readout_dur = {
+    #         'nd_0': 215,
+    #         'nd_0.5': 280,
+    #         'nd_1.0': 420,
+    #         'nd_1.5': 420,
+    #         }
+    nv_sig = { 'coords': [-0.112, 0.483, -28],
+            'name': 'search_{}'.format(sample_name),
+            'expected_count_rate': 35, 'nd_filter': nd,
+            'pulsed_readout_dur': 350, 'magnet_angle': None,
+            'resonance_LOW': 2.8579, 'rabi_LOW': 156.8, 'uwave_power_LOW': 12.0,
+            'resonance_HIGH': 2.8833, 'rabi_HIGH': 149.4, 'uwave_power_HIGH': 12.0}
+    apd_indices = [0, 1]
     num_reps = 3*10**5
-    readout = 2000
+    readout = 2000  # continuous
     # nv_sig = nv2_2019_04_30
 
     # aom_delay
@@ -197,7 +199,7 @@ if __name__ == '__main__':
     #               delay_range, num_steps, num_reps)
 
     # uwave_delay
-    delay_range = [0, 1000]
+    delay_range = [500, 1500]
     num_steps = 51
     # tsg4104a
     state = States.LOW

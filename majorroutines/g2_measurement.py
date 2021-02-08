@@ -62,13 +62,15 @@ def process_raw_buffer(timestamps, channels,
 
     # Throw out probable afterpulses
     # Something is wrong with this... see 2019-06-03_17-05-01_ayrton12
-    if False:
+    if True:
         num_vals = timestamps.size
         for click_index in range(num_vals):
+            
+            # Assume there are no second order afterpulses
+            if click_index in indices_to_delete:
+                continue
 
             click_time = timestamps[click_index]
-
-            # Determine the afterpulse channel
             click_channel = channels[click_index]
 
             # Calculate relevant differences
@@ -82,6 +84,7 @@ def process_raw_buffer(timestamps, channels,
                 next_index += 1
 
         timestamps = numpy.delete(timestamps, indices_to_delete)
+        channels = numpy.delete(channels, indices_to_delete)
 
     # Calculate differences
     num_vals = timestamps.size
@@ -129,7 +132,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
     tool_belt.reset_cfm(cxn)
 
-    afterpulse_window = 50 * 10**3
+    afterpulse_window = 100 * 1000 # 100 ns
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
@@ -144,7 +147,8 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     diff_window_ps = diff_window * 1000
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
-    num_bins = int(2 * diff_window) + 1  # 1 ns bins in ps
+    # num_bins = int(2 * diff_window) + 1  # 1 ns bins in ps
+    num_bins = 151
 
     # Expose the stream
     cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
@@ -165,11 +169,6 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     time_remaining = run_time
     while not stop:
 
-        # Read the stream and convert from strings to int64s
-        ret_vals = cxn.apd_tagger.read_tag_stream()
-        buffer_timetags, buffer_channels = ret_vals
-        buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
-
         # Check if we should stop
         new_time_remaining = int((start_time + run_time) - time.time())
         if (time_remaining < 0) or tool_belt.safe_stop():
@@ -179,18 +178,22 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
             print(new_time_remaining)
             time_remaining = new_time_remaining
             
-        # Optimize every 5 minutes
-        if ((run_time - new_time_remaining) % 300 == 0) and (new_time_remaining > 0):
+        # Optimize every 2 minutes
+        if ((run_time - new_time_remaining) % 120 == 0) and (new_time_remaining > 0):
             cxn.apd_tagger.stop_tag_stream()
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
             cxn.pulse_streamer.constant([wiring['do_532_aom']])
             cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
 
+        # Read the stream and convert from strings to int64s
+        ret_vals = cxn.apd_tagger.read_tag_stream()
+        buffer_timetags, buffer_channels = ret_vals
+        buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
+
         # Process data
         process_raw_buffer(buffer_timetags, buffer_channels,
-                           diff_window_ps, afterpulse_window,
-                           differences_append,
-                           apd_a_chan_name, apd_b_chan_name)
+                       diff_window_ps, afterpulse_window, differences_append,
+                       apd_a_chan_name, apd_b_chan_name)
 
         # Create/update the histogram
         if collection_index == 0:
@@ -210,7 +213,8 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
             fig.canvas.draw()
             fig.canvas.flush_events()
         elif collection_index > 1:
-            hist, bin_edges = numpy.histogram(differences, num_bins)
+            hist, bin_edges = numpy.histogram(differences, num_bins,
+                                      (-1000*diff_window,1000*diff_window))
             tool_belt.update_line_plot_figure(fig, hist)
 
         collection_index += 1

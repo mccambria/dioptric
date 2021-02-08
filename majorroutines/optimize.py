@@ -198,16 +198,16 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         else:
             manual_write_func = z_server.write_z
             
-            # Get the scan vals, adjusting for gravity if necessary
-            # This is necessary to do here as well as on the server since
-            # the adjustment on the server end doesn't do anything for small 
-            # integer steps (ie steps of 1)
-            if ('z_gravity_adjust' in shared_params) and (scan_dtype is int):
-                z_gravity_adjust = shared_params['z_gravity_adjust']
-                adj_z_center = round(z_center + z_gravity_adjust*scan_range)
-            else:
-                adj_z_center = z_center
-            # adj_z_center = z_center
+            # # Get the scan vals, adjusting for gravity if necessary
+            # # This is necessary to do here as well as on the server since
+            # # the adjustment on the server end doesn't do anything for small 
+            # # integer steps (ie steps of 1)
+            # if ('z_gravity_adjust' in shared_params) and (scan_dtype is int):
+            #     z_gravity_adjust = shared_params['z_gravity_adjust']
+            #     adj_z_center = round(z_center + z_gravity_adjust*scan_range)
+            # else:
+            #     adj_z_center = z_center
+            adj_z_center = z_center
                 
             scan_vals = tool_belt.get_scan_vals(adj_z_center, scan_range,
                                                 num_steps, scan_dtype)

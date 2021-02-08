@@ -499,8 +499,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    path = 't1_double_quantum/data_folders/paper_data/bulk_dq/'
-    folder = 'goeppert_mayer-nv7_2019_11_27-1662MHz-7deg'
+    path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\trial\\'
+    folder = 'johnson-nv_2021_01_30-25MHz'
     # folder = 'goeppert_mayer-nv7_2019_11_27-85deg'
     path += folder
 

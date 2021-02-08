@@ -71,7 +71,7 @@ def get_seq(pulser_wiring, args):
     # Pulse sequence for the AOM
     train = [(polarization, HIGH), (wait_time, LOW), (polarization, HIGH)]
     train.extend([(wait_time, LOW), (polarization - aom_delay_time, HIGH)])
-    print(train)
+    # print(train)
     seq.setDigital(pulser_do_aom, train)
     
     # Vary the position of the rf pi pulse
@@ -104,7 +104,7 @@ if __name__ == '__main__':
                      'do_signal_generator_bnc835_gate': 4}
 
     # Set up a dummy args list
-    args = [18, 350, 75, 1060, 1000, 1000, 1, 0]
+    args = [0, 350, 78, 1060, 1100, 1000, 1, 0]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

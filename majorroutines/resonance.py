@@ -43,7 +43,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     tool_belt.reset_cfm(cxn)
     
     # Assume the low state
-    state = States.LOW
+    state = States.HIGH
 
     # Set up for the pulser - we can't load the sequence yet until after 
     # optimize runs since optimize loads its own sequence
@@ -53,6 +53,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     uwave_switch_delay = 1 * 10**6  # 1 ms to switch frequencies
     seq_args = [readout, uwave_switch_delay, apd_indices[0], state.value]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    # print(seq_args_string)
+    # return
 
     file_name = os.path.basename(__file__)
 
