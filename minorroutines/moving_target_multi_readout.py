@@ -297,7 +297,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
         am_589_power, apd_indices[0], init_color, pulse_color, readout_color, num_readout]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-    
+#    print(seq_args)
     # print the expected run time
     period = ret_vals[0]
     period_s = period/10**9
@@ -372,6 +372,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
                 num_read_so_far += num_new_samples
         
         # Sort the counts that we care about
+        print(len(total_samples_list))
         for i in range(num_readout):
             gate_ind = num_readout + 1 + i
             readout_counts = total_samples_list[gate_ind::num_clk_pulses]
@@ -546,54 +547,43 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 3*10**7,  'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur':10**7,  'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 
-    start_coords_list =[[0.065, 0.094, 4.99], # 10
-[0.159, 0.061, 5.03], # 11
-[0.020, 0.061, 5.00], # 12
-[0.088, -0.095, 4.98], # 13
-[-0.028, 0.189, 4.96], # 7
-[0.219, 0.139, 5.03], # 8
-[0.204, 0.150, 4.94], # 9
-[0.166, -0.181, 4.96], # 15
+    start_coords_list =[
+[0.292, -0.370, 5.01],
 ]
     
-    title_list = ['goeppert-mayer-nv10_2021_01_26',
-                  'goeppert-mayer-nv11_2021_01_26',
-                  'goeppert-mayer-nv12_2021_01_26',
-                  'goeppert-mayer-nv13_2021_01_26',
-                  'goeppert-mayer-nv7_2021_01_26',
-                  'goeppert-mayer-nv8_2021_01_26',
-                  'goeppert-mayer-nv9_2021_01_26',
-                  'goeppert-mayer-nv15_2021_01_26']
-    central_img_coord = [0.0, 0.0, 4.98]
-    expected_count = 42
-    num_steps = 70
-    num_runs = 30
-    img_range = 1.0
+    title_list = ['goeppert-mayer-nv19_2021_01_26',]
+    central_img_coord =start_coords_list[0]
+    expected_count = 45
+    num_steps = 5*5 #41
+    num_runs = 2
+#    img_range = 0.4
 #    pulse_time = 5*10**7
     init_color = 532
-    pulse_color = 532
+    pulse_color = 638
     
+    
+
+#    
+    img_range = 0.4
+
     nv_sig = copy.deepcopy(base_sig)
     nv_sig['expected_count_rate'] = expected_count
-
-#    pulse_time = 5*10**7
-#    do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
-#                      num_steps, num_runs, init_color, pulse_color, title_list)
-    pulse_time = 25*10**6
+    nv_sig['color_filter'] =  '635-715 bp'
+    pulse_time = 10**8
     do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
                       num_steps, num_runs, init_color, pulse_color, title_list)
     
-    # other measurement, include more NVs: see my list and the size we should use. Try at 25*10**7
+
     
    

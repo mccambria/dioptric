@@ -216,18 +216,18 @@ def populate_img_array(valsToAdd, imgArray, run_num):
     
        # %%
 def main_data_collection(nv_sig, start_coords, coords_list, pulse_time, 
-                         num_runs, init_color, pulse_color, readout_color, index_list = []):
+                         num_runs, init_color, pulse_color, readout_color, index_list = [], ungate_moving_pulse = True):
     with labrad.connect() as cxn:
         ret_vals = main_data_collection_with_cxn(cxn, nv_sig, 
                         start_coords, coords_list,pulse_time, 
-                        num_runs, init_color, pulse_color, readout_color, index_list)
+                        num_runs, init_color, pulse_color, readout_color, index_list, ungate_moving_pulse)
     
     readout_counts_array, target_counts_array, opti_coords_list = ret_vals
                         
     return readout_counts_array, target_counts_array, opti_coords_list
         
 def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
-                     pulse_time, num_runs, init_color, pulse_color, readout_color, index_list = []):
+                     pulse_time, num_runs, init_color, pulse_color, readout_color, index_list = [], ungate_moving_pulse = True):
     '''
     Runs a measurement where an initial pulse is pulsed on the start coords, 
     then a pulse is set on the first point in the coords list, then the 
@@ -270,6 +270,9 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         A list of the indexing of the voltages passed. Used for the 2D image. 
         In the case of a crash during the measuremnt, the incrimental data will 
         have the indexing and we can replot the partial data
+    ungate_moving_pulse: boolean
+        IF True, the gate wil be closed during the moving pulse. THis is useful 
+        for pulsing in red in the NV band, when we see very high counts.
 
     Returns
     -------
@@ -356,7 +359,8 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         file_name = 'isolate_nv_charge_dynamics_moving_target.py'
         seq_args = [ initialization_time, pulse_time, readout_pulse_time, 
             laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay, 
-            am_589_power, apd_indices[0], init_color, pulse_color, readout_color]
+            am_589_power, apd_indices[0], init_color, pulse_color, readout_color, 
+            ungate_moving_pulse]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         
@@ -703,7 +707,7 @@ def do_moving_target_specific_points(nv_sig, readout_coords,  target_nv_coords, 
 
     return
 # %% 
-def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_steps, num_runs, init_color, pulse_color, readout_color = 589):
+def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_steps, num_runs, init_color, pulse_color, ungate_moving_pulse = True, readout_color = 589):
     # color_filter = nv_sig['color_filter']
     startFunctionTime = time.time()
     
@@ -739,7 +743,7 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_s
 
     # Run the data collection
     ret_vals = main_data_collection(nv_sig, start_coords, coords_voltages_shuffle_list,
-                            pulse_time, num_runs, init_color, pulse_color, readout_color, index_list = ind_list)
+                            pulse_time, num_runs, init_color, pulse_color, readout_color, index_list = ind_list, ungate_moving_pulse = ungate_moving_pulse)
     
     readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
     readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
@@ -1106,8 +1110,8 @@ if __name__ == '__main__':
          # Measurements
 #         t =10**7
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.06, t, num_steps, 60, init_color, pulse_color)
-         t =10**6
-         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)
+         t =10**7
+         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 10, init_color, pulse_color, ungate_moving_pulse = True)
 #         t =5*10**6
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 25,init_color, pulse_color)
 #         t =10**7

@@ -225,32 +225,32 @@ def main_moving_target(cxn, nv_sig, pulse_time, init_time, init_color, pulse_col
     return coords, x_voltages,image_range , dif_img_array, readout  
 # %%
 if __name__ == '__main__':
-    sample_name = 'goeppert-mayer'
+#    sample_name = 'goeppert-mayer'
     
-    nv0_2020_12_20 = { 'coords':[0.018, 0.346,5.25], 
-            'name': '{}-nv0_2020_12_20'.format(sample_name),
-            'expected_count_rate': 48, 'nd_filter': 'nd_1.0',
-#            'color_filter': '635-715 bp',
-            'color_filter': '715 lp',
+    nv19_2021_01_26 = { 'coords':[0.292, -0.370, 5.01], 
+            'name': 'goeppert-mayer-nv19_2021_01_26',
+            'expected_count_rate': 45,'nd_filter': 'nd_1.0',
+            'color_filter': '635-715 bp', 
+#            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 20000000, 'am_589_power': 0.7, 
+            'pulsed_SCC_readout_dur': 4*10**7,  'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}     
     
-    init_time = 3*10**7
+    init_time = 10**4
     
     init_color = 638
     pulse_color = 532
     readout_color = 589
     
-#    green_pulse_time_list = numpy.array([0.01])
-    green_pulse_time_list = numpy.array([250, 5,  10, 25, 50, 75, 100 ,1000]) #  0.6 mW, 2 mW,  4?
+    green_pulse_time_list = numpy.array([10])
+#    green_pulse_time_list = numpy.array([250, 5,  10, 25, 50, 75, 100 ,1000]) #  0.6 mW, 2 mW,  4?
 #    green_pulse_time_list = numpy.array([0.1]) # 60 mW, 16 mW, 4 mW
   
 #    green_pulse_time_list = numpy.array([0.001, 0.005,0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1 ]) # 60 mW, 16 mW, 4 mW
@@ -259,13 +259,13 @@ if __name__ == '__main__':
 
     with labrad.connect() as cxn:
         for t in green_pulse_time_list:
-            nv_sig = copy.deepcopy(nv0_2020_12_20)
+            nv_sig = copy.deepcopy(nv19_2021_01_26)
             nv_sig['color_filter'] = '715 lp' 
             main_moving_target(cxn, nv_sig, t, init_time, init_color, pulse_color, readout_color)
             
-#            nv_sig = copy.deepcopy(nv0_2020_12_20) 
-#            nv_sig['color_filter'] = '635-715 bp'
-#            main_moving_target(cxn, nv_sig, t, init_time, init_color, pulse_color, readout_color)
+            nv_sig = copy.deepcopy(nv19_2021_01_26) 
+            nv_sig['color_filter'] = '635-715 bp'
+            main_moving_target(cxn, nv_sig, t, init_time, init_color, pulse_color, readout_color)
 
 
         
