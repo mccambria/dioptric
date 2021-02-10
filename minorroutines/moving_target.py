@@ -14,7 +14,7 @@ import majorroutines.optimize as optimize
 import numpy
 import time
 import matplotlib.pyplot as plt
-import labrad
+# import labrad
 from random import shuffle
 import majorroutines.image_sample as image_sample
 import copy
@@ -592,6 +592,8 @@ def do_moving_target_1D_line(nv_sig, start_coords, end_coords, pulse_time,
             'yellow_optical_power_mW': yellow_optical_power_mW,
             'yellow_optical_power_mW-units': 'mW',
             'num_runs':num_runs,
+            'pulse_time': pulse_time,
+            'pulse_time-unit': 'ns',
             'opti_coords_list': opti_coords_list,
             'rad_dist': rad_dist.tolist(),
             'rad_dist-units': 'V',
@@ -682,7 +684,7 @@ def do_moving_target_specific_points(nv_sig, readout_coords,  target_nv_coords, 
     tool_belt.save_figure(fig, file_path)
 
     return
-# %% UNTESTED
+# %% 
 def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, num_steps, num_runs, init_color, pulse_color):
     readout_color = 589
     # color_filter = nv_sig['color_filter']
@@ -943,83 +945,83 @@ if __name__ == '__main__':
 #        do_moving_target_2D_image(nv_sig, start_coords, 0.55, t, num_steps, num_runs, init_color, pulse_color)
         
        
-    init_color = 532
-    pulse_color = 532        
-    for s in range(8, 15): 
-        start_coords = start_coords_list[s]            
-        nv_sig = copy.deepcopy(base_sig)
-        nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_14'.format(s)
-        nv_sig['expected_count_rate'] = expected_count_list[s]
-        nv_sig['color_filter'] = '635-715 bp'
+    # init_color = 532
+    # pulse_color = 532        
+    # for s in range(8, 15): 
+    #     start_coords = start_coords_list[s]            
+    #     nv_sig = copy.deepcopy(base_sig)
+    #     nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_14'.format(s)
+    #     nv_sig['expected_count_rate'] = expected_count_list[s]
+    #     nv_sig['color_filter'] = '635-715 bp'
         
-        t = 10**6
-        num_steps = 41
-        num_runs =  60
-        end_coords = numpy.array(start_coords) - [0.1,0,0]
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
-                                 num_steps, num_runs, init_color, pulse_color)
-        t = 5*10**6
-        num_steps = 51
-        num_runs =  50
-        end_coords = numpy.array(start_coords) - [0.2,0,0]
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
-                                 num_steps, num_runs, init_color, pulse_color)
+    #     t = 10**6
+    #     num_steps = 41
+    #     num_runs =  60
+    #     end_coords = numpy.array(start_coords) - [0.1,0,0]
+    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+    #                              num_steps, num_runs, init_color, pulse_color)
+    #     t = 5*10**6
+    #     num_steps = 51
+    #     num_runs =  50
+    #     end_coords = numpy.array(start_coords) - [0.2,0,0]
+    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+    #                              num_steps, num_runs, init_color, pulse_color)
         
-        t = 10**7
-        num_steps = 51
-        num_runs =  50
-        end_coords = numpy.array(start_coords) - [0.3,0,0]
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
-                                 num_steps, num_runs, init_color, pulse_color)
+    #     t = 10**7
+    #     num_steps = 51
+    #     num_runs =  50
+    #     end_coords = numpy.array(start_coords) - [0.3,0,0]
+    #     do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+    #                              num_steps, num_runs, init_color, pulse_color)
                 
-        t = 5*10**7
-        num_steps = 51
-        num_runs =  50
-        end_coords = numpy.array(start_coords) - [0.55,0,0]
-        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
-                                 num_steps, num_runs, init_color, pulse_color)
+    #     t = 5*10**7
+    #     num_steps = 51
+    #     num_runs =  50
+    #     end_coords = numpy.array(start_coords) - [0.55,0,0]
+        # do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+        #                           num_steps, num_runs, init_color, pulse_color)
 
  
     #%%
-#    pc_name = 'pc_rabi'
-#    branch_name = 'branch_Spin_to_charge'
-#    data_folder = 'moving_target'
-#    sub_folder = '2021_01'
-#    folder = pc_name + '/' + branch_name + '/' + data_folder + '/' + sub_folder
-#    
-#    nv_file_list_12 = ['2021_01_12-01_20_51-goeppert-mayer-nv0_2021_01_07',
-#                    '2021_01_11-22_56_44-goeppert-mayer-nv1_2021_01_07',
-#                    '2021_01_12-06_09_27-goeppert-mayer-nv2_2021_01_07',
-#                    '2021_01_12-03_45_08-goeppert-mayer-nv3_2021_01_07',]
-#    siv_file_list_100us_12 = ['2021_01_11-23_28_42-goeppert-mayer-nv0_2021_01_07',
-#                           '2021_01_11-21_04_45-goeppert-mayer-nv1_2021_01_07',
-#                           '2021_01_12-04_17_13-goeppert-mayer-nv2_2021_01_07',
-#                           '2021_01_12-01_52_52-goeppert-mayer-nv3_2021_01_07',]
-#    siv_file_list_1ms_12 = ['2021_01_12-00_01_26-goeppert-mayer-nv0_2021_01_07',
-#                         '2021_01_11-21_37_25-goeppert-mayer-nv1_2021_01_07',
-#                         '2021_01_12-04_49_59-goeppert-mayer-nv2_2021_01_07',
-#                         '2021_01_12-02_25_41-goeppert-mayer-nv3_2021_01_07',]
-#    siv_file_list_10ms_12 = ['2021_01_12-00_41_25-goeppert-mayer-nv0_2021_01_07',
-#                          '2021_01_11-22_17_21-goeppert-mayer-nv1_2021_01_07',
-#                          '2021_01_12-05_29_57-goeppert-mayer-nv2_2021_01_07',
-#                          '2021_01_12-03_05_43-goeppert-mayer-nv3_2021_01_07']
-#        
-#    nv_file_list_13 = ['2021_01_13-02_10_57-goeppert-mayer-nv0_2021_01_07',
-#                       '2021_01_12-21_27_08-goeppert-mayer-nv1_2021_01_07',
-#                       '2021_01_12-23_49_13-goeppert-mayer-nv2_2021_01_07',
-#                       '2021_01_12-19_05_01-goeppert-mayer-nv3_2021_01_07']
-#    siv_file_list_100us_13 = ['2021_01_13-00_20_42-goeppert-mayer-nv0_2021_01_07',
-#                              '2021_01_12-19_36_43-goeppert-mayer-nv1_2021_01_07',
-#                              '2021_01_12-21_58_43-goeppert-mayer-nv2_2021_01_07',
-#                              '2021_01_12-17_14_51-goeppert-mayer-nv3_2021_01_07']
-#    siv_file_list_1ms_13 = ['2021_01_13-00_52_49-goeppert-mayer-nv0_2021_01_07',
-#                            '2021_01_12-20_09_00-goeppert-mayer-nv1_2021_01_07',
-#                            '2021_01_12-22_30_53-goeppert-mayer-nv2_2021_01_07',
-#                            '2021_01_12-17_46_57-goeppert-mayer-nv3_2021_01_07']
-#    siv_file_list_10ms_13 = ['2021_01_13-01_32_07-goeppert-mayer-nv0_2021_01_07',
-#                             '2021_01_12-20_48_21-goeppert-mayer-nv1_2021_01_07',
-#                             '2021_01_12-23_10_25-goeppert-mayer-nv2_2021_01_07',
-#                             '2021_01_12-18_26_14-goeppert-mayer-nv3_2021_01_07']
+    pc_name = 'pc_rabi'
+    branch_name = 'branch_Spin_to_charge'
+    data_folder = 'moving_target'
+    month_folder = '2021_01' #2021_01_14-5ms
+    
+    sub_folder_list = ['2021_01_26-1ms', '2021_01_26-5ms', '2021_01_26-10ms','2021_01_26-50ms']
+    title_list = ['1 ms', '5 ms', '10 ms', '50 ms']
+    
+    normalization_file = pc_name + '/' + branch_name + '/collect_charge_counts/' + month_folder
+    file_name = '2021_01_26-17_13_28-goeppert-mayer-nv_2021_01_26-nv_list'
+    norm_data = tool_belt.get_raw_data(normalization_file, file_name)
+    nvm_list = norm_data['nvm_avg_list']
+    nv0_list = norm_data['nv0_avg_list']
+    
+    for s in [0,1,2,3]:
+        folder = pc_name + '/' + branch_name + '/' + data_folder + '/' + month_folder + '/' + sub_folder_list[s]
+        file_list = tool_belt.get_file_list(folder, 'txt')
+        sorted_file_list = sorted(file_list)
+        
+        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        
+        for f in [0,3,5,7,9]:
+            nvm = nvm_list[f]
+            nv0 = nv0_list[f]
+            file = sorted_file_list[f]
+            data = tool_belt.get_raw_data(folder, file[:-4])    
+            rad_dist = numpy.array(data['rad_dist'])
+            readout_counts_avg = numpy.array(data['readout_counts_avg'])
+            readout_counts_norm = (readout_counts_avg - nv0)/(nvm - nv0)
+            nv_sig = data['nv_sig']
+            ax.plot(rad_dist*35, readout_counts_norm, label = '{}'.format(nv_sig['name'][15:19]))
+            
+        ax.set_xlabel('Distance from readout NV (um)')
+        ax.set_ylabel('Normalized counts to charge state (NV0 to NV-)')
+        ax.set_title('532 init, {} 532 pulse'.format(title_list[s]))
+        ax.legend()
+        
+
+    
 #    # for i in [0,3]:
 #    #     data = tool_belt.get_raw_data(folder, nv_file_list_7[i]) 
 #    #     readout_image_array_7 = numpy.array(data['readout_image_array'])
