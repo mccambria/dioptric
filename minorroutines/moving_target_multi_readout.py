@@ -262,7 +262,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
     laser_515_delay = shared_params['515_laser_delay']
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
-    galvo_delay = shared_params['large_angle_galvo_delay']
+    galvo_delay = shared_params['large_angle_galvo_delay'] #+ 10*10**6
          
     # copy the first start coord onto the nv_sig
     start_nv_sig = copy.deepcopy(nv_sig)
@@ -306,8 +306,8 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
     print('Expected total run time: {:.0f} m'.format(period_s_total/60))
 #    return
     # Optimize at the start of the routine
-    opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
-    opti_coords_list.append(opti_coords)
+#    opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
+#    opti_coords_list.append(opti_coords)
         
         
     # record the time starting at the beginning of the runs
@@ -320,10 +320,10 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
         # So first check the time. If the time that has passed since the last
         # optimize is longer that 5 min, optimize again
         current_time = time.time()
-        if current_time - run_start_time >= 5*60:
-            opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
-            opti_coords_list.append(opti_coords) 
-            run_start_time = current_time
+#        if current_time - run_start_time >= 5*60:
+#            opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
+#            opti_coords_list.append(opti_coords) 
+#            run_start_time = current_time
             
         drift = numpy.array(tool_belt.get_drift())
             
@@ -357,25 +357,24 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
 
         tool_belt.init_safe_stop()
 
-        while num_read_so_far < total_num_samples:
-
-            if tool_belt.safe_stop():
-                break
-    
+#        while num_read_so_far < total_num_samples:
+#
+#            if tool_belt.safe_stop():
+#                break
+#    
             # Read the samples and update the image
-            new_samples = cxn.apd_tagger.read_counter_simple()
-            num_new_samples = len(new_samples)
-            
-            if num_new_samples > 0:
-                for el in new_samples:
-                    total_samples_list.append(int(el))
-                num_read_so_far += num_new_samples
+        new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
+#            num_new_samples = len(new_samples)
+#            
+#            if num_new_samples > 0:
+#                for el in new_samples:
+#                    total_samples_list.append(int(el))
+#                num_read_so_far += num_new_samples
         
         # Sort the counts that we care about
-        print(len(total_samples_list))
         for i in range(num_readout):
             gate_ind = num_readout + 1 + i
-            readout_counts = total_samples_list[gate_ind::num_clk_pulses]
+            readout_counts = new_samples[gate_ind::num_clk_pulses]
         
             readout_counts_array_transp[i][r] = readout_counts
         
@@ -547,7 +546,7 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur':10**7,  'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur':4*10**7,  'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -560,12 +559,13 @@ if __name__ == '__main__':
 
     start_coords_list =[
 [0.292, -0.370, 5.01],
+[0.292, -0.370, 5.01],
 ]
     
     title_list = ['goeppert-mayer-nv19_2021_01_26',]
     central_img_coord =start_coords_list[0]
     expected_count = 45
-    num_steps = 5*5 #41
+    num_steps = 5 #41
     num_runs = 2
 #    img_range = 0.4
 #    pulse_time = 5*10**7
