@@ -304,7 +304,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
     period_s_total = (period_s*num_samples + 1)*num_runs
     print('{} ms pulse time'.format(pulse_time/10**6))
     print('Expected total run time: {:.0f} m'.format(period_s_total/60))
-#    return
+    ### Backto the same
     # Optimize at the start of the routine
 #    opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
 #    opti_coords_list.append(opti_coords)
@@ -557,17 +557,20 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 
-    start_coords_list =[
-[0.292, -0.370, 5.01],
-[0.292, -0.370, 5.01],
-]
+    start_coords_list =[[0.065, 0.094, 4.99],
+[0.159, 0.061, 5.03],
+[0.020, 0.061, 5.00],
+[0.088, -0.095, 4.98],]
     
-    title_list = ['goeppert-mayer-nv19_2021_01_26',]
-    central_img_coord =start_coords_list[0]
-    expected_count = 45
-    num_steps = 5 #41
-    num_runs = 2
-#    img_range = 0.4
+    title_list = ['goeppert-mayer-nv10_2021_01_26',
+                  'goeppert-mayer-nv11_2021_01_26',
+                  'goeppert-mayer-nv12_2021_01_26',
+                  'goeppert-mayer-nv13_2021_01_26']
+    central_img_coord = [0.0, 0.0, 4.98]
+    expected_count = 42
+    num_steps = 50
+    num_runs = 10#50
+    img_range = 1.0
 #    pulse_time = 5*10**7
     init_color = 532
     pulse_color = 638
@@ -579,7 +582,6 @@ if __name__ == '__main__':
 
     nv_sig = copy.deepcopy(base_sig)
     nv_sig['expected_count_rate'] = expected_count
-    nv_sig['color_filter'] =  '635-715 bp'
     pulse_time = 10**8
     do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
                       num_steps, num_runs, init_color, pulse_color, title_list)

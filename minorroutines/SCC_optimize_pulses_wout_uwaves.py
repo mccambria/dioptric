@@ -159,7 +159,7 @@ def main(nv_sig, apd_indices, num_reps):
     return sig_counts, ref_counts
 def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
-    tool_belt.reset_cfm_wout_uwaves(cxn)
+    tool_belt.reset_cfm(cxn)
 
 # Initial Calculation and setup
     readout_time = nv_sig['pulsed_SCC_readout_dur']
@@ -644,9 +644,9 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
     
-    nv19_2021_01_26 = { 'coords':[0.292, -0.370, 5.01], 
+    nv0_2021_01_26 = { 'coords':[0.316, 0.337, 5.00], 
             'name': '{}-nv0_2021_01_26'.format(sample_name),
-            'expected_count_rate': 50, 'nd_filter': 'nd_1.0',
+            'expected_count_rate': 75, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -661,7 +661,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
 #    nv_sig = NVA
     
-    nv_sig_list = [nv19_2021_01_26,]
+    nv_sig_list = [nv0_2021_01_26,]
     
 #    test_pulse_dur_list = [   
 #        0.,  100.,  200.,  300.,  400.,  500.,  600.,   800.,  1000.,  

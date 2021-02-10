@@ -1057,8 +1057,8 @@ if __name__ == '__main__':
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130,  ##
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':16, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
@@ -1068,19 +1068,19 @@ if __name__ == '__main__':
     [0.348, 0.349, 5.06],
 [0.222, 0.359, 5.03],
 [-0.001, 0.310, 4.97],
-[-0.010, 0.277, 5.03], 
+[-0.010, 0.277, 5.03], #[-0.007, 0.293,]
 [-0.053, 0.277, 4.99],
 [0.365, 0.288, 4.96],
 [0.350, 0.235, 5.04],
 [-0.028, 0.189, 4.96],
 [0.219, 0.139, 5.03],
 [0.204, 0.150, 4.94],
-[0.065, 0.094, 4.99], # 10
+[0.065, 0.094, 4.99],
 [0.159, 0.061, 5.03],
 [0.020, 0.061, 5.00],
 [0.088, -0.095, 4.98],
 [0.419, -0.164, 5.05],
-[0.166, -0.181, 4.96], # 15
+[0.166, -0.181, 4.96],
 [0.433, -0.289, 5.02],
 [0.409, -0.286, 5.02],
 [-0.164, -0.314, 5.01],
@@ -1106,21 +1106,20 @@ if __name__ == '__main__':
          nv_sig['color_filter'] = '635-715 bp'
          nv_sig['nd_filter'] = 'nd_1.0'
          nv_sig['am_589_power'] = 0.3
-         nv_sig['pulsed_SCC_readout_dur'] = 10**7
+         nv_sig['pulsed_SCC_readout_dur'] = 3*10**7
          # Measurements
-#         t =10**7
-#         do_moving_target_2D_image(nv_sig, start_coords, 0.06, t, num_steps, 60, init_color, pulse_color)
-         t =10**7
-         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 10, init_color, pulse_color, ungate_moving_pulse = True)
+
+#         t =10**6
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)
 #         t =5*10**6
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 25,init_color, pulse_color)
-#         t =10**7
-#         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 25, init_color, pulse_color) 
+         t =10**7
+         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 25, init_color, pulse_color) 
 #
 #    for s in [19]:
 #         start_coords = start_coords_list[s]
-#         init_color = 532
-#         pulse_color = 638
+#         init_color = 638
+#         pulse_color = 532
 #         nv_sig = copy.deepcopy(base_sig)
 #         # Set up for current NV
 #         nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_26'.format(s)
