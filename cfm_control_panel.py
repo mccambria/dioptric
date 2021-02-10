@@ -59,7 +59,7 @@ def set_xyz_zero():
 # %% Major Routines
 
 
-def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, readout = 10**7, flip = False):
+def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  readout = 10**7, flip = False, um_scaled= False):
     
 #    scan_range = 5.0
 #    num_steps = 150
@@ -69,20 +69,21 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
 #    num_steps = 75
 #    scan_range = 1.2
 #    scan_range = 1.0
-    scan_range = 0.8
-    num_steps = 250
-#    scan_range = 0.3
+#    scan_range = 0.8
+#    num_steps = 250
+#    scan_range = 0.5
 #    num_steps = 125
 #    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.15
-#    scan_range = 0.1
-#    num_steps = 90
+    scan_range = 0.1
+    num_steps = 90
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
+#    scan_range = 0.3
 #    num_steps = 40
     
 #    scan_range = 0.5 # 250
@@ -92,7 +93,7 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
     
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, 
-                               apd_indices, color_ind, save_data, plot_data,readout, flip)
+                               apd_indices, color_ind, save_data, plot_data,readout, flip, um_scaled)
     
 #def do_image_sample_SCC(nv_sig, aom_ao_589_pwr, apd_indices):
 #    
@@ -106,7 +107,7 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data, reado
     
 def do_two_pulse_image_sample(nv_sig, apd_indices, init_pulse_time,readout,
                     init_color_ind, read_color_ind, save_data, plot_data):
-    scan_range = 0.15
+    scan_range = 0.05
     num_steps = 60
     image_sample.two_pulse_image_sample(nv_sig, scan_range, scan_range, num_steps,
                   apd_indices,init_pulse_time,  readout, init_color_ind, read_color_ind, save_data, plot_data)
@@ -549,7 +550,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0.0, 0.0 ,5.23], 
+    search = { 'coords':[0,0 ,5.0], 
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -559,126 +560,63 @@ if __name__ == '__main__':
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 50, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
- 
-    nv0_2021_01_11 = { 'coords':[0.205, 0.571, 5.27], 
-            'name': '{}-nv0_2021_01_11'.format(sample_name),
-            'expected_count_rate': 45, 'nd_filter': 'nd_0',
+
+    nv0_2021_01_26 = { 'coords':[0.316, 0.337, 5.00], 
+            'name': '{}-nv0_2021_01_26'.format(sample_name),
+            'expected_count_rate': 75, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
+            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
-    
- 
-    nv1_2021_01_11 = { 'coords':[-0.333, 0.534, 5.3], 
-            'name': '{}-nv1_2021_01_11'.format(sample_name),
-            'expected_count_rate': 50, 'nd_filter': 'nd_0',
-            'color_filter': '635-715 bp', 
-#            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
-    
-    nv2_2021_01_11 = { 'coords': [-0.330, -0.112, 5.27], 
-            'name': '{}-nv2_2021_01_11'.format(sample_name),
-            'expected_count_rate': 40, 'nd_filter': 'nd_0',
-            'color_filter': '635-715 bp', 
-#            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
-    
-    nv3_2021_01_11 = { 'coords':[0.309, -0.080, 5.29], 
-            'name': '{}-nv3_2021_01_11'.format(sample_name),
-            'expected_count_rate': 48, 'nd_filter': 'nd_0',
-            'color_filter': '635-715 bp', 
-#            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
-       
-    nv8_2021_01_14 = { 'coords':[0.248, 0.113, 5.26], 
-            'name': '{}-nv8_2021_01_14'.format(sample_name),
-            'expected_count_rate': 48, 'nd_filter': 'nd_0',
-            'color_filter': '635-715 bp', 
-#            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
-    nv_list_2021_01_14 = [[0.040, 0.371, 5.19],
-[-0.327, 0.357, 5.20],
-[-0.191, 0.328, 5.19],
-[0.124, 0.297, 5.20],
-[0.337, 0.233, 5.26],
-[0.123, 0.223, 5.19],
-[-0.040, 0.202, 5.24],
-[0.259, 0.126, 5.22],
-[0.248, 0.113, 5.26],
-[0.074, 0.059, 5.21],
-[-0.039, -0.122, 5.23],
-[-0.235, -0.146, 5.23],
-[-0.091, -0.165, 5.19],
-[0.194, -0.191, 5.25],
-[0.066, -0.292, 5.20],
-[0.361, -0.318, 5.23],
+    
+    expected_count_list = [60, 43, 38, 38, 38, 45, 50, 48, 42, 42, 38, 36, 
+                           57, 58, 44, 72, 60, 40, 45, 45] # 2/4/21
+    nv_list_2021_01_26 = [    
+    [0.348, 0.349, 5.06],
+[0.222, 0.359, 5.03],
+[-0.001, 0.310, 4.97],
+[-0.010, 0.277, 5.03],
+[-0.053, 0.277, 4.99],
+[0.365, 0.288, 4.96],
+[0.350, 0.235, 5.04],
+[-0.028, 0.189, 4.96],
+[0.219, 0.139, 5.03],
+[0.204, 0.150, 4.94],
+[0.065, 0.094, 4.99],
+[0.159, 0.061, 5.03],
+[0.020, 0.061, 5.00],
+[0.088, -0.095, 4.98],
+[0.419, -0.164, 5.05],
+[0.166, -0.181, 4.96],
+[0.433, -0.289, 5.02],
+[0.409, -0.286, 5.02],
+[-0.164, -0.314, 5.01],
+[0.292, -0.370, 5.01],
 ]
-    expected_count_list = [46, 43, 40, 40, 50, 48, 40, 45, 48, 48, 38, 45, 40, 48, 48, 49]
     nv_sig_list =[]
-    i = 0
-    for nv_coords in nv_list_2021_01_14:
+    for i in [3]:#range(len(nv_list_2021_01_26)):
+        nv_coords = nv_list_2021_01_26[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
         nv_sig['expected_count_rate'] = expected_count_list[i]
-        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_14'.format(i)
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
         nv_sig_list.append(nv_sig)
-        i = i+1
-    nv_sig_list = [search]
+        
+#    nv_sig_list = [search]
     
-#    aom_ao_589_pwr_list = numpy.linspace(0.1, 0.7, 13)
-#    cobalt_638_power = 30
-#    ao_638_pwr_list = numpy.linspace(0.71, 0.9, 20)
-#    color_ind = 532
-#    readout_time = 100*10**3
 
     # %% Functions to run
 
@@ -686,9 +624,10 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        drift = [-0.064, 0.191,0.0]# nv0_2021_01_07
+#        drift = [0.023,-0.02,0.1]# 1/18/2021, 12:56 am
 #        tool_belt.set_drift(drift)  
-#        tool_belt.set_drift([0.0, 0.0,0.0])  # Totally reset
+#        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset
+#        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
 #        set_xyz([0.018,0.003,5.0])
 #        set_xyz([0.0, 0.0,  4.47])
@@ -697,6 +636,7 @@ if __name__ == '__main__':
 
       
 #        with labrad.connect() as cxn:
+#            set_xyz([-0.031+0.25, 0.299, 4.94])
 #            cxn.filter_slider_ell9k.set_filter('nd_0')           
 #            cxn.pulse_streamer.constant([3], 0.0, 0.0)
 #            time.sleep(1)
@@ -719,26 +659,26 @@ if __name__ == '__main__':
 #            do_optimize(nv_sig, apd_indices, 532)
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
-#            for z in numpy.linspace(5.3,5.5, 5):
+#            for z in numpy.linspace(4.8,5.2,5):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]  
 #                do_image_sample(nv_sig_copy,  apd_indices, 532, save_data=True, plot_data=True) 
-                               
-#            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 532, 638, save_data = True, plot_data = True)
+##                               
+#            do_two_pulse_image_sample(nv_sig, apd_indices,5*10**5, 3*10**7, 532, 589, save_data = True, plot_data = True)
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 589, 638, save_data = True, plot_data = True)
 #            with labrad.connection() as cxn:
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-#            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**3)
             do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout = nv_sig['pulsed_SCC_readout_dur'])
+#            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =10**7)
 
 #            do_determine_galvo_response(nv_sig, apd_indices)
 
             
-#            do_stationary_count(nv_sig, apd_indices, 532)            
+#            do_stationary_count(nv_sig, apd_indices, 638)            
 #            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
 #                                  2*10**7, apd_indices) 
             
@@ -802,7 +742,7 @@ if __name__ == '__main__':
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here
-        tool_belt.reset_cfm()
+#        tool_belt.reset_cfm()
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
             print('\n\nRoutine complete. Press enter to exit.')

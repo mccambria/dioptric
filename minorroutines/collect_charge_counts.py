@@ -31,7 +31,7 @@ def main(nv_sig, apd_indices, num_reps):
     return sig_counts, ref_counts
 def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
 # Initial Calculation and setup
     
@@ -44,8 +44,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     reionization_time = nv_sig['pulsed_reionization_dur']
     ionization_time = nv_sig['pulsed_ionization_dur']
         
-    # set the nd_filter for yellow
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
+
     
     
     #delay of aoms and laser
@@ -60,26 +59,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     opti_coords_list = []
     
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
+    opti_coords = optimize.main_xy_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
     opti_coords_list.append(opti_coords)
 
     # Estimate the lenth of the sequance            
     seq_file = 'simple_readout_two_pulse.py'
-    # Load the measuremnt with red laser first
-    seq_args = [galvo_delay, laser_638_delay, aom_589_delay, ionization_time,
-                readout_pulse_time, aom_ao_589_pwr, apd_indices[0], 638, 589]
-#    print(seq_args)
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
 
-    # Load the APD
-    cxn.apd_tagger.start_tag_stream(apd_indices)
-    # Clear the buffer
-    cxn.apd_tagger.clear_buffer()
-    # Run the sequence
-    cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
-
-    nv0 = cxn.apd_tagger.read_counter_simple(num_reps)
         
     #### Load the measuremnt with green laser
     seq_args = [galvo_delay, laser_515_delay, aom_589_delay, reionization_time,
@@ -96,7 +81,22 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
 
     nvm = cxn.apd_tagger.read_counter_simple(num_reps)
+    
+    # Load the measuremnt with red laser first
+    seq_args = [galvo_delay, laser_638_delay, aom_589_delay, ionization_time,
+                readout_pulse_time, aom_ao_589_pwr, apd_indices[0], 638, 589]
+#    print(seq_args)
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
 
+    # Load the APD
+    cxn.apd_tagger.start_tag_stream(apd_indices)
+    # Clear the buffer
+    cxn.apd_tagger.clear_buffer()
+    # Run the sequence
+    cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
+
+    nv0 = cxn.apd_tagger.read_counter_simple(num_reps)
 
     
     return nv0, nvm
@@ -350,7 +350,7 @@ def collect_charge_counts_yellow_pwr(coords, parameters_sig, nd_filter, aom_powe
 # %%
 def collect_charge_counts_yellow_time(coords, parameters_sig, readout_time_list, num_reps, apd_indices ):
     with labrad.connect() as cxn:
-        tool_belt.reset_cfm(cxn)
+        tool_belt.reset_cfm_wout_uwaves(cxn)
     
     nv0_list = []
     nvm_list = []
@@ -437,7 +437,7 @@ def collect_charge_counts_yellow_time(coords, parameters_sig, readout_time_list,
 # %%
 def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indices):
     with labrad.connect() as cxn:
-        tool_belt.reset_cfm(cxn)
+        tool_belt.reset_cfm_wout_uwaves(cxn)
     
     nv0_list = []
     nvm_list = []
@@ -523,72 +523,69 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    nv_coords_list = [[0.205, 0.571, 5.27],
-                      [-0.333, 0.534, 5.3], 
-                     [-0.330, -0.112, 5.27],
-                     [0.309, -0.080, 5.29], 
-            ]
-    expected_count_list = [45, 50, 32, 48]
+    nv_coords_list =[    
+    [0.348, 0.349, 5.06],
+[0.222, 0.359, 5.03],
+[-0.001, 0.310, 4.97],
+[-0.010, 0.277, 5.03],
+[-0.053, 0.277, 4.99],
+[0.365, 0.288, 4.96],
+[0.350, 0.235, 5.04],
+[-0.028, 0.189, 4.96],
+[0.219, 0.139, 5.03],
+[0.204, 0.150, 4.94],
+[0.065, 0.094, 4.99],
+[0.159, 0.061, 5.03],
+[0.020, 0.061, 5.00],
+[0.088, -0.095, 4.98],
+[0.419, -0.164, 5.05],
+[0.166, -0.181, 4.96],
+[0.433, -0.289, 5.02],
+[0.409, -0.286, 5.02],
+[-0.164, -0.314, 5.01],
+[0.292, -0.370, 5.01],
+]
+    expected_count_list = [60, 43, 38, 38, 38, 45, 50, 48, 42, 42, 38, 36, 
+                           57, 58, 44, 72, 60, 40, 45, 45]
 
     
     base_nv_sig  = { 'coords':None,
-            'name': 'goeppert-mayer-nv_2021_01_11',
+            'name': 'goeppert-mayer-nv_2021_01_26',
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
-            'color_filter': '635-715 bp',
+            'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 30000000, 'am_589_power': 0.7, 
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
+            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
-
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+    
+    list_ = [ nv_coords_list[10], nv_coords_list[11],nv_coords_list[12],nv_coords_list[13]]
 #    collect_charge_counts_list(nv_coords_list, base_nv_sig, 60, apd_indicies)
-#    collect_charge_counts_list(nv_coords_list, base_nv_sig, 1000, apd_indicies)
-  
-    nd_filter = 'nd_0.5'
-    aom_power_list = [0.2,0.3,0.4,0.5,0.6,0.7]
-    for i in [0,1,2,3]:
-        coords = nv_coords_list[i]
-        base_nv_sig['expected_count_rate'] = expected_count_list[i]
-        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_11'.format(i)
-        collect_charge_counts_yellow_pwr(coords, base_nv_sig, nd_filter, aom_power_list, 1000, apd_indicies )        
-    nd_filter = 'nd_1.0'
-    for i in [0,1,2,3]:
-        coords = nv_coords_list[i]
-        base_nv_sig['expected_count_rate'] = expected_count_list[i]
-        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_11'.format(i)
-        collect_charge_counts_yellow_pwr(coords, base_nv_sig, nd_filter, aom_power_list, 1000, apd_indicies )
-        
-    nd_filter = 'nd_1.5'
-    for i in [0,1,2,3]:
-        coords = nv_coords_list[i]
-        base_nv_sig['expected_count_rate'] = expected_count_list[i]
-        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_11'.format(i)
-        collect_charge_counts_yellow_pwr(coords, base_nv_sig, nd_filter, aom_power_list, 1000, apd_indicies )
-    
-    base_nv_sig  = { 'coords':None,
-            'name': 'goeppert-mayer-nv_2021_01_11',
-            'expected_count_rate': None,'nd_filter': 'nd_1.0',
-            'color_filter': '635-715 bp',
-#            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 30000000, 'am_589_power': 0.7, 
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 120, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':20, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}          
-    readout_time_list = [10*10**3, 
-                               50*10**3, 100*10**3,500*10**3, 
-                               1*10**6,  5*10**6, 
-                                1*10**7,
-                               5*10**7]
-    for i in [0,1,2,3]:
-        coords = nv_coords_list[i]
-        base_nv_sig['expected_count_rate'] = expected_count_list[i]
-        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_11'.format(i)
-        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 1000, apd_indicies )
+    collect_charge_counts_list(list_, base_nv_sig, 200, apd_indicies)
+       
+#    readout_time_list = [10**6, 5*10**6, 10*10**6, 30*10**6, 50*10**6, 80*10**6, 100*10**6, 120*10**6]
+#    for i in [2, 3, 5, 7, 9]:
+#        coords = nv_coords_list[i]
+#        base_nv_sig['expected_count_rate'] = expected_count_list[i]
+#        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
+#        base_nv_sig['am_589_power'] = 0.3
+#        base_nv_sig['nd_filter'] = 'nd_0'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#        base_nv_sig['am_589_power'] = 0.4
+#        base_nv_sig['nd_filter'] = 'nd_0'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#        base_nv_sig['am_589_power'] = 0.5
+#        base_nv_sig['nd_filter'] = 'nd_0'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#        base_nv_sig['nd_filter'] = 'nd_0.5'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#        base_nv_sig['nd_filter'] = 'nd_1.0'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#        base_nv_sig['nd_filter'] = 'nd_1.5'
+#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )

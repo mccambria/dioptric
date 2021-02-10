@@ -18,7 +18,7 @@ import time
 
 import json
 import matplotlib.pyplot as plt
-# import labrad
+import labrad
 
 def populate_img_array_bottom_left(valsToAdd, imgArray, writePos):
     """
@@ -148,7 +148,8 @@ def on_click_image(event):
 
         # %%
 
-def reformat_plot(colorMap, save_file_type):
+
+def reformat_plot(colorMap, save_file_type,centered_coords  =False):
     """
     Recreates the scan from an image_sample file. The plot will have axes in
     microns
@@ -206,7 +207,9 @@ def reformat_plot(colorMap, save_file_type):
             xScanRange = data["x_range"]
             xCenter = xyzCenters[0]
             xImgResolution = xScanRange / num_steps
-
+        if centered_coords:
+            xCenter = 0
+            yCenter = 0
         # define the readout in seconds
         readout_sec = float(readout) / 10**9
 
@@ -322,9 +325,6 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   plot_data=True, continuous=False):
 
     # %% Some initial setup
-    nv_size = 0.02 #V
-#    tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
-#    cxn.pulse_streamer.constant([3],0.0,0.0)
     tool_belt.reset_cfm(cxn)
     color_filter = nv_sig['color_filter']
     cxn.filter_slider_ell9k_color.set_filter(color_filter)
@@ -357,8 +357,6 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
 
-#    base_readout = 50*10**6
-#    readout_sec = float(readout) / 10**9
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
@@ -557,33 +555,34 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 # %%
 
 def main(nv_sig, x_range, y_range, num_steps,  apd_indices,
-         color_ind, save_data=True, plot_data=True, readout = 10**7 ,flip = False, continuous=False):
+         color_ind, save_data=True, plot_data=True, readout = 10**7 , um_scaled = False, continuous=False):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
                       y_range, num_steps,
-                      apd_indices,  color_ind, save_data, plot_data, readout, flip,  continuous)
+                      apd_indices,  color_ind,  save_data, plot_data, readout, um_scaled ,  continuous)
 
     return img_array, x_voltages, y_voltages
 
 def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   apd_indices,  color_ind, save_data=True,
-                  plot_data=True, readout = 10**7, flip = False, continuous=False):
+                  plot_data=True, readout = 10**7, um_scaled = False, continuous=False):
 
     # %% Some initial setup
-    nv_size = 0.02 #V
-
 #    tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
 #    cxn.pulse_streamer.constant([3],0.0,0.0)
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
     color_filter = nv_sig['color_filter']
     cxn.filter_slider_ell9k_color.set_filter(color_filter)
 #    cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
+    
+    nd_filter = nv_sig['nd_filter']
+    cxn.filter_slider_ell9k.set_filter(nd_filter)
 
 
 
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+#    shared_params = tool_belt.get_shared_parameters_dict(cxn)
 #    readout = shared_params['continuous_readout_dur']
 
     aom_ao_589_pwr = nv_sig['am_589_power']
@@ -591,9 +590,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
-
-    base_readout = readout
-    readout_sec = float(readout) / 10**9
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
@@ -604,16 +600,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     total_num_samples = num_steps**2
 
-    pixel_size_est = x_range / (num_steps - 1)
-#    print(pixel_size_est)
-
-    # If we want to spend the same amount of time on an NV, regardless of the
-    # scan range or pixel size, we will scale the readout time so that we spend
-    # the same amount of time scanning over an NV, regardless of the relative
-    #size of the pixel sizes and NV size.
-#    readout = int((pixel_size_est/nv_size)**2 * base_readout)
-
-#    print(str(readout /10**6) + 'ms')
     # %% Load the PulseStreamer
 
     seq_args = [delay, readout, aom_ao_589_pwr, apd_indices[0], color_ind]
@@ -629,27 +615,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
 #    time.sleep(1)
     # %% Set up the galvo
-    if flip==1:
-        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_flip(x_center, y_center,
-                                                       x_range, y_range,
-                                                       num_steps, period)
-    elif flip == 2:
-
-        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_bl(x_center, y_center,
-                                                       x_range, y_range,
-                                                       num_steps, period)
-    elif flip == 3:
-
-        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_ul(x_center, y_center,
-                                                       x_range, y_range,
-                                                       num_steps, period)
-    elif flip == 4:
-
-        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_ur(x_center, y_center,
-                                                       x_range, y_range,
-                                                       num_steps, period)
-    else:
-        x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
+    x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
 
@@ -690,10 +656,13 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         half_pixel_size = pixel_size / 2
         img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                       y_low - half_pixel_size, y_high + half_pixel_size]
+        if um_scaled:
+            img_extent = [(x_high + half_pixel_size)*35, (x_low - half_pixel_size)*35,
+                      (y_low - half_pixel_size)*35, (y_high + half_pixel_size)*35]
         title = 'Confocal scan with {} nm.\nReadout {} us'.format(color_ind, readout_us)
         fig = tool_belt.create_image_figure(img_array, img_extent,
                                             clickHandler=on_click_image,
-                                            title = title)
+                                            title = title, um_scaled = um_scaled)
 
     # %% Collect the data
     cxn.apd_tagger.clear_buffer()
@@ -719,72 +688,29 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
-            if flip==1:
-                populate_img_array_bottom_left(new_samples, img_array, img_write_pos)
-                # This is a horribly inefficient way of getting kcps, but it
-                # is easy and readable and probably fine up to some resolution
-                if plot_data:
-    #                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-                    tool_belt.update_image_figure(fig, img_array)
-                num_read_so_far += num_new_samples
-            else:
-                populate_img_array(new_samples, img_array, img_write_pos)
-                # This is a horribly inefficient way of getting kcps, but it
-                # is easy and readable and probably fine up to some resolution
-                if plot_data:
-    #                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-                    tool_belt.update_image_figure(fig, img_array)
-                num_read_so_far += num_new_samples
+            populate_img_array(new_samples, img_array, img_write_pos)
+            # This is a horribly inefficient way of getting kcps, but it
+            # is easy and readable and probably fine up to some resolution
+            if plot_data:
+#                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
+                tool_belt.update_image_figure(fig, img_array)
+            num_read_so_far += num_new_samples
 
     # %% Clean up
 
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
     # Return to center
     cxn.galvo.write(x_center, y_center)
-#    cxn.galvo.write(0.5, 0.5)
-
-    # %% Read the optical power for either yellow or green light
-
-#    if color_ind == 532:
-#        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
-#    elif color_ind == 589:
-#        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind,
-#           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])
-#    elif color_ind == 638:
-#        optical_power_pd = tool_belt.opt_power_via_photodiode(color_ind)
-
-    # Convert V to mW optical power
-#    optical_power_mW = tool_belt.calc_optical_power_mW(color_ind, optical_power_pd)
-    optical_power_pd = None
-    optical_power_mW = None
-
 
     # %% Save the data
-    if plot_data:
-        if flip == 1:
-            fig = tool_belt.create_image_figure(numpy.fliplr(img_array), img_extent,
-                                                clickHandler=on_click_image,
-                                                title = title)
-        elif flip == 2:
-            fig = tool_belt.create_image_figure(numpy.rot90(img_array,3), img_extent,
-                                                clickHandler=on_click_image,
-                                                title = title)
-        elif flip == 3:
-            fig = tool_belt.create_image_figure(numpy.rot90(img_array,2), img_extent,
-                                                clickHandler=on_click_image,
-                                                title = title)
-        elif flip == 4:
-            fig = tool_belt.create_image_figure(numpy.rot90(img_array,1), img_extent,
-                                                clickHandler=on_click_image,
-                                                title = title)
 
     # measure laser powers:
-    green_optical_power_pd, green_optical_power_mW, \
-            red_optical_power_pd, red_optical_power_mW, \
-            yellow_optical_power_pd, yellow_optical_power_mW = \
-            tool_belt.measure_g_r_y_power(
-                              nv_sig['am_589_power'], nv_sig['nd_filter'])
+#    green_optical_power_pd, green_optical_power_mW, \
+#            red_optical_power_pd, red_optical_power_mW, \
+#            yellow_optical_power_pd, yellow_optical_power_mW = \
+#            tool_belt.measure_g_r_y_power(
+#                              nv_sig['am_589_power'], nv_sig['nd_filter'])
 
     timestamp = tool_belt.get_time_stamp()
 
@@ -793,24 +719,20 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
                'color_filter': color_filter,
                'color_ind': color_ind,
-               'optical_power_pd': optical_power_pd,
-               'optical_power_pd-units': 'V',
-               'optical_power_mW': optical_power_mW,
-               'optical_power_mW-units': 'mW',
                'aom_ao_589_pwr': aom_ao_589_pwr,
                'aom_ao_589_pwr-units': 'V',
-                'green_optical_power_pd': green_optical_power_pd,
-                'green_optical_power_pd-units': 'V',
-                'green_optical_power_mW': green_optical_power_mW,
-                'green_optical_power_mW-units': 'mW',
-                'red_optical_power_pd': red_optical_power_pd,
-                'red_optical_power_pd-units': 'V',
-                'red_optical_power_mW': red_optical_power_mW,
-                'red_optical_power_mW-units': 'mW',
-                'yellow_optical_power_pd': yellow_optical_power_pd,
-                'yellow_optical_power_pd-units': 'V',
-                'yellow_optical_power_mW': yellow_optical_power_mW,
-                'yellow_optical_power_mW-units': 'mW',
+#                'green_optical_power_pd': green_optical_power_pd,
+#                'green_optical_power_pd-units': 'V',
+#                'green_optical_power_mW': green_optical_power_mW,
+#                'green_optical_power_mW-units': 'mW',
+#                'red_optical_power_pd': red_optical_power_pd,
+#                'red_optical_power_pd-units': 'V',
+#                'red_optical_power_mW': red_optical_power_mW,
+#                'red_optical_power_mW-units': 'mW',
+#                'yellow_optical_power_pd': yellow_optical_power_pd,
+#                'yellow_optical_power_pd-units': 'V',
+#                'yellow_optical_power_mW': yellow_optical_power_mW,
+#                'yellow_optical_power_mW-units': 'mW',
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,
@@ -847,9 +769,9 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_01/2021_01_14-09_44_56-goeppert-mayer-search'
-#    reformat_plot('inferno', 'png')
-    create_figure(file_name)
+    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_01/2021_01_20-13_34_55-goeppert-mayer-nv0_2021_01_18'
+    reformat_plot('inferno', 'png')
+#    create_figure(file_name)
 
 #    sub_folder = 'branch_Spin_to_charge/2020_10/'
 #    green_file = '2020_10_14-16_47_42-goeppert-mayer-nv1'

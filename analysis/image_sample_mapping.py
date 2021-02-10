@@ -103,38 +103,45 @@ if __name__ == '__main__':
 #        file_name = '2019-06-10_15-26-39_ayrton12_mapping'
 #    illustrate_mapping(file_name, [13])
 #    else:
-
-    coords_list = [[0.040, 0.371, 5.19],
-[-0.327, 0.357, 5.20],
-[-0.191, 0.328, 5.19],
-[0.124, 0.297, 5.20],
-[0.337, 0.233, 5.26],
-[0.123, 0.223, 5.19],
-[-0.040, 0.202, 5.24],
-[0.259, 0.126, 5.22],
-[0.248, 0.113, 5.26],
-[0.074, 0.059, 5.21],
-[-0.039, -0.122, 5.23],
-[-0.235, -0.146, 5.23],
-[-0.091, -0.165, 5.19],
-[0.194, -0.191, 5.25],
-[0.066, -0.292, 5.20],
-[0.361, -0.318, 5.23],
+    drift_x = 0.005
+    coords_list = [    
+    [0.317, 0.338, 5.09],
+[0.190, 0.345, 5.00],
+[-0.031, 0.299, 4.94],
+[-0.042, 0.265, 4.98],
+[-0.084, 0.266, 4.96],
+[0.333, 0.277, 4.93],
+[0.316, 0.223, 5.01],
+[-0.060, 0.179, 4.93],
+[0.187, 0.127, 4.97],
+[0.172, 0.140, 4.91],
+[0.033, 0.085, 4.93],
+[0.125, 0.049, 4.95],
+[-0.010, 0.052, 4.92],
+[0.057, -0.106, 4.93],
+[0.385, -0.174, 4.99],
+[0.134, -0.192, 4.93],
+[0.400, -0.299, 4.97],
+[0.374, -0.296, 4.96],
+[-0.194, -0.326, 4.97],
+[0.260, -0.382, 4.98],
 ]
-
+#    coords_list = numpy.array(coords_list) + numpy.array([-0.007710279036012624, -0.003293695710258837, -0.012155496756263595])
 
     sample_name = 'goeppert-mayer'
     micrometer_coords = [3.154, 2.193, 11.118, 120.21]
-    image_sample_file_name = '2021_01_14-09_44_56-goeppert-mayer-search'
+    image_sample_file_name = '2021_02_03-13_05_48-goeppert-mayer-search'
     branch = 'branch_Spin_to_charge'
-    month_folder = '2021_01'
+    month_folder = '2021_02'
 
     nv_sig_list = []
     for ind in range(len(coords_list)):
         coords = coords_list[ind]
-        name = '{}-nv{}_2020_11_10'.format(sample_name, ind)
+        name = '{}-nv{}_2020_11_18'.format(sample_name, ind)
         nd_filter = 'nd_1.0'
         nv_sig = {'coords': coords, 'name': name, nd_filter: nd_filter}
         nv_sig_list.append(nv_sig)
     generate_mapping_files(sample_name, micrometer_coords,
                           image_sample_file_name, branch, month_folder,  nv_sig_list)
+
+    # Would be great to include the ability to adjust due to drift...

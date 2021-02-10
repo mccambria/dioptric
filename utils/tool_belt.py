@@ -22,10 +22,10 @@ import numpy
 from numpy import exp
 import json
 import time
-# import labrad
-# from tkinter import Tk
-# from tkinter import filedialog
-# from git import Repo
+import labrad
+from tkinter import Tk
+from tkinter import filedialog
+from git import Repo
 from pathlib import Path
 from pathlib import PurePath
 from enum import Enum, auto
@@ -136,7 +136,7 @@ def decode_time_tags(ret_vals_string):
 # %% Matplotlib plotting utils
 
 
-def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts', min_value=None):
+def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts', min_value=None, um_scaled = False):
     """
     Creates a figure containing a single grayscale image and a colorbar.
 
@@ -152,10 +152,12 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
     Returns:
         matplotlib.figure.Figure
     """
-
+    axes_label = 'V'
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
-
+    if um_scaled:
+        axes_label = 'um'
+        
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',
                     extent=tuple(imgExtent), vmin = min_value)
@@ -169,8 +171,8 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
 #    clb.set_label('kcounts/sec', rotation=270)
     
     # Label axes
-    plt.xlabel('V')
-    plt.ylabel('V')
+    plt.xlabel(axes_label)
+    plt.ylabel(axes_label)
     if title:
         plt.title(title)
 
@@ -208,7 +210,7 @@ def update_image_figure(fig, imgArray):
     ax = axes[0]
     images = ax.get_images()
     img = images[0]
-
+    
     # Set the data for the image to display
     img.set_data(imgArray)
 
@@ -772,35 +774,43 @@ def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
         
 def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = None):
     cxn = labrad.connect()
-    
+    optical_power_list = []
     if color_ind==532:
         cxn.pulse_streamer.constant([3],0.0, 0.0) # Turn on the green laser  
-        time.sleep(0.5)
-        optical_power = cxn.photodiode.read_optical_power()
-        
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+            optical_power = numpy.average(optical_power_list)
     elif color_ind==589:
         cxn.filter_slider_ell9k.set_filter(nd_filter) # Change the nd filter for the yellow laser
         cxn.pulse_streamer.constant([],0.0, AO_power_settings) # Turn on the yellow laser       
-        time.sleep(0.5)
-        optical_power = cxn.photodiode.read_optical_power()
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+            optical_power = numpy.average(optical_power_list)
         
     elif color_ind==638:
         cxn.pulse_streamer.constant([7], 0.0, 0.0) # Turn on the red laser     
-        time.sleep(0.5)
-        optical_power = cxn.photodiode.read_optical_power()
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+            optical_power = numpy.average(optical_power_list)
     
-    time.sleep(0.5)
+    time.sleep(0.1)
     cxn.pulse_streamer.constant([], 0.0, 0.0)
     return optical_power
 
 def calc_optical_power_mW(color_ind, optical_power_V):
     # Values found from experiments. See Notebook entry 3/19/2020 and 3/20/2020
     if color_ind == 532:
-        return 13* optical_power_V + 0.037
+        return 14.3* optical_power_V + 0.34
     elif color_ind == 589:
-        return 7.9* optical_power_V + 0.024
+        return 33.5* optical_power_V + 0.16
     if color_ind == 638:
-        return 5.7* optical_power_V + 0.035
+        return 6.7* optical_power_V + 0.78
 
 def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
     green_optical_power_pd = opt_power_via_photodiode(532)
@@ -999,3 +1009,24 @@ def reset_cfm_with_cxn(cxn):
     cxn.arbitrary_waveform_generator.reset()
     cxn.signal_generator_tsg4104a.reset()
     cxn.signal_generator_bnc835.reset()
+    
+    
+def reset_cfm_wout_uwaves(cxn=None):
+    """Reset our cfm so that it's ready to go for a new experiment. Avoids
+    unnecessarily resetting components that may suffer hysteresis (ie the 
+    components that control xyz since these need to be reset in any
+    routine where they matter anyway).
+    
+    Exclude the uwaves
+    """
+    
+    if cxn == None:
+        with labrad.connect() as cxn:
+            reset_cfm_without_uwaves_with_cxn(cxn)
+    else:
+        reset_cfm_without_uwaves_with_cxn(cxn)
+        
+            
+def reset_cfm_without_uwaves_with_cxn(cxn):
+    cxn.pulse_streamer.reset()
+    cxn.apd_tagger.reset()
