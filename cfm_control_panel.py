@@ -607,7 +607,7 @@ if __name__ == '__main__':
 [0.292, -0.370, 5.01],
 ]
     nv_sig_list =[]
-    for i in [3]:#range(len(nv_list_2021_01_26)):
+    for i in [19]:#range(len(nv_list_2021_01_26)):
         nv_coords = nv_list_2021_01_26[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
@@ -656,7 +656,7 @@ if __name__ == '__main__':
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #                cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
 ##    
-#            do_optimize(nv_sig, apd_indices, 532)
+            do_optimize(nv_sig, apd_indices, 532)
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
 #            for z in numpy.linspace(4.8,5.2,5):
@@ -671,7 +671,7 @@ if __name__ == '__main__':
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =10**7)
 

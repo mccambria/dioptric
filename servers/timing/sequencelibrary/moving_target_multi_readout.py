@@ -152,7 +152,7 @@ def get_seq(pulser_wiring, args):
         train_589.extend(galvo_delay_train)
         train_638.extend(galvo_delay_train)
         
-    
+        
 
     seq.setDigital(pulser_do_532_aom, train_532)
     seq.setAnalog(pulser_ao_589_aom, train_589)
@@ -171,8 +171,8 @@ if __name__ == '__main__':
               'do_638_laser': 7
               }
 
-    seq_args = [1000, 1500, 3000, 0, 0, 0, 500, 0.5, 0, 532, 532, 638, 1]
-#    seq_args = [100000, 10000000, 10000000, 140, 1080, 90, 2000000, 0.3, 0, 532, 638, 589, 1]
+    seq_args = [1000, 1500, 3000, 0, 0, 0, 500, 0.5, 0, 532, 532, 638, 3]
+#    seq_args = [100000, 5000000, 100000, 0, 0, 0, 2000000, 0.3, 0, 532, 532, 589, 1]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()

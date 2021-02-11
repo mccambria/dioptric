@@ -241,15 +241,15 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
     tool_belt.reset_cfm_wout_uwaves(cxn)
     disable_boo = False # can disable the optimize function here.
     
-    # Some checking of the initial pulse colors
-    if init_color == 532 or init_color==638:
-        pass
-    else:
-        print("Please only use '532' or '638' for init_color!")
-    if pulse_color == 532 or pulse_color==638:
-        pass
-    else:
-        print("Please only use '532' or '638' for pulse_color!")
+#    # Some checking of the initial pulse colors
+#    if init_color == 532 or init_color==638:
+#        pass
+#    else:
+#        print("Please only use '532' or '638' for init_color!")
+#    if pulse_color == 532 or pulse_color==638:
+#        pass
+#    else:
+#        print("Please only use '532' or '638' for pulse_color!")
         
     # Define paramters
     apd_indices = [0]
@@ -262,7 +262,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
     laser_515_delay = shared_params['515_laser_delay']
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
-    galvo_delay = shared_params['large_angle_galvo_delay'] #+ 10*10**6
+    galvo_delay = shared_params['large_angle_galvo_delay'] + 5*10**7
          
     # copy the first start coord onto the nv_sig
     start_nv_sig = copy.deepcopy(nv_sig)
@@ -297,7 +297,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
         am_589_power, apd_indices[0], init_color, pulse_color, readout_color, num_readout]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-#    print(seq_args)
+    
     # print the expected run time
     period = ret_vals[0]
     period_s = period/10**9
@@ -306,8 +306,8 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
     print('Expected total run time: {:.0f} m'.format(period_s_total/60))
     ### Backto the same
     # Optimize at the start of the routine
-#    opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
-#    opti_coords_list.append(opti_coords)
+    opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
+    opti_coords_list.append(opti_coords)
         
         
     # record the time starting at the beginning of the runs
@@ -320,10 +320,10 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
         # So first check the time. If the time that has passed since the last
         # optimize is longer that 5 min, optimize again
         current_time = time.time()
-#        if current_time - run_start_time >= 5*60:
-#            opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
-#            opti_coords_list.append(opti_coords) 
-#            run_start_time = current_time
+        if current_time - run_start_time >= 5*60:
+            opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
+            opti_coords_list.append(opti_coords) 
+            run_start_time = current_time
             
         drift = numpy.array(tool_belt.get_drift())
             
@@ -357,24 +357,24 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
 
         tool_belt.init_safe_stop()
 
-#        while num_read_so_far < total_num_samples:
-#
-#            if tool_belt.safe_stop():
-#                break
-#    
+        while num_read_so_far < total_num_samples:
+
+            if tool_belt.safe_stop():
+                break
+    
             # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
-#            num_new_samples = len(new_samples)
-#            
-#            if num_new_samples > 0:
-#                for el in new_samples:
-#                    total_samples_list.append(int(el))
-#                num_read_so_far += num_new_samples
-        
+            new_samples = cxn.apd_tagger.read_counter_simple()
+            num_new_samples = len(new_samples)
+            
+            if num_new_samples > 0:
+                for el in new_samples:
+                    total_samples_list.append(int(el))
+                num_read_so_far += num_new_samples
+            
         # Sort the counts that we care about
         for i in range(num_readout):
             gate_ind = num_readout + 1 + i
-            readout_counts = new_samples[gate_ind::num_clk_pulses]
+            readout_counts = total_samples_list[gate_ind::num_clk_pulses]
         
             readout_counts_array_transp[i][r] = readout_counts
         
@@ -546,7 +546,7 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur':4*10**7,  'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 10**7,  'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -557,35 +557,28 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 
-    start_coords_list =[[0.065, 0.094, 4.99],
-[0.159, 0.061, 5.03],
-[0.020, 0.061, 5.00],
-[0.088, -0.095, 4.98],]
+    start_coords_list =[[0.292, -0.370, 5.01],]
     
-    title_list = ['goeppert-mayer-nv10_2021_01_26',
-                  'goeppert-mayer-nv11_2021_01_26',
-                  'goeppert-mayer-nv12_2021_01_26',
-                  'goeppert-mayer-nv13_2021_01_26']
-    central_img_coord = [0.0, 0.0, 4.98]
+    title_list = ['goeppert-mayer-nv19_2021_01_26']
+    central_img_coord = start_coords_list[0]
     expected_count = 42
-    num_steps = 50
-    num_runs = 10#50
-    img_range = 1.0
+    num_steps = 40
+    num_runs = 15
+    img_range = 0.4
 #    pulse_time = 5*10**7
     init_color = 532
     pulse_color = 638
     
-    
-
-#    
-    img_range = 0.4
-
     nv_sig = copy.deepcopy(base_sig)
     nv_sig['expected_count_rate'] = expected_count
-    pulse_time = 10**8
+
+#    pulse_time = 10**7
+#    do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
+#                      num_steps, num_runs, init_color, pulse_color, title_list)
+    pulse_time = 5*10**7
     do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
                       num_steps, num_runs, init_color, pulse_color, title_list)
     
-
+    # other measurement, include more NVs: see my list and the size we should use. Try at 25*10**7
     
    

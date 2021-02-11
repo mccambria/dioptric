@@ -40,7 +40,6 @@ def get_seq(pulser_wiring, args):
     init_color = args[9]
     pulse_color = args[10]
     read_color = args[11]
-    ungate_moving_pulse = args[12]
 
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
@@ -64,15 +63,7 @@ def get_seq(pulser_wiring, args):
     # APD 
 #    train = [(period - readout_time - 100, LOW), (readout_time, HIGH), (100, LOW)]
 #    train = [(readout_time, HIGH), (100, LOW)]
-
-    
-    if ungate_moving_pulse == True:
-        train = [(total_laser_delay, LOW), (initialization_time, LOW),
-             (100 + galvo_time, LOW), (pulse_time, LOW),
-             (100 + galvo_time, LOW), (readout_time, HIGH),
-             (100, LOW)]
-    else:
-        train = [(total_laser_delay, LOW), (initialization_time, HIGH),
+    train = [(total_laser_delay, LOW), (initialization_time, HIGH),
              (100 + galvo_time, LOW), (pulse_time, HIGH),
              (100 + galvo_time, LOW), (readout_time, HIGH),
              (100, LOW)]
