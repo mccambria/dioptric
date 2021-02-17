@@ -262,7 +262,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords_list, sample_coords_
     laser_515_delay = shared_params['515_laser_delay']
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
-    galvo_delay = shared_params['large_angle_galvo_delay'] + 5*10**7
+    galvo_delay = shared_params['large_angle_galvo_delay'] #+ 5*10**7
          
     # copy the first start coord onto the nv_sig
     start_nv_sig = copy.deepcopy(nv_sig)
@@ -557,13 +557,13 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 
-    start_coords_list =[[0.292, -0.370, 5.01],]
+    start_coords_list =[[0.285, -0.359, 4.96],]
     
     title_list = ['goeppert-mayer-nv19_2021_01_26']
     central_img_coord = start_coords_list[0]
-    expected_count = 42
-    num_steps = 40
-    num_runs = 15
+    expected_count = 38
+    num_steps = 5
+    num_runs = 2
     img_range = 0.4
 #    pulse_time = 5*10**7
     init_color = 532
@@ -572,13 +572,51 @@ if __name__ == '__main__':
     nv_sig = copy.deepcopy(base_sig)
     nv_sig['expected_count_rate'] = expected_count
 
-#    pulse_time = 10**7
+    pulse_time = 10**7
 #    do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
 #                      num_steps, num_runs, init_color, pulse_color, title_list)
-    pulse_time = 5*10**7
-    do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
-                      num_steps, num_runs, init_color, pulse_color, title_list)
+#    pulse_time = 5*10**7
+#    do_moving_target_multi_NV_2D(nv_sig, start_coords_list, central_img_coord, img_range, pulse_time, 
+#                      num_steps, num_runs, init_color, pulse_color, title_list)
     
     # other measurement, include more NVs: see my list and the size we should use. Try at 25*10**7
+    
+ 
+    #%%
+#    pc_name = 'pc_rabi'
+#    branch_name = 'branch_Spin_to_charge'
+#    data_folder = 'moving_target_multi_readout'
+#    month_folder = '2021_02'
+#    
+#    sub_folder = '2021_02_06 multi readout 25 ms'
+#    
+#    normalization_file = pc_name + '/' + branch_name + '/collect_charge_counts/' + month_folder
+#    file_name = '2021_02_08-10_07_05-goeppert-mayer-nv_2021_01_26-nv_list'
+#    norm_data = tool_belt.get_raw_data(normalization_file, file_name)
+#    nvm_list = norm_data['nvm_avg_list']
+#    nv0_list = norm_data['nv0_avg_list']
+#    
+#
+#    folder = pc_name + '/' + branch_name + '/' + data_folder + '/' + month_folder + '/' + sub_folder
+#    file_list = tool_belt.get_file_list(folder, 'txt')
+#    sorted_file_list = sorted(file_list)
+#    
+#    index_list = [10,11,12,13,7,8,9,15] # the sorting is a bit off...
+#    for f in range(len(sorted_file_list)):
+#        i = index_list[f]
+#        nvm = nvm_list[i]
+#        nv0 = nv0_list[i]
+#        file = sorted_file_list[f]
+#        data = tool_belt.get_raw_data(folder, file[:-4])
+#        readout_image_array = numpy.array(data['readout_image_array'])
+#        img_extent = data['img_extent']
+#        readout_counts_norm = (readout_image_array - nv0)/(nvm - nv0)
+#        nv_sig = data['nv_sig']
+#        name = nv_sig['name']
+#        # Create the figure
+#        title = 'goeppert-mayer-nv{}_2021_01_26 normalized to charge state'.format(i)
+#        fig_readout = tool_belt.create_image_figure(readout_counts_norm, numpy.array(img_extent)*35,
+#                                                title = title,color_bar_label = 'Scaled charge state to NV-', um_scaled = True)
+    
     
    

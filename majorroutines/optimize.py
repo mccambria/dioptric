@@ -94,7 +94,7 @@ def stationary_count_lite(cxn, coords, shared_params, aom_ao_589_pwr,
     total_num_samples = 2
     x_center, y_center, z_center = coords
 
-    seq_args = [shared_params['532_aom_delay'], readout, aom_ao_589_pwr, 
+    seq_args = [shared_params['532_aom_delay'], readout, aom_ao_589_pwr,  0.0,
                 apd_indices[0], color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)
@@ -126,11 +126,11 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
     tool_belt.set_xyz(cxn, coords)
     
     tool_belt.init_safe_stop()
-    
+
     # x/y
     if axis_ind in [0, 1]:
         scan_range = scan_range_nm / shared_params['galvo_nm_per_volt']
-        seq_args = [shared_params['small_angle_galvo_delay'], readout, aom_ao_589_pwr, 
+        seq_args = [shared_params['small_angle_galvo_delay'], readout, aom_ao_589_pwr, 0.0,
                     apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
@@ -150,7 +150,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
         
         scan_range = 2* scan_range_nm / shared_params['piezo_nm_per_volt']
         seq_args = [shared_params['objective_piezo_delay'],
-                    readout, aom_ao_589_pwr, apd_indices[0], color_ind]
+                    readout, aom_ao_589_pwr, 0.0, apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string)

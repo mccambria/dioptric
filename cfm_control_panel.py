@@ -73,13 +73,14 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  read
 #    num_steps = 250
 #    scan_range = 0.5
 #    num_steps = 125
+#    scan_range = 0.3
 #    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.15
-    scan_range = 0.1
-    num_steps = 90
-#    scan_range = 0.05
-#    num_steps = 60
+#    scan_range = 0.1
+#    num_steps = 90
+    scan_range = 0.05
+    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
@@ -550,7 +551,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0,0 ,5.0], 
+    search = { 'coords':[0.003, 0.070, 4.92], 
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -561,14 +562,15 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 50, 
+            'ao_638_pwr': 0.8,
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
 
-    nv0_2021_01_26 = { 'coords':[0.316, 0.337, 5.00], 
-            'name': '{}-nv0_2021_01_26'.format(sample_name),
-            'expected_count_rate': 75, 'nd_filter': 'nd_1.0',
+    nv0_2021_02_16 = { 'coords':[0.005, 0.070, 4.90], 
+            'name': '{}-nv0_2021_02_16'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -582,29 +584,29 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    expected_count_list = [60, 43, 38, 38, 38, 45, 50, 48, 42, 42, 38, 36, 
-                           57, 58, 44, 72, 60, 40, 45, 45] # 2/4/21
+    expected_count_list = [60, 40, 38, 36, 38, 40, 55, 48, 42, 36, 38, 30, 
+                           46, 53, 44, 70, 50, 40, 40, 38] # 2/11/21
     nv_list_2021_01_26 = [    
-    [0.348, 0.349, 5.06],
-[0.222, 0.359, 5.03],
-[-0.001, 0.310, 4.97],
-[-0.010, 0.277, 5.03],
-[-0.053, 0.277, 4.99],
-[0.365, 0.288, 4.96],
-[0.350, 0.235, 5.04],
-[-0.028, 0.189, 4.96],
-[0.219, 0.139, 5.03],
-[0.204, 0.150, 4.94],
-[0.065, 0.094, 4.99],
-[0.159, 0.061, 5.03],
-[0.020, 0.061, 5.00],
-[0.088, -0.095, 4.98],
-[0.419, -0.164, 5.05],
-[0.166, -0.181, 4.96],
-[0.433, -0.289, 5.02],
-[0.409, -0.286, 5.02],
-[-0.164, -0.314, 5.01],
-[0.292, -0.370, 5.01],
+    [0.342, 0.360, 5.04],
+[0.216, 0.368, 4.97],
+[-0.005, 0.320, 4.92],
+[-0.015, 0.287, 4.97],
+[-0.057, 0.288, 4.94],
+[0.358, 0.298, 4.93],
+[0.344, 0.246, 5.01],
+[-0.034, 0.200, 4.90],
+[0.213, 0.149, 5.00],
+[0.197, 0.157, 4.88],
+[0.059, 0.106, 4.97],
+[0.153, 0.071, 4.97],
+[0.015, 0.073, 4.94],
+[0.083, -0.085, 4.93],
+[0.413, -0.154, 5.03],
+[0.160, -0.171, 4.90],
+[0.424, -0.278, 4.98],
+[0.401, -0.276, 4.96],
+[-0.169, -0.303, 4.99],
+[0.285, -0.359, 4.96],
 ]
     nv_sig_list =[]
     for i in [19]:#range(len(nv_list_2021_01_26)):
@@ -615,7 +617,7 @@ if __name__ == '__main__':
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
         nv_sig_list.append(nv_sig)
         
-#    nv_sig_list = [search]
+    nv_sig_list = [search]
     
 
     # %% Functions to run
@@ -656,7 +658,7 @@ if __name__ == '__main__':
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #                cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
 ##    
-            do_optimize(nv_sig, apd_indices, 532)
+#            do_optimize(nv_sig, apd_indices, 532)
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
 #            for z in numpy.linspace(4.8,5.2,5):
@@ -671,14 +673,14 @@ if __name__ == '__main__':
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =10**7)
 
 #            do_determine_galvo_response(nv_sig, apd_indices)
 
             
-#            do_stationary_count(nv_sig, apd_indices, 638)            
+#            do_stationary_count(nv_sig, apd_indices, 532)            
 #            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
 #                                  2*10**7, apd_indices) 
             

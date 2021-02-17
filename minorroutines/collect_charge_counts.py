@@ -524,29 +524,29 @@ if __name__ == '__main__':
     apd_indicies = [0]
     
     nv_coords_list =[    
-    [0.348, 0.349, 5.06],
-[0.222, 0.359, 5.03],
-[-0.001, 0.310, 4.97],
-[-0.010, 0.277, 5.03],
-[-0.053, 0.277, 4.99],
-[0.365, 0.288, 4.96],
-[0.350, 0.235, 5.04],
-[-0.028, 0.189, 4.96],
-[0.219, 0.139, 5.03],
-[0.204, 0.150, 4.94],
-[0.065, 0.094, 4.99],
-[0.159, 0.061, 5.03],
-[0.020, 0.061, 5.00],
-[0.088, -0.095, 4.98],
-[0.419, -0.164, 5.05],
-[0.166, -0.181, 4.96],
-[0.433, -0.289, 5.02],
-[0.409, -0.286, 5.02],
-[-0.164, -0.314, 5.01],
-[0.292, -0.370, 5.01],
+    [0.342, 0.360, 5.04],
+[0.216, 0.368, 4.97],
+[-0.005, 0.320, 4.92],
+[-0.015, 0.287, 4.97],
+[-0.057, 0.288, 4.94],
+[0.358, 0.298, 4.93],
+[0.344, 0.246, 5.01],
+[-0.034, 0.200, 4.90],
+[0.213, 0.149, 5.00],
+[0.197, 0.157, 4.88],
+[0.059, 0.106, 4.97],
+[0.153, 0.071, 4.97],
+[0.015, 0.073, 4.94],
+[0.083, -0.085, 4.93],
+[0.413, -0.154, 5.03],
+[0.160, -0.171, 4.90],
+[0.424, -0.278, 4.98],
+[0.401, -0.276, 4.96],
+[-0.169, -0.303, 4.99],
+[0.285, -0.359, 4.96],
 ]
-    expected_count_list = [60, 43, 38, 38, 38, 45, 50, 48, 42, 42, 38, 36, 
-                           57, 58, 44, 72, 60, 40, 45, 45]
+    expected_count_list = [60, 40, 38, 36, 38, 40, 55, 48, 42, 36, 38, 30, 
+                           46, 53, 44, 70, 50, 40, 40, 38] # 2/11/21
 
     
     base_nv_sig  = { 'coords':None,
@@ -565,27 +565,16 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    list_ = [ nv_coords_list[10], nv_coords_list[11],nv_coords_list[12],nv_coords_list[13]]
+    list_ = [ nv_coords_list[2], nv_coords_list[9]]
 #    collect_charge_counts_list(nv_coords_list, base_nv_sig, 60, apd_indicies)
-    collect_charge_counts_list(list_, base_nv_sig, 200, apd_indicies)
+#    collect_charge_counts_list(list_, base_nv_sig, 200, apd_indicies)
        
-#    readout_time_list = [10**6, 5*10**6, 10*10**6, 30*10**6, 50*10**6, 80*10**6, 100*10**6, 120*10**6]
-#    for i in [2, 3, 5, 7, 9]:
-#        coords = nv_coords_list[i]
-#        base_nv_sig['expected_count_rate'] = expected_count_list[i]
-#        base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
-#        base_nv_sig['am_589_power'] = 0.3
-#        base_nv_sig['nd_filter'] = 'nd_0'
-#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
-#        base_nv_sig['am_589_power'] = 0.4
-#        base_nv_sig['nd_filter'] = 'nd_0'
-#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
-#        base_nv_sig['am_589_power'] = 0.5
-#        base_nv_sig['nd_filter'] = 'nd_0'
-#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
-#        base_nv_sig['nd_filter'] = 'nd_0.5'
-#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
-#        base_nv_sig['nd_filter'] = 'nd_1.0'
-#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
-#        base_nv_sig['nd_filter'] = 'nd_1.5'
-#        collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+    readout_time_list = [10**6, 5*10**6, 10*10**6, 30*10**6, 50*10**6, 80*10**6, 100*10**6, 120*10**6]
+    for i in [2, 4, 10, 18, 19]:
+        for p in [0.2,0.3,0.4,0.5,0.6]:
+            coords = nv_coords_list[i]
+            base_nv_sig['expected_count_rate'] = expected_count_list[i]
+            base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
+            base_nv_sig['nd_filter'] = 'nd_1.5'
+            base_nv_sig['am_589_power'] = p
+            collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )

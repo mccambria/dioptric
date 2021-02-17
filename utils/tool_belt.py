@@ -781,24 +781,21 @@ def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = No
         for i in range(10):
             optical_power_list.append(cxn.photodiode.read_optical_power())
             time.sleep(0.01)
-            optical_power = numpy.average(optical_power_list)
     elif color_ind==589:
         cxn.filter_slider_ell9k.set_filter(nd_filter) # Change the nd filter for the yellow laser
         cxn.pulse_streamer.constant([],0.0, AO_power_settings) # Turn on the yellow laser       
         time.sleep(0.3)
         for i in range(10):
             optical_power_list.append(cxn.photodiode.read_optical_power())
-            time.sleep(0.01)
-            optical_power = numpy.average(optical_power_list)
-        
+            time.sleep(0.01)        
     elif color_ind==638:
         cxn.pulse_streamer.constant([7], 0.0, 0.0) # Turn on the red laser     
         time.sleep(0.3)
         for i in range(10):
             optical_power_list.append(cxn.photodiode.read_optical_power())
             time.sleep(0.01)
-            optical_power = numpy.average(optical_power_list)
     
+    optical_power = numpy.average(optical_power_list)
     time.sleep(0.1)
     cxn.pulse_streamer.constant([], 0.0, 0.0)
     return optical_power

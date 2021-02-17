@@ -569,23 +569,16 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   plot_data=True, readout = 10**7, um_scaled = False, continuous=False):
 
     # %% Some initial setup
-#    tool_belt.set_xyz(cxn, [0.2, 0.2, 5.0])
-#    cxn.pulse_streamer.constant([3],0.0,0.0)
     tool_belt.reset_cfm_wout_uwaves(cxn)
 
     color_filter = nv_sig['color_filter']
     cxn.filter_slider_ell9k_color.set_filter(color_filter)
-#    cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
     
     nd_filter = nv_sig['nd_filter']
     cxn.filter_slider_ell9k.set_filter(nd_filter)
 
-
-
-#    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-#    readout = shared_params['continuous_readout_dur']
-
     aom_ao_589_pwr = nv_sig['am_589_power']
+    ao_638_pwr = nv_sig['ao_638_pwr']
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
@@ -602,8 +595,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     # %% Load the PulseStreamer
 
-    seq_args = [delay, readout, aom_ao_589_pwr, apd_indices[0], color_ind]
-#    print(seq_args)
+    seq_args = [delay, readout, aom_ao_589_pwr, ao_638_pwr, apd_indices[0], color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
