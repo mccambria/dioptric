@@ -555,18 +555,18 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 # %%
 
 def main(nv_sig, x_range, y_range, num_steps,  apd_indices,
-         color_ind, save_data=True, plot_data=True, readout = 10**7 , um_scaled = False, continuous=False):
+         color_ind, save_data=True, plot_data=True, readout = 10**7 , flip = False, um_scaled = False, continuous=False):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
                       y_range, num_steps,
-                      apd_indices,  color_ind,  save_data, plot_data, readout, um_scaled ,  continuous)
+                      apd_indices,  color_ind,  save_data, plot_data, readout, flip, um_scaled ,  continuous)
 
     return img_array, x_voltages, y_voltages
 
 def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   apd_indices,  color_ind, save_data=True,
-                  plot_data=True, readout = 10**7, um_scaled = False, continuous=False):
+                  plot_data=True, readout = 10**7, flip = False, um_scaled = False, continuous=False):
 
     # %% Some initial setup
     tool_belt.reset_cfm_wout_uwaves(cxn)
@@ -607,7 +607,27 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
 #    time.sleep(1)
     # %% Set up the galvo
-    x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
+    if flip==1:
+        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_flip(x_center, y_center,
+                                                       x_range, y_range,
+                                                       num_steps, period)
+    elif flip == 2:
+
+        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_bl(x_center, y_center,
+                                                       x_range, y_range,
+                                                       num_steps, period)
+    elif flip == 3:
+
+        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_ul(x_center, y_center,
+                                                       x_range, y_range,
+                                                       num_steps, period)
+    elif flip == 4:
+
+        x_voltages, y_voltages = cxn.galvo.load_sweep_scan_ur(x_center, y_center,
+                                                       x_range, y_range,
+                                                       num_steps, period)
+    else:
+        x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
 
@@ -680,13 +700,23 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
-            populate_img_array(new_samples, img_array, img_write_pos)
-            # This is a horribly inefficient way of getting kcps, but it
-            # is easy and readable and probably fine up to some resolution
-            if plot_data:
-#                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-                tool_belt.update_image_figure(fig, img_array)
-            num_read_so_far += num_new_samples
+            if flip==1:
+                populate_img_array_bottom_left(new_samples, img_array, img_write_pos)
+                # This is a horribly inefficient way of getting kcps, but it
+                # is easy and readable and probably fine up to some resolution
+                if plot_data:
+    #                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
+                    tool_belt.update_image_figure(fig, img_array)
+                num_read_so_far += num_new_samples
+            else:
+                populate_img_array(new_samples, img_array, img_write_pos)
+                # This is a horribly inefficient way of getting kcps, but it
+                # is easy and readable and probably fine up to some resolution
+                if plot_data:
+    #                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
+                    tool_belt.update_image_figure(fig, img_array)
+                num_read_so_far += num_new_samples
+
 
     # %% Clean up
 
@@ -696,6 +726,23 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     cxn.galvo.write(x_center, y_center)
 
     # %% Save the data
+    if plot_data:
+        if flip == 1:
+            fig = tool_belt.create_image_figure(numpy.fliplr(img_array), img_extent,
+                                                clickHandler=on_click_image,
+                                                title = title)
+        elif flip == 2:
+            fig = tool_belt.create_image_figure(numpy.rot90(img_array,3), img_extent,
+                                                clickHandler=on_click_image,
+                                                title = title)
+        elif flip == 3:
+            fig = tool_belt.create_image_figure(numpy.rot90(img_array,2), img_extent,
+                                                clickHandler=on_click_image,
+                                                title = title)
+        elif flip == 4:
+            fig = tool_belt.create_image_figure(numpy.rot90(img_array,1), img_extent,
+                                                clickHandler=on_click_image,
+                                                title = title)
 
     # measure laser powers:
 #    green_optical_power_pd, green_optical_power_mW, \
@@ -761,9 +808,9 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_01/2021_01_20-13_34_55-goeppert-mayer-nv0_2021_01_18'
-    reformat_plot('inferno', 'png')
-#    create_figure(file_name)
+    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_02/2021_02_17-15_32_44-goeppert-mayer'
+#    reformat_plot('inferno', 'png')
+    create_figure(file_name)
 
 #    sub_folder = 'branch_Spin_to_charge/2020_10/'
 #    green_file = '2020_10_14-16_47_42-goeppert-mayer-nv1'

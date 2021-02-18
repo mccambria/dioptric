@@ -103,7 +103,7 @@ def main_moving_target(cxn, base_sig, optimize_coords, center_coords, pulse_coor
     
     print('Resetting with {} nm light\n...'.format(init_color))
     _,_,_ = image_sample.main(reset_sig, reset_range, reset_range, num_steps_reset, 
-                      apd_indices, init_color,readout = init_time, save_data=False, plot_data=False) 
+                      apd_indices, init_color,readout = init_time, flip = 3, save_data=False, plot_data=False) 
          
     print('Waiting for {} s, during {} nm pulse'.format(pulse_time, pulse_color))
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
@@ -131,7 +131,7 @@ def main_moving_target(cxn, base_sig, optimize_coords, center_coords, pulse_coor
     
     print('Resetting with {} nm light\n...'.format(init_color))
     _,_,_ = image_sample.main(reset_sig, reset_range, reset_range, num_steps_reset, 
-                      apd_indices, init_color,readout = init_time, save_data=False, plot_data=False) 
+                      apd_indices, init_color,readout = init_time, flip=3, save_data=False, plot_data=False) 
  
     # now pulse at the center of the scan for a short time         
     print('Pulsing {} nm light for {} s'.format(pulse_color, pulse_time))
@@ -291,25 +291,25 @@ if __name__ == '__main__':
     pulse_color = 532
     readout_color = '638a'
     
-#    center_coords = [0,0,4.92]
+    center_coords = [0,0,4.92]
     optimize_coords = [0.005, 0.070, 4.90]
-    pulse_coords =    [0,0,4.92]
-    center_coords = pulse_coords
+#    center_coords = pulse_coords
     
     with labrad.connect() as cxn:
-        pulse_time = 0.1
-        main_moving_target(cxn, base_sig, optimize_coords, center_coords,
-                           pulse_coords, pulse_time, init_time, init_color, 
-                           pulse_color, readout_color)
-        pulse_time = 1
-        main_moving_target(cxn, base_sig, optimize_coords, center_coords,
-                           pulse_coords, pulse_time, init_time, init_color, 
-                           pulse_color, readout_color)
-        pulse_time = 10
-        main_moving_target(cxn, base_sig, optimize_coords, center_coords,
-                           pulse_coords, pulse_time, init_time, init_color, 
-                           pulse_color, readout_color)
         pulse_time = 100
+        pulse_coords =    [0.25,0.0,4.92]
+        main_moving_target(cxn, base_sig, optimize_coords, center_coords,
+                           pulse_coords, pulse_time, init_time, init_color, 
+                           pulse_color, readout_color)
+        pulse_coords =    [0.25,-0.1,4.92]
+        main_moving_target(cxn, base_sig, optimize_coords, center_coords,
+                           pulse_coords, pulse_time, init_time, init_color, 
+                           pulse_color, readout_color)
+        pulse_coords =    [0.35,0,4.92]
+        main_moving_target(cxn, base_sig, optimize_coords, center_coords,
+                           pulse_coords, pulse_time, init_time, init_color, 
+                           pulse_color, readout_color)
+        pulse_coords =    [0.15,0,4.92]
         main_moving_target(cxn, base_sig, optimize_coords, center_coords,
                            pulse_coords, pulse_time, init_time, init_color, 
                            pulse_color, readout_color)
