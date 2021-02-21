@@ -770,8 +770,11 @@ def save_raw_data(rawData, filePath):
     # sharedparameters so we have as snapshot of the configuration and 
     # nv_sig_units. If these have already been defined in the routine,
     # then they'll just be overwritten. 
-    rawData['nv_sig_units'] = get_nv_sig_units()
-    rawData['shared_parameters'] = get_shared_parameters_dict()
+    try:
+        rawData['nv_sig_units'] = get_nv_sig_units()
+        rawData['shared_parameters'] = get_shared_parameters_dict()
+    except Exception as e:
+        print(e)
     
     with open(filePath + '.txt', 'w') as file:
         json.dump(rawData, file, indent=2)
