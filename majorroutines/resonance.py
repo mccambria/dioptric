@@ -106,6 +106,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords = nv_sig['coords']
         opti_coords_list.append(opti_coords)
+        # opti_coords_list.append([0.0, 0.0, 0])
 
         # Load the APD task with two samples for each frequency step
         cxn.pulse_streamer.stream_load(file_name, seq_args_string)

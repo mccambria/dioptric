@@ -202,12 +202,12 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
             # # This is necessary to do here as well as on the server since
             # # the adjustment on the server end doesn't do anything for small 
             # # integer steps (ie steps of 1)
-            # if ('z_gravity_adjust' in shared_params) and (scan_dtype is int):
-            #     z_gravity_adjust = shared_params['z_gravity_adjust']
-            #     adj_z_center = round(z_center + z_gravity_adjust*scan_range)
-            # else:
-            #     adj_z_center = z_center
-            adj_z_center = z_center
+            if ('z_gravity_adjust' in shared_params) and (scan_dtype is int):
+                z_gravity_adjust = shared_params['z_gravity_adjust']
+                adj_z_center = round(z_center + z_gravity_adjust*scan_range)
+            else:
+                adj_z_center = z_center
+            # adj_z_center = z_center
                 
             scan_vals = tool_belt.get_scan_vals(adj_z_center, scan_range,
                                                 num_steps, scan_dtype)
@@ -556,7 +556,7 @@ def opti_z_cxn(cxn, nv_sig, apd_indices,
     
     # %% Try to optimize
     
-    num_attempts = 2
+    num_attempts = 4
     
     for ind in range(num_attempts):
         
@@ -593,8 +593,8 @@ def opti_z_cxn(cxn, nv_sig, apd_indices,
         # the count rate at the center against the expected count rate
         if expected_count_rate is not None:
             
-            lower_threshold = expected_count_rate * 3/4
-            upper_threshold = expected_count_rate * 5/4
+            lower_threshold = expected_count_rate * 4/5
+            upper_threshold = expected_count_rate * 6/5
             
             if ind == 0:
                 print('Expected count rate: {}'.format(expected_count_rate))

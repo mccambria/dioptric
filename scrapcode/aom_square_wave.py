@@ -93,6 +93,6 @@ if __name__ == '__main__':
     # main()
     
     with labrad.connect() as cxn:
-        tool_belt.set_xyz(cxn, [0.0, 0.75, 0])
-        cxn.filter_slider_ell9k.set_filter('nd_0')
+        tool_belt.set_xyz(cxn, [0.0, 1.0, 0])
+        cxn.filter_slider_ell9k.set_filter('nd_0.5')
     constant([3], 0.0, 0.0)

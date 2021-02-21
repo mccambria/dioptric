@@ -296,6 +296,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
     # %% Initialize at the passed coordinates
 
+    if hasattr(cxn, 'filter_slider_ell9k'):
+        cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
 
     # %% Set up the galvo
