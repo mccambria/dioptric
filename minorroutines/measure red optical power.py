@@ -2,7 +2,7 @@
 """
 Created on Fri Feb 12 17:00:05 2021
 
-Test what the photodiode reads for different settings on the red AO settings.
+Test what the photodiode reads for different settings on the AO_0 settings.
 
 @author: agardil
 """
@@ -13,12 +13,12 @@ import matplotlib.pyplot as plt
 import time
 import utils.tool_belt as tool_belt
 
-power_list = numpy.linspace(0.8, 0.9, 301)
+power_list = numpy.linspace(0.5, 1.0, 101)
 cxn = labrad.connect()
 
 measured_power = []
 measured_powers_ste = []
-num_reps = 20
+num_reps = 10
 
 for p in power_list:
     cxn.pulse_streamer.constant([],p,0);
@@ -31,8 +31,8 @@ for p in power_list:
     optical_power_ste = numpy.std(optical_power_list) / numpy.sqrt(num_reps)
     measured_powers_ste.append(optical_power_ste)
     
-converted_power = 6.7*numpy.array(measured_power)+0.78
-converted_power_ste = 6.7*numpy.array(measured_powers_ste)
+converted_power = 14.3*numpy.array(measured_power)+0.34
+converted_power_ste = 14.3*numpy.array(measured_powers_ste)
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 ax.errorbar(power_list, converted_power,
@@ -53,7 +53,7 @@ rawData = {'timestamp': timestamp,
            'converted_power-units': 'mW',
            'converted_power_ste': converted_power_ste.tolist(),
            'converted_power_ste-units': 'mW',           
-           'note': 'measured on 638 nm AO',
+           'note': 'measured on 515 nm AO',
            
            }
 

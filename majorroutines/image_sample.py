@@ -578,7 +578,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     cxn.filter_slider_ell9k.set_filter(nd_filter)
 
     aom_ao_589_pwr = nv_sig['am_589_power']
-    ao_638_pwr = nv_sig['ao_638_pwr']
+    ao_515_pwr = nv_sig['ao_515_pwr']
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
@@ -595,10 +595,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     # %% Load the PulseStreamer
 
-    seq_args = [delay, readout, aom_ao_589_pwr, ao_638_pwr, apd_indices[0], color_ind]
+    seq_args = [delay, readout, aom_ao_589_pwr, ao_515_pwr, apd_indices[0], color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
+#    print(seq_args)
     period = ret_vals[0]
 
 

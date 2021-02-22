@@ -20,12 +20,13 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    delay, duration, aom_ao_589_pwr, color_ind = args
+    delay, duration, aom_ao_589_pwr, ao_515_pwr, color_ind = args
 
     # Get what we need out of the wiring dictionary
     pulser_do_532_aom = pulser_wiring['do_532_aom']
     pulser_ao_589_aom = pulser_wiring['ao_589_aom']
     pulser_do_638_aom = pulser_wiring['do_638_laser']
+    pulser_ao_515_aom = pulser_wiring['ao_515_laser']
 
     # Convert the 32 bit ints into 64 bit ints
     duration = numpy.int64(duration)
@@ -57,6 +58,11 @@ def get_seq(pulser_wiring, args):
         
         train = [(delay, LOW), (duration, HIGH)]
         seq.setDigital(pulser_do_532_aom, train)
+        
+    elif color_ind == '515a':
+        
+        train = [(delay, LOW), (duration, ao_515_pwr)]
+        seq.setAnalog(pulser_ao_515_aom, train)
 
     final = OutputState(final_digital, 0.0, 0.0)
     
@@ -68,7 +74,8 @@ if __name__ == '__main__':
               'do_apd_0_gate': 1,
               'do_532_aom': 2,
               'do_638_laser': 3,
+              'ao_515_laser': 0,
               'ao_589_aom': 1}
-    args = [100, 500, 1.0, 532]
+    args = [100, 500, 0.0,1.0,  '515a']
     seq, ret_vals, _ = get_seq(wiring, args)
     seq.plot()

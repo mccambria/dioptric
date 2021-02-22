@@ -291,7 +291,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
 
     '''
     tool_belt.reset_cfm_wout_uwaves(cxn)
-    disable_boo = False # can disable the optimize function here.
+    disable_boo = True # can disable the optimize function here.
     
     # Some checking of the initial pulse colors
     if init_color == 532 or init_color==638:
@@ -1047,7 +1047,7 @@ if __name__ == '__main__':
 
 
     base_sig = { 'coords':[], 
-            'name': '{}-2021_01_26'.format(sample_name),
+            'name': '{}-2021_02_19'.format(sample_name),
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
@@ -1057,49 +1057,50 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':5, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 #    start_coords = base_sig['coords']
-    start_coords_list =[    
-    [0.342, 0.360, 5.04],
-[0.216, 0.368, 4.97],
-[-0.005, 0.320, 4.92],
-[-0.015, 0.287, 4.97],
-[-0.057, 0.288, 4.94],
-[0.358, 0.298, 4.93],
-[0.344, 0.246, 5.01],
-[-0.034, 0.200, 4.90],
-[0.213, 0.149, 5.00],
-[0.197, 0.157, 4.88],
-[0.059, 0.106, 4.97],
-[0.153, 0.071, 4.97],
-[0.015, 0.073, 4.94],
-[0.083, -0.085, 4.93],
-[0.413, -0.154, 5.03],
-[0.160, -0.171, 4.90],
-[0.424, -0.278, 4.98],
-[0.401, -0.276, 4.96],
-[-0.169, -0.303, 4.99],
-[0.285, -0.359, 4.96],
-]
+#    start_coords_list =[    
+#    [0.342, 0.360, 5.04],
+#[0.216, 0.368, 4.97],
+#[-0.005, 0.320, 4.92],
+#[-0.015, 0.287, 4.97],
+#[-0.057, 0.288, 4.94],
+#[0.358, 0.298, 4.93],
+#[0.344, 0.246, 5.01],
+#[-0.034, 0.200, 4.90],
+#[0.213, 0.149, 5.00],
+#[0.197, 0.157, 4.88],
+#[0.059, 0.106, 4.97],
+#[0.153, 0.071, 4.97],
+#[0.015, 0.073, 4.94],
+#[0.083, -0.085, 4.93],
+#[0.413, -0.154, 5.03],
+#[0.160, -0.171, 4.90],
+#[0.424, -0.278, 4.98],
+#[0.401, -0.276, 4.96],
+#[-0.169, -0.303, 4.99],
+#[0.285, -0.359, 4.96],
+#]
+    start_coords_list = [[0.022, 0.045, 4.87]]
     expected_count_list = [60, 40, 38, 36, 38, 40, 55, 48, 42, 36, 38, 30, 
                            46, 53, 44, 70, 50, 40, 40, 38] # 2/11/21
 #    end_coords = end_coords.tolist()
-    num_steps = 5 #20
+    num_steps = 30
 #    num_runs = 50
 #    img_range = 0.45
     
  
-    for s in [19]:
+    for s in [0]:
          start_coords = start_coords_list[s]
          init_color = 532
          pulse_color = 532
          nv_sig = copy.deepcopy(base_sig)
          # Set up for current NV
-         nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_26'.format(s)
+         nv_sig['name']= 'goeppert-mayer-nv{}_2021_02_19'.format(s)
          nv_sig['expected_count_rate'] = expected_count_list[s]
          # Set up for NV band
          nv_sig['color_filter'] = '635-715 bp'
@@ -1111,8 +1112,8 @@ if __name__ == '__main__':
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)
 #         t =5*10**6
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 25,init_color, pulse_color)
-         t =10**7
-         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 2, init_color, pulse_color) 
+         t =10**8
+         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 15, init_color, pulse_color) 
 #
 #    for s in [19]:
 #         start_coords = start_coords_list[s]
