@@ -77,10 +77,10 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  read
 #    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.15
-    scan_range = 0.1
-    num_steps = 90
-#    scan_range = 0.05
-#    num_steps = 60
+#    scan_range = 0.2
+#    num_steps = 90
+    scan_range = 0.05
+    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
@@ -551,7 +551,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0.003, 0.070, 4.92], 
+    search = { 'coords':[0.285, -0.359, 4.8], 
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -563,7 +563,8 @@ if __name__ == '__main__':
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 50, 
             'ao_638_pwr': 0.8,
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10,
+            'ao_515_pwr': 0.65,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
@@ -585,7 +586,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    nv19_2021_01_26 = { 'coords':[-0.308, -1.828, 5.0], 
+    nv19_2021_01_26 = { 'coords':[0.285, -0.359, 4.96], 
             'name': '{}-nv19_2021_01_26'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
@@ -596,7 +597,7 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
-            'ao_515_pwr': 0.7,#0.6850,
+            'ao_515_pwr': 0.65,
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
@@ -605,26 +606,26 @@ if __name__ == '__main__':
     expected_count_list = [60, 40, 38, 36, 38, 40, 55, 48, 42, 36, 38, 30, 
                            46, 53, 44, 70, 50, 40, 40, 38] # 2/11/21
     nv_list_2021_01_26 = [    
-    [0.342, 0.360, 5.04],
-[0.216, 0.368, 4.97],
-[-0.005, 0.320, 4.92],
-[-0.015, 0.287, 4.97],
-[-0.057, 0.288, 4.94],
-[0.358, 0.298, 4.93],
-[0.344, 0.246, 5.01],
-[-0.034, 0.200, 4.90],
-[0.213, 0.149, 5.00],
-[0.197, 0.157, 4.88],
-[0.059, 0.106, 4.97],
-[0.153, 0.071, 4.97],
-[0.015, 0.073, 4.94],
-[0.083, -0.085, 4.93],
-[0.413, -0.154, 5.03],
-[0.160, -0.171, 4.90],
-[0.424, -0.278, 4.98],
-[0.401, -0.276, 4.96],
-[-0.169, -0.303, 4.99],
-[0.285, -0.359, 4.96],
+[0.309, 0.334, 4.90],
+[0.184, 0.342, 4.79],
+[-0.038, 0.294, 4.72],
+[-0.048, 0.260, 4.80],
+[-0.074, 0.264, 4.83],
+[0.325, 0.272, 4.75],
+[0.322, 0.203, 4.79],
+[-0.067, 0.173, 4.73],
+[0.194, 0.123, 4.88],
+[0.181, 0.122, 4.78],
+[0.025, 0.080, 4.79],
+[0.120, 0.045, 4.79],
+[-0.018, 0.046, 4.76],
+[0.055, -0.126, 4.79],
+[0.396, -0.195, 4.83],
+[0.128, -0.197, 4.75],
+[0.392, -0.304, 4.80],
+[0.392, -0.303, 4.81],
+[-0.203, -0.330, 4.81],
+[0.251, -0.385, 4.76],
 ]
     nv_sig_list =[]
     for i in [19]:#range(len(nv_list_2021_01_26)):
@@ -635,7 +636,7 @@ if __name__ == '__main__':
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
         nv_sig_list.append(nv_sig)
         
-    nv_sig_list = [nv19_2021_01_26]
+#    nv_sig_list = [nv19_2021_01_26]
     
 
     # %% Functions to run
@@ -646,10 +647,11 @@ if __name__ == '__main__':
         
 #        drift = [0.023,-0.02,0.1]# 1/18/2021, 12:56 am
 #        tool_belt.set_drift(drift)  
-#        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset
+#        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset 
+#        tool_belt.set_drift([-0.03,-0.02,-0.16])  # 2/23/21
 #        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        set_xyz([-0.308, -1.828, 5.0])
+#        set_xyz([-0.308, -1.828, 5.0])
 #        set_xyz([0.0, 0.0,  4.47])
         
 #        set_xyz([-0.126, 0.359,  5.6])
@@ -664,7 +666,7 @@ if __name__ == '__main__':
 #            input('Laser currently turned off, Press enter to stop...')
         
 #         Routines that expect lists of NVs
-#        do_optimize_list(nv_sig_list, apd_indices,532)
+#        do_optimize_list(nv_sig_list, apd_indices,'515a')
 #        do_sample_nvs(nv_sig_list, apd_indices)
 #        do_g2_measurement(nv_sig_list, apd_indices[0], apd_indices[1])
 
@@ -676,7 +678,7 @@ if __name__ == '__main__':
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #                cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
 ##    
-#            do_optimize(nv_sig, apd_indices, 532)
+            do_optimize(nv_sig, apd_indices, '515a')
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
 #            for z in numpy.linspace(4.8,5.1,7):
@@ -691,7 +693,7 @@ if __name__ == '__main__':
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-#            do_image_sample(nv_sig,  apd_indices, '515a', save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, '515a', save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =10**7)
 

@@ -86,7 +86,7 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
     return numpy.array(counts, dtype=int)
 
     
-def stationary_count_lite(cxn, coords, shared_params, aom_ao_589_pwr, 
+def stationary_count_lite(cxn, coords, shared_params, aom_ao_589_pwr, ao_515_pwr,
                           apd_indices, color_ind):
     
     # Some initial values
@@ -94,7 +94,7 @@ def stationary_count_lite(cxn, coords, shared_params, aom_ao_589_pwr,
     total_num_samples = 2
     x_center, y_center, z_center = coords
 
-    seq_args = [shared_params['532_aom_delay'], readout, aom_ao_589_pwr,  0.0,
+    seq_args = [shared_params['532_aom_delay'], readout, aom_ao_589_pwr,  ao_515_pwr,
                 apd_indices[0], color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)
@@ -121,6 +121,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
     x_center, y_center, z_center = coords
     scan_range_nm = 2*shared_params['airy_radius'] #32*10**3
     readout = shared_params['continuous_readout_dur']
+    
+    ao_515_pwr = nv_sig['ao_515_pwr']
 
     # Reset to centers
     tool_belt.set_xyz(cxn, coords)
@@ -130,7 +132,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
     # x/y
     if axis_ind in [0, 1]:
         scan_range = scan_range_nm / shared_params['galvo_nm_per_volt']
-        seq_args = [shared_params['small_angle_galvo_delay'], readout, aom_ao_589_pwr, 0.0,
+        seq_args = [shared_params['small_angle_galvo_delay'], readout, aom_ao_589_pwr, ao_515_pwr,
                     apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
@@ -150,7 +152,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
         
         scan_range = 2* scan_range_nm / shared_params['piezo_nm_per_volt']
         seq_args = [shared_params['objective_piezo_delay'],
-                    readout, aom_ao_589_pwr, 0.0, apd_indices[0], color_ind]
+                    readout, aom_ao_589_pwr, ao_515_pwr, apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string)
@@ -360,8 +362,9 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, co
             continue
             
         # Check the count rate
+        ao_515_pwr = adjusted_nv_sig['ao_515_pwr']
         opti_count_rate = stationary_count_lite(cxn, opti_coords,shared_params,
-                                            aom_ao_589_pwr, apd_indices, color_ind)
+                                            aom_ao_589_pwr, ao_515_pwr, apd_indices, color_ind)
         
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate
@@ -566,8 +569,9 @@ def main_xy_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0,
             continue
             
         # Check the count rate
+        ao_515_pwr = adjusted_nv_sig['ao_515_pwr']
         opti_count_rate = stationary_count_lite(cxn, opti_coords,shared_params,
-                                            aom_ao_589_pwr, apd_indices, color_ind)
+                                            aom_ao_589_pwr, ao_515_pwr, apd_indices, color_ind)
         
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate
@@ -753,9 +757,10 @@ def opti_z_cxn(cxn, nv_sig, apd_indices, color_ind, aom_ao_589_pwr = 1.0,
             continue
             
         # Check the count rate
+        ao_515_pwr = adjusted_nv_sig['ao_515_pwr']
         opti_count_rate = stationary_count_lite(cxn, opti_coords,
                                                 shared_params, aom_ao_589_pwr, 
-                          apd_indices, color_ind)
+                          ao_515_pwr, apd_indices, color_ind)
         
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate

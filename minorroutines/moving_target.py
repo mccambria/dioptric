@@ -291,7 +291,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
 
     '''
     tool_belt.reset_cfm_wout_uwaves(cxn)
-    disable_boo = True # can disable the optimize function here.
+    disable_boo = False # can disable the optimize function here.
     
     # Some checking of the initial pulse colors
     if init_color == 532 or init_color==638:
@@ -1057,45 +1057,46 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':5, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
+            'ao_515_pwr': 0.65,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 #    start_coords = base_sig['coords']
-#    start_coords_list =[    
-#    [0.342, 0.360, 5.04],
-#[0.216, 0.368, 4.97],
-#[-0.005, 0.320, 4.92],
-#[-0.015, 0.287, 4.97],
-#[-0.057, 0.288, 4.94],
-#[0.358, 0.298, 4.93],
-#[0.344, 0.246, 5.01],
-#[-0.034, 0.200, 4.90],
-#[0.213, 0.149, 5.00],
-#[0.197, 0.157, 4.88],
-#[0.059, 0.106, 4.97],
-#[0.153, 0.071, 4.97],
-#[0.015, 0.073, 4.94],
-#[0.083, -0.085, 4.93],
-#[0.413, -0.154, 5.03],
-#[0.160, -0.171, 4.90],
-#[0.424, -0.278, 4.98],
-#[0.401, -0.276, 4.96],
-#[-0.169, -0.303, 4.99],
-#[0.285, -0.359, 4.96],
-#]
-    start_coords_list = [[0.022, 0.045, 4.87]]
+    start_coords_list =[    
+    [0.309, 0.334, 4.90],
+[0.184, 0.342, 4.79],
+[-0.038, 0.294, 4.72],
+[-0.048, 0.260, 4.80],
+[-0.074, 0.264, 4.83],
+[0.325, 0.272, 4.75],
+[0.322, 0.203, 4.79],
+[-0.067, 0.173, 4.73],
+[0.194, 0.123, 4.88],
+[0.181, 0.122, 4.78],
+[0.025, 0.080, 4.79],
+[0.120, 0.045, 4.79],
+[-0.018, 0.046, 4.76],
+[0.055, -0.126, 4.79],
+[0.396, -0.195, 4.83],
+[0.128, -0.197, 4.75],
+[0.392, -0.304, 4.80],
+[0.392, -0.303, 4.81],
+[-0.203, -0.330, 4.81],
+[0.251, -0.385, 4.76],
+]
+#    start_coords_list = [[0.285, -0.359, 4.96]]
     expected_count_list = [60, 40, 38, 36, 38, 40, 55, 48, 42, 36, 38, 30, 
-                           46, 53, 44, 70, 50, 40, 40, 38] # 2/11/21
+                           46, 53, 44, 70, 50, 40, 40, 32] # 2/11/21
 #    end_coords = end_coords.tolist()
-    num_steps = 30
+    num_steps = 40
 #    num_runs = 50
 #    img_range = 0.45
     
  
-    for s in [0]:
-         start_coords = start_coords_list[s]
+    for s in [19]:
+#         start_coords = start_coords_list[s]
          init_color = 532
          pulse_color = 532
          nv_sig = copy.deepcopy(base_sig)
@@ -1110,10 +1111,12 @@ if __name__ == '__main__':
          # Measurements
 #         t =10**6
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)
-#         t =5*10**6
+         t =10**7
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 25,init_color, pulse_color)
-         t =10**8
-         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 15, init_color, pulse_color) 
+         do_moving_target_1D_line(nv_sig, [0.251, -0.385, 4.76], [0.251 - 0.15, -0.385, 4.76], t, 
+                             50, 50, init_color, pulse_color)
+#         t =10**8
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 15, init_color, pulse_color) 
 #
 #    for s in [19]:
 #         start_coords = start_coords_list[s]

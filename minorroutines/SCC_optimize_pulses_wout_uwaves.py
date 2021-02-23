@@ -159,7 +159,7 @@ def main(nv_sig, apd_indices, num_reps):
     return sig_counts, ref_counts
 def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
 # Initial Calculation and setup
     readout_time = nv_sig['pulsed_SCC_readout_dur']
@@ -644,9 +644,9 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
     
-    nv0_2021_01_26 = { 'coords':[0.316, 0.337, 5.00], 
-            'name': '{}-nv0_2021_01_26'.format(sample_name),
-            'expected_count_rate': 75, 'nd_filter': 'nd_1.0',
+    nv19_2021_01_26 = { 'coords':[0.251, -0.385, 4.76], 
+            'name': '{}-nv19_2021_01_26'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -655,13 +655,14 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'ao_515_pwr':0.65,
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 #    nv_sig = NVA
     
-    nv_sig_list = [nv0_2021_01_26,]
+    nv_sig_list = [nv19_2021_01_26,]
     
 #    test_pulse_dur_list = [   
 #        0.,  100.,  200.,  300.,  400.,  500.,  600.,   800.,  1000.,  
@@ -690,7 +691,7 @@ if __name__ == '__main__':
 #    optimize_readout_pulse_length(nv_sig)
     for nv_sig_main in nv_sig_list:
         for nd in ['nd_1.0']:
-            for p in [0.3]:
+            for p in [0.4, 0.5, 0.6]:
                 nv_sig = copy.deepcopy(nv_sig_main)
                 nv_sig['nd_filter'] = nd
                 nv_sig['am_589_power'] = p
