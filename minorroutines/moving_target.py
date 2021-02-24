@@ -1136,7 +1136,7 @@ if __name__ == '__main__':
 #         t =10**6
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)
          t =10**7
-         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 20,init_color, pulse_color, True)
-         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 20,init_color, pulse_color, False)
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 20,init_color, pulse_color, True)
+         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 10,init_color, pulse_color, False)
 #         do_moving_target_1D_line(nv_sig, [0.251, -0.385, 4.76], [0.251 - 0.15, -0.385, 4.76], t, 
 #                             50, 50, init_color, pulse_color)

@@ -76,11 +76,11 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  read
 #    scan_range = 0.3
 #    scan_range = 0.2
 #    num_steps = 120
-#    scan_range = 0.15
+    scan_range = 0.1
 #    scan_range = 0.2
-#    num_steps = 90
-    scan_range = 0.05
-    num_steps = 60
+    num_steps = 90
+#    scan_range = 0.05
+#    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60

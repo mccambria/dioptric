@@ -100,11 +100,12 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, illumination_tim
         msg = 'Currently lifetime only supports single APDs!!'
         raise NotImplementedError(msg)
     
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
     # %% Define the times to be used in the sequence
     
     aom_ao_589_pwr = nv_sig['am_589_power']
+    ao_515_pwr = nv_sig['ao_515_pwr']
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     
 #    illumination_time = 10**6
@@ -129,7 +130,7 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, illumination_tim
     # pulls the file of the sequence from serves/timing/sequencelibrary
     file_name = os.path.basename('simple_readout.py')
     seq_args = [laser_delay, illumination_time, 
-                aom_ao_589_pwr, apd_indices[0], 532]
+                aom_ao_589_pwr,ao_515_pwr,  apd_indices[0], 532]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
 #    seq_time = ret_vals[0]
@@ -164,7 +165,7 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, illumination_tim
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=True)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, '515a', disable=True)
         opti_coords_list.append(opti_coords)
         
         
@@ -263,9 +264,6 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, illumination_tim
 #                                            nv_sig['name'], 'incremental')
 #        tool_belt.save_raw_data(raw_data, file_path)
 
-    # %% Hardware clean up
-
-    tool_belt.reset_cfm(cxn)
 
     # %% Bin the data
     
@@ -288,7 +286,7 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, illumination_tim
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         
         ax.plot(numpy.array(bin_centers)/10**6, binned_samples, 'r-')
-        ax.set_title('Lifetime')
+#        ax.set_title('Lifetime')
         ax.set_xlabel('Readout time (ms)')
         ax.set_ylabel('Counts')
         ax.set_title('Time resolved readout while scanning galvo')
@@ -344,4 +342,33 @@ def main_with_cxn(cxn, nv_sig, x_range, num_steps, apd_indices, illumination_tim
     
     return 
 
+# %%
+if __name__ == '__main__':
+    apd_indices = [0]
+    nv_sig = { 'coords':[-0.068, 0.176, 4.76], 
+            'name': 'goeppert-mayer_nv7-2021_02_19',
+            'expected_count_rate': 40,'nd_filter': 'nd_1.0',
+            'color_filter': '635-715 bp', 
+#            'color_filter': '715 lp',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 3*10**7,  'am_589_power': 0.3, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
+            'ao_515_pwr': 0.65,
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
+    
+    x_range = 0.05
+    num_steps = 50
+    illumination_time = 10**7
+    num_reps = 10
+    num_runs = 1
+    num_bins = 50
+    main ( nv_sig,x_range, num_steps, apd_indices, illumination_time,
+                  num_reps, num_runs, num_bins)
+    
 
