@@ -15,10 +15,10 @@ import time
 import copy
 # %%
 
-reset_range = 0.3#2.5
-image_range = 0.3#2.5
-num_steps = int(225 * image_range) 
-num_steps_reset = int(75 * reset_range)
+reset_range = 2.5
+image_range = 2.5
+num_steps = 200#int(225 * image_range) 
+num_steps_reset = 120#int(75 * reset_range)
 apd_indices = [0]
 #red_reset_power = 0.8548
 #red_pulse_power = 0.8548
@@ -68,6 +68,7 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
     
     optimize_sig = copy.deepcopy(base_sig)
     optimize_sig['coords'] = optimize_coords
+    optimize_sig['ao_515_pwr'] = green_image_power
     
     pulse_sig = copy.deepcopy(base_sig)
     pulse_sig['coords'] = pulse_coords
@@ -101,7 +102,7 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
         laser_delay = laser_638_delay
         
 
-    optimize.main_xy_with_cxn(cxn, optimize_sig, apd_indices, 532, disable=disable_optimize)  
+    optimize.main_xy_with_cxn(cxn, optimize_sig, apd_indices, '515a', disable=disable_optimize)  
     
     adj_coords = (numpy.array(pulse_coords) + \
                   numpy.array(tool_belt.get_drift())).tolist()
@@ -130,7 +131,7 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
                       apd_indices, readout_color,readout = readout, save_data=True, plot_data=True) 
 
 
-    optimize.main_xy_with_cxn(cxn, optimize_sig, apd_indices, 532, disable=disable_optimize)    
+    optimize.main_xy_with_cxn(cxn, optimize_sig, apd_indices, '515a', disable=disable_optimize)    
     adj_coords = (numpy.array(pulse_coords) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords  
@@ -179,6 +180,8 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
         pulse_power = red_optical_power_mW
     if pulse_color == 638:
         pulse_power = yellow_optical_power_mW
+    else :
+        pulse_power = 0
 
     title = 'Moving readout subtracted image, {} nm init, {} nm readout\n{} nm pulse {} s, {:.1f} mW'.format(init_color, readout_color, pulse_color, pulse_time, pulse_power) 
     fig = plot_dif_fig(center_coords, x_voltages,image_range,  dif_img_array, readout, title )
@@ -262,7 +265,8 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':80, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10,
+            'ao_515_pwr': 0.65,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
@@ -294,8 +298,8 @@ if __name__ == '__main__':
     
     init_time = 10**7
     
-    init_color = '515a'
-    pulse_color = '515a'
+    init_color = 532
+    pulse_color = 532
     readout_color = 638
     
     center_coords = [0.251, -0.385, 4.76]
@@ -304,7 +308,7 @@ if __name__ == '__main__':
 #    center_coords = pulse_coords
     
     with labrad.connect() as cxn:
-        pulse_time = 10**5/10**9
+        pulse_time = 100
         pulse_coords =    [0.251, -0.385, 4.76]
         main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
                            pulse_coords, pulse_time, init_time, init_color, 

@@ -553,11 +553,11 @@ if __name__ == '__main__':
      
     search = { 'coords':[0.285, -0.359, 4.8], 
             'name': '{}-search'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 1.0, 
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -613,7 +613,7 @@ if __name__ == '__main__':
 [-0.074, 0.264, 4.83],
 [0.325, 0.272, 4.75],
 [0.322, 0.203, 4.79],
-[-0.067, 0.173, 4.73],
+[-0.068, 0.176, 4.76],
 [0.194, 0.123, 4.88],
 [0.181, 0.122, 4.78],
 [0.025, 0.080, 4.79],
@@ -628,7 +628,7 @@ if __name__ == '__main__':
 [0.251, -0.385, 4.76],
 ]
     nv_sig_list =[]
-    for i in [19]:#range(len(nv_list_2021_01_26)):
+    for i in [7]:#range(len(nv_list_2021_01_26)):
         nv_coords = nv_list_2021_01_26[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
@@ -678,14 +678,14 @@ if __name__ == '__main__':
 #                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 #                cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
 ##    
-            do_optimize(nv_sig, apd_indices, '515a')
+#            do_optimize(nv_sig, apd_indices, '515a')
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
-#            for z in numpy.linspace(4.8,5.1,7):
+#            for z in numpy.linspace(4.775, 4.875, 5):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]  
-#                do_image_sample(nv_sig_copy,  apd_indices, 532, save_data=True, plot_data=True) 
+#                do_image_sample(nv_sig_copy,  apd_indices, '515a', save_data=True, plot_data=True) 
 ##                               
 #            do_two_pulse_image_sample(nv_sig, apd_indices,5*10**5, 3*10**7, 532, 589, save_data = True, plot_data = True)
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 589, 638, save_data = True, plot_data = True)
@@ -693,6 +693,7 @@ if __name__ == '__main__':
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, flip = False, readout = 1*10**7)
             do_image_sample(nv_sig,  apd_indices, '515a', save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =10**7)

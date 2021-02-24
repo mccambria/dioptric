@@ -20,9 +20,6 @@ image_range = 0.3#2.5
 num_steps = int(225 * image_range) 
 num_steps_reset = int(75 * reset_range)
 apd_indices = [0]
-#red_reset_power = 0.8548
-#red_pulse_power = 0.8548
-#red_image_power = 0.568
 
 green_reset_power = 0.6075
 green_pulse_power = 0.65
@@ -30,34 +27,10 @@ green_image_power = 0.65
 
 # %%
 
-def plot_dif_fig(coords, x_voltages,range, dif_img_array, readout, title ):
-    x_coord = coords[0]
-    half_x_range = range / 2
-    x_low = x_coord - half_x_range
-    x_high = x_coord + half_x_range
-    y_coord = coords[1]
-    half_y_range = range / 2
-    y_low = y_coord - half_y_range
-    y_high = y_coord + half_y_range
-    
-    dif_img_array_kcps = (dif_img_array / 1000) / (readout / 10**9)
-    
-    pixel_size = x_voltages[1] - x_voltages[0]
-    half_pixel_size = pixel_size / 2
-    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                  y_low - half_pixel_size, y_high + half_pixel_size]
- 
-    fig = tool_belt.create_image_figure(dif_img_array_kcps, img_extent, 
-                                        clickHandler=None, title = title, 
-                                        color_bar_label = 'Difference (kcps)', 
-#                                        min_value = 0
-                                        )
-    fig.canvas.draw()
-    fig.canvas.flush_events()  
-    return fig
-
 # %%      
-def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coords, pulse_time, init_time, init_color, pulse_color, readout_color, disable_optimize=False,wait_time = 0):
+def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coords, 
+         pulse_time, init_time, init_color, pulse_color, readout_color, 
+         pulse_repeat):
     am_589_power = base_sig['am_589_power']
     readout = base_sig['pulsed_SCC_readout_dur']
     color_filter = base_sig['color_filter'] 
@@ -101,68 +74,36 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
         laser_delay = laser_638_delay
         
 
-#    optimize.main_xy_with_cxn(cxn, optimize_sig, apd_indices, 532, disable=disable_optimize)  
-#    
-#    adj_coords = (numpy.array(pulse_coords) + \
-#                  numpy.array(tool_belt.get_drift())).tolist()
-#    x_center, y_center, z_center = adj_coords
-#    
-#    print('Resetting with {} nm light\n...'.format(init_color))
-#    _,_,_ = image_sample.main(reset_sig, reset_range, reset_range, num_steps_reset, 
-#                      apd_indices, init_color,readout = init_time,  save_data=False, plot_data=False) 
-#         
-#    print('Waiting for {} s, during {} nm pulse'.format(pulse_time, pulse_color))
-#    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-#    # Use two methods to pulse the green light, depending on pulse length
-#    if pulse_time < 1:
-#        seq_args = [int(pulse_time*10**9), 0, 0.0,, 0.0, 532]           
-#        seq_args_string = tool_belt.encode_seq_args(seq_args)            
-#        cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
-#    else:
-#        cxn.pulse_streamer.constant([], 0.0, 0.0)
-#        time.sleep(pulse_time)
-#    cxn.pulse_streamer.constant([], 0.0, 0.0) 
-#
-#        
-#    # collect an image
-#    print('Imaging {} nm light\n...'.format(readout_color))
-#    ref_img_array, x_voltages, y_voltages = image_sample.main(image_sig, image_range, image_range, num_steps, 
-#                      apd_indices, readout_color,readout = readout, save_data=True, plot_data=True) 
-
-
 #    optimize.main_xy_with_cxn(cxn, optimize_sig, apd_indices, 532, disable=disable_optimize)    
     adj_coords = (numpy.array(pulse_coords) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords  
      
-    start_time = time.time()
-     ## now pulse at the center of the scan for a short time         
-    print('Pulsing {} nm light for {} s'.format(pulse_color, pulse_time))
-    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-    # Use two methods to pulse the light, depending on pulse length
-    if pulse_time < 1.1:
-        seq_args = [laser_delay, int(pulse_time*10**9),am_589_power,green_pulse_power,  pulse_color]  
-        print(seq_args)         
-        seq_args_string = tool_belt.encode_seq_args(seq_args)            
-        cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
-    else:
-        if pulse_color == 532 or pulse_color==638:
-            cxn.pulse_streamer.constant([direct_wiring], 0.0, 0.0)
-        elif pulse_color == 589:
-            cxn.pulse_streamer.constant([], 0.0, am_589_power)
-        elif pulse_color =='515a':
-            cxn.pulse_streamer.constant([], green_pulse_power, 0)
-        time.sleep(pulse_time)
-    cxn.pulse_streamer.constant([], 0.0, 0.0)   
-     
     print('Resetting with {} nm light\n...'.format(init_color))
-#    _,_,_ = image_sample.main(reset_sig, reset_range, reset_range, num_steps_reset, 
-#                      apd_indices, init_color,readout = init_time,   save_data=False, plot_data=False) 
-    #    _,_,_ = image_sample.main(reset_sig, reset_range, reset_range, num_steps_reset, 
-    #                      apd_indices, init_color,readout = init_time,  flip=3, save_data=False, plot_data=False) 
-    end_time = time.time()
-    print('reset scan time {:.0f} s'.format(end_time - start_time))
-###########
+    _,_,_ = image_sample.main(reset_sig, reset_range, reset_range, num_steps_reset, 
+                      apd_indices, init_color,readout = init_time,   save_data=False, plot_data=False) 
+    
+    for i in range(pulse_repeat):
+        # now pulse at the center of the scan for a short time         
+        print('Pulsing {} nm light for {} s'.format(pulse_color, pulse_time))
+        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+        # Use two methods to pulse the light, depending on pulse length
+        if pulse_time < 1.1:
+            seq_args = [laser_delay, int(pulse_time*10**9),am_589_power,green_pulse_power,  pulse_color]   
+            seq_args_string = tool_belt.encode_seq_args(seq_args)            
+            cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string)   
+        else:
+            if pulse_color == 532 or pulse_color==638:
+                cxn.pulse_streamer.constant([direct_wiring], 0.0, 0.0)
+            elif pulse_color == 589:
+                cxn.pulse_streamer.constant([], 0.0, am_589_power)
+            elif pulse_color =='515a':
+                cxn.pulse_streamer.constant([], green_pulse_power, 0)
+            time.sleep(pulse_time)
+        cxn.pulse_streamer.constant([], 0.0, 0.0)  
+        
+        time.sleep(0.1)
+     
 
 
     # collect an image under yellow after green pulse
@@ -170,88 +111,6 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
     sig_img_array, x_voltages, y_voltages = image_sample.main(image_sig, image_range, image_range, num_steps, 
                       apd_indices, readout_color,readout = readout,save_data=True, plot_data=True) 
 
-    # measure laser powers:
-#    green_optical_power_pd, green_optical_power_mW, \
-#            red_optical_power_pd, red_optical_power_mW, \
-#            yellow_optical_power_pd, yellow_optical_power_mW = \
-#            tool_belt.measure_g_r_y_power(
-#                              base_sig['am_589_power'], base_sig['nd_filter'])
-
-    # Subtract and plot
-#    dif_img_array = sig_img_array - ref_img_array
-    
-#    if pulse_color == 532:
-#        pulse_power = green_optical_power_mW
-#    if pulse_color == 589:
-#        pulse_power = red_optical_power_mW
-#    if pulse_color == 638:
-#        pulse_power = yellow_optical_power_mW
-
-#    title = 'Moving readout subtracted image, {} nm init, {} nm readout\n{} nm pulse {} s, {:.1f} mW'.format(init_color, readout_color, pulse_color, pulse_time, pulse_power) 
-#    fig = plot_dif_fig(center_coords, x_voltages,image_range,  dif_img_array, readout, title )
-    
-    # Save data
-    timestamp = tool_belt.get_time_stamp()
-
-#    rawData = {'timestamp': timestamp,
-#               'init_color': init_color,
-#               'pulse_color': pulse_color,
-#               'readout_color': readout_color,
-#               'red_image_power': red_image_power,
-#               'red_image_power-units': 'V',
-#               'red_reset_power': red_reset_power,
-#               'red_reset_power-units': 'V',
-#               'red_pulse_power': red_pulse_power,
-#               'red_pulse_power-units': 'V',
-#               'base_sig': base_sig,
-#               'base_sig-units': tool_belt.get_nv_sig_units(),
-#               'color_filter' : color_filter,
-#               'optimize_coords': optimize_coords,
-#               'center_coords': center_coords,
-#               'pulse_coords': pulse_coords,
-#               'image_range': image_range,
-#               'image_range-units': 'V',
-#               'num_steps': num_steps,
-#               'reset_range': reset_range,
-#               'reset_range-units': 'V',
-#               'num_steps_reset': num_steps_reset,
-#               'init_time': init_time,
-#               'init_time-units': 'ns',
-#               'pulse_time': float(pulse_time),
-#               'pulse_time-units': 's',
-#               
-#               'wait_time': int(wait_time),
-#               'wait_time-units': 's',
-#                'green_optical_power_pd': green_optical_power_pd,
-#                'green_optical_power_pd-units': 'V',
-#                'green_optical_power_mW': green_optical_power_mW,
-#                'green_optical_power_mW-units': 'mW',
-#                'red_optical_power_pd': red_optical_power_pd,
-#                'red_optical_power_pd-units': 'V',
-#                'red_optical_power_mW': red_optical_power_mW,
-#                'red_optical_power_mW-units': 'mW',
-#                'yellow_optical_power_pd': yellow_optical_power_pd,
-#                'yellow_optical_power_pd-units': 'V',
-#                'yellow_optical_power_mW': yellow_optical_power_mW,
-#                'yellow_optical_power_mW-units': 'mW',
-#               'readout': readout,
-#               'readout-units': 'ns',
-#               'x_voltages': x_voltages.tolist(),
-#               'x_voltages-units': 'V',
-#               'y_voltages': y_voltages.tolist(),
-#               'y_voltages-units': 'V',
-#               'ref_img_array': ref_img_array.tolist(),
-#               'ref_img_array-units': 'counts',
-#               'sig_img_array': sig_img_array.tolist(),
-#               'sig_img_array-units': 'counts',
-#               'dif_img_array': dif_img_array.tolist(),
-#               'dif_img_array-units': 'counts'
-#               }
-#
-#    filePath = tool_belt.get_file_path('image_sample', timestamp, base_sig['name'])
-#    tool_belt.save_raw_data(rawData, filePath + '_dif')
-#
-#    tool_belt.save_figure(fig, filePath + '_dif')
     
     return  
 # %%
@@ -299,23 +158,23 @@ if __name__ == '__main__':
                            46, 53, 44, 70, 50, 40, 40, 32] # 2/11/21
     
     
-    init_time = 10**7
+    init_time = 5*10**7
     
     init_color = '515a'
     pulse_color = '515a'
     readout_color = 638
     
-    center_coords = [0.251, -0.385, 4.76]
-    reset_coords = [0.251, -0.385, 4.76]
-    optimize_coords = [0.251, -0.385, 4.76]
+    center_coords = [-0.067, 0.173, 4.8]
+    reset_coords =[-0.067, 0.173, 4.8]
+    optimize_coords = [-0.067, 0.173, 4.8]
 #    center_coords = pulse_coords
     
     with labrad.connect() as cxn:
-        pulse_time = 10**5/10**9
-        pulse_coords =    [0.251, -0.385, 4.76]
+        pulse_time = 0
+        pulse_coords =    [-0.067, 0.173, 4.8]
         main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
                            pulse_coords, pulse_time, init_time, init_color, 
-                           pulse_color, readout_color)
+                           pulse_color, readout_color, 1)
 
         
 

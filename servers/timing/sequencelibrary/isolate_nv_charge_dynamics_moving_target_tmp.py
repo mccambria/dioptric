@@ -33,24 +33,23 @@ def get_seq(pulser_wiring, args):
         galvo_time = durations
                 
     aom_ao_589_pwr = args[7]
-    green_init_pwr = args[8]
-    green_pulse_pwr = args[9]
-    green_readout_pwr = args[10]
 
     # Get the APD index
-    apd_index = args[11]
+    apd_index = args[8]
     
+    init_green_power = args[9]
+    pulse_green_power = args[10]
+    readout_green_power = args[11]
     init_color = args[12]
     pulse_color = args[13]
     read_color = args[14]
-
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_clock = pulser_wiring['do_sample_clock']
-    pulser_ao_515_aom = pulser_wiring['ao_515_laser']
     pulser_do_532_aom = pulser_wiring['do_532_aom']
     pulser_ao_589_aom = pulser_wiring['ao_589_aom']
     pulser_do_638_aom = pulser_wiring['do_638_laser']
+    pulser_ao_515_aom = pulser_wiring['ao_515_laser']
     
     total_laser_delay = delay_532 + delay_589 + delay_638
 
@@ -83,11 +82,9 @@ def get_seq(pulser_wiring, args):
 #    train = [(period + 100, LOW), (100, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_clock, train)
     
-#    train = [(period, HIGH)]
-#    seq.setDigital(pulser_do_532_aom, train)
     
     # start each laser sequence
-    train_515 = [(total_laser_delay - delay_532 , LOW)]
+    train_515a = [(total_laser_delay - delay_532 , LOW)]
     train_532 = [(total_laser_delay - delay_532 , LOW)]
     train_589 = [(total_laser_delay - delay_589, LOW)]
     train_638 = [(total_laser_delay - delay_638, LOW)]
@@ -98,29 +95,29 @@ def get_seq(pulser_wiring, args):
     init_train_on = [(initialization_time, HIGH)]
     init_train_off = [(initialization_time, LOW)]
     if init_color == '515a':
-        init_train_on = [(initialization_time, green_init_pwr)]
-        train_515.extend(init_train_on)
+        init_train_on = [(initialization_time, init_green_power)]
+        train_515a.extend(init_train_on)
         train_532.extend(init_train_off)
         train_589.extend(init_train_off)
         train_638.extend(init_train_off)
     if init_color == 532:
-        train_515.extend(init_train_off)
+        train_515a.extend(init_train_off)
         train_532.extend(init_train_on)
         train_589.extend(init_train_off)
         train_638.extend(init_train_off)
     if init_color == 589:
         init_train_on = [(initialization_time, aom_ao_589_pwr)]
-        train_515.extend(init_train_off)
+        train_515a.extend(init_train_off)
         train_532.extend(init_train_off)
         train_589.extend(init_train_on)
         train_638.extend(init_train_off)
     if init_color == 638:
-        train_515.extend(init_train_off)
+        train_515a.extend(init_train_off)
         train_532.extend(init_train_off)
         train_589.extend(init_train_off)
         train_638.extend(init_train_on)
         
-    train_515.extend(galvo_delay_train)
+    train_515a.extend(galvo_delay_train)
     train_532.extend(galvo_delay_train)
     train_589.extend(galvo_delay_train)
     train_638.extend(galvo_delay_train)
@@ -129,29 +126,29 @@ def get_seq(pulser_wiring, args):
     pulse_train_on = [(pulse_time, HIGH)]
     pulse_train_off = [(pulse_time, LOW)]
     if pulse_color == '515a':
-        init_train_on = [(pulse_time, green_pulse_pwr)]
-        train_515.extend(pulse_train_on)
+        pulse_train_on = [(pulse_time, pulse_green_power)]
+        train_515a.extend(pulse_train_on)
         train_532.extend(pulse_train_off)
         train_589.extend(pulse_train_off)
         train_638.extend(pulse_train_off)
     if pulse_color == 532:
-        train_515.extend(pulse_train_off)
+        train_515a.extend(pulse_train_off)
         train_532.extend(pulse_train_on)
         train_589.extend(pulse_train_off)
         train_638.extend(pulse_train_off)
     if pulse_color == 589:
         pulse_train_on = [(pulse_time, aom_ao_589_pwr)]
-        train_515.extend(pulse_train_off)
+        train_515a.extend(pulse_train_off)
         train_532.extend(pulse_train_off)
         train_589.extend(pulse_train_on)
         train_638.extend(pulse_train_off)
     if pulse_color == 638:
-        train_515.extend(pulse_train_off)
+        train_515a.extend(pulse_train_off)
         train_532.extend(pulse_train_off)
         train_589.extend(pulse_train_off)
         train_638.extend(pulse_train_on)
         
-    train_515.extend(galvo_delay_train)
+    train_515a.extend(galvo_delay_train)
     train_532.extend(galvo_delay_train)
     train_589.extend(galvo_delay_train)
     train_638.extend(galvo_delay_train)
@@ -160,46 +157,49 @@ def get_seq(pulser_wiring, args):
     read_train_on = [(readout_time, HIGH)]
     read_train_off = [(readout_time, LOW)]
     if read_color == '515a':
-        init_train_on = [(readout_time, green_readout_pwr)]
-        train_515.extend(read_train_on)
+        pulse_train_on = [(readout_time, readout_green_power)]
+        train_515a.extend(read_train_on)
         train_532.extend(read_train_off)
         train_589.extend(read_train_off)
         train_638.extend(read_train_off)
     if read_color == 532:
-        train_515.extend(read_train_off)
+        train_515a.extend(read_train_off)
         train_532.extend(read_train_on)
         train_589.extend(read_train_off)
         train_638.extend(read_train_off)
     if read_color == 589:
         read_train_on = [(readout_time, aom_ao_589_pwr)]
-        train_515.extend(read_train_off)
+        train_515a.extend(read_train_off)
         train_532.extend(read_train_off)
         train_589.extend(read_train_on)
         train_638.extend(read_train_off)
     if read_color == 638:
-        train_515.extend(read_train_off)
-        train_532.extend(pulse_train_off)
-        train_589.extend(pulse_train_off)
+        train_515a.extend(read_train_off)
+        train_532.extend(read_train_off)
+        train_589.extend(read_train_off)
         train_638.extend(read_train_on)
         
-    train_515.extend([(100, LOW)])
+    train_515a.extend([(100, LOW)])
     train_532.extend([(100, LOW)])
     train_589.extend([(100, LOW)])
     train_638.extend([(100, LOW)])
         
         
 
-    seq.setAnalog(pulser_ao_515_aom, train_515)
+    seq.setAnalog(pulser_ao_515_aom, train_515a)
     seq.setDigital(pulser_do_532_aom, train_532)
     seq.setAnalog(pulser_ao_589_aom, train_589)
     seq.setDigital(pulser_do_638_aom, train_638)    
-        
+
+#    train = [(period, HIGH)]
+#    seq.setDigital(pulser_do_532_aom, train) 
+       
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]
 
 if __name__ == '__main__':
-    wiring = {'ao_638_laser': 0,
+    wiring = {'ao_515_laser': 0,
               'ao_589_aom':1,
               'do_sample_clock': 0,
               'do_apd_0_gate': 4,
@@ -207,8 +207,8 @@ if __name__ == '__main__':
               'do_638_laser': 7
               }
 
-    seq_args = [1000, 1500, 3000, 0, 0, 0, 500, 0.5, 0, 532, 532, 638]
-#    seq_args = [1000, 100000, 200000, 140, 1080, 90, 2000000, 0.7, 0, 638, 532, 589]
+#    seq_args = [1000, 1500, 3000, 0, 0, 0, 500, 0.5, 0, 0.5, 0.5, 1.0, '515a', '515a', 638]
+    seq_args = [100000, 10000000, 40000000, 140, 1080, 90, 2000000, 0.3, 0, 0.65, 0.65, 0.65, 532, 532, 589]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()

@@ -523,7 +523,7 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    nv_coords_list =    
+    nv_coords_list =[  
 [0.309, 0.334, 4.90],
 [0.184, 0.342, 4.79],
 [-0.038, 0.294, 4.72],

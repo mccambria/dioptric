@@ -20,10 +20,6 @@ import majorroutines.image_sample as image_sample
 import copy
 import scipy.stats as stats
 
-reset_range = 0.3
-num_steps_reset = int(75 * reset_range)
-reset_time = 10**7
-
 green_reset_power = 0.6075
 green_pulse_power = 0.65
 green_image_power = 0.65
@@ -223,19 +219,19 @@ def populate_img_array(valsToAdd, imgArray, run_num):
     return
     
        # %%
-def main_data_collection(nv_sig, start_coords, coords_list, pulse_time, 
-                         num_runs, init_color, pulse_color, readout_color, siv_init, index_list = []):
+def main_data_collection(nv_sig, start_coords, coords_list, reset_range, pulse_time, 
+                         reset_time, num_runs, init_color, pulse_color, readout_color,siv_init = False, index_list = []):
     with labrad.connect() as cxn:
         ret_vals = main_data_collection_with_cxn(cxn, nv_sig, 
-                        start_coords, coords_list,pulse_time, 
+                        start_coords, coords_list,reset_range, pulse_time, reset_time, 
                         num_runs, init_color, pulse_color, readout_color, siv_init, index_list)
     
     readout_counts_array, target_counts_array, opti_coords_list = ret_vals
                         
     return readout_counts_array, target_counts_array, opti_coords_list
         
-def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
-                     pulse_time, num_runs, init_color, pulse_color, readout_color,siv_init,   index_list = []):
+def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list, reset_range,
+                     pulse_time, reset_time, num_runs, init_color, pulse_color, readout_color, siv_init = False, index_list = []):
     '''
     Runs a measurement where an initial pulse is pulsed on the start coords, 
     then a pulse is set on the first point in the coords list, then the 
@@ -315,6 +311,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
     apd_indices = [0]
     
     num_samples = len(coords_list)
+    reset_num_steps =  int(75 * reset_range)
     
     #delay of aoms and laser, parameters, etc
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -364,19 +361,18 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         file_name = 'isolate_nv_charge_dynamics_moving_target.py'
         seq_args = [ initialization_time, pulse_time, readout_pulse_time, 
             laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay, 
-            am_589_power, 
+            am_589_power, apd_indices[0], 
             green_pulse_power, green_pulse_power, green_image_power, 
-            apd_indices[0],
             init_color, pulse_color, readout_color]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-        
 #        print(seq_args)
 #        return
         # print the expected run time
         period = ret_vals[0]
         period_s = period/10**9
-        period_s_total = (period_s*num_samples + 1)*num_runs
+        scan_time = reset_num_steps*reset_num_steps*(reset_time/10**9 + 0.002)
+        period_s_total = (period_s*num_samples + 1 + scan_time)*num_runs
         print('{} ms pulse time'.format(pulse_time/10**6))
         print('Expected total run time: {:.0f} s'.format(period_s_total))
     
@@ -395,7 +391,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
 #    return
     ### Backto the same
     # Optimize at the start of the routine
-    opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, '515a', disable=disable_boo)
+    opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
     opti_coords_list.append(opti_coords)
         
         
@@ -410,7 +406,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         # optimize is longer that 5 min, optimize again
         current_time = time.time()
         if current_time - run_start_time >= 5*60:
-            opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, '515a', disable=disable_boo)
+            opti_coords = optimize.main_xy_with_cxn(cxn, start_nv_sig, apd_indices, 532, disable=disable_boo)
             opti_coords_list.append(opti_coords) 
             run_start_time = current_time
             
@@ -420,13 +416,12 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
         start_coords_drift = start_coords + drift
         coords_list_drift = numpy.array(coords_list) + [drift[0], drift[1]]
         
-        
         if siv_init:
             # reset the SiV
             print('resetting the SiV into dark state')
             reset_nv_sig = copy.deepcopy(start_nv_sig)
             reset_nv_sig['ao_515_pwr'] = green_reset_power
-            image_sample.main(reset_nv_sig, reset_range, reset_range, num_steps_reset,
+            image_sample.main(reset_nv_sig, reset_range, reset_range, reset_num_steps,
                       apd_indices, '515a', readout = reset_time,   save_data=False, plot_data=False) 
                             
         # Different ways of stepping thru coords and recording data                   
@@ -471,7 +466,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
                 
 #            # Read the counts
 #            new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
-#            print(total_samples_list)
+            
             # The last of the triplet of readout windows is the counts we are interested in
             readout_counts = total_samples_list[2::3]
             readout_counts = [int(el) for el in readout_counts]
@@ -541,6 +536,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, coords_list,
             'readout_color': readout_color,
             'start_coords': start_coords,
             'coords_list': coords_list,
+            'reset_range': reset_range,
             'num_steps': num_steps,
             'num_runs': num_runs,
             'nv_sig': nv_sig,
@@ -727,8 +723,9 @@ def do_moving_target_specific_points(nv_sig, readout_coords,  target_nv_coords, 
 
     return
 # %% 
-def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time, 
-                              num_steps, num_runs, init_color, pulse_color, siv_init, readout_color = 589):
+def do_moving_target_2D_image(nv_sig, start_coords, img_range, reset_range, pulse_time,  reset_time, 
+                              num_steps, num_runs, init_color, pulse_color, 
+                              siv_init = False, readout_color = 589):
 
     # color_filter = nv_sig['color_filter']
     startFunctionTime = time.time()
@@ -765,7 +762,9 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time,
 
     # Run the data collection
     ret_vals = main_data_collection(nv_sig, start_coords, coords_voltages_shuffle_list,
-                            pulse_time, num_runs, init_color, pulse_color, readout_color, siv_init, index_list = ind_list)
+                            reset_range, pulse_time,reset_time, num_runs, 
+                            init_color, pulse_color, readout_color, 
+                            siv_init = siv_init, index_list = ind_list)
     
     readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
     readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
@@ -835,6 +834,9 @@ def do_moving_target_2D_image(nv_sig, start_coords, img_range, pulse_time,
                 'init_color': init_color,
                 'pulse_color': pulse_color,
                 'readout_color': readout_color,
+                'green_reset_power': green_reset_power,
+                'green_pulse_power': green_pulse_power,
+                'green_image_power': green_image_power,
                 'pulse_time': pulse_time,
                 'pulse_time-units': 'ns',
             'start_coords': start_coords,
@@ -1109,20 +1111,21 @@ if __name__ == '__main__':
 [-0.203, -0.330, 4.81],
 [0.251, -0.385, 4.76],
 ]
-    
 #    start_coords_list = [[0.285, -0.359, 4.96]]
-    expected_count_list = [60, 40, 38, 36, 38, 40, 55, 48, 42, 36, 38, 30, 
+    expected_count_list = [60, 40, 38, 36, 38, 40, 55, 42, 42, 36, 38, 30, 
                            46, 53, 44, 70, 50, 40, 40, 32] # 2/11/21
 #    end_coords = end_coords.tolist()
     num_steps = 40
+    reset_range = 0.3
+    reset_time  =10**7
 #    num_runs = 50
 #    img_range = 0.45
     
  
     for s in [7]:
          start_coords = start_coords_list[s]
-         init_color = '515a'
-         pulse_color = '515a'
+         init_color = 532
+         pulse_color = 532
          nv_sig = copy.deepcopy(base_sig)
          # Set up for current NV
          nv_sig['name']= 'goeppert-mayer-nv{}_2021_02_19'.format(s)
@@ -1136,7 +1139,143 @@ if __name__ == '__main__':
 #         t =10**6
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)
          t =10**7
-         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 20,init_color, pulse_color, True)
-         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 20,init_color, pulse_color, False)
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 40,init_color, pulse_color, siv_init = True)
+         do_moving_target_2D_image(nv_sig, start_coords, 0.3,reset_range, t, reset_time,  num_steps, 10,init_color, pulse_color, siv_init = False)
 #         do_moving_target_1D_line(nv_sig, [0.251, -0.385, 4.76], [0.251 - 0.15, -0.385, 4.76], t, 
 #                             50, 50, init_color, pulse_color)
+#         t =10**8
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 15, init_color, pulse_color) 
+#
+#    for s in [19]:
+#         start_coords = start_coords_list[s]
+#         init_color = 638
+#         pulse_color = 532
+#         nv_sig = copy.deepcopy(base_sig)
+#         # Set up for current NV
+#         nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_26'.format(s)
+#         nv_sig['expected_count_rate'] = expected_count_list[s]
+#         # Set up for SiV band
+#         nv_sig['color_filter'] = '715 lp'
+#         nv_sig['nd_filter'] = 'nd_0'
+#         nv_sig['am_589_power'] = 0.6
+#         nv_sig['pulsed_SCC_readout_dur'] = 4*10**7
+#         t =10**6
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 20, init_color, pulse_color, readout_color = 589)
+#         t =5*10**6
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, 25, init_color, pulse_color, readout_color = 589)
+#         t =10**7
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.6, t, num_steps, 25, init_color, pulse_color, readout_color = 589)
+#         init_color = 532
+#         pulse_color = 638
+#         t =10**7
+#         do_moving_target_2D_image(nv_sig, start_coords, 0.3, t, num_steps, 25, init_color, pulse_color, readout_color = 589)
+        
+        
+        
+#    num_runs =  20*5
+#    for t in [10**6]:        
+#        init_color = 532
+#        pulse_color = 532
+#        nv_sig = copy.deepcopy(nv1_2020_12_17)
+#        nv_sig['color_filter'] = '635-715 bp'
+#        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        do_moving_target_2D_image(nv_sig, start_coords, 0.4, t, num_steps, num_runs, init_color, pulse_color)
+#    for t in [10**7]:        
+#        init_color = 532
+#        pulse_color = 532
+#        nv_sig = copy.deepcopy(nv1_2020_12_17)
+#        nv_sig['color_filter'] = '635-715 bp'
+#        do_moving_target_2D_image(nv_sig, start_coords, 0.55, t, num_steps, num_runs, init_color, pulse_color)
+#        nv_sig['color_filter'] = '715 lp'
+#        do_moving_target_2D_image(nv_sig, start_coords, 0.55, t, num_steps, num_runs, init_color, pulse_color)
+
+#       
+#    init_color = 532
+#    pulse_color = 532        
+#    for s in [3]: 
+#        start_coords = start_coords_list[s]            
+#        nv_sig = copy.deepcopy(base_sig)
+#        nv_sig['name']= 'goeppert-mayer-nv{}_2021_01_26'.format(s)
+#        nv_sig['expected_count_rate'] = expected_count_list[s]
+##        nv_sig['color_filter'] = '635-715 bp'
+#        nv_sig['color_filter'] = '715 lp'
+#        nv_sig['nd_filter'] = 'nd_0'
+#        nv_sig['am_589_power'] = 0.6
+#        nv_sig['pulsed_SCC_readout_dur'] = 4*10**7
+#        
+#        t = 10**5
+#        num_steps = 51
+#        num_runs =  50
+#        end_coords = numpy.array(start_coords) - [0.1,0,0]
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+#                                 num_steps, num_runs, init_color, pulse_color)
+#        t = 10**6
+#        num_steps = 41
+#        num_runs= 200
+#        end_coords = numpy.array(start_coords) - [0.15,0,0]
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+#                              num_steps, num_runs, init_color, pulse_color)
+#        t = 5*10**6
+#        num_steps = 51
+#        num_runs =  50
+#        end_coords = numpy.array(start_coords) - [0.2,0,0]
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+#                                 num_steps, num_runs, init_color, pulse_color)
+#        
+#        t = 10**7
+#        num_steps = 51
+#        num_runs =  20
+#        end_coords = numpy.array(start_coords) - [0.3,0,0]
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+#                                 num_steps, num_runs, init_color, pulse_color, readout_color = 638)
+#                
+#        t = 5*10**7
+#        num_steps = 51
+#        num_runs =  50
+#        end_coords = numpy.array(start_coords) - [0.55,0,0]
+#        do_moving_target_1D_line(nv_sig, start_coords, end_coords.tolist(), t, 
+#                                 num_steps, num_runs, init_color, pulse_color)
+
+
+ 
+    #%%
+#    pc_name = 'pc_rabi'
+#    branch_name = 'branch_Spin_to_charge'
+#    data_folder = 'moving_target'
+#    month_folder = '2021_02'
+#    
+#    sub_folder_list = ['2021_01_26-1ms', '2021_01_26-5ms', '2021_01_26-10ms','2021_01_26-50ms']
+#    title_list = ['1 ms', '5 ms', '10 ms', '50 ms']
+#    
+#    normalization_file = pc_name + '/' + branch_name + '/collect_charge_counts/' + month_folder
+#    file_name = '2021_01_26-17_13_28-goeppert-mayer-nv_2021_01_26-nv_list'
+#    norm_data = tool_belt.get_raw_data(normalization_file, file_name)
+#    nvm_list = norm_data['nvm_avg_list']
+#    nv0_list = norm_data['nv0_avg_list']
+#    
+#
+#    folder = pc_name + '/' + branch_name + '/' + data_folder + '/' + month_folder + '/' + sub_folder
+#    file_list = tool_belt.get_file_list(folder, 'txt')
+#    sorted_file_list = sorted(file_list)
+#    
+#    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+#    
+#    for f in range(len(sorted_file_list)):
+#        nvm = nvm_list[f]
+#        nv0 = nv0_list[f]
+#        file = sorted_file_list[f]
+#        data = tool_belt.get_raw_data(folder, file[:-4])
+#        readout_image_array = numpy.array(data['readout_image_array'])
+#        img_extent = data['img_extent']
+#        readout_counts_norm = (readout_image_array - nv0)/(nvm - nv0)
+#        nv_sig = data['nv_sig']
+#        name = nv_sig['name']
+#        # Create the figure
+#        title = '{} normalized to charge state'.format(name)
+#        fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
+#                                                title = title,color_bar_label = 'Scaled charge state to NV-', um_scaled = True)
+    
+    
+    
+    
