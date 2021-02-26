@@ -56,7 +56,7 @@ class CryoPiezos(LabradServer):
         p.get('cryo_piezos_ip')
         p.get('cryo_piezos_voltage')
         p.cd(['', 'SharedParameters'])
-        p.get('z_gravity_adjust')
+        p.get('z_drift_adjust')
         result = await p.send()
         return result['get']
 
@@ -64,7 +64,7 @@ class CryoPiezos(LabradServer):
     def on_get_config(self, reg_vals):
         ip_address = reg_vals[0]
         cryo_piezos_voltage = reg_vals[1]
-        self.z_gravity_adjust = reg_vals[2]
+        self.z_drift_adjust = reg_vals[2]
         # Connect via telnet
         try:
             self.piezos = Telnet(ip_address, 7230)
@@ -122,20 +122,50 @@ class CryoPiezos(LabradServer):
         
         # Calculate the differential number of steps from where we're at
         abs_steps_to_move = abs(steps_to_move)
-        # Compensate for gravity by an empirical 1.2x or 0.8x factor
-        # These values will preseve single step movements
+        
+        ########################################
+        
+        # Move at least 10 steps every time since larger movements are more
+        # repeatable
+        # min_steps_to_move = 10
+        # if abs_steps_to_move < min_steps_to_move:
+        #     reverse_required = True
+        #     abs_steps_to_move += min_steps_to_move 
+        # else:
+        #     reverse_required = False
+            
+        # if steps_to_move > 0: 
+        #     cmd = 'stepu'
+        #     reverse_cmd = 'stepd'
+        #     # Compensate for hysteresis
+        #     if ax == 3:
+        #         abs_steps_to_move = round((1+self.z_drift_adjust)*abs_steps_to_move)
+        #         min_steps_to_move = round((1-self.z_drift_adjust)*min_steps_to_move)
+        # else:
+        #     cmd = 'stepd'
+        #     reverse_cmd = 'stepu'
+        #     # Compensate for hysteresis
+        #     if ax == 3:
+        #         abs_steps_to_move = round((1-self.z_drift_adjust)*abs_steps_to_move)
+        #         min_steps_to_move = round((1+self.z_drift_adjust)*min_steps_to_move)
+        # self.send_cmd(cmd, ax, abs_steps_to_move)
+        
+        # self.send_cmd('stepw', ax)
+        
+        # if reverse_required:
+        #     self.send_cmd(reverse_cmd, ax, min_steps_to_move)
+            
+        ########################################
+        
         if steps_to_move > 0: 
             cmd = 'stepu'
-            abs_steps_to_move = round((1+self.z_gravity_adjust)*abs_steps_to_move)
+            # if ax == 3:
+            #     abs_steps_to_move = round((1+self.z_drift_adjust)*abs_steps_to_move)
         else:
             cmd = 'stepd'
-            abs_steps_to_move = round((1-self.z_gravity_adjust)*abs_steps_to_move)
+            if ax == 3:
+                abs_steps_to_move = round((1-self.z_drift_adjust)*abs_steps_to_move)
         self.send_cmd(cmd, ax, abs_steps_to_move)
-            
-        # # Move one step at a time to mitigate hysteresis
-        # for ind in range(abs_steps_to_move):
-        #     self.send_cmd(cmd, ax, 1)
-        #     self.send_cmd('stepw', ax)
         
         # Set to ground mode once we're done stepping
         self.send_cmd('stepw', ax)

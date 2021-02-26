@@ -36,10 +36,12 @@ def main(cxn=None):
     """
     
     instr = cxn.signal_generator_sg394
-    instr.set_amp(0.0)
+    # instr = cxn.signal_generator_bnc835
+    instr.set_amp(12.0)
     instr.set_freq(2.87)
     instr.uwave_on()
     pulser = cxn.pulse_streamer
+    pulser.constant([7])
     pulser.constant([4])
     input('Press enter to stop...')
     pulser.constant([])

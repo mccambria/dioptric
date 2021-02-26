@@ -62,7 +62,7 @@ def process_raw_buffer(timestamps, channels,
 
     # Throw out probable afterpulses
     # Something is wrong with this... see 2019-06-03_17-05-01_ayrton12
-    if True:
+    if False:
         num_vals = timestamps.size
         for click_index in range(num_vals):
             
@@ -179,7 +179,8 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
             time_remaining = new_time_remaining
             
         # Optimize every 2 minutes
-        if ((run_time - new_time_remaining) % 120 == 0) and (new_time_remaining > 0):
+        elapsed_time = run_time - new_time_remaining
+        if (elapsed_time % 120 == 0) and (elapsed_time > 0) and (new_time_remaining > 0):
             cxn.apd_tagger.stop_tag_stream()
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
             cxn.pulse_streamer.constant([wiring['do_532_aom']])
