@@ -56,12 +56,12 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-    scan_range = 0.5
-    num_steps = 90
+    # scan_range = 0.5
+    # num_steps = 90
     # num_steps = 120
     
-    # scan_range = 0.15
-    # num_steps = 60
+    scan_range = 0.15
+    num_steps = 60
     
     # scan_range = 0.75
     # num_steps = 150
@@ -151,8 +151,8 @@ def do_pulsed_resonance(nv_sig, apd_indices,
     num_steps = 51
     num_reps = 5 * 10**4
     num_runs = 2
-    uwave_power = 12.0
-    uwave_pulse_dur = 150
+    uwave_power = 14.5
+    uwave_pulse_dur = 100
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -183,7 +183,7 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     freq_range = 0.15
     num_freq_steps = 51
     num_freq_runs = 4
-    uwave_power = 12.0
+    uwave_power = 14.5
     # uwave_power = -5.0
     uwave_pulse_dur = 100  # Set to None for CWESR
     num_freq_reps = 5 * 10**4
@@ -197,7 +197,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 5 * 10**4
-    num_runs = 2
+    num_runs = 4
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -445,12 +445,12 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 12.0,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 12.0}
     
-    nv_sig = { 'coords': [0.112, -0.025, -3],
-            'name': '{}-nv7_2021_02_26'.format(sample_name),
-            'expected_count_rate': 32, 'nd_filter': nd,
+    nv_sig = { 'coords': [0.108, -0.047, -39],
+            'name': '{}-nv8_2021_02_26'.format(sample_name),
+            'expected_count_rate': 35, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 120,
-            'resonance_LOW': 2.8651, 'rabi_LOW': 150.6, 'uwave_power_LOW': 12.0,
-            'resonance_HIGH': 2.8906, 'rabi_HIGH': 149.3, 'uwave_power_HIGH': 12.0}
+            'resonance_LOW': 2.8652, 'rabi_LOW': 150.6, 'uwave_power_LOW': 14.5,
+            'resonance_HIGH': 2.8902, 'rabi_HIGH': 149.3, 'uwave_power_HIGH': 13.0}
     
     
     # %% Functions to run
@@ -465,9 +465,9 @@ if __name__ == '__main__':
         # do_resonance(nv_sig, apd_indices, 2.87, 0.1)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.878, 0.06)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
-        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # do_g2_measurement(nv_sig, 1, 0)
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_g2_measurement(nv_sig, 1, 0)
         # do_t1_battery(nv_sig, apd_indices)
         
         # tool_belt.init_safe_stop()

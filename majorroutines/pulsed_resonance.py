@@ -220,7 +220,7 @@ def state(nv_sig, apd_indices, state, freq_range,
 
 def main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-         state=States.HIGH):
+         state=States.LOW):
 
     with labrad.connect() as cxn:
         resonance_list = main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,

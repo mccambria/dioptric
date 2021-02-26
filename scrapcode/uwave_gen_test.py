@@ -35,14 +35,15 @@ def main(cxn=None):
     body of the script.
     """
     
-    instr = cxn.signal_generator_sg394
-    # instr = cxn.signal_generator_bnc835
-    instr.set_amp(12.0)
+    # instr = cxn.signal_generator_sg394
+    # gate = 7
+    instr = cxn.signal_generator_bnc835
+    gate = 4
+    instr.set_amp(13.0)
     instr.set_freq(2.87)
     instr.uwave_on()
     pulser = cxn.pulse_streamer
-    pulser.constant([7])
-    pulser.constant([4])
+    pulser.constant([gate])
     input('Press enter to stop...')
     pulser.constant([])
     
@@ -124,3 +125,4 @@ if __name__ == '__main__':
             main(cxn)
         finally:
             cxn.signal_generator_sg394.reset()
+            cxn.signal_generator_bnc835.reset()
