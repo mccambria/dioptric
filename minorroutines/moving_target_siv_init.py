@@ -27,6 +27,16 @@ green_reset_power = 0.6075
 green_pulse_power = 0.65
 green_image_power = 0.65
 
+bright_reset_range = 0.5
+bright_reset_steps = 35
+bright_reset_power = 0.6358
+bright_reset_time = 5*10**7
+
+dark_reset_range = 0.5
+dark_reset_steps = 21
+dark_reset_power = 0.6085
+dark_reset_time = 10**7
+
 # %%
 def build_voltages_image(start_coords, img_range, num_steps):
     x_center = start_coords[0]
@@ -125,20 +135,20 @@ def populate_img_array(valsToAdd, imgArray, run_num):
     return
     
        # %%
-def main_data_collection(nv_sig, start_coords, opti_coords, pulse_coords_list, reset_range, pulse_time, reset_time,  
-                         num_runs, init_color, pulse_color, readout_color, total_init = True, index_list = []):
+def main_data_collection(nv_sig, start_coords, opti_coords, pulse_coords_list, pulse_time,  
+                         num_runs, init_color, pulse_color, readout_color, siv_init, index_list = []):
     with labrad.connect() as cxn:
         ret_vals = main_data_collection_with_cxn(cxn, nv_sig, 
-                        start_coords, opti_coords, pulse_coords_list, reset_range, pulse_time, reset_time,  
-                        num_runs, init_color, pulse_color, readout_color, total_init, index_list)
+                        start_coords, opti_coords, pulse_coords_list, pulse_time,  
+                        num_runs, init_color, pulse_color, readout_color, siv_init, index_list)
     
     readout_counts_array, target_counts_array, opti_coords_list = ret_vals
                         
     return readout_counts_array, target_counts_array, opti_coords_list
         
 def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
-                                  pulse_coords_list, reset_range, pulse_time, reset_time, 
-                                  num_runs, init_color, pulse_color, readout_color, total_init = True, index_list = []):
+                                  pulse_coords_list, pulse_time, 
+                                  num_runs, init_color, pulse_color, readout_color, siv_init, index_list = []):
     '''
     Runs a measurement where an initial scan is performed in the reset_range
     to put the SiV in a certain state. Then a pulse is set on the first point 
@@ -210,7 +220,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
     apd_indices = [0]
     
     num_samples = len(pulse_coords_list)
-    reset_num_steps =  int(75 * reset_range)
+#    reset_num_steps =  int(75 * reset_range)
     
     #delay of aoms and laser, parameters, etc
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -257,14 +267,19 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
     print('{} ms pulse time'.format(pulse_time/10**6))
     period = ret_vals[0]
     period_s = period/10**9
-    if total_init:
-        scan_time = reset_num_steps*reset_num_steps*(reset_time/10**9 + 0.002)
+    print(siv_init)
+    if siv_init == 'bright':
+        scan_time = bright_reset_steps**2*(bright_reset_time/10**9 + 0.002)
+        period_s_total = ((scan_time + period_s)*num_samples + 1)*num_runs
+        print('Expected total run time: {:.1f} hr'.format(period_s_total/60/60))
+    elif siv_init == 'dark':
+        scan_time = dark_reset_steps**2*(dark_reset_time/10**9 + 0.002)
         period_s_total = ((scan_time + period_s)*num_samples + 1)*num_runs
         print('Expected total run time: {:.1f} hr'.format(period_s_total/60/60))
     else:
         period_s_total = ((period_s)*num_samples + 1)*num_runs
         print('Expected total run time: {:.0f} min'.format(period_s_total/60))
-    
+#    return
     # Optimize at the start of the routine
     opti_coords_measured = optimize.main_xy_with_cxn(cxn, opti_nv_sig, apd_indices, '515a', disable=disable_boo)
     opti_coords_list.append(opti_coords_measured)
@@ -299,12 +314,22 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
             y_pulse_coords = unzipped_coords_list_drift[1]
 
             #############            
-            if total_init:
-#                print('resetting SiV')
-                # reset about start coordinates by just performing an image scan, 
-                # without saving the data
-                image_sample.main(start_nv_sig, reset_range, reset_range, reset_num_steps,
-                      apd_indices, init_color, readout = reset_time,   save_data=False, plot_data=False) 
+            if siv_init == 'bright':
+                reset_sig = copy.deepcopy(nv_sig)
+                reset_sig['coords'] = start_coords
+                reset_sig['ao_515_pwr'] = bright_reset_power
+                _,_,_ = image_sample.main(reset_sig, bright_reset_range, bright_reset_range, 
+                                          bright_reset_steps, 
+                                  apd_indices, init_color,readout = bright_reset_time,  
+                                  save_data=False, plot_data=False) 
+            elif siv_init == 'dark':
+                reset_sig = copy.deepcopy(nv_sig)
+                reset_sig['coords'] = start_coords
+                reset_sig['ao_515_pwr'] = dark_reset_power
+                _,_,_ = image_sample.main(reset_sig, dark_reset_range, dark_reset_range, 
+                                          dark_reset_steps, 
+                                  apd_indices, init_color,readout = dark_reset_time,  
+                                  save_data=False, plot_data=False) 
                 
 
             # pulse laser for 100 us on readout NV regardless
@@ -381,18 +406,14 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
             'readout_color': readout_color,
             'start_coords': start_coords,
             'opti_coords': opti_coords,
+            'siv_init': siv_init,
             'pulse_coords_list': pulse_coords_list,
-            'green_reset_power': green_reset_power,
             'green_pulse_power': green_pulse_power,
             'green_image_power': green_image_power,
-            'reset_range': reset_range,
-            'reset_num_steps': reset_num_steps,
             'num_steps': num_steps,
             'num_runs': num_runs,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'reset_time': reset_time,
-            'reset_time-units': 'ns',
             'pulse_time': pulse_time,
             'pulse_time-units': 'ns',
             'opti_coords_list': opti_coords_list,
@@ -408,8 +429,8 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
     return readout_counts_array, target_counts_array, opti_coords_list
 
 # %%
-def do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  pulse_time, reset_range, reset_time,
-                             num_steps, num_runs, init_color, pulse_color, total_init = True, readout_color = 589):
+def do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  pulse_time, 
+                             num_steps, num_runs, init_color, pulse_color, siv_init, readout_color = 589):
     
     startFunctionTime = time.time()
     
@@ -422,9 +443,8 @@ def do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  puls
     coords_list = list(zip(x_voltages, y_voltages))
     
     # Run the data collection
-    ret_vals = main_data_collection(nv_sig, start_coords, opti_coords, coords_list, reset_range, pulse_time, reset_time,  
-                         num_runs, init_color, pulse_color, readout_color, total_init)
-    
+    ret_vals = main_data_collection(nv_sig, start_coords, opti_coords, coords_list, pulse_time,  
+                         num_runs, init_color, pulse_color, readout_color, siv_init)
     readout_counts_array, target_counts_array, opti_coords_list = ret_vals
             
     # calculate the radial distances from the readout NV to the target points
@@ -458,18 +478,26 @@ def do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  puls
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
                 'timeElapsed': timeElapsed,
-                'total_init': total_init,
+                'siv_init': siv_init,
                 'init_color': init_color,
                 'pulse_color': pulse_color,
                 'readout_color': readout_color,
             'start_coords': start_coords,
             'end_coords': end_coords,
             'opti_coords': opti_coords,
-            'reset_range': reset_range,
-            'reset_time': reset_time,
             'num_steps': num_steps,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
+            
+            'bright_reset_range': bright_reset_range,
+            'bright_reset_steps':bright_reset_steps,
+            'bright_reset_power':bright_reset_power,
+            'bright_reset_time':bright_reset_time,
+            
+            'dark_reset_range': dark_reset_range,
+            'dark_reset_steps':dark_reset_steps,
+            'dark_reset_power':dark_reset_power,
+            'dark_reset_time':dark_reset_time,
             'green_optical_power_pd': green_optical_power_pd,
             'green_optical_power_pd-units': 'V',
             'green_optical_power_mW': green_optical_power_mW,
@@ -626,6 +654,15 @@ def do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range,
             'num_runs':num_runs,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'bright_reset_range': bright_reset_range,
+            'bright_reset_steps':bright_reset_steps,
+            'bright_reset_power':bright_reset_power,
+            'bright_reset_time':bright_reset_time,
+            
+            'dark_reset_range': dark_reset_range,
+            'dark_reset_steps':dark_reset_steps,
+            'dark_reset_power':dark_reset_power,
+            'dark_reset_time':dark_reset_time,
             'green_optical_power_pd': green_optical_power_pd,
             'green_optical_power_pd-units': 'V',
             'green_optical_power_mW': green_optical_power_mW,
@@ -690,7 +727,7 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10**7,  'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 4*10**7,  'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -701,31 +738,26 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
 
-    start_coords = [0.251, -0.385, 4.76]
-    end_coords = [0.251 - 0.15, -0.385, 4.76]
+    start_coords = [0.315, 0.222, 4.79]
+    end_coords = [0.315, 0.222 - 0.15, 4.79]
     
-    opti_coords = [-0.038, 0.294, 4.72]
-    num_steps = 25#50
+    opti_coords = [0.251, -0.385, 4.76]
+    num_steps = 50#50
     image_range = 0.3
-    reset_range = 0.3
-    reset_time = 10**7
-    num_runs = 10#50
+    num_runs = 25#50
     
 
     init_color = '515a'
     pulse_color = '515a'
     nv_sig = copy.deepcopy(base_sig)
     # Set up for current NV
-    nv_sig['name']= 'goeppert-mayer-nv{}_2021_02_19'.format(19)
+    nv_sig['name']= 'goeppert-mayer-nv{}_2021_02_19'.format(6)
     nv_sig['expected_count_rate'] = 38
     # Measurements
-    t =0#10**7
-#    do_moving_target_2D_image(nv_sig, start_coords, opti_coords, image_range, 
-#                              t, reset_range,reset_time, num_steps, num_runs, 
-#                              init_color, pulse_color)
+    t =10**7
     do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t, 
-                             reset_range, reset_time,
-                             num_steps, num_runs, init_color, pulse_color, total_init = True)
-#    do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t, 
-#                             reset_range, reset_time,
-#                             num_steps, num_runs, init_color, pulse_color, total_init = False)
+                             num_steps, num_runs, init_color, pulse_color, siv_init = None)
+    do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t,
+                             num_steps, num_runs, init_color, pulse_color, siv_init = 'dark')
+    do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t, 
+                             num_steps, num_runs, init_color, pulse_color, siv_init = 'bright')

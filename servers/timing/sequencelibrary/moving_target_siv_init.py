@@ -33,8 +33,8 @@ def get_seq(pulser_wiring, args):
         galvo_time = durations
                 
     aom_ao_589_pwr = args[6]
-    green_pulse_power = args[7]
-    green_image_power = args[8]
+    green_pulse_pwr = args[7]
+    green_readout_pwr = args[8]
 
     # Get the APD index
     apd_index = args[9]
@@ -79,7 +79,7 @@ def get_seq(pulser_wiring, args):
     
     
     # start each laser sequence
-    train_515a = [(total_laser_delay - delay_532 , LOW)]
+    train_515 = [(total_laser_delay - delay_532 , LOW)]
     train_532 = [(total_laser_delay - delay_532 , LOW)]
     train_589 = [(total_laser_delay - delay_589, LOW)]
     train_638 = [(total_laser_delay - delay_638, LOW)]
@@ -87,64 +87,70 @@ def get_seq(pulser_wiring, args):
     galvo_delay_train = [(100 + galvo_time, LOW)]
     
     # add the pulse pulse segment
+    pulse_train_on = [(pulse_time, HIGH)]
     pulse_train_off = [(pulse_time, LOW)]
     if pulse_color == '515a':
-        train_515a.extend([(pulse_time, green_pulse_power)])
+        pulse_train_on = [(pulse_time, green_pulse_pwr)]
+        train_515.extend(pulse_train_on)
         train_532.extend(pulse_train_off)
         train_589.extend(pulse_train_off)
         train_638.extend(pulse_train_off)
-    elif pulse_color == 532:
-        train_515a.extend(pulse_train_off)
-        train_532.extend([(pulse_time, HIGH)])
+    if pulse_color == 532:
+        train_515.extend(pulse_train_off)
+        train_532.extend(pulse_train_on)
         train_589.extend(pulse_train_off)
         train_638.extend(pulse_train_off)
-    elif pulse_color == 589:
-        train_515a.extend(pulse_train_off)
+    if pulse_color == 589:
+        pulse_train_on = [(pulse_time, aom_ao_589_pwr)]
+        train_515.extend(pulse_train_off)
         train_532.extend(pulse_train_off)
-        train_589.extend([(pulse_time, aom_ao_589_pwr)])
+        train_589.extend(pulse_train_on)
         train_638.extend(pulse_train_off)
-    elif pulse_color == 638:
-        train_515a.extend(pulse_train_off)
+    if pulse_color == 638:
+        train_515.extend(pulse_train_off)
         train_532.extend(pulse_train_off)
         train_589.extend(pulse_train_off)
-        train_638.extend([(pulse_time, HIGH)])
+        train_638.extend(pulse_train_on)
         
-    train_515a.extend(galvo_delay_train)
+    train_515.extend(galvo_delay_train)
     train_532.extend(galvo_delay_train)
     train_589.extend(galvo_delay_train)
     train_638.extend(galvo_delay_train)
     
     # add the readout pulse segment
+    read_train_on = [(readout_time, HIGH)]
     read_train_off = [(readout_time, LOW)]
     if read_color == '515a':
-        train_515a.extend([(readout_time, green_image_power)])
+        read_train_on = [(readout_time, green_readout_pwr)]
+        train_515.extend(read_train_on)
         train_532.extend(read_train_off)
         train_589.extend(read_train_off)
         train_638.extend(read_train_off)
-    elif read_color == 532:
-        train_515a.extend(read_train_off)
-        train_532.extend([(readout_time, HIGH)])
+    if read_color == 532:
+        train_515.extend(read_train_off)
+        train_532.extend(read_train_on)
         train_589.extend(read_train_off)
         train_638.extend(read_train_off)
-    elif read_color == 589:
-        train_515a.extend(read_train_off)
+    if read_color == 589:
+        read_train_on = [(readout_time, aom_ao_589_pwr)]
+        train_515.extend(read_train_off)
         train_532.extend(read_train_off)
-        train_589.extend([(readout_time, aom_ao_589_pwr)])
+        train_589.extend(read_train_on)
         train_638.extend(read_train_off)
-    elif read_color == 638:
-        train_515a.extend(read_train_off)
-        train_532.extend(read_train_off)
-        train_589.extend(read_train_off)
-        train_638.extend([(readout_time, HIGH)])
+    if read_color == 638:
+        train_515.extend(read_train_off)
+        train_532.extend(pulse_train_off)
+        train_589.extend(pulse_train_off)
+        train_638.extend(read_train_on)
         
-    train_515a.extend([(100, LOW)])
+    train_515.extend([(100, LOW)])
     train_532.extend([(100, LOW)])
     train_589.extend([(100, LOW)])
     train_638.extend([(100, LOW)])
         
         
 
-    seq.setAnalog(pulser_ao_515_aom, train_515a)
+    seq.setAnalog(pulser_ao_515_aom, train_515)
     seq.setDigital(pulser_do_532_aom, train_532)
     seq.setAnalog(pulser_ao_589_aom, train_589)
     seq.setDigital(pulser_do_638_aom, train_638)    

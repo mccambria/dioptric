@@ -167,7 +167,7 @@ def main_with_cxn(cxn,nv_sig,start_coords, end_coords, apd_indices, readout_time
         # Stream the sequence
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         
-        cxn.galvo.load_two_point_scan([x_start, x_end, x_end], [y_start, y_end, y_end], 
+        cxn.galvo.load_arb_points_scan([x_start, x_end, x_end], [y_start, y_end, y_end], 
                           int(readout_time)) 
          
         cxn.pulse_streamer.stream_immediate(file_name, 1,
@@ -184,7 +184,9 @@ def main_with_cxn(cxn,nv_sig,start_coords, end_coords, apd_indices, readout_time
             if tool_belt.safe_stop():
                 break
             
-            new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
+            ret_vals_string = cxn.apd_tagger.read_tag_stream()
+            ret_vals = tool_belt.decode_time_tags(ret_vals_string)
+            new_tags, new_channels = ret_vals
             new_tags = numpy.array(new_tags, dtype=numpy.int64)
 
             # ret_vals_string = cxn.apd_tagger.read_tag_stream() 
@@ -246,9 +248,6 @@ def main_with_cxn(cxn,nv_sig,start_coords, end_coords, apd_indices, readout_time
                                             nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(raw_data, file_path)
 
-    # %% Hardware clean up
-
-    tool_belt.reset_cfm(cxn)
 
     # %% Bin the data
     
@@ -318,7 +317,6 @@ def main_with_cxn(cxn,nv_sig,start_coords, end_coords, apd_indices, readout_time
         tool_belt.save_figure(fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
     
-    tool_belt.reset_cfm(cxn)
     
     return 
 
@@ -330,7 +328,7 @@ if __name__ == '__main__':
     
     apd_indices = [0]
     sample_name = 'goeppert-mayer'
-    num_runs = 10
+    num_runs = 50
     
     start_coords = [-0.068, 0.176, 4.76]
     end_coords = [-0.068 - 0.5, 0.176, 4.76]

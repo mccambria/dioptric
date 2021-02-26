@@ -129,7 +129,7 @@ def get_seq(pulser_wiring, args):
     pulse_train_on = [(pulse_time, HIGH)]
     pulse_train_off = [(pulse_time, LOW)]
     if pulse_color == '515a':
-        init_train_on = [(pulse_time, green_pulse_pwr)]
+        pulse_train_on = [(pulse_time, green_pulse_pwr)]
         train_515.extend(pulse_train_on)
         train_532.extend(pulse_train_off)
         train_589.extend(pulse_train_off)
@@ -160,7 +160,7 @@ def get_seq(pulser_wiring, args):
     read_train_on = [(readout_time, HIGH)]
     read_train_off = [(readout_time, LOW)]
     if read_color == '515a':
-        init_train_on = [(readout_time, green_readout_pwr)]
+        read_train_on = [(readout_time, green_readout_pwr)]
         train_515.extend(read_train_on)
         train_532.extend(read_train_off)
         train_589.extend(read_train_off)

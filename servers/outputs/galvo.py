@@ -703,7 +703,6 @@ class Galvo(LabradServer):
 
         self.load_stream_writer(c, 'Galvo-load_arb_points_scan', voltages, period)
         
-        
 
         return    
 __server__ = Galvo()

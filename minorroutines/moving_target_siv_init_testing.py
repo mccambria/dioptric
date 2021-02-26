@@ -15,13 +15,13 @@ import time
 import copy
 # %%
 
-reset_range = 0.3#2.5
-image_range = 0.3#2.5
-num_steps = int(225 * image_range) 
+reset_range = 0.5#2.5
 num_steps_reset = int(75 * reset_range)
+image_range = 0.4#2.5
+num_steps = int(225 * image_range) 
 apd_indices = [0]
 
-green_reset_power = 0.6075
+#green_reset_power = 0.65#0.6075
 green_pulse_power = 0.65
 green_image_power = 0.65
 
@@ -30,7 +30,7 @@ green_image_power = 0.65
 # %%      
 def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coords, 
          pulse_time, init_time, init_color, pulse_color, readout_color, 
-         pulse_repeat):
+         pulse_repeat, siv_state):
     am_589_power = base_sig['am_589_power']
     readout = base_sig['pulsed_SCC_readout_dur']
     color_filter = base_sig['color_filter'] 
@@ -46,9 +46,6 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
     pulse_sig['coords'] = pulse_coords
     pulse_sig['ao_515_pwr'] = green_pulse_power
     
-    reset_sig = copy.deepcopy(base_sig)
-    reset_sig['coords'] = reset_coords
-    reset_sig['ao_515_pwr'] = green_reset_power
     
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
 #    pulser_wiring_green = wiring['do_532_aom']
@@ -79,9 +76,21 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords  
      
-    print('Resetting with {} nm light\n...'.format(init_color))
-    _,_,_ = image_sample.main(reset_sig, reset_range, reset_range, num_steps_reset, 
-                      apd_indices, init_color,readout = init_time,   save_data=False, plot_data=False) 
+    if siv_state == 'bright':
+        
+        print('Resetting with {} nm light for bright state\n...'.format(init_color))
+        reset_sig = copy.deepcopy(base_sig)
+        reset_sig['coords'] = reset_coords
+        reset_sig['ao_515_pwr'] = 0.6358
+        _,_,_ = image_sample.main(reset_sig, 0.5, 0.5, int(70 * 0.5), 
+                          apd_indices, init_color,readout = 10**7,   save_data=False, plot_data=False) 
+    elif siv_state == 'dark':
+        print('Resetting with {} nm light for dark state\n...'.format(init_color))
+        reset_sig = copy.deepcopy(base_sig)
+        reset_sig['coords'] = reset_coords
+        reset_sig['ao_515_pwr'] = 0.6085
+        _,_,_ = image_sample.main(reset_sig, 0.5, 0.5, int(70 * 0.3), 
+                          apd_indices, init_color,readout = 10**7,   save_data=False, plot_data=False) 
     
     for i in range(pulse_repeat):
         # now pulse at the center of the scan for a short time         
@@ -119,11 +128,11 @@ if __name__ == '__main__':
     
     base_sig = { 'coords':[],
             'name': '{}'.format(sample_name),
-            'expected_count_rate': 38, 'nd_filter': 'nd_0',
+            'expected_count_rate': 38, 'nd_filter': 'nd_1.0',
 #            'color_filter': '635-715 bp',
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 2*10**7, 'am_589_power': 0.6, 
+            'pulsed_SCC_readout_dur': 2*10**7, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -158,23 +167,33 @@ if __name__ == '__main__':
                            46, 53, 44, 70, 50, 40, 40, 32] # 2/11/21
     
     
-    init_time = 5*10**7
+#    init_time = 10**7
     
     init_color = '515a'
     pulse_color = '515a'
-    readout_color = 638
+    readout_color = 589
     
-    center_coords = [-0.067, 0.173, 4.8]
-    reset_coords =[-0.067, 0.173, 4.8]
-    optimize_coords = [-0.067, 0.173, 4.8]
+#    center_coords = [0.315, 0.222, 4.79]
+    center_coords = [-0.25, -0.25, 4.79]
+    reset_coords =center_coords
+    optimize_coords =center_coords
 #    center_coords = pulse_coords
     
+    reset_list = [5]
     with labrad.connect() as cxn:
-        pulse_time = 0
-        pulse_coords =    [-0.067, 0.173, 4.8]
-        main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
+        pulse_time = 10**5/10**9
+        pulse_coords =    center_coords
+        for i in [0]:
+            init_time = int(i*10**7)
+            main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
                            pulse_coords, pulse_time, init_time, init_color, 
-                           pulse_color, readout_color, 1)
+                           pulse_color, readout_color, i, siv_state = 'dark')
+            main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
+                           pulse_coords, pulse_time, init_time, init_color, 
+                           pulse_color, readout_color, i, siv_state = 'bright')
+#            main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
+#                           pulse_coords, pulse_time, init_time, init_color, 
+#                           pulse_color, readout_color, 1, siv_state = None)
 
         
 

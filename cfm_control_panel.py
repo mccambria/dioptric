@@ -74,11 +74,11 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  read
 #    scan_range = 0.5
 #    num_steps = 125
 #    scan_range = 0.3
+    scan_range = 0.2
+    num_steps = 120
+#    scan_range = 0.1
 #    scan_range = 0.2
-#    num_steps = 120
-    scan_range = 0.1
-#    scan_range = 0.2
-    num_steps = 90
+#    num_steps = 90
 #    scan_range = 0.05
 #    num_steps = 60
 #    scan_range = 0.06
@@ -603,32 +603,32 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    expected_count_list = [60, 40, 38, 36, 38, 40, 55, 48, 42, 36, 38, 30, 
+    expected_count_list = [60, 40, 38, 36, 38, 40, 40, 48, 42, 36, 38, 30, 
                            46, 53, 44, 70, 50, 40, 40, 38] # 2/11/21
     nv_list_2021_01_26 = [    
-[0.309, 0.334, 4.90],
-[0.184, 0.342, 4.79],
-[-0.038, 0.294, 4.72],
-[-0.048, 0.260, 4.80],
-[-0.074, 0.264, 4.83],
-[0.325, 0.272, 4.75],
-[0.322, 0.203, 4.79],
-[-0.068, 0.176, 4.76],
-[0.194, 0.123, 4.88],
-[0.181, 0.122, 4.78],
-[0.025, 0.080, 4.79],
-[0.120, 0.045, 4.79],
-[-0.018, 0.046, 4.76],
-[0.055, -0.126, 4.79],
-[0.396, -0.195, 4.83],
-[0.128, -0.197, 4.75],
-[0.392, -0.304, 4.80],
-[0.392, -0.303, 4.81],
-[-0.203, -0.330, 4.81],
-[0.251, -0.385, 4.76],
+[0.309, 0.337, 4.94],
+[0.184, 0.346, 4.82],
+[-0.037, 0.298, 4.76],
+[-0.046, 0.265, 4.80],
+[-0.074, 0.267, 4.84],
+[0.326, 0.276, 4.77],
+[0.313, 0.224, 4.81],
+[-0.065, 0.176, 4.76],
+[0.195, 0.128, 4.92],
+[0.181, 0.127, 4.82],
+[0.028, 0.084, 4.82],
+[0.120, 0.049, 4.83],
+[-0.017, 0.051, 4.76],
+[0.055, -0.121, 4.82],
+[0.397, -0.190, 4.85],
+[0.128, -0.193, 4.76],
+[0.394, -0.299, 4.82],
+[0.392, -0.300, 4.82],
+[-0.202, -0.324, 4.81],
+[0.253, -0.381, 4.79],
 ]
     nv_sig_list =[]
-    for i in [7]:#range(len(nv_list_2021_01_26)):
+    for i in [0]:#range(len(nv_list_2021_01_26)):
         nv_coords = nv_list_2021_01_26[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
@@ -658,7 +658,7 @@ if __name__ == '__main__':
 
       
 #        with labrad.connect() as cxn:
-#            set_xyz([-0.031+0.25, 0.299, 4.94])
+#            set_xyz([0,0,5])
 #            cxn.filter_slider_ell9k.set_filter('nd_0')           
 #            cxn.pulse_streamer.constant([3], 0.0, 0.0)
 #            time.sleep(1)
@@ -694,7 +694,7 @@ if __name__ == '__main__':
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, flip = False, readout = 1*10**7)
-            do_image_sample(nv_sig,  apd_indices, '515a', save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, '515a', save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =10**7)
 
