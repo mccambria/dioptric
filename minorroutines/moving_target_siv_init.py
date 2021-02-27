@@ -30,7 +30,7 @@ green_image_power = 0.65
 bright_reset_range = 0.5
 bright_reset_steps = 35
 bright_reset_power = 0.6358
-bright_reset_time = 5*10**7
+bright_reset_time = 10**7
 
 dark_reset_range = 0.5
 dark_reset_steps = 21
@@ -722,41 +722,41 @@ if __name__ == '__main__':
 
 
     base_sig = { 'coords':[], 
-            'name': '{}-2021_02_19'.format(sample_name),
+            'name': '{}-2021_02_26'.format(sample_name),
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**7,  'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 3*10**7,  'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':5, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'ao_515_pwr': 0.7,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
 
-    start_coords = [0.315, 0.222, 4.79]
-    end_coords = [0.315, 0.222 - 0.15, 4.79]
+    start_coords = [0.062, -0.057, 4.98]
+    end_coords = [0.062, -0.057 - 0.15, 4.98]
     
-    opti_coords = [0.251, -0.385, 4.76]
-    num_steps = 50#50
+    opti_coords = [0.128, 0.265, 4.96]
+    num_steps = 50
     image_range = 0.3
-    num_runs = 25#50
+    num_runs = 75
     
 
     init_color = '515a'
     pulse_color = '515a'
     nv_sig = copy.deepcopy(base_sig)
     # Set up for current NV
-    nv_sig['name']= 'goeppert-mayer-nv{}_2021_02_19'.format(6)
+    nv_sig['name']= 'goeppert-mayer-nv{}_2021_02_26'.format(3)
     nv_sig['expected_count_rate'] = 38
     # Measurements
-    t =10**7
+    t =5*10**6
     do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t, 
-                             num_steps, num_runs, init_color, pulse_color, siv_init = None)
+                             num_steps, 300, init_color, pulse_color, siv_init = None)
     do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t,
                              num_steps, num_runs, init_color, pulse_color, siv_init = 'dark')
     do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t, 

@@ -218,7 +218,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind, continuous=Fals
     
     # %% Load the PulseStreamer
 
-    seq_args = [0, readout, aom_power, apd_indices[0], color_ind]
+    seq_args = [0, readout, aom_power, 0.0, apd_indices[0], color_ind]
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',

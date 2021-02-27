@@ -398,7 +398,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
 #    return
     ### Backto the same
     # Optimize at the start of the routine
-    opti_coords = optimize.main_xy_with_cxn(cxn, opti_nv_sig, apd_indices, 532, disable=disable_boo)
+    opti_coords = optimize.main_xy_with_cxn(cxn, opti_nv_sig, apd_indices, '515a', disable=disable_boo)
     opti_coords_list.append(opti_coords)
         
         
@@ -413,7 +413,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
         # optimize is longer that 5 min, optimize again
         current_time = time.time()
         if current_time - run_start_time >= 5*60:
-            opti_coords = optimize.main_xy_with_cxn(cxn, opti_nv_sig, apd_indices, 532, disable=disable_boo)
+            opti_coords = optimize.main_xy_with_cxn(cxn, opti_nv_sig, apd_indices, '515a', disable=disable_boo)
             opti_coords_list.append(opti_coords) 
             run_start_time = current_time
             
@@ -428,7 +428,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
             # reset the SiV
             print('resetting the SiV into bright state')
             reset_nv_sig = copy.deepcopy(start_nv_sig)
-            reset_nv_sig['ao_515_pwr'] = 0.6075
+            reset_nv_sig['ao_515_pwr'] = 0.6085
             _,_,_ = image_sample.main(reset_nv_sig, 0.5, 0.5, int(70 * 0.3), 
                               apd_indices, init_color,readout = 10**7,   save_data=False, plot_data=False) 
             
@@ -1091,7 +1091,7 @@ if __name__ == '__main__':
 
 
     base_sig = { 'coords':[], 
-            'name': '{}-2021_02_19'.format(sample_name),
+            'name': '{}-2021_02_26'.format(sample_name),
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
@@ -1108,59 +1108,42 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 #    start_coords = base_sig['coords']
-    start_coords_list = [    
-[0.309, 0.337, 4.94],
-[0.184, 0.346, 4.82],
-[-0.037, 0.298, 4.76],
-[-0.046, 0.265, 4.80],
-[-0.074, 0.267, 4.84],
-[0.326, 0.276, 4.77],
-[0.313, 0.224, 4.81], # 6
-[-0.065, 0.176, 4.76],
-[0.195, 0.128, 4.92],
-[0.181, 0.127, 4.82],
-[0.028, 0.084, 4.82],
-[0.120, 0.049, 4.83],
-[-0.017, 0.051, 4.76],
-[0.055, -0.121, 4.82],
-[0.397, -0.190, 4.85],
-[0.128, -0.193, 4.76],
-[0.394, -0.299, 4.82],
-[0.392, -0.300, 4.82],
-[-0.202, -0.324, 4.81],
-[0.253, -0.381, 4.79],
-]
+    expected_count_list = [38, 38, 38, 38] # 2/26/21
+    start_coords_list = [
+            [0.062, -0.057, 4.98],
+            [-0.028, -0.042, 4.96], # X
+            [0.325, 0.241, 4.96], # X
+            [0.128, 0.265, 4.96],
+            ]
     
-#    start_coords_list = [[0.285, -0.359, 4.96]]
-    expected_count_list = [52, 40, 38, 36, 38, 40, 32, 48, 42, 36, 38, 30, 
-                           46, 53, 44, 70, 50, 40, 40, 32] # 2/11/21
+
 #    end_coords = end_coords.tolist()
     num_steps = 40
 #    num_runs = 50
 #    img_range = 0.45
-    optimize_nv_ind = 0
+    optimize_nv_ind = 3
     optimize_coords = start_coords_list[optimize_nv_ind]
  
-    for s in [0]:
+    for s in [3]:
          x, y, z = start_coords_list[s]
          start_coords = [x, y, z]
          end_coords = [x , y - 0.15, z]
-         init_color = 532
-         pulse_color = 532
+         init_color = '515a'
+         pulse_color = '515a'
          nv_sig = copy.deepcopy(base_sig)
          # Set up for current NV
-         nv_sig['name']= 'goeppert-mayer-nv{}_2021_02_19'.format(s)
+         nv_sig['name']= 'goeppert-mayer-nv{}_2021_02_26'.format(s)
          nv_sig['expected_count_rate'] = expected_count_list[optimize_nv_ind]
          # Set up for NV band
          nv_sig['color_filter'] = '635-715 bp'
          nv_sig['nd_filter'] = 'nd_1.0'
          nv_sig['am_589_power'] = 0.3
-         nv_sig['pulsed_SCC_readout_dur'] = 3*10**7
+         nv_sig['pulsed_SCC_readout_dur'] = 4*10**7
          # Measurements
          t =5*10**6
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)
 #         t =10**7
-         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, 50,init_color, pulse_color, False)
+#         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.3, t, num_steps, 25, init_color, pulse_color, False)
 #         do_moving_target_2D_image(nv_sig, start_coords, optimize_coords, 0.3, t, num_steps, 60,init_color, pulse_color, True)
-#         do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, t, 
-#                             50, 200, init_color, pulse_color)
+         do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, t, 
+                             40, 300, init_color, pulse_color)

@@ -646,38 +646,21 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
         
-    nv_coords_list =[      
-[0.309, 0.337, 4.94],
-[0.184, 0.346, 4.82],
-[-0.037, 0.298, 4.76],
-[-0.046, 0.265, 4.80],
-[-0.074, 0.267, 4.84],
-[0.326, 0.276, 4.77],
-[0.313, 0.224, 4.81],
-[-0.065, 0.176, 4.76],
-[0.195, 0.128, 4.92],
-[0.181, 0.127, 4.82],
-[0.028, 0.084, 4.82],
-[0.120, 0.049, 4.83],
-[-0.017, 0.051, 4.76],
-[0.055, -0.121, 4.82],
-[0.397, -0.190, 4.85],
-[0.128, -0.193, 4.76],
-[0.394, -0.299, 4.82],
-[0.392, -0.300, 4.82],
-[-0.202, -0.324, 4.81],
-[0.253, -0.381, 4.79],
-]
-    expected_count_list = [60, 40, 38, 36, 38, 40, 36, 48, 42, 36, 38, 30, 
-                           46, 53, 44, 70, 50, 40, 40, 38] # 2/11/21
+    expected_count_list = [38, 38, 38, 38] # 2/26/21
+    nv_coords_list = [
+            [0.062, -0.057, 4.98],
+            [-0.028, -0.042, 4.96], # X
+            [0.325, 0.241, 4.96], # X
+            [0.128, 0.265, 4.96],
+            ]
     
-    nv_2021_01_26 = { 'coords':[-0.048, 0.260, 4.80], 
-            'name': 'goepert-mayer-nv_2021_01_26',
+    nv_2021_02_26 = { 'coords':[], 
+            'name': 'goepert-mayer-nv_2021_02_26',
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.2, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -688,11 +671,11 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    for i in [6]:#range(19):
-        nv_sig = copy.deepcopy(nv_2021_01_26)
+    for i in [0]:#range(19):
+        nv_sig = copy.deepcopy(nv_2021_02_26)
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
-        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_02_26'.format(i)
         nv_sig['nd_filter'] = 'nd_1.0'
         nv_sig['am_589_power'] = 0.3
         optimize_readout_pulse_length(nv_sig)
