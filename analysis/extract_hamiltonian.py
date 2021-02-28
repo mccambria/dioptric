@@ -24,8 +24,8 @@ import matplotlib.pyplot as plt
 # %% Constants
 
 
-# d_gs = 2.87  # ground state zfs in GHz
-d_gs = 1.42  # excited state zfs in GHz
+d_gs = 2.87  # ground state zfs in GHz
+# d_gs = 1.42  # excited state zfs in GHz
 gmuB = 2.8  # gyromagnetic ratio in MHz / G
 gmuB_GHz = gmuB / 1000  # gyromagnetic ratio in GHz / G
 
@@ -745,16 +745,18 @@ if __name__ == '__main__':
     
     # popt: theta_B, par_Pi, perp_Pi, phi_B, phi_Pi
     
-    mag_B = None
-    popt = [74*(pi/180), 0, 0, 0, 0]
+    mag_B = 0.120
+    # popt = [55*(pi/180), 0, 0, 0, 0]
+    popt = [0, 0, 0, 0, 0]
     # print(calc_eigenvectors(mag_B, *popt))
     # vecs = calc_eigenvectors(mag_B, *popt)
     # for vec in vecs:
     #     vec = numpy.array(vec)
     #     print(numpy.abs(vec)**2)
     # b_matrix_elements(name, res_descs)
-    plot_components(mag_B, popt)
-    # print(calc_res_pair(mag_B, *popt))
+    # plot_components(mag_B, popt)
+    # plot_resonances([0,0.2], *popt)
+    print(calc_res_pair(mag_B, *popt))
 
     # Fake data
     # bounds: ((0, pi/2), (-0.050, 0.050), (0, 0.050), (0, pi/3), (0, 2*pi/3))
