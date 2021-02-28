@@ -28,7 +28,7 @@ from the covariance of the fit.
 # %% Imports
 
 import numpy
-from scipy import exp
+from numpy import exp
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import os
@@ -500,7 +500,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 if __name__ == '__main__':
 
     path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    folder = 'johnson-nv2_2021_02_09-25MHz-297K'
+    folder = 'johnson-nv6_2021_02_19-34MHz-5_33K'
     path += folder
 
     gamma, ste = main(path, omega=None, omega_ste=None,
