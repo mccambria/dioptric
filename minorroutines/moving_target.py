@@ -1136,10 +1136,10 @@ if __name__ == '__main__':
     num_steps = 30
 #    num_runs = 50
 #    img_range = 0.45
-    optimize_nv_ind = 3
+    optimize_nv_ind = 5
     optimize_coords = start_coords_list[optimize_nv_ind]
  
-    for s in [3]:
+    for s in [5]:
          x, y, z = start_coords_list[s]
          start_coords = [x, y, z]
          end_coords = [x , y - 0.15, z]
@@ -1152,8 +1152,8 @@ if __name__ == '__main__':
          # Set up for NV band
          nv_sig['color_filter'] = '635-715 bp'
          nv_sig['nd_filter'] = 'nd_1.0'
-         nv_sig['am_589_power'] = 0.25
-         nv_sig['pulsed_SCC_readout_dur'] = 8*10**7
+         nv_sig['am_589_power'] = 0.15
+         nv_sig['pulsed_SCC_readout_dur'] = 5*10**7
          # Measurements
          t =5*10**6
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)

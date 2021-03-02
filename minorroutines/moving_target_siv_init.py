@@ -320,7 +320,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
                 reset_sig['ao_515_pwr'] = bright_reset_power
                 _,_,_ = image_sample.main(reset_sig, bright_reset_range, bright_reset_range, 
                                           bright_reset_steps, 
-                                  apd_indices, init_color,readout = bright_reset_time,  
+                                  apd_indices, '515a',readout = bright_reset_time,  
                                   save_data=False, plot_data=False) 
             elif siv_init == 'dark':
                 reset_sig = copy.deepcopy(nv_sig)
@@ -328,13 +328,13 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
                 reset_sig['ao_515_pwr'] = dark_reset_power
                 _,_,_ = image_sample.main(reset_sig, dark_reset_range, dark_reset_range, 
                                           dark_reset_steps, 
-                                  apd_indices, init_color,readout = dark_reset_time,  
+                                  apd_indices, '515a',readout = dark_reset_time,  
                                   save_data=False, plot_data=False) 
                 
 
             # pulse laser for 100 us on readout NV regardless
             tool_belt.set_xyz(cxn, start_coords_drift)
-            seq_args_pulse = [140, 10**5,am_589_power, green_pulse_power, '515a']  
+            seq_args_pulse = [140, 10**5,am_589_power, green_pulse_power, init_color]  
             seq_args_pulse_string = tool_belt.encode_seq_args(seq_args_pulse)            
             cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_pulse_string) 
             
@@ -443,12 +443,38 @@ def do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  puls
                                 end_coords[1], num_steps)
     # Zip the two list together
     coords_list = list(zip(x_voltages, y_voltages))
+  
+    # Create some empty data lists
+    readout_counts_array = numpy.empty([num_steps, num_runs])
+    target_counts_array = numpy.empty([num_steps, num_runs])
+      
+    # shuffle the voltages that we're stepping thru
+    ind_list = list(range(num_steps))
+    shuffle(ind_list)
+    
+    # shuffle the voltages to run
+    coords_voltages_shuffle = []
+    for i in ind_list:
+        coords_voltages_shuffle.append(coords_list[i])
+#    
+    coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
     
     # Run the data collection
-    ret_vals = main_data_collection(nv_sig, start_coords, opti_coords, coords_list, pulse_time,  
+    ret_vals = main_data_collection(nv_sig, start_coords, opti_coords, coords_voltages_shuffle_list, pulse_time,  
                          num_runs, init_color, pulse_color, readout_color, siv_init)
-    readout_counts_array, target_counts_array, opti_coords_list = ret_vals
-            
+#    readout_counts_array, target_counts_array, opti_coords_list = ret_vals
+     
+    readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
+    readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
+    target_counts_array_shfl = numpy.array(target_counts_array_shfl)
+    
+    # unshuffle the raw data
+    list_ind = 0
+    for f in ind_list:
+        readout_counts_array[f] = readout_counts_array_shfl[list_ind]
+        target_counts_array[f] = target_counts_array_shfl[list_ind]
+        list_ind += 1
+                   
     # calculate the radial distances from the readout NV to the target points
     x_diffs = (x_voltages - start_coords[0])
     y_diffs = (y_voltages- start_coords[1])
@@ -747,7 +773,7 @@ if __name__ == '__main__':
     opti_coords = [0.307, 0.441, 5.50]
     num_steps = 30
 #    image_range = 0.3
-    num_runs = 35
+    num_runs = 50
     
     
 
@@ -761,7 +787,7 @@ if __name__ == '__main__':
     t =10*10**6
     do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t, 
                              num_steps, num_runs, init_color, pulse_color, siv_init = None)
-#    do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t,
-#                             num_steps, num_runs, init_color, pulse_color, siv_init = 'dark')
-#    do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t, 
-#                             num_steps, num_runs, init_color, pulse_color, siv_init = 'bright')
+    do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t,
+                             num_steps, num_runs, init_color, pulse_color, siv_init = 'dark')
+    do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t, 
+                             num_steps, num_runs, init_color, pulse_color, siv_init = 'bright')
