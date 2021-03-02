@@ -139,8 +139,8 @@ def get_seq(pulser_wiring, args):
         train_638.extend(read_train_off)
     if read_color == 638:
         train_515.extend(read_train_off)
-        train_532.extend(pulse_train_off)
-        train_589.extend(pulse_train_off)
+        train_532.extend(read_train_off)
+        train_589.extend(read_train_off)
         train_638.extend(read_train_on)
         
     train_515.extend([(100, LOW)])
@@ -169,7 +169,7 @@ if __name__ == '__main__':
               }
 
 #    seq_args = [1000, 1500, 0, 0, 0, 500, 0.5, 1.0, 0.5, 0, 532, 589]
-    seq_args = [10000000, 10000000, 140, 1080, 90, 2000000, 0.3, 0.65, 0.65, 0, '515a', 589]
+    seq_args = [5000000, 30000000, 140, 1080, 90, 2000000, 0.3, 0.65, 0.65, 0, '515a', 589]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()

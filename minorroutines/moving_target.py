@@ -1091,7 +1091,7 @@ if __name__ == '__main__':
 
 
     base_sig = { 'coords':[], 
-            'name': '{}-2021_02_26'.format(sample_name),
+            'name': '{}-2021_03_01'.format(sample_name),
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
@@ -1108,17 +1108,32 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 #    start_coords = base_sig['coords']
-    expected_count_list = [38, 38, 38, 38] # 2/26/21
+    expected_count_list = [36, 30, 38, 43, 33, 
+                           44, 43, 29, 38, 41, 
+                           40, 43, 40, 29, 45, 
+                           55] # 3/1/21
     start_coords_list = [
-            [0.062, -0.057, 4.98],
-            [-0.028, -0.042, 4.96], # X
-            [0.325, 0.241, 4.96], # X
-            [0.128, 0.265, 4.96],
+[0.039, 0.087, 5.44],
+[-0.075, 0.059, 5.44],
+[0.065, 0.006, 5.44],
+[-0.081, 0.096, 5.48],
+[0.339, -0.388, 5.44],
+[0.346, -0.479, 5.48],
+[0.005, -0.092, 5.46],
+[-0.020, -0.065, 5.48],
+[-0.076, 0.116, 5.51],
+[0.307, 0.441, 5.50], # really good
+[0.325, 0.441, 5.48],
+[0.311, 0.463, 5.48],
+[0.078, 0.026, 5.46],
+[0.058, 0.027, 5.48],
+[0.363, -0.458, 5.50],
+[-0.073, 0.129, 5.47],
             ]
     
 
 #    end_coords = end_coords.tolist()
-    num_steps = 40
+    num_steps = 30
 #    num_runs = 50
 #    img_range = 0.45
     optimize_nv_ind = 3
@@ -1132,18 +1147,18 @@ if __name__ == '__main__':
          pulse_color = '515a'
          nv_sig = copy.deepcopy(base_sig)
          # Set up for current NV
-         nv_sig['name']= 'goeppert-mayer-nv{}_2021_02_26'.format(s)
+         nv_sig['name']= 'goeppert-mayer-nv{}_2021_03_01'.format(s)
          nv_sig['expected_count_rate'] = expected_count_list[optimize_nv_ind]
          # Set up for NV band
          nv_sig['color_filter'] = '635-715 bp'
          nv_sig['nd_filter'] = 'nd_1.0'
-         nv_sig['am_589_power'] = 0.3
-         nv_sig['pulsed_SCC_readout_dur'] = 4*10**7
+         nv_sig['am_589_power'] = 0.25
+         nv_sig['pulsed_SCC_readout_dur'] = 8*10**7
          # Measurements
          t =5*10**6
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)
 #         t =10**7
-#         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.3, t, num_steps, 25, init_color, pulse_color, False)
+         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.2, t, num_steps, 30, init_color, pulse_color, False)
 #         do_moving_target_2D_image(nv_sig, start_coords, optimize_coords, 0.3, t, num_steps, 60,init_color, pulse_color, True)
-         do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, t, 
-                             40, 300, init_color, pulse_color)
+#         do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, t, 
+#                             40, 300, init_color, pulse_color)

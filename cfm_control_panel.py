@@ -77,10 +77,10 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  read
 #    scan_range = 0.2
 #    num_steps = 120
 #    scan_range = 0.1
-#    scan_range = 0.2
-#    num_steps = 90
-    scan_range = 0.05
-    num_steps = 60
+    scan_range = 0.2
+    num_steps = 90
+#    scan_range = 0.05
+#    num_steps = 60
 #    scan_range = 0.06
 #    num_steps =30
 #    num_steps = 60
@@ -551,7 +551,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0.2, 0.2 ,5.0], 
+    search = { 'coords':[0,0 ,5.48], 
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
@@ -570,21 +570,36 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
 
     
-    expected_count_list = [38, 38, 38, 38] # 2/26/21
-    nv_list_2021_02_26 = [
-            [0.062, -0.057, 4.98],
-            [-0.028, -0.042, 4.96], # X
-            [0.325, 0.241, 4.96], # X
-            [0.128, 0.265, 4.96],
+    expected_count_list = [36, 30, 38, 43, 33, 
+                           44, 43, 29, 38, 41, 
+                           40, 43, 40, 29, 45, 
+                           55] # 3/1/21
+    nv_list_2021_03_01 = [
+[0.039, 0.087, 5.44],
+[-0.075, 0.059, 5.44],
+[0.065, 0.006, 5.44],
+[-0.081, 0.096, 5.48],
+[0.339, -0.388, 5.44],
+[0.346, -0.479, 5.48],
+[0.005, -0.092, 5.46],
+[-0.020, -0.065, 5.48],
+[-0.076, 0.116, 5.51],
+[0.307, 0.441, 5.50], # really good
+[0.325, 0.441, 5.48],
+[0.311, 0.463, 5.48],
+[0.078, 0.026, 5.46],
+[0.058, 0.027, 5.48],
+[0.363, -0.458, 5.50],
+[-0.073, 0.129, 5.47],
             ]
     
     nv_sig_list =[]
-    for i in  range(len(nv_list_2021_02_26)):
-        nv_coords = nv_list_2021_02_26[i]
+    for i in [3]:#range(len(nv_list_2021_03_01)):
+        nv_coords = nv_list_2021_03_01[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
-#        nv_sig['expected_count_rate'] = expected_count_list[i]
-        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_01_26'.format(i)
+        nv_sig['expected_count_rate'] = expected_count_list[i]
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_03_01'.format(i)
         nv_sig_list.append(nv_sig)
         
 #    nv_sig_list = [search]
@@ -632,7 +647,7 @@ if __name__ == '__main__':
 #            do_optimize(nv_sig, apd_indices, '515a')
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
-#            for z in numpy.linspace(4.775, 4.875, 5):
+#            for z in numpy.linspace(5.0, 3.0, 9):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]  

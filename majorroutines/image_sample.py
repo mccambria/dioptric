@@ -809,7 +809,7 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_02/2021_02_17-15_32_44-goeppert-mayer'
+    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_03/2021_03_01-09_48_39-goeppert-mayer-search'
 #    reformat_plot('inferno', 'png')
     create_figure(file_name)
 
