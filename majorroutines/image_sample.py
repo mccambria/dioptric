@@ -196,9 +196,8 @@ def reformat_plot(colorMap, save_file_type):
         # Save the file in the same file directory
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
 
-def create_figure(file_name):
+def create_figure(path, file_name):
 
-    path = 'pc_hahn/branch_cryo-setup/image_sample/2021_02'
     data = tool_belt.get_raw_data(path, file_name)
     try:
         x_range = data['x_range']
@@ -422,9 +421,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 if __name__ == '__main__':
 
 
-    file_name = '2021_02_26-21_34_23-johnson-search'
+    path = 'pc_hahn/branch_cryo-setup/image_sample/2021_03'
+    file_name = '2021_03_02-14_57_01-johnson-nv14_2021_02_26'
     # file_name = '2019_04/2019-04-15_16-42-08_Hopper'
 
-    create_figure(file_name)
+    create_figure(path, file_name)
 
     # reformat_plot('inferno', 'svg')
