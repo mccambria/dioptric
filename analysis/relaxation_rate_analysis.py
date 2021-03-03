@@ -500,7 +500,7 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 if __name__ == '__main__':
 
     path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    folder = 'johnson-nv6_2021_02_19-34MHz-5_33K'
+    folder = 'johnson-nv14_2021_02_26-26MHz-250K'
     path += folder
 
     gamma, ste = main(path, omega=None, omega_ste=None,
