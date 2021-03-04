@@ -208,15 +208,15 @@ def do_t1_battery(nv_sig, apd_indices):
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
 
     t1_exp_array = numpy.array([
-        # [[States.HIGH, States.LOW], [0, 2*10**6], 11, 25*10**3, 20],
-        # [[States.HIGH, States.LOW], [0, 30*10**6], 11, 1.75*10**3, 150],
+        [[States.HIGH, States.LOW], [0, 2*10**6], 11, 25*10**3, 20],
+        [[States.HIGH, States.LOW], [0, 30*10**6], 11, 1.75*10**3, 200],
     
-        # [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 25*10**3, 20],
-        # [[States.HIGH, States.HIGH], [0, 30*10**6], 11, 1.75*10**3, 150],
+        [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 25*10**3, 20],
+        [[States.HIGH, States.HIGH], [0, 30*10**6], 11, 1.75*10**3, 200],
     
         # [[States.ZERO, States.HIGH], [0, 40*10**6], 11, 1.25*10**3, 200],
     
-        [[States.ZERO, States.ZERO], [0, 40*10**6], 11, 1.25*10**3, 200]
+        # [[States.ZERO, States.ZERO], [0, 40*10**6], 11, 1.25*10**3, 200]
         ], dtype=object)
 
     # Loop through the experiments
@@ -452,19 +452,19 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.8652, 'rabi_LOW': 150.6, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': 2.8902, 'rabi_HIGH': 149.3, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.032, -0.063, -8],
+    nv_sig = { 'coords': [0.045, -0.069, 0],
             'name': '{}-nv14_2021_02_26'.format(sample_name),
             'expected_count_rate': 43, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 74.4,
-            'resonance_LOW': 2.8568, 'rabi_LOW': 203.9, 'uwave_power_LOW': 14.5,
-            'resonance_HIGH': 2.8901, 'rabi_HIGH': 204.0, 'uwave_power_HIGH': 13.0}
+            'resonance_LOW': 2.8587, 'rabi_LOW': 238.1, 'uwave_power_LOW': 14.5,
+            'resonance_HIGH': 2.8926, 'rabi_HIGH': 229.0, 'uwave_power_HIGH': 13.0}
     
     
     # %% Functions to run
 
     try:
         
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
@@ -477,7 +477,7 @@ if __name__ == '__main__':
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_g2_measurement(nv_sig, 0, 1)
-        # do_t1_battery(nv_sig, apd_indices)
+        do_t1_battery(nv_sig, apd_indices)
         
         # tool_belt.init_safe_stop()
         # while True:
