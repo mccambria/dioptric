@@ -2,10 +2,10 @@
 """
 Created on Sat Mar  24 08:34:08 2020
 
-Thsi file is for use with the isolate_nv_charge_dynamics_moving_target' routine.
+Thsi file is for use with the moving_target_second_remote_pulse routine.
 
-This sequence has three pulses, seperated by wait times that allow time for
-the galvo to move. We also have two clock pulses instructing the galvo to move, 
+This sequence has four pulses, seperated by wait times that allow time for
+the galvo to move. We also have three clock pulses instructing the galvo to move, 
 followed by a clock pulse at the end of the sequence to signifiy the counts to read.
 
 @author: Aedan
@@ -24,25 +24,26 @@ def get_seq(pulser_wiring, args):
 
     # The first 2 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(7):
+    for ind in range(8):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
-    initialization_time, pulse_time, readout_time, \
+    initialization_time, pulse_time, scnd_pulse_time, readout_time, \
         delay_532, delay_589, delay_638, \
         galvo_time = durations
                 
-    aom_ao_589_pwr = args[7]
-    green_init_pwr = args[8]
-    green_pulse_pwr = args[9]
-    green_readout_pwr = args[10]
+    aom_ao_589_pwr = args[8]
+    green_init_pwr = args[9]
+    green_pulse_pwr = args[10]
+    green_readout_pwr = args[11]
 
     # Get the APD index
-    apd_index = args[11]
+    apd_index = args[12]
     
-    init_color = args[12]
-    pulse_color = args[13]
-    read_color = args[14]
+    init_color = args[13]
+    pulse_color = args[14]
+    scnd_pulse_color = args[15]
+    read_color = args[16]
 
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
@@ -57,8 +58,8 @@ def get_seq(pulser_wiring, args):
     # %% Calclate total period.
     
 #    We're going to readout the entire sequence, including the clock pulse
-    period = total_laser_delay + initialization_time + pulse_time + readout_time \
-        + 2 * galvo_time + 3* 100
+    period = total_laser_delay + initialization_time + pulse_time + scnd_pulse_time + readout_time \
+        + 3 * galvo_time + 4* 100
     
     # %% Define the sequence
 
@@ -69,7 +70,8 @@ def get_seq(pulser_wiring, args):
 #    train = [(readout_time, HIGH), (100, LOW)]
     train = [(total_laser_delay, LOW), (initialization_time, HIGH),
              (100 + galvo_time, LOW), (pulse_time, HIGH),
-             (100 + galvo_time, LOW), (readout_time, HIGH),
+             (100 + galvo_time, LOW), (scnd_pulse_time, HIGH),
+             (100 + galvo_time, LOW),(readout_time, HIGH),
              (100, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
@@ -78,6 +80,7 @@ def get_seq(pulser_wiring, args):
     # the tagger misses some of the gate open/close clicks
     train = [(total_laser_delay + initialization_time+ 100, LOW),(100, HIGH),
              (galvo_time + pulse_time, LOW), (100, HIGH), 
+             (galvo_time + scnd_pulse_time, LOW), (100, HIGH),
              (galvo_time + readout_time, LOW), (100, HIGH),
              (100, LOW)] 
 #    train = [(period + 100, LOW), (100, HIGH), (100, LOW)]
@@ -156,6 +159,37 @@ def get_seq(pulser_wiring, args):
     train_589.extend(galvo_delay_train)
     train_638.extend(galvo_delay_train)
     
+    # add the 2nd pulse pulse segment
+    pulse_train_on = [(scnd_pulse_time, HIGH)]
+    pulse_train_off = [(scnd_pulse_time, LOW)]
+    if scnd_pulse_color == '515a':
+        pulse_train_on = [(scnd_pulse_time, green_pulse_pwr)]
+        train_515.extend(pulse_train_on)
+        train_532.extend(pulse_train_off)
+        train_589.extend(pulse_train_off)
+        train_638.extend(pulse_train_off)
+    if scnd_pulse_color == 532:
+        train_515.extend(pulse_train_off)
+        train_532.extend(pulse_train_on)
+        train_589.extend(pulse_train_off)
+        train_638.extend(pulse_train_off)
+    if scnd_pulse_color == 589:
+        pulse_train_on = [(scnd_pulse_time, aom_ao_589_pwr)]
+        train_515.extend(pulse_train_off)
+        train_532.extend(pulse_train_off)
+        train_589.extend(pulse_train_on)
+        train_638.extend(pulse_train_off)
+    if scnd_pulse_color == 638:
+        train_515.extend(pulse_train_off)
+        train_532.extend(pulse_train_off)
+        train_589.extend(pulse_train_off)
+        train_638.extend(pulse_train_on)
+        
+    train_515.extend(galvo_delay_train)
+    train_532.extend(galvo_delay_train)
+    train_589.extend(galvo_delay_train)
+    train_638.extend(galvo_delay_train)
+    
     # add the readout pulse segment
     read_train_on = [(readout_time, HIGH)]
     read_train_off = [(readout_time, LOW)]
@@ -178,8 +212,8 @@ def get_seq(pulser_wiring, args):
         train_638.extend(read_train_off)
     if read_color == 638:
         train_515.extend(read_train_off)
-        train_532.extend(pulse_train_off)
-        train_589.extend(pulse_train_off)
+        train_532.extend(read_train_off)
+        train_589.extend(read_train_off)
         train_638.extend(read_train_on)
         
     train_515.extend([(100, LOW)])
@@ -207,8 +241,8 @@ if __name__ == '__main__':
               'do_638_laser': 7
               }
 
-    seq_args = [1000, 1500, 3000, 0, 0, 0, 500, 0.5, 0, 532, 532, 638]
-#    seq_args = [100000, 1000000, 10000, 140, 1080, 90, 200000, 0.6, 0.65, 0.65, 0.65, 0, 532, 532, 589]
+    seq_args = [1000, 1500, 2000, 3000, 0, 0, 0, 500, 0.5, 0.5, 0.5, 0.5, 0, 532, 589, 532, 638]
+#    seq_args = [1000, 100000, 200000, 140, 1080, 90, 2000000, 0.7, 0, 638, 532, 589]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()

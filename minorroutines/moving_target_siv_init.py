@@ -461,7 +461,7 @@ def do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  puls
     
     # Run the data collection
     ret_vals = main_data_collection(nv_sig, start_coords, opti_coords, coords_voltages_shuffle_list, pulse_time,  
-                         num_runs, init_color, pulse_color, readout_color, siv_init)
+                         num_runs, init_color, pulse_color, readout_color, siv_init, index_list = ind_list)
 #    readout_counts_array, target_counts_array, opti_coords_list = ret_vals
      
     readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
@@ -558,7 +558,7 @@ def do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  puls
     tool_belt.save_raw_data(raw_data, file_path)
     tool_belt.save_figure(fig, file_path)
     
-    return
+    return readout_counts_avg, readout_counts_ste, rad_dist
 
 # %% 
 #def do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range, 
@@ -756,7 +756,7 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 8*10**7,  'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 6*10**7,  'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -766,14 +766,39 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
-
-    start_coords = [-0.081, 0.096, 5.48]
-    end_coords = [-0.081 + 0.15, 0.096, 5.48]
+    start_coords_list = [
+[0.038, 0.095, 5.37],
+[-0.077, 0.067, 5.40],
+[0.063, 0.014, 5.39],
+[-0.081, 0.103, 5.41],
+[0.337, -0.381, 5.38],
+[0.344, -0.472, 5.44],
+[0.004, -0.084, 5.42],
+[-0.023, -0.061, 5.45],
+[-0.077, 0.120, 5.48],
+[0.306, 0.445, 5.45],
+[0.325, 0.446, 5.46],
+[0.310, 0.469, 5.47],
+[0.077, 0.030, 5.41],
+[0.056, 0.034, 5.41],
+[0.363, -0.451, 5.46],
+[-0.076, 0.133, 5.41],
+            ]
+    expected_count_list = [36, 30, 38, 43, 33, 
+                           44, 43, 29, 38, 41, 
+                           40, 43, 40, 29, 45, 
+                           55] # 3/1/21
     
-    opti_coords = [0.307, 0.441, 5.50]
+    nv_index = 2
+    optimize_index = 10
+    x ,y ,z = start_coords_list[nv_index]
+    start_coords = [x, y, z]
+    end_coords = [x + 0.15, y, z]
+    
+    opti_coords = start_coords_list[optimize_index]
     num_steps = 30
 #    image_range = 0.3
-    num_runs = 50
+    num_runs = 80
     
     
 
@@ -781,13 +806,55 @@ if __name__ == '__main__':
     pulse_color = '515a'
     nv_sig = copy.deepcopy(base_sig)
     # Set up for current NV
-    nv_sig['name']= 'goeppert-mayer-nv{}_2021_03_01'.format(3)
-    nv_sig['expected_count_rate'] = 41
+    nv_sig['name']= 'goeppert-mayer-nv{}_2021_03_01'.format(nv_index)
+    nv_sig['expected_count_rate'] = expected_count_list[optimize_index]
     # Measurements
     t =10*10**6
-    do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t, 
-                             num_steps, num_runs, init_color, pulse_color, siv_init = None)
-    do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t,
-                             num_steps, num_runs, init_color, pulse_color, siv_init = 'dark')
-    do_moving_target_1D_line(nv_sig, start_coords, end_coords,opti_coords,  t, 
+    counts_bright, counts_ste_bright, rad_dist = do_moving_target_1D_line(nv_sig, 
+                                      start_coords, end_coords,opti_coords,  t, 
                              num_steps, num_runs, init_color, pulse_color, siv_init = 'bright')
+    counts_dark, counts_ste_dark, rad_dist = do_moving_target_1D_line(nv_sig, 
+                                      start_coords, end_coords,opti_coords,  t,
+                             num_steps, num_runs, init_color, pulse_color, siv_init = 'dark')
+    counts_none, counts_ste_none, rad_dist = do_moving_target_1D_line(nv_sig, 
+                                      start_coords, end_coords,opti_coords,  t, 
+                             num_steps, num_runs, init_color, pulse_color, siv_init = None)
+    
+    # %% Replot
+    
+#    file_base = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_03'
+#    file_none = '2021_03_01-21_43_51-goeppert-mayer-nv3_2021_03_01'
+#    file_dark = '2021_03_02-00_53_03-goeppert-mayer-nv3_2021_03_01'
+#    file_bright = '2021_03_02-07_30_53-goeppert-mayer-nv3_2021_03_01'
+#    
+#    data = tool_belt.get_raw_data(file_base, file_none)
+#    counts_none = data['readout_counts_avg']
+#    counts_ste_none = data['readout_counts_ste']
+#    data = tool_belt.get_raw_data(file_base, file_dark)
+#    counts_dark = data['readout_counts_avg']
+#    counts_ste_dark = data['readout_counts_ste']
+#    data = tool_belt.get_raw_data(file_base, file_bright)
+#    counts_bright = data['readout_counts_avg']
+#    counts_ste_bright = data['readout_counts_ste']
+#    rad_dist = numpy.array(data['rad_dist'])
+#    pulse_time = data['pulse_time']
+#    
+    fig1, ax = plt.subplots(1, 1, figsize=(10, 10))
+#    ax.errorbar(rad_dist*35, counts_none,yerr = counts_ste_none, fmt = 'k--', label = 'No reset')
+    ax.errorbar(rad_dist*35, counts_dark, yerr = counts_ste_dark,fmt = 'b-', label = 'SiV dark reset')
+    ax.errorbar(rad_dist*35, counts_bright, yerr = counts_ste_bright, fmt='r-', label = 'SiV bright reset')
+    ax.set_xlabel('Distance from readout point (um)')
+    ax.set_ylabel('Counts')
+    ax.set_title('Moving target measurement with and without resetting SiV state')
+    ax.legend()
+    
+    fig2, ax = plt.subplots(1, 1, figsize=(10, 10))
+    ax.plot(rad_dist*35, counts_none, 'k--', label = 'No reset')
+    ax.plot(rad_dist*35, counts_dark, 'b-', label = 'SiV dark reset')
+    ax.plot(rad_dist*35, counts_bright, 'r-', label = 'SiV bright reset')
+    ax.set_xlabel('Distance from readout point (um)')
+    ax.set_ylabel('Counts')
+    ax.set_title('Moving target measurement with and without resetting SiV state')
+    ax.legend()
+    
+    

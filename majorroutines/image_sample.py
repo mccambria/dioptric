@@ -273,6 +273,7 @@ def create_figure(file_name, sub_folder = None):
         print(e)
         coords = data['coords']
     img_array = numpy.array(data['img_array'])
+    print(numpy.average(img_array))
     readout = data['readout']
 
     x_coord = coords[0]
@@ -297,7 +298,9 @@ def create_figure(file_name, sub_folder = None):
     fig = tool_belt.create_image_figure(img_array_kcps, img_extent,
                                         clickHandler=on_click_image,
                                         title = title,
-                                        color_bar_label = 'kcps')
+                                        color_bar_label = 'kcps',
+                                        um_scaled = True
+                                        )
     # Redraw the canvas and flush the changes to the backend
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -809,7 +812,8 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_03/2021_03_01-09_48_39-goeppert-mayer-search'
+#    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_02/2021_02_25-16_47_57-goeppert-mayer'
+    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_02/2021_02_25-13_31_37-goeppert-mayer'
 #    reformat_plot('inferno', 'png')
     create_figure(file_name)
 

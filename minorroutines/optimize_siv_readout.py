@@ -23,6 +23,10 @@ import copy
 #%%
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
+green_reset_power = 0.6085
+green_pulse_power = 0.65
+green_image_power = 0.65
+
 # %%
 def plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, snr_list, title, text = None):
     # turn the list into an array, so we can convert into us
@@ -160,8 +164,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, green_pulse_time, dx, read
     # Estimate the lenth of the sequance , load the sequence          
     file_name = 'isolate_nv_charge_dynamics_moving_target.py'
     seq_args = [10**5, green_pulse_time, readout_time, 
-            laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay, 
-            aom_ao_589_pwr, apd_indices[0], 532, 532, readout_color]
+            laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay,
+            aom_ao_589_pwr, 
+            green_pulse_power, green_pulse_power, green_image_power,             
+            apd_indices[0], 532, 532, readout_color]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_dur = ret_vals[0]
@@ -318,9 +324,9 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
     
-    nv0_2021_01_26 = { 'coords': [0.317, 0.338, 5.00], 
-            'name': '{}-nv0_2021_01_26'.format(sample_name),
-            'expected_count_rate': 75, 'nd_filter': 'nd_0',
+    nv3_2021_03_01 = { 'coords': [-0.081, 0.096, 5.48], 
+            'name': '{}-nv3_2021_03_01'.format(sample_name),
+            'expected_count_rate': 40, 'nd_filter': 'nd_0',
 #            'color_filter': '635-715 bp', 
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -329,7 +335,8 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10,  
+            'ao_515_pwr': 0.65,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
@@ -341,4 +348,4 @@ if __name__ == '__main__':
 #            nv_sig = copy.deepcopy(nv0_2021_01_26)
 #            nv_sig['nd_filter'] = nd
 #            nv_sig['am_589_power'] = p
-    optimize_readout_pulse_length(nv0_2021_01_26, 638) 
+    optimize_readout_pulse_length(nv3_2021_03_01, 589) 
