@@ -66,41 +66,28 @@ def set_xyz(cxn, coords):
                                       ['', 'SharedParameters']))
     xy_server = get_xy_server(cxn)
     z_server = get_z_server(cxn)
-    xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
-    z_server.write_z(z_dtype(coords[2]))
+    if xy_dtype is int:
+        xy_op = round
+    else:
+        xy_op = xy_dtype
+    if z_dtype is int:
+        z_op = round
+    else:
+        z_op = z_dtype
+    xy_server.write_xy(xy_op(coords[0]), xy_op(coords[1]))
+    z_server.write_z(z_op(coords[2]))
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
 
 
 def set_xyz_center(cxn):
-    xy_dtype = eval(get_registry_entry(cxn, 'xy_dtype', 
-                                       ['', 'SharedParameters']))
-    z_dtype = eval(get_registry_entry(cxn, 'z_dtype', 
-                                      ['', 'SharedParameters']))
-    xy_server = get_xy_server(cxn)
-    z_server = get_z_server(cxn)
-    xy_server.write_xy(xy_dtype(0), xy_dtype(0))
     # MCC Generalize this for Hahn
-    z_server.write_z(z_dtype(5))
-    # Force some delay before proceeding to account 
-    # for the effective write time
-    time.sleep(0.001)
+    set_xyz(cxn, [0, 0, 5])
 
 
 def set_xyz_on_nv(cxn, nv_sig):
-    xy_dtype = eval(get_registry_entry(cxn, 'xy_dtype', 
-                                       ['', 'SharedParameters']))
-    z_dtype = eval(get_registry_entry(cxn, 'z_dtype', 
-                                      ['', 'SharedParameters']))
-    xy_server = get_xy_server(cxn)
-    z_server = get_z_server(cxn)
-    coords = nv_sig['coords']
-    xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
-    z_server.write_z(z_dtype(coords[2]))
-    # Force some delay before proceeding to account 
-    # for the effective write time
-    time.sleep(0.001)
+    set_xyz(cxn, nv_sig['coords'])
     
 
 # %% Pulse Streamer utils

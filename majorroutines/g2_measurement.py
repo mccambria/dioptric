@@ -62,7 +62,7 @@ def process_raw_buffer(timestamps, channels,
 
     # Throw out probable afterpulses
     # Something is wrong with this... see 2019-06-03_17-05-01_ayrton12
-    if False:
+    if True:
         num_vals = timestamps.size
         for click_index in range(num_vals):
             
@@ -132,7 +132,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
     tool_belt.reset_cfm(cxn)
 
-    afterpulse_window = 100 * 1000 # 100 ns
+    afterpulse_window = 50 * 1000 # 50 ns
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
