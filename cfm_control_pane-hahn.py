@@ -452,12 +452,12 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.8652, 'rabi_LOW': 150.6, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': 2.8902, 'rabi_HIGH': 149.3, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.045, -0.069, 0],
+    nv_sig = { 'coords': [0.099, 0.005, -0.50],
             'name': '{}-nv14_2021_02_26'.format(sample_name),
             'expected_count_rate': 43, 'nd_filter': nd,
             'pulsed_readout_dur': 350, 'magnet_angle': 74.4,
-            'resonance_LOW': 2.8587, 'rabi_LOW': 238.1, 'uwave_power_LOW': 14.5,
-            'resonance_HIGH': 2.8926, 'rabi_HIGH': 229.0, 'uwave_power_HIGH': 13.0}
+            'resonance_LOW': 2.8576, 'rabi_LOW': 224.2, 'uwave_power_LOW': 14.5,
+            'resonance_HIGH': 2.8914, 'rabi_HIGH': 217.1, 'uwave_power_HIGH': 13.0}
     
     
     # %% Functions to run
@@ -465,8 +465,8 @@ if __name__ == '__main__':
     try:
         
         # do_image_sample(nv_sig, apd_indices)
-        # do_optimize(nv_sig, apd_indices)
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        do_optimize(nv_sig, apd_indices)
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
@@ -477,7 +477,7 @@ if __name__ == '__main__':
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_g2_measurement(nv_sig, 0, 1)
-        do_t1_battery(nv_sig, apd_indices)
+        # do_t1_battery(nv_sig, apd_indices)
         
         # tool_belt.init_safe_stop()
         # while True:
