@@ -83,12 +83,8 @@ def double_gaussian_dip(freq, low_constrast, low_sigma, low_center,
 def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
 
-def fit_resonance(freq_range, freq_center, num_steps,
-                  norm_avg_sig, ref_counts):
-
-    # %% Calculate freqs
-
-    freqs = calculate_freqs(freq_range, freq_center, num_steps)
+# def get_guess_params(freqs, norm_avg_sig, ref_counts):
+def get_guess_params(freqs, norm_avg_sig):
 
     # %% Guess the locations of the minimums
 
@@ -104,10 +100,11 @@ def fit_resonance(freq_range, freq_center, num_steps,
 
     # Bit of processing
     inverted_norm_avg_sig = 1 - norm_avg_sig
-    ref_std = numpy.std(ref_counts)
-    rel_ref_std = ref_std / numpy.average(ref_counts)
-    height = max(rel_ref_std, contrast/4)
-#    height = 0.2
+    # ref_std = numpy.std(ref_counts)
+    # rel_ref_std = ref_std / numpy.average(ref_counts)
+    # height = max(rel_ref_std, contrast/4)
+    # print(height)
+    height = 0.03
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
@@ -161,6 +158,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
 
 #    low_freq_guess = 2.82
 #    high_freq_guess = 2.93
+
     # %% Fit!
 
     if high_freq_guess is None:
@@ -170,14 +168,36 @@ def fit_resonance(freq_range, freq_center, num_steps,
         fit_func = double_gaussian_dip
         guess_params=[contrast, sigma, low_freq_guess,
                       contrast, sigma, high_freq_guess]
+        
+    return fit_func, guess_params
 
+
+def fit_resonance(freq_range, freq_center, num_steps,
+                  norm_avg_sig, norm_avg_sig_ste=None):
+    
+    freqs = calculate_freqs(freq_range, freq_center, num_steps)
+
+    fit_func, guess_params = get_guess_params(freqs, norm_avg_sig)
+    
     try:
-        popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig, p0=guess_params)
+        if norm_avg_sig_ste is not None:
+            popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
+                                   p0=guess_params, sigma=norm_avg_sig_ste, 
+                                   absolute_sigma=True)
+            if len(popt) == 6:
+                zfs = (popt[2] + popt[5]) / 2
+                print(zfs)
+                low_res_err = numpy.sqrt(pcov[2,2])
+                hig_res_err = numpy.sqrt(pcov[5,5])
+                zfs_err = numpy.sqrt(low_res_err**2 + hig_res_err**2) / 2
+                print(zfs_err)
+        else:
+            popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
+                                   p0=guess_params)
     except Exception:
         print('Something went wrong!')
         popt = guess_params
 
-    # Return the resonant frequencies
     return fit_func, popt
 
 def simulate(res_freq, freq_range, contrast,
@@ -474,25 +494,32 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    path = 'pulsed_resonance/2020_02'
-    file = '2020_02_05-14_40_20-johnson-nv3_2020_02_04'
+    path = 'pc_hahn/branch_cryo-setup/pulsed_resonance/2021_01'
+    file = '2021_01_29-19_29_44-search_johnson'
     # data = tool_belt.get_raw_data('pulsed_resonance.py', file)
     data = tool_belt.get_raw_data(path, file)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']
     num_steps = data['num_steps']
+    num_runs = data['num_runs']
     norm_avg_sig = numpy.array(data['norm_avg_sig'])
     ref_counts = numpy.array(data['ref_counts'])
     sig_counts = numpy.array(data['sig_counts'])
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
 
+    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
+    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
+    avg_ref_counts = numpy.average(ref_counts[::], axis=0)
+    ste_ref_counts = numpy.std(ref_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    norm_avg_sig_ste = norm_avg_sig * numpy.sqrt((ste_sig_counts/avg_sig_counts)**2 + (ste_ref_counts/avg_ref_counts)**2 + (ste_sig_counts/avg_sig_counts)**2)
 
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, ref_counts)
-#    if (fit_func is not None) and (popt is not None):
+                                   norm_avg_sig, norm_avg_sig_ste)
+
+    # fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
+    #                                norm_avg_sig, ref_counts)
+    
     create_fit_figure(freq_range, freq_center, num_steps,
                       norm_avg_sig, fit_func, popt)
     
