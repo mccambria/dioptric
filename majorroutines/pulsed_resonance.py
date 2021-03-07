@@ -84,9 +84,11 @@ def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
 
 # def get_guess_params(freqs, norm_avg_sig, ref_counts):
-def get_guess_params(freqs, norm_avg_sig):
+def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
 
     # %% Guess the locations of the minimums
+    
+    freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
     contrast = 0.10  # Arb
     sigma = 0.001  # MHz
@@ -177,7 +179,8 @@ def fit_resonance(freq_range, freq_center, num_steps,
     
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
-    fit_func, guess_params = get_guess_params(freqs, norm_avg_sig)
+    fit_func, guess_params = get_guess_params(freq_range, freq_center,
+                                              num_steps, norm_avg_sig)
     
     try:
         if norm_avg_sig_ste is not None:
@@ -425,7 +428,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # %% Fit the data
 
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, ref_counts)
+                                   norm_avg_sig, norm_avg_sig_ste)
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
                                     norm_avg_sig, fit_func, popt)
@@ -494,8 +497,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    path = 'pc_hahn/branch_cryo-setup/pulsed_resonance/2021_01'
-    file = '2021_01_29-19_29_44-search_johnson'
+    path = 'pc_hahn/branch_cryo-setup/pulsed_resonance/2021_03'
+    file = '2021_03_06-13_30_47-johnson-nv14_2021_02_26'
     # data = tool_belt.get_raw_data('pulsed_resonance.py', file)
     data = tool_belt.get_raw_data(path, file)
 

@@ -75,19 +75,14 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 #         ], dtype=object)
 
 t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 2*10**6], 11, 25*10**3, 20],
-        [[States.HIGH, States.LOW], [0, 30*10**6], 11, 1.75*10**3, 200],
-    
-        [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 25*10**3, 20],
-        [[States.HIGH, States.HIGH], [0, 30*10**6], 11, 1.75*10**3, 200],
-    
+        [[States.HIGH, States.LOW], [0, 60*10**6], 11, 0.8*10**3, 275],
+        [[States.HIGH, States.HIGH], [0, 60*10**6], 11, 0.8*10**3, 275],
         # [[States.ZERO, States.HIGH], [0, 40*10**6], 11, 1.25*10**3, 200],
-    
         # [[States.ZERO, States.ZERO], [0, 40*10**6], 11, 1.25*10**3, 200]
         ], dtype=object)
 
-contrast = 0.27  # arb
-exp_count_rate = 35  # kcps
+contrast = 0.26  # arb
+exp_count_rate = 38  # kcps
 readout_window = 350  # ns
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)
