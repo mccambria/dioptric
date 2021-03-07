@@ -503,5 +503,5 @@ if __name__ == '__main__':
     folder = 'johnson-nv14_2021_02_26-33MHz-225K'
     path += folder
 
-    gamma, ste = main(path, omega=0.0, omega_ste=0.0,
+    gamma, ste = main(path, omega=0.0152, omega_ste=0.0,
                       doPlot=True, offset=False)

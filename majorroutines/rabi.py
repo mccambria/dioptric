@@ -34,13 +34,11 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
     taus, tau_step = numpy.linspace(min_uwave_time, max_uwave_time,
                             num=num_steps, dtype=numpy.int32, retstep=True)
 
-    fit_func = tool_belt.cosexp
+    fit_func = tool_belt.cosexp_1_at_0
 
     # %% Estimated fit parameters
 
     offset = numpy.average(norm_avg_sig)
-    amplitude = 1.0 - offset
-    frequency = 1/75  # Could take Fourier transform
     decay = 1000
 
     # To estimate the frequency let's find the highest peak in the FFT
@@ -53,11 +51,11 @@ def fit_data(uwave_time_range, num_steps, norm_avg_sig):
 
     # %% Fit
 
-    init_params = [offset, amplitude, frequency, decay]
+    init_params = [offset, frequency, decay]
 
     try:
         popt, _ = curve_fit(fit_func, taus, norm_avg_sig,
-                               p0=init_params)
+                            p0=init_params)
     except Exception as e:
         print(e)
         popt = None
@@ -83,11 +81,13 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
     
     text_freq = 'Resonant frequency:' + '%.3f'%(uwave_freq) + 'GHz'
     
+    A_0 = 1- popt[0]
+    
     text_popt = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
                       r'$C = $' + '%.3f'%(popt[0]),
-                      r'$A_0 = $' + '%.3f'%(popt[1]),
-                      r'$\frac{1}{\nu} = $' + '%.1f'%(1/popt[2]) + ' ns',
-                      r'$d = $' + '%i'%(popt[3]) + ' ' + r'$ ns$'))
+                      r'$A_0 = $' + '%.3f'%(A_0),
+                      r'$\frac{1}{\nu} = $' + '%.1f'%(1/popt[1]) + ' ns',
+                      r'$d = $' + '%i'%(popt[2]) + ' ' + r'$ ns$'))
 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(0.55, 0.25, text_popt, transform=ax.transAxes, fontsize=12,
@@ -169,6 +169,8 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
                       num_steps, num_reps, num_runs)
         
         return rabi_per
+    
+    
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                   num_steps, num_reps, num_runs):
 
@@ -428,16 +430,18 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    # file = '2019-08-01-18_26_45-ayrton12-nv16_2019_07_25'
-    # data = tool_belt.get_raw_data('rabi.py', file)
+    path = 'pc_hahn/branch_cryo-setup/rabi/2021_03'
+    file = '2021_03_06-16_07_29-johnson-nv14_2021_02_26'
+    data = tool_belt.get_raw_data(path, file)
 
-    # norm_avg_sig = data['norm_avg_sig']
-    # uwave_time_range = data['uwave_time_range']
-    # num_steps = data['num_steps']
+    norm_avg_sig = data['norm_avg_sig']
+    uwave_time_range = data['uwave_time_range']
+    num_steps = data['num_steps']
+    uwave_freq = data['uwave_freq']
 
-    # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    # if (fit_func is not None) and (popt is not None):
-    #     create_fit_figure(uwave_time_range, num_steps, norm_avg_sig,
-    #                       fit_func, popt)
+    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    if (fit_func is not None) and (popt is not None):
+        create_fit_figure(uwave_time_range, uwave_freq, num_steps,
+                          norm_avg_sig, fit_func, popt)
 
-    simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)
+    # simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)
