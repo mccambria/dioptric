@@ -87,7 +87,7 @@ t1_exp_array = numpy.array([
         ], dtype=object)
 
 contrast = 0.27  # arb
-exp_count_rate = 40  # kcps
+exp_count_rate = 35  # kcps
 readout_window = 350  # ns
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)
