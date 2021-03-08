@@ -35,6 +35,7 @@ import os
 
 import utils.tool_belt as tool_belt
 from utils.tool_belt import States
+from figures.bulk_d_perp_prime.revision3.orbach import omega_calc
 
 # %% Constants
 
@@ -500,8 +501,12 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 if __name__ == '__main__':
 
     path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    folder = 'johnson-nv14_2021_02_26-33MHz-225K'
+    folder = 'johnson-nv14_2021_02_26-33MHz-200K'
     path += folder
+    
+    temp = 200
+    est_omega = omega_calc(temp) / 1000
+    print(est_omega)
 
-    gamma, ste = main(path, omega=0.0152, omega_ste=0.0,
+    gamma, ste = main(path, omega=est_omega, omega_ste=0.0,
                       doPlot=True, offset=False)
