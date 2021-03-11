@@ -56,7 +56,7 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
     total_exp_time = sum(total_exp_time_list)
 
     # Somehow this is off... so let's tack on a heuristic correction
-    total_exp_time *= (21/20)
+    total_exp_time *= (11/10)
 
     print('Total experiment time: {:.1f} hrs'.format(total_exp_time))
 

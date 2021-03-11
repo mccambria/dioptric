@@ -97,8 +97,8 @@ def main():
 
 def main2(temps=None, omegas=None, omega_errs=None,
          gammas=None, gamma_errs=None):
-    temp_linspace = numpy.linspace(5, 600, 1000)
-    # temp_linspace = numpy.linspace(100, 300, 1000)
+    # temp_linspace = numpy.linspace(5, 600, 1000)
+    temp_linspace = numpy.linspace(5, 300, 1000)
     # temp_linspace = numpy.linspace(5, 5000, 1000)
     fig, ax = plt.subplots()
     fig.set_tight_layout(True)
@@ -106,7 +106,7 @@ def main2(temps=None, omegas=None, omega_errs=None,
     ax.plot(temp_linspace, omega_calc(temp_linspace),
             label=r'$\Omega$ fit', color='#FF9933')  # from Jarmola 2012 Eq. 1 for S3
     
-    ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
+    # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
     # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
     
     ax.set_xlabel(r'T (K)')
@@ -114,8 +114,8 @@ def main2(temps=None, omegas=None, omega_errs=None,
     # ax.set_yscale('log')
     # ax.set_xscale('log')
     # ax.set_ylim(2e-3, 2e3)
-    ax.set_ylim(-10, 130)
-    ax.set_ylim(-10, 800)
+    # ax.set_ylim(-10, 130)
+    # ax.set_ylim(-10, 800)
     # ax.set_ylim(2e-3, None)
     
     if temps is not None:
@@ -168,19 +168,19 @@ if __name__ == '__main__':
     gamma_errs = [0.005, 0.013, 0.007, 0.003, 0.003]
     
     # Lin paper results
-    temps.extend([300, 325, 350, 375, 400, 425, 450, 500, 550, 600])
-    lin_omegas = numpy.array([0.33, 0.4, 0.5, 0.6, 0.66, 0.9, 1.1, 1.5, 2.3, 3.5]) / 4
-    omegas.extend(lin_omegas.tolist())
-    omega_errs.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    lin_gammas_pre = [200, None, 266, None, 333, None, 400, 475, 650, 780]
-    lin_gammas = []
-    for el in lin_gammas_pre:
-        if el is not None:
-            lin_gammas.append(el * (117/200) / 1000)
-        else:
-            lin_gammas.append(None)
-    gammas.extend(lin_gammas)
-    gamma_errs.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    # temps.extend([300, 325, 350, 375, 400, 425, 450, 500, 550, 600])
+    # lin_omegas = numpy.array([0.33, 0.4, 0.5, 0.6, 0.66, 0.9, 1.1, 1.5, 2.3, 3.5]) / 4
+    # omegas.extend(lin_omegas.tolist())
+    # omega_errs.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    # lin_gammas_pre = [200, None, 266, None, 333, None, 400, 475, 650, 780]
+    # lin_gammas = []
+    # for el in lin_gammas_pre:
+    #     if el is not None:
+    #         lin_gammas.append(el * (117/200) / 1000)
+    #     else:
+    #         lin_gammas.append(None)
+    # gammas.extend(lin_gammas)
+    # gamma_errs.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     
 
     main2(temps, omegas, omega_errs, gammas, gamma_errs)
