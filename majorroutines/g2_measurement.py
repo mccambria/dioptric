@@ -327,14 +327,14 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
 
 if __name__ == '__main__':
-    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_hahn/branch_cryo-setup/g2_measurement/2021_03'
-    file_name = '2021_03_10-10_34_38-johnson-nv14_2021_02_26.txt'
-
-    with open('{}/{}'.format(folder_name, file_name)) as file:
-        data = json.load(file)
-        differences = data['differences']
-        num_bins = data['num_bins']
-        diff_window = data['diff_window']
+    
+    folder_name = 'pc_hahn/branch_cryo-setup/g2_measurement/2021_03'
+    file_name = '2021_03_09-19_03_22-johnson-nv14_2021_02_26'
+    data = tool_belt.get_raw_data(folder_name, file_name)
+    
+    differences = data['differences']
+    num_bins = data['num_bins']
+    diff_window = data['diff_window']
         
     diff_window_ps = diff_window * 1000
     hist, bin_edges = numpy.histogram(differences, num_bins,
