@@ -167,7 +167,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     diff_window_ps = diff_window * 1000
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
-    num_bins = int((4) * diff_window) + 1
+    num_bins = int((1) * diff_window) + 1
     # num_bins = 151
     # num_bins = diff_window + 1
     # num_bins = int(2*mod)-1
@@ -329,7 +329,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 if __name__ == '__main__':
     
     folder_name = 'pc_hahn/branch_cryo-setup/g2_measurement/2021_03'
-    file_name = '2021_03_09-19_03_22-johnson-nv14_2021_02_26'
+    file_name = '2021_03_10-15_22_06-johnson-nv14_2021_02_26'
     data = tool_belt.get_raw_data(folder_name, file_name)
     
     differences = data['differences']
