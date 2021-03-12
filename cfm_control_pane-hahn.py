@@ -113,8 +113,9 @@ def do_stationary_count(nv_sig, apd_indices):
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 60 * 10  # s
-    diff_window = 400  # ns
+    run_time = 60 * 2  # s
+    # diff_window = 400  # ns
+    diff_window = 1176  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
                         apd_a_index, apd_b_index)
@@ -421,9 +422,9 @@ if __name__ == '__main__':
     # apd_indices = [1]  # dark, disconnected
     apd_indices = [0, 1]
     
-    # nd = 'nd_0'
+    nd = 'nd_0'
     # nd = 'nd_0.5'
-    nd = 'nd_1.0'
+    # nd = 'nd_1.0'
     sample_name = 'johnson'
     
     # nv_sig = { 'coords': [0.0, 0.0, -42],

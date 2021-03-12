@@ -128,6 +128,35 @@ def process_raw_buffer(timestamps, channels,
                     diff = -diff
                 differences_append(int(diff))
             next_index += 1
+            
+    # MCC
+    # Calculate differences
+    # num_vals = timestamps.size
+    # for click_index in range(num_vals):
+
+    #     click_time = timestamps[click_index]
+
+    #     # Determine the channel to take the difference with
+    #     click_channel = channels[click_index]
+    #     if click_channel == 1:
+    #         diff_channel = apd_a_chan_name
+    #     else:
+    #         continue
+
+    #     # Calculate relevant differences
+    #     next_index = click_index + 1
+    #     while next_index < num_vals:  # Don't go past the buffer end
+    #         # Stop taking differences past the diff window
+    #         diff = timestamps[next_index] - click_time
+    #         if diff > diff_window_ps:
+    #             break
+    #         # Only record the diff between opposite chanels
+    #         if channels[next_index] == diff_channel:
+    #             # Flip the sign for diffs relative to channel b
+    #             if click_channel == apd_b_chan_name:
+    #                 diff = -diff
+    #             differences_append(int(diff))
+    #         next_index += 1
 
 
 # %% Main
@@ -144,7 +173,6 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
                   apd_a_index, apd_b_index):
     
     do_optimize = False
-    # mod = 8
 
     # %% Initial calculations and setup
 
@@ -152,6 +180,8 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
     # 200 ns to account for twilighting and afterpulsing
     afterpulse_window = 200 * 1000
+    # afterpulse_window = (diff_window - 200) * 1000
+    
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
@@ -173,7 +203,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     # num_bins = int(2*mod)-1
 
     # Expose the stream
-    cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
+    # cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
 
     # Get the APD channel names that the tagger will return
     ret_vals = cxn.apd_tagger.get_channel_mapping()
@@ -196,15 +226,19 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
         #######
         
-        # if collection_index >= num_pointsss:
-        #     return
+        # stop = True
+        # # if collection_index >= num_pointsss:
+        # #     return
         
-        # seq_args = [180, vals[collection_index], 0]
+        # seq_args = [80, 92, 0]
         # seq_args_string = tool_belt.encode_seq_args(seq_args)
         # ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
         #                                           seq_args_string)
         # print(ret_vals)
-        # cxn.pulse_streamer.stream_start(1000)
+        # # cxn.apd_tagger.stop_tag_stream()
+        # # return
+        # cxn.pulse_streamer.stream_start(100000)
+        # time.sleep(10)
         
         #######
 
