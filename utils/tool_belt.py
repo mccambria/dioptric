@@ -46,7 +46,7 @@ def get_signal_generator_name(state):
         signal_generator_name = 'signal_generator_sg394'
         # signal_generator_name = 'signal_generator_bnc835'
     elif state.value == States.HIGH.value:
-        signal_generator_name = 'signal_generator_bnc835'
+        signal_generator_name = 'signal_generator_tsg4104a'
         # signal_generator_name = 'signal_generator_sg394'
     return signal_generator_name
     

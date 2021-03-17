@@ -173,15 +173,15 @@ class SignalGeneratorTsg4104a(LabradServer):
         self.sig_gen.write('FDEV 0')
         self.uwave_off(c)
         self.mod_off(c)
-        # Clean up the DAQ task!
-        if self.task is not None:
-            crash = 1/0
-        # Set the DAQ AO to 0
-        with nidaqmx.Task() as task:
-            # Set up the output channels
-            task.ao_channels.add_ao_voltage_chan(self.daq_ao_sig_gen_mod,
-                                                 min_val=-1.0, max_val=1.0)
-            task.write(0.0)
+        # # Clean up the DAQ task!
+        # if self.task is not None:
+        #     crash = 1/0
+        # # Set the DAQ AO to 0
+        # with nidaqmx.Task() as task:
+        #     # Set up the output channels
+        #     task.ao_channels.add_ao_voltage_chan(self.daq_ao_sig_gen_mod,
+        #                                          min_val=-1.0, max_val=1.0)
+        #     task.write(0.0)
 
 
 __server__ = SignalGeneratorTsg4104a()

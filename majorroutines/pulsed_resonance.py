@@ -91,7 +91,7 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
     contrast = 0.10  # Arb
-    sigma = 0.001  # MHz
+    sigma = 0.003  # GHz
 #    sigma = 0.010  # MHz
     fwhm = 2.355 * sigma
 
@@ -152,14 +152,12 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
     else:
         print('Could not locate peaks')
 
-#    low_freq_guess = 2.8125
-#    high_freq_guess = None
+    # low_freq_guess = 2.8620
+    # high_freq_guess = 2.8936
     
     if low_freq_guess is None:
         return None, None
 
-#    low_freq_guess = 2.82
-#    high_freq_guess = 2.93
 
     # %% Fit!
 
@@ -187,6 +185,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
             popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
                                    p0=guess_params, sigma=norm_avg_sig_ste, 
                                    absolute_sigma=True)
+            # popt = guess_params
             if len(popt) == 6:
                 zfs = (popt[2] + popt[5]) / 2
                 print(zfs)
@@ -291,6 +290,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                 background_wait_time, aom_delay_time,
                 gate_time, uwave_pulse_dur,
                 apd_indices[0], state.value]
+    # print(seq_args)
+    # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
     opti_coords_list = []
@@ -314,11 +315,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         # Optimize and save the coords we found
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
-        # opti_coords_list.append([0.0, 0.0, 0])
 
         # Load the pulse streamer (must happen after optimize since optimize
         # loads its own sequence)
-        cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
+        ret_vals = cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
 
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -428,7 +428,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # %% Fit the data
 
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, norm_avg_sig_ste)
+                                   norm_avg_sig)
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
                                     norm_avg_sig, fit_func, popt)
@@ -498,7 +498,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 if __name__ == '__main__':
 
     path = 'pc_hahn/branch_cryo-setup/pulsed_resonance/2021_03'
-    file = '2021_03_06-13_30_47-johnson-nv14_2021_02_26'
+    file = '2021_03_13-22_05_46-hopper-nv1_2021_03_13'
     # data = tool_belt.get_raw_data('pulsed_resonance.py', file)
     data = tool_belt.get_raw_data(path, file)
 

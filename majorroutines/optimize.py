@@ -357,6 +357,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     magnet_angle = nv_sig['magnet_angle']
     if (magnet_angle is not None) and hasattr(cxn, 'rotation_stage_ell18k'):
         cxn.rotation_stage_ell18k.set_angle(magnet_angle)
+        
+    if not nv_sig['single']:
+        return None
     
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()

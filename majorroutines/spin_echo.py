@@ -197,12 +197,12 @@ def fit_data_from_file(folder, file):
     rabi_period = nv_sig['rabi_{}'.format(state)]
 
     ret_vals = fit_data(precession_dur_range, rabi_period,
-                        num_steps, num_runs, sig_counts, ref_counts)
+                        num_steps, num_runs, sig_counts, ref_counts, folder, file)
     return ret_vals
 
 
 def fit_data(precession_dur_range, rabi_period,
-             num_steps, num_runs, sig_counts, ref_counts):
+             num_steps, num_runs, sig_counts, ref_counts, folder, file):
 
     # %% Set up
 
@@ -250,7 +250,7 @@ def fit_data(precession_dur_range, rabi_period,
 #    amplitude = 0.07
 #    offset = 0.93
 #    decay_time = 2000.0
-    revival_time = 40000
+    # revival_time = 40000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -281,13 +281,13 @@ def fit_data(precession_dur_range, rabi_period,
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(precession_dur_range, rabi_period,
                                     num_steps, norm_avg_sig, norm_avg_sig_ste,
-                                    fit_func, popt)
+                                    fit_func, popt, file, folder)
 
     return fit_func, popt, stes, fit_fig
 
 def create_fit_figure(precession_dur_range, rabi_period,
                       num_steps, norm_avg_sig, norm_avg_sig_ste,
-                      fit_func, popt):
+                      fit_func, popt, file, folder):
 
     min_precession_dur = precession_dur_range[0]
     max_precession_dur = precession_dur_range[1]
@@ -683,53 +683,10 @@ if __name__ == '__main__':
     # resonances from rotated experiments manually punched in
 
     # zfs in GHz
-#    center_freq = 2.8702  # johnson-nv3_2020_02_04
-    # center_freq = 2.8707  # 2020_02_07-15_18_57-johnson-nv3_2020_02_04
-    center_freq = 2.8706  # 2020_02_09-23_28_56-johnson-nv3_2020_02_04
+    center_freq = 2.877  
+    path = 'pc_hahn/branch_cryo-setup/spin_echo/2021_03'
+    file = '2021_03_15-22_32_53-hopper-nv2_2021_03_15'
 
-    folder = 'spin_echo/branch_temperature_reading/2020_02'
-    # folder = 'spin_echo/2020_02'
+    fit_func, popt, stes, fit_fig = fit_data_from_file(path, file)
 
-    # 0 deg
-    # file = '2019_12_31-10_26_07-goeppert_mayer-nv7_2019_11_27'
-
-    # 60 deg
-    # file = '2020_01_02-12_14_59-goeppert_mayer-nv7_2019_11_27'
-    # file = '2020_01_02-12_14_59-goeppert_mayer-nv7_2019_11_27-edit'
-
-    # 15 deg
-    # file = '2020_01_04-16_05_00-goeppert_mayer-nv7_2019_11_27'
-    # file = '2020_01_04-16_05_00-goeppert_mayer-nv7_2019_11_27-edit'
-
-    # 45 deg
-    # file = '2020_01_06-20_12_33-goeppert_mayer-nv7_2019_11_27'  # take 1
-#    file = '2020_01_15-19_02_19-goeppert_mayer-nv7_2019_11_27'  # take 2
-
-    # 75 deg
-    # file = '2020_01_08-23_27_40-goeppert_mayer-nv7_2019_11_27'
-
-    # 90 deg
-    # file = '2020_01_11-14_55_53-goeppert_mayer-nv7_2019_11_27'
-    # file = '2020_01_11-14_55_53-goeppert_mayer-nv7_2019_11_27-edit'
-
-    # 30 deg
-    # file = '2020_01_13-17_32_58-goeppert_mayer-nv7_2019_11_27'
-
-    # 0 deg, 122 MHz
-#    file = '2020_01_18-16_23_54-goeppert_mayer-nv7_2019_11_27'
-
-    # 0 deg, 861 MHz
-#    file = '2020_01_21-12_44_17-goeppert_mayer-nv7_2019_11_27'
-
-    # 2020_01_21-12_44_17-goeppert_mayer-nv7_2019_11_27 rot to 45 deg
-#    file = '2020_01_21-14_34_47-goeppert_mayer-nv7_2019_11_27'
-
-    # 0 deg, 1.288 GHz
-#    file = '2020_01_27-16_48_32-goeppert_mayer-nv7_2019_11_27'
-
-    # temp
-    file = '2020_02_09-23_28_56-johnson-nv3_2020_02_04'
-
-    # fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
-
-    plot_resonances_vs_theta_B(folder, file, center_freq)
+    plot_resonances_vs_theta_B(path, file, center_freq)
