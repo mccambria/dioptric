@@ -47,6 +47,10 @@ def zfs_from_temp(temp):
 
 def main(zfs, zfs_err):
     
+    zfs_diff = lambda temp: zfs_from_temp(temp) - zfs
+    results = root_scalar(zfs_diff, x0=50, x1=300)
+    temp_mid = results.root
+    
     zfs_low = zfs - zfs_err
     zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_low
     results = root_scalar(zfs_diff, x0=50, x1=300)
@@ -57,7 +61,7 @@ def main(zfs, zfs_err):
     results = root_scalar(zfs_diff, x0=50, x1=300)
     temp_high = results.root
     
-    print('T: [{}, {}]'.format(temp_low, temp_high))
+    print('T: [{}, {}, {}]'.format(temp_low, temp_mid, temp_high))
 
 
 # %% Run the file
@@ -75,14 +79,22 @@ if __name__ == '__main__':
     # zfs_err = 0.00020017187345691895
     
     # 300 K
-    zfs = 2.871011389583322
-    zfs_err = 0.0008097208662379307
+    # zfs = 2.871011389583322
+    # zfs_err = 0.0008097208662379307
+    
+    # 175 K
+    # zfs = 2.8764
+    # zfs_err = 6.368357262294881e-05  
+    
+    # 50 K fake
+    zfs = 2.8776
+    zfs_err = 0.0001
     
     
 
     # main(resonances)
-    # main(zfs, zfs_err)
-    print(zfs_from_temp(175))
+    main(zfs, zfs_err)
+    # print(zfs_from_temp(175))
     # x_vals = numpy.linspace(0, 300, 300)
     # y_vals = zfs_from_temp(x_vals)
     # plt.plot(x_vals, y_vals)

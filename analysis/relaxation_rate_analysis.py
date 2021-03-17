@@ -274,11 +274,12 @@ def get_data_lists(folder_name):
     return omega_exp_list, gamma_exp_list, num_runs, splitting_MHz
 # %% Main
 
-def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = True):
+def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = True):
 
+    path_folder = path + folder
     # Get the file list from the folder
     omega_exp_list, gamma_exp_list, \
-                num_runs, splitting_MHz  = get_data_lists(folder_name)
+                num_runs, splitting_MHz  = get_data_lists(path_folder)
 
     # %% Fit the data
 
@@ -490,8 +491,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                     'gamma_opti_params': gamma_opti_params.tolist(),
                     }
 
-        file_name = '{}MHz_splitting_rate_analysis'.format(round(splitting_MHz))
-        file_path = '{}/{}/{}'.format(data_dir, folder_name, file_name)
+        file_name = '{}-analysis'.format(folder)
+        file_path = '{}/{}/{}'.format(data_dir, path_folder, file_name)
         tool_belt.save_raw_data(raw_data, file_path)
         tool_belt.save_figure(fig, file_path)
 
@@ -502,13 +503,12 @@ if __name__ == '__main__':
 
     path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     folder = 'hopper-nv1_2021_03_16-175K'
-    path += folder
     
     temp = 175
     est_omega = omega_calc(temp) / 1000
     print(est_omega)
 
-    gamma, ste = main(path, omega=est_omega, omega_ste=0.0,
+    gamma, ste = main(path, folder, omega=est_omega, omega_ste=0.0,
                       doPlot=True, offset=False)
-    # gamma, ste = main(path, omega=None, omega_ste=None,
+    # gamma, ste = main(path, folder, omega=None, omega_ste=None,
     #                   doPlot=True, offset=False)
