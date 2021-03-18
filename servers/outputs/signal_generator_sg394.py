@@ -159,20 +159,34 @@ class SignalGeneratorSg394(LabradServer):
     #     self.sig_gen.write('MODL 1')
 
 
-    # @setting(5)
-    # def mod_off(self, c):
-    #     """Turn off the modulation."""
+    @setting(5)
+    def mod_off(self, c):
+        """Turn off the modulation."""
 
-    #     self.sig_gen.write('MODL 0')
-    #     task = self.task
-    #     if task is not None:
-    #         task.close()
+        self.sig_gen.write('MODL 0')
+        task = self.task
+        if task is not None:
+            task.close()
+
+    @setting(7)
+    def load_iq(self, c):
+        """
+        Set up external IQ modulation
+        """
+
+        # QAM is type 7
+        self.sig_gen.write('TYPE 7')
+        # self.sig_gen.write('STYP 1')
+        # External mode is modulation function 5
+        self.sig_gen.write('QFNC 5')
+        # Turn on modulation
+        self.sig_gen.write('MODL 1')
 
     @setting(6)
     def reset(self, c):
-        # self.sig_gen.write('FDEV 0')
+        self.sig_gen.write('FDEV 0')
         self.uwave_off(c)
-        # self.mod_off(c)
+        self.mod_off(c)
         # Clean up the DAQ task!
         # if self.task is not None:
         #     crash = 1/0

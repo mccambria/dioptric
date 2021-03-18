@@ -97,7 +97,10 @@ def encode_seq_args(seq_args):
     return json.dumps(seq_args)
 
 def decode_seq_args(seq_args_string):
-    return json.loads(seq_args_string)
+    if seq_args_string is '':
+        return []
+    else:
+        return json.loads(seq_args_string)
 
 def get_pulse_streamer_wiring(cxn):
     cxn.registry.cd(['', 'Config', 'Wiring', 'Pulser'])

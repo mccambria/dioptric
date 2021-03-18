@@ -158,6 +158,20 @@ class SignalGeneratorTsg4104a(LabradServer):
         # Turn on FM
         self.sig_gen.write('MODL 1')
 
+    @setting(7)
+    def load_iq(self, c):
+        """
+        Set up external IQ modulation
+        """
+
+        # QAM is type 7
+        self.sig_gen.write('TYPE 7')
+        # self.sig_gen.write('STYP 1')
+        # External mode is modulation function 5
+        self.sig_gen.write('QFNC 5')
+        # Turn on modulation
+        self.sig_gen.write('MODL 1')
+
 
     @setting(5)
     def mod_off(self, c):

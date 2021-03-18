@@ -55,16 +55,50 @@ class ArbitraryWaveformGenerator(LabradServer):
         self.wave_gen = resource_manager.open_resource(config)
         self.reset(None)
         
+    @setting(3)
+    def iq_switch(self, c):
+        """
+        On trigger from Pulse Streamer, switch between (0.5, 0) and (0.5, 0)
+        for IQ modulation
+        """
+        
+        for chan in [1, 2]:
+            source_name = 'SOUR{}:'.format(chan)
+            self.wave_gen.write('{}FUNC:ARB:FILT OFF'.format(source_name))
+            self.wave_gen.write('{}FUNC:ARB:ADV TRIG'.format(source_name))
+            self.wave_gen.write('{}FUNC:ARB:PTP 2'.format(source_name))
+        
+        # It would be nice if we could just write '0.5, 0.0', but there's a
+        # minimum number of points
+        seq = '0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0'
+        self.wave_gen.write('SOUR1:DATA:ARB iqSwitch1, {}'.format(seq))
+        seq = '0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5'
+        self.wave_gen.write('SOUR2:DATA:ARB iqSwitch2, {}'.format(seq))
+        
+        for chan in [1, 2]:
+            source_name = 'SOUR{}:'.format(chan)
+            self.wave_gen.write('{}FUNC:ARB iqSwitch{}'.format(source_name, chan))
+            self.wave_gen.write('{}FUNC ARB'.format(source_name))
+            
+        self.wave_gen.write('TRIG1:SOUR EXT')
+        self.wave_gen.write('TRIG2:SOUR EXT')
+        self.wave_gen.write('TRIG1:SLOP POS')
+        self.wave_gen.write('TRIG2:SLOP POS')
+        
+        self.wave_gen.write('OUTP1 ON')
+        self.wave_gen.write('OUTP2 ON')
+        
+        
     @setting(4)
     def test_sin(self, c):
         for chan in [1, 2]:
             source_name = 'SOUR{}:'.format(chan)
             self.wave_gen.write('{}FUNC SIN'.format(source_name))
             self.wave_gen.write('{}FREQ 10000'.format(source_name))
-            self.wave_gen.write('{}VOLT:HIGH +2.0'.format(source_name))
-            self.wave_gen.write('{}VOLT:LOW 0.0'.format(source_name))
+            self.wave_gen.write('{}VOLT:HIGH +0.5'.format(source_name))
+            self.wave_gen.write('{}VOLT:LOW -0.5'.format(source_name))
         self.wave_gen.write('OUTP1 ON')
-        self.wave_gen.write('SOUR2:PHAS 90')
+        self.wave_gen.write('SOUR2:PHAS 0')
         self.wave_gen.write('OUTP2 ON')
         
     @setting(5)
@@ -74,7 +108,11 @@ class ArbitraryWaveformGenerator(LabradServer):
         
     @setting(6)
     def reset(self, c):
-        pass
+        self.wave_off(c)
+        self.wave_gen.write('SOUR1:DATA:VOL:CLE')
+        self.wave_gen.write('SOUR2:DATA:VOL:CLE')
+        self.wave_gen.write('OUTP1:LOAD 50')
+        self.wave_gen.write('OUTP2:LOAD 50')
 
 
 __server__ = ArbitraryWaveformGenerator()
