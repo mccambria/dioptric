@@ -193,6 +193,9 @@ def fit_resonance(freq_range, freq_center, num_steps,
                 hig_res_err = numpy.sqrt(pcov[5,5])
                 zfs_err = numpy.sqrt(low_res_err**2 + hig_res_err**2) / 2
                 print(zfs_err)
+            else:
+                res_err = numpy.sqrt(pcov[2,2])
+                print(res_err)
         else:
             popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
                                    p0=guess_params)
@@ -498,7 +501,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 if __name__ == '__main__':
 
     path = 'pc_hahn/branch_cryo-setup/pulsed_resonance/2021_03'
-    file = '2021_03_13-22_05_46-hopper-nv1_2021_03_13'
+    # file = '2021_03_16-15_32_50-hopper-nv2_2021_03_15'
+    file = '2021_03_16-15_39_04-hopper-nv2_2021_03_15'
     # data = tool_belt.get_raw_data('pulsed_resonance.py', file)
     data = tool_belt.get_raw_data(path, file)
 
