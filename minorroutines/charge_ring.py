@@ -17,16 +17,16 @@ import copy
 
 reset_range = 2.5
 image_range = 2.5
-num_steps = 200#int(225 * image_range) 
+num_steps = 100#200#int(225 * image_range) 
 num_steps_reset = 120#int(75 * reset_range)
 apd_indices = [0]
 #red_reset_power = 0.8548
 #red_pulse_power = 0.8548
 #red_image_power = 0.568
 
-green_reset_power = 0.6075
-green_pulse_power = 0.65
-green_image_power = 0.65
+green_reset_power = 0.6045
+green_pulse_power = 0.635
+green_image_power = 0.635
 
 # %%
 
@@ -260,7 +260,7 @@ if __name__ == '__main__':
 #            'color_filter': '635-715 bp',
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 2*10**7, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 2*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -270,30 +270,16 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
-    start_coords_list =[    
-    [0.309, 0.334, 4.90],
-[0.184, 0.342, 4.79],
-[-0.038, 0.294, 4.72],
-[-0.048, 0.260, 4.80],
-[-0.074, 0.264, 4.83],
-[0.325, 0.272, 4.75],
-[0.322, 0.203, 4.79],
-[-0.067, 0.173, 4.73],
-[0.194, 0.123, 4.88],
-[0.181, 0.122, 4.78],
-[0.025, 0.080, 4.79],
-[0.120, 0.045, 4.79],
-[-0.018, 0.046, 4.76],
-[0.055, -0.126, 4.79],
-[0.396, -0.195, 4.83],
-[0.128, -0.197, 4.75],
-[0.392, -0.304, 4.80],
-[0.392, -0.303, 4.81],
-[-0.203, -0.330, 4.81],
-[0.251, -0.385, 4.76],
+    expected_count_list = [36, 40, 35, 47, 52, 33, 40] # 3/1/21
+    start_coords_list = [
+[-0.020, 0.109, 4.95],
+[-0.056, 0.104, 4.95],
+[0.088, 0.057, 4.95],
+[-0.019, 0.046, 4.95],
+[-0.009, 0.026, 4.95],
+[0.098, -0.130, 4.95],
+[-0.031, -0.131, 4.96],
 ]
-    expected_count_list = [60, 40, 38, 36, 38, 40, 55, 48, 42, 36, 38, 30, 
-                           46, 53, 44, 70, 50, 40, 40, 32] # 2/11/21
     
     
     init_time = 10**7
@@ -302,14 +288,14 @@ if __name__ == '__main__':
     pulse_color = 532
     readout_color = 589
     
-    center_coords = [0.251, -0.385, 4.76]
-    reset_coords = [0.251, -0.385, 4.76]
-    optimize_coords =[0.251, -0.385, 4.76]
+    center_coords = [-0.056, 0.104, 4.95]
+    reset_coords = [-0.056, 0.104, 4.95]
+    optimize_coords =[-0.056, 0.104, 4.95]
 #    center_coords = pulse_coords
     
     with labrad.connect() as cxn:
         pulse_time = 100
-        pulse_coords =   [0.251, -0.385, 4.76]
+        pulse_coords =   [-0.056, 0.104, 4.95]
         main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
                            pulse_coords, pulse_time, init_time, init_color, 
                            pulse_color, readout_color)

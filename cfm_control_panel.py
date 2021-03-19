@@ -551,7 +551,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0,0 ,5.42], 
+    search = { 'coords':[0.0, 0,5.15],
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
@@ -570,36 +570,24 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
 
     
-    expected_count_list = [36, 30, 38, 43, 33, 
-                           44, 43, 29, 38, 41, 
-                           40, 43, 40, 29, 45, 
-                           55] # 3/1/21
-    nv_list_2021_03_01 = [
-[0.038, 0.095, 5.37],
-[-0.077, 0.067, 5.40],
-[0.063, 0.014, 5.39],
-[-0.081, 0.103, 5.41],
-[0.337, -0.381, 5.38],
-[0.344, -0.472, 5.44],
-[0.004, -0.084, 5.42],
-[-0.023, -0.061, 5.45],
-[-0.077, 0.120, 5.48],
-[0.306, 0.445, 5.45],
-[0.325, 0.446, 5.46],
-[0.310, 0.469, 5.47],
-[0.077, 0.030, 5.41],
-[0.056, 0.034, 5.41],
-[0.363, -0.451, 5.46],
-[-0.076, 0.133, 5.41],
-            ]
+    expected_count_list = [36, 40, 35, 47, 52, 33, 40] # 3/1/21
+    nv_list_2021_03_17 = [
+[-0.020, 0.109, 4.95],
+[-0.056, 0.104, 4.95],
+[0.088, 0.057, 4.95],
+[-0.019, 0.046, 4.95],
+[-0.009, 0.026, 4.95],
+[0.098, -0.130, 4.95],
+[-0.031, -0.131, 4.96],
+]
     
     nv_sig_list =[]
-    for i in [2]:# range(len(nv_list_2021_03_01)):
-        nv_coords = nv_list_2021_03_01[i]
+    for i in [1]:#range(len(nv_list_2021_03_17)):
+        nv_coords = nv_list_2021_03_17[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
-        nv_sig['expected_count_rate'] = expected_count_list[i]
-        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_03_01'.format(i)
+#        nv_sig['expected_count_rate'] = expected_count_list[i]
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_03_17'.format(i)
         nv_sig_list.append(nv_sig)
         
 #    nv_sig_list = [search]
@@ -611,21 +599,21 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        drift = [0.023,-0.02,0.1]# 1/18/2021, 12:56 am
+#        drift = [0.014, 0.0, 0.15]
 #        tool_belt.set_drift(drift)  
 #        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset 
 #        tool_belt.set_drift([-0.03,-0.02,-0.16])  # 2/23/21
 #        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-#        set_xyz([-0.308, -1.828, 5.0])
+#        set_xyz([-0.017, -0.037, 5.0])
 #        set_xyz([0.0, 0.0,  4.47])
         
 #        set_xyz([-0.126, 0.359,  5.6])
 
       
 #        with labrad.connect() as cxn:
-#            set_xyz([0,0,5])
-#            cxn.filter_slider_ell9k.set_filter('nd_0')           
+#            set_xyz([0,0, 5.0])
+#            cxn.filter_slider_ell9k_color.set_filter('no_filter')#715 lp')           
 #            cxn.pulse_streamer.constant([3], 0.0, 0.0)
 #            time.sleep(1)
 #            cxn.objective_piezo.write(5.1)
@@ -641,13 +629,14 @@ if __name__ == '__main__':
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]
 #            with labrad.connect() as cxn:
-#                cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
-#                cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
+#                cxn.filter_slider_ell9k.set_filter('nd_0')
+#                cxn.filter_slider_ell9k_color.set_filter('no_filter')
 #    
-            do_optimize(nv_sig, apd_indices, '515a')
+#            do_optimize(nv_sig, apd_indices, '515a')
+#            do_optimize(nv_sig, apd_indices, 532)
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
-#            for z in numpy.linspace(5.0, 3.0, 9):
+#            for z in numpy.linspace(4.85, 5.15, 4):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]  

@@ -32,5 +32,10 @@ def measure_pd_power(color_ind, laser_power, nd_filter):
 
 # %%
 if __name__ == '__main__':
-    pd = measure_pd_power(589, 0.0, 'nd_0')
+    pd = measure_pd_power(589, 0.6, 'nd_1.5') #0.05 - 0.6, every 0.05
+    # nd filters:
+    # 'nd_0'
+    # 'nd_0.5'
+    # 'nd_1.0'
+    # 'nd_1.5'
     print(str(pd) + ' V')

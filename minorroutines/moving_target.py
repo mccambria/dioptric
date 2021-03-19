@@ -606,6 +606,8 @@ def do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, 
     # Statistics
     readout_counts_avg = numpy.average(readout_counts_array, axis=1)
     readout_counts_ste = stats.sem(readout_counts_array, axis=1)
+    target_counts_avg = numpy.average(target_counts_array, axis=1)
+    target_counts_ste = stats.sem(target_counts_array, axis=1)
     
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -619,6 +621,14 @@ def do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, 
     ax.set_xlabel('Distance from readout NV (um)')
     ax.set_ylabel('Average counts')
     ax.set_title('Stationary readout NV, moving target ({} init, {} s {} pulse)'.\
+                                    format(init_color, pulse_time/10**9, pulse_color))
+    ax.legend()
+    
+    fig_target, ax = plt.subplots(1, 1, figsize=(10, 10))
+    ax.plot(rad_dist*35,target_counts_avg, label = nv_sig['name'])
+    ax.set_xlabel('Distance from readout NV (um)')
+    ax.set_ylabel('Average counts')
+    ax.set_title('Remote target counts, ({} init, {} s {} pulse)'.\
                                     format(init_color, pulse_time/10**9, pulse_color))
     ax.legend()
     
@@ -660,14 +670,17 @@ def do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, 
 
             'readout_counts_avg': readout_counts_avg.tolist(),
             'readout_counts_avg-units': 'counts',
+            'target_counts_avg': target_counts_avg.tolist(),
+            'target_counts_avg-units': 'counts',
 
-            'readout_counts_ste': readout_counts_ste.tolist(),
-            'readout_counts_ste-units': 'counts',
+            'target_counts_ste': target_counts_ste.tolist(),
+            'target_counts_ste-units': 'counts',
             }
     
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path)
     tool_belt.save_figure(fig, file_path)
+    tool_belt.save_figure(fig_target, file_path + '-target_counts')
     
     return
 # %% UNTESTED
@@ -1091,7 +1104,7 @@ if __name__ == '__main__':
 
 
     base_sig = { 'coords':[], 
-            'name': '{}-2021_03_01'.format(sample_name),
+            'name': '{}-2021_03_17'.format(sample_name),
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
@@ -1108,62 +1121,52 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 #    start_coords = base_sig['coords']
-    expected_count_list = [36, 30, 38, 43, 33, 
-                           44, 43, 29, 38, 41, 
-                           40, 43, 40, 29, 45, 
-                           55] # 3/1/21
+    expected_count_list = [36, 40, 35, 47, 52, 33, 40] # 3/1/21
     start_coords_list = [
-[0.038, 0.095, 5.37],
-[-0.077, 0.067, 5.40],
-[0.063, 0.014, 5.39],
-[-0.081, 0.103, 5.41],
-[0.337, -0.381, 5.38],
-[0.344, -0.472, 5.44],
-[0.004, -0.084, 5.42],
-[-0.023, -0.061, 5.45],
-[-0.077, 0.120, 5.48],
-[0.306, 0.445, 5.45],
-[0.325, 0.446, 5.46],
-[0.310, 0.469, 5.47],
-[0.077, 0.030, 5.41],
-[0.056, 0.034, 5.41],
-[0.363, -0.451, 5.46],
-[-0.076, 0.133, 5.41],
-            ]
+[-0.020, 0.109, 4.95],
+[-0.056, 0.104, 4.95],
+[0.088, 0.057, 4.95],
+[-0.019, 0.046, 4.95],
+[-0.009, 0.026, 4.95],
+[0.098, -0.130, 4.95],
+[-0.031, -0.131, 4.96],
+]
     
 
 #    end_coords = end_coords.tolist()
-    num_steps = 40
+    num_steps = 20
 #    num_runs = 50
 #    img_range = 0.45
-    optimize_nv_ind = 3
-    optimize_coords = start_coords_list[optimize_nv_ind]
+#    optimize_nv_ind = 3
+#    optimize_coords = start_coords_list[optimize_nv_ind]
  
-    for s in [3]:
+    for s in [1]:
+         optimize_nv_ind = s
+         optimize_coords = start_coords_list[optimize_nv_ind]
          x, y, z = start_coords_list[s]
          start_coords = [x, y, z]
-         end_coords = [x , y - 0.15, z]
+         end_coords = [x + 0.15 , y, z]
          init_color = '515a'
          pulse_color = '515a'
          nv_sig = copy.deepcopy(base_sig)
          # Set up for current NV
-         nv_sig['name']= 'goeppert-mayer-nv{}_2021_03_01'.format(s)
+         nv_sig['name']= 'goeppert-mayer-nv{}_2021_03_17'.format(s)
          nv_sig['expected_count_rate'] = expected_count_list[optimize_nv_ind]
 #         # Set up for NV band
-#         nv_sig['color_filter'] = '635-715 bp'
-#         nv_sig['nd_filter'] = 'nd_1.0'
-#         nv_sig['am_589_power'] = 0.25
-#         nv_sig['pulsed_SCC_readout_dur'] = 7*10**7
+         nv_sig['color_filter'] = '635-715 bp'
+         nv_sig['nd_filter'] = 'nd_1.0'
+         nv_sig['am_589_power'] = 0.25
+         nv_sig['pulsed_SCC_readout_dur'] = 4*10**7
          # Set up for SiV band
-         nv_sig['color_filter'] = '715 lp'
-         nv_sig['nd_filter'] = 'nd_0'
-         nv_sig['am_589_power'] = 0.6
-         nv_sig['pulsed_SCC_readout_dur'] = 5*10**7
+#         nv_sig['color_filter'] = '715 lp'
+#         nv_sig['nd_filter'] = 'nd_0'
+#         nv_sig['am_589_power'] = 0.6
+#         nv_sig['pulsed_SCC_readout_dur'] = 5*10**7
          # Measurements
-         t =10*10**6
+#         t =10*10**6
 #         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)
-#         t =10**7
-         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.3, t, num_steps, 20, init_color, pulse_color, False)
+         t =50*10**6
+         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, 20, init_color, pulse_color, False)
 #         do_moving_target_2D_image(nv_sig, start_coords, optimize_coords, 0.3, t, num_steps, 60,init_color, pulse_color, True)
 #         do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, t, 
-#                             40, 300, init_color, pulse_color)
+#                             30, 50, init_color, pulse_color)

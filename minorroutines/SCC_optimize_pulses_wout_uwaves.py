@@ -646,31 +646,19 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
         
-    expected_count_list = [36, 30, 38, 43, 33, 
-                           44, 43, 29, 38, 41, 
-                           40, 43, 40, 29, 45, 
-                           55] # 3/1/21
+    expected_count_list = [36, 40, 35, 47, 52, 33, 40] # 3/1/21
     nv_coords_list = [
-[0.038, 0.095, 5.37],
-[-0.077, 0.067, 5.40],
-[0.063, 0.014, 5.39],
-[-0.081, 0.103, 5.41],
-[0.337, -0.381, 5.38],
-[0.344, -0.472, 5.44],
-[0.004, -0.084, 5.42],
-[-0.023, -0.061, 5.45],
-[-0.077, 0.120, 5.48],
-[0.306, 0.445, 5.45],
-[0.325, 0.446, 5.46],
-[0.310, 0.469, 5.47],
-[0.077, 0.030, 5.41],
-[0.056, 0.034, 5.41],
-[0.363, -0.451, 5.46],
-[-0.076, 0.133, 5.41],
-            ]
+[-0.020, 0.109, 4.95],
+[-0.056, 0.104, 4.95],
+[0.088, 0.057, 4.95],
+[-0.019, 0.046, 4.95],
+[-0.009, 0.026, 4.95],
+[0.098, -0.130, 4.95],
+[-0.031, -0.131, 4.96],
+]
     
-    nv_2021_03_01 = { 'coords':[], 
-            'name': 'goepert-mayer-nv_2021_03_01',
+    nv_2021_03_17 = { 'coords':[], 
+            'name': 'goepert-mayer-nv_2021_03_17',
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
@@ -686,11 +674,11 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    for i in [2,6, 8]:#range(len(nv_coords_list)):
-        nv_sig = copy.deepcopy(nv_2021_03_01)
+    for i in [1, 4, 6]:#range(len(nv_coords_list)):
+        nv_sig = copy.deepcopy(nv_2021_03_17)
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
-        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_03_01'.format(i)
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_03_17'.format(i)
         nv_sig['nd_filter'] = 'nd_1.0'
         nv_sig['am_589_power'] = 0.25
         optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3, 

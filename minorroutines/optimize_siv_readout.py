@@ -222,7 +222,7 @@ def optimize_readout_pulse_length(nv_sig,readout_color,  test_pulse_dur_list  = 
                                2*10**7,3*10**7,4*10**7,5*10**7]
                                 ):
     apd_indices = [0]
-    num_reps = 50
+    num_reps = 100
     # Make sure that we are in the SiV band
     nv_sig['color_filter'] = '715 lp'
 #    nv_sig['color_filter'] = '635-715 bp'
@@ -324,13 +324,13 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
     
-    nv3_2021_03_01 = { 'coords': [-0.081, 0.096, 5.48], 
-            'name': '{}-nv3_2021_03_01'.format(sample_name),
-            'expected_count_rate': 40, 'nd_filter': 'nd_0',
+    nv1_2021_03_17 = { 'coords': [-0.056, 0.104, 4.95], 
+            'name': '{}-nv1_2021_03_17'.format(sample_name),
+            'expected_count_rate': 40, 'nd_filter': 'nd_1.0',
 #            'color_filter': '635-715 bp', 
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.6, 
+            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.25, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -348,4 +348,4 @@ if __name__ == '__main__':
 #            nv_sig = copy.deepcopy(nv0_2021_01_26)
 #            nv_sig['nd_filter'] = nd
 #            nv_sig['am_589_power'] = p
-    optimize_readout_pulse_length(nv3_2021_03_01, 589) 
+    optimize_readout_pulse_length(nv1_2021_03_17, 589, test_pulse_dur_list = [4*10**7]) 
