@@ -43,14 +43,14 @@ def get_seq(pulser_wiring, args):
     # %% Parse wiring and args
     
     durations = []
-    for ind in range(4):
+    for ind in range(5):
         durations.append(numpy.int64(args[ind]))
     # Unpack the durations
-    uwave_dur, gap, switch_delay, iq_delay = durations
+    buffer, uwave_dur, gap, switch_delay, iq_delay = durations
     half_gap = numpy.int64(gap / 2)
     gap_remainder = gap - half_gap - 10
     
-    sig_gen = args[4]
+    sig_gen = args[5]
 
     pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']
     if sig_gen == 'sg394':
@@ -62,10 +62,10 @@ def get_seq(pulser_wiring, args):
     
     seq = Sequence()
     
-    train = [(uwave_dur, HIGH), (gap, LOW), (uwave_dur, HIGH)]
+    train = [(buffer - switch_delay, LOW), (uwave_dur, HIGH), (gap, LOW), (uwave_dur, HIGH), (switch_delay, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
     
-    train = [(uwave_dur + half_gap, LOW), (10, HIGH), (gap_remainder + uwave_dur, LOW)]
+    train = [(buffer - iq_delay, LOW), (uwave_dur + half_gap, LOW), (10, HIGH), (gap_remainder + uwave_dur, LOW), (iq_delay, LOW)]
     seq.setDigital(pulser_do_arb_wave_trigger, train)
 
     # %% Turn everything off at the end
@@ -80,6 +80,7 @@ if __name__ == '__main__':
               'do_638_laser': 7, 'do_apd_0_gate': 5, 'do_arb_wave_trigger': 2,
               'do_sample_clock': 0, 'do_signal_generator_bnc835_gate': 1,
               'do_signal_generator_sg394_gate': 4}
-    seq_args = [320, 48, 0, 0, 'sg394']
+    # buffer, uwave_dur, gap, switch_delay, iq_delay, sig_gen
+    seq_args = [100, 400, 32, 50, 0, 'sg394']
     seq = get_seq(wiring, seq_args)[0]
     seq.plot()

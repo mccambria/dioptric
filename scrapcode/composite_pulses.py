@@ -36,20 +36,26 @@ def main():
 
 def main_with_cxn(cxn):
     
-    # sig_gen_cxn = cxn.signal_generator_tsg4104a
-    sig_gen_cxn = cxn.signal_generator_sg394
+    sig_gen_cxn = cxn.signal_generator_tsg4104a
+    # sig_gen_cxn = cxn.signal_generator_sg394
     sig_gen_cxn.set_freq(0.4)
     sig_gen_cxn.set_amp(10)
     sig_gen_cxn.load_iq()
     sig_gen_cxn.uwave_on()
     
     cxn.arbitrary_waveform_generator.iq_switch()
-    # uwave_dur, gap, switch_delay, iq_delay, sig_gen
+    
+    time.sleep(1)
+    
+    # buffer, uwave_dur, gap, switch_delay, iq_delay, sig_gen
     # seq_args = [3200, 48, 0, 0, 'tsg4104a']
-    seq_args = [160, 16, 0, 0, 'sg394']
+    # seq_args = [1200, 400, 200, 0, 0, 'sg394']
+    # seq_args = [1000, 800, 0, 1000, 0, 'sg394']
+    # seq_args = [1200, 240, 0, 0, 1050, 'sg394']  # 570 sg394
+    seq_args = [1000, 240, 20, 0, 560, 'tsg4104a']  # 560 tsg4104a
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_immediate('composite_pulses.py',
-                                                    -1, seq_args_string)
+                                                   1, seq_args_string)
     
     # cxn.arbitrary_waveform_generator.test_sin()
     

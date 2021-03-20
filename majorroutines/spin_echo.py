@@ -83,19 +83,20 @@ def theta_B_cost_func(theta_B, center_freq, mag_B,
     return numpy.sqrt(diff_low**2 + diff_high**2)
 
 
-def plot_resonances_vs_theta_B(folder, file, center_freq):
+def plot_resonances_vs_theta_B(data, center_freq=None):
 
     # %% Setup
 
-    fit_func, popt, stes, fit_fig = fit_data_from_file(folder, file)
+    fit_func, popt, stes, fit_fig = fit_data(data)
     if (fit_func is None) or (popt is None):
         print('Fit failed!')
         return
 
-    data = tool_belt.get_raw_data(folder, file)
     nv_sig = data['nv_sig']
     resonance_LOW = nv_sig['resonance_LOW']
     resonance_HIGH = nv_sig['resonance_HIGH']
+    # resonance_LOW = 2.8190
+    # resonance_HIGH = 2.9321
 
     revival_time = popt[1]
     revival_time_ste = stes[1]
@@ -106,6 +107,8 @@ def plot_resonances_vs_theta_B(folder, file, center_freq):
     # Find the angle that minimizes the distances of the predicted resonances
     # from the measured resonances
     theta_B = None
+    if center_freq is None:
+        center_freq = (resonance_LOW + resonance_HIGH) / 2
     args = (center_freq, mag_B, resonance_LOW, resonance_HIGH)
     result = minimize_scalar(theta_B_cost_func, bounds=(0, pi/2), args=args,
                              method='bounded')
@@ -151,13 +154,7 @@ def plot_resonances_vs_theta_B(folder, file, center_freq):
     ax.set_ylabel('Resonances (GHz)')
     ax.legend()
 
-    # %% Save and return
-
-    fig_file = file + '-theta_B'
-    file_path = tool_belt.get_data_path() / folder / fig_file
-    tool_belt.save_figure(fig, file_path)
-
-    return theta_B
+    return fit_func, popt, stes, fit_fig, theta_B, fig
 
 
 # %% Functions
@@ -182,9 +179,8 @@ def quartic(tau, offset, revival_time, decay_time,
     return tally
 
 
-def fit_data_from_file(folder, file):
+def fit_data(data):
 
-    data = tool_belt.get_raw_data(folder, file)
     precession_dur_range = data['precession_time_range']
     sig_counts = data['sig_counts']
     ref_counts = data['ref_counts']
@@ -195,14 +191,6 @@ def fit_data_from_file(folder, file):
     state = data['state']
     nv_sig = data['nv_sig']
     rabi_period = nv_sig['rabi_{}'.format(state)]
-
-    ret_vals = fit_data(precession_dur_range, rabi_period,
-                        num_steps, num_runs, sig_counts, ref_counts, folder, file)
-    return ret_vals
-
-
-def fit_data(precession_dur_range, rabi_period,
-             num_steps, num_runs, sig_counts, ref_counts, folder, file):
 
     # %% Set up
 
@@ -250,7 +238,7 @@ def fit_data(precession_dur_range, rabi_period,
 #    amplitude = 0.07
 #    offset = 0.93
 #    decay_time = 2000.0
-    # revival_time = 40000
+    revival_time = 45000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -281,13 +269,13 @@ def fit_data(precession_dur_range, rabi_period,
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(precession_dur_range, rabi_period,
                                     num_steps, norm_avg_sig, norm_avg_sig_ste,
-                                    fit_func, popt, file, folder)
+                                    fit_func, popt)
 
     return fit_func, popt, stes, fit_fig
 
 def create_fit_figure(precession_dur_range, rabi_period,
                       num_steps, norm_avg_sig, norm_avg_sig_ste,
-                      fit_func, popt, file, folder):
+                      fit_func, popt):
 
     min_precession_dur = precession_dur_range[0]
     max_precession_dur = precession_dur_range[1]
@@ -330,10 +318,6 @@ def create_fit_figure(precession_dur_range, rabi_period,
     fit_fig.canvas.draw()
     fit_fig.set_tight_layout(True)
     fit_fig.canvas.flush_events()
-
-    fig_file = file + '-fit'
-    file_path = tool_belt.get_data_path() / folder / fig_file
-    tool_belt.save_figure(fit_fig, file_path)
 
     return fit_fig
 
@@ -670,6 +654,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
+    
+    # %% Fit and save figs
+    
+    ret_vals = plot_resonances_vs_theta_B(raw_data)  
+    fit_func, popt, stes, fit_fig, theta_B, angle_fig = ret_vals
+    
+    tool_belt.save_figure(fit_fig, file_path + '-fit')
+    tool_belt.save_figure(angle_fig, file_path + '-angle')
 
 
 # %% Run the file
@@ -677,16 +669,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 if __name__ == '__main__':
 
-    # %% nv7_2019_11_27
-
-    # The 'edit' files are the high quality 0 deg spin echo data with the
-    # resonances from rotated experiments manually punched in
-
-    # zfs in GHz
-    center_freq = 2.877  
     path = 'pc_hahn/branch_cryo-setup/spin_echo/2021_03'
-    file = '2021_03_15-22_32_53-hopper-nv2_2021_03_15'
+    file = '2021_03_19-18_41_11-hopper-nv1_2021_03_16'
+    
+    data = tool_belt.get_raw_data(path, file)
 
-    fit_func, popt, stes, fit_fig = fit_data_from_file(path, file)
+    # fit_func, popt, stes, fit_fig = fit_data_from_file(path, file)
 
-    plot_resonances_vs_theta_B(path, file, center_freq)
+    plot_resonances_vs_theta_B(data)  
