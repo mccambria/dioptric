@@ -25,6 +25,7 @@ import majorroutines.resonance as resonance
 import majorroutines.pulsed_resonance as pulsed_resonance
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
+import majorroutines.discrete_rabi as discrete_rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.t1_interleave as t1_interleave
@@ -35,6 +36,7 @@ import majorroutines.lifetime_v2 as lifetime_v2
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
+import time
 
 
 # %% Minor Routines
@@ -195,13 +197,27 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
                uwave_power, uwave_pulse_dur)
 
 def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
-
+ 
     num_steps = 51
     num_reps = 1 * 10**4
     num_runs = 8
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
+
+def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
+
+    num_reps = 2 * 10**4
+    num_runs = 10
+        
+    discrete_rabi.main(nv_sig, apd_indices,
+                        state, max_num_pi_pulses, num_reps, num_runs, 555)
+
+    # for t in numpy.linspace(555,565,11):
+        
+    #     discrete_rabi.main(nv_sig, apd_indices,
+    #                         state, max_num_pi_pulses, num_reps, num_runs, int(t))
+    #     time.sleep(10)
 
 def do_t1_battery(nv_sig, apd_indices):
 
@@ -433,7 +449,7 @@ if __name__ == '__main__':
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
             'resonance_LOW': 2.8196, 'rabi_LOW': 217.8, 'uwave_power_LOW': 14.5,
-            'resonance_HIGH': 2.9314, 'rabi_HIGH': 150.1, 'uwave_power_HIGH': 12.0}
+            'resonance_HIGH': 2.9314, 'rabi_HIGH': 185.0, 'uwave_power_HIGH': 12.0}
     
     # nv_sig = { 'coords': [0.1, 0.0, 70],
     #         'name': '{}-nv2_2021_03_15'.format(sample_name),
@@ -456,12 +472,13 @@ if __name__ == '__main__':
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_stationary_count(nv_sig, apd_indices)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.1)
-        do_pulsed_resonance(nv_sig, apd_indices, 2.876, 0.15)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.876, 0.15)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 750])
+        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)

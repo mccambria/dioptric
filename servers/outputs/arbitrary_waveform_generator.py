@@ -78,11 +78,15 @@ class ArbitraryWaveformGenerator(LabradServer):
             self.wave_gen.write('{}FUNC:ARB:ADV TRIG'.format(source_name))
             self.wave_gen.write('{}FUNC:ARB:PTP 2'.format(source_name))
         
-        # It would be nice if we could just write '0.5, 0.0', but there's a
-        # minimum number of points
-        seq = '0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0'
+        # There's a minimum number of points, thus * 16
+        # seq = '0.5, 0.0, ' * 16
+        seq = '-0.5, 0.5, 0.0, 0.5, -0.5, 0.0, ' * 8
+        seq = seq[:-2]
         self.wave_gen.write('SOUR1:DATA:ARB iqSwitch1, {}'.format(seq))
-        seq = '0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5'
+        # seq = '0.0, 0.5, ' * 16
+        # seq = '0.0, 0.5, 0.0, -0.5, ' * 8
+        seq = '0.0, 0.0, 0.5, 0.0, 0.0, 0.5, ' * 8
+        seq = seq[:-2]
         self.wave_gen.write('SOUR2:DATA:ARB iqSwitch2, {}'.format(seq))
         
         for chan in [1, 2]:
@@ -104,6 +108,10 @@ class ArbitraryWaveformGenerator(LabradServer):
         
     async def force_trigger(self):
         self.client.pulse_streamer.constant([self.do_arb_wave_trigger])
+        # time.sleep(0.1) 
+        # self.client.pulse_streamer.constant()
+        # time.sleep(0.1) 
+        # self.client.pulse_streamer.constant([self.do_arb_wave_trigger])
         
     def on_force_trigger(self):
         # Some delays included here to be sure everything actually happens
