@@ -67,6 +67,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     aom_delay_time = shared_params['532_aom_delay']
     gate_time = nv_sig['pulsed_readout_dur']
     uwave_delay_time = shared_params['uwave_delay']
+    # uwave_delay_time = 500
     # iq_delay_time = 560
     # signal_wait_time = 1000
 

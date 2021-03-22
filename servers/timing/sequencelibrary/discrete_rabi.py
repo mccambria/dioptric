@@ -136,6 +136,6 @@ if __name__ == '__main__':
               'do_sample_clock': 0, 'do_signal_generator_tsg4104a_gate': 1,
               'do_signal_generator_sg394_gate': 4}
 #    args = [0, 3000, 1000, 1000, 2000, 1000, 1000, 300, 150, 0, 3]
-    args = [2000, 1000, 1000, 2000, 1000, 0, 0, 0, 350, 92, 46, 2, 8, 0, 3]
+    args = [2000, 1000, 1000, 2000, 1000, 0, 0, 0, 350, 92, 46, 18, 20, 0, 3]
     seq = get_seq(wiring, args)[0]
     seq.plot()

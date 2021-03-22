@@ -208,7 +208,8 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
     num_reps = 2 * 10**4
-    num_runs = 10
+    # num_reps = 5000
+    num_runs = 4
         
     discrete_rabi.main(nv_sig, apd_indices,
                         state, max_num_pi_pulses, num_reps, num_runs, 555)
