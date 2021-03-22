@@ -14,6 +14,7 @@ Created on Tue Apr 23 11:49:23 2019
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
+from numpy import pi
 import os
 import time
 import matplotlib.pyplot as plt
@@ -22,10 +23,88 @@ from scipy.optimize import curve_fit
 import labrad
 
 
+# %% Constants
+
+
+pi_on_2 = numpy.pi / 2
+
+
 # %% Functions
 
 
+def rotate(state, axis, angle):
+    
+    return numpy.matmul(rotation_matrix(axis, angle), state)
 
+
+def rotation_matrix(axis, angle):
+    
+    if axis == 'x':
+        return numpy.array([[numpy.cos(angle/2), -1J*numpy.sin(angle/2)],
+                            [-1J*numpy.sin(angle/2), numpy.cos(angle/2)]])
+    if axis == 'y':
+        return numpy.array([[numpy.cos(angle/2), -numpy.sin(angle/2)],
+                            [numpy.sin(angle/2), numpy.cos(angle/2)]])
+    if axis == 'z':
+        return numpy.array([[numpy.exp(-1J*angle/2), 0],
+                            [0, numpy.exp(1J*angle/2)]])
+
+
+def simulate(drive_res, drive_rabi, nv_res, nv_rabi, num_pulses):
+    
+    pulses_list = list(range(num_pulses+1))
+    pops = []
+    
+    num_samples = 50
+    # nv_rabi_distr = numpy.random.normal(100, 8, num_samples)
+    nv_res_distr = numpy.random.normal(2.870, 0.003, num_samples)
+    # drive_rabi_distr = numpy.random.normal(100, 8, num_samples)
+    # drive_rabi_distr = numpy.linspace(0, 200, num_samples)
+    
+    for el in pulses_list:
+        
+        sum_pops = 0
+        # for nv_rabi in nv_rabi_distr:
+        for nv_res in nv_res_distr:
+        # for drive_rabi in drive_rabi_distr:
+            val = simulate_single(drive_res, drive_rabi,
+                                  nv_res, nv_rabi, el)
+            sum_pops += val
+            
+        avg_pops = sum_pops / num_samples
+        pops.append(avg_pops)
+    
+    fig, ax = plt.subplots(figsize=(5, 5))
+    fig.set_tight_layout(True)
+    ax.set_ylim([0,1])
+    ax.plot(pulses_list, pops)
+    
+
+
+def simulate_single(drive_res, drive_rabi, nv_res, nv_rabi, num_pulses):
+    
+    detuning = drive_res - nv_res
+    nv_rabi = numpy.sqrt(detuning**2 + (1/drive_rabi)**2)
+    nv_rabi = 1/nv_rabi
+    
+    drive_prop = drive_rabi / nv_rabi
+    
+    # Start at the top of the Bloch sphere
+    state = numpy.array([1,0])
+    
+    for i in range(num_pulses):
+    
+        state = rotate(state, 'x', drive_prop * pi/2)
+        state = rotate(state, 'z', drive_rabi * pi/2 * detuning)
+        state = rotate(state, 'y', drive_prop * pi)
+        state = rotate(state, 'z', drive_rabi * pi * detuning)
+        state = rotate(state, 'x', drive_prop * pi/2)
+        state = rotate(state, 'z', drive_rabi * pi/2 * detuning)
+        
+    excited_component = state[1]
+    excited_projection = numpy.real(numpy.conj(excited_component) * excited_component)
+    return 1-excited_projection
+    
 
 
 # %% Main
@@ -284,12 +363,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
 
 
 if __name__ == '__main__':
-
-    path = 'pc_hahn/branch_cryo-setup/rabi/2021_03'
-    file = '2021_03_06-16_07_29-johnson-nv14_2021_02_26'
-    data = tool_belt.get_raw_data(path, file)
-
-    norm_avg_sig = data['norm_avg_sig']
-    uwave_time_range = data['uwave_time_range']
-    num_steps = data['num_steps']
-    uwave_freq = data['uwave_freq']
+    
+    # drive_res, drive_rabi, nv_res, nv_rabi, num_pulses
+    # print(simulate_single(2.87, 90, 2.87, 100, 1))
+    
+    simulate(2.87, 100, 2.87, 100, 8)
