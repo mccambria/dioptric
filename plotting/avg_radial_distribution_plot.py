@@ -350,47 +350,35 @@ def plot_moving_target_1D_line_2_data(file_list, pulse_length):
 # %% 
 if __name__ == '__main__':
     # %% Moving target 2D 1/11
-    nv_file_list = ['2021_01_12-01_20_51-goeppert-mayer-nv0_2021_01_07',
-                    '2021_01_11-22_56_44-goeppert-mayer-nv1_2021_01_07',
-                    '2021_01_12-06_09_27-goeppert-mayer-nv2_2021_01_07',
-                    '2021_01_12-03_45_08-goeppert-mayer-nv3_2021_01_07',]
-    siv_file_list_100us = ['2021_01_11-23_28_42-goeppert-mayer-nv0_2021_01_07',
-                           '2021_01_11-21_04_45-goeppert-mayer-nv1_2021_01_07',
-                           '2021_01_12-04_17_13-goeppert-mayer-nv2_2021_01_07',
-                           '2021_01_12-01_52_52-goeppert-mayer-nv3_2021_01_07',]
-    siv_file_list_1ms = ['2021_01_12-00_01_26-goeppert-mayer-nv0_2021_01_07',
-                         '2021_01_11-21_37_25-goeppert-mayer-nv1_2021_01_07',
-                         '2021_01_12-04_49_59-goeppert-mayer-nv2_2021_01_07',
-                         '2021_01_12-02_25_41-goeppert-mayer-nv3_2021_01_07',]
-    siv_file_list_10ms = ['2021_01_12-00_41_25-goeppert-mayer-nv0_2021_01_07',
-                          '2021_01_11-22_17_21-goeppert-mayer-nv1_2021_01_07',
-                          '2021_01_12-05_29_57-goeppert-mayer-nv2_2021_01_07',
-                          '2021_01_12-03_05_43-goeppert-mayer-nv3_2021_01_07']
+    nv_file_list = ['2021_03_21-13_15_41-goeppert-mayer-nv1-2021_03_17', # dark
+                    '2021_03_22-16_24_06-goeppert-mayer-nv1-2021_03_17', # bright
+                    '2021_03_20-10_39_33-goeppert-mayer-nv1-2021_03_17', # none
+                    ]
     
     pc_name = 'pc_rabi'
     branch_name = 'branch_Spin_to_charge'
-    data_folder = 'moving_target'
-    sub_folder = '2021_01'
+    data_folder = 'moving_target_siv_init'
+    sub_folder = '2021_03'
     
     color = 'tab:blue'
-    
+    labels = ['SiV dark reset', 'SiV bright reset', 'No SiV reset']
     fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
-    for i in [0,1,2,3]:
+    for i in [0,1, 2]:
         try:
-            file = siv_file_list_1ms[i]
+            file = nv_file_list[i]
             # file_9 = nv_file_list_9[i]
             radii, counts_r=plot_radial_avg_moving_target(file, pc_name, branch_name, data_folder, 
                                                           sub_folder, do_plot = False, save_plot =  False)
             print(len(counts_r))
             # radii_9, counts_r_9=plot_radial_avg_moving_target(file_9, pc_name, branch_name, data_folder, 
             #                                               sub_folder, do_plot = False, save_plot =  False)
-            ax1.plot(radii, counts_r, label = 'nv{}'.format(i))
+            ax1.plot(radii, counts_r, label = labels[i])
             # ax1.plot(radii_9, counts_r_9, label = '1/9')
         except Exception:
             continue
     ax1.set_xlabel('Radial distance (um)')
-    ax1.set_ylabel('Azimuthal avg counts (kcps) [715 nm longpass]')
-    ax1.set_title('Radial plot of moving target SiV band\n532 nm init pulse\n1 ms 532 nm pulse')
+    ax1.set_ylabel('Azimuthal avg counts (kcps)')
+    ax1.set_title('Radial plot of moving target w/ SiV reset\n50 ms 532 nm remote pulse')
     ax1.legend()
     
     # for i in range(len(nv_file_list)):

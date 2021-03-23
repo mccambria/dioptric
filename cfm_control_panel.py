@@ -570,23 +570,23 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
 
     
-    expected_count_list = [36, 40, 35, 47, 52, 33, 40] # 3/1/21
+    expected_count_list = [36, 40, 35, 47, 52, 40, 40] # 3/1/21
     nv_list_2021_03_17 = [
-[-0.020, 0.109, 4.95],
-[-0.056, 0.104, 4.95],
-[0.088, 0.057, 4.95],
-[-0.019, 0.046, 4.95],
-[-0.009, 0.026, 4.95],
-[0.098, -0.130, 4.95],
-[-0.031, -0.131, 4.96],
+[-0.008, 0.109, 5.03],
+[-0.044, 0.104, 5.05],
+[0.095, 0.041, 5.05],
+[-0.009, 0.047, 5.02],
+[0.001, 0.028, 5.03],
+[0.108, -0.131, 5.07],
+[-0.021, -0.129, 5.08],
 ]
     
     nv_sig_list =[]
-    for i in [1]:#range(len(nv_list_2021_03_17)):
+    for i in [1,6]:#range(len(nv_list_2021_03_17)):
         nv_coords = nv_list_2021_03_17[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
-#        nv_sig['expected_count_rate'] = expected_count_list[i]
+        nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_03_17'.format(i)
         nv_sig_list.append(nv_sig)
         
