@@ -79,13 +79,12 @@ class ArbitraryWaveformGenerator(LabradServer):
             self.wave_gen.write('{}FUNC:ARB:PTP 2'.format(source_name))
         
         # There's a minimum number of points, thus * 16
-        seq = '0.5, 0.0, ' * 16
-        # seq = '-0.5, 0.5, 0.0, 0.5, -0.5, 0.0, ' * 8
+        seq = '0.5, 0.5, ' * 16
+        # seq = '0.5, 0.5, 0.0, 0.5, 0.5, 0.0, ' * 8
         seq = seq[:-2]
         self.wave_gen.write('SOUR1:DATA:ARB iqSwitch1, {}'.format(seq))
-        seq = '0.0, 0.5, ' * 16
-        # seq = '0.0, 0.5, 0.0, -0.5, ' * 8
-        # seq = '0.0, 0.0, 0.5, 0.0, 0.0, 0.5, ' * 8
+        seq = '0.5, -0.5, ' * 16
+        # seq = '0.0, 0.0, 0.5, 0.0, 0.0, -0.5, ' * 8
         seq = seq[:-2]
         self.wave_gen.write('SOUR2:DATA:ARB iqSwitch2, {}'.format(seq))
         

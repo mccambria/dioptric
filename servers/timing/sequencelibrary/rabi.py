@@ -104,10 +104,10 @@ def get_seq(pulser_wiring, args):
 if __name__ == '__main__':
     wiring = {'ao_589_aom': 1, 'ao_638_laser': 0, 'do_532_aom': 3,
               'do_638_laser': 7, 'do_apd_0_gate': 5, 'do_arb_wave_trigger': 6,
-              'do_sample_clock': 0, 'do_signal_generator_bnc835_gate': 1,
+              'do_sample_clock': 0, 'do_signal_generator_tsg4104a_gate': 1,
               'do_signal_generator_sg394_gate': 4}
 #    args = [0, 3000, 1000, 1000, 2000, 1000, 1000, 300, 150, 0, 3]
     # args = [120, 12000, 1000, 1000, 2000, 1000, 1060, 350, 120, 0, 1]
-    args = [60, 12000, 1000, 1000, 2000, 1000, 1060, 350, 120, 0, 1]
+    args = [78, 12000, 1000, 1000, 2000, 1000, 1060, 1000, 350, 78, 0, 3]
     seq = get_seq(wiring, args)[0]
     seq.plot()

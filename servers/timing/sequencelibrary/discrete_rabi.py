@@ -113,7 +113,7 @@ def get_seq(pulser_wiring, args):
     seq.setDigital(pulser_do_sig_gen_gate, train)
     
     # Switch the phase with the AWG
-    composite_pulse = [(10, HIGH), (buffer + uwave_pi_on_2_pulse+half_gap_time - 10, LOW), (10, HIGH), (uwave_pi_pulse+gap_time-10, LOW), (10, HIGH), (uwave_pi_on_2_pulse+half_gap_time-10 + buffer, LOW)]
+    composite_pulse = [(10, HIGH), (buffer + uwave_pi_on_2_pulse+half_gap_time-10, LOW), (10, HIGH), (uwave_pi_pulse+gap_time-10, LOW), (10, HIGH), (uwave_pi_on_2_pulse+half_gap_time-10 + buffer, LOW)]
     pre_duration = aom_delay_time + polarization_time + signal_wait_time - iq_delay_time - uwave_delay_time
     post_duration = signal_wait_time + polarization_time + \
         reference_wait_time + reference_time + \
@@ -136,6 +136,8 @@ if __name__ == '__main__':
               'do_sample_clock': 0, 'do_signal_generator_tsg4104a_gate': 1,
               'do_signal_generator_sg394_gate': 4}
 #    args = [0, 3000, 1000, 1000, 2000, 1000, 1000, 300, 150, 0, 3]
-    args = [2000, 1000, 1000, 2000, 1000, 0, 0, 0, 350, 92, 46, 18, 20, 0, 3]
-    seq = get_seq(wiring, args)[0]
+    # args = [12000, 1000, 1000, 2000, 1000, 1060, 1000, 555, 350, 92, 46, 1, 8, 0, 3]
+    # args = [500, 1000, 1000, 2000, 1000, 0, 0, 0, 350, 92, 46, 0, 4, 0, 3]
+    seq_args = [12000, 1000, 1000, 2000, 1000, 0, 0, 0, 350, 78, 39, 1, 1, 0, 3]
+    seq = get_seq(wiring, seq_args)[0]
     seq.plot()

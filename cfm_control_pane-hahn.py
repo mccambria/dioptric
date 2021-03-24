@@ -163,19 +163,21 @@ def do_pulsed_resonance(nv_sig, apd_indices,
 
 def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
-#    freq_range = 0.150
-#    num_steps = 51
-#    num_reps = 10**5
-#    num_runs = 1
+    # freq_range = 0.150
+    # num_steps = 51
+    # num_reps = 10**4
+    # num_runs = 8
     
     # Zoom
-    freq_range = 0.03
+    freq_range = 0.150
     num_steps = 51
     num_reps = 10**4
     num_runs = 8
+    
+    composite = True
 
     pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
-                          num_steps, num_reps, num_runs)
+                          num_steps, num_reps, num_runs, composite)
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
 
@@ -209,7 +211,7 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
     num_reps = 2 * 10**4
     # num_reps = 5000
-    num_runs = 4
+    num_runs = 8
         
     discrete_rabi.main(nv_sig, apd_indices,
                         state, max_num_pi_pulses, num_reps, num_runs, 555)
@@ -225,10 +227,10 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 40*10**6], 11, 1.0*10**3, 55],
-        [[States.HIGH, States.HIGH], [0, 40*10**6], 11, 1.0*10**3, 55],
-        [[States.ZERO, States.HIGH], [0, 75*10**6], 11, 0.5*10**3, 110],
-        [[States.ZERO, States.ZERO], [0, 75*10**6], 11, 0.5*10**3, 110]
+        [[States.HIGH, States.LOW], [0, 70*10**6], 11, 1.0*10**3, 60],
+        [[States.HIGH, States.HIGH], [0, 70*10**6], 11, 1.0*10**3, 60],
+        [[States.ZERO, States.HIGH], [0, 110*10**6], 11, 1.0*10**3, 60],
+        [[States.ZERO, States.ZERO], [0, 110*10**6], 11, 1.0*10**3, 60]
         ], dtype=object)
 
     # Loop through the experiments
@@ -445,12 +447,14 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.0, 0.0, 65],
+    nv_sig = { 'coords': [0.0, 0.0, 60],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.8196, 'rabi_LOW': 217.8, 'uwave_power_LOW': 14.5,
-            'resonance_HIGH': 2.9314, 'rabi_HIGH': 185.0, 'uwave_power_HIGH': 12.0}
+            'resonance_LOW': 2.8199, 'rabi_LOW': 225.6, 'uwave_power_LOW': 14.5,
+            # 'resonance_HIGH': 2.9290, 'rabi_HIGH': 156.4, 'uwave_power_HIGH': 12.0}
+            'resonance_HIGH': 2.9320, 'rabi_HIGH': 156.4, 'uwave_power_HIGH': 12.0}  # on res
+            # 'resonance_HIGH': 2.9850, 'rabi_HIGH': 156.4, 'uwave_power_HIGH': 12.0}
     
     # nv_sig = { 'coords': [0.1, 0.0, 70],
     #         'name': '{}-nv2_2021_03_15'.format(sample_name),
@@ -478,11 +482,11 @@ if __name__ == '__main__':
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 750])
-        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
-        # do_t1_battery(nv_sig, apd_indices)
+        do_t1_battery(nv_sig, apd_indices)
         
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(0,4)
@@ -493,7 +497,7 @@ if __name__ == '__main__':
         #         break
         #     do_optimize(nv_sig, apd_indices)
         #     do_image_sample(nv_sig, apd_indices)
-        #     time.sleep(300)
+        #     time.sleep(300) 
         
         # tool_belt.init_safe_stop()
         # for z in numpy.tile([0, -10],10):  
