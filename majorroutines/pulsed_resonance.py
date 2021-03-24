@@ -229,14 +229,14 @@ def simulate(res_freq, freq_range, contrast,
 
 
 def state(nv_sig, apd_indices, state, freq_range,
-          num_steps, num_reps, num_runs):
+          num_steps, num_reps, num_runs, composite=False):
 
     freq_center = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
     uwave_pulse_dur = nv_sig['rabi_{}'.format(state.name)] // 2
 
     resonance_list = main(nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state)
+         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state, composite)
 
     return resonance_list
 
@@ -245,16 +245,16 @@ def state(nv_sig, apd_indices, state, freq_range,
 
 def main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-         state=States.LOW):
+         state=States.LOW, composite=False):
 
     with labrad.connect() as cxn:
         resonance_list = main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-                  state)
+                  state, composite)
     return resonance_list
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-              state=States.LOW):
+              state=States.LOW, composite=False):
 
     # %% Initial calculations and setup
 
@@ -285,14 +285,28 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     background_wait_time = signal_wait_time  # not sure what this is
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
     aom_delay_time = shared_params['532_aom_delay']
+    uwave_delay_time = shared_params['uwave_delay']
+    iq_delay_time = 555
     readout = nv_sig['pulsed_readout_dur']
     gate_time = readout
     readout_sec = readout / (10**9)
-    seq_args = [uwave_pulse_dur, polarization_time, reference_time,
-                signal_wait_time, reference_wait_time,
-                background_wait_time, aom_delay_time,
-                gate_time, uwave_pulse_dur,
-                apd_indices[0], state.value]
+    if composite:
+        uwave_pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
+        uwave_pi_pulse = round(3 * nv_sig['rabi_{}'.format(state.name)] / 4)
+        uwave_pi_on_2_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 4)
+        seq_args = [polarization_time, reference_time,
+                    signal_wait_time, reference_wait_time,
+                    background_wait_time,
+                    aom_delay_time, uwave_delay_time, iq_delay_time,
+                    gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
+                    1, 1, apd_indices[0], state.value]
+        seq_args = [int(el) for el in seq_args]
+    else:
+        seq_args = [uwave_pulse_dur, polarization_time, reference_time,
+                    signal_wait_time, reference_wait_time,
+                    background_wait_time, aom_delay_time, uwave_delay_time,
+                    gate_time, uwave_pulse_dur,
+                    apd_indices[0], state.value]
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -319,25 +333,31 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
-        # Load the pulse streamer (must happen after optimize since optimize
-        # loads its own sequence)
-        ret_vals = cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
-
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):
-
+            
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
 
-            # Just assume the low state
             sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
             sig_gen_cxn.set_freq(freqs[step_ind])
             sig_gen_cxn.set_amp(uwave_power)
+            if composite:
+                sig_gen_cxn.load_iq()
+                cxn.arbitrary_waveform_generator.iq_switch()
             sig_gen_cxn.uwave_on()
+
+            # Load the pulse streamer (must happen after optimize and iq_switch
+            # since run their own sequences)
+            if composite:
+                ret_vals = cxn.pulse_streamer.stream_load('discrete_rabi.py', seq_args_string)
+            else:
+                ret_vals = cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
+                
 
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total

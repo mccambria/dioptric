@@ -502,8 +502,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 if __name__ == '__main__':
 
     path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-200K'
-    
+    folder = 'hopper-nv1_2021_03_16-295K'
+
     temp = 187.5
     est_omega = omega_calc(temp) / 1000
     print(est_omega)

@@ -57,9 +57,8 @@ def simulate(drive_res, drive_rabi, nv_res, nv_rabi, num_pulses):
     
     num_samples = 50
     # nv_rabi_distr = numpy.random.normal(100, 8, num_samples)
-    nv_res_distr = numpy.random.normal(2.870, 0.003, num_samples)
+    nv_res_distr = numpy.random.normal(2.870, 0.0005, num_samples)
     # drive_rabi_distr = numpy.random.normal(100, 8, num_samples)
-    # drive_rabi_distr = numpy.linspace(0, 200, num_samples)
     
     for el in pulses_list:
         
@@ -92,14 +91,49 @@ def simulate_single(drive_res, drive_rabi, nv_res, nv_rabi, num_pulses):
     # Start at the top of the Bloch sphere
     state = numpy.array([1,0])
     
+    # for i in range(num_pulses):
+    
+    #     state = rotate(state, 'x', drive_prop * pi/2)
+    #     state = rotate(state, 'z', drive_rabi * pi/2 * detuning)
+        
+    #     # state = rotate(state, 'z', drive_rabi * pi/2 * detuning)
+    #     state = rotate(state, 'y', drive_prop * pi)
+    #     state = rotate(state, 'z', drive_rabi * pi * detuning)
+        
+    #     state = rotate(state, 'z', drive_rabi * pi/2 * detuning)
+    #     state = rotate(state, 'x', drive_prop * pi/2)
+    
     for i in range(num_pulses):
     
-        state = rotate(state, 'x', drive_prop * pi/2)
+        
+        if i // 2 == 1:
+            ax1 = 'x'
+            ax2 = 'y'
+        else:
+            ax1 = 'y'
+            ax2 = 'x'
+            
+        state = rotate(state, ax1, drive_prop * pi/2)
         state = rotate(state, 'z', drive_rabi * pi/2 * detuning)
-        state = rotate(state, 'y', drive_prop * pi)
+        
+        # state = rotate(state, 'z', drive_rabi * pi/2 * detuning)
+        state = rotate(state, ax2, drive_prop * pi)
         state = rotate(state, 'z', drive_rabi * pi * detuning)
-        state = rotate(state, 'x', drive_prop * pi/2)
+        
         state = rotate(state, 'z', drive_rabi * pi/2 * detuning)
+        state = rotate(state, ax1, drive_prop * pi/2)
+    
+    # for i in range(num_pulses):
+        
+    #     if i // 2 == 1:
+    #         state = rotate(state, 'x', drive_prop * pi/2)
+    #         state = rotate(state, 'y', drive_prop * pi)
+    #         state = rotate(state, 'x', drive_prop * pi/2)
+    #     else:
+    #         state = rotate(state, 'y', drive_prop * pi/2)
+    #         state = rotate(state, 'x', drive_prop * pi)
+    #         state = rotate(state, 'y', drive_prop * pi/2)
+            
         
     excited_component = state[1]
     excited_projection = numpy.real(numpy.conj(excited_component) * excited_component)
@@ -133,6 +167,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
     uwave_pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
+    # uwave_pi_pulse = round(3 * nv_sig['rabi_{}'.format(state.name)] / 4)
     uwave_pi_on_2_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 4)
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
