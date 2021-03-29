@@ -501,7 +501,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 187.5
+    temp = 225
     path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     folder = 'hopper-nv1_2021_03_16-{}K'.format(temp)
 
