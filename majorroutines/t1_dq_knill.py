@@ -54,8 +54,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
-    # polarization_time = shared_params['polarization_dur']
-    polarization_time = 1E6  # Jarmola uses 1 ms
+    # Jarmola uses 1 ms, see entries from lat March 2021 on polarization time
+    polarization_time = 1E5  
     # time of illumination during which signal readout occurs
     signal_time = polarization_time
     # time of illumination during which reference readout occurs
@@ -65,8 +65,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
     aom_delay_time = shared_params['532_aom_delay']
-    sig_gen_tsg4104a_delay = shared_params['sig_gen_tsg4104a_delay']
-    sig_gen_sg394_delay = shared_params['sig_gen_sg394_delay']
+    sig_gen_tsg4104a_delay = shared_params['signal_generator_tsg4104a_delay']
+    sig_gen_sg394_delay = shared_params['signal_generator_sg394_delay']
     iq_delay_time = shared_params['iq_delay']
     gate_time = nv_sig['pulsed_readout_dur']
 
@@ -220,11 +220,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
         low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.LOW)
         low_sig_gen_cxn.set_freq(uwave_freq_low)
         low_sig_gen_cxn.set_amp(uwave_power_low)
+        low_sig_gen_cxn.load_iq()
         low_sig_gen_cxn.uwave_on()
         high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)
         high_sig_gen_cxn.set_freq(uwave_freq_high)
         high_sig_gen_cxn.set_amp(uwave_power_high)
+        high_sig_gen_cxn.load_iq()
         high_sig_gen_cxn.uwave_on()
+        cxn.arbitrary_waveform_generator.load_knill()
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)

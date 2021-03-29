@@ -145,15 +145,15 @@ def simulate_single(drive_res, drive_rabi, nv_res, nv_rabi, num_pulses):
 
 
 def main(nv_sig, apd_indices, state,
-         max_num_pi_pulses, num_reps, num_runs, iq_delay_time):
+         max_num_pi_pulses, num_reps, num_runs):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, state,
-                      max_num_pi_pulses, num_reps, num_runs, iq_delay_time)
+                      max_num_pi_pulses, num_reps, num_runs)
     
     
 def main_with_cxn(cxn, nv_sig, apd_indices, state,
-                  max_num_pi_pulses, num_reps, num_runs, iq_delay_time):
+                  max_num_pi_pulses, num_reps, num_runs):
 
     tool_belt.reset_cfm(cxn)
 
@@ -182,7 +182,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
     aom_delay_time = shared_params['532_aom_delay']
     gate_time = nv_sig['pulsed_readout_dur']
-    uwave_delay_time = shared_params['uwave_delay']
+    sig_gen_name = tool_belt.get_signal_generator_name(state)
+    uwave_delay_time = shared_params['{}_delay'.format(sig_gen_name)]
+    iq_delay = shared_params['iq_delay']
     # uwave_delay_time = 15
     # iq_delay_time = 560
     # signal_wait_time = 1000
@@ -193,7 +195,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     seq_args = [polarization_time, reference_time,
                 signal_wait_time, reference_wait_time,
                 background_wait_time,
-                aom_delay_time, uwave_delay_time, iq_delay_time,
+                aom_delay_time, uwave_delay_time, iq_delay,
                 gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                 0, max_num_pi_pulses,
                 apd_indices[0], state.value]
@@ -246,7 +248,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
-        cxn.arbitrary_waveform_generator.iq_switch()
+        cxn.arbitrary_waveform_generator.load_knill()
 
         # TEST for split resonance
 #        sig_gen_cxn = cxn.signal_generator_bnc835
@@ -274,7 +276,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
             seq_args = [polarization_time, reference_time,
                         signal_wait_time, reference_wait_time,
                         background_wait_time,
-                        aom_delay_time, uwave_delay_time, iq_delay_time,
+                        aom_delay_time, uwave_delay_time, iq_delay,
                         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                         pi_ind, max_num_pi_pulses,
                         apd_indices[0], state.value]

@@ -28,6 +28,7 @@ import majorroutines.rabi as rabi
 import majorroutines.discrete_rabi as discrete_rabi
 import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
+import majorroutines.t1_dq_knill as t1_dq_knill
 import majorroutines.t1_interleave as t1_interleave
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
@@ -169,12 +170,12 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # num_runs = 8
     
     # Zoom
-    freq_range = 0.1
+    freq_range = 0.04
     num_steps = 51
     num_reps = 10**4
     num_runs = 8
     
-    composite = True
+    composite = False
 
     pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
                           num_steps, num_reps, num_runs, composite)
@@ -211,17 +212,10 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
     # num_reps = 2 * 10**4
     num_reps = 5000
-    num_runs = 10
-    
-    if state is States.LOW:
-        iq_delay_time = 565
-    elif state is States.HIGH:
-        iq_delay_time = 555
-        
-    # iq_delay_time = 558
+    num_runs = 40
         
     discrete_rabi.main(nv_sig, apd_indices,
-                    state, max_num_pi_pulses, num_reps, num_runs, iq_delay_time)
+                       state, max_num_pi_pulses, num_reps, num_runs)
 
     # for t in numpy.linspace(550,580,11):
         
@@ -251,6 +245,29 @@ def do_t1_battery(nv_sig, apd_indices):
 
         t1_double_quantum.main(nv_sig, apd_indices, relaxation_time_range,
                            num_steps, num_reps, num_runs, init_read_states)
+
+def do_t1_dq_knill_battery(nv_sig, apd_indices):
+
+    # T1 experiment parameters, formatted:
+    # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
+    t1_exp_array = numpy.array([
+        [[States.HIGH, States.LOW], [0, 20*10**6], 11, 1.0*10**3, 100],
+        [[States.HIGH, States.HIGH], [0, 20*10**6], 11, 1.0*10**3, 100],
+        [[States.ZERO, States.HIGH], [0, 30*10**6], 11, 1.0*10**3, 100],
+        [[States.ZERO, States.ZERO], [0, 30*10**6], 11, 1.0*10**3, 100]
+        ], dtype=object)
+
+    # Loop through the experiments
+    for exp_ind in range(len(t1_exp_array)):
+
+        init_read_states = t1_exp_array[exp_ind, 0]
+        relaxation_time_range = t1_exp_array[exp_ind, 1]
+        num_steps = t1_exp_array[exp_ind, 2]
+        num_reps = t1_exp_array[exp_ind, 3]
+        num_runs = t1_exp_array[exp_ind, 4]
+
+        t1_dq_knill.main(nv_sig, apd_indices, relaxation_time_range,
+                         num_steps, num_reps, num_runs, init_read_states)
 
 def do_t1_interleave(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
@@ -458,9 +475,9 @@ if __name__ == '__main__':
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.7998, 'rabi_LOW': 241.2, 'uwave_power_LOW': 14.5,
+            'resonance_LOW': 2.7995, 'rabi_LOW': 241.2, 'uwave_power_LOW': 14.5,
             # 'resonance_LOW': 2.7398, 'rabi_LOW': 241.2, 'uwave_power_LOW': 14.5, 
-            'resonance_HIGH': 2.9441, 'rabi_HIGH': 148.9, 'uwave_power_HIGH': 12.0} 
+            'resonance_HIGH': 2.9440, 'rabi_HIGH': 146.7, 'uwave_power_HIGH': 12.0} 
             # 'resonance_HIGH': 3.0041, 'rabi_HIGH': 148.9, 'uwave_power_HIGH': 12.0} 
     
     
@@ -486,7 +503,8 @@ if __name__ == '__main__':
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
-        do_t1_battery(nv_sig, apd_indices)
+        # do_t1_battery(nv_sig, apd_indices)
+        do_t1_dq_knill_battery(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
         #     nv_sig['resonance_HIGH'] = res
