@@ -98,7 +98,8 @@ def main():
 def main2(temps=None, omegas=None, omega_errs=None,
          gammas=None, gamma_errs=None):
     # temp_linspace = numpy.linspace(5, 600, 1000)
-    temp_linspace = numpy.linspace(5, 300, 1000)
+    temp_linspace = numpy.linspace(150, 300, 1000)
+    # temp_linspace = numpy.linspace(5, 300, 1000)
     # temp_linspace = numpy.linspace(5, 5000, 1000)
     fig, ax = plt.subplots()
     fig.set_tight_layout(True)
@@ -132,6 +133,7 @@ def main2(temps=None, omegas=None, omega_errs=None,
                     omegas[mask] * 1000, yerr=omega_errs[mask] * 1000,
                     label=r'$\Omega$', marker='^',
                     color='#FF9933', markerfacecolor='#FFCC33',
+                    # color=omega_colors[mask],
                     linestyle='None', ms=ms, lw=lw)
         
         mask = []
@@ -141,6 +143,7 @@ def main2(temps=None, omegas=None, omega_errs=None,
                     gammas[mask] * 1000, yerr=gamma_errs[mask] * 1000,
                     label= r'$\gamma$', marker='o',
                     color='#993399', markerfacecolor='#CC99CC',
+                    # color=gamma_colors[mask],
                     linestyle='None', ms=ms, lw=lw)
         
     ax.legend(loc='upper left')
@@ -161,13 +164,42 @@ if __name__ == '__main__':
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)
     
-    temps = [295, 250, 225, 200, 175]
-    omegas = [0.059, 0.025, None, None, None]
-    omega_errs = [0.002, 0.002, None, None, None]
-    gammas = [0.117, 0.101, 0.065, 0.028, 0.019]
-    gamma_errs = [0.005, 0.013, 0.007, 0.003, 0.003]
+    temps = []
+    omegas = []
+    omega_errs = []
+    omega_colors = []
+    gammas = []
+    gamma_errs = []
+    gamma_colors = []
     
-    # Lin paper results
+    # PRResearch paper
+    # temps.extend([295])
+    # omegas.extend([0.059])
+    # omega_errs.extend([0.002])
+    # omega_colors.extend(['#FF9933'])
+    # gammas.extend([0.117])
+    # gamma_errs.extend([0.005])
+    # gamma_colors.extend(['#993399'])
+    
+    # Johnson
+    # temps.extend([250, 225, 200, 175])
+    # omegas.extend([0.025, None, None, None])
+    # omega_errs.extend([0.002, None, None, None])
+    # omega_colors.extend(['#990000']*4)
+    # gammas.extend([0.101, 0.065, 0.028, 0.019])
+    # gamma_errs.extend([0.013, 0.007, 0.003, 0.003])
+    # gamma_colors.extend(['#6666ff']*4)
+    
+    # Hopper
+    temps.extend([295, 275, 225, 200, 187.5, 175])
+    omegas.extend([0.053, 0.036, 0.018, 0.010, 0.008, None])
+    omega_errs.extend([0.005, 0.003, 0.001, 0.001, 0.001, None])
+    omega_colors.extend(['#996600']*6)
+    gammas.extend([0.130, 0.100, 0.057, 0.032, 0.027, 0.022])
+    gamma_errs.extend([0.017, 0.010, 0.005, 0.003, 0.003, 0.002])
+    gamma_colors.extend(['#00cc99']*6)
+    
+    # Lin paper
     # temps.extend([300, 325, 350, 375, 400, 425, 450, 500, 550, 600])
     # lin_omegas = numpy.array([0.33, 0.4, 0.5, 0.6, 0.66, 0.9, 1.1, 1.5, 2.3, 3.5]) / 4
     # omegas.extend(lin_omegas.tolist())
