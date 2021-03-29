@@ -110,8 +110,6 @@ class ApdTagger(LabradServer):
         return timestamps, channels
     
     def read_counter_setting_internal(self, num_to_read):
-        overflows = self.tagger.getOverflows()
-        logging.debug('Overflows: {}'.format(overflows))
         if self.stream is None:
             logging.error('read_counter attempted while stream is None.')
             return
@@ -123,14 +121,15 @@ class ApdTagger(LabradServer):
             start = time.time()
             counts = []
             while len(counts) < num_to_read:
+                overflows = self.tagger.getOverflows()
+                if overflows > 0:
+                    logging.debug('Overflows: {}'.format(overflows))
                 # Timeout after 2 minutes - pad counts with 0s
                 if time.time() > start + 120:
                     num_remaining = num_to_read - len(counts)
                     counts.extend(num_remaining * [0])
                     logging.error('Timed out trying to last {} counts out ' \
                                   'of {}'.format(num_remaining, num_to_read))
-                    overflows = self.tagger.getOverflows()
-                    logging.debug('Overflows: {}'.format(overflows))
                     break
                 counts.extend(self.read_counter_internal(num_to_read))
             if len(counts) > num_to_read:
