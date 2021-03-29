@@ -153,7 +153,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
 
     num_steps = 51
     num_reps = 1 * 10**4
-    num_runs = 8
+    num_runs = 2
     uwave_power = 14.5
     uwave_pulse_dur = 100
 
@@ -169,7 +169,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # num_runs = 8
     
     # Zoom
-    freq_range = 0.150
+    freq_range = 0.1
     num_steps = 51
     num_reps = 10**4
     num_runs = 8
@@ -209,14 +209,21 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
 def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
-    num_reps = 2 * 10**4
-    # num_reps = 5000
-    num_runs = 8
+    # num_reps = 2 * 10**4
+    num_reps = 5000
+    num_runs = 10
+    
+    if state is States.LOW:
+        iq_delay_time = 565
+    elif state is States.HIGH:
+        iq_delay_time = 555
+        
+    # iq_delay_time = 558
         
     discrete_rabi.main(nv_sig, apd_indices,
-                        state, max_num_pi_pulses, num_reps, num_runs, 555)
+                    state, max_num_pi_pulses, num_reps, num_runs, iq_delay_time)
 
-    # for t in numpy.linspace(555,565,11):
+    # for t in numpy.linspace(550,580,11):
         
     #     discrete_rabi.main(nv_sig, apd_indices,
     #                         state, max_num_pi_pulses, num_reps, num_runs, int(t))
@@ -227,10 +234,10 @@ def do_t1_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 70*10**6], 11, 1.0*10**3, 60],
-        [[States.HIGH, States.HIGH], [0, 70*10**6], 11, 1.0*10**3, 60],
-        [[States.ZERO, States.HIGH], [0, 110*10**6], 11, 1.0*10**3, 60],
-        [[States.ZERO, States.ZERO], [0, 110*10**6], 11, 1.0*10**3, 60]
+        [[States.HIGH, States.LOW], [0, 20*10**6], 11, 1.0*10**3, 100],
+        [[States.HIGH, States.HIGH], [0, 20*10**6], 11, 1.0*10**3, 100],
+        [[States.ZERO, States.HIGH], [0, 30*10**6], 11, 1.0*10**3, 100],
+        [[States.ZERO, States.ZERO], [0, 30*10**6], 11, 1.0*10**3, 100]
         ], dtype=object)
 
     # Loop through the experiments
@@ -291,7 +298,7 @@ def do_spin_echo(nv_sig, apd_indices):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    max_time = 160  # us
+    max_time = 110  # us
     num_steps = max_time + 1  # 1 point per us
     precession_time_range = [0, max_time * 10**3]
     num_reps = int(1 * 10**4)
@@ -436,8 +443,8 @@ if __name__ == '__main__':
     apd_indices = [0]
     
     # nd = 'nd_0'
-    # nd = 'nd_0.5'
-    nd = 'nd_1.0'
+    nd = 'nd_0.5'
+    # nd = 'nd_1.0'
     sample_name = 'hopper'
     
     # nv_sig = { 'coords': [0.0, 0.0, 0],
@@ -447,22 +454,14 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.0, 0.0, 60],
+    nv_sig = { 'coords': [0.0, 0.0, 80],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.8199, 'rabi_LOW': 225.6, 'uwave_power_LOW': 14.5,
-            # 'resonance_HIGH': 2.9290, 'rabi_HIGH': 156.4, 'uwave_power_HIGH': 12.0}
-            'resonance_HIGH': 2.9320, 'rabi_HIGH': 156.4, 'uwave_power_HIGH': 12.0}  # on res
-            # 'resonance_HIGH': 2.9850, 'rabi_HIGH': 156.4, 'uwave_power_HIGH': 12.0}
-    
-    # nv_sig = { 'coords': [0.1, 0.0, 70],
-    #         'name': '{}-nv2_2021_03_15'.format(sample_name),
-    #         'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
-    #         'pulsed_readout_dur': 350, 'magnet_angle': None,
-    #         'resonance_LOW': 2.8717, 'rabi_LOW': 231.6, 'uwave_power_LOW': 14.5,
-    #         'resonance_HIGH': 2.8849, 'rabi_HIGH': 207.3, 'uwave_power_HIGH': 13.0}
-    
+            'resonance_LOW': 2.7998, 'rabi_LOW': 241.2, 'uwave_power_LOW': 14.5,
+            # 'resonance_LOW': 2.7398, 'rabi_LOW': 241.2, 'uwave_power_LOW': 14.5, 
+            'resonance_HIGH': 2.9441, 'rabi_HIGH': 148.9, 'uwave_power_HIGH': 12.0} 
+            # 'resonance_HIGH': 3.0041, 'rabi_HIGH': 148.9, 'uwave_power_HIGH': 12.0} 
     
     
     # %% Functions to run
@@ -471,25 +470,33 @@ if __name__ == '__main__':
         
         # do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_stationary_count(nv_sig, apd_indices)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.1)
-        # do_pulsed_resonance(nv_sig, apd_indices, 2.876, 0.15)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.872, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 8)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         do_t1_battery(nv_sig, apd_indices)
         
+        # for res in numpy.linspace(2.9435, 2.9447, 7):
+        #     nv_sig['resonance_HIGH'] = res
+        #     do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
+        
+        # for i in range(5):
+        #     do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
+        
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0,4)
+            # cxn.cryo_piezos.write_xy(0,5)
         
         # tool_belt.init_safe_stop()
         # while True:

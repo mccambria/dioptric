@@ -245,7 +245,7 @@ def state(nv_sig, apd_indices, state, freq_range,
 
 def main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-         state=States.LOW, composite=False):
+         state=None, composite=False):
 
     with labrad.connect() as cxn:
         resonance_list = main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
@@ -254,7 +254,7 @@ def main(nv_sig, apd_indices, freq_center, freq_range,
     return resonance_list
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-              state=States.LOW, composite=False):
+              state=None, composite=False):
 
     # %% Initial calculations and setup
 
@@ -286,13 +286,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
     aom_delay_time = shared_params['532_aom_delay']
     uwave_delay_time = shared_params['uwave_delay']
-    iq_delay_time = 555
+    if state is States.LOW:
+        iq_delay_time = 565
+    elif state is States.HIGH:
+        iq_delay_time = 555
     readout = nv_sig['pulsed_readout_dur']
     gate_time = readout
     readout_sec = readout / (10**9)
     if composite:
         uwave_pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
-        uwave_pi_pulse = round(3 * nv_sig['rabi_{}'.format(state.name)] / 4)
         uwave_pi_on_2_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 4)
         seq_args = [polarization_time, reference_time,
                     signal_wait_time, reference_wait_time,
@@ -354,7 +356,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             # Load the pulse streamer (must happen after optimize and iq_switch
             # since run their own sequences)
             if composite:
-                ret_vals = cxn.pulse_streamer.stream_load('discrete_rabi.py', seq_args_string)
+                ret_vals = cxn.pulse_streamer.stream_load('discrete_rabi2.py', seq_args_string)
             else:
                 ret_vals = cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
                 

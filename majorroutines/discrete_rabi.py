@@ -168,11 +168,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
     uwave_pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
     # uwave_pi_pulse = round(3 * nv_sig['rabi_{}'.format(state.name)] / 4)
+    # uwave_pi_pulse = round(0.70 * nv_sig['rabi_{}'.format(state.name)])
+    # uwave_pi_pulse = 0
     uwave_pi_on_2_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 4)
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
-    polarization_time = shared_params['polarization_dur']
+    polarization_time = shared_params['polarization_dur'] 
     # time of illumination during which reference readout occurs
     signal_wait_time = shared_params['post_polarization_wait_dur']
     reference_time = signal_wait_time  # not sure what this is
@@ -181,12 +183,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     aom_delay_time = shared_params['532_aom_delay']
     gate_time = nv_sig['pulsed_readout_dur']
     uwave_delay_time = shared_params['uwave_delay']
-    # uwave_delay_time = 500
+    # uwave_delay_time = 15
     # iq_delay_time = 560
     # signal_wait_time = 1000
 
     # Analyze the sequence
-    file_name = os.path.basename(__file__)
+    # file_name = os.path.basename(__file__)
+    file_name = 'discrete_rabi2.py'
     seq_args = [polarization_time, reference_time,
                 signal_wait_time, reference_wait_time,
                 background_wait_time,

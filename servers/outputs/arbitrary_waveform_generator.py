@@ -26,10 +26,24 @@ timeout = 5
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
-import visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
+import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 import socket
 import logging
 import time
+import numpy
+from numpy import pi
+root2_on_2 = numpy.sqrt(2) / 2
+
+
+def iq_comps(phase):
+    if type(phase) is list:
+        ret_vals = []
+        for val in phase:
+            ret_vals.append(numpy.round(root2_on_2 * numpy.exp((0+1j) * val), 5))
+        return (numpy.real(ret_vals).tolist(), numpy.imag(ret_vals).tolist())
+    else:
+        ret_val = numpy.round(root2_on_2 * numpy.exp((0+1j) * phase), 5)
+        return (numpy.real(ret_val), numpy.imag(ret_val))
 
 
 class ArbitraryWaveformGenerator(LabradServer):
@@ -79,13 +93,28 @@ class ArbitraryWaveformGenerator(LabradServer):
             self.wave_gen.write('{}FUNC:ARB:PTP 2'.format(source_name))
         
         # There's a minimum number of points, thus * 16
-        seq = '0.5, 0.5, ' * 16
-        # seq = '0.5, 0.5, 0.0, 0.5, 0.5, 0.0, ' * 8
-        seq = seq[:-2]
+        # phases = [0, +pi/2, 0] * 16
+        phases = [pi/6, 0, pi/2, 0, pi/6,
+                   # pi/6+pi, 0+pi, pi/2+pi, 0+pi, pi/6+pi] * 8
+                  pi/6+pi/2, 0+pi/2, pi/2+pi/2, 0+pi/2, pi/6+pi/2] * 8
+        # phases = [0, -pi/2, 0,
+        #           pi/2, 0, pi/2,
+        #           3*pi/2, pi, 3*pi/2,
+        #           pi, pi/2, pi] * 4
+        phase_comps = iq_comps(phases)
+        
+        # Shift the last element to first to account for first pulse in seq
+        # Then convert to string and trim the brackets
+        comps = phase_comps[0]
+        last_el = comps.pop()
+        comps.insert(0, last_el)
+        seq = str(comps)[1:-1]  
         self.wave_gen.write('SOUR1:DATA:ARB iqSwitch1, {}'.format(seq))
-        seq = '0.5, -0.5, ' * 16
-        # seq = '0.0, 0.0, 0.5, 0.0, 0.0, -0.5, ' * 8
-        seq = seq[:-2]
+        
+        comps = phase_comps[1]
+        last_el = comps.pop()
+        comps.insert(0, last_el)
+        seq = str(comps)[1:-1] 
         self.wave_gen.write('SOUR2:DATA:ARB iqSwitch2, {}'.format(seq))
         
         for chan in [1, 2]:
@@ -150,3 +179,15 @@ __server__ = ArbitraryWaveformGenerator()
 if __name__ == '__main__':
     from labrad import util
     util.runServer(__server__)
+    
+    
+    # phases = [pi/4, -pi/4] * 16
+    # phase_comps = iq_comps(phases)
+    # seq1 = str(phase_comps[1])[1:-1]  # Convert to string and trim the brackets
+    # seq = '0.5, -0.5, ' * 16
+    # seq2 = seq[:-2]
+    
+    # print(seq1)
+    # print(seq2)
+    
+    # print(seq1 == seq2)
