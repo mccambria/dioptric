@@ -504,7 +504,7 @@ if __name__ == '__main__':
     temp = 225
     path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     folder = 'hopper-nv1_2021_03_16-{}K'.format(temp)
-    
+
     est_omega = omega_calc(temp) / 1000
     print(est_omega)
     print(1/(3*est_omega))

@@ -110,6 +110,8 @@ class ApdTagger(LabradServer):
         return timestamps, channels
     
     def read_counter_setting_internal(self, num_to_read):
+        overflows = self.tagger.getOverflows()
+        logging.debug('Overflows: {}'.format(overflows))
         if self.stream is None:
             logging.error('read_counter attempted while stream is None.')
             return
@@ -156,6 +158,7 @@ class ApdTagger(LabradServer):
         # Counts will be a list of lists - the first dimension will divide
         # samples and the second will divide gatings within samples
         return_counts = []
+        return_counts_append = return_counts.append
 
         for clock_click_ind in clock_click_inds:
 
@@ -180,6 +183,7 @@ class ApdTagger(LabradServer):
             sample_channels = numpy.array(sample_channels)
             
             sample_counts = []
+            sample_counts_append = sample_counts.append
             
             # Loop through the APDs
             for apd_index in self.stream_apd_indices:
@@ -201,6 +205,7 @@ class ApdTagger(LabradServer):
                 # The number of APD clicks is simply the number of items in the
                 # buffer between gate open and gate close clicks
                 channel_counts = []
+                channel_counts_append = channel_counts.append
                 
                 for ind in range(len(gate_open_click_inds)):
                     gate_open_click_ind = gate_open_click_inds[ind]
@@ -209,11 +214,11 @@ class ApdTagger(LabradServer):
                         gate_close_click_ind]
                     gate_window = gate_window.tolist()
                     gate_count = gate_window.count(apd_channel)
-                    channel_counts.append(gate_count)
+                    channel_counts_append(gate_count)
                     
-                sample_counts.append(channel_counts)
+                sample_counts_append(channel_counts)
 
-            return_counts.append(sample_counts)
+            return_counts_append(sample_counts)
             previous_sample_end_ind = sample_end_ind
         
         if sample_end_ind is None:

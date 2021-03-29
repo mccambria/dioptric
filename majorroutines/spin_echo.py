@@ -238,7 +238,7 @@ def fit_data(data):
 #    amplitude = 0.07
 #    offset = 0.93
 #    decay_time = 2000.0
-    revival_time = 45000
+    # revival_time = 45000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -670,7 +670,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 if __name__ == '__main__':
 
     path = 'pc_hahn/branch_cryo-setup/spin_echo/2021_03'
-    file = '2021_03_19-18_41_11-hopper-nv1_2021_03_16'
+    file = '2021_03_25-18_49_58-hopper-nv1_2021_03_16'
     
     data = tool_belt.get_raw_data(path, file)
 

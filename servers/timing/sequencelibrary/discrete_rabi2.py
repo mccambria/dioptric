@@ -21,20 +21,30 @@ def get_seq(pulser_wiring, args):
 
     # The first 9 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(10):
+    for ind in range(11):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
-    tau, polarization_time, reference_time, signal_wait_time, \
+    polarization_time, reference_time, signal_wait_time, \
         reference_wait_time, background_wait_time, \
-        aom_delay_time, uwave_delay_time, \
-        gate_time, max_tau = durations
+        aom_delay_time, uwave_delay_time, iq_delay_time, \
+        gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse = durations
+        
+    num_pi_pulses = int(args[11])
+    max_num_pi_pulses = int(args[12])
+    
+    # if num_pi_pulses % 2 == 1:
+    #     num_pi_pulses = 1
+    # else:
+    #     num_pi_pulses = 2
+    
+    # num_pi_pulses = 2
 
     # Get the APD indices
-    apd_index = args[10]
+    apd_index = args[13]
 
     # Signify which signal generator to use
-    state_value = args[11]
+    state_value = args[14]
 
     # Get what we need out of the wiring dictionary
     key = 'do_apd_{}_gate'.format(apd_index)
@@ -43,8 +53,14 @@ def get_seq(pulser_wiring, args):
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
     pulser_do_aom = pulser_wiring['do_532_aom']
+    pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']
 
     # %% Couple calculated values
+    
+    composite_pulse_time = 5 * uwave_pi_pulse 
+    
+    tau = composite_pulse_time * num_pi_pulses
+    max_tau = composite_pulse_time * max_num_pi_pulses
 
     prep_time = polarization_time + signal_wait_time + \
         tau + signal_wait_time
@@ -87,13 +103,25 @@ def get_seq(pulser_wiring, args):
              (background_wait_time + end_rest_time + aom_delay_time, LOW)]
     seq.setDigital(pulser_do_aom, train)
 
-    # Pulse the microwave for tau
+    # Microwave train
     pre_duration = aom_delay_time + polarization_time + signal_wait_time - uwave_delay_time
     post_duration = signal_wait_time + polarization_time + \
         reference_wait_time + reference_time + \
         background_wait_time + end_rest_time + uwave_delay_time
     train = [(pre_duration, LOW), (tau, HIGH), (post_duration, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
+    
+    # Switch the phase with the AWG
+    composite_pulse = [(10, HIGH), (uwave_pi_pulse-10, LOW)] * 5
+    pre_duration = aom_delay_time + polarization_time + signal_wait_time - iq_delay_time - uwave_delay_time
+    post_duration = signal_wait_time + polarization_time + \
+        reference_wait_time + reference_time + \
+        background_wait_time + end_rest_time + iq_delay_time + uwave_delay_time
+    train = [(pre_duration, LOW)]
+    for i in range(num_pi_pulses):
+        train.extend(composite_pulse)
+    train.extend([(post_duration, LOW)])
+    seq.setDigital(pulser_do_arb_wave_trigger, train)
 
     final_digital = [pulser_wiring['do_532_aom'],
                      pulser_wiring['do_sample_clock']]
@@ -107,7 +135,8 @@ if __name__ == '__main__':
               'do_sample_clock': 0, 'do_signal_generator_tsg4104a_gate': 1,
               'do_signal_generator_sg394_gate': 4}
 #    args = [0, 3000, 1000, 1000, 2000, 1000, 1000, 300, 150, 0, 3]
-    # args = [120, 12000, 1000, 1000, 2000, 1000, 1060, 350, 120, 0, 1]
-    args = [78, 12000, 1000, 1000, 2000, 1000, 1060, 1000, 350, 78, 0, 3]
-    seq = get_seq(wiring, args)[0]
+    # seq_args = [12000, 1000, 1000, 2000, 1000, 1060, 1000, 555, 350, 92, 46, 8, 8, 0, 3]
+    # args = [500, 1000, 1000, 2000, 1000, 0, 0, 0, 350, 92, 46, 0, 4, 0, 3]
+    seq_args = [1200, 1000, 1000, 10000, 1000, 0, 0, 0, 350, 78, 39, 1, 1, 0, 3]
+    seq = get_seq(wiring, seq_args)[0]
     seq.plot()
