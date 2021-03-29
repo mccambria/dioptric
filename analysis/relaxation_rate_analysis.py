@@ -501,15 +501,15 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
+    temp = 187.5
     path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-295K'
-    
-    temp = 295
+    folder = 'hopper-nv1_2021_03_16-{}K'.format(temp)
+
     est_omega = omega_calc(temp) / 1000
     print(est_omega)
     print(1/(3*est_omega))
 
     # gamma, ste = main(path, folder, omega=est_omega, omega_ste=0.0,
     #                   doPlot=True, offset=False)
-    # gamma, ste = main(path, folder, omega=None, omega_ste=None,
-    #                   doPlot=True, offset=False)
+    gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                      doPlot=True, offset=False)
