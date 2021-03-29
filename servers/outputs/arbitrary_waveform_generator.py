@@ -74,11 +74,26 @@ class ArbitraryWaveformGenerator(LabradServer):
         self.wave_gen = resource_manager.open_resource(address)
         self.reset(None)
         
+        
     @setting(3)
-    def iq_switch(self, c):
+    def load_knill(self, c):
+        
+        # There's a minimum number of points, thus * 16
+        # phases = [0, +pi/2, 0] * 16
+        phases = [pi/6, 0, pi/2, 0, pi/6,
+                   # pi/6+pi, 0+pi, pi/2+pi, 0+pi, pi/6+pi] * 8
+                  pi/6+pi/2, 0+pi/2, pi/2+pi/2, 0+pi/2, pi/6+pi/2] * 8
+        # phases = [0, -pi/2, 0,
+        #           pi/2, 0, pi/2,
+        #           3*pi/2, pi, 3*pi/2,
+        #           pi, pi/2, pi] * 4
+        
+        self.load_iq(phases)
+        
+    
+    def load_iq(self, phases):
         """
-        On trigger from Pulse Streamer, switch between (0.5, 0) and (0.5, 0)
-        for IQ modulation
+        Load IQ modulation
         """
         
         self.wave_gen.write('TRIG1:SOUR EXT')
@@ -91,16 +106,12 @@ class ArbitraryWaveformGenerator(LabradServer):
             self.wave_gen.write('{}FUNC:ARB:FILT OFF'.format(source_name))
             self.wave_gen.write('{}FUNC:ARB:ADV TRIG'.format(source_name))
             self.wave_gen.write('{}FUNC:ARB:PTP 2'.format(source_name))
-        
-        # There's a minimum number of points, thus * 16
-        # phases = [0, +pi/2, 0] * 16
-        phases = [pi/6, 0, pi/2, 0, pi/6,
-                   # pi/6+pi, 0+pi, pi/2+pi, 0+pi, pi/6+pi] * 8
-                  pi/6+pi/2, 0+pi/2, pi/2+pi/2, 0+pi/2, pi/6+pi/2] * 8
-        # phases = [0, -pi/2, 0,
-        #           pi/2, 0, pi/2,
-        #           3*pi/2, pi, 3*pi/2,
-        #           pi, pi/2, pi] * 4
+            
+        # There's a minimum length of points you must send, so let's just
+        # repeat until it's long enough
+        while len(phases) < 32:
+            phases *= 2
+            
         phase_comps = iq_comps(phases)
         
         # Shift the last element to first to account for first pulse in seq
