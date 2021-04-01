@@ -91,8 +91,29 @@ def omega_calc(temp):
     # return A_1 + test_T_cubed(temp) + raman(temp)
     # return (A_1 + orbach(temp) + raman(temp) + test_T_seventh(temp)) / 3
     
+def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp**5)
+    
     
 # %% Other functions
+
+
+def fit_omega_orbach_T5(data_points):
+    
+    temps = []
+    omegas = []
+    omega_errs = []
+    for point in data_points:
+        if point[omega_column_title] is not None:
+            temps.append(point[temp_column_title])
+            omegas.append(point[omega_column_title])
+            omega_errs.append(point[omega_err_column_title])
+            
+    init_params = (A_2, quasi, A_3)
+    popt, pcov = curve_fit(orbach_T5_free, temps, omegas, p0=init_params,
+                           sigma=omega_errs, absolute_sigma=True)
+    
+    return popt, pcov
 
 
 def fit_gamma_orbach(data_points):
@@ -161,16 +182,27 @@ def get_data_points_csv(file):
 
 def main(data_points):
     
+    min_temp = 150
+    max_temp = 300
+    
     # temp_linspace = numpy.linspace(5, 600, 1000)
-    temp_linspace = numpy.linspace(150, 300, 1000)
+    temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
     # temp_linspace = numpy.linspace(5, 300, 1000)
     # temp_linspace = numpy.linspace(5, 5000, 1000)
     fig, ax = plt.subplots()
     fig.set_tight_layout(True)
     # ax.set_title('Relaxation rates')
-    ax.plot(temp_linspace, omega_calc(temp_linspace),
-            label=r'$\Omega$ fit', color=omega_edge_color)  # from Jarmola 2012 Eq. 1 for S3
     
+    # Fit to Omega
+    popt, pcov = fit_omega_orbach_T5(data_points)
+    print(popt)
+    ax.plot(temp_linspace, orbach_T5_free(temp_linspace, *popt),
+            label=r'$\Omega$ fit', color=omega_edge_color)
+    # Plot Jarmola 2012 Eq. 1 for S3
+    # ax.plot(temp_linspace, omega_calc(temp_linspace),
+    #         label=r'$\Omega$ fit', color=omega_edge_color)  
+    
+    # Fit to gamma
     popt, pcov = fit_gamma_orbach(data_points)
     print(popt)
     ax.plot(temp_linspace, orbach_free(temp_linspace, *popt),
@@ -183,7 +215,7 @@ def main(data_points):
     ax.set_ylabel(r'Relaxation rates (s$^{-1})$')
     # ax.set_yscale('log')
     # ax.set_xscale('log')
-    ax.set_xlim(150, 300)
+    ax.set_xlim(min_temp, max_temp)
     # ax.set_ylim(1e-2, 1e4)
     # ax.set_ylim(-10, 130)
     # ax.set_ylim(-10, 800)
@@ -258,9 +290,10 @@ if __name__ == '__main__':
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)
     
+    file_name = 'compiled_data'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
-    file_path = path + 'compiled_data.xlsx'
-    csv_file_path = path + 'compiled_data.csv'
+    file_path = path + '{}.xlsx'.format(file_name)
+    csv_file_path = path + '{}.csv'.format(file_name)
     
     file = pd.read_excel(file_path)
     file.to_csv(csv_file_path, index=None, header=True)
