@@ -570,19 +570,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
 
     
-    expected_count_list = [55, 45, 50, 45, 45, 45, 50, 50, 50, 60] # 3/30/21
-    nv_list_2021_03_30 = [
-[0.046, 0.019, 5.20],
-[-0.057, 0.002, 5.14],
-[0.051, 0.077, 5.18],
-[-0.043, -0.047, 5.15],
-[0.047, 0.023, 5.21],
-[0.098, -0.105, 5.15],
-[0.019, 0.053, 5.19],
-[0.015, -0.134, 5.19],
-[0.077, -0.167, 5.19],
-# find a reference NV
-]
+    expected_count_list = [55, 45, 50, 45, 50, 45, 50, 50, 50, 60] # 3/30/21
     nv_list_2021_04_02 = [
 [0.046, 0.138, 5.21],
 [0.085, 0.126, 5.21],
@@ -595,11 +583,11 @@ if __name__ == '__main__':
             ]
     
     nv_sig_list =[]
-    for i in [3,4,5,6]:#range(len(nv_list_2021_04_02)):
+    for i in [4]:#range(len(nv_list_2021_04_02)):
         nv_coords = nv_list_2021_04_02[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
-#        nv_sig['expected_count_rate'] = expected_count_list[i]
+        nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_02'.format(i)
         nv_sig_list.append(nv_sig)
         
@@ -663,8 +651,8 @@ if __name__ == '__main__':
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, flip = False, readout = 1*10**7)
-#            do_image_sample(nv_sig,  apd_indices, '515a',
-#                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, '515a',
+                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =2*10**7)
 

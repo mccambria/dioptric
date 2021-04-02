@@ -1258,7 +1258,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 #    start_coords = base_sig['coords']
-    expected_count_list = [50, 52, 55, 42, 50, 50, 55] # 4/2/21
+    expected_count_list =[55, 45, 50, 45, 50, 45, 50, 50, 50, 60] # 4/2/21
     start_coords_list = [
 [0.046, 0.138, 5.21],
 [0.085, 0.126, 5.21],
@@ -1272,13 +1272,13 @@ if __name__ == '__main__':
             ]
 
 #    end_coords = end_coords.tolist()
-    num_steps = 20#41
+    num_steps = 25#41
 #    num_runs = 50
 #    img_range = 0.45
 #    optimize_nv_ind = 3
 #    optimize_coords = start_coords_list[optimize_nv_ind]
  
-    for s in [1]:
+    for s in [4]:
          optimize_nv_ind = s
          optimize_coords = start_coords_list[optimize_nv_ind]
          x, y, z = start_coords_list[s]
@@ -1304,7 +1304,7 @@ if __name__ == '__main__':
 #         t =1*10**6
 #         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.60, t, num_steps, 30, init_color, pulse_color, False)
          #########
-         t =5*10**6
+#         t =5*10**6
 #         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.7, t, num_steps, 30, 
 #                                   init_color, pulse_color, False, live_updates = True)
 #         t =10*10**6

@@ -324,8 +324,8 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
     
-    nv2_2021_03_30 = { 'coords': [0.051, 0.077, 5.18], 
-            'name': '{}-nv2_2021_03_30'.format(sample_name),
+    nv2_2021_03_30 = { 'coords': [0.220, -0.271, 5.18], 
+            'name': '{}-nv4_2021_04_02'.format(sample_name),
             'expected_count_rate': 50, 'nd_filter': 'nd_1.0',
 #            'color_filter': '635-715 bp', 
             'color_filter': '715 lp',
@@ -334,7 +334,7 @@ if __name__ == '__main__':
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10,  
             'ao_515_pwr': 0.65,
             'magnet_angle': 0,

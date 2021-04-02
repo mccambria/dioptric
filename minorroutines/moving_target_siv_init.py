@@ -981,43 +981,8 @@ def do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range,
     readout_image_array[:] = numpy.nan
     target_image_array = numpy.empty([num_steps, num_steps])
     target_image_array[:] = numpy.nan
-    
-    # shuffle the voltages that we're stepping thru
-    ind_list = list(range(num_samples))
-    shuffle(ind_list)
-    
-    # shuffle the voltages to run
-    coords_voltages_shuffle = []
-    for i in ind_list:
-        coords_voltages_shuffle.append(coords_voltages[i])
-#    
-    coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
-    # Run the data collection
-    ret_vals = main_data_collection(nv_sig, start_coords, opti_coords, coords_voltages_shuffle_list, pulse_time, 
-                         num_runs, init_color, pulse_color, readout_color, siv_init, index_list = ind_list)
-    
-    readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
-    readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
-    target_counts_array_shfl = numpy.array(target_counts_array_shfl)
-    
-    # unshuffle the raw data
-    list_ind = 0
-    for f in ind_list:
-        readout_counts_array[f] = readout_counts_array_shfl[list_ind]
-        target_counts_array[f] = target_counts_array_shfl[list_ind]
-        list_ind += 1
-        
-    # Take the average and ste
-    readout_counts_avg = numpy.average(readout_counts_array, axis = 1)
-    readout_counts_ste = stats.sem(readout_counts_array, axis = 1)
-    target_counts_avg = numpy.empty([1])
-    target_counts_ste = numpy.empty([1])
-
-    # create the img arrays
-    writePos = []
-    readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
-    
+    # Create the figure
     # image extent
     x_low = x_voltages_1d[0]
     x_high = x_voltages_1d[num_steps-1]
@@ -1030,24 +995,49 @@ def do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range,
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
     
-    # Create the figure
     title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse. {} SiV reset'.format(init_color, pulse_color, pulse_time/10**6, siv_init)
     fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
                                                 title = title, um_scaled = True)
-    # If the pusle time is longer that 1 s, we don't have target count data
-    if pulse_time < 10**9:
-        # Take the average and ste
-        target_counts_avg = numpy.average(target_counts_array, axis = 1)
-        target_counts_ste = stats.sem(target_counts_array, axis = 1)
     
+    for n in range(num_runs):
+        print('Run {}'.format(n))
+        # shuffle the voltages that we're stepping thru
+        ind_list = list(range(num_samples))
+        shuffle(ind_list)
+        # shuffle the voltages to run
+        coords_voltages_shuffle = []
+        for i in ind_list:
+            coords_voltages_shuffle.append(coords_voltages[i])
+        coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
+
+        # Run the data collection
+        ret_vals = main_data_collection(nv_sig, start_coords, opti_coords, coords_voltages_shuffle_list, pulse_time, 
+                         num_runs, init_color, pulse_color, readout_color, siv_init, index_list = ind_list)
+        
+        readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
+        readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
+        target_counts_array_shfl = numpy.array(target_counts_array_shfl)
+        
+        # unshuffle the raw data
+        list_ind = 0
+        for f in ind_list:
+            readout_counts_array_shfl[list_ind][0]
+            readout_counts_array[f][n] = readout_counts_array_shfl[list_ind][0]
+            target_counts_array[f][n] = target_counts_array_shfl[list_ind][0]
+            list_ind += 1
+        
+        # Take the average and ste. Need to rotate the matrix, to then only 
+        # average the runs that have been completed
+        readout_counts_array_rot = numpy.rot90(readout_counts_array)
+        readout_counts_avg = numpy.average(readout_counts_array_rot[-(n+1):], axis = 0)
+        readout_counts_ste = stats.sem(readout_counts_array_rot[-(n+1):], axis = 0)
+        
         # create the img arrays
         writePos = []
-        target_image_array = image_sample.populate_img_array(target_counts_avg, target_image_array, writePos)
-        
-        title = 'Counts on target  {} nm init pulse \n{} nm {} ms pulse'.format(init_color, pulse_color, pulse_time/10**6)
-        fig_target = tool_belt.create_image_figure(target_image_array, numpy.array(img_extent)*35,
-                                                    title = title, um_scaled = True)
+        readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
     
+        tool_belt.update_image_figure(fig_readout, readout_image_array)
+        
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
             red_optical_power_pd, red_optical_power_mW, \
@@ -1118,20 +1108,20 @@ def do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range,
 
             'readout_counts_avg': readout_counts_avg.tolist(),
             'readout_counts_avg-units': 'counts',
-            'target_counts_avg': target_counts_avg.tolist(),
-            'target_counts_avg-units': 'counts',
+#            'target_counts_avg': target_counts_avg.tolist(),
+#            'target_counts_avg-units': 'counts',
 
             'readout_counts_ste': readout_counts_ste.tolist(),
             'readout_counts_ste-units': 'counts',
-            'target_counts_ste': target_counts_ste.tolist(),
-            'target_counts_ste-units': 'counts',
+#            'target_counts_ste': target_counts_ste.tolist(),
+#            'target_counts_ste-units': 'counts',
             }
         
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path)
     tool_belt.save_figure(fig_readout, file_path)
-    if pulse_time < 10**9:
-        tool_belt.save_figure(fig_target, file_path + '-target_counts')
+#    if pulse_time < 10**9:
+#        tool_belt.save_figure(fig_target, file_path + '-target_counts')
     
     return
  
