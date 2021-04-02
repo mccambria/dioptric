@@ -55,7 +55,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     # polarization_time = shared_params['polarization_dur']
-    polarization_time = 1E6  # Jarmola uses 1 ms
+    polarization_time = 1E5  # Jarmola uses 1 ms
     # time of illumination during which signal readout occurs
     signal_time = polarization_time
     # time of illumination during which reference readout occurs
@@ -176,8 +176,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                 gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, max_relaxation_time,
                 apd_indices[0], init_state.value, read_state.value]
     seq_args = [int(el) for el in seq_args]
-    print(seq_args)
-    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]

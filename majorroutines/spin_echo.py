@@ -224,6 +224,7 @@ def fit_data(data):
     amplitude = 1.0 - numpy.average(norm_avg_sig)
     offset = 1.0 - amplitude
     decay_time = 1000.0
+    # decay_time /= 2
 
     # To estimate the revival frequency let's find the highest peak in the FFT
     transform = numpy.fft.rfft(norm_avg_sig)
@@ -235,10 +236,10 @@ def fit_data(data):
     revival_time = 1/frequency
 
     # Hard guess
-#    amplitude = 0.07
-#    offset = 0.93
-#    decay_time = 2000.0
-    # revival_time = 45000
+    # amplitude = 0.07
+    # offset = 0.90
+    # decay_time = 2000.0
+    revival_time = 35000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -252,6 +253,7 @@ def fit_data(data):
     min_bounds = (0.5, 0.0, 0.0, *[0.0 for el in amplitudes])
     max_bounds = (1.0, max_precession_dur / 1000, max_precession_dur / 1000,
                   *[0.3 for el in amplitudes])
+    print(init_params)
 
     try:
         popt, pcov = curve_fit(fit_func, tau_pis / 1000, norm_avg_sig,
@@ -259,10 +261,18 @@ def fit_data(data):
                                p0=init_params, bounds=(min_bounds, max_bounds))
         popt[1] *= 1000
         popt[2] *= 1000
+        
     except Exception as e:
+        
         print(e)
+        
         popt = None
-        return None, None, None, None
+        return None
+        
+        # popt = init_params
+        # popt[1] *= 1000
+        # popt[2] *= 1000
+        # pcov = [[0 for el in popt] for el in popt]
 
     revival_time = popt[1]
     stes = numpy.sqrt(numpy.diag(pcov))
@@ -670,7 +680,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 if __name__ == '__main__':
 
     path = 'pc_hahn/branch_cryo-setup/spin_echo/2021_03'
-    file = '2021_03_25-18_49_58-hopper-nv1_2021_03_16'
+    file = '2021_03_30-17_31_36-hopper-nv1_2021_03_16'
     
     data = tool_belt.get_raw_data(path, file)
 
