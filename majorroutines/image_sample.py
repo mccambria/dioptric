@@ -272,6 +272,7 @@ def create_figure(file_name, sub_folder = None):
     except Exception as e:
         print(e)
         coords = data['coords']
+#    coords = [0,0,5.0]
     img_array = numpy.array(data['img_array'])
     print(numpy.average(img_array))
     readout = data['readout']
@@ -295,7 +296,7 @@ def create_figure(file_name, sub_folder = None):
 #    color_ind =  data['color_ind']
     readout_us = readout / 10**3
     title = 'Confocal scan.\nReadout {} us'.format(readout_us)
-    fig = tool_belt.create_image_figure(img_array_kcps, img_extent,
+    fig = tool_belt.create_image_figure(img_array_kcps, numpy.array(img_extent)*35,
                                         clickHandler=on_click_image,
                                         title = title,
                                         color_bar_label = 'kcps',
@@ -812,8 +813,8 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-#    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_02/2021_02_25-16_47_57-goeppert-mayer'
-    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_02/2021_02_25-13_31_37-goeppert-mayer'
+#    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_03/2021_03_18-14_18_01-goeppert-mayer' # bright
+    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_03/2021_03_18-14_14_58-goeppert-mayer' # dark
 #    reformat_plot('inferno', 'png')
     create_figure(file_name)
 

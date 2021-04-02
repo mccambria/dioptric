@@ -324,9 +324,9 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
     
-    nv1_2021_03_17 = { 'coords': [-0.056, 0.104, 4.95], 
-            'name': '{}-nv1_2021_03_17'.format(sample_name),
-            'expected_count_rate': 40, 'nd_filter': 'nd_1.0',
+    nv2_2021_03_30 = { 'coords': [0.051, 0.077, 5.18], 
+            'name': '{}-nv2_2021_03_30'.format(sample_name),
+            'expected_count_rate': 50, 'nd_filter': 'nd_1.0',
 #            'color_filter': '635-715 bp', 
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -341,11 +341,9 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}  
        
-#    for nd in ['nd_1.0']:
-#        for p in [0.3]:
-#    for nd in ['nd_1.0']:
-#        for p in [ 0.3]:
-#            nv_sig = copy.deepcopy(nv0_2021_01_26)
-#            nv_sig['nd_filter'] = nd
-#            nv_sig['am_589_power'] = p
-    optimize_readout_pulse_length(nv1_2021_03_17, 589, test_pulse_dur_list = [4*10**7]) 
+    for nd in ['nd_0', 'nd_0.5']:
+        for p in [0.3, 0.4, 0.5, 0.6]:
+            nv_sig = copy.deepcopy(nv2_2021_03_30)
+            nv_sig['nd_filter'] = nd
+            nv_sig['am_589_power'] = p
+            optimize_readout_pulse_length(nv_sig, 589) 

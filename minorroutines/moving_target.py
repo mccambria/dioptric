@@ -506,7 +506,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
                 tool_belt.set_xyz(cxn, start_coords_drift)
                 
                 # pulse the laser at the readout
-                seq_args = [init_laser_delay, int(initialization_time), 0.0, init_color]           
+                seq_args = [init_laser_delay, int(initialization_time), 0.0, 0.6350, init_color]           
                 seq_args_string = tool_belt.encode_seq_args(seq_args)            
                 cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string) 
                 
@@ -514,7 +514,10 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
                 tool_belt.set_xyz(cxn, [x_voltages[i], y_voltages[i], start_coords_drift[2]])
                 
                 # pulse laser for X time with time.sleep
-                cxn.pulse_streamer.constant([direct_wiring], 0.0, 0.0)
+                if pulse_color == '515a':
+                    cxn.pulse_streamer.constant([], 0.6350, 0.0)
+                else:
+                    cxn.pulse_streamer.constant([direct_wiring], 0.0, 0.0)
                 time.sleep(pulse_time/10**9)
                 cxn.pulse_streamer.constant([], 0.0, 0.0)
                 
@@ -522,7 +525,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
                 tool_belt.set_xyz(cxn, start_coords_drift)
                 
                 # measure the counts
-                seq_args = [aom_589_delay, readout_pulse_time, am_589_power, apd_indices[0], readout_color]       
+                seq_args = [aom_589_delay, readout_pulse_time, am_589_power,0.6350,  apd_indices[0], readout_color]       
                 seq_args_string = tool_belt.encode_seq_args(seq_args)  
                 cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)  
                        
@@ -757,7 +760,7 @@ def do_moving_target_specific_points(nv_sig, readout_coords,  target_nv_coords, 
     return
 # %% 
 def do_moving_target_2D_image(nv_sig, start_coords, optimize_coords, img_range, pulse_time, 
-                              num_steps, num_runs, init_color, pulse_color, siv_init, readout_color = 589):
+                              num_steps, num_runs, init_color, pulse_color, siv_init, readout_color = 589, live_updates = False):
 
     # color_filter = nv_sig['color_filter']
     startFunctionTime = time.time()
@@ -781,145 +784,279 @@ def do_moving_target_2D_image(nv_sig, start_coords, optimize_coords, img_range, 
     target_image_array = numpy.empty([num_steps, num_steps])
     target_image_array[:] = numpy.nan
     
-    # shuffle the voltages that we're stepping thru
-    ind_list = list(range(num_samples))
-    shuffle(ind_list)
+    if live_updates:
+        # Create the figure
+        # image extent
+        x_low = x_voltages_1d[0]
+        x_high = x_voltages_1d[num_steps-1]
+        y_low = y_voltages_1d[0]
+        y_high = y_voltages_1d[num_steps-1]
     
-    # shuffle the voltages to run
-    coords_voltages_shuffle = []
-    for i in ind_list:
-        coords_voltages_shuffle.append(coords_voltages[i])
-#    
-    coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
-
-    # Run the data collection
-    ret_vals = main_data_collection(nv_sig, start_coords, optimize_coords, coords_voltages_shuffle_list,
-                            pulse_time, num_runs, init_color, pulse_color, readout_color, siv_init, index_list = ind_list)
-    
-    readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
-    readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
-    target_counts_array_shfl = numpy.array(target_counts_array_shfl)
-    
-    # unshuffle the raw data
-    list_ind = 0
-    for f in ind_list:
-        readout_counts_array[f] = readout_counts_array_shfl[list_ind]
-        target_counts_array[f] = target_counts_array_shfl[list_ind]
-        list_ind += 1
+        pixel_size = (x_voltages_1d[1] - x_voltages_1d[0])
         
-    # Take the average and ste
-    readout_counts_avg = numpy.average(readout_counts_array, axis = 1)
-    readout_counts_ste = stats.sem(readout_counts_array, axis = 1)
-    target_counts_avg = numpy.empty([1])
-    target_counts_ste = numpy.empty([1])
+        half_pixel_size = pixel_size / 2
+        img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                      y_low - half_pixel_size, y_high + half_pixel_size]
+        
+        title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse'.format(init_color, pulse_color, pulse_time/10**6)
+        fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
+                                                    title = title, um_scaled = True)
+        
+        for n in range(num_runs):
+            print('Run {}'.format(n))
+            # shuffle the voltages that we're stepping thru
+            ind_list = list(range(num_samples))
+            shuffle(ind_list)
+            # shuffle the voltages to run
+            coords_voltages_shuffle = []
+            for i in ind_list:
+                coords_voltages_shuffle.append(coords_voltages[i])
+            coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
-    # create the img arrays
-    writePos = []
-    readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
+            # Run the data collection
+            ret_vals = main_data_collection(nv_sig, start_coords, optimize_coords, coords_voltages_shuffle_list,
+                                    pulse_time, 1, init_color, pulse_color, readout_color, siv_init, index_list = ind_list)
+            
+            readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
+            readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
+            target_counts_array_shfl = numpy.array(target_counts_array_shfl)
+            
+            # unshuffle the raw data
+            list_ind = 0
+            for f in ind_list:
+                readout_counts_array_shfl[list_ind][0]
+                readout_counts_array[f][n] = readout_counts_array_shfl[list_ind][0]
+                target_counts_array[f][n] = target_counts_array_shfl[list_ind][0]
+                list_ind += 1
+            
+            # Take the average and ste. Need to rotate the matrix, to then only 
+            # average the runs that have been completed
+            readout_counts_array_rot = numpy.rot90(readout_counts_array)
+            readout_counts_avg = numpy.average(readout_counts_array_rot[-(n+1):], axis = 0)
+            readout_counts_ste = stats.sem(readout_counts_array_rot[-(n+1):], axis = 0)
+            
+            # create the img arrays
+            writePos = []
+            readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
+        
+            tool_belt.update_image_figure(fig_readout, readout_image_array)
+            
+        # Save
+        # measure laser powers:
+        green_optical_power_pd, green_optical_power_mW, \
+                red_optical_power_pd, red_optical_power_mW, \
+                yellow_optical_power_pd, yellow_optical_power_mW = \
+                tool_belt.measure_g_r_y_power(
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+        
+        
+        endFunctionTime = time.time()
+        # Save
+        timeElapsed = endFunctionTime - startFunctionTime
+        timestamp = tool_belt.get_time_stamp()
+        raw_data = {'timestamp': timestamp,
+                    'timeElapsed': timeElapsed,
+                    'init_color': init_color,
+                    'pulse_color': pulse_color,
+                    'readout_color': readout_color,
+                    'pulse_time': pulse_time,
+                    'pulse_time-units': 'ns',
+                'start_coords': start_coords,
+                'img_range': img_range,
+                'img_range-units': 'V',
+                'num_steps': num_steps,
+                'num_runs':num_runs,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'green_optical_power_pd': green_optical_power_pd,
+                'green_optical_power_pd-units': 'V',
+                'green_optical_power_mW': green_optical_power_mW,
+                'green_optical_power_mW-units': 'mW',
+                'red_optical_power_pd': red_optical_power_pd,
+                'red_optical_power_pd-units': 'V',
+                'red_optical_power_mW': red_optical_power_mW,
+                'red_optical_power_mW-units': 'mW',
+                'yellow_optical_power_pd': yellow_optical_power_pd,
+                'yellow_optical_power_pd-units': 'V',
+                'yellow_optical_power_mW': yellow_optical_power_mW,
+                'yellow_optical_power_mW-units': 'mW',
+                'coords_voltages': coords_voltages,
+                'coords_voltages-units': '[V, V]',
+                 'ind_list': ind_list,
+                'x_voltages_1d': x_voltages_1d.tolist(),
+                'y_voltages_1d': y_voltages_1d.tolist(),
+                
+                'img_extent': img_extent,
+                'img_extent-units': 'V',
+                
+                'readout_image_array': readout_image_array.tolist(),
+                'readout_image_array-units': 'counts',
+                'target_image_array': target_image_array.tolist(),
+                'target_image_array-units': 'counts',
+                        
+                'readout_counts_array': readout_counts_array.tolist(),
+                'readout_counts_array-units': 'counts',
+                'target_counts_array': target_counts_array.tolist(),
+                'target_counts_array-units': 'counts',
     
-    # image extent
-    x_low = x_voltages_1d[0]
-    x_high = x_voltages_1d[num_steps-1]
-    y_low = y_voltages_1d[0]
-    y_high = y_voltages_1d[num_steps-1]
-
-    pixel_size = (x_voltages_1d[1] - x_voltages_1d[0])
+                'readout_counts_avg': readout_counts_avg.tolist(),
+                'readout_counts_avg-units': 'counts',
+#                'target_counts_avg': target_counts_avg.tolist(),
+#                'target_counts_avg-units': 'counts',
     
-    half_pixel_size = pixel_size / 2
-    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                  y_low - half_pixel_size, y_high + half_pixel_size]
+                'readout_counts_ste': readout_counts_ste.tolist(),
+                'readout_counts_ste-units': 'counts',
+#                'target_counts_ste': target_counts_ste.tolist(),
+#                'target_counts_ste-units': 'counts',
+                }
+            
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+        tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_figure(fig_readout, file_path)
+#        if pulse_time < 10**9:
+#            tool_belt.save_figure(fig_target, file_path + '-target_counts')
+    else:
     
-    # Create the figure
-    title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse'.format(init_color, pulse_color, pulse_time/10**6)
-    fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
-                                                title = title, um_scaled = True)
-    # If the pusle time is longer that 1 s, we don't have target count data
-    if pulse_time < 10**9:
+        # shuffle the voltages that we're stepping thru
+        ind_list = list(range(num_samples))
+        shuffle(ind_list)
+        
+        # shuffle the voltages to run
+        coords_voltages_shuffle = []
+        for i in ind_list:
+            coords_voltages_shuffle.append(coords_voltages[i])
+    #    
+        coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
+    
+        # Run the data collection
+        ret_vals = main_data_collection(nv_sig, start_coords, optimize_coords, coords_voltages_shuffle_list,
+                                pulse_time, num_runs, init_color, pulse_color, readout_color, siv_init, index_list = ind_list)
+        
+        readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
+        readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
+        target_counts_array_shfl = numpy.array(target_counts_array_shfl)
+        
+        
+        # unshuffle the raw data
+        list_ind = 0
+        for f in ind_list:
+            readout_counts_array[f] = readout_counts_array_shfl[list_ind]
+            target_counts_array[f] = target_counts_array_shfl[list_ind]
+            list_ind += 1
+            
         # Take the average and ste
-        target_counts_avg = numpy.average(target_counts_array, axis = 1)
-        target_counts_ste = stats.sem(target_counts_array, axis = 1)
+        readout_counts_avg = numpy.average(readout_counts_array, axis = 1)
+        readout_counts_ste = stats.sem(readout_counts_array, axis = 1)
+        target_counts_avg = numpy.empty([1])
+        target_counts_ste = numpy.empty([1])
     
         # create the img arrays
         writePos = []
-        target_image_array = image_sample.populate_img_array(target_counts_avg, target_image_array, writePos)
+        readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
         
-        title = 'Counts on target  {} nm init pulse \n{} nm {} ms pulse'.format(init_color, pulse_color, pulse_time/10**6)
-        fig_target = tool_belt.create_image_figure(target_image_array, numpy.array(img_extent)*35,
+        # image extent
+        x_low = x_voltages_1d[0]
+        x_high = x_voltages_1d[num_steps-1]
+        y_low = y_voltages_1d[0]
+        y_high = y_voltages_1d[num_steps-1]
+    
+        pixel_size = (x_voltages_1d[1] - x_voltages_1d[0])
+        
+        half_pixel_size = pixel_size / 2
+        img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                      y_low - half_pixel_size, y_high + half_pixel_size]
+        
+        # Create the figure
+        title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse'.format(init_color, pulse_color, pulse_time/10**6)
+        fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
                                                     title = title, um_scaled = True)
-    
-    # measure laser powers:
-    green_optical_power_pd, green_optical_power_mW, \
-            red_optical_power_pd, red_optical_power_mW, \
-            yellow_optical_power_pd, yellow_optical_power_mW = \
-            tool_belt.measure_g_r_y_power(
-                              nv_sig['am_589_power'], nv_sig['nd_filter'])
-    
-    
-    endFunctionTime = time.time()
-    # Save
-    timeElapsed = endFunctionTime - startFunctionTime
-    timestamp = tool_belt.get_time_stamp()
-    raw_data = {'timestamp': timestamp,
-                'timeElapsed': timeElapsed,
-                'init_color': init_color,
-                'pulse_color': pulse_color,
-                'readout_color': readout_color,
-                'pulse_time': pulse_time,
-                'pulse_time-units': 'ns',
-            'start_coords': start_coords,
-            'img_range': img_range,
-            'img_range-units': 'V',
-            'num_steps': num_steps,
-            'num_runs':num_runs,
-            'nv_sig': nv_sig,
-            'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'green_optical_power_pd': green_optical_power_pd,
-            'green_optical_power_pd-units': 'V',
-            'green_optical_power_mW': green_optical_power_mW,
-            'green_optical_power_mW-units': 'mW',
-            'red_optical_power_pd': red_optical_power_pd,
-            'red_optical_power_pd-units': 'V',
-            'red_optical_power_mW': red_optical_power_mW,
-            'red_optical_power_mW-units': 'mW',
-            'yellow_optical_power_pd': yellow_optical_power_pd,
-            'yellow_optical_power_pd-units': 'V',
-            'yellow_optical_power_mW': yellow_optical_power_mW,
-            'yellow_optical_power_mW-units': 'mW',
-            'coords_voltages': coords_voltages,
-            'coords_voltages-units': '[V, V]',
-             'ind_list': ind_list,
-            'x_voltages_1d': x_voltages_1d.tolist(),
-            'y_voltages_1d': y_voltages_1d.tolist(),
-            
-            'img_extent': img_extent,
-            'img_extent-units': 'V',
-            
-            'readout_image_array': readout_image_array.tolist(),
-            'readout_image_array-units': 'counts',
-            'target_image_array': target_image_array.tolist(),
-            'target_image_array-units': 'counts',
-                    
-            'readout_counts_array': readout_counts_array.tolist(),
-            'readout_counts_array-units': 'counts',
-            'target_counts_array': target_counts_array.tolist(),
-            'target_counts_array-units': 'counts',
-
-            'readout_counts_avg': readout_counts_avg.tolist(),
-            'readout_counts_avg-units': 'counts',
-            'target_counts_avg': target_counts_avg.tolist(),
-            'target_counts_avg-units': 'counts',
-
-            'readout_counts_ste': readout_counts_ste.tolist(),
-            'readout_counts_ste-units': 'counts',
-            'target_counts_ste': target_counts_ste.tolist(),
-            'target_counts_ste-units': 'counts',
-            }
+        # If the pusle time is longer that 1 s, we don't have target count data
+        if pulse_time < 10**9:
+            # Take the average and ste
+            target_counts_avg = numpy.average(target_counts_array, axis = 1)
+            target_counts_ste = stats.sem(target_counts_array, axis = 1)
         
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_raw_data(raw_data, file_path)
-    tool_belt.save_figure(fig_readout, file_path)
-    if pulse_time < 10**9:
-        tool_belt.save_figure(fig_target, file_path + '-target_counts')
+            # create the img arrays
+            writePos = []
+            target_image_array = image_sample.populate_img_array(target_counts_avg, target_image_array, writePos)
+            
+            title = 'Counts on target  {} nm init pulse \n{} nm {} ms pulse'.format(init_color, pulse_color, pulse_time/10**6)
+            fig_target = tool_belt.create_image_figure(target_image_array, numpy.array(img_extent)*35,
+                                                        title = title, um_scaled = True)
+        
+        # measure laser powers:
+        green_optical_power_pd, green_optical_power_mW, \
+                red_optical_power_pd, red_optical_power_mW, \
+                yellow_optical_power_pd, yellow_optical_power_mW = \
+                tool_belt.measure_g_r_y_power(
+                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+        
+        
+        endFunctionTime = time.time()
+        # Save
+        timeElapsed = endFunctionTime - startFunctionTime
+        timestamp = tool_belt.get_time_stamp()
+        raw_data = {'timestamp': timestamp,
+                    'timeElapsed': timeElapsed,
+                    'init_color': init_color,
+                    'pulse_color': pulse_color,
+                    'readout_color': readout_color,
+                    'pulse_time': pulse_time,
+                    'pulse_time-units': 'ns',
+                'start_coords': start_coords,
+                'img_range': img_range,
+                'img_range-units': 'V',
+                'num_steps': num_steps,
+                'num_runs':num_runs,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'green_optical_power_pd': green_optical_power_pd,
+                'green_optical_power_pd-units': 'V',
+                'green_optical_power_mW': green_optical_power_mW,
+                'green_optical_power_mW-units': 'mW',
+                'red_optical_power_pd': red_optical_power_pd,
+                'red_optical_power_pd-units': 'V',
+                'red_optical_power_mW': red_optical_power_mW,
+                'red_optical_power_mW-units': 'mW',
+                'yellow_optical_power_pd': yellow_optical_power_pd,
+                'yellow_optical_power_pd-units': 'V',
+                'yellow_optical_power_mW': yellow_optical_power_mW,
+                'yellow_optical_power_mW-units': 'mW',
+                'coords_voltages': coords_voltages,
+                'coords_voltages-units': '[V, V]',
+                 'ind_list': ind_list,
+                'x_voltages_1d': x_voltages_1d.tolist(),
+                'y_voltages_1d': y_voltages_1d.tolist(),
+                
+                'img_extent': img_extent,
+                'img_extent-units': 'V',
+                
+                'readout_image_array': readout_image_array.tolist(),
+                'readout_image_array-units': 'counts',
+                'target_image_array': target_image_array.tolist(),
+                'target_image_array-units': 'counts',
+                        
+                'readout_counts_array': readout_counts_array.tolist(),
+                'readout_counts_array-units': 'counts',
+                'target_counts_array': target_counts_array.tolist(),
+                'target_counts_array-units': 'counts',
+    
+                'readout_counts_avg': readout_counts_avg.tolist(),
+                'readout_counts_avg-units': 'counts',
+                'target_counts_avg': target_counts_avg.tolist(),
+                'target_counts_avg-units': 'counts',
+    
+                'readout_counts_ste': readout_counts_ste.tolist(),
+                'readout_counts_ste-units': 'counts',
+                'target_counts_ste': target_counts_ste.tolist(),
+                'target_counts_ste-units': 'counts',
+                }
+            
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+        tool_belt.save_raw_data(raw_data, file_path)
+        tool_belt.save_figure(fig_readout, file_path)
+        if pulse_time < 10**9:
+            tool_belt.save_figure(fig_target, file_path + '-target_counts')
     
     return
  
@@ -1104,7 +1241,7 @@ if __name__ == '__main__':
 
 
     base_sig = { 'coords':[], 
-            'name': '{}-2021_03_17'.format(sample_name),
+            'name': '{}'.format(sample_name),
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
@@ -1114,27 +1251,28 @@ if __name__ == '__main__':
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
+            'pulsed_reionization_dur': 10**3, 'cobalt_532_power':10, 
             'ao_515_pwr': 0.65,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 #    start_coords = base_sig['coords']
-    expected_count_list = [36, 40, 35, 47, 52, 33, 40] # 3/1/21
+    expected_count_list = [50, 52, 55, 42, 50, 50, 55] # 4/2/21
     start_coords_list = [
-[-0.020, 0.109, 4.95],
-[-0.056, 0.104, 4.95],
-[0.088, 0.057, 4.95],
-[-0.019, 0.046, 4.95],
-[-0.009, 0.026, 4.95],
-[0.098, -0.130, 4.95],
-[-0.031, -0.131, 4.96],
-]
-    
+[0.046, 0.138, 5.21],
+[0.085, 0.126, 5.21],
+[0.006, 0.164, 5.17],
+
+[0.235, -0.174, 5.17],
+[0.220, -0.271, 5.18],
+[0.112, -0.221, 5.21],
+[0.132, -0.120, 5.17],
+
+            ]
 
 #    end_coords = end_coords.tolist()
-    num_steps = 20
+    num_steps = 20#41
 #    num_runs = 50
 #    img_range = 0.45
 #    optimize_nv_ind = 3
@@ -1145,28 +1283,46 @@ if __name__ == '__main__':
          optimize_coords = start_coords_list[optimize_nv_ind]
          x, y, z = start_coords_list[s]
          start_coords = [x, y, z]
-         end_coords = [x + 0.15 , y, z]
+         end_coords = [x + 0.55 , y, z]
          init_color = '515a'
          pulse_color = '515a'
          nv_sig = copy.deepcopy(base_sig)
          # Set up for current NV
-         nv_sig['name']= 'goeppert-mayer-nv{}_2021_03_17'.format(s)
+         nv_sig['name']= 'goeppert-mayer-nv{}_2021_04_02'.format(s)
          nv_sig['expected_count_rate'] = expected_count_list[optimize_nv_ind]
 #         # Set up for NV band
          nv_sig['color_filter'] = '635-715 bp'
          nv_sig['nd_filter'] = 'nd_1.0'
-         nv_sig['am_589_power'] = 0.25
-         nv_sig['pulsed_SCC_readout_dur'] = 4*10**7
+         nv_sig['am_589_power'] = 0.15
+         nv_sig['pulsed_SCC_readout_dur'] = 10*10**7
          # Set up for SiV band
 #         nv_sig['color_filter'] = '715 lp'
 #         nv_sig['nd_filter'] = 'nd_0'
 #         nv_sig['am_589_power'] = 0.6
 #         nv_sig['pulsed_SCC_readout_dur'] = 5*10**7
          # Measurements
+#         t =1*10**6
+#         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.60, t, num_steps, 30, init_color, pulse_color, False)
+         #########
+         t =5*10**6
+#         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.7, t, num_steps, 30, 
+#                                   init_color, pulse_color, False, live_updates = True)
 #         t =10*10**6
-#         do_moving_target_2D_image(nv_sig, start_coords, 0.18, t, num_steps, 100, init_color, pulse_color)
-         t =50*10**6
-         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, 20, init_color, pulse_color, False)
-#         do_moving_target_2D_image(nv_sig, start_coords, optimize_coords, 0.3, t, num_steps, 60,init_color, pulse_color, True)
-#         do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, t, 
-#                             30, 50, init_color, pulse_color)
+#         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.7, t, num_steps, 10, 
+#                                   init_color, pulse_color, False, live_updates = True )
+         t =25*10**6
+         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.7, t, num_steps, 20, 
+                                   init_color, pulse_color, False, live_updates = True )
+#         t =50*10**6
+#         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.7, t, num_steps, 10, 
+#                                   init_color, pulse_color, False, live_updates = True)
+         ##########
+#         t =100*10**6
+#         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  1.1, t, num_steps, 10, init_color, pulse_color, False)
+#         t =1000*10**6
+#         do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  1.20, t, num_steps, 30, init_color, pulse_color, False)
+         
+#         do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, 5*10**6, 
+#                             60, 20, init_color, pulse_color)
+#         do_moving_target_1D_line(nv_sig, start_coords, end_coords, optimize_coords, 10**9, 
+#                             30, 20, init_color, pulse_color)

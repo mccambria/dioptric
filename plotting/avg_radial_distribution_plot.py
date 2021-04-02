@@ -351,9 +351,9 @@ def plot_moving_target_1D_line_2_data(file_list, pulse_length):
 if __name__ == '__main__':
     # %% Moving target 2D 1/11
     nv_file_list = ['2021_03_21-13_15_41-goeppert-mayer-nv1-2021_03_17', # dark
-                    '2021_03_22-16_24_06-goeppert-mayer-nv1-2021_03_17', # bright
-                    '2021_03_20-10_39_33-goeppert-mayer-nv1-2021_03_17', # none
-                    ]
+                    '2021_03_22-16_24_06-goeppert-mayer-nv1-2021_03_17'] # bright]
+    
+    charge_count_file = 'pc_rabi/branch_Spin_to_charge/collect_charge_counts/2021_03/2021_03_24-14_30_16-goeppert-mayer-nv_2021_03_17-nv_list'
     
     pc_name = 'pc_rabi'
     branch_name = 'branch_Spin_to_charge'
@@ -361,23 +361,27 @@ if __name__ == '__main__':
     sub_folder = '2021_03'
     
     color = 'tab:blue'
-    labels = ['SiV dark reset', 'SiV bright reset', 'No SiV reset']
+    labels = ['SiV dark reset', 'SiV bright reset', ]
     fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
-    for i in [0,1, 2]:
-        try:
+    for i in [0,1]:
             file = nv_file_list[i]
             # file_9 = nv_file_list_9[i]
             radii, counts_r=plot_radial_avg_moving_target(file, pc_name, branch_name, data_folder, 
                                                           sub_folder, do_plot = False, save_plot =  False)
-            print(len(counts_r))
+#            print(len(counts_r))
             # radii_9, counts_r_9=plot_radial_avg_moving_target(file_9, pc_name, branch_name, data_folder, 
             #                                               sub_folder, do_plot = False, save_plot =  False)
-            ax1.plot(radii, counts_r, label = labels[i])
+            
+            # charge state information
+            data = tool_belt.get_raw_data('', charge_count_file)
+            nv0_avg = data['nv0_avg_list'][0]
+            nvm_avg = data['nvm_avg_list'][0]
+            counts_r_chrg = (numpy.array(counts_r) - nvm_avg)/(nv0_avg - nvm_avg)
+            
+            ax1.plot(radii, counts_r_chrg, label = labels[i])
             # ax1.plot(radii_9, counts_r_9, label = '1/9')
-        except Exception:
-            continue
-    ax1.set_xlabel('Radial distance (um)')
-    ax1.set_ylabel('Azimuthal avg counts (kcps)')
+    ax1.set_xlabel(r'Remote Pulse Position, Relative to NV ($\mu$m)')
+    ax1.set_ylabel('NV- population (arb)')
     ax1.set_title('Radial plot of moving target w/ SiV reset\n50 ms 532 nm remote pulse')
     ax1.legend()
     

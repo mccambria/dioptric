@@ -646,19 +646,19 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
         
-    expected_count_list = [36, 40, 35, 47, 52, 33, 40] # 3/1/21
+    expected_count_list = [50,50, 50, 45, 45, 45, 50, 50, 50] # 3/30/21
     nv_coords_list = [
-[-0.020, 0.109, 4.95],
-[-0.056, 0.104, 4.95],
-[0.088, 0.057, 4.95],
-[-0.019, 0.046, 4.95],
-[-0.009, 0.026, 4.95],
-[0.098, -0.130, 4.95],
-[-0.031, -0.131, 4.96],
+[0.046, 0.138, 5.21],
+[0.085, 0.126, 5.21],
+[0.006, 0.164, 5.17],
+[0.235, -0.174, 5.17],
+[0.220, -0.271, 5.18],
+[0.112, -0.221, 5.21],
+[0.132, -0.120, 5.17],
 ]
     
-    nv_2021_03_17 = { 'coords':[], 
-            'name': 'goepert-mayer-nv_2021_03_17',
+    nv_2021_03_30 = { 'coords':[], 
+            'name': 'goepert-mayer-nv_2021_04_02',
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
@@ -674,20 +674,24 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    for i in [1, 4, 6]:#range(len(nv_coords_list)):
-        nv_sig = copy.deepcopy(nv_2021_03_17)
+    for i in [3,4,5,6]:#range(len(nv_coords_list)):
+        nv_sig = copy.deepcopy(nv_2021_03_30)
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
-        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_03_17'.format(i)
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_02'.format(i)
         nv_sig['nd_filter'] = 'nd_1.0'
-        nv_sig['am_589_power'] = 0.25
-        optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3, 
-                               50*10**3, 100*10**3,500*10**3, 
-                               1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
-                               6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
-                               2*10**7,3*10**7,4*10**7,
-                               5*10**7, 6*10**7, 7*10**7, 8*10**7, 9*10**7, 10**8
-                               ])
+        nv_sig['am_589_power'] = 0.15
+        optimize_readout_pulse_length(nv_sig, 
+#                                      test_pulse_dur_list  = [10*10**3, 
+#                               50*10**3, 100*10**3,500*10**3, 
+#                               1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
+#                               6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
+#                               2*10**7,3*10**7,4*10**7,
+#                               5*10**7, 6*10**7, 7*10**7, 8*10**7, 9*10**7, 10**8
+#                               ]
+                                )
+        
+   
         
 #    optimize_readout_pulse_power(nv18_2020_11_10)
     

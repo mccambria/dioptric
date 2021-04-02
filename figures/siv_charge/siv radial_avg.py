@@ -1,0 +1,225 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar 24 14:49:46 2021
+File to create figures for SiV charge paper
+
+@author: agardill
+"""
+
+import matplotlib.pyplot as plt 
+import numpy
+import utils.tool_belt as tool_belt
+import majorroutines.image_sample as image_sample
+     
+# %%
+def radial_distrbution_data(center_coords, x_voltages, y_voltages, num_steps, img_range, img_array):
+    # Initial calculations
+    x_coord = center_coords[0]          
+    y_coord = center_coords[1]
+    
+    # subtract the center coords from the x and y voltages so that we are working from the "origin"
+    x_voltages = numpy.array(x_voltages) - x_coord
+    y_voltages = numpy.array(y_voltages) - y_coord
+    
+    half_x_range = img_range / 2
+    # x_high = x_coord + half_x_range
+    
+    # Having trouble with very small differences in pixel values. (10**-15 V)
+    # Let's round to a relatively safe value and see if that helps
+    pixel_size = round(x_voltages[1] - x_voltages[0], 10)
+    half_pixel_size = pixel_size / 2
+    
+    # List to hold the values of each pixel within the ring
+    counts_r = []
+    # New 2D array to put the radial values of each pixel
+    r_array = numpy.empty((num_steps, num_steps))
+    
+    # Calculate the radial distance from each point to center
+    for i in range(num_steps):
+        x_pos = x_voltages[i]
+        for j in range(num_steps):
+            y_pos = y_voltages[j]
+            r = numpy.sqrt(x_pos**2 + y_pos**2)
+            r_array[i][j] = r
+    
+    # define bounds on each ring radial values, which will be one pixel in size
+    low_r = 0
+    high_r = pixel_size
+    # step throguh the radial ranges for each ring, add pixel within ring to list
+    # Note, I was runnign into rounding issue with the uper bound, probably a 
+    # poor fix of just adding a small bit to the bound
+    while high_r <= (half_x_range + half_pixel_size + 10**-9):
+        ring_counts = []
+        for i in range(num_steps):
+            for j in range(num_steps): 
+                radius = r_array[i][j]
+                if radius >= low_r and radius < high_r:
+                    ring_counts.append(img_array[i][j])
+        # average the counts of all counts in a ring
+        counts_r.append(numpy.average(ring_counts))
+        # advance the radial bounds
+        low_r = high_r
+        high_r = round(high_r + pixel_size, 10)
+    
+    # define the radial values as center values of pixels along x, convert to um
+    # we need to subtract the center value from the x voltages
+    radii = numpy.array(x_voltages[int(num_steps/2):])*35
+    
+    return radii, counts_r
+
+# %% data from moving target
+def plot_radial_avg_moving_target(file,  pc_name, branch_name, data_folder, 
+                                  sub_folder, threshold, do_plot = True, save_plot = True):
+    '''
+    Use this function to plot the azimuthal averaged counts as a function of radius 
+    from the moving target data. 
+    
+    You need to pass the daa file ending with "dif", which has it's data stored
+    under "readout_image_array"
+
+    Parameters
+    ----------
+    file : str
+        file name, excluding the .txt
+    pc_name : str
+        name of the pc, either 'pc_rbi' or 'pc_hahn'
+    branch_anme: str
+        the name of the branch that the data is saved under
+    data_folder: str
+        data folder that file is saved in, ex: 'moving_target'
+    sub_folder : str
+        the path from the parent folder to the folder containing the file.
+    do_plot : Boolean, optional
+        If True, the radial coutns will be plotted. The default is True.
+    save_plot : Boolean, optional
+        If True, the figure and data will be saved. The default is True.
+
+    Returns
+    -------
+    radii : list
+        The radii of each radial point, in units of um.
+    counts_r : numpy array
+        The averaged azimuthal counts at each radial distance from the center.
+
+    '''
+    folder = pc_name + '/' + branch_name + '/' + data_folder + '/' + sub_folder
+    
+    # Get data from the file
+    data = tool_belt.get_raw_data(folder, file) 
+    timestamp = data['timestamp']
+    init_color = data['init_color']
+    pulse_color = data['pulse_color']
+    nv_sig = data['nv_sig']
+    coords = numpy.array(data['start_coords'])
+    try:
+        x_voltages = data['x_voltages_1d']
+        y_voltages = data['y_voltages_1d']
+    except Exception:
+        coords_voltages = data['coords_voltages']
+        x_voltages, y_voltages = zip(*coords_voltages)
+    num_steps = data['num_steps']
+    img_range= data['img_range']
+#    readout_image_array = numpy.array(data['readout_image_array'])
+    # img_extent = data['img_extent']
+    
+    raw_counts = numpy.array(data['readout_counts_array'])
+    # charge state information
+    cut_off = threshold
+    
+    # for each individual measurement, determine if the NV was in NV0 or NV- by threshold.
+    # Then average the measurements for each pixel to gain mean charge state.
+    for r in range(len(raw_counts)):
+        row = raw_counts[r]
+        for c in range(len(row)):
+            current_val = raw_counts[r][c]
+            if current_val < cut_off:
+                set_val = 0
+            elif current_val >= cut_off:
+                set_val = 1
+            raw_counts[r][c] = set_val
+    charge_counts_avg = numpy.average(raw_counts, axis = 1)
+    
+    # create the img arrays
+    readout_image_array = numpy.empty([num_steps, num_steps])
+    readout_image_array[:] = numpy.nan
+    writePos = []
+    readout_image_array = image_sample.populate_img_array(charge_counts_avg, readout_image_array, writePos)
+        
+    if pulse_color == 532:
+        opt_power = data['green_optical_power_mW']
+        pulse_time = nv_sig['pulsed_reionization_dur']
+    if pulse_color == 638:
+        opt_power = data['red_optical_power_mW']
+        pulse_time = nv_sig['pulsed_ionization_dur']
+    
+    readout = nv_sig['pulsed_SCC_readout_dur']
+    
+    # plot
+    radii, counts_r = radial_distrbution_data(coords, x_voltages,
+                              y_voltages, num_steps, img_range, readout_image_array)
+    
+    if do_plot:
+    
+        fig, ax = plt.subplots(1,1, figsize = (8, 8))
+        # radii = radii[:-1]
+        # counts_r = counts_r[:-1]
+        ax.plot(radii, counts_r)
+        ax.set_xlabel('Radial distance (um)')
+        ax.set_ylabel('Azimuthal avg counts (kcps)')
+        ax.set_title('Radial plot of moving target\n{} nm init pulse\n{} s {} nm pulse at {:.1f} mW'.format(init_color, 
+                                                                          pulse_time/10**9, pulse_color,opt_power))
+    
+        if save_plot:
+            # save data from this file
+            rawData = {'timestamp': timestamp,
+                        'init_color': init_color,
+                        'pulse_color': pulse_color,
+                        'pulse_time': pulse_time,
+                        'pulse_time-units': 'ns',
+                        'opt_power': opt_power,
+                        'opt_power-units': 'mW',
+                        'readout': readout,
+                        'readout-units': 'ns',
+                        'nv_sig': nv_sig,
+                        'nv_sig-units': tool_belt.get_nv_sig_units(),
+                        'num_steps': num_steps,
+                        'radii': radii.tolist(),
+                        'radii-units': 'um',
+                        'counts_r': counts_r,
+                        'counts_r-units': 'kcps'}
+                
+            filePath = tool_belt.get_file_path(data_folder, timestamp, nv_sig['name'])
+            tool_belt.save_raw_data(rawData, filePath + '_radial_dist')
+            tool_belt.save_figure(fig, filePath + '_radial_dist')
+        
+
+    return radii, counts_r
+# %%
+if __name__ == '__main__':
+    
+
+    nv_file_list = ['2021_03_23-11_33_52-goeppert-mayer-nv1-2021_03_17', # dark
+                    '2021_03_23-11_52_22-goeppert-mayer-nv1-2021_03_17'] # bright]
+    
+    threshold = 6
+    
+    pc_name = 'pc_rabi'
+    branch_name = 'branch_Spin_to_charge'
+    data_folder = 'moving_target_siv_init'
+    sub_folder = '2021_03'
+    
+    color = 'tab:blue'
+    labels = ['SiV dark reset', 'SiV bright reset', ]
+    fig, ax1 = plt.subplots(1,1, figsize = (10,8))#(12, 6))
+    for i in [0,1]:
+            file = nv_file_list[i]
+            # file_9 = nv_file_list_9[i]
+            radii, counts_r=plot_radial_avg_moving_target(file, pc_name, branch_name, data_folder, 
+                                                          sub_folder, threshold, do_plot = False, save_plot =  False)
+            
+            ax1.plot(radii, counts_r, label = labels[i])
+            # ax1.plot(radii_9, counts_r_9, label = '1/9')
+    ax1.set_xlabel(r'Remote Pulse Position, Relative to NV ($\mu$m)')
+    ax1.set_ylabel('NV- population (arb)')
+    ax1.set_title('Radial plot of moving target w/ SiV reset\n50 ms 515 nm remote pulse')
+    ax1.legend()

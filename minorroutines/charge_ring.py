@@ -15,10 +15,10 @@ import time
 import copy
 # %%
 
-reset_range = 2.5
-image_range = 2.5
-num_steps = 100#200#int(225 * image_range) 
-num_steps_reset = 120#int(75 * reset_range)
+reset_range = 1.0#2.5
+image_range = 1.0
+num_steps = int(225 * image_range) 
+num_steps_reset = int(75 * reset_range)
 apd_indices = [0]
 #red_reset_power = 0.8548
 #red_pulse_power = 0.8548
@@ -273,7 +273,7 @@ if __name__ == '__main__':
     expected_count_list = [36, 40, 35, 47, 52, 33, 40] # 3/1/21
     start_coords_list = [
 [-0.020, 0.109, 4.95],
-[-0.056, 0.104, 4.95],
+[-0.044, 0.104, 5.05],
 [0.088, 0.057, 4.95],
 [-0.019, 0.046, 4.95],
 [-0.009, 0.026, 4.95],
@@ -284,18 +284,18 @@ if __name__ == '__main__':
     
     init_time = 10**7
     
-    init_color = 532
+    init_color = 638
     pulse_color = 532
     readout_color = 589
     
-    center_coords = [-0.056, 0.104, 4.95]
-    reset_coords = [-0.056, 0.104, 4.95]
-    optimize_coords =[-0.056, 0.104, 4.95]
+    center_coords = [-0.044, 0.104, 5.05]
+    reset_coords = [-0.044, 0.104, 5.05]
+    optimize_coords =[-0.044, 0.104, 5.05]
 #    center_coords = pulse_coords
     
     with labrad.connect() as cxn:
-        pulse_time = 100
-        pulse_coords =   [-0.056, 0.104, 4.95]
+        pulse_time = 10
+        pulse_coords =   [-0.044, 0.104, 5.05]
         main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
                            pulse_coords, pulse_time, init_time, init_color, 
                            pulse_color, readout_color)
