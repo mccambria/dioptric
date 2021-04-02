@@ -222,11 +222,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
         low_sig_gen_cxn.set_amp(uwave_power_low)
         low_sig_gen_cxn.load_iq()
         low_sig_gen_cxn.uwave_on()
+        
         high_sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)
         high_sig_gen_cxn.set_freq(uwave_freq_high)
         high_sig_gen_cxn.set_amp(uwave_power_high)
         high_sig_gen_cxn.load_iq()
         high_sig_gen_cxn.uwave_on()
+        
         cxn.arbitrary_waveform_generator.load_knill()
 
         # Load the APD
@@ -267,6 +269,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                         gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, taus[tau_ind_second],
                         apd_indices[0], init_state.value, read_state.value]
             seq_args = [int(el) for el in seq_args]
+            # print(seq_args)
+            # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             
             cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),

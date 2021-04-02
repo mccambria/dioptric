@@ -113,10 +113,10 @@ def get_seq(pulser_wiring, args):
     
     # Switch the phase with the AWG
     composite_pulse = [(10, HIGH), (uwave_pi_pulse-10, LOW)] * 5
-    pre_duration = aom_delay_time + polarization_time + signal_wait_time - iq_delay_time - uwave_delay_time
+    pre_duration = aom_delay_time + polarization_time + signal_wait_time - iq_delay_time
     post_duration = signal_wait_time + polarization_time + \
         reference_wait_time + reference_time + \
-        background_wait_time + end_rest_time + iq_delay_time + uwave_delay_time
+        background_wait_time + end_rest_time + iq_delay_time
     train = [(pre_duration, LOW)]
     for i in range(num_pi_pulses):
         train.extend(composite_pulse)
