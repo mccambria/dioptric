@@ -387,7 +387,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
     # Define the counts for the plus relaxation equation
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
     plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
-    
+
     # Skip values at t=0 to get rid of pi pulse decoherence systematic
     # See wiki March 31st, 2021
     inds_to_remove = []
@@ -435,7 +435,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         # Calculate gamma and its ste
         gamma = (gamma_opti_params[0] - omega)/ 2.0
         gamma_ste = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_ste**2)
-        
+
         # Test MCC
         # gamma = 0.070
         # gamma_opti_params[0] = (2 * gamma) + omega
@@ -519,7 +519,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 if __name__ == '__main__':
 
     temp = 287.5
-    
+
     # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
     folder = 'hopper-nv1_2021_03_16-{}K'.format(temp)
