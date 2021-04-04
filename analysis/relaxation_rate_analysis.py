@@ -308,7 +308,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
         zero_relaxation_ste = numpy.sqrt(zero_zero_ste**2 + zero_plus_ste**2)
 
-        init_params_list = [1.0, 0.4]
+        init_params_list = [0.1, 0.3]
 
         try:
             if offset:
@@ -517,14 +517,11 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 275
+    temp = 212.5
     
-    path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    # path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    # folder = 'johnson-nv17_2021_02_04-{}K'.format(temp)
-    folder = 'hopper-nv1_2021_03_16-275K-1ms'
-    
-    # folder = 'hopper-nv1_2021_03_16-{}K'.format(temp)
+    # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
+    path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
+    folder = 'hopper-nv1_2021_03_16-{}K'.format(temp)
 
     est_omega = omega_calc(temp) / 1000
     print(est_omega)

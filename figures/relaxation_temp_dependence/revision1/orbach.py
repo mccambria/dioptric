@@ -29,14 +29,15 @@ Boltzmann = 8.617e-2  # meV / K
 # Rate coefficients in s^-1 from Jarmola
 A_1 = 0.007  # Constant for S3
 A_2 = 2.1e3  # Orbach
-# A_2 = 1.8e3  # Test
+# A_2 = 1.7e3  # Test
 A_3 = 2.2e-11  # T^5
-# A_3 = 0  # Test
+# A_3 = 2.5e-11  # Test
 A_4 = 4.3e-6  # T^3
 A_7 = 2.55e-20
 
 # Quasilocalized mode activation energy
 quasi = 73.0  # meV, empirical fit
+# quasi = 69.0  # meV, empirical fit
 # quasi = 65.0  # meV, quasilocalized resonance
 # quasi = 1.17e-20  # J
 
@@ -94,6 +95,9 @@ def omega_calc(temp):
 def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp**5)
     
+def T5_free(temp, coeff_T5):
+    return coeff_T5 * temp**5
+
     
 # %% Other functions
 
@@ -109,11 +113,22 @@ def fit_omega_orbach_T5(data_points):
             omegas.append(point[omega_column_title])
             omega_errs.append(point[omega_err_column_title])
             
-    init_params = (A_2, quasi, A_3)
-    popt, pcov = curve_fit(orbach_T5_free, temps, omegas, p0=init_params,
-                           sigma=omega_errs, absolute_sigma=True)
+    # fit_func = orbach_free
+    # init_params = (A_2 / 3, quasi)
     
-    return popt, pcov
+    fit_func = orbach_T5_free
+    init_params = (A_2 / 3, quasi, A_3 / 3)
+            
+    # fit_func = T5_free
+    # init_params = (2 * A_3 / 3)
+    
+    num_params = len(init_params)
+    popt, pcov = curve_fit(fit_func, temps, omegas, p0=init_params,
+                           sigma=omega_errs, absolute_sigma=True, 
+                           bounds=([0]*num_params,[numpy.inf]*num_params),
+                           method='dogbox')
+    
+    return popt, pcov, fit_func
 
 
 def fit_gamma_orbach(data_points):
@@ -127,11 +142,22 @@ def fit_gamma_orbach(data_points):
             gammas.append(point[gamma_column_title])
             gamma_errs.append(point[gamma_err_column_title])
             
-    init_params = (A_2, quasi)
-    popt, pcov = curve_fit(orbach_free, temps, gammas, p0=init_params,
-                           sigma=gamma_errs, absolute_sigma=True)
+    fit_func = orbach_free
+    init_params = ((2/3) * A_2, quasi)
+            
+    # fit_func = orbach_T5_free
+    # init_params = ((2/3) * A_2, quasi, 1E-11)
+            
+    # fit_func = T5_free
+    # init_params = ((2/3) * A_3)
     
-    return popt, pcov
+    num_params = len(init_params)
+    popt, pcov = curve_fit(fit_func, temps, gammas, p0=init_params,
+                           sigma=gamma_errs, absolute_sigma=True, 
+                           bounds=([0]*num_params,[numpy.inf]*num_params),
+                           method='dogbox')
+    
+    return popt, pcov, fit_func
 
 
 def get_data_points_csv(file):
@@ -194,18 +220,18 @@ def main(data_points):
     # ax.set_title('Relaxation rates')
     
     # Fit to Omega
-    popt, pcov = fit_omega_orbach_T5(data_points)
+    popt, pcov, fit_func = fit_omega_orbach_T5(data_points)
     print(popt)
-    ax.plot(temp_linspace, orbach_T5_free(temp_linspace, *popt),
+    ax.plot(temp_linspace, fit_func(temp_linspace, *popt),
             label=r'$\Omega$ fit', color=omega_edge_color)
     # Plot Jarmola 2012 Eq. 1 for S3
     # ax.plot(temp_linspace, omega_calc(temp_linspace),
     #         label=r'$\Omega$ fit', color=omega_edge_color)  
     
     # Fit to gamma
-    popt, pcov = fit_gamma_orbach(data_points)
+    popt, pcov, fit_func = fit_gamma_orbach(data_points)
     print(popt)
-    ax.plot(temp_linspace, orbach_free(temp_linspace, *popt),
+    ax.plot(temp_linspace, fit_func(temp_linspace, *popt),
             label=r'$\gamma$ fit', color=gamma_edge_color)
     
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
