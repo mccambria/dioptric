@@ -116,9 +116,9 @@ def do_stationary_count(nv_sig, apd_indices):
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 60 * 2  # s
-    # diff_window = 400  # ns
-    diff_window = 1176  # ns
+    run_time =30  # s
+    # diff_window = 200  # ns
+    diff_window = 1000  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
                         apd_a_index, apd_b_index)
@@ -252,10 +252,10 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [20e3, 40e6], 11, 1.0*10**3, 60],
-        [[States.HIGH, States.HIGH], [20e3, 40e6], 11, 1.0*10**3, 60],
-        [[States.ZERO, States.HIGH], [20e3, 75e6], 11, 1.0*10**3, 60],
-        [[States.ZERO, States.ZERO], [20e3, 75e6], 11, 1.0*10**3, 60]
+        [[States.ZERO, States.HIGH], [20e3, 45e6], 11, 1.0*10**3, 70],
+        [[States.ZERO, States.ZERO], [20e3, 45e6], 11, 1.0*10**3, 70],
+        [[States.HIGH, States.LOW], [20e3, 25e6], 11, 1.0*10**3, 70],
+        [[States.HIGH, States.HIGH], [20e3, 25e6], 11, 1.0*10**3, 70],
         ], dtype=object)
 
     # Loop through the experiments
@@ -472,12 +472,12 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.0, 0.0, 65],
+    nv_sig = { 'coords': [0.0, 0.0, 70],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.8028, 'rabi_LOW': 306.6, 'uwave_power_LOW': 14.5,
-            'resonance_HIGH': 2.9480, 'rabi_HIGH': 180.3, 'uwave_power_HIGH': 12.0} 
+            'resonance_LOW': 2.8014, 'rabi_LOW': 276.6, 'uwave_power_LOW': 14.5,
+            'resonance_HIGH': 2.9468, 'rabi_HIGH': 169.4, 'uwave_power_HIGH': 12.0} 
     
     
     # %% Functions to run
@@ -513,7 +513,7 @@ if __name__ == '__main__':
         #     do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
         
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0,5)
+        #     cxn.cryo_piezos.write_xy(0,6)
         
         # tool_belt.init_safe_stop()
         # while True:

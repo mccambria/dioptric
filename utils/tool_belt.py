@@ -97,7 +97,7 @@ def encode_seq_args(seq_args):
     return json.dumps(seq_args)
 
 def decode_seq_args(seq_args_string):
-    if seq_args_string is '':
+    if seq_args_string == '':
         return []
     else:
         return json.loads(seq_args_string)
