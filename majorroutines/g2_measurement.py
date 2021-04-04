@@ -203,7 +203,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     # num_bins = int(2*mod)-1
 
     # Expose the stream
-    # cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
+    cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
 
     # Get the APD channel names that the tagger will return
     ret_vals = cxn.apd_tagger.get_channel_mapping()
@@ -222,6 +222,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     # num_pointsss = 50
     # vals = numpy.linspace(0, num_pointsss, num_pointsss+1)
     # vals *= 8
+    total_tags = []
     while not stop:
 
         #######
@@ -266,6 +267,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         ret_vals = cxn.apd_tagger.read_tag_stream()
         buffer_timetags, buffer_channels = ret_vals
         buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
+        total_tags.extend(buffer_timetags.tolist())
         # print('num tags: {}'.format(len(buffer_channels)))
         # print(buffer_timetags)
         # print(buffer_channels)
@@ -353,6 +355,9 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     tool_belt.save_raw_data(raw_data, filePath)
 
     print('g2(0) = {}'.format(g2_zero))
+    
+    raw_data = {'total_tags': total_tags}
+    tool_belt.save_raw_data(raw_data, filePath)
 
     return g2_zero
 
