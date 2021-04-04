@@ -87,6 +87,7 @@ def test_T_seventh(temp):
     return A_7 * (temp**7)
 
 def omega_calc(temp):
+    """Using Jarmola fit"""
     return (A_1 + orbach(temp) + raman(temp)) / 3
     # return A_1 + test_T_cubed(temp) + raman(temp)
     # return (A_1 + orbach(temp) + raman(temp) + test_T_seventh(temp)) / 3
@@ -96,6 +97,10 @@ def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     
 def T5_free(temp, coeff_T5):
     return coeff_T5 * temp**5
+
+def gamma_calc(temp):
+    """Using fit from April 2nd, 2021"""
+    return orbach_free(temp, 1668, 71) 
 
     
 # %% Other functions
