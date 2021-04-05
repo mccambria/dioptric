@@ -35,7 +35,8 @@ import os
 
 import utils.tool_belt as tool_belt
 from utils.tool_belt import States
-from figures.bulk_d_perp_prime.revision3.orbach import omega_calc
+from figures.relaxation_temp_dependence.revision1.orbach import omega_calc
+from figures.relaxation_temp_dependence.revision1.orbach import gamma_calc
 
 # %% Constants
 
@@ -386,7 +387,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
     # Define the counts for the plus relaxation equation
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
     plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
-    
+
     # Skip values at t=0 to get rid of pi pulse decoherence systematic
     # See wiki March 31st, 2021
     inds_to_remove = []
@@ -434,7 +435,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         # Calculate gamma and its ste
         gamma = (gamma_opti_params[0] - omega)/ 2.0
         gamma_ste = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_ste**2)
-        
+
         # Test MCC
         # gamma = 0.070
         # gamma_opti_params[0] = (2 * gamma) + omega
@@ -517,15 +518,17 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 237.5
-    
+    temp = 250
+
     # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-{}K'.format(temp)
+    folder = 'hopper-nv1_2021_03_16-{}K-2'.format(temp)
 
-    est_omega = omega_calc(temp) / 1000
-    print(est_omega)
-    # print(1/(3*est_omega))
+    est_omega = omega_calc(temp)
+    est_gamma = gamma_calc(temp)
+    print('good times in ms')
+    print('Omega: {}'.format(3500/(3*est_omega)))
+    print('gamma: {}'.format(3000/(2*est_gamma + est_omega)))
 
     # gamma, ste = main(path, folder, omega=est_omega, omega_ste=0.0,
                       # doPlot=True, offset=False)
