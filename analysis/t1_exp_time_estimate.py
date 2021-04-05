@@ -63,10 +63,10 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 # %%
 
 t1_exp_array = numpy.array([
-        [[States.ZERO, States.HIGH], [20e3, 45e6], 11, 1.0*10**3, 70],
-        [[States.ZERO, States.ZERO], [20e3, 45e6], 11, 1.0*10**3, 70],
-        [[States.HIGH, States.LOW], [20e3, 25e6], 11, 1.0*10**3, 70],
-        [[States.HIGH, States.HIGH], [20e3, 25e6], 11, 1.0*10**3, 70],
+        [[States.ZERO, States.HIGH], [20e3, 40e6], 11, 1.0*10**3, 80],
+        [[States.ZERO, States.ZERO], [20e3, 40e6], 11, 1.0*10**3, 80],
+        [[States.HIGH, States.LOW], [20e3, 25e6], 11, 1.0*10**3, 80],
+        [[States.HIGH, States.HIGH], [20e3, 25e6], 11, 1.0*10**3, 80],
         ], dtype=object)
 
 contrast = 0.17  # arb
