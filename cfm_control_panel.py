@@ -551,7 +551,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0.2, -0.2 ,5.2],
+    search = { 'coords':[-0.3, -0.3 ,5.2],
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
@@ -576,10 +576,15 @@ if __name__ == '__main__':
 [0.085, 0.126, 5.21],
 [0.006, 0.164, 5.17],
 
-[0.235, -0.174, 5.17],
+[0.235, -0.174, 5.17], # 3
 [0.220, -0.271, 5.18],
 [0.112, -0.221, 5.21],
 [0.132, -0.120, 5.17],
+
+[-0.374, -0.387, 5.22], # 7
+[-0.344, -0.350, 5.18],
+[-0.221, -0.303, 5.20],
+[-0.366, -0.257, 5.18],
             ]
     
     nv_sig_list =[]
@@ -587,7 +592,7 @@ if __name__ == '__main__':
         nv_coords = nv_list_2021_04_02[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
-        nv_sig['expected_count_rate'] = expected_count_list[i]
+#        nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_02'.format(i)
         nv_sig_list.append(nv_sig)
         
@@ -633,7 +638,7 @@ if __name__ == '__main__':
 #            with labrad.connect() as cxn:
 #                cxn.filter_slider_ell9k.set_filter('nd_0')
 #                cxn.filter_slider_ell9k_color.set_filter('no_filter')
-            do_optimize(nv_sig, apd_indices, '515a')
+#            do_optimize(nv_sig, apd_indices, '515a')
 #            do_optimize(nv_sig, apd_indices, 532)
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
