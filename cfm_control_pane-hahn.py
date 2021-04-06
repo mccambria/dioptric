@@ -170,7 +170,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # num_runs = 8
     
     # Zoom
-    freq_range = 0.04
+    freq_range = 0.035
     num_steps = 51
     num_reps = 8000
     num_runs = 10
@@ -252,10 +252,10 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
     t1_exp_array = numpy.array([
-        [[States.ZERO, States.HIGH], [20e3, 45e6], 11, 1.0*10**3, 70],
-        [[States.ZERO, States.ZERO], [20e3, 45e6], 11, 1.0*10**3, 70],
-        [[States.HIGH, States.LOW], [20e3, 25e6], 11, 1.0*10**3, 70],
-        [[States.HIGH, States.HIGH], [20e3, 25e6], 11, 1.0*10**3, 70],
+        [[States.ZERO, States.HIGH], [20e3, 40e6], 11, 1.0*10**3, 80],
+        [[States.ZERO, States.ZERO], [20e3, 40e6], 11, 1.0*10**3, 80],
+        [[States.HIGH, States.LOW], [20e3, 25e6], 11, 1.0*10**3, 80],
+        [[States.HIGH, States.HIGH], [20e3, 25e6], 11, 1.0*10**3, 80],
         ], dtype=object)
 
     # Loop through the experiments
@@ -472,12 +472,12 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.0, 0.0, 70],
+    nv_sig = { 'coords': [0.0, 0.0, 75],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.8014, 'rabi_LOW': 276.6, 'uwave_power_LOW': 14.5,
-            'resonance_HIGH': 2.9468, 'rabi_HIGH': 169.4, 'uwave_power_HIGH': 12.0} 
+            'resonance_LOW': 2.8008, 'rabi_LOW': 267.2, 'uwave_power_LOW': 14.5,
+            'resonance_HIGH': 2.9461, 'rabi_HIGH': 163.0, 'uwave_power_HIGH': 12.0} 
     
     
     # %% Functions to run
@@ -513,7 +513,7 @@ if __name__ == '__main__':
         #     do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
         
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0,6)
+        #     cxn.cryo_piezos.write_xy(0,7)
         
         # tool_belt.init_safe_stop()
         # while True:
