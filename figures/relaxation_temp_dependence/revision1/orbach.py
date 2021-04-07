@@ -213,8 +213,8 @@ def get_data_points_csv(file):
 
 def main(data_points):
     
-    min_temp = 150
-    max_temp = 300
+    min_temp = 175
+    max_temp = 310
     
     # temp_linspace = numpy.linspace(5, 600, 1000)
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
@@ -293,14 +293,15 @@ def main(data_points):
     # legend_elements = [Rectangle((110,0), 10, 30, facecolor='red', edgecolor='#FF9933', label=r'$\Omega$'),
     #                    Rectangle((0,0), 10, 30, facecolor='#CC99CC', edgecolor='#993399', label=r'$\gamma$')]
     leg1 = ax.legend(handles=[omega_patch, gamma_patch], loc='upper left',
-                     title='Rates', bbox_to_anchor=(0.29, 1.0))
+                     title='Rates')
     
     sample_patches = []
     for ind in range(len(samples)):
         patch = mlines.Line2D([], [], color='black', marker=markers[ind],
                           linestyle='None', markersize=ms, label=samples[ind])
         sample_patches.append(patch)
-    ax.legend(handles=sample_patches, loc='upper left', title='Samples')
+    ax.legend(handles=sample_patches, loc='upper left', title='Samples', 
+              bbox_to_anchor=(0.14, 1.0))
     
     ax.add_artist(leg1)
 
@@ -321,7 +322,7 @@ if __name__ == '__main__':
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)
     
-    file_name = 'compiled_data-no_t_0'
+    file_name = 'compiled_data'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     file_path = path + '{}.xlsx'.format(file_name)
     csv_file_path = path + '{}.csv'.format(file_name)
