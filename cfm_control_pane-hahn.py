@@ -251,12 +251,22 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
+    num_runs = 40
+    num_reps = 1e3
+    num_steps = 11
+    min_tau = 20e3
+    max_tau_omega = 105e6
+    max_tau_gamma = 59e6
     t1_exp_array = numpy.array([
-        [[States.ZERO, States.HIGH], [20e3, 40e6], 11, 1.0*10**3, 80],
-        [[States.ZERO, States.ZERO], [20e3, 40e6], 11, 1.0*10**3, 80],
-        [[States.HIGH, States.LOW], [20e3, 25e6], 11, 1.0*10**3, 80],
-        [[States.HIGH, States.HIGH], [20e3, 25e6], 11, 1.0*10**3, 80],
-        ], dtype=object)
+            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
+            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
+            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
+            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
+            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+            ], dtype=object)
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -472,12 +482,12 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.0, 0.0, 75],
+    nv_sig = { 'coords': [0.0, 0.0, 60],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.8008, 'rabi_LOW': 267.2, 'uwave_power_LOW': 14.5,
-            'resonance_HIGH': 2.9461, 'rabi_HIGH': 163.0, 'uwave_power_HIGH': 12.0} 
+            'resonance_LOW': 2.8031, 'rabi_LOW': 335.1, 'uwave_power_LOW': 14.5,
+            'resonance_HIGH': 2.9480, 'rabi_HIGH': 182.8, 'uwave_power_HIGH': 12.0} 
     
     
     # %% Functions to run
