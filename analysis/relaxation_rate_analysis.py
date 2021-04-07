@@ -518,19 +518,19 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 250
+    temp = 300
 
     # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-{}K-2'.format(temp)
+    folder = 'hopper-nv1_2021_03_16-{}K'.format(temp)
 
     est_omega = omega_calc(temp)
     est_gamma = gamma_calc(temp)
     print('good times in ms')
-    print('Omega: {}'.format(3500/(3*est_omega)))
-    print('gamma: {}'.format(3000/(2*est_gamma + est_omega)))
+    print('Omega: {}'.format(4000/(3*est_omega)))
+    print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
 
     # gamma, ste = main(path, folder, omega=est_omega, omega_ste=0.0,
                       # doPlot=True, offset=False)
-    gamma, ste = main(path, folder, omega=None, omega_ste=None,
-                      doPlot=True, offset=False)
+    # gamma, ste = main(path, folder, omega=None, omega_ste=None,
+    #                   doPlot=True, offset=False)

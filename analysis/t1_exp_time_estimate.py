@@ -62,14 +62,24 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 
 # %%
 
+num_runs = 40
+num_reps = 1e3
+num_steps = 11
+min_tau = 20e3
+max_tau_omega = 105e6
+max_tau_gamma = 59e6
 t1_exp_array = numpy.array([
-        [[States.ZERO, States.HIGH], [20e3, 40e6], 11, 1.0*10**3, 80],
-        [[States.ZERO, States.ZERO], [20e3, 40e6], 11, 1.0*10**3, 80],
-        [[States.HIGH, States.LOW], [20e3, 25e6], 11, 1.0*10**3, 80],
-        [[States.HIGH, States.HIGH], [20e3, 25e6], 11, 1.0*10**3, 80],
+        [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
+        [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
+        [[States.ZERO, States.HIGH], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
+        [[States.ZERO, States.ZERO], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
+        [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+        [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+        [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+        [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
         ], dtype=object)
 
-contrast = 0.17  # arb
+contrast = 0.15  # arb
 exp_count_rate = 1000  # kcps
 readout_window = 350  # ns
 
