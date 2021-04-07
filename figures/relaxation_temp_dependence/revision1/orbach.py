@@ -14,7 +14,7 @@ Created on Fri Jun 26 17:40:09 2020
 import numpy
 import matplotlib.pyplot as plt
 import csv
-from matplotlib.patches import Patch
+import matplotlib.patches as patches
 import matplotlib.lines as mlines
 from scipy.optimize import curve_fit
 import pandas as pd
@@ -48,6 +48,8 @@ gamma_face_color = '#CC99CC'
 gamma_edge_color = '#993399'
 omega_face_color = '#FFCC33'
 omega_edge_color = '#FF9933'
+ratio_face_color = '#FB9898'
+ratio_edge_color = '#EF2424'
 
 sample_column_title = 'Sample'
 skip_column_title = 'Skip'
@@ -212,9 +214,16 @@ def get_data_points_csv(file):
 
 
 def main(data_points):
+    
+    # %% Setup
 
-    min_temp = 175
+    min_temp = 170
     max_temp = 310
+
+    plot_type = 'rates'
+    # plot_type = 'ratios'
+    # plot_type = 'ratio_fits'
+    # plot_type = 'residuals'
 
     # temp_linspace = numpy.linspace(5, 600, 1000)
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
@@ -225,25 +234,44 @@ def main(data_points):
     # ax.set_title('Relaxation rates')
 
     # Fit to Omega
-    popt, pcov, fit_func = fit_omega_orbach_T5(data_points)
-    print(popt)
-    ax.plot(temp_linspace, fit_func(temp_linspace, *popt),
-            label=r'$\Omega$ fit', color=omega_edge_color)
-    # Plot Jarmola 2012 Eq. 1 for S3
-    # ax.plot(temp_linspace, omega_calc(temp_linspace),
-    #         label=r'$\Omega$ fit', color=omega_edge_color)
+    omega_popt, omega_pcov, omega_fit_func = fit_omega_orbach_T5(data_points)
+    omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
+    print(omega_popt)
+    # omega_popt[2] = 0
+    if plot_type == 'rates':
+        ax.plot(temp_linspace, omega_lambda(temp_linspace),
+                label=r'$\Omega$ fit', color=omega_edge_color)
+        # Plot Jarmola 2012 Eq. 1 for S3
+        # ax.plot(temp_linspace, omega_calc(temp_linspace),
+        #         label=r'$\Omega$ fit', color=omega_edge_color)
 
     # Fit to gamma
-    popt, pcov, fit_func = fit_gamma_orbach(data_points)
-    print(popt)
-    ax.plot(temp_linspace, fit_func(temp_linspace, *popt),
-            label=r'$\gamma$ fit', color=gamma_edge_color)
+    gamma_popt, gamma_pcov, gamma_fit_func = fit_gamma_orbach(data_points)
+    gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
+    print(gamma_popt)
+    # gamma_popt[1] = omega_popt[1]
+    if plot_type == 'rates':
+        ax.plot(temp_linspace, gamma_lambda(temp_linspace),
+                label=r'$\gamma$ fit', color=gamma_edge_color)
+        
+    ratio_lambda = lambda temp: gamma_lambda(temp_linspace) / omega_lambda(temp_linspace)
+    if plot_type == 'ratio_fits':
+        ax.plot(temp_linspace, ratio_lambda(temp_linspace),
+                label=r'$\gamma/\Omega$', color=gamma_edge_color)
+    
 
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
     # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
 
     ax.set_xlabel(r'T (K)')
-    ax.set_ylabel(r'Relaxation rates (s$^{-1})$')
+    if plot_type == 'rates':
+        ax.set_ylabel(r'Relaxation rates (s$^{-1}$)')
+    elif plot_type == 'ratios':
+        ax.set_ylabel(r'Ratios')
+    elif plot_type == 'ratio_fits':
+        ax.set_ylabel(r'Ratio of fits')
+    elif plot_type == 'residuals':
+        ax.set_ylabel(r'Residuals (s$^{-1}$)')
     # ax.set_yscale('log')
     # ax.set_xscale('log')
     ax.set_xlim(min_temp, max_temp)
@@ -255,6 +283,8 @@ def main(data_points):
     # ind in range(len(nv_data)):
 
     #     nv = nv_data[ind]
+    
+    # %% Plot the points
 
     samples = []
     markers = []
@@ -269,41 +299,82 @@ def main(data_points):
             samples.append(sample)
         if marker not in markers:
             markers.append(marker)
+            
+        temp = point[temp_column_title]
 
-        if point[omega_column_title] is not None:
-            ax.errorbar(point[temp_column_title],
-                        point[omega_column_title],
-                        yerr=point[omega_err_column_title],
-                        label=r'$\Omega$', marker=marker,
-                        color=omega_edge_color, markerfacecolor=omega_face_color,
-                        linestyle='None', ms=ms, lw=lw)
+        if plot_type in ['rates', 'residuals']:
+            # Omega
+            rate = point[omega_column_title]
+            if rate is not None:
+                if plot_type == 'rates':
+                    val = rate
+                elif plot_type == 'residuals':
+                    val = rate - omega_lambda(temp)
+                ax.errorbar(temp, val,
+                            yerr=point[omega_err_column_title],
+                            label=r'$\Omega$', marker=marker,
+                            color=omega_edge_color,
+                            markerfacecolor=omega_face_color,
+                            linestyle='None', ms=ms, lw=lw)
+            # gamma
+            rate = point[gamma_column_title]
+            if rate is not None:
+                if plot_type == 'rates':
+                    val = rate
+                elif plot_type == 'residuals':
+                    val = rate - gamma_lambda(temp)
+                ax.errorbar(temp, val,
+                            yerr=point[gamma_err_column_title],
+                            label= r'$\gamma$', marker=marker,
+                            color=gamma_edge_color,
+                            markerfacecolor=gamma_face_color,
+                            linestyle='None', ms=ms, lw=lw)
+            
+        elif plot_type == 'ratios':
+            omega_val = point[omega_column_title]
+            omega_err = point[omega_err_column_title]
+            gamma_val = point[gamma_column_title]
+            gamma_err = point[gamma_err_column_title]
+            if (omega_val is not None) and (gamma_val is not None):
+                ratio = gamma_val / omega_val
+                ratio_err = ratio*numpy.sqrt((omega_err/omega_val)**2 + (gamma_err/gamma_val)**2)
+                ax.errorbar(temp, ratio,
+                            yerr=ratio_err,
+                            label= r'$\gamma/\Omega$', marker=marker,
+                            color=ratio_edge_color,
+                            markerfacecolor=ratio_face_color,
+                            linestyle='None', ms=ms, lw=lw)
 
-        if point[gamma_column_title] is not None:
-            ax.errorbar(point[temp_column_title],
-                        point[gamma_column_title],
-                        yerr=point[gamma_err_column_title],
-                        label= r'$\gamma$', marker=marker,
-                        color=gamma_edge_color, markerfacecolor=gamma_face_color,
-                        linestyle='None', ms=ms, lw=lw)
+    # %% Legend
+    
+    leg1 = None
 
-    omega_patch = Patch(facecolor=omega_face_color, edgecolor=omega_edge_color,
-                        label=r'$\Omega$')
-    gamma_patch = Patch(facecolor=gamma_face_color, edgecolor=gamma_edge_color,
-                        label=r'$\gamma$')
-    # legend_elements = [Rectangle((110,0), 10, 30, facecolor='red', edgecolor='#FF9933', label=r'$\Omega$'),
-    #                    Rectangle((0,0), 10, 30, facecolor='#CC99CC', edgecolor='#993399', label=r'$\gamma$')]
-    leg1 = ax.legend(handles=[omega_patch, gamma_patch], loc='upper left',
-                     title='Rates')
+    if plot_type in ['rates', 'residuals']:
+        omega_patch = patches.Patch(label=r'$\Omega$',
+                        facecolor=omega_face_color, edgecolor=omega_edge_color)
+        gamma_patch = patches.Patch(label=r'$\gamma$', 
+                        facecolor=gamma_face_color, edgecolor=gamma_edge_color)
+        leg1 = ax.legend(handles=[omega_patch, gamma_patch], loc='upper left',
+                          title='Rates')
 
-    sample_patches = []
-    for ind in range(len(samples)):
-        patch = mlines.Line2D([], [], color='black', marker=markers[ind],
-                          linestyle='None', markersize=ms, label=samples[ind])
-        sample_patches.append(patch)
-    ax.legend(handles=sample_patches, loc='upper left', title='Samples',
-              bbox_to_anchor=(0.14, 1.0))
+    elif plot_type == 'ratios':
+        ratio_patch = patches.Patch(label=r'$\gamma/\Omega$',
+                        facecolor=ratio_face_color, edgecolor=ratio_edge_color)
+        leg1 = ax.legend(handles=[ratio_patch], loc='upper left')
 
-    ax.add_artist(leg1)
+    # Samples
+    if plot_type in ['rates', 'ratios', 'residuals']:
+        sample_patches = []
+        for ind in range(len(samples)):
+            patch = mlines.Line2D([], [], color='black', marker=markers[ind],
+                              linestyle='None', markersize=ms, label=samples[ind])
+            sample_patches.append(patch)
+        x_loc = 0.16
+        ax.legend(handles=sample_patches, loc='upper left', title='Samples',
+                  bbox_to_anchor=(x_loc, 1.0))
+
+    if leg1 is not None:
+        ax.add_artist(leg1)
 
 
 # %% Run the file
@@ -322,7 +393,8 @@ if __name__ == '__main__':
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)
 
-    file_name = 'compiled_data-no_t_0'
+    # file_name = 'compiled_data'
+    file_name = 'compiled_data-test'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     file_path = path + '{}.xlsx'.format(file_name)
     csv_file_path = path + '{}.csv'.format(file_name)
