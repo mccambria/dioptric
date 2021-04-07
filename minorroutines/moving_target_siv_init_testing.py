@@ -46,23 +46,18 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
     
     
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
-#    pulser_wiring_green = wiring['do_532_aom']
     pulser_wiring_green = wiring['ao_515_laser']
-#    pulser_wiring_yellow = wiring['ao_589_aom']
     pulser_wiring_red = wiring['do_638_laser']
-#    pulser_wiring_red = wiring['ao_638_laser']
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)    
     laser_515_delay = shared_params['515_laser_delay']
     laser_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
-#    laser_638_delay = shared_params['638_AM_laser_delay']
     
     if pulse_color == 532 or pulse_color == '515a':
         direct_wiring = pulser_wiring_green
         laser_delay = laser_515_delay
     elif pulse_color == 589:
-#        direct_wiring = pulser_wiring_yellow
         laser_delay = laser_589_delay
     elif pulse_color == 638:
         direct_wiring = pulser_wiring_red
@@ -71,6 +66,8 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
 
     optimize.main_with_cxn(cxn, optimize_sig, apd_indices, '515a', disable=False) 
     start=time.time()   
+    
+    # area reset
     if siv_state == 'bright':
         
         print('Resetting with {} nm light for bright state\n...'.format(init_color))

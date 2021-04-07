@@ -8,6 +8,7 @@ File to create figures for SiV charge paper
 
 import matplotlib.pyplot as plt 
 import numpy
+import math
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
      
@@ -46,9 +47,7 @@ def radial_distrbution_data(center_coords, x_voltages, y_voltages, num_steps, im
     low_r = 0
     high_r = pixel_size
     # step throguh the radial ranges for each ring, add pixel within ring to list
-    # Note, I was runnign into rounding issue with the uper bound, probably a 
-    # poor fix of just adding a small bit to the bound
-    while high_r <= (half_x_range + half_pixel_size + 10**-9):
+    while high_r <= (half_x_range + pixel_size + 10**-9):
         ring_counts = []
         for i in range(num_steps):
             for j in range(num_steps): 
@@ -63,7 +62,7 @@ def radial_distrbution_data(center_coords, x_voltages, y_voltages, num_steps, im
     
     # define the radial values as center values of pixels along x, convert to um
     # we need to subtract the center value from the x voltages
-    radii = numpy.array(x_voltages[int(num_steps/2):])*35
+    radii = numpy.array(x_voltages[(math.ceil(num_steps/2)-1):])*35
     
     return radii, counts_r
 
@@ -124,20 +123,23 @@ def plot_radial_avg_moving_target(file,  pc_name, branch_name, data_folder,
     
     raw_counts = numpy.array(data['readout_counts_array'])
     # charge state information
-    cut_off = threshold
+    if threshold:
+        cut_off = threshold
     
-    # for each individual measurement, determine if the NV was in NV0 or NV- by threshold.
-    # Then average the measurements for each pixel to gain mean charge state.
-    for r in range(len(raw_counts)):
-        row = raw_counts[r]
-        for c in range(len(row)):
-            current_val = raw_counts[r][c]
-            if current_val < cut_off:
-                set_val = 0
-            elif current_val >= cut_off:
-                set_val = 1
-            raw_counts[r][c] = set_val
-    charge_counts_avg = numpy.average(raw_counts, axis = 1)
+        # for each individual measurement, determine if the NV was in NV0 or NV- by threshold.
+        # Then average the measurements for each pixel to gain mean charge state.
+        for r in range(len(raw_counts)):
+            row = raw_counts[r]
+            for c in range(len(row)):
+                current_val = raw_counts[r][c]
+                if current_val < cut_off:
+                    set_val = 0
+                elif current_val >= cut_off:
+                    set_val = 1
+                raw_counts[r][c] = set_val
+        charge_counts_avg = numpy.average(raw_counts, axis = 1)
+    else:
+        charge_counts_avg = data['readout_counts_avg']
     
     # create the img arrays
     readout_image_array = numpy.empty([num_steps, num_steps])
@@ -194,21 +196,15 @@ def plot_radial_avg_moving_target(file,  pc_name, branch_name, data_folder,
         
 
     return radii, counts_r
-# %%
-if __name__ == '__main__':
-    
 
-    nv_file_list = ['2021_03_23-11_33_52-goeppert-mayer-nv1-2021_03_17', # dark
-                    '2021_03_23-11_52_22-goeppert-mayer-nv1-2021_03_17'] # bright]
-    
-    threshold = 6
-    
+def siv_reset(dark_file, bright_file, threshold):
+    nv_file_list = [dark_file, bright_file]
     pc_name = 'pc_rabi'
     branch_name = 'branch_Spin_to_charge'
     data_folder = 'moving_target_siv_init'
     sub_folder = '2021_03'
     
-    color = 'tab:blue'
+#    color = 'tab:blue'
     labels = ['SiV dark reset', 'SiV bright reset', ]
     fig, ax1 = plt.subplots(1,1, figsize = (10,8))#(12, 6))
     for i in [0,1]:
@@ -223,3 +219,48 @@ if __name__ == '__main__':
     ax1.set_ylabel('NV- population (arb)')
     ax1.set_title('Radial plot of moving target w/ SiV reset\n50 ms 515 nm remote pulse')
     ax1.legend()
+    
+    return
+
+def siv_and_nv_band(NV_file, SiV_file, threshold):
+     file_list = [NV_file, SiV_file]
+     pc_name = 'pc_rabi'
+     branch_name = 'branch_Spin_to_charge'
+     data_folder = 'moving_target'
+     sub_folder = '2021_04'
+    
+     label_list = ['NV band', 'SiV band']
+     fig, ax1 = plt.subplots(1,1, figsize = (8, 8))
+    
+     color = 'tab:blue'
+     file = file_list[0]
+     radii, counts_r=plot_radial_avg_moving_target(file, pc_name, branch_name, data_folder, 
+                                                          sub_folder, threshold, do_plot = False, save_plot =  False)
+     ax1.plot(radii, counts_r, color = color)
+     ax1.set_xlabel(r'Remote Pulse Position, Relative to NV ($\mu$m)')
+     ax1.set_ylabel('Azimuthal avg counts (kcps) [635-715 nm bandpass]', color = color)
+#     ax1.set_title('Radial plot of moving target\n532 nm init pulse\n1 ms 532 nm pulse')
+     ax1.tick_params(axis = 'y', labelcolor=color)
+
+     color = 'tab:red'
+     ax2 = ax1.twinx()
+     file = file_list[1]
+     radii, counts_r=plot_radial_avg_moving_target(file, pc_name, branch_name, data_folder, 
+                                                          sub_folder, None, do_plot = False, save_plot =  False)
+     ax2.plot(radii, counts_r, color = color)
+     ax1.set_xlabel(r'Remote Pulse Position, Relative to NV ($\mu$m)')
+     ax2.set_ylabel('Azimuthal avg counts (kcps) [715 nm longpass]', color = color)
+     ax2.tick_params(axis = 'y', labelcolor=color)
+     
+     return
+# %%
+if __name__ == '__main__':
+     dark_file = ''
+     bright_file = ''
+     threshold = 6
+#     siv_reset(dark_file, bright_file, threshold) 
+     # 1 ms
+     NV_file = '2021_04_06-05_27_42-goeppert-mayer-nv13_2021_04_02'
+     SiV_file = '2021_04_06-15_05_14-goeppert-mayer-nv13_2021_04_02'
+     threshold = 15
+     siv_and_nv_band(NV_file, SiV_file, threshold)

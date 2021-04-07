@@ -150,7 +150,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
     # z
     elif axis_ind == 2:
         
-        scan_range = 3* scan_range_nm / shared_params['piezo_nm_per_volt']
+        scan_range = 2*3* scan_range_nm / shared_params['piezo_nm_per_volt']
         seq_args = [shared_params['objective_piezo_delay'],
                     readout, aom_ao_589_pwr, ao_515_pwr, apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -300,6 +300,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, co
         cxn.filter_slider_ell9k_color.set_filter('635-715 bp')  
     elif color_filter == 'SiV':
         cxn.filter_slider_ell9k_color.set_filter('715 lp')
+    time.sleep(0.01)
         
     magnet_angle = nv_sig['magnet_angle']
     if magnet_angle is not None:
@@ -506,7 +507,8 @@ def main_xy_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0,
         cxn.filter_slider_ell9k_color.set_filter('635-715 bp')  
     elif color_filter == 'SiV':
         cxn.filter_slider_ell9k_color.set_filter('715 lp')
-        
+    time.sleep(0.01)
+    
     magnet_angle = nv_sig['magnet_angle']
     if magnet_angle is not None:
         cxn.rotation_stage_ell18k.set_angle(magnet_angle)

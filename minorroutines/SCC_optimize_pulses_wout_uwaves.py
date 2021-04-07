@@ -646,20 +646,26 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
         
-    expected_count_list = [50,50, 50, 45, 50, 45, 50, 50, 50, 60, 50, 50] # 3/30/21
+    expected_count_list = [55, 55, 50, 45, 50, 55, 60, 50, 50, 50, 60, 45, 55, 55, 40] # 4/2/21
     nv_coords_list = [
-[0.046, 0.138, 5.21],
-[0.085, 0.126, 5.21],
-[0.006, 0.164, 5.17],
-[0.235, -0.174, 5.17], # 3
-[0.220, -0.271, 5.18],
-[0.112, -0.221, 5.21],
-[0.132, -0.120, 5.17],
+[0.045, 0.139, 5.16],
+[0.084, 0.126, 5.22],
+[0.005, 0.165, 5.13],
 
-[-0.374, -0.387, 5.22], # 7
-[-0.344, -0.350, 5.18],
-[-0.221, -0.303, 5.20],
-[-0.366, -0.257, 5.18],
+[0.233, -0.170, 5.18], # 3
+[0.219, -0.267, 5.17],
+[0.112, -0.218, 5.20],
+[0.131, -0.116, 5.13],
+
+[-0.376, -0.383, 5.19], # 7
+[-0.348, -0.346, 5.14],
+[-0.225, -0.300, 5.16],
+[-0.370, -0.254, 5.13],
+
+[0.200, 0.243, 5.14], #11
+[0.239, 0.265, 5.17],
+[0.243, 0.317, 5.14], 
+[0.384, 0.210, 5.10],
 ]
     
     nv_2021_03_30 = { 'coords':[], 
@@ -679,18 +685,14 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    for i in [7,8,9,10]:#range(len(nv_coords_list)):
+    for i in [13]:#range(len(nv_coords_list)):
         nv_sig = copy.deepcopy(nv_2021_03_30)
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_02'.format(i)
         nv_sig['nd_filter'] = 'nd_1.0'
         nv_sig['am_589_power'] = 0.15
-        optimize_readout_pulse_length(nv_sig, 
-                                      test_pulse_dur_list  = [ 10*10**7, 
-#                               11*10**7, 12*10**7 
-                               ]
-                                )
+        optimize_readout_pulse_length(nv_sig,   )
         
    
         
