@@ -663,8 +663,8 @@ if __name__ == '__main__':
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, flip = False, readout = 1*10**7)
-            do_image_sample(nv_sig,  apd_indices, '515a',
-                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, '515a',
+#                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =2*10**7)
 
@@ -698,7 +698,7 @@ if __name__ == '__main__':
              
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices, 532)
+            do_resonance(nv_sig, apd_indices, 532)
  
 #            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.1)
 #            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.22)
