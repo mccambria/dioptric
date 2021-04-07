@@ -214,7 +214,7 @@ def get_data_points_csv(file):
 def main(data_points):
     
     min_temp = 150
-    max_temp = 300
+    max_temp = 310
     
     # temp_linspace = numpy.linspace(5, 600, 1000)
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
@@ -321,7 +321,7 @@ if __name__ == '__main__':
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)
     
-    file_name = 'compiled_data'
+    file_name = 'compiled_data-no_t_0'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     file_path = path + '{}.xlsx'.format(file_name)
     csv_file_path = path + '{}.csv'.format(file_name)
