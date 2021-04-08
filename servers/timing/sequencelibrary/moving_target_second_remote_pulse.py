@@ -33,7 +33,7 @@ def get_seq(pulser_wiring, args):
         galvo_time = durations
                 
     aom_ao_589_pwr = args[8]
-    green_init_pwr = args[9]
+    green_remote_init_pwr = args[9]
     green_pulse_pwr = args[10]
     green_readout_pwr = args[11]
 
@@ -101,7 +101,7 @@ def get_seq(pulser_wiring, args):
     init_train_on = [(initialization_time, HIGH)]
     init_train_off = [(initialization_time, LOW)]
     if init_color == '515a':
-        init_train_on = [(initialization_time, green_init_pwr)]
+        init_train_on = [(initialization_time, green_remote_init_pwr)]
         train_515.extend(init_train_on)
         train_532.extend(init_train_off)
         train_589.extend(init_train_off)
@@ -241,8 +241,8 @@ if __name__ == '__main__':
               'do_638_laser': 7
               }
 
-#    seq_args = [1000, 1500, 2000, 3000, 0, 0, 0, 500, 0.5, 0.5, 0.5, 0.5, 0, 532, 589, 532, 638]
-    seq_args = [1000000, 100000, 50000000, 40000000, 140, 1080, 90, 2000000, 0.25, 0.6045, 0.635, 0.635, 0, '515a', '515a', '515a', 589]
+    seq_args = [1000, 1500, 2000, 3000, 0, 0, 0, 500, 0.25, 0.3, 1, 1, 0, '515a', '515a', '515a', 589]
+#    seq_args = [1000000, 100000, 50000000, 40000000, 140, 1080, 90, 2000000, 0.25, 0.6045, 0.635, 0.635, 0, '515a', '515a', '515a', 589]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()

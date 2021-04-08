@@ -93,6 +93,6 @@ if __name__ == '__main__':
                'ao_638_laser': 1,
                'do_638_laser': 7             }
 
-    args = [1000,500, 100, 200, 100, 0, 0, 0, 0, 0.7]
+    args = [600000, 25000, 10000, 1000, 1000, 140, 1080, 90, 0, 1]
     seq, final, _ = get_seq(wiring, args)
     seq.plot()

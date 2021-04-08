@@ -192,7 +192,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-
+    print(seq_args)
+    return
     seq_time = ret_vals[0]
 
     seq_time_s = seq_time / (10**9)  # s
@@ -236,7 +237,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
 def optimize_reion_pulse_length(nv_sig, test_pulse_dur_list = None):
     apd_indices = [0]
-    num_reps = 1000
+    num_reps = 500
     if not test_pulse_dur_list:
         test_pulse_dur_list = [0,5*10**3, 10*10**3, 20*10**3, 30*10**3, 
                         40*10**3, 50*10**3, 100*10**3,200*10**3,300*10**3,
@@ -692,8 +693,9 @@ if __name__ == '__main__':
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_02'.format(i)
         nv_sig['nd_filter'] = 'nd_1.0'
         nv_sig['am_589_power'] = 0.15
-        optimize_readout_pulse_length(nv_sig,   )
-        
+#        optimize_readout_pulse_length(nv_sig,   )
+    
+        optimize_reion_pulse_length(nv_sig)
    
         
 #    optimize_readout_pulse_power(nv18_2020_11_10)

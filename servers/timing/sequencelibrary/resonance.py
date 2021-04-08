@@ -83,6 +83,6 @@ if __name__ == '__main__':
               'do_aom': 2,
               'do_signal_generator_bnc835_gate': 3,
               'do_532_aom': 4}
-    args = [50, 1.0 , 100 ,0, 3, 532]
+    args = [50, 1.0 , 100 ,0, 1, 532]
     seq, ret_vals, _ = get_seq(wiring, args)
     seq.plot()

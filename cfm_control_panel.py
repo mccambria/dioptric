@@ -134,9 +134,11 @@ def do_optimize_list(nv_sig_list, apd_indices, color_ind):
 
 def do_stationary_count(nv_sig, apd_indices, color_ind):
 
-    run_time = 90 * 10**9  # ns
+    run_time = 10* 10**9  # ns
 
-    stationary_count.main(nv_sig, run_time, apd_indices, color_ind)
+    average, st_dev = stationary_count.main(nv_sig, run_time, apd_indices, color_ind)
+    
+    return average, st_dev
     
 def do_two_pulse_stationary_count(nv_sig, init_color, read_color, init_time, 
                                   readout_time, apd_indices):
@@ -155,20 +157,10 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
                         apd_a_index, apd_b_index)
 
 def do_resonance(nv_sig, apd_indices, color_ind, freq_center=2.878, freq_range=0.2):
-#    # green @ 8 mW
     num_steps = 76
     num_runs = 12
-    uwave_power = -8
+    uwave_power = -13.0
     
-    # green @ 4 mW
-#    num_steps = 101
-#    num_runs = 3
-#    uwave_power = -16.0
-    
-    # yellow @ 40 uW
-#    num_steps = 101
-#    num_runs = 7
-#    uwave_power = -21.0  
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                    num_steps, num_runs, uwave_power, color_ind)
@@ -190,9 +182,9 @@ def do_resonance_state(nv_sig, apd_indices, state):
 def do_pulsed_resonance(nv_sig, apd_indices,
                         freq_center=2.878, freq_range=0.2):
 
-    num_steps = 51
+    num_steps = 76
     num_reps = 10**5
-    num_runs = 1
+    num_runs = 12
     uwave_power = 9.0
     uwave_pulse_dur = 100
 
@@ -553,7 +545,7 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0.3, 0.3 ,5.2],
+    search = { 'coords':[0.226, 0.304 ,5.19],
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
@@ -563,35 +555,32 @@ if __name__ == '__main__':
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 50, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
             'ao_638_pwr': 0.8,
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10,
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':5,
             'ao_515_pwr': 0.65,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}    
 
     
-    expected_count_list = [55, 55, 50, 45, 50, 55, 60, 50, 50, 50, 60, 45, 50, 45, 40] # 4/2/21
+    expected_count_list = [55, 55, 50, 50, 50, 55, 60, 50, 50, 50, 60, 55, 55, 55, 55] # 4/2/21 ###
     nv_list_2021_04_02 = [
-[0.045, 0.139, 5.16],
-[0.084, 0.126, 5.22],
-[0.005, 0.165, 5.13],
-
-[0.233, -0.170, 5.18], # 3
-[0.219, -0.267, 5.17],
-[0.112, -0.218, 5.20],
-[0.131, -0.116, 5.13],
-
-[-0.376, -0.383, 5.19], # 7
-[-0.348, -0.346, 5.14],
-[-0.225, -0.300, 5.16],
-[-0.370, -0.254, 5.13],
-
-[0.200, 0.243, 5.14], #11
-[0.239, 0.265, 5.17],
-[0.243, 0.317, 5.14], 
-[0.384, 0.210, 5.10],
+[0.032, 0.147, 5.25],
+[0.068, 0.132, 5.28],
+[-0.007, 0.173, 5.19],
+[0.221, -0.163, 5.21],
+[0.207, -0.261, 5.23],
+[0.100, -0.212, 5.27],
+[0.118, -0.110, 5.20],
+[-0.390, -0.376, 5.26],
+[-0.362, -0.341, 5.20],
+[-0.237, -0.293, 5.22],
+[-0.384, -0.249, 5.20],
+[0.186, 0.247, 5.23],
+[0.226, 0.269, 5.22],
+[0.231, 0.319, 5.19],
+[0.372, 0.212, 5.18],
             ]
     
     nv_sig_list =[]
@@ -612,7 +601,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        drift = [0.003, 0.005, 0.05]
+#        drift = [0.004, 0.009, 0.1]
 #        tool_belt.set_drift(drift)  
 #        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset 
 #        tool_belt.set_drift([-0.03,-0.02,-0.16])  # 2/23/21
@@ -650,7 +639,7 @@ if __name__ == '__main__':
 #            for x in [-1, 0 ,1]:
 #                for y in [-1, 0, 1]:
 #            [x, y, z] = nv_sig['coords']
-#            for z in numpy.linspace(z - 0.25, z + 0.25, 5):
+#            for z in numpy.linspace(z - 0.2, z + 0.2, 5):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]  
@@ -663,15 +652,18 @@ if __name__ == '__main__':
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, flip = False, readout = 1*10**7)
-#            do_image_sample(nv_sig,  apd_indices, '515a',
-#                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, '515a',
+                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =2*10**7)
 
 #            do_determine_galvo_response(nv_sig, apd_indices)
 
             
-#            do_stationary_count(nv_sig, apd_indices, 532)            
+#            average, st_dev = do_stationary_count(nv_sig, apd_indices, 532)  
+#            print(average)
+#            print(st_dev)
+            
 #            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
 #                                  2*10**7, apd_indices) 
             
@@ -698,7 +690,7 @@ if __name__ == '__main__':
              
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
-            do_resonance(nv_sig, apd_indices, 532)
+#            do_resonance(nv_sig, apd_indices, 532)
  
 #            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.1)
 #            do_resonance(nv_sig, apd_indices, 532, freq_center= 2.878, freq_range=0.22)

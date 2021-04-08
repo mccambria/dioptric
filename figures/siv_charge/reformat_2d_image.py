@@ -137,6 +137,22 @@ def create_figure(file_name, threshold, sub_folder = None):
 if __name__ == '__main__':
     
 #    image_file = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_03/2021_03_23-13_19_10-goeppert-mayer-nv1-2021_03_17' #dark
-    image_file = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_03/2021_03_23-13_37_37-goeppert-mayer-nv1-2021_03_17' #bright
-    threshold = 6
-    create_figure(image_file, threshold)
+#    image_file = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_03/2021_03_23-13_37_37-goeppert-mayer-nv1-2021_03_17' #bright
+    
+    folder = 'pc_rabi/branch_Spin_to_charge/moving_target/2021_04'
+    # nv13_2021_04_02
+    # 50 ms
+#    image_file = '2021_04_03-07_03_24-goeppert-mayer-nv7_2021_04_02'
+    # 25 ms
+#    image_file = '2021_04_03-09_54_25-goeppert-mayer-nv7_2021_04_02'
+    # 10 ms
+#    image_file = '2021_04_03-12_25_55-goeppert-mayer-nv7_2021_04_02'
+    # 5 ms
+#    image_file = '2021_04_03-14_50_56-goeppert-mayer-nv7_2021_04_02'
+    # 1 ms
+#    image_file = '2021_04_04-01_13_56-goeppert-mayer-nv7_2021_04_02'
+    # 10 ms zoom
+    image_file = '2021_04_04-13_39_49-goeppert-mayer-nv7_2021_04_02'
+    
+    threshold = 8
+    create_figure(folder + '/' + image_file, threshold)

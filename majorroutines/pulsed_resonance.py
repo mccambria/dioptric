@@ -283,7 +283,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             break
 
         # Optimize and save the coords we found
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, aom_ao_589_pwr = 1.0, disable = False)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = False)
         opti_coords_list.append(opti_coords)
 
         # Load the pulse streamer (must happen after optimize since optimize

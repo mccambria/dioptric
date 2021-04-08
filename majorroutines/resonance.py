@@ -102,9 +102,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             break
         
         # Optimize and save the coords we found
-#        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, aom_ao_589_pwr = 1.0, disable = False)
-#        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices, 532)
-#        opti_coords_list.append(opti_coords)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = False)
+        opti_coords_list.append(opti_coords)
 
         # Load the APD task with two samples for each frequency step
         cxn.pulse_streamer.stream_load(file_name, seq_args_string)

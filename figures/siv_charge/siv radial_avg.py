@@ -264,3 +264,17 @@ if __name__ == '__main__':
      SiV_file = '2021_04_06-15_05_14-goeppert-mayer-nv13_2021_04_02'
      threshold = 15
      siv_and_nv_band(NV_file, SiV_file, threshold)
+     
+         # nv13_2021_04_02
+    # 50 ms
+#    image_file = '2021_04_03-07_03_24-goeppert-mayer-nv7_2021_04_02'
+    # 25 ms
+#    image_file = '2021_04_03-09_54_25-goeppert-mayer-nv7_2021_04_02'
+    # 10 ms
+#    image_file = '2021_04_03-12_25_55-goeppert-mayer-nv7_2021_04_02'
+    # 5 ms
+#    image_file = '2021_04_03-14_50_56-goeppert-mayer-nv7_2021_04_02'
+    # 1 ms
+#    image_file = '2021_04_04-01_13_56-goeppert-mayer-nv7_2021_04_02'
+    # 10 ms zoom
+    image_file = '2021_04_04-13_39_49-goeppert-mayer-nv7_2021_04_02'
