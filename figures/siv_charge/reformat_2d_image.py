@@ -142,17 +142,21 @@ if __name__ == '__main__':
     folder = 'pc_rabi/branch_Spin_to_charge/moving_target/2021_04'
     # nv13_2021_04_02
     # 50 ms
-#    image_file = '2021_04_03-07_03_24-goeppert-mayer-nv7_2021_04_02'
+#    image_file_nv = '2021_04_05-19_19_19-goeppert-mayer-nv13_2021_04_02'
     # 25 ms
-#    image_file = '2021_04_03-09_54_25-goeppert-mayer-nv7_2021_04_02'
+#    image_file_nv = '2021_04_05-22_10_54-goeppert-mayer-nv13_2021_04_02'
     # 10 ms
-#    image_file = '2021_04_03-12_25_55-goeppert-mayer-nv7_2021_04_02'
+#    image_file_nv = '2021_04_06-00_42_42-goeppert-mayer-nv13_2021_04_02'
     # 5 ms
-#    image_file = '2021_04_03-14_50_56-goeppert-mayer-nv7_2021_04_02'
+#    image_file_nv = '2021_04_06-03_07_50-goeppert-mayer-nv13_2021_04_02'
     # 1 ms
-#    image_file = '2021_04_04-01_13_56-goeppert-mayer-nv7_2021_04_02'
+#    image_file_nv = '2021_04_06-05_27_42-goeppert-mayer-nv13_2021_04_02'
     # 10 ms zoom
-    image_file = '2021_04_04-13_39_49-goeppert-mayer-nv7_2021_04_02'
+#    image_file_nv = '2021_04_06-07_59_32-goeppert-mayer-nv13_2021_04_02'
+    # 25 ms g/g zoom
+#    image_file_nv = '2021_04_08-23_58_17-goeppert-mayer-nv13_2021_04_02'
+    # 25 ms r/g zoom
+    image_file_nv = '2021_04_08-21_47_39-goeppert-mayer-nv13_2021_04_02'
     
     threshold = 8
-    create_figure(folder + '/' + image_file, threshold)
+    create_figure(folder + '/' + image_file_nv, threshold)

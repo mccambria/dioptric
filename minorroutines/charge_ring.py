@@ -15,8 +15,8 @@ import time
 import copy
 # %%
 
-reset_range = 1.0#2.5
-image_range = 1.0
+reset_range = 1.5
+image_range = 1.5
 num_steps = int(225 * image_range) 
 num_steps_reset = int(75 * reset_range)
 apd_indices = [0]
@@ -187,65 +187,65 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
 #    fig = plot_dif_fig(center_coords, x_voltages,image_range,  dif_img_array, readout, title )
 #    
 #    # Save data
-#    timestamp = tool_belt.get_time_stamp()
-#
-#    rawData = {'timestamp': timestamp,
-#               'init_color': init_color,
-#               'pulse_color': pulse_color,
-#               'readout_color': readout_color,
-#               'green_image_power': green_image_power,
-#               'green_image_power-units': 'V',
-#               'green_reset_power': green_reset_power,
-#               'green_reset_power-units': 'V',
-#               'green_pulse_power': green_pulse_power,
-#               'green_pulse_power-units': 'V',
-#               'base_sig': base_sig,
-#               'base_sig-units': tool_belt.get_nv_sig_units(),
-#               'color_filter' : color_filter,
-#               'optimize_coords': optimize_coords,
-#               'center_coords': center_coords,
-#               'pulse_coords': pulse_coords,
-#               'image_range': image_range,
-#               'image_range-units': 'V',
-#               'num_steps': num_steps,
-#               'reset_range': reset_range,
-#               'reset_range-units': 'V',
-#               'num_steps_reset': num_steps_reset,
-#               'init_time': init_time,
-#               'init_time-units': 'ns',
-#               'pulse_time': float(pulse_time),
-#               'pulse_time-units': 's',
-#               
-#               'wait_time': int(wait_time),
-#               'wait_time-units': 's',
-#                'green_optical_power_pd': green_optical_power_pd,
-#                'green_optical_power_pd-units': 'V',
-#                'green_optical_power_mW': green_optical_power_mW,
-#                'green_optical_power_mW-units': 'mW',
-#                'red_optical_power_pd': red_optical_power_pd,
-#                'red_optical_power_pd-units': 'V',
-#                'red_optical_power_mW': red_optical_power_mW,
-#                'red_optical_power_mW-units': 'mW',
-#                'yellow_optical_power_pd': yellow_optical_power_pd,
-#                'yellow_optical_power_pd-units': 'V',
-#                'yellow_optical_power_mW': yellow_optical_power_mW,
-#                'yellow_optical_power_mW-units': 'mW',
-#               'readout': readout,
-#               'readout-units': 'ns',
-#               'x_voltages': x_voltages.tolist(),
-#               'x_voltages-units': 'V',
-#               'y_voltages': y_voltages.tolist(),
-#               'y_voltages-units': 'V',
+    timestamp = tool_belt.get_time_stamp()
+
+    rawData = {'timestamp': timestamp,
+               'init_color': init_color,
+               'pulse_color': pulse_color,
+               'readout_color': readout_color,
+               'green_image_power': green_image_power,
+               'green_image_power-units': 'V',
+               'green_reset_power': green_reset_power,
+               'green_reset_power-units': 'V',
+               'green_pulse_power': green_pulse_power,
+               'green_pulse_power-units': 'V',
+               'base_sig': base_sig,
+               'base_sig-units': tool_belt.get_nv_sig_units(),
+               'color_filter' : color_filter,
+               'optimize_coords': optimize_coords,
+               'center_coords': center_coords,
+               'pulse_coords': pulse_coords,
+               'image_range': image_range,
+               'image_range-units': 'V',
+               'num_steps': num_steps,
+               'reset_range': reset_range,
+               'reset_range-units': 'V',
+               'num_steps_reset': num_steps_reset,
+               'init_time': init_time,
+               'init_time-units': 'ns',
+               'pulse_time': float(pulse_time),
+               'pulse_time-units': 's',
+               
+               'wait_time': int(wait_time),
+               'wait_time-units': 's',
+                'green_optical_power_pd': green_optical_power_pd,
+                'green_optical_power_pd-units': 'V',
+                'green_optical_power_mW': green_optical_power_mW,
+                'green_optical_power_mW-units': 'mW',
+                'red_optical_power_pd': red_optical_power_pd,
+                'red_optical_power_pd-units': 'V',
+                'red_optical_power_mW': red_optical_power_mW,
+                'red_optical_power_mW-units': 'mW',
+                'yellow_optical_power_pd': yellow_optical_power_pd,
+                'yellow_optical_power_pd-units': 'V',
+                'yellow_optical_power_mW': yellow_optical_power_mW,
+                'yellow_optical_power_mW-units': 'mW',
+               'readout': readout,
+               'readout-units': 'ns',
+               'x_voltages': x_voltages.tolist(),
+               'x_voltages-units': 'V',
+               'y_voltages': y_voltages.tolist(),
+               'y_voltages-units': 'V',
 #               'ref_img_array': ref_img_array.tolist(),
 #               'ref_img_array-units': 'counts',
-#               'sig_img_array': sig_img_array.tolist(),
-#               'sig_img_array-units': 'counts',
+               'sig_img_array': sig_img_array.tolist(),
+               'sig_img_array-units': 'counts',
 #               'dif_img_array': dif_img_array.tolist(),
 #               'dif_img_array-units': 'counts'
-#               }
-#
-#    filePath = tool_belt.get_file_path('image_sample', timestamp, base_sig['name'])
-#    tool_belt.save_raw_data(rawData, filePath + '_dif')
+               }
+
+    filePath = tool_belt.get_file_path('image_sample', timestamp, base_sig['name'])
+    tool_belt.save_raw_data(rawData, filePath + '_dif')
 #
 #    tool_belt.save_figure(fig, filePath + '_dif')
     
@@ -256,15 +256,15 @@ if __name__ == '__main__':
     
     base_sig = { 'coords':[],
             'name': '{}'.format(sample_name),
-            'expected_count_rate': 38, 'nd_filter': 'nd_1.0',
+            'expected_count_rate': 55, 'nd_filter': 'nd_0',
 #            'color_filter': '635-715 bp',
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 2*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 4*10**7, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10,
             'ao_515_pwr': 0.65,
             'magnet_angle': 0,
@@ -272,14 +272,22 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     expected_count_list = [36, 40, 35, 47, 52, 33, 40] # 3/1/21
     start_coords_list = [
-[-0.020, 0.109, 4.95],
-[-0.044, 0.104, 5.05],
-[0.088, 0.057, 4.95],
-[-0.019, 0.046, 4.95],
-[-0.009, 0.026, 4.95],
-[0.098, -0.130, 4.95],
-[-0.031, -0.131, 4.96],
-]
+[0.032, 0.147, 5.25],
+[0.068, 0.132, 5.28],
+[-0.007, 0.173, 5.19],
+[0.221, -0.163, 5.21],
+[0.207, -0.261, 5.23],
+[0.100, -0.212, 5.27],
+[0.118, -0.110, 5.20],
+[-0.390, -0.376, 5.26],
+[-0.362, -0.341, 5.20],
+[-0.237, -0.293, 5.22],
+[-0.384, -0.249, 5.20],
+[0.186, 0.247, 5.23],
+[0.226, 0.269, 5.22],
+[0.231, 0.319, 5.19],
+[0.372, 0.212, 5.18],
+            ]
     
     
     init_time = 10**7
@@ -288,14 +296,14 @@ if __name__ == '__main__':
     pulse_color = 532
     readout_color = 589
     
-    center_coords = [-0.044, 0.104, 5.05]
-    reset_coords = [-0.044, 0.104, 5.05]
-    optimize_coords =[-0.044, 0.104, 5.05]
+    center_coords = [0.231, 0.319, 5.19]
+    reset_coords = [0.231, 0.319, 5.19]
+    optimize_coords =[0.231, 0.319, 5.19]
 #    center_coords = pulse_coords
     
     with labrad.connect() as cxn:
-        pulse_time = 10
-        pulse_coords =   [-0.044, 0.104, 5.05]
+        pulse_time = 100
+        pulse_coords =   [0.231, 0.319, 5.19]
         main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
                            pulse_coords, pulse_time, init_time, init_color, 
                            pulse_color, readout_color)

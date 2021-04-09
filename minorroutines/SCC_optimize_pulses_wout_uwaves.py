@@ -192,8 +192,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-    print(seq_args)
-    return
+#    print(seq_args)
+#    return
     seq_time = ret_vals[0]
 
     seq_time_s = seq_time / (10**9)  # s
@@ -207,7 +207,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     # Collect data
 
     # Optimize
-    opti_coords = optimize.main_xy_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
     opti_coords_list.append(opti_coords)
     
     
@@ -580,7 +580,7 @@ def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3,
 
 def optimize_readout_pulse_power(nv_sig, power_list = None):
     apd_indices = [0]
-    num_reps = 1000
+    num_reps = 200
 
     if not power_list:
         power_list = numpy.linspace(0.1,0.8,15).tolist()
@@ -649,24 +649,21 @@ if __name__ == '__main__':
         
     expected_count_list = [55, 55, 50, 45, 50, 55, 60, 50, 50, 50, 60, 45, 55, 55, 40] # 4/2/21
     nv_coords_list = [
-[0.045, 0.139, 5.16],
-[0.084, 0.126, 5.22],
-[0.005, 0.165, 5.13],
-
-[0.233, -0.170, 5.18], # 3
-[0.219, -0.267, 5.17],
-[0.112, -0.218, 5.20],
-[0.131, -0.116, 5.13],
-
-[-0.376, -0.383, 5.19], # 7
-[-0.348, -0.346, 5.14],
-[-0.225, -0.300, 5.16],
-[-0.370, -0.254, 5.13],
-
-[0.200, 0.243, 5.14], #11
-[0.239, 0.265, 5.17],
-[0.243, 0.317, 5.14], 
-[0.384, 0.210, 5.10],
+[0.032, 0.147, 5.25],
+[0.068, 0.132, 5.28],
+[-0.007, 0.173, 5.19],
+[0.221, -0.163, 5.21],
+[0.207, -0.261, 5.23],
+[0.100, -0.212, 5.27],
+[0.118, -0.110, 5.20],
+[-0.390, -0.376, 5.26],
+[-0.362, -0.341, 5.20],
+[-0.237, -0.293, 5.22],
+[-0.384, -0.249, 5.20],
+[0.186, 0.247, 5.23],
+[0.226, 0.269, 5.22],
+[0.231, 0.319, 5.19],
+[0.372, 0.212, 5.18],
 ]
     
     nv_2021_03_30 = { 'coords':[], 
@@ -675,7 +672,7 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 3*10**7, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 10*10**7, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -694,8 +691,9 @@ if __name__ == '__main__':
         nv_sig['nd_filter'] = 'nd_1.0'
         nv_sig['am_589_power'] = 0.15
 #        optimize_readout_pulse_length(nv_sig,   )
+        optimize_readout_pulse_power(nv_sig,power_list=  [ 0.15, 0.17, 0.2, 0.22,0.25])
     
-        optimize_reion_pulse_length(nv_sig)
+#        optimize_reion_pulse_length(nv_sig)
    
         
 #    optimize_readout_pulse_power(nv18_2020_11_10)

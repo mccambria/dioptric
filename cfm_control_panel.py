@@ -545,13 +545,13 @@ if __name__ == '__main__':
     
     sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[0.226, 0.304 ,5.19],
+    search = { 'coords':[-0.3, -0.3 ,5.19],
             'name': '{}-search'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -581,14 +581,17 @@ if __name__ == '__main__':
 [0.226, 0.269, 5.22],
 [0.231, 0.319, 5.19],
 [0.372, 0.212, 5.18],
+
+[-0.441, -0.302, 5.19], #15
+[0.035, 0.082, 5.19],
             ]
     
     nv_sig_list =[]
-    for i in [13]:#range(len(nv_list_2021_04_02)):
+    for i in [16]:#range(len(nv_list_2021_04_02)):
         nv_coords = nv_list_2021_04_02[i]
         nv_sig = copy.deepcopy(search)
         nv_sig['coords'] = nv_coords
-        nv_sig['expected_count_rate'] = expected_count_list[i]
+#        nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_02'.format(i)
         nv_sig_list.append(nv_sig)
         
@@ -601,7 +604,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        drift = [0.004, 0.009, 0.1]
+#        drift = [-0.010, -0.002, 0.0]
 #        tool_belt.set_drift(drift)  
 #        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset 
 #        tool_belt.set_drift([-0.03,-0.02,-0.16])  # 2/23/21
@@ -618,7 +621,7 @@ if __name__ == '__main__':
 #            cxn.filter_slider_ell9k_color.set_filter('635-715 bp')  
 #            cxn.filter_slider_ell9k.set_filter('nd_1.0')           
 #            cxn.pulse_streamer.constant([3], 0.0, 0.0)
-#            time.sleep(1)
+#            time.sleep(100)
 #            cxn.objective_piezo.write(5.1)
 #            input('Laser currently turned off, Press enter to stop...')
         
@@ -651,11 +654,11 @@ if __name__ == '__main__':
 #                set_xyz(nv_sig['coords'])
 #                cxn.pulse_streamer.constant([3],0,0)
 #                time.sleep(5)
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, flip = False, readout = 1*10**7)
-            do_image_sample(nv_sig,  apd_indices, '515a',
-                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, '515a',
+#                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =2*10**7)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =4*10**7)
 
 #            do_determine_galvo_response(nv_sig, apd_indices)
 
