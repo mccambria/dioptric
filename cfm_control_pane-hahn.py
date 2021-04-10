@@ -251,7 +251,7 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
-    num_runs = 50
+    num_runs = 85
     num_reps = 1e3
     num_steps = 11
     min_tau = 20e3
@@ -482,12 +482,12 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.0, 0.0, 80],
+    nv_sig = { 'coords': [0.0, 0.0, 90],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.7990, 'rabi_LOW': 249.5, 'uwave_power_LOW': 14.5,
-            'resonance_HIGH': 2.9445, 'rabi_HIGH': 155.9, 'uwave_power_HIGH': 12.0} 
+            'resonance_LOW': 2.7992, 'rabi_LOW': 237.45, 'uwave_power_LOW': 14.5,
+            'resonance_HIGH': 2.9445, 'rabi_HIGH': 146.6, 'uwave_power_HIGH': 12.0} 
     
     
     # %% Functions to run
@@ -523,7 +523,7 @@ if __name__ == '__main__':
         #     do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 9)
         
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0,8)
+        #     cxn.cryo_piezos.write_xy(0,9)
         
         # tool_belt.init_safe_stop()
         # while True:
