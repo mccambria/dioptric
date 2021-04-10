@@ -176,6 +176,7 @@ def get_data_lists(folder_name):
                                               zero_zero_ste))
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
+            
             if init_state_name == zero_state_name and \
                                 read_state_name == high_state_name:
                 if zero_plus_bool == False:
@@ -204,8 +205,8 @@ def get_data_lists(folder_name):
                         zero_plus_time = numpy.concatenate(time_array, zero_plus_time)
 
 
-            if init_state_name == high_state_name and \
-                                read_state_name == high_state_name:
+            if (init_state_name == high_state_name) and \
+                (read_state_name == high_state_name):
                 if plus_plus_bool == False:
                     plus_plus_counts = norm_avg_sig
                     plus_plus_ste = norm_avg_sig_ste
@@ -365,8 +366,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                         'r', label = 'fit')
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
-                ax.set_title('(0,0) - (0,-1)')  # MCC
-                # ax.set_title('(0,0) - (0,+1)')
+                ax.set_title('(0,0) - (0,+1)')
                 ax.legend()
                 text = r'$\Omega = $ {} $\pm$ {} kHz'.format('%.3f'%omega,
                       '%.3f'%omega_ste)
@@ -522,7 +522,7 @@ if __name__ == '__main__':
 
     # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-{}K'.format(temp)
+    folder = 'hopper-nv1_2021_03_16-{}K-4'.format(temp)
 
     est_omega = omega_calc(temp)
     est_gamma = gamma_calc(temp)
@@ -532,5 +532,5 @@ if __name__ == '__main__':
 
     # gamma, ste = main(path, folder, omega=est_omega, omega_ste=0.0,
                       # doPlot=True, offset=False)
-    # gamma, ste = main(path, folder, omega=None, omega_ste=None,
-    #                   doPlot=True, offset=False)
+    gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                      doPlot=True, offset=False)

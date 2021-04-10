@@ -96,6 +96,8 @@ def omega_calc(temp):
     # return (A_1 + orbach(temp) + raman(temp) + test_T_seventh(temp)) / 3
 
 def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
+    # activation = 78
+    # coeff_T5 = 0
     return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp**5)
 
 def T5_free(temp, coeff_T5):
@@ -236,8 +238,9 @@ def main(data_points):
     # Fit to Omega
     omega_popt, omega_pcov, omega_fit_func = fit_omega_orbach_T5(data_points)
     omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
-    print(omega_popt)
     # omega_popt[2] = 0
+    # omega_popt[1] = 78
+    print(omega_popt)
     if plot_type == 'rates':
         ax.plot(temp_linspace, omega_lambda(temp_linspace),
                 label=r'$\Omega$ fit', color=omega_edge_color)
@@ -248,8 +251,8 @@ def main(data_points):
     # Fit to gamma
     gamma_popt, gamma_pcov, gamma_fit_func = fit_gamma_orbach(data_points)
     gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
-    print(gamma_popt)
     # gamma_popt[1] = omega_popt[1]
+    print(gamma_popt)
     if plot_type == 'rates':
         ax.plot(temp_linspace, gamma_lambda(temp_linspace),
                 label=r'$\gamma$ fit', color=gamma_edge_color)
@@ -393,8 +396,8 @@ if __name__ == '__main__':
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)
 
-    # file_name = 'compiled_data'
-    file_name = 'compiled_data-test'
+    file_name = 'compiled_data'
+    # file_name = 'compiled_data-test'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     file_path = path + '{}.xlsx'.format(file_name)
     csv_file_path = path + '{}.csv'.format(file_name)
