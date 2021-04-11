@@ -222,18 +222,23 @@ def do_t1_battery(nv_sig, apd_indices):
 
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
-    # t1_exp_array = numpy.array([
-    #     [[States.HIGH, States.LOW], [0, 20*10**6], 11, 1.0*10**3, 100],
-    #     [[States.HIGH, States.HIGH], [0, 20*10**6], 11, 1.0*10**3, 100],
-    #     [[States.ZERO, States.HIGH], [0, 30*10**6], 11, 1.0*10**3, 100],
-    #     [[States.ZERO, States.ZERO], [0, 30*10**6], 11, 1.0*10**3, 100]
-    #     ], dtype=object)
+    
+    num_runs = 85
+    num_reps = 1e3
+    num_steps = 11
+    min_tau = 20e3
+    max_tau_omega = 29e6
+    max_tau_gamma = 18e6
     t1_exp_array = numpy.array([
-        [[States.LOW, States.LOW], [0, 10000], 2, 1.0*10**3, 100],
-        [[States.HIGH, States.HIGH], [0, 10000], 2, 1.0*10**3, 100],
-        [[States.LOW, States.ZERO], [0, 10000], 2, 1.0*10**3, 100],
-        [[States.HIGH, States.ZERO], [0, 10000], 2, 1.0*10**3, 100],
-        ], dtype=object)
+            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+            [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+            [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+            ], dtype=object)
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -518,8 +523,8 @@ if __name__ == '__main__':
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
-        # do_t1_battery(nv_sig, apd_indices)
-        do_t1_dq_knill_battery(nv_sig, apd_indices)
+        do_t1_battery(nv_sig, apd_indices)
+        # do_t1_dq_knill_battery(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
         #     nv_sig['resonance_HIGH'] = res
