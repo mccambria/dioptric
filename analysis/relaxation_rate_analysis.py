@@ -40,7 +40,7 @@ from figures.relaxation_temp_dependence.revision1.orbach import gamma_calc
 
 # %% Constants
 
-manual_offset_gamma = 0.0
+manual_offset_gamma = 0.00
 # %% Functions
 
 # The exponential function without an offset
@@ -49,6 +49,9 @@ def exp_eq_omega(t, rate, amp):
 
 def exp_eq_gamma(t, rate, amp):
     return  amp * exp(- rate * t) + manual_offset_gamma
+
+def biexp(t, omega, rate1, amp1, amp2):
+    return  amp1 * exp(-rate1*t) + amp2 #* exp(-3*omega*t)
 
 # The exponential function with an offset
 def exp_eq_offset(t, rate, amp, offset):
@@ -177,10 +180,12 @@ def get_data_lists(folder_name):
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
             
-            if init_state_name == zero_state_name and \
-                                read_state_name == high_state_name:
+            # if init_state_name == zero_state_name and \
+            #                     read_state_name == high_state_name:
             # if init_state_name == zero_state_name and \
             #                     read_state_name == low_state_name:
+            if (init_state_name == zero_state_name and read_state_name == high_state_name) or \
+                (init_state_name == zero_state_name and read_state_name == low_state_name):
                 if zero_plus_bool == False:
                     zero_plus_counts = norm_avg_sig
                     zero_plus_ste = norm_avg_sig_ste
@@ -209,8 +214,10 @@ def get_data_lists(folder_name):
 
             # if (init_state_name == high_state_name) and \
             #     (read_state_name == high_state_name):
-            if (init_state_name == low_state_name) and \
-                (read_state_name == low_state_name):
+            # if (init_state_name == low_state_name) and \
+            #     (read_state_name == low_state_name):
+            if (init_state_name == high_state_name and read_state_name == high_state_name) or \
+                (init_state_name == low_state_name and read_state_name == low_state_name):
                 if plus_plus_bool == False:
                     plus_plus_counts = norm_avg_sig
                     plus_plus_ste = norm_avg_sig_ste
@@ -236,8 +243,10 @@ def get_data_lists(folder_name):
 
             # if init_state_name == high_state_name and \
             #                     read_state_name == low_state_name:
-            if init_state_name == low_state_name and \
-                                read_state_name == high_state_name:
+            # if init_state_name == low_state_name and \
+            #                     read_state_name == high_state_name:
+            if (init_state_name == high_state_name and read_state_name == low_state_name) or \
+                (init_state_name == low_state_name and read_state_name == high_state_name):
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']
@@ -379,8 +388,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
                 
+    ax.set_title('Omega')
     # ax.set_title('(0,0) - (0,-1)')
-    ax.set_title('(0,0) - (0,+1)')
+    # ax.set_title('(0,0) - (0,+1)')
 
     # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
     # to fit
@@ -419,14 +429,24 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 
         else:
-            init_params = tuple(init_params_list)
-            gamma_opti_params, cov_arr = curve_fit(exp_eq_gamma,
-                             plus_plus_time, plus_relaxation_counts,
-                             p0 = init_params, sigma = plus_relaxation_ste,
-                             absolute_sigma=True)
+            # MCC
+            # init_params = tuple(init_params_list)
+            # gamma_fit_func = exp_eq_gamma
+            # gamma_opti_params, cov_arr = curve_fit(exp_eq_gamma,
+            #                   plus_plus_time, plus_relaxation_counts,
+            #                   p0 = init_params, sigma = plus_relaxation_ste,
+            #                   absolute_sigma=True)
+            init_params = (0.22, 0.17, 0.0)
+            gamma_fit_func = lambda t, rate1, amp1, amp2: biexp(t, omega, rate1, amp1, amp2)
+            gamma_opti_params, cov_arr = curve_fit(gamma_fit_func,
+                              plus_plus_time, plus_relaxation_counts,
+                              p0 = init_params, sigma = plus_relaxation_ste,
+                              absolute_sigma=True)
+            print(gamma_opti_params)
 
-    except Exception:
+    except Exception as e:
         gamma_fit_failed = True
+        print(e)
 
         if doPlot:
             ax = axes_pack[1]
@@ -463,7 +483,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                     'r', label = 'fit')
             else:
                 ax.plot(plus_time_linspace,
-                    exp_eq_gamma(plus_time_linspace, *gamma_opti_params),
+                    # exp_eq_gamma(plus_time_linspace, *gamma_opti_params),  # MCC
+                    gamma_fit_func(plus_time_linspace, *gamma_opti_params),
                     'r', label = 'fit')
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
@@ -476,8 +497,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
                     verticalalignment='top', bbox=props)
             
-    ax.set_title('(+1,+1) - (+1,-1)')
-    ax.set_title('(-1,-1) - (-1,+1)')
+    ax.set_title('gamma')
+    # ax.set_title('(+1,+1) - (+1,-1)')
+    # ax.set_title('(-1,-1) - (-1,+1)')
     
     if doPlot:
         fig.canvas.draw()
@@ -529,17 +551,38 @@ if __name__ == '__main__':
 
     temp = 275
 
-    path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
+    # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     # path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-{}K-6'.format(temp)
+    # folder = 'hopper-nv1_2021_03_16-275K-5-test1'.format(temp)
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print('good times in ms')
-    print('Omega: {}'.format(4000/(3*est_omega)))
-    print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    # est_omega = omega_calc(temp)
+    # est_gamma = gamma_calc(temp)
+    # print('good times in ms')
+    # print('Omega: {}'.format(4000/(3*est_omega)))
+    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
 
     # gamma, ste = main(path, folder, omega=est_omega, omega_ste=0.0,
                       # doPlot=True, offset=False)
-    gamma, ste = main(path, folder, omega=None, omega_ste=None,
-                      doPlot=True, offset=False)
+    # gamma, ste = main(path, folder, omega=None, omega_ste=None,
+    #                   doPlot=True, offset=False)
+    
+    # %%
+    
+    path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
+    folders = ['hopper-nv1_2021_03_16-275K-3-omega_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-3-omega_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-{}K-4'.format(temp),
+                'hopper-nv1_2021_03_16-275K-5-gamma_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-5-gamma_plus_1'.format(temp)]
+    
+    for folder in folders:
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                          doPlot=True, offset=False)
+    
+    path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
+    folders = ['hopper-nv1_2021_03_16-275K-6-gamma_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-6-gamma_plus_1'.format(temp),]
+    
+    for folder in folders:
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                          doPlot=True, offset=False)
