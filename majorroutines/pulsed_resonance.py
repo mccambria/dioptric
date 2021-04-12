@@ -286,10 +286,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
     aom_delay_time = shared_params['532_aom_delay']
     uwave_delay_time = shared_params['uwave_delay']
-    if state is States.LOW:
-        iq_delay_time = 565
-    elif state is States.HIGH:
-        iq_delay_time = 555
+    iq_delay = shared_params['iq_delay']
     readout = nv_sig['pulsed_readout_dur']
     gate_time = readout
     readout_sec = readout / (10**9)
@@ -299,7 +296,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         seq_args = [polarization_time, reference_time,
                     signal_wait_time, reference_wait_time,
                     background_wait_time,
-                    aom_delay_time, uwave_delay_time, iq_delay_time,
+                    aom_delay_time, uwave_delay_time, iq_delay,
                     gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                     1, 1, apd_indices[0], state.value]
         seq_args = [int(el) for el in seq_args]
@@ -350,7 +347,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             sig_gen_cxn.set_amp(uwave_power)
             if composite:
                 sig_gen_cxn.load_iq()
-                cxn.arbitrary_waveform_generator.iq_switch()
+                cxn.arbitrary_waveform_generator.load_knill()
             sig_gen_cxn.uwave_on()
 
             # Load the pulse streamer (must happen after optimize and iq_switch
