@@ -150,7 +150,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params, aom_ao_589_pwr,
     # z
     elif axis_ind == 2:
         
-        scan_range = 3* scan_range_nm / shared_params['piezo_nm_per_volt']
+        scan_range = 3.5* scan_range_nm / shared_params['piezo_nm_per_volt']
         seq_args = [shared_params['objective_piezo_delay'],
                     readout, aom_ao_589_pwr, ao_515_pwr, apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -371,8 +371,8 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, co
         # the count rate at the center against the expected count rate
         if expected_count_rate is not None:
             
-            lower_threshold = expected_count_rate * 3/4
-            upper_threshold = expected_count_rate * 5/4
+            lower_threshold = expected_count_rate * 4/5#3/4
+            upper_threshold = expected_count_rate * 6/5#5/4
             
             if ind == 0:
                 print('Expected count rate: {}'.format(expected_count_rate))

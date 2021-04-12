@@ -207,7 +207,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     # Collect data
 
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
+    opti_coords = optimize.main_xy_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
     opti_coords_list.append(opti_coords)
     
     
@@ -516,7 +516,7 @@ def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3,
                                5*10**7
                                ]):
     apd_indices = [0]
-    num_reps = 100#1000
+    num_reps = 500#1000
 
     
     # measure laser powers:
@@ -649,26 +649,30 @@ if __name__ == '__main__':
         
     expected_count_list = [55, 55, 50, 45, 50, 55, 60, 50, 50, 50, 60, 45, 55, 55, 40] # 4/2/21
     nv_coords_list = [
-[0.032, 0.147, 5.25],
-[0.068, 0.132, 5.28],
-[-0.007, 0.173, 5.19],
-[0.221, -0.163, 5.21],
-[0.207, -0.261, 5.23],
-[0.100, -0.212, 5.27],
-[0.118, -0.110, 5.20],
-[-0.390, -0.376, 5.26],
-[-0.362, -0.341, 5.20],
-[-0.237, -0.293, 5.22],
-[-0.384, -0.249, 5.20],
-[0.186, 0.247, 5.23],
-[0.226, 0.269, 5.22],
-[0.231, 0.319, 5.19],
-[0.372, 0.212, 5.18],
+[0.073, 0.243, 5.12], # 
+[0.059, 0.125, 5.19],
+[-0.019, 0.166, 5.12],
+[0.208, -0.170, 5.16],
+[0.194, -0.267, 5.14],
+[0.088, -0.219, 5.18],
+[0.107, -0.116, 5.11],
+[-0.403, -0.383, 5.18],
+[-0.374, -0.346, 5.13],
+[-0.252, -0.299, 5.17],
+[-0.397, -0.253, 5.14],
+[0.173, 0.241, 5.15],
+[0.213, 0.264, 5.16],
+
+[0.274, 0.425, 5.13], #
+[0.359, 0.209, 5.13],
+
+[-0.451, -0.309, 5.10],
+[0.026, 0.076, 5.11],
 ]
     
     nv_2021_03_30 = { 'coords':[], 
             'name': 'goepert-mayer-nv_2021_04_02',
-            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
+            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -689,9 +693,10 @@ if __name__ == '__main__':
         nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_02'.format(i)
         nv_sig['nd_filter'] = 'nd_1.0'
-        nv_sig['am_589_power'] = 0.15
-#        optimize_readout_pulse_length(nv_sig,   )
-        optimize_readout_pulse_power(nv_sig,power_list=  [ 0.15, 0.17, 0.2, 0.22,0.25])
+        nv_sig['am_589_power'] = 0.12
+        optimize_readout_pulse_length(nv_sig,  test_pulse_dur_list  = [10**8
+                               ]  )
+#        optimize_readout_pulse_power(nv_sig,power_list=  [ 0.15, 0.17, 0.2, 0.22,0.25])
     
 #        optimize_reion_pulse_length(nv_sig)
    

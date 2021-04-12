@@ -538,18 +538,18 @@ if __name__ == '__main__':
 [-0.384, -0.249, 5.20],
 [0.186, 0.247, 5.23],
 [0.226, 0.269, 5.22],
-[0.231, 0.319, 5.19],
+[0.274, 0.425, 5.13],
 [0.372, 0.212, 5.18],
 ]
 
     
     base_nv_sig  = { 'coords':None,
             'name': 'goeppert-mayer-nv13_2021_03_17',
-            'expected_count_rate': 50,'nd_filter': 'nd_1.0',
+            'expected_count_rate': 55,'nd_filter': 'nd_1.5',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.15,
+            'pulsed_SCC_readout_dur': 15*10**7,  'am_589_power': 0.12,
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,

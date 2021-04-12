@@ -400,7 +400,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     # Optimize at the start of the routine
     opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices, '515a', disable=disable_boo)
     opti_coords_list.append(opti_coords)
-        
+    print(opti_coords_list)
         
     # record the time starting at the beginning of the runs
     start_timestamp = tool_belt.get_time_stamp()
@@ -791,6 +791,7 @@ def do_moving_target_2D_image(nv_sig, start_coords, optimize_coords, img_range, 
         x_high = x_voltages_1d[num_steps-1]
         y_low = y_voltages_1d[0]
         y_high = y_voltages_1d[num_steps-1]
+        opti_coords_master = []
     
         pixel_size = (x_voltages_1d[1] - x_voltages_1d[0])
         
@@ -818,6 +819,7 @@ def do_moving_target_2D_image(nv_sig, start_coords, optimize_coords, img_range, 
                                     pulse_time, 1, init_color, pulse_color, readout_color, siv_init, index_list = ind_list)
             
             readout_counts_array_shfl, target_counts_array_shfl, opti_coords_list = ret_vals
+            opti_coords_master.append(opti_coords_list[0])
             readout_counts_array_shfl = numpy.array(readout_counts_array_shfl)
             target_counts_array_shfl = numpy.array(target_counts_array_shfl)
             
@@ -883,6 +885,7 @@ def do_moving_target_2D_image(nv_sig, start_coords, optimize_coords, img_range, 
                 'coords_voltages': coords_voltages,
                 'coords_voltages-units': '[V, V]',
                  'ind_list': ind_list,
+                 'opti_coords_list': opti_coords_master,
                 'x_voltages_1d': x_voltages_1d.tolist(),
                 'y_voltages_1d': y_voltages_1d.tolist(),
                 
@@ -1258,27 +1261,31 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 #    start_coords = base_sig['coords']
-    expected_count_list =[55, 55, 50, 45, 50, 55, 60, 50, 50, 50, 60, 45, 55, 55, 40] # 4/2/21
+    expected_count_list =[60, 55, 50, 50, 50, 55, 60, 50, 50, 50, 60, 55, 55, 55, 55, 55, 55] # 4/2/21
     start_coords_list = [
-[0.032, 0.147, 5.25],
-[0.068, 0.132, 5.28],
-[-0.007, 0.173, 5.19],
-[0.221, -0.163, 5.21],
-[0.207, -0.261, 5.23],
-[0.100, -0.212, 5.27],
-[0.118, -0.110, 5.20],
-[-0.390, -0.376, 5.26],
-[-0.362, -0.341, 5.20],
-[-0.237, -0.293, 5.22],
-[-0.384, -0.249, 5.20],
-[0.186, 0.247, 5.23],
-[0.226, 0.269, 5.22],
-[0.231, 0.319, 5.19],
-[0.372, 0.212, 5.18],
+[0.073, 0.243, 5.12], # 
+[0.059, 0.125, 5.19],
+[-0.019, 0.166, 5.12],
+[0.208, -0.170, 5.16],
+[0.194, -0.267, 5.14],
+[0.088, -0.219, 5.18],
+[0.107, -0.116, 5.11],
+[-0.403, -0.383, 5.18],
+[-0.374, -0.346, 5.13],
+[-0.252, -0.299, 5.17],
+[-0.397, -0.253, 5.14],
+[0.173, 0.241, 5.15],
+[0.213, 0.264, 5.16],
+
+[0.274, 0.425, 5.13], #
+[0.359, 0.209, 5.13],
+
+[-0.451, -0.309, 5.10],
+[0.026, 0.076, 5.11],
             ]
 
 #    end_coords = end_coords.tolist()
-    num_steps = 31#51#41
+    num_steps = 51#41
 #    num_runs = 50
 #    img_range = 0.45
 #    optimize_nv_ind = 3
@@ -1303,10 +1310,10 @@ if __name__ == '__main__':
              # Set up for NV band
              nv_sig['color_filter'] = '635-715 bp'
              nv_sig['nd_filter'] = 'nd_1.0'
-             nv_sig['am_589_power'] = 0.22
+             nv_sig['am_589_power'] = 0.12
              nv_sig['pulsed_SCC_readout_dur'] = 10*10**7
-             t =25*10**6
-             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.6, t, num_steps, num_runs, 
+             t =10*10**6
+             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.45, t, num_steps, num_runs, 
                                        init_color, pulse_color, False, live_updates = True )      
              # Set up for SiV band
 #             nv_sig['color_filter'] = '715 lp'
@@ -1358,3 +1365,51 @@ if __name__ == '__main__':
 #                                               init_color, pulse_color, False, live_updates = True ) 
          ##########
 
+#%% # %% Replot
+
+#    file = '2021_04_06-07_59_32-goeppert-mayer-nv13_2021_04_02'
+#    folder = 'pc_rabi/branch_Spin_to_charge/moving_target/2021_04'
+#    data = tool_belt.get_raw_data(folder, file)
+#    readout_counts_array = numpy.array(data['readout_counts_array'])
+#    start_coords = data['start_coords']
+#    num_steps = data['num_steps']
+#    init_color = data['init_color']
+#    pulse_color = data['init_color']
+#    pulse_time = data['pulse_time']
+#    x_voltages_1d = data['x_voltages_1d']
+#    y_voltages_1d = data['y_voltages_1d']
+#    img_range = data['img_range']
+#    num_samples = num_steps**2
+#    
+#    readout_image_array = numpy.empty([num_steps, num_steps])
+#    readout_image_array[:] = numpy.nan
+#
+#    
+#    readout_counts_array_ed = []
+#    for el in readout_counts_array:
+#        readout_counts_array_ed.append(el[:15])
+#    # Take the average and ste
+#    readout_counts_avg = numpy.average(readout_counts_array_ed, axis = 1)
+#    readout_counts_ste = stats.sem(readout_counts_array_ed, axis = 1)
+#
+#    # create the img arrays
+#    writePos = []
+#    readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
+#    
+#    # image extent
+#    x_low = x_voltages_1d[0]
+#    x_high = x_voltages_1d[num_steps-1]
+#    y_low = y_voltages_1d[0]
+#    y_high = y_voltages_1d[num_steps-1]
+#
+#    pixel_size = (x_voltages_1d[1] - x_voltages_1d[0])
+#    
+#    half_pixel_size = pixel_size / 2
+#    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+#                  y_low - half_pixel_size, y_high + half_pixel_size]
+##    print(readout_counts_avg)
+#    # Create the figure
+#    title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse.'.format(init_color,
+#                                                     pulse_color, pulse_time/10**6)
+#    fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
+#                                                title = title, um_scaled = True)

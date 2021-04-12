@@ -93,7 +93,13 @@ def create_figure(file_name, threshold, sub_folder = None):
             elif current_val >= cut_off:
                 set_val = 1
             raw_counts[r][c] = set_val
+#            
+#    raw_counts_ed = []
+#    for el in raw_counts:
+#        raw_counts_ed.append(el[:1])
+            
     charge_counts_avg = numpy.average(raw_counts, axis = 1)
+    
     
     
     # create the img arrays
@@ -152,11 +158,11 @@ if __name__ == '__main__':
     # 1 ms
 #    image_file_nv = '2021_04_06-05_27_42-goeppert-mayer-nv13_2021_04_02'
     # 10 ms zoom
-#    image_file_nv = '2021_04_06-07_59_32-goeppert-mayer-nv13_2021_04_02'
+    image_file_nv = '2021_04_06-07_59_32-goeppert-mayer-nv13_2021_04_02'
     # 25 ms g/g zoom
 #    image_file_nv = '2021_04_08-23_58_17-goeppert-mayer-nv13_2021_04_02'
     # 25 ms r/g zoom
-    image_file_nv = '2021_04_08-21_47_39-goeppert-mayer-nv13_2021_04_02'
+#    image_file_nv = '2021_04_08-21_47_39-goeppert-mayer-nv13_2021_04_02'
     
     threshold = 8
     create_figure(folder + '/' + image_file_nv, threshold)
