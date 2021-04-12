@@ -207,8 +207,10 @@ def get_data_lists(folder_name):
                         zero_plus_time = numpy.concatenate(time_array, zero_plus_time)
 
 
-            if (init_state_name == high_state_name) and \
-                (read_state_name == high_state_name):
+            # if (init_state_name == high_state_name) and \
+            #     (read_state_name == high_state_name):
+            if (init_state_name == low_state_name) and \
+                (read_state_name == low_state_name):
                 if plus_plus_bool == False:
                     plus_plus_counts = norm_avg_sig
                     plus_plus_ste = norm_avg_sig_ste
@@ -232,8 +234,10 @@ def get_data_lists(folder_name):
                                                           plus_plus_ste))
                         plus_plus_time = numpy.concatenate((time_array, plus_plus_time))
 
-            if init_state_name == high_state_name and \
-                                read_state_name == low_state_name:
+            # if init_state_name == high_state_name and \
+            #                     read_state_name == low_state_name:
+            if init_state_name == low_state_name and \
+                                read_state_name == high_state_name:
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']
@@ -473,6 +477,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                     verticalalignment='top', bbox=props)
             
     ax.set_title('(+1,+1) - (+1,-1)')
+    ax.set_title('(-1,-1) - (-1,+1)')
     
     if doPlot:
         fig.canvas.draw()
@@ -524,9 +529,9 @@ if __name__ == '__main__':
 
     temp = 275
 
-    # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-{}K-4'.format(temp)
+    path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
+    # path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
+    folder = 'hopper-nv1_2021_03_16-{}K-6'.format(temp)
 
     est_omega = omega_calc(temp)
     est_gamma = gamma_calc(temp)
