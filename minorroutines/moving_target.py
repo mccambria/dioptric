@@ -1261,27 +1261,12 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 #    start_coords = base_sig['coords']
-    expected_count_list =[60, 55, 50, 50, 50, 55, 60, 50, 50, 50, 60, 55, 55, 55, 55, 55, 55] # 4/2/21
+    expected_count_list =[44, 50, 53, 55] # 4/2/21
     start_coords_list = [
-[0.073, 0.243, 5.12], # 
-[0.059, 0.125, 5.19],
-[-0.019, 0.166, 5.12],
-[0.208, -0.170, 5.16],
-[0.194, -0.267, 5.14],
-[0.088, -0.219, 5.18],
-[0.107, -0.116, 5.11],
-[-0.403, -0.383, 5.18],
-[-0.374, -0.346, 5.13],
-[-0.252, -0.299, 5.17],
-[-0.397, -0.253, 5.14],
-[0.173, 0.241, 5.15],
-[0.213, 0.264, 5.16],
-
-[0.274, 0.425, 5.13], #
-[0.359, 0.209, 5.13],
-
-[-0.451, -0.309, 5.10],
-[0.026, 0.076, 5.11],
+[0.117, 0.114, 3.97],
+[-0.229, -0.067, 3.97],
+[0.200, -0.232, 3.96],
+[-0.202, -0.238, 4.0],
             ]
 
 #    end_coords = end_coords.tolist()
@@ -1290,8 +1275,8 @@ if __name__ == '__main__':
 #    img_range = 0.45
 #    optimize_nv_ind = 3
 #    optimize_coords = start_coords_list[optimize_nv_ind]
- 
-    for s in [13]:
+  
+    for s in [1]:
              optimize_nv_ind = s
              optimize_coords = start_coords_list[optimize_nv_ind]
              x, y, z = start_coords_list[s]
@@ -1310,7 +1295,7 @@ if __name__ == '__main__':
              # Set up for NV band
              nv_sig['color_filter'] = '635-715 bp'
              nv_sig['nd_filter'] = 'nd_1.0'
-             nv_sig['am_589_power'] = 0.12
+             nv_sig['am_589_power'] = 0.15
              nv_sig['pulsed_SCC_readout_dur'] = 10*10**7
              t =10*10**6
              do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.45, t, num_steps, num_runs, 
