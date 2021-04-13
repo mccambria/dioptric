@@ -558,7 +558,7 @@ if __name__ == '__main__':
 
     # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-275K-5-gamma_minus_1-long'.format(temp)
+    folder = 'hopper-nv1_2021_03_16-275K-5-gamma_plus_1-long2'.format(temp)
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)
