@@ -306,6 +306,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
     omega_fit_failed = False
     gamma_fit_failed = False
+    
+    ax = None
 
     # If omega value is passed into the function, skip the omega fitting.
     if omega is not None and omega_ste is not None:
@@ -387,10 +389,11 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
                 ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
-                
-    ax.set_title('Omega')
-    # ax.set_title('(0,0) - (0,-1)')
-    # ax.set_title('(0,0) - (0,+1)')
+        
+    if ax is not None:
+        ax.set_title('Omega')
+        # ax.set_title('(0,0) - (0,-1)')
+        # ax.set_title('(0,0) - (0,+1)')
 
     # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
     # to fit
@@ -438,11 +441,13 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             #                   absolute_sigma=True)
             init_params = (0.22, 0.17, 0.0)
             gamma_fit_func = lambda t, rate1, amp1, amp2: biexp(t, omega, rate1, amp1, amp2)
-            gamma_opti_params, cov_arr = curve_fit(gamma_fit_func,
-                              plus_plus_time, plus_relaxation_counts,
-                              p0 = init_params, sigma = plus_relaxation_ste,
-                              absolute_sigma=True)
-            print(gamma_opti_params)
+            # gamma_opti_params, cov_arr = curve_fit(gamma_fit_func,
+            #                   plus_plus_time, plus_relaxation_counts,
+            #                   p0 = init_params, sigma = plus_relaxation_ste,
+            #                   absolute_sigma=True)
+            # print(gamma_opti_params)
+            gamma_opti_params = numpy.array([0.0,0.0,0])
+            cov_arr = numpy.array([[0,0,0],[0,0,0],[0,0,0]])
 
     except Exception as e:
         gamma_fit_failed = True
@@ -552,8 +557,8 @@ if __name__ == '__main__':
     temp = 275
 
     # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    # path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    # folder = 'hopper-nv1_2021_03_16-275K-5-test1'.format(temp)
+    path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
+    folder = 'hopper-nv1_2021_03_16-275K-5-gamma_minus_1-long'.format(temp)
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)
@@ -561,28 +566,28 @@ if __name__ == '__main__':
     # print('Omega: {}'.format(4000/(3*est_omega)))
     # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
 
-    # gamma, ste = main(path, folder, omega=est_omega, omega_ste=0.0,
-                      # doPlot=True, offset=False)
+    gamma, ste = main(path, folder, omega=0.0, omega_ste=0.0,
+                       doPlot=True, offset=False)
     # gamma, ste = main(path, folder, omega=None, omega_ste=None,
     #                   doPlot=True, offset=False)
     
     # %%
     
-    path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    folders = ['hopper-nv1_2021_03_16-275K-3-omega_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-3-omega_plus_1'.format(temp),
-                'hopper-nv1_2021_03_16-{}K-4'.format(temp),
-                'hopper-nv1_2021_03_16-275K-5-gamma_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-5-gamma_plus_1'.format(temp)]
+    # path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
+    # folders = ['hopper-nv1_2021_03_16-275K-3-omega_minus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-3-omega_plus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-{}K-4'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-5-gamma_minus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-5-gamma_plus_1'.format(temp)]
     
-    for folder in folders:
-        gamma, ste = main(path, folder, omega=None, omega_ste=None,
-                          doPlot=True, offset=False)
+    # for folder in folders:
+    #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
+    #                       doPlot=True, offset=False)
     
-    path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    folders = ['hopper-nv1_2021_03_16-275K-6-gamma_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-6-gamma_plus_1'.format(temp),]
+    # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
+    # folders = ['hopper-nv1_2021_03_16-275K-6-gamma_minus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-6-gamma_plus_1'.format(temp),]
     
-    for folder in folders:
-        gamma, ste = main(path, folder, omega=None, omega_ste=None,
-                          doPlot=True, offset=False)
+    # for folder in folders:
+    #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
+    #                       doPlot=True, offset=False)
