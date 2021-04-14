@@ -396,8 +396,8 @@ if __name__ == '__main__':
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)
 
-    file_name = 'compiled_data'
-    # file_name = 'compiled_data-test'
+    # file_name = 'compiled_data'
+    file_name = 'compiled_data-test'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     file_path = path + '{}.xlsx'.format(file_name)
     csv_file_path = path + '{}.csv'.format(file_name)
