@@ -49,7 +49,7 @@ def exp_eq_omega(t, rate, amp):
     return  amp * exp(- rate * t)
 
 def exp_eq_gamma(t, rate, amp):
-    return  amp * exp(- rate * t) + manual_offset_gamma + 0.005 * exp(-3*0.040*t)
+    return  amp * exp(- rate * t) + manual_offset_gamma #+ 0.005 * exp(-3*0.040*t)
 
 def biexp(t, omega, rate1, amp1, amp2):
     return  amp1 * exp(-rate1*t) + amp2 #* exp(-3*omega*t)
@@ -626,8 +626,10 @@ if __name__ == '__main__':
         #         'hopper-nv1_2021_03_16-{}K-4'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-5-gamma_minus_1'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-5-gamma_plus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-7-gamma_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-7-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-7-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-7-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-8-gamma_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-8-gamma_plus_1'.format(temp),
                 ]
     
     for folder in folders:
