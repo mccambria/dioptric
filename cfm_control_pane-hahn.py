@@ -271,13 +271,11 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
             [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
             [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
             [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+            [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+            [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
             ], dtype=object)
-    # t1_exp_array = numpy.array([
-    #         [[States.LOW, States.HIGH], [20e6, 70e6], 6, 1e3, 30],
-    #         [[States.LOW, States.LOW], [20e6, 70e6], 6, 1e3, 30],
-    #         [[States.HIGH, States.LOW], [20e6, 70e6], 6, 1e3, 30],
-    #         [[States.HIGH, States.HIGH], [20e6, 70e6], 6, 1e3, 30],
-    #         ], dtype=object)
 
     # Loop through the experiments
     for exp_ind in range(len(t1_exp_array)):
@@ -497,8 +495,8 @@ if __name__ == '__main__':
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.7991, 'rabi_LOW': 237.4, 'uwave_power_LOW': 14.5,
-            'resonance_HIGH': 2.9445, 'rabi_HIGH': 146.6, 'uwave_power_HIGH': 12.0} 
+            'resonance_LOW': 2.7991, 'rabi_LOW': 235.9, 'uwave_power_LOW': 14.5,
+            'resonance_HIGH': 2.9445, 'rabi_HIGH': 146.7, 'uwave_power_HIGH': 12.0} 
     
     
     # %% Functions to run
@@ -517,14 +515,14 @@ if __name__ == '__main__':
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # # do_optimize_magnet_angle(nv_sig, apd_indices)
-        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 8)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
-        # do_t1_dq_knill_battery(nv_sig, apd_indices)
+        do_t1_dq_knill_battery(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
         #     nv_sig['resonance_HIGH'] = res
