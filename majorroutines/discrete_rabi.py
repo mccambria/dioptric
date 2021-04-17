@@ -174,7 +174,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
-    polarization_time = shared_params['polarization_dur'] 
+    # polarization_time = shared_params['polarization_dur'] 
+    polarization_time = 1e5
     # time of illumination during which reference readout occurs
     signal_wait_time = shared_params['post_polarization_wait_dur']
     reference_time = signal_wait_time  # not sure what this is

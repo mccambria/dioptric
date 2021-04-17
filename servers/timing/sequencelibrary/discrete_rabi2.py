@@ -30,6 +30,8 @@ def get_seq(pulser_wiring, args):
         aom_delay_time, uwave_delay_time, iq_delay_time, \
         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse = durations
         
+    uwave_to_readout_time = 1e4
+        
     num_pi_pulses = int(args[11])
     max_num_pi_pulses = int(args[12])
     
@@ -63,7 +65,7 @@ def get_seq(pulser_wiring, args):
     max_tau = composite_pulse_time * max_num_pi_pulses
 
     prep_time = polarization_time + signal_wait_time + \
-        tau + signal_wait_time
+        tau + uwave_to_readout_time
     end_rest_time = max_tau - tau
 
     # The period is independent of the particular tau, but it must be long
@@ -96,7 +98,7 @@ def get_seq(pulser_wiring, args):
 
     # Pulse the laser with the AOM for polarization and readout
     train = [(polarization_time, HIGH),
-             (signal_wait_time + tau + signal_wait_time, LOW),
+             (signal_wait_time + tau + uwave_to_readout_time, LOW),
              (polarization_time, HIGH),
              (reference_wait_time, LOW),
              (reference_time, HIGH),
@@ -105,16 +107,16 @@ def get_seq(pulser_wiring, args):
 
     # Microwave train
     pre_duration = aom_delay_time + polarization_time + signal_wait_time - uwave_delay_time
-    post_duration = signal_wait_time + polarization_time + \
+    post_duration = uwave_to_readout_time + polarization_time + \
         reference_wait_time + reference_time + \
         background_wait_time + end_rest_time + uwave_delay_time
-    train = [(pre_duration, LOW), (tau, HIGH), (post_duration, LOW)]
+    train = [(pre_duration, LOW), (tau, LOW), (post_duration, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
     
     # Switch the phase with the AWG
     composite_pulse = [(10, HIGH), (uwave_pi_pulse-10, LOW)] * 5
     pre_duration = aom_delay_time + polarization_time + signal_wait_time - iq_delay_time
-    post_duration = signal_wait_time + polarization_time + \
+    post_duration = uwave_to_readout_time + polarization_time + \
         reference_wait_time + reference_time + \
         background_wait_time + end_rest_time + iq_delay_time
     train = [(pre_duration, LOW)]
@@ -137,6 +139,7 @@ if __name__ == '__main__':
 #    args = [0, 3000, 1000, 1000, 2000, 1000, 1000, 300, 150, 0, 3]
     # seq_args = [12000, 1000, 1000, 2000, 1000, 1060, 1000, 555, 350, 92, 46, 8, 8, 0, 3]
     # args = [500, 1000, 1000, 2000, 1000, 0, 0, 0, 350, 92, 46, 0, 4, 0, 3]
-    seq_args = [1200, 1000, 1000, 10000, 1000, 0, 0, 0, 350, 78, 39, 1, 1, 0, 3]
+    # seq_args = [1200, 1000, 1000, 10000, 1000, 0, 0, 0, 350, 78, 39, 1, 1, 0, 3]
+    seq_args = [5000, 1000, 1000, 2000, 1000, 0, 0, 0, 350, 86, 43, 1, 2, 0, 3]
     seq = get_seq(wiring, seq_args)[0]
     seq.plot()
