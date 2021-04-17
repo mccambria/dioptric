@@ -49,7 +49,7 @@ def exp_eq_omega(t, rate, amp):
     return  amp * exp(- rate * t)
 
 def exp_eq_gamma(t, rate, amp):
-    return  amp * exp(- rate * t) + manual_offset_gamma #- 0.01 * exp(-3*0.040*t)
+    return  amp * exp(- rate * t) + manual_offset_gamma #- 0.005 * exp(-3*0.040*t)
 
 def biexp(t, omega, rate1, amp1, amp2):
     return  amp1 * exp(-rate1*t)
@@ -216,6 +216,7 @@ def get_data_lists(folder_name):
             #                     read_state_name == low_state_name:
             if (init_state_name == zero_state_name and read_state_name == high_state_name) or \
                 (init_state_name == zero_state_name and read_state_name == low_state_name):
+                norm_avg_sig *= 1.0075
                 if zero_plus_bool == False:
                     zero_plus_counts = norm_avg_sig
                     zero_plus_ste = norm_avg_sig_ste
@@ -248,7 +249,7 @@ def get_data_lists(folder_name):
             #     (read_state_name == low_state_name):
             if (init_state_name == high_state_name and read_state_name == high_state_name) or \
                 (init_state_name == low_state_name and read_state_name == low_state_name):
-                # norm_avg_sig *= numpy.linspace(1.00,0.95,num_steps)
+                norm_avg_sig *= 1.0
                 if plus_plus_bool == False:
                     plus_plus_counts = norm_avg_sig
                     plus_plus_ste = norm_avg_sig_ste
@@ -281,7 +282,7 @@ def get_data_lists(folder_name):
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']
-                # norm_avg_sig *= numpy.linspace(1.00,0.95,num_steps)
+                norm_avg_sig *= 1.0
                 if plus_minus_bool == False:
                     plus_minus_counts = norm_avg_sig
                     plus_minus_ste = norm_avg_sig_ste
@@ -379,8 +380,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                                               absolute_sigma=True)#,
                                              # bounds=((0,0),(1,0.5)),
                                              # loss='soft_l1')
-                # omega_opti_params = numpy.array([0.0,0.0])
-                # cov_arr = numpy.array([[0,0],[0,0]])
+                omega_opti_params = numpy.array([0.0,0.0])
+                cov_arr = numpy.array([[0,0],[0,0]])
 
         except Exception:
 
@@ -472,12 +473,12 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
         else:
             # MCC
-            init_params = tuple(init_params_list)
-            gamma_fit_func = exp_eq_gamma
-            gamma_opti_params, cov_arr = curve_fit(exp_eq_gamma,
-                              plus_plus_time, plus_relaxation_counts,
-                              p0 = init_params, sigma = plus_relaxation_ste,
-                              absolute_sigma=True)#,
+            # init_params = tuple(init_params_list)
+            # gamma_fit_func = exp_eq_gamma
+            # gamma_opti_params, cov_arr = curve_fit(exp_eq_gamma,
+            #                   plus_plus_time, plus_relaxation_counts,
+            #                   p0 = init_params, sigma = plus_relaxation_ste,
+            #                   absolute_sigma=True)#,
                               # bounds=((0,0),(1,0.5)),
                               # loss='soft_l1')
             # init_params = (0.04, 0.22, 0.17, 0.0)
@@ -491,8 +492,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             #                   p0 = init_params, sigma = plus_relaxation_ste,
             #                   absolute_sigma=True)
             # print(gamma_opti_params)
-            # gamma_opti_params = numpy.array([0.0,0.0,0])
-            # cov_arr = numpy.array([[0,0,0],[0,0,0],[0,0,0]])
+            gamma_fit_func = lambda t, rate1, amp1, amp2: biexp(t, omega, rate1, amp1, amp2)
+            gamma_opti_params = numpy.array([0.0,0.0,0])
+            cov_arr = numpy.array([[0,0,0],[0,0,0],[0,0,0]])
 
     except Exception as e:
         gamma_fit_failed = True
@@ -620,21 +622,48 @@ if __name__ == '__main__':
 
     # %%
 
-    path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
+    # path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
+    # folders = [
+    #             'hopper-nv1_2021_03_16-275K-3-omega_minus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-3-omega_plus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-{}K-4'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-5-gamma_minus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-5-gamma_plus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-7-gamma_minus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-7-gamma_plus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-8-gamma_minus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-8-gamma_plus_1'.format(temp),
+    #             ]
+
+    # for folder in folders:
+    #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
+    #                       doPlot=True, offset=False)
+        
+    # folders = [
+    #             # 'hopper-nv1_2021_03_16-275K-9-gamma_minus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-275K-9-gamma_plus_1'.format(temp),
+    #             ]
+
+    # for folder in folders:
+    #     gamma, ste = main(path, folder, omega=0.040, omega_ste=0.0,
+    #                       doPlot=True, offset=False)
+
+    path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\trial_data\\'
     folders = [
-        # 'hopper-nv1_2021_03_16-275K-3-omega_minus_1'.format(temp),
-        #         'hopper-nv1_2021_03_16-275K-3-omega_plus_1'.format(temp),
-        #         'hopper-nv1_2021_03_16-{}K-4'.format(temp),
-                # 'hopper-nv1_2021_03_16-275K-5-gamma_minus_1'.format(temp),
-                # 'hopper-nv1_2021_03_16-275K-5-gamma_plus_1'.format(temp),
-                # 'hopper-nv1_2021_03_16-275K-7-gamma_minus_1'.format(temp),
-                # 'hopper-nv1_2021_03_16-275K-7-gamma_plus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-8-gamma_minus_1'.format(temp),
-                # 'hopper-nv1_2021_03_16-275K-8-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-10-gamma_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-10-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-11-gamma_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-11-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-12-gamma_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-12-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-13-gamma_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-13-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-14-gamma_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-14-gamma_plus_1'.format(temp),
                 ]
 
     for folder in folders:
-        gamma, ste = main(path, folder, omega=0.040, omega_ste=0.00,
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
                           doPlot=True, offset=False)
 
     # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
