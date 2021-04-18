@@ -170,7 +170,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     # %% Analyze the sequence
 
     # pulls the file of the sequence from serves/timing/sequencelibrary
-    file_name = os.path.basename(__file__)
+    # file_name = os.path.basename(__file__)
     file_name = 't1_dq_knill2.py'
 
     seq_args = [min_relaxation_time, polarization_time, signal_time, reference_time,

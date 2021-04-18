@@ -68,6 +68,7 @@ def get_seq(pulser_wiring, args):
     # This ensures that all sequences run the same duty cycle. It compensates
     # for finite pulse length.
     pi_pulse_buffer = max(5*pi_pulse_low, 5*pi_pulse_high)
+    # pi_pulse_buffer = 0
 
     # Set pulse durations for Knill composite pulses
     if init_state_value == States.LOW.value:
@@ -141,16 +142,16 @@ def get_seq(pulser_wiring, args):
         sig_to_ref_wait_time + gate_time
 
     train = [(pre_duration - rf_high_delay, LOW)]
-    train.extend([(init_pi_high, HIGH), (pi_pulse_buffer-init_pi_high + tau_shrt, LOW), (read_pi_high, HIGH)])
+    train.extend([(init_pi_high, LOW), (pi_pulse_buffer-init_pi_high + tau_shrt, LOW), (read_pi_high, LOW)])
     train.extend([(pi_pulse_buffer-read_pi_high + mid_duration, LOW)])
-    train.extend([(init_pi_high, HIGH), (pi_pulse_buffer-init_pi_high + tau_long, LOW), (read_pi_high, HIGH)])
+    train.extend([(init_pi_high, LOW), (pi_pulse_buffer-init_pi_high + tau_long, LOW), (read_pi_high, LOW)])
     train.extend([(pi_pulse_buffer-read_pi_high + post_duration + rf_high_delay, LOW)])
     seq.setDigital(pulser_do_sig_gen_high_gate, train)
 
     train = [(pre_duration - rf_low_delay, LOW)]
-    train.extend([(init_pi_low, HIGH), (pi_pulse_buffer-init_pi_low + tau_shrt, LOW), (read_pi_low, HIGH)])
+    train.extend([(init_pi_low, LOW), (pi_pulse_buffer-init_pi_low + tau_shrt, LOW), (read_pi_low, LOW)])
     train.extend([(pi_pulse_buffer-read_pi_low + mid_duration, LOW)])
-    train.extend([(init_pi_low, HIGH), (pi_pulse_buffer-init_pi_low + tau_long, LOW), (read_pi_low, HIGH)])
+    train.extend([(init_pi_low, LOW), (pi_pulse_buffer-init_pi_low + tau_long, LOW), (read_pi_low, LOW)])
     train.extend([(pi_pulse_buffer-read_pi_low + post_duration + rf_low_delay, LOW)])
     seq.setDigital(pulser_do_sig_gen_low_gate, train)
     
