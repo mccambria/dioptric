@@ -103,6 +103,7 @@ def get_data_lists(folder_name):
 
     num_diffs = 0
     diffs = 0
+    splitting_MHz = None
 
     # Unpack the data and sort into arrays. This allows multiple measurements of
     # the same type to be correctly sorted into one array
@@ -149,11 +150,13 @@ def get_data_lists(folder_name):
 
             # Assume reference is constant and can be approximated to one value
             avg_ref = numpy.average(ref_counts[::])
+            # avg_ref = 350
             avg_sig = numpy.average(sig_counts[::])
             num_diffs += 1
             diffs += avg_ref - (numpy.std(ref_counts[::], ddof = 1)**2)
+            # print(init_state_name + ', ' + read_state_name)
             # print(avg_ref)
-            # print(numpy.std(ref_counts[::], ddof = 1))
+            # print(numpy.std(ref_counts[::], ddof = 1) / numpy.sqrt(num_runs*num_steps))
             # print(avg_sig)
             # print(avg_sig_counts)
             # print()
@@ -166,6 +169,10 @@ def get_data_lists(folder_name):
             norm_avg_sig_ste = ste_sig_counts / avg_ref
             # norm_avg_sig = avg_sig_counts
             # norm_avg_sig_ste = ste_sig_counts
+            
+            # print(norm_avg_sig)
+            # print(norm_avg_sig_ste)
+            # print()
 
             # time_array = numpy.array(range(0,num_runs*num_steps))
             # norm_avg_sig = sig_counts.flatten() #- avg_ref
@@ -216,7 +223,7 @@ def get_data_lists(folder_name):
             #                     read_state_name == low_state_name:
             if (init_state_name == zero_state_name and read_state_name == high_state_name) or \
                 (init_state_name == zero_state_name and read_state_name == low_state_name):
-                norm_avg_sig *= 1.0075
+                norm_avg_sig *= 1.01
                 if zero_plus_bool == False:
                     zero_plus_counts = norm_avg_sig
                     zero_plus_ste = norm_avg_sig_ste
@@ -380,8 +387,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                                               absolute_sigma=True)#,
                                              # bounds=((0,0),(1,0.5)),
                                              # loss='soft_l1')
-                omega_opti_params = numpy.array([0.0,0.0])
-                cov_arr = numpy.array([[0,0],[0,0]])
+                # print(omega_opti_params)
+                # omega_opti_params = numpy.array([0.045*3,0.175])
+                # cov_arr = numpy.array([[0,0],[0,0]])
 
         except Exception:
 
@@ -622,7 +630,7 @@ if __name__ == '__main__':
 
     # %%
 
-    # path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
+    path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\trial_data\\'
     # folders = [
     #             'hopper-nv1_2021_03_16-275K-3-omega_minus_1'.format(temp),
     #             'hopper-nv1_2021_03_16-275K-3-omega_plus_1'.format(temp),
@@ -647,19 +655,19 @@ if __name__ == '__main__':
     # for folder in folders:
     #     gamma, ste = main(path, folder, omega=0.040, omega_ste=0.0,
     #                       doPlot=True, offset=False)
-
-    path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\trial_data\\'
     folders = [
-                'hopper-nv1_2021_03_16-275K-10-gamma_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-10-gamma_plus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-11-gamma_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-11-gamma_plus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-12-gamma_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-12-gamma_plus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-13-gamma_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-13-gamma_plus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-14-gamma_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-14-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-10-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-10-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-11-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-11-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-12-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-12-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-13-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-13-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-14-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-14-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-15-gamma_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-15-gamma_plus_1'.format(temp),
                 ]
 
     for folder in folders:
