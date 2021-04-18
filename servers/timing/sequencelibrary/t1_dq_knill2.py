@@ -46,7 +46,7 @@ def get_seq(pulser_wiring, args):
         rf_low_delay = sig_gen_tsg4104a_delay
     elif low_sig_gen_name == 'signal_generator_sg394':
         rf_low_delay = sig_gen_sg394_delay
-    
+
     high_sig_gen_name = tool_belt.get_signal_generator_name(States.HIGH)
     high_sig_gen_gate_chan_name = 'do_{}_gate'.format(high_sig_gen_name)
     pulser_do_sig_gen_high_gate = pulser_wiring[high_sig_gen_gate_chan_name]
@@ -54,7 +54,7 @@ def get_seq(pulser_wiring, args):
         rf_high_delay = sig_gen_tsg4104a_delay
     elif high_sig_gen_name == 'signal_generator_sg394':
         rf_high_delay = sig_gen_sg394_delay
-    
+
     pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']
 
     # %% Some further setup
@@ -64,10 +64,11 @@ def get_seq(pulser_wiring, args):
     init_pi_high = 0
     read_pi_low = 0
     read_pi_high = 0
-    
+
     # This ensures that all sequences run the same duty cycle. It compensates
     # for finite pulse length.
     pi_pulse_buffer = max(5*pi_pulse_low, 5*pi_pulse_high)
+    # pi_pulse_buffer = 0
 
     # Set pulse durations for Knill composite pulses
     if init_state_value == States.LOW.value:
@@ -78,9 +79,9 @@ def get_seq(pulser_wiring, args):
         read_pi_low = 5*pi_pulse_low
     elif read_state_value == States.HIGH.value:
         read_pi_high = 5*pi_pulse_high
-        
+
     pulser_do_aom = pulser_wiring['do_532_aom']
-    
+
     base_uwave_experiment_dur = 2*pi_pulse_buffer
     uwave_experiment_shrt = base_uwave_experiment_dur + tau_shrt
     uwave_experiment_long = base_uwave_experiment_dur + tau_long
@@ -102,7 +103,7 @@ def get_seq(pulser_wiring, args):
         signal_time + sig_to_ref_wait_time + gate_time
 
     seq = Sequence()
-    
+
     # %% APD
 
     pre_duration = prep_time
@@ -118,7 +119,7 @@ def get_seq(pulser_wiring, args):
              (long_sig_to_long_ref, LOW),
              (gate_time, HIGH)]
     seq.setDigital(pulser_do_apd_gate, train)
-    
+
     # %% Green laser
 
     train = [(polarization_time, HIGH),
@@ -141,26 +142,26 @@ def get_seq(pulser_wiring, args):
         sig_to_ref_wait_time + gate_time
 
     train = [(pre_duration - rf_high_delay, LOW)]
-    train.extend([(1, HIGH), (pi_pulse_buffer-init_pi_high + tau_shrt, LOW), (read_pi_high, HIGH)])
+    train.extend([(init_pi_high, LOW), (pi_pulse_buffer-init_pi_high + tau_shrt, LOW), (read_pi_high, LOW)])
     train.extend([(pi_pulse_buffer-read_pi_high + mid_duration, LOW)])
-    train.extend([(init_pi_high, HIGH), (pi_pulse_buffer-init_pi_high + tau_long, LOW), (read_pi_high, HIGH)])
+    train.extend([(init_pi_high, LOW), (pi_pulse_buffer-init_pi_high + tau_long, LOW), (read_pi_high, LOW)])
     train.extend([(pi_pulse_buffer-read_pi_high + post_duration + rf_high_delay, LOW)])
     seq.setDigital(pulser_do_sig_gen_high_gate, train)
 
     train = [(pre_duration - rf_low_delay, LOW)]
-    train.extend([(init_pi_low, HIGH), (pi_pulse_buffer-init_pi_low + tau_shrt, LOW), (read_pi_low, HIGH)])
+    train.extend([(init_pi_low, LOW), (pi_pulse_buffer-init_pi_low + tau_shrt, LOW), (read_pi_low, LOW)])
     train.extend([(pi_pulse_buffer-read_pi_low + mid_duration, LOW)])
-    train.extend([(init_pi_low, HIGH), (pi_pulse_buffer-init_pi_low + tau_long, LOW), (read_pi_low, HIGH)])
+    train.extend([(init_pi_low, LOW), (pi_pulse_buffer-init_pi_low + tau_long, LOW), (read_pi_low, LOW)])
     train.extend([(pi_pulse_buffer-read_pi_low + post_duration + rf_low_delay, LOW)])
     seq.setDigital(pulser_do_sig_gen_low_gate, train)
-    
+
     # %% IQ modulation
-    
+
     composite_low_seq = [(10, HIGH), (pi_pulse_low-10, LOW)] * 5
     composite_high_seq = [(10, HIGH), (pi_pulse_high-10, LOW)] * 5
 
     train = [(pre_duration - iq_delay_time, LOW)]
-    
+
     if init_state_value == States.LOW.value:
         train.extend(composite_low_seq)
         train.extend([(pi_pulse_buffer-init_pi_low, LOW)])
@@ -169,9 +170,9 @@ def get_seq(pulser_wiring, args):
         train.extend([(pi_pulse_buffer-init_pi_high, LOW)])
     else:
         train.extend([(pi_pulse_buffer, LOW)])
-        
+
     train.extend([(tau_shrt, LOW)])
-    
+
     if read_state_value == States.LOW.value:
         train.extend(composite_low_seq)
         train.extend([(pi_pulse_buffer-read_pi_low, LOW)])
@@ -180,9 +181,9 @@ def get_seq(pulser_wiring, args):
         train.extend([(pi_pulse_buffer-read_pi_high, LOW)])
     else:
         train.extend([(pi_pulse_buffer, LOW)])
-        
+
     train.extend([(mid_duration, LOW)])
-    
+
     if init_state_value == States.LOW.value:
         train.extend(composite_low_seq)
         train.extend([(pi_pulse_buffer-init_pi_low, LOW)])
@@ -191,9 +192,9 @@ def get_seq(pulser_wiring, args):
         train.extend([(pi_pulse_buffer-init_pi_high, LOW)])
     else:
         train.extend([(pi_pulse_buffer, LOW)])
-        
+
     train.extend([(tau_long, LOW)])
-    
+
     if read_state_value == States.LOW.value:
         train.extend(composite_low_seq)
         train.extend([(pi_pulse_buffer-read_pi_low, LOW)])
@@ -202,11 +203,11 @@ def get_seq(pulser_wiring, args):
         train.extend([(pi_pulse_buffer-read_pi_high, LOW)])
     else:
         train.extend([(pi_pulse_buffer, LOW)])
-        
+
     train.extend([(post_duration + iq_delay_time, LOW)])
-    
+
     seq.setDigital(pulser_do_arb_wave_trigger, train)
-    
+
     # %% Return the sequence
 
     final_digital = [pulser_wiring['do_532_aom'],
@@ -222,7 +223,7 @@ if __name__ == '__main__':
               'do_signal_generator_sg394_gate': 2,
               'do_signal_generator_tsg4104a_gate': 3,
               'do_arb_wave_trigger': 5,}
-    
+
     # seq_args = [6428, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 510, 51, 80, 3571, 0, 3, 3]
     # seq_args = [0, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 510, 51, 80, 5000, 0, 3, 3]
     # seq_args = [3000, 1000, 1000, 1000, 2000, 1000, 1000, 1080, 1005, 995, 560, 350, 121, 73, 0, 0, 3, 3]
