@@ -141,7 +141,7 @@ def get_seq(pulser_wiring, args):
         sig_to_ref_wait_time + gate_time
 
     train = [(pre_duration - rf_high_delay, LOW)]
-    train.extend([(init_pi_high, HIGH), (pi_pulse_buffer-init_pi_high + tau_shrt, LOW), (read_pi_high, HIGH)])
+    train.extend([(1, HIGH), (pi_pulse_buffer-init_pi_high + tau_shrt, LOW), (read_pi_high, HIGH)])
     train.extend([(pi_pulse_buffer-read_pi_high + mid_duration, LOW)])
     train.extend([(init_pi_high, HIGH), (pi_pulse_buffer-init_pi_high + tau_long, LOW), (read_pi_high, HIGH)])
     train.extend([(pi_pulse_buffer-read_pi_high + post_duration + rf_high_delay, LOW)])
@@ -226,7 +226,7 @@ if __name__ == '__main__':
     # seq_args = [6428, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 510, 51, 80, 3571, 0, 3, 3]
     # seq_args = [0, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 510, 51, 80, 5000, 0, 3, 3]
     # seq_args = [3000, 1000, 1000, 1000, 2000, 1000, 1000, 1080, 1005, 995, 560, 350, 121, 73, 0, 0, 3, 3]
-    seq_args = [3000, 1000, 1000, 1000, 2000, 1000, 1000, 0, 0, 0, 0, 350, 1200, 2100, 4000, 0, 3,1]
+    seq_args = [3000, 1000, 1000, 1000, 2000, 1000, 1000, 1080, 1005, 995, 560, 350, 1200, 2100, 4000, 0, 2,2]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()
