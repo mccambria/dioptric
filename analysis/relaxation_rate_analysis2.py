@@ -145,6 +145,8 @@ def get_data_lists(folder_name):
 #            print(sig_counts)
             avg_sig_counts = numpy.average(sig_counts[::], axis=0)
             ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
+            avg_ref_counts = numpy.average(ref_counts[::], axis=0)
+            ste_ref_counts = numpy.std(ref_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
             # avg_sig_counts = numpy.average(sig_counts[::])
             # ste_sig_counts = numpy.std(sig_counts[::], ddof = 1) / numpy.sqrt(num_runs*num_steps)
 
@@ -154,7 +156,6 @@ def get_data_lists(folder_name):
             avg_sig = numpy.average(sig_counts[::])
             num_diffs += 1
             diffs += avg_ref - (numpy.std(ref_counts[::], ddof = 1)**2)
-            # print(init_state_name + ', ' + read_state_name)
             # print(avg_ref)
             # print(numpy.std(ref_counts[::], ddof = 1) / numpy.sqrt(num_runs*num_steps))
             # print(numpy.min(ref_counts))
@@ -166,14 +167,21 @@ def get_data_lists(folder_name):
             #     print(avg_sig_counts)
 
             # Divide signal by reference to get normalized counts and st error
+            # norm_avg_sig = avg_sig_counts / avg_ref_counts
+            # norm_avg_sig_ste = ste_sig_counts / avg_ref_counts
+            
             norm_avg_sig = avg_sig_counts / avg_ref
             norm_avg_sig_ste = ste_sig_counts / avg_ref
             # norm_avg_sig = avg_sig_counts
             # norm_avg_sig_ste = ste_sig_counts
             
-            # print(norm_avg_sig)
-            # print(norm_avg_sig_ste)
-            # print()
+            # if 1 not in time_array:
+            #     print(init_state_name + ', ' + read_state_name)
+            #     sig_33 = sig_counts[:,1]
+            #     print(numpy.average(sig_33))
+            #     print(numpy.std(sig_33, ddof = 1) / numpy.sqrt(num_runs))
+            #     # plt.hist(sig_33, 10, (270, 380), histtype='step')
+            #     print()
 
             # time_array = numpy.array(range(0,num_runs*num_steps))
             # norm_avg_sig = sig_counts.flatten() #- avg_ref
@@ -683,14 +691,22 @@ if __name__ == '__main__':
                 # 'hopper-nv1_2021_03_16-275K-23-omega'.format(temp),  # A
                 # 'hopper-nv1_2021_03_16-275K-24-omega'.format(temp),  # A
                 # 'hopper-nv1_2021_03_16-275K-25-omega'.format(temp),  # C: Finite pulses, just Omega, IQ and RF commented out
-                'hopper-nv1_2021_03_16-275K-26-omega'.format(temp),  # A
-                'hopper-nv1_2021_03_16-275K-27-omega'.format(temp),  # A
+                # 'hopper-nv1_2021_03_16-275K-26-omega'.format(temp),  # A
+                # 'hopper-nv1_2021_03_16-275K-27-omega'.format(temp),  # A
                 'hopper-nv1_2021_03_16-275K-28-omega'.format(temp),  # A
-                'hopper-nv1_2021_03_16-275K-29-omega'.format(temp),  # A
-                'hopper-nv1_2021_03_16-275K-30-omega'.format(temp),  # C
-                'hopper-nv1_2021_03_16-275K-31-omega'.format(temp),  # C
-                'hopper-nv1_2021_03_16-275K-32-omega'.format(temp),  # C
-                'hopper-nv1_2021_03_16-275K-33-omega'.format(temp),  # C
+                # 'hopper-nv1_2021_03_16-275K-29-omega'.format(temp),  # A
+                # 'hopper-nv1_2021_03_16-275K-30-omega'.format(temp),  # C
+                # 'hopper-nv1_2021_03_16-275K-31-omega'.format(temp),  # C
+                # 'hopper-nv1_2021_03_16-275K-32-omega'.format(temp),  # C
+                # 'hopper-nv1_2021_03_16-275K-33-omega'.format(temp),  # C
+                # 'hopper-nv1_2021_03_16-275K-34-omega'.format(temp),  # C, reverse order
+                # 'hopper-nv1_2021_03_16-275K-35-omega'.format(temp),  # C
+                # 'hopper-nv1_2021_03_16-275K-36-omega'.format(temp),  # C
+                # 'hopper-nv1_2021_03_16-275K-37-omega'.format(temp),  # C
+                # 'hopper-nv1_2021_03_16-275K-26-omega'.format(temp),  # A, reverse order
+                # 'hopper-nv1_2021_03_16-275K-27-omega'.format(temp),  # A
+                # 'hopper-nv1_2021_03_16-275K-28-omega'.format(temp),  # A
+                # 'hopper-nv1_2021_03_16-275K-29-omega'.format(temp),  # A
                 ]
 
     for folder in folders:
