@@ -647,36 +647,26 @@ if __name__ == '__main__':
     sample_name = 'goepert-mayer'
     
         
-    expected_count_list = [55, 55, 50, 45, 50, 55, 60, 50, 50, 50, 60, 45, 55, 55, 40] # 4/2/21
+    expected_count_list = [40, 45, 65, 64, 55, 42,  40, 45 ] # 4/13/21 ###
     nv_coords_list = [
-[0.073, 0.243, 5.12], # 
-[0.059, 0.125, 5.19],
-[-0.019, 0.166, 5.12],
-[0.208, -0.170, 5.16],
-[0.194, -0.267, 5.14],
-[0.088, -0.219, 5.18],
-[0.107, -0.116, 5.11],
-[-0.403, -0.383, 5.18],
-[-0.374, -0.346, 5.13],
-[-0.252, -0.299, 5.17],
-[-0.397, -0.253, 5.14],
-[0.173, 0.241, 5.15],
-[0.213, 0.264, 5.16],
+[-0.037, 0.119, 5.14],
+[-0.090, 0.066, 5.04],
+[-0.110, 0.042, 5.13],
+[0.051, -0.115, 5.08],
+[-0.110, 0.042, 5.06],
 
-[0.274, 0.425, 5.13], #
-[0.359, 0.209, 5.13],
-
-[-0.451, -0.309, 5.10],
-[0.026, 0.076, 5.11],
+[0.063, 0.269, 5.09], 
+[0.243, 0.184, 5.12],
+[0.086, 0.220, 5.03],
 ]
     
     nv_2021_03_30 = { 'coords':[], 
             'name': 'goepert-mayer-nv_2021_04_02',
-            'expected_count_rate': None, 'nd_filter': 'nd_1.5',
+            'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**7, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 15*10**7,  'am_589_power': 0.15, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -686,17 +676,24 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
-
-    for i in [13]:#range(len(nv_coords_list)):
+    test_pulses  = [10*10**3, 
+                                100*10**3,
+                               1*10**6,  5*10**6, 
+                                1*10**7,
+                               2*10**7,3*10**7,4*10**7,
+                               5*10**7
+                               ]
+    for i in [7]:#range(len(nv_coords_list)):
         nv_sig = copy.deepcopy(nv_2021_03_30)
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
-        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_02'.format(i)
+        nv_sig['name'] = 'johnson-nv{}_2021_04_15'.format(i)
         nv_sig['nd_filter'] = 'nd_1.0'
-        nv_sig['am_589_power'] = 0.12
-        optimize_readout_pulse_length(nv_sig,  test_pulse_dur_list  = [10**8
-                               ]  )
-#        optimize_readout_pulse_power(nv_sig,power_list=  [ 0.15, 0.17, 0.2, 0.22,0.25])
+#        nv_sig['am_589_power'] = 0.20
+#        optimize_readout_pulse_length(nv_sig  )
+        nv_sig['am_589_power'] = 0.15
+        optimize_readout_pulse_length(nv_sig  , test_pulse_dur_list  = test_pulses)
+#        optimize_readout_pulse_power(nv_sig,power_list=  [ 0.15,0.16, 0.17,0.18, 0.19, 0.2])
     
 #        optimize_reion_pulse_length(nv_sig)
    

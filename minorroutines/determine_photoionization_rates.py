@@ -179,29 +179,13 @@ def sweep_test_pulse_length(nv_sig, test_color, test_power = 0.65, test_pulse_du
 # %% Run the files
     
 if __name__ == '__main__':
-    sample_name = 'goepert-mayer'
+#    sample_name = 'goepert-mayer'
     
         
-    expected_count_list = [55, 55, 50, 45, 50, 55, 60, 50, 50, 50, 60, 45, 55, 55, 40] # 4/2/21
+    expected_count_list = [22] #
     nv_coords_list = [
-[0.029, 0.139, 5.20],
-[0.070, 0.125, 5.26],
-[-0.009, 0.165, 5.17],
 
-[0.219 -0.174, 5.19], # 3
-[0.204, -0.268, 5.20],
-[0.096, -0.218, 5.24],
-[0.114, -0.116, 5.17],
-
-[-0.395, -0.383, 5.23], # 7
-[-0.364, -0.347, 5.18],
-[-0.242, -0.300, 5.20],
-[-0.385, -0.254, 5.15],
-
-[0.183, 0.242, 5.18], # 11
-[0.225, 0.264, 5.21],
-[0.230, 0.315, 5.18],
-[0.370, 0.208, 5.15],
+[-0.036, -0.146 ,5.0]
 ]
     
     nv_2021_03_30 = { 'coords':[], 
@@ -210,7 +194,7 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**7, 'am_589_power': 0.15, 
+            'pulsed_SCC_readout_dur': 15*10**7, 'am_589_power': 0.18, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -221,20 +205,20 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    for i in [13]:#range(len(nv_coords_list)):
+    for i in [0]:#range(len(nv_coords_list)):
         nv_sig = copy.deepcopy(nv_2021_03_30)
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
-        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_02'.format(i)
+        nv_sig['name'] = 'johnson-nv{}_2021_04_13'.format(i)
         nv_sig['nd_filter'] = 'nd_1.0'
-        nv_sig['am_589_power'] = 0.15
+        nv_sig['am_589_power'] = 0.18
     
         sweep_test_pulse_length(nv_sig, '515a', test_power = 0.65, 
             test_pulse_dur_list = [50, 100,150, 200, 250, 300, 350, 400, 450, 
                                    500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000,
                                    2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 100000,
                                    10*10**3, 20*10**3, 30*10**3, 40*10**3, 50*10**3 ])
-        sweep_test_pulse_length(nv_sig, '515a', test_power = 0.6035, 
+        sweep_test_pulse_length(nv_sig, '515a', test_power = 0.606, 
             test_pulse_dur_list = [50, 100,150, 200, 250, 300, 350, 400, 450, 
                                    500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000,
                                    2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 100000,

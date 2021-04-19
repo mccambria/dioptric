@@ -371,8 +371,8 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, co
         # the count rate at the center against the expected count rate
         if expected_count_rate is not None:
             
-            lower_threshold = expected_count_rate * 4/5#3/4
-            upper_threshold = expected_count_rate * 6/5#5/4
+            lower_threshold = expected_count_rate * 0.78#3/4
+            upper_threshold = expected_count_rate * 1.22#5/4
             
             if ind == 0:
                 print('Expected count rate: {}'.format(expected_count_rate))

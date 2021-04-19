@@ -15,10 +15,10 @@ import time
 import copy
 # %%
 
-reset_range = 0.3#2.5
+reset_range = 0.3
 num_steps_reset = int(75 * reset_range)
-image_range = 0.45#2.5
-num_steps = int(225 * image_range) 
+image_range = 0.45
+num_steps = 90# int(225 * image_range) 
 #num_steps = 90
 apd_indices = [0]
 
@@ -64,7 +64,7 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
         laser_delay = laser_638_delay
         
 
-    optimize.main_with_cxn(cxn, optimize_sig, apd_indices, '515a', disable=False) 
+    #optimize.main_with_cxn(cxn, optimize_sig, apd_indices, '515a', disable=False) 
     start=time.time()   
     
     # area reset
@@ -73,20 +73,20 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
         print('Resetting with {} nm light for bright state\n...'.format(init_color))
         reset_sig = copy.deepcopy(base_sig)
         reset_sig['coords'] = reset_coords
-        reset_sig['ao_515_pwr'] = 0.6240
-        _,_,_ = image_sample.main(reset_sig, 0.5, 0.5, int(70 * 0.5), 
-                          apd_indices, init_color,readout = 2*10**7,   save_data=False, plot_data=False)
+        reset_sig['ao_515_pwr'] = 0.63
+        _,_,_ = image_sample.main(reset_sig, 0.5, 0.5, 33, 
+                          apd_indices, init_color,readout = 10**7,   save_data=False, plot_data=False)
     elif siv_state == 'dark':
         print('Resetting with {} nm light for dark state\n...'.format(init_color))
         reset_sig = copy.deepcopy(base_sig)
         reset_sig['coords'] = reset_coords
-        reset_sig['ao_515_pwr'] = 0.6035
-        _,_,_ = image_sample.main(reset_sig, 0.5, 0.5, int(70 * 0.5), 
-                          apd_indices, init_color,readout = 2*10**7, save_data=False, plot_data=False) 
-        _,_,_ = image_sample.main(reset_sig, 0.5, 0.5, int(70 * 0.5), 
-                          apd_indices, init_color,readout = 2*10**7, save_data=False, plot_data=False)  
-        _,_,_ = image_sample.main(reset_sig, 0.5, 0.5, int(70 * 0.5), 
-                          apd_indices, init_color,readout = 2*10**7, save_data=False, plot_data=False) 
+        reset_sig['ao_515_pwr'] = 0.606
+        _,_,_ = image_sample.main(reset_sig, 0.5, 0.5, 33, 
+                          apd_indices, init_color,readout = 1*10**7, save_data=False, plot_data=False) 
+        _,_,_ = image_sample.main(reset_sig, 0.5, 0.5, 33, 
+                          apd_indices, init_color,readout = 1*10**7, save_data=False, plot_data=False)  
+#        _,_,_ = image_sample.main(reset_sig, 0.5, 0.5, int(70 * 0.5), 
+#                          apd_indices, init_color,readout = 2*10**7, save_data=False, plot_data=False) 
         
     end = time.time()
     print('Reset {:.1f} s'.format(end-start))
@@ -183,11 +183,11 @@ if __name__ == '__main__':
     
     base_sig = { 'coords':[],
             'name': '{}'.format(sample_name),
-            'expected_count_rate': 50, 'nd_filter': 'nd_1.0',
+            'expected_count_rate': 45, 'nd_filter': 'nd_1.0',
 #            'color_filter': '635-715 bp',
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 2*10**7, 'am_589_power': 0.25, 
+            'pulsed_SCC_readout_dur': 2*10**7, 'am_589_power': 0.15, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -197,17 +197,13 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
-    expected_count_list = [55, 45, 50, 45, 45, 45, 50, 50, 50, 60] # 3/30/21
+    expected_count_list = [40, 45, 65, 64, 55, 42 ] # 4/13/21 ###
     start_coords_list = [
-[0.046, 0.019, 5.20],
-[-0.057, 0.002, 5.14],
-[0.051, 0.077, 5.18],
-[-0.043, -0.047, 5.15],
-[0.047, 0.023, 5.21],
-[0.098, -0.105, 5.15],
-[0.019, 0.053, 5.19],
-[0.015, -0.134, 5.19],
-[0.077, -0.167, 5.19],
+[-0.035, 0.114, 5.24],
+[-0.109, 0.037, 5.23],
+[-0.127, 0.054, 5.27],
+[0.048, -0.121, 5.21],
+[-0.100, 0.053, 5.25],
 ]
     
 #    init_time = 10**7
@@ -217,25 +213,25 @@ if __name__ == '__main__':
     readout_color = 589
     
     
-    center_coords =[0,0, 5.18]
-    optimize_coords =[0.051, 0.077, 5.18]
+    center_coords =[-0.109, 0.037, 5.23]
+    optimize_coords =[-0.108, 0.038, 5.25 - 0.08]
 #    center_coords = pulse_coords
     
 #    reset_list = [5]
     
-    pulse_coords_list = [[0.1,  0.1, 5.18]]
+    pulse_coords_list = [[-0.109, 0.037, 5.23]]
     pulse_time = 0*10**6/10**9
     center_pulse_time = 0*10**3/10**9
     with labrad.connect() as cxn:
 #        for z in numpy.linspace(4.98, 5.38, 3):
-            reset_coords = [0,0, 5.18]
+            reset_coords = [-0.109, 0.037, 5.23]
 #            center_coords = [0,0, 5.18]
             main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
-                           pulse_coords_list, center_pulse_time, pulse_time, init_color, 
-                           pulse_color, readout_color,  siv_state = 'bright', boo = False)
-            main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
                        pulse_coords_list, center_pulse_time, pulse_time, init_color, 
-                       pulse_color, readout_color,  siv_state = 'dark', boo = False)
+                       pulse_color, readout_color,  siv_state = 'bright', boo = False)
+            main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
+                           pulse_coords_list, center_pulse_time, pulse_time, init_color, 
+                           pulse_color, readout_color,  siv_state = 'dark', boo = False)
 #            main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
 #                           pulse_coords_list, center_pulse_time, pulse_time, init_color, 
 #                           pulse_color, readout_color,  siv_state = 'bright')

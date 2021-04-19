@@ -78,10 +78,10 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  read
 #    scan_range = 0.3
 #    scan_range = 0.2
 #    num_steps = 120
-    scan_range = 0.1
+#    scan_range = 0.1
 #    scan_range = 0.2
 #    num_steps = 90
-#    scan_range = 0.05
+    scan_range = 0.05
     num_steps = 60
 #    scan_range = 0.025
 #    num_steps =30
@@ -150,7 +150,7 @@ def do_two_pulse_stationary_count(nv_sig, init_color, read_color, init_time,
     
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 60 * 2  # s
+    run_time = 60 * 3  # s
     diff_window = 150  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
@@ -543,9 +543,9 @@ if __name__ == '__main__':
     apd_indices = [0]
 #    apd_indices = [0, 1]
     
-    sample_name = 'johnson'
+    sample_name = 'goeppert-mayer'
      
-    search = { 'coords':[-0.086, 0.188,5.0 ],
+    search = { 'coords':[0.2, 0.2 ,5.17],
             'name': '{}-search'.format(sample_name),
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
@@ -565,21 +565,37 @@ if __name__ == '__main__':
      
 
     
-    expected_count_list = [] # 4/12/21 ###
-    nv_list_2021_04_12 = [
+    expected_count_list = [40, 35, 60, 64, 65, 40, 40, 45] # 4/13/21 ###
+    nv_list_2021_04_15 = [
+[-0.037, 0.119, 5.14],
+[-0.090, 0.066, 5.04],
+[-0.110, 0.042, 5.13],
+[0.051, -0.115, 5.08],
+[-0.110, 0.042, 5.06],
 
+[0.063, 0.269, 5.09], 
+[0.243, 0.184, 5.12],
+[0.086, 0.220, 5.03],
+#[0.097, 0.245, 5.06], # X
+#[0.232, 0.205, 5.12], # X
+#[0.279, 0.186, 5.06], # X
+#[0.095, 0.187, 5.11], # X
+#[0.092, 0.240, 5.08], # X
+#[0.307, 0.136, 5.06], # X
+#[0.255, 0.183, 5.12], # X
+#[0.278, 0.141, 5.06], # X
 ]
     
     nv_sig_list =[]
-#    for i in range(len(nv_list_2021_04_12)):
-#        nv_coords = nv_list_2021_04_12[i]
-#        nv_sig = copy.deepcopy(search)
-#        nv_sig['coords'] = nv_coords
-#        nv_sig['expected_count_rate'] = expected_count_list[i]
-#        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_12'.format(i)
-#        nv_sig_list.append(nv_sig)
+    for i in [5]:#range(len(nv_list_2021_04_15)):#
+        nv_coords = nv_list_2021_04_15[i]
+        nv_sig = copy.deepcopy(search)
+        nv_sig['coords'] = nv_coords
+        nv_sig['expected_count_rate'] = expected_count_list[i]
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
+        nv_sig_list.append(nv_sig)
         
-    nv_sig_list = [search]
+#    nv_sig_list = [search]
     
 
     # %% Functions to run
@@ -588,7 +604,7 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        drift = [-0.006, -0.010, 0.0]
+#        drift = [0.0, 0.007, 0.09]
 #        tool_belt.set_drift(drift)  
 #        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset 
 #        tool_belt.set_drift([-0.03,-0.02,-0.16])  # 2/23/21
@@ -620,22 +636,25 @@ if __name__ == '__main__':
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]
             
-#            do_optimize(nv_sig, apd_indices, '515a')
+            do_optimize(nv_sig, apd_indices, '515a')
 #            do_optimize(nv_sig, apd_indices, 532)
 #            do_optimize(nv_sig, apd_indices, 532)
             
 #            [x, y, z] = nv_sig['coords']
-            for z in numpy.linspace(3.2, 2.2, 11):
-                nv_sig_copy = copy.deepcopy(nv_sig)
-                [coord_x, coord_y, coord_z] = nv_sig['coords']
-                nv_sig_copy['coords'] = [coord_x, coord_y, z]  
-                do_image_sample(nv_sig_copy,  apd_indices, '515a', save_data=True, plot_data=True) 
+#            for z in numpy.linspace(z - 0.1, z + 0.1, 5):
+#                nv_sig_copy = copy.deepcopy(nv_sig)
+#                [coord_x, coord_y, coord_z] = nv_sig['coords']
+#                nv_sig_copy['coords'] = [coord_x, coord_y, z]  
+#                do_image_sample(nv_sig_copy,  apd_indices, '515a', save_data=True, plot_data=True) 
 
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 589, 638, save_data = True, plot_data = True)
             
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, '515a',
 #                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+#            time.sleep(5*60)
+            do_image_sample(nv_sig,  apd_indices, '515a',
+                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =4*10**7)
 
@@ -649,7 +668,7 @@ if __name__ == '__main__':
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                                 532, 638)
 
-#             
+#            for i in range(5):
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)

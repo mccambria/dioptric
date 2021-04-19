@@ -523,48 +523,45 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    expected_count_list = [55, 55, 50, 45, 50, 55, 60, 50, 50, 50, 60, 45, 50, 45, 40] # 4/2/21
+    expected_count_list = [40, 45, 65, 64, 55, 42,  40, 45 ] # 4/13/21 ###
     nv_coords_list = [
-[0.032, 0.147, 5.25],
-[0.068, 0.132, 5.28],
-[-0.007, 0.173, 5.19],
-[0.221, -0.163, 5.21],
-[0.207, -0.261, 5.23],
-[0.100, -0.212, 5.27],
-[0.118, -0.110, 5.20],
-[-0.390, -0.376, 5.26],
-[-0.362, -0.341, 5.20],
-[-0.237, -0.293, 5.22],
-[-0.384, -0.249, 5.20],
-[0.186, 0.247, 5.23],
-[0.226, 0.269, 5.22],
-[0.274, 0.425, 5.13],
-[0.372, 0.212, 5.18],
+[-0.037, 0.119, 5.14],
+[-0.090, 0.066, 5.04],
+[-0.110, 0.042, 5.13],
+[0.051, -0.115, 5.08],
+[-0.110, 0.042, 5.06],
+
+[0.063, 0.269, 5.09], 
+[0.243, 0.184, 5.12],
+[0.086, 0.220, 5.03],
 ]
 
     
     base_nv_sig  = { 'coords':None,
-            'name': 'goeppert-mayer-nv13_2021_03_17',
-            'expected_count_rate': 55,'nd_filter': 'nd_1.5',
+            'name': 'goeppert-mayer-nv5_2021_04_15',
+            'expected_count_rate': 45,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 15*10**7,  'am_589_power': 0.12,
+            'pulsed_SCC_readout_dur': 30*10**7,  'am_589_power': 0.15,
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10,
-            'ao_515_pwr': 0.6,
+            'ao_515_pwr': 0.65,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    list_ = [ nv_coords_list[13]]
-#    collect_charge_counts_list(nv_coords_list, base_nv_sig, 60, apd_indicies)
-    collect_charge_counts_list(list_, base_nv_sig, 500, apd_indicies)
+    list_ = [ nv_coords_list[5]]
+#    collect_charge_counts_list(nv_coords_list, base_nv_sig, 200, apd_indicies)
+#    for t in [15*10**7, 20*10**7, 25*10**7]:
+#        nv_sig = copy.deepcopy(base_nv_sig)
+#        nv_sig['pulsed_SCC_readout_dur'] = t
+    collect_charge_counts_list(list_, base_nv_sig, 200, apd_indicies)
        
-#    readout_time_list = [10**6, 5*10**6, 10*10**6, 30*10**6, 50*10**6, 80*10**6, 100*10**6, 120*10**6]
+#    readout_time_list = [15*10**7, 20*10**7, 25*10**7]
 #    for i in [2, 4, 10, 18, 19]:
 #        for p in [0.2,0.3,0.4,0.5,0.6]:
 #            coords = nv_coords_list[i]
@@ -572,4 +569,4 @@ if __name__ == '__main__':
 #            base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_03_17'.format(i)
 #            base_nv_sig['nd_filter'] = 'nd_1.5'
 #            base_nv_sig['am_589_power'] = p
-#            collect_charge_counts_yellow_time(coords, base_nv_sig, readout_time_list, 500, apd_indicies )
+#    collect_charge_counts_yellow_time(nv_coords_list[5], base_nv_sig, readout_time_list, 200, apd_indicies )

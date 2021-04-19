@@ -252,20 +252,85 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
 # %% Run the file
 
+def calculate_relative_g2_zero_mod(hist):
+    
+    # We take the values on the wings to be representatives for g2(inf)
+    # We take the wings to be the first and last 1/6 of collected data
+    num_bins = len(hist)
+    wing_length = num_bins // 12
+    neg_wing = hist[0: wing_length]
+    pos_wing = hist[num_bins - wing_length: ]
+    inf_delay_differences = numpy.average([neg_wing, pos_wing])
+    
+    # Use the parity of num_bins to determine differences at 0 ns
+    if num_bins % 2 == 0:
+        # As an example, say there are 6 bins. Then we want the differences
+        # from bins 2 and 3 (indexing starts from 0).
+        midpoint_high = num_bins // 2
+        zero_delay_differences = numpy.average(hist[midpoint_high - 1,
+                                                    midpoint_high])
+    else:
+        # Now say there are 7 bins. We'd like bin 3. 
+        midpoint = int(numpy.floor(num_bins / 2))
+        zero_delay_differences = hist[midpoint]
+        
+    return zero_delay_differences / inf_delay_differences, inf_delay_differences
 
 if __name__ == '__main__':
-    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/g2_measurement'
-    file_name = '2019_10/2019-10-03-11_01_18-ayrton12-NV0_2019_06_06.txt'
+    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_Spin_to_charge/g2_measurement/2021_04'
+    files = ['2021_04_15-19_43_29-goeppert-mayer-nv1_2021_04_15.txt',
+             '2021_04_15-19_44_52-goeppert-mayer-nv1_2021_04_15.txt',
+             '2021_04_15-19_46_01-goeppert-mayer-nv1_2021_04_15.txt',
+             '2021_04_15-19_47_09-goeppert-mayer-nv1_2021_04_15.txt',
+             '2021_04_15-19_48_16-goeppert-mayer-nv1_2021_04_15.txt',
+             '2021_04_15-19_49_25-goeppert-mayer-nv1_2021_04_15.txt'
+             ]
+    histogram_list = []
+    for file_name in files:
+        with open('{}/{}'.format(folder_name, file_name)) as file:
+            data = json.load(file)
+            differences = data['differences']
+            num_bins = data['num_bins']
+            timestamp = data['timestamp']
+            nv_sig = data['nv_sig']
+            diff_window= data['diff_window']
 
-    with open('{}/{}'.format(folder_name, file_name)) as file:
-        data = json.load(file)
-        differences = data['differences']
-        num_bins = data['num_bins']
+        hist, bin_edges = numpy.histogram(differences, num_bins)
+        bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
+        bin_centers = bin_edges[0: num_bins] + bin_center_offset
+        
+        histogram_list.append(hist.tolist())
+#    print(histogram_list)
+    histogram = numpy.average(histogram_list, axis = 0)
+    g2_zero, inf_delay_diff = calculate_relative_g2_zero_mod(histogram)
 
-    hist, bin_edges = numpy.histogram(differences, num_bins)
-    bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
-    bin_centers = bin_edges[0: num_bins] + bin_center_offset
-
-    plt.plot(bin_centers / 1000, hist)
-    g2_zero = calculate_relative_g2_zero(hist)
+    txt_size = 10
+    
+    fig, ax = plt.subplots()
+    ax.plot(bin_centers / 1000, histogram/inf_delay_diff)
+    ax.set_xlabel('Delay time (ns)', fontsize=txt_size)
+    ax.set_ylabel(r'$g^{(2)}(\tau)$', fontsize=txt_size)
+#    ax.set_title(title[i], fontsize=30)
+#    ax.set_xticks([-150, -75, 0, 75, 150])
+#    ax.tick_params(which = 'both', length=10, width=2, colors='k',
+#                    direction='in',grid_alpha=0.7, labelsize = txt_size)
+    ax.set_ylim(bottom=0, top = 2)
+    
     print(g2_zero)
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'g2_zero': g2_zero,
+                'g2_zero-units': 'ratio',
+                'run_time': 6*60,
+                'run_time-units': 's',
+                'diff_window': diff_window,
+                'diff_window-units': 'ns',
+                'num_bins': num_bins,
+                'histogram': histogram.tolist(),
+                'bin_centers': bin_centers.tolist(),
+                'bin_centers-units': 'ps'}
+
+    filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_figure(fig, filePath + '_accumul')
+    tool_belt.save_raw_data(raw_data, filePath + '_accumul')

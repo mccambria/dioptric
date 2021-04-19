@@ -803,11 +803,11 @@ def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = No
 def calc_optical_power_mW(color_ind, optical_power_V):
     # Values found from experiments. See Notebook entry 3/19/2020 and 3/20/2020
     if color_ind == 532:
-        return 14.3* optical_power_V + 0.34
+        return 11.84* optical_power_V + 0.0493
     elif color_ind == 589:
-        return 33.5* optical_power_V + 0.16
+        return 13.41* optical_power_V + 0.06
     if color_ind == 638:
-        return 6.7* optical_power_V + 0.78
+        return 4.14* optical_power_V + 0.0492
 
 def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
     green_optical_power_pd = opt_power_via_photodiode(532)

@@ -813,8 +813,9 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-#    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_03/2021_03_18-14_18_01-goeppert-mayer' # bright
-    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_03/2021_03_18-14_14_58-goeppert-mayer' # dark
+    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_02-09_41_46-goeppert-mayer' # bright
+#    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_02-09_46_49-goeppert-mayer' # dark
+#    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_02-09_46_49-goeppert-mayer' # dark
 #    reformat_plot('inferno', 'png')
     create_figure(file_name)
 
