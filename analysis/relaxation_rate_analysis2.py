@@ -341,6 +341,8 @@ def get_data_lists(folder_name):
 # %% Main
 
 def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = True):
+    
+    rates_to_zero = False
 
     path_folder = path + folder
     # Get the file list from the folder
@@ -389,17 +391,18 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                                              absolute_sigma=True)
 
             else:
-                # init_params = tuple(init_params_list)
-                # omega_opti_params, cov_arr = curve_fit(exp_eq_omega, zero_zero_time,
-                #                               zero_relaxation_counts, p0 = init_params,
-                #                               sigma = zero_relaxation_ste,
-                #                               absolute_sigma=True)#,
-                                             # bounds=((0,0),(1,0.5)),
-                                             # loss='soft_l1')
-                # print(omega_opti_params)
-                # omega_opti_params = numpy.array([0.045*3,0.175])
-                omega_opti_params = numpy.array([0.0,0.0])
-                cov_arr = numpy.array([[0,0],[0,0]])
+                if rates_to_zero:
+                    # omega_opti_params = numpy.array([0.045*3,0.175])
+                    omega_opti_params = numpy.array([0.0,0.0])
+                    cov_arr = numpy.array([[0,0],[0,0]])
+                else:
+                    init_params = tuple(init_params_list)
+                    omega_opti_params, cov_arr = curve_fit(exp_eq_omega, zero_zero_time,
+                                                  zero_relaxation_counts, p0 = init_params,
+                                                  sigma = zero_relaxation_ste,
+                                                  absolute_sigma=True)#,
+                                                 # bounds=((0,0),(1,0.5)),
+                                                 # loss='soft_l1')
 
         except Exception:
 
@@ -502,29 +505,31 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
     
     
             else:
-                # MCC
-                init_params = tuple(init_params_list)
-                gamma_fit_func = exp_eq_gamma
-                gamma_opti_params, cov_arr = curve_fit(exp_eq_gamma,
-                                  plus_plus_time, plus_relaxation_counts,
-                                  p0 = init_params, sigma = plus_relaxation_ste,
-                                  absolute_sigma=True)#,
-                                  # bounds=((0,0),(1,0.5)),
-                                  # loss='soft_l1')
-                # init_params = (0.04, 0.22, 0.17, 0.0)
-                # gamma_fit_func = biexp
-                # init_params = (0.22, 0.17)
-                # gamma_fit_func = lambda t, rate1, amp1: biexp(t, omega, rate1, amp1, -0.005)
-                # init_params = (0.22, 0.17, 0.0)
-                # gamma_fit_func = lambda t, rate1, amp1, amp2: biexp(t, omega, rate1, amp1, amp2)
-                # gamma_opti_params, cov_arr = curve_fit(gamma_fit_func,
-                #                   plus_plus_time, plus_relaxation_counts,
-                #                   p0 = init_params, sigma = plus_relaxation_ste,
-                #                   absolute_sigma=True)
-                # print(gamma_opti_params)
-                # gamma_fit_func = lambda t, rate1, amp1, amp2: biexp(t, omega, rate1, amp1, amp2)
-                # gamma_opti_params = numpy.array([0.0,0.0,0])
-                # cov_arr = numpy.array([[0,0,0],[0,0,0],[0,0,0]])
+                if rates_to_zero:
+                    gamma_fit_func = lambda t, rate1, amp1, amp2: biexp(t, omega, rate1, amp1, amp2)
+                    gamma_opti_params = numpy.array([0.0,0.0,0])
+                    cov_arr = numpy.array([[0,0,0],[0,0,0],[0,0,0]])
+                else:
+                    # MCC
+                    init_params = tuple(init_params_list)
+                    gamma_fit_func = exp_eq_gamma
+                    gamma_opti_params, cov_arr = curve_fit(exp_eq_gamma,
+                                      plus_plus_time, plus_relaxation_counts,
+                                      p0 = init_params, sigma = plus_relaxation_ste,
+                                      absolute_sigma=True)#,
+                                      # bounds=((0,0),(1,0.5)),
+                                      # loss='soft_l1')
+                    # init_params = (0.04, 0.22, 0.17, 0.0)
+                    # gamma_fit_func = biexp
+                    # init_params = (0.22, 0.17)
+                    # gamma_fit_func = lambda t, rate1, amp1: biexp(t, omega, rate1, amp1, -0.005)
+                    # init_params = (0.22, 0.17, 0.0)
+                    # gamma_fit_func = lambda t, rate1, amp1, amp2: biexp(t, omega, rate1, amp1, amp2)
+                    # gamma_opti_params, cov_arr = curve_fit(gamma_fit_func,
+                    #                   plus_plus_time, plus_relaxation_counts,
+                    #                   p0 = init_params, sigma = plus_relaxation_ste,
+                    #                   absolute_sigma=True)
+                    # print(gamma_opti_params)
     
         except Exception as e:
             gamma_fit_failed = True
@@ -652,6 +657,16 @@ if __name__ == '__main__':
 
     # %%
 
+    path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\trial_data\\'
+    folders = [
+                'hopper-nv1_2021_03_16-275K-49-gamma_minus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-49-gamma_plus_1'.format(temp),
+                ]
+
+    for folder in folders:
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                          doPlot=True, offset=False)
+
     path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\trial_data\\'
     folders = [
                 # 'hopper-nv1_2021_03_16-275K-3-omega_minus_1'.format(temp),
@@ -719,10 +734,10 @@ if __name__ == '__main__':
                 # 'hopper-nv1_2021_03_16-275K-39-omega'.format(temp),  # A
                 # 'hopper-nv1_2021_03_16-275K-40-omega'.format(temp),  # A
                 # 'hopper-nv1_2021_03_16-275K-41-omega'.format(temp),  # A
-                'hopper-nv1_2021_03_16-275K-42-omega'.format(temp),  # A, original order
-                'hopper-nv1_2021_03_16-275K-43-omega'.format(temp),  # A
-                'hopper-nv1_2021_03_16-275K-44-omega'.format(temp),  # A
-                'hopper-nv1_2021_03_16-275K-45-omega'.format(temp),  # A
+                # 'hopper-nv1_2021_03_16-275K-42-omega'.format(temp),  # A, original order
+                # 'hopper-nv1_2021_03_16-275K-43-omega'.format(temp),  # A
+                # 'hopper-nv1_2021_03_16-275K-44-omega'.format(temp),  # A
+                # 'hopper-nv1_2021_03_16-275K-45-omega'.format(temp),  # A
                 ]
 
     for folder in folders:
