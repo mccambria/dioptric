@@ -30,6 +30,7 @@ import majorroutines.g2_measurement as g2_measurement
 import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.t1_dq_knill as t1_dq_knill
 import majorroutines.t1_interleave as t1_interleave
+import majorroutines.t1_interleave_knill as t1_interleave_knill
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
@@ -212,7 +213,7 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
     # num_reps = 2 * 10**4
     num_reps = 5000
-    num_runs = 20
+    num_runs = 10
         
     discrete_rabi.main(nv_sig, apd_indices,
                        state, max_num_pi_pulses, num_reps, num_runs)
@@ -291,24 +292,33 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
         t1_dq_knill.main(nv_sig, apd_indices, relaxation_time_range,
                          num_steps, num_reps, num_runs, init_read_states)
 
-def do_t1_interleave(nv_sig, apd_indices):
+def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    # ~18 hrs
-    num_runs = 30
+    num_runs = 10
+    num_reps = 500
+    num_steps = 12
+    min_tau = 20e3
+    # max_tau_omega = 29e6
+    # max_tau_gamma = 18e6
+    max_tau_omega = 1e6
+    max_tau_gamma = max_tau_omega
     t1_exp_array = numpy.array([
-        [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
-        [[States.HIGH, States.LOW], [0, 120*10**3], 26, 8*10**4, num_runs],
-    
-        [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
-        [[States.HIGH, States.HIGH], [0, 120*10**3], 26, 8*10**4, num_runs],
-    
-        [[States.ZERO, States.HIGH], [0, 2.5*10**6], 26, 1*10**4, num_runs],
-    
-        [[States.ZERO, States.ZERO], [0, 2.5*10**6], 26, 1*10**4, num_runs],
-        ])
+            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps],
+            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps],
+            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega//3], num_steps, num_reps],
+            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega//3], num_steps, num_reps],
+            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps],
+            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps],
+            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps],
+            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps],
+            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps],
+            [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps],
+            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps],
+            [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps],
+            ], dtype=object)
 
-    t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
+    t1_interleave_knill.main(nv_sig, apd_indices, t1_exp_array, num_runs)
     
 def do_lifetime(nv_sig, apd_indices, filter, voltage, reference = False):
     
@@ -497,8 +507,8 @@ if __name__ == '__main__':
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.7987, 'rabi_LOW': 273.5, 'uwave_power_LOW': 14.5,
-            'resonance_HIGH': 2.9443, 'rabi_HIGH': 172.6, 'uwave_power_HIGH': 12.0} 
+            'resonance_LOW': 2.7991, 'rabi_LOW': 275.2, 'uwave_power_LOW': 14.5,
+            'resonance_HIGH': 2.9446, 'rabi_HIGH': 175.0, 'uwave_power_HIGH': 12.0} 
             # 'resonance_HIGH': 2.9443, 'rabi_HIGH': 1e5, 'uwave_power_HIGH': 12.0} 
     
     
@@ -520,13 +530,14 @@ if __name__ == '__main__':
         # # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 2)
+        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 8)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
-        for i in range(4):
-            do_t1_dq_knill_battery(nv_sig, apd_indices)
+        do_t1_interleave_knill(nv_sig, apd_indices)
+        # for i in range(4):
+        #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
         #     nv_sig['resonance_HIGH'] = res

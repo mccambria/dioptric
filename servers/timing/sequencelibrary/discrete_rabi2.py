@@ -30,7 +30,8 @@ def get_seq(pulser_wiring, args):
         aom_delay_time, uwave_delay_time, iq_delay_time, \
         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse = durations
         
-    uwave_to_readout_time = 1e4
+    # uwave_to_readout_time = 1e4
+    uwave_to_readout_time = signal_wait_time
         
     num_pi_pulses = int(args[11])
     max_num_pi_pulses = int(args[12])
@@ -110,7 +111,7 @@ def get_seq(pulser_wiring, args):
     post_duration = uwave_to_readout_time + polarization_time + \
         reference_wait_time + reference_time + \
         background_wait_time + end_rest_time + uwave_delay_time
-    train = [(pre_duration, LOW), (tau, LOW), (post_duration, LOW)]
+    train = [(pre_duration, LOW), (tau, HIGH), (post_duration, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
     
     # Switch the phase with the AWG
