@@ -295,14 +295,14 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 10
+    num_runs = 100
     num_reps = 500
     num_steps = 12
     min_tau = 20e3
-    # max_tau_omega = 29e6
-    # max_tau_gamma = 18e6
-    max_tau_omega = 1e6
-    max_tau_gamma = max_tau_omega
+    max_tau_omega = 29e6
+    max_tau_gamma = 18e6
+    # max_tau_omega = 1e6
+    # max_tau_gamma = max_tau_omega
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps],

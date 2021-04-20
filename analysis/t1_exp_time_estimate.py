@@ -62,7 +62,7 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 
 # %%
 
-num_runs = 10
+num_runs = 100
 num_reps = 500
 num_steps = 12
 min_tau = 20e3
