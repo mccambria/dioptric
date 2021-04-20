@@ -1568,10 +1568,10 @@ if __name__ == '__main__':
     # Measurements
     t =10*10**6
 #    p = 0.6045
-#    do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range, 
-#                              t, num_steps, 
-#                              num_runs, init_color, pulse_color, siv_init = 'bright', 
-#                              readout_color = 589)
+    do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range, 
+                              t, num_steps, 
+                              num_runs, init_color, pulse_color, siv_init = 'bright', 
+                              readout_color = 589)
 #    do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range, 
 #                              t, num_steps, 
 #                              num_runs, init_color, pulse_color, siv_init = 'none',  
@@ -1598,55 +1598,58 @@ if __name__ == '__main__':
 #                 '2021_04_17-22_31_29-goeppert-mayer-nv5-2021_04_15-edit',
 #                 '2021_04_18-22_28_44-goeppert-mayer-nv5-2021_04_15',
 #                 '2021_04_19-08_27_48-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_20-08_27_13-goeppert-mayer-nv5-2021_04_15',
 #                 ]
 #    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15/dark'
     
-#    file_list = ['2021_04_17-21_40_27-goeppert-mayer-nv5-2021_04_15',
-#                 ]
-#    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15/bright'
-#    
-#    readout_counts_array_master = []
-#    
-#    num_runs_total = 0
-#    for file in file_list:
-#        
-#        data = tool_belt.get_raw_data(folder, file)
-#        img_extent = data['img_extent']
-#        start_coords = data['start_coords']
-#        num_steps = data['num_steps']
-#        num_runs = data['num_runs']
-#        init_color = data['init_color']
-#        pulse_color = data['pulse_color']
-#        pulse_time = data['pulse_time']
-#        siv_init = data['siv_init']
-#        num_samples = num_steps**2
-#        timestamp = data['timestamp']
-#        img_range = data['img_range']
-#        coords_voltages = data['coords_voltages']
-#        x_voltages_1d = data['x_voltages_1d']
-#        y_voltages_1d = data['y_voltages_1d']
-#        
-#        num_runs_total = num_runs_total + num_runs
-#        readout_counts_array= numpy.array(data['readout_counts_array'])
-#        readout_counts_array_rot = numpy.rot90(readout_counts_array)
-#        for i in range((num_runs - 1), -1, -1):
-#            el = readout_counts_array_rot[i]
-#            readout_counts_array_master.append(el.tolist())
-#    readout_counts_array_fin = numpy.flip(numpy.rot90(readout_counts_array_master, -1), axis = 1)
-#        
-#    
-#    readout_image_array = numpy.empty([num_steps, num_steps])
-#    
-#    # Take the average and ste
-#    readout_counts_avg = numpy.average(readout_counts_array_fin, axis = 1)
-#    readout_counts_ste = stats.sem(readout_counts_array_fin, axis = 1)
-#
-#    # create the img arrays
-#    writePos = []
-#    readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
-#
-#    # Create the figure
-#    title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse. {} SiV reset'.format(init_color, pulse_color, pulse_time/10**6, siv_init)
+    file_list = ['2021_04_17-21_40_27-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_19-16_49_23-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_19-22_24_26-goeppert-mayer-nv5-2021_04_15',
+                 ]
+    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15/bright'
+    
+    readout_counts_array_master = []
+    
+    num_runs_total = 0
+    for file in file_list:
+        
+        data = tool_belt.get_raw_data(folder, file)
+        img_extent = data['img_extent']
+        start_coords = data['start_coords']
+        num_steps = data['num_steps']
+        num_runs = data['num_runs']
+        init_color = data['init_color']
+        pulse_color = data['pulse_color']
+        pulse_time = data['pulse_time']
+        siv_init = data['siv_init']
+        num_samples = num_steps**2
+        timestamp = data['timestamp']
+        img_range = data['img_range']
+        coords_voltages = data['coords_voltages']
+        x_voltages_1d = data['x_voltages_1d']
+        y_voltages_1d = data['y_voltages_1d']
+        
+        num_runs_total = num_runs_total + num_runs
+        readout_counts_array= numpy.array(data['readout_counts_array'])
+        readout_counts_array_rot = numpy.rot90(readout_counts_array)
+        for i in range((num_runs - 1), -1, -1):
+            el = readout_counts_array_rot[i]
+            readout_counts_array_master.append(el.tolist())
+    readout_counts_array_fin = numpy.flip(numpy.rot90(readout_counts_array_master, -1), axis = 1)
+#    print(num_runs_total)
+    
+    readout_image_array = numpy.empty([num_steps, num_steps])
+    
+    # Take the average and ste
+    readout_counts_avg = numpy.average(readout_counts_array_fin, axis = 1)
+    readout_counts_ste = stats.sem(readout_counts_array_fin, axis = 1)
+
+    # create the img arrays
+    writePos = []
+    readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
+
+    # Create the figure
+    title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse. {} SiV reset'.format(init_color, pulse_color, pulse_time/10**6, siv_init)
 #    fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
 #                                                title = title, um_scaled = True)
 #    raw_data = {'timestamp': timestamp,

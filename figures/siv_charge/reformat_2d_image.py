@@ -160,7 +160,7 @@ if __name__ == '__main__':
     # 10 ms zoom (E6)
 #    image_file_nv = '2021_04_13-23_28_12-johnson-nv0_2021_04_13'
     # 10 ms zoom
-#    image_file_nv = '2021_04_06-07_59_32-goeppert-mayer-nv13_2021_04_02'
+    image_file_nv = '2021_04_06-07_59_32-goeppert-mayer-nv13_2021_04_02'
     # 25 ms g/g zoom
 #    image_file_nv = '2021_04_08-23_58_17-goeppert-mayer-nv13_2021_04_02'
     # 25 ms r/g zoom
@@ -169,11 +169,11 @@ if __name__ == '__main__':
     # g/g
 #    image_file_nv = '2021_04_14-14_41_40-johnson-nv0_2021_04_13'
     # r/g
-    image_file_nv = '2021_04_14-15_18_32-johnson-nv0_2021_04_13'
+#    image_file_nv = '2021_04_14-15_18_32-johnson-nv0_2021_04_13'
     # r/r
 #    image_file_nv = '2021_04_14-16_32_01-johnson-nv0_2021_04_13'
     # g/r
 #    image_file_nv = '2021_04_14-15_55_20-johnson-nv0_2021_04_13'
     
-    threshold = 9
+    threshold = 8
     create_figure(folder + '/' + image_file_nv, threshold)

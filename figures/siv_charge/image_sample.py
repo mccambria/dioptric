@@ -16,6 +16,8 @@ import numpy
 import utils.tool_belt as tool_belt
 import matplotlib.pyplot as plt
 
+f_size = 35
+tick_f_size = 20
     
 def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, 
                         color_bar_label = 'Counts', min_value=None, 
@@ -41,6 +43,8 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None,
     if um_scaled:
         axes_label = r'$\mu$m'
         
+    ax.tick_params(which = 'both', length=12, width=1, colors='k',
+                    direction='in',grid_alpha=0.7, labelsize = tick_f_size)
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap=color_map,
                     extent=tuple(imgExtent), vmin = min_value)
@@ -50,7 +54,8 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None,
 
     # Add a colorbar
     clb = plt.colorbar(img)
-    clb.set_label(color_bar_label, rotation=270)
+    clb.set_label(color_bar_label, rotation=270, fontsize = f_size)
+    clb.ax.tick_params( length=12, width=1,grid_alpha=0.7, labelsize = tick_f_size)
 #    clb.set_label('kcounts/sec', rotation=270)
     
     # Label axes
@@ -118,7 +123,7 @@ def create_figure(file_name, colormap, sub_folder = None):
 if __name__ == '__main__':
     # NV confocal scans
     file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_07-09_47_41-goeppert-mayer-nv13_2021_04_02' # NV13 GP
-    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_14-09_28_46-johnson-nv0_2021_04_13' # NV0 J
+#    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_14-09_28_46-johnson-nv0_2021_04_13' # NV0 J
     create_figure(file_name, colormap = 'YlGnBu_r')
     
     # SiV confocal scans
