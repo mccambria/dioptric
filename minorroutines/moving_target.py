@@ -317,7 +317,8 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     num_samples = len(coords_list)
     #delay of aoms and laser, parameters, etc
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    laser_515_delay = shared_params['515_laser_delay']
+    laser_515_DM_delay = shared_params['515_DM_laser_delay']
+    laser_515_AM_delay = shared_params['515_AM_laser_delay']
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
     galvo_delay = shared_params['large_angle_galvo_delay']
@@ -342,12 +343,18 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     
     # define some times for the routine
     readout_pulse_time = nv_sig['pulsed_SCC_readout_dur']
-    if init_color == 532 or init_color == '515a':
+    if init_color == 532:
         initialization_time = nv_sig['pulsed_reionization_dur']
-        init_laser_delay = laser_515_delay
+        green_laser_delay = laser_515_DM_delay
+        init_laser_delay = green_laser_delay
+    if init_color == '515a':
+        initialization_time = nv_sig['pulsed_reionization_dur']
+        green_laser_delay = laser_515_AM_delay
+        init_laser_delay = green_laser_delay
     elif init_color == 638:
         initialization_time = nv_sig['pulsed_ionization_dur']
-        init_laser_delay = laser_638_delay        
+        init_laser_delay = laser_638_delay
+        
     if pulse_color == 532:
         direct_wiring = pulser_wiring_green
     elif pulse_color == 638:
@@ -365,7 +372,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
         # define the sequence paramters
         file_name = 'isolate_nv_charge_dynamics_moving_target.py'
         seq_args = [ initialization_time, pulse_time, readout_pulse_time, 
-            laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay, 
+            green_laser_delay, aom_589_delay, laser_638_delay, galvo_delay, 
             am_589_power, 
             green_pulse_power, green_pulse_power, green_image_power, 
             apd_indices[0],
@@ -1259,7 +1266,7 @@ if __name__ == '__main__':
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
     
 #    start_coords = base_sig['coords']
-    expected_count_list = [40, 45, 65, 64, 55, 42,  40, 45 ] # 4/13/21 ###
+    expected_count_list =[40, 45, 65, 64, 55, 38,  40, 45  ] # 4/13/21 ###
     start_coords_list = [
 [-0.037, 0.119, 5.14],
 [-0.090, 0.066, 5.04],
@@ -1290,12 +1297,12 @@ if __name__ == '__main__':
              nv_sig['name']= 'goeppert-mayer-nv{}_2021_04_15'.format(s)
              nv_sig['expected_count_rate'] = expected_count_list[optimize_nv_ind]
              #########
-             num_runs = 10            
+             num_runs = 15            
              # Set up for NV band
              t =10*10**6
              init_color = '515a'
              pulse_color = '515a' 
-             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, num_runs, 
+             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.45, t, num_steps, num_runs, 
                                        init_color, pulse_color, False, live_updates = True )     
 #             init_color = 638
 #             pulse_color = '515a' 

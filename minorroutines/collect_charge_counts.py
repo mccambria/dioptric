@@ -7,6 +7,8 @@ the NV0 or NV- average counts.
 
 Can either do a single NV or a list of NVs
 
+USE 515 DM, not AM
+
 @author: agardill
 """
 # %%
@@ -50,9 +52,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     #delay of aoms and laser
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     aom_589_delay = shared_params['589_aom_delay']
-    laser_515_delay = shared_params['515_laser_delay']
+    laser_515_delay = shared_params['515_DM_laser_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
     galvo_delay = shared_params['large_angle_galvo_delay']
+    
     
 
     # Set up our data lists
@@ -539,7 +542,7 @@ if __name__ == '__main__':
     
     base_nv_sig  = { 'coords':None,
             'name': 'goeppert-mayer-nv5_2021_04_15',
-            'expected_count_rate': 45,'nd_filter': 'nd_1.0',
+            'expected_count_rate': 35,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -556,10 +559,10 @@ if __name__ == '__main__':
     
     list_ = [ nv_coords_list[5]]
 #    collect_charge_counts_list(nv_coords_list, base_nv_sig, 200, apd_indicies)
-#    for t in [15*10**7, 20*10**7, 25*10**7]:
-#        nv_sig = copy.deepcopy(base_nv_sig)
-#        nv_sig['pulsed_SCC_readout_dur'] = t
-    collect_charge_counts_list(list_, base_nv_sig, 200, apd_indicies)
+    for t in [10*10**7, 15*10**7, 20*10**7, 25*10**7, 30*10**7]:
+        nv_sig = copy.deepcopy(base_nv_sig)
+        nv_sig['pulsed_SCC_readout_dur'] = t
+        collect_charge_counts_list(list_, nv_sig, 200, apd_indicies)
        
 #    readout_time_list = [15*10**7, 20*10**7, 25*10**7]
 #    for i in [2, 4, 10, 18, 19]:

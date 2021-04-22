@@ -327,7 +327,8 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
     
     #delay of aoms and laser, parameters, etc
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    laser_515_delay = shared_params['515_laser_delay']
+    laser_515_DM_delay = shared_params['515_DM_laser_delay']
+    laser_515_AM_delay = shared_params['515_AM_laser_delay']
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
     galvo_delay = shared_params['large_angle_galvo_delay']
@@ -349,6 +350,10 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
     
     # define some times for the routine
     readout_pulse_time = nv_sig['pulsed_SCC_readout_dur']
+    if init_color == 532:
+        green_laser_delay = laser_515_DM_delay
+    if init_color == '515a':
+        green_laser_delay = laser_515_AM_delay
     
     opti_coords_list = []
     
@@ -360,7 +365,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
     # define the sequence paramters
     file_name = 'moving_target_siv_init.py'
     seq_args = [pulse_time, readout_pulse_time, 
-        laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay, 
+        green_laser_delay, aom_589_delay, laser_638_delay, galvo_delay, 
         am_589_power, green_pulse_power, green_image_power, apd_indices[0], 
         pulse_color, readout_color]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -398,7 +403,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
         for n in range(num_samples):
             #optimize every 5 min or so
             # So first check the time. If the time that has passed since the last
-            # optimize is longer that 5 min, optimize again
+            # optimize is longer that 2 min, optimize again
             current_time = time.time()
             if current_time - run_start_time >= 2*60:
                 opti_coords_measured = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices, '515a', disable=disable_boo)
@@ -408,7 +413,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
                 
             drift = numpy.array(tool_belt.get_drift())
                 
-            # get the readout coords with drift
+            # adjust the coords with drift
             start_coords_drift = start_coords + drift
             coords_list_drift = numpy.array(pulse_coords_list) + [drift[0], drift[1]]
                     
@@ -417,7 +422,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
             x_pulse_coords = unzipped_coords_list_drift[0]
             y_pulse_coords = unzipped_coords_list_drift[1]
 
-            #############            
+            ############# SIV RESET #############          
             if siv_init == 'bright':
                 reset_sig = copy.deepcopy(nv_sig)
                 reset_sig['coords'] = start_coords
@@ -438,25 +443,13 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
                                           dark_reset_steps, 
                                   apd_indices, '515a',readout = dark_reset_time,  
                                   save_data=False, plot_data=False) 
-#                _,_,_ = image_sample.main(reset_sig, dark_reset_range, dark_reset_range, 
-#                                          dark_reset_steps, 
-#                                  apd_indices, '515a',readout = dark_reset_time,  
-#                                  save_data=False, plot_data=False) 
                 
 
-            # pulse laser for 100 us on readout NV regardless
+            # pulse laser for 100 us on readout NV
             tool_belt.set_xyz(cxn, start_coords_drift)
-            seq_args_pulse = [140, 10**3, am_589_power, green_pulse_power, init_color]  
+            seq_args_pulse = [green_laser_delay, 10**3, am_589_power, green_pulse_power, init_color]  
             seq_args_pulse_string = tool_belt.encode_seq_args(seq_args_pulse)            
             cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_pulse_string) 
-            
-#            seq_args = [pulse_time, readout_pulse_time, 
-#            laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay, 
-#            am_589_power, green_pulse_power, green_image_power, apd_indices[0], 
-#            pulse_color, readout_color]
-#            seq_args_string = tool_belt.encode_seq_args(seq_args)
-
-            #############
             
             
             # start on the coordinate where pulse will be
@@ -479,30 +472,13 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, opti_coords,
         
             # We're looking for 2 samples, since there will be two clock pulses
             total_num_samples = 2 
-        
-#            total_samples_list = []
-#            num_read_so_far = 0     
+           
             tool_belt.init_safe_stop()
-
-#            while num_read_so_far < total_num_samples:
-#    
-#                if tool_belt.safe_stop():
-#                    break
-#        
-#                # Read the samples and update the image
-#                new_samples = cxn.apd_tagger.read_counter_simple()
-#                num_new_samples = len(new_samples)
-#                
-#                if num_new_samples > 0:
-#                    for el in new_samples:
-#                        total_samples_list.append(int(el))
-#                    num_read_so_far += num_new_samples
-##                    
-##                # Read the counts
+                    
+            # Read the counts
             new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
-#            print(x_pulse_coords[n])
-#            print(new_samples)
-            # The last of the triplet of readout windows is the counts we are interested in
+            
+            # The last of readout windows is the counts we are interested in
             readout_counts = int(new_samples[1])
             target_counts =int( new_samples[0])
             
@@ -1533,7 +1509,7 @@ if __name__ == '__main__':
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
-    expected_count_list = [40, 45, 65, 64, 55, 38,  40, 45  ] # 4/13/21 ###
+    expected_count_list = [40, 45, 65, 64, 55, 35,  40, 45  ] # 4/13/21 ###
     start_coords_list = [
 [-0.037, 0.119, 5.14],
 [-0.090, 0.066, 5.04],
@@ -1570,7 +1546,7 @@ if __name__ == '__main__':
 #    p = 0.6045
     do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range, 
                               t, num_steps, 
-                              num_runs, init_color, pulse_color, siv_init = 'bright', 
+                              num_runs, init_color, pulse_color, siv_init = 'dark', 
                               readout_color = 589)
 #    do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range, 
 #                              t, num_steps, 
@@ -1594,19 +1570,23 @@ if __name__ == '__main__':
  
     # %% Replot
     
-#    file_list = ['2021_04_17-10_56_17-goeppert-mayer-nv5-2021_04_15',
-#                 '2021_04_17-22_31_29-goeppert-mayer-nv5-2021_04_15-edit',
-#                 '2021_04_18-22_28_44-goeppert-mayer-nv5-2021_04_15',
-#                 '2021_04_19-08_27_48-goeppert-mayer-nv5-2021_04_15',
-#                 '2021_04_20-08_27_13-goeppert-mayer-nv5-2021_04_15',
-#                 ]
-#    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15/dark'
-    
-    file_list = ['2021_04_17-21_40_27-goeppert-mayer-nv5-2021_04_15',
-                 '2021_04_19-16_49_23-goeppert-mayer-nv5-2021_04_15',
-                 '2021_04_19-22_24_26-goeppert-mayer-nv5-2021_04_15',
+    file_list = ['2021_04_17-10_56_17-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_17-22_31_29-goeppert-mayer-nv5-2021_04_15-edit',
+                 '2021_04_18-22_28_44-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_19-08_27_48-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_20-08_27_13-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_21-08_04_59-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_22-09_02_32-goeppert-mayer-nv5-2021_04_15',
                  ]
-    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15/bright'
+    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15/dark'
+    
+#    file_list = ['2021_04_17-21_40_27-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_19-16_49_23-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_19-22_24_26-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_20-16_48_16-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_21-17_47_28-goeppert-mayer-nv5-2021_04_15',
+#                 ]
+#    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15/bright'
     
     readout_counts_array_master = []
     
@@ -1636,7 +1616,7 @@ if __name__ == '__main__':
             el = readout_counts_array_rot[i]
             readout_counts_array_master.append(el.tolist())
     readout_counts_array_fin = numpy.flip(numpy.rot90(readout_counts_array_master, -1), axis = 1)
-#    print(num_runs_total)
+    print(num_runs_total)
     
     readout_image_array = numpy.empty([num_steps, num_steps])
     
@@ -1650,41 +1630,41 @@ if __name__ == '__main__':
 
     # Create the figure
     title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse. {} SiV reset'.format(init_color, pulse_color, pulse_time/10**6, siv_init)
-#    fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
-#                                                title = title, um_scaled = True)
-#    raw_data = {'timestamp': timestamp,
-#                'siv_init': siv_init,
-#                'init_color': init_color,
-#                'pulse_color': pulse_color,
-#                'pulse_time': pulse_time,
-#                'pulse_time-units': 'ns',
-#            'start_coords': start_coords,
-#            'img_range': img_range,
-#            'img_range-units': 'V',
-#            'num_steps': num_steps,
-#            'num_runs':num_runs_total,
-#            'nv_sig': nv_sig,
-#            'nv_sig-units': tool_belt.get_nv_sig_units(),
-#            'coords_voltages': coords_voltages,
-#            'coords_voltages-units': '[V, V]',
-#            'x_voltages_1d': x_voltages_1d,
-#            'y_voltages_1d': y_voltages_1d,
-#            
-#            'img_extent': img_extent,
-#            'img_extent-units': 'V',
-#            
-#            'readout_image_array': readout_image_array.tolist(),
-#            'readout_image_array-units': 'counts',
-#                    
-#            'readout_counts_array': readout_counts_array_fin.tolist(),
-#            'readout_counts_array-units': 'counts',
-#
-#            'readout_counts_avg': readout_counts_avg.tolist(),
-#            'readout_counts_avg-units': 'counts',
-#
-#            'readout_counts_ste': readout_counts_ste.tolist(),
-#            'readout_counts_ste-units': 'counts',
-#            }
-#        
-#    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-#    tool_belt.save_raw_data(raw_data, file_path + '-combined')
+    fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
+                                                title = title, um_scaled = True)
+    raw_data = {'timestamp': timestamp,
+                'siv_init': siv_init,
+                'init_color': init_color,
+                'pulse_color': pulse_color,
+                'pulse_time': pulse_time,
+                'pulse_time-units': 'ns',
+            'start_coords': start_coords,
+            'img_range': img_range,
+            'img_range-units': 'V',
+            'num_steps': num_steps,
+            'num_runs':num_runs_total,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'coords_voltages': coords_voltages,
+            'coords_voltages-units': '[V, V]',
+            'x_voltages_1d': x_voltages_1d,
+            'y_voltages_1d': y_voltages_1d,
+            
+            'img_extent': img_extent,
+            'img_extent-units': 'V',
+            
+            'readout_image_array': readout_image_array.tolist(),
+            'readout_image_array-units': 'counts',
+                    
+            'readout_counts_array': readout_counts_array_fin.tolist(),
+            'readout_counts_array-units': 'counts',
+
+            'readout_counts_avg': readout_counts_avg.tolist(),
+            'readout_counts_avg-units': 'counts',
+
+            'readout_counts_ste': readout_counts_ste.tolist(),
+            'readout_counts_ste-units': 'counts',
+            }
+        
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path + '-combined')

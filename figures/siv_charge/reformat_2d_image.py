@@ -175,5 +175,8 @@ if __name__ == '__main__':
     # g/r
 #    image_file_nv = '2021_04_14-15_55_20-johnson-nv0_2021_04_13'
     
-    threshold = 8
+    # NV5
+    image_file_nv = '2021_04_21-09_52_08-goeppert-mayer-nv5_2021_04_15'
+    
+    threshold = 18
     create_figure(folder + '/' + image_file_nv, threshold)

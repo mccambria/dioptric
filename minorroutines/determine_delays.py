@@ -3,7 +3,13 @@
 Plot the counts obtained by moving the AOM on time so that we can
 determine the delay of the AOM relative to the APD gating.
 
-For laser delays, the tail of the pulse shoudl be at 500 ns. If it occurs
+The apd gate is delayed by tau, which is swept through a range of times. The
+apd gate is offset from the end of the laser pulse by 500 ns. As tau is 
+increased, the apd gate moves closer (and eventually past) the laser pulse.
+So if there were no delays betwee nthe laser and apd, the apd gate would just
+stop overlapping with the laser pulse at 500 ns.
+ 
+For laser delays, the end of the tail of the pulse shoudl be at 500 ns. If it occurs
 later thatn 500 ns, the difference is the delay added at the beginning of 
 all other sequence trains.
 
@@ -33,7 +39,7 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
               state=States.LOW, aom_delay=None):
     
     taus = numpy.linspace(delay_range[0], delay_range[1],
-                          num_steps, dtype=numpy.int32)
+                          num_steps)
     max_tau = delay_range[1]
     tau_ind_list = list(range(num_steps))
     shuffle(tau_ind_list)
@@ -46,17 +52,25 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     
     #delay of aoms and laser
-#    if not aom_delay:
-    laser_delay = 0
-#    else:
-    if color_ind == 532:
-        laser_delay = shared_params['515_laser_delay']
-    if color_ind == 589:
-        laser_delay = shared_params['589_aom_delay']
-    if color_ind == 638:
+    if not aom_delay:
         laser_delay = 0
+        print('Laser delay set to 0')
+    else:
+        if color_ind == 532:
+            laser_delay = shared_params['515_DM_laser_delay']
+        if color_ind == 589:
+            laser_delay = shared_params['589_aom_delay']
+        if color_ind == 638:
+            laser_delay = shared_params['638_DM_laser_delay']
 #        
-        
+    if color_ind == '515a':
+        am_power = nv_sig['ao_515_pwr']
+    elif color_ind == 589:
+        nd_filter = nv_sig['nd_filter']
+        cxn.filter_slider_ell9k.set_filter(nd_filter)  
+        am_power = nv_sig['am_589_power']
+    else:
+        am_power = 0
 
 #    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     
@@ -83,14 +97,14 @@ def measure_delay(cxn, nv_sig, readout, apd_indices,
         
         tau = taus[tau_ind]
         if seq_file == 'aom_delay.py':
-            seq_args = [tau, max_tau, readout, laser_delay, apd_indices[0], color_ind]
+            seq_args = [tau, max_tau, readout, laser_delay, apd_indices[0], am_power, color_ind]
 #            print(seq_args)
+#            return
         elif seq_file == 'uwave_delay.py':
             polarization_time = 1000
             wait_time = 1000
             seq_args = [tau, max_tau, readout, pi_pulse, aom_delay, 
                         polarization_time, wait_time, state.value, apd_indices[0]]
-        seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate(seq_file, num_reps,
                                             seq_args_string)
@@ -188,7 +202,7 @@ def uwave_delay(cxn, nv_sig, apd_indices, state, aom_delay_time,
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here 
-    sample_name = 'hopper'
+    sample_name = 'goeppert-mayer'
     nd_filter = 'nd_1.0'
     expected_count_rate = {
             'nd_0': 95,
@@ -203,10 +217,20 @@ if __name__ == '__main__':
             'nd_1.5': 420,
             }
 
-    ensemble = { 'coords': [0.0, 0.0, 5.00],
-            'name': '{}-ensemble'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': 'nd_0',
-            'pulsed_readout_dur': 1000, 'magnet_angle': 0,
+    ensemble = { 'coords': [0.063, 0.269, 5.09],
+            'name': '{}-nv5_2021_04_15'.format(sample_name),
+            'expected_count_rate': 35, 'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp', 
+#            'color_filter': '715 lp',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 30*10**7,  'am_589_power': 0.5, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':130, 
+            'ao_515_pwr': 0.65,
+            'magnet_angle': 0,
             'resonance_LOW': 2.8059, 'rabi_LOW': 173.5, 'uwave_power_LOW': 9.0, 
             'resonance_HIGH': 2.9366, 'rabi_HIGH': 247.4, 'uwave_power_HIGH': 10.0}
     apd_indices = [0]
@@ -215,11 +239,11 @@ if __name__ == '__main__':
     nv_sig = ensemble
 
     # aom_delay
-    delay_range = [0, 2000]
-    num_steps = 151
+    delay_range = [0, 1510]
+    num_steps = 150
     with labrad.connect() as cxn:
         aom_delay(cxn, nv_sig, readout, apd_indices,
-                  delay_range, num_steps, num_reps, color_ind  =638)
+                  delay_range, num_steps, num_reps, color_ind  = 638)
 
     # uwave_delay
 #    delay_range = [500, 2500]

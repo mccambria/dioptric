@@ -8,6 +8,8 @@ pulse of some length, then reads out the NV with yellow.
 The point of this measurement is to determine how fast the NV charge states
 change under illumination. 
 
+USE WITH 515 AM MOD
+
 @author: agardill
 """
 import utils.tool_belt as tool_belt
@@ -50,9 +52,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, tes
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     #delay of aoms and laser
-    laser_515_delay = shared_params['515_laser_delay']
+    laser_515_delay = shared_params['515_AM_laser_delay']
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
+    
     
     wait_time = shared_params['post_polarization_wait_dur']
 
@@ -182,19 +185,26 @@ if __name__ == '__main__':
 #    sample_name = 'goepert-mayer'
     
         
-    expected_count_list = [22] #
+    expected_count_list = [40, 45, 65, 64, 55, 35,  40, 45 ] #
     nv_coords_list = [
+[-0.037, 0.119, 5.14],
+[-0.090, 0.066, 5.04],
+[-0.110, 0.042, 5.13],
+[0.051, -0.115, 5.08],
+[-0.110, 0.042, 5.06],
 
-[-0.036, -0.146 ,5.0]
+[0.063, 0.269, 5.09], 
+[0.243, 0.184, 5.12],
+[0.086, 0.220, 5.03],
 ]
     
     nv_2021_03_30 = { 'coords':[], 
-            'name': 'goepert-mayer-nv_2021_04_02',
+            'name': '',
             'expected_count_rate': None, 'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 15*10**7, 'am_589_power': 0.18, 
+            'pulsed_SCC_readout_dur': 30*10**7, 'am_589_power': 0.15, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -205,13 +215,11 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    for i in [0]:#range(len(nv_coords_list)):
+    for i in [5]:#range(len(nv_coords_list)):
         nv_sig = copy.deepcopy(nv_2021_03_30)
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
-        nv_sig['name'] = 'johnson-nv{}_2021_04_13'.format(i)
-        nv_sig['nd_filter'] = 'nd_1.0'
-        nv_sig['am_589_power'] = 0.18
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
     
         sweep_test_pulse_length(nv_sig, '515a', test_power = 0.65, 
             test_pulse_dur_list = [50, 100,150, 200, 250, 300, 350, 400, 450, 

@@ -175,7 +175,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     #delay of aoms and laser
-    laser_515_delay = shared_params['515_laser_delay']
+    laser_515_delay = shared_params['515_DM_laser_delay']
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
     

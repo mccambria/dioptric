@@ -340,7 +340,7 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 #    init_pulse_time = 10**5
 
     if init_color_ind == 532:
-        init_delay = shared_params['515_laser_delay']
+        init_delay = shared_params['515_DM_laser_delay']
     elif init_color_ind == 589:
         init_delay = shared_params['589_aom_delay']
     elif init_color_ind == 638:
@@ -349,7 +349,7 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         init_delay = 0
 
     if read_color_ind == 532:
-        read_delay = shared_params['515_laser_delay']
+        read_delay = shared_params['515_DM_laser_delay']
     elif read_color_ind == 589:
         read_delay = shared_params['589_aom_delay']
     elif read_color_ind == 638:

@@ -645,8 +645,8 @@ if __name__ == '__main__':
 #            do_image_sample(nv_sig,  apd_indices, '515a',
 #                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            time.sleep(5*60)
-            do_image_sample(nv_sig,  apd_indices, '515a',
-                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, '515a',
+#                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =4*10**7)
 
