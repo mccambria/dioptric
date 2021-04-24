@@ -49,7 +49,7 @@ def exp_eq_omega(t, rate, amp):
     return  amp * exp(- rate * t)
 
 def exp_eq_gamma(t, rate, amp):
-    return  amp * exp(- rate * t) + manual_offset_gamma #- 0.005 * exp(-3*0.040*t)
+    return  amp * exp(- rate * t) + manual_offset_gamma #+ 0.01 * exp(-3*0.040*t)
 
 def biexp(t, omega, rate1, amp1, amp2):
     return  amp1 * exp(-rate1*t)
@@ -298,7 +298,7 @@ def get_data_lists(folder_name):
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']
-                # norm_avg_sig *= 1.0
+                # norm_avg_sig -= 0.0075
                 if plus_minus_bool == False:
                     plus_minus_counts = norm_avg_sig
                     plus_minus_ste = norm_avg_sig_ste
@@ -659,11 +659,16 @@ if __name__ == '__main__':
 
     path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\trial_data\\'
     folders = [
-                'hopper-nv1_2021_03_16-275K-49-gamma_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-49-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-50-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-50-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-51-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-51-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-54-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-54-gamma_plus_1'.format(temp),
                 ]
 
     for folder in folders:
+        # gamma, ste = main(path, folder, omega=0.042, omega_ste=0.0,
         gamma, ste = main(path, folder, omega=None, omega_ste=None,
                           doPlot=True, offset=False)
 
@@ -747,7 +752,15 @@ if __name__ == '__main__':
     # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     # folders = ['hopper-nv1_2021_03_16-275K-6-gamma_minus_1'.format(temp),
     #             'hopper-nv1_2021_03_16-275K-6-gamma_plus_1'.format(temp),]
+    
+    path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\trial_data\\'
+    folders = [
+                # 'hopper-nv1_2021_03_16-275K-52-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-52-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-53-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-53-gamma_plus_1'.format(temp),
+                ]
 
-    # for folder in folders:
-    #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
-    #                       doPlot=True, offset=False)
+    for folder in folders:
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                          doPlot=True, offset=False)
