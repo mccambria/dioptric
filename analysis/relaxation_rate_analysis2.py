@@ -664,7 +664,7 @@ if __name__ == '__main__':
                 # 'hopper-nv1_2021_03_16-275K-51-gamma_minus_1'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-51-gamma_plus_1'.format(temp),
                 'hopper-nv1_2021_03_16-275K-54-gamma_minus_1'.format(temp),
-                # 'hopper-nv1_2021_03_16-275K-54-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-54-gamma_plus_1'.format(temp),
                 ]
 
     for folder in folders:
@@ -759,6 +759,8 @@ if __name__ == '__main__':
                 # 'hopper-nv1_2021_03_16-275K-52-gamma_plus_1'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-53-gamma_minus_1'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-53-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-55-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-55-gamma_plus_1'.format(temp),
                 ]
 
     for folder in folders:
