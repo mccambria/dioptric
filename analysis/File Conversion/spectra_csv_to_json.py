@@ -49,7 +49,7 @@ def convert(folder_name):
             
 if __name__ == '__main__':
 
-    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/spectra/Brar/2020_11_03-graphene_nanoribbons'
+    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/horiba_spectrometer/2020_10'
         
     convert(top_folder_name)
 
