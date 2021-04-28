@@ -676,7 +676,7 @@ def save_figure(fig, file_path):
     """
 
     file_path = str(file_path)
-    fig.savefig(file_path + '.svg')
+    fig.savefig(file_path + '.svg', dpi = 300)
 
 
 def save_raw_data(rawData, filePath):
