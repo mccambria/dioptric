@@ -151,7 +151,7 @@ def do_two_pulse_stationary_count(nv_sig, init_color, read_color, init_time,
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
     run_time = 60 * 3  # s
-    diff_window = 150  # ns
+    diff_window = 75  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
                         apd_a_index, apd_b_index)
@@ -540,8 +540,8 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-    apd_indices = [0]
-#    apd_indices = [0, 1]
+#    apd_indices = [0]
+    apd_indices = [0, 1]
     
     sample_name = 'goeppert-mayer'
      
@@ -558,14 +558,32 @@ if __name__ == '__main__':
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
             'ao_638_pwr': 0.8,
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':12,
-            'ao_515_pwr': 0.65,
+            'ao_515_pwr': 0.64,
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
+    
+    dark_spot = { 'coords':[0.065 - 0.017, 0.29-0.005 ,5.09 + 0.05],
+            'name': '{}-search'.format(sample_name),
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
+#            'color_filter': '635-715 bp', 
+            'color_filter': '715 lp',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.3, 
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200, 
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'ao_638_pwr': 0.8,
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':12,
+            'ao_515_pwr': 0.64,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
      
 
     
-    expected_count_list = [40, 35, 60, 64, 65, 40, 40, 45] # 4/13/21 ###
+    expected_count_list = [40, 35, 60, 64, 65, 35, 40, 45] # 4/13/21 ###
     nv_list_2021_04_15 = [
 [-0.037, 0.119, 5.14],
 [-0.090, 0.066, 5.04],
@@ -587,7 +605,7 @@ if __name__ == '__main__':
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
         nv_sig_list.append(nv_sig)
         
-#    nv_sig_list = [search]
+#    nv_sig_list = [dark_spot]
     
 
     # %% Functions to run
@@ -596,8 +614,8 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-#        drift = [0.01, 0.002, -0.09]
-#        tool_belt.set_drift(drift)  
+        drift = [0.015, 0.013, -0.06]
+        tool_belt.set_drift(drift)  
 #        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset 
 #        tool_belt.set_drift([-0.03,-0.02,-0.16])  # 2/23/21
 #        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
@@ -630,7 +648,6 @@ if __name__ == '__main__':
             
             do_optimize(nv_sig, apd_indices, '515a')
 #            do_optimize(nv_sig, apd_indices, 532)
-#            do_optimize(nv_sig, apd_indices, 532)
             
 #            [x, y, z] = nv_sig['coords']
 #            for z in numpy.linspace(z - 0.1, z + 0.1, 5):
@@ -642,8 +659,8 @@ if __name__ == '__main__':
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 589, 638, save_data = True, plot_data = True)
             
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
-#            do_image_sample(nv_sig,  apd_indices, '515a',
-#                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, '515a',
+                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            time.sleep(5*60)
 #            do_image_sample(nv_sig,  apd_indices, '515a',
 #                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
@@ -660,8 +677,12 @@ if __name__ == '__main__':
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                                 532, 638)
 
-#            for i in range(5):
-#            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
+#            for i in range(10):
+#            with labrad.connect() as cxn:
+#                cxn.filter_slider_ell9k_color.set_filter('715 lp') 
+#                do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
+                
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)

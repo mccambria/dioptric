@@ -42,6 +42,7 @@ def get_seq(pulser_wiring, args):
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_indices)]
     pulser_do_clock = pulser_wiring['do_sample_clock']
     pulser_ao_515_aom = pulser_wiring['ao_515_laser']
+#    pulser_do_515_aom = pulser_wiring['do_532_aom'] ##
     pulser_ao_589_aom = pulser_wiring['ao_589_aom']
     pulser_do_638_aom = pulser_wiring['do_638_laser']
 
@@ -59,6 +60,8 @@ def get_seq(pulser_wiring, args):
     # laser pulses
     green_train = [(laser_638_delay + aom_589_delay, LOW),
          (green_prep_time, prep_power_515), (wait_time, LOW)]
+#    green_train = [(laser_638_delay + aom_589_delay, LOW),
+#         (green_prep_time, HIGH), (wait_time, LOW)]
     red_train = [(laser_515_delay + aom_589_delay + wait_time + green_prep_time, LOW)]
     yellow_train = [(laser_638_delay + laser_515_delay+ wait_time + green_prep_time, LOW)]
     
@@ -68,6 +71,11 @@ def get_seq(pulser_wiring, args):
         green_train.extend(test_pulse_on) 
         red_train.extend(test_pulse_off) 
         yellow_train.extend(test_pulse_off)
+#    if test_color == 532:
+#        test_pulse_on = [(test_time, HIGH)] 
+#        green_train.extend(test_pulse_on) 
+#        red_train.extend(test_pulse_off) 
+#        yellow_train.extend(test_pulse_off)
     elif test_color == 638:
         test_pulse_on = [(test_time, HIGH)] 
         green_train.extend(test_pulse_off)
@@ -88,6 +96,11 @@ def get_seq(pulser_wiring, args):
         green_train.extend(test_pulse_on) 
         red_train.extend(test_pulse_off) 
         yellow_train.extend(test_pulse_off)
+#    if test_color == 532:
+#        test_pulse_on = [(test_time, HIGH)] 
+#        green_train.extend(test_pulse_on) 
+#        red_train.extend(test_pulse_off) 
+#        yellow_train.extend(test_pulse_off)
     elif test_color == 638:
         test_pulse_on = [(test_time, HIGH)] 
         green_train.extend(test_pulse_off)
@@ -105,6 +118,7 @@ def get_seq(pulser_wiring, args):
     
         
     seq.setAnalog(pulser_ao_515_aom, green_train)
+#    seq.setDigital(pulser_do_515_aom, green_train)
     seq.setDigital(pulser_do_638_aom, red_train)
     seq.setAnalog(pulser_ao_589_aom, yellow_train) 
     
@@ -121,10 +135,13 @@ if __name__ == '__main__':
               'ao_515_laser': 1,
               'sig_gen_gate_chan_name': 3,
                'do_sample_clock':4,
+              'do_515_laser': 5,
                'ao_589_aom': 0,
                'ao_638_laser': 1,
                'do_638_laser': 7             }
 
-    args = [1000, 500, 750, 500, 1000, '515a', 0, 0, 0, 0, 1, 1, 1, 0.5]
+    args = [1000, 500, 750, 500, 1000, '515a', 500, 0, 0, 0, 1,  1, 0.5]
+            
+#    args = [1500, 1000, 1000, 300, 1000, 532, 0, 0, 0, 0, 1, 1, 1]
     seq, final, _ = get_seq(wiring, args)
     seq.plot()

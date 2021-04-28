@@ -559,7 +559,7 @@ if __name__ == '__main__':
     
     list_ = [ nv_coords_list[5]]
 #    collect_charge_counts_list(nv_coords_list, base_nv_sig, 200, apd_indicies)
-    for t in [10*10**7, 15*10**7, 20*10**7, 25*10**7, 30*10**7]:
+    for t in [100*10**6]:
         nv_sig = copy.deepcopy(base_nv_sig)
         nv_sig['pulsed_SCC_readout_dur'] = t
         collect_charge_counts_list(list_, nv_sig, 200, apd_indicies)

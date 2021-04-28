@@ -277,13 +277,37 @@ def calculate_relative_g2_zero_mod(hist):
     return zero_delay_differences / inf_delay_differences, inf_delay_differences
 
 if __name__ == '__main__':
-    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_Spin_to_charge/g2_measurement/2021_04'
-    files = ['2021_04_15-19_43_29-goeppert-mayer-nv1_2021_04_15.txt',
-             '2021_04_15-19_44_52-goeppert-mayer-nv1_2021_04_15.txt',
-             '2021_04_15-19_46_01-goeppert-mayer-nv1_2021_04_15.txt',
-             '2021_04_15-19_47_09-goeppert-mayer-nv1_2021_04_15.txt',
-             '2021_04_15-19_48_16-goeppert-mayer-nv1_2021_04_15.txt',
-             '2021_04_15-19_49_25-goeppert-mayer-nv1_2021_04_15.txt'
+#    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_Spin_to_charge/g2_measurement/2021_04'
+    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_master/g2_measurement/2019_05'
+    files = [
+#            '2021_04_26-13_46_01-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-13_47_08-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-13_48_15-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-13_49_23-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-13_50_31-goeppert-mayer-nv5_2021_04_15.txt',
+             
+#             '2021_04_26-13_54_19-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-13_55_26-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-13_56_32-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-13_57_38-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-13_58_46-goeppert-mayer-nv5_2021_04_15.txt',
+             
+#             '2021_04_26-14_02_31-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-14_03_36-goeppert-mayer-nv5_2021_04_15.txt',
+    
+            '2019-05-06_18-39-22_ayrton12.txt',
+            
+#             '2021_04_26-15_14_16-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-15_15_24-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-15_16_31-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-15_17_38-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-15_18_44-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-15_19_52-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-15_20_58-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-15_22_04-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-15_23_11-goeppert-mayer-nv5_2021_04_15.txt',
+#             '2021_04_26-15_24_19-goeppert-mayer-nv5_2021_04_15.txt',
+             
              ]
     histogram_list = []
     for file_name in files:
@@ -292,7 +316,7 @@ if __name__ == '__main__':
             differences = data['differences']
             num_bins = data['num_bins']
             timestamp = data['timestamp']
-            nv_sig = data['nv_sig']
+#            nv_sig = data['nv_sig']
             diff_window= data['diff_window']
 
         hist, bin_edges = numpy.histogram(differences, num_bins)
@@ -317,20 +341,20 @@ if __name__ == '__main__':
     ax.set_ylim(bottom=0, top = 2)
     
     print(g2_zero)
-    raw_data = {'timestamp': timestamp,
-                'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'g2_zero': g2_zero,
-                'g2_zero-units': 'ratio',
-                'run_time': 6*60,
-                'run_time-units': 's',
-                'diff_window': diff_window,
-                'diff_window-units': 'ns',
-                'num_bins': num_bins,
-                'histogram': histogram.tolist(),
-                'bin_centers': bin_centers.tolist(),
-                'bin_centers-units': 'ps'}
-
-    filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_figure(fig, filePath + '_accumul')
-    tool_belt.save_raw_data(raw_data, filePath + '_accumul')
+#    raw_data = {'timestamp': timestamp,
+#                'nv_sig': nv_sig,
+#                'nv_sig-units': tool_belt.get_nv_sig_units(),
+#                'g2_zero': g2_zero,
+#                'g2_zero-units': 'ratio',
+#                'run_time': 10*60,
+#                'run_time-units': 's',
+#                'diff_window': diff_window,
+#                'diff_window-units': 'ns',
+#                'num_bins': num_bins,
+#                'histogram': histogram.tolist(),
+#                'bin_centers': bin_centers.tolist(),
+#                'bin_centers-units': 'ps'}
+#
+#    filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+#    tool_belt.save_figure(fig, filePath + '_accumul')
+#    tool_belt.save_raw_data(raw_data, filePath + '_accumul')

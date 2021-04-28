@@ -176,7 +176,17 @@ if __name__ == '__main__':
 #    image_file_nv = '2021_04_14-15_55_20-johnson-nv0_2021_04_13'
     
     # NV5
-    image_file_nv = '2021_04_21-09_52_08-goeppert-mayer-nv5_2021_04_15'
+#    image_file_nv = '2021_04_21-09_52_08-goeppert-mayer-nv5_2021_04_15'
     
+    # 300 ms
+#    image_file_nv = '2021_04_23-10_35_52-goeppert-mayer-nv5_2021_04_15'
+#    threshold = 18
+    image_file_nv = '2021_04_16-15_26_05-goeppert-mayer-nv5_2021_04_15'
     threshold = 18
+    # 100 ms
+#    image_file_nv = '2021_04_23-11_06_33-goeppert-mayer-nv5_2021_04_15'
+#    threshold = 8
+    # 60 ms
+#    image_file_nv = '2021_04_23-10_48_00-goeppert-mayer-nv5_2021_04_15'
+#    threshold = 5
     create_figure(folder + '/' + image_file_nv, threshold)

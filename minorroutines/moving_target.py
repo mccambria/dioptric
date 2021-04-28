@@ -417,7 +417,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
         # So first check the time. If the time that has passed since the last
         # optimize is longer that 5 min, optimize again
         current_time = time.time()
-        if current_time - run_start_time >= 2.5*60:
+        if current_time - run_start_time >= 4*60:
             opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices, '515a', disable=disable_boo)
             opti_coords_list.append(opti_coords) 
             run_start_time = current_time
@@ -1244,29 +1244,27 @@ def do_moving_target__multi_NV_2D(nv_sig, start_coords_list, img_range, pulse_ti
 # %% Run the files
 
 if __name__ == '__main__':
-    sample_name= 'johnson'
+    sample_name= 'goeppert-mayer'
 
 
 
     base_sig = { 'coords':[], 
-            'name': '{}'.format(sample_name),
+            'name': '{}-2021_04_15'.format(sample_name),
             'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 30*10**7,  'am_589_power': 0.15, 
+            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.15, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
-            'pulsed_reionization_dur': 10**3, 'cobalt_532_power':10, 
-            'ao_515_pwr': 0.65,
+            'pulsed_reionization_dur': 1*10**3, 'cobalt_532_power':10, 
+            'ao_515_pwr': 0.64,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
-    
-#    start_coords = base_sig['coords']
-    expected_count_list =[40, 45, 65, 64, 55, 38,  40, 45  ] # 4/13/21 ###
+    expected_count_list = [40, 45, 65, 64, 55, 35,  40, 45  ] # 4/13/21 ###
     start_coords_list = [
 [-0.037, 0.119, 5.14],
 [-0.090, 0.066, 5.04],
@@ -1280,7 +1278,7 @@ if __name__ == '__main__':
 ]
 
 #    end_coords = end_coords.tolist()
-    num_steps = 25#
+    num_steps = 51
 #    num_runs = 50
 #    img_range = 0.45
 #    optimize_nv_ind = 3
@@ -1297,13 +1295,14 @@ if __name__ == '__main__':
              nv_sig['name']= 'goeppert-mayer-nv{}_2021_04_15'.format(s)
              nv_sig['expected_count_rate'] = expected_count_list[optimize_nv_ind]
              #########
-             num_runs = 15            
+             num_runs = 20           
              # Set up for NV band
-             t =10*10**6
+             t =5*10**6
              init_color = '515a'
              pulse_color = '515a' 
-             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.45, t, num_steps, num_runs, 
-                                       init_color, pulse_color, False, live_updates = True )     
+             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, num_runs, 
+                                       init_color, pulse_color, False, live_updates = True ) 
+             
 #             init_color = 638
 #             pulse_color = '515a' 
 #             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.6, t, num_steps, num_runs, 

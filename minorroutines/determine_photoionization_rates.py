@@ -23,14 +23,14 @@ import copy
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, num_reps, test_color, test_time, test_power = 0.65):
+def main(nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
 
     with labrad.connect() as cxn:
         green_counts, red_counts = main_with_cxn(cxn, nv_sig, apd_indices,
                                  num_reps, test_color, test_time, test_power)
         
     return green_counts, red_counts
-def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, test_power = 0.65):
+def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
 
     tool_belt.reset_cfm_wout_uwaves(cxn)
 
@@ -53,9 +53,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, tes
 
     #delay of aoms and laser
     laser_515_delay = shared_params['515_AM_laser_delay']
+    laser_515_delay = shared_params['515_AM_laser_delay'] ###
+    
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
     
+    # if using AM for green, add an additional 300 ns to the pulse time. 
+    # the AM laser has a 300 ns rise time
+    if test_color == '515a':
+        test_time = test_time + 300
     
     wait_time = shared_params['post_polarization_wait_dur']
 
@@ -67,10 +73,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, tes
     seq_args = [readout_time,green_prep_time, red_prep_time, test_time,
             wait_time, test_color, laser_515_delay, aom_589_delay, laser_638_delay, 
             apd_indices[0], readout_power_589, prep_power_515, test_power ]
-#    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
+#    print(seq_args)
+#    return
 
     seq_time_s = seq_time / (10**9)  # s
     expected_run_time = num_reps * seq_time_s  #s
@@ -84,6 +91,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, tes
 
     # Optimize
     opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, '515a', disable=False)
+#    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
     opti_coords_list.append(opti_coords)
     
     
@@ -97,6 +105,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, tes
     cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
 
     new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+#    print(new_counts)
     sample_counts = new_counts[0]
 
     # signal counts are even - get every second element starting from 0
@@ -111,14 +120,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, tes
 
 # %%
 
-def sweep_test_pulse_length(nv_sig, test_color, test_power = 0.65, test_pulse_dur_list = None):
+def sweep_test_pulse_length(nv_sig, test_color, test_power, test_pulse_dur_list = None):
     apd_indices = [0]
     num_reps = 200
     if not test_pulse_dur_list:
-        test_pulse_dur_list = [0,5*10**3, 10*10**3, 20*10**3, 30*10**3, 
-                        40*10**3, 50*10**3, 100*10**3,200*10**3,300*10**3,
-                        400*10**3,500*10**3, 600*10**3, 700*10**3, 800*10**3, 
-                        900*10**3, 1*10**6, 2*10**6, 3*10**6 ]
+        test_pulse_dur_list = [25, 50, 75, 100, 125, 150, 175, 200, 250, 300, 400, 
+                                   500, 600,  700,  800,  900, 1000, 1500,
+                                   2000]
 #        test_pulse_dur_list = [0]
     # measure laser powers:
     green_optical_power_pd, green_optical_power_mW, \
@@ -142,6 +150,14 @@ def sweep_test_pulse_length(nv_sig, test_color, test_power = 0.65, test_pulse_du
         green_count_raw.append(green_count)
         red_count_raw.append(red_count)
         
+    green_counts = numpy.average(green_count_raw, axis = 1)
+    red_counts = numpy.average(red_count_raw, axis = 1)
+    fig, ax = plt.subplots() 
+    ax.plot(test_pulse_dur_list, green_counts, 'go')
+    ax.plot(test_pulse_dur_list, red_counts, 'ro')
+    ax.set_xlabel('Test Pulse Illumination Time (ns)')
+    ax.set_ylabel('Counts')
+    
     # Save
     test_pulse_dur_list = numpy.array(test_pulse_dur_list)
     timestamp = tool_belt.get_time_stamp()
@@ -204,7 +220,7 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 30*10**7, 'am_589_power': 0.15, 
+            'pulsed_SCC_readout_dur': 10*10**7, 'am_589_power': 0.15, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -215,21 +231,13 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
+    test_pulses = [50, 100, 150, 200, 250, 300, 310, 320, 330, 340, 350,
+                   360, 370, 380, 390, 400, 410, 420, 430, 440, 450, 500]
     for i in [5]:#range(len(nv_coords_list)):
         nv_sig = copy.deepcopy(nv_2021_03_30)
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
-    
-        sweep_test_pulse_length(nv_sig, '515a', test_power = 0.65, 
-            test_pulse_dur_list = [50, 100,150, 200, 250, 300, 350, 400, 450, 
-                                   500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000,
-                                   2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 100000,
-                                   10*10**3, 20*10**3, 30*10**3, 40*10**3, 50*10**3 ])
-        sweep_test_pulse_length(nv_sig, '515a', test_power = 0.606, 
-            test_pulse_dur_list = [50, 100,150, 200, 250, 300, 350, 400, 450, 
-                                   500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000,
-                                   2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 100000,
-                                   10*10**3, 20*10**3, 30*10**3, 40*10**3, 50*10**3 ])
-   
+        for p in (0.658, 0.64, 0.622, 0.611, 0.606):
+            sweep_test_pulse_length(nv_sig, '515a' ,p)
     

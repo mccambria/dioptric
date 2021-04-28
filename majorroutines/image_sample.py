@@ -258,9 +258,11 @@ def create_figure(file_name, sub_folder = None):
     data = tool_belt.get_raw_data('', file_name)
 #    else:
 #        data = tool_belt.get_raw_data('image_sample', file_name)
-    x_range = data['x_range']
-    y_range = data['y_range']
-    x_voltages = data['x_voltages']
+    x_range = data['img_range']
+    y_range = data['img_range']
+    num_steps = data['num_steps']
+    x_voltages = numpy.linspace(-x_range/2, +x_range/2, num_steps)
+#    x_voltages = data['x_voltages']'
 #    coords = data['coords']
 #    nv_sig = data['nv_sig']
 #    coords = nv_sig['coords']
@@ -272,10 +274,10 @@ def create_figure(file_name, sub_folder = None):
     except Exception as e:
         print(e)
         coords = data['coords']
-#    coords = [0,0,5.0]
-    img_array = numpy.array(data['img_array'])
+    coords = [0,0,5.0]
+    img_array = numpy.array(data['readout_image_array'])
     print(numpy.average(img_array))
-    readout = data['readout']
+    readout = 20000000#data['readout']
 
     x_coord = coords[0]
     half_x_range = x_range / 2
@@ -290,13 +292,13 @@ def create_figure(file_name, sub_folder = None):
 
     pixel_size = x_voltages[1] - x_voltages[0]
     half_pixel_size = pixel_size / 2
-    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+    img_extent = [x_low - half_pixel_size, x_high + half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
 
 #    color_ind =  data['color_ind']
     readout_us = readout / 10**3
     title = 'Confocal scan.\nReadout {} us'.format(readout_us)
-    fig = tool_belt.create_image_figure(img_array_kcps, numpy.array(img_extent)*35,
+    fig = tool_belt.create_image_figure(img_array_kcps, numpy.array(img_extent)*35*10**3,
                                         clickHandler=on_click_image,
                                         title = title,
                                         color_bar_label = 'kcps',
@@ -813,7 +815,9 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_02-09_41_46-goeppert-mayer' # bright
+    file_name = 'pc_rabi/branch_Spin_to_charge/isolate_nv_charge_dynamics_moving_target/2020_12/2020_12_08-18_04_02-goeppert-mayer-nv1_2020_12_02-img'
+    
+#    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_02-09_41_46-goeppert-mayer' # bright
 #    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_02-09_46_49-goeppert-mayer' # dark
 #    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_02-09_46_49-goeppert-mayer' # dark
 #    reformat_plot('inferno', 'png')

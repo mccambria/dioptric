@@ -31,8 +31,8 @@ for p in power_list:
     optical_power_ste = numpy.std(optical_power_list) / numpy.sqrt(num_reps)
     measured_powers_ste.append(optical_power_ste)
     
-converted_power = 14.3*numpy.array(measured_power)+0.34
-converted_power_ste = 14.3*numpy.array(measured_powers_ste)
+converted_power = 11.84*numpy.array(measured_power)+0.0493
+converted_power_ste = 11.84*numpy.array(measured_powers_ste)
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 ax.errorbar(power_list, converted_power,
