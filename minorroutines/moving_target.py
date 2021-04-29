@@ -1278,7 +1278,7 @@ if __name__ == '__main__':
 ]
 
 #    end_coords = end_coords.tolist()
-    num_steps = 51
+    num_steps = 41
 #    num_runs = 50
 #    img_range = 0.45
 #    optimize_nv_ind = 3
@@ -1303,113 +1303,12 @@ if __name__ == '__main__':
              do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, num_runs, 
                                        init_color, pulse_color, False, live_updates = True ) 
              
-#             init_color = 638
-#             pulse_color = '515a' 
-#             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.6, t, num_steps, num_runs, 
-#                                       init_color, pulse_color, False, live_updates = True )         
-#             init_color = '515a'
-#             pulse_color = 638
-#             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.6, t, num_steps, num_runs, 
-#                                       init_color, pulse_color, False, live_updates = True )       
-#             init_color = 638
-#             pulse_color = 638 
-#             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.6, t, num_steps, num_runs, 
-#                                       init_color, pulse_color, False, live_updates = True )    
+   
              # Set up for SiV band
 #             nv_sig['color_filter'] = '715 lp'
 #             nv_sig['nd_filter'] = 'nd_0'
 #             nv_sig['am_589_power'] = 0.3
 #             nv_sig['pulsed_SCC_readout_dur'] = 4*10**7
-#             t =25*10**6
-#             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.6, t, num_steps, num_runs, 
-#                                       init_color, pulse_color, False, live_updates = True )
-#             
-#             init_color = 638
-#             pulse_color = '515a'
-#             t =25*10**6
-#             do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.6, t, num_steps, num_runs, 
-#                                       init_color, pulse_color, False, live_updates = True )
+
              
-#             num_steps = 41
-#             for init_color in [638, '515a']:
-#                 for pulse_color in [638, '515a']:
-#                     # Set up for NV band
-#                     nv_sig['color_filter'] = '635-715 bp'
-#                     nv_sig['nd_filter'] = 'nd_1.0'
-#                     nv_sig['am_589_power'] = 0.15
-#                     nv_sig['pulsed_SCC_readout_dur'] = 10*10**7
-#                     t =50*10**6
-#                     do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.7, t, num_steps, num_runs, 
-#                                               init_color, pulse_color, False, live_updates = True )
-#                     t =10*10**6
-#                     do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.5, t, num_steps, num_runs, 
-#                                               init_color, pulse_color, False, live_updates = True )
-#                     t =1*10**6
-#                     do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.2, t, num_steps, num_runs, 
-#                                               init_color, pulse_color, False, live_updates = True )             
-#      
-#                     # Set up for SiV band
-#                     nv_sig['color_filter'] = '715 lp'
-#                     nv_sig['nd_filter'] = 'nd_0'
-#                     nv_sig['am_589_power'] = 0.3
-#                     nv_sig['pulsed_SCC_readout_dur'] = 4*10**7
-#             
-#                     t =50*10**6
-#                     do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.7, t, num_steps, num_runs, 
-#                                               init_color, pulse_color, False, live_updates = True )
-#                     t =10*10**6
-#                     do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.5, t, num_steps, num_runs, 
-#                                               init_color, pulse_color, False, live_updates = True )
-#                     t =1*10**6
-#                     do_moving_target_2D_image(nv_sig, start_coords,optimize_coords,  0.2, t, num_steps, num_runs, 
-#                                               init_color, pulse_color, False, live_updates = True ) 
-         ##########
 
-#%% # %% Replot
-
-#    file = '2021_04_06-07_59_32-goeppert-mayer-nv13_2021_04_02'
-#    folder = 'pc_rabi/branch_Spin_to_charge/moving_target/2021_04'
-#    data = tool_belt.get_raw_data(folder, file)
-#    readout_counts_array = numpy.array(data['readout_counts_array'])
-#    start_coords = data['start_coords']
-#    num_steps = data['num_steps']
-#    init_color = data['init_color']
-#    pulse_color = data['init_color']
-#    pulse_time = data['pulse_time']
-#    x_voltages_1d = data['x_voltages_1d']
-#    y_voltages_1d = data['y_voltages_1d']
-#    img_range = data['img_range']
-#    num_samples = num_steps**2
-#    
-#    readout_image_array = numpy.empty([num_steps, num_steps])
-#    readout_image_array[:] = numpy.nan
-#
-#    
-#    readout_counts_array_ed = []
-#    for el in readout_counts_array:
-#        readout_counts_array_ed.append(el[:15])
-#    # Take the average and ste
-#    readout_counts_avg = numpy.average(readout_counts_array_ed, axis = 1)
-#    readout_counts_ste = stats.sem(readout_counts_array_ed, axis = 1)
-#
-#    # create the img arrays
-#    writePos = []
-#    readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
-#    
-#    # image extent
-#    x_low = x_voltages_1d[0]
-#    x_high = x_voltages_1d[num_steps-1]
-#    y_low = y_voltages_1d[0]
-#    y_high = y_voltages_1d[num_steps-1]
-#
-#    pixel_size = (x_voltages_1d[1] - x_voltages_1d[0])
-#    
-#    half_pixel_size = pixel_size / 2
-#    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-#                  y_low - half_pixel_size, y_high + half_pixel_size]
-##    print(readout_counts_avg)
-#    # Create the figure
-#    title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse.'.format(init_color,
-#                                                     pulse_color, pulse_time/10**6)
-#    fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
-#                                                title = title, um_scaled = True)

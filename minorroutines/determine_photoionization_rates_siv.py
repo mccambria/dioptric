@@ -2,10 +2,12 @@
 """
 Created on mon Apr 8 10:45:09 2020
 
-This file ru ns a sequence that places the NV in NV- (NV0), then applies a test
-pulse of some length, then reads out the NV with yellow.
+This file ru ns a sequence that pulses a green pulse either on of off the 
+readout spot. It reads out in the SiVs band, to create SiV2- when on the spot
+and SiV when off . Then a green pulse of variable power is pulsed on the
+readout spot, followed by a yellow readout.
 
-The point of this measurement is to determine how fast the NV charge states
+The point of this measurement is to determine how fast the SiV charge states
 change under illumination. 
 
 USE WITH 515 AM MOD
@@ -15,32 +17,63 @@ USE WITH 515 AM MOD
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-import time
+#import time
 import matplotlib.pyplot as plt
 import labrad
 import copy
 
+# %%
+def build_voltage_list(start_coords_drift, signal_coords_drift, num_reps):
+
+    # calculate the x values we want to step thru
+    start_x_value = start_coords_drift[0]
+    start_y_value = start_coords_drift[1]
+
+    
+    # we want this list to have the pattern [[readout], [readout], [readout], [target], 
+    #                                                   [readout], [readout], [readout],...]
+    # The glavo needs a 0th coord, so we'll pass the readout NV as the "starting" point
+    x_points = [start_x_value]
+    y_points = [start_y_value]
+    
+    # now append the coordinates in the following pattern:
+    for i in range(num_reps):
+        x_points.append(start_x_value)
+        x_points.append(start_x_value) 
+        x_points.append(signal_coords_drift[0])
+        x_points.append(start_x_value)
+        x_points.append(start_x_value)
+        x_points.append(start_x_value)
+        
+        y_points.append(start_y_value)
+        y_points.append(start_y_value) 
+        y_points.append(signal_coords_drift[1])
+        y_points.append(start_y_value)
+        y_points.append(start_y_value)
+        y_points.append(start_y_value) 
+        
+    return x_points, y_points
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
 def main(nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
 
     with labrad.connect() as cxn:
-        green_counts, red_counts = main_with_cxn(cxn, nv_sig, apd_indices,
+        on_counts, off_counts = main_with_cxn(cxn, nv_sig, apd_indices,
                                  num_reps, test_color, test_time, test_power)
         
-    return green_counts, red_counts
+    return on_counts, off_counts
 def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
 
     tool_belt.reset_cfm_wout_uwaves(cxn)
 
 # Initial Calculation and setup
     readout_time = nv_sig['pulsed_SCC_readout_dur']
-    red_prep_time = nv_sig['pulsed_ionization_dur']
-    green_prep_time = nv_sig['pulsed_reionization_dur']
     am_589_power = nv_sig['am_589_power']
     am_515_power = nv_sig['ao_515_pwr']
     nd_filter = nv_sig['nd_filter']
+    siv_pulse_time = 10**6 # ns
+    siv_pulse_distance = 0.056 # V
         
     prep_power_515 = am_515_power
     readout_power_589 = am_589_power
@@ -52,72 +85,77 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, tes
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     #delay of aoms and laser
-    laser_515_delay = shared_params['515_AM_laser_delay']
     laser_515_delay = shared_params['515_AM_laser_delay'] ###
-    
     aom_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
+    galvo_delay = shared_params['large_angle_galvo_delay']
     
     # if using AM for green, add an additional 300 ns to the pulse time. 
     # the AM laser has a 300 ns rise time
     if test_color == '515a':
         test_time = test_time + 300
     
-    wait_time = shared_params['post_polarization_wait_dur']
-
-    # Set up our data lists
-    opti_coords_list = []
-
-    print(test_power)
-    # Estimate the lenth of the sequance            
-    file_name = 'photoionization_rates.py'            
-    seq_args = [readout_time,green_prep_time, red_prep_time, test_time,
-            wait_time, test_color, laser_515_delay, aom_589_delay, laser_638_delay, 
-            apd_indices[0], readout_power_589, prep_power_515, test_power ]
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-    seq_time = ret_vals[0]
-#    print(seq_args)
-#    return
-
-    seq_time_s = seq_time / (10**9)  # s
-    expected_run_time = num_reps * seq_time_s  #s
-    expected_run_time_m = expected_run_time / 60 # m
-
-    # Ask to continue and timeout if no response in 2 seconds?
-
-    print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
-
-    # Collect data
 
     # Optimize
+    opti_coords_list = []  
+    # Optimize
     opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, '515a', disable=False)
-#    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
     opti_coords_list.append(opti_coords)
+    cxn.filter_slider_ell9k_color.set_filter('715 lp') 
+    
+     # Estimate the lenth of the sequance , load the sequence          
+    file_name = 'isolate_nv_charge_dynamics_moving_target.py'
+    seq_args = [siv_pulse_time, test_time, readout_time, 
+            laser_515_delay, aom_589_delay, laser_638_delay, galvo_delay,
+            readout_power_589, 
+            prep_power_515, test_power, prep_power_515,             
+            apd_indices[0], '515a', test_color, 589]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    seq_dur = ret_vals[0]
+    period = seq_dur
     
     
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
 
-    # Load the APD
+    # Set up the voltages to step thru  
+    # get the drift and add it to the start coordinates      
+    drift = numpy.array(tool_belt.get_drift())
+    start_coords = numpy.array(nv_sig['coords'])
+    start_coords_drift = start_coords + drift
+    # define the signal coords as start + dx.
+    signal_coords_drift = start_coords_drift + [siv_pulse_distance, 0, 0]
+    
+    x_voltages, y_voltages = build_voltage_list(start_coords_drift, signal_coords_drift, num_reps)
+    
+    # Collect data
+    # start on the readout NV
+    tool_belt.set_xyz(cxn, start_coords_drift)
+    
+    # Load the galvo
+    cxn.galvo.load_arb_points_scan(x_voltages, y_voltages, int(period))
+    
+    # Set up the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)
-    # Clear the buffer
-    cxn.apd_tagger.clear_buffer()
-    # Run the sequence
-    cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
-
-    new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-#    print(new_counts)
-    sample_counts = new_counts[0]
-
-    # signal counts are even - get every second element starting from 0
-    green_counts = sample_counts[0::2]
-
-    # ref counts are odd - sample_counts every second element starting from 1
-    red_counts = sample_counts[1::2]
+    
+    #Run the sequence double the amount of time, one for the sig and one for the ref
+    cxn.pulse_streamer.stream_start(num_reps*2)
+    
+    # We'll be lookign for three samples each repetition, and double that for 
+    # the ref and sig
+    total_num_reps = 3*2*num_reps
+    
+    # Read the counts
+    new_samples = cxn.apd_tagger.read_counter_simple(total_num_reps)
+    # The last of the triplet of readout windows is the counts we are interested in
+    on_counts = new_samples[2::6]
+    on_counts = [int(el) for el in on_counts]
+    off_counts = new_samples[5::6]
+    off_counts = [int(el) for el in off_counts]
     
     cxn.apd_tagger.stop_tag_stream()
+
     
-    return green_counts, red_counts
+    return on_counts, off_counts
 
 # %%
 
@@ -137,25 +175,25 @@ def sweep_test_pulse_length(nv_sig, test_color, test_power, test_pulse_dur_list 
                                   nv_sig['am_589_power'], nv_sig['nd_filter'])
         
     # create some lists for data
-    green_count_raw = []
-    red_count_raw = []
+    on_count_raw = []
+    off_count_raw = []
     
     # Step through the pulse lengths for the test laser
     for test_time in test_pulse_dur_list:
         print('Testing {} us'.format(test_time/10**3))
-        green_count, red_count = main(nv_sig, apd_indices, num_reps, test_color, test_time, test_power)
+        on_count, off_count = main(nv_sig, apd_indices, num_reps, test_color, test_time, test_power)
         
-        green_count = [int(el) for el in green_count]
-        red_count = [int(el) for el in red_count]
+#        on_count = [int(el) for el in on_count]
+#        off_count = [int(el) for el in off_count]
         
-        green_count_raw.append(green_count)
-        red_count_raw.append(red_count)
+        on_count_raw.append(on_count)
+        off_count_raw.append(off_count)
         
-    green_counts = numpy.average(green_count_raw, axis = 1)
-    red_counts = numpy.average(red_count_raw, axis = 1)
+    on_counts = numpy.average(on_count_raw, axis = 1)
+    off_counts = numpy.average(off_count_raw, axis = 1)
     fig, ax = plt.subplots() 
-    ax.plot(test_pulse_dur_list, green_counts, 'go')
-    ax.plot(test_pulse_dur_list, red_counts, 'ro')
+    ax.plot(test_pulse_dur_list, on_counts, 'bo')
+    ax.plot(test_pulse_dur_list, off_counts, 'go')
     ax.set_xlabel('Test Pulse Illumination Time (ns)')
     ax.set_ylabel('Counts')
     
@@ -183,14 +221,15 @@ def sweep_test_pulse_length(nv_sig, test_color, test_power, test_pulse_dur_list 
             'yellow_optical_power_pd-units': 'V',
             'yellow_optical_power_mW': yellow_optical_power_mW,
             'yellow_optical_power_mW-units': 'mW',
-            'green_count_raw':green_count_raw,
-            'green_count_raw-units': 'counts',
-            'red_count_raw': red_count_raw,
-            'red_count_raw-units': 'counts', 
+            'on_count_raw':on_count_raw,
+            'on_count_raw-units': 'counts',
+            'off_count_raw': off_count_raw,
+            'off_count_raw-units': 'counts', 
             }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path)
+    tool_belt.save_figure(fig, file_path)
 
     
     print(' \nRoutine complete!')
@@ -217,11 +256,11 @@ if __name__ == '__main__':
     
     nv_2021_03_30 = { 'coords':[], 
             'name': '',
-            'expected_count_rate': None, 'nd_filter': 'nd_1.0',
-            'color_filter': '635-715 bp', 
-#            'color_filter': '715 lp',
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
+#            'color_filter': '635-715 bp', 
+            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**7, 'am_589_power': 0.15, 
+            'pulsed_SCC_readout_dur': 4*10**7, 'am_589_power': 0.3, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -239,6 +278,6 @@ if __name__ == '__main__':
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
-        for p in (0.658, 0.64, 0.622, 0.611, 0.606):
-            sweep_test_pulse_length(nv_sig, '515a' ,p)
+#        for p in (0.658, 0.64, 0.622, 0.611, 0.606):
+        sweep_test_pulse_length(nv_sig, '515a' ,0.64)
     

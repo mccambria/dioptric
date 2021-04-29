@@ -526,7 +526,7 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    expected_count_list = [40, 45, 65, 64, 55, 42,  40, 45 ] # 4/13/21 ###
+    expected_count_list = [40, 45, 65, 64, 55, 32,  40, 45 ] # 4/13/21 ###
     nv_coords_list = [
 [-0.037, 0.119, 5.14],
 [-0.090, 0.066, 5.04],
