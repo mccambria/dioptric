@@ -279,5 +279,5 @@ if __name__ == '__main__':
         nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
 #        for p in (0.658, 0.64, 0.622, 0.611, 0.606):
-        sweep_test_pulse_length(nv_sig, '515a' ,0.64)
+        sweep_test_pulse_length(nv_sig, '515a' ,0.606)
     
