@@ -659,8 +659,8 @@ if __name__ == '__main__':
 
     path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\trial_data\\'
     folders = [
-                'hopper-nv1_2021_03_16-275K-49-gamma_minus_1'.format(temp),
-                'hopper-nv1_2021_03_16-275K-49-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-49-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-49-gamma_plus_1'.format(temp),
                 ]
 
     for folder in folders:
@@ -704,8 +704,8 @@ if __name__ == '__main__':
                 # 'hopper-nv1_2021_03_16-275K-13-gamma_plus_1'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-14-gamma_minus_1'.format(temp),  # Nicest
                 # 'hopper-nv1_2021_03_16-275K-14-gamma_plus_1'.format(temp),
-                # 'hopper-nv1_2021_03_16-275K-15-gamma_minus_1'.format(temp),  # Full
-                # 'hopper-nv1_2021_03_16-275K-15-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-15-gamma_minus_1'.format(temp),  # Full
+                'hopper-nv1_2021_03_16-275K-15-gamma_plus_1'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-16-gamma_minus_1'.format(temp),  # No rf, short, finite pulses
                 # 'hopper-nv1_2021_03_16-275K-16-gamma_plus_1'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-17-gamma_minus_1'.format(temp),  # Zero pulses
