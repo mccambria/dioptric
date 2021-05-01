@@ -95,8 +95,8 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     nv_sig = data['nv_sig']
     resonance_LOW = nv_sig['resonance_LOW']
     resonance_HIGH = nv_sig['resonance_HIGH']
-    # resonance_LOW = 2.8190
-    # resonance_HIGH = 2.9321
+    # resonance_LOW = 2.7979
+    # resonance_HIGH = 2.9456
 
     revival_time = popt[1]
     revival_time_ste = stes[1]
@@ -109,6 +109,9 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     theta_B = None
     if center_freq is None:
         center_freq = (resonance_LOW + resonance_HIGH) / 2
+        # print(center_freq)
+        # center_freq = 2.8718356422016003
+        # print(center_freq)
     args = (center_freq, mag_B, resonance_LOW, resonance_HIGH)
     result = minimize_scalar(theta_B_cost_func, bounds=(0, pi/2), args=args,
                              method='bounded')
@@ -259,6 +262,7 @@ def fit_data(data):
         popt, pcov = curve_fit(fit_func, tau_pis / 1000, norm_avg_sig,
                                sigma=norm_avg_sig_ste, absolute_sigma=True,
                                p0=init_params, bounds=(min_bounds, max_bounds))
+        # popt[1] = 35.7
         popt[1] *= 1000
         popt[2] *= 1000
         
@@ -679,8 +683,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 if __name__ == '__main__':
 
-    path = 'pc_hahn/branch_cryo-setup/spin_echo/2021_03'
-    file = '2021_03_30-17_31_36-hopper-nv1_2021_03_16'
+    path = 'pc_hahn/branch_cryo-setup/spin_echo/2021_04'
+    file = '2021_04_30-21_55_35-hopper-nv1_2021_03_16'
     
     data = tool_belt.get_raw_data(path, file)
 

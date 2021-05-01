@@ -36,11 +36,15 @@ def main(cxn=None):
     """
     
     # instr = cxn.signal_generator_sg394
+    # freq = 2.7992
+    # power = 15.0
     # gate = 7
-    instr = cxn.signal_generator_bnc835
+    instr = cxn.signal_generator_tsg4104a
+    freq = 2.9444
+    power = 14.0
     gate = 4
-    instr.set_amp(13.0)
-    instr.set_freq(2.87)
+    instr.set_amp(power)
+    instr.set_freq(freq)
     instr.uwave_on()
     pulser = cxn.pulse_streamer
     pulser.constant([gate])
@@ -125,4 +129,4 @@ if __name__ == '__main__':
             main(cxn)
         finally:
             cxn.signal_generator_sg394.reset()
-            cxn.signal_generator_bnc835.reset()
+            cxn.signal_generator_tsg4104a.reset()

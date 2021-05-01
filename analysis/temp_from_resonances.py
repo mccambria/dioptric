@@ -93,10 +93,12 @@ if __name__ == '__main__':
     
 
     # main(resonances)
-    main(zfs, zfs_err)
+    # main(zfs, zfs_err)
     # print(zfs_from_temp(175))
     # x_vals = numpy.linspace(0, 300, 300)
     # y_vals = zfs_from_temp(x_vals)
     # plt.plot(x_vals, y_vals)
+    
+    print(zfs_from_temp(280))
     
 
