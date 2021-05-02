@@ -55,14 +55,14 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 
     total_exp_time = sum(total_exp_time_list)
 
-    # Somehow this is off... so let's tack on a heuristic correction
-    total_exp_time *= (11/10)
+    # If this is off, tack on a heuristic correction
+    # total_exp_time *= (11/10)
 
     print('Total experiment time: {:.1f} hrs'.format(total_exp_time))
 
 # %%
 
-num_runs = 250
+num_runs = 125
 num_reps = 500
 num_steps = 12
 min_tau = 20e3
@@ -83,8 +83,8 @@ t1_exp_array = numpy.array([
         [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
         ], dtype=object)
 
-contrast = 0.11  # arb
-exp_count_rate = 750  # kcps
+contrast = 0.18  # arb
+exp_count_rate = 1000  # kcps
 readout_window = 350  # ns
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)

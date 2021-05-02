@@ -334,25 +334,28 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     # %% Average the counts over the iterations
 
     avg_sig_counts = numpy.average(sig_counts, axis=0)
+    err_sig_counts = numpy.std(sig_counts, axis=0, ddof = 1) / numpy.sqrt(num_runs)
     avg_ref_counts = numpy.average(ref_counts, axis=0)
+    err_ref_counts = numpy.std(ref_counts, axis=0, ddof = 1) / numpy.sqrt(num_runs)
 
     # %% Calculate the Rabi data, signal / reference over different Tau
 
     norm_avg_sig = avg_sig_counts / avg_ref_counts
+    norm_avg_sig_err = norm_avg_sig * numpy.sqrt((err_sig_counts/avg_sig_counts)**2 + (err_ref_counts/avg_ref_counts)**2)
 
     # %% Plot the Rabi signal
 
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
-    ax.plot(pi_ind_list_ordered, avg_sig_counts, 'r-')
-    ax.plot(pi_ind_list_ordered, avg_ref_counts, 'g-')
+    ax.errorbar(pi_ind_list_ordered, avg_sig_counts, fmt='r-', yerr=err_sig_counts)
+    ax.errorbar(pi_ind_list_ordered, avg_ref_counts, fmt='g-', yerr=err_ref_counts)
     # ax.plot(tauArray, countsBackground, 'o-')
     ax.set_xlabel('Number pi pulses')
     ax.set_ylabel('Counts')
 
     ax = axes_pack[1]
-    ax.plot(pi_ind_list_ordered , norm_avg_sig, 'b-')
+    ax.errorbar(pi_ind_list_ordered , norm_avg_sig, fmt='b-', yerr=norm_avg_sig_err)
     ax.set_title('Normalized Signal With Varying Microwave Duration')
     ax.set_xlabel('Number pi pulses')
     ax.set_ylabel('Contrast (arb. units)')

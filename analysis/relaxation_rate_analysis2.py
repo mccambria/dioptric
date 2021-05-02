@@ -169,12 +169,12 @@ def get_data_lists(folder_name):
             # Divide signal by reference to get normalized counts and st error
             # norm_avg_sig = avg_sig_counts / avg_ref_counts
             # norm_avg_sig_ste = ste_sig_counts / avg_ref_counts
-            
+
             norm_avg_sig = avg_sig_counts / avg_ref
             norm_avg_sig_ste = ste_sig_counts / avg_ref
             # norm_avg_sig = avg_sig_counts
             # norm_avg_sig_ste = ste_sig_counts
-            
+
             # if 1 not in time_array:
             #     print(init_state_name + ', ' + read_state_name)
             #     sig_33 = ref_counts[:,1]
@@ -341,7 +341,7 @@ def get_data_lists(folder_name):
 # %% Main
 
 def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = True):
-    
+
     rates_to_zero = False
 
     path_folder = path + folder
@@ -463,9 +463,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
     plus_minus_counts = gamma_exp_list[2]
     plus_minus_ste = gamma_exp_list[3]
     plus_plus_time = gamma_exp_list[4]
-    
-    
-    
+
+
+
     if len(plus_plus_counts) == 0:
         gamma = None
         gamma_ste = None
@@ -473,14 +473,14 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         plus_relaxation_ste = numpy.array([])
         plus_plus_time = numpy.array([])
         gamma_opti_params = numpy.array([])
-    
+
     else:
 
         # Define the counts for the plus relaxation equation
         plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
         # plus_relaxation_counts = plus_minus_counts
         plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
-    
+
         # Skip values at t=0 to get rid of pi pulse decoherence systematic
         # See wiki March 31st, 2021
         inds_to_remove = []
@@ -495,15 +495,15 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         init_params_list = [2*omega, 0.40]
         try:
             if offset:
-    
+
                 init_params_list.append(0)
                 init_params = tuple(init_params_list)
                 gamma_opti_params, cov_arr = curve_fit(exp_eq_offset,
                                  plus_plus_time, plus_relaxation_counts,
                                  p0 = init_params, sigma = plus_relaxation_ste,
                                  absolute_sigma=True)
-    
-    
+
+
             else:
                 if rates_to_zero:
                     gamma_fit_func = lambda t, rate1, amp1, amp2: biexp(t, omega, rate1, amp1, amp2)
@@ -530,11 +530,11 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                     #                   p0 = init_params, sigma = plus_relaxation_ste,
                     #                   absolute_sigma=True)
                     # print(gamma_opti_params)
-    
+
         except Exception as e:
             gamma_fit_failed = True
             print(e)
-    
+
             if doPlot:
                 ax = axes_pack[1]
                 ax.errorbar(plus_plus_time, plus_relaxation_counts,
@@ -542,21 +542,21 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                         label = 'data', fmt = 'o', color = 'blue')
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
-    
+
         if not gamma_fit_failed:
-    
+
             # Calculate gamma and its ste
             gamma = (gamma_opti_params[0] - omega)/ 2.0
             gamma_ste = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_ste**2)
-    
+
             # Test MCC
             # gamma = 0.070
             # gamma_opti_params[0] = (2 * gamma) + omega
             # gamma_opti_params[1] = 0.20
-    
+
             print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma,
                       '%.3f'%gamma_ste))
-    
+
             # Plotting
             if doPlot:
                 plus_time_linspace = numpy.linspace(0, plus_plus_time[-1], num=1000)
@@ -579,11 +579,11 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma,
                       '%.3f'%gamma_ste)
     #            ax.set_xlim([-0.001, 0.05])
-    
+
                 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
                 ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
-    
+
         if ax is not None:
             ax.set_title('gamma')
             # ax.set_title('(+1,+1) - (+1,-1)')
@@ -688,7 +688,7 @@ if __name__ == '__main__':
     for folder in folders:
         gamma, ste = main(path, folder, omega=None, omega_ste=None,
                           doPlot=True, offset=False)
-        
+
     folders = [
                 # 'hopper-nv1_2021_03_16-275K-9-gamma_minus_1'.format(temp),  # Just gamma
                 # 'hopper-nv1_2021_03_16-275K-9-gamma_plus_1'.format(temp),
@@ -697,7 +697,7 @@ if __name__ == '__main__':
     for folder in folders:
         gamma, ste = main(path, folder, omega=0.040, omega_ste=0.0,
                           doPlot=True, offset=False)
-        
+
     folders = [
                 # 'hopper-nv1_2021_03_16-275K-10-gamma_minus_1'.format(temp),  # No rf, long, zero pulses
                 # 'hopper-nv1_2021_03_16-275K-10-gamma_plus_1'.format(temp),
@@ -709,8 +709,8 @@ if __name__ == '__main__':
                 # 'hopper-nv1_2021_03_16-275K-13-gamma_plus_1'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-14-gamma_minus_1'.format(temp),  # Nicest
                 # 'hopper-nv1_2021_03_16-275K-14-gamma_plus_1'.format(temp),
-                # 'hopper-nv1_2021_03_16-275K-15-gamma_minus_1'.format(temp),  # Full
-                # 'hopper-nv1_2021_03_16-275K-15-gamma_plus_1'.format(temp),
+                'hopper-nv1_2021_03_16-275K-15-gamma_minus_1'.format(temp),  # Full
+                'hopper-nv1_2021_03_16-275K-15-gamma_plus_1'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-16-gamma_minus_1'.format(temp),  # No rf, short, finite pulses
                 # 'hopper-nv1_2021_03_16-275K-16-gamma_plus_1'.format(temp),
                 # 'hopper-nv1_2021_03_16-275K-17-gamma_minus_1'.format(temp),  # Zero pulses
@@ -752,7 +752,7 @@ if __name__ == '__main__':
     # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
     # folders = ['hopper-nv1_2021_03_16-275K-6-gamma_minus_1'.format(temp),
     #             'hopper-nv1_2021_03_16-275K-6-gamma_plus_1'.format(temp),]
-    
+
     path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\trial_data\\'
     folders = [
                 # 'hopper-nv1_2021_03_16-275K-52-gamma_minus_1'.format(temp),

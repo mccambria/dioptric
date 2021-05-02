@@ -30,7 +30,7 @@ def get_seq(pulser_wiring, args):
         aom_delay_time, uwave_delay_time, iq_delay_time, \
         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse = durations
         
-    # uwave_to_readout_time = 1e4
+    # uwave_to_readout_time = 1e5
     uwave_to_readout_time = signal_wait_time
         
     num_pi_pulses = int(args[11])

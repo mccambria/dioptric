@@ -44,7 +44,7 @@ class States(Enum):
 def get_signal_generator_name(state):
     if state.value == States.LOW.value:
         signal_generator_name = 'signal_generator_sg394'
-        # signal_generator_name = 'signal_generator_bnc835'
+        # signal_generator_name = 'signal_generator_tsg4104a'
     elif state.value == States.HIGH.value:
         signal_generator_name = 'signal_generator_tsg4104a'
         # signal_generator_name = 'signal_generator_sg394'
