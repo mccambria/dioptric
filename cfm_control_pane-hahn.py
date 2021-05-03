@@ -509,13 +509,12 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.0, 0.0, 10],
+    nv_sig = { 'coords': [-0.1, 0.1, 0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.7979, 'rabi_LOW': 253.4, 'uwave_power_LOW': 15.0,  # 15.0 max
-            'resonance_HIGH': 2.9456, 'rabi_HIGH': 159.3, 'uwave_power_HIGH': 12.0}   # 14.0 max
-            # 'resonance_HIGH': 2.9443, 'rabi_HIGH': 1e5, 'uwave_power_HIGH': 12.0} 
+            'resonance_LOW': 2.8020, 'rabi_LOW': 325.7, 'uwave_power_LOW': 15.0,  # 15.0 max
+            'resonance_HIGH': 2.9496, 'rabi_HIGH': 182.1, 'uwave_power_HIGH': 12.0}   # 14.0 max
     
     
     # %% Functions to run
@@ -536,12 +535,12 @@ if __name__ == '__main__':
         # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 8)
-        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
+        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 8)
+        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 8)
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
-        do_t1_interleave_knill(nv_sig, apd_indices)
+        # do_t1_interleave_knill(nv_sig, apd_indices)
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
@@ -553,7 +552,7 @@ if __name__ == '__main__':
         #     do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 9)
         
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0,0)
+        #     cxn.cryo_piezos.write_xy(-20,0)
         
         # tool_belt.init_safe_stop()
         # while True:
