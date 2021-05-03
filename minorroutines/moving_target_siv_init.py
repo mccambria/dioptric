@@ -1531,7 +1531,7 @@ if __name__ == '__main__':
     opti_coords = start_coords_list[optimize_index]
     num_steps = 25
     img_range = 0.45
-    num_runs = 1
+    num_runs = 3
     
     
 
@@ -1577,16 +1577,26 @@ if __name__ == '__main__':
                  '2021_04_28-07_24_28-goeppert-mayer-nv5-2021_04_15',
                  '2021_04_28-22_11_39-goeppert-mayer-nv5-2021_04_15',
                  '2021_04_29-08_03_57-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_30-08_34_40-goeppert-mayer-nv5-2021_04_15',
+                 
+                 '2021_05_01-05_59_11-goeppert-mayer-nv5-2021_04_15',
+                 '2021_05_02-08_38_02-goeppert-mayer-nv5-2021_04_15',
                  ]
     
     folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15 100 ms/dark'
-    
+#    
 #    file_list = ['2021_04_24-14_43_38-goeppert-mayer-nv5-2021_04_15',
 #                 '2021_04_25-17_52_05-goeppert-mayer-nv5-2021_04_15',
 #                 '2021_04_27-17_11_26-goeppert-mayer-nv5-2021_04_15-reclaimed',
 #                 '2021_04_28-10_02_23-goeppert-mayer-nv5-2021_04_15',
 #                 '2021_04_28-17_09_08-goeppert-mayer-nv5-2021_04_15',
 #                 '2021_04_29-11_15_53-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_29-22_57_15-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_30-11_14_23-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_30-13_57_08-goeppert-mayer-nv5-2021_04_15',
+#                 
+#                 '2021_05_01-15_26_20-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_05_02-19_57_38-goeppert-mayer-nv5-2021_04_15',
 #                 ]    
 #    
 #    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15 100 ms/bright'
@@ -1599,6 +1609,7 @@ if __name__ == '__main__':
     for file in file_list:
         
         data = tool_belt.get_raw_data(folder, file)
+            
         img_extent = data['img_extent']
         start_coords = data['start_coords']
         num_steps = data['num_steps']

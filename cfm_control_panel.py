@@ -35,10 +35,8 @@ import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
-import minorroutines.determine_n_thresh as determine_n_thresh
-import minorroutines.determine_n_thresh_with_638 as determine_n_thresh_with_638
 import minorroutines.time_resolved_readout as time_resolved_readout
-import minorroutines.determine_galvo_response as determine_galvo_response
+import chargeroutines.moving_target as moving_target
 from utils.tool_belt import States
 
 
@@ -59,54 +57,25 @@ def set_xyz_zero():
 # %% Major Routines
 
 
-def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  readout = 10**7, flip = False, um_scaled= False):
+def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,  
+                    readout = 10**7, flip = False, um_scaled= False):
     
-#    scan_range = 5.0
-#    num_steps = 150
-#    scan_range = 3.0
-#    num_steps = 600
-#    num_steps = 120
-#    num_steps = 75
-#    scan_range = 1.2
-#    scan_range = 1.0
-#    scan_range = 0.8
 #    num_steps = 250
 #    scan_range = 0.7
 #    scan_range = 0.5
 #    num_steps = 125
-#    scan_range = 0.4
+#    scan_range = 0.45
 #    scan_range = 0.3
 #    scan_range = 0.2
-#    num_steps = 120
 #    scan_range = 0.1
-#    scan_range = 0.2
 #    num_steps = 90
     scan_range = 0.05
     num_steps = 60
-#    scan_range = 0.025
-#    num_steps =30
-#    num_steps = 51
-#    scan_range = 0.3
-#    num_steps = 40
     
-#    scan_range = 0.5 # 250
-#    scan_range = 0.25 # 125
-#    scan_range = 0.1 # 50
-#    num_steps = int(scan_range / 0.1 * 50)
     
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, 
                                apd_indices, color_ind, save_data, plot_data,readout, flip, um_scaled)
-    
-#def do_image_sample_SCC(nv_sig, aom_ao_589_pwr, apd_indices):
-#    
-#
-#    scan_range = 0.2
-#    num_steps = 90
-#    
-#    # For now we only support square scans so pass scan_range twice
-#    image_sample_SCC.main(nv_sig, scan_range, scan_range, num_steps, 
-#                              aom_ao_589_pwr, apd_indices)
     
 def do_two_pulse_image_sample(nv_sig, apd_indices, init_pulse_time,readout,
                     init_color_ind, read_color_ind, save_data, plot_data):
@@ -139,15 +108,7 @@ def do_stationary_count(nv_sig, apd_indices, color_ind):
     average, st_dev = stationary_count.main(nv_sig, run_time, apd_indices, color_ind)
     
     return average, st_dev
-    
-def do_two_pulse_stationary_count(nv_sig, init_color, read_color, init_time, 
-                                  readout_time, apd_indices):
-
-    num_steps = 90*50
-
-    stationary_count.two_pulse_main(nv_sig, num_steps, init_color, read_color, init_time, readout_time, 
-                   apd_indices)
-    
+        
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
     run_time = 60 * 3  # s
@@ -460,79 +421,34 @@ def do_test_major_routines(nv_sig, apd_indices):
     """
 
     test_major_routines.main(nv_sig, apd_indices)
-
-    
-def do_determine_n_thresh(nv_sig, aom_ao_589_pwr, readout_time, apd_indices):
-    
-    num_runs = 1
-    num_reps = 1* 10**3
-    
-    determine_n_thresh.main(nv_sig, apd_indices, aom_ao_589_pwr, readout_time, num_runs, num_reps)
-    
-def do_determine_n_thresh_with_638(nv_sig, apd_indices):
-    
-    num_reps = 500
-    
-    determine_n_thresh_with_638.main(nv_sig, apd_indices, num_reps)
     
 def do_time_resolved_readout(nv_sig, apd_indices,
                                  init_color_ind, illum_color_ind):
-#    illumination_time = 500 # turns on at 250 and turns off at 750
-#    num_reps = 10**5
-#    num_bins = 500
-    
-#    illumination_time = 250 # turns on at 250 and turns off at 750
-#    num_reps = 10**2
-#    num_bins = 300
-#    
-#    illumination_time = 10**4 
-#    num_reps = 10**4
-#    num_bins = 1000
-    
     illumination_time = 10**6 
     num_reps = 10**3
     num_bins = 500
-
-#    illumination_time = 1*10**6 
-#    num_reps = 10**3
-##    num_reps = 10**4
-#    num_bins = 500
-    
-    # 1
-#    illumination_time = 15*10**6    
-#    num_reps = 2*10**2
-#    num_bins = 1500
-    
-    # 2
-#    illumination_time = 50*10**6    
-#    num_reps = 1#15 #4
-#    num_bins = 5000
-    
-    # 3
-#    illumination_time = 5*10**6    
-#    num_reps = 10**3
-#    num_bins = 1000
-    
-    
+   
     init_pulse_duration = 2*10**6
-#    init_pulse_duration = 100*10**3
     num_runs = 5
     time_resolved_readout.main(nv_sig, apd_indices, 
                    illumination_time, init_pulse_duration,
                    init_color_ind, illum_color_ind,
                    num_reps, num_runs, num_bins)
 
-def do_determine_galvo_response(nv_sig, apd_indices):
-    x_range = 0.06
-    num_steps = 100
-    num_bins = num_steps
-    illumination_time = 10*10**6
-    num_runs = 60
-    num_reps = 1
+def do_moving_target(nv_sig):
+    start_coords = nv_sig['coords']
+    optimize_coords = start_coords
+    img_range = 0.4
+    pulse_time = 10*10**6
+    num_steps = 35
+    num_runs = 5
+    init_color = '515a'
+    pulse_color = '515a'
+    measurement_type = '2D'
     
-    determine_galvo_response.main(nv_sig, x_range, num_steps, 
-                                  apd_indices, illumination_time,
-                  num_reps, num_runs, num_bins)
+    moving_target.main(nv_sig, start_coords, optimize_coords, img_range, 
+                       pulse_time,num_steps, num_runs, init_color, pulse_color, 
+                              measurement_type)
 # %% Run the file
 
 
@@ -547,11 +463,11 @@ if __name__ == '__main__':
      
     search = { 'coords':[0.2, 0.2 ,5.17],
             'name': '{}-search'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
+            'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.15, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -563,26 +479,7 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
     
-    dark_spot = { 'coords':[0.065 - 0.017, 0.29-0.005 ,5.09 + 0.05],
-            'name': '{}-search'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
-#            'color_filter': '635-715 bp', 
-            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**6, 'am_589_power': 0.3, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
-            'ao_638_pwr': 0.8,
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':12,
-            'ao_515_pwr': 0.64,
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0} 
-     
-
-    
+         
     expected_count_list = [40, 35, 60, 64, 65, 35, 40, 45] # 4/13/21 ###
     nv_list_2021_04_15 = [
 [-0.037, 0.119, 5.14],
@@ -614,27 +511,19 @@ if __name__ == '__main__':
         
         # Operations that don't need an NV
         
-        drift = [0.015, 0.013, -0.06]
-        tool_belt.set_drift(drift)  
+#        drift = [0.01, 0.01, -0.06]
+#        tool_belt.set_drift(drift)  
 #        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset 
-#        tool_belt.set_drift([-0.03,-0.02,-0.16])  # 2/23/21
 #        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-#        set_xyz([-0.017, -0.037, 5.0])
 #        set_xyz([0.0, 0.0,  5.0])
-        
-#        set_xyz([-0.126, 0.359,  5.6])
 
       
 #        with labrad.connect() as cxn:
-#            set_xyz([0,0, 5.0])
 #            cxn.filter_slider_ell9k_color.set_filter('635-715 bp')  
 #            cxn.filter_slider_ell9k.set_filter('nd_1.0')           
 #            cxn.pulse_streamer.constant([], 0.65, 0.0)
-#            time.sleep(60)
 #            cxn.objective_piezo.write(5.1)
-#            time.sleep(0.01)
-#            input('Laser currently turned off, Press enter to stop...')
         
 #         Routines that expect lists of NVs
 #        do_optimize_list(nv_sig_list, apd_indices,'515a')
@@ -646,7 +535,7 @@ if __name__ == '__main__':
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]
             
-            do_optimize(nv_sig, apd_indices, '515a')
+#            do_optimize(nv_sig, apd_indices, '515a')
 #            do_optimize(nv_sig, apd_indices, 532)
             
 #            [x, y, z] = nv_sig['coords']
@@ -659,30 +548,19 @@ if __name__ == '__main__':
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 589, 638, save_data = True, plot_data = True)
             
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
-            do_image_sample(nv_sig,  apd_indices, '515a',
-                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
-#            time.sleep(5*60)
 #            do_image_sample(nv_sig,  apd_indices, '515a',
 #                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =4*10**7)
 
-#            do_determine_galvo_response(nv_sig, apd_indices)
-            
-#            average, st_dev = do_stationary_count(nv_sig, apd_indices, 532)  
-#            print(average)
-#            print(st_dev)
-#            do_two_pulse_stationary_count(nv_sig, 532, 589, 10**7, 
-#                                  2*10**7, apd_indices) 
+#            do_stationary_count(nv_sig, apd_indices, 532)
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                                 532, 638)
+            
+            do_moving_target(nv_sig)
 
-#            for i in range(10):
-#            with labrad.connect() as cxn:
-#                cxn.filter_slider_ell9k_color.set_filter('715 lp') 
-#                do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
+#            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
                 
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
@@ -698,14 +576,6 @@ if __name__ == '__main__':
 #            do_t1_interleave(nv_sig, apd_indices)
 #            do_t1_image_sample(nv_sig, apd_indices)
 #            do_lifetime(nv_sig, apd_indices)
-#            find_resonance_and_rabi(nv_sig, apd_indices)
-            
-#            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
-#            if fail_bool == True:
-#                print('Failed to record pESR and Rabi')
-#                break
-#            else:
-#                do_t1_battery(nv_sig, apd_indices)
             
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
@@ -715,9 +585,6 @@ if __name__ == '__main__':
 #                tool_belt.set_xyz_on_nv(cxn, nv_sig)
 
     finally:
-        # Reset our hardware - this should be done in each routine, but
-        # let's double check here
-#        tool_belt.reset_cfm()
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
             print('\n\nRoutine complete. Press enter to exit.')

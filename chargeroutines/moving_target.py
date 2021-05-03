@@ -224,18 +224,18 @@ def populate_img_array(valsToAdd, imgArray, run_num):
     
        # %%
 def main_data_collection(nv_sig, start_coords, optimize_coords, coords_list, pulse_time, 
-                         init_color, pulse_color, readout_color, index_list = []):
+                         init_color, pulse_color, readout_color):
     with labrad.connect() as cxn:
         ret_vals = main_data_collection_with_cxn(cxn, nv_sig, 
                         start_coords,optimize_coords,coords_list,pulse_time, 
-                       init_color, pulse_color, readout_color, index_list)
+                       init_color, pulse_color, readout_color)
     
     readout_counts_array, opti_coords_list = ret_vals
                         
     return readout_counts_array,  opti_coords_list
         
 def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coords_list,
-                     pulse_time, init_color, pulse_color, readout_color,  index_list = []):
+                     pulse_time, init_color, pulse_color, readout_color):
     '''
     Runs a measurement where an initial pulse is pulsed on the start coords, 
     then a pulse is set on the first point in the coords list, then the 
@@ -273,10 +273,6 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     readout_color : str
         Preferably '589'. This is the color that we will readout with on 
         start coord
-    index_list: list( int)
-        A list of the indexing of the voltages passed. Used for the 2D image. 
-        In the case of a crash during the measuremnt, the incrimental data will 
-        have the indexing and we can replot the partial data
 
     Returns
     -------
@@ -363,13 +359,13 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
         # print the expected run time
         period = ret_vals[0]
         period_s = period/10**9
-        period_s_total = (period_s*num_samples + 1)*num_runs
+        period_s_total = (period_s*num_samples + 1)
         print('{} ms pulse time'.format(pulse_time/10**6))
         print('Expected total run time: {:.1f} m'.format(period_s_total/60))
     
     else:
         period_s = pulse_time/10**9
-        period_s_total = (period_s*num_samples + 5)*num_runs
+        period_s_total = (period_s*num_samples + 5)
         print('Expected total run time: {:.0f} min'.format(period_s_total/60))
     
     ### Backto the same
@@ -475,7 +471,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     return readout_counts_list, opti_coords_list
 
 # %% 
-def do_moving_target(nv_sig, start_coords, optimize_coords, img_range, pulse_time, 
+def main(nv_sig, start_coords, optimize_coords, img_range, pulse_time, 
                               num_steps, num_runs, init_color, pulse_color, 
                               measurement_type, readout_color = 589):
     '''
@@ -585,7 +581,7 @@ def do_moving_target(nv_sig, start_coords, optimize_coords, img_range, pulse_tim
 
         # Run the data collection
         ret_vals = main_data_collection(nv_sig, start_coords, optimize_coords, coords_voltages_shuffle_list,
-                                pulse_time, 1, init_color, pulse_color, readout_color, index_list = ind_list)
+                                pulse_time, init_color, pulse_color, readout_color)
         
         readout_counts_list_shfl, opti_coords_list = ret_vals
         opti_coords_master.append(opti_coords_list[0])
@@ -627,7 +623,7 @@ def do_moving_target(nv_sig, start_coords, optimize_coords, img_range, pulse_tim
                 'readout_counts_ste': readout_counts_ste.tolist(),
                 'readout_counts_ste-units': 'counts',
                 }
-        file_path = tool_belt.get_file_path(__file__, start_timestamp, nv_sig['name'])
+        file_path = tool_belt.get_file_path(__file__, start_timestamp, nv_sig['name'], 'incremental')
         
         if measurement_type == '2D':
             # create the img arrays
@@ -644,9 +640,9 @@ def do_moving_target(nv_sig, start_coords, optimize_coords, img_range, pulse_tim
             raw_data['readout_counts_array-units'] = 'counts'
             
             
-            tool_belt.save_figure(fig_2D, file_path + '/incremental')
+            tool_belt.save_figure(fig_2D, file_path)
             
-        tool_belt.save_raw_data(raw_data, file_path + '/incremental')
+        tool_belt.save_raw_data(raw_data, file_path)
         
     # Save at the end of the whole measurement
     # measure laser powers:
@@ -720,7 +716,7 @@ def do_moving_target(nv_sig, start_coords, optimize_coords, img_range, pulse_tim
             raw_data['readout_counts_array-units'] = 'counts'
             
             
-            tool_belt.save_figure(fig_2D, file_path + '/incremental')
+            tool_belt.save_figure(fig_2D, file_path)
          
     tool_belt.save_raw_data(raw_data, file_path)
     
@@ -779,12 +775,12 @@ if __name__ == '__main__':
              nv_sig['name']= 'goeppert-mayer-nv{}_2021_04_15'.format(s)
              nv_sig['expected_count_rate'] = expected_count_list[optimize_nv_ind]
              #########
-             num_runs = 20           
+             num_runs = 20       
              # Set up for NV band
              t =5*10**6
              init_color = '515a'
              pulse_color = '515a' 
-             do_moving_target(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, num_runs, 
+             main(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, num_runs, 
                                        init_color, pulse_color, measurement_type = '2D' ) 
    
              # Set up for SiV band
