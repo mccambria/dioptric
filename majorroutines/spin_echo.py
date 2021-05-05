@@ -173,8 +173,7 @@ def mag_B_from_revival_time(revival_time, revival_time_ste=None):
         return mag_B
 
 
-def quartic(tau, offset, revival_time, decay_time,
-            *amplitudes):
+def quartic(tau, offset, revival_time, decay_time, *amplitudes):
     tally = offset
     for ind in range(0, len(amplitudes)):
         exp_part = numpy.exp(-((tau - ind*revival_time)/decay_time)**4)
@@ -204,6 +203,8 @@ def fit_data(data):
 
     # Account for the pi/2 pulse on each side of a tau
     pi_pulse_dur = tool_belt.get_pi_pulse_dur(rabi_period)
+    # print(pi_pulse_dur)
+    # pi_pulse_dur = 0
     tau_pis = taus + pi_pulse_dur
 
     fit_func = quartic
@@ -236,13 +237,14 @@ def fit_data(data):
     # [1:] excludes frequency 0 (DC component)
     max_ind = numpy.argmax(transform_mag[1:])
     frequency = freqs[max_ind+1]
-    revival_time = 1/frequency
+    revival_time = 2/frequency  # Double tends to work better for
+    # print(revival_time)
 
     # Hard guess
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-    revival_time = 35000
+    # revival_time = 35000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -256,7 +258,7 @@ def fit_data(data):
     min_bounds = (0.5, 0.0, 0.0, *[0.0 for el in amplitudes])
     max_bounds = (1.0, max_precession_dur / 1000, max_precession_dur / 1000,
                   *[0.3 for el in amplitudes])
-    print(init_params)
+    # print(init_params)
 
     try:
         popt, pcov = curve_fit(fit_func, tau_pis / 1000, norm_avg_sig,
