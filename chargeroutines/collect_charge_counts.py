@@ -15,13 +15,11 @@ USE 515 DM, not AM
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-import time
 #import matplotlib.pyplot as plt
 import labrad
 #import majorroutines.image_sample as image_sample
 import copy
 import scipy.stats as stats
-import minorroutines.SCC_optimize_pulses_wout_uwaves as SCC_optimize_pulses_wout_uwaves
 # %%
 # Apply a gren or red pulse, then measure the counts under yellow illumination. 
 # Repeat num_reps number of times and returns the list of counts after red illumination, then green illumination

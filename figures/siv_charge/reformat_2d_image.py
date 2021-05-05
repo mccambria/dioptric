@@ -189,4 +189,10 @@ if __name__ == '__main__':
     # 60 ms
 #    image_file_nv = '2021_04_23-10_48_00-goeppert-mayer-nv5_2021_04_15'
 #    threshold = 5
+    
+    
+    
+    folder = 'pc_rabi/branch_Spin_to_charge/moving_target/2021_05'
+    image_file_nv = '2021_05_03-10_17_18-goeppert-mayer-nv5_2021_04_15'
+    threshold = 8
     create_figure(folder + '/' + image_file_nv, threshold)

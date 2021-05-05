@@ -456,14 +456,14 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-#    apd_indices = [0]
-    apd_indices = [0, 1]
+    apd_indices = [0]
+#    apd_indices = [0, 1]
     
     sample_name = 'goeppert-mayer'
      
     search = { 'coords':[0.2, 0.2 ,5.17],
             'name': '{}-search'.format(sample_name),
-            'expected_count_rate': None,'nd_filter': 'nd_1.0',
+            'expected_count_rate': None,'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -519,9 +519,9 @@ if __name__ == '__main__':
 #        set_xyz([0.0, 0.0,  5.0])
 
       
-#        with labrad.connect() as cxn:
+        with labrad.connect() as cxn:
 #            cxn.filter_slider_ell9k_color.set_filter('635-715 bp')  
-#            cxn.filter_slider_ell9k.set_filter('nd_1.0')           
+            cxn.filter_slider_ell9k.set_filter('nd_0')           
 #            cxn.pulse_streamer.constant([], 0.65, 0.0)
 #            cxn.objective_piezo.write(5.1)
         
@@ -536,7 +536,7 @@ if __name__ == '__main__':
             nv_sig = nv_sig_list[ind]
             
 #            do_optimize(nv_sig, apd_indices, '515a')
-#            do_optimize(nv_sig, apd_indices, 532)
+            do_optimize(nv_sig, apd_indices, 532)
             
 #            [x, y, z] = nv_sig['coords']
 #            for z in numpy.linspace(z - 0.1, z + 0.1, 5):
@@ -547,7 +547,7 @@ if __name__ == '__main__':
 
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 589, 638, save_data = True, plot_data = True)
             
-#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, '515a',
 #                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
@@ -557,7 +557,7 @@ if __name__ == '__main__':
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                                 532, 638)
             
-            do_moving_target(nv_sig)
+#            do_moving_target(nv_sig)
 
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
                 
