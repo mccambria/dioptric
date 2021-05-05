@@ -554,40 +554,20 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 275
+    temp = 200
 
-    # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-275K-5-gamma_plus_1-long2'.format(temp)
+    est_omega = omega_calc(temp)
+    est_gamma = gamma_calc(temp)
+    print('good times in ms')
+    print('Omega: {}'.format(4000/(3*est_omega)))
+    print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
 
-    # est_omega = omega_calc(temp)
-    # est_gamma = gamma_calc(temp)
-    # print('good times in ms')
-    # print('Omega: {}'.format(4000/(3*est_omega)))
-    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    # path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
+    # folders = [
+    #             'hopper-nv1_2021_03_16-{}K-56-gamma_minus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-{}K-56-gamma_plus_1'.format(temp),
+    #             ]
 
-    gamma, ste = main(path, folder, omega=0.0, omega_ste=0.0,
-                       doPlot=True, offset=False)
-    # gamma, ste = main(path, folder, omega=None, omega_ste=None,
-    #                   doPlot=True, offset=False)
-    
-    # %%
-    
-    # path = 'pc_hahn\\branch_cryo-setup\\t1_dq_knill\\data_collections\\'
-    # folders = ['hopper-nv1_2021_03_16-275K-3-omega_minus_1'.format(temp),
-    #             'hopper-nv1_2021_03_16-275K-3-omega_plus_1'.format(temp),
-    #             'hopper-nv1_2021_03_16-{}K-4'.format(temp),
-    #             'hopper-nv1_2021_03_16-275K-5-gamma_minus_1'.format(temp),
-    #             'hopper-nv1_2021_03_16-275K-5-gamma_plus_1'.format(temp)]
-    
-    # for folder in folders:
-    #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
-    #                       doPlot=True, offset=False)
-    
-    # path = 'pc_hahn\\branch_cryo-setup\\t1_double_quantum\\data_collections\\'
-    # folders = ['hopper-nv1_2021_03_16-275K-6-gamma_minus_1'.format(temp),
-    #             'hopper-nv1_2021_03_16-275K-6-gamma_plus_1'.format(temp),]
-    
     # for folder in folders:
     #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
     #                       doPlot=True, offset=False)
