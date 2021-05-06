@@ -237,7 +237,7 @@ if __name__ == '__main__':
     
     nv_2021_03_30 = { 'coords':[], 
             'name': '',
-            'expected_count_rate': None, 'nd_filter': 'nd_1.1',
+            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -247,18 +247,17 @@ if __name__ == '__main__':
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
             'ao_515_pwr':0.65,
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':15, 
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    test_pulses = [0,  25, 50, 60, 70, 80, 90, 100,  200,
-                                   500,  1000]
+    test_pulses = [0, 50, 100, 500]
     for i in [5]:#range(len(nv_coords_list)):
         nv_sig = copy.deepcopy(nv_2021_03_30)
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
 #        for p in [0.606, 0.608, 0.611, 0.622, 0.63, 0.64, 0.658 ]:
-        sweep_test_pulse_length(nv_sig, 532, 1.7, test_pulse_dur_list = test_pulses)
+        sweep_test_pulse_length(nv_sig, 532, 0.59, test_pulse_dur_list = test_pulses)
     

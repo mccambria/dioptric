@@ -17,12 +17,60 @@ USE WITH 515 AM MOD
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-#import time
+import time
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 import labrad
 import copy
 
+siv_pulse_time = 10*10**6 # ns
+siv_pulse_distance = 0.071 # V
+
 # %%
+
+def decay_exp(t, a1,  d1, a2, d2):
+    return a1*numpy.exp(-t/d1) + a2*numpy.exp(-t/d2)
+
+def do_plot(on_counts, off_counts, test_pulse_dur_list, test_power_mW):
+    test_pulse_dur_list = numpy.array(test_pulse_dur_list)/10**6
+    max_diff = off_counts[0] - on_counts[0]
+    norm_counts = (off_counts - on_counts)/ max_diff
+    init_guess = [1, 0.1, 0.5, 1]
+    popt, _ = curve_fit(decay_exp, test_pulse_dur_list, norm_counts, p0 = init_guess)
+    lin_time = numpy.linspace(test_pulse_dur_list[0],test_pulse_dur_list[-1] , 100 )
+    print(popt)
+    
+    fig, axes = plt.subplots(1,2,figsize=(15, 8)) 
+    ax = axes[0]
+    ax.plot(test_pulse_dur_list, norm_counts, 'ro', label = 'Data')
+    ax.plot(lin_time, decay_exp(lin_time, *popt), 'g-', label = 'Exp Fit')
+    ax.set_xlabel('Test Pulse Illumination Time (ms)')
+    ax.set_ylabel('Norm Counts')
+    ax.set_title(str(test_power_mW) + 'mW test beam')
+    ax.set_yscale('log')
+    ax.legend()
+    text_popt = '\n'.join((r'$A_0 e^{-t/d_0} + A_1 e^{-t/d_1}$',
+                      r'$A_0 = $' + '%.3f'%(popt[0]),
+                      r'$d_0 = $' + '%.3f'%(popt[1]) + ' ' + r'$ ms$',
+                      r'$A_1 = $' + '%.3f'%(popt[2]),
+                      r'$d_1 = $' + '%.3f'%(popt[3]) + ' ' + r'$ ms$'))
+
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.55, 0.75, text_popt, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    
+    
+    ax = axes[1] 
+    ax.plot(test_pulse_dur_list, on_counts, 'ko', label = 'SiV2- init')
+    ax.plot(test_pulse_dur_list, off_counts, 'bo', label = 'SiV- init')
+    ax.set_xlabel('Test Pulse Illumination Time (ms)')
+    ax.set_ylabel('Counts')
+    ax.set_title(str(test_power_mW) + 'mW test beam')
+    ax.set_yscale('log')
+    ax.legend()
+    
+    return fig, popt
+
 def build_voltage_list(start_coords_drift, signal_coords_drift, num_reps):
 
     # calculate the x values we want to step thru
@@ -56,14 +104,14 @@ def build_voltage_list(start_coords_drift, signal_coords_drift, num_reps):
 
 #%% Main
 # Connect to labrad in this file, as opposed to control panel
-def main(nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
+def main_AM(nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
 
     with labrad.connect() as cxn:
-        on_counts, off_counts = main_with_cxn(cxn, nv_sig, apd_indices,
+        on_counts, off_counts = main_AM_with_cxn(cxn, nv_sig, apd_indices,
                                  num_reps, test_color, test_time, test_power)
         
     return on_counts, off_counts
-def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
+def main_AM_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
 
     tool_belt.reset_cfm_wout_uwaves(cxn)
 
@@ -71,16 +119,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, tes
     readout_time = nv_sig['pulsed_SCC_readout_dur']
     am_589_power = nv_sig['am_589_power']
     am_515_power = nv_sig['ao_515_pwr']
-    nd_filter = nv_sig['nd_filter']
-    siv_pulse_time = 10**6 # ns
-    siv_pulse_distance = 0.056 # V
         
     prep_power_515 = am_515_power
     readout_power_589 = am_589_power
         
     
     # set the nd_filter for yellow
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
+    cxn.filter_slider_ell9k.set_filter('nd_0')
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
@@ -92,8 +137,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, tes
     
     # if using AM for green, add an additional 300 ns to the pulse time. 
     # the AM laser has a 300 ns rise time
-    if test_color == '515a':
-        test_time = test_time + 300
+#    if test_color == '515a':
+#        test_time = test_time + 300
     
 
     # Optimize
@@ -158,69 +203,228 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, tes
     return on_counts, off_counts
 
 # %%
+# Connect to labrad in this file, as opposed to control panel
+def main_DM(nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
 
-def sweep_test_pulse_length(nv_sig, test_color, test_power, test_pulse_dur_list = None):
+    with labrad.connect() as cxn:
+        green_counts, red_counts = main_DM_with_cxn(cxn, nv_sig, apd_indices,
+                                 num_reps, test_color, test_time, test_power)
+        
+    return green_counts, red_counts
+def main_DM_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
+
+    tool_belt.reset_cfm_wout_uwaves(cxn)
+
+# Initial Calculation and setup
+    readout_time = nv_sig['pulsed_SCC_readout_dur']
+    am_589_power = nv_sig['am_589_power']
+    am_515_power = nv_sig['ao_515_pwr']
+    nd_filter = nv_sig['nd_filter']
+    center_coords = nv_sig['coords']
+    
+    apd_index = 0
+            
+    # set the nd_filter for yellow
+    cxn.filter_slider_ell9k.set_filter(nd_filter)
+    
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+
+    #delay of aoms and laser
+    laser_515_delay = shared_params['515_DM_laser_delay'] 
+    
+    aom_589_delay = shared_params['589_aom_delay']
+#    laser_638_delay = shared_params['638_DM_laser_delay']
+        
+    
+    on_counts = []
+    off_counts = []
+
+    cxn.filter_slider_ell9k.set_filter('nd_0')
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
+    run_start_time = time.time()
+    
+    for i in range(num_reps):
+        # Move the ND filter to 0
+        time.sleep(0.01)
+        cxn.filter_slider_ell9k.set_filter('nd_0')
+        time.sleep(0.1)
+        #optimize every 2 min or so
+        # So first check the time. If the time that has passed since the last
+        # optimize is longer that 2 min, optimize again
+        current_time = time.time()
+        if current_time - run_start_time >= 2*60:
+            optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
+            run_start_time = current_time
+            
+        cxn.filter_slider_ell9k_color.set_filter('715 lp')
+                
+        # "ON" INITIAL PULSE    
+        # set coords to center:
+        drift = numpy.array(tool_belt.get_drift())
+        center_coords_drift = center_coords + drift
+        
+        tool_belt.set_xyz(cxn, center_coords_drift)
+                
+        # adjust the coords with drift
+        pulse_file_name = 'simple_pulse.py'            
+        seq_args = [laser_515_delay, siv_pulse_time, am_589_power, am_515_power, 532 ]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
+    
+        # Set the Nd filter
+        time.sleep(0.01)
+        cxn.filter_slider_ell9k.set_filter(nd_filter)
+        time.sleep(0.1)    
+    
+        # test pulse at center                 
+        seq_args = [laser_515_delay, test_time, am_589_power, am_515_power, test_color ]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
+        
+        # readout 
+        readout_file_name = 'simple_readout.py'  
+        seq_args = [aom_589_delay, readout_time, am_589_power, am_515_power, apd_index, 589 ]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.pulse_streamer.stream_load(readout_file_name,  seq_args_string)
+        
+        # Load the APD
+        cxn.apd_tagger.start_tag_stream(apd_indices)
+        # Clear the buffer
+        cxn.apd_tagger.clear_buffer()
+        # Run the sequence
+        cxn.pulse_streamer.stream_immediate(readout_file_name, 1, seq_args_string)
+    
+        new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+        sample_counts = new_counts[0]
+        on_counts.append(sample_counts[0])
+        
+        
+        # "OFF" INITIAL PULSE 
+        # Move the ND filter to 0
+        time.sleep(0.01)
+        cxn.filter_slider_ell9k.set_filter('nd_0')
+        time.sleep(0.1) 
+        
+        # offset coords
+        offset_coords_drift = center_coords_drift + [siv_pulse_distance,0,0]
+        tool_belt.set_xyz(cxn, offset_coords_drift) 
+        
+        pulse_file_name = 'simple_pulse.py'            
+        seq_args = [laser_515_delay, siv_pulse_time, am_589_power, am_515_power, 532 ]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
+        
+        # Set the Nd filter
+        time.sleep(0.01) 
+        cxn.filter_slider_ell9k.set_filter(nd_filter)
+        time.sleep(0.1) 
+        # Move back to center
+        tool_belt.set_xyz(cxn, center_coords_drift)
+        
+        # test pulse                    
+        seq_args = [laser_515_delay, test_time, am_589_power, am_515_power, test_color ]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
+        
+        # readout 
+        readout_file_name = 'simple_readout.py'  
+        seq_args = [aom_589_delay, readout_time, am_589_power, am_515_power, apd_index, 589 ]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        cxn.pulse_streamer.stream_load(readout_file_name,  seq_args_string)
+        
+        # Load the APD
+        cxn.apd_tagger.start_tag_stream(apd_indices)
+        # Clear the buffer
+        cxn.apd_tagger.clear_buffer()
+        # Run the sequence
+        cxn.pulse_streamer.stream_immediate(readout_file_name, 1, seq_args_string)
+    
+        new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+        sample_counts = new_counts[0]
+        off_counts.append(sample_counts[0])
+
+    
+    return on_counts, off_counts
+
+# %%
+
+def sweep_test_pulse_length(nv_sig, test_color, test_power_mW, modulation, test_power_V, test_pulse_dur_list = None):
     apd_indices = [0]
-    num_reps = 200
+    num_reps = 100
     if not test_pulse_dur_list:
-        test_pulse_dur_list = [25, 50, 75, 100, 125, 150, 175, 200, 250, 300, 400, 
-                                   500, 600,  700,  800,  900, 1000, 1500,
+        test_pulse_dur_list = [0, 25, 50, 75, 100,  150 , 200, 250, 300, 400, 
+                                   500, 750, 1000, 1500,
                                    2000]
 #        test_pulse_dur_list = [0]
     # measure laser powers:
-    green_optical_power_pd, green_optical_power_mW, \
-            red_optical_power_pd, red_optical_power_mW, \
-            yellow_optical_power_pd, yellow_optical_power_mW = \
-            tool_belt.measure_g_r_y_power( 
-                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+#    green_optical_power_pd, green_optical_power_mW, \
+#            red_optical_power_pd, red_optical_power_mW, \
+#            yellow_optical_power_pd, yellow_optical_power_mW = \
+#            tool_belt.measure_g_r_y_power( 
+#                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
         
     # create some lists for data
     on_count_raw = []
     off_count_raw = []
     
+    if modulation == 'AM':
+        main_function = main_AM
+    elif modulation == 'DM':
+        main_function = main_DM
     # Step through the pulse lengths for the test laser
     for test_time in test_pulse_dur_list:
         print('Testing {} us'.format(test_time/10**3))
-        on_count, off_count = main(nv_sig, apd_indices, num_reps, test_color, test_time, test_power)
+        on_count, off_count = main_function(nv_sig, apd_indices, num_reps, test_color, test_time, test_power = test_power_V)
         
-#        on_count = [int(el) for el in on_count]
-#        off_count = [int(el) for el in off_count]
+        on_count = [int(el) for el in on_count]
+        off_count = [int(el) for el in off_count]
         
         on_count_raw.append(on_count)
         off_count_raw.append(off_count)
         
     on_counts = numpy.average(on_count_raw, axis = 1)
     off_counts = numpy.average(off_count_raw, axis = 1)
-    fig, ax = plt.subplots() 
-    ax.plot(test_pulse_dur_list, on_counts, 'bo')
-    ax.plot(test_pulse_dur_list, off_counts, 'go')
-    ax.set_xlabel('Test Pulse Illumination Time (ns)')
-    ax.set_ylabel('Counts')
+    
+    fig, popt = do_plot(on_counts, off_counts, test_pulse_dur_list, test_power_mW)
+    
+    a0, d0, a1, d1 = popt
     
     # Save
     test_pulse_dur_list = numpy.array(test_pulse_dur_list)
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
             'test_color': test_color,
-            'test_power': test_power,
-            'test_power-units': 'V',
+            'test_power_mW': test_power_mW,
+            'test_power_mW-units': 'mW',
+            'test_power_V': test_power_V,
+            'test_power_V-units': 'mW',
             'test_pulse_dur_list': test_pulse_dur_list.tolist(),
             'test_pulse_dur_list-units': 'ns',
             'num_reps':num_reps,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'green_optical_power_pd': green_optical_power_pd,
-            'green_optical_power_pd-units': 'V',
-            'green_optical_power_mW': green_optical_power_mW,
-            'green_optical_power_mW-units': 'mW',
-            'red_optical_power_pd': red_optical_power_pd,
-            'red_optical_power_pd-units': 'V',
-            'red_optical_power_mW': red_optical_power_mW,
-            'red_optical_power_mW-units': 'mW',
-            'yellow_optical_power_pd': yellow_optical_power_pd,
-            'yellow_optical_power_pd-units': 'V',
-            'yellow_optical_power_mW': yellow_optical_power_mW,
-            'yellow_optical_power_mW-units': 'mW',
+            'siv_pulse_time': siv_pulse_time,
+            'siv_pulse_time-units': 'ns',
+            'siv_pulse_distance': siv_pulse_distance,
+            'siv_pulse_distance-units': 'V',
+            'a0': a0,
+            'd0': d0,
+            'd0-units': 'ms',
+            'a1': a1,
+            'd1': d1,
+            'd1-units': 'ms',
+#            'green_optical_power_pd': green_optical_power_pd,
+#            'green_optical_power_pd-units': 'V',
+#            'green_optical_power_mW': green_optical_power_mW,
+#            'green_optical_power_mW-units': 'mW',
+#            'red_optical_power_pd': red_optical_power_pd,
+#            'red_optical_power_pd-units': 'V',
+#            'red_optical_power_mW': red_optical_power_mW,
+#            'red_optical_power_mW-units': 'mW',
+#            'yellow_optical_power_pd': yellow_optical_power_pd,
+#            'yellow_optical_power_pd-units': 'V',
+#            'yellow_optical_power_mW': yellow_optical_power_mW,
+#            'yellow_optical_power_mW-units': 'mW',
             'on_count_raw':on_count_raw,
             'on_count_raw-units': 'counts',
             'off_count_raw': off_count_raw,
@@ -230,10 +434,9 @@ def sweep_test_pulse_length(nv_sig, test_color, test_power, test_pulse_dur_list 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path)
     tool_belt.save_figure(fig, file_path)
-
     
     print(' \nRoutine complete!')
-    return
+    return d0, d1
 
 # %% Run the files
     
@@ -256,28 +459,63 @@ if __name__ == '__main__':
     
     nv_2021_03_30 = { 'coords':[], 
             'name': '',
-            'expected_count_rate': None, 'nd_filter': 'nd_0',
-#            'color_filter': '635-715 bp', 
-            'color_filter': '715 lp',
+            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
+            'color_filter': '635-715 bp', 
+#            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 4*10**7, 'am_589_power': 0.3, 
+            'pulsed_SCC_readout_dur': 4*10**7, 'am_589_power': 0.6, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
-            'ao_515_pwr':0.65,
+            'ao_515_pwr':0.645,
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    test_pulses = [50, 100, 150, 200, 250, 300, 310, 320, 330, 340, 350,
-                   360, 370, 380, 390, 400, 410, 420, 430, 440, 450, 500]
+    test_pulses = [10**3, 10**4,5*10**4, 10**5,2.5*10**5,5*10**5,7.5*10**5, 10**6, 2.5*10**6, 5*10**6, 7.5*10**6, 10**7]
+    p_mw = [1.2, 1.62, 2.06, 1.82, 2.47, .76, 0.32, .039, 0.15, 0.018, 0.55]
+    p_V = [0.63, 0.64, 0.65, 0.645, 0.66, 0.62, 0.61, 0.605, 0.607, 0.603, 0.615]
+    
+    d0_list = []
+    d1_list = []
     for i in [5]:#range(len(nv_coords_list)):
         nv_sig = copy.deepcopy(nv_2021_03_30)
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
-#        for p in (0.658, 0.64, 0.622, 0.611, 0.606):
-        sweep_test_pulse_length(nv_sig, '515a' ,0.606)
+        for i in range(len(p_mw)):
+            test_power_mw = p_mw[i]
+            test_power_V = p_V[i]
+            d0, d1 = sweep_test_pulse_length(nv_sig, '515a', test_power_mw, 
+                'AM',test_power_V,  test_pulse_dur_list = test_pulses)
+            d0_list.append(d0)
+            d1_list.append(d1)
+            
+    print(d0_list)
+    print(d1_list)
+    fig, ax = plt.subplots() 
+    ax.plot(p_mw, 1/numpy.array(d0_list), 'ro', label = 'd0 rate')
+    ax.plot(p_mw, 1/numpy.array(d1_list), 'ko', label = 'd1 rate')
+    ax.set_ylabel('x 10^3 s^-1')
+    ax.set_xlabel('Power (mW)')
+    ax.legend()
+
+#    folder = 'pc_rabi/branch_Spin_to_charge/determine_photoionization_rates_siv/2021_05'
+#    file = '2021_05_05-21_10_25-goeppert-mayer-nv5_2021_04_15'
+#    file= '2021_05_05-16_22_09-goeppert-mayer-nv5_2021_04_15'
+#    data = tool_belt.get_raw_data(folder, file)
+#    on_count_raw = data['on_count_raw']
+#    off_count_raw = data['off_count_raw']
+#    time_list = data['test_pulse_dur_list']
+#    test_power_mW = data['test_power_mW']    
+#    on_counts = numpy.average(on_count_raw, axis = 1)
+#    off_counts = numpy.average(off_count_raw, axis = 1)
+#    do_plot(on_counts, off_counts, time_list, test_power_mW)
+    
+    
+    
+    
+    
     

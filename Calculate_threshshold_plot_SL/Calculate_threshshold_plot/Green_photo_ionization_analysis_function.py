@@ -41,7 +41,7 @@ def get_ave_pop(array,n_th,time_list):
 
 def fit_model(x_data,A,B):
     result = []
-#    B = 0.7
+    B = 0.7
     for i in range(np.size(x_data)):
         result.append( B*(1 - np.exp(-A *x_data[i])))
     return result 
@@ -79,20 +79,26 @@ file_09 = '2021_05_04-12_41_58-goeppert-mayer-nv5_2021_04_15' # 0.9 mW
 file_19 = '2021_05_04-14_11_32-goeppert-mayer-nv5_2021_04_15' # 1.9 mW
 file_0016 = '2021_05_04-15_46_27-goeppert-mayer-nv5_2021_04_15' # 0.016 mW
 file_014 = '2021_05_04-19_41_37-goeppert-mayer-nv5_2021_04_15' # 0.14 mW
+file_024 = '2021_05_05-09_08_19-goeppert-mayer-nv5_2021_04_15' # 0.24 mW
+file_058 = '2021_05_05-10_39_20-goeppert-mayer-nv5_2021_04_15' # 0.58 mW
+file_124 = '2021_05_05-12_10_30-goeppert-mayer-nv5_2021_04_15' # 1.24 mW
 
-file_list = [file_07,file_09,  file_014, file_19 ]
+file_list = [file_07,file_09,  file_014, file_024, file_058, file_124]
 
 rate_list = []
+power_list = []
 for file in file_list:
     data = tool_belt.get_raw_data(folder, file)   
     time_list = data['test_pulse_dur_list'] 
     red_array = data['red_count_raw']
     green_array = data['green_count_raw']
+    power = data['test_power']
     rate = get_NVm_pop_plot(time_list,red_array,8)
     rate_list.append(rate)
-power_list = [0.7, 0.9,   0.14, 1.9]
+    power_list.append(power)
 power_list.append(0)
 rate_list.append(0)
+
 fig,ax = plt.subplots()
 ax.plot(power_list,rate_list,'o')
 popt, pcov = curve_fit(quadratic_model, power_list, rate_list, p0=[10])
