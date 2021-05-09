@@ -554,7 +554,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 225
+    temp = 212.5
 
     est_omega = omega_calc(temp)
     est_gamma = gamma_calc(temp)
@@ -564,8 +564,9 @@ if __name__ == '__main__':
 
     # path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
     # folders = [
-    #             'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
-    #             'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
+    #             'hopper-nv1_2021_03_16-{}K'.format(temp),
+    #             # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
+    #             # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
     #             ]
 
     # for folder in folders:
