@@ -54,6 +54,7 @@ ratio_edge_color = '#EF2424'
 sample_column_title = 'Sample'
 skip_column_title = 'Skip'
 temp_column_title = 'Nominal temp (K)'
+# temp_column_title = 'ZFS temp (K)'
 omega_column_title = 'Omega (s^-1)'
 omega_err_column_title = 'Omega err (s^-1)'
 gamma_column_title = 'gamma (s^-1)'
@@ -219,8 +220,8 @@ def main(data_points):
     
     # %% Setup
 
-    min_temp = 170
-    max_temp = 310
+    min_temp = 150
+    max_temp = 300
 
     plot_type = 'rates'
     # plot_type = 'ratios'
@@ -242,11 +243,11 @@ def main(data_points):
     # omega_popt[1] = 78
     print(omega_popt)
     if plot_type == 'rates':
-        ax.plot(temp_linspace, omega_lambda(temp_linspace),
-                label=r'$\Omega$ fit', color=omega_edge_color)
-        # Plot Jarmola 2012 Eq. 1 for S3
-        # ax.plot(temp_linspace, omega_calc(temp_linspace),
+        # ax.plot(temp_linspace, omega_lambda(temp_linspace),
         #         label=r'$\Omega$ fit', color=omega_edge_color)
+        # Plot Jarmola 2012 Eq. 1 for S3
+        ax.plot(temp_linspace, omega_calc(temp_linspace),
+                label=r'$\Omega$ fit', color=omega_edge_color)
 
     # Fit to gamma
     gamma_popt, gamma_pcov, gamma_fit_func = fit_gamma_orbach(data_points)
@@ -397,7 +398,7 @@ if __name__ == '__main__':
     plt.rc('text', usetex=True)
 
     # file_name = 'compiled_data'
-    file_name = 'compiled_data-test'
+    file_name = 'compiled_data'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     file_path = path + '{}.xlsx'.format(file_name)
     csv_file_path = path + '{}.csv'.format(file_name)
