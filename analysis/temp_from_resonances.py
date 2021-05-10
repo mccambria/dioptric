@@ -41,9 +41,15 @@ def zfs_from_temp(temp):
 # %% Main
 
 
-# def main(resonances):
+def main_res(resonances):
     
-#     zfs = (resonances[1] + resonances[0]) / 2
+    zfs = (resonances[1] + resonances[0]) / 2
+    
+    zfs_diff = lambda temp: zfs_from_temp(temp) - zfs
+    results = root_scalar(zfs_diff, x0=50, x1=300)
+    temp_mid = results.root
+    
+    print('T: {}'.format(temp_mid))
 
 def main(zfs, zfs_err):
     
@@ -70,9 +76,10 @@ def main(zfs, zfs_err):
 if __name__ == '__main__':
     
     # Resonances in GHz
-    # resonances = [2.8568, 2.8901]  # 250 K
-    # resonances = [2.8587, 2.8926]  # 200 K
-    resonances = [2.8576, 2.8914]  # 225 K
+    # resonances = [2.7979, 2.9456]  # 275 K
+    # resonances = [2.8020,	2.9496]  # 200 K
+    # resonances = [2.7984, 2.9467]  # 262.5 K
+    resonances = [2.8008, 2.9488]  # 225 K
     
     # 225 K
     # zfs = 2.8745645361129957
@@ -87,18 +94,18 @@ if __name__ == '__main__':
     # zfs_err = 6.368357262294881e-05  
     
     # 50 K fake
-    zfs = 2.8776
-    zfs_err = 0.0001
+    # zfs = 2.8776
+    # zfs_err = 0.0001
     
     
 
-    # main(resonances)
+    main_res(resonances)
     # main(zfs, zfs_err)
     # print(zfs_from_temp(175))
     # x_vals = numpy.linspace(0, 300, 300)
     # y_vals = zfs_from_temp(x_vals)
     # plt.plot(x_vals, y_vals)
     
-    print(zfs_from_temp(280))
+    # print(zfs_from_temp(280))
     
 

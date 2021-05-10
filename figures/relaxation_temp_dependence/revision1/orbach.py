@@ -54,6 +54,7 @@ ratio_edge_color = '#EF2424'
 sample_column_title = 'Sample'
 skip_column_title = 'Skip'
 temp_column_title = 'Nominal temp (K)'
+# temp_column_title = 'ZFS temp (K)'
 omega_column_title = 'Omega (s^-1)'
 omega_err_column_title = 'Omega err (s^-1)'
 gamma_column_title = 'gamma (s^-1)'
@@ -216,11 +217,11 @@ def get_data_points_csv(file):
 
 
 def main(data_points):
-    
+
     # %% Setup
 
-    min_temp = 170
-    max_temp = 310
+    min_temp = 150
+    max_temp = 300
 
     plot_type = 'rates'
     # plot_type = 'ratios'
@@ -242,11 +243,11 @@ def main(data_points):
     # omega_popt[1] = 78
     print(omega_popt)
     if plot_type == 'rates':
-        ax.plot(temp_linspace, omega_lambda(temp_linspace),
-                label=r'$\Omega$ fit', color=omega_edge_color)
-        # Plot Jarmola 2012 Eq. 1 for S3
-        # ax.plot(temp_linspace, omega_calc(temp_linspace),
+        # ax.plot(temp_linspace, omega_lambda(temp_linspace),
         #         label=r'$\Omega$ fit', color=omega_edge_color)
+        # Plot Jarmola 2012 Eq. 1 for S3
+        ax.plot(temp_linspace, omega_calc(temp_linspace),
+                label=r'$\Omega$ fit', color=omega_edge_color)
 
     # Fit to gamma
     gamma_popt, gamma_pcov, gamma_fit_func = fit_gamma_orbach(data_points)
@@ -256,12 +257,12 @@ def main(data_points):
     if plot_type == 'rates':
         ax.plot(temp_linspace, gamma_lambda(temp_linspace),
                 label=r'$\gamma$ fit', color=gamma_edge_color)
-        
+
     ratio_lambda = lambda temp: gamma_lambda(temp_linspace) / omega_lambda(temp_linspace)
     if plot_type == 'ratio_fits':
         ax.plot(temp_linspace, ratio_lambda(temp_linspace),
                 label=r'$\gamma/\Omega$', color=gamma_edge_color)
-    
+
 
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
     # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
@@ -286,7 +287,7 @@ def main(data_points):
     # ind in range(len(nv_data)):
 
     #     nv = nv_data[ind]
-    
+
     # %% Plot the points
 
     samples = []
@@ -302,7 +303,7 @@ def main(data_points):
             samples.append(sample)
         if marker not in markers:
             markers.append(marker)
-            
+
         temp = point[temp_column_title]
 
         if plot_type in ['rates', 'residuals']:
@@ -332,7 +333,7 @@ def main(data_points):
                             color=gamma_edge_color,
                             markerfacecolor=gamma_face_color,
                             linestyle='None', ms=ms, lw=lw)
-            
+
         elif plot_type == 'ratios':
             omega_val = point[omega_column_title]
             omega_err = point[omega_err_column_title]
@@ -349,13 +350,13 @@ def main(data_points):
                             linestyle='None', ms=ms, lw=lw)
 
     # %% Legend
-    
+
     leg1 = None
 
     if plot_type in ['rates', 'residuals']:
         omega_patch = patches.Patch(label=r'$\Omega$',
                         facecolor=omega_face_color, edgecolor=omega_edge_color)
-        gamma_patch = patches.Patch(label=r'$\gamma$', 
+        gamma_patch = patches.Patch(label=r'$\gamma$',
                         facecolor=gamma_face_color, edgecolor=gamma_edge_color)
         leg1 = ax.legend(handles=[omega_patch, gamma_patch], loc='upper left',
                           title='Rates')

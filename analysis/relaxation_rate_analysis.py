@@ -179,7 +179,7 @@ def get_data_lists(folder_name):
                                               zero_zero_ste))
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
-            
+
             # if init_state_name == zero_state_name and \
             #                     read_state_name == high_state_name:
             # if init_state_name == zero_state_name and \
@@ -306,7 +306,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
     omega_fit_failed = False
     gamma_fit_failed = False
-    
+
     ax = None
 
     # If omega value is passed into the function, skip the omega fitting.
@@ -389,7 +389,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
                 ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
-        
+
     if ax is not None:
         ax.set_title('Omega')
         # ax.set_title('(0,0) - (0,-1)')
@@ -501,11 +501,11 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
                     verticalalignment='top', bbox=props)
-            
+
     ax.set_title('gamma')
     # ax.set_title('(+1,+1) - (+1,-1)')
     # ax.set_title('(-1,-1) - (-1,+1)')
-    
+
     if doPlot:
         fig.canvas.draw()
         fig.canvas.flush_events()
