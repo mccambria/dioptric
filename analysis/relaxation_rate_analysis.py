@@ -554,7 +554,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 212.5
+    temp = 237.5
 
     est_omega = omega_calc(temp)
     est_gamma = gamma_calc(temp)
