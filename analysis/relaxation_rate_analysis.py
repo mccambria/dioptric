@@ -179,7 +179,7 @@ def get_data_lists(folder_name):
                                               zero_zero_ste))
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
-            
+
             # if init_state_name == zero_state_name and \
             #                     read_state_name == high_state_name:
             # if init_state_name == zero_state_name and \
@@ -306,7 +306,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
     omega_fit_failed = False
     gamma_fit_failed = False
-    
+
     ax = None
 
     # If omega value is passed into the function, skip the omega fitting.
@@ -389,7 +389,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
                 ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
-        
+
     if ax is not None:
         ax.set_title('Omega')
         # ax.set_title('(0,0) - (0,-1)')
@@ -501,11 +501,11 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
                     verticalalignment='top', bbox=props)
-            
+
     ax.set_title('gamma')
     # ax.set_title('(+1,+1) - (+1,-1)')
     # ax.set_title('(-1,-1) - (-1,+1)')
-    
+
     if doPlot:
         fig.canvas.draw()
         fig.canvas.flush_events()
@@ -554,21 +554,21 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 237.5
+    temp = 212.5
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print('good times in ms')
-    print('Omega: {}'.format(4000/(3*est_omega)))
-    print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    # est_omega = omega_calc(temp)
+    # est_gamma = gamma_calc(temp)
+    # print('good times in ms')
+    # print('Omega: {}'.format(4000/(3*est_omega)))
+    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
 
-    # path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
-    # folders = [
-    #             'hopper-nv1_2021_03_16-{}K'.format(temp),
-    #             # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
-    #             # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
-    #             ]
+    path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
+    folders = [
+                'hopper-nv1_2021_03_16-{}K'.format(temp),
+                # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
+                ]
 
-    # for folder in folders:
-    #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
-    #                       doPlot=True, offset=False)
+    for folder in folders:
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                          doPlot=True, offset=False)

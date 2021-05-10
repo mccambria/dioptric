@@ -217,7 +217,7 @@ def get_data_points_csv(file):
 
 
 def main(data_points):
-    
+
     # %% Setup
 
     min_temp = 150
@@ -257,12 +257,12 @@ def main(data_points):
     if plot_type == 'rates':
         ax.plot(temp_linspace, gamma_lambda(temp_linspace),
                 label=r'$\gamma$ fit', color=gamma_edge_color)
-        
+
     ratio_lambda = lambda temp: gamma_lambda(temp_linspace) / omega_lambda(temp_linspace)
     if plot_type == 'ratio_fits':
         ax.plot(temp_linspace, ratio_lambda(temp_linspace),
                 label=r'$\gamma/\Omega$', color=gamma_edge_color)
-    
+
 
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
     # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
@@ -287,7 +287,7 @@ def main(data_points):
     # ind in range(len(nv_data)):
 
     #     nv = nv_data[ind]
-    
+
     # %% Plot the points
 
     samples = []
@@ -303,7 +303,7 @@ def main(data_points):
             samples.append(sample)
         if marker not in markers:
             markers.append(marker)
-            
+
         temp = point[temp_column_title]
 
         if plot_type in ['rates', 'residuals']:
@@ -333,7 +333,7 @@ def main(data_points):
                             color=gamma_edge_color,
                             markerfacecolor=gamma_face_color,
                             linestyle='None', ms=ms, lw=lw)
-            
+
         elif plot_type == 'ratios':
             omega_val = point[omega_column_title]
             omega_err = point[omega_err_column_title]
@@ -350,13 +350,13 @@ def main(data_points):
                             linestyle='None', ms=ms, lw=lw)
 
     # %% Legend
-    
+
     leg1 = None
 
     if plot_type in ['rates', 'residuals']:
         omega_patch = patches.Patch(label=r'$\Omega$',
                         facecolor=omega_face_color, edgecolor=omega_edge_color)
-        gamma_patch = patches.Patch(label=r'$\gamma$', 
+        gamma_patch = patches.Patch(label=r'$\gamma$',
                         facecolor=gamma_face_color, edgecolor=gamma_edge_color)
         leg1 = ax.legend(handles=[omega_patch, gamma_patch], loc='upper left',
                           title='Rates')
@@ -397,8 +397,8 @@ if __name__ == '__main__':
     plt.rcParams.update({'font.sans-serif': ['Helvetica']})
     plt.rc('text', usetex=True)
 
-    # file_name = 'compiled_data'
     file_name = 'compiled_data'
+    # file_name = 'compiled_data-test'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     file_path = path + '{}.xlsx'.format(file_name)
     csv_file_path = path + '{}.csv'.format(file_name)
