@@ -130,7 +130,7 @@ def fit_omega_orbach_T5(data_points):
     init_params = (A_2 / 3, quasi, A_3 / 3)
 
     # fit_func = T5_free
-    # init_params = (2 * A_3 / 3)
+    # init_params = (2 * A_3 / 3, )
 
     num_params = len(init_params)
     popt, pcov = curve_fit(fit_func, temps, omegas, p0=init_params,
@@ -243,11 +243,11 @@ def main(data_points):
     # omega_popt[1] = 78
     print(omega_popt)
     if plot_type == 'rates':
-        # ax.plot(temp_linspace, omega_lambda(temp_linspace),
-        #         label=r'$\Omega$ fit', color=omega_edge_color)
-        # Plot Jarmola 2012 Eq. 1 for S3
-        ax.plot(temp_linspace, omega_calc(temp_linspace),
+        ax.plot(temp_linspace, omega_lambda(temp_linspace),
                 label=r'$\Omega$ fit', color=omega_edge_color)
+        # Plot Jarmola 2012 Eq. 1 for S3
+        # ax.plot(temp_linspace, omega_calc(temp_linspace),
+        #         label=r'$\Omega$ fit', color=omega_edge_color)
 
     # Fit to gamma
     gamma_popt, gamma_pcov, gamma_fit_func = fit_gamma_orbach(data_points)

@@ -363,8 +363,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             omega = omega_opti_params[0] / 3.0
             omega_ste = numpy.sqrt(cov_arr[0,0]) / 3.0
 
-            print('Omega: {} +/- {} kHz'.format('%.3f'%omega,
-                      '%.3f'%omega_ste))
+            print('Omega: {} +/- {} s^-1'.format('%.2f'%(omega*1000),
+                      '%.2f'%(omega_ste*1000)))
             # Plotting the data
             if doPlot:
                 zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
@@ -383,8 +383,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
                 ax.legend()
-                text = r'$\Omega = $ {} $\pm$ {} kHz'.format('%.3f'%omega,
-                      '%.3f'%omega_ste)
+                text = r'$\Omega = $ {} $\pm$ {} s$^- ^1$'.format((omega*1000),
+                      '%.2f'%(omega_ste*1000))
 
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
                 ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
@@ -472,8 +472,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         # gamma_opti_params[0] = (2 * gamma) + omega
         # gamma_opti_params[1] = 0.20
 
-        print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma,
-                  '%.3f'%gamma_ste))
+        print('gamma: {} +/- {} s^-1'.format('%.2f'%(gamma*1000),
+                  '%.2f'%(gamma_ste*1000)))
 
         # Plotting
         if doPlot:
@@ -494,8 +494,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
             ax.legend()
-            text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma,
-                  '%.3f'%gamma_ste)
+            text = r'$\gamma = $ {} $\pm$ {} s$^{-1}$'.format('%.2f'%(gamma*1000),
+                  '%.2f'%(gamma_ste*1000))
 #            ax.set_xlim([-0.001, 0.05])
 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
