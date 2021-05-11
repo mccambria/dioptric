@@ -223,10 +223,14 @@ def main(data_points):
     min_temp = 150
     max_temp = 300
 
-    plot_type = 'rates'
+    # plot_type = 'rates'
     # plot_type = 'ratios'
     # plot_type = 'ratio_fits'
-    # plot_type = 'residuals'
+    plot_type = 'residuals'
+    
+    # rates_to_plot = 'both'
+    # rates_to_plot = 'Omega'
+    rates_to_plot = 'gamma'
 
     # temp_linspace = numpy.linspace(5, 600, 1000)
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
@@ -242,7 +246,7 @@ def main(data_points):
     # omega_popt[2] = 0
     # omega_popt[1] = 78
     print(omega_popt)
-    if plot_type == 'rates':
+    if (plot_type == 'rates') and (rates_to_plot in ['both', 'Omega']):
         ax.plot(temp_linspace, omega_lambda(temp_linspace),
                 label=r'$\Omega$ fit', color=omega_edge_color)
         # Plot Jarmola 2012 Eq. 1 for S3
@@ -254,7 +258,7 @@ def main(data_points):
     gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
     # gamma_popt[1] = omega_popt[1]
     print(gamma_popt)
-    if plot_type == 'rates':
+    if (plot_type == 'rates') and (rates_to_plot in ['both', 'gamma']):
         ax.plot(temp_linspace, gamma_lambda(temp_linspace),
                 label=r'$\gamma$ fit', color=gamma_edge_color)
 
@@ -309,7 +313,7 @@ def main(data_points):
         if plot_type in ['rates', 'residuals']:
             # Omega
             rate = point[omega_column_title]
-            if rate is not None:
+            if (rate is not None) and (rates_to_plot in ['both', 'Omega']):
                 if plot_type == 'rates':
                     val = rate
                 elif plot_type == 'residuals':
@@ -322,7 +326,7 @@ def main(data_points):
                             linestyle='None', ms=ms, lw=lw)
             # gamma
             rate = point[gamma_column_title]
-            if rate is not None:
+            if (rate is not None) and (rates_to_plot in ['both', 'gamma']):
                 if plot_type == 'rates':
                     val = rate
                 elif plot_type == 'residuals':

@@ -383,8 +383,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
                 ax.legend()
-                text = r'$\Omega = $ {} $\pm$ {} s$^- ^1$'.format((omega*1000),
-                      '%.2f'%(omega_ste*1000))
+                units = r's$^{-1}$'
+                text = r'$\Omega = $ {} $\pm$ {} {}'.format('%.2f'%(omega*1000),
+                      '%.2f'%(omega_ste*1000), units)
 
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
                 ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
@@ -494,8 +495,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
             ax.legend()
-            text = r'$\gamma = $ {} $\pm$ {} s$^{-1}$'.format('%.2f'%(gamma*1000),
-                  '%.2f'%(gamma_ste*1000))
+            units = r's$^{-1}$'
+            text = r'$\gamma = $ {} $\pm$ {} {}'.format('%.2f'%(gamma*1000),
+                  '%.2f'%(gamma_ste*1000), units)
 #            ax.set_xlim([-0.001, 0.05])
 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -554,7 +556,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 287.5
+    temp = 300
 
     est_omega = omega_calc(temp)
     est_gamma = gamma_calc(temp)
