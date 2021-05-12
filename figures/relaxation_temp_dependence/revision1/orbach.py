@@ -220,17 +220,17 @@ def main(data_points):
 
     # %% Setup
 
-    min_temp = 150
-    max_temp = 300
+    min_temp = 190
+    max_temp = 310
 
-    # plot_type = 'rates'
+    plot_type = 'rates'
     # plot_type = 'ratios'
     # plot_type = 'ratio_fits'
-    plot_type = 'residuals'
+    # plot_type = 'residuals'
     
-    # rates_to_plot = 'both'
+    rates_to_plot = 'both'
     # rates_to_plot = 'Omega'
-    rates_to_plot = 'gamma'
+    # rates_to_plot = 'gamma'
 
     # temp_linspace = numpy.linspace(5, 600, 1000)
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
