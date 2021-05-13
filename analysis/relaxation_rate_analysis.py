@@ -363,8 +363,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             omega = omega_opti_params[0] / 3.0
             omega_ste = numpy.sqrt(cov_arr[0,0]) / 3.0
 
-            print('Omega: {} +/- {} kHz'.format('%.3f'%omega,
-                      '%.3f'%omega_ste))
+            print('Omega: {} +/- {} s^-1'.format('%.2f'%(omega*1000),
+                      '%.2f'%(omega_ste*1000)))
             # Plotting the data
             if doPlot:
                 zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
@@ -383,8 +383,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
                 ax.legend()
-                text = r'$\Omega = $ {} $\pm$ {} kHz'.format('%.3f'%omega,
-                      '%.3f'%omega_ste)
+                units = r's$^{-1}$'
+                text = r'$\Omega = $ {} $\pm$ {} {}'.format('%.2f'%(omega*1000),
+                      '%.2f'%(omega_ste*1000), units)
 
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
                 ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
@@ -472,8 +473,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         # gamma_opti_params[0] = (2 * gamma) + omega
         # gamma_opti_params[1] = 0.20
 
-        print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma,
-                  '%.3f'%gamma_ste))
+        print('gamma: {} +/- {} s^-1'.format('%.2f'%(gamma*1000),
+                  '%.2f'%(gamma_ste*1000)))
 
         # Plotting
         if doPlot:
@@ -494,8 +495,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
             ax.legend()
-            text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma,
-                  '%.3f'%gamma_ste)
+            units = r's$^{-1}$'
+            text = r'$\gamma = $ {} $\pm$ {} {}'.format('%.2f'%(gamma*1000),
+                  '%.2f'%(gamma_ste*1000), units)
 #            ax.set_xlim([-0.001, 0.05])
 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -554,21 +556,21 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 287.5
+    temp = 250
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print('good times in ms')
-    print('Omega: {}'.format(4000/(3*est_omega)))
-    print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    # est_omega = omega_calc(temp)
+    # est_gamma = gamma_calc(temp)
+    # print('good times in ms')
+    # print('Omega: {}'.format(4000/(3*est_omega)))
+    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
 
-    # path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
-    # folders = [
-    #             'hopper-nv1_2021_03_16-{}K'.format(temp),
-    #             # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
-    #             # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
-    #             ]
+    path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
+    folders = [
+                'hopper-nv1_2021_03_16-{}K'.format(temp),
+                # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
+                ]
 
-    # for folder in folders:
-    #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
-    #                       doPlot=True, offset=False)
+    for folder in folders:
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                          doPlot=True, offset=False)
