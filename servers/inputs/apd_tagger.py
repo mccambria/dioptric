@@ -125,12 +125,13 @@ class ApdTagger(LabradServer):
                 if overflows > 0:
                     logging.debug('Overflows: {}'.format(overflows))
                 # Timeout after 2 minutes - pad counts with 0s
-                if time.time() > start + 120:
-                    num_remaining = num_to_read - len(counts)
-                    counts.extend(num_remaining * [0])
-                    logging.error('Timed out trying to last {} counts out ' \
-                                  'of {}'.format(num_remaining, num_to_read))
-                    break
+                # This is broken right now...
+                # if time.time() > start + 120:
+                #     num_remaining = num_to_read - len(counts)
+                #     counts.extend(num_remaining * [0])
+                #     logging.error('Timed out trying to last {} counts out ' \
+                #                   'of {}'.format(num_remaining, num_to_read))
+                #     break
                 counts.extend(self.read_counter_internal(num_to_read))
             if len(counts) > num_to_read:
                 msg = 'Read {} samples, only requested {}'.format(len(counts),
