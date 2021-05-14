@@ -46,7 +46,7 @@ A_7 = 2.55e-20
 # Quasilocalized mode activation energy
 quasi = 76.0  # meV, empirical fit
 # quasi = 69.0  # meV, empirical fit
-# quasi = 65.0  # meV, quasilocalized resonance
+quasi = 65.0  # meV, quasilocalized resonance
 # quasi = 1.17e-20  # J
 
 ms = 7
@@ -231,14 +231,14 @@ def main(data_points):
     min_temp = 190
     max_temp = 310
 
-    plot_type = 'rates'
+    # plot_type = 'rates'
     # plot_type = 'ratios'
     # plot_type = 'ratio_fits'
-    # plot_type = 'residuals'
-    
-    rates_to_plot = 'both'
+    plot_type = 'residuals'
+
+    # rates_to_plot = 'both'
     # rates_to_plot = 'Omega'
-    # rates_to_plot = 'gamma'
+    rates_to_plot = 'gamma'
 
     # temp_linspace = numpy.linspace(5, 600, 1000)
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
