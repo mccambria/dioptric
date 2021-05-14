@@ -46,7 +46,7 @@ A_7 = 2.55e-20
 # Quasilocalized mode activation energy
 quasi = 76.0  # meV, empirical fit
 # quasi = 69.0  # meV, empirical fit
-quasi = 65.0  # meV, quasilocalized resonance
+# quasi = 65.0  # meV, quasilocalized resonance
 # quasi = 1.17e-20  # J
 
 ms = 7
@@ -224,21 +224,31 @@ def get_data_points_csv(file):
 # %% Main
 
 
-def main(data_points):
+def main(file_name, path, 
+         plot_type, rates_to_plot, temp_range=[190, 310]):
 
     # %% Setup
 
-    min_temp = 190
-    max_temp = 310
+    plt.rcParams['text.latex.preamble'] = [
+        r'\usepackage{physics}',
+        r'\usepackage{sfmath}',
+        r'\usepackage{upgreek}',
+        r'\usepackage{helvet}',
+       ]
+    plt.rcParams.update({'font.size': 11.25})
+    plt.rcParams.update({'font.family': 'sans-serif'})
+    plt.rcParams.update({'font.sans-serif': ['Helvetica']})
+    plt.rc('text', usetex=True)
+    file_path = path + '{}.xlsx'.format(file_name)
+    csv_file_path = path + '{}.csv'.format(file_name)
 
-    # plot_type = 'rates'
-    # plot_type = 'ratios'
-    # plot_type = 'ratio_fits'
-    plot_type = 'residuals'
+    file = pd.read_excel(file_path)
+    file.to_csv(csv_file_path, index=None, header=True)
 
-    # rates_to_plot = 'both'
-    # rates_to_plot = 'Omega'
-    rates_to_plot = 'gamma'
+    data_points = get_data_points_csv(csv_file_path)
+
+    min_temp = temp_range[0]
+    max_temp = temp_range[1]
 
     # temp_linspace = numpy.linspace(5, 600, 1000)
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
@@ -400,26 +410,19 @@ def main(data_points):
 
 if __name__ == '__main__':
 
-    plt.rcParams['text.latex.preamble'] = [
-        r'\usepackage{physics}',
-        r'\usepackage{sfmath}',
-        r'\usepackage{upgreek}',
-        r'\usepackage{helvet}',
-       ]
-    plt.rcParams.update({'font.size': 11.25})
-    plt.rcParams.update({'font.family': 'sans-serif'})
-    plt.rcParams.update({'font.sans-serif': ['Helvetica']})
-    plt.rc('text', usetex=True)
+    plot_type = 'rates'
+    # plot_type = 'ratios'
+    # plot_type = 'ratio_fits'
+    # plot_type = 'residuals'
+
+    rates_to_plot = 'both'
+    # rates_to_plot = 'Omega'
+    # rates_to_plot = 'gamma'
+    
+    temp_range=[190, 310]
 
     file_name = 'compiled_data'
     # file_name = 'compiled_data-test'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
-    file_path = path + '{}.xlsx'.format(file_name)
-    csv_file_path = path + '{}.csv'.format(file_name)
-
-    file = pd.read_excel(file_path)
-    file.to_csv(csv_file_path, index=None, header=True)
-
-    data_points = get_data_points_csv(csv_file_path)
-
-    main(data_points)
+    
+    main(file_name, path, plot_type, rates_to_plot, temp_range)
