@@ -26,17 +26,25 @@ import pandas as pd
 Boltzmann = 8.617e-2  # meV / K
 # from scipy.constants import Boltzmann  # J / K
 
-# Rate coefficients in s^-1 from Jarmola
+# Rate coefficients in s^-1 from Jarmola. Not accurate right now
+# A_1 = 0.007  # Constant for S3
+# A_2 = 5.10e2  # Orbach
+# # A_2 = 1.7e3  # Test
+# A_3 = 1.38e-11  # T^5
+# # A_3 = 2.5e-11  # Test
+# A_4 = 4.3e-6  # T^3
+# A_7 = 2.55e-20
+
 A_1 = 0.007  # Constant for S3
-A_2 = 2.1e3  # Orbach
+A_2 = 5.10e2  # Orbach
 # A_2 = 1.7e3  # Test
-A_3 = 2.2e-11  # T^5
+A_3 = 1.38e-11  # T^5
 # A_3 = 2.5e-11  # Test
 A_4 = 4.3e-6  # T^3
 A_7 = 2.55e-20
 
 # Quasilocalized mode activation energy
-quasi = 73.0  # meV, empirical fit
+quasi = 76.0  # meV, empirical fit
 # quasi = 69.0  # meV, empirical fit
 # quasi = 65.0  # meV, quasilocalized resonance
 # quasi = 1.17e-20  # J
@@ -91,8 +99,8 @@ def test_T_seventh(temp):
     return A_7 * (temp**7)
 
 def omega_calc(temp):
-    """Using Jarmola fit"""
-    return (A_1 + orbach(temp) + raman(temp)) / 3
+    """Using fit from May 12th, 2021"""
+    return orbach_T5_free(temp, 510, 76.0, 1.38e-11)
     # return A_1 + test_T_cubed(temp) + raman(temp)
     # return (A_1 + orbach(temp) + raman(temp) + test_T_seventh(temp)) / 3
 
@@ -105,8 +113,8 @@ def T5_free(temp, coeff_T5):
     return coeff_T5 * temp**5
 
 def gamma_calc(temp):
-    """Using fit from April 2nd, 2021"""
-    return orbach_free(temp, 1668, 71)
+    """Using fit from May 12th, 2021"""
+    return orbach_free(temp, 2200, 75.2)
 
 
 # %% Other functions
@@ -243,6 +251,7 @@ def main(data_points):
     # Fit to Omega
     omega_popt, omega_pcov, omega_fit_func = fit_omega_orbach_T5(data_points)
     omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
+    # omega_lambda = lambda temp: omega_calc(temp)
     # omega_popt[2] = 0
     # omega_popt[1] = 78
     print(omega_popt)
@@ -256,6 +265,7 @@ def main(data_points):
     # Fit to gamma
     gamma_popt, gamma_pcov, gamma_fit_func = fit_gamma_orbach(data_points)
     gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
+    # gamma_lambda = lambda temp: gamma_calc(temp)
     # gamma_popt[1] = omega_popt[1]
     print(gamma_popt)
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'gamma']):
