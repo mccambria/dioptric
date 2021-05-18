@@ -102,6 +102,7 @@ rate_list.append(0)
 fig,ax = plt.subplots()
 ax.plot(power_list,rate_list,'o')
 popt, pcov = curve_fit(quadratic_model, power_list, rate_list, p0=[10])
+print(pcov[0][0])
 print(popt)
 lin_power = np.linspace(0, 2, 100)
 

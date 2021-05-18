@@ -359,8 +359,18 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
     
-    determine_readout_dur(nv_sig, 
-                          nd_filter = 'nd_0.5')
+#    determine_readout_dur(nv_sig, 
+#                          nd_filter = 'nd_0.5')
+    file = '2021_04_13-19_14_05-johnson-nv0_2021_04_13-readout_pulse_pwr'
+    folder = 'pc_rabi/branch_Spin_to_charge/SCC_optimize_pulses_wout_uwaves/2021_04'
+    data_f = tool_belt.get_raw_data(folder, file)
+    nv_sig = data_f['nv_sig']
+    readout_time = nv_sig['pulsed_SCC_readout_dur']
+    sig_count_raw = data_f['sig_count_raw']
+    NV0 = np.array(sig_count_raw[3])
+    ref_count_raw = data_f['ref_count_raw']
+    NVm = np.array(ref_count_raw[3])
+    get_photon_dis_curve_fit_plot(readout_time,NV0,NVm, do_plot = True)
 
 
 

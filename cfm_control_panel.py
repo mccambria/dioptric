@@ -438,12 +438,12 @@ def do_time_resolved_readout(nv_sig, apd_indices,
 def do_moving_target(nv_sig):
     start_coords = nv_sig['coords']
     optimize_coords = start_coords
-    img_range = 0.4
-    pulse_time = 10*10**6
-    num_steps = 35
-    num_runs = 5
+    img_range = 0.06
+    pulse_time = 0.01*10**6
+    num_steps = 40
+    num_runs = 50
     init_color = '515a'
-    pulse_color = '515a'
+    pulse_color = 638
     measurement_type = '2D'
     
     moving_target.main(nv_sig, start_coords, optimize_coords, img_range, 
@@ -467,7 +467,7 @@ if __name__ == '__main__':
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.15, 
+            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.08, 
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
@@ -519,9 +519,9 @@ if __name__ == '__main__':
 #        set_xyz([0.0, 0.0,  5.0])
 
       
-        with labrad.connect() as cxn:
+#        with labrad.connect() as cxn:
 #            cxn.filter_slider_ell9k_color.set_filter('635-715 bp')  
-            cxn.filter_slider_ell9k.set_filter('nd_0')           
+#            cxn.filter_slider_ell9k.set_filter('nd_0')           
 #            cxn.pulse_streamer.constant([], 0.65, 0.0)
 #            cxn.objective_piezo.write(5.1)
         
@@ -536,7 +536,7 @@ if __name__ == '__main__':
             nv_sig = nv_sig_list[ind]
             
 #            do_optimize(nv_sig, apd_indices, '515a')
-            do_optimize(nv_sig, apd_indices, 532)
+#            do_optimize(nv_sig, apd_indices, 532)
             
 #            [x, y, z] = nv_sig['coords']
 #            for z in numpy.linspace(z - 0.1, z + 0.1, 5):
@@ -547,9 +547,9 @@ if __name__ == '__main__':
 
 #            do_two_pulse_image_sample(nv_sig, apd_indices,10**5, 10**7, 589, 638, save_data = True, plot_data = True)
             
-            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
-#            do_image_sample(nv_sig,  apd_indices, '515a',
-#                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, '515a',
+                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =4*10**7)
 

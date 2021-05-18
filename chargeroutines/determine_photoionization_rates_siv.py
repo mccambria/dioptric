@@ -20,11 +20,22 @@ import numpy
 import time
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+import majorroutines.image_sample as image_sample
 import labrad
 import copy
 
 siv_pulse_time = 10*10**6 # ns
 siv_pulse_distance = 0.071 # V
+
+bright_reset_power = 0.63 # 1.2 mW
+bright_reset_range = 0.25
+bright_reset_steps = 17
+bright_reset_time = 10**7
+
+dark_reset_power = 0.603 # 18 uW
+dark_reset_range = 0.25
+dark_reset_steps = 17
+dark_reset_time = 10**7
 
 # %%
 
@@ -204,14 +215,14 @@ def main_AM_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, 
 
 # %%
 # Connect to labrad in this file, as opposed to control panel
-def main_DM(nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
+def main_scan(nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
 
     with labrad.connect() as cxn:
-        green_counts, red_counts = main_DM_with_cxn(cxn, nv_sig, apd_indices,
+        green_counts, red_counts = main_scan_with_cxn(cxn, nv_sig, apd_indices,
                                  num_reps, test_color, test_time, test_power)
         
     return green_counts, red_counts
-def main_DM_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
+def main_scan_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, test_power):
 
     tool_belt.reset_cfm_wout_uwaves(cxn)
 
@@ -219,65 +230,58 @@ def main_DM_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, 
     readout_time = nv_sig['pulsed_SCC_readout_dur']
     am_589_power = nv_sig['am_589_power']
     am_515_power = nv_sig['ao_515_pwr']
-    nd_filter = nv_sig['nd_filter']
+#    nd_filter = nv_sig['nd_filter']
     center_coords = nv_sig['coords']
     
     apd_index = 0
             
-    # set the nd_filter for yellow
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     #delay of aoms and laser
-    laser_515_delay = shared_params['515_DM_laser_delay'] 
+    laser_515_delay = shared_params['515_AM_laser_delay'] 
     
     aom_589_delay = shared_params['589_aom_delay']
 #    laser_638_delay = shared_params['638_DM_laser_delay']
         
     
-    on_counts = []
-    off_counts = []
+    on_counts = [] # SiV2-
+    off_counts = [] # siv
 
     cxn.filter_slider_ell9k.set_filter('nd_0')
-    optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices, '515a', disable=False)
     run_start_time = time.time()
     
     for i in range(num_reps):
-        # Move the ND filter to 0
-        time.sleep(0.01)
-        cxn.filter_slider_ell9k.set_filter('nd_0')
-        time.sleep(0.1)
         #optimize every 2 min or so
         # So first check the time. If the time that has passed since the last
         # optimize is longer that 2 min, optimize again
         current_time = time.time()
         if current_time - run_start_time >= 2*60:
-            optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
-            run_start_time = current_time
+            optimize.main_with_cxn(cxn, nv_sig, apd_indices, '515a')
+            run_start_time = current_time 
+            
+        drift = numpy.array(tool_belt.get_drift())
+        center_coords_drift = center_coords + drift
             
         cxn.filter_slider_ell9k_color.set_filter('715 lp')
                 
-        # "ON" INITIAL PULSE    
-        # set coords to center:
-        drift = numpy.array(tool_belt.get_drift())
-        center_coords_drift = center_coords + drift
-        
-        tool_belt.set_xyz(cxn, center_coords_drift)
-                
-        # adjust the coords with drift
-        pulse_file_name = 'simple_pulse.py'            
-        seq_args = [laser_515_delay, siv_pulse_time, am_589_power, am_515_power, 532 ]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
-        cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
-    
-        # Set the Nd filter
-        time.sleep(0.01)
-        cxn.filter_slider_ell9k.set_filter(nd_filter)
-        time.sleep(0.1)    
-    
-        # test pulse at center                 
-        seq_args = [laser_515_delay, test_time, am_589_power, am_515_power, test_color ]
+        # DARK SIV SCAN    
+        reset_sig = copy.deepcopy(nv_sig)
+        reset_sig['coords'] = center_coords_drift
+        reset_sig['ao_515_pwr'] = dark_reset_power
+        _,_,_ = image_sample.main(reset_sig, dark_reset_range, dark_reset_range, 
+                                  dark_reset_steps, 
+                          apd_indices, '515a',readout = dark_reset_time,  
+                          save_data=False, plot_data=False) 
+        _,_,_ = image_sample.main(reset_sig, dark_reset_range, dark_reset_range, 
+                                  dark_reset_steps, 
+                          apd_indices, '515a',readout = dark_reset_time,  
+                          save_data=False, plot_data=False)  
+
+        # test pulse at center             
+        pulse_file_name = 'simple_pulse.py'     
+        seq_args = [laser_515_delay, test_time, am_589_power, test_power, test_color ]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
         
@@ -299,30 +303,18 @@ def main_DM_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, 
         on_counts.append(sample_counts[0])
         
         
-        # "OFF" INITIAL PULSE 
+        # RIGHT SIV SCAN 
         # Move the ND filter to 0
-        time.sleep(0.01)
-        cxn.filter_slider_ell9k.set_filter('nd_0')
-        time.sleep(0.1) 
-        
-        # offset coords
-        offset_coords_drift = center_coords_drift + [siv_pulse_distance,0,0]
-        tool_belt.set_xyz(cxn, offset_coords_drift) 
-        
-        pulse_file_name = 'simple_pulse.py'            
-        seq_args = [laser_515_delay, siv_pulse_time, am_589_power, am_515_power, 532 ]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
-        cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
-        
-        # Set the Nd filter
-        time.sleep(0.01) 
-        cxn.filter_slider_ell9k.set_filter(nd_filter)
-        time.sleep(0.1) 
-        # Move back to center
-        tool_belt.set_xyz(cxn, center_coords_drift)
+        reset_sig = copy.deepcopy(nv_sig)
+        reset_sig['coords'] = center_coords_drift
+        reset_sig['ao_515_pwr'] = bright_reset_power
+        _,_,_ = image_sample.main(reset_sig, bright_reset_range, bright_reset_range, 
+                                  bright_reset_steps, 
+                          apd_indices, '515a',readout = bright_reset_time,  
+                          save_data=False, plot_data=False) 
         
         # test pulse                    
-        seq_args = [laser_515_delay, test_time, am_589_power, am_515_power, test_color ]
+        seq_args = [laser_515_delay, test_time, am_589_power, test_power, test_color ]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate(pulse_file_name, 1, seq_args_string)
         
@@ -350,7 +342,7 @@ def main_DM_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, 
 
 def sweep_test_pulse_length(nv_sig, test_color, test_power_mW, modulation, test_power_V, test_pulse_dur_list = None):
     apd_indices = [0]
-    num_reps = 100
+    num_reps = 25
     if not test_pulse_dur_list:
         test_pulse_dur_list = [0, 25, 50, 75, 100,  150 , 200, 250, 300, 400, 
                                    500, 750, 1000, 1500,
@@ -367,10 +359,10 @@ def sweep_test_pulse_length(nv_sig, test_color, test_power_mW, modulation, test_
     on_count_raw = []
     off_count_raw = []
     
-    if modulation == 'AM':
+    if modulation == 'no_scan':
         main_function = main_AM
-    elif modulation == 'DM':
-        main_function = main_DM
+    elif modulation == 'scan':
+        main_function = main_scan
     # Step through the pulse lengths for the test laser
     for test_time in test_pulse_dur_list:
         print('Testing {} us'.format(test_time/10**3))
@@ -407,6 +399,15 @@ def sweep_test_pulse_length(nv_sig, test_color, test_power_mW, modulation, test_
             'siv_pulse_time-units': 'ns',
             'siv_pulse_distance': siv_pulse_distance,
             'siv_pulse_distance-units': 'V',
+            'bright_reset_range': bright_reset_range,
+            'bright_reset_steps':bright_reset_steps,
+            'bright_reset_power':bright_reset_power,
+            'bright_reset_time':bright_reset_time,
+            
+            'dark_reset_range': dark_reset_range,
+            'dark_reset_steps':dark_reset_steps,
+            'dark_reset_power':dark_reset_power,
+            'dark_reset_time':dark_reset_time,
             'a0': a0,
             'd0': d0,
             'd0-units': 'ms',
@@ -459,7 +460,7 @@ if __name__ == '__main__':
     
     nv_2021_03_30 = { 'coords':[], 
             'name': '',
-            'expected_count_rate': None, 'nd_filter': 'nd_0.5',
+            'expected_count_rate': None, 'nd_filter': 'nd_0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -485,22 +486,22 @@ if __name__ == '__main__':
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
-        for i in range(len(p_mw)):
+        for i in [0]:#range(len(p_mw)):
             test_power_mw = p_mw[i]
             test_power_V = p_V[i]
             d0, d1 = sweep_test_pulse_length(nv_sig, '515a', test_power_mw, 
-                'AM',test_power_V,  test_pulse_dur_list = test_pulses)
+                'scan',test_power_V,  test_pulse_dur_list = test_pulses)
             d0_list.append(d0)
             d1_list.append(d1)
             
-    print(d0_list)
-    print(d1_list)
-    fig, ax = plt.subplots() 
-    ax.plot(p_mw, 1/numpy.array(d0_list), 'ro', label = 'd0 rate')
-    ax.plot(p_mw, 1/numpy.array(d1_list), 'ko', label = 'd1 rate')
-    ax.set_ylabel('x 10^3 s^-1')
-    ax.set_xlabel('Power (mW)')
-    ax.legend()
+#    print(d0_list)
+#    print(d1_list)
+#    fig, ax = plt.subplots() 
+#    ax.plot(p_mw, 1/numpy.array(d0_list), 'ro', label = 'd0 rate')
+#    ax.plot(p_mw, 1/numpy.array(d1_list), 'ko', label = 'd1 rate')
+#    ax.set_ylabel('x 10^3 s^-1')
+#    ax.set_xlabel('Power (mW)')
+#    ax.legend()
 
 #    folder = 'pc_rabi/branch_Spin_to_charge/determine_photoionization_rates_siv/2021_05'
 #    file = '2021_05_05-21_10_25-goeppert-mayer-nv5_2021_04_15'
