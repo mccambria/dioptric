@@ -38,7 +38,8 @@ from utils.tool_belt import States
 def unpack_interleave(data, num_runs=None):
     """
     Save the interleaved data into separate files and plots for each 
-    experiment.
+    experiment. If num_runs is not None, then only process the first
+    specified number of runs.
     """
     
     sig_counts_master_list = data['sig_counts_master_list']
@@ -49,7 +50,8 @@ def unpack_interleave(data, num_runs=None):
     tau_master_list = data['tau_master_list']
     nv_sig = data['nv_sig']
     gate_time = data['gate_time']
-    num_runs = data['run_ind'] + 1
+    if num_runs is None:
+        num_runs = data['num_runs']
     sig_counts_master_list = data['sig_counts_master_list']
     avg_sig_counts_master_list = []
     avg_ref_counts_master_list = []
@@ -61,6 +63,10 @@ def unpack_interleave(data, num_runs=None):
     for exp_ind in range(num_exp):
         sig_counts = sig_counts_master_list[exp_ind]
         ref_counts = ref_counts_master_list[exp_ind]
+        
+        # Clip according to the number of completed runs
+        sig_counts = sig_counts[0:num_runs][:]
+        ref_counts = ref_counts[0:num_runs][:]
         
         avg_sig_counts = numpy.average(sig_counts, axis=0)
         avg_ref_counts = numpy.average(ref_counts, axis=0)
@@ -560,4 +566,4 @@ if __name__ == '__main__':
     file = 'incremental'
     data = tool_belt.get_raw_data(path+folder, file)
     
-    unpack_interleave(data)
+    unpack_interleave(data, 70)

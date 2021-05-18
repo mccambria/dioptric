@@ -224,8 +224,8 @@ def get_data_points_csv(file):
 # %% Main
 
 
-def main(file_name, path, 
-         plot_type, rates_to_plot, temp_range=[190, 310]):
+def main(file_name, path, plot_type, rates_to_plot,
+         temp_range=[190, 310], xscale='linear', yscale='linear'):
 
     # %% Setup
 
@@ -300,8 +300,8 @@ def main(file_name, path,
         ax.set_ylabel(r'Ratio of fits')
     elif plot_type == 'residuals':
         ax.set_ylabel(r'Residuals (s$^{-1}$)')
-    # ax.set_yscale('log')
-    # ax.set_xscale('log')
+    ax.set_xscale(xscale)
+    ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
     # ax.set_ylim(1e-2, 1e4)
     # ax.set_ylim(-10, 130)
@@ -419,10 +419,13 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
     
-    temp_range=[190, 310]
+    temp_range = [140, 310]
+    xscale = 'linear'
+    yscale = 'log'
 
     file_name = 'compiled_data'
     # file_name = 'compiled_data-test'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     
-    main(file_name, path, plot_type, rates_to_plot, temp_range)
+    main(file_name, path, plot_type, rates_to_plot,
+         temp_range, xscale, yscale)
