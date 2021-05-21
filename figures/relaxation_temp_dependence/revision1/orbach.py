@@ -260,10 +260,11 @@ def main(file_name, path, plot_type, rates_to_plot,
 
     # Fit to Omega
     omega_popt, omega_pcov, omega_fit_func = fit_omega_orbach_T5(data_points)
-    omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
-    # omega_lambda = lambda temp: omega_calc(temp)
     # omega_popt[2] = 0
     # omega_popt[1] = 78
+    omega_popt = [5.10064267e+02, 7.59685834e+01, 1.37858651e-11]
+    omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
+    # omega_lambda = lambda temp: omega_calc(temp)
     print(omega_popt)
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'Omega']):
         ax.plot(temp_linspace, omega_lambda(temp_linspace),
@@ -419,7 +420,7 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
     
-    temp_range = [140, 310]
+    temp_range = [75, 310]
     xscale = 'linear'
     yscale = 'linear'
 

@@ -60,8 +60,8 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-    scan_range = 0.5
-    num_steps = 90
+    # scan_range = 0.5
+    # num_steps = 90
     # num_steps = 120
     
     # scan_range = 0.15
@@ -72,7 +72,7 @@ def do_image_sample(nv_sig, apd_indices):
     
     # scan_range = 5.0
     # scan_range = 3.0
-#    scan_range = 1.2
+    scan_range = 1.5
     # scan_range = 1.0
     # scan_range = 0.75
     # scan_range = 0.3
@@ -87,7 +87,7 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 150
 #    num_steps = 135
     # num_steps = 120
-    # num_steps = 90
+    num_steps = 90
     # num_steps = 60
     # num_steps = 50
     # num_steps = 20
@@ -172,9 +172,10 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     
     # Zoom
     freq_range = 0.035
+    # freq_range = 0.120
     num_steps = 51
     num_reps = 8000
-    num_runs = 10
+    num_runs = 3
     
     composite = False
 
@@ -204,7 +205,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
     num_reps = 8000
-    num_runs = 10
+    num_runs = 3
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -507,20 +508,29 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [-0.1, 0.1, -20],
-    # nv_sig = { 'coords': [0.0, 0.0, -20],
+    # nv_sig = { 'coords': [0.007, +0.093, 10],
+    nv_sig = { 'coords': [-0.290, 0.069, 110],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.8034, 'rabi_LOW': 301.8, 'uwave_power_LOW': 15.0,  # 15.0 max
-            'resonance_HIGH': 2.9511, 'rabi_HIGH': 175.2, 'uwave_power_HIGH': 12.0}   # 14.0 max
+            'resonance_LOW': 2.8040, 'rabi_LOW': 340, 'uwave_power_LOW': 15.0,  # 15.0 max
+            'resonance_HIGH': 2.9515, 'rabi_HIGH': 200, 'uwave_power_HIGH': 12.0}   # 14.0 max
     
     
     # %% Functions to run
 
     try:
         
-        # do_image_sample(nv_sig, apd_indices)
+        # for y_pos in numpy.linspace(700,1000,7,dtype=int):
+        #     with labrad.connect() as cxn:
+        #         cxn.cryo_piezos.write_xy(400,y_pos)
+        #     do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        #     do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        
+        with labrad.connect() as cxn:
+            cxn.cryo_piezos.write_xy(0, 850)
+        
+        do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
@@ -539,7 +549,7 @@ if __name__ == '__main__':
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
-        do_t1_interleave_knill(nv_sig, apd_indices)
+        # do_t1_interleave_knill(nv_sig, apd_indices)
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
@@ -550,9 +560,6 @@ if __name__ == '__main__':
         # for i in range(5):
         #     do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 9)
         
-        # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0,0)
-        
         # tool_belt.init_safe_stop()
         # while True:
         #     if tool_belt.safe_stop():
@@ -562,7 +569,7 @@ if __name__ == '__main__':
         #     time.sleep(300) 
         
         # tool_belt.init_safe_stop()
-        # for z in numpy.tile([0, -10],10):  
+        # for z in numpy.linspace(70, 100, 7, dtype=int):  
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig['coords'][2] = int(z)
