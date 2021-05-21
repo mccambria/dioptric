@@ -60,7 +60,7 @@ def set_xyz_zero():
 
 def do_image_sample(nv_sig, apd_indices):
     
-    # scan_range = 0.5
+    scan_range = 0.5
     # num_steps = 90
     # num_steps = 120
     
@@ -72,7 +72,7 @@ def do_image_sample(nv_sig, apd_indices):
     
     # scan_range = 5.0
     # scan_range = 3.0
-    scan_range = 1.5
+    # scan_range = 1.5
     # scan_range = 1.0
     # scan_range = 0.75
     # scan_range = 0.3
@@ -175,7 +175,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # freq_range = 0.120
     num_steps = 51
     num_reps = 8000
-    num_runs = 3
+    num_runs = 10
     
     composite = False
 
@@ -205,7 +205,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
     num_reps = 8000
-    num_runs = 3
+    num_runs = 10
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -509,28 +509,30 @@ if __name__ == '__main__':
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
     # nv_sig = { 'coords': [0.007, +0.093, 10],
-    nv_sig = { 'coords': [-0.290, 0.069, 110],
+    # nv_sig = { 'coords': [0.029, 0.068, 167],
+    nv_sig = { 'coords': [0.200, 0.080, 0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.8040, 'rabi_LOW': 340, 'uwave_power_LOW': 15.0,  # 15.0 max
-            'resonance_HIGH': 2.9515, 'rabi_HIGH': 200, 'uwave_power_HIGH': 12.0}   # 14.0 max
+            'resonance_LOW': 2.8038, 'rabi_LOW': 302.2, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9513, 'rabi_HIGH': 239.9, 'uwave_power_HIGH': 12.0}   # 14.5 max
     
     
     # %% Functions to run
 
     try:
         
-        # for y_pos in numpy.linspace(700,1000,7,dtype=int):
+        # for x_pos in numpy.linspace(-1250,-1750,11,dtype=int): 
         #     with labrad.connect() as cxn:
-        #         cxn.cryo_piezos.write_xy(400,y_pos)
-        #     do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        #     do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        #         cxn.cryo_piezos.write_xy(x_pos, 915)
+        #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        #     do_image_sample(nv_sig, apd_indices)
         
-        with labrad.connect() as cxn:
-            cxn.cryo_piezos.write_xy(0, 850)
+        # with labrad.connect() as cxn:
+        #     cxn.cryo_piezos.write_xy(0, 0)
         
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
@@ -542,8 +544,8 @@ if __name__ == '__main__':
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
