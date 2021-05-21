@@ -223,7 +223,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     # useful for us here.
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
-    sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
+    sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.float32)
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
     # norm_avg_sig = numpy.empty([num_runs, num_steps])

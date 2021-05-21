@@ -224,8 +224,8 @@ def get_data_points_csv(file):
 # %% Main
 
 
-def main(file_name, path, 
-         plot_type, rates_to_plot, temp_range=[190, 310]):
+def main(file_name, path, plot_type, rates_to_plot,
+         temp_range=[190, 310], xscale='linear', yscale='linear'):
 
     # %% Setup
 
@@ -260,10 +260,11 @@ def main(file_name, path,
 
     # Fit to Omega
     omega_popt, omega_pcov, omega_fit_func = fit_omega_orbach_T5(data_points)
-    omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
-    # omega_lambda = lambda temp: omega_calc(temp)
     # omega_popt[2] = 0
     # omega_popt[1] = 78
+    omega_popt = [5.10064267e+02, 7.59685834e+01, 1.37858651e-11]
+    omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
+    # omega_lambda = lambda temp: omega_calc(temp)
     print(omega_popt)
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'Omega']):
         ax.plot(temp_linspace, omega_lambda(temp_linspace),
@@ -300,8 +301,8 @@ def main(file_name, path,
         ax.set_ylabel(r'Ratio of fits')
     elif plot_type == 'residuals':
         ax.set_ylabel(r'Residuals (s$^{-1}$)')
-    # ax.set_yscale('log')
-    # ax.set_xscale('log')
+    ax.set_xscale(xscale)
+    ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
     # ax.set_ylim(1e-2, 1e4)
     # ax.set_ylim(-10, 130)
@@ -419,10 +420,13 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
     
-    temp_range=[190, 310]
+    temp_range = [75, 310]
+    xscale = 'linear'
+    yscale = 'linear'
 
     file_name = 'compiled_data'
     # file_name = 'compiled_data-test'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     
-    main(file_name, path, plot_type, rates_to_plot, temp_range)
+    main(file_name, path, plot_type, rates_to_plot,
+         temp_range, xscale, yscale)

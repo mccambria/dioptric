@@ -32,6 +32,150 @@ import labrad
 from utils.tool_belt import States
 
 
+# %% Functions
+    
+    
+def unpack_interleave(data, num_runs=None):
+    """
+    Save the interleaved data into separate files and plots for each 
+    experiment. If num_runs is not None, then only process the first
+    specified number of runs.
+    """
+    
+    sig_counts_master_list = data['sig_counts_master_list']
+    ref_counts_master_list = data['ref_counts_master_list']
+    params_master_list = data['params_master_list']
+    tau_ind_save_list = data['tau_ind_save_list']
+    opti_coords_master_list = data['opti_coords_master_list']
+    tau_master_list = data['tau_master_list']
+    nv_sig = data['nv_sig']
+    gate_time = data['gate_time']
+    if num_runs is None:
+        num_runs = data['num_runs']
+    sig_counts_master_list = data['sig_counts_master_list']
+    avg_sig_counts_master_list = []
+    avg_ref_counts_master_list = []
+    norm_sig_counts_master_list = []
+    
+
+    # %% Average the counts over the iterations, for each experiment
+    num_exp = len(params_master_list)
+    for exp_ind in range(num_exp):
+        sig_counts = sig_counts_master_list[exp_ind]
+        ref_counts = ref_counts_master_list[exp_ind]
+        
+        # Clip according to the number of completed runs
+        sig_counts = sig_counts[0:num_runs][:]
+        ref_counts = ref_counts[0:num_runs][:]
+        
+        avg_sig_counts = numpy.average(sig_counts, axis=0)
+        avg_ref_counts = numpy.average(ref_counts, axis=0)
+        
+        avg_sig_counts_master_list.append(avg_sig_counts.tolist())
+        avg_ref_counts_master_list.append(avg_ref_counts.tolist())
+
+        # Replace x/0=inf with 0
+        try:
+            norm_avg_sig = avg_sig_counts / avg_ref_counts
+        except RuntimeWarning as e:
+            print(e)
+            inf_mask = numpy.isinf(norm_avg_sig)
+            # Assign to 0 based on the passed conditional array
+            norm_avg_sig[inf_mask] = 0
+            
+        norm_sig_counts_master_list.append(norm_avg_sig.tolist())
+
+        # %% Plot and save each experiment data
+        
+        # Extract the params for each experiment
+        init_state_name = params_master_list[exp_ind][0][0]
+        read_state_name = params_master_list[exp_ind][0][1]
+        relaxation_time_range = params_master_list[exp_ind][1]
+        num_steps = params_master_list[exp_ind][2]
+        num_reps = params_master_list[exp_ind][3]
+        uwave_pi_pulse_init = params_master_list[exp_ind][4]
+        uwave_freq_init = params_master_list[exp_ind][5]
+        uwave_power_init = params_master_list[exp_ind][6]
+        uwave_pi_pulse_read = params_master_list[exp_ind][7]
+        uwave_freq_read = params_master_list[exp_ind][8]
+        uwave_power_read = params_master_list[exp_ind][9]
+        
+        tau_index_master_list = tau_ind_save_list[exp_ind]
+        opti_coords_list = opti_coords_master_list[exp_ind]
+        
+#        sig_counts = sig_counts_master_list[exp_ind]
+#        ref_counts = ref_counts_master_list[exp_ind]
+#        norm_avg_sig = norm_sig_counts_master_list[exp_ind]
+        
+        taus = tau_master_list[exp_ind]
+        
+        # Plot
+        individual_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+        
+        ax = axes_pack[0]
+        ax.plot(numpy.array(taus) / 10**6, avg_sig_counts, 'r-', label = 'signal')
+        ax.plot(numpy.array(taus) / 10**6, avg_ref_counts, 'g-', label = 'reference')
+        ax.set_xlabel('Relaxation time (ms)')
+        ax.set_ylabel('Counts')
+        ax.legend()
+        
+        ax = axes_pack[1]
+        ax.plot(numpy.array(taus) / 10**6, norm_avg_sig, 'b-')
+        ax.set_title('T1 Measurement. Initial state: {}, readout state: {}'.format(init_state_name, read_state_name))
+        ax.set_xlabel('Relaxation time (ms)')
+        ax.set_ylabel('Contrast (arb. units)')
+    
+        individual_fig.canvas.draw()
+        # fig.set_tight_layout(True)
+        individual_fig.canvas.flush_events()
+        
+        timestamp = tool_belt.get_time_stamp()
+
+        individual_raw_data = {'timestamp': timestamp,
+#            'timeElapsed': timeElapsed,
+            'init_state': init_state_name,
+            'read_state': read_state_name,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'gate_time': gate_time,
+            'gate_time-units': 'ns',
+            'uwave_freq_init': uwave_freq_init,
+            'uwave_freq_init-units': 'GHz',
+            'uwave_freq_read': uwave_freq_read,
+            'uwave_freq_read-units': 'GHz',
+            'uwave_power_init': uwave_power_init,
+            'uwave_power_init-units': 'dBm',
+            'uwave_power_read': uwave_power_read,
+            'uwave_power_read-units': 'dBm',
+            'uwave_pi_pulse_init': uwave_pi_pulse_init,
+            'uwave_pi_pulse_init-units': 'ns',
+            'uwave_pi_pulse_read': uwave_pi_pulse_read,
+            'uwave_pi_pulse_read-units': 'ns',
+            'relaxation_time_range': relaxation_time_range,
+            'relaxation_time_range-units': 'ns',
+            'num_steps': num_steps,
+            'num_reps': num_reps,
+            'num_runs': num_runs,
+            'tau_index_master_list': tau_index_master_list,
+            'opti_coords_list': opti_coords_list,
+            'opti_coords_list-units': 'V',
+            'sig_counts': sig_counts,
+            'sig_counts-units': 'counts',
+            'ref_counts': ref_counts,
+            'ref_counts-units': 'counts',
+            'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
+            'norm_avg_sig-units': 'arb'}
+           
+        # Save each figure
+        
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+        tool_belt.save_raw_data(individual_raw_data, file_path)
+        tool_belt.save_figure(individual_fig, file_path)
+        
+        # Sleep for 1.1 seconds so the files don't save over eachother
+        time.sleep(1.1)
+
+
 # %% Main
 
 
@@ -370,120 +514,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
     # %% Hardware clean up
 
     tool_belt.reset_cfm(cxn)
-
-    # %% Average the counts over the iterations, for each experiment
-    for exp_ind in range(num_exp):
-        sig_counts = sig_counts_master_list[exp_ind]
-        ref_counts = ref_counts_master_list[exp_ind]
-        
-        avg_sig_counts = numpy.average(sig_counts, axis=0)
-        avg_ref_counts = numpy.average(ref_counts, axis=0)
-        
-        avg_sig_counts_master_list.append(avg_sig_counts.tolist())
-        avg_ref_counts_master_list.append(avg_ref_counts.tolist())
-
-        # Replace x/0=inf with 0
-        try:
-            norm_avg_sig = avg_sig_counts / avg_ref_counts
-        except RuntimeWarning as e:
-            print(e)
-            inf_mask = numpy.isinf(norm_avg_sig)
-            # Assign to 0 based on the passed conditional array
-            norm_avg_sig[inf_mask] = 0
-            
-        norm_sig_counts_master_list.append(norm_avg_sig.tolist())
-
-        # %% Plot and save each experiment data
-        
-        # Extract the params for each experiment
-        init_state_name = params_master_list[exp_ind][0][0]
-        read_state_name = params_master_list[exp_ind][0][1]
-        relaxation_time_range = params_master_list[exp_ind][1]
-        num_steps = params_master_list[exp_ind][2]
-        num_reps = params_master_list[exp_ind][3]
-        uwave_pi_pulse_init = params_master_list[exp_ind][4]
-        uwave_freq_init = params_master_list[exp_ind][5]
-        uwave_power_init = params_master_list[exp_ind][6]
-        uwave_pi_pulse_read = params_master_list[exp_ind][7]
-        uwave_freq_read = params_master_list[exp_ind][8]
-        uwave_power_read = params_master_list[exp_ind][9]
-        
-        tau_index_master_list = tau_ind_save_list[exp_ind]
-        opti_coords_list = opti_coords_master_list[exp_ind]
-        
-#        sig_counts = sig_counts_master_list[exp_ind]
-#        ref_counts = ref_counts_master_list[exp_ind]
-#        norm_avg_sig = norm_sig_counts_master_list[exp_ind]
-        
-        taus = tau_master_list[exp_ind]
-        
-        # Plot
-        individual_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-        
-        ax = axes_pack[0]
-        ax.plot(numpy.array(taus) / 10**6, avg_sig_counts, 'r-', label = 'signal')
-        ax.plot(numpy.array(taus) / 10**6, avg_ref_counts, 'g-', label = 'reference')
-        ax.set_xlabel('Relaxation time (ms)')
-        ax.set_ylabel('Counts')
-        ax.legend()
-        
-        ax = axes_pack[1]
-        ax.plot(numpy.array(taus) / 10**6, norm_avg_sig, 'b-')
-        ax.set_title('T1 Measurement. Initial state: {}, readout state: {}'.format(init_state_name, read_state_name))
-        ax.set_xlabel('Relaxation time (ms)')
-        ax.set_ylabel('Contrast (arb. units)')
-    
-        individual_fig.canvas.draw()
-        # fig.set_tight_layout(True)
-        individual_fig.canvas.flush_events()
-        
-        timestamp = tool_belt.get_time_stamp()
-
-        individual_raw_data = {'timestamp': timestamp,
-#            'timeElapsed': timeElapsed,
-            'init_state': init_state_name,
-            'read_state': read_state_name,
-            'nv_sig': nv_sig,
-            'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'gate_time': gate_time,
-            'gate_time-units': 'ns',
-            'uwave_freq_init': uwave_freq_init,
-            'uwave_freq_init-units': 'GHz',
-            'uwave_freq_read': uwave_freq_read,
-            'uwave_freq_read-units': 'GHz',
-            'uwave_power_init': uwave_power_init,
-            'uwave_power_init-units': 'dBm',
-            'uwave_power_read': uwave_power_read,
-            'uwave_power_read-units': 'dBm',
-            'uwave_pi_pulse_init': uwave_pi_pulse_init,
-            'uwave_pi_pulse_init-units': 'ns',
-            'uwave_pi_pulse_read': uwave_pi_pulse_read,
-            'uwave_pi_pulse_read-units': 'ns',
-            'relaxation_time_range': relaxation_time_range,
-            'relaxation_time_range-units': 'ns',
-            'num_steps': num_steps,
-            'num_reps': num_reps,
-            'num_runs': num_runs,
-            'tau_index_master_list': tau_index_master_list,
-            'opti_coords_list': opti_coords_list,
-            'opti_coords_list-units': 'V',
-            'sig_counts': sig_counts,
-            'sig_counts-units': 'counts',
-            'ref_counts': ref_counts,
-            'ref_counts-units': 'counts',
-            'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-            'norm_avg_sig-units': 'arb'}
-           
-        # Save each figure
-        
-        file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-        tool_belt.save_raw_data(individual_raw_data, file_path)
-        tool_belt.save_figure(individual_fig, file_path)
-        
-        # Sleep for 1.1 seconds so the files don't save over eachother
-        time.sleep(1.1)
     
     # %% Save the data
+    
+    # At this point incr_data is all the data so just unpack it
+    unpack_interleave(incr_data)
 
     endFunctionTime = time.time()
 
@@ -519,3 +554,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
     
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])    
     tool_belt.save_raw_data(full_data, file_path)
+
+
+# %% Run the file
+
+
+if __name__ == '__main__':
+    
+    path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
+    folder = 'hopper-nv1_2021_03_16-150K'
+    file = 'incremental'
+    data = tool_belt.get_raw_data(path+folder, file)
+    
+    unpack_interleave(data, 70)
