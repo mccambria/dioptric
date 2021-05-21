@@ -421,7 +421,7 @@ if __name__ == '__main__':
     
     temp_range = [140, 310]
     xscale = 'linear'
-    yscale = 'log'
+    yscale = 'linear'
 
     file_name = 'compiled_data'
     # file_name = 'compiled_data-test'
