@@ -264,7 +264,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
         
         # For each experiment, take the time values and create a linspace
         taus = numpy.linspace(min_relaxation_time, max_relaxation_time,
-                          num=num_steps, dtype=numpy.int32)
+                          num=num_steps, dtype=numpy.int64)
         tau_master_list.append(taus.tolist())
         
         # also calculate the half length for each tau list to step through, 
@@ -283,7 +283,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
         # Create empty arrays to fill with data, the indexing will be [exp_ind][num_run][num_steps]
 
         #append the list with each experiment's specific sized arrays        
-        sig_count_single = numpy.empty([num_runs, num_steps], dtype=numpy.uint32) 
+        sig_count_single = numpy.empty([num_runs, num_steps], dtype=numpy.float32) 
         sig_count_single[:] = numpy.nan
         ref_count_single = numpy.copy(sig_count_single)
         
@@ -346,7 +346,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
         seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
-        seq_time = ret_vals[0]
+        seq_time = int(ret_vals[0])
         
         seq_time_s = seq_time / (10**9)  # s
         expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
