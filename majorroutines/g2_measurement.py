@@ -197,7 +197,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     diff_window_ps = diff_window * 1000
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
-    num_bins = int((1) * diff_window) + 1
+    num_bins = int(2 * diff_window) + 1
     # num_bins = 151
     # num_bins = diff_window + 1
     # num_bins = int(2*mod)-1

@@ -562,8 +562,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
 if __name__ == '__main__':
     
     path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-150K'
+    folder = 'hopper-nv1_2021_03_16-85K'
     file = 'incremental'
     data = tool_belt.get_raw_data(path+folder, file)
     
-    unpack_interleave(data, 70)
+    unpack_interleave(data, 148)

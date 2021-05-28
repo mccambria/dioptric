@@ -293,6 +293,8 @@ def get_data_lists(folder_name):
 
 def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = True):
 
+    slow = True
+    
     path_folder = path + folder
     # Get the file list from the folder
     omega_exp_list, gamma_exp_list, \
@@ -327,7 +329,10 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
         zero_relaxation_ste = numpy.sqrt(zero_zero_ste**2 + zero_plus_ste**2)
 
-        init_params_list = [0.1, 0.3]
+        if slow:
+            init_params_list = [0.24/1000, 0.16]
+        else:
+            init_params_list = [0.1, 0.3]
 
         try:
             if offset:
@@ -344,6 +349,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                                              zero_relaxation_counts, p0 = init_params,
                                              sigma = zero_relaxation_ste,
                                              absolute_sigma=True)
+                omega_opti_params = numpy.array(init_params)
+                cov_arr = numpy.array([[0,0],[0,0]])
 
         except Exception:
 
@@ -420,7 +427,11 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
     plus_relaxation_counts = numpy.delete(plus_relaxation_counts, inds_to_remove)
     plus_relaxation_ste = numpy.delete(plus_relaxation_ste, inds_to_remove)
 
-    init_params_list = [2*omega, 0.40]
+    if slow:
+        init_params_list = [3*omega, 0.16]
+    else:
+        init_params_list = [2*omega, 0.40]
+        
     try:
         if offset:
 
@@ -449,6 +460,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             # print(gamma_opti_params)
             # gamma_opti_params = numpy.array([0.0,0.0,0])
             # cov_arr = numpy.array([[0,0,0],[0,0,0],[0,0,0]])
+            gamma_opti_params = numpy.array(init_params)
+            cov_arr = numpy.array([[0,0],[0,0]])
 
     except Exception as e:
         gamma_fit_failed = True
@@ -558,19 +571,19 @@ if __name__ == '__main__':
 
     temp = 85
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print('good times in ms')
-    print('Omega: {}'.format(4000/(3*est_omega)))
-    print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    # est_omega = omega_calc(temp)
+    # est_gamma = gamma_calc(temp)
+    # print('good times in ms')
+    # print('Omega: {}'.format(4000/(3*est_omega)))
+    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
 
-    # path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
-    # folders = [
-    #             'hopper-nv1_2021_03_16-{}K'.format(temp),
-    #             # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
-    #             # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
-    #             ]
+    path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
+    folders = [
+                'hopper-nv1_2021_03_16-{}K'.format(temp),
+                # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
+                ]
 
-    # for folder in folders:
-    #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
-    #                       doPlot=True, offset=False)
+    for folder in folders:
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                          doPlot=True, offset=False)
