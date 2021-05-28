@@ -205,8 +205,10 @@ def sim_background_nv(background_count_rate, nv_count_rate, bin_size,
 if __name__ == '__main__':
     
     # Second quantities
-    background_count_rate = 12000
-    nv_count_rate = 38000
+    # background_count_rate = 12000
+    # nv_count_rate = 50000 - background_count_rate
+    background_count_rate = 500
+    nv_count_rate = 20000
     measurement_time = 60*10
     
     # ns quantities
@@ -215,11 +217,11 @@ if __name__ == '__main__':
     
     # sim_background_background(background_count_rate, bin_size,
     #                           measurement_time, diff_window)
-    # expected = background_count_rate**2 * measurement_time * bin_size * 1e-9 / 4
-    # print('expected: {}'.format(expected))
+    expected = background_count_rate**2 * measurement_time * bin_size * 1e-9 / 4
+    print('expected: {}'.format(expected))
     
-    sim_background_nv(background_count_rate, nv_count_rate, 
-                      bin_size, measurement_time, diff_window)
+    # sim_background_nv(background_count_rate, nv_count_rate, 
+    #                   bin_size, measurement_time, diff_window)
     expected = background_count_rate* nv_count_rate * measurement_time * bin_size * 1e-9 / 2
     print('expected: {}'.format(expected))
     
