@@ -82,7 +82,7 @@ def process_raw_buffer(timestamps, channels,
                 diff_channel = d_chan_name
             elif click_channel == apd_b_chan_name:
                 diff_channel = c_chan_name
-            if click_channel == c_chan_name:
+            elif click_channel == c_chan_name:
                 diff_channel = apd_b_chan_name
             elif click_channel == d_chan_name:
                 diff_channel = apd_a_chan_name
@@ -102,7 +102,7 @@ def process_raw_buffer(timestamps, channels,
             if diff > diff_window:
                 break
             # Only record the diff between opposite chanels
-            if channels[next_index] == diff_channel:
+            if (channels[next_index] == diff_channel) and (diff_channel == apd_b_chan_name):
                 # Flip the sign for diffs relative to APD 2 
                 if click_channel in [apd_b_chan_name, d_chan_name]:
                     diff = -diff
@@ -178,7 +178,7 @@ def sim_background_nv(background_count_rate, nv_count_rate, bin_size,
     
     # Account for NV light antibunching by removing counts on channels 2 or 3 
     # that occur within 100 ns of each other. 
-    indices_to_delete = find_afterpulses(timestamps, channels, [2,3], 100)
+    indices_to_delete = find_afterpulses(timestamps, channels, [2,3], 0)
     timestamps = numpy.delete(timestamps, indices_to_delete)
     channels = numpy.delete(channels, indices_to_delete)
 
@@ -205,10 +205,10 @@ def sim_background_nv(background_count_rate, nv_count_rate, bin_size,
 if __name__ == '__main__':
     
     # Second quantities
-    # background_count_rate = 12000
-    # nv_count_rate = 50000 - background_count_rate
-    background_count_rate = 500
-    nv_count_rate = 20000
+    background_count_rate = 12000
+    nv_count_rate = 50000 - background_count_rate
+    # background_count_rate = 500
+    # nv_count_rate = 20000
     measurement_time = 60*10
     
     # ns quantities
@@ -217,11 +217,11 @@ if __name__ == '__main__':
     
     # sim_background_background(background_count_rate, bin_size,
     #                           measurement_time, diff_window)
-    expected = background_count_rate**2 * measurement_time * bin_size * 1e-9 / 4
-    print('expected: {}'.format(expected))
+    # expected = background_count_rate**2 * measurement_time * bin_size * 1e-9 / 4
+    # print('expected: {}'.format(expected))
     
-    # sim_background_nv(background_count_rate, nv_count_rate, 
-    #                   bin_size, measurement_time, diff_window)
+    sim_background_nv(background_count_rate, nv_count_rate, 
+                      bin_size, measurement_time, diff_window)
     expected = background_count_rate* nv_count_rate * measurement_time * bin_size * 1e-9 / 2
     print('expected: {}'.format(expected))
     

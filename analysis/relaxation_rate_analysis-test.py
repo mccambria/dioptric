@@ -124,8 +124,9 @@ def get_data_lists(folder_name):
             num_steps = data['num_steps']
 
             num_runs = data['num_runs']
-            sig_counts  = numpy.array(data['sig_counts'])
-            ref_counts = numpy.array(data['ref_counts'])
+            # num_runs = 70
+            sig_counts  = numpy.array(data['sig_counts'])[0:num_runs, :]
+            ref_counts = numpy.array(data['ref_counts'])[0:num_runs, :]
 
             # Calculate time arrays in us
             min_relaxation_time, max_relaxation_time = \
@@ -135,8 +136,16 @@ def get_data_lists(folder_name):
 
             # Calculate the average signal counts over the runs, and st. error
 #            print(sig_counts)
+            avg_sig_counts_all_runs = numpy.average(sig_counts[::], axis=0)
+            # ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(avg_sig_counts)
+            std_sig_counts = numpy.sqrt(avg_sig_counts_all_runs)
+            
+            num_runs = 2
+            sig_counts  = sig_counts[0:num_runs, :]
+            ref_counts = ref_counts[0:num_runs, :]
+            
+            ste_sig_counts = std_sig_counts / numpy.sqrt(num_runs)
             avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-            ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
 
             # Assume reference is constant and can be approximated to one value
             avg_ref = numpy.average(ref_counts[::])
@@ -293,7 +302,7 @@ def get_data_lists(folder_name):
 
 def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = True):
 
-    slow = True
+    slow = False
     
     path_folder = path + folder
     # Get the file list from the folder
@@ -571,7 +580,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 85
+    temp = 150
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)

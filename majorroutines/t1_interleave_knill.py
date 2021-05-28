@@ -566,4 +566,4 @@ if __name__ == '__main__':
     file = 'incremental'
     data = tool_belt.get_raw_data(path+folder, file)
     
-    unpack_interleave(data, 148)
+    unpack_interleave(data, 232)
