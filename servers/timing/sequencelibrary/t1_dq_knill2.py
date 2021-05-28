@@ -213,7 +213,7 @@ def get_seq(pulser_wiring, args):
     final_digital = [pulser_wiring['do_532_aom'],
                      pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
-    return seq, final, [period]
+    return seq, final, [str(period)]
 
 
 if __name__ == '__main__':
