@@ -352,6 +352,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 if slow:
                     omega_opti_params = numpy.array(init_params)
                     cov_arr = numpy.array([[0,0],[0,0]])
+                    
+            # MCC
+            print(omega_opti_params)
 
         except Exception:
 
@@ -464,6 +467,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             if slow:
                 gamma_opti_params = numpy.array(init_params)
                 cov_arr = numpy.array([[0,0],[0,0]])
+                    
+        # MCC
+        print(gamma_opti_params)
 
     except Exception as e:
         gamma_fit_failed = True

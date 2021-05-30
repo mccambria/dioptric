@@ -9,6 +9,7 @@ Created on Thu May 27 22:30:51 2021
 from numpy import random
 import numpy
 import matplotlib.pyplot as plt
+from scipy.stats import poisson
 
 
 def find_afterpulses(timestamps, channels, chan_names, afterpulse_window):
@@ -102,7 +103,7 @@ def process_raw_buffer(timestamps, channels,
             if diff > diff_window:
                 break
             # Only record the diff between opposite chanels
-            if (channels[next_index] == diff_channel) and (diff_channel == apd_b_chan_name):
+            if (channels[next_index] == diff_channel):# and (diff_channel == apd_b_chan_name):
                 # Flip the sign for diffs relative to APD 2 
                 if click_channel in [apd_b_chan_name, d_chan_name]:
                     diff = -diff
@@ -129,6 +130,33 @@ def plot_hist(differences, num_bins, diff_window):
     fig.set_tight_layout(True)
     fig.canvas.draw()
     fig.canvas.flush_events()
+    return hist
+            
+    
+def plot_dist(hist, param):
+    
+    fig, ax = plt.subplots()
+    min_val = numpy.min(hist) - 5
+    max_val = numpy.max(hist) + 5
+    num_bins = max_val-min_val
+    bin_edges = numpy.linspace(min_val+0.5, max_val-0.5, num_bins)
+    hist, _ = numpy.histogram(hist, bin_edges, density=True)
+    bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
+    bin_centers = bin_edges[0: num_bins-1] + bin_center_offset
+    # print(bin_centers)
+    ax.plot(bin_centers, hist, label='Simulated')
+    # ax.plot(bin_centers, hist, marker='o', linestyle='none', markersize=3)
+    # xlim = int(1.1 * diff_window)
+    # ax.set_xlim(-xlim, xlim)
+    
+    ax.plot(bin_centers, poisson.pmf(bin_centers, param), label='Analytical')
+    
+    ax.set_xlabel('Number of coincidences')
+    ax.set_ylabel('Probability')
+    ax.legend()
+    fig.set_tight_layout(True)
+    fig.canvas.draw()
+    fig.canvas.flush_events()
 
 
 def sim_background_background(background_count_rate, bin_size,
@@ -146,18 +174,14 @@ def sim_background_background(background_count_rate, bin_size,
     
     process_raw_buffer(timestamps, channels, diff_window, 0,
                        differences_append, 0, 1)
-    # print(differences)
-    # unique = numpy.unique(timestamps)
-    # print(num_counts)
-    # print(len(unique))
-    
-    # unique, counts = numpy.unique(differences, return_counts=True)
-    # hist = dict(zip(unique, counts))
-    # print(hist)
 
     num_bins = int(2 * diff_window) # 1 ns bins
     
-    plot_hist(differences, num_bins, diff_window)
+    hist = plot_hist(differences, num_bins, diff_window)
+    
+    param = background_count_rate**2 * measurement_time * bin_size * 1e-9 / 4
+    print('expected: {}'.format(param))
+    plot_dist(hist, param)
 
 
 def sim_background_nv(background_count_rate, nv_count_rate, bin_size,
@@ -187,18 +211,14 @@ def sim_background_nv(background_count_rate, nv_count_rate, bin_size,
     
     process_raw_buffer(timestamps, channels, diff_window, 0,
                        differences_append, 0, 1, 2, 3)
-    # print(differences)
-    # unique = numpy.unique(timestamps)
-    # print(num_counts)
-    # print(len(unique))
-    
-    # unique, counts = numpy.unique(differences, return_counts=True)
-    # hist = dict(zip(unique, counts))
-    # print(hist)
 
     num_bins = int(2 * diff_window) # 1 ns bins
     
-    plot_hist(differences, num_bins, diff_window)
+    hist = plot_hist(differences, num_bins, diff_window)
+    
+    param = background_count_rate * nv_count_rate * measurement_time * bin_size * 1e-9 / 2
+    print('expected: {}'.format(param))
+    plot_dist(hist, param)
     
 
 
@@ -215,13 +235,9 @@ if __name__ == '__main__':
     bin_size = 1  # The code assumes 1 ns bins right now
     diff_window = 150
     
-    # sim_background_background(background_count_rate, bin_size,
-    #                           measurement_time, diff_window)
-    # expected = background_count_rate**2 * measurement_time * bin_size * 1e-9 / 4
-    # print('expected: {}'.format(expected))
+    sim_background_background(background_count_rate, bin_size,
+                              measurement_time, diff_window)
     
-    sim_background_nv(background_count_rate, nv_count_rate, 
-                      bin_size, measurement_time, diff_window)
-    expected = background_count_rate* nv_count_rate * measurement_time * bin_size * 1e-9 / 2
-    print('expected: {}'.format(expected))
+    # sim_background_nv(background_count_rate, nv_count_rate, 
+    #                   bin_size, measurement_time, diff_window)
     
