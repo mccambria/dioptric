@@ -109,32 +109,6 @@ def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     # coeff_T5 = 0
     return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp**5)
 
-
-def simultaneous_orbach_T5_free(temps, omega_coeff_orbach, omega_coeff_T5,
-                                gamma_coeff, activation):
-    """
-    Only use this for fitting to Omega and gamma simultaneously. This assumes
-    the temp argument is a list/array. 
-    """
-    
-    omega_rate_lambda = lambda temp_val: orbach_T5_free(temp_val,
-                            omega_coeff_orbach, activation, omega_coeff_T5)
-    gamma_rate_lambda = lambda temp_val: orbach_free(temp_val,
-                                                     gamma_coeff, activation)
-    ret_vals = []
-    num_vals = len(temps)
-    for ind in range(num_vals):
-        temp_val = temps[ind]
-        # Omegas are even indexed
-        if ind % 2 == 0:
-            ret_vals.append(omega_rate_lambda(temp_val))
-        # gammas are odd indexed
-        else:
-            ret_vals.append(gamma_rate_lambda(temp_val))
-            
-    return ret_vals
-
-
 def T5_free(temp, coeff_T5):
     return coeff_T5 * temp**5
 
@@ -204,50 +178,6 @@ def fit_gamma_orbach(data_points):
     return popt, pcov, fit_func
 
 
-def fit_simultaneous(data_points):
-
-    # To fit to Omega and gamma simultaneously, set up a combined list of the
-    # rates. Parity determines which rate is where. Even is Omega, odd is 
-    # gamma.
-    temps = []
-    combined_rates = []
-    combined_errs = []
-    for point in data_points:
-        # Crash if we're trying to work with incomplete data
-        if (point[omega_column_title] is None) or (point[gamma_column_title] is None):
-            crash = 1/0
-        temps.append(point[temp_column_title])
-        combined_rates.append(point[omega_column_title])
-        combined_errs.append(point[omega_err_column_title])
-        temps.append(point[temp_column_title])
-        combined_rates.append(point[gamma_column_title])
-        combined_errs.append(point[gamma_err_column_title])
-    
-    # print(temps)
-    # print(combined_rates)
-    # print(combined_errs)
-
-    fit_func = simultaneous_orbach_T5_free
-    init_params = (510, 1.38e-11, 2000, 74.0)
-
-    num_params = len(init_params)
-    popt, pcov = curve_fit(fit_func, temps, combined_rates, p0=init_params,
-                           sigma=combined_errs, absolute_sigma=True,
-                           bounds=([0]*num_params,[numpy.inf]*num_params),
-                           method='dogbox')
-    # print(simultaneous_orbach_T5_free(temps, *popt))
-    
-    omega_popt = [popt[0], popt[3], popt[1]]
-    omega_pcov = [pcov[0], pcov[3], pcov[1]]
-    omega_fit_func = orbach_T5_free
-    
-    gamma_popt = [popt[2], popt[3]]
-    gamma_pcov = [pcov[2], pcov[3]]
-    gamma_fit_func = orbach_free
-
-    return omega_popt, omega_pcov, omega_fit_func, gamma_popt, gamma_pcov, gamma_fit_func
-
-
 def get_data_points_csv(file):
 
     # Marker and color combination to distinguish samples
@@ -291,59 +221,6 @@ def get_data_points_csv(file):
     return data_points
 
 
-def plot_scalings(process_to_plot,
-                  temp_range=[190, 310], rate_range=None, 
-                  xscale='linear', yscale='linear'):
-
-    # %% Setup
-
-    plt.rcParams['text.latex.preamble'] = [
-        r'\usepackage{physics}',
-        r'\usepackage{sfmath}',
-        r'\usepackage{upgreek}',
-        r'\usepackage{helvet}',
-       ]
-    plt.rcParams.update({'font.size': 11.25})   
-    plt.rcParams.update({'font.family': 'sans-serif'})
-    plt.rcParams.update({'font.sans-serif': ['Helvetica']})
-    plt.rc('text', usetex=True)
-
-    min_temp = temp_range[0]
-    max_temp = temp_range[1]
-
-    # temp_linspace = numpy.linspace(5, 600, 1000)
-    temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
-    # temp_linspace = numpy.linspace(5, 300, 1000)
-    # temp_linspace = numpy.linspace(5, 5000, 1000)
-    fig, ax = plt.subplots()
-    fig.set_tight_layout(True)
-    # ax.set_title('Relaxation rates')
-
-    if process_to_plot in ['Walker', 'both']:
-        process_lambda = lambda temp: orbach_T5_free(temp, 0, 75, 1/(300**5))
-        process_edge_color = 'blue'
-        ax.plot(temp_linspace, process_lambda(temp_linspace),
-                color=process_edge_color, label='Walker')
-    if process_to_plot in ['Orbach', 'both']:
-        process_lambda = lambda temp: orbach_T5_free(temp, 1/bose(75, 300), 75, 0)
-        process_edge_color = 'red'
-        ax.plot(temp_linspace, process_lambda(temp_linspace),
-                color=process_edge_color, label='Orbach')
-
-    ax.set_xlabel(r'T (K)')
-    ax.set_ylabel(r'Relaxation rate (arb. units)')
-    ax.set_xscale(xscale)
-    ax.set_yscale(yscale)
-    ax.set_xlim(min_temp, max_temp)
-    if rate_range is not None:
-        ax.set_ylim(rate_range[0], rate_range[1])
-    if process_to_plot in ['Walker', 'Orbach']:
-        ax.set_title('{} Process Temperature Dependence'.format(process_to_plot))
-    elif process_to_plot == 'both':
-        ax.set_title('Relaxation Process Temperature Dependence')
-        ax.legend(loc='upper left')
-
-
 # %% Main
 
 
@@ -381,25 +258,13 @@ def main(file_name, path, plot_type, rates_to_plot,
     fig.set_tight_layout(True)
     # ax.set_title('Relaxation rates')
 
-    # # Fit to Omega
-    # omega_popt, omega_pcov, omega_fit_func = fit_omega_orbach_T5(data_points)
-    # # omega_popt[2] = 0
-    # # omega_popt[1] = 78
-    # # omega_popt = [5.10064267e+02, 7.59685834e+01, 1.37858651e-11]
-    # omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
-    # # omega_lambda = lambda temp: omega_calc(temp)
-
-    # # Fit to gamma
-    # gamma_popt, gamma_pcov, gamma_fit_func = fit_gamma_orbach(data_points)
-    # gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
-    # # gamma_lambda = lambda temp: gamma_calc(temp)
-    # # gamma_popt[1] = omega_popt[1]
-
-    # Fit to Omega and gamma simultaneously
-    ret_vals = fit_simultaneous(data_points)
-    omega_popt, omega_pcov, omega_fit_func, gamma_popt, gamma_pcov, gamma_fit_func = ret_vals
-    
+    # Fit to Omega
+    omega_popt, omega_pcov, omega_fit_func = fit_omega_orbach_T5(data_points)
+    # omega_popt[2] = 0
+    # omega_popt[1] = 78
+    omega_popt = [5.10064267e+02, 7.59685834e+01, 1.37858651e-11]
     omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
+    # omega_lambda = lambda temp: omega_calc(temp)
     print(omega_popt)
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'Omega']):
         ax.plot(temp_linspace, omega_lambda(temp_linspace),
@@ -407,15 +272,17 @@ def main(file_name, path, plot_type, rates_to_plot,
         # Plot Jarmola 2012 Eq. 1 for S3
         # ax.plot(temp_linspace, omega_calc(temp_linspace),
         #         label=r'$\Omega$ fit', color=omega_edge_color)
-        
+
+    # Fit to gamma
+    gamma_popt, gamma_pcov, gamma_fit_func = fit_gamma_orbach(data_points)
     gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
+    # gamma_lambda = lambda temp: gamma_calc(temp)
+    # gamma_popt[1] = omega_popt[1]
     print(gamma_popt)
-    print(numpy.sqrt(gamma_popt[1]))
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'gamma']):
         ax.plot(temp_linspace, gamma_lambda(temp_linspace),
                 label=r'$\gamma$ fit', color=gamma_edge_color)
-    
-    # Plot ratio
+
     ratio_lambda = lambda temp: gamma_lambda(temp_linspace) / omega_lambda(temp_linspace)
     if plot_type == 'ratio_fits':
         ax.plot(temp_linspace, ratio_lambda(temp_linspace),
@@ -553,8 +420,7 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
     
-    temp_range = [140, 310]
-    rate_range = [0, 4.5]
+    temp_range = [10, 500]
     xscale = 'linear'
     yscale = 'linear'
 
@@ -563,10 +429,4 @@ if __name__ == '__main__':
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     
     main(file_name, path, plot_type, rates_to_plot,
-          temp_range, xscale, yscale)
-    
-    # # process_to_plot = 'Walker'
-    # # process_to_plot = 'Orbach'
-    # process_to_plot = 'both'
-    
-    # plot_scalings(process_to_plot, temp_range, rate_range, xscale, yscale)
+         temp_range, xscale, yscale)
