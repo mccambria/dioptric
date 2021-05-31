@@ -36,7 +36,7 @@ def create_fit_figure(freq_range, freq_center, num_steps,
     ax.plot(smooth_freqs, fit_func(smooth_freqs, *popt), 'r-', label='fit')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
-    ax.legend()
+    ax.legend(loc='lower right')
 
     text = '\n'.join(('Contrast = {:.3f}',
                       'Standard deviation = {:.4f} GHz',
@@ -48,12 +48,12 @@ def create_fit_figure(freq_range, freq_center, num_steps,
         low_text = text.format(*popt[0:3])
         high_text = text.format(*popt[3:6])
 
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(0.05, 0.15, low_text, transform=ax.transAxes, fontsize=12,
-            verticalalignment="top", bbox=props)
-    if high_text is not None:
-        ax.text(0.55, 0.15, high_text, transform=ax.transAxes, fontsize=12,
-                verticalalignment="top", bbox=props)
+    # props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    # ax.text(0.05, 0.15, low_text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment="top", bbox=props)
+    # if high_text is not None:
+    #     ax.text(0.55, 0.15, high_text, transform=ax.transAxes, fontsize=12,
+    #             verticalalignment="top", bbox=props)
 
     fig.canvas.draw()
     fig.set_tight_layout(True)
@@ -518,11 +518,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 
 if __name__ == '__main__':
+    
+    
 
-    path = 'pc_hahn/branch_cryo-setup/pulsed_resonance/2021_03'
-    # file = '2021_03_16-15_32_50-hopper-nv2_2021_03_15'
-    file = '2021_03_16-15_39_04-hopper-nv2_2021_03_15'
-    # data = tool_belt.get_raw_data('pulsed_resonance.py', file)
+    path = 'pc_rabi/branch_master/pulsed_resonance/2019_08'
+    file = '2019-08-06-11_58_27-ayrton12-nv2_2019_04_30'
     data = tool_belt.get_raw_data(path, file)
 
     freq_center = data['freq_center']

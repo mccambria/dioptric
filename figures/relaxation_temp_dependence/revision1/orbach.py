@@ -342,6 +342,32 @@ def plot_scalings(process_to_plot,
     elif process_to_plot == 'both':
         ax.set_title('Relaxation Process Temperature Dependence')
         ax.legend(loc='upper left')
+        
+        
+def plot_T2_max(omega_popt, gamma_popt,
+                temp_range=[190, 310], xscale='linear', yscale='linear'):
+    
+    
+    omega_fit_func = orbach_T5_free
+    gamma_fit_func = orbach_free
+    
+    omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
+    gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
+    T2_max = lambda temp: 2/(3*omega_lambda(temp) + gamma_lambda(temp))
+    
+    min_temp = temp_range[0]
+    max_temp = temp_range[1]
+
+    temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
+    fig, ax = plt.subplots()
+    fig.set_tight_layout(True)
+    
+    ax.plot(temp_linspace, T2_max(temp_linspace))
+    
+    ax.set_xlabel(r'T (K)')
+    ax.set_ylabel(r'$T_{2,\text{max}}$ (s)')
+    ax.set_xscale(xscale)
+    ax.set_yscale(yscale)
 
 
 # %% Main
@@ -528,8 +554,13 @@ def main(file_name, path, plot_type, rates_to_plot,
     if plot_type in ['rates', 'ratios', 'residuals']:
         sample_patches = []
         for ind in range(len(samples)):
+            label = samples[ind]
+            # if label == 'PRResearch':
+            #     label = '[1]'
+            # else:
+            #     label = 'New results'
             patch = mlines.Line2D([], [], color='black', marker=markers[ind],
-                              linestyle='None', markersize=ms, label=samples[ind])
+                              linestyle='None', markersize=ms, label=label)
             sample_patches.append(patch)
         x_loc = 0.16
         ax.legend(handles=sample_patches, loc='upper left', title='Samples',
@@ -553,7 +584,7 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
     
-    temp_range = [140, 310]
+    temp_range = [135, 315]
     rate_range = [0, 4.5]
     xscale = 'linear'
     yscale = 'linear'
@@ -562,11 +593,16 @@ if __name__ == '__main__':
     # file_name = 'compiled_data-test'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     
-    main(file_name, path, plot_type, rates_to_plot,
-          temp_range, xscale, yscale)
+    # main(file_name, path, plot_type, rates_to_plot,
+    #       temp_range, xscale, yscale)
     
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
     # process_to_plot = 'both'
     
     # plot_scalings(process_to_plot, temp_range, rate_range, xscale, yscale)
+    
+    # May 31st 2021
+    omega_popt = [448.05202972439383, 73.77518971996268, 1.4221406909199286e-11]
+    gamma_popt = [2049.116503275054, 73.77518971996268]
+    plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
