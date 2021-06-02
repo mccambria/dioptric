@@ -374,7 +374,7 @@ def plot_T2_max(omega_popt, gamma_popt,
 
 
 def main(file_name, path, plot_type, rates_to_plot,
-         temp_range=[190, 310], xscale='linear', yscale='linear'):
+         temp_range=[190, 310], rate_range=None, xscale='linear', yscale='linear'):
 
     # %% Setup
 
@@ -463,10 +463,8 @@ def main(file_name, path, plot_type, rates_to_plot,
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
-    # ax.set_ylim(1e-2, 1e4)
-    # ax.set_ylim(-10, 130)
-    # ax.set_ylim(-10, 800)
-    # ax.set_ylim(2e-3, None)
+    if rate_range is not None:
+        ax.set_ylim(rate_range[0], rate_range[1])
 
     # ind in range(len(nv_data)):
 
@@ -584,7 +582,7 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
     
-    temp_range = [135, 315]
+    temp_range = [80, 315]
     rate_range = [0, 4.5]
     xscale = 'linear'
     yscale = 'linear'
@@ -593,8 +591,8 @@ if __name__ == '__main__':
     # file_name = 'compiled_data-test'
     path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/paper_materials/relaxation_temp_dependence/'
     
-    # main(file_name, path, plot_type, rates_to_plot,
-    #       temp_range, xscale, yscale)
+    main(file_name, path, plot_type, rates_to_plot,
+          temp_range, rate_range, xscale, yscale)
     
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
@@ -603,6 +601,6 @@ if __name__ == '__main__':
     # plot_scalings(process_to_plot, temp_range, rate_range, xscale, yscale)
     
     # May 31st 2021
-    omega_popt = [448.05202972439383, 73.77518971996268, 1.4221406909199286e-11]
-    gamma_popt = [2049.116503275054, 73.77518971996268]
-    plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
+    # omega_popt = [448.05202972439383, 73.77518971996268, 1.4221406909199286e-11]
+    # gamma_popt = [2049.116503275054, 73.77518971996268]
+    # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')

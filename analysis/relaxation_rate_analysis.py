@@ -349,9 +349,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                                              zero_relaxation_counts, p0 = init_params,
                                              sigma = zero_relaxation_ste,
                                              absolute_sigma=True)
-                if slow:
-                    omega_opti_params = numpy.array(init_params)
-                    cov_arr = numpy.array([[0,0],[0,0]])
+                # if slow:
+                #     omega_opti_params = numpy.array(init_params)
+                #     cov_arr = numpy.array([[0,0],[0,0]])
                     
             # MCC
             print(omega_opti_params)
@@ -374,8 +374,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             omega = omega_opti_params[0] / 3.0
             omega_ste = numpy.sqrt(cov_arr[0,0]) / 3.0
 
-            print('Omega: {} +/- {} s^-1'.format('%.2f'%(omega*1000),
-                      '%.2f'%(omega_ste*1000)))
+            print('Omega: {} +/- {} s^-1'.format('%.3f'%(omega*1000),
+                      '%.3f'%(omega_ste*1000)))
             # Plotting the data
             if doPlot:
                 zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
@@ -395,8 +395,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 ax.set_ylabel('Normalized signal Counts')
                 ax.legend()
                 units = r's$^{-1}$'
-                text = r'$\Omega = $ {} $\pm$ {} {}'.format('%.2f'%(omega*1000),
-                      '%.2f'%(omega_ste*1000), units)
+                text = r'$\Omega = $ {} $\pm$ {} {}'.format('%.3f'%(omega*1000),
+                      '%.3f'%(omega_ste*1000), units)
 
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
                 ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
@@ -464,9 +464,9 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             # print(gamma_opti_params)
             # gamma_opti_params = numpy.array([0.0,0.0,0])
             # cov_arr = numpy.array([[0,0,0],[0,0,0],[0,0,0]])
-            if slow:
-                gamma_opti_params = numpy.array(init_params)
-                cov_arr = numpy.array([[0,0],[0,0]])
+            # if slow:
+            #     gamma_opti_params = numpy.array(init_params)
+            #     cov_arr = numpy.array([[0,0],[0,0]])
                     
         # MCC
         print(gamma_opti_params)
@@ -494,8 +494,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         # gamma_opti_params[0] = (2 * gamma) + omega
         # gamma_opti_params[1] = 0.20
 
-        print('gamma: {} +/- {} s^-1'.format('%.2f'%(gamma*1000),
-                  '%.2f'%(gamma_ste*1000)))
+        print('gamma: {} +/- {} s^-1'.format('%.3f'%(gamma*1000),
+                  '%.3f'%(gamma_ste*1000)))
 
         # Plotting
         if doPlot:
@@ -517,8 +517,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             ax.set_ylabel('Normalized signal Counts')
             ax.legend()
             units = r's$^{-1}$'
-            text = r'$\gamma = $ {} $\pm$ {} {}'.format('%.2f'%(gamma*1000),
-                  '%.2f'%(gamma_ste*1000), units)
+            text = r'$\gamma = $ {} $\pm$ {} {}'.format('%.3f'%(gamma*1000),
+                  '%.3f'%(gamma_ste*1000), units)
 #            ax.set_xlim([-0.001, 0.05])
 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
