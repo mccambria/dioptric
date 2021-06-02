@@ -82,7 +82,7 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, nd_filter,
 
     # %% Initial calculations and setup
     
-    apd_indices = [0]
+    apd_indices = [0,1]
     
     # Assume the low state
 #    state = States.LOW
@@ -370,16 +370,19 @@ def main(nv_sig):
 if __name__ == '__main__':
 
     # Define the nv_sig to be used
-    sample_name = 'goeppert_mayer'
-    nv7_2019_11_27 = { 'coords': [-0.092, -0.300, 4.98],
-            'name': '{}-nv7_2019_11_27'.format(sample_name),
-            'expected_count_rate': 33, 'nd_filter': 'nd_0.5',
-            'pulsed_readout_dur': 375, 'magnet_angle': 45.0,
-            'resonance_LOW': 2.6481, 'rabi_LOW': 76.2, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': 3.2038, 'rabi_HIGH': 232.0, 'uwave_power_HIGH': 10.0}
+    # nd = 'nd_0'  # 250-400 ns, 55 kcps
+    nd = 'nd_0.5'  # 250-400 ns, 30 kcps
+    sample_name = 'johnson'
+    
+    nv_sig = { 'coords': [0.020, 0.662, 0],
+            'name': '{}-nv2_2021_02_09'.format(sample_name),
+            'expected_count_rate': 30, 'nd_filter': nd,
+            'pulsed_readout_dur': 350, 'magnet_angle': None,
+            'resonance_LOW': 2.8583, 'rabi_LOW': 150.6, 'uwave_power_LOW': 12.0,
+            'resonance_HIGH': 2.8836, 'rabi_HIGH': 149.3, 'uwave_power_HIGH': 12.0}
     
     ### MAIN ###
-    main(nv7_2019_11_27)
+    main(nv_sig)
     
     # The individual functions in this file
 #    snr_measurement(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)

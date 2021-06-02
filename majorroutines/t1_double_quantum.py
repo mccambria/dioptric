@@ -54,7 +54,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
-    polarization_time = shared_params['polarization_dur']
+    # polarization_time = shared_params['polarization_dur']
+    polarization_time = 1E5  # Jarmola uses 1 ms
     # time of illumination during which signal readout occurs
     signal_time = polarization_time
     # time of illumination during which reference readout occurs

@@ -49,7 +49,11 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, continuous=False):
     # %% Some initial setup
     
     tool_belt.reset_cfm(cxn)
-    cxn.filter_slider_ell9k_color.set_filter('560 bp')
+    
+    if hasattr(cxn, 'filter_slider_ell9k_color'):
+        cxn.filter_slider_ell9k_color.set_filter('560 bp')
+    if hasattr(cxn, 'filter_slider_ell9k'):
+        cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 
     shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_parameters['continuous_readout_dur']
@@ -58,6 +62,12 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, continuous=False):
     # %% Optimize
 
 #    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    coords = nv_sig['coords']
+    drift = tool_belt.get_drift()
+    adj_coords = []
+    for i in range(3):
+        adj_coords.append(coords[i] + drift[i])
+    tool_belt.set_xyz(cxn, adj_coords)
 
     # %% Load the PulseStreamer
 

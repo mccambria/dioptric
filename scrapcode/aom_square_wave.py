@@ -17,6 +17,7 @@ from pulsestreamer import OutputState
 import numpy
 from pulsestreamer import Sequence
 import labrad
+import utils.tool_belt as tool_belt
 
 
 # %% Constants
@@ -67,7 +68,7 @@ def main():
     train = [(half_period, HIGH), (half_period, LOW)]
     seq.setDigital(3, train)
     
-    pulser = Pulser('128.104.160.111')
+    pulser = Pulser('128.104.160.113')
     pulser.constant(OutputState([]))
     pulser.setTrigger(start=TriggerStart.SOFTWARE)
     pulser.stream(seq, Pulser.REPEAT_INFINITELY)
@@ -90,4 +91,8 @@ if __name__ == '__main__':
 
     # Run the script
     # main()
+    
+    with labrad.connect() as cxn:
+        tool_belt.set_xyz(cxn, [0.0, 0.0, 0])
+        cxn.filter_slider_ell9k.set_filter('nd_0')
     constant([3], 0.0, 0.0)

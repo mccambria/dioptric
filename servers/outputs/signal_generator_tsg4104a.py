@@ -158,6 +158,20 @@ class SignalGeneratorTsg4104a(LabradServer):
         # Turn on FM
         self.sig_gen.write('MODL 1')
 
+    @setting(7)
+    def load_iq(self, c):
+        """
+        Set up external IQ modulation
+        """
+
+        # QAM is type 7
+        self.sig_gen.write('TYPE 7')
+        # self.sig_gen.write('STYP 1')
+        # External mode is modulation function 5
+        self.sig_gen.write('QFNC 5')
+        # Turn on modulation
+        self.sig_gen.write('MODL 1')
+
 
     @setting(5)
     def mod_off(self, c):
@@ -173,15 +187,15 @@ class SignalGeneratorTsg4104a(LabradServer):
         self.sig_gen.write('FDEV 0')
         self.uwave_off(c)
         self.mod_off(c)
-        # Clean up the DAQ task!
-        if self.task is not None:
-            crash = 1/0
-        # Set the DAQ AO to 0
-        with nidaqmx.Task() as task:
-            # Set up the output channels
-            task.ao_channels.add_ao_voltage_chan(self.daq_ao_sig_gen_mod,
-                                                 min_val=-1.0, max_val=1.0)
-            task.write(0.0)
+        # # Clean up the DAQ task!
+        # if self.task is not None:
+        #     crash = 1/0
+        # # Set the DAQ AO to 0
+        # with nidaqmx.Task() as task:
+        #     # Set up the output channels
+        #     task.ao_channels.add_ao_voltage_chan(self.daq_ao_sig_gen_mod,
+        #                                          min_val=-1.0, max_val=1.0)
+        #     task.write(0.0)
 
 
 __server__ = SignalGeneratorTsg4104a()

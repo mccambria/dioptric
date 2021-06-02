@@ -196,9 +196,8 @@ def reformat_plot(colorMap, save_file_type):
         # Save the file in the same file directory
         fig.savefig(fileNameBase + '_replot.' + save_file_type)
 
-def create_figure(file_name):
+def create_figure(path, file_name):
 
-    path = 'image_sample'
     data = tool_belt.get_raw_data(path, file_name)
     try:
         x_range = data['x_range']
@@ -268,9 +267,12 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
     readout = shared_params['continuous_readout_dur']
-
-    adj_coords = (numpy.array(nv_sig['coords']) + \
-                  numpy.array(tool_belt.get_drift())).tolist()
+    
+    coords = nv_sig['coords']
+    drift = tool_belt.get_drift()
+    adj_coords = []
+    for i in range(3):
+        adj_coords.append(coords[i] + drift[i])
     x_center, y_center, z_center = adj_coords
 
     readout_sec = float(readout) / 10**9
@@ -293,14 +295,16 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 
     # %% Initialize at the passed coordinates
 
+    if hasattr(cxn, 'filter_slider_ell9k'):
+        cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
 
     # %% Set up the galvo
 
-    xy_server = tool_belt.get_xy_server()
+    xy_server = tool_belt.get_xy_server(cxn)
     x_voltages, y_voltages = xy_server.load_sweep_xy_scan(x_center, y_center,
-                                                       x_range, y_range,
-                                                       num_steps, period)
+                                                          x_range, y_range,
+                                                          num_steps, period)
 
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]
@@ -417,9 +421,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps, apd_indices,
 if __name__ == '__main__':
 
 
-    file_name = '2019_07/2019-07-23_17-39-48_johnson1'
+    path = 'pc_hahn/branch_cryo-setup/image_sample/2021_03'
+    file_name = '2021_03_02-14_57_01-johnson-nv14_2021_02_26'
     # file_name = '2019_04/2019-04-15_16-42-08_Hopper'
 
-    create_figure(file_name)
+    create_figure(path, file_name)
 
     # reformat_plot('inferno', 'svg')

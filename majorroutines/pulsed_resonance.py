@@ -36,7 +36,7 @@ def create_fit_figure(freq_range, freq_center, num_steps,
     ax.plot(smooth_freqs, fit_func(smooth_freqs, *popt), 'r-', label='fit')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
-    ax.legend()
+    ax.legend(loc='lower right')
 
     text = '\n'.join(('Contrast = {:.3f}',
                       'Standard deviation = {:.4f} GHz',
@@ -48,12 +48,12 @@ def create_fit_figure(freq_range, freq_center, num_steps,
         low_text = text.format(*popt[0:3])
         high_text = text.format(*popt[3:6])
 
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(0.05, 0.15, low_text, transform=ax.transAxes, fontsize=12,
-            verticalalignment="top", bbox=props)
-    if high_text is not None:
-        ax.text(0.55, 0.15, high_text, transform=ax.transAxes, fontsize=12,
-                verticalalignment="top", bbox=props)
+    # props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    # ax.text(0.05, 0.15, low_text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment="top", bbox=props)
+    # if high_text is not None:
+    #     ax.text(0.55, 0.15, high_text, transform=ax.transAxes, fontsize=12,
+    #             verticalalignment="top", bbox=props)
 
     fig.canvas.draw()
     fig.set_tight_layout(True)
@@ -83,17 +83,15 @@ def double_gaussian_dip(freq, low_constrast, low_sigma, low_center,
 def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
 
-def fit_resonance(freq_range, freq_center, num_steps,
-                  norm_avg_sig, ref_counts):
-
-    # %% Calculate freqs
-
-    freqs = calculate_freqs(freq_range, freq_center, num_steps)
+# def get_guess_params(freqs, norm_avg_sig, ref_counts):
+def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
 
     # %% Guess the locations of the minimums
+    
+    freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
     contrast = 0.10  # Arb
-    sigma = 0.001  # MHz
+    sigma = 0.003  # GHz
 #    sigma = 0.010  # MHz
     fwhm = 2.355 * sigma
 
@@ -104,10 +102,11 @@ def fit_resonance(freq_range, freq_center, num_steps,
 
     # Bit of processing
     inverted_norm_avg_sig = 1 - norm_avg_sig
-    ref_std = numpy.std(ref_counts)
-    rel_ref_std = ref_std / numpy.average(ref_counts)
-    height = max(rel_ref_std, contrast/4)
-#    height = 0.2
+    # ref_std = numpy.std(ref_counts)
+    # rel_ref_std = ref_std / numpy.average(ref_counts)
+    # height = max(rel_ref_std, contrast/4)
+    # print(height)
+    height = 0.03
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
@@ -153,14 +152,13 @@ def fit_resonance(freq_range, freq_center, num_steps,
     else:
         print('Could not locate peaks')
 
-#    low_freq_guess = 2.8125
-#    high_freq_guess = None
+    # low_freq_guess = 2.8620
+    # high_freq_guess = 2.8936
     
     if low_freq_guess is None:
         return None, None
 
-#    low_freq_guess = 2.82
-#    high_freq_guess = 2.93
+
     # %% Fit!
 
     if high_freq_guess is None:
@@ -170,14 +168,41 @@ def fit_resonance(freq_range, freq_center, num_steps,
         fit_func = double_gaussian_dip
         guess_params=[contrast, sigma, low_freq_guess,
                       contrast, sigma, high_freq_guess]
+        
+    return fit_func, guess_params
 
+
+def fit_resonance(freq_range, freq_center, num_steps,
+                  norm_avg_sig, norm_avg_sig_ste=None):
+    
+    freqs = calculate_freqs(freq_range, freq_center, num_steps)
+
+    fit_func, guess_params = get_guess_params(freq_range, freq_center,
+                                              num_steps, norm_avg_sig)
+    
     try:
-        popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig, p0=guess_params)
+        if norm_avg_sig_ste is not None:
+            popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
+                                   p0=guess_params, sigma=norm_avg_sig_ste, 
+                                   absolute_sigma=True)
+            # popt = guess_params
+            if len(popt) == 6:
+                zfs = (popt[2] + popt[5]) / 2
+                print(zfs)
+                low_res_err = numpy.sqrt(pcov[2,2])
+                hig_res_err = numpy.sqrt(pcov[5,5])
+                zfs_err = numpy.sqrt(low_res_err**2 + hig_res_err**2) / 2
+                print(zfs_err)
+            else:
+                res_err = numpy.sqrt(pcov[2,2])
+                print(res_err)
+        else:
+            popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
+                                   p0=guess_params)
     except Exception:
         print('Something went wrong!')
         popt = guess_params
 
-    # Return the resonant frequencies
     return fit_func, popt
 
 def simulate(res_freq, freq_range, contrast,
@@ -204,14 +229,14 @@ def simulate(res_freq, freq_range, contrast,
 
 
 def state(nv_sig, apd_indices, state, freq_range,
-          num_steps, num_reps, num_runs):
+          num_steps, num_reps, num_runs, composite=False):
 
     freq_center = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
     uwave_pulse_dur = nv_sig['rabi_{}'.format(state.name)] // 2
 
     resonance_list = main(nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state)
+         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state, composite)
 
     return resonance_list
 
@@ -220,16 +245,16 @@ def state(nv_sig, apd_indices, state, freq_range,
 
 def main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-         state=States.LOW):
+         state=States.LOW, composite=False):
 
     with labrad.connect() as cxn:
         resonance_list = main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-                  state)
+                  state, composite)
     return resonance_list
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-              state=States.LOW):
+              state=States.LOW, composite=False):
 
     # %% Initial calculations and setup
 
@@ -260,14 +285,29 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     background_wait_time = signal_wait_time  # not sure what this is
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
     aom_delay_time = shared_params['532_aom_delay']
+    uwave_delay_time = shared_params['uwave_delay']
+    iq_delay = shared_params['iq_delay']
     readout = nv_sig['pulsed_readout_dur']
     gate_time = readout
     readout_sec = readout / (10**9)
-    seq_args = [uwave_pulse_dur, polarization_time, reference_time,
-                signal_wait_time, reference_wait_time,
-                background_wait_time, aom_delay_time,
-                gate_time, uwave_pulse_dur,
-                apd_indices[0], state.value]
+    if composite:
+        uwave_pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
+        uwave_pi_on_2_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 4)
+        seq_args = [polarization_time, reference_time,
+                    signal_wait_time, reference_wait_time,
+                    background_wait_time,
+                    aom_delay_time, uwave_delay_time, iq_delay,
+                    gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
+                    1, 1, apd_indices[0], state.value]
+        seq_args = [int(el) for el in seq_args]
+    else:
+        seq_args = [uwave_pulse_dur, polarization_time, reference_time,
+                    signal_wait_time, reference_wait_time,
+                    background_wait_time, aom_delay_time, uwave_delay_time,
+                    gate_time, uwave_pulse_dur,
+                    apd_indices[0], state.value]
+    # print(seq_args)
+    # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
     opti_coords_list = []
@@ -292,25 +332,31 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
-        # Load the pulse streamer (must happen after optimize since optimize
-        # loads its own sequence)
-        cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
-
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):
-
+            
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
 
-            # Just assume the low state
             sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
             sig_gen_cxn.set_freq(freqs[step_ind])
             sig_gen_cxn.set_amp(uwave_power)
+            if composite:
+                sig_gen_cxn.load_iq()
+                cxn.arbitrary_waveform_generator.load_knill()
             sig_gen_cxn.uwave_on()
+
+            # Load the pulse streamer (must happen after optimize and iq_switch
+            # since run their own sequences)
+            if composite:
+                ret_vals = cxn.pulse_streamer.stream_load('discrete_rabi2.py', seq_args_string)
+            else:
+                ret_vals = cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
+                
 
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total
@@ -404,7 +450,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # %% Fit the data
 
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, ref_counts)
+                                   norm_avg_sig)
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
                                     norm_avg_sig, fit_func, popt)
@@ -472,26 +518,34 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 
 if __name__ == '__main__':
+    
+    
 
-    path = 'pulsed_resonance/2020_02'
-    file = '2020_02_05-14_40_20-johnson-nv3_2020_02_04'
-    # data = tool_belt.get_raw_data('pulsed_resonance.py', file)
+    path = 'pc_rabi/branch_master/pulsed_resonance/2019_08'
+    file = '2019-08-06-11_58_27-ayrton12-nv2_2019_04_30'
     data = tool_belt.get_raw_data(path, file)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']
     num_steps = data['num_steps']
+    num_runs = data['num_runs']
     norm_avg_sig = numpy.array(data['norm_avg_sig'])
     ref_counts = numpy.array(data['ref_counts'])
     sig_counts = numpy.array(data['sig_counts'])
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
 
+    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
+    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
+    avg_ref_counts = numpy.average(ref_counts[::], axis=0)
+    ste_ref_counts = numpy.std(ref_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    norm_avg_sig_ste = norm_avg_sig * numpy.sqrt((ste_sig_counts/avg_sig_counts)**2 + (ste_ref_counts/avg_ref_counts)**2 + (ste_sig_counts/avg_sig_counts)**2)
 
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, ref_counts)
-#    if (fit_func is not None) and (popt is not None):
+                                   norm_avg_sig, norm_avg_sig_ste)
+
+    # fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
+    #                                norm_avg_sig, ref_counts)
+    
     create_fit_figure(freq_range, freq_center, num_steps,
                       norm_avg_sig, fit_func, popt)
     

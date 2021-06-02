@@ -28,17 +28,19 @@ from the covariance of the fit.
 # %% Imports
 
 import numpy
-from scipy import exp
+from numpy import exp
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import os
 
 import utils.tool_belt as tool_belt
 from utils.tool_belt import States
+from figures.relaxation_temp_dependence.revision1.orbach import omega_calc
+from figures.relaxation_temp_dependence.revision1.orbach import gamma_calc
 
 # %% Constants
 
-manual_offset_gamma = 0.0
+manual_offset_gamma = 0.00
 # %% Functions
 
 # The exponential function without an offset
@@ -47,6 +49,9 @@ def exp_eq_omega(t, rate, amp):
 
 def exp_eq_gamma(t, rate, amp):
     return  amp * exp(- rate * t) + manual_offset_gamma
+
+def biexp(t, omega, rate1, amp1, amp2):
+    return  amp1 * exp(-rate1*t) + amp2 #* exp(-3*omega*t)
 
 # The exponential function with an offset
 def exp_eq_offset(t, rate, amp, offset):
@@ -174,8 +179,13 @@ def get_data_lists(folder_name):
                                               zero_zero_ste))
                         zero_zero_time = numpy.concatenate((time_array, zero_zero_time))
 
-            if init_state_name == zero_state_name and \
-                                read_state_name == high_state_name:
+
+            # if init_state_name == zero_state_name and \
+            #                     read_state_name == high_state_name:
+            # if init_state_name == zero_state_name and \
+            #                     read_state_name == low_state_name:
+            if (init_state_name == zero_state_name and read_state_name == high_state_name) or \
+                (init_state_name == zero_state_name and read_state_name == low_state_name):
                 if zero_plus_bool == False:
                     zero_plus_counts = norm_avg_sig
                     zero_plus_ste = norm_avg_sig_ste
@@ -202,8 +212,12 @@ def get_data_lists(folder_name):
                         zero_plus_time = numpy.concatenate(time_array, zero_plus_time)
 
 
-            if init_state_name == high_state_name and \
-                                read_state_name == high_state_name:
+            # if (init_state_name == high_state_name) and \
+            #     (read_state_name == high_state_name):
+            # if (init_state_name == low_state_name) and \
+            #     (read_state_name == low_state_name):
+            if (init_state_name == high_state_name and read_state_name == high_state_name) or \
+                (init_state_name == low_state_name and read_state_name == low_state_name):
                 if plus_plus_bool == False:
                     plus_plus_counts = norm_avg_sig
                     plus_plus_ste = norm_avg_sig_ste
@@ -227,8 +241,12 @@ def get_data_lists(folder_name):
                                                           plus_plus_ste))
                         plus_plus_time = numpy.concatenate((time_array, plus_plus_time))
 
-            if init_state_name == high_state_name and \
-                                read_state_name == low_state_name:
+            # if init_state_name == high_state_name and \
+            #                     read_state_name == low_state_name:
+            # if init_state_name == low_state_name and \
+            #                     read_state_name == high_state_name:
+            if (init_state_name == high_state_name and read_state_name == low_state_name) or \
+                (init_state_name == low_state_name and read_state_name == high_state_name):
                 # We will want to put the MHz splitting in the file metadata
                 uwave_freq_init = data['uwave_freq_init']
                 uwave_freq_read = data['uwave_freq_read']
@@ -273,11 +291,14 @@ def get_data_lists(folder_name):
     return omega_exp_list, gamma_exp_list, num_runs, splitting_MHz
 # %% Main
 
-def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = True):
+def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = True):
 
+    slow = True
+    
+    path_folder = path + folder
     # Get the file list from the folder
     omega_exp_list, gamma_exp_list, \
-                num_runs, splitting_MHz  = get_data_lists(folder_name)
+                num_runs, splitting_MHz  = get_data_lists(path_folder)
 
     # %% Fit the data
 
@@ -287,6 +308,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
     omega_fit_failed = False
     gamma_fit_failed = False
+
+    ax = None
 
     # If omega value is passed into the function, skip the omega fitting.
     if omega is not None and omega_ste is not None:
@@ -306,7 +329,10 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
         zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
         zero_relaxation_ste = numpy.sqrt(zero_zero_ste**2 + zero_plus_ste**2)
 
-        init_params_list = [1.0, 0.4]
+        if slow:
+            init_params_list = [0.24/1000, 0.16]
+        else:
+            init_params_list = [0.1, 0.3]
 
         try:
             if offset:
@@ -323,6 +349,12 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                                              zero_relaxation_counts, p0 = init_params,
                                              sigma = zero_relaxation_ste,
                                              absolute_sigma=True)
+                # if slow:
+                #     omega_opti_params = numpy.array(init_params)
+                #     cov_arr = numpy.array([[0,0],[0,0]])
+                    
+            # MCC
+            print(omega_opti_params)
 
         except Exception:
 
@@ -335,7 +367,6 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                             label = 'data', fmt = 'o', color = 'blue')
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
-                ax.set_title('(0,0) - (0,+1)')
                 ax.legend()
 
         if not omega_fit_failed:
@@ -343,8 +374,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
             omega = omega_opti_params[0] / 3.0
             omega_ste = numpy.sqrt(cov_arr[0,0]) / 3.0
 
-            print('Omega: {} +/- {} kHz'.format('%.3f'%omega,
-                      '%.3f'%omega_ste))
+            print('Omega: {} +/- {} s^-1'.format('%.3f'%(omega*1000),
+                      '%.3f'%(omega_ste*1000)))
             # Plotting the data
             if doPlot:
                 zero_time_linspace = numpy.linspace(0, zero_zero_time[-1], num=1000)
@@ -362,15 +393,19 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                         'r', label = 'fit')
                 ax.set_xlabel('Relaxation time (ms)')
                 ax.set_ylabel('Normalized signal Counts')
-                ax.set_title('(0,0) - (0,-1)')  # MCC
-                # ax.set_title('(0,0) - (0,+1)')
                 ax.legend()
-                text = r'$\Omega = $ {} $\pm$ {} kHz'.format('%.3f'%omega,
-                      '%.3f'%omega_ste)
+                units = r's$^{-1}$'
+                text = r'$\Omega = $ {} $\pm$ {} {}'.format('%.3f'%(omega*1000),
+                      '%.3f'%(omega_ste*1000), units)
 
                 props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
                 ax.text(0.55, 0.9, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
+
+    if ax is not None:
+        ax.set_title('Omega')
+        # ax.set_title('(0,0) - (0,-1)')
+        # ax.set_title('(0,0) - (0,+1)')
 
     # %% Fit to the (1,1) - (1,-1) data to find Gamma, only if Omega waas able
     # to fit
@@ -385,7 +420,22 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
     plus_relaxation_counts =  plus_plus_counts - plus_minus_counts
     plus_relaxation_ste = numpy.sqrt(plus_plus_ste**2 + plus_minus_ste**2)
 
-    init_params_list = [2*omega, 0.40]
+    # Skip values at t=0 to get rid of pi pulse decoherence systematic
+    # See wiki March 31st, 2021
+    inds_to_remove = []
+    for ind in range(len(plus_plus_time)):
+        t = plus_plus_time[ind]
+        if t == 0:
+            inds_to_remove.append(ind)
+    plus_plus_time = numpy.delete(plus_plus_time, inds_to_remove)
+    plus_relaxation_counts = numpy.delete(plus_relaxation_counts, inds_to_remove)
+    plus_relaxation_ste = numpy.delete(plus_relaxation_ste, inds_to_remove)
+
+    if slow:
+        init_params_list = [3*omega, 0.16]
+    else:
+        init_params_list = [2*omega, 0.40]
+        
     try:
         if offset:
 
@@ -398,14 +448,32 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
 
         else:
+            # MCC
             init_params = tuple(init_params_list)
+            gamma_fit_func = exp_eq_gamma
             gamma_opti_params, cov_arr = curve_fit(exp_eq_gamma,
-                             plus_plus_time, plus_relaxation_counts,
-                             p0 = init_params, sigma = plus_relaxation_ste,
-                             absolute_sigma=True)
+                              plus_plus_time, plus_relaxation_counts,
+                              p0 = init_params, sigma = plus_relaxation_ste,
+                              absolute_sigma=True)
+            # init_params = (0.22, 0.17, 0.0)
+            # gamma_fit_func = lambda t, rate1, amp1, amp2: biexp(t, omega, rate1, amp1, amp2)
+            # gamma_opti_params, cov_arr = curve_fit(gamma_fit_func,
+            #                   plus_plus_time, plus_relaxation_counts,
+            #                   p0 = init_params, sigma = plus_relaxation_ste,
+            #                   absolute_sigma=True)
+            # print(gamma_opti_params)
+            # gamma_opti_params = numpy.array([0.0,0.0,0])
+            # cov_arr = numpy.array([[0,0,0],[0,0,0],[0,0,0]])
+            # if slow:
+            #     gamma_opti_params = numpy.array(init_params)
+            #     cov_arr = numpy.array([[0,0],[0,0]])
+                    
+        # MCC
+        print(gamma_opti_params)
 
-    except Exception:
+    except Exception as e:
         gamma_fit_failed = True
+        print(e)
 
         if doPlot:
             ax = axes_pack[1]
@@ -414,7 +482,6 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                     label = 'data', fmt = 'o', color = 'blue')
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(-1,-1) - (-1,+1)')
 
     if not gamma_fit_failed:
 
@@ -422,8 +489,13 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
         gamma = (gamma_opti_params[0] - omega)/ 2.0
         gamma_ste = 0.5 * numpy.sqrt(cov_arr[0,0]+omega_ste**2)
 
-        print('Gamma: {} +/- {} kHz'.format('%.3f'%gamma,
-                  '%.3f'%gamma_ste))
+        # Test MCC
+        # gamma = 0.070
+        # gamma_opti_params[0] = (2 * gamma) + omega
+        # gamma_opti_params[1] = 0.20
+
+        print('gamma: {} +/- {} s^-1'.format('%.3f'%(gamma*1000),
+                  '%.3f'%(gamma_ste*1000)))
 
         # Plotting
         if doPlot:
@@ -438,19 +510,25 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                     'r', label = 'fit')
             else:
                 ax.plot(plus_time_linspace,
-                    exp_eq_gamma(plus_time_linspace, *gamma_opti_params),
+                    # exp_eq_gamma(plus_time_linspace, *gamma_opti_params),  # MCC
+                    gamma_fit_func(plus_time_linspace, *gamma_opti_params),
                     'r', label = 'fit')
             ax.set_xlabel('Relaxation time (ms)')
             ax.set_ylabel('Normalized signal Counts')
-            ax.set_title('(-1,-1) - (-1,+1)')
             ax.legend()
-            text = r'$\gamma = $ {} $\pm$ {} kHz'.format('%.3f'%gamma,
-                  '%.3f'%gamma_ste)
+            units = r's$^{-1}$'
+            text = r'$\gamma = $ {} $\pm$ {} {}'.format('%.3f'%(gamma*1000),
+                  '%.3f'%(gamma_ste*1000), units)
 #            ax.set_xlim([-0.001, 0.05])
 
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             ax.text(0.55, 0.90, text, transform=ax.transAxes, fontsize=12,
                     verticalalignment='top', bbox=props)
+
+    ax.set_title('gamma')
+    # ax.set_title('(+1,+1) - (+1,-1)')
+    # ax.set_title('(-1,-1) - (-1,+1)')
+
     if doPlot:
         fig.canvas.draw()
         fig.canvas.flush_events()
@@ -489,8 +567,8 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
                     'gamma_opti_params': gamma_opti_params.tolist(),
                     }
 
-        file_name = '{}MHz_splitting_rate_analysis'.format(round(splitting_MHz))
-        file_path = '{}/{}/{}'.format(data_dir, folder_name, file_name)
+        file_name = '{}-analysis'.format(folder)
+        file_path = '{}/{}/{}'.format(data_dir, path_folder, file_name)
         tool_belt.save_raw_data(raw_data, file_path)
         tool_belt.save_figure(fig, file_path)
 
@@ -499,10 +577,21 @@ def main(folder_name, omega = None, omega_ste = None, doPlot = False, offset = T
 
 if __name__ == '__main__':
 
-    path = 't1_double_quantum/data_folders/paper_data/bulk_dq/'
-    folder = 'goeppert_mayer-nv7_2019_11_27-1662MHz-7deg'
-    # folder = 'goeppert_mayer-nv7_2019_11_27-85deg'
-    path += folder
+    temp = 85
 
-    gamma, ste = main(path, omega=None, omega_ste=None,
-                      doPlot=True, offset=False)
+    # est_omega = omega_calc(temp)
+    # est_gamma = gamma_calc(temp)
+    # print('good times in ms')
+    # print('Omega: {}'.format(4000/(3*est_omega)))
+    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+
+    path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
+    folders = [
+                'hopper-nv1_2021_03_16-{}K'.format(temp),
+                # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
+                ]
+
+    for folder in folders:
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                          doPlot=True, offset=False)

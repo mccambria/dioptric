@@ -278,12 +278,8 @@ if __name__ == '__main__':
     # Enter the resonance descriptions as a list of lists. Each sublist should
     # have the form (all units GHz):
     # [magnetic field if known, lower resonance, higher resonance]
-    res_descs = [[0.0, 2.8584, 2.8725],
-                 [None, 2.8512, 2.8804],
-                 [None, 2.8435, 2.8990],
-                 [None, 2.8265, 2.9117],
-                 [None, 2.7726, 3.0530],
-                 [None, 2.7738, 3.4712],
+    res_descs = [[0.0, 2.87, None],
+                 [None, 2.8640, 2.8912],
                  ]
     
     ####################################

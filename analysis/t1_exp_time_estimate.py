@@ -55,27 +55,36 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 
     total_exp_time = sum(total_exp_time_list)
 
-    # Somehow this is off... so let's tack on a heuristic correction
-    total_exp_time *= (21/20)
+    # If this is off, tack on a heuristic correction
+    # total_exp_time *= (11/10)
 
     print('Total experiment time: {:.1f} hrs'.format(total_exp_time))
 
 # %%
 
+num_runs = 200
+num_reps = 5
+num_steps = 12
+min_tau = 20e3
+max_tau_omega = 17e9
+max_tau_gamma = 17e9
 t1_exp_array = numpy.array([
-    [[States.HIGH, States.LOW], [0, 2*10**6], 11, 25*10**3, 20],
-    [[States.HIGH, States.LOW], [0, 15*10**6], 11, 3.5*10**3, 100],
+        [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
+        [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
+        [[States.ZERO, States.HIGH], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
+        [[States.ZERO, States.ZERO], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
+        [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+        [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+        [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+        [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+        # [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+        # [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+        # [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+        # [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+        ], dtype=object)
 
-    [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 25*10**3, 20],
-    [[States.HIGH, States.HIGH], [0, 15*10**6], 11, 3.5*10**3, 100],
-
-    [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 2.5*10**3, 140],
-
-    [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 2.5*10**3, 140]
-    ])
-
-contrast = 0.35  # arb
-exp_count_rate = 35  # kcps
-readout_window = 375  # ns
+contrast = 0.16  # arb
+exp_count_rate = 700  # kcps
+readout_window = 350  # ns
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)

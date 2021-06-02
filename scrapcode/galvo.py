@@ -15,7 +15,7 @@ import json
 import matplotlib.pyplot as plt
 import labrad
 
-nv_sig = { 'coords':[0.0, 0.0, 5.0],
+nv_sig = { 'coords':[0.0, 0.0, 5],
             'name': 'test',
             'expected_count_rate': None, 'nd_filter': 'nd_0',
             'pulsed_readout_dur': 350, 'magnet_angle': 0.0,

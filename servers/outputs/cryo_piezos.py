@@ -52,14 +52,19 @@ class CryoPiezos(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
+        p.cd(['', 'Config'])
         p.get('cryo_piezos_ip')
+        p.get('cryo_piezos_voltage')
+        p.cd(['', 'SharedParameters'])
+        p.get('z_drift_adjust')
         result = await p.send()
-        return result
+        return result['get']
 
 
-    def on_get_config(self, config):
-        ip_address = config['get']
+    def on_get_config(self, reg_vals):
+        ip_address = reg_vals[0]
+        cryo_piezos_voltage = reg_vals[1]
+        self.z_drift_adjust = reg_vals[2]
         # Connect via telnet
         try:
             self.piezos = Telnet(ip_address, 7230)
@@ -76,7 +81,7 @@ class CryoPiezos(LabradServer):
         # frequency and voltage of 1000 Hz and 30 V
         self.send_cmd_all('setm', 'gnd')
         self.send_cmd_all('setf', 1000)
-        self.send_cmd_all('setv', 30)
+        self.send_cmd_all('setv', cryo_piezos_voltage)
         # Initialize positions to 0 steps
         self.pos = [0,0,0]
         # Done
@@ -91,27 +96,84 @@ class CryoPiezos(LabradServer):
         common and important routines (eg optimize)
         """
         
+        self.write_ax(pos_in_steps, 3)
+
+
+    @setting(3, x_pos_in_steps='i', y_pos_in_steps='i')
+    def write_xy(self, c, x_pos_in_steps, y_pos_in_steps):
+        """
+        Specify the absolute position in steps relative to 0. There will be 
+        hysteresis on this value, but it's repeatable enough for the 
+        common and important routines (eg optimize)
+        """
+        
+        self.write_ax(x_pos_in_steps, 1)
+        self.write_ax(y_pos_in_steps, 2)
+        
+    
+    def write_ax(self, pos_in_steps, ax):
+        
+        steps_to_move = pos_in_steps - self.pos[ax-1]
+        if steps_to_move == 0:
+            return
+        
         # Set to step mode
-        self.send_cmd('setm', 3, 'stp')
+        self.send_cmd('setm', ax, 'stp')
         
         # Calculate the differential number of steps from where we're at
-        steps_to_move = pos_in_steps - self.pos[2]
         abs_steps_to_move = abs(steps_to_move)
+        
+        ########################################
+        
+        # Move at least 10 steps every time since larger movements are more
+        # repeatable
+        # min_steps_to_move = 10
+        # if abs_steps_to_move < min_steps_to_move:
+        #     reverse_required = True
+        #     abs_steps_to_move += min_steps_to_move 
+        # else:
+        #     reverse_required = False
+            
+        # if steps_to_move > 0: 
+        #     cmd = 'stepu'
+        #     reverse_cmd = 'stepd'
+        #     # Compensate for hysteresis
+        #     if ax == 3:
+        #         abs_steps_to_move = round((1+self.z_drift_adjust)*abs_steps_to_move)
+        #         min_steps_to_move = round((1-self.z_drift_adjust)*min_steps_to_move)
+        # else:
+        #     cmd = 'stepd'
+        #     reverse_cmd = 'stepu'
+        #     # Compensate for hysteresis
+        #     if ax == 3:
+        #         abs_steps_to_move = round((1-self.z_drift_adjust)*abs_steps_to_move)
+        #         min_steps_to_move = round((1+self.z_drift_adjust)*min_steps_to_move)
+        # self.send_cmd(cmd, ax, abs_steps_to_move)
+        
+        # self.send_cmd('stepw', ax)
+        
+        # if reverse_required:
+        #     self.send_cmd(reverse_cmd, ax, min_steps_to_move)
+            
+        ########################################
+        
         if steps_to_move > 0: 
-            self.send_cmd('stepu', 3, abs_steps_to_move)
+            cmd = 'stepu'
+            # if ax == 3:
+            #     abs_steps_to_move = round((1+self.z_drift_adjust)*abs_steps_to_move)
         else:
-            self.send_cmd('stepd', 3, abs_steps_to_move)
-        self.pos[2] = pos_in_steps
+            cmd = 'stepd'
+            if ax == 3:
+                abs_steps_to_move = round((1-self.z_drift_adjust)*abs_steps_to_move)
+        self.send_cmd(cmd, ax, abs_steps_to_move)
         
         # Set to ground mode once we're done stepping
-        self.send_cmd('stepw', 3, 'gnd')
-        self.send_cmd('setm', 3, 'gnd')
-
-    
-    @setting(6)
-    def has_load_z_scan(self, c):
-        """Check if the server has a z scan feature"""
-        return False
+        self.send_cmd('stepw', ax)
+        self.send_cmd('setm', ax, 'gnd')
+            
+        # Cache the position
+        self.pos[ax-1] = pos_in_steps
+        
 
     
     # @setting(3, center='v[]', scan_range='v[]',
@@ -167,7 +229,7 @@ class CryoPiezos(LabradServer):
             
     def send_cmd_all(self, cmd, arg=None):
         """Send a command to all three axes"""
-        for axis in range(3):
+        for axis in [1,2,3]:
             self.send_cmd(cmd, axis, arg)
         
 

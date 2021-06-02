@@ -62,14 +62,24 @@ def process_raw_buffer(timestamps, channels,
 
     # Throw out probable afterpulses
     # Something is wrong with this... see 2019-06-03_17-05-01_ayrton12
-    if False:
+    if True:
         num_vals = timestamps.size
+        click_index = 0
+        last_deleted_a_index = -1
+        last_deleted_b_index = -1
         for click_index in range(num_vals):
 
             click_time = timestamps[click_index]
-
-            # Determine the afterpulse channel
             click_channel = channels[click_index]
+            
+            # if click_channel == apd_a_chan_name:
+            #     continue
+            
+            # Skip over events we've already decided to delete
+            if (click_channel == apd_a_chan_name) and (click_index <= last_deleted_a_index):
+                continue
+            elif (click_channel == apd_b_chan_name) and (click_index <= last_deleted_b_index):
+                continue
 
             # Calculate relevant differences
             next_index = click_index + 1
@@ -78,10 +88,15 @@ def process_raw_buffer(timestamps, channels,
                 if diff > afterpulse_window:
                     break
                 if channels[next_index] == click_channel:
+                    if click_channel == apd_a_chan_name:
+                        last_deleted_a_index = next_index
+                    elif click_channel == apd_a_chan_name:
+                        last_deleted_b_index = next_index
                     indices_to_delete_append(next_index)
                 next_index += 1
 
         timestamps = numpy.delete(timestamps, indices_to_delete)
+        channels = numpy.delete(channels, indices_to_delete)
 
     # Calculate differences
     num_vals = timestamps.size
@@ -91,10 +106,13 @@ def process_raw_buffer(timestamps, channels,
 
         # Determine the channel to take the difference with
         click_channel = channels[click_index]
-        if click_channel == apd_a_chan_name:
+        if click_channel == apd_b_chan_name:
             diff_channel = apd_b_chan_name
-        else:
+        elif click_channel == apd_a_chan_name:
             diff_channel = apd_a_chan_name
+            
+        # if click_channel == apd_a_chan_name:
+        #     continue
 
         # Calculate relevant differences
         next_index = click_index + 1
@@ -105,11 +123,40 @@ def process_raw_buffer(timestamps, channels,
                 break
             # Only record the diff between opposite chanels
             if channels[next_index] == diff_channel:
-                # Flip the sign for diffs relative to channel 2
+                # Flip the sign for diffs relative to channel b
                 if click_channel == apd_b_chan_name:
                     diff = -diff
                 differences_append(int(diff))
             next_index += 1
+            
+    # MCC
+    # Calculate differences
+    # num_vals = timestamps.size
+    # for click_index in range(num_vals):
+
+    #     click_time = timestamps[click_index]
+
+    #     # Determine the channel to take the difference with
+    #     click_channel = channels[click_index]
+    #     if click_channel == 1:
+    #         diff_channel = apd_a_chan_name
+    #     else:
+    #         continue
+
+    #     # Calculate relevant differences
+    #     next_index = click_index + 1
+    #     while next_index < num_vals:  # Don't go past the buffer end
+    #         # Stop taking differences past the diff window
+    #         diff = timestamps[next_index] - click_time
+    #         if diff > diff_window_ps:
+    #             break
+    #         # Only record the diff between opposite chanels
+    #         if channels[next_index] == diff_channel:
+    #             # Flip the sign for diffs relative to channel b
+    #             if click_channel == apd_b_chan_name:
+    #                 diff = -diff
+    #             differences_append(int(diff))
+    #         next_index += 1
 
 
 # %% Main
@@ -124,16 +171,22 @@ def main(nv_sig, run_time, diff_window,
 
 def main_with_cxn(cxn, nv_sig, run_time, diff_window,
                   apd_a_index, apd_b_index):
+    
+    do_optimize = False
 
     # %% Initial calculations and setup
 
     tool_belt.reset_cfm(cxn)
 
-    afterpulse_window = 50 * 10**3
+    # 200 ns to account for twilighting and afterpulsing
+    afterpulse_window = 200 * 1000
+    # afterpulse_window = (diff_window - 200) * 1000
+    
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    if do_optimize:
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
     cxn.pulse_streamer.constant([wiring['do_532_aom']])
@@ -144,7 +197,10 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     diff_window_ps = diff_window * 1000
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
-    num_bins = int(2 * diff_window) + 1  # 1 ns bins in ps
+    num_bins = int(2 * diff_window) + 1
+    # num_bins = 151
+    # num_bins = diff_window + 1
+    # num_bins = int(2*mod)-1
 
     # Expose the stream
     cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
@@ -163,12 +219,29 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     # a while True
     stop = False
     time_remaining = run_time
+    # num_pointsss = 50
+    # vals = numpy.linspace(0, num_pointsss, num_pointsss+1)
+    # vals *= 8
+    total_tags = []
     while not stop:
 
-        # Read the stream and convert from strings to int64s
-        ret_vals = cxn.apd_tagger.read_tag_stream()
-        buffer_timetags, buffer_channels = ret_vals
-        buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
+        #######
+        
+        # stop = True
+        # # if collection_index >= num_pointsss:
+        # #     return
+        
+        # seq_args = [80, 92, 0]
+        # seq_args_string = tool_belt.encode_seq_args(seq_args)
+        # ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+        #                                           seq_args_string)
+        # print(ret_vals)
+        # # cxn.apd_tagger.stop_tag_stream()
+        # # return
+        # cxn.pulse_streamer.stream_start(100000)
+        # time.sleep(10)
+        
+        #######
 
         # Check if we should stop
         new_time_remaining = int((start_time + run_time) - time.time())
@@ -178,31 +251,72 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         elif new_time_remaining < time_remaining:  
             print(new_time_remaining)
             time_remaining = new_time_remaining
+            
+        time.sleep(1.0)
+            
+        # Optimize every 2 minutes
+        if do_optimize:
+            elapsed_time = run_time - new_time_remaining
+            if (elapsed_time % 120 == 0) and (elapsed_time > 0) and (new_time_remaining > 0):
+                cxn.apd_tagger.stop_tag_stream()
+                opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+                cxn.pulse_streamer.constant([wiring['do_532_aom']])
+                cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
+
+        # Read the stream and convert from strings to int64s
+        ret_vals = cxn.apd_tagger.read_tag_stream()
+        buffer_timetags, buffer_channels = ret_vals
+        buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
+        total_tags.extend(buffer_timetags.tolist())
+        # print('num tags: {}'.format(len(buffer_channels)))
+        # print(buffer_timetags)
+        # print(buffer_channels)
+        # return
 
         # Process data
         process_raw_buffer(buffer_timetags, buffer_channels,
-                           diff_window_ps, afterpulse_window,
-                           differences_append,
-                           apd_a_chan_name, apd_b_chan_name)
+                       diff_window_ps, afterpulse_window, differences_append,
+                       apd_a_chan_name, apd_b_chan_name)
+        # print(differences)
+        # return
 
         # Create/update the histogram
         if collection_index == 0:
             fig, ax = plt.subplots()
-            hist, bin_edges = numpy.histogram(differences, num_bins)
+            hist, bin_edges = numpy.histogram(differences, num_bins,
+                                      (-diff_window_ps, diff_window_ps))
             bin_edges = bin_edges / 1000  # ps to ns
             bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
             bin_centers = bin_edges[0: num_bins] + bin_center_offset
             ax.plot(bin_centers, hist)
+            # ax.plot(bin_centers, hist, marker='o', linestyle='none', markersize=3)
             xlim = int(1.1 * diff_window)
             ax.set_xlim(-xlim, xlim)
+            
+            #####
+            
+            # diff_mod = (numpy.array(differences) // 1000) % mod
+            # hist, bin_edges = numpy.histogram(diff_mod, num_bins,
+            #                           (-mod+1, mod-1))
+            # ax.plot(numpy.linspace(-mod,+mod, num_bins), hist)
+            # ax.set_xlim(-mod-1, mod+1)
+            
+            #####
+            
             ax.set_xlabel('Time (ns)')
             ax.set_ylabel('Differences')
             ax.set_title(r'$g^{(2)}(\tau)$')
             fig.set_tight_layout(True)
             fig.canvas.draw()
             fig.canvas.flush_events()
+            
+            
         elif collection_index > 1:
-            hist, bin_edges = numpy.histogram(differences, num_bins)
+            hist, bin_edges = numpy.histogram(differences, num_bins,
+                                      (-diff_window_ps, diff_window_ps))
+            # diff_mod = (numpy.array(differences) // 1000) % mod
+            # hist, bin_edges = numpy.histogram(diff_mod, num_bins,
+            #                           (-mod+1, mod-1))
             tool_belt.update_line_plot_figure(fig, hist)
 
         collection_index += 1
@@ -225,8 +339,8 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 'g2_zero': g2_zero,
                 'g2_zero-units': 'ratio',
-                'opti_coords': opti_coords,
-                'opti_coords-units': 'V',
+                # 'opti_coords': opti_coords,
+                # 'opti_coords-units': 'V',
                 'run_time': run_time,
                 'run_time-units': 's',
                 'diff_window': diff_window,
@@ -241,6 +355,9 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     tool_belt.save_raw_data(raw_data, filePath)
 
     print('g2(0) = {}'.format(g2_zero))
+    
+    raw_data = {'total_tags': total_tags}
+    tool_belt.save_raw_data(raw_data, filePath)
 
     return g2_zero
 
@@ -249,18 +366,22 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
 
 if __name__ == '__main__':
-    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/g2_measurement'
-    file_name = '2019_10/2019-10-03-11_01_18-ayrton12-NV0_2019_06_06.txt'
-
-    with open('{}/{}'.format(folder_name, file_name)) as file:
-        data = json.load(file)
-        differences = data['differences']
-        num_bins = data['num_bins']
-
-    hist, bin_edges = numpy.histogram(differences, num_bins)
+    
+    folder_name = 'pc_hahn/branch_cryo-setup/g2_measurement/2021_03'
+    file_name = '2021_03_10-15_22_06-johnson-nv14_2021_02_26'
+    data = tool_belt.get_raw_data(folder_name, file_name)
+    
+    differences = data['differences']
+    num_bins = data['num_bins']
+    diff_window = data['diff_window']
+        
+    diff_window_ps = diff_window * 1000
+    hist, bin_edges = numpy.histogram(differences, num_bins,
+                                      (-diff_window_ps, diff_window_ps))
+    bin_edges = bin_edges / 1000  # ps to ns
     bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
     bin_centers = bin_edges[0: num_bins] + bin_center_offset
 
-    plt.plot(bin_centers / 1000, hist)
+    plt.plot(bin_centers, hist)
     g2_zero = calculate_relative_g2_zero(hist)
     print(g2_zero)

@@ -43,9 +43,11 @@ class States(Enum):
     
 def get_signal_generator_name(state):
     if state.value == States.LOW.value:
-        signal_generator_name = 'signal_generator_tsg4104a'
+        signal_generator_name = 'signal_generator_sg394'
+        # signal_generator_name = 'signal_generator_tsg4104a'
     elif state.value == States.HIGH.value:
-        signal_generator_name = 'signal_generator_bnc835'
+        signal_generator_name = 'signal_generator_tsg4104a'
+        # signal_generator_name = 'signal_generator_sg394'
     return signal_generator_name
     
 def get_signal_generator_cxn(cxn, state):
@@ -58,34 +60,34 @@ def get_signal_generator_cxn(cxn, state):
 
 
 def set_xyz(cxn, coords):
-    xy_server = get_xy_server()
-    z_server = get_z_server()
-    xy_server.write_xy(coords[0], coords[1])
-    z_server.write_z(coords[2])
+    xy_dtype = eval(get_registry_entry(cxn, 'xy_dtype', 
+                                       ['', 'SharedParameters']))
+    z_dtype = eval(get_registry_entry(cxn, 'z_dtype', 
+                                      ['', 'SharedParameters']))
+    xy_server = get_xy_server(cxn)
+    z_server = get_z_server(cxn)
+    if xy_dtype is int:
+        xy_op = round
+    else:
+        xy_op = xy_dtype
+    if z_dtype is int:
+        z_op = round
+    else:
+        z_op = z_dtype
+    xy_server.write_xy(xy_op(coords[0]), xy_op(coords[1]))
+    z_server.write_z(z_op(coords[2]))
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
 
 
 def set_xyz_center(cxn):
-    xy_server = get_xy_server()
-    z_server = get_z_server()
-    xy_server.write_xy(0.0, 0.0)
-    z_server.write_z(5.0)
-    # Force some delay before proceeding to account 
-    # for the effective write time
-    time.sleep(0.001)
+    # MCC Generalize this for Hahn
+    set_xyz(cxn, [0, 0, 5])
 
 
 def set_xyz_on_nv(cxn, nv_sig):
-    xy_server = get_xy_server()
-    z_server = get_z_server()
-    coords = nv_sig['coords']
-    xy_server.write_xy(coords[0], coords[1])
-    z_server.write_z(coords[2])
-    # Force some delay before proceeding to account 
-    # for the effective write time
-    time.sleep(0.001)
+    set_xyz(cxn, nv_sig['coords'])
     
 
 # %% Pulse Streamer utils
@@ -95,7 +97,10 @@ def encode_seq_args(seq_args):
     return json.dumps(seq_args)
 
 def decode_seq_args(seq_args_string):
-    return json.loads(seq_args_string)
+    if seq_args_string == '':
+        return []
+    else:
+        return json.loads(seq_args_string)
 
 def get_pulse_streamer_wiring(cxn):
     cxn.registry.cd(['', 'Config', 'Wiring', 'Pulser'])
@@ -363,6 +368,12 @@ def cosexp(t, offset, amp, freq, decay):
     two_pi = 2*numpy.pi
     return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
 
+
+def cosexp_1_at_0(t, offset, freq, decay):
+    two_pi = 2*numpy.pi
+    amp = 1- offset
+    return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
+
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2*numpy.pi
     
@@ -372,10 +383,24 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
                 amp_3 * numpy.cos(two_pi * freq_3 * t))
 
 
+def get_scan_vals(center, scan_range, num_steps, dtype=float):
+    """
+    Returns a linspace for a scan centered about specified point
+    """
+    
+    half_scan_range = scan_range / 2
+    low = center - half_scan_range
+    high = center + half_scan_range
+    scan_vals = numpy.linspace(low, high, num_steps, dtype=dtype)
+    # Deduplicate - may be necessary for ints and low scan ranges
+    scan_vals = numpy.unique(scan_vals)
+    return scan_vals
+
+
 # %% LabRAD utils
 
 
-def get_shared_parameters_dict(cxn):
+def get_shared_parameters_dict(cxn=None):
     """Get the shared parameters from the registry. These parameters are not
     specific to any experiment, but are instead used across experiments. They
     may depend on the current alignment (eg aom_delay) or they may just be
@@ -411,6 +436,15 @@ def get_shared_parameters_dict(cxn):
         piezo_nm_per_volt: Conversion factor between objective piezo voltage
             and z position
     """
+    
+    if cxn is None:
+        with labrad.connect() as cxn:
+            return get_shared_parameters_dict_sub(cxn)
+    else:
+        return get_shared_parameters_dict_sub(cxn)
+    
+    
+def get_shared_parameters_dict_sub(cxn):
 
     # Get what we need out of the registry
     cxn.registry.cd(['', 'SharedParameters'])
@@ -432,6 +466,10 @@ def get_shared_parameters_dict(cxn):
     return reg_dict
 
 
+def get_nv_sig_units():
+    return 'in shared_parameters'
+
+
 def get_xy_server(cxn):
     """
     Talk to the registry to get the fine xy control server for this setup.
@@ -440,25 +478,36 @@ def get_xy_server(cxn):
     
     # return an actual reference to the appropriate server so it can just
     # be used directly
-    return getattr(cxn, get_registry_entry(cxn, 'xy_server', 'Config'))
+    return getattr(cxn, get_registry_entry(cxn, 'xy_server', ['Config']))
 
 
 def get_z_server(cxn):
     """Same as get_xy_server but for the fine z control server"""
     
-    return getattr(cxn, get_registry_entry(cxn, 'z_server', 'Config'))
+    return getattr(cxn, get_registry_entry(cxn, 'z_server', ['Config']))
 
 
-def get_registry_entry(cxn, key, *directory):
+def get_registry_entry(cxn, key, directory):
     """
     Return the value for the specified key. The directory is specified from 
-    the top of the registry
+    the top of the registry. Directory as a list
     """
     
     p = cxn.registry.packet()
     p.cd('', *directory)
     p.get(key)
     return p.send()['get']
+
+
+def get_registry_entry_no_cxn(key, directory):
+    """
+    Same as above
+    """
+    with labrad.connect() as cxn:
+        p = cxn.registry.packet()
+        p.cd('', *directory)
+        p.get(key)
+        return p.send()['get']
     
 
 # %% Open utils
@@ -703,7 +752,7 @@ def save_figure(fig, file_path):
 def save_raw_data(rawData, filePath):
     """
     Save raw data in the form of a dictionary to a text file. New lines
-    will be printed between entries in the dictionary.
+    will be printed between entries in the dictionary. 
 
     Params:
         rawData: dict
@@ -713,14 +762,18 @@ def save_raw_data(rawData, filePath):
             extension
     """
 
+    # Add in a few things that should always be saved here. In particular,
+    # sharedparameters so we have as snapshot of the configuration and 
+    # nv_sig_units. If these have already been defined in the routine,
+    # then they'll just be overwritten. 
+    try:
+        rawData['nv_sig_units'] = get_nv_sig_units()
+        rawData['shared_parameters'] = get_shared_parameters_dict()
+    except Exception as e:
+        print(e)
+    
     with open(filePath + '.txt', 'w') as file:
         json.dump(rawData, file, indent=2)
-
-
-def get_nv_sig_units():
-    return {'coords': 'V', 'expected_count_rate': 'kcps', 
-        'pulsed_readout_dur': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz',
-        'rabi': 'ns', 'uwave_power': 'dBm'}
 
 
 # %% Safe stop (TM mccambria)
@@ -836,6 +889,10 @@ def get_drift():
     with labrad.connect() as cxn:
         cxn.registry.cd(['', 'State'])
         drift = cxn.registry.get('DRIFT')
+        # MCC where should this stuff live?
+        cxn.registry.cd(['', 'SharedParameters'])
+        xy_dtype = eval(cxn.registry.get('xy_dtype'))
+        z_dtype = eval(cxn.registry.get('z_dtype'))
     len_drift = len(drift)
     if len_drift != 3:
         print('Got drift of length {}.'.format(len_drift))
@@ -845,7 +902,11 @@ def get_drift():
                 drift.append(0.0)
         elif len_drift > 3:
             drift = drift[0:3]
-    drift_to_return = [float(el) for el in drift]  # Cast to float
+    # Cast to appropriate type
+    # MCC round instead of int? 
+    drift_to_return = [xy_dtype(drift[0]), 
+                       xy_dtype(drift[1]), 
+                       z_dtype(drift[2])]
     return drift_to_return
 
 
@@ -854,11 +915,13 @@ def set_drift(drift):
     if len_drift != 3:
         print('Attempted to set drift of length {}.'.format(len_drift))
         print('Set drift unsuccessful.')
-    for el in drift:
-        type_el = type(el)
-        if type_el is not float:
-            print('Attempted to set drift element of type {}.'.format(type_el))
-            print('Set drift unsuccessful.')
+    # Cast to the proper types
+    
+    xy_dtype = eval(get_registry_entry_no_cxn('xy_dtype', 
+                                              ['', 'SharedParameters']))
+    z_dtype = eval(get_registry_entry_no_cxn('z_dtype', 
+                                             ['', 'SharedParameters']))
+    drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
     with labrad.connect() as cxn:
         cxn.registry.cd(['', 'State'])
         return cxn.registry.set('DRIFT', drift)
@@ -886,11 +949,20 @@ def reset_cfm(cxn=None):
         
             
 def reset_cfm_with_cxn(cxn):
-    cxn.pulse_streamer.reset()
-    cxn.apd_tagger.reset()
-    cxn.arbitrary_waveform_generator.reset()
-    cxn.signal_generator_tsg4104a.reset()
-    cxn.signal_generator_bnc835.reset()
+    if hasattr(cxn, 'pulse_streamer'):
+        cxn.pulse_streamer.reset()
+    if hasattr(cxn, 'apd_tagger'):
+        cxn.apd_tagger.reset()
+    if hasattr(cxn, 'arbitrary_waveform_generator'):
+        cxn.arbitrary_waveform_generator.reset()
+    if hasattr(cxn, 'signal_generator_tsg4104a'):
+        cxn.signal_generator_tsg4104a.reset()
+    if hasattr(cxn, 'signal_generator_sg394'):
+        cxn.signal_generator_sg394.reset()
+    if hasattr(cxn, 'signal_generator_bnc835'):
+        cxn.signal_generator_bnc835.reset()
     # 8/10/2020, mainly for Er lifetime measurements
-    cxn.filter_slider_ell9k_color.set_filter('none')
-    cxn.filter_slider_ell9k.set_filter('nd_0')
+    if hasattr(cxn, 'filter_slider_ell9k_color'):
+        cxn.filter_slider_ell9k_color.set_filter('none')
+    if hasattr(cxn, 'filter_slider_ell9k'):
+        cxn.filter_slider_ell9k.set_filter('nd_0')
