@@ -26,7 +26,7 @@ def get_seq(pulser_wiring, args):
 
     # The first 3 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(6):
+    for ind in range(7):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
@@ -126,7 +126,8 @@ if __name__ == '__main__':
               'do_532_aom': 1,
               'do_638_laser': 7
               }
-
+readout, illum_pulse_duration, init_pulse_duration, wait_time, \
+                init_pulse_delay, illum_pulse_delay, galvo_delay
     seq_args = [10500, 10000, 5, 300, 0, 0, 0.7, 0, 532 , 589]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)

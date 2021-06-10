@@ -133,10 +133,11 @@ def main_AM_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, 
         
     prep_power_515 = am_515_power
     readout_power_589 = am_589_power
+    nd_filter = nv_sig['nd_filter']
         
     
     # set the nd_filter for yellow
-    cxn.filter_slider_ell9k.set_filter('nd_0')
+    cxn.filter_slider_ell9k.set_filter(nd_filter)
     
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
@@ -153,10 +154,10 @@ def main_AM_with_cxn(cxn, nv_sig, apd_indices, num_reps, test_color, test_time, 
     
 
     # Optimize
-    opti_coords_list = []  
+#    opti_coords_list = []  
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, '515a', disable=False)
-    opti_coords_list.append(opti_coords)
+#    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, '515a', disable=False)
+#    opti_coords_list.append(opti_coords)
     cxn.filter_slider_ell9k_color.set_filter('715 lp') 
     
      # Estimate the lenth of the sequance , load the sequence          
@@ -468,14 +469,18 @@ if __name__ == '__main__':
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200, 
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 40, 
             'ao_515_pwr':0.645,
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    test_pulses = [10**3, 10**4,5*10**4, 10**5,2.5*10**5,5*10**5,7.5*10**5, 10**6, 2.5*10**6, 5*10**6, 7.5*10**6, 10**7]
+    test_pulses = [10**3, 10**4,5*10**4, 10**5,2.5*10**5,5*10**5,7.5*10**5, 
+                   10**6, 2.5*10**6, 5*10**6, 7.5*10**6,
+                   10**7,2.5*10**7, 5*10**7, 7.5*10**7,
+                   10**8,2.5*10**8, 5*10**8, 
+                   ]
     p_mw = [1.2, 1.62, 2.06, 1.82, 2.47, .76, 0.32, .039, 0.15, 0.018, 0.55]
     p_V = [0.63, 0.64, 0.65, 0.645, 0.66, 0.62, 0.61, 0.605, 0.607, 0.603, 0.615]
     
@@ -486,13 +491,13 @@ if __name__ == '__main__':
         nv_sig['coords'] = nv_coords_list[i]
         nv_sig['expected_count_rate'] = expected_count_list[i]
         nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
-        for i in [0]:#range(len(p_mw)):
-            test_power_mw = p_mw[i]
-            test_power_V = p_V[i]
-            d0, d1 = sweep_test_pulse_length(nv_sig, '515a', test_power_mw, 
-                'scan',test_power_V,  test_pulse_dur_list = test_pulses)
-            d0_list.append(d0)
-            d1_list.append(d1)
+        
+        test_power_mw = 8.23
+        test_power_V = 0.5
+        d0, d1 = sweep_test_pulse_length(nv_sig, 638, test_power_mw, 
+            'no_scan',test_power_V,  test_pulse_dur_list = test_pulses)
+        d0_list.append(d0)
+        d1_list.append(d1)
             
 #    print(d0_list)
 #    print(d1_list)

@@ -144,9 +144,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
     
     aom_ao_589_pwr = nv_sig['am_589_power']
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    galvo_delay = shared_params['large_angle_galvo_delay']
     start_coords = numpy.array(nv_sig['coords'])
     
-    # We want to observe the illumination pulsee turn on/off. So we make thee
+    # We want to observe the illumination pulse turn on/off. So we make thee
     # readout longer than the illuination time. Below I set these readout
     # times based on the lengths of the illumination time, so that the extra 
     # time will be resolvable.
