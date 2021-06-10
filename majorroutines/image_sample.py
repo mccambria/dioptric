@@ -18,7 +18,7 @@ import time
 
 import json
 import matplotlib.pyplot as plt
-import labrad
+# import labrad
 
 def populate_img_array_bottom_left(valsToAdd, imgArray, writePos):
     """
@@ -258,8 +258,8 @@ def create_figure(file_name, sub_folder = None):
     data = tool_belt.get_raw_data('', file_name)
 #    else:
 #        data = tool_belt.get_raw_data('image_sample', file_name)
-    x_range = data['img_range']
-    y_range = data['img_range']
+    x_range = data['x_range']
+    y_range = data['y_range']
     num_steps = data['num_steps']
     x_voltages = numpy.linspace(-x_range/2, +x_range/2, num_steps)
 #    x_voltages = data['x_voltages']'
@@ -275,9 +275,9 @@ def create_figure(file_name, sub_folder = None):
         print(e)
         coords = data['coords']
     coords = [0,0,5.0]
-    img_array = numpy.array(data['readout_image_array'])
-    print(numpy.average(img_array))
-    readout = 20000000#data['readout']
+    img_array = numpy.array(data['img_array'])
+    # print(numpy.average(img_array))
+    readout = data['readout']
 
     x_coord = coords[0]
     half_x_range = x_range / 2
@@ -815,8 +815,9 @@ if __name__ == '__main__':
 #    reformat_plot('inferno', 'svg')
 
 #    file_name = 'branch_Spin_to_charge/2020_10/2020_10_13-17_32_31-goeppert-mayer-ensemble'
-    file_name = 'pc_rabi/branch_Spin_to_charge/isolate_nv_charge_dynamics_moving_target/2020_12/2020_12_08-18_04_02-goeppert-mayer-nv1_2020_12_02-img'
-    
+    # file_name = 'pc_rabi/branch_Spin_to_charge/isolate_nv_charge_dynamics_moving_target/2020_12/2020_12_08-18_04_02-goeppert-mayer-nv1_2020_12_02-img'
+    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2020_12/2020_12_09-15_36_03-goeppert-mayer-nv1_2020_12_02'
+
 #    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_02-09_41_46-goeppert-mayer' # bright
 #    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_02-09_46_49-goeppert-mayer' # dark
 #    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_02-09_46_49-goeppert-mayer' # dark

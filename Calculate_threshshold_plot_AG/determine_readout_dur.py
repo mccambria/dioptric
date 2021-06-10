@@ -5,7 +5,7 @@ Created on Thu Apr 22 14:09:39 2021
 @author: samli
 """
 
-import labrad
+# import labrad
 import scipy.stats
 import scipy.special
 import numpy
@@ -261,26 +261,17 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-#    determine_readout_dur(nv_sig, readout_times = [60*10**6, 100*10**6], readout_yellow_powers = [0.1, 0.15, 0.2],
-#                          nd_filter = 'nd_0.5')
-    file = '2021_04_13-18_58_20-johnson-nv0_2021_04_13-readout_pulse_dur'
-    folder = 'pc_rabi/branch_Spin_to_charge/SCC_optimize_pulses_wout_uwaves/2021_04'
-    data_f = tool_belt.get_raw_data(folder, file)
-    nv_sig = data_f['nv_sig']
+    # determine_readout_dur(nv_sig, readout_times = [60*10**6, 100*10**6], readout_yellow_powers = [0.1, 0.15, 0.2],
+    #                       nd_filter = 'nd_0.5')
+
+    file_name = 'pc_rabi/branch_Spin_to_charge/collect_charge_counts/2021_04/2021_04_28-17_18_59-goeppert-mayer-nv5_2021_04_15-nv_list'
+    data_in = tool_belt.get_raw_data('', file_name)
+    nv0_list = data_in['nv0_list']
+    nvm_list = data_in['nvm_list']
+    nv_sig = data_in['parameters_sig']
     readout_time = nv_sig['pulsed_SCC_readout_dur']
-    sig_count_raw = data_f['sig_count_raw']
-    NV0 = np.array(sig_count_raw[3])
-    ref_count_raw = data_f['ref_count_raw']
-    NVm = np.array(ref_count_raw[3])
-    nd_filter = 'nd_1.0'
-    aom_power = 0.18
-#    file_name = 'pc_rabi/branch_Spin_to_charge/collect_charge_counts/2021_04/2021_04_22-16_01_32-goeppert-mayer-nv5_2021_04_15-nv_list'
-#    data_in = tool_belt.get_raw_data('', file_name)
-#    nv0_list = data_in['nv0_list']
-#    nvm_list = data_in['nvm_list']
-#    nv_sig = data_in['parameters_sig']
-#    readout_time = nv_sig['pulsed_SCC_readout_dur']
-    calculate_threshold_plot(readout_time/10**6, NV0,NVm, nd_filter, aom_power)
+    calculate_threshold_plot(readout_time/10**6, nv0_list[0],nvm_list[0], '', '')
+
 
 
 
