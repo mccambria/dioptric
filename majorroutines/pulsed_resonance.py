@@ -87,7 +87,7 @@ def single_gaussian_dip(freq, constrast, sigma, center):
 def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
 
     # %% Guess the locations of the minimums
-    
+
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
     contrast = 0.10  # Arb
@@ -154,7 +154,7 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
 
     # low_freq_guess = 2.8620
     # high_freq_guess = 2.8936
-    
+
     if low_freq_guess is None:
         return None, None
 
@@ -168,22 +168,22 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
         fit_func = double_gaussian_dip
         guess_params=[contrast, sigma, low_freq_guess,
                       contrast, sigma, high_freq_guess]
-        
+
     return fit_func, guess_params
 
 
 def fit_resonance(freq_range, freq_center, num_steps,
                   norm_avg_sig, norm_avg_sig_ste=None):
-    
+
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
     fit_func, guess_params = get_guess_params(freq_range, freq_center,
                                               num_steps, norm_avg_sig)
-    
+
     try:
         if norm_avg_sig_ste is not None:
             popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
-                                   p0=guess_params, sigma=norm_avg_sig_ste, 
+                                   p0=guess_params, sigma=norm_avg_sig_ste,
                                    absolute_sigma=True)
             # popt = guess_params
             if len(popt) == 6:
@@ -285,6 +285,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     background_wait_time = signal_wait_time  # not sure what this is
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
     aom_delay_time = shared_params['532_aom_delay']
+    # aom_delay_time = shared_params['515_DM_laser_delay'] # for RabiCPU
     uwave_delay_time = shared_params['uwave_delay']
     iq_delay = shared_params['iq_delay']
     readout = nv_sig['pulsed_readout_dur']
@@ -329,7 +330,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             break
 
         # Optimize and save the coords we found
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = False)
         opti_coords_list.append(opti_coords)
 
         # Start the tagger stream
@@ -337,7 +338,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):
-            
+
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
@@ -356,12 +357,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                 ret_vals = cxn.pulse_streamer.stream_load('discrete_rabi2.py', seq_args_string)
             else:
                 ret_vals = cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
-                
+
 
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total
 #            time.sleep(0.001)
-
+            # Clear the tagger buffer of any excess counts
+            cxn.apd_tagger.clear_buffer()
             # Start the timing stream
             cxn.pulse_streamer.stream_start(num_reps)
 
@@ -518,8 +520,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 
 if __name__ == '__main__':
-    
-    
+
+
 
     path = 'pc_rabi/branch_master/pulsed_resonance/2019_08'
     file = '2019-08-06-11_58_27-ayrton12-nv2_2019_04_30'
@@ -545,9 +547,9 @@ if __name__ == '__main__':
 
     # fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
     #                                norm_avg_sig, ref_counts)
-    
+
     create_fit_figure(freq_range, freq_center, num_steps,
                       norm_avg_sig, fit_func, popt)
-    
+
     # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
 #    simulate(2.87, 0.2, 0.1, 100, 50)

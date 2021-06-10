@@ -43,7 +43,7 @@ def get_seq(pulser_wiring, args):
     # enough to accomodate the longest tau
     period = aom_delay_time + polarization_time +  tau_frst + \
         gate_time + inter_exp_wait_time + polarization_time + tau_scnd + \
-        gate_time + inter_exp_wait_time 
+        gate_time + inter_exp_wait_time
 
     # %% Define the sequence
 
@@ -77,7 +77,7 @@ if __name__ == '__main__':
               'do_532_aom': 1,
               'do_signal_generator_tsg4104a_gate': 2,
               'do_signal_generator_bnc835_gate': 3}
-    
+
     seq_args = [10**5/2, 10000, 0, 0, 5000, 10**5/2, 0]
 
     seq, final, ret_vals = get_seq(wiring, seq_args)

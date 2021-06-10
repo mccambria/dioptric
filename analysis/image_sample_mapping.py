@@ -2,6 +2,9 @@
 """Saves the data necessary to relocate specific NVs. Also can probably (?)
 illustrate a mapping from an NV list to an image_sample.
 
+
+11/24/2020 needs work... I added specific fixes to plot a few things, but needs to be generalized.
+
 Created on Mon Jun 10 13:54:07 2019
 
 @author: mccambria
@@ -17,19 +20,20 @@ import utils.tool_belt as tool_belt
 import matplotlib.pyplot as plt
 import os
 import labrad
+import numpy
 from pathlib import Path
 
 
 # %% Functions
 
 
-def illustrate_mapping(file_name, nv_indices=None):
-
-    data = tool_belt.get_raw_data(__file__, file_name)
+def illustrate_mapping(file_name, mapping_sub_folder, image_sub_folder, nv_indices=None):
+    data = tool_belt.get_raw_data(mapping_sub_folder, file_name + '-untitled')
     image_sample_file_name = data['image_sample_file_name']
     nv_sig_list = data['nv_sig_list']
 
-    fig = image_sample.create_figure(image_sample_file_name)
+    mapping_full_file = image_sub_folder + '/' + image_sample_file_name
+    fig = image_sample.create_figure(mapping_full_file )
     axes = fig.get_axes()
     ax = axes[0]
     images = ax.get_images()
@@ -63,7 +67,7 @@ def illustrate_mapping(file_name, nv_indices=None):
     return fig
 
 def generate_mapping_files(sample_name, micrometer_coords,
-                           image_sample_file_name, nv_sig_list):
+                           image_sample_file_name, branch, month_folder, nv_sig_list):
 
     raw_data = {
             'sample_name': sample_name,
@@ -74,17 +78,15 @@ def generate_mapping_files(sample_name, micrometer_coords,
             'nv_sig_list-units': tool_belt.get_nv_sig_units(),
             }
 
-    # Parse image_sample_file_name, which will look like:
-    # 'month_folder/time-stamp-description'
-    split_name = image_sample_file_name.split('/')
-    file_name = split_name[1]
-    time_stamp = '-'.join(file_name.split('-')[0:1])
-    mapping_file_name = '{}-mapping'.format('-'.join(file_name.split('-')[1:]))
-    file_path = tool_belt.get_file_path(__file__, time_stamp, mapping_file_name)
+    file_name = '{}-mapping'.format(image_sample_file_name)
+    file_path = tool_belt.get_file_path(__file__, file_name)
+    print(file_path)
 
+    mapping_sub_folder = 'pc_rabi/{}/image_sample_mapping/{}'.format(branch,month_folder )
+    image_sub_folder = 'pc_rabi/{}/image_sample/{}'.format(branch,month_folder )
     tool_belt.save_raw_data(raw_data, file_path)
-    # Use the raw data we just saved to create the mapping
-    fig = illustrate_mapping('/'.join(file_path.split('/')[-2:]))
+    fig = illustrate_mapping(file_name,  mapping_sub_folder, image_sub_folder,)
+
     tool_belt.save_figure(fig, file_path)
 
 
@@ -96,27 +98,46 @@ if __name__ == '__main__':
 #    image_sample_file_name = '2019-07-25_18-37-46_ayrton12_search'
 
     # Ignore this...
-    if True:
+#    if True:
         # Circle NVs from an existing mapping
-        file_name = '2019_11/2019_11_27-14_40_50-Geoppert-Mayer-nv5_2019_11_27-mapping'
-        illustrate_mapping(file_name, [0])
-    else:
+#        file_name = '2019-06-10_15-26-39_ayrton12_mapping'
+#    illustrate_mapping(file_name, [13])
+#    else:
+    drift_x = 0.005
+    coords_list = [
+[0.039, 0.087, 5.44],
+[-0.075, 0.059, 5.44],
+[0.065, 0.006, 5.44],
+[-0.081, 0.096, 5.48],
+[0.339, -0.388, 5.44],
+[0.346, -0.479, 5.48],
+[0.005, -0.092, 5.46],
+[-0.020, -0.065, 5.48],
+[-0.076, 0.116, 5.51],
+[0.307, 0.441, 5.50], # really good
+[0.325, 0.441, 5.48],
+[0.311, 0.463, 5.48],
+[0.078, 0.026, 5.46],
+[0.058, 0.027, 5.48],
+[0.363, -0.458, 5.50],
+[-0.073, 0.129, 5.47],
+            ]
+#    coords_list = numpy.array(coords_list) + numpy.array([-0.007710279036012624, -0.003293695710258837, -0.012155496756263595])
 
-        coords_list = [
-                [-0.761, -0.181, 5.06]
-                ]
+    sample_name = 'goeppert-mayer'
+    micrometer_coords = [3.154, 2.193, 11.118, 120.21]
+    image_sample_file_name = '2021_03_01-11_32_57-goeppert-mayer-search'
+    branch = 'branch_Spin_to_charge'
+    month_folder = '2021_03'
 
-        sample_name = 'goeppert_mayer'
-        micrometer_coords = [2730, 1588, 9275]
-        image_sample_file_name = '2019_11/2019_11_27-14_40_50-Geoppert-Mayer-nv5_2019_11_27'
+    nv_sig_list = []
+    for ind in range(len(coords_list)):
+        coords = coords_list[ind]
+        name = '{}-nv{}_2020_11_18'.format(sample_name, ind)
+        nd_filter = 'nd_1.0'
+        nv_sig = {'coords': coords, 'name': name, nd_filter: nd_filter}
+        nv_sig_list.append(nv_sig)
+    generate_mapping_files(sample_name, micrometer_coords,
+                          image_sample_file_name, branch, month_folder,  nv_sig_list)
 
-        nv_sig_list = []
-        for ind in range(len(coords_list)):
-            coords = coords_list[ind]
-            name = '{}-nv{}_2019_11_27'.format(sample_name, ind)
-            nd_filter = 'nd_1.0'
-            nv_sig = {'coords': coords, 'name': name, nd_filter: nd_filter}
-            nv_sig_list.append(nv_sig)
-
-        generate_mapping_files(sample_name, micrometer_coords,
-                              image_sample_file_name, nv_sig_list)
+    # Would be great to include the ability to adjust due to drift...

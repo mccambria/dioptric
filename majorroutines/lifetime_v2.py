@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-This is a program to record the lifetime (right now, specifically of the Er 
+This is a program to record the lifetime (right now, specifically of the Er
 implanted materials fro mVictor brar's group).
 
-It takes the same structure as a standard t1 measurement. We shine 532 nm 
-light, wait some time, and then read out the counts WITHOUT shining 532 nm 
+It takes the same structure as a standard t1 measurement. We shine 532 nm
+light, wait some time, and then read out the counts WITHOUT shining 532 nm
 light.
 
-Adding a variable 'filter' to pass into the function to signify what filter 
+Adding a variable 'filter' to pass into the function to signify what filter
 was used to take the measurement (2/20/2020)
 
 Created on Mon Nov 11 12:49:55 2019
@@ -35,15 +35,15 @@ import labrad
 def process_raw_buffer(new_tags, new_channels,
                        current_tags, current_channels,
                        gate_open_channel, gate_close_channel):
-    
+
     # The processing here will be bin_size agnostic
-    
+
     # Tack the new data onto the leftover data (leftovers are necessary if
     # the last read contained a gate open without a matching gate close)
     current_tags.extend(new_tags)
     current_channels.extend(new_channels)
     current_channels_array = numpy.array(current_channels)
-    
+
     # Find gate open clicks
     result = numpy.nonzero(current_channels_array == gate_open_channel)
     gate_open_click_inds = result[0].tolist()
@@ -51,17 +51,17 @@ def process_raw_buffer(new_tags, new_channels,
     # Find gate close clicks
     result = numpy.nonzero(current_channels_array == gate_close_channel)
     gate_close_click_inds = result[0].tolist()
-    
+
     new_processed_tags = []
-    
+
     # Loop over the number of closes we have since there are guaranteed to
     # be opens
     num_closed_samples = len(gate_close_click_inds)
     for list_ind in range(num_closed_samples):
-        
+
         gate_open_click_ind = gate_open_click_inds[list_ind]
         gate_close_click_ind = gate_close_click_inds[list_ind]
-        
+
         # Extract all the counts between these two indices as a single sample
         rep = current_tags[gate_open_click_ind+1:
                                     gate_close_click_ind]
@@ -69,13 +69,13 @@ def process_raw_buffer(new_tags, new_channels,
         # Make relative to gate open
         rep -= current_tags[gate_open_click_ind]
         new_processed_tags.extend(rep.astype(int).tolist())
-        
+
     # Clear processed tags
     if len(gate_close_click_inds) > 0:
         leftover_start = gate_close_click_inds[-1]
         del current_tags[0: leftover_start+1]
         del current_channels[0: leftover_start+1]
-        
+
     return new_processed_tags, num_closed_samples
 
 
@@ -92,25 +92,25 @@ def main(nv_sig, apd_indices, readout_time_range,
 
 def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
                   num_reps, num_runs, num_bins, filter, voltage, polarization_time, reference = False):
-    
+
     if len(apd_indices) > 1:
         msg = 'Currently lifetime only supports single APDs!!'
         raise NotImplementedError(msg)
-    
+
     tool_belt.reset_cfm(cxn)
 
     # %% Define the times to be used in the sequence
-    
+
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     # In ns
 #    polarization_time = 25 * 10**3
     start_readout_time = int(readout_time_range[0])
     end_readout_time = int(readout_time_range[1])
-    
+
     if end_readout_time < polarization_time:
         end_readout_time = polarization_time
-        
+
     calc_readout_time = end_readout_time - start_readout_time
 #    readout_time = polarization_time + int(readout_time)
 #    inter_exp_wait_time = 500  # time between experiments
@@ -141,12 +141,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
     # Record the start time
     startFunctionTime = time.time()
     start_timestamp = tool_belt.get_time_stamp()
-    
+
     opti_coords_list = []
-    
+
     # %% Set the filters
-    
-    
+
+
     if reference:
         # shutter the objective
         cxn.filter_slider_ell9k.set_filter('nd_0.5')
@@ -160,16 +160,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
         cxn.filter_slider_ell9k.set_filter('nd_0')
         # put the correct color filter on
         cxn.filter_slider_ell9k_color.set_filter(filter)
-    
+
     # %% Collect the data
-    
+
     processed_tags = []
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
-        
+
         print(' \nRun index: {}'.format(run_ind))
 
         # Break out of the while if the user says stop
@@ -179,26 +179,26 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
         # Optimize
 #        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices)
 #        opti_coords_list.append(opti_coords)
-        
-        
+
+
         # Expose the stream
         cxn.apd_tagger.start_tag_stream(apd_indices, apd_indices, False)
-    
+
         # Find the gate channel
         # The order of channel_mapping is APD, APD gate open, APD gate close
         channel_mapping = cxn.apd_tagger.get_channel_mapping()
         gate_open_channel = channel_mapping[1]
         gate_close_channel = channel_mapping[2]
-            
+
         # Stream the sequence
         seq_args = [start_readout_time, end_readout_time, polarization_time,
                 aom_delay_time, apd_indices[0]]
         seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        
+
         cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
                                             seq_args_string)
-        
+
         # Initialize state
         current_tags = []
         current_channels = []
@@ -209,10 +209,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
-    
+
             new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
             new_tags = numpy.array(new_tags, dtype=numpy.int64)
-            
+
             ret_vals = process_raw_buffer(new_tags, new_channels,
                                    current_tags, current_channels,
                                    gate_open_channel, gate_close_channel)
@@ -221,20 +221,20 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
             if num_new_processed_reps > 750000:
                 print('Processed {} reps out of 10^6 max'.format(num_new_processed_reps))
                 print('Tell Matt that the time tagger is too slow!')
-            
+
             num_processed_reps += num_new_processed_reps
-            
+
             processed_tags.extend(new_processed_tags)
-            
+
 
         cxn.apd_tagger.stop_tag_stream()
-        
+
         # %% Save the data we have incrementally for long measurements
 
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'filter': filter,   
+                    'filter': filter,
                     'reference_measurement?': reference,
                     'start_readout_time': start_readout_time,
                     'start_readout_time-units': 'ns',
@@ -262,15 +262,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
     tool_belt.reset_cfm(cxn)
 
     # %% Bin the data
-    
+
     readout_time_ps = 1000*calc_readout_time
-    
+
 #    start_readout_time_ps = 1000*start_readout_time
 #    end_readout_time_ps = 1000*end_readout_time
     binned_samples, bin_edges = numpy.histogram(processed_tags, num_bins,
                                 (0, readout_time_ps))
 #    print(binned_samples)
-    
+
     # Compute the centers of the bins
     bin_size = calc_readout_time / num_bins
     bin_center_offset = bin_size / 2
@@ -285,7 +285,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
     ax.set_title('Lifetime')
     ax.set_xlabel('Time after illumination (ms)')
     ax.set_ylabel('Counts')
-    
+
     fig.canvas.draw()
     fig.set_tight_layout(True)
     fig.canvas.flush_events()
@@ -295,12 +295,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, readout_time_range,
     endFunctionTime = time.time()
     time_elapsed = endFunctionTime - startFunctionTime
     timestamp = tool_belt.get_time_stamp()
-    
+
     raw_data = {'timestamp': timestamp,
                 'time_elapsed': time_elapsed,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'filter': filter,   
+                'filter': filter,
                 'reference_measurement?': reference,
                 'voltage': voltage,
                 'polarization_time': polarization_time,
@@ -348,7 +348,7 @@ def t1_exponential_decay(open_file_name):
         countsT1_array = numpy.array(data["binned_samples"])
         readout_time = data["readout_time"]
         num_bins = data["num_bins"]
-        
+
     bin_size = readout_time / num_bins
     bin_center_offset = bin_size / 2
     bin_centers = numpy.linspace(0, readout_time, num_bins) + bin_center_offset
@@ -356,9 +356,9 @@ def t1_exponential_decay(open_file_name):
     amplitude = 500
     decay = 100 # us
     init_params = [amplitude, decay]
-    
+
     init_params = [500, 10, 500, 100, 500, 500]
-    
+
 
 #    popt,pcov = curve_fit(decayExp, timeArray, countsT1,
 #                              p0=init_params)
@@ -392,7 +392,7 @@ def t1_exponential_decay(open_file_name):
 #    ax.text(0.65, 0.75, text, transform=ax.transAxes, fontsize=12,
 #                            verticalalignment="top", bbox=props)
     ax.set_yscale("log", nonposy='clip')
-    
+
     fig_fit.canvas.draw()
     fig_fit.canvas.flush_events()
 
@@ -401,9 +401,9 @@ def t1_exponential_decay(open_file_name):
 #    fig_fit.savefig(open_file_name + '-replot.svg')
 
 # %%
-    
+
 
 if __name__ == '__main__':
     file_name = '2019_11/2019_11_26-17_22_11-undoped_Y2O3-633_bandpass'
-    
+
     t1_exponential_decay(file_name)

@@ -71,10 +71,10 @@ def process_raw_buffer(timestamps, channels,
 
             click_time = timestamps[click_index]
             click_channel = channels[click_index]
-            
+
             # if click_channel == apd_a_chan_name:
             #     continue
-            
+
             # Skip over events we've already decided to delete
             if (click_channel == apd_a_chan_name) and (click_index <= last_deleted_a_index):
                 continue
@@ -110,7 +110,7 @@ def process_raw_buffer(timestamps, channels,
             diff_channel = apd_b_chan_name
         elif click_channel == apd_a_chan_name:
             diff_channel = apd_a_chan_name
-            
+
         # if click_channel == apd_a_chan_name:
         #     continue
 
@@ -128,7 +128,7 @@ def process_raw_buffer(timestamps, channels,
                     diff = -diff
                 differences_append(int(diff))
             next_index += 1
-            
+
     # MCC
     # Calculate differences
     # num_vals = timestamps.size
@@ -171,7 +171,7 @@ def main(nv_sig, run_time, diff_window,
 
 def main_with_cxn(cxn, nv_sig, run_time, diff_window,
                   apd_a_index, apd_b_index):
-    
+
     do_optimize = False
 
     # %% Initial calculations and setup
@@ -181,12 +181,11 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     # 200 ns to account for twilighting and afterpulsing
     afterpulse_window = 200 * 1000
     # afterpulse_window = (diff_window - 200) * 1000
-    
+
     apd_indices = [apd_a_index, apd_b_index]
 
     # Set xyz and open the AOM
-    if do_optimize:
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = False)
 
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
     cxn.pulse_streamer.constant([wiring['do_532_aom']])
@@ -225,35 +224,27 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     total_tags = []
     while not stop:
 
-        #######
-        
-        # stop = True
-        # # if collection_index >= num_pointsss:
-        # #     return
-        
-        # seq_args = [80, 92, 0]
-        # seq_args_string = tool_belt.encode_seq_args(seq_args)
-        # ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-        #                                           seq_args_string)
-        # print(ret_vals)
-        # # cxn.apd_tagger.stop_tag_stream()
-        # # return
-        # cxn.pulse_streamer.stream_start(100000)
-        # time.sleep(10)
-        
-        #######
+        # Wait until some data has filled
+        now = time.time()
+        calc_time_elapsed = now - start_calc_time
+        time.sleep(max(sleep_time - calc_time_elapsed, 0))
+        # Read the stream and convert from strings to int64s
+        ret_vals_string = cxn.apd_tagger.read_tag_stream()
+        ret_vals = tool_belt.decode_time_tags(ret_vals_string)
+        buffer_timetags, buffer_channels = ret_vals
+        buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
 
         # Check if we should stop
         new_time_remaining = int((start_time + run_time) - time.time())
         if (time_remaining < 0) or tool_belt.safe_stop():
             stop = True
         # Do not spam the console witth the same number
-        elif new_time_remaining < time_remaining:  
+        elif new_time_remaining < time_remaining:
             print(new_time_remaining)
             time_remaining = new_time_remaining
-            
+
         time.sleep(1.0)
-            
+
         # Optimize every 2 minutes
         if do_optimize:
             elapsed_time = run_time - new_time_remaining
@@ -292,25 +283,25 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
             # ax.plot(bin_centers, hist, marker='o', linestyle='none', markersize=3)
             xlim = int(1.1 * diff_window)
             ax.set_xlim(-xlim, xlim)
-            
+
             #####
-            
+
             # diff_mod = (numpy.array(differences) // 1000) % mod
             # hist, bin_edges = numpy.histogram(diff_mod, num_bins,
             #                           (-mod+1, mod-1))
             # ax.plot(numpy.linspace(-mod,+mod, num_bins), hist)
             # ax.set_xlim(-mod-1, mod+1)
-            
+
             #####
-            
+
             ax.set_xlabel('Time (ns)')
             ax.set_ylabel('Differences')
             ax.set_title(r'$g^{(2)}(\tau)$')
             fig.set_tight_layout(True)
             fig.canvas.draw()
             fig.canvas.flush_events()
-            
-            
+
+
         elif collection_index > 1:
             hist, bin_edges = numpy.histogram(differences, num_bins,
                                       (-diff_window_ps, diff_window_ps))
@@ -355,7 +346,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     tool_belt.save_raw_data(raw_data, filePath)
 
     print('g2(0) = {}'.format(g2_zero))
-    
+
     raw_data = {'total_tags': total_tags}
     tool_belt.save_raw_data(raw_data, filePath)
 
@@ -364,17 +355,40 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
 # %% Run the file
 
+def calculate_relative_g2_zero_mod(hist):
+
+    # We take the values on the wings to be representatives for g2(inf)
+    # We take the wings to be the first and last 1/6 of collected data
+    num_bins = len(hist)
+    wing_length = num_bins // 12
+    neg_wing = hist[0: wing_length]
+    pos_wing = hist[num_bins - wing_length: ]
+    inf_delay_differences = numpy.average([neg_wing, pos_wing])
+
+    # Use the parity of num_bins to determine differences at 0 ns
+    if num_bins % 2 == 0:
+        # As an example, say there are 6 bins. Then we want the differences
+        # from bins 2 and 3 (indexing starts from 0).
+        midpoint_high = num_bins // 2
+        zero_delay_differences = numpy.average(hist[midpoint_high - 1,
+                                                    midpoint_high])
+    else:
+        # Now say there are 7 bins. We'd like bin 3.
+        midpoint = int(numpy.floor(num_bins / 2))
+        zero_delay_differences = hist[midpoint]
+
+    return zero_delay_differences / inf_delay_differences, inf_delay_differences
 
 if __name__ == '__main__':
-    
+
     folder_name = 'pc_hahn/branch_cryo-setup/g2_measurement/2021_03'
     file_name = '2021_03_10-15_22_06-johnson-nv14_2021_02_26'
     data = tool_belt.get_raw_data(folder_name, file_name)
-    
+
     differences = data['differences']
     num_bins = data['num_bins']
     diff_window = data['diff_window']
-        
+
     diff_window_ps = diff_window * 1000
     hist, bin_edges = numpy.histogram(differences, num_bins,
                                       (-diff_window_ps, diff_window_ps))
@@ -385,3 +399,22 @@ if __name__ == '__main__':
     plt.plot(bin_centers, hist)
     g2_zero = calculate_relative_g2_zero(hist)
     print(g2_zero)
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'g2_zero': g2_zero,
+                'g2_zero-units': 'ratio',
+                'run_time': run_time_total,
+                'run_time-units': 's',
+                'diff_window': diff_window,
+                'background_kcps': 7,
+                'diff_window-units': 'ns',
+                'num_bins': num_bins,
+                'histogram': histogram.tolist(),
+                'bin_centers': bin_centers.tolist(),
+                'bin_centers-units': 'ps'}
+
+    # filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    filePath = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_Spin_to_charge/g2_measurement/2021_04/{}'.format(file_name)
+    tool_belt.save_figure(fig, filePath + '_accumul_10s')
+    tool_belt.save_raw_data(raw_data, filePath + '_accumul_10s')

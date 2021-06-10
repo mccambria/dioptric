@@ -267,14 +267,14 @@ def fit_data(data):
         # popt[1] = 35.7
         popt[1] *= 1000
         popt[2] *= 1000
-        
+
     except Exception as e:
-        
+
         print(e)
-        
+
         popt = None
         return None
-        
+
         # popt = init_params
         # popt[1] *= 1000
         # popt[2] *= 1000
@@ -368,7 +368,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     post_uwave_exp_wait_time = shared_params['pre_readout_wait_dur']
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    aom_delay_time = shared_params['532_aom_delay']
+    aom_delay_time = shared_params['515_laser_delay']
     rf_delay_time = shared_params['uwave_delay']
     gate_time = nv_sig['pulsed_readout_dur']
 
@@ -440,7 +440,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                 gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                 max_precession_time, apd_indices[0], state.value]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    seq_args = [int(el) for el in seq_args]
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
 #    print(sequence_args)
@@ -474,7 +473,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, aom_ao_589_pwr = 1.0, disable = True)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -517,8 +516,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                         post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
                         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                         taus[tau_ind_second], apd_indices[0], state.value]
-            seq_args = [int(el) for el in seq_args]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
+            # Clear the tagger buffer of any excess counts
+            cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_immediate(seq_file_name, num_reps,
                                                 seq_args_string)
 
@@ -670,12 +670,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
-    
+
     # %% Fit and save figs
-    
-    ret_vals = plot_resonances_vs_theta_B(raw_data)  
+
+    ret_vals = plot_resonances_vs_theta_B(raw_data)
     fit_func, popt, stes, fit_fig, theta_B, angle_fig = ret_vals
-    
+
     tool_belt.save_figure(fit_fig, file_path + '-fit')
     tool_belt.save_figure(angle_fig, file_path + '-angle')
 
@@ -687,9 +687,9 @@ if __name__ == '__main__':
 
     path = 'pc_hahn/branch_cryo-setup/spin_echo/2021_04'
     file = '2021_04_30-21_55_35-hopper-nv1_2021_03_16'
-    
+
     data = tool_belt.get_raw_data(path, file)
 
     # fit_func, popt, stes, fit_fig = fit_data_from_file(path, file)
 
-    plot_resonances_vs_theta_B(data)  
+    plot_resonances_vs_theta_B(data)

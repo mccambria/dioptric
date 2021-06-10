@@ -38,15 +38,16 @@ from utils.tool_belt import States
 
 
 def main(nv_sig, apd_indices, relaxation_time_range,
-         num_steps, num_reps, num_runs, init_read_list):
+         num_steps, num_reps, num_runs, init_read_list, plot_data = True, save_data = True):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
-                      num_steps, num_reps, num_runs, init_read_list)
+        avg_sig_counts, avg_ref_counts, norm_avg_sig = main_with_cxn(cxn, nv_sig, 
+                                             apd_indices, relaxation_time_range,
+              num_steps, num_reps, num_runs, init_read_list, plot_data, save_data)
 
-
+    return avg_sig_counts, avg_ref_counts, norm_avg_sig
 def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
-                  num_steps, num_reps, num_runs, init_read_list):
+                  num_steps, num_reps, num_runs, init_read_list, plot_data, save_data):
 
     tool_belt.reset_cfm(cxn)
 
@@ -64,7 +65,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     post_uwave_exp_wait_time = shared_params['pre_readout_wait_dur']
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    aom_delay_time = shared_params['532_aom_delay']
+    aom_delay_time = shared_params['515_laser_delay']
     rf_delay_time = shared_params['uwave_delay']
     gate_time = nv_sig['pulsed_readout_dur']
 
@@ -107,15 +108,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
         uwave_pi_pulse_read = uwave_pi_pulse_low
         uwave_freq_read = uwave_freq_low
         uwave_power_read = uwave_power_low
-
-    print('Init state: {}'.format(init_state.name))
-    print('Init pi pulse: {} ns'.format(uwave_pi_pulse_init))
-    print('Init frequency: {} GHz'.format(uwave_freq_init))
-    print('Init power: {} dBm'.format(uwave_power_init))
-    print('Read state: {}'.format(read_state.name))
-    print('Read pi pulse: {} ns'.format(uwave_pi_pulse_read))
-    print('Read frequency: {} GHz'.format(uwave_freq_read))
-    print('Read power: {} dBm'.format(uwave_power_read))
+    if plot_data:
+        print('Init state: {}'.format(init_state.name))
+        print('Init pi pulse: {} ns'.format(uwave_pi_pulse_init))
+        print('Init frequency: {} GHz'.format(uwave_freq_init))
+        print('Init power: {} dBm'.format(uwave_power_init))
+        print('Read state: {}'.format(read_state.name))
+        print('Read pi pulse: {} ns'.format(uwave_pi_pulse_read))
+        print('Read frequency: {} GHz'.format(uwave_freq_read))
+        print('Read power: {} dBm'.format(uwave_power_read))
 
     # %% Create the array of relaxation times
 
@@ -187,8 +188,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     expected_run_time_m = expected_run_time / 60 # m
 
     # Ask to continue and timeout if no response in 2 seconds?
-
-    print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
+    if plot_data:
+        print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
 #    return
     
     # %% Get the starting time of the function, to be used to calculate run time
@@ -202,15 +203,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
-
-        print(' \nRun index: {}'.format(run_ind))
+        if plot_data:
+            print(' \nRun index: {}'.format(run_ind))
 
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize. main_with_cxn(cxn, nv_sig,  apd_indices, 532, aom_ao_589_pwr = 1.0, disable = True)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves for the low and high states
@@ -249,9 +250,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
-
-            print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
-            print('Second relaxation time: {}'.format(taus[tau_ind_second]))
+            if plot_data:
+                print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
+                print('Second relaxation time: {}'.format(taus[tau_ind_second]))
 
             # Stream the sequence
             seq_args = [taus[tau_ind_first], polarization_time, signal_time, reference_time,
@@ -260,6 +261,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
                         gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, taus[tau_ind_second],
                         apd_indices[0], init_state.value, read_state.value]
             seq_args = [int(el) for el in seq_args]
+            # Clear the tagger buffer of any excess counts
+            cxn.apd_tagger.clear_buffer()
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             
             cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
@@ -276,61 +279,65 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
 
             count = sum(sample_counts[0::4])
             sig_counts[run_ind, tau_ind_first] = count
-            print('First signal = ' + str(count))
+            if plot_data:
+                print('First signal = ' + str(count))
 
             count = sum(sample_counts[1::4])
             ref_counts[run_ind, tau_ind_first] = count
-            print('First Reference = ' + str(count))
+            if plot_data:
+                print('First Reference = ' + str(count))
 
             count = sum(sample_counts[2::4])
             sig_counts[run_ind, tau_ind_second] = count
-            print('Second Signal = ' + str(count))
+            if plot_data:
+                print('Second Signal = ' + str(count))
 
             count = sum(sample_counts[3::4])
             ref_counts[run_ind, tau_ind_second] = count
-            print('Second Reference = ' + str(count))
+            if plot_data:
+                print('Second Reference = ' + str(count))
 
         cxn.apd_tagger.stop_tag_stream()
 
         # %% Save the data we have incrementally for long measurements
-
-        raw_data = {'start_timestamp': start_timestamp,
-                    'init_state': init_state.name,
-                    'read_state': read_state.name,
-                    'nv_sig': nv_sig,
-                    'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'gate_time': gate_time,
-                    'gate_time-units': 'ns',
-                    'uwave_freq_init': uwave_freq_init,
-                    'uwave_freq_init-units': 'GHz',
-                    'uwave_freq_read': uwave_freq_read,
-                    'uwave_freq_read-units': 'GHz',
-                    'uwave_power_high': uwave_power_high,
-                    'uwave_power_high-units': 'dBm',
-                    'uwave_power_low': uwave_power_low,
-                    'uwave_power_low-units': 'dBm',
-                    'uwave_pi_pulse_init': uwave_pi_pulse_init,
-                    'uwave_pi_pulse_init-units': 'ns',
-                    'uwave_pi_pulse_read': uwave_pi_pulse_read,
-                    'uwave_pi_pulse_read-units': 'ns',
-                    'relaxation_time_range': relaxation_time_range,
-                    'relaxation_time_range-units': 'ns',
-                    'num_steps': num_steps,
-                    'num_reps': num_reps,
-                    'run_ind': run_ind,
-                    'tau_index_master_list': tau_index_master_list,
-                    'opti_coords_list': opti_coords_list,
-                    'opti_coords_list-units': 'V',
-                    'sig_counts': sig_counts.astype(int).tolist(),
-                    'sig_counts-units': 'counts',
-                    'ref_counts': ref_counts.astype(int).tolist(),
-                    'ref_counts-units': 'counts'}
-
-        # This will continuously be the same file path so we will overwrite
-        # the existing file with the latest version
-        file_path = tool_belt.get_file_path(__file__, start_timestamp,
-                                            nv_sig['name'], 'incremental')
-        tool_belt.save_raw_data(raw_data, file_path)
+        if save_data:
+            raw_data = {'start_timestamp': start_timestamp,
+                        'init_state': init_state.name,
+                        'read_state': read_state.name,
+                        'nv_sig': nv_sig,
+                        'nv_sig-units': tool_belt.get_nv_sig_units(),
+                        'gate_time': gate_time,
+                        'gate_time-units': 'ns',
+                        'uwave_freq_init': uwave_freq_init,
+                        'uwave_freq_init-units': 'GHz',
+                        'uwave_freq_read': uwave_freq_read,
+                        'uwave_freq_read-units': 'GHz',
+                        'uwave_power_high': uwave_power_high,
+                        'uwave_power_high-units': 'dBm',
+                        'uwave_power_low': uwave_power_low,
+                        'uwave_power_low-units': 'dBm',
+                        'uwave_pi_pulse_init': uwave_pi_pulse_init,
+                        'uwave_pi_pulse_init-units': 'ns',
+                        'uwave_pi_pulse_read': uwave_pi_pulse_read,
+                        'uwave_pi_pulse_read-units': 'ns',
+                        'relaxation_time_range': relaxation_time_range,
+                        'relaxation_time_range-units': 'ns',
+                        'num_steps': num_steps,
+                        'num_reps': num_reps,
+                        'run_ind': run_ind,
+                        'tau_index_master_list': tau_index_master_list,
+                        'opti_coords_list': opti_coords_list,
+                        'opti_coords_list-units': 'V',
+                        'sig_counts': sig_counts.astype(int).tolist(),
+                        'sig_counts-units': 'counts',
+                        'ref_counts': ref_counts.astype(int).tolist(),
+                        'ref_counts-units': 'counts'}
+    
+            # This will continuously be the same file path so we will overwrite
+            # the existing file with the latest version
+            file_path = tool_belt.get_file_path(__file__, start_timestamp,
+                                                nv_sig['name'], 'incremental')
+            tool_belt.save_raw_data(raw_data, file_path)
 
     # %% Hardware clean up
 
@@ -353,72 +360,77 @@ def main_with_cxn(cxn, nv_sig, apd_indices, relaxation_time_range,
         norm_avg_sig[inf_mask] = 0
 
     # %% Plot the t1 signal
-
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-
-    ax = axes_pack[0]
-    ax.plot(taus / 10**6, avg_sig_counts, 'r-', label = 'signal')
-    ax.plot(taus / 10**6, avg_ref_counts, 'g-', label = 'reference')
-    ax.set_xlabel('Relaxation time (ms)')
-    ax.set_ylabel('Counts')
-    ax.legend()
-
-    ax = axes_pack[1]
-    ax.plot(taus / 10**6, norm_avg_sig, 'b-')
-    ax.set_title('T1 Measurement. Initial state: {}, readout state: {}'.format(init_state.name, read_state.name))
-    ax.set_xlabel('Relaxation time (ms)')
-    ax.set_ylabel('Contrast (arb. units)')
-
-    raw_fig.canvas.draw()
-    # fig.set_tight_layout(True)
-    raw_fig.canvas.flush_events()
+    if plot_data:
+        raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    
+        ax = axes_pack[0]
+        ax.plot(taus / 10**6, avg_sig_counts, 'r-', label = 'signal')
+        ax.plot(taus / 10**6, avg_ref_counts, 'g-', label = 'reference')
+        ax.set_xlabel('Relaxation time (ms)')
+        ax.set_ylabel('Counts')
+        ax.legend()
+    
+        ax = axes_pack[1]
+        ax.plot(taus / 10**6, norm_avg_sig, 'b-')
+        ax.set_title('T1 Measurement. Initial state: {}, readout state: {}'.format(init_state.name, read_state.name))
+        ax.set_xlabel('Relaxation time (ms)')
+        ax.set_ylabel('Contrast (arb. units)')
+    
+        raw_fig.canvas.draw()
+        # fig.set_tight_layout(True)
+        raw_fig.canvas.flush_events()
 
     # %% Save the data
+    if save_data:
+        endFunctionTime = time.time()
+    
+        timeElapsed = endFunctionTime - startFunctionTime
+    
+        timestamp = tool_belt.get_time_stamp()
+    
+        raw_data = {'timestamp': timestamp,
+                'timeElapsed': timeElapsed,
+                'init_state': init_state.name,
+                'read_state': read_state.name,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'gate_time': gate_time,
+                'gate_time-units': 'ns',
+                'uwave_freq_init': uwave_freq_init,
+                'uwave_freq_init-units': 'GHz',
+                'uwave_freq_read': uwave_freq_read,
+                'uwave_freq_read-units': 'GHz',
+                'uwave_power_high': uwave_power_high,
+                'uwave_power_high-units': 'dBm',
+                'uwave_power_low': uwave_power_low,
+                'uwave_power_low-units': 'dBm',
+                'uwave_pi_pulse_init': uwave_pi_pulse_init,
+                'uwave_pi_pulse_init-units': 'ns',
+                'uwave_pi_pulse_read': uwave_pi_pulse_read,
+                'uwave_pi_pulse_read-units': 'ns',
+                'relaxation_time_range': relaxation_time_range,
+                'relaxation_time_range-units': 'ns',
+                'num_steps': num_steps,
+                'num_reps': num_reps,
+                'num_runs': num_runs,
+                'tau_index_master_list': tau_index_master_list,
+                'opti_coords_list': opti_coords_list,
+                'opti_coords_list-units': 'V',
+                'sig_counts': sig_counts.astype(int).tolist(),
+                'sig_counts-units': 'counts',
+                'ref_counts': ref_counts.astype(int).tolist(),
+                'ref_counts-units': 'counts',
+                'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
+                'norm_avg_sig-units': 'arb'}
 
-    endFunctionTime = time.time()
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+        tool_belt.save_raw_data(raw_data, file_path)
 
-    timeElapsed = endFunctionTime - startFunctionTime
-
-    timestamp = tool_belt.get_time_stamp()
-
-    raw_data = {'timestamp': timestamp,
-            'timeElapsed': timeElapsed,
-            'init_state': init_state.name,
-            'read_state': read_state.name,
-            'nv_sig': nv_sig,
-            'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'gate_time': gate_time,
-            'gate_time-units': 'ns',
-            'uwave_freq_init': uwave_freq_init,
-            'uwave_freq_init-units': 'GHz',
-            'uwave_freq_read': uwave_freq_read,
-            'uwave_freq_read-units': 'GHz',
-            'uwave_power_high': uwave_power_high,
-            'uwave_power_high-units': 'dBm',
-            'uwave_power_low': uwave_power_low,
-            'uwave_power_low-units': 'dBm',
-            'uwave_pi_pulse_init': uwave_pi_pulse_init,
-            'uwave_pi_pulse_init-units': 'ns',
-            'uwave_pi_pulse_read': uwave_pi_pulse_read,
-            'uwave_pi_pulse_read-units': 'ns',
-            'relaxation_time_range': relaxation_time_range,
-            'relaxation_time_range-units': 'ns',
-            'num_steps': num_steps,
-            'num_reps': num_reps,
-            'num_runs': num_runs,
-            'tau_index_master_list': tau_index_master_list,
-            'opti_coords_list': opti_coords_list,
-            'opti_coords_list-units': 'V',
-            'sig_counts': sig_counts.astype(int).tolist(),
-            'sig_counts-units': 'counts',
-            'ref_counts': ref_counts.astype(int).tolist(),
-            'ref_counts-units': 'counts',
-            'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-            'norm_avg_sig-units': 'arb'}
-
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_figure(raw_fig, file_path)
-    tool_belt.save_raw_data(raw_data, file_path)
+    if plot_data:
+        tool_belt.save_figure(raw_fig, file_path)
+            
+    
+    return avg_sig_counts, avg_ref_counts, norm_avg_sig
 
 # %%
 
@@ -429,7 +441,7 @@ def decayExp(t, offset, amplitude, decay):
 
 def t1_exponential_decay(open_file_name, save_file_type):
 
-    directory = 'E:/Team Drives/Kolkowitz Lab Group/nvdata/t1_measurement/'
+    directory = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/t1_double_quantum/branch_Spin_to_charge/2020_05/'
 
     # Open the specified file
     with open(directory + open_file_name + '.txt') as json_file:
@@ -439,13 +451,14 @@ def t1_exponential_decay(open_file_name, save_file_type):
         countsT1 = data["norm_avg_sig"]
         relaxation_time_range = data["relaxation_time_range"]
         num_steps = data["num_steps"]
-        spin = data["spin_measured?"]
+        init_state = data["init_state"]
+        read_state = data["read_state"]
 
     min_relaxation_time = relaxation_time_range[0]
     max_relaxation_time = relaxation_time_range[1]
 
     timeArray = numpy.linspace(min_relaxation_time, max_relaxation_time,
-                              num=num_steps, dtype=numpy.int32)
+                              num=num_steps)
 
     offset = 0.8
     amplitude = 0.1
@@ -462,24 +475,30 @@ def t1_exponential_decay(open_file_name, save_file_type):
 
 
     fig, ax= plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(timeArray / 10**6, countsT1,'bo',label='data')
-    ax.plot(linspaceTime / 10**6, decayExp(linspaceTime,*popt),'r-',label='fit')
-    ax.set_xlabel('Dark Time (ms)')
+    ax.semilogy(timeArray / 10**6, countsT1,'bo',label='data')
+#    ax.plot(linspaceTime / 10**6, decayExp(linspaceTime,*popt),'r-',label='fit')
+    ax.set_xlabel('Wait time (ms)')
     ax.set_ylabel('Contrast (arb. units)')
-    ax.set_title('T1 of ' + str(spin))
+    ax.set_title('Prepared {} state, readout {} state'.format(init_state, read_state))
     ax.legend()
 
-    text = "\n".join((r'$C + A_0 e^{-t / d}$',
-                      r'$C = $' + '%.1f'%(popt[0]),
-                      r'$A_0 = $' + '%.1f'%(popt[1]),
-                      r'$d = $' + "%.3f"%(decay_time / 10**6) + " ms"))
-
-
-    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    ax.text(0.70, 0.95, text, transform=ax.transAxes, fontsize=12,
-                            verticalalignment="top", bbox=props)
+#    text = "\n".join((r'$C + A_0 e^{-t / d}$',
+#                      r'$C = $' + '%.1f'%(popt[0]),
+#                      r'$A_0 = $' + '%.1f'%(popt[1]),
+#                      r'$d = $' + "%.3f"%(decay_time / 10**6) + " ms"))
+#
+#
+#    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+#    ax.text(0.70, 0.95, text, transform=ax.transAxes, fontsize=12,
+#                            verticalalignment="top", bbox=props)
 
     fig.canvas.draw()
     fig.canvas.flush_events()
 
     fig.savefig(open_file_name + 'replot.' + save_file_type)
+
+
+if __name__ == '__main__':
+    file_name = '2020_05_13-23_17_30-bachman-ensemble'
+    t1_exponential_decay(file_name, 'svg')
+    

@@ -35,7 +35,7 @@ import socket
 class Galvo(LabradServer):
     name = 'galvo'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG, 
+    logging.basicConfig(level=logging.DEBUG,
                 format='%(asctime)s %(levelname)-8s %(message)s',
                 datefmt='%y-%m-%d_%H-%M-%S',
                 filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
@@ -59,7 +59,7 @@ class Galvo(LabradServer):
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
         # logging.debug(self.daq_di_clock)
-        
+
 
     def stopServer(self):
         self.close_task_internal()
@@ -168,6 +168,9 @@ class Galvo(LabradServer):
         """Load a scan that will wind through the grid defined by the passed
         parameters. Samples are advanced by the clock. Currently x_range
         must equal y_range.
+
+        Normal scan performed, starts in bottom right corner, and starts
+        heading left
 
         Params
             x_center: float
@@ -363,10 +366,10 @@ class Galvo(LabradServer):
         self.load_stream_writer(c, 'Galvo-load_y_scan', voltages, period)
 
         return y_voltages
-    
+
     @setting(6, x_points='*v[]', y_points='*v[]', period='i')
     def load_two_point_xy_scan(self, c, x_points, y_points, period):
-        """Load a scan that goes between two points. E.i., starts at [1,1] and 
+        """Load a scan that goes between two points. E.i., starts at [1,1] and
         then on a clock pulse, moves to [2,1].
 
         Params
