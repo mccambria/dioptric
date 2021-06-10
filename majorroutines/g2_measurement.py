@@ -22,7 +22,7 @@ import numpy
 import matplotlib.pyplot as plt
 import time
 import json
-# import labrad
+import labrad
 
 
 # %% Functions

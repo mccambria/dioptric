@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
 import copy
-# import labrad
+import labrad
 
 
 # %% Plotting functions

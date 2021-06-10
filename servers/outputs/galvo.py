@@ -166,6 +166,9 @@ class Galvo(LabradServer):
         """Load a scan that will wind through the grid defined by the passed
         parameters. Samples are advanced by the clock. Currently x_range
         must equal y_range.
+        
+        Normal scan performed, starts in bottom right corner, and starts 
+        heading left
 
         Params
             x_center: float
@@ -370,6 +373,8 @@ class Galvo(LabradServer):
         """Load a scan that will wind through the grid defined by the passed
         parameters. Samples are advanced by the clock. Currently x_range
         must equal y_range.
+        
+        Flip scan, starting at y_max of y_range.
 
         Params
             x_center: float
@@ -450,6 +455,8 @@ class Galvo(LabradServer):
         """Load a scan that will wind through the grid defined by the passed
         parameters. Samples are advanced by the clock. Currently x_range
         must equal y_range.
+        
+        Start in bottom left corner
 
         Params
             x_center: float
@@ -530,6 +537,8 @@ class Galvo(LabradServer):
         """Load a scan that will wind through the grid defined by the passed
         parameters. Samples are advanced by the clock. Currently x_range
         must equal y_range.
+        
+        Start in upper left corner.
 
         Params
             x_center: float
@@ -610,6 +619,8 @@ class Galvo(LabradServer):
         """Load a scan that will wind through the grid defined by the passed
         parameters. Samples are advanced by the clock. Currently x_range
         must equal y_range.
+        
+        Start in upper right corner
 
         Params
             x_center: float

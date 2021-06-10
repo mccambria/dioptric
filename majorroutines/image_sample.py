@@ -7,6 +7,8 @@ Includes a replotting routine to show the data with axes in um instead of V.
 
 Includes a replotting routine to replot rw data to manipulate again.
 
+6/1 added a function that does two pulses at each pixel. Not included in control panel
+
 Created on Tue Apr  9 15:18:53 2019
 
 @author: mccambria
@@ -614,26 +616,27 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
 #    time.sleep(1)
     # %% Set up the galvo
-    if flip==1:
+    if flip==1: # instead of starting scan at lowest x and y point, instead
+        #starts at y_max. So y direction is flipped
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan_flip(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
-    elif flip == 2:
+    elif flip == 2: # starts in bottom left corner (max x, min y)
 
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan_bl(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
-    elif flip == 3:
+    elif flip == 3: # starts in upper left corner (max x, max y)
 
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan_ul(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
-    elif flip == 4:
+    elif flip == 4: # starts in upper right corner (min x, max y)
 
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan_ur(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
-    else:
+    else:  # normal scan, starts in bottom right corner (min x, min y)
         x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
@@ -707,7 +710,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
-            if flip==1:
+            if flip==1: # if we flipped the scan, start to fill in the points 
+                # on the left side
                 populate_img_array_bottom_left(new_samples, img_array, img_write_pos)
                 # This is a horribly inefficient way of getting kcps, but it
                 # is easy and readable and probably fine up to some resolution
@@ -733,7 +737,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     cxn.galvo.write(x_center, y_center)
 
     # %% Save the data
-    if plot_data:
+    if plot_data: # for all the different starting points of the scans, generate
+        # a second image that is positioned "normally" in space (just as if
+        #nothing was flipped)
         if flip == 1:
             fig = tool_belt.create_image_figure(numpy.fliplr(img_array), img_extent,
                                                 clickHandler=on_click_image,
