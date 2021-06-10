@@ -22,10 +22,10 @@ import numpy
 from numpy import exp
 import json
 import time
-# import labrad
-# from tkinter import Tk
-# from tkinter import filedialog
-# from git import Repo
+import labrad
+from tkinter import Tk
+from tkinter import filedialog
+from git import Repo
 from pathlib import Path
 from pathlib import PurePath
 from enum import Enum, auto
@@ -43,9 +43,9 @@ class States(Enum):
     
 def get_signal_generator_name(state):
     if state.value == States.LOW.value:
-        signal_generator_name = 'signal_generator_tsg4104a'
-    elif state.value == States.HIGH.value:
         signal_generator_name = 'signal_generator_bnc835'
+    elif state.value == States.HIGH.value:
+        signal_generator_name = 'signal_generator_tsg4104a'
     return signal_generator_name
     
 def get_signal_generator_cxn(cxn, state):
@@ -58,31 +58,25 @@ def get_signal_generator_cxn(cxn, state):
 
 
 def set_xyz(cxn, coords):
-    xy_server = get_xy_server()
-    z_server = get_z_server()
-    xy_server.write_xy(coords[0], coords[1])
-    z_server.write_z(coords[2])
+    cxn.galvo.write(coords[0], coords[1])
+    cxn.objective_piezo.write(coords[2])
     # Force some delay before proceeding to account 
     # for the effective write time
-    time.sleep(0.001)
+    time.sleep(0.002)
 
 
-def set_xyz_center(cxn):
-    xy_server = get_xy_server()
-    z_server = get_z_server()
-    xy_server.write_xy(0.0, 0.0)
-    z_server.write_z(5.0)
+def set_xyz_zero(cxn):
+    cxn.galvo.write(0.0, 0.0)
+    cxn.objective_piezo.write(5.0)
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
 
 
 def set_xyz_on_nv(cxn, nv_sig):
-    xy_server = get_xy_server()
-    z_server = get_z_server()
     coords = nv_sig['coords']
-    xy_server.write_xy(coords[0], coords[1])
-    z_server.write_z(coords[2])
+    cxn.galvo.write(coords[0], coords[1])
+    cxn.objective_piezo.write(coords[2])
     # Force some delay before proceeding to account 
     # for the effective write time
     time.sleep(0.001)
@@ -111,7 +105,7 @@ def get_pulse_streamer_wiring(cxn):
         pulse_streamer_wiring[key] = wiring[key]
     return pulse_streamer_wiring
 
-def get_tagger_wiring(cxn):
+def get_time_tagger_wiring(cxn):
     cxn.registry.cd(['', 'Config', 'Wiring', 'Tagger'])
     sub_folders, keys = cxn.registry.dir()
     if keys == []:
@@ -120,16 +114,29 @@ def get_tagger_wiring(cxn):
     for key in keys:
         p.get(key, key=key)  # Return as a dictionary
     wiring = p.send()
-    tagger_wiring = {}
+    pulse_streamer_wiring = {}
     for key in keys:
-        tagger_wiring[key] = wiring[key]
-    return tagger_wiring
+        pulse_streamer_wiring[key] = wiring[key]
+    return pulse_streamer_wiring
 
+# %% adp_tagger utils
+    
+def decode_time_tags(ret_vals_string):
+    ret_vals = ret_vals_string.split('.')
+    new_tags = []
+    new_channels = []
+    if ret_vals[0] != '':
+        for val in ret_vals:
+            split_val = val.split(',')
+            new_tags.append(split_val[0])
+            new_channels.append(int(split_val[1]))
+        new_tags = numpy.array(new_tags, dtype=numpy.int64)    
+    return new_tags, new_channels
 
 # %% Matplotlib plotting utils
 
 
-def create_image_figure(imgArray, imgExtent, clickHandler=None):
+def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts', min_value=None, um_scaled = False):
     """
     Creates a figure containing a single grayscale image and a colorbar.
 
@@ -145,31 +152,29 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None):
     Returns:
         matplotlib.figure.Figure
     """
-
+    axes_label = 'V'
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
-    fig.set_tight_layout(True)
-
+    if um_scaled:
+        axes_label = 'nm'#r'$\mu$m'
+        
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',
-                    extent=tuple(imgExtent))
+                    extent=tuple(imgExtent), vmin = min_value)
 
-    # Check if we should clip or autoscale
-    clipAtThousand = False
-    if clipAtThousand:
-        if numpy.all(numpy.isnan(imgArray)):
-            imgMax = 0  # No data yet
-        else:
-            imgMax = numpy.nanmax(imgArray)
-        if imgMax > 1000:
-            img.set_clim(None, 1000)
-        else:
-            img.autoscale()
-    else:
-        img.autoscale()
+#    if min_value == None:
+#        img.autoscale()
 
     # Add a colorbar
-    plt.colorbar(img)
+    clb = plt.colorbar(img)
+    clb.set_label(color_bar_label, rotation=270)
+#    clb.set_label('kcounts/sec', rotation=270)
+    
+    # Label axes
+    plt.xlabel(axes_label)
+    plt.ylabel(axes_label)
+    if title:
+        plt.title(title)
 
     # Wire up the click handler to print the coordinates
     if clickHandler is not None:
@@ -177,6 +182,7 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None):
 
     # Draw the canvas and flush the events to the backend
     fig.canvas.draw()
+    plt.tight_layout()
     fig.canvas.flush_events()
 
     return fig
@@ -204,7 +210,7 @@ def update_image_figure(fig, imgArray):
     ax = axes[0]
     images = ax.get_images()
     img = images[0]
-
+    
     # Set the data for the image to display
     img.set_data(imgArray)
 
@@ -317,7 +323,6 @@ def update_line_plot_figure(fig, vals):
 
 
 # %% Math functions
-    
 
 def get_pi_pulse_dur(rabi_period):
     return round(rabi_period / 2)
@@ -363,6 +368,10 @@ def cosexp(t, offset, amp, freq, decay):
     two_pi = 2*numpy.pi
     return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
 
+def cosexp_scc(t, offset, amp, freq, decay):
+    two_pi = 2*numpy.pi
+    return offset - (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t)))
+
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2*numpy.pi
     
@@ -370,6 +379,25 @@ def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
                 amp_1 * numpy.cos(two_pi * freq_1 * t) +
                 amp_2 * numpy.cos(two_pi * freq_2 * t) +
                 amp_3 * numpy.cos(two_pi * freq_3 * t))
+    
+def calc_snr(sig_count, ref_count):
+    '''
+    Take a list of signal and reference counts, and take their average, then 
+    calculate a snr.
+    inputs:
+        sig_count = list
+        ref_counts = list
+    outputs:
+        snr = list
+    '''    
+    
+    sig_count_avg = numpy.average(sig_count)
+    ref_count_avg = numpy.average(ref_count)
+    dif = sig_count_avg - ref_count_avg
+    noise = numpy.sqrt(ref_count_avg)
+    snr = dif / noise
+    
+    return snr
 
 
 # %% LabRAD utils
@@ -432,35 +460,6 @@ def get_shared_parameters_dict(cxn):
     return reg_dict
 
 
-def get_xy_server(cxn):
-    """
-    Talk to the registry to get the fine xy control server for this setup.
-    eg for rabi it is probably galvo. See optimize for some examples.
-    """
-    
-    # return an actual reference to the appropriate server so it can just
-    # be used directly
-    return getattr(cxn, get_registry_entry(cxn, 'xy_server', 'Config'))
-
-
-def get_z_server(cxn):
-    """Same as get_xy_server but for the fine z control server"""
-    
-    return getattr(cxn, get_registry_entry(cxn, 'z_server', 'Config'))
-
-
-def get_registry_entry(cxn, key, *directory):
-    """
-    Return the value for the specified key. The directory is specified from 
-    the top of the registry
-    """
-    
-    p = cxn.registry.packet()
-    p.cd('', *directory)
-    p.get(key)
-    return p.send()['get']
-    
-
 # %% Open utils
 
 
@@ -503,26 +502,6 @@ def get_file_list(path_from_nvdata, file_ends_with,
             file_list.append(file)
 
     return file_list
-
-
-# def get_raw_data(source_name, file_name, sub_folder_name=None,
-#                  data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
-#     """Returns a dictionary containing the json object from the specified
-#     raw data file.
-#     """
-
-#     # Parse the source_name if __file__ was passed
-#     source_name = os.path.splitext(os.path.basename(source_name))[0]
-
-#     data_dir = Path(data_dir)
-#     file_name_ext = '{}.txt'.format(file_name)
-#     if sub_folder_name is None:
-#         file_path = data_dir / source_name / file_name_ext
-#     else:
-#         file_path = data_dir / source_name / sub_folder_name / file_name_ext
-
-#     with open(file_path) as file:
-#         return json.load(file)
 
 
 def get_raw_data(path_from_nvdata, file_name,
@@ -574,18 +553,18 @@ def get_folder_dir(source_name, subfolder):
     branch_name = get_branch_name()
     pc_name = socket.gethostname()
 
-    # # Check where we should save to
-    # if branch_name == 'master':
-    #     # master should save without a branch sub-folder
-    #     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
-    #                                source_name)
-    # else:
-    #     # Otherwise we want a branch sub-folder so that we know this data was
-    #     # produced by code that's under development
-    #     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
-    #                                source_name,
-    #                                'branch_{}'.format(branch_name))
-        
+#    # Check where we should save to
+#    if branch_name == 'master':
+#        # master should save without a branch sub-folder
+#        joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
+#                                   source_name)
+#    else:
+#        # Otherwise we want a branch sub-folder so that we know this data was
+#        # produced by code that's under development
+#        joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
+#                                   source_name,
+#                                   'branch_{}'.format(branch_name))
+    
     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
                                'pc_{}'.format(pc_name),
                                'branch_{}'.format(branch_name),
@@ -602,10 +581,8 @@ def get_folder_dir(source_name, subfolder):
 
     return folderDir
 
-
 def get_data_path():
     return Path('E:/Shared drives/Kolkowitz Lab Group/nvdata')
-
 
 def get_file_path(source_name, time_stamp='', name='', subfolder=None):
     """
@@ -624,7 +601,6 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
             Subfolder to save to under file name
     """
 
-    date_folder_name = None  # Init to None
     # Set up the file name
     if (time_stamp != '') and (name != ''):
         fileName = '{}-{}'.format(time_stamp, name)
@@ -639,13 +615,16 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
         fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
     
     # Create the subfolder combined name, if needed
-    subfolder_name = None
     if (subfolder != None) and (date_folder_name != None):
         subfolder_name = str(date_folder_name + '/' + subfolder)
     elif (subfolder == None) and (date_folder_name != None):
         subfolder_name = date_folder_name
+    else:
+        subfolder_name = None
+        
     
     folderDir = get_folder_dir(source_name, subfolder_name)
+
     fileDir = os.path.abspath(os.path.join(folderDir, fileName))
 
     return fileDir
@@ -697,7 +676,7 @@ def save_figure(fig, file_path):
     """
 
     file_path = str(file_path)
-    fig.savefig(file_path + '.svg', dpi=300)
+    fig.savefig(file_path + '.svg', dpi = 300)
 
 
 def save_raw_data(rawData, filePath):
@@ -719,10 +698,139 @@ def save_raw_data(rawData, filePath):
 
 def get_nv_sig_units():
     return {'coords': 'V', 'expected_count_rate': 'kcps', 
-        'pulsed_readout_dur': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz',
+        'pulsed_readout_dur': 'ns', 
+        'pulsed_SCC_readout_dur': 'ns', 'am_589_power': '0-1 V', 
+        'pulsed_shelf_dur': 'ns', 'am_589_shelf_power': '0-1 V', 
+        'pulsed_ionization_dur': 'ns', 'cobalt_638_power': 'mW', 
+        'pulsed_reionization_dur': 'ns', 'cobalt_532_power': 'mW', 
+        'magnet_angle': 'deg', 'resonance': 'GHz',
         'rabi': 'ns', 'uwave_power': 'dBm'}
 
+# Error messages
+    
+def color_ind_err(color_ind):
+    if color_ind != 532 or color_ind != 589:
+        raise RuntimeError('Value of color_ind must be 532 or 589.'+
+                           '\nYou entered {}'.format(color_ind))
+        
+def aom_ao_589_pwr_err(aom_ao_589_pwr):
+    if aom_ao_589_pwr < 0 or aom_ao_589_pwr > 1.0:
+        raise RuntimeError('Value for 589 aom must be within 0 to +1 V.'+
+                           '\nYou entered {} V'.format(aom_ao_589_pwr))
+        
+def ao_638_pwr_err(ao_638_pwr):
+    if ao_638_pwr < 0 or ao_638_pwr > 0.9:
+        raise RuntimeError('Value for 638 ao must be within 0 to 0.9 V.'+
+                           '\nYou entered {} V'.format(ao_638_pwr))
+ 
+def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
+    
+        if x_range != y_range:
+            raise ValueError('x_range must equal y_range for now')
 
+        x_num_steps = num_steps
+        y_num_steps = num_steps
+
+        # Force the scan to have square pixels by only applying num_steps
+        # to the shorter axis
+        half_x_range = x_range / 2
+        half_y_range = y_range / 2
+
+        x_low = x_center - half_x_range
+        x_high = x_center + half_x_range
+        y_low = y_center - half_y_range
+        y_high = y_center + half_y_range
+
+        # Apply scale and offset to get the voltages we'll apply to the galvo
+        # Note that the polar/azimuthal angles, not the actual x/y positions
+        # are linear in these voltages. For a small range, however, we don't
+        # really care.
+        x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
+        y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
+
+        ######### Works for any x_range, y_range #########
+
+        # Winding cartesian product
+        # The x values are repeated and the y values are mirrored and tiled
+        # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
+
+        # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
+        x_inter = numpy.concatenate((x_voltages_1d,
+                                     numpy.flipud(x_voltages_1d)))
+        # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
+        if y_num_steps % 2 == 0:  # Even x size
+            x_voltages = numpy.tile(x_inter, int(y_num_steps/2))
+        else:  # Odd x size
+            x_voltages = numpy.tile(x_inter, int(numpy.floor(y_num_steps/2)))
+            x_voltages = numpy.concatenate((x_voltages, x_voltages_1d))
+
+        # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
+        y_voltages = numpy.repeat(y_voltages_1d, x_num_steps)
+
+        voltages = numpy.vstack((x_voltages, y_voltages))   
+        
+        return x_voltages, y_voltages
+# %% Misc
+        
+def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = None):
+    cxn = labrad.connect()
+    optical_power_list = []
+    if color_ind==532:
+        cxn.pulse_streamer.constant([3],0.0, 0.0) # Turn on the green laser  
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+    elif color_ind==589:
+        cxn.filter_slider_ell9k.set_filter(nd_filter) # Change the nd filter for the yellow laser
+        cxn.pulse_streamer.constant([],0.0, AO_power_settings) # Turn on the yellow laser       
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)        
+    elif color_ind==638:
+        cxn.pulse_streamer.constant([7], 0.0, 0.0) # Turn on the red laser     
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+    
+    optical_power = numpy.average(optical_power_list)
+    time.sleep(0.1)
+    cxn.pulse_streamer.constant([], 0.0, 0.0)
+    return optical_power
+
+def calc_optical_power_mW(color_ind, optical_power_V):
+    # Values found from experiments. See Notebook entry 3/19/2020 and 3/20/2020
+    if color_ind == 532:
+        return 11.84* optical_power_V + 0.0493
+    elif color_ind == 589:
+        return 13.41* optical_power_V + 0.06
+    if color_ind == 638:
+        return 4.14* optical_power_V + 0.0492
+
+def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
+    green_optical_power_pd = opt_power_via_photodiode(532)
+
+    red_optical_power_pd = opt_power_via_photodiode(638)
+
+    yellow_optical_power_pd = opt_power_via_photodiode(589,
+           AO_power_settings = aom_ao_589_pwr, nd_filter = nd_filter)
+
+    # Convert V to mW optical power
+    green_optical_power_mW = \
+            calc_optical_power_mW(532, green_optical_power_pd)
+
+    red_optical_power_mW = \
+            calc_optical_power_mW(638, red_optical_power_pd)
+
+    yellow_optical_power_mW = \
+            calc_optical_power_mW(589, yellow_optical_power_pd)
+            
+    return green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW
+    
 # %% Safe stop (TM mccambria)
 
 
@@ -845,7 +953,14 @@ def get_drift():
                 drift.append(0.0)
         elif len_drift > 3:
             drift = drift[0:3]
-    drift_to_return = [float(el) for el in drift]  # Cast to float
+    drift_to_return = []
+    for el in drift:
+        type_el = type(el)
+        if type_el not in [float, numpy.float64]:
+            print('Got drift element of type {}.'.format(type_el))
+            print('Casting to float.')
+            el = float(el)
+        drift_to_return.append(el)
     return drift_to_return
 
 
@@ -888,9 +1003,27 @@ def reset_cfm(cxn=None):
 def reset_cfm_with_cxn(cxn):
     cxn.pulse_streamer.reset()
     cxn.apd_tagger.reset()
-    cxn.arbitrary_waveform_generator.reset()
-    cxn.signal_generator_tsg4104a.reset()
+#    cxn.arbitrary_waveform_generator.reset()
+#    cxn.signal_generator_tsg4104a.reset()
     cxn.signal_generator_bnc835.reset()
-    # 8/10/2020, mainly for Er lifetime measurements
-    cxn.filter_slider_ell9k_color.set_filter('none')
-    cxn.filter_slider_ell9k.set_filter('nd_0')
+    
+    
+def reset_cfm_wout_uwaves(cxn=None):
+    """Reset our cfm so that it's ready to go for a new experiment. Avoids
+    unnecessarily resetting components that may suffer hysteresis (ie the 
+    components that control xyz since these need to be reset in any
+    routine where they matter anyway).
+    
+    Exclude the uwaves
+    """
+    
+    if cxn == None:
+        with labrad.connect() as cxn:
+            reset_cfm_without_uwaves_with_cxn(cxn)
+    else:
+        reset_cfm_without_uwaves_with_cxn(cxn)
+        
+            
+def reset_cfm_without_uwaves_with_cxn(cxn):
+    cxn.pulse_streamer.reset()
+    cxn.apd_tagger.reset()
