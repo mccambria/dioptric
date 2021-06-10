@@ -294,7 +294,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, co
     tool_belt.reset_cfm_wout_uwaves(cxn)
     
     # Be sure the right ND is in place and the magnet aligned
-    cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
+#    cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
     # Make sure the color filter is set
     if color_filter == 'NV':
         cxn.filter_slider_ell9k_color.set_filter('635-715 bp')  

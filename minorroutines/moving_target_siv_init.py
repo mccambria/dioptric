@@ -1531,7 +1531,7 @@ if __name__ == '__main__':
     opti_coords = start_coords_list[optimize_index]
     num_steps = 25
     img_range = 0.45
-    num_runs = 1
+    num_runs = 3
     
     
 
@@ -1544,13 +1544,13 @@ if __name__ == '__main__':
     # Measurements
     t =10*10**6
 #    p = 0.6045
-    do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range, 
-                              t, num_steps, 
-                              num_runs, init_color, pulse_color, siv_init = 'bright', 
-                              readout_color = 589)
 #    do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range, 
 #                              t, num_steps, 
-#                              num_runs, init_color, pulse_color, siv_init = 'none',  
+#                              num_runs, init_color, pulse_color, siv_init = 'bright', 
+#                              readout_color = 589)
+#    do_moving_target_2D_image(nv_sig, start_coords, opti_coords, 0.4, 
+#                              5*10**6, 51, 
+#                              20, init_color, pulse_color, siv_init = 'none',  
 #                              readout_color = 589)
 #    do_moving_target_2D_image(nv_sig, start_coords, opti_coords, img_range, 
 #                             t, num_steps, 
@@ -1568,29 +1568,48 @@ if __name__ == '__main__':
 #                                      start_coords, end_coords,opti_coords,  t,
 #                             num_steps, num_runs, init_color, pulse_color, siv_init = 'dark')
  
-    # %% Replot
+    # %% Combine data
     
-#    file_list = ['2021_04_24-06_58_53-goeppert-mayer-nv5-2021_04_15',
-##                    '2021_04_25-08_47_51-goeppert-mayer-nv5-2021_04_15',
-#                    '2021_04_26-09_30_29-goeppert-mayer-nv5-2021_04_15'
-#                 ]
+    file_list = ['2021_04_24-06_58_53-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_24-15_58_28-goeppert-mayer-nv5-2021_04_15-reclaimed',
+                 '2021_04_26-09_30_29-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_27-06_29_13-goeppert-mayer-nv5-2021_04_15-reclaimed_1',
+                 '2021_04_28-07_24_28-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_28-22_11_39-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_29-08_03_57-goeppert-mayer-nv5-2021_04_15',
+                 '2021_04_30-08_34_40-goeppert-mayer-nv5-2021_04_15',
+                 
+                 '2021_05_01-05_59_11-goeppert-mayer-nv5-2021_04_15',
+                 '2021_05_02-08_38_02-goeppert-mayer-nv5-2021_04_15',
+                 ]
     
-#    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15 100 ms/dark'
+    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15 100 ms/dark'
+#    
+#    file_list = ['2021_04_24-14_43_38-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_25-17_52_05-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_27-17_11_26-goeppert-mayer-nv5-2021_04_15-reclaimed',
+#                 '2021_04_28-10_02_23-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_28-17_09_08-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_29-11_15_53-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_29-22_57_15-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_30-11_14_23-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_04_30-13_57_08-goeppert-mayer-nv5-2021_04_15',
+#                 
+#                 '2021_05_01-15_26_20-goeppert-mayer-nv5-2021_04_15',
+#                 '2021_05_02-19_57_38-goeppert-mayer-nv5-2021_04_15',
+#                 ]    
+#    
+#    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15 100 ms/bright'
     
-    file_list = ['2021_04_24-14_43_38-goeppert-mayer-nv5-2021_04_15',
-                 '2021_04_25-17_52_05-goeppert-mayer-nv5-2021_04_15',
-                 ]    
     
-    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04/NV5_2021_04_15 100 ms/bright'
-    
-    
-    threshold = 20
+    threshold = 8
     readout_counts_array_master = []
     
     num_runs_total = 0
     for file in file_list:
         
         data = tool_belt.get_raw_data(folder, file)
+            
         img_extent = data['img_extent']
         start_coords = data['start_coords']
         num_steps = data['num_steps']
@@ -1610,21 +1629,18 @@ if __name__ == '__main__':
         raw_counts= numpy.array(data['readout_counts_array'])
     
 
-
-        # charge state information
-        cut_off = threshold
     
         # for each individual measurement, determine if the NV was in NV0 or NV- by threshold.
         # Then average the measurements for each pixel to gain mean charge state.
-        for r in range(len(raw_counts)):
-            row = raw_counts[r]
-            for c in range(len(row)):
-                current_val = raw_counts[r][c]
-                if current_val < cut_off:
-                    set_val = 0
-                elif current_val >= cut_off:
-                    set_val = 1
-                raw_counts[r][c] = set_val
+#        for r in range(len(raw_counts)):
+#            row = raw_counts[r]
+#            for c in range(len(row)):
+#                current_val = raw_counts[r][c]
+#                if current_val < threshold:
+#                    set_val = 0
+#                elif current_val >= threshold:
+#                    set_val = 1
+#                raw_counts[r][c] = set_val
             
         
         readout_counts_array_rot = numpy.rot90(raw_counts)
@@ -1644,9 +1660,101 @@ if __name__ == '__main__':
     writePos = []
     readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
 
-    # Create the figure
+#     Create the figure
     title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse. {} SiV reset'.format(init_color, pulse_color, pulse_time/10**6, siv_init)
-#    fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
+    fig_readout = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
+                                                title = title, um_scaled = True)
+    raw_data = {'timestamp': timestamp,
+                'siv_init': siv_init,
+                'init_color': init_color,
+                'pulse_color': pulse_color,
+                'pulse_time': pulse_time,
+                'pulse_time-units': 'ns',
+            'start_coords': start_coords,
+            'img_range': img_range,
+            'img_range-units': 'V',
+            'num_steps': num_steps,
+            'num_runs':num_runs_total,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'coords_voltages': coords_voltages,
+            'coords_voltages-units': '[V, V]',
+            'x_voltages_1d': x_voltages_1d,
+            'y_voltages_1d': y_voltages_1d,
+            
+            'img_extent': img_extent,
+            'img_extent-units': 'V',
+            
+            'readout_image_array': readout_image_array.tolist(),
+            'readout_image_array-units': 'counts',
+                    
+            'readout_counts_array': readout_counts_array_fin.tolist(),
+            'readout_counts_array-units': 'counts',
+
+            'readout_counts_avg': readout_counts_avg.tolist(),
+            'readout_counts_avg-units': 'counts',
+
+            'readout_counts_ste': readout_counts_ste.tolist(),
+            'readout_counts_ste-units': 'counts',
+            }
+        
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    tool_belt.save_raw_data(raw_data, file_path + '-combined')
+    
+# %% Salvage incremental data that didn't finish
+#    file = '2021_04_25-08_47_51-goeppert-mayer-nv5-2021_04_15'
+#    folder = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_04'#/incremental'
+#    data = tool_belt.get_raw_data(folder, file)
+#    # how many runs shoudl we keep?
+#    n = 1
+#    
+#    readout_counts_array = data['readout_counts_array']
+#    start_coords = data['start_coords']
+#    try:
+#        timestamp = data['start_timestamp']
+#    except Exception:
+#        timestamp = data['timestamp']
+#    nv_sig = data['nv_sig']
+#    coords_voltages = data['coords_voltages']
+#    num_steps = data['num_steps']
+#    init_color = data['init_color']
+#    pulse_color = data['init_color']
+#    pulse_time = data['pulse_time']
+#    siv_init = data['siv_init']
+#    img_range = data['img_range']
+#    x_voltages_1d = data['x_voltages_1d']
+#    y_voltages_1d = data['y_voltages_1d']
+#    num_samples = num_steps**2
+#    
+#    readout_image_array = numpy.empty([num_steps, num_steps])
+#    readout_image_array[:] = numpy.nan
+#    
+#    readout_counts_array_ed = []
+#    for el in readout_counts_array:
+#        readout_counts_array_ed.append(el[:n])
+#    # Take the average and ste
+#    readout_counts_avg = numpy.average(readout_counts_array_ed, axis = 1)
+#    readout_counts_ste = stats.sem(readout_counts_array_ed, axis = 1)
+#
+#    # create the img arrays
+#    writePos = []
+#    readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
+#    
+#    # image extent
+#    x_low = x_voltages_1d[0]
+#    x_high = x_voltages_1d[num_steps-1]
+#    y_low = y_voltages_1d[0]
+#    y_high = y_voltages_1d[num_steps-1]
+#
+#    pixel_size = (x_voltages_1d[1] - x_voltages_1d[0])
+#    
+#    half_pixel_size = pixel_size / 2
+#    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+#                  y_low - half_pixel_size, y_high + half_pixel_size]
+##    print(readout_counts_avg)
+#    # Create the figure
+#    title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse. {} SiV reset'.format(init_color, pulse_color, pulse_time/10**6, siv_init)
+#    fig = tool_belt.create_image_figure(readout_image_array, numpy.array(img_extent)*35,
 #                                                title = title, um_scaled = True)
 #    raw_data = {'timestamp': timestamp,
 #                'siv_init': siv_init,
@@ -1658,7 +1766,7 @@ if __name__ == '__main__':
 #            'img_range': img_range,
 #            'img_range-units': 'V',
 #            'num_steps': num_steps,
-#            'num_runs':num_runs_total,
+#            'num_runs':n,
 #            'nv_sig': nv_sig,
 #            'nv_sig-units': tool_belt.get_nv_sig_units(),
 #            'coords_voltages': coords_voltages,
@@ -1672,7 +1780,7 @@ if __name__ == '__main__':
 #            'readout_image_array': readout_image_array.tolist(),
 #            'readout_image_array-units': 'counts',
 #                    
-#            'readout_counts_array': readout_counts_array_fin.tolist(),
+#            'readout_counts_array': readout_counts_array_ed,
 #            'readout_counts_array-units': 'counts',
 #
 #            'readout_counts_avg': readout_counts_avg.tolist(),
@@ -1683,4 +1791,5 @@ if __name__ == '__main__':
 #            }
 #        
 #    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-#    tool_belt.save_raw_data(raw_data, file_path + '-combined')
+#    tool_belt.save_raw_data(raw_data, file_path + '-reclaimed')
+#    tool_belt.save_figure(fig, file_path + '-reclaimed')

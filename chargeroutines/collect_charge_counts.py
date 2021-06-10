@@ -15,13 +15,11 @@ USE 515 DM, not AM
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-import time
 #import matplotlib.pyplot as plt
 import labrad
 #import majorroutines.image_sample as image_sample
 import copy
 import scipy.stats as stats
-import minorroutines.SCC_optimize_pulses_wout_uwaves as SCC_optimize_pulses_wout_uwaves
 # %%
 # Apply a gren or red pulse, then measure the counts under yellow illumination. 
 # Repeat num_reps number of times and returns the list of counts after red illumination, then green illumination
@@ -526,7 +524,7 @@ def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indice
 if __name__ == '__main__':
     apd_indicies = [0]
     
-    expected_count_list = [40, 45, 65, 64, 55, 42,  40, 45 ] # 4/13/21 ###
+    expected_count_list = [40, 45, 65, 64, 55, 32,  40, 45 ] # 4/13/21 ###
     nv_coords_list = [
 [-0.037, 0.119, 5.14],
 [-0.090, 0.066, 5.04],

@@ -50,7 +50,7 @@ def main(cxn, base_sig, optimize_coords, center_coords, reset_coords, pulse_coor
     pulser_wiring_red = wiring['do_638_laser']
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)    
-    laser_515_delay = shared_params['515_laser_delay']
+    laser_515_delay = shared_params['515_AM_laser_delay']
     laser_589_delay = shared_params['589_aom_delay']
     laser_638_delay = shared_params['638_DM_laser_delay']
     
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     
     base_sig = { 'coords':[],
             'name': '{}'.format(sample_name),
-            'expected_count_rate': 45, 'nd_filter': 'nd_1.0',
+            'expected_count_rate': 45, 'nd_filter': 'nd_0',
 #            'color_filter': '635-715 bp',
             'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -193,7 +193,7 @@ if __name__ == '__main__':
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 10, 
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
-            'ao_515_pwr': 0.6350,
+            'ao_515_pwr': 0.64,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
@@ -220,8 +220,8 @@ if __name__ == '__main__':
 #    reset_list = [5]
     
     pulse_coords_list = [[-0.109, 0.037, 5.23]]
-    pulse_time = 0*10**6/10**9
-    center_pulse_time = 0*10**3/10**9
+    pulse_time = 0*10**7/10**9
+    center_pulse_time = 1*10**7/10**9
     with labrad.connect() as cxn:
 #        for z in numpy.linspace(4.98, 5.38, 3):
             reset_coords = [-0.109, 0.037, 5.23]
@@ -229,9 +229,9 @@ if __name__ == '__main__':
             main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
                        pulse_coords_list, center_pulse_time, pulse_time, init_color, 
                        pulse_color, readout_color,  siv_state = 'bright', boo = False)
-            main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
-                           pulse_coords_list, center_pulse_time, pulse_time, init_color, 
-                           pulse_color, readout_color,  siv_state = 'dark', boo = False)
+#            main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
+#                           pulse_coords_list, center_pulse_time, pulse_time, init_color, 
+#                           pulse_color, readout_color,  siv_state = 'dark', boo = False)
 #            main(cxn, base_sig, optimize_coords, center_coords, reset_coords,
 #                           pulse_coords_list, center_pulse_time, pulse_time, init_color, 
 #                           pulse_color, readout_color,  siv_state = 'bright')

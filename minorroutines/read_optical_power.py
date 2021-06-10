@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 
 # %%
 
-def set_laset_power(color_ind, set_515_power = None, set_589_AI = None,
+def set_laser_power(color_ind, set_515_power = None, set_589_AI = None,
                     set_638_AI = None):
     
     with labrad.connect() as cxn:
@@ -51,7 +51,7 @@ def main(color_ind, totel_measure_time, set_515_power = None, set_589_AI = None,
     time_step = 0.5 # s
     num_steps = int(totel_measure_time / time_step)
     
-    laser_power_indicator = set_laset_power(color_ind, set_515_power, set_589_AI, 
+    laser_power_indicator = set_laser_power(color_ind, set_515_power, set_589_AI, 
                     set_638_AI)
     time.sleep(1)
     optical_power_list = []
@@ -84,7 +84,7 @@ def main(color_ind, totel_measure_time, set_515_power = None, set_589_AI = None,
 
 if __name__ == '__main__':
     
-    avg_voltage = main(532, 10, set_515_power = 1, plot=False)
+    avg_voltage = main('515a', 5, set_515_power =0.615, plot=False)
 
     print('Avg voltage: {} mV'.format(avg_voltage*1000))
 
