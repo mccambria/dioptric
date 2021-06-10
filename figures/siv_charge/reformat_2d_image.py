@@ -145,7 +145,7 @@ if __name__ == '__main__':
 #    image_file = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_03/2021_03_23-13_19_10-goeppert-mayer-nv1-2021_03_17' #dark
 #    image_file = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_03/2021_03_23-13_37_37-goeppert-mayer-nv1-2021_03_17' #bright
     
-    folder = 'pc_rabi/branch_Spin_to_charge/moving_target/2021_04'
+    folder = 'pc_rabi/branch_Spin_to_charge/moving_target/2020_12'
     # nv13_2021_04_02
     # 50 ms
 #    image_file_nv = '2021_04_05-19_19_19-goeppert-mayer-nv13_2021_04_02'
@@ -189,4 +189,6 @@ if __name__ == '__main__':
     # 60 ms
 #    image_file_nv = '2021_04_23-10_48_00-goeppert-mayer-nv5_2021_04_15'
 #    threshold = 5
-    create_figure(folder + '/' + image_file_nv, threshold)
+
+    image_file = '2020_12_08-18_04_02-goeppert-mayer-nv1_2020_12_02-img'
+    create_figure(folder + '/' + image_file_nv, None)

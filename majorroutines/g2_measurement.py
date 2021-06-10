@@ -22,7 +22,7 @@ import numpy
 import matplotlib.pyplot as plt
 import time
 import json
-import labrad
+# import labrad
 
 
 # %% Functions
@@ -277,47 +277,56 @@ def calculate_relative_g2_zero_mod(hist):
     return zero_delay_differences / inf_delay_differences, inf_delay_differences
 
 if __name__ == '__main__':
-#    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_Spin_to_charge/g2_measurement/2021_04'
-    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_master/g2_measurement/2019_05'
+    folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_Spin_to_charge/g2_measurement/2021_04'
+    # folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_master/g2_measurement/2019_05'
     files = [
-#            '2021_04_26-13_46_01-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-13_47_08-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-13_48_15-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-13_49_23-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-13_50_31-goeppert-mayer-nv5_2021_04_15.txt',
-             
-#             '2021_04_26-13_54_19-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-13_55_26-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-13_56_32-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-13_57_38-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-13_58_46-goeppert-mayer-nv5_2021_04_15.txt',
-             
-#             '2021_04_26-14_02_31-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-14_03_36-goeppert-mayer-nv5_2021_04_15.txt',
-    
-            '2019-05-06_18-39-22_ayrton12.txt',
+            # '2019-05-06_18-39-22_ayrton12.txt',
             
-#             '2021_04_26-15_14_16-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-15_15_24-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-15_16_31-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-15_17_38-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-15_18_44-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-15_19_52-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-15_20_58-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-15_22_04-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-15_23_11-goeppert-mayer-nv5_2021_04_15.txt',
-#             '2021_04_26-15_24_19-goeppert-mayer-nv5_2021_04_15.txt',
-             
+            '2021_04_26-15_14_16-goeppert-mayer-nv5_2021_04_15',
+            '2021_04_26-15_15_24-goeppert-mayer-nv5_2021_04_15',
+            '2021_04_26-15_16_31-goeppert-mayer-nv5_2021_04_15',
+            '2021_04_26-15_17_38-goeppert-mayer-nv5_2021_04_15',
+            '2021_04_26-15_18_44-goeppert-mayer-nv5_2021_04_15',
+            '2021_04_26-15_19_52-goeppert-mayer-nv5_2021_04_15',
+            '2021_04_26-15_20_58-goeppert-mayer-nv5_2021_04_15',
+            '2021_04_26-15_22_04-goeppert-mayer-nv5_2021_04_15',
+            '2021_04_26-15_23_11-goeppert-mayer-nv5_2021_04_15',
+            '2021_04_26-15_24_19-goeppert-mayer-nv5_2021_04_15',
+
+            # '2021_04_12-12_27_58-goeppert-mayer-nv13_2021_04_02', #120
+            # # '2021_04_12-12_21_09-goeppert-mayer-nv13_2021_04_02', # 240
+            # '2021_04_12-12_16_33-goeppert-mayer-nv13_2021_04_02', #30
+            # '2021_04_12-12_14_45-goeppert-mayer-nv13_2021_04_02', #30,
+            # '2021_04_12-12_07_47-goeppert-mayer-nv13_2021_04_02', # 30
+            # # '2021_04_12-11_02_41-goeppert-mayer-nv13_2021_04_02', # 150
+            
+            # # '2021_04_12-10_43_16-goeppert-mayer-nv13_2021_04_02', # 150
+            # '2021_04_12-10_30_18-goeppert-mayer-nv13_2021_04_02', #150
+            # '2021_04_12-12_12_01-goeppert-mayer-nv13_2021_04_02', #30
+            # '2021_04_12-10_24_36-goeppert-mayer-nv13_2021_04_02' #150
+            
+            # '2021_04_13-16_13_28-johnson-nv0_2021_04_13', #120
+            # '2021_04_13-16_19_36-johnson-nv0_2021_04_13', #300
+            # '2021_04_13-16_56_20-johnson-nv0_2021_04_13', #60
+            # '2021_04_13-16_57_27-johnson-nv0_2021_04_13',
+            # '2021_04_13-16_58_34-johnson-nv0_2021_04_13',
+            # '2021_04_13-16_59_42-johnson-nv0_2021_04_13',
+            # '2021_04_13-17_00_49-johnson-nv0_2021_04_13',
+            # # '2021_04_13-17_01_56-johnson-nv0_2021_04_13',
              ]
+    bkgd = 0
     histogram_list = []
+    run_time_total = 0
     for file_name in files:
-        with open('{}/{}'.format(folder_name, file_name)) as file:
+        with open('{}/{}.txt'.format(folder_name, file_name)) as file:
             data = json.load(file)
             differences = data['differences']
             num_bins = data['num_bins']
             timestamp = data['timestamp']
-#            nv_sig = data['nv_sig']
+            nv_sig = data['nv_sig']
             diff_window= data['diff_window']
+            run_time = data['run_time']
+            run_time_total = run_time_total + run_time
 
         hist, bin_edges = numpy.histogram(differences, num_bins)
         bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
@@ -325,36 +334,38 @@ if __name__ == '__main__':
         
         histogram_list.append(hist.tolist())
 #    print(histogram_list)
-    histogram = numpy.average(histogram_list, axis = 0)
-    g2_zero, inf_delay_diff = calculate_relative_g2_zero_mod(histogram)
-
+    histogram = numpy.sum(histogram_list, axis = 0)
+    g2_zero, inf_delay_diff = calculate_relative_g2_zero_mod(histogram - bkgd)
+    print(run_time_total/60)
     txt_size = 10
     
     fig, ax = plt.subplots()
-    ax.plot(bin_centers / 1000, histogram/inf_delay_diff)
+    ax.plot(bin_centers / 1000, (histogram-bkgd))#/inf_delay_diff)
     ax.set_xlabel('Delay time (ns)', fontsize=txt_size)
     ax.set_ylabel(r'$g^{(2)}(\tau)$', fontsize=txt_size)
 #    ax.set_title(title[i], fontsize=30)
 #    ax.set_xticks([-150, -75, 0, 75, 150])
 #    ax.tick_params(which = 'both', length=10, width=2, colors='k',
 #                    direction='in',grid_alpha=0.7, labelsize = txt_size)
-    ax.set_ylim(bottom=0, top = 2)
+    # ax.set_ylim(bottom=0, top = 2)
     
     print(g2_zero)
-#    raw_data = {'timestamp': timestamp,
-#                'nv_sig': nv_sig,
-#                'nv_sig-units': tool_belt.get_nv_sig_units(),
-#                'g2_zero': g2_zero,
-#                'g2_zero-units': 'ratio',
-#                'run_time': 10*60,
-#                'run_time-units': 's',
-#                'diff_window': diff_window,
-#                'diff_window-units': 'ns',
-#                'num_bins': num_bins,
-#                'histogram': histogram.tolist(),
-#                'bin_centers': bin_centers.tolist(),
-#                'bin_centers-units': 'ps'}
-#
-#    filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-#    tool_belt.save_figure(fig, filePath + '_accumul')
-#    tool_belt.save_raw_data(raw_data, filePath + '_accumul')
+    raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'g2_zero': g2_zero,
+                'g2_zero-units': 'ratio',
+                'run_time': run_time_total,
+                'run_time-units': 's',
+                'diff_window': diff_window,
+                'background_kcps': 7,
+                'diff_window-units': 'ns',
+                'num_bins': num_bins,
+                'histogram': histogram.tolist(),
+                'bin_centers': bin_centers.tolist(),
+                'bin_centers-units': 'ps'}
+
+    # filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    filePath = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_Spin_to_charge/g2_measurement/2021_04/{}'.format(file_name)
+    tool_belt.save_figure(fig, filePath + '_accumul_10s')
+    tool_belt.save_raw_data(raw_data, filePath + '_accumul_10s')

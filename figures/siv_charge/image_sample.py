@@ -41,7 +41,7 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None,
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
     if um_scaled:
-        axes_label = r'$\mu$m'
+        axes_label = r'$n$m'
         
     ax.tick_params(which = 'both', length=12, width=1, colors='k',
                     direction='in',grid_alpha=0.7, labelsize = tick_f_size)
@@ -103,7 +103,7 @@ def create_figure(file_name, colormap, sub_folder = None):
     img_extent = [x_low - half_pixel_size, x_high + half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
 
-    fig = create_image_figure(img_array_kcps, numpy.array(img_extent)*35,
+    fig = create_image_figure(img_array_kcps, numpy.array(img_extent)*35000,
                                         color_bar_label = 'kcps',
                                         um_scaled = True,
                                         color_map = colormap
@@ -122,15 +122,15 @@ def create_figure(file_name, colormap, sub_folder = None):
 
 if __name__ == '__main__':
     # NV confocal scans
-    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_07-09_47_41-goeppert-mayer-nv13_2021_04_02' # NV13 GP
+    # file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_07-09_47_41-goeppert-mayer-nv13_2021_04_02' # NV13 GP
 #    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_14-09_28_46-johnson-nv0_2021_04_13' # NV0 J
-    create_figure(file_name, colormap = 'YlGnBu_r')
+    # create_figure(file_name, colormap = 'YlGnBu_r')
     
     # SiV confocal scans
     file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_16-09_39_51-goeppert-mayer' # bright
     file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2021_04/2021_04_16-09_43_06-goeppert-mayer' # dark
     
-    
+    file_name = 'pc_rabi/branch_Spin_to_charge/image_sample/2020_12/2020_12_09-15_36_03-goeppert-mayer-nv1_2020_12_02'
 
-#    create_figure(file_name, colormap = 'afmhot')
+    create_figure(file_name, colormap = 'inferno')
 
