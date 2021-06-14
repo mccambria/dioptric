@@ -183,21 +183,21 @@ def two_pulse_main_with_cxn(cxn, nv_sig,num_steps, init_color, read_color, init_
 # %% Main
 
 
-def main(nv_sig, run_time, apd_indices, color_ind, continuous=False):
+def main(nv_sig, run_time, apd_indices, color_ind = 532, continuous=False):
 
     with labrad.connect() as cxn:
         average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind, continuous)
 
     return average, st_dev
 
-def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind, continuous=False):
+def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind = 532, continuous=False):
 
     # %% Some initial setup
 
     tool_belt.reset_cfm(cxn)
 
     if hasattr(cxn, 'filter_slider_ell9k_color'):
-        cxn.filter_slider_ell9k_color.set_filter('560 bp')
+        cxn.filter_slider_ell9k_color.set_filter('670 bp')
     if hasattr(cxn, 'filter_slider_ell9k'):
         cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
 
@@ -205,8 +205,11 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind, continuous=Fals
     readout = shared_parameters['continuous_readout_dur']*10
     readout_sec = readout / 10**9
 
-
-    aom_power = nv_sig['am_589_power']
+    try: 
+        ao_589_pwr = nv_sig['am_589_power']
+    except Exception:
+        print('589 nm AM voltage not specified in nv_sig. Setting it to 0')
+        ao_589_pwr = 0
 
     # %% Optimize
 
@@ -220,7 +223,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind, continuous=Fals
 
     # %% Load the PulseStreamer
 
-    seq_args = [0, readout, aom_power, 0.0, apd_indices[0], color_ind]
+    seq_args = [0, readout, ao_589_pwr, 0.0, apd_indices[0], color_ind]
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',

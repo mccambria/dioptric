@@ -1127,7 +1127,7 @@ def reset_cfm_with_cxn(cxn):
         cxn.signal_generator_bnc835.reset()
     # 8/10/2020, mainly for Er lifetime measurements
     if hasattr(cxn, 'filter_slider_ell9k_color'):
-        cxn.filter_slider_ell9k_color.set_filter('none')
+        cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
     if hasattr(cxn, 'filter_slider_ell9k'):
         cxn.filter_slider_ell9k.set_filter('nd_0')
 

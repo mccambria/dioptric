@@ -780,8 +780,8 @@ if __name__ == '__main__':
              t =5*10**6
              init_color = '515a'
              pulse_color = '515a' 
-             main(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, num_runs, 
-                                       init_color, pulse_color, measurement_type = '2D' ) 
+#             main(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, num_runs, 
+#                                       init_color, pulse_color, measurement_type = '2D' ) 
    
              # Set up for SiV band
 #             nv_sig['color_filter'] = '715 lp'

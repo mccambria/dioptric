@@ -85,7 +85,8 @@ if __name__ == '__main__':
               'do_532_aom': 2,
               'ao_515_laser': 0,
               'ao_589_aom': 1}
-    args = [500000, 10000000, 0.3, 0.685, 0, '515a']
+#    args = [500000, 10000000, 0.3, 0.685, 0, '515a']
+    args = [2000000, False, 0.08, 0.64, 0, '515a']
 #    seq_args_string = tool_belt.encode_seq_args(args)
     seq, ret_vals, period = get_seq(wiring, args)
     seq.plot()

@@ -595,13 +595,15 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
+    
+    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    galvo_delay = shared_params['small_angle_galvo_delay']
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
 
-    # The galvo's small angle step response is 400 us
-    # Let's give ourselves a buffer of 500 us (500000 ns)
-    delay = int(0.5 * 10**6) # Change this to some built in variable
+    # Define the delay, accounting for the time it takes the galvo to move
+    delay = galvo_delay 
 
     total_num_samples = num_steps**2
 
@@ -611,7 +613,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
-#    print(seq_args)
     period = ret_vals[0]
 
 
@@ -621,7 +622,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 #    time.sleep(1)
     # %% Set up the galvo
 
-    x_voltages, y_voltages = cxn.galvo.load_sweep_scan(x_center, y_center,
+    x_voltages, y_voltages = cxn.galvo.load_sweep_xy_scan(x_center, y_center,
                                                        x_range, y_range,
                                                        num_steps, period)
 
@@ -709,7 +710,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.reset_cfm_wout_uwaves(cxn)
 
     # Return to center
-    cxn.galvo.write(x_center, y_center)
+    cxn.galvo.write_xy(x_center, y_center)
 
     # %% Save the data
 
