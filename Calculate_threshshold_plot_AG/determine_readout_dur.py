@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import random
 import photonstatistics as model
+import labrad
 
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
@@ -143,7 +144,7 @@ def measure_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     opti_coords_list = []
     
     # Optimize
-    opti_coords = optimize.main_xy_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, laser_ind =532, disable=False)
     opti_coords_list.append(opti_coords)
 
     # Pulse sequence to do a single pulse followed by readout           
@@ -246,7 +247,7 @@ if __name__ == '__main__':
     # load the data here 
     nv_sig  = { 'coords':[0.063, 0.269, 5.09],
             'name': 'goeppert-mayer-nv5_2021_04_15',
-            'expected_count_rate': 35,'nd_filter': 'nd_1.0',
+            'expected_count_rate': None,'nd_filter': 'nd_1.0',
             'color_filter': '635-715 bp', 
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
@@ -261,16 +262,16 @@ if __name__ == '__main__':
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    # determine_readout_dur(nv_sig, readout_times = [60*10**6, 100*10**6], readout_yellow_powers = [0.1, 0.15, 0.2],
-    #                       nd_filter = 'nd_0.5')
+    determine_readout_dur(nv_sig, readout_times = [60*10**6, 100*10**6], readout_yellow_powers = [0.1, 0.15, 0.2],
+                           nd_filter = 'nd_0.5')
 
-    file_name = 'pc_rabi/branch_Spin_to_charge/collect_charge_counts/2021_04/2021_04_28-17_18_59-goeppert-mayer-nv5_2021_04_15-nv_list'
-    data_in = tool_belt.get_raw_data('', file_name)
-    nv0_list = data_in['nv0_list']
-    nvm_list = data_in['nvm_list']
-    nv_sig = data_in['parameters_sig']
-    readout_time = nv_sig['pulsed_SCC_readout_dur']
-    calculate_threshold_plot(readout_time/10**6, nv0_list[0],nvm_list[0], '', '')
+#    file_name = 'pc_rabi/branch_Spin_to_charge/collect_charge_counts/2021_04/2021_04_28-17_18_59-goeppert-mayer-nv5_2021_04_15-nv_list'
+#    data_in = tool_belt.get_raw_data('', file_name)
+#    nv0_list = data_in['nv0_list']
+#    nvm_list = data_in['nvm_list']
+#    nv_sig = data_in['parameters_sig']
+#    readout_time = nv_sig['pulsed_SCC_readout_dur']
+#    calculate_threshold_plot(readout_time/10**6, nv0_list[0],nvm_list[0], '', '')
 
 
 

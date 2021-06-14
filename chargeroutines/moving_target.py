@@ -370,7 +370,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     
     ### Backto the same
     # Optimize at the start of the routine
-    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices, '515a')
+    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices, '515a', disable = True)
     opti_coords_list.append(opti_coords)
               
     drift = numpy.array(tool_belt.get_drift())
@@ -390,7 +390,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
         # Build the list to step through the coords on readout NV and targets
         x_voltages, y_voltages = build_voltages_from_list(start_coords_drift, coords_list_drift)
         # Load the galvo
-        cxn.galvo.load_arb_points_scan(x_voltages, y_voltages, int(period))
+        cxn.galvo.load_multi_point_xy_scan(x_voltages, y_voltages, int(period))
         
         #  Set up the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
