@@ -180,6 +180,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
     # 200 ns to account for twilighting and afterpulsing
     afterpulse_window = 200 * 1000
+    sleep_time = 2 # (?)
     # afterpulse_window = (diff_window - 200) * 1000
 
     apd_indices = [apd_a_index, apd_b_index]
@@ -225,14 +226,14 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     while not stop:
 
         # Wait until some data has filled
-        now = time.time()
-        calc_time_elapsed = now - start_time
-        time.sleep(max(sleep_time - calc_time_elapsed, 0))
+#        now = time.time()
+#        calc_time_elapsed = now - start_time
+#        time.sleep(max(sleep_time - calc_time_elapsed, 0))
         # Read the stream and convert from strings to int64s
-        ret_vals_string = cxn.apd_tagger.read_tag_stream()
-        ret_vals = tool_belt.decode_time_tags(ret_vals_string)
-        buffer_timetags, buffer_channels = ret_vals
-        buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
+#        ret_vals = cxn.apd_tagger.read_tag_stream()
+#        ret_vals = tool_belt.decode_time_tags(ret_vals_string)
+#        buffer_timetags, buffer_channels = ret_vals
+#        buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
 
         # Check if we should stop
         new_time_remaining = int((start_time + run_time) - time.time())
@@ -260,15 +261,15 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
         total_tags.extend(buffer_timetags.tolist())
         # print('num tags: {}'.format(len(buffer_channels)))
-        # print(buffer_timetags)
-        # print(buffer_channels)
+#        print(buffer_timetags)
+#        print(buffer_channels)
         # return
 
         # Process data
         process_raw_buffer(buffer_timetags, buffer_channels,
                        diff_window_ps, afterpulse_window, differences_append,
                        apd_a_chan_name, apd_b_chan_name)
-        # print(differences)
+#        print(differences)
         # return
 
         # Create/update the histogram

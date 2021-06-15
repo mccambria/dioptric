@@ -101,7 +101,7 @@ def do_stationary_count(nv_sig, apd_indices, color_ind):
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 60 * 3  # s
+    run_time = 60 * 1  # s
     diff_window = 75  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
