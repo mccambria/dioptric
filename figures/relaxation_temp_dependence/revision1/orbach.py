@@ -585,7 +585,10 @@ if __name__ == '__main__':
     temp_range = [80, 315]
     rate_range = [0, 4.5]
     xscale = 'linear'
-    yscale = 'linear'
+    # rate_range = [-5, 150]
+    # yscale = 'linear'
+    rate_range = [1e-2, 200]
+    yscale = 'log'
 
     file_name = 'compiled_data'
     # file_name = 'compiled_data-test'
