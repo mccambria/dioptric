@@ -57,15 +57,15 @@ def set_xyz_zero():
 
 
 def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,
-                    readout = 10**7, flip = False, um_scaled= False):
+                    readout = 10**7, um_scaled= False):
 
 #    scan_range = 5.0
 #    scan_range = 1.2
 #    scan_range = 0.5
 #    scan_range = 0.3
 #    scan_range = 0.2
-    scan_range = 0.1
-#    scan_range = 0.05
+#    scan_range = 0.1
+    scan_range = 0.05
 #    scan_range = 0.025
 
 #    num_steps = 300
@@ -73,10 +73,10 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,
 #    num_steps = 150
 #    num_steps = 135
 #    num_steps = 120
-    num_steps = 90
-#    num_steps = 60
+#    num_steps = 90
+    num_steps = 60
     
-    save_data=True,
+    save_data=True
     
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices,
@@ -413,10 +413,10 @@ def do_time_resolved_readout(nv_sig, apd_indices,
 def do_SPaCE(nv_sig):
     start_coords = nv_sig['coords']
     optimize_coords = start_coords
-    img_range = 0.06
-    pulse_time = 0.01*10**6
-    num_steps = 10
-    num_runs = 3
+    img_range = 0.7
+    pulse_time = 10*10**6
+    num_steps = 35
+    num_runs = 10
     init_color = '515a'
     pulse_color = '515a'
     measurement_type = '2D'
@@ -437,40 +437,65 @@ if __name__ == '__main__':
 
     sample_name = 'goeppert-mayer'
 
-    search = { 'coords':[0, 0 ,5.0],
+    search = { 'coords':[0, 0 , 4.9],
             'name': '{}-search'.format(sample_name),
-            'expected_count_rate': None,'nd_filter': 'nd_0',
+            'expected_count_rate': None,'nd_filter': 'nd_0.5',
             'color_filter': '635-715 bp',
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.08,
+            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.15,
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200,
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130,
             'ao_638_pwr': 0.8,
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':12,
-            'ao_515_pwr': 0.64,
+            'ao_515_pwr': 0.65,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
+    nv0_2021_06_14 = { 'coords':[0.043, 0.004 ,5.0],
+            'name': '{}-nv0_2021_06_14'.format(sample_name),
+            'expected_count_rate': 40,'nd_filter': 'nd_0.5',
+            'color_filter': '635-715 bp',
+#            'color_filter': '715 lp',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.15,
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200,
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130,
+            'ao_638_pwr': 0.8,
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':12,
+            'ao_515_pwr': 0.65,
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+    
 
 
 
     expected_count_list = [] # 4/13/21 ###
-    nv_list_2021_04_15 = []
+    nv_list_2021_06_14 = [
+[-0.070, -0.154 ,5.0],
+[-0.068, -0.059 ,5.0],
+[-0.049, -0.038 ,5.0],
+[0.092, -0.047 ,5.0],
+[0.071, 0.095 ,5.0],
+[-0.016, -0.042, 4.9],
+[0.003, 0.060, 4.9],]
 
     nv_sig_list =[]
-#    for i in [5]:#range(len(nv_list_2021_04_15)):#
-#        nv_coords = nv_list_2021_04_15[i]
-#        nv_sig = copy.deepcopy(search)
-#        nv_sig['coords'] = nv_coords
+    for i in [6]:#range(len(nv_list_2021_06_14)):
+        nv_coords = nv_list_2021_06_14[i]
+        nv_sig = copy.deepcopy(nv0_2021_06_14)
+        nv_sig['coords'] = nv_coords
 #        nv_sig['expected_count_rate'] = expected_count_list[i]
-#        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
-#        nv_sig_list.append(nv_sig)
+        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_06_14'.format(i)
+        nv_sig_list.append(nv_sig)
 
-    nv_sig_list = [search]
+#    nv_sig_list = [search]
 
 
     # %% Functions to run
@@ -506,16 +531,16 @@ if __name__ == '__main__':
 #            do_optimize(nv_sig, apd_indices, 532)
 
 #            [x, y, z] = nv_sig['coords']
-#            for z in numpy.linspace(z - 0.1, z + 0.1, 5):
+#            for z in numpy.linspace(z, z + 0.5, 6):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                [coord_x, coord_y, coord_z] = nv_sig['coords']
 #                nv_sig_copy['coords'] = [coord_x, coord_y, z]
-#                do_image_sample(nv_sig_copy,  apd_indices, '515a', save_data=True, plot_data=True)
+#                do_image_sample(nv_sig_copy,  apd_indices, 532, save_data=True, plot_data=True)
 
 
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, '515a',
-#                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+#                            save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =4*10**7)
 
@@ -523,9 +548,9 @@ if __name__ == '__main__':
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                                 532, 638)
 
-            do_SPaCE(nv_sig)
+#            do_SPaCE(nv_sig)
 
-#            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
+            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)

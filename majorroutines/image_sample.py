@@ -581,7 +581,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   plot_data=True, readout = 10**7,  um_scaled = False, continuous=False):
 
     # %% Some initial setup
-    tool_belt.reset_cfm_wout_uwaves(cxn)
+    tool_belt.reset_cfm(cxn)
 
     color_filter = nv_sig['color_filter']
     cxn.filter_slider_ell9k_color.set_filter(color_filter)
@@ -707,7 +707,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     # %% Clean up
 
-    tool_belt.reset_cfm_wout_uwaves(cxn)
+    tool_belt.reset_cfm(cxn)
 
     # Return to center
     cxn.galvo.write_xy(x_center, y_center)

@@ -286,7 +286,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
         In the form of [[x,y,z],...]
 
     '''
-    tool_belt.reset_cfm_wout_uwaves(cxn)
+    tool_belt.reset_cfm(cxn)
         
     # Define paramters
     apd_indices = [0]
@@ -321,22 +321,25 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     
     # define some times for the routine
     readout_pulse_time = nv_sig['pulsed_SCC_readout_dur']
-    if init_color == 532:
-        initialization_time = nv_sig['pulsed_reionization_dur']
-        green_laser_delay = laser_515_DM_delay
-        init_laser_delay = green_laser_delay
-    if init_color == '515a':
-        initialization_time = nv_sig['pulsed_reionization_dur']
-        green_laser_delay = laser_515_AM_delay
-        init_laser_delay = green_laser_delay
-    elif init_color == 638:
-        initialization_time = nv_sig['pulsed_ionization_dur']
-        init_laser_delay = laser_638_delay
+#    if init_color == 532 or pulse_color == 532:
         
-    if pulse_color == 532:
-        direct_wiring = pulser_wiring_green
-    elif pulse_color == 638:
-        direct_wiring = pulser_wiring_red
+        
+#    if init_color == 532:
+#        initialization_time = nv_sig['pulsed_reionization_dur']
+#        green_laser_delay = laser_515_DM_delay
+#        init_laser_delay = green_laser_delay
+#    if init_color == '515a':
+    initialization_time = nv_sig['pulsed_reionization_dur']
+    green_laser_delay = laser_515_AM_delay
+    init_laser_delay = green_laser_delay
+#    elif init_color == 638:
+    initialization_time = nv_sig['pulsed_ionization_dur']
+    init_laser_delay = laser_638_delay
+        
+#    if pulse_color == 532:
+#        direct_wiring = pulser_wiring_green
+#    elif pulse_color == 638:
+    direct_wiring = pulser_wiring_red
     
     opti_coords_list = []
     # Readout array will be a list in this case. This will be a list with 
@@ -370,7 +373,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     
     ### Backto the same
     # Optimize at the start of the routine
-    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices, '515a', disable = True)
+    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices, '515a', disable = False)
     opti_coords_list.append(opti_coords)
               
     drift = numpy.array(tool_belt.get_drift())

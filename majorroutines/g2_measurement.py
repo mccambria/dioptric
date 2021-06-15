@@ -226,7 +226,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
         # Wait until some data has filled
         now = time.time()
-        calc_time_elapsed = now - start_calc_time
+        calc_time_elapsed = now - start_time
         time.sleep(max(sleep_time - calc_time_elapsed, 0))
         # Read the stream and convert from strings to int64s
         ret_vals_string = cxn.apd_tagger.read_tag_stream()

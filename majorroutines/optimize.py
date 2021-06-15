@@ -367,7 +367,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
                   plot_data=False, set_drift=True):
 
     # Reset the microscope and make sure we're at the right ND
-    tool_belt.reset_cfm_wout_uwaves(cxn)
+    tool_belt.reset_cfm(cxn)
 
     # Be sure the right ND is in place and the magnet aligned
     if hasattr(cxn, 'filter_slider_ell9k'):
