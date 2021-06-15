@@ -32,23 +32,23 @@ g = 2
 
 def calc_T2max_qubit(gamma, gamma_unc, omega, omega_unc):
     T2max = 2/(3*omega + gamma)
-    
+
     T2max_unc = T2max * numpy.sqrt((3*omega_unc)**2 + gamma_unc**2) / (3*omega + gamma)
-    
+
     return T2max, T2max_unc #s
 
 def calc_T2max_qutrit(gamma, gamma_unc, omega, omega_unc):
     T2max = 2/(2*omega + 2*gamma)
-    
+
     T2max_unc = T2max * numpy.sqrt((2*omega_unc)**2 + (2*gamma_unc)**2) / (2*omega + 2*gamma)
-    
+
     return T2max, T2max_unc #s
 
 def B_sensitivity(T2max, T2max_unc):
     B_sens = h_bar / (g * mu_b * numpy.sqrt(T2max))
-    
+
     B_sens_unc = B_sens * 0.5 * T2max_unc / T2max
-    
+
     return B_sens, B_sens_unc #T/sqrt(Hz)
 
 # %%
@@ -60,4 +60,3 @@ T2max, T2max_unc = calc_T2max_qutrit(gamma, gamma_unc, omega, omega_unc)
 B_sens, B_sens_unc = B_sensitivity(T2max, T2max_unc)
 print(B_sens * 10**12)
 print(B_sens_unc* 10**12)
-

@@ -100,7 +100,7 @@ def get_seq(pulser_wiring, args):
 
     # With future protocols--ramsey, spin echo, etc--it will be easy to use
     # this format of sequence building and just change this secion of the file
-    
+
     base_uwave_experiment_dur = init_pi_high + init_pi_low + \
                     read_pi_high + read_pi_low
     uwave_experiment_shrt = base_uwave_experiment_dur + tau_shrt
@@ -216,11 +216,12 @@ if __name__ == '__main__':
               'do_532_aom': 1,
               'do_signal_generator_sg394_gate': 2,
               'do_signal_generator_tsg4104a_gate': 3}
-    
+
     # seq_args = [6428, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 510, 51, 80, 3571, 0, 3, 3]
     # seq_args = [0, 3000, 3000, 3000, 2000, 1000, 1000, 0, 0, 510, 51, 80, 5000, 0, 3, 3]
     pol_time = 1e6
     seq_args = [1000000, pol_time, pol_time, pol_time, 2000, 1000, 1000, 1080, 1000, 350, 121, 74, 3000000, 0, 2, 2]
+
 
     seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()

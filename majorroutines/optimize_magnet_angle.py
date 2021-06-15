@@ -27,7 +27,7 @@ import copy
 
 def create_fit_figure(splittings, angles, fit_func, popt):
     opti_angle = popt[2] % 180
-    
+
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
 
     ax.set_title('ESR Splitting Versus Magnet Angle')
@@ -43,7 +43,7 @@ def create_fit_figure(splittings, angles, fit_func, popt):
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     ax.text(0.70, 0.90, text, transform=ax.transAxes, fontsize=12,
             verticalalignment="top", bbox=props)
-    
+
     fig.canvas.draw()
     fig.set_tight_layout(True)
     fig.canvas.flush_events()
@@ -143,7 +143,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 
         angle = angles[ind]
         nv_sig_copy['magnet_angle'] = angle
-        
+
         angle_resonances = (None, None)  # Default to Nones
         if uwave_pulse_dur is not None:
             angle_resonances = pesr(cxn, nv_sig_copy, apd_indices,
@@ -153,7 +153,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
         else:
             angle_resonances = cwesr(cxn, nv_sig_copy, apd_indices,
                                      freq_center, freq_range, num_freq_steps,
-                                     num_freq_runs, uwave_power)
+                                     num_freq_runs, uwave_power, 532)
         resonances[ind, :] = angle_resonances
         if all(angle_resonances):
             # We got two resonances so take the difference
@@ -166,7 +166,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
             splittings[ind] = None
 
     # %% Analyze the data
-    
+
     fit_func, popt = fit_data(splittings, angles)
     opti_angle = None
     fig = None
@@ -217,11 +217,11 @@ if __name__ == '__main__':
     file = '2020_02_05-10_16_21-johnson-nv3_2020_02_04'
     data = tool_belt.get_raw_data(path, file)
     splittings = data['splittings']
-    
+
     angle_range = data['angle_range']
     num_angle_steps = data['num_angle_steps']
     angles = numpy.linspace(angle_range[0], angle_range[1], num_angle_steps)
-    
+
     fit_func, popt = fit_data(splittings, angles)
 
     opti_angle = None
@@ -231,4 +231,3 @@ if __name__ == '__main__':
         # Find the angle at the peak within [0, 180]
         opti_angle = popt[2] % 180
         print('Optimized angle: {}'.format(opti_angle))
-

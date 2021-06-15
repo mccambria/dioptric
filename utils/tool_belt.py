@@ -40,16 +40,16 @@ class States(Enum):
     LOW = auto()
     ZERO = auto()
     HIGH = auto()
-    
+
 def get_signal_generator_name(state):
     if state.value == States.LOW.value:
-        signal_generator_name = 'signal_generator_sg394'
+        signal_generator_name = 'signal_generator_sg394' # or 'signal_generator_bnc835'
         # signal_generator_name = 'signal_generator_tsg4104a'
     elif state.value == States.HIGH.value:
         signal_generator_name = 'signal_generator_tsg4104a'
         # signal_generator_name = 'signal_generator_sg394'
     return signal_generator_name
-    
+
 def get_signal_generator_cxn(cxn, state):
     signal_generator_name = get_signal_generator_name(state)
     signal_generator_cxn = eval('cxn.{}'.format(signal_generator_name))
@@ -60,9 +60,9 @@ def get_signal_generator_cxn(cxn, state):
 
 
 def set_xyz(cxn, coords):
-    xy_dtype = eval(get_registry_entry(cxn, 'xy_dtype', 
+    xy_dtype = eval(get_registry_entry(cxn, 'xy_dtype',
                                        ['', 'SharedParameters']))
-    z_dtype = eval(get_registry_entry(cxn, 'z_dtype', 
+    z_dtype = eval(get_registry_entry(cxn, 'z_dtype',
                                       ['', 'SharedParameters']))
     xy_server = get_xy_server(cxn)
     z_server = get_z_server(cxn)
@@ -76,9 +76,9 @@ def set_xyz(cxn, coords):
         z_op = z_dtype
     xy_server.write_xy(xy_op(coords[0]), xy_op(coords[1]))
     z_server.write_z(z_op(coords[2]))
-    # Force some delay before proceeding to account 
+    # Force some delay before proceeding to account
     # for the effective write time
-    time.sleep(0.001)
+    time.sleep(0.002)
 
 
 def set_xyz_center(cxn):
@@ -88,7 +88,7 @@ def set_xyz_center(cxn):
 
 def set_xyz_on_nv(cxn, nv_sig):
     set_xyz(cxn, nv_sig['coords'])
-    
+
 
 # %% Pulse Streamer utils
 
@@ -134,7 +134,7 @@ def get_tagger_wiring(cxn):
 # %% Matplotlib plotting utils
 
 
-def create_image_figure(imgArray, imgExtent, clickHandler=None):
+def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts', min_value=None, um_scaled = False):
     """
     Creates a figure containing a single grayscale image and a colorbar.
 
@@ -150,31 +150,31 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None):
     Returns:
         matplotlib.figure.Figure
     """
-
+    axes_label = 'V'
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
+
     fig.set_tight_layout(True)
+    if um_scaled:
+        axes_label = 'nm'#r'$\mu$m'
 
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',
-                    extent=tuple(imgExtent))
+                    extent=tuple(imgExtent), vmin = min_value)
 
-    # Check if we should clip or autoscale
-    clipAtThousand = False
-    if clipAtThousand:
-        if numpy.all(numpy.isnan(imgArray)):
-            imgMax = 0  # No data yet
-        else:
-            imgMax = numpy.nanmax(imgArray)
-        if imgMax > 1000:
-            img.set_clim(None, 1000)
-        else:
-            img.autoscale()
-    else:
-        img.autoscale()
+#    if min_value == None:
+#        img.autoscale()
 
     # Add a colorbar
-    plt.colorbar(img)
+    clb = plt.colorbar(img)
+    clb.set_label(color_bar_label, rotation=270)
+#    clb.set_label('kcounts/sec', rotation=270)
+
+    # Label axes
+    plt.xlabel(axes_label)
+    plt.ylabel(axes_label)
+    if title:
+        plt.title(title)
 
     # Wire up the click handler to print the coordinates
     if clickHandler is not None:
@@ -182,6 +182,7 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None):
 
     # Draw the canvas and flush the events to the backend
     fig.canvas.draw()
+    plt.tight_layout()
     fig.canvas.flush_events()
 
     return fig
@@ -322,11 +323,18 @@ def update_line_plot_figure(fig, vals):
 
 
 # %% Math functions
-    
+
 
 def get_pi_pulse_dur(rabi_period):
     return round(rabi_period / 2)
-    
+
+
+def get_pi_on_2_pulse_dur(rabi_period):
+    return round(rabi_period / 4)
+
+def get_pi_pulse_dur(rabi_period):
+    return round(rabi_period / 2)
+
 
 def get_pi_on_2_pulse_dur(rabi_period):
     return round(rabi_period / 4)
@@ -376,18 +384,37 @@ def cosexp_1_at_0(t, offset, freq, decay):
 
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
     two_pi = 2*numpy.pi
-    
+
     return offset + numpy.exp(-t / abs(decay)) * (
                 amp_1 * numpy.cos(two_pi * freq_1 * t) +
                 amp_2 * numpy.cos(two_pi * freq_2 * t) +
                 amp_3 * numpy.cos(two_pi * freq_3 * t))
+
+def calc_snr(sig_count, ref_count):
+    '''
+    Take a list of signal and reference counts, and take their average, then
+    calculate a snr.
+    inputs:
+        sig_count = list
+        ref_counts = list
+    outputs:
+        snr = list
+    '''
+
+    sig_count_avg = numpy.average(sig_count)
+    ref_count_avg = numpy.average(ref_count)
+    dif = sig_count_avg - ref_count_avg
+    noise = numpy.sqrt(ref_count_avg)
+    snr = dif / noise
+
+    return snr
 
 
 def get_scan_vals(center, scan_range, num_steps, dtype=float):
     """
     Returns a linspace for a scan centered about specified point
     """
-    
+
     half_scan_range = scan_range / 2
     low = center - half_scan_range
     high = center + half_scan_range
@@ -408,7 +435,7 @@ def get_shared_parameters_dict(cxn=None):
     Generally, they should need to be updated infrequently, unlike the
     shared parameters defined in cfm_control_panel, which change more
     frequently (eg apd_indices).
-    
+
     We currently have the parameters listed below. All durations (ending in
     _delay or _dur) have units of ns.
         airy_radius: Standard deviation of the Gaussian approximation to
@@ -436,14 +463,14 @@ def get_shared_parameters_dict(cxn=None):
         piezo_nm_per_volt: Conversion factor between objective piezo voltage
             and z position
     """
-    
+
     if cxn is None:
         with labrad.connect() as cxn:
             return get_shared_parameters_dict_sub(cxn)
     else:
         return get_shared_parameters_dict_sub(cxn)
-    
-    
+
+
 def get_shared_parameters_dict_sub(cxn):
 
     # Get what we need out of the registry
@@ -475,7 +502,7 @@ def get_xy_server(cxn):
     Talk to the registry to get the fine xy control server for this setup.
     eg for rabi it is probably galvo. See optimize for some examples.
     """
-    
+
     # return an actual reference to the appropriate server so it can just
     # be used directly
     return getattr(cxn, get_registry_entry(cxn, 'xy_server', ['Config']))
@@ -483,16 +510,16 @@ def get_xy_server(cxn):
 
 def get_z_server(cxn):
     """Same as get_xy_server but for the fine z control server"""
-    
+
     return getattr(cxn, get_registry_entry(cxn, 'z_server', ['Config']))
 
 
 def get_registry_entry(cxn, key, directory):
     """
-    Return the value for the specified key. The directory is specified from 
+    Return the value for the specified key. The directory is specified from
     the top of the registry. Directory as a list
     """
-    
+
     p = cxn.registry.packet()
     p.cd('', *directory)
     p.get(key)
@@ -508,7 +535,7 @@ def get_registry_entry_no_cxn(key, directory):
         p.cd('', *directory)
         p.get(key)
         return p.send()['get']
-    
+
 
 # %% Open utils
 
@@ -541,12 +568,12 @@ def get_file_list(path_from_nvdata, file_ends_with,
     Creates a list of all the files in the folder for one experiment, based on
     the ending file name
     '''
-    
+
     data_dir = Path(data_dir)
-    file_path = data_dir / path_from_nvdata 
-    
+    file_path = data_dir / path_from_nvdata
+
     file_list = []
-    
+
     for file in os.listdir(file_path):
         if file.endswith(file_ends_with):
             file_list.append(file)
@@ -586,7 +613,7 @@ def get_raw_data(path_from_nvdata, file_name,
 
     with open(file_path) as file:
         return json.load(file)
-    
+
 
 # %%  Save utils
 
@@ -634,12 +661,12 @@ def get_folder_dir(source_name, subfolder):
     #     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
     #                                source_name,
     #                                'branch_{}'.format(branch_name))
-        
+
     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
                                'pc_{}'.format(pc_name),
                                'branch_{}'.format(branch_name),
                                source_name)
-    
+
     if subfolder is not None:
         joined_path = os.path.join(joined_path, subfolder)
 
@@ -651,6 +678,8 @@ def get_folder_dir(source_name, subfolder):
 
     return folderDir
 
+def get_data_path():
+    return Path('E:/Shared drives/Kolkowitz Lab Group/nvdata')
 
 def get_data_path():
     return Path('E:/Shared drives/Kolkowitz Lab Group/nvdata')
@@ -686,14 +715,14 @@ def get_file_path(source_name, time_stamp='', name='', subfolder=None):
         date_folder_name = '_'.join(time_stamp.split('_')[0:2])
     else:
         fileName = '{}-{}'.format(get_time_stamp(), 'untitled')
-    
+
     # Create the subfolder combined name, if needed
     subfolder_name = None
     if (subfolder != None) and (date_folder_name != None):
         subfolder_name = str(date_folder_name + '/' + subfolder)
     elif (subfolder == None) and (date_folder_name != None):
         subfolder_name = date_folder_name
-    
+
     folderDir = get_folder_dir(source_name, subfolder_name)
     fileDir = os.path.abspath(os.path.join(folderDir, fileName))
 
@@ -746,13 +775,13 @@ def save_figure(fig, file_path):
     """
 
     file_path = str(file_path)
-    fig.savefig(file_path + '.svg')
+    fig.savefig(file_path + '.svg', dpi = 300)
 
 
 def save_raw_data(rawData, filePath):
     """
     Save raw data in the form of a dictionary to a text file. New lines
-    will be printed between entries in the dictionary. 
+    will be printed between entries in the dictionary.
 
     Params:
         rawData: dict
@@ -763,18 +792,153 @@ def save_raw_data(rawData, filePath):
     """
 
     # Add in a few things that should always be saved here. In particular,
-    # sharedparameters so we have as snapshot of the configuration and 
+    # sharedparameters so we have as snapshot of the configuration and
     # nv_sig_units. If these have already been defined in the routine,
-    # then they'll just be overwritten. 
+    # then they'll just be overwritten.
     try:
         rawData['nv_sig_units'] = get_nv_sig_units()
         rawData['shared_parameters'] = get_shared_parameters_dict()
     except Exception as e:
         print(e)
-    
+
     with open(filePath + '.txt', 'w') as file:
         json.dump(rawData, file, indent=2)
 
+
+def get_nv_sig_units():
+    return {'coords': 'V', 'expected_count_rate': 'kcps',
+        'pulsed_readout_dur': 'ns',
+        'pulsed_SCC_readout_dur': 'ns', 'am_589_power': '0-1 V',
+        'pulsed_shelf_dur': 'ns', 'am_589_shelf_power': '0-1 V',
+        'pulsed_ionization_dur': 'ns', 'cobalt_638_power': 'mW',
+        'pulsed_reionization_dur': 'ns', 'cobalt_532_power': 'mW',
+        'magnet_angle': 'deg', 'resonance': 'GHz',
+        'rabi': 'ns', 'uwave_power': 'dBm'}
+
+# Error messages
+
+def color_ind_err(color_ind):
+    if color_ind != 532 or color_ind != 589:
+        raise RuntimeError('Value of color_ind must be 532 or 589.'+
+                           '\nYou entered {}'.format(color_ind))
+
+def aom_ao_589_pwr_err(aom_ao_589_pwr):
+    if aom_ao_589_pwr < 0 or aom_ao_589_pwr > 1.0:
+        raise RuntimeError('Value for 589 aom must be within 0 to +1 V.'+
+                           '\nYou entered {} V'.format(aom_ao_589_pwr))
+
+def ao_638_pwr_err(ao_638_pwr):
+    if ao_638_pwr < 0 or ao_638_pwr > 0.9:
+        raise RuntimeError('Value for 638 ao must be within 0 to 0.9 V.'+
+                           '\nYou entered {} V'.format(ao_638_pwr))
+
+def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
+
+        if x_range != y_range:
+            raise ValueError('x_range must equal y_range for now')
+
+        x_num_steps = num_steps
+        y_num_steps = num_steps
+
+        # Force the scan to have square pixels by only applying num_steps
+        # to the shorter axis
+        half_x_range = x_range / 2
+        half_y_range = y_range / 2
+
+        x_low = x_center - half_x_range
+        x_high = x_center + half_x_range
+        y_low = y_center - half_y_range
+        y_high = y_center + half_y_range
+
+        # Apply scale and offset to get the voltages we'll apply to the galvo
+        # Note that the polar/azimuthal angles, not the actual x/y positions
+        # are linear in these voltages. For a small range, however, we don't
+        # really care.
+        x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
+        y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
+
+        ######### Works for any x_range, y_range #########
+
+        # Winding cartesian product
+        # The x values are repeated and the y values are mirrored and tiled
+        # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
+
+        # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
+        x_inter = numpy.concatenate((x_voltages_1d,
+                                     numpy.flipud(x_voltages_1d)))
+        # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
+        if y_num_steps % 2 == 0:  # Even x size
+            x_voltages = numpy.tile(x_inter, int(y_num_steps/2))
+        else:  # Odd x size
+            x_voltages = numpy.tile(x_inter, int(numpy.floor(y_num_steps/2)))
+            x_voltages = numpy.concatenate((x_voltages, x_voltages_1d))
+
+        # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
+        y_voltages = numpy.repeat(y_voltages_1d, x_num_steps)
+
+        voltages = numpy.vstack((x_voltages, y_voltages))
+
+        return x_voltages, y_voltages
+# %% Misc
+
+def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = None):
+    cxn = labrad.connect()
+    optical_power_list = []
+    if color_ind==532:
+        cxn.pulse_streamer.constant([3],0.0, 0.0) # Turn on the green laser
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+    elif color_ind==589:
+        cxn.filter_slider_ell9k.set_filter(nd_filter) # Change the nd filter for the yellow laser
+        cxn.pulse_streamer.constant([],0.0, AO_power_settings) # Turn on the yellow laser
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+    elif color_ind==638:
+        cxn.pulse_streamer.constant([7], 0.0, 0.0) # Turn on the red laser
+        time.sleep(0.3)
+        for i in range(10):
+            optical_power_list.append(cxn.photodiode.read_optical_power())
+            time.sleep(0.01)
+
+    optical_power = numpy.average(optical_power_list)
+    time.sleep(0.1)
+    cxn.pulse_streamer.constant([], 0.0, 0.0)
+    return optical_power
+
+def calc_optical_power_mW(color_ind, optical_power_V):
+    # Values found from experiments. See Notebook entry 3/19/2020 and 3/20/2020
+    if color_ind == 532:
+        return 11.84* optical_power_V + 0.0493
+    elif color_ind == 589:
+        return 13.41* optical_power_V + 0.06
+    if color_ind == 638:
+        return 4.14* optical_power_V + 0.0492
+
+def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
+    green_optical_power_pd = opt_power_via_photodiode(532)
+
+    red_optical_power_pd = opt_power_via_photodiode(638)
+
+    yellow_optical_power_pd = opt_power_via_photodiode(589,
+           AO_power_settings = aom_ao_589_pwr, nd_filter = nd_filter)
+
+    # Convert V to mW optical power
+    green_optical_power_mW = \
+            calc_optical_power_mW(532, green_optical_power_pd)
+
+    red_optical_power_mW = \
+            calc_optical_power_mW(638, red_optical_power_pd)
+
+    yellow_optical_power_mW = \
+            calc_optical_power_mW(589, yellow_optical_power_pd)
+
+    return green_optical_power_pd, green_optical_power_mW, \
+            red_optical_power_pd, red_optical_power_mW, \
+            yellow_optical_power_pd, yellow_optical_power_mW
 
 # %% Safe stop (TM mccambria)
 
@@ -903,9 +1067,9 @@ def get_drift():
         elif len_drift > 3:
             drift = drift[0:3]
     # Cast to appropriate type
-    # MCC round instead of int? 
-    drift_to_return = [xy_dtype(drift[0]), 
-                       xy_dtype(drift[1]), 
+    # MCC round instead of int?
+    drift_to_return = [xy_dtype(drift[0]),
+                       xy_dtype(drift[1]),
                        z_dtype(drift[2])]
     return drift_to_return
 
@@ -916,10 +1080,10 @@ def set_drift(drift):
         print('Attempted to set drift of length {}.'.format(len_drift))
         print('Set drift unsuccessful.')
     # Cast to the proper types
-    
-    xy_dtype = eval(get_registry_entry_no_cxn('xy_dtype', 
+
+    xy_dtype = eval(get_registry_entry_no_cxn('xy_dtype',
                                               ['', 'SharedParameters']))
-    z_dtype = eval(get_registry_entry_no_cxn('z_dtype', 
+    z_dtype = eval(get_registry_entry_no_cxn('z_dtype',
                                              ['', 'SharedParameters']))
     drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
     with labrad.connect() as cxn:
@@ -932,22 +1096,22 @@ def reset_drift():
 
 
 # %% Reset hardware
-        
+
 
 def reset_cfm(cxn=None):
     """Reset our cfm so that it's ready to go for a new experiment. Avoids
-    unnecessarily resetting components that may suffer hysteresis (ie the 
+    unnecessarily resetting components that may suffer hysteresis (ie the
     components that control xyz since these need to be reset in any
     routine where they matter anyway).
     """
-    
+
     if cxn == None:
         with labrad.connect() as cxn:
             reset_cfm_with_cxn(cxn)
     else:
         reset_cfm_with_cxn(cxn)
-        
-            
+
+
 def reset_cfm_with_cxn(cxn):
     if hasattr(cxn, 'pulse_streamer'):
         cxn.pulse_streamer.reset()
@@ -963,6 +1127,26 @@ def reset_cfm_with_cxn(cxn):
         cxn.signal_generator_bnc835.reset()
     # 8/10/2020, mainly for Er lifetime measurements
     if hasattr(cxn, 'filter_slider_ell9k_color'):
-        cxn.filter_slider_ell9k_color.set_filter('none')
+        cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
     if hasattr(cxn, 'filter_slider_ell9k'):
         cxn.filter_slider_ell9k.set_filter('nd_0')
+
+def reset_cfm_wout_uwaves(cxn=None):
+    """Reset our cfm so that it's ready to go for a new experiment. Avoids
+    unnecessarily resetting components that may suffer hysteresis (ie the
+    components that control xyz since these need to be reset in any
+    routine where they matter anyway).
+
+    Exclude the uwaves
+    """
+
+    if cxn == None:
+        with labrad.connect() as cxn:
+            reset_cfm_without_uwaves_with_cxn(cxn)
+    else:
+        reset_cfm_without_uwaves_with_cxn(cxn)
+
+
+def reset_cfm_without_uwaves_with_cxn(cxn):
+    cxn.pulse_streamer.reset()
+    cxn.apd_tagger.reset()

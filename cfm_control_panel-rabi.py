@@ -34,6 +34,8 @@ import majorroutines.lifetime as lifetime
 import majorroutines.lifetime_v2 as lifetime_v2
 import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
+import minorroutines.time_resolved_readout as time_resolved_readout
+import chargeroutines.moving_target as moving_target
 from utils.tool_belt import States
 
 
@@ -54,8 +56,9 @@ def set_xyz_zero():
 # %% Major Routines
 
 
-def do_image_sample(nv_sig, apd_indices):
-    
+def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,
+                    readout = 10**7, flip = False, um_scaled= False):
+
 #    scan_range = 5.0
 #    scan_range = 1.2
 #    scan_range = 0.5
@@ -64,42 +67,42 @@ def do_image_sample(nv_sig, apd_indices):
     scan_range = 0.1
 #    scan_range = 0.05
 #    scan_range = 0.025
-    
+
 #    num_steps = 300
 #    num_steps = 200
 #    num_steps = 150
 #    num_steps = 135
 #    num_steps = 120
-#    num_steps = 90
-    num_steps = 60
-
+    num_steps = 90
+#    num_steps = 60
+    
+    save_data=True,
+    
     # For now we only support square scans so pass scan_range twice
-    image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
+    image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices,
+                      color_ind, save_data, plot_data, readout, um_scaled )
 
-def do_optimize(nv_sig, apd_indices):
+def do_optimize(nv_sig, apd_indices, color_ind):
 
-    optimize.main(nv_sig, apd_indices,
+    optimize.main(nv_sig, apd_indices,color_ind,
               set_to_opti_coords=False, save_data=True, plot_data=True)
 
-def do_optimize_list(nv_sig_list, apd_indices):
+def do_optimize_list(nv_sig_list, apd_indices, color_ind):
 
-    optimize.optimize_list(nv_sig_list, apd_indices)
-    
-def do_opti_z(nv_sig_list, apd_indices):
-    
-    optimize.opti_z(nv_sig_list, apd_indices,
-              set_to_opti_coords=False, save_data=True, plot_data=True)
+    optimize.optimize_list(nv_sig_list, apd_indices, color_ind)
 
-def do_stationary_count(nv_sig, apd_indices):
 
-    run_time = 120 * 10**9  # ns
+def do_stationary_count(nv_sig, apd_indices, color_ind):
+    run_time = 90* 10**9  # ns
 
-    stationary_count.main(nv_sig, run_time, apd_indices)
+    average, st_dev = stationary_count.main(nv_sig, run_time, apd_indices, color_ind)
+
+    return average, st_dev
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 60 * 5  # s
-    diff_window = 150  # ns
+    run_time = 60 * 3  # s
+    diff_window = 75  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
                         apd_a_index, apd_b_index)
@@ -109,7 +112,6 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
     num_steps = 51
     num_runs = 2
     uwave_power = -7.0
-#    uwave_power = -20.0
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                    num_steps, num_runs, uwave_power)
@@ -119,11 +121,11 @@ def do_resonance_state(nv_sig, apd_indices, state):
     freq_center = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = -13.0  # -13.0 with a 1.5 ND is a good starting point
 #    uwave_power = -5.0  # After inserting mixer
-    
+
 #    freq_range = 0.200
 #    num_steps = 51
 #    num_runs = 2
-    
+
     # Zoom
     freq_range = 0.05
     num_steps = 51
@@ -151,7 +153,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 #    num_steps = 51
 #    num_reps = 10**5
 #    num_runs = 1
-    
+
     # Zoom
     freq_range = 0.050
     num_steps = 51
@@ -196,12 +198,12 @@ def do_t1_battery(nv_sig, apd_indices):
     t1_exp_array = numpy.array([
         [[States.HIGH, States.LOW], [0, 2*10**6], 11, 25*10**3, 20],
         [[States.HIGH, States.LOW], [0, 15*10**6], 11, 3.5*10**3, 100],
-    
+
         [[States.HIGH, States.HIGH], [0, 2*10**6], 11, 25*10**3, 20],
         [[States.HIGH, States.HIGH], [0, 15*10**6], 11, 3.5*10**3, 100],
-    
+
         [[States.ZERO, States.HIGH], [0, 20*10**6], 11, 2.5*10**3, 140],
-    
+
         [[States.ZERO, States.ZERO], [0, 20*10**6], 11, 2.5*10**3, 140]
         ])
 
@@ -225,29 +227,29 @@ def do_t1_interleave(nv_sig, apd_indices):
     t1_exp_array = numpy.array([
         [[States.HIGH, States.LOW], [0, 50*10**3], 51, 8*10**4, num_runs],
         [[States.HIGH, States.LOW], [0, 120*10**3], 26, 8*10**4, num_runs],
-    
+
         [[States.HIGH, States.HIGH], [0, 50*10**3], 51, 8*10**4, num_runs],
         [[States.HIGH, States.HIGH], [0, 120*10**3], 26, 8*10**4, num_runs],
-    
+
         [[States.ZERO, States.HIGH], [0, 2.5*10**6], 26, 1*10**4, num_runs],
-    
+
         [[States.ZERO, States.ZERO], [0, 2.5*10**6], 26, 1*10**4, num_runs],
         ])
 
     t1_interleave.main(nv_sig, apd_indices, t1_exp_array, num_runs)
-    
+
 def do_lifetime(nv_sig, apd_indices, filter, voltage, reference = False):
-    
-#    num_reps = 100 #MM 
+
+#    num_reps = 100 #MM
     num_reps = 500 #SM
-    num_bins = 101 
+    num_bins = 101
     num_runs = 10
     readout_time_range = [0, 1.0 * 10**6] #ns
     polarization_time = 60 * 10**3 #ns
-    
+
     lifetime_v2.main(nv_sig, apd_indices, readout_time_range,
          num_reps, num_runs, num_bins, filter, voltage, polarization_time, reference)
-    
+
 def do_ramsey(nv_sig, apd_indices):
 
     detuning = 2.5  # MHz
@@ -263,22 +265,17 @@ def do_spin_echo(nv_sig, apd_indices):
 
     # T2 in nanodiamond NVs without dynamical decoupling is just a couple
     # us so don't bother looking past 10s of us
-    
+
 #    num_steps = 101
 #    precession_time_range = [0, 100 * 10**3]
 #    num_reps = int(3.0 * 10**4)
 #    num_runs = 4
-    
+
     num_steps = 101
     precession_time_range = [0, 150 * 10**3]
     num_reps = int(1.75 * 10**4)
     num_runs = 4
-    
-#    num_steps = 151
-#    precession_time_range = [0, 10*10**3]
-#    num_reps = int(10.0 * 10**4)
-#    num_runs = 6
-    
+
     state = States.LOW
 
     spin_echo.main(nv_sig, apd_indices, precession_time_range,
@@ -400,6 +397,33 @@ def do_test_major_routines(nv_sig, apd_indices):
 
     test_major_routines.main(nv_sig, apd_indices)
 
+def do_time_resolved_readout(nv_sig, apd_indices,
+                                 init_color_ind, illum_color_ind):
+    illumination_time = 10**6
+    num_reps = 10**3
+    num_bins = 500
+
+    init_pulse_duration = 2*10**6
+    num_runs = 5
+    time_resolved_readout.main(nv_sig, apd_indices,
+                   illumination_time, init_pulse_duration,
+                   init_color_ind, illum_color_ind,
+                   num_reps, num_runs, num_bins)
+
+def do_SPaCE(nv_sig):
+    start_coords = nv_sig['coords']
+    optimize_coords = start_coords
+    img_range = 0.06
+    pulse_time = 0.01*10**6
+    num_steps = 10
+    num_runs = 3
+    init_color = '515a'
+    pulse_color = '515a'
+    measurement_type = '2D'
+
+    moving_target.main(nv_sig, start_coords, optimize_coords, img_range,
+                       pulse_time,num_steps, num_runs, init_color, pulse_color,
+                              measurement_type)
 
 # %% Run the file
 
@@ -408,76 +432,106 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-    apd_indices = [0]
-#    apd_indices = [0, 1]
-    
-    nd = 'nd_0'
-#    sample_name = '5nmEr-nrg'
-    sample_name = 'johnson'
-    
-    search = { 'coords':[0.248-0.5, 0.379, 5.0],
-            'name': '{}'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': nd,
-            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
-            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-    search2 = { 'coords':[-0.785, 0.320, 5.0],
-            'name': '{}'.format(sample_name),
-            'expected_count_rate': None, 'nd_filter': nd,
-            'pulsed_readout_dur': 350, 'magnet_angle': 0.0,
-            'resonance_LOW': None, 'rabi_LOW': None, 'uwave_power_LOW': 9.0,
-            'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 10.0}
-    
-    nv_sig_list = [search2]
-    
+#    apd_indices = [0]
+    apd_indices = [0, 1]
+
+    sample_name = 'goeppert-mayer'
+
+    search = { 'coords':[0, 0 ,5.0],
+            'name': '{}-search'.format(sample_name),
+            'expected_count_rate': None,'nd_filter': 'nd_0',
+            'color_filter': '635-715 bp',
+#            'color_filter': '715 lp',
+            'pulsed_readout_dur': 300,
+            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.08,
+            'pulsed_initial_ion_dur': 25*10**3,
+            'pulsed_shelf_dur': 200,
+            'am_589_shelf_power': 0.35,
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130,
+            'ao_638_pwr': 0.8,
+            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':12,
+            'ao_515_pwr': 0.64,
+            'magnet_angle': 0,
+            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+
+
+
+
+    expected_count_list = [] # 4/13/21 ###
+    nv_list_2021_04_15 = []
+
+    nv_sig_list =[]
+#    for i in [5]:#range(len(nv_list_2021_04_15)):#
+#        nv_coords = nv_list_2021_04_15[i]
+#        nv_sig = copy.deepcopy(search)
+#        nv_sig['coords'] = nv_coords
+#        nv_sig['expected_count_rate'] = expected_count_list[i]
+#        nv_sig['name'] = 'goeppert-mayer-nv{}_2021_04_15'.format(i)
+#        nv_sig_list.append(nv_sig)
+
+    nv_sig_list = [search]
+
+
     # %% Functions to run
 
     try:
-        
+
         # Operations that don't need an NV
-        
-#        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+
+#        drift = [0.01, 0.01, -0.06]
+#        tool_belt.set_drift(drift)
+#        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset
+#        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
 #        tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        
-#        set_xyz([0.0,0.0,5.0])
-#        set_xyz([-0.116, -0.073, 2.61])
-        
+#        set_xyz([0.0, 0.0,  5.0])
+
+
 #        with labrad.connect() as cxn:
-#            cxn.filter_slider_ell9k.set_filter('nd_1.5')
-#            cxn.pulse_streamer.constant([], 0.0, 0.0)
-#            input('Laser currently turned off, Press enter to stop...')
-        
-        # Routines that expect lists of NVs
-#        do_optimize_list(nv_sig_list, apd_indices)
+#            cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
+#            cxn.filter_slider_ell9k.set_filter('nd_0')
+#            cxn.pulse_streamer.constant([], 0.65, 0.0)
+#            cxn.objective_piezo.write(5.1)
+
+#         Routines that expect lists of NVs
+#        do_optimize_list(nv_sig_list, apd_indices,'515a')
 #        do_sample_nvs(nv_sig_list, apd_indices)
 #        do_g2_measurement(nv_sig_list, apd_indices[0], apd_indices[1])
-        
+
         # Routines that expect single NVs
         for ind in range(len(nv_sig_list)):
-            nv_sig = nv_sig_list[ind]                
-#            for z in numpy.linspace(5.15, 5.25, 11):
+            nv_sig = nv_sig_list[ind]
+
+#            do_optimize(nv_sig, apd_indices, '515a')
+#            do_optimize(nv_sig, apd_indices, 532)
+
+#            [x, y, z] = nv_sig['coords']
+#            for z in numpy.linspace(z - 0.1, z + 0.1, 5):
 #                nv_sig_copy = copy.deepcopy(nv_sig)
-#                coords = nv_sig_copy['coords']
-#                nv_sig_copy['coords'] = [coords[0], coords[1], z]
-#                do_image_sample(nv_sig_copy, apd_indices)
-            do_image_sample(nv_sig, apd_indices)
-#            tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
-#            do_optimize(nv_sig, apd_indices)
-            
-#            tool_belt.set_drift([0.0, 0.0, 0.15]) # SM
-#            tool_belt.set_drift([0.0, 0.0, 0.0]) # MM
-#            do_opti_z(nv_sig, apd_indices)
-#            do_stationary_count(nv_sig, apd_indices)
+#                [coord_x, coord_y, coord_z] = nv_sig['coords']
+#                nv_sig_copy['coords'] = [coord_x, coord_y, z]
+#                do_image_sample(nv_sig_copy,  apd_indices, '515a', save_data=True, plot_data=True)
+
+
+#            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, '515a',
+#                            save_data=True, plot_data=True, flip = False, readout = 1*10**7)
+#            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =4*10**7)
+
+#            do_stationary_count(nv_sig, apd_indices, 532)
+#            do_time_resolved_readout(nv_sig, apd_indices,
+#                                 532, 638)
+
+            do_SPaCE(nv_sig)
+
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
+
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices)
-#            do_resonance(nv_sig, apd_indices, freq_center=2.870, freq_range=0.4)
-#            do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2)
+#            do_resonance(nv_sig, apd_indices, 532)
 #            do_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.4542, freq_range=0.1)
-#            do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.150)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
 #            do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
 #            do_pulsed_resonance(nv_sig, apd_indices,
@@ -491,25 +545,9 @@ if __name__ == '__main__':
 #            find_resonance_and_rabi(nv_sig, apd_indices)
 #            do_t1_battery(nv_sig, apd_indices)
 #            do_t1_interleave(nv_sig, apd_indices)
-            
-            voltage = '-1.8 V'
-#
-#            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = False)
-#            do_lifetime(nv_sig, apd_indices, 'none', voltage ,reference = True)
-#            do_lifetime(nv_sig, apd_indices, '560 bp', voltage ,reference = False)
-#            do_lifetime(nv_sig, apd_indices, '560 bp', voltage ,reference = True)
-#            do_lifetime(nv_sig, apd_indices, '670 bp', voltage ,reference = False)
-#            do_lifetime(nv_sig, apd_indices, '670 bp', voltage ,reference = True)
-##        
-#            find_resonance_and_rabi(nv_sig, apd_indices)
-            
-#            fail_bool = find_resonance_and_rabi(nv_sig, apd_indices)
-#            if fail_bool == True:
-#                print('Failed to record pESR and Rabi')
-#                break
-#            else:
-#                do_t1_interleave(nv_sig, apd_indices)
-            
+#            do_t1_image_sample(nv_sig, apd_indices)
+#            do_lifetime(nv_sig, apd_indices)
+
 #            do_ramsey(nv_sig, apd_indices)
 #            do_spin_echo(nv_sig, apd_indices)
 #            do_set_drift_from_reference_image(nv_sig, apd_indices)
@@ -518,9 +556,6 @@ if __name__ == '__main__':
 #                tool_belt.set_xyz_on_nv(cxn, nv_sig)
 
     finally:
-        # Reset our hardware - this should be done in each routine, but
-        # let's double check here
-        tool_belt.reset_cfm()
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
             print('\n\nRoutine complete. Press enter to exit.')
