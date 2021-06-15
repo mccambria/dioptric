@@ -48,12 +48,12 @@ def create_fit_figure(freq_range, freq_center, num_steps,
         low_text = text.format(*popt[0:3])
         high_text = text.format(*popt[3:6])
 
-    # props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    # ax.text(0.05, 0.15, low_text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment="top", bbox=props)
-    # if high_text is not None:
-    #     ax.text(0.55, 0.15, high_text, transform=ax.transAxes, fontsize=12,
-    #             verticalalignment="top", bbox=props)
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    ax.text(0.05, 0.15, low_text, transform=ax.transAxes, fontsize=12,
+            verticalalignment="top", bbox=props)
+    if high_text is not None:
+        ax.text(0.55, 0.15, high_text, transform=ax.transAxes, fontsize=12,
+                verticalalignment="top", bbox=props)
 
     fig.canvas.draw()
     fig.set_tight_layout(True)
@@ -521,8 +521,8 @@ if __name__ == '__main__':
     
     
 
-    path = 'pc_rabi/branch_master/pulsed_resonance/2019_08'
-    file = '2019-08-06-11_58_27-ayrton12-nv2_2019_04_30'
+    path = 'pc_hahn/branch_master/pulsed_resonance/2021_06'
+    file = '2021_06_05-17_03_55-hopper-nv1_2021_03_16'
     data = tool_belt.get_raw_data(path, file)
 
     freq_center = data['freq_center']
