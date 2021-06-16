@@ -416,7 +416,7 @@ def do_SPaCE(nv_sig, img_range, num_steps):
 #    img_range = 2.5 # V (35 um / 2 V)
     pulse_time = 10*10**6
 #    num_steps = 200 
-    num_runs = 5
+    num_runs = 2
     init_color = '515a'
     pulse_color = '515a'
     measurement_type = '2D'
@@ -539,8 +539,8 @@ if __name__ == '__main__':
 
 
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
-#            do_image_sample(nv_sig,  apd_indices, '515a',
-#                            save_data=True, plot_data=True, readout = 1*10**7)
+            do_image_sample(nv_sig,  apd_indices, '515a',
+                            save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
 #            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =4*10**7)
 
@@ -548,27 +548,61 @@ if __name__ == '__main__':
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                                 532, 638)
 #            power_list = [0.622, 0.635, 0.655, 0.68, 0.75, 0.81, 0.865, 0.92, 0.98]
-            power_list_1 = [0.68,0.655,0.635,0.622] # 1 V, 100 steps were good enough)
-            power_list_2 = [0.98,0.92,0.865,0.81,0.75,0.68,0.655,0.635,0.622]
-            power_list_high = [0.98,0.92]
-            power_list_mid = [0.865,0.81,0.75]
-            power_list_low = [0.68,0.655,0.635,0.622]
-            for p in power_list_low:
-                nv_sig_copy = copy.deepcopy(nv_sig)
-                nv_sig_copy['ao_515_pwr'] = p
-                do_SPaCE(nv_sig_copy, 0.8, 41) 
-            for p in power_list_high:
-                nv_sig_copy = copy.deepcopy(nv_sig)
-                nv_sig_copy['ao_515_pwr'] = p
-                do_SPaCE(nv_sig_copy, 2.5, 75) 
-            for p in power_list_mid:
-                nv_sig_copy = copy.deepcopy(nv_sig)
-                nv_sig_copy['ao_515_pwr'] = p
-                do_SPaCE(nv_sig_copy, 1.5, 51) 
-#            for p in power_list_2:
+            
+#            power_list_1 = [0.68] 
+#            power_list_2 = [0.98,0.92,0.865,0.81,0.75,0.68,0.655,0.635,0.622]
+            
+############################################################################            
+#            power_list_high = [0.98]#,0.92]
+#            power_list_mid = [0.865]#,0.81,0.75]
+#            power_list_low = [0.68,]#0.655,0.635,0.622]
+#            for p in power_list_low:
 #                nv_sig_copy = copy.deepcopy(nv_sig)
 #                nv_sig_copy['ao_515_pwr'] = p
-#                do_SPaCE(nv_sig_copy, 2.5, 200)
+#                # NV readout
+#                nv_sig_copy['nd_filter'] = 'nd_0.5'
+#                nv_sig_copy['am_589_power'] = 0.15
+#                nv_sig_copy['pulsed_SCC_readout_dur'] = 100*10**6
+#                nv_sig_copy['color_filter'] = '635-715 bp'
+#                do_SPaCE(nv_sig_copy, 0.8, 41) 
+#                # SiV readout
+#                nv_sig_copy['nd_filter'] = 'nd_0'
+#                nv_sig_copy['am_589_power'] = 0.6
+#                nv_sig_copy['pulsed_SCC_readout_dur'] = 40*10**6
+#                nv_sig_copy['color_filter'] = '715 lp'
+#                do_SPaCE(nv_sig_copy, 0.8, 41) 
+#            for p in power_list_high:
+#                nv_sig_copy = copy.deepcopy(nv_sig)
+#                nv_sig_copy['ao_515_pwr'] = p
+#                # NV readout
+#                nv_sig_copy['nd_filter'] = 'nd_0.5'
+#                nv_sig_copy['am_589_power'] = 0.15
+#                nv_sig_copy['pulsed_SCC_readout_dur'] = 100*10**6
+#                nv_sig_copy['color_filter'] = '635-715 bp'
+#                do_SPaCE(nv_sig_copy, 2.5, 75) 
+#                #  SiV readout
+#                nv_sig_copy['nd_filter'] = 'nd_0'
+#                nv_sig_copy['am_589_power'] = 0.6
+#                nv_sig_copy['pulsed_SCC_readout_dur'] = 40*10**6
+#                nv_sig_copy['color_filter'] = '715 lp'
+#                do_SPaCE(nv_sig_copy, 2.5, 75) 
+#            for p in power_list_mid:
+#                nv_sig_copy = copy.deepcopy(nv_sig)
+#                nv_sig_copy['ao_515_pwr'] = p
+#                # NV readout
+#                nv_sig_copy['nd_filter'] = 'nd_0.5'
+#                nv_sig_copy['am_589_power'] = 0.15
+#                nv_sig_copy['pulsed_SCC_readout_dur'] = 100*10**6
+#                nv_sig_copy['color_filter'] = '635-715 bp'
+#                do_SPaCE(nv_sig_copy, 1.5, 51) 
+#                #  SiV readout
+#                nv_sig_copy['nd_filter'] = 'nd_0'
+#                nv_sig_copy['am_589_power'] = 0.6
+#                nv_sig_copy['pulsed_SCC_readout_dur'] = 40*10**6
+#                nv_sig_copy['color_filter'] = '715 lp'
+#                do_SPaCE(nv_sig_copy, 1.5, 51) 
+############################################################################     
+            
 
 #            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 

@@ -562,7 +562,11 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
             tool_belt.save_figure(fig, filePath)
 
     # %% Return the optimized coordinates we found
-
+    if hasattr(cxn, 'filter_slider_ell9k_color'):
+        # After we've optimized, set the color filter back to what we want
+        measure_color_filter = nv_sig['color_filter']
+        cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
+        
     return opti_coords
 
 # %%
