@@ -386,7 +386,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
     ### what if instead, we can put in a dictionary entry in the NV that, if
     # there, optimize will see it and not be run. i.e. nv_sig["disable_opt"] ###
     try:
-        if not nv_sig['single']:
+        if not nv_sig['disable_opt']:
             return None
     except Exception:
         pass
