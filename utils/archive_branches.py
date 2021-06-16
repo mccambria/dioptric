@@ -134,6 +134,30 @@ if __name__ == '__main__':
     repo_path = str(Path.home()) + '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
     
     # List of branches to archive
-    branches_to_archive = ['File_directory_sam']
+    branches_to_archive = ['all-zeros-investigation',
+                           'berkeley-sig-gen',
+                           'bug-stale-galvo-stream-part2',
+                           'cpmg',
+                           'debug-function',
+                           'filter_slider',
+                           'filter-slider-stops-responding',
+                           'high-to-high',
+                           'hopper_disable_opt',
+                           'major-routine-interfaces',
+                           'optimize-enhancements',
+                           'optimize-speed-up',
+                           'optimize-z-work',
+                           'pulse-streamer-enhancements',
+                           'ramsey2',
+                           'ramsey3',
+                           'reset-hardware',
+                           'Samli',
+                           'semi-auto-t1',
+                           'split_resonance',
+                           't1_parallel_exp',
+                           'temperature_reading',
+                           'time-tagger-counter',
+                           'uwave_delay',
+                           'working_branch_sam']
 
     main(repo_path, branches_to_archive)
