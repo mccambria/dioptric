@@ -20,13 +20,13 @@ import majorroutines.image_sample as image_sample
 import copy
 import scipy.stats as stats
 
-reset_range = 0.3
-num_steps_reset = int(75 * reset_range)
-reset_time = 10**7
+#reset_range = 0.3
+#num_steps_reset = int(75 * reset_range)
+#reset_time = 10**7
 
-green_reset_power = 0.6085
-green_pulse_power = 0.65
-green_image_power = 0.65
+#green_reset_power = 0.6085
+#green_pulse_power = 0.65
+#green_image_power = 0.65
 
 # %%
 def build_voltages_from_list(start_coords_drift, coords_list_drift):
@@ -290,6 +290,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
         
     # Define paramters
     apd_indices = [0]
+    green_2mw_power = 0.655
     
     num_samples = len(coords_list)
     #delay of aoms and laser, parameters, etc
@@ -305,12 +306,16 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     pulser_wiring_green = wiring['do_532_aom']
     pulser_wiring_red = wiring['do_638_laser']
     
+    # get the ionization green power:
+    green_pulse_power = nv_sig['ao_515_pwr']
+    
     # copy the start coords onto the nv_sig
     start_nv_sig = copy.deepcopy(nv_sig)
     start_nv_sig['coords'] = start_coords
     
     opti_nv_sig = copy.deepcopy(nv_sig)
     opti_nv_sig['coords'] = optimize_coords
+    opti_nv_sig['ao_515_pwr'] = green_2mw_power
 
     am_589_power = nv_sig['am_589_power']
     ao_515_pwr = nv_sig['ao_515_pwr']
@@ -353,11 +358,13 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
         seq_args = [ initialization_time, pulse_time, readout_pulse_time, 
             green_laser_delay, aom_589_delay, laser_638_delay, galvo_delay, 
             am_589_power, 
-            green_pulse_power, green_pulse_power, green_image_power, 
+            green_2mw_power, green_pulse_power, green_2mw_power, 
             apd_indices[0],
             init_color, pulse_color, readout_color]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+#        print(seq_args)
+#        return
         
         # print the expected run time
         period = ret_vals[0]

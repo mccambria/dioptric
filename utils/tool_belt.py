@@ -156,7 +156,7 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
 
     fig.set_tight_layout(True)
     if um_scaled:
-        axes_label = 'nm'#r'$\mu$m'
+        axes_label = r'$\mu$m'
 
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',

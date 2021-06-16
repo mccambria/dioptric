@@ -59,7 +59,7 @@ def process_raw_buffer(timestamps, channels,
 
     indices_to_delete = []
     indices_to_delete_append = indices_to_delete.append
-
+    
     # Throw out probable afterpulses
     # Something is wrong with this... see 2019-06-03_17-05-01_ayrton12
     if True:
@@ -110,7 +110,7 @@ def process_raw_buffer(timestamps, channels,
             diff_channel = apd_b_chan_name
         elif click_channel == apd_a_chan_name:
             diff_channel = apd_a_chan_name
-
+            
         # if click_channel == apd_a_chan_name:
         #     continue
 
@@ -180,7 +180,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
     # 200 ns to account for twilighting and afterpulsing
     afterpulse_window = 200 * 1000
-    sleep_time = 2 # (?)
+#    sleep_time = 2 # (?)
     # afterpulse_window = (diff_window - 200) * 1000
 
     apd_indices = [apd_a_index, apd_b_index]

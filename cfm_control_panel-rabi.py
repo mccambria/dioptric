@@ -101,7 +101,7 @@ def do_stationary_count(nv_sig, apd_indices, color_ind):
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 60 * 1  # s
+    run_time = 60 * 0.2  # s
     diff_window = 75  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
@@ -410,13 +410,13 @@ def do_time_resolved_readout(nv_sig, apd_indices,
                    init_color_ind, illum_color_ind,
                    num_reps, num_runs, num_bins)
 
-def do_SPaCE(nv_sig):
+def do_SPaCE(nv_sig, img_range, num_steps):
     start_coords = nv_sig['coords']
     optimize_coords = start_coords
-    img_range = 0.7
+#    img_range = 2.5 # V (35 um / 2 V)
     pulse_time = 10*10**6
-    num_steps = 35
-    num_runs = 10
+#    num_steps = 200 
+    num_runs = 5
     init_color = '515a'
     pulse_color = '515a'
     measurement_type = '2D'
@@ -432,8 +432,8 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-#    apd_indices = [0]
-    apd_indices = [0, 1]
+    apd_indices = [0]
+#    apd_indices = [0, 1]
 
     sample_name = 'goeppert-mayer'
 
@@ -547,10 +547,30 @@ if __name__ == '__main__':
 #            do_stationary_count(nv_sig, apd_indices, 532)
 #            do_time_resolved_readout(nv_sig, apd_indices,
 #                                 532, 638)
+#            power_list = [0.622, 0.635, 0.655, 0.68, 0.75, 0.81, 0.865, 0.92, 0.98]
+            power_list_1 = [0.68,0.655,0.635,0.622] # 1 V, 100 steps were good enough)
+            power_list_2 = [0.98,0.92,0.865,0.81,0.75,0.68,0.655,0.635,0.622]
+            power_list_high = [0.98,0.92]
+            power_list_mid = [0.865,0.81,0.75]
+            power_list_low = [0.68,0.655,0.635,0.622]
+            for p in power_list_low:
+                nv_sig_copy = copy.deepcopy(nv_sig)
+                nv_sig_copy['ao_515_pwr'] = p
+                do_SPaCE(nv_sig_copy, 0.8, 41) 
+            for p in power_list_high:
+                nv_sig_copy = copy.deepcopy(nv_sig)
+                nv_sig_copy['ao_515_pwr'] = p
+                do_SPaCE(nv_sig_copy, 2.5, 75) 
+            for p in power_list_mid:
+                nv_sig_copy = copy.deepcopy(nv_sig)
+                nv_sig_copy['ao_515_pwr'] = p
+                do_SPaCE(nv_sig_copy, 1.5, 51) 
+#            for p in power_list_2:
+#                nv_sig_copy = copy.deepcopy(nv_sig)
+#                nv_sig_copy['ao_515_pwr'] = p
+#                do_SPaCE(nv_sig_copy, 2.5, 200)
 
-#            do_SPaCE(nv_sig)
-
-            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
+#            do_g2_measurement(nv_sig, apd_indices[0], apd_indices[1])
 
 #            do_optimize_magnet_angle(nv_sig, apd_indices)
 #            do_resonance(nv_sig, apd_indices, 532)
