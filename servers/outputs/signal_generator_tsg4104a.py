@@ -47,9 +47,9 @@ class SignalGeneratorTsg4104a(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
+        p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('signal_generator_tsg4104a_visa_address')
-        p.cd(['Wiring', 'Daq'])
+        p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('di_clock')
         p.get('ao_uwave_sig_gen_mod')
         result = await p.send()

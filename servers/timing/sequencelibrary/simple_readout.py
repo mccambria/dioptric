@@ -17,15 +17,12 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    delay, readout_time, aom_ao_589_pwr, ao_515_pwr, apd_index, color_ind = args
+    delay, readout_time, laser_name, laser_power, apd_index = args
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    pulser_do_532_aom = pulser_wiring['do_532_aom']
-    pulser_ao_589_aom = pulser_wiring['ao_589_aom']
-    pulser_do_638_aom = pulser_wiring['do_638_laser']
-    pulser_ao_515_aom = pulser_wiring['ao_515_laser']
+    pulser_do_laser_gate = pulser_wiring['do_{}_gate'.format(laser_name)]
 
     # Convert the 32 bit ints into 64 bit ints
     delay = numpy.int64(delay)
@@ -33,11 +30,7 @@ def get_seq(pulser_wiring, args):
 
     period = numpy.int64(delay + readout_time + 300)
 
-    # Make sure the aom_ao_589_pwer is within range of +1 and 0
-    tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
-
-    # make sure only the color passed is either 532 or 589
-#    tool_belt.color_ind_err(color_ind)
+    tool_belt.check_laser_power(laser_name, laser_power)
 
     # Define the sequence
     seq = Sequence()
@@ -52,25 +45,11 @@ def get_seq(pulser_wiring, args):
     train = [(delay, LOW), (readout_time, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
 
-    if color_ind == 589:
-
-        train = [(period, aom_ao_589_pwr)]
-        seq.setAnalog(pulser_ao_589_aom, train)
-
-    elif color_ind == 532:
-
+    if laser_power == -1:
         train = [(period, HIGH)]
-        seq.setDigital(pulser_do_532_aom, train)
-
-    elif color_ind == 638:
-
-        train = [(period, HIGH)]
-        seq.setDigital(pulser_do_638_aom, train)
-
-    elif color_ind == '515a':
-
-        train = [(period, ao_515_pwr)]
-        seq.setAnalog(pulser_ao_515_aom, train)
+    else:
+        train = [(period, laser_power)]
+    seq.setAnalog(pulser_do_laser_gate, train)
 
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)

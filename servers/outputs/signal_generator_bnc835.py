@@ -44,7 +44,7 @@ class SignalGeneratorBnc835(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
+        p.cd(['', 'Config', 'DeviceIDs'])
         p.get('signal_generator_bnc835_visa_address')
         result = await p.send()
         return result['get']

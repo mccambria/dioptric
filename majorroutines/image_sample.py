@@ -566,50 +566,65 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
 # %%
 
-def main(nv_sig, x_range, y_range, num_steps,  apd_indices,
-         color_ind, save_data=True, plot_data=True, readout = 10**7 ,  um_scaled = False, continuous=False):
+def main(nv_sig, x_range, y_range, num_steps, apd_indices,
+         save_data=True, plot_data=True, 
+         um_scaled=False):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
-                      y_range, num_steps,
-                      apd_indices,  color_ind,  save_data, plot_data, readout,  um_scaled ,  continuous)
+                      y_range, num_steps, apd_indices, save_data, plot_data, 
+                      um_scaled)
 
     return img_array, x_voltages, y_voltages
 
 def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
-                  apd_indices,  color_ind, save_data=True,
-                  plot_data=True, readout = 10**7,  um_scaled = False, continuous=False):
+                  apd_indices, save_data=True, plot_data=True, 
+                  um_scaled=False):
 
     # %% Some initial setup
+    
     tool_belt.reset_cfm(cxn)
+    
+    if 'collection_filter' in nv_sig:
+        collection_filter = nv_sig['collection_filter']
+        collection_filter_server = tool_belt.get_filter_server(cxn, 
+                                                               'collection')
+        collection_filter_server.set_filter(collection_filter)
 
-    color_filter = nv_sig['color_filter']
-    cxn.filter_slider_ell9k_color.set_filter(color_filter)
-
-    nd_filter = nv_sig['nd_filter']
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
-
-    aom_ao_589_pwr = nv_sig['am_589_power']
-    ao_515_pwr = nv_sig['ao_515_pwr']
+    laser_name = nv_sig['imaging_laser']
+    if 'imaging_laser_filter' in nv_sig:
+        laser_filter = nv_sig['imaging_laser_filter']
+        laser_filter_server = tool_belt.get_laser_filter_server(cxn, 
+                                                                laser_name)
+        laser_filter_server.set_filter(laser_filter)
+    if 'imaging_laser_power' in nv_sig:
+        laser_power = nv_sig['imaging_laser_power']
+    else:
+        laser_power = -1  # -1 signifies digital modulation
 
     adj_coords = (numpy.array(nv_sig['coords']) + \
                   numpy.array(tool_belt.get_drift())).tolist()
     x_center, y_center, z_center = adj_coords
     
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    galvo_delay = shared_params['small_angle_galvo_delay']
-
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
 
-    # Define the delay, accounting for the time it takes the galvo to move
-    delay = galvo_delay 
+    xy_server = tool_belt.get_xy_server(cxn)
+    xy_delay = tool_belt.get_registry_entry(cxn, 'xy_delay', ['', 'Config', 'Positioning'])
+    # Get the scale in um per volt
+    xy_scale = tool_belt.get_registry_entry(cxn, 'xy_nm_per_unit', ['', 'Config', 'Positioning'])
+    if xy_scale == -1:
+        um_scaled = False
+    else: 
+        xy_scale *= 1000
 
     total_num_samples = num_steps**2
 
     # %% Load the PulseStreamer
+    
+    readout = nv_sig['imaging_readout_dur']
 
-    seq_args = [delay, readout, aom_ao_589_pwr, ao_515_pwr, apd_indices[0], color_ind]
+    seq_args = [xy_delay, readout, laser_name, laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
@@ -619,12 +634,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Initialize at the starting point
 
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-#    time.sleep(1)
-    # %% Set up the galvo
+    
+    # %% Set up the xy_server
 
-    x_voltages, y_voltages = cxn.galvo.load_sweep_xy_scan(x_center, y_center,
-                                                       x_range, y_range,
-                                                       num_steps, period)
+    x_voltages, y_voltages = xy_server.load_sweep_xy_scan(x_center, y_center,
+                                       x_range, y_range, num_steps, period)
 
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]
@@ -635,9 +649,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     pixel_size = x_voltages[1] - x_voltages[0]
 
-
     readout_us = float(readout) / 10**3
-
 
     # %% Set up the APD
 
@@ -664,12 +676,12 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                       y_low - half_pixel_size, y_high + half_pixel_size]
         if um_scaled:
-            img_extent = [(x_high + half_pixel_size)*35, (x_low - half_pixel_size)*35,
-                      (y_low - half_pixel_size)*35, (y_high + half_pixel_size)*35]
-        title = 'Confocal scan with {} nm.\nReadout {} us'.format(color_ind, readout_us)
+            img_extent = [(x_high + half_pixel_size)*xy_scale, (x_low - half_pixel_size)*xy_scale,
+                      (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
+        title = 'Confocal scan with {}.\nReadout {} us'.format(laser_name, readout_us)
         fig = tool_belt.create_image_figure(img_array, img_extent,
                                             clickHandler=on_click_image,
-                                            title = title, um_scaled = um_scaled)
+                                            title=title, um_scaled=um_scaled)
 
     # %% Collect the data
     cxn.apd_tagger.clear_buffer()
@@ -726,22 +738,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
-               'color_filter': color_filter,
-               'color_ind': color_ind,
-               'aom_ao_589_pwr': aom_ao_589_pwr,
-               'aom_ao_589_pwr-units': 'V',
-#                'green_optical_power_pd': green_optical_power_pd,
-#                'green_optical_power_pd-units': 'V',
-#                'green_optical_power_mW': green_optical_power_mW,
-#                'green_optical_power_mW-units': 'mW',
-#                'red_optical_power_pd': red_optical_power_pd,
-#                'red_optical_power_pd-units': 'V',
-#                'red_optical_power_mW': red_optical_power_mW,
-#                'red_optical_power_mW-units': 'mW',
-#                'yellow_optical_power_pd': yellow_optical_power_pd,
-#                'yellow_optical_power_pd-units': 'V',
-#                'yellow_optical_power_mW': yellow_optical_power_mW,
-#                'yellow_optical_power_mW-units': 'mW',
+               'collection_filter': collection_filter,
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,

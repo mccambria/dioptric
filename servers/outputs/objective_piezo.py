@@ -31,6 +31,7 @@ import logging
 import numpy
 import nidaqmx.stream_writers as stream_writers
 import socket
+import Path
 
 
 class ObjectivePiezo(LabradServer):
@@ -48,11 +49,10 @@ class ObjectivePiezo(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
+        p.cd(['', 'Config', 'DeviceIDs'])
         p.get('objective_piezo_model')
-        p.get('gcs_dll_path')
         p.get('objective_piezo_serial')
-        p.cd(['Wiring', 'Daq'])
+        p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('ao_objective_piezo')
         p.get('di_clock')
         result = await p.send()
@@ -60,6 +60,9 @@ class ObjectivePiezo(LabradServer):
 
     def on_get_config(self, config):
         # Load the generic device
+        gcs_dll_path = str(Path.home())
+        gcs_dll_path += '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
+        gcs_dll_path += '\\servers\\outputs\\GCSTranslator'
         self.piezo = GCSDevice(devname=config[0], gcsdll=config[1])
         # Connect the specific device with the serial number
         self.piezo.ConnectUSB(config[2])

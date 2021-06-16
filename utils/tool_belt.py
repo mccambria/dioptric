@@ -41,17 +41,12 @@ class States(Enum):
     ZERO = auto()
     HIGH = auto()
 
-def get_signal_generator_name(state):
-    if state.value == States.LOW.value:
-        signal_generator_name = 'signal_generator_sg394' # or 'signal_generator_bnc835'
-        # signal_generator_name = 'signal_generator_tsg4104a'
-    elif state.value == States.HIGH.value:
-        signal_generator_name = 'signal_generator_tsg4104a'
-        # signal_generator_name = 'signal_generator_sg394'
-    return signal_generator_name
+def get_signal_generator_name(cxn, state):
+    return get_registry_entry(cxn, 'sig_gen_{}'.format(state.value),
+                              ['', 'Config', 'Microwaves'])
 
 def get_signal_generator_cxn(cxn, state):
-    signal_generator_name = get_signal_generator_name(state)
+    signal_generator_name = get_signal_generator_name(cxn, state)
     signal_generator_cxn = eval('cxn.{}'.format(signal_generator_name))
     return signal_generator_cxn
 
@@ -494,7 +489,25 @@ def get_shared_parameters_dict_sub(cxn):
 
 
 def get_nv_sig_units():
-    return 'in shared_parameters'
+    return 'in config'
+
+
+def set_filter(cxn, name, filter):
+    """Name should be either 'collection' or a laser name"""
+
+
+def get_filter_server(cxn, name):
+    """Name should be either 'collection' or a laser name"""
+
+    # return an actual reference to the appropriate server so it can just
+    # be used directly
+    if name == 'collection':
+        server_name = get_registry_entry(cxn, 'collection_filter_server',
+                                         ['', 'Config'])
+    else:
+        server_name = get_registry_entry(cxn, 'filter_server',
+                                         ['', 'Config', 'Lasers', name])
+    return getattr(cxn, server_name)
 
 
 def get_xy_server(cxn):
@@ -505,13 +518,13 @@ def get_xy_server(cxn):
 
     # return an actual reference to the appropriate server so it can just
     # be used directly
-    return getattr(cxn, get_registry_entry(cxn, 'xy_server', ['Config']))
+    return getattr(cxn, get_registry_entry(cxn, 'xy_server', ['', 'Config']))
 
 
 def get_z_server(cxn):
     """Same as get_xy_server but for the fine z control server"""
 
-    return getattr(cxn, get_registry_entry(cxn, 'z_server', ['Config']))
+    return getattr(cxn, get_registry_entry(cxn, 'z_server', ['', 'Config']))
 
 
 def get_registry_entry(cxn, key, directory):
@@ -821,6 +834,9 @@ def color_ind_err(color_ind):
     if color_ind != 532 or color_ind != 589:
         raise RuntimeError('Value of color_ind must be 532 or 589.'+
                            '\nYou entered {}'.format(color_ind))
+
+def check_laser_power(laser_name, laser_power):
+    pass
 
 def aom_ao_589_pwr_err(aom_ao_589_pwr):
     if aom_ao_589_pwr < 0 or aom_ao_589_pwr > 1.0:

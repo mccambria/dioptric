@@ -49,7 +49,7 @@ class ApdTagger(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
+        p.cd(['', 'Config', 'DeviceIDs'])
         p.get('time_tagger_serial')
         p.cd(['Wiring', 'Tagger'])
         p.get('di_clock')

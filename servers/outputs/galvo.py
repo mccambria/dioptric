@@ -47,7 +47,7 @@ class Galvo(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd(['Config', 'Wiring', 'Daq'])
+        p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('ao_galvo_x')
         p.get('ao_galvo_y')
         p.get('di_clock')

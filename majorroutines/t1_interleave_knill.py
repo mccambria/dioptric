@@ -172,7 +172,7 @@ def unpack_interleave(data, num_runs=None):
         tool_belt.save_raw_data(individual_raw_data, file_path)
         tool_belt.save_figure(individual_fig, file_path)
 
-        # Sleep for 1.1 seconds so the files don't save over eachother
+        # Sleep for 1.1 seconds so the files don't save over each other
         time.sleep(1.1)
 
 
@@ -194,7 +194,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     # polarization_time = shared_params['polarization_dur']
-    polarization_time = 1E5
+    polarization_time = nv_sig['spin_pol_dur']
     # time of illumination during which signal readout occurs
     signal_time = polarization_time
     # time of illumination during which reference readout occurs

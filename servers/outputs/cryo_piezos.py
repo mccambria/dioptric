@@ -52,10 +52,10 @@ class CryoPiezos(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd(['', 'Config'])
+        p.cd(['', 'Config', 'DeviceIDs'])
         p.get('cryo_piezos_ip')
+        p.cd(['', 'Config', 'Positioning'])
         p.get('cryo_piezos_voltage')
-        p.cd(['', 'SharedParameters'])
         p.get('z_drift_adjust')
         result = await p.send()
         return result['get']

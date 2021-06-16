@@ -34,6 +34,7 @@ import sys
 import utils.tool_belt as tool_belt
 import logging
 import socket
+from pathlib import Path
 
 
 class PulseStreamer(LabradServer):
@@ -50,10 +51,9 @@ class PulseStreamer(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
+        p.cd(['', 'Config', 'DeviceIDs'])
         p.get('pulse_streamer_ip')
-        p.get('sequence_library_path')
-        p.cd(['Wiring', 'Pulser'])
+        p.cd(['', 'Config', 'Wiring', 'Pulser'])
         p.dir()
         result = await p.send()
         return result
@@ -61,7 +61,10 @@ class PulseStreamer(LabradServer):
     def on_get_config(self, config):
         get_result = config['get']
         self.pulser = Pulser(get_result[0])
-        sys.path.append(get_result[1])
+        sequence_library_path = str(Path.home())
+        sequence_library_path += '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
+        sequence_library_path += '\\servers\\timing\\sequencelibrary'
+        sys.path.append(sequence_library_path)
         reg_keys = config['dir'][1]  # dir returns subdirs followed by keys
         wiring = ensureDeferred(self.get_wiring(reg_keys))
         wiring.addCallback(self.on_get_wiring, reg_keys)
