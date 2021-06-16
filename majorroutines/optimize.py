@@ -382,21 +382,26 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
     if (magnet_angle is not None) and hasattr(cxn, 'rotation_stage_ell18k'):
         cxn.rotation_stage_ell18k.set_angle(magnet_angle)
 
-    # see if the NV
-    ### what if instead, we can put in a dictionary entry in the NV that, if
-    # there, optimize will see it and not be run. i.e. nv_sig["disable_opt"] ###
-    try:
-        if not nv_sig['single']:
-            return None
-    except Exception:
-        pass
-
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
     passed_coords = nv_sig['coords']
     adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig['coords'] = adjusted_coords
+    
+    # Disable optimzie in nv_sig. If disabled, set coordinates to adjusted
+    # coords (as well as set color filter if possible)
+    try:
+        if nv_sig['disable_opt']:
+            coords = adjusted_nv_sig['coords']
+            tool_belt.set_xyz(cxn, coords)
+            # After we've optimized, set the color filter back to what we want
+            if hasattr(cxn, 'filter_slider_ell9k_color'):
+                measure_color_filter = nv_sig['color_filter']
+                cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
+            return coords
+    except Exception:
+        pass
 
     # Get the shared parameters from the registry
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -404,17 +409,6 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
     expected_count_rate = adjusted_nv_sig['expected_count_rate']
 
     opti_succeeded = False
-
-    # If optimize is disabled, then this routine just sets the galvo at the
-    # passed coordinates, and does not try to optimize
-    if disable:
-        coords = adjusted_nv_sig['coords']
-        tool_belt.set_xyz(cxn, coords)
-        # After we've optimized, set the color filter back to what we want
-        measure_color_filter = nv_sig['color_filter']
-        cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
-
-        return coords
 
     # %% Try to optimize
 

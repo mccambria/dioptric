@@ -432,13 +432,14 @@ if __name__ == '__main__':
 
     # %% Shared parameters
 
-    apd_indices = [0]
-#    apd_indices = [0, 1]
+#    apd_indices = [0]
+    apd_indices = [0, 1]
 
     sample_name = 'goeppert-mayer'
 
     search = { 'coords':[0, 0 , 4.9],
             'name': '{}-search'.format(sample_name),
+#            'disable_opt': True,
             'expected_count_rate': None,'nd_filter': 'nd_0.5',
             'color_filter': '635-715 bp',
 #            'color_filter': '715 lp',
@@ -527,7 +528,7 @@ if __name__ == '__main__':
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]
 
-#            do_optimize(nv_sig, apd_indices, '515a')
+            do_optimize(nv_sig, apd_indices, '515a')
 #            do_optimize(nv_sig, apd_indices, 532)
 
 #            [x, y, z] = nv_sig['coords']
