@@ -511,7 +511,7 @@ if __name__ == '__main__':
     # nv_sig = { 'coords': [0.0, 0.0, 35],
     nv_sig = { 'coords': [0.075, -0.045, 35],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
+            'expected_count_rate': 1000, 'nd_filter': nd, 'disable_opt': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
             'resonance_LOW': 2.8036, 'rabi_LOW': 242.9, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9512, 'rabi_HIGH': 219.6, 'uwave_power_HIGH': 12.0}   # 14.5 max
@@ -531,7 +531,7 @@ if __name__ == '__main__':
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(-770, 72)
         
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
@@ -550,7 +550,7 @@ if __name__ == '__main__':
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
-        do_t1_interleave_knill(nv_sig, apd_indices)
+        # do_t1_interleave_knill(nv_sig, apd_indices)
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
