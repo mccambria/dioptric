@@ -190,7 +190,7 @@ def main(nv_sig, run_time, apd_indices, color_ind = 532, continuous=False):
 
     return average, st_dev
 
-def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind = 532, continuous=False):
+def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
 
     # %% Some initial setup
 
@@ -213,7 +213,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind = 532, continuou
 
     # %% Optimize
 
-#    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     coords = nv_sig['coords']
     drift = tool_belt.get_drift()
     adj_coords = []

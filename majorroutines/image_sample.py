@@ -606,7 +606,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     xy_server = tool_belt.get_xy_server(cxn)
     xy_delay = tool_belt.get_registry_entry(cxn, 'xy_delay', ['', 'Config', 'Positioning'])
-    # Get the scale in um per volt
+    # Get the scale in um per unit
     xy_scale = tool_belt.get_registry_entry(cxn, 'xy_nm_per_unit', ['', 'Config', 'Positioning'])
     if xy_scale == -1:
         um_scaled = False
@@ -618,7 +618,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Load the PulseStreamer
     
     readout = nv_sig['imaging_readout_dur']
+    
     readout_sec = readout / 10**9
+    readout_us = readout / 10**3
 
     seq_args = [xy_delay, readout, laser_name, laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -646,8 +648,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     y_high = y_voltages[y_num_steps-1]
 
     pixel_size = x_voltages[1] - x_voltages[0]
-
-    readout_us = float(readout) / 10**3
 
     # %% Set up the APD
 
