@@ -142,53 +142,8 @@ def create_figure(file_name, threshold, sub_folder = None):
 # %%
 if __name__ == '__main__':
     
-#    image_file = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_03/2021_03_23-13_19_10-goeppert-mayer-nv1-2021_03_17' #dark
-#    image_file = 'pc_rabi/branch_Spin_to_charge/moving_target_siv_init/2021_03/2021_03_23-13_37_37-goeppert-mayer-nv1-2021_03_17' #bright
-    
-    folder = 'pc_rabi/branch_Spin_to_charge/moving_target/2020_12'
-    # nv13_2021_04_02
-    # 50 ms
-#    image_file_nv = '2021_04_05-19_19_19-goeppert-mayer-nv13_2021_04_02'
-    # 25 ms
-#    image_file_nv = '2021_04_05-22_10_54-goeppert-mayer-nv13_2021_04_02'
-    # 10 ms
-#    image_file_nv = '2021_04_06-00_42_42-goeppert-mayer-nv13_2021_04_02'
-    # 5 ms
-#    image_file_nv = '2021_04_06-03_07_50-goeppert-mayer-nv13_2021_04_02'
-    # 1 ms
-#    image_file_nv = '2021_04_06-05_27_42-goeppert-mayer-nv13_2021_04_02'
-    # 10 ms zoom (E6)
-#    image_file_nv = '2021_04_13-23_28_12-johnson-nv0_2021_04_13'
-    # 10 ms zoom
-    image_file_nv = '2021_04_06-07_59_32-goeppert-mayer-nv13_2021_04_02'
-    # 25 ms g/g zoom
-#    image_file_nv = '2021_04_08-23_58_17-goeppert-mayer-nv13_2021_04_02'
-    # 25 ms r/g zoom
-#    image_file_nv = '2021_04_08-21_47_39-goeppert-mayer-nv13_2021_04_02'
-    
-    # g/g
-#    image_file_nv = '2021_04_14-14_41_40-johnson-nv0_2021_04_13'
-    # r/g
-#    image_file_nv = '2021_04_14-15_18_32-johnson-nv0_2021_04_13'
-    # r/r
-#    image_file_nv = '2021_04_14-16_32_01-johnson-nv0_2021_04_13'
-    # g/r
-#    image_file_nv = '2021_04_14-15_55_20-johnson-nv0_2021_04_13'
-    
-    # NV5
-#    image_file_nv = '2021_04_21-09_52_08-goeppert-mayer-nv5_2021_04_15'
-    
-    # 300 ms
-#    image_file_nv = '2021_04_23-10_35_52-goeppert-mayer-nv5_2021_04_15'
-#    threshold = 18
-    image_file_nv = '2021_04_16-15_26_05-goeppert-mayer-nv5_2021_04_15'
-    threshold = 18
-    # 100 ms
-#    image_file_nv = '2021_04_23-11_06_33-goeppert-mayer-nv5_2021_04_15'
-#    threshold = 8
-    # 60 ms
-#    image_file_nv = '2021_04_23-10_48_00-goeppert-mayer-nv5_2021_04_15'
-#    threshold = 5
+    folder = 'pc_rabi/branch_master/moving_target/2021_06'
 
-    image_file = '2020_12_08-18_04_02-goeppert-mayer-nv1_2020_12_02-img'
-    create_figure(folder + '/' + image_file_nv, None)
+    image_file = '2021_06_15-13_00_47-goeppert-mayer-nv6_2021_06_14'
+    threshold = 11
+    create_figure(folder + '/' + image_file, threshold)

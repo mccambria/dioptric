@@ -118,7 +118,7 @@ def measure(nv_sig, apd_indices, num_reps):
     return sig_counts, ref_counts
 def measure_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
-    tool_belt.reset_cfm_wout_uwaves(cxn)
+    tool_belt.reset_cfm(cxn)
 
 # Initial Calculation and setup
     
@@ -245,24 +245,26 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
 #%%     
 if __name__ == '__main__':
     # load the data here 
-    nv_sig  = { 'coords':[0.063, 0.269, 5.09],
-            'name': 'goeppert-mayer-nv5_2021_04_15',
-            'expected_count_rate': None,'nd_filter': 'nd_1.0',
-            'color_filter': '635-715 bp', 
+    sample_name = 'goeppert-mayer'
+    nv_sig  =  { 'coords':[0.003, 0.060, 4.9],
+            'name': '{}-nv6_2021_06_14'.format(sample_name),
+            'expected_count_rate': 40,'nd_filter': 'nd_0.5',
+            'color_filter': '635-715 bp',
 #            'color_filter': '715 lp',
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 30*10**7,  'am_589_power': 0.15,
+            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.08,
             'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
+            'pulsed_shelf_dur': 200,
             'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130,
+            'ao_638_pwr': 0.8,
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10,
             'ao_515_pwr': 0.65,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
 
-    determine_readout_dur(nv_sig, readout_times = [60*10**6, 100*10**6], readout_yellow_powers = [0.1, 0.15, 0.2],
+    determine_readout_dur(nv_sig, readout_times = [ 100*10**6], readout_yellow_powers = [0.15],
                            nd_filter = 'nd_0.5')
 
 #    file_name = 'pc_rabi/branch_Spin_to_charge/collect_charge_counts/2021_04/2021_04_28-17_18_59-goeppert-mayer-nv5_2021_04_15-nv_list'
@@ -273,6 +275,8 @@ if __name__ == '__main__':
 #    readout_time = nv_sig['pulsed_SCC_readout_dur']
 #    calculate_threshold_plot(readout_time/10**6, nv0_list[0],nvm_list[0], '', '')
 
+
+# use 60 ms, 0.15 ND filter
 
 
 

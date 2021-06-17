@@ -115,16 +115,16 @@ def read_manual_counts(cxn, period, apd_indices,
     return numpy.array(counts, dtype=int)
 
 
-def stationary_count_lite(cxn, nv_sig,  coords, shared_params, 
+def stationary_count_lite(cxn, nv_sig,  coords, shared_params,
                           apd_indices, color_ind = 532):
-    try: 
+    try:
         aom_ao_589_pwr = nv_sig['am_589_power']
         ao_515_pwr = nv_sig['ao_515_pwr']
     except Exception:
         print('589 nm and 515 nm AM voltages not specified in nv_sig. Setting them to 0')
         aom_ao_589_pwr = 0
         ao_515_pwr = 0
-        
+
     # Some initial values
     readout = shared_params['continuous_readout_dur']
     total_num_samples = 2
@@ -157,7 +157,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     x_center, y_center, z_center = coords
     readout = shared_params['continuous_readout_dur']
 
-    try: 
+    try:
         aom_ao_589_pwr = nv_sig['am_589_power']
         ao_515_pwr = nv_sig['ao_515_pwr']
     except Exception:
@@ -178,7 +178,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
                     apd_indices[0], color_ind]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
-                                                  seq_args_string) 
+                                                  seq_args_string)
         period = ret_vals[0]
 
         # Get the proper scan function
@@ -367,7 +367,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
                   plot_data=False, set_drift=True):
 
     # Reset the microscope and make sure we're at the right ND
-    tool_belt.reset_cfm_wout_uwaves(cxn)
+    tool_belt.reset_cfm(cxn)
 
     # Be sure the right ND is in place and the magnet aligned
     if hasattr(cxn, 'filter_slider_ell9k'):
@@ -382,15 +382,6 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
     if (magnet_angle is not None) and hasattr(cxn, 'rotation_stage_ell18k'):
         cxn.rotation_stage_ell18k.set_angle(magnet_angle)
 
-    # see if the NV
-    ### what if instead, we can put in a dictionary entry in the NV that, if
-    # there, optimize will see it and not be run. i.e. nv_sig["disable_opt"] ###
-    try:
-        if not nv_sig['single']:
-            return None
-    except Exception:
-        pass
-
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
     passed_coords = nv_sig['coords']
@@ -398,23 +389,26 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig['coords'] = adjusted_coords
 
+    # Disable optimzie in nv_sig. If disabled, set coordinates to adjusted
+    # coords (as well as set color filter if possible)
+    try:
+        if nv_sig['disable_opt']:
+            coords = adjusted_nv_sig['coords']
+            tool_belt.set_xyz(cxn, coords)
+            # After we've optimized, set the color filter back to what we want
+            if hasattr(cxn, 'filter_slider_ell9k_color'):
+                measure_color_filter = nv_sig['color_filter']
+                cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
+            return coords
+    except Exception:
+        pass
+
     # Get the shared parameters from the registry
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
 
     expected_count_rate = adjusted_nv_sig['expected_count_rate']
 
     opti_succeeded = False
-
-    # If optimize is disabled, then this routine just sets the galvo at the
-    # passed coordinates, and does not try to optimize
-    if disable:
-        coords = adjusted_nv_sig['coords']
-        tool_belt.set_xyz(cxn, coords)
-        # After we've optimized, set the color filter back to what we want
-        measure_color_filter = nv_sig['color_filter']
-        cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
-
-        return coords
 
     # %% Try to optimize
 
@@ -434,11 +428,11 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
         opti_coords = []
         scan_vals_by_axis = []
         counts_by_axis = []
-        
+
         # xy
         for axis_ind in range(2):
             ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
-                                        shared_params, 
+                                        shared_params,
                                         apd_indices, laser_ind, fig)
             opti_coords.append(ret_vals[0])
             scan_vals_by_axis.append(ret_vals[1])
@@ -562,6 +556,10 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
             tool_belt.save_figure(fig, filePath)
 
     # %% Return the optimized coordinates we found
+    if hasattr(cxn, 'filter_slider_ell9k_color'):
+        # After we've optimized, set the color filter back to what we want
+        measure_color_filter = nv_sig['color_filter']
+        cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
 
     return opti_coords
 

@@ -156,7 +156,7 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
 
     fig.set_tight_layout(True)
     if um_scaled:
-        axes_label = 'nm'#r'$\mu$m'
+        axes_label = r'$\mu$m'
 
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',
@@ -1126,27 +1126,27 @@ def reset_cfm_with_cxn(cxn):
     if hasattr(cxn, 'signal_generator_bnc835'):
         cxn.signal_generator_bnc835.reset()
     # 8/10/2020, mainly for Er lifetime measurements
-    if hasattr(cxn, 'filter_slider_ell9k_color'):
-        cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
-    if hasattr(cxn, 'filter_slider_ell9k'):
-        cxn.filter_slider_ell9k.set_filter('nd_0')
-
-def reset_cfm_wout_uwaves(cxn=None):
-    """Reset our cfm so that it's ready to go for a new experiment. Avoids
-    unnecessarily resetting components that may suffer hysteresis (ie the
-    components that control xyz since these need to be reset in any
-    routine where they matter anyway).
-
-    Exclude the uwaves
-    """
-
-    if cxn == None:
-        with labrad.connect() as cxn:
-            reset_cfm_without_uwaves_with_cxn(cxn)
-    else:
-        reset_cfm_without_uwaves_with_cxn(cxn)
-
-
-def reset_cfm_without_uwaves_with_cxn(cxn):
-    cxn.pulse_streamer.reset()
-    cxn.apd_tagger.reset()
+#    if hasattr(cxn, 'filter_slider_ell9k_color'):
+#        cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
+#    if hasattr(cxn, 'filter_slider_ell9k'):
+#        cxn.filter_slider_ell9k.set_filter('nd_0')
+#
+#def reset_cfm_wout_uwaves(cxn=None):
+#    """Reset our cfm so that it's ready to go for a new experiment. Avoids
+#    unnecessarily resetting components that may suffer hysteresis (ie the
+#    components that control xyz since these need to be reset in any
+#    routine where they matter anyway).
+#
+#    Exclude the uwaves
+#    """
+#
+#    if cxn == None:
+#        with labrad.connect() as cxn:
+#            reset_cfm_without_uwaves_with_cxn(cxn)
+#    else:
+#        reset_cfm_without_uwaves_with_cxn(cxn)
+#
+#
+#def reset_cfm_without_uwaves_with_cxn(cxn):
+#    cxn.pulse_streamer.reset()
+#    cxn.apd_tagger.reset()
