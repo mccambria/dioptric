@@ -94,5 +94,7 @@ if __name__ == '__main__':
     
     with labrad.connect() as cxn:
         tool_belt.set_xyz(cxn, [0.0, 0.0, 0])
-        cxn.filter_slider_ell9k.set_filter('nd_0')
+        cxn.filter_slider_ell9k.set_filter('nd_0.5')
     constant([3], 0.0, 0.0)
+    input('Press enter to stop...')
+    constant([], 0.0, 0.0)

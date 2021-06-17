@@ -29,34 +29,35 @@ from majorroutines.pulsed_resonance import double_gaussian_dip
 
 
 def main(nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_runs, uwave_power):
+         num_steps, num_runs, uwave_power, color_ind):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-                      num_steps, num_runs, uwave_power)
+                      num_steps, num_runs, uwave_power, color_ind)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-                  num_steps, num_runs, uwave_power):
+                  num_steps, num_runs, uwave_power, color_ind):
 
     # %% Initial calculations and setup
-    
+
     tool_belt.reset_cfm(cxn)
-    
+
     # Assume the low state
     state = States.HIGH
 
-    # Set up for the pulser - we can't load the sequence yet until after 
+    # Set up for the pulser - we can't load the sequence yet until after
     # optimize runs since optimize loads its own sequence
     shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
-    readout = 10*shared_parameters['continuous_readout_dur']
+    readout = shared_parameters['continuous_readout_dur']
     readout_sec = readout / (10**9)
     uwave_switch_delay = 1 * 10**6  # 1 ms to switch frequencies
-    seq_args = [readout, uwave_switch_delay, apd_indices[0], state.value]
+    am_589_power = nv_sig['am_589_power']
+    seq_args = [readout, am_589_power, uwave_switch_delay, apd_indices[0], state.value, color_ind]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     # print(seq_args_string)
     # return
 
-    file_name = os.path.basename(__file__)
+    file_name = 'resonance.py'
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -78,14 +79,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     ref_counts = numpy.empty([num_runs, num_steps])
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
-        
+
     # %% Make some lists and variables to save at the end
-    
+
 #    passed_coords = coords
-    
+
     opti_coords_list = []
 #    optimization_success_list = []
-    
+
     # %% Get the starting time of the function
 
     start_timestamp = tool_belt.get_time_stamp()
@@ -101,7 +102,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
-        
+
         # Optimize and save the coords we found
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords = nv_sig['coords']
@@ -126,22 +127,34 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             sig_gen_cxn.uwave_on()
 
             # Start the timing stream
+            cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_start()
 
-            new_counts = cxn.apd_tagger.read_counter_simple(2)
-            if len(new_counts) != 2:
-                raise RuntimeError('There should be exactly 2 samples per freq.')
+            # Previous method
+#            new_counts = cxn.apd_tagger.read_counter_simple(2)
+#            if len(new_counts) != 2:
+#                raise RuntimeError('There should be exactly 2 samples per freq.')
+#
+#            ref_counts[run_ind, step_ind] = new_counts[0]
+#            sig_counts[run_ind, step_ind] = new_counts[1]
 
-            ref_counts[run_ind, step_ind] = new_counts[0]
-            sig_counts[run_ind, step_ind] = new_counts[1]
-            
+            # New method
+            new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            sample_counts = new_counts[0]
+            ref_gate_counts = sample_counts[0::2]
+            ref_counts[run_ind, step_ind]  = sum(ref_gate_counts)
+
+            sig_gate_counts = sample_counts[1::2]
+            sig_counts[run_ind, step_ind] = sum(sig_gate_counts)
+
         cxn.apd_tagger.stop_tag_stream()
-        
+
         # %% Save the data we have incrementally for long measurements
 
         rawData = {'start_timestamp': start_timestamp,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                   'color_ind': color_ind,
                    'opti_coords_list': opti_coords_list,
                    'opti_coords_list-units': 'V',
                    'freq_center': freq_center,
@@ -202,7 +215,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     fig.canvas.flush_events()
 
     # %% Clean up and save the data
-    
+
     tool_belt.reset_cfm(cxn)
 
     timestamp = tool_belt.get_time_stamp()
@@ -260,3 +273,31 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         print('No resonances found')
         print('\n')
         return None, None
+
+# %%
+
+if __name__ == '__main__':
+
+    file_green = '2020_05_13-09_41_28-hopper-ensemble'
+    file_no_green = '2020_05_13-09_47_24-hopper-ensemble'
+
+    data_green = tool_belt.get_raw_data('resonance/branch_Spin_to_charge/2020_05', file_green)
+    freq_center = data_green['freq_center']
+    freq_range = data_green['freq_range']
+    num_steps = data_green['num_steps']
+    half_freq_range = freq_range / 2
+    freq_low = freq_center - half_freq_range
+    freq_high = freq_center + half_freq_range
+    freqs = numpy.linspace(freq_low, freq_high, num_steps)
+
+    norm_avg_sig_green = numpy.array(data_green['norm_avg_sig'])
+
+    data_no_green = tool_belt.get_raw_data('resonance/branch_Spin_to_charge/2020_05', file_no_green)
+    norm_avg_sig_no_green = numpy.array(data_no_green['norm_avg_sig'])
+
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    ax.plot(freqs, norm_avg_sig_green, 'g', label='with 1000 s green laser')
+    ax.plot(freqs, norm_avg_sig_no_green, 'b', label='without 1000 s green laser')
+    ax.set_xlabel('Frequency (GHz)')
+    ax.set_ylabel('Contrast (arb. units)')
+    ax.legend()

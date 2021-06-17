@@ -78,7 +78,7 @@ class ObjectivePiezo(LabradServer):
 
         # Write the initial voltages and stream the rest
         num_voltages = len(voltages)
-        self.write(c, voltages[0])
+        self.write_z(c, voltages[0])
         stream_voltages = voltages[1:num_voltages]
         stream_voltages = numpy.ascontiguousarray(stream_voltages)
         num_stream_voltages = num_voltages - 1

@@ -78,11 +78,10 @@ def create_fit_figure(uwave_time_range, uwave_freq, num_steps, norm_avg_sig,
     ax.set_ylabel('Contrast (arb. units)')
     ax.set_title('Rabi Oscillation Of NV Center Electron Spin')
     ax.legend()
-    
     text_freq = 'Resonant frequency:' + '%.3f'%(uwave_freq) + 'GHz'
-    
+
     A_0 = 1- popt[0]
-    
+
     text_popt = '\n'.join((r'$C + A_0 e^{-t/d} \mathrm{cos}(2 \pi \nu t + \phi)$',
                       r'$C = $' + '%.3f'%(popt[0]),
                       r'$A_0 = $' + '%.3f'%(A_0),
@@ -165,12 +164,12 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
          num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
-        rabi_per = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
+        rabi_per, sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                       num_steps, num_reps, num_runs)
-        
+
         return rabi_per
-    
-    
+
+
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                   num_steps, num_reps, num_runs):
 
@@ -240,7 +239,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
-
     for run_ind in range(num_runs):
 
         print('Run index: {}'. format(run_ind))
@@ -250,7 +248,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, aom_ao_589_pwr = 1.0, disable = False)
+#        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices, 532)
         opti_coords_list.append(opti_coords)
 
         # Apply the microwaves
@@ -273,16 +272,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         # Shuffle the list of indices to use for stepping through the taus
         shuffle(tau_ind_list)
 
+#        start_time = time.time()
         for tau_ind in tau_ind_list:
 #        for tau_ind in range(len(taus)):
 #            print('Tau: {} ns'. format(taus[tau_ind]))
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
-
+#            print(taus[tau_ind])
             # add the tau indexxes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind)
-
             # Stream the sequence
             seq_args = [taus[tau_ind], polarization_time, reference_time,
                         signal_wait_time, reference_wait_time,
@@ -291,22 +290,32 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                         apd_indices[0], state.value]
             seq_args = [int(el) for el in seq_args]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
+            # Clear the tagger buffer of any excess counts
+            cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_immediate(file_name, num_reps,
                                                 seq_args_string)
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+#            print(new_counts)
 
             sample_counts = new_counts[0]
 
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
             sig_counts[run_ind, tau_ind] = sum(sig_gate_counts)
+#            print('Sig counts: {}'.format(sum(sig_gate_counts)))
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
             ref_counts[run_ind, tau_ind] = sum(ref_gate_counts)
+#            print('Ref counts: {}'.format(sum(ref_gate_counts)))
 
+#            run_time = time.time()
+#            run_elapsed_time = run_time - start_time
+#            start_time = run_time
+#            print('Tau: {} ns'.format(taus[tau_ind]))
+#            print('Elapsed time {}'.format(run_elapsed_time))
         cxn.apd_tagger.stop_tag_stream()
 
         # %% Save the data we have incrementally for long measurements
@@ -356,11 +365,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
-    ax.plot(taus, avg_sig_counts, 'r-')
-    ax.plot(taus, avg_ref_counts, 'g-')
+    ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
+    ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
     # ax.plot(tauArray, countsBackground, 'o-')
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
+    ax.legend()
 
     ax = axes_pack[1]
     ax.plot(taus , norm_avg_sig, 'b-')
@@ -421,11 +431,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, file_path + '-fit')
     tool_belt.save_raw_data(raw_data, file_path)
-    
+
     if (fit_func is not None) and (popt is not None):
-        return rabi_period
+        return rabi_period, sig_counts, ref_counts
     else:
-        return None
+        return None, sig_counts, ref_counts
 
 
 # %% Run the file

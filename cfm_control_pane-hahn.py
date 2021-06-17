@@ -87,8 +87,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 150
 #    num_steps = 135
     # num_steps = 120
-    num_steps = 90
-    # num_steps = 60
+    # num_steps = 90
+    num_steps = 60
     # num_steps = 50
     # num_steps = 20
 
@@ -302,12 +302,12 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 400
-    num_reps = 5
+    num_runs = 250
+    num_reps = 50
     num_steps = 12
     min_tau = 20e3
-    max_tau_omega = 17e9
-    max_tau_gamma = 17e9
+    max_tau_omega = 1540e6
+    max_tau_gamma = 800e6
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps],
@@ -508,31 +508,30 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    # nv_sig = { 'coords': [0.007, +0.093, 10],
-    # nv_sig = { 'coords': [0.029, 0.068, 167],
-    nv_sig = { 'coords': [0.200, 0.080, 0],
+    # nv_sig = { 'coords': [0.0, 0.0, 35],
+    nv_sig = { 'coords': [0.075, -0.045, 35],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
-            'expected_count_rate': 1000, 'nd_filter': nd, 'single': False,
+            'expected_count_rate': 1000, 'nd_filter': nd, 'disable_opt': False,
             'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.8038, 'rabi_LOW': 302.2, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9513, 'rabi_HIGH': 237.9, 'uwave_power_HIGH': 12.0}   # 14.5 max
+            'resonance_LOW': 2.8036, 'rabi_LOW': 242.9, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9512, 'rabi_HIGH': 219.6, 'uwave_power_HIGH': 12.0}   # 14.5 max
     
     
     # %% Functions to run
 
     try:
         
-        # for x_pos in numpy.linspace(-1250,-1750,11,dtype=int): 
+        # for pos in numpy.linspace(35, -50, 11, dtype=int): 
         #     with labrad.connect() as cxn:
-        #         cxn.cryo_piezos.write_xy(x_pos, 915)
+        #         cxn.cryo_piezos.write_xy(pos, 915)
         #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         #     do_image_sample(nv_sig, apd_indices)
         
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0, 0)
+        #     cxn.cryo_piezos.write_xy(-770, 72)
         
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
@@ -551,7 +550,7 @@ if __name__ == '__main__':
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
-        do_t1_interleave_knill(nv_sig, apd_indices)
+        # do_t1_interleave_knill(nv_sig, apd_indices)
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
@@ -571,7 +570,7 @@ if __name__ == '__main__':
         #     time.sleep(300) 
         
         # tool_belt.init_safe_stop()
-        # for z in numpy.linspace(70, 100, 7, dtype=int):  
+        # for z in numpy.linspace(35, -50, 18, dtype=int):  
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig['coords'][2] = int(z)

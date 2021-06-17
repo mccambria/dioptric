@@ -37,7 +37,7 @@ import socket
 class ApdTagger(LabradServer):
     name = 'apd_tagger'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG, 
+    logging.basicConfig(level=logging.DEBUG,
                 format='%(asctime)s %(levelname)-8s %(message)s',
                 datefmt='%y-%m-%d_%H-%M-%S',
                 filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
@@ -46,7 +46,7 @@ class ApdTagger(LabradServer):
         self.reset_tag_stream_state()
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
-    
+
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd('Config')
@@ -56,7 +56,7 @@ class ApdTagger(LabradServer):
         p.dir()
         result = await p.send()
         return result
-            
+
     def on_get_config(self, config):
         get_result = config['get']
         tagger_serial = get_result[0]
@@ -75,7 +75,7 @@ class ApdTagger(LabradServer):
         if len(apd_sub_dirs) > 0:
             wiring = ensureDeferred(self.get_wiring(apd_sub_dirs))
             wiring.addCallback(self.on_get_wiring, apd_indices)
-    
+
     async def get_wiring(self, apd_sub_dirs):
         p = self.client.registry.packet()
         for sub_dir in apd_sub_dirs:
@@ -108,7 +108,7 @@ class ApdTagger(LabradServer):
         timestamps = buffer.getTimestamps()
         channels = buffer.getChannels()
         return timestamps, channels
-    
+
     def read_counter_setting_internal(self, num_to_read):
         if self.stream is None:
             logging.error('read_counter attempted while stream is None.')
@@ -137,15 +137,19 @@ class ApdTagger(LabradServer):
                 msg = 'Read {} samples, only requested {}'.format(len(counts),
                             num_to_read)
                 logging.error(msg)
-                
+
+        overflows = self.tagger.getOverflowsAndClear()
+        if overflows > 0:
+            logging.debug('Overflows: {}'.format(overflows))
+
         return counts
-        
+
     def read_counter_internal(self, num_to_read):
         if self.stream is None:
             logging.error('read_counter_internal attempted while stream ' \
                           'is None.')
             return
-        
+
         timestamps, channels = self.read_raw_stream()
 
         # Find clock clicks (sample breaks)
@@ -176,37 +180,37 @@ class ApdTagger(LabradServer):
                     sample_end_ind]
                 sample_channels = channels[previous_sample_end_ind:
                     sample_end_ind]
-                
+
             # Make sure we've got arrays or else comparison won't produce
             # the boolean array we're looking for when we find gate clicks
             sample_timestamps = numpy.array(sample_timestamps)
             sample_channels = numpy.array(sample_channels)
-            
+
             sample_counts = []
             sample_counts_append = sample_counts.append
-            
+
             # Loop through the APDs
             for apd_index in self.stream_apd_indices:
-                
+
                 apd_channel = self.tagger_di_apd[apd_index]
                 gate_open_channel = self.tagger_di_gate[apd_index]
                 gate_close_channel = -gate_open_channel
-            
+
                 # Find gate open clicks
                 result = numpy.nonzero(sample_channels == gate_open_channel)
                 gate_open_click_inds = result[0].tolist()
-    
+
                 # Find gate close clicks
                 # Gate close channel is negative of gate open channel,
                 # signifying the falling edge
                 result = numpy.nonzero(sample_channels == gate_close_channel)
                 gate_close_click_inds = result[0].tolist()
-    
+
                 # The number of APD clicks is simply the number of items in the
                 # buffer between gate open and gate close clicks
                 channel_counts = []
                 channel_counts_append = channel_counts.append
-                
+
                 for ind in range(len(gate_open_click_inds)):
                     gate_open_click_ind = gate_open_click_inds[ind]
                     gate_close_click_ind = gate_close_click_inds[ind]
@@ -215,12 +219,12 @@ class ApdTagger(LabradServer):
                     gate_window = gate_window.tolist()
                     gate_count = gate_window.count(apd_channel)
                     channel_counts_append(gate_count)
-                    
+
                 sample_counts_append(channel_counts)
 
             return_counts_append(sample_counts)
             previous_sample_end_ind = sample_end_ind
-        
+
         if sample_end_ind is None:
             # No samples were clocked - add everything to leftovers
             self.leftover_timestamps.extend(timestamps.tolist())
@@ -231,12 +235,12 @@ class ApdTagger(LabradServer):
             self.leftover_channels = channels[sample_end_ind:].tolist()
 
         return return_counts
-    
+
     def stop_tag_stream_internal(self):
         if self.stream is not None:
             self.stream.stop()
         self.reset_tag_stream_state()
-    
+
     def reset_tag_stream_state(self):
         self.stream = None
         self.stream_apd_indices = []
@@ -259,7 +263,7 @@ class ApdTagger(LabradServer):
         """Expose a raw tag stream which can be read with read_tag_stream and
         closed with stop_tag_stream.
         """
-        
+
         # Make sure the existing stream is stopped and we have fresh state
         if self.stream is not None:
             logging.warning('New stream started before existing stream was ' \
@@ -267,11 +271,11 @@ class ApdTagger(LabradServer):
             self.stop_tag_stream_internal()
         else:
             self.reset_tag_stream_state()
-        
+
         channels = []
         for ind in apd_indices:
             channels.append(self.tagger_di_apd[ind])
-        # If gate_indices is unspecified, add gates for all the 
+        # If gate_indices is unspecified, add gates for all the
         # passed APDs by default
         if gate_indices is None:
             gate_indices = apd_indices
@@ -285,19 +289,28 @@ class ApdTagger(LabradServer):
         self.stream_channels = channels
         # De-duplicate the channels list
         channels = list(set(channels))
-        self.stream = TimeTagger.TimeTagStream(self.tagger, 10**6, channels)
+        self.stream = TimeTagger.TimeTagStream(self.tagger, 10**6, channels) # SCC branch used 10**9?
         # When you set up a measurement, it will not start recording data
         # immediately. It takes some time for the tagger to configure the fpga,
-        # etc. The sync call waits until this process is complete. 
+        # etc. The sync call waits until this process is complete.
         self.tagger.sync()
         self.stream_apd_indices = apd_indices
-        
+
     @setting(2)
     def stop_tag_stream(self, c):
         """Closes the stream started with start_tag_stream. Resets
         leftovers.
         """
         self.stop_tag_stream_internal()
+
+    @setting(9)
+    def clear_buffer(self, c):
+        """Clear the hardware's internal buffer. Should be called before
+        starting a pulse sequence."""
+        _ = self.stream.getData()
+        # We also don't care about overflows here, so toss those
+        _ = self.tagger.getOverflowsAndClear()
+
 
     @setting(3, returns='*s*i')
     def read_tag_stream(self, c):
@@ -321,55 +334,78 @@ class ApdTagger(LabradServer):
 
     @setting(5, num_to_read='i', returns='*w')
     def read_counter_simple(self, c, num_to_read=None):
-        
+
         complete_counts = self.read_counter_setting_internal(num_to_read)
-        
+
         # To combine APDs we assume all the APDs have the same gate
         gate_channels = list(self.tagger_di_gate.values())
         first_gate_channel = gate_channels[0]
         if not all(val == first_gate_channel for val in gate_channels):
             logging.critical('Combined counts from APDs with ' \
                              'different gates.')
-        
+
         # Just find the sum of each sample in complete_counts
         return_counts = [numpy.sum(sample, dtype=int) for sample
                          in complete_counts]
-            
+
         return return_counts
 
     @setting(6, num_to_read='i', returns='*2w')
     def read_counter_separate_gates(self, c, num_to_read=None):
-        
+
         complete_counts = self.read_counter_setting_internal(num_to_read)
-        
+
         # To combine APDs we assume all the APDs have the same gate
         gate_channels = list(self.tagger_di_gate.values())
         first_gate_channel = gate_channels[0]
         if not all(val == first_gate_channel for val in gate_channels):
             logging.critical('Combined counts from APDs with ' \
                              'different gates.')
-        
+
         # Add the APD counts as vectors for each sample in complete_counts
         return_counts = [numpy.sum(sample, 0, dtype=int).tolist() for sample
                          in complete_counts]
-            
+
         return return_counts
 
     @setting(7, num_to_read='i', returns='*2w')
     def read_counter_separate_apds(self, c, num_to_read=None):
-        
+
         complete_counts = self.read_counter_setting_internal(num_to_read)
-        
+
         # Just find the sum of the counts for each APD for each
         # sample in complete_counts
         return_counts = [[numpy.sum(apd_counts, dtype=int) for apd_counts
                           in sample] for sample in complete_counts]
-            
+
         return return_counts
 
     @setting(8)
     def reset(self, c):
         self.stop_tag_stream_internal()
+
+    @setting(10, returns='*s*i')
+    def read_tag_stream_master(self, c):
+        """Read the stream started with start_tag_stream. Returns two lists,
+        each as long as the number of counts that have occurred since the
+        buffer was refreshed. First list is timestamps in ps, second is
+        channel indices. The list is now a string, so that transferring it
+        thru labrad is quicker.
+        """
+        if self.stream is None:
+            logging.error('read_tag_stream attempted while stream is None.')
+            return
+        timestamps, channels = self.read_raw_stream()
+        # Convert timestamps to strings since labrad does not support int64s
+        # It must be converted to int64s back on the client
+        timestamps = timestamps.astype(str).tolist()
+        return timestamps, channels
+#        ret_vals = []  # List of comma delimited strings to minimize data
+#        for ind in range(len(timestamps)):
+#            ret_vals.append('{},{}'.format(timestamps[ind], channels[ind]))
+#        delim = '.'
+#        ret_vals_string = delim.join(ret_vals)
+#        return ret_vals_string
 
 __server__ = ApdTagger()
 

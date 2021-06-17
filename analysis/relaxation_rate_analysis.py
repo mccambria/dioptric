@@ -135,11 +135,11 @@ def get_data_lists(folder_name):
 
             # Calculate the average signal counts over the runs, and st. error
 #            print(sig_counts)
-            avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-            ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
+            avg_sig_counts = numpy.average(sig_counts[:num_runs], axis=0)
+            ste_sig_counts = numpy.std(sig_counts[:num_runs], axis=0, ddof = 1) / numpy.sqrt(num_runs)
 
             # Assume reference is constant and can be approximated to one value
-            avg_ref = numpy.average(ref_counts[::])
+            avg_ref = numpy.average(ref_counts[:num_runs])
 
             # Divide signal by reference to get normalized counts and st error
             norm_avg_sig = avg_sig_counts / avg_ref
@@ -281,7 +281,7 @@ def get_data_lists(folder_name):
         except Exception:
             print('Skipping {}'.format(str(file)))
             continue
-
+    splitting_MHz = 232
     omega_exp_list = [zero_zero_counts, zero_zero_ste, \
                       zero_plus_counts, zero_plus_ste, \
                       zero_zero_time]
@@ -294,7 +294,7 @@ def get_data_lists(folder_name):
 def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = True):
 
     slow = True
-    
+
     path_folder = path + folder
     # Get the file list from the folder
     omega_exp_list, gamma_exp_list, \
@@ -325,7 +325,6 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         zero_plus_counts = omega_exp_list[2]
         zero_plus_ste = omega_exp_list[3]
         zero_zero_time = omega_exp_list[4]
-
         zero_relaxation_counts =  zero_zero_counts - zero_plus_counts
         zero_relaxation_ste = numpy.sqrt(zero_zero_ste**2 + zero_plus_ste**2)
 
@@ -352,7 +351,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                 # if slow:
                 #     omega_opti_params = numpy.array(init_params)
                 #     cov_arr = numpy.array([[0,0],[0,0]])
-                    
+
             # MCC
             print(omega_opti_params)
 
@@ -435,7 +434,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         init_params_list = [3*omega, 0.16]
     else:
         init_params_list = [2*omega, 0.40]
-        
+
     try:
         if offset:
 
@@ -467,7 +466,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
             # if slow:
             #     gamma_opti_params = numpy.array(init_params)
             #     cov_arr = numpy.array([[0,0],[0,0]])
-                    
+
         # MCC
         print(gamma_opti_params)
 
@@ -547,24 +546,24 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                     'omega-units': 'kHz',
                     'omega_ste': omega_ste,
                     'omega_ste-units': 'khz',
-                    'gamma': gamma,
-                    'gamma-units': 'kHz',
-                    'gamma_ste': gamma_ste,
-                    'gamma_ste-units': 'khz',
+#                    'gamma': gamma,
+#                    'gamma-units': 'kHz',
+#                    'gamma_ste': gamma_ste,
+#                    'gamma_ste-units': 'khz',
                     'zero_relaxation_counts': zero_relaxation_counts.tolist(),
                     'zero_relaxation_counts-units': 'counts',
                     'zero_relaxation_ste': zero_relaxation_ste.tolist(),
                     'zero_relaxation_ste-units': 'counts',
                     'zero_zero_time': zero_zero_time.tolist(),
                     'zero_zero_time-units': 'ms',
-                    'plus_relaxation_counts': plus_relaxation_counts.tolist(),
-                    'plus_relaxation_counts-units': 'counts',
-                    'plus_relaxation_ste': plus_relaxation_ste.tolist(),
-                    'plus_relaxation_ste-units': 'counts',
-                    'plus_plus_time': plus_plus_time.tolist(),
-                    'plus_plus_time-units': 'ms',
+#                    'plus_relaxation_counts': plus_relaxation_counts.tolist(),
+#                    'plus_relaxation_counts-units': 'counts',
+#                    'plus_relaxation_ste': plus_relaxation_ste.tolist(),
+#                    'plus_relaxation_ste-units': 'counts',
+#                    'plus_plus_time': plus_plus_time.tolist(),
+#                    'plus_plus_time-units': 'ms',
                     'omega_opti_params': omega_opti_params.tolist(),
-                    'gamma_opti_params': gamma_opti_params.tolist(),
+#                    'gamma_opti_params': gamma_opti_params.tolist(),
                     }
 
         file_name = '{}-analysis'.format(folder)
@@ -577,7 +576,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 85
+    temp = 125
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)
@@ -585,7 +584,7 @@ if __name__ == '__main__':
     # print('Omega: {}'.format(4000/(3*est_omega)))
     # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
 
-    path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
+    path = 'pc_hahn\\branch_master\\t1_interleave_knill\\data_collections\\'
     folders = [
                 'hopper-nv1_2021_03_16-{}K'.format(temp),
                 # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),

@@ -49,7 +49,7 @@ def iq_comps(phase):
 class ArbitraryWaveformGenerator(LabradServer):
     name = 'arbitrary_waveform_generator'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG, 
+    logging.basicConfig(level=logging.DEBUG,
                 format='%(asctime)s %(levelname)-8s %(message)s',
                 datefmt='%y-%m-%d_%H-%M-%S',
                 filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
@@ -73,11 +73,11 @@ class ArbitraryWaveformGenerator(LabradServer):
         resource_manager = visa.ResourceManager()
         self.wave_gen = resource_manager.open_resource(address)
         self.reset(None)
-        
-        
+
+
     @setting(3)
     def load_knill(self, c):
-        
+
         # There's a minimum number of points, thus * 16
         # phases = [0, +pi/2, 0] * 16
         phases = [pi/6, 0, pi/2, 0, pi/6,
@@ -87,78 +87,78 @@ class ArbitraryWaveformGenerator(LabradServer):
         #           pi/2, 0, pi/2,
         #           3*pi/2, pi, 3*pi/2,
         #           pi, pi/2, pi] * 4
-        
+
         self.load_iq(phases)
-        
-    
+
+
     def load_iq(self, phases):
         """
         Load IQ modulation
         """
-        
+
         self.wave_gen.write('TRIG1:SOUR EXT')
         self.wave_gen.write('TRIG2:SOUR EXT')
         self.wave_gen.write('TRIG1:SLOP POS')
         self.wave_gen.write('TRIG2:SLOP POS')
-        
+
         for chan in [1, 2]:
             source_name = 'SOUR{}:'.format(chan)
             self.wave_gen.write('{}FUNC:ARB:FILT OFF'.format(source_name))
             self.wave_gen.write('{}FUNC:ARB:ADV TRIG'.format(source_name))
             self.wave_gen.write('{}FUNC:ARB:PTP 2'.format(source_name))
-            
+
         # There's a minimum length of points you must send, so let's just
         # repeat until it's long enough
         while len(phases) < 32:
             phases *= 2
-            
+
         phase_comps = iq_comps(phases)
-        
+
         # Shift the last element to first to account for first pulse in seq
         # Then convert to string and trim the brackets
         comps = phase_comps[0]
         last_el = comps.pop()
         comps.insert(0, last_el)
-        seq = str(comps)[1:-1]  
+        seq = str(comps)[1:-1]
         self.wave_gen.write('SOUR1:DATA:ARB iqSwitch1, {}'.format(seq))
-        
+
         comps = phase_comps[1]
         last_el = comps.pop()
         comps.insert(0, last_el)
-        seq = str(comps)[1:-1] 
+        seq = str(comps)[1:-1]
         self.wave_gen.write('SOUR2:DATA:ARB iqSwitch2, {}'.format(seq))
-        
+
         for chan in [1, 2]:
             source_name = 'SOUR{}:'.format(chan)
             self.wave_gen.write('{}FUNC:ARB iqSwitch{}'.format(source_name, chan))
             self.wave_gen.write('{}FUNC ARB'.format(source_name))
-        
+
         self.wave_gen.write('OUTP1 ON')
         self.wave_gen.write('OUTP2 ON')
-        
+
         # When you load a sequence like this, it doesn't move to the first
         # point of the sequence until it gets a trigger. Supposedly just
         # 'TRIG[1:2]' forces a trigger event, but I can't get it to work.
-        # So let's just set the pulse streamer to constant for a second to 
+        # So let's just set the pulse streamer to constant for a second to
         # fake a trigger...
         time.sleep(0.1)  # Make sure everything is propagated
         ret_val = ensureDeferred(self.force_trigger())
         ret_val.addCallback(self.on_force_trigger)
-        
+
     async def force_trigger(self):
         self.client.pulse_streamer.constant([self.do_arb_wave_trigger])
-        # time.sleep(0.1) 
+        # time.sleep(0.1)
         # self.client.pulse_streamer.constant()
-        # time.sleep(0.1) 
+        # time.sleep(0.1)
         # self.client.pulse_streamer.constant([self.do_arb_wave_trigger])
-        
+
     def on_force_trigger(self):
         # Some delays included here to be sure everything actually happens
-        time.sleep(0.1) 
+        time.sleep(0.1)
         self.client.pulse_streamer.constant()
-        time.sleep(0.1) 
-        
-        
+        time.sleep(0.1)
+
+
     @setting(4)
     def test_sin(self, c):
         for chan in [1, 2]:
@@ -170,12 +170,12 @@ class ArbitraryWaveformGenerator(LabradServer):
         self.wave_gen.write('OUTP1 ON')
         self.wave_gen.write('SOUR2:PHAS 0')
         self.wave_gen.write('OUTP2 ON')
-        
+
     @setting(5)
     def wave_off(self, c):
         self.wave_gen.write('OUTP1 OFF')
         self.wave_gen.write('OUTP2 OFF')
-        
+
     @setting(6)
     def reset(self, c):
         self.wave_off(c)
@@ -190,15 +190,15 @@ __server__ = ArbitraryWaveformGenerator()
 if __name__ == '__main__':
     from labrad import util
     util.runServer(__server__)
-    
-    
+
+
     # phases = [pi/4, -pi/4] * 16
     # phase_comps = iq_comps(phases)
     # seq1 = str(phase_comps[1])[1:-1]  # Convert to string and trim the brackets
     # seq = '0.5, -0.5, ' * 16
     # seq2 = seq[:-2]
-    
+
     # print(seq1)
     # print(seq2)
-    
+
     # print(seq1 == seq2)
