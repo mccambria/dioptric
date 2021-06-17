@@ -22,6 +22,7 @@ timeout = 5
 ### END NODE INFO
 """
 
+
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
@@ -34,12 +35,14 @@ import socket
 class FilterSliderEll9k(LabradServer):
     name = 'filter_slider_ell9k'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG, 
-                format='%(asctime)s %(levelname)-8s %(message)s',
-                datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
+        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = filename.format(self.pc_name, self.name)
+        logging.basicConfig(level=logging.DEBUG, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%y-%m-%d_%H-%M-%S',
+                    filename=filename)
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -47,8 +50,6 @@ class FilterSliderEll9k(LabradServer):
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'DeviceIDs'])
         p.get('filter_slider_ell9k_address')
-        p.cd('FilterSliderEll9kFilterMapping')
-        p.dir()
         result = await p.send()
         return result
 
@@ -63,24 +64,6 @@ class FilterSliderEll9k(LabradServer):
         time.sleep(0.1)
         self.slider.flush()
         time.sleep(0.1)
-        filter_mapping_keys = config['dir'][1]
-        config = ensureDeferred(self.get_mapping(filter_mapping_keys))
-        config.addCallback(self.on_get_mapping, filter_mapping_keys)
-        
-    async def get_mapping(self, filter_mapping_keys):
-        # Set up the mapping from filter name to slider position
-        p = self.client.registry.packet()
-        for key in filter_mapping_keys:
-            p.get(key)
-        result = await p.send()
-        return result['get']
-            
-    def on_get_mapping(self, mapping, keys):
-        self.slider_positions = {}
-        for key_ind in range(len(keys)):
-            key = keys[key_ind]
-            pos = mapping[key_ind]
-            self.slider_positions[key] = pos
         # Set up the mapping from filter position to move command
         self.move_commands = {0: '0ma00000000'.encode(),
                               1: '0ma00000020'.encode(),
@@ -88,9 +71,8 @@ class FilterSliderEll9k(LabradServer):
                               3: '0ma00000060'.encode()}
         logging.debug('Init complete')
 
-    @setting(0, filter_name='s')
-    def set_filter(self, c, filter_name):
-        pos = self.slider_positions[filter_name]
+    @setting(0, pos='i')
+    def set_filter(self, c, pos):
         cmd = self.move_commands[pos]
         self.slider.write(cmd)
         self.slider.readline()

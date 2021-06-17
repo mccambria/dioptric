@@ -437,7 +437,7 @@ if __name__ == '__main__':
             'disable_opt': False, 'expected_count_rate': 1000,
             'imaging_laser': 'laser_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
             'spin_pol_laser': 'laser_532', 'spin_pol_laser_filter': nd, 'spin_pol_dur': 1E5,
-            'spin_readout_laser': '532', 'spin_readout_laser_filter': nd, 'spin_readout_dur': 350,
+            'spin_readout_laser': 'laser_532', 'spin_readout_laser_filter': nd, 'spin_readout_dur': 350,
             'magnet_angle': None,
             'resonance_LOW': 2.8036, 'rabi_LOW': 242.9, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9512, 'rabi_HIGH': 219.6, 'uwave_power_HIGH': 12.0}   # 14.5 max

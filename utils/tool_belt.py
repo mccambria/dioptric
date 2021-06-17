@@ -36,7 +36,6 @@ import socket
 
 
 class States(Enum):
-    """Do not update this without also updating get_state_signal_generator!"""
     LOW = auto()
     ZERO = auto()
     HIGH = auto()
@@ -492,21 +491,20 @@ def get_nv_sig_units():
     return 'in config'
 
 
-def set_filter(cxn, name, filter):
-    """Name should be either 'collection' or a laser name"""
+def set_filter(cxn, optics_name, filter_name):
+    """optics_name should be either 'collection' or a laser name"""
+    
+    filter_server = get_filter_server(cxn, optics_name)
+    pos = get_registry_entry(cxn, filter_name,
+                             ['', 'Config', 'Optics',
+                              optics_name, 'FilterMapping'])
+    filter_server.set_filter(pos)
 
 
-def get_filter_server(cxn, name):
-    """Name should be either 'collection' or a laser name"""
+def get_filter_server(cxn, optics_name):
 
-    # return an actual reference to the appropriate server so it can just
-    # be used directly
-    if name == 'collection':
-        server_name = get_registry_entry(cxn, 'collection_filter_server',
-                                         ['', 'Config'])
-    else:
-        server_name = get_registry_entry(cxn, 'filter_server',
-                                         ['', 'Config', 'Lasers', name])
+    server_name = get_registry_entry(cxn, 'filter_server',
+                                     ['', 'Config', 'Optics', optics_name])
     return getattr(cxn, server_name)
 
 
