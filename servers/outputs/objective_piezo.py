@@ -31,18 +31,19 @@ import logging
 import numpy
 import nidaqmx.stream_writers as stream_writers
 import socket
-import Path
+from pathlib import Path
 
 
 class ObjectivePiezo(LabradServer):
     name = 'objective_piezo'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG, 
-                format='%(asctime)s %(levelname)-8s %(message)s',
-                datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
+        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = filename.format(self.pc_name, self.name)
+        logging.basicConfig(level=logging.DEBUG, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.task = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
@@ -63,7 +64,7 @@ class ObjectivePiezo(LabradServer):
         gcs_dll_path = str(Path.home())
         gcs_dll_path += '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
         gcs_dll_path += '\\servers\\outputs\\GCSTranslator'
-        self.piezo = GCSDevice(devname=config[0], gcsdll=config[1])
+        self.piezo = GCSDevice(devname=config[0], gcs_dll_path=config[1])
         # Connect the specific device with the serial number
         self.piezo.ConnectUSB(config[2])
         # Just one axis for this device

@@ -132,6 +132,8 @@ def populate_img_array(valsToAdd, imgArray, writePos):
     writePos[:] = [xPos, yPos]
 
     return imgArray
+
+
 def on_click_image(event):
     """
     Click handler for images. Prints the click coordinates to the console.
@@ -335,7 +337,6 @@ def two_pulse_image_sample_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.reset_cfm(cxn)
     color_filter = nv_sig['color_filter']
     cxn.filter_slider_ell9k_color.set_filter(color_filter)
-
 
 
     shared_params = tool_belt.get_shared_parameters_dict(cxn)
@@ -586,17 +587,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.reset_cfm(cxn)
     
     if 'collection_filter' in nv_sig:
-        collection_filter = nv_sig['collection_filter']
-        collection_filter_server = tool_belt.get_filter_server(cxn, 
-                                                               'collection')
-        collection_filter_server.set_filter(collection_filter)
+        tool_belt.set_filter(cxn, 'collection', nv_sig['collection_filter'])
 
     laser_name = nv_sig['imaging_laser']
     if 'imaging_laser_filter' in nv_sig:
-        laser_filter = nv_sig['imaging_laser_filter']
-        laser_filter_server = tool_belt.get_laser_filter_server(cxn, 
-                                                                laser_name)
-        laser_filter_server.set_filter(laser_filter)
+        tool_belt.set_filter(cxn, laser_name, nv_sig['imaging_laser_filter'])
     if 'imaging_laser_power' in nv_sig:
         laser_power = nv_sig['imaging_laser_power']
     else:
@@ -623,9 +618,12 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Load the PulseStreamer
     
     readout = nv_sig['imaging_readout_dur']
+    readout_sec = readout / 10**9
 
     seq_args = [xy_delay, readout, laser_name, laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    # print(seq_args_string)
+    # return
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
     period = ret_vals[0]
@@ -667,7 +665,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     if plot_data:
 
-#        img_array_kcps = numpy.copy(img_array)
+        img_array_kcps = numpy.copy(img_array)
 
         # For the image extent, we need to bump out the min/max x/y by half the
         # pixel size in each direction so that the center of each pixel properly
@@ -678,10 +676,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         if um_scaled:
             img_extent = [(x_high + half_pixel_size)*xy_scale, (x_low - half_pixel_size)*xy_scale,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
-        title = 'Confocal scan with {}.\nReadout {} us'.format(laser_name, readout_us)
+        title = 'Confocal scan, {}, {} us readout'.format(laser_name, readout_us)
         fig = tool_belt.create_image_figure(img_array, img_extent,
-                                            clickHandler=on_click_image,
-                                            title=title, um_scaled=um_scaled)
+                        clickHandler=on_click_image, color_bar_label='kcps',
+                        title=title, um_scaled=um_scaled)
 
     # %% Collect the data
     cxn.apd_tagger.clear_buffer()
@@ -712,7 +710,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             # This is a horribly inefficient way of getting kcps, but it
             # is easy and readable and probably fine up to some resolution
             if plot_data:
-#                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
+                img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
                 tool_belt.update_image_figure(fig, img_array)
             num_read_so_far += num_new_samples
 
@@ -726,19 +724,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     # %% Save the data
 
-    # measure laser powers:
-#    green_optical_power_pd, green_optical_power_mW, \
-#            red_optical_power_pd, red_optical_power_mW, \
-#            yellow_optical_power_pd, yellow_optical_power_mW = \
-#            tool_belt.measure_g_r_y_power(
-#                              nv_sig['am_589_power'], nv_sig['nd_filter'])
-
     timestamp = tool_belt.get_time_stamp()
 
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
-               'collection_filter': collection_filter,
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,

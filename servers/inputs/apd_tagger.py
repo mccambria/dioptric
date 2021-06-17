@@ -37,12 +37,13 @@ import socket
 class ApdTagger(LabradServer):
     name = 'apd_tagger'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG,
-                format='%(asctime)s %(levelname)-8s %(message)s',
-                datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
+        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = filename.format(self.pc_name, self.name)
+        logging.basicConfig(level=logging.DEBUG,
+                format='%(asctime)s %(levelname)-8s %(message)s',
+                datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.reset_tag_stream_state()
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
@@ -51,7 +52,7 @@ class ApdTagger(LabradServer):
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'DeviceIDs'])
         p.get('time_tagger_serial')
-        p.cd(['Wiring', 'Tagger'])
+        p.cd(['', 'Config', 'Wiring', 'Tagger'])
         p.get('di_clock')
         p.dir()
         result = await p.send()

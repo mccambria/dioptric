@@ -350,46 +350,50 @@ def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, laser_ind,
 
     for coords in opti_coords_list:
         print(coords)
+        
+        
+def post_optimize(cxn, nv_sig):
+     """set the filters and magnet in place"""
+     
+     tool_belt.set_filter(cxn, nv_sig['spin_pol_laser'], nv_sig['spin_pol_laser_filter'])
+     tool_belt.set_filter(cxn, nv_sig['spin_readout_laser'], nv_sig['spin_readout_laser_filter'])
+     tool_belt.set_filter(cxn, 'collection', nv_sig['collection_filter'])
+     # if hasattr(cxn, 'filter_slider_ell9k_color'):
+     #     if color_filter == 'NV':
+         #         cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
+         #     elif color_filter == 'SiV':
+             #         cxn.filter_slider_ell9k_color.set_filter('715 lp')
+            
+     magnet_angle = nv_sig['magnet_angle']
+     if (magnet_angle is not None) and hasattr(cxn, 'rotation_stage_ell18k'):
+         cxn.rotation_stage_ell18k.set_angle(magnet_angle)
+        
+     time.sleep(0.01)
 
 
 # %% Main
 
 
-def main(nv_sig, apd_indices, laser_ind = 532, color_filter = 'NV', disable = False,
+def main(nv_sig, apd_indices, 
          set_to_opti_coords=True, save_data=False, plot_data=False):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, laser_ind, color_filter,
-                      disable, set_to_opti_coords, save_data, plot_data)
+        main_with_cxn(cxn, nv_sig, apd_indices,
+                      set_to_opti_coords, save_data, plot_data)
 
-def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV', disable = False,
+def main_with_cxn(cxn, nv_sig,  apd_indices,
                   set_to_opti_coords=True, save_data=False,
                   plot_data=False, set_drift=True):
 
-    # Reset the microscope and make sure we're at the right ND
     tool_belt.reset_cfm(cxn)
+    
+    # If optimize is disabled, just set the filters and magnet in place
+    if nv_sig['disable_opt']:
 
-    # Be sure the right ND is in place and the magnet aligned
-    if hasattr(cxn, 'filter_slider_ell9k'):
-        cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
-    if hasattr(cxn, 'filter_slider_ell9k_color'):
-        if color_filter == 'NV':
-            cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
-        elif color_filter == 'SiV':
-            cxn.filter_slider_ell9k_color.set_filter('715 lp')
-        time.sleep(0.01)
-    magnet_angle = nv_sig['magnet_angle']
-    if (magnet_angle is not None) and hasattr(cxn, 'rotation_stage_ell18k'):
-        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
-
-    # see if the NV
-    ### what if instead, we can put in a dictionary entry in the NV that, if
-    # there, optimize will see it and not be run. i.e. nv_sig["disable_opt"] ###
-    try:
-        if not nv_sig['disable_opt']:
-            return None
-    except Exception:
-        pass
+        coords = nv_sig['coords']
+        tool_belt.set_xyz(cxn, coords)
+        post_optimize(cxn, nv_sig)
+        return None
 
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
@@ -404,17 +408,6 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
     expected_count_rate = adjusted_nv_sig['expected_count_rate']
 
     opti_succeeded = False
-
-    # If optimize is disabled, then this routine just sets the galvo at the
-    # passed coordinates, and does not try to optimize
-    if disable:
-        coords = adjusted_nv_sig['coords']
-        tool_belt.set_xyz(cxn, coords)
-        # After we've optimized, set the color filter back to what we want
-        measure_color_filter = nv_sig['color_filter']
-        cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
-
-        return coords
 
     # %% Try to optimize
 
@@ -562,10 +555,8 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
             tool_belt.save_figure(fig, filePath)
 
     # %% Return the optimized coordinates we found
-    if hasattr(cxn, 'filter_slider_ell9k_color'):
-        # After we've optimized, set the color filter back to what we want
-        measure_color_filter = nv_sig['color_filter']
-        cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
+        
+    post_optimize(cxn, nv_sig)
         
     return opti_coords
 

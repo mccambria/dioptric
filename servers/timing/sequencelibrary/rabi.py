@@ -34,15 +34,17 @@ def get_seq(pulser_wiring, args):
     apd_index = args[10]
 
     # Signify which signal generator to use
-    state_value = args[11]
+    sig_gen_name = args[11]
+    
+    # Which laser?
+    laser_name = args[12]
 
     # Get what we need out of the wiring dictionary
     key = 'do_apd_{}_gate'.format(apd_index)
     pulser_do_apd_gate = pulser_wiring[key]
-    sig_gen_name = tool_belt.get_signal_generator_name(States(state_value))
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
-    pulser_do_aom = pulser_wiring['do_532_aom']
+    pulser_do_aom = pulser_wiring['do_{}_dm'.format(laser_name)]
 
     # %% Couple calculated values
 

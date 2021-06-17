@@ -40,8 +40,12 @@ class States(Enum):
     ZERO = auto()
     HIGH = auto()
 
+def get_signal_generator_name_no_cxn(state):
+    with labrad.connect() as cxn:
+        return get_signal_generator_name(cxn, state)
+
 def get_signal_generator_name(cxn, state):
-    return get_registry_entry(cxn, 'sig_gen_{}'.format(state.value),
+    return get_registry_entry(cxn, 'sig_gen_{}'.format(state.name),
                               ['', 'Config', 'Microwaves'])
 
 def get_signal_generator_cxn(cxn, state):
@@ -55,9 +59,9 @@ def get_signal_generator_cxn(cxn, state):
 
 def set_xyz(cxn, coords):
     xy_dtype = eval(get_registry_entry(cxn, 'xy_dtype',
-                                       ['', 'SharedParameters']))
+                                       ['', 'Config', 'Positioning']))
     z_dtype = eval(get_registry_entry(cxn, 'z_dtype',
-                                      ['', 'SharedParameters']))
+                                       ['', 'Config', 'Positioning']))
     xy_server = get_xy_server(cxn)
     z_server = get_z_server(cxn)
     if xy_dtype is int:
@@ -128,7 +132,8 @@ def get_tagger_wiring(cxn):
 # %% Matplotlib plotting utils
 
 
-def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts', min_value=None, um_scaled = False):
+def create_image_figure(imgArray, imgExtent, clickHandler=None, title=None, 
+                color_bar_label='Counts', min_value=None, um_scaled=False):
     """
     Creates a figure containing a single grayscale image and a colorbar.
 
@@ -144,13 +149,16 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
     Returns:
         matplotlib.figure.Figure
     """
-    axes_label = 'V'
+    
+    if um_scaled:
+        axes_label = r'$\mu$m'
+    else:
+        axes_label = get_registry_entry_no_cxn('xy_units', ['', 'Config', 'Positioning'])
+        
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
 
     fig.set_tight_layout(True)
-    if um_scaled:
-        axes_label = r'$\mu$m'
 
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',
@@ -161,7 +169,9 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
 
     # Add a colorbar
     clb = plt.colorbar(img)
-    clb.set_label(color_bar_label, rotation=270)
+    clb.set_label(color_bar_label)
+    # clb.ax.set_tight_layout(True)
+    # clb.ax.set_title(color_bar_label)
 #    clb.set_label('kcounts/sec', rotation=270)
 
     # Label axes
@@ -176,7 +186,6 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
 
     # Draw the canvas and flush the events to the backend
     fig.canvas.draw()
-    plt.tight_layout()
     fig.canvas.flush_events()
 
     return fig
@@ -421,7 +430,7 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
 # %% LabRAD utils
 
 
-def get_shared_parameters_dict(cxn=None):
+def get_config_dict(cxn=None):
     """Get the shared parameters from the registry. These parameters are not
     specific to any experiment, but are instead used across experiments. They
     may depend on the current alignment (eg aom_delay) or they may just be
@@ -460,32 +469,51 @@ def get_shared_parameters_dict(cxn=None):
 
     if cxn is None:
         with labrad.connect() as cxn:
-            return get_shared_parameters_dict_sub(cxn)
+            return get_config_dict_sub(cxn)
     else:
-        return get_shared_parameters_dict_sub(cxn)
+        return get_config_dict_sub(cxn)
 
 
-def get_shared_parameters_dict_sub(cxn):
+def get_config_dict_sub(cxn):
 
-    # Get what we need out of the registry
-    cxn.registry.cd(['', 'SharedParameters'])
+    config_dict = {}
+    populate_config_dict(cxn, ['', 'Config'], config_dict)
+    return config_dict
+
+
+def populate_config_dict(cxn, reg_path, dict_to_populate):
+    """Populate the config dictionary recursively"""
+    
+    # Sub-folders
+    cxn.registry.cd(reg_path)
     sub_folders, keys = cxn.registry.dir()
-    if keys == []:
-        return {}
+    for el in sub_folders:
+        sub_dict = {}
+        sub_path = reg_path + [el]
+        populate_config_dict(cxn, sub_path, sub_dict)
+        dict_to_populate[el] = sub_dict
 
-    p = cxn.registry.packet()
-    for key in keys:
+    # Keys
+    if len(keys) == 1:
+        cxn.registry.cd(reg_path)
+        p = cxn.registry.packet()
+        key = keys[0]
         p.get(key)
-    vals = p.send()['get']
-
-    reg_dict = {}
-    for ind in range(len(keys)):
-        key = keys[ind]
-        val = vals[ind]
-        reg_dict[key] = val
-
-    return reg_dict
-
+        val = p.send()['get']
+        dict_to_populate[key] = val
+    
+    elif len(keys) > 1:
+        cxn.registry.cd(reg_path)
+        p = cxn.registry.packet()
+        for key in keys:
+            p.get(key)
+        vals = p.send()['get']
+    
+        for ind in range(len(keys)):
+            key = keys[ind]
+            val = vals[ind]
+            dict_to_populate[key] = val
+    
 
 def get_nv_sig_units():
     return 'in config'
@@ -494,6 +522,8 @@ def get_nv_sig_units():
 def set_filter(cxn, optics_name, filter_name):
     """optics_name should be either 'collection' or a laser name"""
     
+    if filter_name is None:
+        return
     filter_server = get_filter_server(cxn, optics_name)
     pos = get_registry_entry(cxn, filter_name,
                              ['', 'Config', 'Optics',
@@ -516,13 +546,13 @@ def get_xy_server(cxn):
 
     # return an actual reference to the appropriate server so it can just
     # be used directly
-    return getattr(cxn, get_registry_entry(cxn, 'xy_server', ['', 'Config']))
+    return getattr(cxn, get_registry_entry(cxn, 'xy_server', ['', 'Config', 'Positioning']))
 
 
 def get_z_server(cxn):
     """Same as get_xy_server but for the fine z control server"""
 
-    return getattr(cxn, get_registry_entry(cxn, 'z_server', ['', 'Config']))
+    return getattr(cxn, get_registry_entry(cxn, 'z_server', ['', 'Config', 'Positioning']))
 
 
 def get_registry_entry(cxn, key, directory):
@@ -808,7 +838,7 @@ def save_raw_data(rawData, filePath):
     # then they'll just be overwritten.
     try:
         rawData['nv_sig_units'] = get_nv_sig_units()
-        rawData['shared_parameters'] = get_shared_parameters_dict()
+        rawData['config'] = get_config_dict()  # Include a snapshot of the config
     except Exception as e:
         print(e)
 
@@ -1055,8 +1085,8 @@ def poll_safe_stop():
 # %% State/globals
 
 
-# This isn't really that scary - our client is and should be mostly stateless
-# but in some cases it's just easier to share some state across the life of an
+# Our client is and should be mostly stateless.
+# But in some cases it's just easier to share some state across the life of an
 # experiment/across experiments. To do this safely and easily we store global
 # variables on our LabRAD registry. The globals should only be accessed with
 # the getters and setters here so that we can be sure they're implemented
@@ -1068,7 +1098,7 @@ def get_drift():
         cxn.registry.cd(['', 'State'])
         drift = cxn.registry.get('DRIFT')
         # MCC where should this stuff live?
-        cxn.registry.cd(['', 'SharedParameters'])
+        cxn.registry.cd(['', 'Config', 'Positioning'])
         xy_dtype = eval(cxn.registry.get('xy_dtype'))
         z_dtype = eval(cxn.registry.get('z_dtype'))
     len_drift = len(drift)

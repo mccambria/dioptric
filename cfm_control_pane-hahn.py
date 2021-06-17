@@ -171,7 +171,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # freq_range = 0.120
     num_steps = 51
     num_reps = 8000
-    num_runs = 10
+    num_runs = 3
     
     composite = False
 
@@ -432,13 +432,13 @@ if __name__ == '__main__':
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
     # nv_sig = { 'coords': [0.0, 0.0, 35],
-    nv_sig = { 'coords': [0.075, -0.045, 35],
+    nv_sig = { 'coords': [0.075, -0.045, -20],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
-            'disable_opt': False, 'expected_count_rate': 1000,
+            'disable_opt': True, 'expected_count_rate': 1000,
             'imaging_laser': 'laser_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
             'spin_pol_laser': 'laser_532', 'spin_pol_laser_filter': nd, 'spin_pol_dur': 1E5,
             'spin_readout_laser': 'laser_532', 'spin_readout_laser_filter': nd, 'spin_readout_dur': 350,
-            'magnet_angle': None,
+            'collection_filter': None, 'magnet_angle': None,
             'resonance_LOW': 2.8036, 'rabi_LOW': 242.9, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9512, 'rabi_HIGH': 219.6, 'uwave_power_HIGH': 12.0}   # 14.5 max
     
@@ -457,7 +457,7 @@ if __name__ == '__main__':
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(-770, 72)
         
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
@@ -466,7 +466,7 @@ if __name__ == '__main__':
         # do_stationary_count(nv_sig, apd_indices)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.1)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.872, 0.200)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])

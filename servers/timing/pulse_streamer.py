@@ -40,12 +40,13 @@ from pathlib import Path
 class PulseStreamer(LabradServer):
     name = 'pulse_streamer'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG,
-                format='%(asctime)s %(levelname)-8s %(message)s',
-                datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
+        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = filename.format(self.pc_name, self.name)
+        logging.basicConfig(level=logging.DEBUG, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -59,8 +60,7 @@ class PulseStreamer(LabradServer):
         return result
 
     def on_get_config(self, config):
-        get_result = config['get']
-        self.pulser = Pulser(get_result[0])
+        self.pulser = Pulser(config['get'])
         sequence_library_path = str(Path.home())
         sequence_library_path += '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
         sequence_library_path += '\\servers\\timing\\sequencelibrary'
@@ -84,6 +84,7 @@ class PulseStreamer(LabradServer):
         self.seq = None
         self.loaded_seq_streamed = False
         self.reset(None)
+        logging.debug(self.pulser_wiring)
         logging.debug('Init complete')
 
     def get_seq(self, seq_file, seq_args_string):

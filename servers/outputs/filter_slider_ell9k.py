@@ -41,8 +41,7 @@ class FilterSliderEll9k(LabradServer):
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(level=logging.DEBUG, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
-                    datefmt='%y-%m-%d_%H-%M-%S',
-                    filename=filename)
+                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 

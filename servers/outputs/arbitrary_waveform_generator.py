@@ -49,12 +49,13 @@ def iq_comps(phase):
 class ArbitraryWaveformGenerator(LabradServer):
     name = 'arbitrary_waveform_generator'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG,
-                format='%(asctime)s %(levelname)-8s %(message)s',
-                datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
+        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = filename.format(self.pc_name, self.name)
+        logging.basicConfig(level=logging.DEBUG, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -62,17 +63,19 @@ class ArbitraryWaveformGenerator(LabradServer):
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'DeviceIDs'])
         p.get('arb_wave_gen_visa_address')
-        p.cd(['', 'Wiring', 'Pulser'])
+        p.cd(['', 'Config', 'Wiring', 'Pulser'])
         p.get('do_arb_wave_trigger')
         result = await p.send()
         return result['get']
 
     def on_get_config(self, config):
         address = config[0]
+        logging.debug(address)
         self.do_arb_wave_trigger = int(config[1])
         resource_manager = visa.ResourceManager()
         self.wave_gen = resource_manager.open_resource(address)
         self.reset(None)
+        logging.debug('Init complete')
 
 
     @setting(3)

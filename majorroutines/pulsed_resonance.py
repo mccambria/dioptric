@@ -276,19 +276,19 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     sig_counts = numpy.copy(ref_counts)
 
     # Define some times for the sequence (in ns)
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    config = tool_belt.get_config_dict(cxn)
 
-    polarization_time = shared_params['polarization_dur']
+    polarization_time = nv_sig['spin_pol_dur']
     # time of illumination during which reference readout occurs
-    signal_wait_time = shared_params['post_polarization_wait_dur']
+    signal_wait_time = config['CommonDurations']['uwave_to_readout_wait_dur']
     reference_time = signal_wait_time  # not sure what this is
     background_wait_time = signal_wait_time  # not sure what this is
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
-    aom_delay_time = shared_params['532_aom_delay']
-    # aom_delay_time = shared_params['515_DM_laser_delay'] # for RabiCPU
-    uwave_delay_time = shared_params['uwave_delay']
-    iq_delay = shared_params['iq_delay']
-    readout = nv_sig['pulsed_readout_dur']
+    aom_delay_time = config['Optics'][nv_sig['spin_pol_laser']]['delay']
+    sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    uwave_delay_time = config['Microwaves']['{}_delay'.format(sig_gen_name)]
+    iq_delay = config['Microwaves']['iq_delay']
+    readout = nv_sig['spin_readout_dur']
     gate_time = readout
     readout_sec = readout / (10**9)
     if composite:
@@ -306,7 +306,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                     signal_wait_time, reference_wait_time,
                     background_wait_time, aom_delay_time, uwave_delay_time,
                     gate_time, uwave_pulse_dur,
-                    apd_indices[0], state.value]
+                    apd_indices[0], sig_gen_name, nv_sig['spin_pol_laser']]
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -330,7 +330,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             break
 
         # Optimize and save the coords we found
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = False)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Start the tagger stream
