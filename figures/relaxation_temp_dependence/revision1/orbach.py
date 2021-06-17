@@ -89,6 +89,9 @@ def orbach(temp):
 def orbach_free(temp, coeff, activation):
     return coeff * bose(activation, temp)
 
+def orbach_free_const(temp, coeff, activation, constant):
+    return (coeff * bose(activation, temp)) + constant
+
 def raman(temp):
     return A_3 * (temp**5)
 
@@ -121,6 +124,31 @@ def simultaneous_orbach_T5_free(temps, omega_coeff_orbach, omega_coeff_T5,
                             omega_coeff_orbach, activation, omega_coeff_T5)
     gamma_rate_lambda = lambda temp_val: orbach_free(temp_val,
                                                      gamma_coeff, activation)
+    ret_vals = []
+    num_vals = len(temps)
+    for ind in range(num_vals):
+        temp_val = temps[ind]
+        # Omegas are even indexed
+        if ind % 2 == 0:
+            ret_vals.append(omega_rate_lambda(temp_val))
+        # gammas are odd indexed
+        else:
+            ret_vals.append(gamma_rate_lambda(temp_val))
+
+    return ret_vals
+
+
+def simultaneous_orbach_T5_gamma_const(temps, omega_coeff_orbach, omega_coeff_T5,
+                                       gamma_coeff, activation, gamma_const):
+    """
+    Only use this for fitting to Omega and gamma simultaneously. This assumes
+    the temp argument is a list/array.
+    """
+
+    omega_rate_lambda = lambda temp_val: orbach_T5_free(temp_val,
+                            omega_coeff_orbach, activation, omega_coeff_T5)
+    gamma_rate_lambda = lambda temp_val: orbach_free_const(temp_val,
+                                     gamma_coeff, activation, gamma_const)
     ret_vals = []
     num_vals = len(temps)
     for ind in range(num_vals):
@@ -204,7 +232,7 @@ def fit_gamma_orbach(data_points):
     return popt, pcov, fit_func
 
 
-def fit_simultaneous(data_points):
+def fit_simultaneous(data_points, gamma_const=True):
 
     # To fit to Omega and gamma simultaneously, set up a combined list of the
     # rates. Parity determines which rate is where. Even is Omega, odd is
@@ -227,8 +255,12 @@ def fit_simultaneous(data_points):
     # print(combined_rates)
     # print(combined_errs)
 
-    fit_func = simultaneous_orbach_T5_free
-    init_params = (510, 1.38e-11, 2000, 74.0)
+    if gamma_const:
+        fit_func = simultaneous_orbach_T5_gamma_const
+        init_params = (510, 1.38e-11, 2000, 74.0, 0.5)
+    else:
+        fit_func = simultaneous_orbach_T5_free
+        init_params = (510, 1.38e-11, 2000, 74.0)
 
     num_params = len(init_params)
     popt, pcov = curve_fit(fit_func, temps, combined_rates, p0=init_params,
@@ -238,14 +270,16 @@ def fit_simultaneous(data_points):
     # print(simultaneous_orbach_T5_free(temps, *popt))
 
     omega_popt = [popt[0], popt[3], popt[1]]
-    omega_pcov = [pcov[0], pcov[3], pcov[1]]
     omega_fit_func = orbach_T5_free
 
-    gamma_popt = [popt[2], popt[3]]
-    gamma_pcov = [pcov[2], pcov[3]]
-    gamma_fit_func = orbach_free
-
-    return omega_popt, omega_pcov, omega_fit_func, gamma_popt, gamma_pcov, gamma_fit_func
+    if gamma_const:
+        gamma_popt = [popt[2], popt[3], popt[4]]
+        gamma_fit_func = orbach_free_const
+    else:
+        gamma_popt = [popt[2], popt[3]]
+        gamma_fit_func = orbach_free
+        
+    return omega_popt, omega_fit_func, gamma_popt, gamma_fit_func, pcov
 
 
 def get_data_points_csv(file):
@@ -422,8 +456,8 @@ def main(file_name, path, plot_type, rates_to_plot,
     # # gamma_popt[1] = omega_popt[1]
 
     # Fit to Omega and gamma simultaneously
-    ret_vals = fit_simultaneous(data_points)
-    omega_popt, omega_pcov, omega_fit_func, gamma_popt, gamma_pcov, gamma_fit_func = ret_vals
+    ret_vals = fit_simultaneous(data_points, gamma_const=True)
+    omega_popt, omega_fit_func, gamma_popt, gamma_fit_func, pcov = ret_vals
 
     omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
     print(omega_popt)
@@ -436,10 +470,11 @@ def main(file_name, path, plot_type, rates_to_plot,
 
     gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
     print(gamma_popt)
-    print(numpy.sqrt(gamma_popt[1]))
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'gamma']):
         ax.plot(temp_linspace, gamma_lambda(temp_linspace),
                 label=r'$\gamma$ fit', color=gamma_edge_color)
+        
+    print(numpy.sqrt(pcov[3][3]))  # Activation energy error
 
     # Plot ratio
     ratio_lambda = lambda temp: gamma_lambda(temp_linspace) / omega_lambda(temp_linspace)
