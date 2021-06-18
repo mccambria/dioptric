@@ -86,6 +86,46 @@ def set_xyz_center(cxn):
 
 def set_xyz_on_nv(cxn, nv_sig):
     set_xyz(cxn, nv_sig['coords'])
+    
+    
+# %% Laser utils
+
+
+def set_laser_power(cxn, nv_sig, laser_name, power_key, config=None):
+    
+    if config is None:
+        config = get_config_dict(cxn)
+    
+    # If the power is controlled by analog modulation, we'll need to pass it
+    # to the pulse streamer
+    if config['optics'][laser_name]['modulation_type'] == 'analog':
+        laser_power = nv_sig[power_key]
+    else:
+        if power_key in nv_sig:
+            pass  # TODO: set the power via a server
+        laser_power = -1  # -1 signifies digital modulation
+        
+    return laser_power
+    
+
+
+def set_filter(cxn, optics_name, filter_name):
+    """optics_name should be either 'collection' or a laser name"""
+    
+    if filter_name is None:
+        return
+    filter_server = get_filter_server(cxn, optics_name)
+    pos = get_registry_entry(cxn, filter_name,
+                             ['', 'Config', 'Optics',
+                              optics_name, 'FilterMapping'])
+    filter_server.set_filter(pos)
+
+
+def get_filter_server(cxn, optics_name):
+
+    server_name = get_registry_entry(cxn, 'filter_server',
+                                     ['', 'Config', 'Optics', optics_name])
+    return getattr(cxn, server_name)
 
 
 # %% Pulse Streamer utils
@@ -517,25 +557,6 @@ def populate_config_dict(cxn, reg_path, dict_to_populate):
 
 def get_nv_sig_units():
     return 'in config'
-
-
-def set_filter(cxn, optics_name, filter_name):
-    """optics_name should be either 'collection' or a laser name"""
-    
-    if filter_name is None:
-        return
-    filter_server = get_filter_server(cxn, optics_name)
-    pos = get_registry_entry(cxn, filter_name,
-                             ['', 'Config', 'Optics',
-                              optics_name, 'FilterMapping'])
-    filter_server.set_filter(pos)
-
-
-def get_filter_server(cxn, optics_name):
-
-    server_name = get_registry_entry(cxn, 'filter_server',
-                                     ['', 'Config', 'Optics', optics_name])
-    return getattr(cxn, server_name)
 
 
 def get_xy_server(cxn):

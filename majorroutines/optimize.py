@@ -115,25 +115,23 @@ def read_manual_counts(cxn, period, apd_indices,
     return numpy.array(counts, dtype=int)
 
 
-def stationary_count_lite(cxn, nv_sig,  coords, shared_params, 
-                          apd_indices, color_ind = 532):
-    try: 
-        aom_ao_589_pwr = nv_sig['am_589_power']
-        ao_515_pwr = nv_sig['ao_515_pwr']
-    except Exception:
-        print('589 nm and 515 nm AM voltages not specified in nv_sig. Setting them to 0')
-        aom_ao_589_pwr = 0
-        ao_515_pwr = 0
+def stationary_count_lite(cxn, nv_sig,  coords, config, apd_indices):
+    
+    seq_file_name = 'simple_readout.py'
         
     # Some initial values
-    readout = shared_params['continuous_readout_dur']
+    laser_name = nv_sig['imaging_laser']
+    power_key = 'imaging_laser_power'
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig,
+                                            laser_name, power_key, config)
+    readout = nv_sig['imaging_readout_dur']
     total_num_samples = 2
     x_center, y_center, z_center = coords
 
-    seq_args = [shared_params['532_aom_delay'], readout, aom_ao_589_pwr,  ao_515_pwr,
-                apd_indices[0], color_ind]
+    delay = config['Positioning']['xy_delay']
+    seq_args = [delay, readout, laser_name, laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)
+    cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
 
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
 
@@ -148,34 +146,31 @@ def stationary_count_lite(cxn, nv_sig,  coords, shared_params,
     return counts_kcps
 
 
-def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
-                     apd_indices, color_ind = 532, fig=None):
+def optimize_on_axis(cxn, nv_sig, axis_ind, config,
+                     apd_indices, fig=None):
 
     seq_file_name = 'simple_readout.py'
     num_steps = 61#31
     coords = nv_sig['coords']
     x_center, y_center, z_center = coords
-    readout = shared_params['continuous_readout_dur']
-
-    try: 
-        aom_ao_589_pwr = nv_sig['am_589_power']
-        ao_515_pwr = nv_sig['ao_515_pwr']
-    except Exception:
-        print('589 nm and 515 nm AM voltages not specified in nv_sig. Setting them to 0')
-        aom_ao_589_pwr = 0
-        ao_515_pwr = 0
+    readout = nv_sig['imaging_readout_dur']
 
     # Reset to centers
     tool_belt.set_xyz(cxn, coords)
+    
+    laser_name = nv_sig['imaging_laser']
+    power_key = 'imaging_laser_power'
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig,
+                                            laser_name, power_key, config)
 
     tool_belt.init_safe_stop()
     # xy
     if axis_ind in [0, 1]:
 
-        scan_range = shared_params['xy_optimize_range']
-        scan_dtype = eval(shared_params['xy_dtype'])
-        seq_args = [shared_params['xy_delay'], readout,aom_ao_589_pwr, ao_515_pwr,
-                    apd_indices[0], color_ind]
+        scan_range = config['Positioning']['xy_optimize_range']
+        scan_dtype = eval(config['Positioning']['xy_dtype'])
+        delay = config['Positioning']['xy_delay']
+        seq_args = [delay, readout, laser_name, laser_power, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string) 
@@ -195,10 +190,10 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     # z
     elif axis_ind == 2:
 
-        scan_range = shared_params['z_optimize_range']
-        scan_dtype = eval(shared_params['z_dtype'])
-        seq_args = [shared_params['z_delay'], readout, aom_ao_589_pwr, ao_515_pwr,
-                    apd_indices[0], color_ind]
+        scan_range = config['Positioning']['z_optimize_range']
+        scan_dtype = eval(config['Positioning']['z_dtype'])
+        delay = config['Positioning']['z_delay']
+        seq_args = [delay, readout, laser_name, laser_power, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string)
@@ -232,6 +227,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     else:
         counts = read_manual_counts(cxn, period, apd_indices,
                                     manual_write_func, scan_vals)
+        
     # counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     count_rates = (counts / 1000) / (readout / 10**9)
 
@@ -239,10 +235,6 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         update_figure(fig, axis_ind, scan_vals, count_rates)
 
     opti_coord = fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig)
-
-    # if ('z_drift_adjust' in shared_params) and (scan_dtype is int):
-    #     diff = max(scan_vals) - opti_coord
-    #     opti_coord = round(opti_coord + z_drift_adjust*diff)
 
     return opti_coord, scan_vals, counts
 
@@ -352,8 +344,14 @@ def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, laser_ind,
         print(coords)
         
         
-def post_optimize(cxn, nv_sig):
-     """set the filters and magnet in place"""
+def prepare_microscope(cxn, nv_sig, coords=None):
+     """
+     Prepares the microscope for a measurement. In particular,
+     sets up the optics (positioning, filters, etc) and magnet.
+     """
+     
+     if coords is not None:
+         tool_belt.set_xyz(cxn, coords)
      
      tool_belt.set_filter(cxn, nv_sig['spin_pol_laser'], nv_sig['spin_pol_laser_filter'])
      tool_belt.set_filter(cxn, nv_sig['spin_readout_laser'], nv_sig['spin_readout_laser_filter'])
@@ -389,10 +387,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
     
     # If optimize is disabled, just set the filters and magnet in place
     if nv_sig['disable_opt']:
-
-        coords = nv_sig['coords']
-        tool_belt.set_xyz(cxn, coords)
-        post_optimize(cxn, nv_sig)
+        prepare_microscope(cxn, nv_sig, nv_sig['coords'])
         return None
 
     # Adjust the sig we use for drift
@@ -401,11 +396,17 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
     adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig['coords'] = adjusted_coords
+    
+    if 'collection_filter' in nv_sig:
+        tool_belt.set_filter(cxn, 'collection', nv_sig['collection_filter'])
 
-    # Get the shared parameters from the registry
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    laser_name = nv_sig['imaging_laser']
+    if 'imaging_laser_filter' in nv_sig:
+        tool_belt.set_filter(cxn, laser_name, nv_sig['imaging_laser_filter'])
 
     expected_count_rate = adjusted_nv_sig['expected_count_rate']
+    
+    config = tool_belt.get_config_dict(cxn)
 
     opti_succeeded = False
 
@@ -431,8 +432,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
         # xy
         for axis_ind in range(2):
             ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
-                                        shared_params, 
-                                        apd_indices, laser_ind, fig)
+                                        config, apd_indices, fig)
             opti_coords.append(ret_vals[0])
             scan_vals_by_axis.append(ret_vals[1])
             counts_by_axis.append(ret_vals[2])
@@ -444,7 +444,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
             tool_belt.set_xyz(cxn, int_coords)
         axis_ind = 2
         ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
-                                    shared_params, apd_indices, laser_ind, fig)
+                                    config, apd_indices, fig)
         opti_coords.append(ret_vals[0])
         scan_vals_by_axis.append(ret_vals[1])
         counts_by_axis.append(ret_vals[2])
@@ -455,7 +455,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
 
         # Check the count rate
         opti_count_rate = stationary_count_lite(cxn, nv_sig, opti_coords,
-                                                shared_params, apd_indices, laser_ind)
+                                                config, apd_indices)
 
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate
@@ -505,12 +505,12 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
 
     if set_to_opti_coords:
         if opti_succeeded:
-            tool_belt.set_xyz(cxn, opti_coords)
+            prepare_microscope(cxn, nv_sig, opti_coords)
         else:
             # Let the user know something went wrong
             print('Optimization failed. Resetting to coordinates ' \
                   'about which we attempted to optimize.')
-            tool_belt.set_xyz(cxn, adjusted_coords)
+            prepare_microscope(cxn, nv_sig, adjusted_coords)
     else:
         if opti_succeeded:
             print('Optimized coordinates: ')
@@ -519,6 +519,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
             print('{:.3f}, {:.3f}, {:.2f}'.format(*drift))
         else:
             print('Optimization failed.')
+            prepare_microscope(cxn, nv_sig)
 
     print('\n')
 
@@ -536,7 +537,6 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
                    'opti_coords': opti_coords,
-                   'laser_ind': laser_ind,
                    'x_scan_vals': scan_vals_by_axis[0].tolist(),
                    'y_scan_vals': scan_vals_by_axis[1].tolist(),
                    'z_scan_vals': scan_vals_by_axis[2].tolist(),
@@ -555,8 +555,6 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
             tool_belt.save_figure(fig, filePath)
 
     # %% Return the optimized coordinates we found
-        
-    post_optimize(cxn, nv_sig)
         
     return opti_coords
 
