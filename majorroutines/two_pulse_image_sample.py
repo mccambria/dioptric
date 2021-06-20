@@ -81,7 +81,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     total_num_samples = num_steps**2
 
     # %% Load the PulseStreamer
-    seq_args = [galvo_delay, init_delay, read_delay, init_pulse_time,  readout, aom_ao_589_pwr, apd_indices[0],
+    seq_args = [delay, init_delay, read_delay, init_pulse_time,  readout, aom_ao_589_pwr, apd_indices[0],
             init_color_ind, read_color_ind]
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)

@@ -91,33 +91,58 @@ def set_xyz_on_nv(cxn, nv_sig):
 # %% Laser utils
 
 
-def set_laser_power(cxn, nv_sig, laser_name, power_key, config=None):
+def set_laser_power(cxn, nv_sig=None, laser_key=None,
+                    laser_name=None, laser_power=None):
+    """
+    Set a laser power, or return it for analog modulation.
+    Specify either a laser_key/nv_sig or a laser_name/laser_power.
+    """
     
-    if config is None:
-        config = get_config_dict(cxn)
+    if (nv_sig is not None) and (laser_key is not None):
+        laser_name = nv_sig[laser_key]
+        power_key = '{}_power'.format(laser_key)
+        # If the power isn't specified, then we assume it's set some other way
+        if power_key in nv_sig:
+            laser_power = nv_sig[power_key]
+    elif (laser_name is not None) and (laser_power is not None):
+        pass  # All good
+    else:
+        raise Exception('Specify either a laser_key/nv_sig or a laser_name/laser_power.')
     
     # If the power is controlled by analog modulation, we'll need to pass it
     # to the pulse streamer
-    if config['optics'][laser_name]['modulation_type'] == 'analog':
-        laser_power = nv_sig[power_key]
+    modulation_type = get_registry_entry(cxn, 'modulation_type',
+                             ['', 'Config', 'Optics', laser_name])
+    if modulation_type == 'analog':
+        return laser_power
     else:
-        if power_key in nv_sig:
+        if laser_power is not None:
             pass  # TODO: set the power via a server
-        laser_power = -1  # -1 signifies digital modulation
-        
-    return laser_power
+        return -1  # -1 signifies digital modulation
     
 
-
-def set_filter(cxn, optics_name, filter_name):
-    """optics_name should be either 'collection' or a laser name"""
+def set_filter(cxn, nv_sig=None, optics_key=None,
+               optics_name=None, filter_name=None):
+    """
+    optics_key should be either 'collection' or a laser key.
+    Specify either an optics_key/nv_sig or an optics_name/filter_name.
+    """
     
-    if filter_name is None:
-        return
+    if (nv_sig is not None) and (optics_key is not None):
+        optics_name = nv_sig[optics_key]
+        filter_key = '{}_filter'.format(optics_key)
+        # Just exit if there's no filter specified in the nv_sig
+        if filter_key not in nv_sig:
+            return
+        filter_name = nv_sig[filter_key]
+    elif (optics_name is not None) and (filter_name is not None):
+        pass  # All good
+    else:
+        raise Exception('Specify either an optics_key/nv_sig or an optics_name/filter_name.')
+    
     filter_server = get_filter_server(cxn, optics_name)
     pos = get_registry_entry(cxn, filter_name,
-                             ['', 'Config', 'Optics',
-                              optics_name, 'FilterMapping'])
+                     ['', 'Config', 'Optics', optics_name, 'FilterMapping'])
     filter_server.set_filter(pos)
 
 

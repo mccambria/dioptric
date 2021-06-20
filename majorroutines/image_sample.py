@@ -13,6 +13,7 @@ import numpy
 import utils.tool_belt as tool_belt
 import time
 import labrad
+import majorroutines.optimize as optimize
 
 
 def populate_img_array_bottom_left(valsToAdd, imgArray, writePos):
@@ -165,21 +166,14 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Some initial setup
     
     tool_belt.reset_cfm(cxn)
-    
-    if 'collection_filter' in nv_sig:
-        tool_belt.set_filter(cxn, 'collection', nv_sig['collection_filter'])
+
+    coords = nv_sig['coords']
+    x_center, y_center, z_center = coords
+    optimize.prepare_microscope(cxn, nv_sig, coords)
 
     laser_name = nv_sig['imaging_laser']
-    if 'imaging_laser_filter' in nv_sig:
-        tool_belt.set_filter(cxn, laser_name, nv_sig['imaging_laser_filter'])
-    if 'imaging_laser_power' in nv_sig:
-        laser_power = nv_sig['imaging_laser_power']
-    else:
-        laser_power = -1  # -1 signifies digital modulation
-
-    adj_coords = (numpy.array(nv_sig['coords']) + \
-                  numpy.array(tool_belt.get_drift())).tolist()
-    x_center, y_center, z_center = adj_coords
+    tool_belt.set_filter(cxn, nv_sig, 'imaging_laser')
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, 'imaging_laser')
     
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')

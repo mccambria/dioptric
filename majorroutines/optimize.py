@@ -347,20 +347,15 @@ def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, laser_ind,
 def prepare_microscope(cxn, nv_sig, coords=None):
      """
      Prepares the microscope for a measurement. In particular,
-     sets up the optics (positioning, filters, etc) and magnet.
+     sets up the optics (positioning, collection filter, etc) and magnet.
+     The laser set up must be handled by each routine since the same laser
+     may be specified for multiple purposes.
      """
      
      if coords is not None:
          tool_belt.set_xyz(cxn, coords)
      
-     tool_belt.set_filter(cxn, nv_sig['spin_pol_laser'], nv_sig['spin_pol_laser_filter'])
-     tool_belt.set_filter(cxn, nv_sig['spin_readout_laser'], nv_sig['spin_readout_laser_filter'])
      tool_belt.set_filter(cxn, 'collection', nv_sig['collection_filter'])
-     # if hasattr(cxn, 'filter_slider_ell9k_color'):
-     #     if color_filter == 'NV':
-         #         cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
-         #     elif color_filter == 'SiV':
-             #         cxn.filter_slider_ell9k_color.set_filter('715 lp')
             
      magnet_angle = nv_sig['magnet_angle']
      if (magnet_angle is not None) and hasattr(cxn, 'rotation_stage_ell18k'):
@@ -384,16 +379,15 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
                   plot_data=False, set_drift=True):
 
     tool_belt.reset_cfm(cxn)
-    
-    # If optimize is disabled, just set the filters and magnet in place
-    if nv_sig['disable_opt']:
-        prepare_microscope(cxn, nv_sig, nv_sig['coords'])
-        return None
 
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
     passed_coords = nv_sig['coords']
     adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
+    # If optimize is disabled, just set the filters and magnet in place
+    if nv_sig['disable_opt']:
+        prepare_microscope(cxn, nv_sig, adjusted_coords)
+        return None
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig['coords'] = adjusted_coords
     
