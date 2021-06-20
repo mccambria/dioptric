@@ -27,7 +27,7 @@ def get_seq(pulser_wiring, args):
     tau_shrt, polarization_time, signal_time, reference_time,  \
             sig_to_ref_wait_time, pre_uwave_exp_wait_time,  \
             post_uwave_exp_wait_time, aom_delay_time, \
-            sig_gen_tsg4104a_delay, sig_gen_sg394_delay, iq_delay_time, \
+            rf_low_delay, rf_high_delay, iq_delay_time, \
             gate_time, pi_pulse_low, pi_pulse_high, tau_long = durations
 
     # Get the APD indices
@@ -37,23 +37,21 @@ def get_seq(pulser_wiring, args):
     init_state_value = args[16]
     read_state_value = args[17]
 
+    # Specify the initial and readout states
+    low_sig_gen_name = args[18]
+    high_sig_gen_name = args[19]
+    
+    # Laser specs
+    laser_name = args[20]
+    laser_power = args[21]
+
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
 
-    low_sig_gen_name = tool_belt.get_signal_generator_name(States.LOW)
     low_sig_gen_gate_chan_name = 'do_{}_gate'.format(low_sig_gen_name)
     pulser_do_sig_gen_low_gate = pulser_wiring[low_sig_gen_gate_chan_name]
-    if low_sig_gen_name == 'signal_generator_tsg4104a':
-        rf_low_delay = sig_gen_tsg4104a_delay
-    elif low_sig_gen_name == 'signal_generator_sg394':
-        rf_low_delay = sig_gen_sg394_delay
 
-    high_sig_gen_name = tool_belt.get_signal_generator_name(States.HIGH)
     high_sig_gen_gate_chan_name = 'do_{}_gate'.format(high_sig_gen_name)
     pulser_do_sig_gen_high_gate = pulser_wiring[high_sig_gen_gate_chan_name]
-    if high_sig_gen_name == 'signal_generator_tsg4104a':
-        rf_high_delay = sig_gen_tsg4104a_delay
-    elif high_sig_gen_name == 'signal_generator_sg394':
-        rf_high_delay = sig_gen_sg394_delay
 
     pulser_do_arb_wave_trigger = pulser_wiring['do_arb_wave_trigger']
 
@@ -122,16 +120,27 @@ def get_seq(pulser_wiring, args):
 
     # %% Green laser
 
-    train = [(polarization_time, HIGH),
-             (pre_uwave_exp_wait_time + uwave_experiment_shrt + post_uwave_exp_wait_time, LOW),
-             (signal_time, HIGH),
-             (sig_to_ref_wait_time, LOW),
-             (reference_time, HIGH),
-             (pre_uwave_exp_wait_time + uwave_experiment_long + post_uwave_exp_wait_time, LOW),
-             (signal_time, HIGH),
-             (sig_to_ref_wait_time, LOW),
-             (gate_time + aom_delay_time, HIGH)]
-    seq.setDigital(pulser_do_aom, train)
+    if laser_power == -1:
+        laser_high = HIGH
+        laser_low = LOW
+    else:
+        laser_high = laser_power
+        laser_low = 0.0
+    train = [(polarization_time, laser_high),
+             (pre_uwave_exp_wait_time + uwave_experiment_shrt + post_uwave_exp_wait_time, laser_low),
+             (signal_time, laser_high),
+             (sig_to_ref_wait_time, laser_low),
+             (reference_time, laser_high),
+             (pre_uwave_exp_wait_time + uwave_experiment_long + post_uwave_exp_wait_time, laser_low),
+             (signal_time, laser_high),
+             (sig_to_ref_wait_time, laser_low),
+             (gate_time + aom_delay_time, laser_high)]
+    if laser_power == -1:
+        pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
+        seq.setDigital(pulser_laser_mod, train)
+    else:
+        pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
+        seq.setAnalog(pulser_laser_mod, train)
 
     # %% Microwaves
 

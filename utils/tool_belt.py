@@ -116,8 +116,9 @@ def set_laser_power(cxn, nv_sig=None, laser_key=None,
     if modulation_type == 'analog':
         return laser_power
     else:
-        if laser_power is not None:
-            pass  # TODO: set the power via a server
+        laser_server = get_filter_server(cxn, laser_name)
+        if (laser_power is not None) and (laser_server is not None):
+            laser_server.set_laser_power(laser_power)
         return -1  # -1 signifies digital modulation
     
 
@@ -141,16 +142,39 @@ def set_filter(cxn, nv_sig=None, optics_key=None,
         raise Exception('Specify either an optics_key/nv_sig or an optics_name/filter_name.')
     
     filter_server = get_filter_server(cxn, optics_name)
+    if filter_server is None:
+        return
     pos = get_registry_entry(cxn, filter_name,
                      ['', 'Config', 'Optics', optics_name, 'FilterMapping'])
     filter_server.set_filter(pos)
 
 
 def get_filter_server(cxn, optics_name):
-
-    server_name = get_registry_entry(cxn, 'filter_server',
+    """
+    Try to get a filter server. If there isn't one listed on the registry, 
+    just return None.
+    """
+    
+    try:
+        server_name = get_registry_entry(cxn, 'filter_server',
                                      ['', 'Config', 'Optics', optics_name])
-    return getattr(cxn, server_name)
+        return getattr(cxn, server_name)
+    except Exception:
+        return None
+
+
+def get_laser_server(cxn, laser_name):
+    """
+    Try to get a laser server. If there isn't one listed on the registry, 
+    just return None.
+    """
+
+    try:
+        server_name = get_registry_entry(cxn, 'laser_server',
+                                     ['', 'Config', 'Optics', laser_name])
+        return getattr(cxn, server_name)
+    except Exception:
+        return None
 
 
 # %% Pulse Streamer utils

@@ -279,7 +279,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     
     laser_key = 'spin_laser'
     laser_name = nv_sig[laser_key]
-    tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
     # Define some times for the sequence (in ns)

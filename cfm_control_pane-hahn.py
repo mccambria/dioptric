@@ -436,7 +436,7 @@ if __name__ == '__main__':
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
             'imaging_laser': 'laser_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
-            'spin_laser': 'laser_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E4, 'spin_readout_dur': 350,
+            'spin_laser': 'laser_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
             'collection_filter': None, 'magnet_angle': None,

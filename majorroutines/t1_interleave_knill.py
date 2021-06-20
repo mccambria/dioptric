@@ -189,25 +189,30 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
 
     tool_belt.reset_cfm(cxn)
 
-    # %% Define the times to be used in the sequence
+    # %% Define the parameters for the sequence
 
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    config = tool_belt.get_config_dict(cxn)
+    
+    laser_key = 'spin_laser'
+    laser_name = nv_sig[laser_key]
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-    # polarization_time = shared_params['polarization_dur']
     polarization_time = nv_sig['spin_pol_dur']
     # time of illumination during which signal readout occurs
     signal_time = polarization_time
     # time of illumination during which reference readout occurs
     reference_time = polarization_time
-    pre_uwave_exp_wait_time = shared_params['post_polarization_wait_dur']
-    post_uwave_exp_wait_time = shared_params['pre_readout_wait_dur']
+    pre_uwave_exp_wait_time = config['CommonDurations']['pol_to_uwave_wait_dur']
+    post_uwave_exp_wait_time = config['CommonDurations']['uwave_to_readout_wait_dur']
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    aom_delay_time = shared_params['532_aom_delay']
-    sig_gen_tsg4104a_delay = shared_params['signal_generator_tsg4104a_delay']
-    sig_gen_sg394_delay = shared_params['signal_generator_sg394_delay']
-    iq_delay_time = shared_params['iq_delay']
-    gate_time = nv_sig['pulsed_readout_dur']
+    aom_delay_time = config['Optics'][laser_name]['delay']
+    sig_gen_LOW_name = config['Microwaves']['sig_gen_{}'.format(States.LOW.name)]
+    sig_gen_LOW_delay = config['Microwaves']['{}_delay'.format(sig_gen_LOW_name)]
+    sig_gen_HIGH_name = config['Microwaves']['sig_gen_{}'.format(States.HIGH.name)]
+    sig_gen_HIGH_delay = config['Microwaves']['{}_delay'.format(sig_gen_HIGH_name)]
+    iq_delay = config['Microwaves']['iq_delay']
+    readout = nv_sig['spin_readout_dur']
 
     # %% Setting HIGH and LOW params
 
@@ -340,9 +345,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
         seq_args = [min_relaxation_time, polarization_time, signal_time, reference_time,
                     sig_to_ref_wait_time, pre_uwave_exp_wait_time,
                     post_uwave_exp_wait_time, aom_delay_time,
-                    sig_gen_tsg4104a_delay, sig_gen_sg394_delay, iq_delay_time,
-                    gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, max_relaxation_time,
-                    apd_indices[0], init_state.value, read_state.value]
+                    sig_gen_LOW_delay, sig_gen_HIGH_delay, iq_delay,
+                    readout, uwave_pi_pulse_low, uwave_pi_pulse_high, max_relaxation_time,
+                    apd_indices[0], init_state.value, read_state.value,
+                    sig_gen_LOW_name, sig_gen_HIGH_name, laser_name, laser_power]
         seq_args = [int(el) for el in seq_args]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
@@ -412,6 +418,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
             high_sig_gen_cxn.uwave_on()
 
             cxn.arbitrary_waveform_generator.load_knill()
+            
+            # Set up the laser
+            
+            tool_belt.set_filter(cxn, nv_sig, laser_key)
+            laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
             print('\nStarting experiment: ({}, {}) on run_ind: {}'.format(init_state.name,
                                               read_state.name, run_ind))
@@ -450,9 +461,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
                 seq_args = [taus[tau_ind_first], polarization_time, signal_time, reference_time,
                             sig_to_ref_wait_time, pre_uwave_exp_wait_time,
                             post_uwave_exp_wait_time, aom_delay_time,
-                            sig_gen_tsg4104a_delay, sig_gen_sg394_delay, iq_delay_time,
-                            gate_time, uwave_pi_pulse_low, uwave_pi_pulse_high, taus[tau_ind_second],
-                            apd_indices[0], init_state.value, read_state.value]
+                            sig_gen_LOW_delay, sig_gen_HIGH_delay, iq_delay,
+                            readout, uwave_pi_pulse_low, uwave_pi_pulse_high, taus[tau_ind_second],
+                            apd_indices[0], init_state.value, read_state.value,
+                            sig_gen_LOW_name, sig_gen_HIGH_name, laser_name, laser_power]
 
                 seq_args = [int(el) for el in seq_args]
                 seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -489,8 +501,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
         incr_data = {'start_timestamp': start_timestamp,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'gate_time': gate_time,
-            'gate_time-units': 'ns',
+            'readout': readout,
+            'readout-units': 'ns',
             'run_ind': run_ind,
             'params_master_list': params_master_list,
             'params_master_list-format': '[[init_state, read_state],relaxation range, num_steps, num_reps, uwave_pi_pulse_init, uwave_freq_init, uwave_power_init, uwave_pi_pulse_read, uwave_freq_read, uwave_power_read]',
@@ -530,8 +542,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
             'timeElapsed': timeElapsed,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'gate_time': gate_time,
-            'gate_time-units': 'ns',
+            'readout': readout,
+            'readout-units': 'ns',
             'num_runs': num_runs,
             'params_master_list': params_master_list,
             'params_master_list-format': '[[init_state, read_state],relaxation range, num_steps, num_reps, uwave_pi_pulse_init, uwave_freq_init, uwave_power_init, uwave_pi_pulse_read, uwave_freq_read, uwave_power_read]',

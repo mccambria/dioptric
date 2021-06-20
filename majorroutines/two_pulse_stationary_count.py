@@ -17,70 +17,77 @@ import matplotlib.pyplot as plt
 import time
 import labrad
 import majorroutines.optimize as optimize
+import majorroutines.stationary_count as stationary_count
 
 
 # %% Functions
 
 
-def update_line_plot(new_samples, num_read_so_far, *args):
 
-    fig, samples, write_pos, readout_sec = args
-
-    # Write to the samples array
-    cur_write_pos = write_pos[0]
-    new_write_pos = cur_write_pos + len(new_samples)
-    samples[cur_write_pos: new_write_pos] = new_samples
-    write_pos[0] = new_write_pos
-
-    # Update the figure in k counts per sec
-    tool_belt.update_line_plot_figure(fig, (samples / (10**3 * readout_sec)))
 
 # %% Main
 
 
-def main(nv_sig, run_time, apd_indices):
+def two_pulse_main(nv_sig, num_steps, init_color, read_color, init_time, readout_time,
+                   apd_indices, continuous=False):
 
     with labrad.connect() as cxn:
-        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices)
+        average, st_dev = two_pulse_main_with_cxn(cxn, nv_sig,num_steps,init_color,
+                    read_color, init_time, readout_time, apd_indices, continuous)
 
     return average, st_dev
 
-def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
+def two_pulse_main_with_cxn(cxn, nv_sig,num_steps, init_color, read_color, init_time,
+            readout_time, apd_indices, continuous=False):
 
     # %% Some initial setup
 
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm_wout_uwaves(cxn)
 
-    readout = nv_sig['imaging_readout_dur']
-    readout_sec = readout / 10**9
+    shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
+#    readout = shared_parameters['continuous_readout_dur']*10
+    readout_sec = readout_time / 10**9
+
+    aom_ao_589_pwr = nv_sig['am_589_power']
+
+    if init_color == 532:
+        init_delay = shared_parameters['515_laser_delay']
+    elif init_color == 589:
+        init_delay = shared_parameters['589_aom_delay']
+    elif init_color == 638:
+        init_delay = shared_parameters['638_laser_delay']
+
+    if read_color == 532:
+        read_delay = shared_parameters['515_laser_delay']
+    elif read_color == 589:
+        read_delay = shared_parameters['589_aom_delay']
+    elif read_color == 638:
+        read_delay = shared_parameters['638_laser_delay']
 
     # %% Optimize
 
-    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-    coords = nv_sig['coords']
-    drift = tool_belt.get_drift()
-    adj_coords = []
-    for i in range(3):
-        adj_coords.append(coords[i] + drift[i])
-    tool_belt.set_xyz(cxn, adj_coords)
-    
-    # %% Set up the imaging laser
+#    optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
 
-    laser_key = 'imaging_laser'
-    laser_name = nv_sig[laser_key]
-    tool_belt.set_filter(cxn, nv_sig, laser_key)
-    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    drift = numpy.array(tool_belt.get_drift())
+    coords = numpy.array(nv_sig['coords'])
+
+    coords_drift = coords + drift
+
+    cxn.galvo.write(coords_drift[0], coords_drift[1])
+    cxn.objective_piezo.write(coords_drift[2])
+#    print(coords_drift)
 
     # %% Load the PulseStreamer
+    seq_args = [0, init_delay, read_delay, init_time,  readout_time, aom_ao_589_pwr, apd_indices[0],
+            init_color, read_color]
 
-    seq_args = [0, readout, laser_name, laser_power, apd_indices[0]]
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+    ret_vals = cxn.pulse_streamer.stream_load('simple_readout_two_pulse.py',
                                               seq_args_string)
     period = ret_vals[0]
 
-    total_num_samples = int(run_time / period)
+#    total_num_samples = int(run_time / period)
 
     # %% Set up the APD
 
@@ -88,16 +95,16 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
 
     # %% Initialize the figure
 
-    samples = numpy.empty(total_num_samples)
+    samples = numpy.empty(num_steps)
     samples.fill(numpy.nan)  # Only floats support NaN
     write_pos = [0]  # This is a list because we need a mutable variable
 
     # Set up the line plot
-    x_vals = numpy.arange(total_num_samples) + 1
+    x_vals = numpy.arange(num_steps) + 1
     x_vals = x_vals / (10**9) * period   # Elapsed time in s
 
     fig = tool_belt.create_line_plot_figure(samples, x_vals)
-    # fig = tool_belt.create_line_plot_figure(samples)
+#    fig = tool_belt.create_line_plot_figure(samples)
 
     # Set labels
     axes = fig.get_axes()
@@ -115,16 +122,16 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
 
     # %% Collect the data
 
-    cxn.pulse_streamer.stream_start(total_num_samples)
+    cxn.pulse_streamer.stream_start(num_steps)
 
-    timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
+    timeout_duration = ((period*(10**-9)) * num_steps) + 10
     timeout_inst = time.time() + timeout_duration
 
     num_read_so_far = 0
 
     tool_belt.init_safe_stop()
 
-    while num_read_so_far < total_num_samples:
+    while num_read_so_far < num_steps:
 
         if time.time() > timeout_inst:
             break
@@ -136,11 +143,11 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
         new_samples = cxn.apd_tagger.read_counter_simple()
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
-            update_line_plot(new_samples, num_read_so_far, *args)
+            stationary_count.update_line_plot(new_samples, num_read_so_far, *args)
             num_read_so_far += num_new_samples
 
     # %% Clean up and report the data
-    
+
     tool_belt.reset_cfm_wout_uwaves(cxn)
 
     # Replace x/0=inf with 0
