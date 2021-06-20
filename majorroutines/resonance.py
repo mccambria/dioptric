@@ -29,30 +29,34 @@ from majorroutines.pulsed_resonance import double_gaussian_dip
 
 
 def main(nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_runs, uwave_power, color_ind):
+         num_steps, num_runs, uwave_power, state=States.LOW):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-                      num_steps, num_runs, uwave_power, color_ind)
+                      num_steps, num_runs, uwave_power, state=States.LOW)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-                  num_steps, num_runs, uwave_power, color_ind):
+                  num_steps, num_runs, uwave_power, state=States.LOW):
 
     # %% Initial calculations and setup
 
     tool_belt.reset_cfm(cxn)
+    
+    # Set up the laser
+    laser_key = 'spin_laser'
+    laser_name = nv_sig[laser_key]
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-    # Assume the low state
-    state = States.HIGH
-
-    # Set up for the pulser - we can't load the sequence yet until after
+    # Set up for the sequence - we can't load the sequence yet until after
     # optimize runs since optimize loads its own sequence
-    shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
-    readout = shared_parameters['continuous_readout_dur']
+    
+    # Since this is CW we need the imaging readout rather than the spin 
+    # readout typically used for state detection
+    readout = nv_sig['imaging_readout_dur']  
     readout_sec = readout / (10**9)
-    uwave_switch_delay = 1 * 10**6  # 1 ms to switch frequencies
-    am_589_power = nv_sig['am_589_power']
-    seq_args = [readout, am_589_power, uwave_switch_delay, apd_indices[0], state.value, color_ind]
+    sig_gen_name = tool_belt.get_registry_entry(cxn, 'sig_gen_{}'.format(state.name), ['', 'Config', 'Microwaves'])
+    uwave_delay = config['Microwaves'][sig_gen_name]['delay']
+    seq_args = [readout, uwave_delay, apd_indices[0], sig_gen_name, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     # print(seq_args_string)
     # return
@@ -105,9 +109,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
         # Optimize and save the coords we found
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-        opti_coords = nv_sig['coords']
         opti_coords_list.append(opti_coords)
-        # opti_coords_list.append([0.0, 0.0, 0])
+    
+        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn.set_amp(uwave_power)
+        sig_gen_cxn.uwave_on()
+        
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Load the APD task with two samples for each frequency step
         cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -120,25 +129,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             if tool_belt.safe_stop():
                 break
 
-            # Just assume the low state
-            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
             sig_gen_cxn.set_freq(freqs[step_ind])
-            sig_gen_cxn.set_amp(uwave_power)
-            sig_gen_cxn.uwave_on()
 
             # Start the timing stream
             cxn.apd_tagger.clear_buffer()
             cxn.pulse_streamer.stream_start()
 
-            # Previous method
-#            new_counts = cxn.apd_tagger.read_counter_simple(2)
-#            if len(new_counts) != 2:
-#                raise RuntimeError('There should be exactly 2 samples per freq.')
-#
-#            ref_counts[run_ind, step_ind] = new_counts[0]
-#            sig_counts[run_ind, step_ind] = new_counts[1]
-
-            # New method
+            # Read the counts using parity to distinguish signal vs ref
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
             sample_counts = new_counts[0]
             ref_gate_counts = sample_counts[0::2]
@@ -154,7 +151,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         rawData = {'start_timestamp': start_timestamp,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
-                   'color_ind': color_ind,
                    'opti_coords_list': opti_coords_list,
                    'opti_coords_list-units': 'V',
                    'freq_center': freq_center,

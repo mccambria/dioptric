@@ -18,26 +18,18 @@ HIGH = 1
 def get_seq(pulser_wiring, args):
 
     # Unpack the args
-    readout, am_589_power,  uwave_switch_delay, apd_index, state_value, color_ind = args
+    readout, uwave_delay, apd_index, sig_gen_name, laser_name, laser_power = args
 
     readout = numpy.int64(readout)
-    readout = numpy.int64(readout)
-    uwave_switch_delay = numpy.int64(uwave_switch_delay)
-    wait_time = numpy.int64(300)
-    period = readout + wait_time + uwave_switch_delay + readout + wait_time
+    uwave_delay = numpy.int64(uwave_delay)
+    # wait_time is a probably unnecessary buffer time between measurements
+    wait_time = numpy.int64(300)  
+    period = readout + wait_time + uwave_delay + readout + wait_time
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
 
-    if color_ind == 532:
-        pulser_do_aom = pulser_wiring['do_532_aom']
-    elif color_ind == 638:
-        pulser_do_aom = pulser_wiring['do_638_laser']
-    elif color_ind == 589:
-        pulser_ao_aom = pulser_wiring['ao_589_aom']
-
-    sig_gen_name = tool_belt.get_signal_generator_name(States(state_value))
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
 
@@ -54,23 +46,30 @@ def get_seq(pulser_wiring, args):
 
     # Ungate the APD channel for the readouts
     train = [(readout, HIGH), (wait_time, LOW),
-             (uwave_switch_delay, LOW),
+             (uwave_delay, LOW),
              (readout, HIGH), (wait_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
 
     # Uwave should be on for the first measurement and off for the second
     train = [(readout, LOW), (wait_time, LOW),
-             (uwave_switch_delay, HIGH),
+             (uwave_delay, HIGH),
              (readout, HIGH), (wait_time, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
     # The laser should always be on
-    if color_ind == 532 or color_ind == 638:
-        train = [(period, HIGH)]
-        seq.setDigital(pulser_do_aom, train)
-    if color_ind == 589:
-        train = [(period, am_589_power)]
-        seq.setAnalog(pulser_ao_aom, train)
+    if laser_power == -1:
+        laser_high = HIGH
+        laser_low = LOW
+    else:
+        laser_high = laser_power
+        laser_low = 0.0
+    train = [(period, laser_high)]
+    if laser_power == -1:
+        pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
+        seq.setDigital(pulser_laser_mod, train)
+    else:
+        pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
+        seq.setAnalog(pulser_laser_mod, train)
 
     final_digital = [pulser_do_daq_clock]
     final = OutputState(final_digital, 0.0, 0.0)

@@ -292,7 +292,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
     aom_delay_time = config['Optics'][laser_name]['delay']
     sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    uwave_delay_time = config['Microwaves']['{}_delay'.format(sig_gen_name)]
+    uwave_delay_time = config['Microwaves'][sig_gen_name]['delay']
     iq_delay = config['Microwaves']['iq_delay']
     readout = nv_sig['spin_readout_dur']
     readout_sec = readout / (10**9)
@@ -347,7 +347,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         if composite:
             sig_gen_cxn.load_iq()
             cxn.arbitrary_waveform_generator.load_knill()
-        sig_gen_cxn.uwave_on()
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         if composite:
@@ -366,6 +365,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                 break
 
             sig_gen_cxn.set_freq(freqs[step_ind])
+            sig_gen_cxn.uwave_on()
 
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total
