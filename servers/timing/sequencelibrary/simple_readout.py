@@ -45,11 +45,16 @@ def get_seq(pulser_wiring, args):
     seq.setDigital(pulser_do_daq_gate, train)
 
     if laser_power == -1:
-        train = [(period, HIGH)]
+        laser_high = HIGH
+        laser_low = LOW
+    else:
+        laser_high = laser_power
+        laser_low = 0.0
+    train = [(period, laser_high)]
+    if laser_power == -1:
         pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
         seq.setDigital(pulser_laser_mod, train)
     else:
-        train = [(period, laser_power)]
         pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
         seq.setAnalog(pulser_laser_mod, train)
 

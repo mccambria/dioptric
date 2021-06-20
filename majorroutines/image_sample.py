@@ -166,14 +166,15 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Some initial setup
     
     tool_belt.reset_cfm(cxn)
+    laser_key = 'imaging_laser'
 
     coords = nv_sig['coords']
     x_center, y_center, z_center = coords
     optimize.prepare_microscope(cxn, nv_sig, coords)
 
-    laser_name = nv_sig['imaging_laser']
-    tool_belt.set_filter(cxn, nv_sig, 'imaging_laser')
-    laser_power = tool_belt.set_laser_power(cxn, nv_sig, 'imaging_laser')
+    laser_name = nv_sig[laser_key]
+    tool_belt.set_filter(cxn, nv_sig, laser_key)
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
     
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')

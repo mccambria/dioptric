@@ -28,6 +28,19 @@ import labrad
 # %% Functions
 
 
+def illuminate(cxn, laser_power, laser_name):
+    
+    wiring = tool_belt.get_pulse_streamer_wiring(cxn)
+    if laser_power == -1:
+        cxn.pulse_streamer.constant([wiring['do_{}_dm'.format(laser_name)]], 0.0, 0.0)
+    else:
+        analog_channel = wiring['ao_{}_am'.format(laser_name)]
+        if analog_channel == 1:
+            cxn.pulse_streamer.constant([], laser_power, 0.0)
+        elif analog_channel == 2:
+            cxn.pulse_streamer.constant([], 0.0, laser_power)
+
+
 def calculate_relative_g2_zero(hist):
 
     # We take the values on the wings to be representatives for g2(inf)
@@ -172,24 +185,26 @@ def main(nv_sig, run_time, diff_window,
 def main_with_cxn(cxn, nv_sig, run_time, diff_window,
                   apd_a_index, apd_b_index):
 
-    do_optimize = False
-
     # %% Initial calculations and setup
 
     tool_belt.reset_cfm(cxn)
 
+    laser_key = 'imaging_laser'
+    laser_name = nv_sig[laser_key]
+
     # 200 ns to account for twilighting and afterpulsing
-    afterpulse_window = 200 * 1000
+    afterpulse_window = 200 
 #    sleep_time = 2 # (?)
     # afterpulse_window = (diff_window - 200) * 1000
 
     apd_indices = [apd_a_index, apd_b_index]
 
-    # Set xyz and open the AOM
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = False)
+    # Optimize and set filters
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    tool_belt.set_filter(cxn, nv_sig, laser_key)
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-    wiring = tool_belt.get_pulse_streamer_wiring(cxn)
-    cxn.pulse_streamer.constant([wiring['do_532_aom']])
+    illuminate(cxn, laser_power, laser_name)
 
     num_tags = 0
     collection_index = 0
@@ -247,13 +262,14 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         time.sleep(1.0)
 
         # Optimize every 2 minutes
-        if do_optimize:
-            elapsed_time = run_time - new_time_remaining
-            if (elapsed_time % 120 == 0) and (elapsed_time > 0) and (new_time_remaining > 0):
-                cxn.apd_tagger.stop_tag_stream()
-                opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-                cxn.pulse_streamer.constant([wiring['do_532_aom']])
-                cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
+        elapsed_time = run_time - new_time_remaining
+        if (elapsed_time % 120 == 0) and (elapsed_time > 0) and (new_time_remaining > 0):
+            cxn.apd_tagger.stop_tag_stream()
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            tool_belt.set_filter(cxn, nv_sig, laser_key)
+            laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+            illuminate(cxn, laser_power, laser_name)
+            cxn.apd_tagger.start_tag_stream(apd_indices, [], False)
 
         # Read the stream and convert from strings to int64s
         ret_vals = cxn.apd_tagger.read_tag_stream()
@@ -400,22 +416,3 @@ if __name__ == '__main__':
     plt.plot(bin_centers, hist)
     g2_zero = calculate_relative_g2_zero(hist)
     print(g2_zero)
-    raw_data = {'timestamp': timestamp,
-                'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'g2_zero': g2_zero,
-                'g2_zero-units': 'ratio',
-                'run_time': run_time_total,
-                'run_time-units': 's',
-                'diff_window': diff_window,
-                'background_kcps': 7,
-                'diff_window-units': 'ns',
-                'num_bins': num_bins,
-                'histogram': histogram.tolist(),
-                'bin_centers': bin_centers.tolist(),
-                'bin_centers-units': 'ps'}
-
-    # filePath = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    filePath = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_rabi/branch_Spin_to_charge/g2_measurement/2021_04/{}'.format(file_name)
-    tool_belt.save_figure(fig, filePath + '_accumul_10s')
-    tool_belt.save_raw_data(raw_data, filePath + '_accumul_10s')

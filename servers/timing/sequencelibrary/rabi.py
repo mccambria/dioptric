@@ -36,15 +36,15 @@ def get_seq(pulser_wiring, args):
     # Signify which signal generator to use
     sig_gen_name = args[11]
     
-    # Which laser?
+    # Laser specs
     laser_name = args[12]
+    laser_power = args[13]
 
     # Get what we need out of the wiring dictionary
     key = 'do_apd_{}_gate'.format(apd_index)
     pulser_do_apd_gate = pulser_wiring[key]
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
-    pulser_do_aom = pulser_wiring['do_{}_dm'.format(laser_name)]
 
     # %% Couple calculated values
 
@@ -81,13 +81,24 @@ def get_seq(pulser_wiring, args):
     # pulserSequence.setDigital(pulserDODaqGate0, gateBackgroundTrain)
 
     # Pulse the laser with the AOM for polarization and readout
-    train = [(polarization_time, HIGH),
-             (signal_wait_time + tau + signal_wait_time, LOW),
-             (polarization_time, HIGH),
-             (reference_wait_time, LOW),
-             (reference_time, HIGH),
-             (background_wait_time + end_rest_time + aom_delay_time, LOW)]
-    seq.setDigital(pulser_do_aom, train)
+    if laser_power == -1:
+        laser_high = HIGH
+        laser_low = LOW
+    else:
+        laser_high = laser_power
+        laser_low = 0.0
+    train = [(polarization_time, laser_high),
+             (signal_wait_time + tau + signal_wait_time, laser_low),
+             (polarization_time, laser_high),
+             (reference_wait_time, laser_low),
+             (reference_time, laser_high),
+             (background_wait_time + end_rest_time + aom_delay_time, laser_low)]
+    if laser_power == -1:
+        pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
+        seq.setDigital(pulser_laser_mod, train)
+    else:
+        pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
+        seq.setAnalog(pulser_laser_mod, train)
 
     # Pulse the microwave for tau
     pre_duration = aom_delay_time + polarization_time + signal_wait_time - uwave_delay_time

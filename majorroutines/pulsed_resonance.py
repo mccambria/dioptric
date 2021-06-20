@@ -252,6 +252,8 @@ def main(nv_sig, apd_indices, freq_center, freq_range,
                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
                   state, composite)
     return resonance_list
+
+
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
               state=States.LOW, composite=False):
@@ -274,6 +276,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     ref_counts = numpy.empty([num_runs, num_steps])
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
+    
+    laser_key = 'spin_laser'
+    laser_name = nv_sig[laser_key]
+    tool_belt.set_filter(cxn, nv_sig, laser_key)
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
     # Define some times for the sequence (in ns)
     config = tool_belt.get_config_dict(cxn)
@@ -284,12 +291,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     reference_time = signal_wait_time  # not sure what this is
     background_wait_time = signal_wait_time  # not sure what this is
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
-    aom_delay_time = config['Optics'][nv_sig['spin_pol_laser']]['delay']
+    aom_delay_time = config['Optics'][laser_name]['delay']
     sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
     uwave_delay_time = config['Microwaves']['{}_delay'.format(sig_gen_name)]
     iq_delay = config['Microwaves']['iq_delay']
     readout = nv_sig['spin_readout_dur']
-    gate_time = readout
     readout_sec = readout / (10**9)
     if composite:
         uwave_pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
@@ -298,15 +304,16 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                     signal_wait_time, reference_wait_time,
                     background_wait_time,
                     aom_delay_time, uwave_delay_time, iq_delay,
-                    gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
-                    1, 1, apd_indices[0], state.value]
+                    readout, uwave_pi_pulse, uwave_pi_on_2_pulse,
+                    1, 1, apd_indices[0],
+                    sig_gen_name, laser_name, laser_power]
         seq_args = [int(el) for el in seq_args]
     else:
         seq_args = [uwave_pulse_dur, polarization_time, reference_time,
                     signal_wait_time, reference_wait_time,
                     background_wait_time, aom_delay_time, uwave_delay_time,
-                    gate_time, uwave_pulse_dur,
-                    apd_indices[0], sig_gen_name, nv_sig['spin_pol_laser']]
+                    readout, uwave_pulse_dur, apd_indices[0],
+                    sig_gen_name, laser_name, laser_power]
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -332,6 +339,22 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         # Optimize and save the coords we found
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
+        
+        # Set up the microwaves and laser. Then load the pulse streamer 
+        # (must happen after optimize and iq_switch since run their
+        # own sequences)
+        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn.set_amp(uwave_power)
+        if composite:
+            sig_gen_cxn.load_iq()
+            cxn.arbitrary_waveform_generator.load_knill()
+        sig_gen_cxn.uwave_on()
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        if composite:
+            ret_vals = cxn.pulse_streamer.stream_load('discrete_rabi2.py', seq_args_string)
+        else:
+            ret_vals = cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
 
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -343,21 +366,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             if tool_belt.safe_stop():
                 break
 
-            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
             sig_gen_cxn.set_freq(freqs[step_ind])
-            sig_gen_cxn.set_amp(uwave_power)
-            if composite:
-                sig_gen_cxn.load_iq()
-                cxn.arbitrary_waveform_generator.load_knill()
-            sig_gen_cxn.uwave_on()
-
-            # Load the pulse streamer (must happen after optimize and iq_switch
-            # since run their own sequences)
-            if composite:
-                ret_vals = cxn.pulse_streamer.stream_load('discrete_rabi2.py', seq_args_string)
-            else:
-                ret_vals = cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
-
 
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total

@@ -357,22 +357,25 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     # %% Define the times to be used in the sequence
 
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-
-    polarization_time = shared_params['polarization_dur']
+    config = tool_belt.get_config(cxn)
+    laser_key = 'spin_laser'
+    laser_name = nv_sig[laser_key]
+    tool_belt.set_filter(cxn, nv_sig, laser_key)
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    polarization_time = nv_sig['spin_pol_dur']
     # time of illumination during which signal readout occurs
     signal_time = polarization_time
     # time of illumination during which reference readout occurs
     reference_time = polarization_time
-    pre_uwave_exp_wait_time = shared_params['post_polarization_wait_dur']
-    post_uwave_exp_wait_time = shared_params['pre_readout_wait_dur']
+    pre_uwave_exp_wait_time = config['CommonDurations']['pol_to_uwave_wait_dur']
+    post_uwave_exp_wait_time = config['CommonDurations']['uwave_to_readout_wait_dur']
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    aom_delay_time = shared_params['515_laser_delay']
-    rf_delay_time = shared_params['uwave_delay']
-    gate_time = nv_sig['pulsed_readout_dur']
+    aom_delay_time = config['Optics'][laser_name]['delay']
+    rf_delay_time = config['Microwaves']['{}_delay'.format(sig_gen_name)]
+    gate_time = nv_sig['spin_readout_dur']
 
-    # Default to the low state
     rabi_period = nv_sig['rabi_{}'.format(state.name)]
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
@@ -438,7 +441,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                 sig_to_ref_wait_time, pre_uwave_exp_wait_time,
                 post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
                 gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
-                max_precession_time, apd_indices[0], state.value]
+                max_precession_time, apd_indices[0], 
+                sig_gen_name, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -473,7 +477,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, aom_ao_589_pwr = 1.0, disable = True)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -481,6 +485,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
+        
+        # Set up the laser
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -515,7 +523,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
                         sig_to_ref_wait_time, pre_uwave_exp_wait_time,
                         post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
                         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
-                        taus[tau_ind_second], apd_indices[0], state.value]
+                        taus[tau_ind_second], apd_indices[0], 
+                        sig_gen_name, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
             cxn.apd_tagger.clear_buffer()
