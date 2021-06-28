@@ -60,12 +60,12 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,
                     readout = 10**7, um_scaled= False):
 
 #    scan_range = 5.0
-#    scan_range = 1.2
-#    scan_range = 0.5
+#    scan_range = 2.5
+#    scan_range = 0.8
 #    scan_range = 0.3
 #    scan_range = 0.2
-#    scan_range = 0.1
-    scan_range = 0.05
+    scan_range = 0.15
+#    scan_range = 0.05
 #    scan_range = 0.025
 
 #    num_steps = 300
@@ -73,8 +73,8 @@ def do_image_sample(nv_sig, apd_indices,  color_ind, save_data, plot_data,
 #    num_steps = 150
 #    num_steps = 135
 #    num_steps = 120
-#    num_steps = 90
-    num_steps = 60
+    num_steps = 90
+#    num_steps = 60
     
     save_data=True
     
@@ -411,12 +411,15 @@ def do_time_resolved_readout(nv_sig, apd_indices,
                    num_reps, num_runs, num_bins)
 
 def do_SPaCE(nv_sig, img_range, num_steps):
+#    optimize_coords = nv_sig['coords']
+#    start_coords = list(numpy.array(optimize_coords))# + [-0.06, -0.25, 0])
+#    print(start_coords)
     start_coords = nv_sig['coords']
     optimize_coords = start_coords
 #    img_range = 2.5 # V (35 um / 2 V)
     pulse_time = 10*10**6
 #    num_steps = 200 
-    num_runs = 2
+    num_runs = 10
     init_color = '515a'
     pulse_color = '515a'
     measurement_type = '2D'
@@ -458,18 +461,19 @@ if __name__ == '__main__':
 
     nv0_2021_06_14 = { 'coords':[0.043, 0.004 ,5.0],
             'name': '{}-nv0_2021_06_14'.format(sample_name),
-            'expected_count_rate': 40,'nd_filter': 'nd_0.5',
-            'color_filter': '635-715 bp',
-#            'color_filter': '715 lp',
+            'expected_count_rate': 40,'nd_filter': 'nd_0',
+#            'color_filter': '635-715 bp',
+            'color_filter': '715 lp',
+            'disable_opt': True,
             'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.15,
+            'pulsed_SCC_readout_dur': 4*10**7,  'am_589_power': 0.6,
             'pulsed_initial_ion_dur': 25*10**3,
             'pulsed_shelf_dur': 200,
             'am_589_shelf_power': 0.35,
             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130,
             'ao_638_pwr': 0.8,
             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':12,
-            'ao_515_pwr': 0.65,
+            'ao_515_pwr': 0.655 ,
             'magnet_angle': 0,
             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
@@ -505,7 +509,8 @@ if __name__ == '__main__':
 
         # Operations that don't need an NV
 
-#        drift = [0.01, 0.01, -0.06]
+#        drift = [-0.275, 0.09, 0.018]
+#        drift = [0, 0, 0.018]
 #        tool_belt.set_drift(drift)
 #        tool_belt.set_drift([0.0,0.0,0.0])  # Totally reset
 #        tool_belt.set_drift([tool_belt.get_drift()[0], tool_belt.get_drift()[1], 0.0])  # Keep x, y
@@ -515,7 +520,7 @@ if __name__ == '__main__':
 
 #        with labrad.connect() as cxn:
 #            cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
-#            cxn.filter_slider_ell9k.set_filter('nd_0')
+#            cxn.filter_slider_ell9k.set_filter('nd_0.5')
 #            cxn.pulse_streamer.constant([], 0.65, 0.0)
 #            cxn.objective_piezo.write(5.1)
 
@@ -528,7 +533,7 @@ if __name__ == '__main__':
         for ind in range(len(nv_sig_list)):
             nv_sig = nv_sig_list[ind]
 
-            do_optimize(nv_sig, apd_indices, '515a')
+#            do_optimize(nv_sig, apd_indices, '515a')
 #            do_optimize(nv_sig, apd_indices, 532)
 
 #            [x, y, z] = nv_sig['coords']
@@ -540,10 +545,23 @@ if __name__ == '__main__':
 
 
 #            do_image_sample(nv_sig,  apd_indices, 532, save_data=True, plot_data=True, readout = 1*10**7)
-            do_image_sample(nv_sig,  apd_indices, '515a',
-                            save_data=True, plot_data=True, readout = 1*10**7)
 #            do_image_sample(nv_sig,  apd_indices, 638, save_data=True, plot_data=True, readout = 10**5)
-#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =4*10**7)
+#            do_image_sample(nv_sig,  apd_indices, '515a',
+#                            save_data=True, plot_data=True, readout = 1*10**7)
+            
+            
+#            with labrad.connect() as cxn:
+#                cxn.pulse_streamer.constant([], 0.655, 0.0)
+#                time.sleep(0.01)
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =1*10**7)
+#            
+#            do_image_sample(nv_sig,  apd_indices, '515a',
+#                            save_data=True, plot_data=True, readout = 1*10**7)
+#            with labrad.connect() as cxn:
+#                cxn.pulse_streamer.constant([], 0, 0.0)
+#                time.sleep(0.01)
+            
+#            do_image_sample(nv_sig,  apd_indices, 589, save_data=True, plot_data=True, readout =1*10**7)
 
 #            do_stationary_count(nv_sig, apd_indices, 532)
 #            do_time_resolved_readout(nv_sig, apd_indices,
@@ -553,19 +571,25 @@ if __name__ == '__main__':
 #            power_list_1 = [0.68] 
 #            power_list_2 = [0.98,0.92,0.865,0.81,0.75,0.68,0.655,0.635,0.622]
             
-############################################################################            
-#            power_list_high = [0.98]#,0.92]
-#            power_list_mid = [0.865]#,0.81,0.75]
-#            power_list_low = [0.68,]#0.655,0.635,0.622]
-#            for p in power_list_low:
+############################################################################ 
+            for x in [-0.5, -0.25, 0, 0.25, 0.5]:
+                for y in [-0.5, -0.25, 0, 0.25, 0.5]:
+                    nv_sig_copy = copy.deepcopy(nv_sig)
+                    nv_sig_copy['coords'] = [x, y, 4.9]
+                    do_SPaCE(nv_sig_copy, 0.8, 41) 
+            
+#            power_list_high = [0.98,0.92]
+#            power_list_mid = [0.865,0.81,0.75]
+#            power_list_low = [0.68,0.655,0.635,0.622]
+#            for p in [0.655]:
 #                nv_sig_copy = copy.deepcopy(nv_sig)
-#                nv_sig_copy['ao_515_pwr'] = p
-#                # NV readout
-#                nv_sig_copy['nd_filter'] = 'nd_0.5'
-#                nv_sig_copy['am_589_power'] = 0.15
-#                nv_sig_copy['pulsed_SCC_readout_dur'] = 100*10**6
-#                nv_sig_copy['color_filter'] = '635-715 bp'
-#                do_SPaCE(nv_sig_copy, 0.8, 41) 
+#                nv_sig_copy['ao_515_pwr'] = 0.655
+##                # NV readout
+##                nv_sig_copy['nd_filter'] = 'nd_0.5'
+##                nv_sig_copy['am_589_power'] = 0.15
+##                nv_sig_copy['pulsed_SCC_readout_dur'] = 100*10**6
+##                nv_sig_copy['color_filter'] = '635-715 bp'
+##                do_SPaCE(nv_sig_copy, 0.8, 41) 
 #                # SiV readout
 #                nv_sig_copy['nd_filter'] = 'nd_0'
 #                nv_sig_copy['am_589_power'] = 0.6
