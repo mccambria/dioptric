@@ -20,6 +20,7 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import labrad
 from utils.tool_belt import States
+import analysis.temp_from_resonances as temp_from_resonances
 
 
 # %% Figure functions
@@ -188,14 +189,17 @@ def fit_resonance(freq_range, freq_center, num_steps,
             # popt = guess_params
             if len(popt) == 6:
                 zfs = (popt[2] + popt[5]) / 2
-                print(zfs)
                 low_res_err = numpy.sqrt(pcov[2,2])
                 hig_res_err = numpy.sqrt(pcov[5,5])
                 zfs_err = numpy.sqrt(low_res_err**2 + hig_res_err**2) / 2
-                print(zfs_err)
             else:
-                res_err = numpy.sqrt(pcov[2,2])
-                print(res_err)
+                zfs = popt[2]
+                zfs_err = numpy.sqrt(pcov[2,2])
+            
+            print(zfs)
+            print(zfs_err)
+            temp_from_resonances.main(zfs, zfs_err)
+                
         else:
             popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
                                    p0=guess_params)
@@ -532,7 +536,7 @@ if __name__ == '__main__':
 
 
     path = 'pc_rabi/branch_laser-consolidation/resonance/2021_06'
-    file = '2021_06_29-15_04_55-hopper-nv1_2021_03_16'
+    file = '2021_06_29-17_30_13-hopper-nv1_2021_03_16'
     data = tool_belt.get_raw_data(path, file)
 
     freq_center = data['freq_center']

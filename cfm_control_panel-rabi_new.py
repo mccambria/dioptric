@@ -465,7 +465,7 @@ if __name__ == '__main__':
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 #         do_stationary_count(nv_sig, apd_indices)
-         do_resonance(nv_sig, apd_indices, 2.87, 0.1)
+         do_resonance(nv_sig, apd_indices, 2.87, 0.05)
 #         do_pulsed_resonance(nv_sig, apd_indices, 2.872, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
