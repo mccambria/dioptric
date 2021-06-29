@@ -68,6 +68,7 @@ class SignalGeneratorSg394(LabradServer):
         self.daq_ao_sig_gen_mod = config[2]
         self.task = None    # Initialize state variable
         self.reset(None)
+        logging.debug('Init complete')
 
     @setting(0)
     def uwave_on(self, c):

@@ -286,9 +286,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             # is easy and readable and probably fine up to some resolution
             if plot_data:
                 img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-                tool_belt.update_image_figure(fig, img_array)
+                tool_belt.update_image_figure(fig, img_array_kcps)
             num_read_so_far += num_new_samples
-
 
     # %% Clean up
 

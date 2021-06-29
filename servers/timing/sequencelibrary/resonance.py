@@ -24,7 +24,8 @@ def get_seq(pulser_wiring, args):
     uwave_delay = numpy.int64(uwave_delay)
     # wait_time is a probably unnecessary buffer time between measurements
     wait_time = numpy.int64(300)  
-    period = readout + wait_time + uwave_delay + readout + wait_time
+    # Just tack the laser_delay onto the end of everything
+    period = readout + wait_time + readout + wait_time
 
     # Get what we need out of the wiring dictionary
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
@@ -46,17 +47,17 @@ def get_seq(pulser_wiring, args):
 
     # Ungate the APD channel for the readouts
     train = [(readout, HIGH), (wait_time, LOW),
-             (uwave_delay, LOW),
              (readout, HIGH), (wait_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
 
     # Uwave should be on for the first measurement and off for the second
-    train = [(readout, LOW), (wait_time, LOW),
-             (uwave_delay, HIGH),
-             (readout, HIGH), (wait_time, LOW)]
+    train = [(readout-uwave_delay, LOW), (wait_time, LOW),
+             (readout, HIGH), (wait_time+uwave_delay, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
-    # The laser should always be on
+    # The laser should always be on, even after the sequence completes! 
+    # Otherwise the signal will be lower than reference as the NVs reach
+    # steady state some time (us?) the start of illumination. 
     if laser_power == -1:
         laser_high = HIGH
         laser_low = LOW
@@ -67,11 +68,17 @@ def get_seq(pulser_wiring, args):
     if laser_power == -1:
         pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
         seq.setDigital(pulser_laser_mod, train)
+        final_digital = [pulser_do_daq_clock, pulser_laser_mod]
+        final = OutputState(final_digital, 0.0, 0.0)
     else:
         pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
         seq.setAnalog(pulser_laser_mod, train)
+        final_digital = [pulser_do_daq_clock]
+        if pulser_laser_mod == 0:
+            final = OutputState(final_digital, laser_power, 0.0)
+        elif pulser_laser_mod == 1:
+            final = OutputState(final_digital, 0.0, laser_power)
 
-    final_digital = [pulser_do_daq_clock]
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]
 
@@ -79,9 +86,9 @@ def get_seq(pulser_wiring, args):
 if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 1,
-              'do_532_aom': 2,
-              'do_signal_generator_sg394_gate': 7,
+              'do_laser_515_dm': 2,
+              'do_signal_generator_tsg4104a_gate': 7,
               'do_signal_generator_bnc835_gate': 4}
-    args = [100000000, 1000000, 0, 1]
+    args = [10000.0, 1003, 0, 'signal_generator_tsg4104a', 'laser_515', -1]
     seq, final, ret_vals = get_seq(wiring, args)
     seq.plot()
