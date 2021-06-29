@@ -536,7 +536,7 @@ if __name__ == '__main__':
 
 
     path = 'pc_rabi/branch_laser-consolidation/resonance/2021_06'
-    file = '2021_06_29-17_30_13-hopper-nv1_2021_03_16'
+    file = '2021_06_29-18_09_47-hopper-nv1_2021_03_16'
     data = tool_belt.get_raw_data(path, file)
 
     freq_center = data['freq_center']
