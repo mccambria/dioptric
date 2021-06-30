@@ -553,14 +553,15 @@ def main(file_name, path, plot_type, rates_to_plot,
         sample_patches = []
         for ind in range(len(samples)):
             label = samples[ind]
-            # if label == 'PRResearch':
-            #     label = '[1]'
-            # else:
-            #     label = 'New results'
+            if label == 'PRResearch':
+                label = '[1]'
+            else:
+                label = 'New results'
             patch = mlines.Line2D([], [], color='black', marker=markers[ind],
                               linestyle='None', markersize=ms, label=label)
             sample_patches.append(patch)
-        x_loc = 0.16
+        # x_loc = 0.16
+        x_loc = 0.22
         ax.legend(handles=sample_patches, loc='upper left', title='Samples',
                   bbox_to_anchor=(x_loc, 1.0))
 
