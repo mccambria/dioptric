@@ -93,7 +93,7 @@ if __name__ == '__main__':
     # main()
     
     # laser_names = ['laser_532', 'laser_589', 'laser_638']
-    laser_names = ['laser_532', 'laser_589']
+    laser_names = ['laser_532']
     chans = []
     
     with labrad.connect() as cxn:
