@@ -181,6 +181,11 @@ def get_laser_server(cxn, laser_name):
 
 
 def encode_seq_args(seq_args):
+    # Recast numpy ints to Python ints so json knows what to do
+    for ind in range(len(seq_args)):
+        el = seq_args[ind]
+        if type(el) is numpy.int32:
+            seq_args[ind] = int(el)
     return json.dumps(seq_args)
 
 def decode_seq_args(seq_args_string):

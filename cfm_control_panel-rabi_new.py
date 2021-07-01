@@ -137,9 +137,9 @@ def do_resonance_state(nv_sig, apd_indices, state):
 #    num_runs = 2
     
     # Zoom
-    freq_range = 0.05
+    freq_range = 0.060
     num_steps = 51
-    num_runs = 4
+    num_runs = 5
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                    num_steps, num_runs, uwave_power)
@@ -167,11 +167,11 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # num_runs = 8
     
     # Zoom
-    freq_range = 0.035
+    freq_range = 0.060
     # freq_range = 0.120
     num_steps = 51
-    num_reps = 8000
-    num_runs = 3
+    num_reps = 1000
+    num_runs = 5
     
     composite = False
 
@@ -184,13 +184,19 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     angle_range = [0, 150]
     # angle_range = [25, 35]
     num_angle_steps = 6
-    freq_center = 2.877
-    freq_range = 0.12
+    freq_center = 2.87
+    freq_range = 0.250
     num_freq_steps = 51
     num_freq_runs = 10
-    uwave_power = 14.5
-    # uwave_power = -5.0
-    uwave_pulse_dur = 100  # Set to None for CWESR
+    
+    # Pulsed
+#    uwave_power = 14.5
+#    uwave_pulse_dur = 100 
+    
+    # CW
+    uwave_power = -5.0
+    uwave_pulse_dur = None 
+    
     num_freq_reps = 1 * 10**4
 
     optimize_magnet_angle.main(nv_sig, apd_indices,
@@ -202,8 +208,8 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
-    num_reps = 8000
-    num_runs = 10
+    num_reps = 1000
+    num_runs = 5
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -415,9 +421,9 @@ if __name__ == '__main__':
     # %% Shared parameters
 
 
-    apd_indices = [0]
+#    apd_indices = [0]
 #    apd_indices = [1]
-#    apd_indices = [0,1]
+    apd_indices = [0,1]
     
 #    nd = 'nd_0'
     nd = 'nd_0.5'
@@ -439,9 +445,9 @@ if __name__ == '__main__':
             'spin_laser': 'laser_515', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
-            'collection_filter': '630_lp', 'magnet_angle': None,
-            'resonance_LOW': 2.8036, 'rabi_LOW': 242.9, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9512, 'rabi_HIGH': 219.6, 'uwave_power_HIGH': 12.0}   # 14.5 max
+            'collection_filter': '630_lp', 'magnet_angle': 30.0,
+            'resonance_LOW': 2.7942, 'rabi_LOW': 161.5, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9469, 'rabi_HIGH': 239.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -465,13 +471,15 @@ if __name__ == '__main__':
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 #         do_stationary_count(nv_sig, apd_indices)
-         do_resonance(nv_sig, apd_indices, 2.87, 0.05)
-#         do_pulsed_resonance(nv_sig, apd_indices, 2.872, 0.200)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_optimize_magnet_angle(nv_sig, apd_indices)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+#         do_resonance(nv_sig, apd_indices, 2.87, 0.250)
+#         do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.05)
+#         do_resonance_state(nv_sig, apd_indices, States.LOW)
+#         do_resonance_state(nv_sig, apd_indices, States.HIGH)
+#         do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+#         do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+#         do_optimize_magnet_angle(nv_sig, apd_indices)
+#         do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+         do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)

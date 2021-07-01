@@ -92,12 +92,17 @@ if __name__ == '__main__':
     # Run the script
     # main()
     
-    # laser_names = ['laser_532', 'laser_589', 'laser_638']
+    # Rabi
     laser_names = ['laser_515']
-    chans = []
+    pos = [0.0, 0.0, 5.0]
     
+    # Hahn
+#    laser_names = ['laser_532', 'laser_589', 'laser_638']
+#    pos = [0.0, 0.0, 0]
+    
+    chans = []
     with labrad.connect() as cxn:
-        tool_belt.set_xyz(cxn, [0.0, 0.0, 0])
+        tool_belt.set_xyz(cxn, )
         for el in laser_names:
             # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name='nd_0.5')
             chan = tool_belt.get_registry_entry(cxn, 'do_{}_dm'.format(el),

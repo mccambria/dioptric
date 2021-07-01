@@ -164,8 +164,9 @@ def main(nv_sig, apd_indices, uwave_time_range, state,
          num_steps, num_reps, num_runs):
 
     with labrad.connect() as cxn:
-        rabi_per, sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
-                      num_steps, num_reps, num_runs)
+        rabi_per, sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, 
+                                         apd_indices, uwave_time_range, state,
+                                         num_steps, num_reps, num_runs)
 
         return rabi_per
 
@@ -200,7 +201,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     reference_wait_time = 2 * signal_wait_time  # not sure what this is
     aom_delay_time = config['Optics'][laser_name]['delay']
     sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    uwave_delay_time = config['Microwaves']['{}_delay'.format(sig_gen_name)]
+    uwave_delay_time = config['Microwaves'][sig_gen_name]['delay']
     iq_delay = config['Microwaves']['iq_delay']
     readout = nv_sig['spin_readout_dur']
     readout_sec = readout / (10**9)
@@ -219,7 +220,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                 background_wait_time, aom_delay_time, uwave_delay_time,
                 readout, max_uwave_time, apd_indices[0], 
                 sig_gen_name, laser_name, laser_power]
-    seq_args = [int(el) for el in seq_args]
+#    for arg in seq_args:
+#        print(type(arg))
 #    print(seq_args)
 #    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -256,8 +258,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, aom_ao_589_pwr = 1.0, disable = False)
-#        opti_coords = optimize.opti_z_cxn(cxn, nv_sig, apd_indices, 532)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Apply the microwaves
@@ -296,7 +297,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                         background_wait_time, aom_delay_time, uwave_delay_time,
                         readout, max_uwave_time, apd_indices[0], 
                         sig_gen_name, laser_name, laser_power]
-            seq_args = [int(el) for el in seq_args]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
             cxn.apd_tagger.clear_buffer()

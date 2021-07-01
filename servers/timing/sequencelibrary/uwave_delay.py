@@ -39,49 +39,64 @@ def get_seq(pulser_wiring, args):
     
     # Extract the delay (that the rf is applied from the start of the seq),
     # the readout time, and the pi pulse duration
-    durations = args[0:6]
+    durations = args[0:7]
     durations = [numpy.int64(el) for el in durations]
-    delay, readout, pi_pulse, aom_delay_time, \
-                                polarization, wait_time = durations[0:6]
+    tau, max_tau, readout, pi_pulse, aom_delay_time, polarization, wait_time = durations
     
-    state_value = args[6]
-    state = States(state_value)
-    apd_index = args[7]
+    sig_gen = args[7]
+    apd_index = args[8]
+    laser_name = args[9]
+    laser_power = args[10]
     
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    pulser_do_aom = pulser_wiring['do_532_aom']
-    sig_gen = tool_belt.get_signal_generator_name(state)
     pulser_do_sig_gen_gate = pulser_wiring['do_{}_gate'.format(sig_gen)]
     
+    # Include a buffer on the front end so that we can delay channels that
+    # should start off the sequence HIGH
+    front_buffer = max(max_tau, aom_delay_time)
     
-    sequence = polarization + wait_time + polarization + wait_time + \
-                        polarization
-    period =  sequence + aom_delay_time
+    period = front_buffer + polarization + wait_time + polarization
 
     seq = Sequence()
     
     # The readout windows are what everything else is relative to so keep
-    # these fixed
-    prep_time = aom_delay_time + polarization + wait_time
-    train = [(prep_time, LOW), (readout, HIGH)]
-    train.extend([(polarization + wait_time - readout, LOW), (readout, HIGH)])
-    train.extend([(polarization - readout, LOW)])
+    # those fixed
+    train = [(front_buffer, LOW),
+             (polarization + wait_time - readout, LOW), 
+             (readout, HIGH),
+             (polarization + wait_time - readout, LOW),
+             (readout, HIGH),
+             ]
     seq.setDigital(pulser_do_apd_gate, train)
 
-    # Pulse sequence for the AOM
-    train = [(polarization, HIGH), (wait_time, LOW), (polarization, HIGH)]
-    train.extend([(wait_time, LOW), (polarization - aom_delay_time, HIGH)])
-    # print(train)
-    seq.setDigital(pulser_do_aom, train)
+    if laser_power == -1:
+        laser_high = HIGH
+        laser_low = LOW
+    else:
+        laser_high = laser_power
+        laser_low = 0.0
+    train = [(front_buffer - aom_delay_time, laser_low),
+             (polarization, laser_high), 
+             (wait_time, laser_low), 
+             (polarization, laser_high),
+             (aom_delay_time, laser_low), 
+             ]
+    train.extend([(wait_time, laser_low), (polarization - aom_delay_time, laser_high)])
+    if laser_power == -1:
+        pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
+        seq.setDigital(pulser_laser_mod, train)
+    else:
+        pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
+        seq.setAnalog(pulser_laser_mod, train)
     
     # Vary the position of the rf pi pulse
-    train = [(aom_delay_time + delay, LOW)]
-    train.extend([(pi_pulse, HIGH)])
-    train.extend([(sequence - aom_delay_time - delay - pi_pulse, LOW)])
+    train = [(front_buffer - tau, LOW),
+             (pi_pulse, HIGH),
+             (period - (front_buffer - tau) - pi_pulse, LOW),
+             ]
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
-    final_digital = [pulser_wiring['do_532_aom'],
-                     pulser_wiring['do_sample_clock']]
+    final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]
 
@@ -99,12 +114,12 @@ if __name__ == '__main__':
     # go through that here.
 
     # Set up a dummy pulser wiring dictionary
-    pulser_wiring = {'do_apd_0_gate': 0, 'do_532_aom': 1, 'do_sample_clock': 2,
+    pulser_wiring = {'do_apd_0_gate': 0, 'do_laser_515_dm': 1, 'do_sample_clock': 2,
                      'do_signal_generator_sg394_gate': 3, 
-                     'do_signal_generator_bnc835_gate': 4}
+                     'do_signal_generator_tsg4104a_gate': 4}
 
     # Set up a dummy args list
-    args = [0, 350, 78, 1060, 1100, 1000, 1, 0]
+    args = [0, 1500, 350, 81, 90, 1100, 1000, 'signal_generator_sg394', 0, 'laser_515', -1]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

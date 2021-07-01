@@ -18,10 +18,7 @@ import numpy
 import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
-from majorroutines.pulsed_resonance import fit_resonance
-from majorroutines.pulsed_resonance import create_fit_figure
-from majorroutines.pulsed_resonance import single_gaussian_dip
-from majorroutines.pulsed_resonance import double_gaussian_dip
+from majorroutines import pulsed_resonance 
 from random import shuffle
 
 
@@ -58,7 +55,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     readout = nv_sig['imaging_readout_dur']  
     readout_sec = readout / (10**9)
     sig_gen_name = tool_belt.get_registry_entry(cxn, 'sig_gen_{}'.format(state.name), ['', 'Config', 'Microwaves'])
-    uwave_delay = tool_belt.get_registry_entry(cxn, '{}_delay'.format(sig_gen_name), ['', 'Config', 'Microwaves'])
+    uwave_delay = tool_belt.get_registry_entry(cxn, 'delay', ['', 'Config', 'Microwaves', sig_gen_name])
     
     seq_args = [readout, uwave_delay, apd_indices[0], sig_gen_name, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -194,11 +191,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # %% Process and plot the data
 
-    # Find the averages across runs
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
-
+    ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
+    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
+    
     # Convert to kilocounts per second
     kcps_uwave_off_avg = (avg_ref_counts / (10**3)) / readout_sec
     kcpsc_uwave_on_avg = (avg_sig_counts / (10**3)) / readout_sec
@@ -255,7 +250,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'ref_counts': ref_counts.astype(int).tolist(),
                'ref_counts-units': 'counts',
                'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-               'norm_avg_sig-units': 'arb'}
+               'norm_avg_sig-units': 'arb',
+#               'norm_avg_sig_ste': norm_avg_sig_ste.astype(float).tolist(),
+#               'norm_avg_sig_ste-units': 'arb',
+               }
 
     name = nv_sig['name']
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
@@ -263,21 +261,21 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     tool_belt.save_raw_data(rawData, filePath)
 
     # Use the pulsed_resonance fitting functions
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, ref_counts)
+    fit_func, popt = pulsed_resonance.fit_resonance(freq_range, freq_center,
+                                    num_steps, norm_avg_sig, norm_avg_sig_ste)
     fit_fig = None
     if (fit_func is not None) and (popt is not None):
-        fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
-                                    norm_avg_sig, fit_func, popt)
+        fit_fig = pulsed_resonance.create_fit_figure(freq_range, freq_center,
+                                     num_steps, norm_avg_sig, fit_func, popt)
     filePath = tool_belt.get_file_path(__file__, timestamp, name + '-fit')
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
 
-    if fit_func == single_gaussian_dip:
+    if fit_func == pulsed_resonance.single_gaussian_dip:
         print('Single resonance at {:.4f} GHz'.format(popt[2]))
         print('\n')
         return popt[2], None
-    elif fit_func == double_gaussian_dip:
+    elif fit_func == pulsed_resonance.double_gaussian_dip:
         print('Resonances at {:.4f} GHz and {:.4f} GHz'.format(popt[2], popt[5]))
         print('Splitting of {:d} MHz'.format(int((popt[5] - popt[2]) * 1000)))
         print('\n')
