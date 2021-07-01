@@ -63,15 +63,15 @@ class ObjectivePiezo(LabradServer):
         # Load the generic device
         gcs_dll_path = str(Path.home())
         gcs_dll_path += '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
-        gcs_dll_path += '\\servers\\outputs\\GCSTranslator'
-        self.piezo = GCSDevice(devname=config[0], gcs_dll_path=config[1])
+        gcs_dll_path += '\\servers\\outputs\\GCSTranslator\\PI_GCS2_DLL_x64.dll'
+        self.piezo = GCSDevice(devname=config[0], gcsdll=gcs_dll_path)
         # Connect the specific device with the serial number
-        self.piezo.ConnectUSB(config[2])
+        self.piezo.ConnectUSB(config[1])
         # Just one axis for this device
         self.axis = self.piezo.axes[0]
         self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
-        self.daq_ao_objective_piezo = config[3]
-        self.daq_di_clock = config[4]
+        self.daq_ao_objective_piezo = config[2]
+        self.daq_di_clock = config[3]
         logging.debug('Init complete')
 
     def load_stream_writer(self, c, task_name, voltages, period):

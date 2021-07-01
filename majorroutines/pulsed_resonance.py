@@ -20,6 +20,7 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import labrad
 from utils.tool_belt import States
+import analysis.temp_from_resonances as temp_from_resonances
 
 
 # %% Figure functions
@@ -188,19 +189,22 @@ def fit_resonance(freq_range, freq_center, num_steps,
             # popt = guess_params
             if len(popt) == 6:
                 zfs = (popt[2] + popt[5]) / 2
-                print(zfs)
                 low_res_err = numpy.sqrt(pcov[2,2])
                 hig_res_err = numpy.sqrt(pcov[5,5])
                 zfs_err = numpy.sqrt(low_res_err**2 + hig_res_err**2) / 2
-                print(zfs_err)
             else:
-                res_err = numpy.sqrt(pcov[2,2])
-                print(res_err)
+                zfs = popt[2]
+                zfs_err = numpy.sqrt(pcov[2,2])
+            
+            print(zfs)
+            print(zfs_err)
+            temp_from_resonances.main(zfs, zfs_err)
+                
         else:
             popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
                                    p0=guess_params)
-    except Exception:
-        print('Something went wrong!')
+    except Exception as e:
+        print(e)
         popt = guess_params
 
     return fit_func, popt
@@ -223,6 +227,24 @@ def simulate(res_freq, freq_range, contrast,
     ax.plot(smooth_freqs, rel_counts)
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
+    
+    
+def process_counts(ref_counts, sig_counts, num_runs):
+    
+    # Find the averages across runs
+    avg_ref_counts = numpy.average(ref_counts, axis=0)
+    avg_sig_counts = numpy.average(sig_counts, axis=0)
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    
+    # Extract the error
+    # Typically we don't do many runs (<10), so this isn't a large enough
+    # sample to run stats on. Assume Poisson statistics instead. 
+    ste_ref_counts = numpy.sqrt(avg_ref_counts) / numpy.sqrt(num_runs)
+    ste_sig_counts = numpy.sqrt(avg_sig_counts) / numpy.sqrt(num_runs)
+    norm_avg_sig_ste = numpy.copy(norm_avg_sig)
+    norm_avg_sig_ste *= numpy.sqrt((ste_sig_counts/avg_sig_counts)**2 + (ste_ref_counts/avg_ref_counts)**2 + (ste_sig_counts/avg_sig_counts)**2)
+
+    return avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste
 
 
 # %% User functions
@@ -424,13 +446,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # %% Process and plot the data
 
-    # Find the averages across runs
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
 
     # Convert to kilocounts per second
-
     kcps_uwave_off_avg = (avg_ref_counts / (num_reps * 1000)) / readout_sec
     kcpsc_uwave_on_avg = (avg_sig_counts / (num_reps * 1000)) / readout_sec
 
@@ -460,7 +479,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # %% Fit the data
 
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig)
+                                   norm_avg_sig, norm_avg_sig_ste)
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
                                     norm_avg_sig, fit_func, popt)
@@ -497,7 +516,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'ref_counts': ref_counts.astype(int).tolist(),
                'ref_counts-units': 'counts',
                'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-               'norm_avg_sig-units': 'arb'}
+               'norm_avg_sig-units': 'arb',
+               'norm_avg_sig_ste': norm_avg_sig_ste.astype(float).tolist(),
+               'norm_avg_sig_ste-units': 'arb'}
 
     name = nv_sig['name']
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
@@ -529,10 +550,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-
-
-    path = 'pc_hahn/branch_master/pulsed_resonance/2021_06'
-    file = '2021_06_05-17_03_55-hopper-nv1_2021_03_16'
+    path = 'pc_rabi/branch_laser-consolidation/resonance/2021_06'
+    file = '2021_06_29-19_53_41-hopper-nv1_2021_03_16'
     data = tool_belt.get_raw_data(path, file)
 
     freq_center = data['freq_center']
@@ -540,15 +559,7 @@ if __name__ == '__main__':
     num_steps = data['num_steps']
     num_runs = data['num_runs']
     norm_avg_sig = numpy.array(data['norm_avg_sig'])
-    ref_counts = numpy.array(data['ref_counts'])
-    sig_counts = numpy.array(data['sig_counts'])
-
-    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
-    avg_ref_counts = numpy.average(ref_counts[::], axis=0)
-    ste_ref_counts = numpy.std(ref_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
-    norm_avg_sig_ste = norm_avg_sig * numpy.sqrt((ste_sig_counts/avg_sig_counts)**2 + (ste_ref_counts/avg_ref_counts)**2 + (ste_sig_counts/avg_sig_counts)**2)
+    norm_avg_sig_ste = numpy.array(data['norm_avg_sig_ste'])
 
     fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
                                    norm_avg_sig, norm_avg_sig_ste)

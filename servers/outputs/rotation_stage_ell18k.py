@@ -47,7 +47,7 @@ class RotationStageEll18k(LabradServer):
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd(['', 'Config', 'Wiring', 'Daq'])
+        p.cd(['', 'Config', 'DeviceIDs'])
         p.get('rotation_stage_ell18k_address')
         result = await p.send()
         return result

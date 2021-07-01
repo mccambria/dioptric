@@ -15,14 +15,11 @@ Created on Thu Apr 11 15:39:23 2019
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-import os
 import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
-from majorroutines.pulsed_resonance import fit_resonance
-from majorroutines.pulsed_resonance import create_fit_figure
-from majorroutines.pulsed_resonance import single_gaussian_dip
-from majorroutines.pulsed_resonance import double_gaussian_dip
+from majorroutines import pulsed_resonance 
+from random import shuffle
 
 
 # %% Main
@@ -33,7 +30,7 @@ def main(nv_sig, apd_indices, freq_center, freq_range,
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-                      num_steps, num_runs, uwave_power, state=States.LOW)
+                      num_steps, num_runs, uwave_power, state)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                   num_steps, num_runs, uwave_power, state=States.LOW):
@@ -46,6 +43,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     laser_key = 'spin_laser'
     laser_name = nv_sig[laser_key]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    spin_laser_chan = tool_belt.get_registry_entry(cxn,
+                                           'do_{}_dm'.format(laser_name),
+                                           ['', 'Config', 'Wiring', 'Pulser'])
 
     # Set up for the sequence - we can't load the sequence yet until after
     # optimize runs since optimize loads its own sequence
@@ -55,11 +55,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     readout = nv_sig['imaging_readout_dur']  
     readout_sec = readout / (10**9)
     sig_gen_name = tool_belt.get_registry_entry(cxn, 'sig_gen_{}'.format(state.name), ['', 'Config', 'Microwaves'])
-    uwave_delay = config['Microwaves'][sig_gen_name]['delay']
+    uwave_delay = tool_belt.get_registry_entry(cxn, 'delay', ['', 'Config', 'Microwaves', sig_gen_name])
+    
     seq_args = [readout, uwave_delay, apd_indices[0], sig_gen_name, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    # print(seq_args_string)
-    # return
+#    print(seq_args)
+#    return
 
     file_name = 'resonance.py'
 
@@ -68,6 +69,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
     freqs = numpy.linspace(freq_low, freq_high, num_steps)
+    freq_ind_list = list(range(num_steps))
+    freq_ind_master_list = []
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
@@ -110,6 +113,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         # Optimize and save the coords we found
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
+        
+        # Start the green laser now to get rid of transient effects
+        cxn.pulse_streamer.constant([spin_laser_chan])
     
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
@@ -121,6 +127,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         # Load the APD task with two samples for each frequency step
         cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         cxn.apd_tagger.start_tag_stream(apd_indices)
+        
+        # Shuffle the list of frequency indices so that we step through
+        # them randomly
+        shuffle(freq_ind_list)
+        freq_ind_master_list.append(freq_ind_list)
 
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):
@@ -129,7 +140,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             if tool_belt.safe_stop():
                 break
 
-            sig_gen_cxn.set_freq(freqs[step_ind])
+            freq_ind = freq_ind_list[step_ind]
+            sig_gen_cxn.set_freq(freqs[freq_ind])
 
             # Start the timing stream
             cxn.apd_tagger.clear_buffer()
@@ -139,10 +151,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
             sample_counts = new_counts[0]
             ref_gate_counts = sample_counts[0::2]
-            ref_counts[run_ind, step_ind]  = sum(ref_gate_counts)
+            ref_counts[run_ind, freq_ind]  = sum(ref_gate_counts)
 
             sig_gate_counts = sample_counts[1::2]
-            sig_counts[run_ind, step_ind] = sum(sig_gate_counts)
+            sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
 
         cxn.apd_tagger.stop_tag_stream()
 
@@ -159,12 +171,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                    'freq_range-units': 'GHz',
                    'num_steps': num_steps,
                    'num_runs': num_runs,
+                   'freq_ind_master_list': freq_ind_master_list,
                    'uwave_power': uwave_power,
                    'uwave_power-units': 'dBm',
                    'readout': readout,
                    'readout-units': 'ns',
-                   'uwave_switch_delay': uwave_switch_delay,
-                   'uwave_switch_delay-units': 'ns',
+                   'uwave_delay': uwave_delay,
+                   'uwave_delay-units': 'ns',
                    'sig_counts': sig_counts.astype(int).tolist(),
                    'sig_counts-units': 'counts',
                    'ref_counts': ref_counts.astype(int).tolist(),
@@ -178,11 +191,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # %% Process and plot the data
 
-    # Find the averages across runs
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
-
+    ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
+    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
+    
     # Convert to kilocounts per second
     kcps_uwave_off_avg = (avg_ref_counts / (10**3)) / readout_sec
     kcpsc_uwave_on_avg = (avg_sig_counts / (10**3)) / readout_sec
@@ -227,18 +238,22 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'freq_range-units': 'GHz',
                'num_steps': num_steps,
                'num_runs': num_runs,
+               'freq_ind_master_list': freq_ind_master_list,
                'uwave_power': uwave_power,
                'uwave_power-units': 'dBm',
                'readout': readout,
                'readout-units': 'ns',
-               'uwave_switch_delay': uwave_switch_delay,
-               'uwave_switch_delay-units': 'ns',
+               'uwave_delay': uwave_delay,
+               'uwave_delay-units': 'ns',
                'sig_counts': sig_counts.astype(int).tolist(),
                'sig_counts-units': 'counts',
                'ref_counts': ref_counts.astype(int).tolist(),
                'ref_counts-units': 'counts',
                'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-               'norm_avg_sig-units': 'arb'}
+               'norm_avg_sig-units': 'arb',
+#               'norm_avg_sig_ste': norm_avg_sig_ste.astype(float).tolist(),
+#               'norm_avg_sig_ste-units': 'arb',
+               }
 
     name = nv_sig['name']
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
@@ -246,21 +261,21 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     tool_belt.save_raw_data(rawData, filePath)
 
     # Use the pulsed_resonance fitting functions
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, ref_counts)
+    fit_func, popt = pulsed_resonance.fit_resonance(freq_range, freq_center,
+                                    num_steps, norm_avg_sig, norm_avg_sig_ste)
     fit_fig = None
     if (fit_func is not None) and (popt is not None):
-        fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
-                                    norm_avg_sig, fit_func, popt)
+        fit_fig = pulsed_resonance.create_fit_figure(freq_range, freq_center,
+                                     num_steps, norm_avg_sig, fit_func, popt)
     filePath = tool_belt.get_file_path(__file__, timestamp, name + '-fit')
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
 
-    if fit_func == single_gaussian_dip:
+    if fit_func == pulsed_resonance.single_gaussian_dip:
         print('Single resonance at {:.4f} GHz'.format(popt[2]))
         print('\n')
         return popt[2], None
-    elif fit_func == double_gaussian_dip:
+    elif fit_func == pulsed_resonance.double_gaussian_dip:
         print('Resonances at {:.4f} GHz and {:.4f} GHz'.format(popt[2], popt[5]))
         print('Splitting of {:d} MHz'.format(int((popt[5] - popt[2]) * 1000)))
         print('\n')

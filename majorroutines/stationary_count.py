@@ -134,6 +134,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
 
         # Read the samples and update the image
         new_samples = cxn.apd_tagger.read_counter_simple()
+#        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             update_line_plot(new_samples, num_read_so_far, *args)
@@ -141,7 +142,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
 
     # %% Clean up and report the data
     
-    tool_belt.reset_cfm_wout_uwaves(cxn)
+    tool_belt.reset_cfm(cxn)
 
     # Replace x/0=inf with 0
     try:
