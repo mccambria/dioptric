@@ -53,19 +53,19 @@ def get_seq(pulser_wiring, args):
     
     # Include a buffer on the front end so that we can delay channels that
     # should start off the sequence HIGH
-    front_buffer = max(max_tau, aom_delay_time)
+    front_buffer = max(max_tau+pi_pulse, aom_delay_time)
     
-    period = front_buffer + polarization + wait_time + polarization
+    period = front_buffer + polarization + wait_time + polarization + wait_time
 
     seq = Sequence()
     
     # The readout windows are what everything else is relative to so keep
     # those fixed
     train = [(front_buffer, LOW),
+             (readout, HIGH),
              (polarization + wait_time - readout, LOW), 
              (readout, HIGH),
              (polarization + wait_time - readout, LOW),
-             (readout, HIGH),
              ]
     seq.setDigital(pulser_do_apd_gate, train)
 
@@ -79,9 +79,8 @@ def get_seq(pulser_wiring, args):
              (polarization, laser_high), 
              (wait_time, laser_low), 
              (polarization, laser_high),
-             (aom_delay_time, laser_low), 
+             (wait_time + aom_delay_time, laser_low), 
              ]
-    train.extend([(wait_time, laser_low), (polarization - aom_delay_time, laser_high)])
     if laser_power == -1:
         pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
         seq.setDigital(pulser_laser_mod, train)
@@ -90,9 +89,13 @@ def get_seq(pulser_wiring, args):
         seq.setAnalog(pulser_laser_mod, train)
     
     # Vary the position of the rf pi pulse
-    train = [(front_buffer - tau, LOW),
+    train = [(front_buffer - pi_pulse - tau, LOW),
              (pi_pulse, HIGH),
-             (period - (front_buffer - tau) - pi_pulse, LOW),
+             (period - (front_buffer - tau), LOW),
+             ]
+    train = [(front_buffer + polarization + wait_time - pi_pulse - tau, LOW),
+             (pi_pulse, HIGH),
+             (polarization + wait_time + tau, LOW),
              ]
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
@@ -119,7 +122,7 @@ if __name__ == '__main__':
                      'do_signal_generator_tsg4104a_gate': 4}
 
     # Set up a dummy args list
-    args = [0, 1500, 350, 81, 90, 1100, 1000, 'signal_generator_sg394', 0, 'laser_515', -1]
+    args = [0, 500, 350, 81, 0, 1000.0, 1000, 'signal_generator_sg394', 0, 'laser_515', -1]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

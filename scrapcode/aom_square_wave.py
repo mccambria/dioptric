@@ -50,14 +50,14 @@ def constant(digital_channels, analog_0_voltage, analog_1_voltage):
 # %% Main
 
 
-def main():
+def main(channels):
     """When you run the file, we'll call into main, which should contain the
     body of the script.
     """
     
 #    period = numpy.int64(100)
 #    period = numpy.int64(300)
-    period = numpy.int64(10**3)
+    period = numpy.int64(10**4)
 #    period = numpy.int64(10**5)
 #    period = numpy.int64(10**9)
     half_period = period // 2
@@ -65,10 +65,22 @@ def main():
     seq = Sequence()
 
 #    train = [(half_period, HIGH), (half_period, HIGH)]
-    train = [(half_period, HIGH), (half_period, LOW)]
-    seq.setDigital(3, train)
+#    train = [(half_period, HIGH), (half_period, LOW)]
+    train = [(10**4, HIGH), (10**4, LOW),
+             (10**4, HIGH), (10**4, LOW),
+             ]
+    for chan in channels:
+        seq.setDigital(chan, train)
+#    laser_high = 1.0
+#    laser_low = 0
+#    train = [(10**4, laser_high), (10**4, laser_low),
+#             (10**4, laser_high), (10**4, laser_low),
+#             ]
+##    for chan in channels:
+##        seq.setAnalog(chan, train)
+#    seq.setAnalog(0, train)
     
-    pulser = Pulser('128.104.160.113')
+    pulser = Pulser('128.104.160.111')
     pulser.constant(OutputState([]))
     pulser.setTrigger(start=TriggerStart.SOFTWARE)
     pulser.stream(seq, Pulser.REPEAT_INFINITELY)
@@ -88,9 +100,6 @@ def main():
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here
-
-    # Run the script
-    # main()
     
     # Rabi
     laser_names = ['laser_515']
@@ -102,10 +111,11 @@ if __name__ == '__main__':
     
     chans = []
     with labrad.connect() as cxn:
-        tool_belt.set_xyz(cxn, )
+        tool_belt.set_xyz(cxn, pos)
         for el in laser_names:
             # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name='nd_0.5')
             chan = tool_belt.get_registry_entry(cxn, 'do_{}_dm'.format(el),
                                          ['', 'Config', 'Wiring', 'Pulser'])
             chans.append(chan)
-    constant(chans, 0.0, 0.0)
+#    constant(chans, 0.0, 0.0)
+    main(chans)

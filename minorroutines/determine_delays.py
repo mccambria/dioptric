@@ -83,7 +83,8 @@ def measure_delay(cxn, nv_sig, apd_indices,
             laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
             aom_delay = config['Optics'][laser_name]['delay']
             sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
-            polarization_time = 1100
+            polarization_time = nv_sig['spin_pol_dur']
+#            wait_time = max(max_tau, config['CommonDurations']['uwave_to_readout_wait_dur'])
             wait_time = 1000
             readout = nv_sig['spin_readout_dur']
             seq_args = [tau, max_tau, readout, pi_pulse, aom_delay,
@@ -91,16 +92,19 @@ def measure_delay(cxn, nv_sig, apd_indices,
                         apd_indices[0], laser_name, laser_power]
 #            print(seq_args)
 #            return
+        # Clear the tagger buffer of any excess counts
+        cxn.apd_tagger.clear_buffer()
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate(seq_file, num_reps,
                                             seq_args_string)
 
         new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
         sample_counts = new_counts[0]
-        sig_counts[tau_ind] = sum(sample_counts[0::2])
-        ref_counts[tau_ind] = sum(sample_counts[1::2])
+        ref_counts[tau_ind] = sum(sample_counts[0::2])
+        sig_counts[tau_ind] = sum(sample_counts[1::2])
 
     cxn.apd_tagger.stop_tag_stream()
+    
     tool_belt.reset_cfm(cxn)
 
     # kcps
@@ -145,6 +149,10 @@ def measure_delay(cxn, nv_sig, apd_indices,
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
+    
+    if tool_belt.check_safe_stop_alive():
+        print('\n\nRoutine complete. Press enter to exit.')
+        tool_belt.poll_safe_stop()
 
 
 # %% Mains
@@ -209,10 +217,10 @@ if __name__ == '__main__':
             'resonance_LOW': 2.7942, 'rabi_LOW': 161.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9469, 'rabi_HIGH': 239.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     apd_indices = [0, 1]
-    num_reps = 10**5
+    num_reps = 10**4
 
     # aom_delay
-#    delay_range = [0, 250]
+#    delay_range = [10, 200]
 #    num_steps = 51
 #    laser_name = 'laser_515'
 #    laser_power = -1
@@ -221,12 +229,12 @@ if __name__ == '__main__':
 #                  delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
-    delay_range = [500, 1500]
+    delay_range = [-200, 100]
     num_steps = 51
     # tsg4104a
     state = States.LOW
     # sg394
-    # state = States.HIGH
+#    state = States.HIGH
     with labrad.connect() as cxn:
         uwave_delay(cxn, nv_sig, apd_indices, state,
                     delay_range, num_steps, num_reps)

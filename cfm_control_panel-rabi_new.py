@@ -219,10 +219,12 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
     # num_reps = 2 * 10**4
     num_reps = 5000
-    num_runs = 10
+    num_runs = 5
+    
+    for iq_delay in numpy.linspace(500, 700, 21):
         
-    discrete_rabi.main(nv_sig, apd_indices,
-                       state, max_num_pi_pulses, num_reps, num_runs)
+        discrete_rabi.main(nv_sig, apd_indices,
+                           state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
 
 
 def do_t1_battery(nv_sig, apd_indices):
@@ -364,16 +366,20 @@ def do_spin_echo(nv_sig, apd_indices):
     # In bulk it's more like 100 us at 300 K
     max_time = 120  # us
     num_steps = max_time + 1  # 1 point per us
+#    max_time = 1  # us
+#    num_steps = 51
     precession_time_range = [0, max_time * 10**3]
-    num_reps = 8000
-    num_runs = 20
+#    num_reps = 8000
+#    num_runs = 5
+    num_reps = 1000
+    num_runs = 5
     
 #    num_steps = 151
 #    precession_time_range = [0, 10*10**3]
 #    num_reps = int(10.0 * 10**4)
 #    num_runs = 6
     
-    state = States.HIGH
+    state = States.LOW
 
     spin_echo.main(nv_sig, apd_indices, precession_time_range,
                    num_steps, num_reps, num_runs, state)
@@ -446,8 +452,8 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
             'collection_filter': '630_lp', 'magnet_angle': 30.0,
-            'resonance_LOW': 2.7942, 'rabi_LOW': 161.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9469, 'rabi_HIGH': 239.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.7942, 'rabi_LOW': 162.2, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9469, 'rabi_HIGH': 231.5, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -479,10 +485,10 @@ if __name__ == '__main__':
 #         do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
 #         do_optimize_magnet_angle(nv_sig, apd_indices)
 #         do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-         do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        # do_spin_echo(nv_sig, apd_indices)
+#         do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+#         do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+#         do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+         do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
         # do_t1_interleave_knill(nv_sig, apd_indices)

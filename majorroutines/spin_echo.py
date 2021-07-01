@@ -237,7 +237,8 @@ def fit_data(data):
     # [1:] excludes frequency 0 (DC component)
     max_ind = numpy.argmax(transform_mag[1:])
     frequency = freqs[max_ind+1]
-    revival_time = 2/frequency  # Double tends to work better for
+    revival_time = 2/frequency  # Double tends to work better for some reason
+    revival_time = 30000
     # print(revival_time)
 
     # Hard guess
@@ -258,12 +259,13 @@ def fit_data(data):
     min_bounds = (0.5, 0.0, 0.0, *[0.0 for el in amplitudes])
     max_bounds = (1.0, max_precession_dur / 1000, max_precession_dur / 1000,
                   *[0.3 for el in amplitudes])
-    # print(init_params)
-
+    print(init_params)
+    
     try:
         popt, pcov = curve_fit(fit_func, tau_pis / 1000, norm_avg_sig,
                                sigma=norm_avg_sig_ste, absolute_sigma=True,
                                p0=init_params, bounds=(min_bounds, max_bounds))
+#        return
         # popt[1] = 35.7
         popt[1] *= 1000
         popt[2] *= 1000
@@ -357,7 +359,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     # %% Define the times to be used in the sequence
 
-    config = tool_belt.get_config(cxn)
+    config = tool_belt.get_config_dict(cxn)
+    
     laser_key = 'spin_laser'
     laser_name = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
@@ -373,7 +376,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
     aom_delay_time = config['Optics'][laser_name]['delay']
-    rf_delay_time = config['Microwaves']['{}_delay'.format(sig_gen_name)]
+    rf_delay_time = config['Microwaves'][sig_gen_name]['delay']
     gate_time = nv_sig['spin_readout_dur']
 
     rabi_period = nv_sig['rabi_{}'.format(state.name)]
@@ -435,8 +438,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     # %% Analyze the sequence
 
-    # We can simply reuse t1_double_quantum for this if we pass a pi/2 pulse
-    # instead of a pi pulse and use the same states for init/readout
     seq_args = [min_precession_time, polarization_time, signal_time, reference_time,
                 sig_to_ref_wait_time, pre_uwave_exp_wait_time,
                 post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
@@ -446,7 +447,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-#    print(sequence_args)
+#    print(seq_args)
+#    return
 #    print(seq_time)
 
     # %% Let the user know how long this will take
@@ -484,7 +486,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
-        sig_gen_cxn.uwave_on()
+#        sig_gen_cxn.uwave_on()
         
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
@@ -694,11 +696,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 if __name__ == '__main__':
 
-    path = 'pc_hahn/branch_cryo-setup/spin_echo/2021_04'
-    file = '2021_04_30-21_55_35-hopper-nv1_2021_03_16'
+    path = 'pc_rabi\\branch_laser-consolidation\\spin_echo\\2021_07'
+    file = '2021_07_01-09_33_09-hopper-nv1_2021_03_16'
 
     data = tool_belt.get_raw_data(path, file)
-
-    # fit_func, popt, stes, fit_fig = fit_data_from_file(path, file)
 
     plot_resonances_vs_theta_B(data)

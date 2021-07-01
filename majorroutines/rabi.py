@@ -222,8 +222,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                 sig_gen_name, laser_name, laser_power]
 #    for arg in seq_args:
 #        print(type(arg))
-#    print(seq_args)
-#    return
+    print(seq_args)
+    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
 

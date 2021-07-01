@@ -53,21 +53,23 @@ def get_seq(pulser_wiring, args):
     half_illumination = illumination // 2
     readout = illumination // 10
     inter_time = 10**3
-    period = max_tau + (2 * illumination) + inter_time
+    back_buffer = inter_time
+    period = (2 * illumination) + inter_time + back_buffer
     
     seq = Sequence()
 
     # Keep the signal readout fixed at the back end of the illumination
     # to account for transients and because the laser should lag the readout.
-    # Sweep the illumination delay. Place the second
-    # readout (reference) squarely in the middle of the illumination so its 
+    # Sweep the illumination delay. Place the reference
+    # readout squarely in the middle of the illumination so its 
     # independent of the actual delay.
-    train = [(max_tau, LOW),
-             (illumination-readout, LOW), (readout, HIGH), 
-             (inter_time, LOW),
-             (half_illumination, LOW),
+    train = [(half_illumination, LOW),
              (readout, HIGH),
              (half_illumination-readout, LOW),
+             (inter_time, LOW),
+             (illumination-readout, LOW), 
+             (readout, HIGH),
+             (back_buffer, LOW),
              ]
     seq.setDigital(do_apd_gate, train)
 
@@ -77,10 +79,10 @@ def get_seq(pulser_wiring, args):
     else:
         laser_high = laser_power
         laser_low = 0.0
-    train = [(max_tau-tau, laser_low), 
-             (illumination, laser_high), 
-             (inter_time+tau, laser_low), 
+    train = [(illumination, laser_high), 
+             (inter_time-tau, laser_low), 
              (illumination, laser_high),
+             (back_buffer+tau, laser_low),
              ]
     if laser_power == -1:
         pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
@@ -110,13 +112,12 @@ if __name__ == '__main__':
     pulser_wiring = {'do_apd_0_gate': 0, 
                      'do_532_aom': 1, 
                      'do_sample_clock': 2,
-                     'ao_515_laser': 0,
+                     'do_laser_515_dm': 1,
                      'ao_589_aom': 1, 
                      'do_638_laser': 4}
 
     # Set up a dummy args list
-    args = [ 500, 1500, 200, 0, 0, 1.0, 589]
-    args = [1573.3333333333335, 2000, 200, 0, 0, 0.65, '515a']
+    args = [0, 250, 0, 'laser_515', -1]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

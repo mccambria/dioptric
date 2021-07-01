@@ -152,20 +152,26 @@ def get_seq(pulser_wiring, args):
 if __name__ == '__main__':
     wiring = {'do_sample_clock': 0,
               'do_apd_0_gate': 4,
-              'do_532_aom': 1,
-              'do_signal_generator_tsg4104a_gate': 2,
+              'do_laser_515_dm': 1,
+              'do_signal_generator_sg394_gate': 2,
               'do_uwave_gate_1': 3,
               }
 
-            # tau_shrt, polarization_time, signal_time, reference_time
-    args = [500, 3000, 3000, 3000,
-            # sig_to_ref_wait_time, pre_uwave_exp_wait_time
-            2000, 1000,
-            # post_uwave_exp_wait_time, aom_delay_time, rf_delay_time
-            1000, 0, 0, 
-            # gate_time, pi_pulse, pi_on_2_pulse, tau_long
-            320, 1000, 500, 2500,
-            # apd_index, state_value 
-            0, States.LOW.value]
-    seq, final, ret_vals = get_seq(wiring, args)
+#            # tau_shrt, polarization_time, signal_time, reference_time
+#    seq_args = [500, 3000, 3000, 3000,
+#            # sig_to_ref_wait_time, pre_uwave_exp_wait_time
+#            2000, 1000,
+#            # post_uwave_exp_wait_time, aom_delay_time, rf_delay_time
+#            1000, 0, 0, 
+#            # gate_time, pi_pulse, pi_on_2_pulse, tau_long
+#            320, 1000, 500, 2500,
+#            # apd_index, state_value 
+#            0, States.LOW.value]
+#    seq_args = [1000, 1000.0, 1000.0, 1000.0, 2000, 1000,
+#                1000, 0, 0, 350, 81, 41, 700,
+#                0, 'signal_generator_sg394', 'laser_515', -1]
+    seq_args = [0, 1000.0, 1000.0, 1000.0, 2000, 1000,
+                1000, 0, 0, 350, 81, 41, 0,
+                0, 'signal_generator_sg394', 'laser_515', -1]
+    seq, final, ret_vals = get_seq(wiring, seq_args)
     seq.plot()
