@@ -66,8 +66,12 @@ def main(channels):
 
 #    train = [(half_period, HIGH), (half_period, HIGH)]
 #    train = [(half_period, HIGH), (half_period, LOW)]
-    train = [(10**4, HIGH), (10**4, LOW),
-             (10**4, HIGH), (10**4, LOW),
+#    train = [(10**4, HIGH), (500, LOW),
+#             (10**4, HIGH), (5000, LOW),
+#             ]
+    pulse_length = 500
+    train = [(pulse_length, HIGH), (pulse_length, LOW),
+             (pulse_length, HIGH), (pulse_length, LOW),
              ]
     for chan in channels:
         seq.setDigital(chan, train)
