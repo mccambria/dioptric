@@ -9,7 +9,7 @@ Created on Sun Jun 16 11:22:40 2019
 
 
 # %% Imports
-    
+
 
 from pulsestreamer import PulseStreamer as Pulser
 from pulsestreamer import TriggerStart
@@ -31,7 +31,7 @@ HIGH = 1
 
 
 def constant(digital_channels, analog_0_voltage, analog_1_voltage):
-    
+
     with labrad.connect() as cxn:
         pulser = cxn.pulse_streamer
         pulser.constant(digital_channels,
@@ -43,7 +43,7 @@ def constant(digital_channels, analog_0_voltage, analog_1_voltage):
 #        cxn.pulse_streamer.constant([], val, val)
 
         input('Press enter to stop...')
-        
+
         pulser.constant([], 0.0, 0.0)
 
 
@@ -54,14 +54,14 @@ def main(channels):
     """When you run the file, we'll call into main, which should contain the
     body of the script.
     """
-    
+
 #    period = numpy.int64(100)
 #    period = numpy.int64(300)
     period = numpy.int64(10**4)
 #    period = numpy.int64(10**5)
 #    period = numpy.int64(10**9)
     half_period = period // 2
-    
+
     seq = Sequence()
 
 #    train = [(half_period, HIGH), (half_period, HIGH)]
@@ -83,15 +83,15 @@ def main(channels):
 ##    for chan in channels:
 ##        seq.setAnalog(chan, train)
 #    seq.setAnalog(0, train)
-    
+
     pulser = Pulser('128.104.160.111')
     pulser.constant(OutputState([]))
     pulser.setTrigger(start=TriggerStart.SOFTWARE)
     pulser.stream(seq, Pulser.REPEAT_INFINITELY)
     pulser.startNow()
-    
+
     input('Press enter to stop...')
-    
+
     pulser.constant(OutputState([]))
 
 
@@ -104,15 +104,15 @@ def main(channels):
 if __name__ == '__main__':
 
     # Set up your parameters to be passed to main here
-    
+
     # Rabi
     laser_names = ['laser_515']
     pos = [0.0, 0.0, 5.0]
-    
+
     # Hahn
 #    laser_names = ['laser_532', 'laser_589', 'laser_638']
 #    pos = [0.0, 0.0, 0]
-    
+
     chans = []
     with labrad.connect() as cxn:
         tool_belt.set_xyz(cxn, pos)
