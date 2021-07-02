@@ -57,13 +57,18 @@ class Cobolt515(LabradServer):
     def on_get_config(self, config):
         self.do_laser_515_feedthrough = config[0]
         self.di_laser_515_feedthrough = config[1]
+        # Load the feedthrough and just leave it running
+        try:
+            self.load_feedthrough(None)
+        except Exception as e:
+            logging.debug(e)
         logging.debug('Init complete')
 
 
     def stopServer(self):
         self.close_task_internal()
 
-    def load_stream_writer(self, c, task_name, voltages, period):
+    def load_stream_writer(self, c, task_name, stream_bools):
 
         # Close the existing task if there is one
         if self.task is not None:
@@ -77,21 +82,18 @@ class Cobolt515(LabradServer):
         task.do_channels.add_do_chan(self.do_laser_515_feedthrough)
 
         # Set up the output stream
-        output_stream = nidaqmx.task.OutStream(task)
-        writer = stream_writers.DigitalSingleChannelWriter(output_stream)
-        
-        stream_voltages = numpy.array(100*[1, 0], dtype=numpy.uint32)
+#        output_stream = nidaqmx.task.OutStream(task)
+#        writer = stream_writers.DigitalSingleChannelWriter(output_stream)
 
         # Configure the sample to advance on the rising edge of the PFI input.
         # The frequency specified is just the max expected rate in this case.
-        # We'll stop once we've run all the samples.
+        freq = 1E6  # 1 MHz, every microsecond
         clock = self.di_laser_515_feedthrough
         sample_mode = nidaqmx.constants.AcquisitionType.CONTINUOUS
-        task.timing.cfg_change_detection_timing(rising_edge_chan=clock,
-                                                falling_edge_chan=clock,
-                                                sample_mode=sample_mode)
-
-        writer.write_many_sample_port_uint32(stream_voltages)
+        task.timing.cfg_samp_clk_timing(freq, source=clock,
+                                        sample_mode=sample_mode)
+        
+        task.write(stream_bools)
 
         # Close the task once we've written all the samples
         task.register_done_event(self.close_task_internal)
@@ -108,10 +110,12 @@ class Cobolt515(LabradServer):
         return 0
 
 
-    @setting(0, period='i')
+    @setting(0)
     def load_feedthrough(self, c):
-        voltages = numpy.array(100*[1, 0], dtype=numpy.uint32)
-        self.load_stream_writer(c, 'cobolt_515-load_feedthrough', voltages)
+        # Just flip the TTL out on the rising edge of the TTL in
+        stream_bools = numpy.array([True, False], dtype=bool)
+        self.load_stream_writer(c, 'cobolt_515-load_feedthrough', 
+                                stream_bools)
         
         
     @setting(1)

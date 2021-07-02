@@ -54,8 +54,6 @@ def measure_delay(cxn, nv_sig, apd_indices,
 
     tool_belt.reset_cfm(cxn)
     
-    cxn.cobolt_515.load_feedthrough()
-
     # Turn on the microwaves for determining microwave delay
     sig_gen = None
     if seq_file == 'uwave_delay.py':

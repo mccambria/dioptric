@@ -175,6 +175,12 @@ def get_laser_server(cxn, laser_name):
         return getattr(cxn, server_name)
     except Exception:
         return None
+    
+    
+def process_sequence(laser_seq_args):
+    """
+    Some lasers may require special processing of their Pulse Streamer
+    sequence. For example, 
 
 
 # %% Pulse Streamer utils
@@ -1244,8 +1250,6 @@ def reset_cfm_with_cxn(cxn):
         cxn.signal_generator_sg394.reset()
     if hasattr(cxn, 'signal_generator_bnc835'):
         cxn.signal_generator_bnc835.reset()
-    if hasattr(cxn, 'cobolt_515'):
-        cxn.cobolt_515.reset()
     # 8/10/2020, mainly for Er lifetime measurements
 #    if hasattr(cxn, 'filter_slider_ell9k_color'):
 #        cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
