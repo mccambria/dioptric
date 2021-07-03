@@ -49,8 +49,8 @@ class Cobolt515(LabradServer):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'Wiring', 'Daq'])
-        p.get('do_laser_515_feedthrough')
-        p.get('di_laser_515_feedthrough')
+        p.get('do_{}_feedthrough'.format(self.name))
+        p.get('di_{}_feedthrough'.format(self.name))
         result = await p.send()
         return result['get']
 
@@ -63,7 +63,6 @@ class Cobolt515(LabradServer):
         except Exception as e:
             logging.debug(e)
         logging.debug('Init complete')
-
 
     def stopServer(self):
         self.close_task_internal()
@@ -120,10 +119,26 @@ class Cobolt515(LabradServer):
         
     @setting(1)
     def reset(self, c):
-        task = self.task
-        if task is not None:
-            task.close()
-            self.task = None
+        # Make sure the laser is off.
+        self.turn_off(c)
+        # Reload the feedthrough
+        self.load_feedthrough(c)
+        
+        
+    @setting(2)
+    def turn_on(self, c):
+        self.close_task_internal()
+        with nidaqmx.Task() as task:
+            task.do_channels.add_do_chan(self.do_laser_515_feedthrough)
+            task.write(True)
+        
+        
+    @setting(3)
+    def turn_off(self, c):
+        self.close_task_internal()
+        with nidaqmx.Task() as task:
+            task.do_channels.add_do_chan(self.do_laser_515_feedthrough)
+            task.write(False)
         
         
 __server__ = Cobolt515()

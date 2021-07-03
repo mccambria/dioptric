@@ -18,6 +18,9 @@ Created on Sun Jun 16 11:22:40 2019
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
 import numpy
+import utils.tool_belt as tool_belt
+#from utils.tool_belt import Digital
+import logging
 
 
 # %% Constants
@@ -43,8 +46,7 @@ def get_seq(pulser_wiring, args):
     tau, max_tau, readout = durations
 
     apd_index = args[2]
-    laser_name = args[3]
-    laser_power = args[4]
+    laser_seq_args = args[3]
     
     do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
@@ -52,7 +54,7 @@ def get_seq(pulser_wiring, args):
     illumination = 10**4
     half_illumination = illumination // 2
     readout = illumination // 10
-    inter_time = 10**3
+    inter_time = max(10**3, max_tau) + 100
     back_buffer = inter_time
     period = (2 * illumination) + inter_time + back_buffer
     
@@ -73,23 +75,12 @@ def get_seq(pulser_wiring, args):
              ]
     seq.setDigital(do_apd_gate, train)
 
-    if laser_power == -1:
-        laser_high = HIGH
-        laser_low = LOW
-    else:
-        laser_high = laser_power
-        laser_low = 0.0
-    train = [(illumination, laser_high), 
-             (inter_time-tau, laser_low), 
-             (illumination, laser_high),
-             (back_buffer+tau, laser_low),
+    train = [(illumination, HIGH), 
+             (inter_time-tau, LOW), 
+             (illumination, HIGH),
+             (back_buffer+tau, LOW),
              ]
-    if laser_power == -1:
-        pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
-        seq.setDigital(pulser_laser_mod, train)
-    else:
-        pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
-        seq.setAnalog(pulser_laser_mod, train)
+    tool_belt.process_laser_seq(seq, pulser_wiring, train, laser_seq_args)
     
     final_digital = [pulser_do_daq_clock]
     final = OutputState(final_digital, 0.0, 0.0)
@@ -112,12 +103,12 @@ if __name__ == '__main__':
     pulser_wiring = {'do_apd_0_gate': 0, 
                      'do_532_aom': 1, 
                      'do_sample_clock': 2,
-                     'do_laser_515_dm': 1,
+                     'do_cobolt_515_dm': 1,
                      'ao_589_aom': 1, 
                      'do_638_laser': 4}
 
     # Set up a dummy args list
-    args = [0, 250, 0, 'laser_515', -1]
+    args = [32.8, 200, 0, ['cobolt_515', 1, None, 'True']]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

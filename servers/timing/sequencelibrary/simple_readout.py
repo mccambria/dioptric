@@ -14,12 +14,13 @@ LOW = 0
 HIGH = 1
 
 
-def get_seq(pulser_wiring, args):
+def get_seq(config, args):
 
     # Unpack the args
-    delay, readout_time, laser_name, laser_power, apd_index = args
+    delay, readout_time, apd_index, laser_name, laser_power = args
 
     # Get what we need out of the wiring dictionary
+    pulser_wiring = config['Wiring']['Pulser']
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
 
@@ -29,7 +30,7 @@ def get_seq(pulser_wiring, args):
 
     period = numpy.int64(delay + readout_time + 300)
 
-    tool_belt.check_laser_power(laser_name, laser_power)
+#    tool_belt.check_laser_power(laser_name, laser_power)
 
     # Define the sequence
     seq = Sequence()
@@ -38,25 +39,14 @@ def get_seq(pulser_wiring, args):
     # either side. During the buffers, everything should be low. The buffers
     # account for any timing jitters/delays and ensure that everything we
     # expect to be on one side of the clock signal is indeed on that side.
-    train = [(delay + readout_time + 100, LOW), (100, HIGH), (100, LOW)]
+    train = [(period-200, LOW), (100, HIGH), (100, LOW)]
     seq.setDigital(pulser_do_daq_clock, train)
 
     train = [(delay, LOW), (readout_time, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
 
-    if laser_power == -1:
-        laser_high = HIGH
-        laser_low = LOW
-    else:
-        laser_high = laser_power
-        laser_low = 0.0
-    train = [(period, laser_high)]
-    if laser_power == -1:
-        pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
-        seq.setDigital(pulser_laser_mod, train)
-    else:
-        pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
-        seq.setAnalog(pulser_laser_mod, train)
+    train = [(period-200, HIGH), (200, LOW)]
+    tool_belt.process_laser_seq(seq, config, laser_name, laser_power, train)
 
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -65,14 +55,8 @@ def get_seq(pulser_wiring, args):
 
 
 if __name__ == '__main__':
-    wiring = {'do_sample_clock': 0,
-              'do_apd_0_gate': 1,
-              'do_638_laser': 3,
-              'do_laser_532_dm': 2,
-              'ao_515_laser': 0,
-              'ao_589_aom': 1}
-#    args = [500000, 10000000, 0.3, 0.685, 0, '515a']
-    args = [0, 1000.0, 'laser_532', -1, 0]
+    config = tool_belt.get_config_dict()
+    args = [0, 1000.0, 0, 'cobolt_515', None]
 #    seq_args_string = tool_belt.encode_seq_args(args)
-    seq, ret_vals, period = get_seq(wiring, args)
+    seq, ret_vals, period = get_seq(config, args)
     seq.plot()

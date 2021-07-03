@@ -43,26 +43,17 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     laser_key = 'spin_laser'
     laser_name = nv_sig[laser_key]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-    spin_laser_chan = tool_belt.get_registry_entry(cxn,
-                                           'do_{}_dm'.format(laser_name),
-                                           ['', 'Config', 'Wiring', 'Pulser'])
 
-    # Set up for the sequence - we can't load the sequence yet until after
-    # optimize runs since optimize loads its own sequence
-    
     # Since this is CW we need the imaging readout rather than the spin 
     # readout typically used for state detection
     readout = nv_sig['imaging_readout_dur']  
     readout_sec = readout / (10**9)
-    sig_gen_name = tool_belt.get_registry_entry(cxn, 'sig_gen_{}'.format(state.name), ['', 'Config', 'Microwaves'])
-    uwave_delay = tool_belt.get_registry_entry(cxn, 'delay', ['', 'Config', 'Microwaves', sig_gen_name])
     
-    seq_args = [readout, uwave_delay, apd_indices[0], sig_gen_name, laser_name, laser_power]
+    file_name = 'resonance.py'
+    seq_args = [readout, state.value, laser_name, laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 #    print(seq_args)
 #    return
-
-    file_name = 'resonance.py'
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -87,12 +78,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
 
-    # %% Make some lists and variables to save at the end
-
-#    passed_coords = coords
-
     opti_coords_list = []
-#    optimization_success_list = []
 
     # %% Get the starting time of the function
 
@@ -115,7 +101,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         opti_coords_list.append(opti_coords)
         
         # Start the green laser now to get rid of transient effects
-        cxn.pulse_streamer.constant([spin_laser_chan])
+#        cxn.pulse_streamer.constant([spin_laser_chan])
     
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
@@ -176,8 +162,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                    'uwave_power-units': 'dBm',
                    'readout': readout,
                    'readout-units': 'ns',
-                   'uwave_delay': uwave_delay,
-                   'uwave_delay-units': 'ns',
                    'sig_counts': sig_counts.astype(int).tolist(),
                    'sig_counts-units': 'counts',
                    'ref_counts': ref_counts.astype(int).tolist(),
@@ -243,8 +227,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'uwave_power-units': 'dBm',
                'readout': readout,
                'readout-units': 'ns',
-               'uwave_delay': uwave_delay,
-               'uwave_delay-units': 'ns',
                'sig_counts': sig_counts.astype(int).tolist(),
                'sig_counts-units': 'counts',
                'ref_counts': ref_counts.astype(int).tolist(),

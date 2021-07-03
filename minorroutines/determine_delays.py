@@ -74,9 +74,9 @@ def measure_delay(cxn, nv_sig, apd_indices,
 
         tau = taus[tau_ind]
         if seq_file == 'aom_delay.py':
-            seq_args = [tau, max_tau, apd_indices[0], laser_name, laser_power]
-#            print(seq_args)
-#            return
+            laser_seq_args = tool_belt.get_laser_seq_args(cxn,
+                                                  laser_name, laser_power)
+            seq_args = [tau, max_tau, apd_indices[0], laser_seq_args]
         elif seq_file == 'uwave_delay.py':
             laser_key = 'spin_laser'
             laser_name = nv_sig[laser_key]
@@ -118,7 +118,7 @@ def measure_delay(cxn, nv_sig, apd_indices,
     ax.plot(taus, ref_counts, 'g-', label = 'reference')
     ax.set_title('Counts vs Delay Time')
     ax.set_xlabel('Delay time (ns)')
-    ax.set_ylabel('Count rate (cps)')
+    ax.set_ylabel('Counts')
     ax.legend()
     ax = axes_pack[1]
     ax.plot(taus, norm_avg_sig, 'b-')
@@ -209,7 +209,7 @@ if __name__ == '__main__':
 #    nv_sig = { 'coords': [0.568, -0.645, 5.0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
-            'imaging_laser': 'laser_515', 'imaging_readout_dur': 1E7,
+            'imaging_laser': 'cobolt_515', 'imaging_readout_dur': 1E7,
             'spin_laser': 'laser_515', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
@@ -217,24 +217,24 @@ if __name__ == '__main__':
             'resonance_LOW': 2.7942, 'rabi_LOW': 161.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9469, 'rabi_HIGH': 239.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     apd_indices = [0, 1]
-    num_reps = 10**4
+    num_reps = 10**5
 
     # aom_delay
-#    delay_range = [10, 200]
-#    num_steps = 51
-#    laser_name = 'laser_515'
-#    laser_power = -1
-#    with labrad.connect() as cxn:
-#        aom_delay(cxn, nv_sig, apd_indices,
-#                  delay_range, num_steps, num_reps, laser_name, laser_power)
+    delay_range = [0, 500]
+    num_steps = 51
+    laser_name = 'cobolt_515'
+    laser_power = None
+    with labrad.connect() as cxn:
+        aom_delay(cxn, nv_sig, apd_indices,
+                  delay_range, num_steps, num_reps, laser_name, laser_power)
 
     # uwave_delay
-    delay_range = [-200, 100]
-    num_steps = 51
-    # tsg4104a
-    state = States.LOW
-    # sg394
-#    state = States.HIGH
-    with labrad.connect() as cxn:
-        uwave_delay(cxn, nv_sig, apd_indices, state,
-                    delay_range, num_steps, num_reps)
+#    delay_range = [-200, 100]
+#    num_steps = 51
+#    # tsg4104a
+#    state = States.LOW
+#    # sg394
+##    state = States.HIGH
+#    with labrad.connect() as cxn:
+#        uwave_delay(cxn, nv_sig, apd_indices, state,
+#                    delay_range, num_steps, num_reps)

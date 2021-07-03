@@ -73,8 +73,9 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
 
     # %% Load the PulseStreamer
 
-    seq_args = [0, readout, laser_name, laser_power, apd_indices[0]]
+    seq_args = [0, readout, apd_indices[0], laser_name, laser_power]
 #    print(seq_args)
+#    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
@@ -104,7 +105,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
     ax = axes[0]
     ax.set_title('Stationary Counts')
     ax.set_xlabel('Elapsed time (s)')
-    ax.set_ylabel('kcts/sec')
+    ax.set_ylabel('kcps')
 
     # Maximize the window
     fig_manager = plt.get_current_fig_manager()

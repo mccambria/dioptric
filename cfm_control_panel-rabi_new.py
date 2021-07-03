@@ -447,8 +447,8 @@ if __name__ == '__main__':
 #    nv_sig = { 'coords': [0.568, -0.645, 5.0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
-            'imaging_laser': 'laser_515', 'imaging_readout_dur': 1E7,
-            'spin_laser': 'laser_515', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            'imaging_laser': 'cobolt_515', 'imaging_readout_dur': 1E7,
+            'spin_laser': 'cobolt_515', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
             'collection_filter': '630_lp', 'magnet_angle': 30.0,
@@ -470,14 +470,14 @@ if __name__ == '__main__':
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(-770, 72)
         
-        do_image_sample(nv_sig, apd_indices)
+#        do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 #         do_stationary_count(nv_sig, apd_indices)
-#         do_resonance(nv_sig, apd_indices, 2.87, 0.250)
+         do_resonance(nv_sig, apd_indices, 2.87, 0.250)
 #         do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.05)
 #         do_resonance_state(nv_sig, apd_indices, States.LOW)
 #         do_resonance_state(nv_sig, apd_indices, States.HIGH)

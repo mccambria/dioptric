@@ -18,6 +18,7 @@ import numpy
 from pulsestreamer import Sequence
 import labrad
 import utils.tool_belt as tool_belt
+import time
 
 
 # %% Constants
@@ -30,12 +31,14 @@ HIGH = 1
 # %% Functions
 
 
-def constant(digital_channels, analog_0_voltage, analog_1_voltage):
+def constant(digital_channels, ao0, ao1):
 
     with labrad.connect() as cxn:
         pulser = cxn.pulse_streamer
-        pulser.constant(digital_channels,
-                                    analog_0_voltage, analog_1_voltage)
+        pulser.constant(digital_channels, ao0, ao1)
+        time.sleep(1)
+        pulser.constant([], 0.0, 0.0)
+        
 #        val = 0.0
 #        cxn.pulse_streamer.constant([], 0.0, 0.0)
 #        cxn.pulse_streamer.constant([], val, 0.0)
@@ -44,6 +47,8 @@ def constant(digital_channels, analog_0_voltage, analog_1_voltage):
 
         input('Press enter to stop...')
 
+        pulser.constant(digital_channels, ao0, ao1)
+        time.sleep(1)
         pulser.constant([], 0.0, 0.0)
 
 
@@ -106,7 +111,7 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     # Rabi
-    laser_names = ['laser_515']
+    laser_names = ['cobolt_515']
     pos = [0.0, 0.0, 5.0]
 
     # Hahn
@@ -121,5 +126,5 @@ if __name__ == '__main__':
             chan = tool_belt.get_registry_entry(cxn, 'do_{}_dm'.format(el),
                                          ['', 'Config', 'Wiring', 'Pulser'])
             chans.append(chan)
-#    constant(chans, 0.0, 0.0)
-    main(chans)
+    constant(chans, 0.0, 0.0)
+#    main(chans)
