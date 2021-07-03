@@ -97,13 +97,13 @@ def set_xyz_on_nv(cxn, nv_sig):
 # %% Laser utils
 
 
-def turn_laser_off(cxn, laser_name):
-    turn_laser_sub(cxn, False, laser_name)
+def laser_off(cxn, laser_name):
+    laser_switch_sub(cxn, False, laser_name)
 
-def turn_laser_on(cxn, laser_name, laser_power=None):
-    turn_laser_sub(cxn, True, laser_name, laser_power)
+def laser_on(cxn, laser_name, laser_power=None):
+    laser_switch_sub(cxn, True, laser_name, laser_power)
     
-def turn_laser_sub(cxn, turn_on, laser_name, laser_power=None):
+def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
     
     mod_type = get_registry_entry(cxn, 'mod_type', 
                                   ['', 'Config', 'Optics', laser_name])
@@ -116,9 +116,9 @@ def turn_laser_sub(cxn, turn_on, laser_name, laser_power=None):
         # Digital, feedthrough
         if feedthrough:
             if turn_on:
-                cxn[laser_name].turn_on()
+                cxn[laser_name].laser_on()
             else:
-                cxn[laser_name].turn_off()
+                cxn[laser_name].laser_off()
         # Digital, no feedthrough
         else:  
             if turn_on:
@@ -1367,42 +1367,9 @@ def reset_cfm(cxn=None):
 
 
 def reset_cfm_with_cxn(cxn):
-    if hasattr(cxn, 'pulse_streamer'):
-        cxn.pulse_streamer.reset()
-    if hasattr(cxn, 'apd_tagger'):
-        cxn.apd_tagger.reset()
-    if hasattr(cxn, 'arbitrary_waveform_generator'):
-        cxn.arbitrary_waveform_generator.reset()
-    if hasattr(cxn, 'signal_generator_tsg4104a'):
-        cxn.signal_generator_tsg4104a.reset()
-    if hasattr(cxn, 'signal_generator_sg394'):
-        cxn.signal_generator_sg394.reset()
-    if hasattr(cxn, 'signal_generator_bnc835'):
-        cxn.signal_generator_bnc835.reset()
-    if hasattr(cxn, 'cobolt_515'):
-        cxn.cobolt_515.reset()
-    # 8/10/2020, mainly for Er lifetime measurements
-#    if hasattr(cxn, 'filter_slider_ell9k_color'):
-#        cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
-#    if hasattr(cxn, 'filter_slider_ell9k'):
-#        cxn.filter_slider_ell9k.set_filter('nd_0')
-#
-#def reset_cfm_wout_uwaves(cxn=None):
-#    """Reset our cfm so that it's ready to go for a new experiment. Avoids
-#    unnecessarily resetting components that may suffer hysteresis (ie the
-#    components that control xyz since these need to be reset in any
-#    routine where they matter anyway).
-#
-#    Exclude the uwaves
-#    """
-#
-#    if cxn == None:
-#        with labrad.connect() as cxn:
-#            reset_cfm_without_uwaves_with_cxn(cxn)
-#    else:
-#        reset_cfm_without_uwaves_with_cxn(cxn)
-#
-#
-#def reset_cfm_without_uwaves_with_cxn(cxn):
-#    cxn.pulse_streamer.reset()
-#    cxn.apd_tagger.reset()
+    xyz_servers = [get_xy_server(cxn), get_z_server(cxn)]
+    for server in cxn.servers:
+        if server in xyz_servers:
+            continue
+        if hasattr(server, 'reset'):
+            server.reset()

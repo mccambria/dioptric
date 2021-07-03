@@ -120,13 +120,13 @@ class Cobolt515(LabradServer):
     @setting(1)
     def reset(self, c):
         # Make sure the laser is off.
-        self.turn_off(c)
+        self.laser_off(c)
         # Reload the feedthrough
         self.load_feedthrough(c)
         
         
     @setting(2)
-    def turn_on(self, c):
+    def laser_on(self, c):
         self.close_task_internal()
         with nidaqmx.Task() as task:
             task.do_channels.add_do_chan(self.do_laser_515_feedthrough)
@@ -134,7 +134,7 @@ class Cobolt515(LabradServer):
         
         
     @setting(3)
-    def turn_off(self, c):
+    def laser_off(self, c):
         self.close_task_internal()
         with nidaqmx.Task() as task:
             task.do_channels.add_do_chan(self.do_laser_515_feedthrough)
