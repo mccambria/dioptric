@@ -32,22 +32,26 @@ HIGH = 1
 # %% Sequence definition
 
 
-def get_seq(pulser_wiring, args):
+def get_seq(pulse_streamer, config, args):
     """This is called by the pulse_streamer server to get the sequence object
     based on the wiring (from the registry) and the args passed by the client.
     """
     
     # Extract the delay (that the rf is applied from the start of the seq),
     # the readout time, and the pi pulse duration
-    durations = args[0:7]
+    durations = args[0:5]
     durations = [numpy.int64(el) for el in durations]
-    tau, max_tau, readout, pi_pulse, aom_delay_time, polarization, wait_time = durations
+    tau, max_tau, readout, pi_pulse, polarization = durations
     
-    sig_gen = args[7]
-    apd_index = args[8]
-    laser_name = args[9]
-    laser_power = args[10]
+    state, apd_index, laser_name, laser_power = args[5:9]
+    state = States(state)
+    sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
     
+    wait_time = config['CommonDurations']['meas_buffer']
+    aom_delay_time = config['Optics'][laser_name]['delay']
+    aom_delay_time = 0
+    
+    pulser_wiring = config['Wiring']['PulseStreamer']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_sig_gen_gate = pulser_wiring['do_{}_gate'.format(sig_gen)]
     
@@ -69,24 +73,14 @@ def get_seq(pulser_wiring, args):
              ]
     seq.setDigital(pulser_do_apd_gate, train)
 
-    if laser_power == -1:
-        laser_high = HIGH
-        laser_low = LOW
-    else:
-        laser_high = laser_power
-        laser_low = 0.0
-    train = [(front_buffer - aom_delay_time, laser_low),
-             (polarization, laser_high), 
-             (wait_time, laser_low), 
-             (polarization, laser_high),
-             (wait_time + aom_delay_time, laser_low), 
+    train = [(front_buffer - aom_delay_time, LOW),
+             (polarization, HIGH), 
+             (wait_time, LOW), 
+             (polarization, HIGH),
+             (wait_time + aom_delay_time, LOW), 
              ]
-    if laser_power == -1:
-        pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
-        seq.setDigital(pulser_laser_mod, train)
-    else:
-        pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
-        seq.setAnalog(pulser_laser_mod, train)
+    tool_belt.process_laser_seq(pulse_streamer, seq, config, 
+                                laser_name, laser_power, train)
     
     # Vary the position of the rf pi pulse
     train = [(front_buffer - pi_pulse - tau, LOW),
@@ -112,21 +106,14 @@ def get_seq(pulser_wiring, args):
 # the script that you set up here.
 if __name__ == '__main__':
 
-    # The whole point of defining sequences in their own files is so that we
-    # can run the file to plot the sequence for debugging and analysis. We'll
-    # go through that here.
-
-    # Set up a dummy pulser wiring dictionary
-    pulser_wiring = {'do_apd_0_gate': 0, 'do_laser_515_dm': 1, 'do_sample_clock': 2,
-                     'do_signal_generator_sg394_gate': 3, 
-                     'do_signal_generator_tsg4104a_gate': 4}
+    config = tool_belt.get_config_dict()
 
     # Set up a dummy args list
-    args = [0, 500, 350, 81, 0, 1000.0, 1000, 'signal_generator_sg394', 0, 'laser_515', -1]
+    args = [500.0, 700, 350, 81, 1000.0, 1, 0, 'cobolt_515', None]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.
-    seq = get_seq(pulser_wiring, args)[0]
+    seq = get_seq(None, config, args)[0]
 
     # Plot the sequence
     seq.plot()

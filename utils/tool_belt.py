@@ -230,7 +230,8 @@ def get_laser_server(cxn, laser_name):
         return None
     
     
-def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, train):
+def process_laser_seq(pulse_streamer, seq, config, 
+                      laser_name, laser_power, train):
     """
     Some lasers may require special processing of their Pulse Streamer
     sequence. For example, the Cobolt lasers expect 3.5 V for digital
@@ -242,6 +243,7 @@ def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, trai
     mod_type = eval(mod_type)
     feedthrough = config['Optics'][laser_name]['feedthrough']
     feedthrough = eval(feedthrough)
+#    feedthrough = False
     
     LOW = 0
     HIGH = 1

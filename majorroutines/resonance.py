@@ -100,15 +100,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
         
-        # Start the green laser now to get rid of transient effects
-        tool_belt.turn_laser_on(cxn, laser_name)
+        # Laser setup
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        # Start the laser now to get rid of transient effects
+        tool_belt.turn_laser_on(cxn, laser_name, laser_power)
     
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
-        
-        tool_belt.set_filter(cxn, nv_sig, laser_key)
-        laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Load the APD task with two samples for each frequency step
         cxn.pulse_streamer.stream_load(file_name, seq_args_string)

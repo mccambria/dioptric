@@ -14,13 +14,13 @@ LOW = 0
 HIGH = 1
 
 
-def get_seq(config, args):
+def get_seq(pulse_streamer, config, args):
 
     # Unpack the args
     delay, readout_time, apd_index, laser_name, laser_power = args
 
     # Get what we need out of the wiring dictionary
-    pulser_wiring = config['Wiring']['Pulser']
+    pulser_wiring = config['Wiring']['PulseStreamer']
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
 
@@ -46,7 +46,8 @@ def get_seq(config, args):
     seq.setDigital(pulser_do_daq_gate, train)
 
     train = [(period, HIGH)]
-    tool_belt.process_laser_seq(seq, config, laser_name, laser_power, train)
+    tool_belt.process_laser_seq(pulse_streamer, seq, config, 
+                                laser_name, laser_power, train)
 
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -58,5 +59,5 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     args = [0, 1000.0, 0, 'cobolt_515', None]
 #    seq_args_string = tool_belt.encode_seq_args(args)
-    seq, ret_vals, period = get_seq(config, args)
+    seq, ret_vals, period = get_seq(None, config, args)
     seq.plot()

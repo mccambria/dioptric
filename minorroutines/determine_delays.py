@@ -81,17 +81,12 @@ def measure_delay(cxn, nv_sig, apd_indices,
             laser_key = 'spin_laser'
             laser_name = nv_sig[laser_key]
             laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-            aom_delay = config['Optics'][laser_name]['delay']
-            sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
-            polarization_time = nv_sig['spin_pol_dur']
-#            wait_time = max(max_tau, config['CommonDurations']['uwave_to_readout_wait_dur'])
-            wait_time = 1000
             readout = nv_sig['spin_readout_dur']
-            seq_args = [tau, max_tau, readout, pi_pulse, aom_delay,
-                        polarization_time, wait_time, sig_gen_name,
-                        apd_indices[0], laser_name, laser_power]
-#            print(seq_args)
-#            return
+            polarization = nv_sig['spin_pol_dur']
+            seq_args = [tau, max_tau, readout, pi_pulse, polarization,
+                        state.value, apd_indices[0], laser_name, laser_power]
+            print(seq_args)
+            continue
         # Clear the tagger buffer of any excess counts
         cxn.apd_tagger.clear_buffer()
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -210,7 +205,7 @@ if __name__ == '__main__':
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
             'imaging_laser': 'cobolt_515', 'imaging_readout_dur': 1E7,
-            'spin_laser': 'laser_515', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            'spin_laser': 'cobolt_515', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
             'collection_filter': '630_lp', 'magnet_angle': 30.0,
@@ -218,23 +213,39 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9469, 'rabi_HIGH': 239.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     apd_indices = [0, 1]
     num_reps = 10**5
+    
+    try:
 
-    # aom_delay
-    delay_range = [0, 500]
-    num_steps = 51
-    laser_name = 'cobolt_515'
-    laser_power = None
-    with labrad.connect() as cxn:
-        aom_delay(cxn, nv_sig, apd_indices,
-                  delay_range, num_steps, num_reps, laser_name, laser_power)
-
-    # uwave_delay
-#    delay_range = [-200, 100]
-#    num_steps = 51
-#    # tsg4104a
-#    state = States.LOW
-#    # sg394
-##    state = States.HIGH
-#    with labrad.connect() as cxn:
-#        uwave_delay(cxn, nv_sig, apd_indices, state,
-#                    delay_range, num_steps, num_reps)
+        # aom_delay
+#        num_reps = 10**5
+    #    delay_range = [0, 500]
+    #    num_steps = 51
+    #    laser_name = 'cobolt_515'
+    #    laser_power = None
+    #    with labrad.connect() as cxn:
+    #        aom_delay(cxn, nv_sig, apd_indices,
+    #                  delay_range, num_steps, num_reps, laser_name, laser_power)
+    
+        # uwave_delay
+        num_reps = 10**4
+        delay_range = [-200, 500]
+        num_steps = 51
+        # tsg4104a
+#        state = States.LOW
+        # sg394
+        state = States.HIGH
+        with labrad.connect() as cxn:
+            uwave_delay(cxn, nv_sig, apd_indices, state,
+                        delay_range, num_steps, num_reps)
+            
+    finally:
+        # Reset our hardware - this should be done in each routine, but
+        # let's double check here
+        tool_belt.reset_cfm()
+        # Leave green on
+        # with labrad.connect() as cxn:
+        #     cxn.pulse_streamer.constant([3], 0.0, 0.0)
+        # Kill safe stop
+        if tool_belt.check_safe_stop_alive():
+            print('\n\nRoutine complete. Press enter to exit.')
+            tool_belt.poll_safe_stop()
