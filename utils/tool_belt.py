@@ -115,10 +115,11 @@ def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
     if mod_type is Mod_types.DIGITAL:
         # Digital, feedthrough
         if feedthrough:
+            laser_cxn = eval('cxn.{}'.format(laser_name))
             if turn_on:
-                cxn[laser_name].laser_on()
+                laser_cxn.laser_on()
             else:
-                cxn[laser_name].laser_off()
+                laser_cxn.laser_off()
         # Digital, no feedthrough
         else:  
             if turn_on:
@@ -1369,9 +1370,15 @@ def reset_cfm(cxn=None):
 
 
 def reset_cfm_with_cxn(cxn):
-    xyz_servers = [get_xy_server(cxn), get_z_server(cxn)]
-    for server in cxn.servers:
-        if server in xyz_servers:
+    xy_server_name = get_registry_entry(cxn, 'xy_server', 
+                                        ['', 'Config', 'Positioning'])
+    z_server_name = get_registry_entry(cxn, 'z_server', 
+                                       ['', 'Config', 'Positioning'])
+    xyz_server_names = [xy_server_name, z_server_name]
+    cxn_server_names = cxn.servers
+    for name in cxn_server_names:
+        if name in xyz_server_names:
             continue
+        server = cxn[name]
         if hasattr(server, 'reset'):
             server.reset()
