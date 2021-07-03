@@ -45,7 +45,7 @@ def get_seq(config, args):
     train = [(delay, LOW), (readout_time, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
 
-    train = [(period-200, HIGH), (200, LOW)]
+    train = [(period, HIGH)]
     tool_belt.process_laser_seq(seq, config, laser_name, laser_power, train)
 
     final_digital = []

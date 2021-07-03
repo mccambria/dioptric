@@ -97,6 +97,52 @@ def set_xyz_on_nv(cxn, nv_sig):
 # %% Laser utils
 
 
+def turn_laser_off(cxn, laser_name):
+    turn_laser_sub(cxn, False, laser_name)
+
+def turn_laser_on(cxn, laser_name, laser_power=None):
+    turn_laser_sub(cxn, True, laser_name, laser_power)
+    
+def turn_laser_sub(cxn, turn_on, laser_name, laser_power=None):
+    
+    mod_type = get_registry_entry(cxn, 'mod_type', 
+                                  ['', 'Config', 'Optics', laser_name])
+    mod_type = eval(mod_type)
+    feedthrough = get_registry_entry(cxn, 'feedthrough',
+                                     ['', 'Config', 'Optics', laser_name])
+    feedthrough = eval(feedthrough)
+    
+    if mod_type is Mod_types.DIGITAL:
+        # Digital, feedthrough
+        if feedthrough:
+            if turn_on:
+                cxn[laser_name].turn_on()
+            else:
+                cxn[laser_name].turn_off()
+        # Digital, no feedthrough
+        else:  
+            if turn_on:
+                laser_chan = get_registry_entry(cxn, 'do_{}_dm'.format(laser_name),
+                                     ['', 'Config', 'Wiring', 'PulseStreamer'])
+                cxn.pulse_streamer.constant([laser_chan])
+    # Analog
+    elif mod_type is Mod_types.ANALOG:  
+        if turn_on:
+            laser_chan = get_registry_entry(cxn, 'do_{}_dm'.format(laser_name),
+                                     ['', 'Config', 'Wiring', 'PulseStreamer'])
+            if laser_chan == 0:
+                cxn.pulse_streamer.constant([], 0.0, laser_power)
+            elif laser_chan == 1:
+                cxn.pulse_streamer.constant([], laser_power, 0.0)
+                
+    # If we're turning things off, turn everything off. If we wanted to really
+    # do this nicely we'd find a way to only turn off the specific channel,
+    # but it's not worth the effort.
+    if not turn_on:
+        cxn.pulse_streamer.constant([])
+            
+        
+
 def set_laser_power(cxn, nv_sig=None, laser_key=None,
                     laser_name=None, laser_power=None):
     """
