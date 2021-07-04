@@ -283,7 +283,7 @@ def process_laser_seq(pulse_streamer, seq, config,
             # Check if this is just supposed to be always on
             if (len(collapsed_train) == 1) and (collapsed_train[0][1] == HIGH):
                 if pulse_streamer is not None:
-                    pulse_streamer.client[laser_name].turn_on()
+                    pulse_streamer.client[laser_name].laser_on()
                 return
             # Set up the bookends
             for ind in range(len(collapsed_train)):

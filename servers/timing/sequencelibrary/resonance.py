@@ -25,7 +25,7 @@ def get_seq(pulse_streamer, config, args):
     sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
     uwave_delay = config['Microwaves'][sig_gen_name]['delay']
     laser_delay = config['Optics'][laser_name]['delay']
-    meas_buffer = config['CommonDurations']['meas_buffer']
+    meas_buffer = config['CommonDurations']['cw_meas_buffer']
     transient = 0
 
     readout = numpy.int64(readout)

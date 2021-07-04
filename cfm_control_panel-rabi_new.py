@@ -209,7 +209,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
     num_reps = 1000
-    num_runs = 5
+    num_runs = 10
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -371,7 +371,7 @@ def do_spin_echo(nv_sig, apd_indices):
     precession_time_range = [0, max_time * 10**3]
 #    num_reps = 8000
 #    num_runs = 5
-    num_reps = 100
+    num_reps = 1000
     num_runs = 20
     
 #    num_steps = 151
@@ -452,8 +452,8 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
             'collection_filter': '630_lp', 'magnet_angle': 30.0,
-            'resonance_LOW': 2.7958, 'rabi_LOW': 174.2, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9498, 'rabi_HIGH': 237.6, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.7953, 'rabi_LOW': 165.6, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9477, 'rabi_HIGH': 227.5, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
