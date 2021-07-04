@@ -36,8 +36,6 @@ def zfs_from_temp(temp):
 
 
 
-
-
 # %% Main
 
 
@@ -60,12 +58,12 @@ def main(zfs, zfs_err):
     zfs_low = zfs - zfs_err
     zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_low
     results = root_scalar(zfs_diff, x0=50, x1=300)
-    temp_low = results.root
+    temp_high = results.root
     
     zfs_high = zfs + zfs_err
     zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_high
     results = root_scalar(zfs_diff, x0=50, x1=300)
-    temp_high = results.root
+    temp_low = results.root
     
     print('T: [{}, {}, {}]'.format(temp_low, temp_mid, temp_high))
 
@@ -99,9 +97,10 @@ if __name__ == '__main__':
     
     
 
-    main_res(resonances)
-    # main(zfs, zfs_err)
-    # print(zfs_from_temp(175))
+#    main_res(resonances)
+#    main(2.8696904231693554, 0.0005348574127538577)
+#    main(2.871, 0.0)
+    print(zfs_from_temp(295))
     # x_vals = numpy.linspace(0, 300, 300)
     # y_vals = zfs_from_temp(x_vals)
     # plt.plot(x_vals, y_vals)

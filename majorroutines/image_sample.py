@@ -197,7 +197,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     readout_sec = readout / 10**9
     readout_us = readout / 10**3
 
-    seq_args = [xy_delay, readout, laser_name, laser_power, apd_indices[0]]
+    seq_args = [xy_delay, readout, apd_indices[0], laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     # print(seq_args_string)
     # return
@@ -286,9 +286,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             # is easy and readable and probably fine up to some resolution
             if plot_data:
                 img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-                tool_belt.update_image_figure(fig, img_array)
+                tool_belt.update_image_figure(fig, img_array_kcps)
             num_read_so_far += num_new_samples
-
 
     # %% Clean up
 

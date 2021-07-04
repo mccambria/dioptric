@@ -24,7 +24,6 @@ Created on Wed Apr 24 15:01:04 2019
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-import os
 import time
 from random import shuffle
 import matplotlib.pyplot as plt

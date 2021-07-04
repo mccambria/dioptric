@@ -40,6 +40,12 @@ class States(Enum):
     ZERO = auto()
     HIGH = auto()
 
+#Digital = {'LOW': 0, 'HIGH': 1}
+
+class Mod_types(Enum):
+    DIGITAL = auto()
+    ANALOG = auto()
+
 def get_signal_generator_name_no_cxn(state):
     with labrad.connect() as cxn:
         return get_signal_generator_name(cxn, state)
@@ -91,6 +97,53 @@ def set_xyz_on_nv(cxn, nv_sig):
 # %% Laser utils
 
 
+def laser_off(cxn, laser_name):
+    laser_switch_sub(cxn, False, laser_name)
+
+def laser_on(cxn, laser_name, laser_power=None):
+    laser_switch_sub(cxn, True, laser_name, laser_power)
+    
+def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
+    
+    mod_type = get_registry_entry(cxn, 'mod_type', 
+                                  ['', 'Config', 'Optics', laser_name])
+    mod_type = eval(mod_type)
+    feedthrough = get_registry_entry(cxn, 'feedthrough',
+                                     ['', 'Config', 'Optics', laser_name])
+    feedthrough = eval(feedthrough)
+    
+    if mod_type is Mod_types.DIGITAL:
+        # Digital, feedthrough
+        if feedthrough:
+            laser_cxn = eval('cxn.{}'.format(laser_name))
+            if turn_on:
+                laser_cxn.laser_on()
+            else:
+                laser_cxn.laser_off()
+        # Digital, no feedthrough
+        else:  
+            if turn_on:
+                laser_chan = get_registry_entry(cxn, 'do_{}_dm'.format(laser_name),
+                                     ['', 'Config', 'Wiring', 'PulseStreamer'])
+                cxn.pulse_streamer.constant([laser_chan])
+    # Analog
+    elif mod_type is Mod_types.ANALOG:  
+        if turn_on:
+            laser_chan = get_registry_entry(cxn, 'do_{}_dm'.format(laser_name),
+                                     ['', 'Config', 'Wiring', 'PulseStreamer'])
+            if laser_chan == 0:
+                cxn.pulse_streamer.constant([], 0.0, laser_power)
+            elif laser_chan == 1:
+                cxn.pulse_streamer.constant([], laser_power, 0.0)
+                
+    # If we're turning things off, turn everything off. If we wanted to really
+    # do this nicely we'd find a way to only turn off the specific channel,
+    # but it's not worth the effort.
+    if not turn_on:
+        cxn.pulse_streamer.constant([])
+            
+        
+
 def set_laser_power(cxn, nv_sig=None, laser_key=None,
                     laser_name=None, laser_power=None):
     """
@@ -111,15 +164,16 @@ def set_laser_power(cxn, nv_sig=None, laser_key=None,
     
     # If the power is controlled by analog modulation, we'll need to pass it
     # to the pulse streamer
-    modulation_type = get_registry_entry(cxn, 'modulation_type',
-                             ['', 'Config', 'Optics', laser_name])
-    if modulation_type == 'analog':
+    mod_type = get_registry_entry(cxn, 'mod_type',
+                                  ['', 'Config', 'Optics', laser_name])
+    mod_type = eval(mod_type)
+    if mod_type == Mod_types.ANALOG:
         return laser_power
     else:
         laser_server = get_filter_server(cxn, laser_name)
         if (laser_power is not None) and (laser_server is not None):
             laser_server.set_laser_power(laser_power)
-        return -1  # -1 signifies digital modulation
+        return None  
     
 
 def set_filter(cxn, nv_sig=None, optics_key=None,
@@ -175,12 +229,101 @@ def get_laser_server(cxn, laser_name):
         return getattr(cxn, server_name)
     except Exception:
         return None
+    
+    
+def process_laser_seq(pulse_streamer, seq, config, 
+                      laser_name, laser_power, train):
+    """
+    Some lasers may require special processing of their Pulse Streamer
+    sequence. For example, the Cobolt lasers expect 3.5 V for digital
+    modulation, but the Pulse Streamer only supplies 2.6 V.
+    """
+    
+    pulser_wiring = config['Wiring']['PulseStreamer']
+    mod_type = config['Optics'][laser_name]['mod_type']
+    mod_type = eval(mod_type)
+    feedthrough = config['Optics'][laser_name]['feedthrough']
+    feedthrough = eval(feedthrough)
+#    feedthrough = False
+    
+    LOW = 0
+    HIGH = 1
+        
+    processed_train = []
+    
+    if mod_type is Mod_types.DIGITAL:
+        # Digital, feedthrough, bookend each pulse with 100 ns clock pulses
+        # Assumes we always leave the laser on (or off) for at least 100 ns
+        if feedthrough:
+            # Collapse the sequence so that no two adjacent elements have the
+            # same value
+            collapsed_train = []
+            ind = 0
+            len_train = len(train)
+            while ind < len_train:
+                el = train[ind]
+                dur = el[0]
+                val = el[1]
+                next_ind = ind+1
+                while next_ind < len_train:
+                    next_el = train[next_ind]
+                    next_dur = next_el[0]
+                    next_val = next_el[1]
+                    # If the next element shares the same value as the current
+                    # one, combine them
+                    if next_val == val:
+                        dur += next_dur
+                        next_ind += 1
+                    else:
+                        break
+                # Append the current pulse and start back 
+                # where we left off
+                collapsed_train.append((dur, val))
+                ind = next_ind
+            # Check if this is just supposed to be always on
+            if (len(collapsed_train) == 1) and (collapsed_train[0][1] == HIGH):
+                if pulse_streamer is not None:
+                    pulse_streamer.client[laser_name].laser_on()
+                return
+            # Set up the bookends
+            for ind in range(len(collapsed_train)):
+                el = collapsed_train[ind]
+                dur = el[0]
+                val = el[1]
+                # For the first element, just leave things LOW
+                # Assumes the laser is off prior to the start of the sequence
+                if (ind == 0) and (val is LOW):
+                    processed_train.append((dur, LOW))
+                    continue
+                processed_train.append((100, HIGH))
+                processed_train.append((dur-100, LOW))
+        # Digital, no feedthrough, do nothing
+        else:  
+            processed_train = train.copy()
+        pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
+        seq.setDigital(pulser_laser_mod, processed_train)
+        
+    # Analog, convert LOW / HIGH to 0.0 / analog voltage
+    elif mod_type is Mod_types.ANALOG:  
+        power_dict = {LOW: 0.0, HIGH: laser_power}
+        for el in train:
+            dur = el[0]
+            val = el[1]
+            processed_train.append((dur, power_dict[val]))
+            
+        pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
+        seq.setAnalog(pulser_laser_mod, processed_train)
 
 
 # %% Pulse Streamer utils
 
 
 def encode_seq_args(seq_args):
+    # Recast numpy ints to Python ints so json knows what to do
+    for ind in range(len(seq_args)):
+        el = seq_args[ind]
+        if type(el) is numpy.int32:
+            seq_args[ind] = int(el)
     return json.dumps(seq_args)
 
 def decode_seq_args(seq_args_string):
@@ -1227,40 +1370,15 @@ def reset_cfm(cxn=None):
 
 
 def reset_cfm_with_cxn(cxn):
-    if hasattr(cxn, 'pulse_streamer'):
-        cxn.pulse_streamer.reset()
-    if hasattr(cxn, 'apd_tagger'):
-        cxn.apd_tagger.reset()
-    if hasattr(cxn, 'arbitrary_waveform_generator'):
-        cxn.arbitrary_waveform_generator.reset()
-    if hasattr(cxn, 'signal_generator_tsg4104a'):
-        cxn.signal_generator_tsg4104a.reset()
-    if hasattr(cxn, 'signal_generator_sg394'):
-        cxn.signal_generator_sg394.reset()
-    if hasattr(cxn, 'signal_generator_bnc835'):
-        cxn.signal_generator_bnc835.reset()
-    # 8/10/2020, mainly for Er lifetime measurements
-#    if hasattr(cxn, 'filter_slider_ell9k_color'):
-#        cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
-#    if hasattr(cxn, 'filter_slider_ell9k'):
-#        cxn.filter_slider_ell9k.set_filter('nd_0')
-#
-#def reset_cfm_wout_uwaves(cxn=None):
-#    """Reset our cfm so that it's ready to go for a new experiment. Avoids
-#    unnecessarily resetting components that may suffer hysteresis (ie the
-#    components that control xyz since these need to be reset in any
-#    routine where they matter anyway).
-#
-#    Exclude the uwaves
-#    """
-#
-#    if cxn == None:
-#        with labrad.connect() as cxn:
-#            reset_cfm_without_uwaves_with_cxn(cxn)
-#    else:
-#        reset_cfm_without_uwaves_with_cxn(cxn)
-#
-#
-#def reset_cfm_without_uwaves_with_cxn(cxn):
-#    cxn.pulse_streamer.reset()
-#    cxn.apd_tagger.reset()
+    xy_server_name = get_registry_entry(cxn, 'xy_server', 
+                                        ['', 'Config', 'Positioning'])
+    z_server_name = get_registry_entry(cxn, 'z_server', 
+                                       ['', 'Config', 'Positioning'])
+    xyz_server_names = [xy_server_name, z_server_name]
+    cxn_server_names = cxn.servers
+    for name in cxn_server_names:
+        if name in xyz_server_names:
+            continue
+        server = cxn[name]
+        if hasattr(server, 'reset'):
+            server.reset()
