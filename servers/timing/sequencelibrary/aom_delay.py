@@ -36,7 +36,7 @@ HIGH = 1
 # %% Sequence definition
 
 
-def get_seq(pulser_wiring, args):
+def get_seq(pulse_streamer, config, args):
     """This is called by the pulse_streamer server to get the sequence object
     based on the wiring (from the registry) and the args passed by the client.
     """
@@ -45,9 +45,9 @@ def get_seq(pulser_wiring, args):
     durations = [numpy.int64(el) for el in durations]
     tau, max_tau, readout = durations
 
-    apd_index = args[2]
-    laser_seq_args = args[3]
+    apd_index, laser_name, laser_power = args[3:6]
     
+    pulser_wiring = config['Wiring']['PulseStreamer']
     do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
         
@@ -80,7 +80,8 @@ def get_seq(pulser_wiring, args):
              (illumination, HIGH),
              (back_buffer+tau, LOW),
              ]
-    tool_belt.process_laser_seq(seq, pulser_wiring, train, laser_seq_args)
+    tool_belt.process_laser_seq(pulse_streamer, seq, config, 
+                                laser_name, laser_power, train)
     
     final_digital = [pulser_do_daq_clock]
     final = OutputState(final_digital, 0.0, 0.0)

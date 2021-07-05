@@ -47,9 +47,8 @@ def get_seq(pulse_streamer, config, args):
     state = States(state)
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
     
-    wait_time = config['CommonDurations']['meas_buffer']
+    wait_time = config['CommonDurations']['pol_to_uwave_wait_dur']
     aom_delay_time = config['Optics'][laser_name]['delay']
-    aom_delay_time = 0
     
     pulser_wiring = config['Wiring']['PulseStreamer']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
@@ -73,6 +72,7 @@ def get_seq(pulse_streamer, config, args):
              ]
     seq.setDigital(pulser_do_apd_gate, train)
 
+    # Laser sequence
     train = [(front_buffer - aom_delay_time, LOW),
              (polarization, HIGH), 
              (wait_time, LOW), 
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
     # Set up a dummy args list
-    args = [500.0, 700, 350, 81, 1000.0, 1, 0, 'cobolt_515', None]
+    args = [0.0, 1200, 350, 83, 1000.0, 1, 0, 'laserglow_532', None]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

@@ -474,7 +474,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
-#        sig_gen_cxn.uwave_on()
+        sig_gen_cxn.uwave_on()
         
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)

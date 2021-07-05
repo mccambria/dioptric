@@ -48,9 +48,7 @@ def measure_delay(cxn, nv_sig, apd_indices,
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
 
-    config = tool_belt.get_config_dict(cxn)
-
-#    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
     tool_belt.reset_cfm(cxn)
     
@@ -74,9 +72,9 @@ def measure_delay(cxn, nv_sig, apd_indices,
 
         tau = taus[tau_ind]
         if seq_file == 'aom_delay.py':
-            laser_seq_args = tool_belt.get_laser_seq_args(cxn,
-                                                  laser_name, laser_power)
-            seq_args = [tau, max_tau, apd_indices[0], laser_seq_args]
+            readout = nv_sig['imaging_readout_dur']
+            seq_args = [tau, max_tau, readout, 
+                        apd_indices[0], laser_name, laser_power]
         elif seq_file == 'uwave_delay.py':
             laser_key = 'spin_laser'
             laser_name = nv_sig[laser_key]
@@ -85,8 +83,8 @@ def measure_delay(cxn, nv_sig, apd_indices,
             polarization = nv_sig['spin_pol_dur']
             seq_args = [tau, max_tau, readout, pi_pulse, polarization,
                         state.value, apd_indices[0], laser_name, laser_power]
-            print(seq_args)
-            continue
+#        print(seq_args)
+#        return
         # Clear the tagger buffer of any excess counts
         cxn.apd_tagger.clear_buffer()
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -188,51 +186,41 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
     sample_name = 'hopper'
     nd = 'nd_0.5'
-    # expected_count_rate = {
-    #         'nd_0': 35,
-    #         'nd_0.5': 85,
-    #         'nd_1.0': 60,
-    #         'nd_1.5': 25,
-    #         }
-    # pulsed_readout_dur = {
-    #         'nd_0': 215,
-    #         'nd_0.5': 280,
-    #         'nd_1.0': 420,
-    #         'nd_1.5': 420,
-    #         }
+#    green_laser = 'cobolt_515'
+    green_laser = 'laserglow_532'
     nv_sig = { 'coords': [0.0, 0.0, 5.0],
-#    nv_sig = { 'coords': [0.568, -0.645, 5.0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
-            'imaging_laser': 'cobolt_515', 'imaging_readout_dur': 1E7,
-            'spin_laser': 'cobolt_515', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            'spin_laser': green_laser, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
             'collection_filter': '630_lp', 'magnet_angle': 30.0,
-            'resonance_LOW': 2.7942, 'rabi_LOW': 161.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9469, 'rabi_HIGH': 239.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.7953, 'rabi_LOW': 165.6, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9477, 'rabi_HIGH': 227.5, 'uwave_power_HIGH': 14.5}   # 14.5 max
     apd_indices = [0, 1]
-    num_reps = 10**5
     
     try:
 
         # aom_delay
-#        num_reps = 10**5
-    #    delay_range = [0, 500]
-    #    num_steps = 51
-    #    laser_name = 'cobolt_515'
-    #    laser_power = None
-    #    with labrad.connect() as cxn:
-    #        aom_delay(cxn, nv_sig, apd_indices,
-    #                  delay_range, num_steps, num_reps, laser_name, laser_power)
+#        num_reps = int(5E4)
+#        num_steps = 51
+##        laser_name = 'cobolt_515'
+##        delay_range = [0, 300]
+#        laser_name = 'laserglow_532'
+#        delay_range = [800, 1200]
+#        laser_power = None
+#        with labrad.connect() as cxn:
+#            aom_delay(cxn, nv_sig, apd_indices,
+#                      delay_range, num_steps, num_reps, laser_name, laser_power)
     
         # uwave_delay
-        num_reps = 10**4
-        delay_range = [-200, 500]
+        num_reps = int(1E4)
+        delay_range = [-200, 100]
         num_steps = 51
-        # tsg4104a
-#        state = States.LOW
         # sg394
+#        state = States.LOW
+        # tsg4104a
         state = States.HIGH
         with labrad.connect() as cxn:
             uwave_delay(cxn, nv_sig, apd_indices, state,
@@ -242,9 +230,6 @@ if __name__ == '__main__':
         # Reset our hardware - this should be done in each routine, but
         # let's double check here
         tool_belt.reset_cfm()
-        # Leave green on
-        # with labrad.connect() as cxn:
-        #     cxn.pulse_streamer.constant([3], 0.0, 0.0)
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
             print('\n\nRoutine complete. Press enter to exit.')

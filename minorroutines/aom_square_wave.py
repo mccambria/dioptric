@@ -71,7 +71,9 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     # Rabi
-    laser_name = 'cobolt_515'
+#    laser_name = 'cobolt_515'
+    laser_name = 'laserglow_532'
+    filter_name = 'nd_0'
     pos = [0.0, 0.0, 5.0]
 
     # Hahn
@@ -81,6 +83,6 @@ if __name__ == '__main__':
     with labrad.connect() as cxn:
         tool_belt.set_xyz(cxn, pos)
 #        for el in laser_names:
-#            # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name='nd_0.5')
+        tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
         constant(cxn, laser_name)
 #        main(cxn, laser_name)

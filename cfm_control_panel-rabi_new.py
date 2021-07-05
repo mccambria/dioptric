@@ -371,7 +371,7 @@ def do_spin_echo(nv_sig, apd_indices):
     precession_time_range = [0, max_time * 10**3]
 #    num_reps = 8000
 #    num_runs = 5
-    num_reps = 1000
+    num_reps = 4000
     num_runs = 20
     
 #    num_steps = 151
@@ -432,9 +432,11 @@ if __name__ == '__main__':
     apd_indices = [0,1]
     
 #    nd = 'nd_0'
-    nd = 'nd_0.5'
-#    nd = 'nd_1.0'
+#    nd = 'nd_0.5'
+    nd = 'nd_1.0'
     sample_name = 'hopper'
+#    green_laser = 'cobolt_515'
+    green_laser = 'laserglow_532'
     
     # nv_sig = { 'coords': [0.0, 0.0, 0],
     #         'name': '{}-search'.format(sample_name),
@@ -447,13 +449,13 @@ if __name__ == '__main__':
 #    nv_sig = { 'coords': [0.568, -0.645, 5.0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
-            'imaging_laser': 'cobolt_515', 'imaging_readout_dur': 1E7,
-            'spin_laser': 'cobolt_515', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            'spin_laser': green_laser, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
             'collection_filter': '630_lp', 'magnet_angle': 30.0,
-            'resonance_LOW': 2.7953, 'rabi_LOW': 165.6, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9477, 'rabi_HIGH': 227.5, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.7948, 'rabi_LOW': 165.9, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9486, 'rabi_HIGH': 226.6, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -563,9 +565,6 @@ if __name__ == '__main__':
         # Reset our hardware - this should be done in each routine, but
         # let's double check here
         tool_belt.reset_cfm()
-        # Leave green on
-        # with labrad.connect() as cxn:
-        #     cxn.pulse_streamer.constant([3], 0.0, 0.0)
         # Kill safe stop
         if tool_belt.check_safe_stop_alive():
             print('\n\nRoutine complete. Press enter to exit.')
