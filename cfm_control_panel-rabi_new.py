@@ -371,7 +371,7 @@ def do_spin_echo(nv_sig, apd_indices):
     precession_time_range = [0, max_time * 10**3]
 #    num_reps = 8000
 #    num_runs = 5
-    num_reps = 2000
+    num_reps = 1000
     num_runs = 20
     
 #    num_steps = 151
@@ -428,8 +428,8 @@ if __name__ == '__main__':
 
 
 #    apd_indices = [0]
-    apd_indices = [1]
-#    apd_indices = [0,1]
+#    apd_indices = [1]
+    apd_indices = [0,1]
     
 #    nd = 'nd_0'
 #    nd = 'nd_0.5'
@@ -453,9 +453,9 @@ if __name__ == '__main__':
             'spin_laser': green_laser, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
-            'collection_filter': '630_lp', 'magnet_angle': 60.0,
-            'resonance_LOW': 2.8039, 'rabi_LOW': 157.3, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9399, 'rabi_HIGH': 225.1, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'collection_filter': '630_lp', 'magnet_angle': 330.0,
+            'resonance_LOW': 2.8036, 'rabi_LOW': 154.7, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9384, 'rabi_HIGH': 219.1, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run

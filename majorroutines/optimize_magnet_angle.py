@@ -67,8 +67,13 @@ def fit_data(splittings, angles):
         fit_func = None
         popt = None
     else:
-        popt, pcov = curve_fit(fit_func, angles, splittings,
-                               p0=guess_params, bounds=bounds)
+        try:
+            popt, pcov = curve_fit(fit_func, angles, splittings,
+                                   p0=guess_params, bounds=bounds)
+        except Exception as e:
+            print(e)
+            fit_func = None
+            popt = None
 
     return fit_func, popt
 
