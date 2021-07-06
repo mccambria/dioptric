@@ -220,7 +220,7 @@ def fit_data(data):
     # Divide signal by reference to get normalized counts and st error
     norm_avg_sig = avg_sig_counts / avg_ref
     norm_avg_sig_ste = ste_sig_counts / avg_ref
-    
+
 #    avg_ref_counts = numpy.average(ref_counts[::], axis=0)
 #    norm_avg_sig = avg_sig_counts / avg_ref_counts
 #    norm_avg_sig_ste = ste_sig_counts / avg_ref_counts
@@ -241,7 +241,8 @@ def fit_data(data):
     # [1:] excludes frequency 0 (DC component)
     max_ind = numpy.argmax(transform_mag[1:])
     frequency = freqs[max_ind+1]
-    revival_time = 2/frequency  # Double tends to work better for some reason
+    revival_time = 1/frequency
+    # revival_time = 2/frequency  # Double sometimes works better
     # print(revival_time)
 
     # Hard guess
@@ -263,7 +264,7 @@ def fit_data(data):
     max_bounds = (1.0, max_precession_dur / 1000, max_precession_dur / 1000,
                   *[0.3 for el in amplitudes])
     print(init_params)
-    
+
     try:
         popt, pcov = curve_fit(fit_func, tau_pis / 1000, norm_avg_sig,
                                sigma=norm_avg_sig_ste, absolute_sigma=True,
@@ -430,7 +431,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     seq_args = [min_precession_time, polarization_time,
                 gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
-                max_precession_time, apd_indices[0], 
+                max_precession_time, apd_indices[0],
                 state.value, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
@@ -475,7 +476,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
-        
+
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -511,7 +512,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
             seq_args = [taus[tau_ind_first], polarization_time,
                         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
-                        taus[tau_ind_second], apd_indices[0], 
+                        taus[tau_ind_second], apd_indices[0],
                         state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
@@ -683,10 +684,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 if __name__ == '__main__':
 
     path = 'pc_rabi\\branch_laser-consolidation\\spin_echo\\2021_07'
-    file = '2021_07_06-11_10_43-hopper-nv1_2021_03_16-fit'
+    file = '2021_07_05-02_03_21-hopper-nv1_2021_03_16'
 
     data = tool_belt.get_raw_data(path, file)
-    
+
 #    print(data['norm_avg_sig'])
 
     plot_resonances_vs_theta_B(data)
