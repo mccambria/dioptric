@@ -186,8 +186,8 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
     sample_name = 'hopper'
     nd = 'nd_0.5'
-#    green_laser = 'cobolt_515'
-    green_laser = 'laserglow_532'
+    green_laser = 'cobolt_515'
+#    green_laser = 'laserglow_532'
     nv_sig = { 'coords': [0.0, 0.0, 5.0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
@@ -196,8 +196,8 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
             'collection_filter': '630_lp', 'magnet_angle': 30.0,
-            'resonance_LOW': 2.7953, 'rabi_LOW': 165.6, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9477, 'rabi_HIGH': 227.5, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.7948, 'rabi_LOW': 165.9, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9486, 'rabi_HIGH': 226.6, 'uwave_power_HIGH': 14.5}   # 14.5 max
     apd_indices = [0, 1]
     
     try:
@@ -205,10 +205,10 @@ if __name__ == '__main__':
         # aom_delay
 #        num_reps = int(5E4)
 #        num_steps = 51
-##        laser_name = 'cobolt_515'
-##        delay_range = [0, 300]
-#        laser_name = 'laserglow_532'
-#        delay_range = [800, 1200]
+#        laser_name = 'cobolt_515'
+#        delay_range = [0, 300]
+##        laser_name = 'laserglow_532'
+##        delay_range = [800, 1200]
 #        laser_power = None
 #        with labrad.connect() as cxn:
 #            aom_delay(cxn, nv_sig, apd_indices,
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     
         # uwave_delay
         num_reps = int(1E4)
-        delay_range = [-200, 100]
+        delay_range = [-200, 200]
         num_steps = 51
         # sg394
 #        state = States.LOW
