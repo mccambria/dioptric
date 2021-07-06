@@ -241,7 +241,8 @@ def fit_data(data):
     # [1:] excludes frequency 0 (DC component)
     max_ind = numpy.argmax(transform_mag[1:])
     frequency = freqs[max_ind+1]
-    revival_time = 2/frequency  # Double tends to work better for some reason
+    revival_time = 1/frequency  
+    # revival_time = 2/frequency  # Double sometimes works better
     # print(revival_time)
 
     # Hard guess
@@ -683,7 +684,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 if __name__ == '__main__':
 
     path = 'pc_rabi\\branch_laser-consolidation\\spin_echo\\2021_07'
-    file = '2021_07_03-12_49_08-hopper-nv1_2021_03_16'
+    file = '2021_07_05-02_03_21-hopper-nv1_2021_03_16'
 
     data = tool_belt.get_raw_data(path, file)
     
