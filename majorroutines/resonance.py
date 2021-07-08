@@ -243,8 +243,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     tool_belt.save_raw_data(rawData, filePath)
 
     # Use the pulsed_resonance fitting functions
-    fit_func, popt = pulsed_resonance.fit_resonance(freq_range, freq_center,
-                                    num_steps, norm_avg_sig, norm_avg_sig_ste)
+    fit_func, popt, pcov = pulsed_resonance.fit_resonance(freq_range, freq_center,
+                                  num_steps, norm_avg_sig, norm_avg_sig_ste)
     fit_fig = None
     if (fit_func is not None) and (popt is not None):
         fit_fig = pulsed_resonance.create_fit_figure(freq_range, freq_center,

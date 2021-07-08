@@ -224,6 +224,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
     except Exception as e:
         print(e)
         popt = guess_params
+        pcov = None
 
     return fit_func, popt, pcov
 
@@ -479,8 +480,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # %% Fit the data
 
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, norm_avg_sig_ste)
+    fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
+                                         norm_avg_sig, norm_avg_sig_ste)
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
                                     norm_avg_sig, fit_func, popt)
