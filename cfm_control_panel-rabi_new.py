@@ -176,12 +176,12 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     composite = False
 
     pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
-                          num_steps, num_reps, num_runs, composite)
+                           num_steps, num_reps, num_runs, composite)
 
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
 
-    angle_range = [135, 150]
+    angle_range = [132, 147]
 #    angle_range = [315, 330]
     num_angle_steps = 6
 #    freq_center = 2.7921
@@ -223,15 +223,16 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
     # num_reps = 2 * 10**4
     num_reps = 1000
-    num_runs = 20
+    num_runs = 10
     
-    iq_delay = 600
+    iq_delay = None
         
 #    discrete_rabi.main(nv_sig, apd_indices,
 #                       state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
     
-    for iq_delay in numpy.linspace(500, 700, 41):
-        
+#    for iq_delay in numpy.linspace(690, 710, 6):
+    for iq_delay in numpy.linspace(595, 605, 6):
+#        
         discrete_rabi.main(nv_sig, apd_indices,
                            state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
 
@@ -463,9 +464,9 @@ if __name__ == '__main__':
             'spin_laser': green_laser, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
-            'collection_filter': '630_lp', 'magnet_angle': 138.0,
-            'resonance_LOW': 2.7989, 'rabi_LOW': 153.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9421, 'rabi_HIGH': 208.0, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'collection_filter': '630_lp', 'magnet_angle': 134.0, #134.0,
+            'resonance_LOW': 2.7961, 'rabi_LOW': 154.4, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9438, 'rabi_HIGH': 210.2, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -479,7 +480,7 @@ if __name__ == '__main__':
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 #         do_stationary_count(nv_sig, apd_indices)
-#         do_resonance(nv_sig, apd_indices, 2.87, 0.250)
+#         do_resonance(nv_sig, apd_indices, 2.87, 0.220)
 #         do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.05)
 #         do_resonance_state(nv_sig, apd_indices, States.LOW)
 #         do_resonance_state(nv_sig, apd_indices, States.HIGH)
@@ -490,10 +491,10 @@ if __name__ == '__main__':
 #         do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
 #         do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
 #         do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-         do_spin_echo(nv_sig, apd_indices)
+#         do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
-        # do_t1_interleave_knill(nv_sig, apd_indices)
+        do_t1_interleave_knill(nv_sig, apd_indices)
         
         # Operations that don't need an NV
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset

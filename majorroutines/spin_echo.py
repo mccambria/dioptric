@@ -231,8 +231,8 @@ def fit_data(data):
     # us back to 1.0
     amplitude = 1.0 - numpy.average(norm_avg_sig)
     offset = 1.0 - amplitude
-    decay_time = 1000.0
-    # decay_time /= 2
+    decay_time = 4000.0
+#    decay_time /= 2
 
     # To estimate the revival frequency let's find the highest peak in the FFT
     transform = numpy.fft.rfft(norm_avg_sig)
@@ -241,15 +241,15 @@ def fit_data(data):
     # [1:] excludes frequency 0 (DC component)
     max_ind = numpy.argmax(transform_mag[1:])
     frequency = freqs[max_ind+1]
-    revival_time = 1/frequency
-    # revival_time = 2/frequency  # Double sometimes works better
-    # print(revival_time)
+#    revival_time = 1/frequency
+    revival_time = 2/frequency  # Double sometimes works better
+#    print(revival_time)
 
     # Hard guess
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-#    revival_time = 37000
+    revival_time = 34500
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -682,7 +682,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 if __name__ == '__main__':
 
     path = 'pc_rabi\\branch_laser-consolidation\\spin_echo\\2021_07'
-    file = '2021_07_07-13_20_03-hopper-nv1_2021_03_16'
+    file = '2021_07_07-20_17_41-hopper-nv1_2021_03_16'
 
     data = tool_belt.get_raw_data(path, file)
 
