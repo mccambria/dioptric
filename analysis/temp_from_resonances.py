@@ -68,17 +68,17 @@ def main_res(resonances, res_errs):
 def main(zfs, zfs_err):
     
     zfs_diff = lambda temp: zfs_from_temp(temp) - zfs
-    results = root_scalar(zfs_diff, x0=50, x1=300)
+    results = root_scalar(zfs_diff, x0=50, x1=500)
     temp_mid = results.root
     
     zfs_lower = zfs - zfs_err
     zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_lower
-    results = root_scalar(zfs_diff, x0=50, x1=300)
+    results = root_scalar(zfs_diff, x0=50, x1=500)
     temp_higher = results.root
     
     zfs_higher = zfs + zfs_err
     zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_higher
-    results = root_scalar(zfs_diff, x0=50, x1=300)
+    results = root_scalar(zfs_diff, x0=50, x1=500)
     temp_lower = results.root
     
     print('T: [{}, {}, {}]'.format(temp_lower, temp_mid, temp_higher))
