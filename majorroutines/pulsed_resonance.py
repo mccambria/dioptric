@@ -224,6 +224,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
     except Exception as e:
         print(e)
         popt = guess_params
+        pcov = None
 
     return fit_func, popt, pcov
 

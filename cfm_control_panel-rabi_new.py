@@ -456,7 +456,7 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.0, 0.0, 5.0],
+    nv_sig = { 'coords': [0.0, 0.0, 5.4],
 #    nv_sig = { 'coords': [0.568, -0.645, 5.0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
@@ -482,10 +482,10 @@ if __name__ == '__main__':
 #         do_stationary_count(nv_sig, apd_indices)
 #         do_resonance(nv_sig, apd_indices, 2.87, 0.220)
 #         do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.05)
-         do_resonance_state(nv_sig, apd_indices, States.LOW)
-         do_resonance_state(nv_sig, apd_indices, States.HIGH)
-#         do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-#         do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+#         do_resonance_state(nv_sig, apd_indices, States.LOW)
+#         do_resonance_state(nv_sig, apd_indices, States.HIGH)
+         do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+         do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
 #         do_optimize_magnet_angle(nv_sig, apd_indices)
 #         do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
 #         do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
