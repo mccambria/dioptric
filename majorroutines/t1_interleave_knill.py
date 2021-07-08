@@ -49,9 +49,9 @@ def unpack_interleave(data, num_runs=None):
     opti_coords_master_list = data['opti_coords_master_list']
     tau_master_list = data['tau_master_list']
     nv_sig = data['nv_sig']
-    gate_time = data['spin_readout_dur']
+    gate_time = nv_sig['spin_readout_dur']
     if num_runs is None:
-        num_runs = data['num_runs']
+        num_runs = data['run_ind'] + 1
     sig_counts_master_list = data['sig_counts_master_list']
     avg_sig_counts_master_list = []
     avg_ref_counts_master_list = []

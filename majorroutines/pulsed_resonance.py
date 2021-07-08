@@ -20,7 +20,6 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import labrad
 from utils.tool_belt import States
-import analysis.temp_from_resonances as temp_from_resonances
 
 
 # %% Figure functions
@@ -63,7 +62,26 @@ def create_fit_figure(freq_range, freq_center, num_steps,
     return fig
 
 
-# %% Functions
+# %% 
+
+
+def return_res_with_error(data):
+    """
+    Returns the frequency/error of the first resonance in a spectrum.
+    Intended for extracting the frequency/error of a single resonance.
+    """
+    
+    freq_center = data['freq_center']
+    freq_range = data['freq_range']
+    num_steps = data['num_steps']
+    norm_avg_sig = numpy.array(data['norm_avg_sig'])
+    norm_avg_sig_ste = numpy.array(data['norm_avg_sig_ste'])
+    
+    fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
+                                         norm_avg_sig, norm_avg_sig_ste)
+    res = popt[2]
+    res_err = numpy.sqrt(pcov[2,2])
+    return res, res_err
 
 
 def calculate_freqs(freq_range, freq_center, num_steps):
@@ -187,18 +205,18 @@ def fit_resonance(freq_range, freq_center, num_steps,
                                    p0=guess_params, sigma=norm_avg_sig_ste,
                                    absolute_sigma=True)
             # popt = guess_params
-            if len(popt) == 6:
-                zfs = (popt[2] + popt[5]) / 2
-                low_res_err = numpy.sqrt(pcov[2,2])
-                hig_res_err = numpy.sqrt(pcov[5,5])
-                zfs_err = numpy.sqrt(low_res_err**2 + hig_res_err**2) / 2
-            else:
-                zfs = popt[2]
-                zfs_err = numpy.sqrt(pcov[2,2])
+            # if len(popt) == 6:
+            #     zfs = (popt[2] + popt[5]) / 2
+            #     low_res_err = numpy.sqrt(pcov[2,2])
+            #     hig_res_err = numpy.sqrt(pcov[5,5])
+            #     zfs_err = numpy.sqrt(low_res_err**2 + hig_res_err**2) / 2
+            # else:
+            #     zfs = popt[2]
+            #     zfs_err = numpy.sqrt(pcov[2,2])
             
-            print(zfs)
-            print(zfs_err)
-            temp_from_resonances.main(zfs, zfs_err)
+            # print(zfs)
+            # print(zfs_err)
+            # temp_from_resonances.main(zfs, zfs_err)
                 
         else:
             popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
@@ -207,7 +225,7 @@ def fit_resonance(freq_range, freq_center, num_steps,
         print(e)
         popt = guess_params
 
-    return fit_func, popt
+    return fit_func, popt, pcov
 
 def simulate(res_freq, freq_range, contrast,
              rabi_period, uwave_pulse_dur):
@@ -533,8 +551,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_laser-consolidation/resonance/2021_06'
-    file = '2021_06_29-19_53_41-hopper-nv1_2021_03_16'
+    path = 'pc_rabi/branch_laser-consolidation/pulsed_resonance/2021_07'
+    # file = '2021_07_08-10_10_58-hopper-nv1_2021_03_16'
+    file = '2021_07_08-10_14_29-hopper-nv1_2021_03_16'
     data = tool_belt.get_raw_data(path, file)
 
     freq_center = data['freq_center']
@@ -544,10 +563,10 @@ if __name__ == '__main__':
     norm_avg_sig = numpy.array(data['norm_avg_sig'])
     norm_avg_sig_ste = numpy.array(data['norm_avg_sig_ste'])
 
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, norm_avg_sig_ste)
+    fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
+                                         norm_avg_sig, norm_avg_sig_ste)
 
-    # fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
+    # fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
     #                                norm_avg_sig, ref_counts)
 
     create_fit_figure(freq_range, freq_center, num_steps,

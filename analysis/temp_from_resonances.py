@@ -18,6 +18,8 @@ from numpy import pi
 from scipy.optimize import root_scalar
 from numpy import exp
 import matplotlib.pyplot as plt
+from majorroutines.pulsed_resonance import return_res_with_error
+import utils.tool_belt as tool_belt
 
 
 # %% Functions
@@ -39,15 +41,29 @@ def zfs_from_temp(temp):
 # %% Main
 
 
-def main_res(resonances):
+def main_files(paths, files):
     
-    zfs = (resonances[1] + resonances[0]) / 2
+    resonances = []
+    res_errs = []
     
-    zfs_diff = lambda temp: zfs_from_temp(temp) - zfs
-    results = root_scalar(zfs_diff, x0=50, x1=300)
-    temp_mid = results.root
+    for ind in range(2):
+        path = paths[ind]
+        file = files[ind]
+        data = tool_belt.get_raw_data(path, file)
+        res, res_err = return_res_with_error(data)
+        resonances.append(res)
+        res_errs.append(res_err)
     
-    print('T: {}'.format(temp_mid))
+    main_res(resonances, res_errs)
+
+
+def main_res(resonances, res_errs):
+    
+    zfs = (resonances[0] + resonances[1]) / 2
+    zfs_err = numpy.sqrt(res_errs[0]**2 + res_errs[1]**2) / 2
+    
+    main(zfs, zfs_err)
+
 
 def main(zfs, zfs_err):
     
@@ -55,17 +71,17 @@ def main(zfs, zfs_err):
     results = root_scalar(zfs_diff, x0=50, x1=300)
     temp_mid = results.root
     
-    zfs_low = zfs - zfs_err
-    zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_low
+    zfs_lower = zfs - zfs_err
+    zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_lower
     results = root_scalar(zfs_diff, x0=50, x1=300)
-    temp_high = results.root
+    temp_higher = results.root
     
-    zfs_high = zfs + zfs_err
-    zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_high
+    zfs_higher = zfs + zfs_err
+    zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_higher
     results = root_scalar(zfs_diff, x0=50, x1=300)
-    temp_low = results.root
+    temp_lower = results.root
     
-    print('T: [{}, {}, {}]'.format(temp_low, temp_mid, temp_high))
+    print('T: [{}, {}, {}]'.format(temp_lower, temp_mid, temp_higher))
 
 
 # %% Run the file
@@ -73,37 +89,13 @@ def main(zfs, zfs_err):
 
 if __name__ == '__main__':
     
-    # Resonances in GHz
-    # resonances = [2.7979, 2.9456]  # 275 K
-    # resonances = [2.8020,	2.9496]  # 200 K
-    # resonances = [2.7984, 2.9467]  # 262.5 K
-    resonances = [2.8008, 2.9488]  # 225 K
-    
-    # 225 K
-    # zfs = 2.8745645361129957
-    # zfs_err = 0.00020017187345691895
-    
-    # 300 K
-    # zfs = 2.871011389583322
-    # zfs_err = 0.0008097208662379307
-    
-    # 175 K
-    # zfs = 2.8764
-    # zfs_err = 6.368357262294881e-05  
-    
-    # 50 K fake
-    # zfs = 2.8776
-    # zfs_err = 0.0001
-    
-    
+    path = 'pc_rabi/branch_laser-consolidation/pulsed_resonance/2021_07'
+    file_low = '2021_07_08-10_10_58-hopper-nv1_2021_03_16'
+    file_high = '2021_07_08-10_14_29-hopper-nv1_2021_03_16'
+    paths = [path, path]
+    files = [file_low, file_high]
 
-#    main_res(resonances)
-#    main(2.8696904231693554, 0.0005348574127538577)
-#    main(2.871, 0.0)
-    print(zfs_from_temp(295))
-    # x_vals = numpy.linspace(0, 300, 300)
-    # y_vals = zfs_from_temp(x_vals)
-    # plt.plot(x_vals, y_vals)
+    main_files(paths, files)
     
     # print(zfs_from_temp(280))
     
