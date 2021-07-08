@@ -49,9 +49,9 @@ def unpack_interleave(data, num_runs=None):
     opti_coords_master_list = data['opti_coords_master_list']
     tau_master_list = data['tau_master_list']
     nv_sig = data['nv_sig']
-    gate_time = data['spin_readout_dur']
+    gate_time = nv_sig['spin_readout_dur']
     if num_runs is None:
-        num_runs = data['num_runs']
+        num_runs = data['run_ind'] + 1
     sig_counts_master_list = data['sig_counts_master_list']
     avg_sig_counts_master_list = []
     avg_ref_counts_master_list = []
@@ -549,9 +549,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
 
 if __name__ == '__main__':
 
-    path = 'pc_hahn\\branch_master\\t1_interleave_knill\\data_collections\\'
-    folder = 'hopper-nv1_2021_03_16-175K'
+    path = 'pc_rabi\\branch_laser-consolidation\\t1_interleave_knill\\data_collections\\'
+    folder = 'hopper-nv1_2021_03_16-room_temp'
     file = 'incremental'
     data = tool_belt.get_raw_data(path+folder, file)
 
-    unpack_interleave(data, 120)
+    unpack_interleave(data, None)
