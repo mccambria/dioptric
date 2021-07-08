@@ -176,18 +176,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     laser_name = nv_sig[laser_key]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-    config = tool_belt.get_config_dict(cxn)
-
     polarization_time = nv_sig['spin_pol_dur'] 
-    signal_wait_time = config['CommonDurations']['uwave_to_readout_wait_dur']
-    reference_time = signal_wait_time  # not sure what this is
-    background_wait_time = signal_wait_time  # not sure what this is
-    reference_wait_time = 2 * signal_wait_time  # not sure what this is
-    aom_delay_time = config['Optics'][laser_name]['delay']
-    sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
-    uwave_delay_time = config['Microwaves'][sig_gen_name]['delay']
     if iq_delay is None:
-        iq_delay = config['Microwaves']['iq_delay']
+        iq_delay = tool_belt.get_registry_entry(cxn, 'iq_delay', ['', 'Config', 'Microwaves'])
     gate_time = nv_sig['spin_readout_dur']
     # uwave_delay_time = 15
     # signal_wait_time = 1000
@@ -195,13 +186,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     # Analyze the sequence
     # file_name = os.path.basename(__file__)
     file_name = 'discrete_rabi2.py'
-    seq_args = [polarization_time, reference_time,
-                signal_wait_time, reference_wait_time,
-                background_wait_time,
-                aom_delay_time, uwave_delay_time, iq_delay,
+    seq_args = [polarization_time, iq_delay,
                 gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                 0, max_num_pi_pulses,
-                apd_indices[0], sig_gen_name, laser_name, laser_power]
+                apd_indices[0], state.value, laser_name, laser_power]
 #    print(seq_args)
 #    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -275,13 +263,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
             pi_ind_master_list[run_ind].append(pi_ind)
 
             # Stream the sequence
-            seq_args = [polarization_time, reference_time,
-                        signal_wait_time, reference_wait_time,
-                        background_wait_time,
-                        aom_delay_time, uwave_delay_time, iq_delay,
+            seq_args = [polarization_time, iq_delay,
                         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                         pi_ind, max_num_pi_pulses,
-                        apd_indices[0], sig_gen_name, laser_name, laser_power]
+                        apd_indices[0], state.value, laser_name, laser_power]
             # print(seq_args)
             # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)

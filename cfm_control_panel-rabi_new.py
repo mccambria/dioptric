@@ -181,11 +181,15 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
 
-    angle_range = [0, 150]
-    # angle_range = [25, 35]
+    angle_range = [135, 150]
+#    angle_range = [315, 330]
     num_angle_steps = 6
+#    freq_center = 2.7921
+#    freq_range = 0.060
+#    angle_range = [0, 150]
+#    num_angle_steps = 6
     freq_center = 2.87
-    freq_range = 0.250
+    freq_range = 0.220
     num_freq_steps = 51
     num_freq_runs = 10
     
@@ -218,10 +222,15 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
     # num_reps = 2 * 10**4
-    num_reps = 5000
-    num_runs = 5
+    num_reps = 1000
+    num_runs = 20
     
-    for iq_delay in numpy.linspace(500, 700, 21):
+    iq_delay = 600
+        
+#    discrete_rabi.main(nv_sig, apd_indices,
+#                       state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
+    
+    for iq_delay in numpy.linspace(500, 700, 41):
         
         discrete_rabi.main(nv_sig, apd_indices,
                            state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
@@ -365,7 +374,8 @@ def do_spin_echo(nv_sig, apd_indices):
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
     max_time = 120  # us
-    num_steps = max_time + 1  # 1 point per us
+#    num_steps = max_time + 1  # 1 point per us
+    num_steps = int(max_time/2) + 1  # 2 point per us
 #    max_time = 1  # us
 #    num_steps = 51
     precession_time_range = [0, max_time * 10**3]
@@ -453,9 +463,9 @@ if __name__ == '__main__':
             'spin_laser': green_laser, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
-            'collection_filter': '630_lp', 'magnet_angle': 330.0,
-            'resonance_LOW': 2.8036, 'rabi_LOW': 154.7, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9384, 'rabi_HIGH': 219.1, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'collection_filter': '630_lp', 'magnet_angle': 138.0,
+            'resonance_LOW': 2.7989, 'rabi_LOW': 153.5, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9421, 'rabi_HIGH': 208.0, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run

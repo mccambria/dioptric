@@ -63,7 +63,7 @@ class ArbitraryWaveformGenerator(LabradServer):
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'DeviceIDs'])
         p.get('arb_wave_gen_visa_address')
-        p.cd(['', 'Config', 'Wiring', 'Pulser'])
+        p.cd(['', 'Config', 'Wiring', 'PulseStreamer'])
         p.get('do_arb_wave_trigger')
         result = await p.send()
         return result['get']
