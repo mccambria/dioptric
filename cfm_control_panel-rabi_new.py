@@ -223,18 +223,18 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
     # num_reps = 2 * 10**4
     num_reps = 1000
-    num_runs = 10
+    num_runs = 20
     
     iq_delay = None
         
-#    discrete_rabi.main(nv_sig, apd_indices,
-#                       state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
+    discrete_rabi.main(nv_sig, apd_indices,
+                       state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
     
 #    for iq_delay in numpy.linspace(690, 710, 6):
-    for iq_delay in numpy.linspace(595, 605, 6):
-#        
-        discrete_rabi.main(nv_sig, apd_indices,
-                           state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
+#    for iq_delay in numpy.linspace(585, 595, 6):
+##        
+#        discrete_rabi.main(nv_sig, apd_indices,
+#                           state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
 
 
 def do_t1_battery(nv_sig, apd_indices):
@@ -321,25 +321,25 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 250
-    num_reps = 50
+    num_runs = 50
+    num_reps = 1000
     num_steps = 12
     min_tau = 20e3
-    max_tau_omega = 1540e6
-    max_tau_gamma = 800e6
+    max_tau_omega = 22e6
+    max_tau_gamma = 12e6
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps],
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega//3], num_steps, num_reps],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega//3], num_steps, num_reps],
-            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps],
-            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps],
-            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps],
-            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps],
-            # [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps],
-            # [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps],
-            # [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps],
-            # [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps],
+#            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps],
+#            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps],
+#            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps],
+#            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps],
+            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps],
+            [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps],
+            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps],
+            [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps],
             ], dtype=object)
 
     t1_interleave_knill.main(nv_sig, apd_indices, t1_exp_array, num_runs)

@@ -49,7 +49,7 @@ def unpack_interleave(data, num_runs=None):
     opti_coords_master_list = data['opti_coords_master_list']
     tau_master_list = data['tau_master_list']
     nv_sig = data['nv_sig']
-    gate_time = data['gate_time']
+    gate_time = data['spin_readout_dur']
     if num_runs is None:
         num_runs = data['num_runs']
     sig_counts_master_list = data['sig_counts_master_list']
@@ -191,27 +191,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
 
     # %% Define the parameters for the sequence
 
-    config = tool_belt.get_config_dict(cxn)
-    
     laser_key = 'spin_laser'
     laser_name = nv_sig[laser_key]
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-
     polarization_time = nv_sig['spin_pol_dur']
-    # time of illumination during which signal readout occurs
-    signal_time = polarization_time
-    # time of illumination during which reference readout occurs
-    reference_time = polarization_time
-    pre_uwave_exp_wait_time = config['CommonDurations']['pol_to_uwave_wait_dur']
-    post_uwave_exp_wait_time = config['CommonDurations']['uwave_to_readout_wait_dur']
-    # time between signal and reference without illumination
-    sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    aom_delay_time = config['Optics'][laser_name]['delay']
-    sig_gen_LOW_name = config['Microwaves']['sig_gen_{}'.format(States.LOW.name)]
-    sig_gen_LOW_delay = config['Microwaves']['{}_delay'.format(sig_gen_LOW_name)]
-    sig_gen_HIGH_name = config['Microwaves']['sig_gen_{}'.format(States.HIGH.name)]
-    sig_gen_HIGH_delay = config['Microwaves']['{}_delay'.format(sig_gen_HIGH_name)]
-    iq_delay = config['Microwaves']['iq_delay']
     readout = nv_sig['spin_readout_dur']
 
     # %% Setting HIGH and LOW params
@@ -342,14 +325,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
         # file_name = os.path.basename(__file__)
         seq_file = 't1_dq_knill2.py'
 
-        seq_args = [min_relaxation_time, polarization_time, signal_time, reference_time,
-                    sig_to_ref_wait_time, pre_uwave_exp_wait_time,
-                    post_uwave_exp_wait_time, aom_delay_time,
-                    sig_gen_LOW_delay, sig_gen_HIGH_delay, iq_delay,
-                    readout, uwave_pi_pulse_low, uwave_pi_pulse_high, max_relaxation_time,
-                    apd_indices[0], init_state.value, read_state.value,
-                    sig_gen_LOW_name, sig_gen_HIGH_name, laser_name, laser_power]
-        seq_args = [int(el) for el in seq_args]
+        seq_args = [min_relaxation_time, polarization_time, readout, 
+                    uwave_pi_pulse_low, uwave_pi_pulse_high, 
+                    max_relaxation_time, apd_indices[0], 
+                    init_state.value, read_state.value, 
+                    laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
         seq_time = int(ret_vals[0])
@@ -458,15 +438,11 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
                 print('Second relaxation time: {}'.format(taus[tau_ind_second]))
 
                 # Stream the sequence
-                seq_args = [taus[tau_ind_first], polarization_time, signal_time, reference_time,
-                            sig_to_ref_wait_time, pre_uwave_exp_wait_time,
-                            post_uwave_exp_wait_time, aom_delay_time,
-                            sig_gen_LOW_delay, sig_gen_HIGH_delay, iq_delay,
-                            readout, uwave_pi_pulse_low, uwave_pi_pulse_high, taus[tau_ind_second],
-                            apd_indices[0], init_state.value, read_state.value,
-                            sig_gen_LOW_name, sig_gen_HIGH_name, laser_name, laser_power]
-
-                seq_args = [int(el) for el in seq_args]
+                seq_args = [taus[tau_ind_first], polarization_time, readout, 
+                            uwave_pi_pulse_low, uwave_pi_pulse_high, 
+                            taus[tau_ind_second], apd_indices[0], 
+                            init_state.value, read_state.value, 
+                            laser_name, laser_power]
                 seq_args_string = tool_belt.encode_seq_args(seq_args)
 
                 cxn.pulse_streamer.stream_immediate(seq_file, int(num_reps),
