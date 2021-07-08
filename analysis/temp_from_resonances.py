@@ -25,16 +25,47 @@ import utils.tool_belt as tool_belt
 # %% Functions
 
 
-def zfs_from_temp(temp):
-    """
-    This is the 5th order polynomial used as a fit in the paper 'Temperature
-    dependent energy level shifts of nitrogen-vacancy centers in diamond'
-    """
+def sub_room_zfs_from_temp(temp):
     coeffs = [2.87771, -4.625E-6, 1.067E-7, -9.325E-10, 1.739E-12, -1.838E-15]
     ret_val = 0
     for ind in range(6):
         ret_val += coeffs[ind] * (temp**ind)
     return ret_val
+
+
+def super_room_zfs_from_temp(temp):
+    coeffs = [2.8697, 9.7E-5, -3.7E-7, 1.7E-10]
+    coeff_errs = [0.0009, 0.6E-5, 0.1E-7, 0.1E-10]
+    ret_val = 0
+    for ind in range(4):
+        ret_val += coeffs[ind] * (temp**ind)
+    return ret_val
+
+
+def zfs_from_temp(temp):
+    """
+    This is a combination of 2 results. For temp < 300 K, we pull the 
+    5th order polynomial from 'Temperature dependent energy level shifts 
+    of nitrogen-vacancy centers in diamond.' Then we stitch that to
+    'Measurement and Control of Single Nitrogen-Vacancy Center Spins above 
+    600 K' above 300 K
+    """
+    # Branch depending on if temp is single- or multi-valued
+    if type(temp) in [list, numpy.ndarray]:
+        ret_vals = []
+        for val in temp:
+            if val < 300:
+                zfs = sub_room_zfs_from_temp(val)
+            else:
+                zfs = super_room_zfs_from_temp(val)
+            ret_vals.append(zfs)
+        ret_vals = numpy.array(ret_vals)
+        return ret_vals
+    else:
+        if temp < 300:
+            return sub_room_zfs_from_temp(temp)
+        else:
+            return super_room_zfs_from_temp(temp)
 
 
 
@@ -95,8 +126,11 @@ if __name__ == '__main__':
     paths = [path, path]
     files = [file_low, file_high]
 
-    main_files(paths, files)
+#    main_files(paths, files)
+#    
+#    print(zfs_from_temp(280))
     
-    # print(zfs_from_temp(280))
+    temps = numpy.linspace(5,500,1000)
+    plt.plot(temps, zfs_from_temp(temps))
     
 

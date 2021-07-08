@@ -321,12 +321,12 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 50
+    num_runs = 55
     num_reps = 1000
     num_steps = 12
     min_tau = 20e3
-    max_tau_omega = 22e6
-    max_tau_gamma = 12e6
+    max_tau_omega = int(11.5e6)
+    max_tau_gamma = int(8e6)
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps],
@@ -464,9 +464,9 @@ if __name__ == '__main__':
             'spin_laser': green_laser, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
-            'collection_filter': '630_lp', 'magnet_angle': 133.0,
-            'resonance_LOW': 2.7972, 'rabi_LOW': 152.2, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9448, 'rabi_HIGH': 213.2, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'collection_filter': '630_lp', 'magnet_angle': 129.0,
+            'resonance_LOW': 2.7945, 'rabi_LOW': 152.2, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9405, 'rabi_HIGH': 212.3, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -482,8 +482,8 @@ if __name__ == '__main__':
 #         do_stationary_count(nv_sig, apd_indices)
 #         do_resonance(nv_sig, apd_indices, 2.87, 0.220)
 #         do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.05)
-#         do_resonance_state(nv_sig, apd_indices, States.LOW)
-#         do_resonance_state(nv_sig, apd_indices, States.HIGH)
+         do_resonance_state(nv_sig, apd_indices, States.LOW)
+         do_resonance_state(nv_sig, apd_indices, States.HIGH)
 #         do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
 #         do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
 #         do_optimize_magnet_angle(nv_sig, apd_indices)
@@ -491,10 +491,10 @@ if __name__ == '__main__':
 #         do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
 #         do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
 #         do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-         do_spin_echo(nv_sig, apd_indices)
+#         do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
-#        do_t1_interleave_knill(nv_sig, apd_indices)
+#         do_t1_interleave_knill(nv_sig, apd_indices)
         
         # Operations that don't need an NV
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
