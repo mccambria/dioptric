@@ -268,6 +268,11 @@ def get_data_points_csv(file):
                 continue
             point = {}
             sample = row[0]
+            # The first row should be populated for every data point. If it's
+            # not, then assume we're looking at a padding row at the bottom
+            # of the csv
+            if sample == '':
+                continue
             if sample not in samples:
                 sample_markers[sample] = markers[marker_ind]
                 marker_ind += 1
@@ -391,7 +396,7 @@ def main(file_name, path, plot_type, rates_to_plot,
     file_path = path + '{}.xlsx'.format(file_name)
     csv_file_path = path + '{}.csv'.format(file_name)
 
-    file = pd.read_excel(file_path)
+    file = pd.read_excel(file_path, engine='openpyxl')
     file.to_csv(csv_file_path, index=None, header=True)
 
     data_points = get_data_points_csv(csv_file_path)
@@ -426,7 +431,9 @@ def main(file_name, path, plot_type, rates_to_plot,
     omega_popt, omega_pcov, omega_fit_func, gamma_popt, gamma_pcov, gamma_fit_func = ret_vals
 
     omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
+    # omega_popt[0] = 0
     print(omega_popt)
+    print(numpy.sqrt(numpy.diag(omega_pcov)))
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'Omega']):
         ax.plot(temp_linspace, omega_lambda(temp_linspace),
                 label=r'$\Omega$ fit', color=omega_edge_color)
@@ -436,7 +443,7 @@ def main(file_name, path, plot_type, rates_to_plot,
 
     gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
     print(gamma_popt)
-    print(numpy.sqrt(gamma_popt[1]))
+    print(numpy.sqrt(numpy.diag(gamma_pcov)))
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'gamma']):
         ax.plot(temp_linspace, gamma_lambda(temp_linspace),
                 label=r'$\gamma$ fit', color=gamma_edge_color)
@@ -583,13 +590,13 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [80, 315]
+    temp_range = [80, 360]
     rate_range = [0, 4.5]
     xscale = 'linear'
-    # rate_range = [-5, 150]
-    # yscale = 'linear'
-    rate_range = [1e-2, 200]
-    yscale = 'log'
+    rate_range = [-5, 220]
+    yscale = 'linear'
+#    rate_range = [1e-2, 200]
+#    yscale = 'log'
 
     file_name = 'compiled_data'
     # file_name = 'compiled_data-test'
