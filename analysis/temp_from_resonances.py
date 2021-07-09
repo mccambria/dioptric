@@ -131,6 +131,10 @@ if __name__ == '__main__':
 #    print(zfs_from_temp(280))
     
     temps = numpy.linspace(5,500,1000)
-    plt.plot(temps, zfs_from_temp(temps))
+    # plt.plot(temps, zfs_from_temp(temps))
+    fig, ax = plt.subplots()
+    ax.plot(temps, sub_room_zfs_from_temp(temps), label='sub')
+    ax.plot(temps, super_room_zfs_from_temp(temps), label='super')
+    ax.legend()
     
 
