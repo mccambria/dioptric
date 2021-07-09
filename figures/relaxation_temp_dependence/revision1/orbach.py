@@ -231,6 +231,8 @@ def fit_simultaneous(data_points):
     init_params = (510, 1.38e-11, 2000, 74.0)
 
     num_params = len(init_params)
+    print(temps)
+    print(combined_rates)
     popt, pcov = curve_fit(fit_func, temps, combined_rates, p0=init_params,
                            sigma=combined_errs, absolute_sigma=True,
                            bounds=([0]*num_params,[numpy.inf]*num_params),
@@ -268,6 +270,11 @@ def get_data_points_csv(file):
                 continue
             point = {}
             sample = row[0]
+            # The first row should be populated for every data point. If it's
+            # not, then assume we're looking at a padding row at the bottom
+            # of the csv
+            if sample == '':
+                continue
             if sample not in samples:
                 sample_markers[sample] = markers[marker_ind]
                 marker_ind += 1
@@ -391,7 +398,7 @@ def main(file_name, path, plot_type, rates_to_plot,
     file_path = path + '{}.xlsx'.format(file_name)
     csv_file_path = path + '{}.csv'.format(file_name)
 
-    file = pd.read_excel(file_path)
+    file = pd.read_excel(file_path, engine='openpyxl')
     file.to_csv(csv_file_path, index=None, header=True)
 
     data_points = get_data_points_csv(csv_file_path)
@@ -586,10 +593,10 @@ if __name__ == '__main__':
     temp_range = [80, 315]
     rate_range = [0, 4.5]
     xscale = 'linear'
-    # rate_range = [-5, 150]
-    # yscale = 'linear'
-    rate_range = [1e-2, 200]
-    yscale = 'log'
+    rate_range = [-5, 200]
+    yscale = 'linear'
+#    rate_range = [1e-2, 200]
+#    yscale = 'log'
 
     file_name = 'compiled_data'
     # file_name = 'compiled_data-test'
