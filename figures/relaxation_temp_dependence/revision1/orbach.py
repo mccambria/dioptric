@@ -238,14 +238,14 @@ def fit_simultaneous(data_points):
     # print(simultaneous_orbach_T5_free(temps, *popt))
 
     omega_popt = [popt[0], popt[3], popt[1]]
-    omega_pcov = [pcov[0], pcov[3], pcov[1]]
+    omega_pvar = [pcov[0,0], pcov[3,3], pcov[1,1]]
     omega_fit_func = orbach_T5_free
 
     gamma_popt = [popt[2], popt[3]]
-    gamma_pcov = [pcov[2], pcov[3]]
+    gamma_pvar = [pcov[2,2], pcov[3,3]]
     gamma_fit_func = orbach_free
 
-    return omega_popt, omega_pcov, omega_fit_func, gamma_popt, gamma_pcov, gamma_fit_func
+    return omega_popt, omega_pvar, omega_fit_func, gamma_popt, gamma_pvar, gamma_fit_func
 
 
 def get_data_points_csv(file):
@@ -428,12 +428,12 @@ def main(file_name, path, plot_type, rates_to_plot,
 
     # Fit to Omega and gamma simultaneously
     ret_vals = fit_simultaneous(data_points)
-    omega_popt, omega_pcov, omega_fit_func, gamma_popt, gamma_pcov, gamma_fit_func = ret_vals
+    omega_popt, omega_pvar, omega_fit_func, gamma_popt, gamma_pvar, gamma_fit_func = ret_vals
 
     omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
     # omega_popt[0] = 0
     print(omega_popt)
-    print(numpy.sqrt(numpy.diag(omega_pcov)))
+    print(numpy.sqrt(omega_pvar))
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'Omega']):
         ax.plot(temp_linspace, omega_lambda(temp_linspace),
                 label=r'$\Omega$ fit', color=omega_edge_color)
@@ -443,7 +443,7 @@ def main(file_name, path, plot_type, rates_to_plot,
 
     gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
     print(gamma_popt)
-    print(numpy.sqrt(numpy.diag(gamma_pcov)))
+    print(numpy.sqrt(gamma_pvar))
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'gamma']):
         ax.plot(temp_linspace, gamma_lambda(temp_linspace),
                 label=r'$\gamma$ fit', color=gamma_edge_color)

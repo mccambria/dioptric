@@ -118,7 +118,7 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
 
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
-    contrast = 0.10  # Arb
+    contrast = 0.15  # Arb
     sigma = 0.003  # GHz
 #    sigma = 0.010  # MHz
     fwhm = 2.355 * sigma
@@ -134,7 +134,7 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
     # rel_ref_std = ref_std / numpy.average(ref_counts)
     # height = max(rel_ref_std, contrast/4)
     # print(height)
-    height = 0.03
+    height = 0.10
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
@@ -562,8 +562,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 if __name__ == '__main__':
 
     path = 'pc_rabi/branch_laser-consolidation/pulsed_resonance/2021_07'
-    # file = '2021_07_08-10_10_58-hopper-nv1_2021_03_16'
-    file = '2021_07_08-10_14_29-hopper-nv1_2021_03_16'
+    # file = '2021_07_08-23_34_28-hopper-nv1_2021_03_16'
+    file = '2021_07_08-23_37_37-hopper-nv1_2021_03_16'
     data = tool_belt.get_raw_data(path, file)
 
     freq_center = data['freq_center']
