@@ -67,7 +67,7 @@ def create_fit_figure(freq_range, freq_center, num_steps,
 
 def return_res_with_error(data):
     """
-    Returns the frequency/error of the first resonance in a spectrum.
+    Returns the frequency/error of the deepest resonance in a spectrum.
     Intended for extracting the frequency/error of a single resonance.
     """
     
@@ -79,8 +79,17 @@ def return_res_with_error(data):
     
     fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
                                          norm_avg_sig, norm_avg_sig_ste)
-    res = popt[2]
-    res_err = numpy.sqrt(pcov[2,2])
+    if len(popt) == 6:
+        low_res_depth = popt[0]
+        high_res_depth = popt[3]
+        if low_res_depth > high_res_depth:
+            res_ind = 2
+        else:
+            res_ind = 5
+    else:
+        res_ind = 2
+    res = popt[res_ind]
+    res_err = numpy.sqrt(pcov[res_ind, res_ind])
     return res, res_err
 
 
