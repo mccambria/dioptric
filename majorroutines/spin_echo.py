@@ -682,7 +682,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 if __name__ == '__main__':
 
     path = 'pc_rabi\\branch_laser-consolidation\\spin_echo\\2021_07'
-    file = '2021_07_07-20_17_41-hopper-nv1_2021_03_16'
+    file = '2021_07_11-12_18_08-hopper-nv1_2021_03_16'
 
     data = tool_belt.get_raw_data(path, file)
 

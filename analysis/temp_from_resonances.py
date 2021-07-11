@@ -25,6 +25,51 @@ import utils.tool_belt as tool_belt
 # %% Functions
 
 
+def process_res_list():
+    
+    paths = [
+# 275
+# 200
+# 262.5
+# 225
+# 212.5
+# 237.5
+# 287.5
+# 300
+# 250
+# 150
+# 85
+# 175
+# 125
+# 295
+# 350
+# 400
+        ]
+    resonances = [
+# 275
+# 200
+# 262.5
+# 225
+# 212.5
+# 237.5
+# 287.5
+# 300
+# 250
+# 150
+# 85
+# 175
+# 125
+# 295
+# 350
+# 400
+]
+    
+    for ind in range(len(paths)):
+        path_pair = paths[ind]
+        res_pair = resonances[ind]
+        main_files(path_pair, res_pair)
+
+
 def sub_room_zfs_from_temp(temp):
     coeffs = [2.87771, -4.625E-6, 1.067E-7, -9.325E-10, 1.739E-12, -1.838E-15]
     ret_val = 0

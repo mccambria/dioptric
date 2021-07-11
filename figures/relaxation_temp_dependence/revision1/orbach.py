@@ -590,10 +590,10 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [80, 500]
+    temp_range = [80, 450]
     rate_range = [0, 4.5]
     xscale = 'linear'
-    rate_range = [-5, 500]
+    rate_range = [-5, 400]
     yscale = 'linear'
 #    rate_range = [1e-2, 200]
 #    yscale = 'log'
