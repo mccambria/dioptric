@@ -121,8 +121,8 @@ def main(zfs, zfs_err):
 if __name__ == '__main__':
     
     path = 'pc_rabi/branch_laser-consolidation/pulsed_resonance/2021_07'
-    file_low = '2021_07_08-23_34_28-hopper-nv1_2021_03_16'
-    file_high = '2021_07_08-23_37_37-hopper-nv1_2021_03_16'
+    file_low = '2021_07_09-18_04_22-hopper-nv1_2021_03_16'
+    file_high = '2021_07_09-18_07_34-hopper-nv1_2021_03_16'
     paths = [path, path]
     files = [file_low, file_high]
 
