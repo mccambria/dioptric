@@ -157,7 +157,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     ax.set_ylabel('Resonances (GHz)')
     ax.legend()
 
-    return fit_func, popt, stes, fit_fig, theta_B, fig
+    return fit_func, popt, stes, fit_fig, theta_B_deg, fig
 
 
 # %% Functions
@@ -231,7 +231,7 @@ def fit_data(data):
     # us back to 1.0
     amplitude = 1.0 - numpy.average(norm_avg_sig)
     offset = 1.0 - amplitude
-    decay_time = 4000.0
+    decay_time = 4500.0
 #    decay_time /= 2
 
     # To estimate the revival frequency let's find the highest peak in the FFT
@@ -241,15 +241,14 @@ def fit_data(data):
     # [1:] excludes frequency 0 (DC component)
     max_ind = numpy.argmax(transform_mag[1:])
     frequency = freqs[max_ind+1]
-#    revival_time = 1/frequency
-    revival_time = 2/frequency  # Double sometimes works better
-#    print(revival_time)
+    revival_time = 2/frequency  # Revival time is double the dominant frequency
+    # print(revival_time)
 
     # Hard guess
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-    revival_time = 34500
+    # revival_time = 35000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -263,12 +262,13 @@ def fit_data(data):
     min_bounds = (0.5, 0.0, 0.0, *[0.0 for el in amplitudes])
     max_bounds = (1.0, max_precession_dur / 1000, max_precession_dur / 1000,
                   *[0.3 for el in amplitudes])
-    print(init_params)
+    # print(init_params)
 
     try:
         popt, pcov = curve_fit(fit_func, tau_pis / 1000, norm_avg_sig,
                                sigma=norm_avg_sig_ste, absolute_sigma=True,
                                p0=init_params, bounds=(min_bounds, max_bounds))
+        # print(popt)
         popt[1] *= 1000
         popt[2] *= 1000
 
@@ -349,9 +349,9 @@ def main(nv_sig, apd_indices,
          state=States.LOW):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices,
-                  precession_dur_range, num_steps, num_reps, num_runs,
-                  state)
+        angle = main_with_cxn(cxn, nv_sig, apd_indices,
+                  precession_dur_range, num_steps, num_reps, num_runs, state)
+        return angle
 
 def main_with_cxn(cxn, nv_sig, apd_indices,
                   precession_time_range, num_steps, num_reps, num_runs,
@@ -416,7 +416,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
 
-    sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
+    sig_counts = numpy.zeros([num_runs, num_steps])
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
 
@@ -670,10 +670,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     # %% Fit and save figs
 
     ret_vals = plot_resonances_vs_theta_B(raw_data)
-    fit_func, popt, stes, fit_fig, theta_B, angle_fig = ret_vals
+    fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
 
     tool_belt.save_figure(fit_fig, file_path + '-fit')
     tool_belt.save_figure(angle_fig, file_path + '-angle')
+
+    return theta_B_deg
 
 
 # %% Run the file
@@ -688,4 +690,5 @@ if __name__ == '__main__':
 
 #    print(data['norm_avg_sig'])
 
-    plot_resonances_vs_theta_B(data)
+    ret_vals = plot_resonances_vs_theta_B(data)
+    fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals

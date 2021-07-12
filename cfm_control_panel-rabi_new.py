@@ -175,8 +175,9 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     
     composite = False
 
-    pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
-                           num_steps, num_reps, num_runs, composite)
+    res, _ = pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
+                                 num_steps, num_reps, num_runs, composite)
+    nv_sig['res_{}'.format(state.name)] = res
 
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
@@ -215,8 +216,9 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
     num_reps = 1000
     num_runs = 10
 
-    rabi.main(nv_sig, apd_indices, uwave_time_range,
-              state, num_steps, num_reps, num_runs)
+    period = rabi.main(nv_sig, apd_indices, uwave_time_range,
+                       state, num_steps, num_reps, num_runs)
+    nv_sig['rabi_{}'.format(state.name)] = period
 
 
 def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
@@ -321,12 +323,12 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 120
+    num_runs = 80
     num_reps = 1000
     num_steps = 12
     min_tau = 20e3
-    max_tau_omega = int(11.5e6)
-    max_tau_gamma = int(8e6)
+    max_tau_omega = int(8e6)
+    max_tau_gamma = int(6e6)
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps],
@@ -370,12 +372,25 @@ def do_ramsey(nv_sig, apd_indices):
                 num_steps, num_reps, num_runs)
 
 
+def do_spin_echo_battery(nv_sig, apd_indices):
+
+    for magnet_angle in numpy.linspace(129, 135, 4):
+        nv_sig['magnet_angle'] = magnet_angle
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        angle = do_spin_echo(nv_sig, apd_indices)
+        if angle < 6:
+            break
+
+
 def do_spin_echo(nv_sig, apd_indices):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
     max_time = 120  # us
-    num_steps = max_time + 1  # 1 point per us
+    num_steps = int(max_time + 1)  # 1 point per us
 #    num_steps = int(max_time/2) + 1  # 2 point per us
 #    max_time = 1  # us
 #    num_steps = 51
@@ -383,7 +398,7 @@ def do_spin_echo(nv_sig, apd_indices):
 #    num_reps = 8000
 #    num_runs = 5
     num_reps = 1000
-    num_runs = 40
+    num_runs = 80
     
 #    num_steps = 151
 #    precession_time_range = [0, 10*10**3]
@@ -392,8 +407,9 @@ def do_spin_echo(nv_sig, apd_indices):
     
     state = States.LOW
 
-    spin_echo.main(nv_sig, apd_indices, precession_time_range,
-                   num_steps, num_reps, num_runs, state)
+    angle = spin_echo.main(nv_sig, apd_indices, precession_time_range,
+                           num_steps, num_reps, num_runs, state)
+    return angle
 
 
 def do_sample_nvs(nv_sig_list, apd_indices):
@@ -456,7 +472,7 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.0, 0.0, 5.0],
+    nv_sig = { 'coords': [0.0, 0.0, 5.2],
 #    nv_sig = { 'coords': [0.568, -0.645, 5.0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
@@ -465,14 +481,14 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
             'collection_filter': '630_lp', 'magnet_angle': 129.0,
-            'resonance_LOW': 2.7862, 'rabi_LOW': 168.2, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9354, 'rabi_HIGH': 227.8, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.7974, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9429, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     # %% Functions to run
 
     try:
         
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
@@ -486,14 +502,15 @@ if __name__ == '__main__':
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
 #         do_optimize_magnet_angle(nv_sig, apd_indices)
-#         do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-#         do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-#         do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-#         do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-#         do_spin_echo(nv_sig, apd_indices)
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        # do_spin_echo(nv_sig, apd_indices)
+        do_spin_echo_battery(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
-         # do_t1_interleave_knill(nv_sig, apd_indices)
+           # do_t1_interleave_knill(nv_sig, apd_indices)
         
         # Operations that don't need an NV
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
