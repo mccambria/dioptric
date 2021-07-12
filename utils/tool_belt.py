@@ -869,6 +869,23 @@ def get_raw_data(path_from_nvdata, file_name,
         return json.load(file)
 
 
+def get_raw_data(file_name, path_from_nvdata=None,
+                 nvdata_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
+    """
+    Returns a dictionary containing the json object from the specified
+    raw data file. If path_from_nvdata is not specified, we'll crawl the 
+    branch and month folders in nvdata until find the proper file. (The file
+    name should be unique here within this subset of nvdata.)
+    """
+
+    data_dir = PurePath(nvdata_dir, path_from_nvdata)
+    file_name_ext = '{}.txt'.format(file_name)
+    file_path = data_dir / file_name_ext
+
+    with open(file_path) as file:
+        return json.load(file)
+
+
 # %%  Save utils
 
 
