@@ -148,7 +148,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     ax.plot(linspace_theta_B_deg, const, label='Measured high')
 
     if theta_B is not None:
-        text = 'theta_B = {:.3f} deg'.format(theta_B_deg)
+        text = r'$\theta_{B} = $%.3f'%(theta_B_deg)
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.05, 0.65, text, fontsize=14, transform=ax.transAxes,
                 verticalalignment='top', bbox=props)
@@ -676,7 +676,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     tool_belt.save_figure(fit_fig, file_path + '-fit')
     tool_belt.save_figure(angle_fig, file_path + '-angle')
-    
+
     return theta_B_deg
 
 
@@ -686,7 +686,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 if __name__ == '__main__':
 
     path = 'pc_rabi\\branch_laser-consolidation\\spin_echo\\2021_07'
-    file = '2021_07_11-13_49_26-hopper-nv1_2021_03_16'
+    file = '2021_07_11-12_18_08-hopper-nv1_2021_03_16'
 
     data = tool_belt.get_raw_data(path, file)
 
