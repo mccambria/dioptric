@@ -61,8 +61,11 @@ ratio_edge_color = '#EF2424'
 
 sample_column_title = 'Sample'
 skip_column_title = 'Skip'
-temp_column_title = 'Nominal temp (K)'
-# temp_column_title = 'ZFS temp (K)'
+# temp_column_title = 'Nominal temp (K)'
+nominal_temp_column_title = 'Nominal temp (K)'
+temp_column_title = 'ZFS temp (K)'
+temp_lb_column_title = 'ZFS temp lower bound (K)'
+temp_ub_column_title = 'ZFS temp upper bound(K)'
 omega_column_title = 'Omega (s^-1)'
 omega_err_column_title = 'Omega err (s^-1)'
 gamma_column_title = 'gamma (s^-1)'
@@ -146,6 +149,13 @@ def gamma_calc(temp):
 # %% Other functions
 
 
+def get_temp(point):
+    temp = point[temp_column_title]
+    if temp == '':
+        temp = point[nominal_temp_column_title]
+    return temp
+ 
+
 def fit_omega_orbach_T5(data_points):
 
     temps = []
@@ -182,7 +192,8 @@ def fit_gamma_orbach(data_points):
     gamma_errs = []
     for point in data_points:
         if point[gamma_column_title] is not None:
-            temps.append(point[temp_column_title])
+            temp = get_temp(point)
+            temps.append(temp)
             gammas.append(point[gamma_column_title])
             gamma_errs.append(point[gamma_err_column_title])
 
@@ -216,10 +227,11 @@ def fit_simultaneous(data_points):
         # Crash if we're trying to work with incomplete data
         if (point[omega_column_title] is None) or (point[gamma_column_title] is None):
             crash = 1/0
-        temps.append(point[temp_column_title])
+        temp = get_temp(point)
+        temps.append(temp)
         combined_rates.append(point[omega_column_title])
         combined_errs.append(point[omega_err_column_title])
-        temps.append(point[temp_column_title])
+        temps.append(temp)
         combined_rates.append(point[gamma_column_title])
         combined_errs.append(point[gamma_err_column_title])
 
@@ -493,7 +505,7 @@ def main(file_name, path, plot_type, rates_to_plot,
         if marker not in markers:
             markers.append(marker)
 
-        temp = point[temp_column_title]
+        temp = get_temp(point)
 
         if plot_type in ['rates', 'residuals']:
             # Omega
@@ -567,8 +579,8 @@ def main(file_name, path, plot_type, rates_to_plot,
             patch = mlines.Line2D([], [], color='black', marker=markers[ind],
                               linestyle='None', markersize=ms, label=label)
             sample_patches.append(patch)
-        # x_loc = 0.16
-        x_loc = 0.22
+        x_loc = 0.16
+        # x_loc = 0.22
         ax.legend(handles=sample_patches, loc='upper left', title='Samples',
                   bbox_to_anchor=(x_loc, 1.0))
 
@@ -590,13 +602,13 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [80, 450]
+    temp_range = [80, 200]
     rate_range = [0, 4.5]
     xscale = 'linear'
     rate_range = [-5, 400]
     yscale = 'linear'
-#    rate_range = [1e-2, 200]
-#    yscale = 'log'
+    # rate_range = [1e-2, 400]
+    # yscale = 'log'
 
     file_name = 'compiled_data'
     # file_name = 'compiled_data-test'

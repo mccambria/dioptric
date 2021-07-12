@@ -26,48 +26,34 @@ import utils.tool_belt as tool_belt
 
 
 def process_res_list():
-    
-    paths = [
-# 275
-# 200
-# 262.5
-# 225
-# 212.5
-# 237.5
-# 287.5
-# 300
-# 250
-# 150
-# 85
-# 175
-# 125
-# 295
-# 350
-# 400
-        ]
+    nominal_temps = [275, 200, 262.5, 225, 212.5, 237.5, 287.5, 300, 250, 
+                     150, 85, 175, 125, 295, 350, 400]
+
     resonances = [
-# 275
-# 200
-# 262.5
-# 225
-# 212.5
-# 237.5
-# 287.5
-# 300
-# 250
-# 150
-# 85
-# 175
-# 125
-# 295
-# 350
-# 400
-]
+                ['2021_04_30-20_20_44-hopper-nv1_2021_03_16', '2021_04_30-20_25_01-hopper-nv1_2021_03_16'],  # 275
+                ['2021_05_02-19_46_43-hopper-nv1_2021_03_16', '2021_05_02-19_51_00-hopper-nv1_2021_03_16'],  # 200
+                ['2021_05_05-16_52_20-hopper-nv1_2021_03_16', '2021_05_05-16_58_19-hopper-nv1_2021_03_16'],  # 262.5
+                ['2021_05_06-10_57_36-hopper-nv1_2021_03_16', '2021_05_06-11_03_36-hopper-nv1_2021_03_16'],  # 225
+                ['2021_05_07-11_29_42-hopper-nv1_2021_03_16', '2021_05_07-11_35_40-hopper-nv1_2021_03_16'],  # 212.5
+                ['2021_05_09-00_28_20-hopper-nv1_2021_03_16', '2021_05_09-00_34_24-hopper-nv1_2021_03_16'],  # 237.5
+                ['2021_05_10-09_47_22-hopper-nv1_2021_03_16', '2021_05_10-09_53_17-hopper-nv1_2021_03_16'],  # 287.5
+                ['2021_05_11-08_21_59-hopper-nv1_2021_03_16', '2021_05_11-08_27_51-hopper-nv1_2021_03_16'],  # 300
+                ['2021_05_11-23_13_54-hopper-nv1_2021_03_16', '2021_05_11-23_19_48-hopper-nv1_2021_03_16'],  # 250
+                ['2021_05_12-23_08_06-hopper-nv1_2021_03_16', '2021_05_12-23_13_52-hopper-nv1_2021_03_16'],  # 150
+                ['2021_05_20-23_57_25-hopper-nv1_2021_03_16', '2021_05_20-23_52_42-hopper-nv1_2021_03_16'],  # 85
+                ['2021_06_05-16_57_26-hopper-nv1_2021_03_16', '2021_06_05-17_03_55-hopper-nv1_2021_03_16'],  # 175
+                ['2021_06_09-22_52_51-hopper-nv1_2021_03_16', '2021_06_09-22_58_18-hopper-nv1_2021_03_16'],  # 125
+                ['2021_07_07-22_21_10-hopper-nv1_2021_03_16', '2021_07_07-22_22_55-hopper-nv1_2021_03_16'],  # 295
+                ['2021_07_08-18_16_31-hopper-nv1_2021_03_16', '2021_07_08-18_19_47-hopper-nv1_2021_03_16'],  # 350
+                ['2021_07_09-18_04_22-hopper-nv1_2021_03_16', '2021_07_09-18_07_34-hopper-nv1_2021_03_16'],  # 400
+                ]
     
-    for ind in range(len(paths)):
-        path_pair = paths[ind]
+    for ind in range(len(resonances)):
+        nominal_temp = nominal_temps[ind]
         res_pair = resonances[ind]
-        main_files(path_pair, res_pair)
+        print('Nominal temp: {}'.format(nominal_temp))
+        main_files(res_pair)
+        print()
 
 
 def sub_room_zfs_from_temp(temp):
@@ -117,15 +103,14 @@ def zfs_from_temp(temp):
 # %% Main
 
 
-def main_files(paths, files):
+def main_files(files):
     
     resonances = []
     res_errs = []
     
     for ind in range(2):
-        path = paths[ind]
         file = files[ind]
-        data = tool_belt.get_raw_data(path, file)
+        data = tool_belt.get_raw_data(file)
         res, res_err = return_res_with_error(data)
         resonances.append(res)
         res_errs.append(res_err)
@@ -157,7 +142,7 @@ def main(zfs, zfs_err):
     results = root_scalar(zfs_diff, x0=50, x1=500)
     temp_lower = results.root
     
-    print('T: [{}, {}, {}]'.format(temp_lower, temp_mid, temp_higher))
+    print('T: [{}\t{}\t{}]'.format(temp_lower, temp_mid, temp_higher))
 
 
 # %% Run the file
@@ -165,14 +150,12 @@ def main(zfs, zfs_err):
 
 if __name__ == '__main__':
     
-    path = 'pc_rabi/branch_laser-consolidation/pulsed_resonance/2021_07'
-    file_low = '2021_07_09-18_04_22-hopper-nv1_2021_03_16'
-    file_high = '2021_07_09-18_07_34-hopper-nv1_2021_03_16'
-    paths = [path, path]
-    files = [file_low, file_high]
+    # files = ['2021_07_09-18_04_22-hopper-nv1_2021_03_16', '2021_07_09-18_07_34-hopper-nv1_2021_03_16']  # 400 K
 
-    main_files(paths, files)
-#    
+    # main_files(files)
+    
+    process_res_list()
+
 #    print(zfs_from_temp(280))
     
     # temps = numpy.linspace(5,500,1000)

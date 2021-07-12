@@ -74,8 +74,11 @@ def return_res_with_error(data):
     freq_center = data['freq_center']
     freq_range = data['freq_range']
     num_steps = data['num_steps']
-    norm_avg_sig = numpy.array(data['norm_avg_sig'])
-    norm_avg_sig_ste = numpy.array(data['norm_avg_sig_ste'])
+    ref_counts = data['ref_counts']
+    sig_counts = data['sig_counts']
+    num_runs = data['num_runs']
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
     
     fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
                                          norm_avg_sig, norm_avg_sig_ste)
@@ -134,7 +137,7 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
     # rel_ref_std = ref_std / numpy.average(ref_counts)
     # height = max(rel_ref_std, contrast/4)
     # print(height)
-    height = 0.10
+    height = 0.08
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
