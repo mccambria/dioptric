@@ -148,7 +148,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     ax.plot(linspace_theta_B_deg, const, label='Measured high')
 
     if theta_B is not None:
-        text = 'theta_B = {:.3f} deg'.format(theta_B_deg)
+        text = r'$\theta_{B} = $%.3f'%(theta_B_deg)
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.05, 0.65, text, fontsize=14, transform=ax.transAxes,
                 verticalalignment='top', bbox=props)
