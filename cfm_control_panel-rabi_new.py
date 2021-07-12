@@ -109,7 +109,7 @@ def do_stationary_count(nv_sig, apd_indices):
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time =30  # s
+    run_time = 30  # s
     # diff_window = 200  # ns
     diff_window = 1000  # ns
 
@@ -374,7 +374,7 @@ def do_ramsey(nv_sig, apd_indices):
 
 def do_spin_echo_battery(nv_sig, apd_indices):
 
-    for magnet_angle in numpy.linspace(129, 135, 4):
+    for magnet_angle in numpy.linspace(127, 135, 5):
         nv_sig['magnet_angle'] = magnet_angle
         do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
@@ -472,7 +472,7 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    nv_sig = { 'coords': [0.0, 0.0, 5.2],
+    nv_sig = { 'coords': [0.250, 0.0, 5.0],
 #    nv_sig = { 'coords': [0.568, -0.645, 5.0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
@@ -494,7 +494,7 @@ if __name__ == '__main__':
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
-        # do_stationary_count(nv_sig, apd_indices)
+        do_stationary_count(nv_sig, apd_indices)
 #         do_resonance(nv_sig, apd_indices, 2.87, 0.220)
 #         do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.05)
 #         do_resonance_state(nv_sig, apd_indices, States.LOW)
@@ -507,7 +507,7 @@ if __name__ == '__main__':
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
-        do_spin_echo_battery(nv_sig, apd_indices)
+        # do_spin_echo_battery(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
            # do_t1_interleave_knill(nv_sig, apd_indices)

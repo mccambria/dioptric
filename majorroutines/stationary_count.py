@@ -24,13 +24,25 @@ import majorroutines.optimize as optimize
 
 def update_line_plot(new_samples, num_read_so_far, *args):
 
-    fig, samples, write_pos, readout_sec = args
+    fig, samples, write_pos, readout_sec, total_num_samples = args
 
-    # Write to the samples array
-    cur_write_pos = write_pos[0]
-    new_write_pos = cur_write_pos + len(new_samples)
-    samples[cur_write_pos: new_write_pos] = new_samples
-    write_pos[0] = new_write_pos
+    num_samples = numpy.count_nonzero(~numpy.isnan(samples))
+    num_new_samples = len(new_samples)
+    
+    # If we're going to overflow, just shift everything over and drop the 
+    # earliest samples
+    overflow = (num_samples + num_new_samples) - total_num_samples
+    if overflow > 0:
+        num_nans = max(total_num_samples - num_samples, 0)
+        samples_dummy = samples[num_new_samples-num_nans: 
+                                total_num_samples-num_nans]
+        samples[::] = numpy.append(samples_dummy, new_samples)
+    else:
+        cur_write_pos = write_pos[0]
+        new_write_pos = cur_write_pos + num_new_samples
+        samples[cur_write_pos: new_write_pos] = new_samples
+        write_pos[0] = new_write_pos
+        
 
     # Update the figure in k counts per sec
     tool_belt.update_line_plot_figure(fig, (samples / (10**3 * readout_sec)))
@@ -104,7 +116,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
     axes = fig.get_axes()
     ax = axes[0]
     ax.set_title('Stationary Counts')
-    ax.set_xlabel('Elapsed time (s)')
+    ax.set_xlabel('Time (s)')
     ax.set_ylabel('kcps')
 
     # Maximize the window
@@ -112,23 +124,23 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
     fig_manager.window.showMaximized()
 
     # Args to pass to update_line_plot
-    args = fig, samples, write_pos, readout_sec
+    args = fig, samples, write_pos, readout_sec, total_num_samples
 
     # %% Collect the data
 
-    cxn.pulse_streamer.stream_start(total_num_samples)
+    cxn.pulse_streamer.stream_start(-1)
 
-    timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
-    timeout_inst = time.time() + timeout_duration
+    # timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
+    # timeout_inst = time.time() + timeout_duration
 
     num_read_so_far = 0
 
     tool_belt.init_safe_stop()
 
-    while num_read_so_far < total_num_samples:
+    while True:
 
-        if time.time() > timeout_inst:
-            break
+        # if time.time() > timeout_inst:
+        #     break
 
         if tool_belt.safe_stop():
             break

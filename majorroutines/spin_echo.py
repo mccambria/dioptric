@@ -240,6 +240,8 @@ def fit_data(data):
     transform_mag = numpy.absolute(transform)
     # [1:] excludes frequency 0 (DC component)
     max_ind = numpy.argmax(transform_mag[1:])
+    # plt.plot(1/freqs, transform_mag)
+    # return
     frequency = freqs[max_ind+1]
     revival_time = 2/frequency  # Revival time is double the dominant frequency
     # print(revival_time)
@@ -248,7 +250,7 @@ def fit_data(data):
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-    # revival_time = 35000
+    revival_time = 35000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -684,7 +686,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 if __name__ == '__main__':
 
     path = 'pc_rabi\\branch_laser-consolidation\\spin_echo\\2021_07'
-    file = '2021_07_11-10_18_31-hopper-nv1_2021_03_16'
+    file = '2021_07_11-13_49_26-hopper-nv1_2021_03_16'
 
     data = tool_belt.get_raw_data(path, file)
 

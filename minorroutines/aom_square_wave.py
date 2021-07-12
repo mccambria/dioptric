@@ -73,8 +73,8 @@ if __name__ == '__main__':
     # Rabi
 #    laser_name = 'cobolt_515'
     laser_name = 'laserglow_532'
-    filter_name = 'nd_0'
-    pos = [0.0, 0.0, 5.0]
+    filter_name = 'nd_1.0'
+    pos = [0.250, 0.0, 5.0]
 
     # Hahn
 #    laser_names = ['laser_532', 'laser_589', 'laser_638']
