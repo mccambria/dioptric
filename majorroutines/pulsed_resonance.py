@@ -83,6 +83,7 @@ def return_res_with_error(data):
     fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
                                          norm_avg_sig, norm_avg_sig_ste)
     if len(popt) == 6:
+        print('Double resonance detected!')
         low_res_depth = popt[0]
         high_res_depth = popt[3]
         if low_res_depth > high_res_depth:
@@ -563,18 +564,20 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 
 if __name__ == '__main__':
-
-    path = 'pc_rabi/branch_laser-consolidation/pulsed_resonance/2021_07'
-    # file = '2021_07_08-23_34_28-hopper-nv1_2021_03_16'
-    file = '2021_07_08-23_37_37-hopper-nv1_2021_03_16'
-    data = tool_belt.get_raw_data(path, file)
+    
+    # file = '2021_05_12-23_08_06-hopper-nv1_2021_03_16'
+    file = '2021_05_12-23_13_52-hopper-nv1_2021_03_16'
+    data = tool_belt.get_raw_data(file)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']
     num_steps = data['num_steps']
     num_runs = data['num_runs']
-    norm_avg_sig = numpy.array(data['norm_avg_sig'])
-    norm_avg_sig_ste = numpy.array(data['norm_avg_sig_ste'])
+    ref_counts = data['ref_counts']
+    sig_counts = data['sig_counts']
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
+    
 
     fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
                                          norm_avg_sig, norm_avg_sig_ste)

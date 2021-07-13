@@ -102,8 +102,9 @@ def get_data_lists(folder_name):
 
     # Unpack the data and sort into arrays. This allows multiple measurements of
     # the same type to be correctly sorted into one array
+    ref_counts_master = []
     for file in file_list:
-        data = tool_belt.get_raw_data(folder_name, file[:-4])
+        data = tool_belt.get_raw_data(file[:-4], folder_name)
         try:
 
             init_state_name = data['init_state']
@@ -126,6 +127,24 @@ def get_data_lists(folder_name):
             num_runs = data['num_runs']
             sig_counts  = numpy.array(data['sig_counts'])
             ref_counts = numpy.array(data['ref_counts'])
+            avg_ref_counts = numpy.average(ref_counts[:num_runs], axis=1)
+            fig, ax = plt.subplots()
+            ax.plot(numpy.linspace(0, num_runs, num_runs) * 5, avg_ref_counts)
+            ax.set_ylabel('reference counts')
+            ax.set_xlabel('time (minutes)')
+            return
+            
+            # For 85 K data, to prevent divide by 0
+            # num_runs = 360
+            # combine = 6
+            # dummy_sig_counts = sig_counts[0:num_runs:combine]
+            # dummy_ref_counts = ref_counts[0:num_runs:combine]
+            # for ind in range(1, combine):
+            #     dummy_sig_counts += sig_counts[ind:num_runs:combine]
+            #     dummy_ref_counts += ref_counts[ind:num_runs:combine]
+            # sig_counts = dummy_sig_counts
+            # ref_counts = dummy_ref_counts
+            # num_runs = 360 // combine
 
             # Calculate time arrays in us
             min_relaxation_time, max_relaxation_time = \
@@ -487,6 +506,10 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
         print('gamma: {} +/- {} s^-1'.format('%.3f'%(gamma*1000),
                   '%.3f'%(gamma_ste*1000)))
+        
+
+        print('{}\t{}\t{}\t{}'.format('%.3f'%(omega*1000), '%.3f'%(omega_ste*1000),
+                                      '%.3f'%(gamma*1000), '%.3f'%(gamma_ste*1000)))
 
         # Plotting
         if doPlot:
@@ -568,7 +591,8 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 295
+    # divide by zero for 85 K!
+    temp = 350
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)
@@ -576,11 +600,13 @@ if __name__ == '__main__':
     # print('Omega: {}'.format(4000/(3*est_omega)))
     # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
 
+    # path = 'pc_hahn\\branch_cryo-setup\\t1_interleave_knill\\data_collections\\'
+    # path = 'pc_hahn\\branch_master\\t1_interleave_knill\\data_collections\\'
     path = 'pc_rabi\\branch_laser-consolidation\\t1_interleave_knill\\data_collections\\'
     folders = [
                 'hopper-nv1_2021_03_16-{}K'.format(temp),
-                  # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
-                  # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
+                # 'hopper-nv1_2021_03_16-275K-56-gamma_plus_1'
+                # 'hopper-nv1_2021_03_16-200K-gamma_minus_1'
                 ]
 
     for folder in folders:

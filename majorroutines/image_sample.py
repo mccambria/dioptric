@@ -251,7 +251,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         if um_scaled:
             img_extent = [(x_high + half_pixel_size)*xy_scale, (x_low - half_pixel_size)*xy_scale,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
-        title = 'Confocal scan, {}, {} us readout'.format(laser_name, readout_us)
+        laser_name_print = laser_name.translate(str.maketrans({'_':  r'\_'}))
+        title = r'Confocal scan, {}, {} us readout'.format(laser_name_print, readout_us)
         fig = tool_belt.create_image_figure(img_array, img_extent,
                         clickHandler=on_click_image, color_bar_label='kcps',
                         title=title, um_scaled=um_scaled)

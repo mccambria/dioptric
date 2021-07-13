@@ -18,6 +18,7 @@ import matplotlib.patches as patches
 import matplotlib.lines as mlines
 from scipy.optimize import curve_fit
 import pandas as pd
+from scipy.odr import ODR, Model, RealData
 
 
 # %% Constants
@@ -138,6 +139,10 @@ def simultaneous_orbach_T5_free(temps, omega_coeff_orbach, omega_coeff_T5,
     return ret_vals
 
 
+def simultaneous_orbach_T5_free_odr(beta, x):
+    return numpy.array(simultaneous_orbach_T5_free(x, *beta))
+
+
 def T5_free(temp, coeff_T5):
     return coeff_T5 * temp**5
 
@@ -163,6 +168,15 @@ def get_temp_bounds(point):
     else:
         upper_bound = point[temp_ub_column_title]
         return [lower_bound, upper_bound]
+
+
+def get_temp_error(point):
+    temp = point[temp_column_title]
+    temp_bounds = get_temp_bounds(point)
+    if temp_bounds is None:
+        return 1.0
+    else:
+        return numpy.average([temp-temp_bounds[0], temp_bounds[1]-temp])
  
 
 def fit_omega_orbach_T5(data_points):
@@ -230,6 +244,7 @@ def fit_simultaneous(data_points):
     # rates. Parity determines which rate is where. Even is Omega, odd is
     # gamma.
     temps = []
+    temp_errors = []
     combined_rates = []
     combined_errs = []
     for point in data_points:
@@ -238,9 +253,13 @@ def fit_simultaneous(data_points):
             crash = 1/0
         temp = get_temp(point)
         temps.append(temp)
+        temp_bounds = get_temp_bounds(point)
+        temp_error = get_temp_error(point)
+        temp_errors.append(temp_error)
         combined_rates.append(point[omega_column_title])
         combined_errs.append(point[omega_err_column_title])
         temps.append(temp)
+        temp_errors.append(temp_error)
         combined_rates.append(point[gamma_column_title])
         combined_errs.append(point[gamma_err_column_title])
 
@@ -252,11 +271,18 @@ def fit_simultaneous(data_points):
     init_params = (510, 1.38e-11, 2000, 74.0)
 
     num_params = len(init_params)
-    popt, pcov = curve_fit(fit_func, temps, combined_rates, p0=init_params,
-                           sigma=combined_errs, absolute_sigma=True,
-                           bounds=([0]*num_params,[numpy.inf]*num_params),
-                           method='dogbox')
-    # print(simultaneous_orbach_T5_free(temps, *popt))
+    # popt, pcov = curve_fit(fit_func, temps, combined_rates, p0=init_params,
+    #                        sigma=combined_errs, absolute_sigma=True,
+    #                        bounds=([0]*num_params,[numpy.inf]*num_params),
+    #                        method='dogbox')
+    data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
+    fit_func = simultaneous_orbach_T5_free_odr
+    model = Model(fit_func)
+    odr = ODR(data, model, beta0=numpy.array(init_params))
+    odr.set_job(fit_type=0)
+    output = odr.run()
+    popt = output.beta
+    pcov = output.cov_beta
 
     omega_popt = [popt[0], popt[3], popt[1]]
     omega_pvar = [pcov[0,0], pcov[3,3], pcov[1,1]]
@@ -515,12 +541,13 @@ def main(file_name, path, plot_type, rates_to_plot,
             markers.append(marker)
 
         temp = get_temp(point)
-        temp_bounds = get_temp_bounds(point)
-        if temp_bounds is None:
-            temp_bounds_arg = None
-        else:
-            temp_bounds_arg = [[temp-temp_bounds[0]], [temp_bounds[1]-temp]]
-        print(temp_bounds_arg)
+        # temp_bounds = get_temp_bounds(point)
+        # if temp_bounds is None:
+        #     temp_bounds_arg = None
+        # else:
+        #     temp_bounds_arg = [[temp-temp_bounds[0]], [temp_bounds[1]-temp]]
+        # print(temp_bounds_arg)
+        temp_error = get_temp_error(point)
 
         if plot_type in ['rates', 'residuals']:
             # Omega
@@ -532,7 +559,7 @@ def main(file_name, path, plot_type, rates_to_plot,
                     val = rate - omega_lambda(temp)
                 ax.errorbar(temp, val,
                             yerr=point[omega_err_column_title],
-                            xerr=temp_bounds_arg,
+                            xerr=temp_error,
                             label=r'$\Omega$', marker=marker,
                             color=omega_edge_color,
                             markerfacecolor=omega_face_color,
@@ -546,7 +573,7 @@ def main(file_name, path, plot_type, rates_to_plot,
                     val = rate - gamma_lambda(temp)
                 ax.errorbar(temp, val,
                             yerr=point[gamma_err_column_title],
-                            xerr=temp_bounds_arg,
+                            xerr=temp_error,
                             label= r'$\gamma$', marker=marker,
                             color=gamma_edge_color,
                             markerfacecolor=gamma_face_color,
@@ -562,7 +589,7 @@ def main(file_name, path, plot_type, rates_to_plot,
                 ratio_err = ratio*numpy.sqrt((omega_err/omega_val)**2 + (gamma_err/gamma_val)**2)
                 ax.errorbar(temp, ratio,
                             yerr=ratio_err,
-                            xerr=temp_bounds_arg,
+                            xerr=temp_error,
                             label= r'$\gamma/\Omega$', marker=marker,
                             color=ratio_edge_color,
                             markerfacecolor=ratio_face_color,
@@ -620,12 +647,12 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [80, 400]
+    temp_range = [70, 400]
     rate_range = [0, 4.5]
     xscale = 'linear'
     rate_range = [-5, 300]
     yscale = 'linear'
-    # rate_range = [1e-2, 400]
+    # rate_range = [1e-2, 300]
     # yscale = 'log'
 
     file_name = 'compiled_data'

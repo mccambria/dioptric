@@ -459,8 +459,8 @@ if __name__ == '__main__':
     apd_indices = [0,1]
     
 #    nd = 'nd_0'
-#    nd = 'nd_0.5'
-    nd = 'nd_1.0'
+    nd = 'nd_0.5'
+    # nd = 'nd_1.0'
     sample_name = 'hopper'
 #    green_laser = 'cobolt_515'
     green_laser = 'laserglow_532'
@@ -480,21 +480,29 @@ if __name__ == '__main__':
             'spin_laser': green_laser, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
-            'collection_filter': '630_lp', 'magnet_angle': 129.0,
+            'collection_filter': '630_lp', 'magnet_angle': 127.0,
             'resonance_LOW': 2.7968, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9451, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     # %% Functions to run
 
     try:
-        
+
+        tool_belt.init_safe_stop()
+    
+        # while True:
+        #     if tool_belt.safe_stop():
+        #         break
+        #     do_image_sample(nv_sig, apd_indices)
+        #     do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        #     do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
-        # do_stationary_count(nv_sig, apd_indices)
+        do_stationary_count(nv_sig, apd_indices)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.220)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.220)
 #         do_resonance_state(nv_sig, apd_indices, States.LOW)
@@ -507,7 +515,7 @@ if __name__ == '__main__':
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
-        do_spin_echo_battery(nv_sig, apd_indices)
+        # do_spin_echo_battery(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
            # do_t1_interleave_knill(nv_sig, apd_indices)

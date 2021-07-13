@@ -20,6 +20,8 @@ from numpy import exp
 import matplotlib.pyplot as plt
 from majorroutines.pulsed_resonance import return_res_with_error
 import utils.tool_belt as tool_belt
+from majorroutines.spin_echo import zfs_cost_func
+from scipy.optimize import minimize_scalar
 
 
 # %% Functions
@@ -30,22 +32,38 @@ def process_res_list():
                      150, 85, 175, 125, 295, 350, 400]
 
     resonances = [
-                ['2021_04_30-20_20_44-hopper-nv1_2021_03_16', '2021_04_30-20_25_01-hopper-nv1_2021_03_16'],  # 275
-                ['2021_05_02-19_46_43-hopper-nv1_2021_03_16', '2021_05_02-19_51_00-hopper-nv1_2021_03_16'],  # 200
-                ['2021_05_05-16_52_20-hopper-nv1_2021_03_16', '2021_05_05-16_58_19-hopper-nv1_2021_03_16'],  # 262.5
-                ['2021_05_06-10_57_36-hopper-nv1_2021_03_16', '2021_05_06-11_03_36-hopper-nv1_2021_03_16'],  # 225
-                ['2021_05_07-11_29_42-hopper-nv1_2021_03_16', '2021_05_07-11_35_40-hopper-nv1_2021_03_16'],  # 212.5
-                ['2021_05_09-00_28_20-hopper-nv1_2021_03_16', '2021_05_09-00_34_24-hopper-nv1_2021_03_16'],  # 237.5
-                ['2021_05_10-09_47_22-hopper-nv1_2021_03_16', '2021_05_10-09_53_17-hopper-nv1_2021_03_16'],  # 287.5
-                ['2021_05_11-08_21_59-hopper-nv1_2021_03_16', '2021_05_11-08_27_51-hopper-nv1_2021_03_16'],  # 300
-                ['2021_05_11-23_13_54-hopper-nv1_2021_03_16', '2021_05_11-23_19_48-hopper-nv1_2021_03_16'],  # 250
-                ['2021_05_12-23_08_06-hopper-nv1_2021_03_16', '2021_05_12-23_13_52-hopper-nv1_2021_03_16'],  # 150
-                ['2021_05_20-23_57_25-hopper-nv1_2021_03_16', '2021_05_20-23_52_42-hopper-nv1_2021_03_16'],  # 85
-                ['2021_06_05-16_57_26-hopper-nv1_2021_03_16', '2021_06_05-17_03_55-hopper-nv1_2021_03_16'],  # 175
-                ['2021_06_09-22_52_51-hopper-nv1_2021_03_16', '2021_06_09-22_58_18-hopper-nv1_2021_03_16'],  # 125
-                ['2021_07_07-22_21_10-hopper-nv1_2021_03_16', '2021_07_07-22_22_55-hopper-nv1_2021_03_16'],  # 295
-                ['2021_07_08-18_16_31-hopper-nv1_2021_03_16', '2021_07_08-18_19_47-hopper-nv1_2021_03_16'],  # 350
-                ['2021_07_09-18_04_22-hopper-nv1_2021_03_16', '2021_07_09-18_07_34-hopper-nv1_2021_03_16'],  # 400
+                ['2021_04_30-20_20_44-hopper-nv1_2021_03_16', 
+                 '2021_04_30-20_25_01-hopper-nv1_2021_03_16'],  # 275
+                ['2021_05_02-19_46_43-hopper-nv1_2021_03_16', 
+                 '2021_05_02-19_51_00-hopper-nv1_2021_03_16'],  # 200
+                ['2021_05_05-16_52_20-hopper-nv1_2021_03_16', 
+                 '2021_05_05-16_58_19-hopper-nv1_2021_03_16'],  # 262.5
+                ['2021_05_06-10_57_36-hopper-nv1_2021_03_16', 
+                 '2021_05_06-11_03_36-hopper-nv1_2021_03_16'],  # 225
+                ['2021_05_07-11_29_42-hopper-nv1_2021_03_16', 
+                 '2021_05_07-11_35_40-hopper-nv1_2021_03_16'],  # 212.5
+                ['2021_05_09-00_28_20-hopper-nv1_2021_03_16', 
+                 '2021_05_09-00_34_24-hopper-nv1_2021_03_16'],  # 237.5
+                ['2021_05_10-09_47_22-hopper-nv1_2021_03_16', 
+                 '2021_05_10-09_53_17-hopper-nv1_2021_03_16'],  # 287.5
+                ['2021_05_11-08_21_59-hopper-nv1_2021_03_16', 
+                 '2021_05_11-08_27_51-hopper-nv1_2021_03_16'],  # 300
+                ['2021_05_11-23_13_54-hopper-nv1_2021_03_16', 
+                 '2021_05_11-23_19_48-hopper-nv1_2021_03_16'],  # 250
+                ['2021_05_12-23_08_06-hopper-nv1_2021_03_16', 
+                 '2021_05_12-23_13_52-hopper-nv1_2021_03_16'],  # 150
+                ['2021_05_20-23_57_25-hopper-nv1_2021_03_16', 
+                 '2021_05_20-23_52_42-hopper-nv1_2021_03_16'],  # 85
+                ['2021_06_05-16_57_26-hopper-nv1_2021_03_16', 
+                 '2021_06_05-17_03_55-hopper-nv1_2021_03_16'],  # 175
+                ['2021_06_09-22_52_51-hopper-nv1_2021_03_16', 
+                 '2021_06_09-22_58_18-hopper-nv1_2021_03_16'],  # 125
+                ['2021_07_07-22_21_10-hopper-nv1_2021_03_16', 
+                 '2021_07_07-22_22_55-hopper-nv1_2021_03_16'],  # 295
+                ['2021_07_08-18_16_31-hopper-nv1_2021_03_16', 
+                 '2021_07_08-18_19_47-hopper-nv1_2021_03_16'],  # 350
+                ['2021_07_09-18_04_22-hopper-nv1_2021_03_16', 
+                 '2021_07_09-18_07_34-hopper-nv1_2021_03_16'],  # 400
                 ]
     
     for ind in range(len(resonances)):
@@ -103,7 +121,7 @@ def zfs_from_temp(temp):
 # %% Main
 
 
-def main_files(files):
+def main_files(files, mag_B=None, theta_B_deg=None):
     
     resonances = []
     res_errs = []
@@ -115,13 +133,21 @@ def main_files(files):
         resonances.append(res)
         res_errs.append(res_err)
     
-    main_res(resonances, res_errs)
+    main_res(resonances, res_errs, mag_B, theta_B_deg)
 
 
-def main_res(resonances, res_errs):
+def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
     
-    zfs = (resonances[0] + resonances[1]) / 2
-    zfs_err = numpy.sqrt(res_errs[0]**2 + res_errs[1]**2) / 2
+    if mag_B is not None:
+        theta_B = theta_B_deg * (numpy.pi / 180)
+        args = (mag_B, theta_B, *resonances)
+        result = minimize_scalar(zfs_cost_func, bounds=(2.83, 2.88), args=args,
+                                 method='bounded')
+        zfs = result.x
+        zfs_err = 0
+    else:
+        zfs = (resonances[0] + resonances[1]) / 2
+        zfs_err = numpy.sqrt(res_errs[0]**2 + res_errs[1]**2) / 2
     
     main(zfs, zfs_err)
 
@@ -150,11 +176,25 @@ def main(zfs, zfs_err):
 
 if __name__ == '__main__':
     
-    # files = ['2021_07_09-18_04_22-hopper-nv1_2021_03_16', '2021_07_09-18_07_34-hopper-nv1_2021_03_16']  # 400 K
-
-    # main_files(files)
+    # mag_B = 26.377
+    # theta_B_deg = 7.315
+    # files = ['2021_07_11-23_13_00-hopper-nv1_2021_03_16', 
+    #          '2021_07_11-23_09_57-hopper-nv1_2021_03_16']  # room
     
-    process_res_list()
+    # mag_B = 26.297
+    # theta_B_deg = 9.803
+    # # files = ['2021_07_08-18_16_31-hopper-nv1_2021_03_16', 
+    # #          '2021_07_08-18_19_47-hopper-nv1_2021_03_16']  # 350
+    # files = ['2021_07_09-18_04_22-hopper-nv1_2021_03_16', 
+    #           '2021_07_09-18_07_34-hopper-nv1_2021_03_16']  # 400
+    
+    # main_files(files, mag_B, theta_B_deg)
+    
+    files = ['2021_05_12-23_08_06-hopper-nv1_2021_03_16',
+             '2021_05_12-23_13_52-hopper-nv1_2021_03_16']
+    main_files(files)
+    
+    # process_res_list()
 
 #    print(zfs_from_temp(280))
     

@@ -75,6 +75,14 @@ def calc_res_pair(theta_B, center_freq, mag_B):
     return resonance_low, resonance_high
 
 
+def zfs_cost_func(center_freq, mag_B, theta_B,
+                  meas_res_low, meas_res_high):
+    calc_res_low, calc_res_high = calc_res_pair(theta_B, center_freq, mag_B)
+    diff_low = calc_res_low - meas_res_low
+    diff_high = calc_res_high - meas_res_high
+    return numpy.sqrt(diff_low**2 + diff_high**2)
+
+
 def theta_B_cost_func(theta_B, center_freq, mag_B,
                       meas_res_low, meas_res_high):
     calc_res_low, calc_res_high = calc_res_pair(theta_B, center_freq, mag_B)
