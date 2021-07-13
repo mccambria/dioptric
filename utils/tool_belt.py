@@ -488,7 +488,8 @@ def create_line_plot_figure(vals, xVals=None):
 
     if xVals is not None:
         ax.plot(xVals, vals)
-        ax.set_xlim(xVals[0], xVals[len(xVals) - 1])
+        max_x_val = xVals[-1]
+        ax.set_xlim(xVals[0], 1.1*max_x_val)
     else:
         ax.plot(vals)
         ax.set_xlim(0, len(vals)-1)
@@ -1379,7 +1380,7 @@ def reset_cfm(cxn=None):
     components that control xyz since these need to be reset in any
     routine where they matter anyway).
     """
-
+    
     if cxn == None:
         with labrad.connect() as cxn:
             reset_cfm_with_cxn(cxn)
@@ -1388,6 +1389,9 @@ def reset_cfm(cxn=None):
 
 
 def reset_cfm_with_cxn(cxn):
+    
+    plt.rc('text', usetex=False)
+    
     xy_server_name = get_registry_entry(cxn, 'xy_server', 
                                         ['', 'Config', 'Positioning'])
     z_server_name = get_registry_entry(cxn, 'z_server', 

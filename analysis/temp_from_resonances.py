@@ -190,8 +190,8 @@ if __name__ == '__main__':
     
     # main_files(files, mag_B, theta_B_deg)
     
-    files = ['2021_05_12-23_08_06-hopper-nv1_2021_03_16',
-             '2021_05_12-23_13_52-hopper-nv1_2021_03_16']
+    files = ['2021_07_12-21_50_10-hopper-nv1_2021_03_16',
+             '2021_07_12-21_53_07-hopper-nv1_2021_03_16']
     main_files(files)
     
     # process_res_list()

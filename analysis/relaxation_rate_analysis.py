@@ -103,7 +103,7 @@ def get_data_lists(folder_name):
     # Unpack the data and sort into arrays. This allows multiple measurements of
     # the same type to be correctly sorted into one array
     for file in file_list:
-        data = tool_belt.get_raw_data(folder_name, file[:-4])
+        data = tool_belt.get_raw_data(file[:-4], folder_name)
         try:
 
             init_state_name = data['init_state']
