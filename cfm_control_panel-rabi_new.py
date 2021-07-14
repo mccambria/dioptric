@@ -48,19 +48,19 @@ import time
 def do_image_sample(nv_sig, apd_indices):
     
     # scan_range = 0.5
-    # num_steps = 90
+    num_steps = 90
     # num_steps = 120
 #    
 #    scan_range = 0.15
-#    num_steps = 60
+    # num_steps = 60
 #    
 #    scan_range = 0.75
 #    num_steps = 150
 #    
 #    scan_range = 5.0
-#    scan_range = 3.0
-#    scan_range = 1.5
-    scan_range = 1.0
+    # scan_range = 3.0
+    scan_range = 1.5
+    # scan_range = 1.0
 #    scan_range = 0.75
 #    scan_range = 0.3
 #    scan_range = 0.2
@@ -73,7 +73,7 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 200
 #    num_steps = 150
 #    num_steps = 135
-    num_steps = 120
+    # num_steps = 120
 #    num_steps = 90
 #    num_steps = 60
 #    num_steps = 50
@@ -102,7 +102,7 @@ def do_opti_z(nv_sig_list, apd_indices):
 
 def do_stationary_count(nv_sig, apd_indices):
 
-    run_time = 3 * 60 * 10**9  # ns
+    run_time = 1 * 60 * 10**9  # ns
 
     stationary_count.main(nv_sig, run_time, apd_indices)
 
@@ -472,9 +472,7 @@ if __name__ == '__main__':
     #         'resonance_LOW': 2.87, 'rabi_LOW': 160, 'uwave_power_LOW': 14.5,
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
-    # nv_sig = { 'coords': [0.250, 0.0, 5.0],
-    nv_sig = { 'coords': [1.0, -1.0, 5.0],
-#    nv_sig = { 'coords': [0.568, -0.645, 5.0],
+    nv_sig = { 'coords': [0.0, 0.0, 5.0],
             'name': '{}-nv1_2021_03_16'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
             'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
@@ -482,8 +480,8 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
             'collection_filter': '630_lp', 'magnet_angle': 127.0,
-            'resonance_LOW': 2.7891, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9347, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     # %% Functions to run
 

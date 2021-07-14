@@ -169,6 +169,8 @@ def main(zfs, zfs_err):
     temp_lower = results.root
     
     print('T: [{}\t{}\t{}]'.format(temp_lower, temp_mid, temp_higher))
+    temp_error = numpy.average([temp_mid-temp_lower, temp_higher-temp_mid])
+    print('T: [{}\t{}]'.format(temp_mid, temp_error))
 
 
 # %% Run the file
@@ -190,8 +192,8 @@ if __name__ == '__main__':
     
     # main_files(files, mag_B, theta_B_deg)
     
-    files = ['2021_07_12-21_50_10-hopper-nv1_2021_03_16',
-             '2021_07_12-21_53_07-hopper-nv1_2021_03_16']
+    files = ['2021_07_12-22_04_48-hopper-nv1_2021_03_16',
+             '2021_07_12-22_07_44-hopper-nv1_2021_03_16']
     main_files(files)
     
     # process_res_list()

@@ -26,6 +26,7 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 
     fig, samples, write_pos, readout_sec, total_num_samples = args
 
+
     num_samples = numpy.count_nonzero(~numpy.isnan(samples))
     num_new_samples = len(new_samples)
     
@@ -34,9 +35,9 @@ def update_line_plot(new_samples, num_read_so_far, *args):
     overflow = (num_samples + num_new_samples) - total_num_samples
     if overflow > 0:
         num_nans = max(total_num_samples - num_samples, 0)
-        samples_dummy = samples[num_new_samples-num_nans: 
-                                total_num_samples-num_nans]
-        samples[::] = numpy.append(samples_dummy, new_samples)
+        samples[::] = numpy.append(samples[num_new_samples-num_nans: 
+                                           total_num_samples-num_nans], 
+                                   new_samples)
     else:
         cur_write_pos = write_pos[0]
         new_write_pos = cur_write_pos + num_new_samples
@@ -46,6 +47,7 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 
     # Update the figure in k counts per sec
     tool_belt.update_line_plot_figure(fig, (samples / (10**3 * readout_sec)))
+
 
 # %% Main
 
@@ -136,9 +138,10 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
     num_read_so_far = 0
 
     tool_belt.init_safe_stop()
+    
 
     while True:
-
+        
         # if time.time() > timeout_inst:
         #     break
 
@@ -150,9 +153,10 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
 #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
+            
             update_line_plot(new_samples, num_read_so_far, *args)
             num_read_so_far += num_new_samples
-
+            
     # %% Clean up and report the data
     
     tool_belt.reset_cfm(cxn)
