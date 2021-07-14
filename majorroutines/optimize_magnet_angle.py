@@ -67,8 +67,13 @@ def fit_data(splittings, angles):
         fit_func = None
         popt = None
     else:
-        popt, pcov = curve_fit(fit_func, angles, splittings,
-                               p0=guess_params, bounds=bounds)
+        try:
+            popt, pcov = curve_fit(fit_func, angles, splittings,
+                                   p0=guess_params, bounds=bounds)
+        except Exception as e:
+            print(e)
+            fit_func = None
+            popt = None
 
     return fit_func, popt
 
@@ -153,7 +158,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
         else:
             angle_resonances = cwesr(cxn, nv_sig_copy, apd_indices,
                                      freq_center, freq_range, num_freq_steps,
-                                     num_freq_runs, uwave_power, 532)
+                                     num_freq_runs, uwave_power)
         resonances[ind, :] = angle_resonances
         if all(angle_resonances):
             # We got two resonances so take the difference

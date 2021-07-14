@@ -61,8 +61,11 @@ ratio_edge_color = '#EF2424'
 
 sample_column_title = 'Sample'
 skip_column_title = 'Skip'
-temp_column_title = 'Nominal temp (K)'
-# temp_column_title = 'ZFS temp (K)'
+# temp_column_title = 'Nominal temp (K)'
+nominal_temp_column_title = 'Nominal temp (K)'
+temp_column_title = 'ZFS temp (K)'
+temp_lb_column_title = 'ZFS temp lower bound (K)'
+temp_ub_column_title = 'ZFS temp upper bound (K)'
 omega_column_title = 'Omega (s^-1)'
 omega_err_column_title = 'Omega err (s^-1)'
 gamma_column_title = 'gamma (s^-1)'
@@ -174,6 +177,22 @@ def gamma_calc(temp):
 # %% Other functions
 
 
+def get_temp(point):
+    temp = point[temp_column_title]
+    if temp == '':
+        temp = point[nominal_temp_column_title]
+    return temp
+
+
+def get_temp_bounds(point):
+    lower_bound = point[temp_lb_column_title]
+    if lower_bound == '':
+        return None
+    else:
+        upper_bound = point[temp_ub_column_title]
+        return [lower_bound, upper_bound]
+
+
 def fit_omega_orbach_T5(data_points):
 
     temps = []
@@ -210,7 +229,8 @@ def fit_gamma_orbach(data_points):
     gamma_errs = []
     for point in data_points:
         if point[gamma_column_title] is not None:
-            temps.append(point[temp_column_title])
+            temp = get_temp(point)
+            temps.append(temp)
             gammas.append(point[gamma_column_title])
             gamma_errs.append(point[gamma_err_column_title])
 
@@ -244,10 +264,11 @@ def fit_simultaneous(data_points, gamma_const=True):
         # Crash if we're trying to work with incomplete data
         if (point[omega_column_title] is None) or (point[gamma_column_title] is None):
             crash = 1/0
-        temps.append(point[temp_column_title])
+        temp = get_temp(point)
+        temps.append(temp)
         combined_rates.append(point[omega_column_title])
         combined_errs.append(point[omega_err_column_title])
-        temps.append(point[temp_column_title])
+        temps.append(temp)
         combined_rates.append(point[gamma_column_title])
         combined_errs.append(point[gamma_err_column_title])
 
@@ -270,16 +291,14 @@ def fit_simultaneous(data_points, gamma_const=True):
     # print(simultaneous_orbach_T5_free(temps, *popt))
 
     omega_popt = [popt[0], popt[3], popt[1]]
+    omega_pvar = [pcov[0,0], pcov[3,3], pcov[1,1]]
     omega_fit_func = orbach_T5_free
 
-    if gamma_const:
-        gamma_popt = [popt[2], popt[3], popt[4]]
-        gamma_fit_func = orbach_free_const
-    else:
-        gamma_popt = [popt[2], popt[3]]
-        gamma_fit_func = orbach_free
-        
-    return omega_popt, omega_fit_func, gamma_popt, gamma_fit_func, pcov
+    gamma_popt = [popt[2], popt[3]]
+    gamma_pvar = [pcov[2,2], pcov[3,3]]
+    gamma_fit_func = orbach_free
+
+    return omega_popt, omega_pvar, omega_fit_func, gamma_popt, gamma_pvar, gamma_fit_func
 
 
 def get_data_points_csv(file):
@@ -302,6 +321,11 @@ def get_data_points_csv(file):
                 continue
             point = {}
             sample = row[0]
+            # The first row should be populated for every data point. If it's
+            # not, then assume we're looking at a padding row at the bottom
+            # of the csv
+            if sample == '':
+                continue
             if sample not in samples:
                 sample_markers[sample] = markers[marker_ind]
                 marker_ind += 1
@@ -425,7 +449,7 @@ def main(file_name, path, plot_type, rates_to_plot,
     file_path = path + '{}.xlsx'.format(file_name)
     csv_file_path = path + '{}.csv'.format(file_name)
 
-    file = pd.read_excel(file_path)
+    file = pd.read_excel(file_path, engine='openpyxl')
     file.to_csv(csv_file_path, index=None, header=True)
 
     data_points = get_data_points_csv(csv_file_path)
@@ -456,11 +480,13 @@ def main(file_name, path, plot_type, rates_to_plot,
     # # gamma_popt[1] = omega_popt[1]
 
     # Fit to Omega and gamma simultaneously
-    ret_vals = fit_simultaneous(data_points, gamma_const=True)
-    omega_popt, omega_fit_func, gamma_popt, gamma_fit_func, pcov = ret_vals
+    ret_vals = fit_simultaneous(data_points)
+    omega_popt, omega_pvar, omega_fit_func, gamma_popt, gamma_pvar, gamma_fit_func = ret_vals
 
     omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
+    # omega_popt[0] = 0
     print(omega_popt)
+    print(numpy.sqrt(omega_pvar))
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'Omega']):
         ax.plot(temp_linspace, omega_lambda(temp_linspace),
                 label=r'$\Omega$ fit', color=omega_edge_color)
@@ -470,10 +496,11 @@ def main(file_name, path, plot_type, rates_to_plot,
 
     gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
     print(gamma_popt)
+    print(numpy.sqrt(gamma_pvar))
     if (plot_type == 'rates') and (rates_to_plot in ['both', 'gamma']):
         ax.plot(temp_linspace, gamma_lambda(temp_linspace),
                 label=r'$\gamma$ fit', color=gamma_edge_color)
-        
+
     print(numpy.sqrt(pcov[3][3]))  # Activation energy error
 
     # Plot ratio
@@ -521,7 +548,13 @@ def main(file_name, path, plot_type, rates_to_plot,
         if marker not in markers:
             markers.append(marker)
 
-        temp = point[temp_column_title]
+        temp = get_temp(point)
+        temp_bounds = get_temp_bounds(point)
+        if temp_bounds is None:
+            temp_bounds_arg = None
+        else:
+            temp_bounds_arg = [[temp-temp_bounds[0]], [temp_bounds[1]-temp]]
+        print(temp_bounds_arg)
 
         if plot_type in ['rates', 'residuals']:
             # Omega
@@ -533,6 +566,7 @@ def main(file_name, path, plot_type, rates_to_plot,
                     val = rate - omega_lambda(temp)
                 ax.errorbar(temp, val,
                             yerr=point[omega_err_column_title],
+                            xerr=temp_bounds_arg,
                             label=r'$\Omega$', marker=marker,
                             color=omega_edge_color,
                             markerfacecolor=omega_face_color,
@@ -546,6 +580,7 @@ def main(file_name, path, plot_type, rates_to_plot,
                     val = rate - gamma_lambda(temp)
                 ax.errorbar(temp, val,
                             yerr=point[gamma_err_column_title],
+                            xerr=temp_bounds_arg,
                             label= r'$\gamma$', marker=marker,
                             color=gamma_edge_color,
                             markerfacecolor=gamma_face_color,
@@ -561,6 +596,7 @@ def main(file_name, path, plot_type, rates_to_plot,
                 ratio_err = ratio*numpy.sqrt((omega_err/omega_val)**2 + (gamma_err/gamma_val)**2)
                 ax.errorbar(temp, ratio,
                             yerr=ratio_err,
+                            xerr=temp_bounds_arg,
                             label= r'$\gamma/\Omega$', marker=marker,
                             color=ratio_edge_color,
                             markerfacecolor=ratio_face_color,
@@ -588,14 +624,15 @@ def main(file_name, path, plot_type, rates_to_plot,
         sample_patches = []
         for ind in range(len(samples)):
             label = samples[ind]
-            # if label == 'PRResearch':
-            #     label = '[1]'
-            # else:
-            #     label = 'New results'
+            if label == 'PRResearch':
+                label = '[1]'
+            else:
+                label = 'New results'
             patch = mlines.Line2D([], [], color='black', marker=markers[ind],
                               linestyle='None', markersize=ms, label=label)
             sample_patches.append(patch)
         x_loc = 0.16
+        # x_loc = 0.22
         ax.legend(handles=sample_patches, loc='upper left', title='Samples',
                   bbox_to_anchor=(x_loc, 1.0))
 
@@ -617,13 +654,13 @@ if __name__ == '__main__':
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [80, 315]
+    temp_range = [80, 400]
     rate_range = [0, 4.5]
     xscale = 'linear'
-    # rate_range = [-5, 150]
-    # yscale = 'linear'
-    rate_range = [1e-2, 200]
-    yscale = 'log'
+    rate_range = [-5, 300]
+    yscale = 'linear'
+    # rate_range = [1e-2, 400]
+    # yscale = 'log'
 
     file_name = 'compiled_data'
     # file_name = 'compiled_data-test'

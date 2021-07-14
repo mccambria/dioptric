@@ -36,22 +36,26 @@ import socket
 
 
 class States(Enum):
-    """Do not update this without also updating get_state_signal_generator!"""
     LOW = auto()
     ZERO = auto()
     HIGH = auto()
 
-def get_signal_generator_name(state):
-    if state.value == States.LOW.value:
-        signal_generator_name = 'signal_generator_sg394' # or 'signal_generator_bnc835'
-        # signal_generator_name = 'signal_generator_tsg4104a'
-    elif state.value == States.HIGH.value:
-        signal_generator_name = 'signal_generator_tsg4104a'
-        # signal_generator_name = 'signal_generator_sg394'
-    return signal_generator_name
+#Digital = {'LOW': 0, 'HIGH': 1}
+
+class Mod_types(Enum):
+    DIGITAL = auto()
+    ANALOG = auto()
+
+def get_signal_generator_name_no_cxn(state):
+    with labrad.connect() as cxn:
+        return get_signal_generator_name(cxn, state)
+
+def get_signal_generator_name(cxn, state):
+    return get_registry_entry(cxn, 'sig_gen_{}'.format(state.name),
+                              ['', 'Config', 'Microwaves'])
 
 def get_signal_generator_cxn(cxn, state):
-    signal_generator_name = get_signal_generator_name(state)
+    signal_generator_name = get_signal_generator_name(cxn, state)
     signal_generator_cxn = eval('cxn.{}'.format(signal_generator_name))
     return signal_generator_cxn
 
@@ -61,9 +65,9 @@ def get_signal_generator_cxn(cxn, state):
 
 def set_xyz(cxn, coords):
     xy_dtype = eval(get_registry_entry(cxn, 'xy_dtype',
-                                       ['', 'SharedParameters']))
+                                       ['', 'Config', 'Positioning']))
     z_dtype = eval(get_registry_entry(cxn, 'z_dtype',
-                                      ['', 'SharedParameters']))
+                                       ['', 'Config', 'Positioning']))
     xy_server = get_xy_server(cxn)
     z_server = get_z_server(cxn)
     if xy_dtype is int:
@@ -88,12 +92,238 @@ def set_xyz_center(cxn):
 
 def set_xyz_on_nv(cxn, nv_sig):
     set_xyz(cxn, nv_sig['coords'])
+    
+    
+# %% Laser utils
+
+
+def laser_off(cxn, laser_name):
+    laser_switch_sub(cxn, False, laser_name)
+
+def laser_on(cxn, laser_name, laser_power=None):
+    laser_switch_sub(cxn, True, laser_name, laser_power)
+    
+def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
+    
+    mod_type = get_registry_entry(cxn, 'mod_type', 
+                                  ['', 'Config', 'Optics', laser_name])
+    mod_type = eval(mod_type)
+    feedthrough = get_registry_entry(cxn, 'feedthrough',
+                                     ['', 'Config', 'Optics', laser_name])
+    feedthrough = eval(feedthrough)
+    
+    if mod_type is Mod_types.DIGITAL:
+        # Digital, feedthrough
+        if feedthrough:
+            laser_cxn = eval('cxn.{}'.format(laser_name))
+            if turn_on:
+                laser_cxn.laser_on()
+            else:
+                laser_cxn.laser_off()
+        # Digital, no feedthrough
+        else:  
+            if turn_on:
+                laser_chan = get_registry_entry(cxn, 'do_{}_dm'.format(laser_name),
+                                     ['', 'Config', 'Wiring', 'PulseStreamer'])
+                cxn.pulse_streamer.constant([laser_chan])
+    # Analog
+    elif mod_type is Mod_types.ANALOG:  
+        if turn_on:
+            laser_chan = get_registry_entry(cxn, 'do_{}_dm'.format(laser_name),
+                                     ['', 'Config', 'Wiring', 'PulseStreamer'])
+            if laser_chan == 0:
+                cxn.pulse_streamer.constant([], 0.0, laser_power)
+            elif laser_chan == 1:
+                cxn.pulse_streamer.constant([], laser_power, 0.0)
+                
+    # If we're turning things off, turn everything off. If we wanted to really
+    # do this nicely we'd find a way to only turn off the specific channel,
+    # but it's not worth the effort.
+    if not turn_on:
+        cxn.pulse_streamer.constant([])
+            
+        
+
+def set_laser_power(cxn, nv_sig=None, laser_key=None,
+                    laser_name=None, laser_power=None):
+    """
+    Set a laser power, or return it for analog modulation.
+    Specify either a laser_key/nv_sig or a laser_name/laser_power.
+    """
+    
+    if (nv_sig is not None) and (laser_key is not None):
+        laser_name = nv_sig[laser_key]
+        power_key = '{}_power'.format(laser_key)
+        # If the power isn't specified, then we assume it's set some other way
+        if power_key in nv_sig:
+            laser_power = nv_sig[power_key]
+    elif (laser_name is not None) and (laser_power is not None):
+        pass  # All good
+    else:
+        raise Exception('Specify either a laser_key/nv_sig or a laser_name/laser_power.')
+    
+    # If the power is controlled by analog modulation, we'll need to pass it
+    # to the pulse streamer
+    mod_type = get_registry_entry(cxn, 'mod_type',
+                                  ['', 'Config', 'Optics', laser_name])
+    mod_type = eval(mod_type)
+    if mod_type == Mod_types.ANALOG:
+        return laser_power
+    else:
+        laser_server = get_filter_server(cxn, laser_name)
+        if (laser_power is not None) and (laser_server is not None):
+            laser_server.set_laser_power(laser_power)
+        return None  
+    
+
+def set_filter(cxn, nv_sig=None, optics_key=None,
+               optics_name=None, filter_name=None):
+    """
+    optics_key should be either 'collection' or a laser key.
+    Specify either an optics_key/nv_sig or an optics_name/filter_name.
+    """
+    
+    if (nv_sig is not None) and (optics_key is not None):
+        optics_name = nv_sig[optics_key]
+        filter_key = '{}_filter'.format(optics_key)
+        # Just exit if there's no filter specified in the nv_sig
+        if filter_key not in nv_sig:
+            return
+        filter_name = nv_sig[filter_key]
+    elif (optics_name is not None) and (filter_name is not None):
+        pass  # All good
+    else:
+        raise Exception('Specify either an optics_key/nv_sig or an optics_name/filter_name.')
+    
+    filter_server = get_filter_server(cxn, optics_name)
+    if filter_server is None:
+        return
+    pos = get_registry_entry(cxn, filter_name,
+                     ['', 'Config', 'Optics', optics_name, 'FilterMapping'])
+    filter_server.set_filter(pos)
+
+
+def get_filter_server(cxn, optics_name):
+    """
+    Try to get a filter server. If there isn't one listed on the registry, 
+    just return None.
+    """
+    
+    try:
+        server_name = get_registry_entry(cxn, 'filter_server',
+                                     ['', 'Config', 'Optics', optics_name])
+        return getattr(cxn, server_name)
+    except Exception:
+        return None
+
+
+def get_laser_server(cxn, laser_name):
+    """
+    Try to get a laser server. If there isn't one listed on the registry, 
+    just return None.
+    """
+
+    try:
+        server_name = get_registry_entry(cxn, 'laser_server',
+                                     ['', 'Config', 'Optics', laser_name])
+        return getattr(cxn, server_name)
+    except Exception:
+        return None
+    
+    
+def process_laser_seq(pulse_streamer, seq, config, 
+                      laser_name, laser_power, train):
+    """
+    Some lasers may require special processing of their Pulse Streamer
+    sequence. For example, the Cobolt lasers expect 3.5 V for digital
+    modulation, but the Pulse Streamer only supplies 2.6 V.
+    """
+    
+    pulser_wiring = config['Wiring']['PulseStreamer']
+    mod_type = config['Optics'][laser_name]['mod_type']
+    mod_type = eval(mod_type)
+    feedthrough = config['Optics'][laser_name]['feedthrough']
+    feedthrough = eval(feedthrough)
+#    feedthrough = False
+    
+    LOW = 0
+    HIGH = 1
+        
+    processed_train = []
+    
+    if mod_type is Mod_types.DIGITAL:
+        # Digital, feedthrough, bookend each pulse with 100 ns clock pulses
+        # Assumes we always leave the laser on (or off) for at least 100 ns
+        if feedthrough:
+            # Collapse the sequence so that no two adjacent elements have the
+            # same value
+            collapsed_train = []
+            ind = 0
+            len_train = len(train)
+            while ind < len_train:
+                el = train[ind]
+                dur = el[0]
+                val = el[1]
+                next_ind = ind+1
+                while next_ind < len_train:
+                    next_el = train[next_ind]
+                    next_dur = next_el[0]
+                    next_val = next_el[1]
+                    # If the next element shares the same value as the current
+                    # one, combine them
+                    if next_val == val:
+                        dur += next_dur
+                        next_ind += 1
+                    else:
+                        break
+                # Append the current pulse and start back 
+                # where we left off
+                collapsed_train.append((dur, val))
+                ind = next_ind
+            # Check if this is just supposed to be always on
+            if (len(collapsed_train) == 1) and (collapsed_train[0][1] == HIGH):
+                if pulse_streamer is not None:
+                    pulse_streamer.client[laser_name].laser_on()
+                return
+            # Set up the bookends
+            for ind in range(len(collapsed_train)):
+                el = collapsed_train[ind]
+                dur = el[0]
+                val = el[1]
+                # For the first element, just leave things LOW
+                # Assumes the laser is off prior to the start of the sequence
+                if (ind == 0) and (val is LOW):
+                    processed_train.append((dur, LOW))
+                    continue
+                processed_train.append((100, HIGH))
+                processed_train.append((dur-100, LOW))
+        # Digital, no feedthrough, do nothing
+        else:  
+            processed_train = train.copy()
+        pulser_laser_mod = pulser_wiring['do_{}_dm'.format(laser_name)]
+        seq.setDigital(pulser_laser_mod, processed_train)
+        
+    # Analog, convert LOW / HIGH to 0.0 / analog voltage
+    elif mod_type is Mod_types.ANALOG:  
+        power_dict = {LOW: 0.0, HIGH: laser_power}
+        for el in train:
+            dur = el[0]
+            val = el[1]
+            processed_train.append((dur, power_dict[val]))
+            
+        pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
+        seq.setAnalog(pulser_laser_mod, processed_train)
 
 
 # %% Pulse Streamer utils
 
 
 def encode_seq_args(seq_args):
+    # Recast numpy ints to Python ints so json knows what to do
+    for ind in range(len(seq_args)):
+        el = seq_args[ind]
+        if type(el) is numpy.int32:
+            seq_args[ind] = int(el)
     return json.dumps(seq_args)
 
 def decode_seq_args(seq_args_string):
@@ -134,7 +364,8 @@ def get_tagger_wiring(cxn):
 # %% Matplotlib plotting utils
 
 
-def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, color_bar_label = 'Counts', min_value=None, um_scaled = False):
+def create_image_figure(imgArray, imgExtent, clickHandler=None, title=None, 
+                color_bar_label='Counts', min_value=None, um_scaled=False):
     """
     Creates a figure containing a single grayscale image and a colorbar.
 
@@ -150,13 +381,16 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
     Returns:
         matplotlib.figure.Figure
     """
-    axes_label = 'V'
+    
+    if um_scaled:
+        axes_label = r'$\mu$m'
+    else:
+        axes_label = get_registry_entry_no_cxn('xy_units', ['', 'Config', 'Positioning'])
+        
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
 
     fig.set_tight_layout(True)
-    if um_scaled:
-        axes_label = r'$\mu$m'
 
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',
@@ -167,7 +401,9 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
 
     # Add a colorbar
     clb = plt.colorbar(img)
-    clb.set_label(color_bar_label, rotation=270)
+    clb.set_label(color_bar_label)
+    # clb.ax.set_tight_layout(True)
+    # clb.ax.set_title(color_bar_label)
 #    clb.set_label('kcounts/sec', rotation=270)
 
     # Label axes
@@ -182,7 +418,6 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title = None, co
 
     # Draw the canvas and flush the events to the backend
     fig.canvas.draw()
-    plt.tight_layout()
     fig.canvas.flush_events()
 
     return fig
@@ -253,7 +488,8 @@ def create_line_plot_figure(vals, xVals=None):
 
     if xVals is not None:
         ax.plot(xVals, vals)
-        ax.set_xlim(xVals[0], xVals[len(xVals) - 1])
+        max_x_val = xVals[-1]
+        ax.set_xlim(xVals[0], 1.1*max_x_val)
     else:
         ax.plot(vals)
         ax.set_xlim(0, len(vals)-1)
@@ -427,7 +663,7 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
 # %% LabRAD utils
 
 
-def get_shared_parameters_dict(cxn=None):
+def get_config_dict(cxn=None):
     """Get the shared parameters from the registry. These parameters are not
     specific to any experiment, but are instead used across experiments. They
     may depend on the current alignment (eg aom_delay) or they may just be
@@ -466,35 +702,54 @@ def get_shared_parameters_dict(cxn=None):
 
     if cxn is None:
         with labrad.connect() as cxn:
-            return get_shared_parameters_dict_sub(cxn)
+            return get_config_dict_sub(cxn)
     else:
-        return get_shared_parameters_dict_sub(cxn)
+        return get_config_dict_sub(cxn)
 
 
-def get_shared_parameters_dict_sub(cxn):
+def get_config_dict_sub(cxn):
 
-    # Get what we need out of the registry
-    cxn.registry.cd(['', 'SharedParameters'])
+    config_dict = {}
+    populate_config_dict(cxn, ['', 'Config'], config_dict)
+    return config_dict
+
+
+def populate_config_dict(cxn, reg_path, dict_to_populate):
+    """Populate the config dictionary recursively"""
+    
+    # Sub-folders
+    cxn.registry.cd(reg_path)
     sub_folders, keys = cxn.registry.dir()
-    if keys == []:
-        return {}
+    for el in sub_folders:
+        sub_dict = {}
+        sub_path = reg_path + [el]
+        populate_config_dict(cxn, sub_path, sub_dict)
+        dict_to_populate[el] = sub_dict
 
-    p = cxn.registry.packet()
-    for key in keys:
+    # Keys
+    if len(keys) == 1:
+        cxn.registry.cd(reg_path)
+        p = cxn.registry.packet()
+        key = keys[0]
         p.get(key)
-    vals = p.send()['get']
-
-    reg_dict = {}
-    for ind in range(len(keys)):
-        key = keys[ind]
-        val = vals[ind]
-        reg_dict[key] = val
-
-    return reg_dict
-
+        val = p.send()['get']
+        dict_to_populate[key] = val
+    
+    elif len(keys) > 1:
+        cxn.registry.cd(reg_path)
+        p = cxn.registry.packet()
+        for key in keys:
+            p.get(key)
+        vals = p.send()['get']
+    
+        for ind in range(len(keys)):
+            key = keys[ind]
+            val = vals[ind]
+            dict_to_populate[key] = val
+    
 
 def get_nv_sig_units():
-    return 'in shared_parameters'
+    return 'in config'
 
 
 def get_xy_server(cxn):
@@ -505,13 +760,13 @@ def get_xy_server(cxn):
 
     # return an actual reference to the appropriate server so it can just
     # be used directly
-    return getattr(cxn, get_registry_entry(cxn, 'xy_server', ['Config']))
+    return getattr(cxn, get_registry_entry(cxn, 'xy_server', ['', 'Config', 'Positioning']))
 
 
 def get_z_server(cxn):
     """Same as get_xy_server but for the fine z control server"""
 
-    return getattr(cxn, get_registry_entry(cxn, 'z_server', ['Config']))
+    return getattr(cxn, get_registry_entry(cxn, 'z_server', ['', 'Config', 'Positioning']))
 
 
 def get_registry_entry(cxn, key, directory):
@@ -601,18 +856,36 @@ def get_file_list(path_from_nvdata, file_ends_with,
 #         return json.load(file)
 
 
-def get_raw_data(path_from_nvdata, file_name,
-                 nvdata_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
-    """Returns a dictionary containing the json object from the specified
-    raw data file.
+def get_raw_data(file_name, path_from_nvdata=None,
+                 nvdata_dir='E:\\Shared drives\\Kolkowitz Lab Group\\nvdata'):
     """
-
-    data_dir = PurePath(nvdata_dir, path_from_nvdata)
-    file_name_ext = '{}.txt'.format(file_name)
-    file_path = data_dir / file_name_ext
-
-    with open(file_path) as file:
-        return json.load(file)
+    Returns a dictionary containing the json object from the specified
+    raw data file. If path_from_nvdata is not specified, we assume we're
+    looking for an autogenerated experiment data file. In this case we'll 
+    crawl nvdata until find the proper file. We assume it exists under a 
+    folder named for the year_month part of the timestamp at the beginning
+    of the file name
+    """
+    
+    if path_from_nvdata is None:
+        file_name_ext = '{}.txt'.format(file_name)
+        year_month = file_name[0:7]
+        for dir_name, dirs, files in os.walk(nvdata_dir):
+            if not dir_name.endswith(year_month):
+                continue
+            dir_path = PurePath(dir_name)
+            file_path = dir_path / file_name_ext
+            if file_name_ext in files:
+                with open(file_path) as file:
+                    return json.load(file)
+        print('File not found!')
+    else:
+        data_dir = PurePath(nvdata_dir, path_from_nvdata)
+        file_name_ext = '{}.txt'.format(file_name)
+        file_path = data_dir / file_name_ext
+    
+        with open(file_path) as file:
+            return json.load(file)
 
 
 # %%  Save utils
@@ -797,7 +1070,7 @@ def save_raw_data(rawData, filePath):
     # then they'll just be overwritten.
     try:
         rawData['nv_sig_units'] = get_nv_sig_units()
-        rawData['shared_parameters'] = get_shared_parameters_dict()
+        rawData['config'] = get_config_dict()  # Include a snapshot of the config
     except Exception as e:
         print(e)
 
@@ -821,6 +1094,9 @@ def color_ind_err(color_ind):
     if color_ind != 532 or color_ind != 589:
         raise RuntimeError('Value of color_ind must be 532 or 589.'+
                            '\nYou entered {}'.format(color_ind))
+
+def check_laser_power(laser_name, laser_power):
+    pass
 
 def aom_ao_589_pwr_err(aom_ao_589_pwr):
     if aom_ao_589_pwr < 0 or aom_ao_589_pwr > 1.0:
@@ -1041,8 +1317,8 @@ def poll_safe_stop():
 # %% State/globals
 
 
-# This isn't really that scary - our client is and should be mostly stateless
-# but in some cases it's just easier to share some state across the life of an
+# Our client is and should be mostly stateless.
+# But in some cases it's just easier to share some state across the life of an
 # experiment/across experiments. To do this safely and easily we store global
 # variables on our LabRAD registry. The globals should only be accessed with
 # the getters and setters here so that we can be sure they're implemented
@@ -1054,7 +1330,7 @@ def get_drift():
         cxn.registry.cd(['', 'State'])
         drift = cxn.registry.get('DRIFT')
         # MCC where should this stuff live?
-        cxn.registry.cd(['', 'SharedParameters'])
+        cxn.registry.cd(['', 'Config', 'Positioning'])
         xy_dtype = eval(cxn.registry.get('xy_dtype'))
         z_dtype = eval(cxn.registry.get('z_dtype'))
     len_drift = len(drift)
@@ -1104,7 +1380,7 @@ def reset_cfm(cxn=None):
     components that control xyz since these need to be reset in any
     routine where they matter anyway).
     """
-
+    
     if cxn == None:
         with labrad.connect() as cxn:
             reset_cfm_with_cxn(cxn)
@@ -1113,40 +1389,18 @@ def reset_cfm(cxn=None):
 
 
 def reset_cfm_with_cxn(cxn):
-    if hasattr(cxn, 'pulse_streamer'):
-        cxn.pulse_streamer.reset()
-    if hasattr(cxn, 'apd_tagger'):
-        cxn.apd_tagger.reset()
-    if hasattr(cxn, 'arbitrary_waveform_generator'):
-        cxn.arbitrary_waveform_generator.reset()
-    if hasattr(cxn, 'signal_generator_tsg4104a'):
-        cxn.signal_generator_tsg4104a.reset()
-    if hasattr(cxn, 'signal_generator_sg394'):
-        cxn.signal_generator_sg394.reset()
-    if hasattr(cxn, 'signal_generator_bnc835'):
-        cxn.signal_generator_bnc835.reset()
-    # 8/10/2020, mainly for Er lifetime measurements
-#    if hasattr(cxn, 'filter_slider_ell9k_color'):
-#        cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
-#    if hasattr(cxn, 'filter_slider_ell9k'):
-#        cxn.filter_slider_ell9k.set_filter('nd_0')
-#
-#def reset_cfm_wout_uwaves(cxn=None):
-#    """Reset our cfm so that it's ready to go for a new experiment. Avoids
-#    unnecessarily resetting components that may suffer hysteresis (ie the
-#    components that control xyz since these need to be reset in any
-#    routine where they matter anyway).
-#
-#    Exclude the uwaves
-#    """
-#
-#    if cxn == None:
-#        with labrad.connect() as cxn:
-#            reset_cfm_without_uwaves_with_cxn(cxn)
-#    else:
-#        reset_cfm_without_uwaves_with_cxn(cxn)
-#
-#
-#def reset_cfm_without_uwaves_with_cxn(cxn):
-#    cxn.pulse_streamer.reset()
-#    cxn.apd_tagger.reset()
+    
+    plt.rc('text', usetex=False)
+    
+    xy_server_name = get_registry_entry(cxn, 'xy_server', 
+                                        ['', 'Config', 'Positioning'])
+    z_server_name = get_registry_entry(cxn, 'z_server', 
+                                       ['', 'Config', 'Positioning'])
+    xyz_server_names = [xy_server_name, z_server_name]
+    cxn_server_names = cxn.servers
+    for name in cxn_server_names:
+        if name in xyz_server_names:
+            continue
+        server = cxn[name]
+        if hasattr(server, 'reset'):
+            server.reset()

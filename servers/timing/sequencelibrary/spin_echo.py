@@ -15,57 +15,43 @@ LOW = 0
 HIGH = 1
 
 
-def get_seq(pulser_wiring, args):
+def get_seq(pulse_streamer, config, args):
 
     # %% Parse wiring and args
 
     # The first 11 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(13):
+    for ind in range(6):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
-    tau_shrt, polarization_time, signal_time, reference_time,  \
-            sig_to_ref_wait_time, pre_uwave_exp_wait_time,  \
-            post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,  \
-            gate_time, pi_pulse, pi_on_2_pulse, tau_long = durations
+    tau_shrt, polarization_time, gate_time, pi_pulse, pi_on_2_pulse, tau_long = durations
 
     # Get the APD indices
-    apd_index = args[13]
-    state_value = args[14]
+    apd_index, state, laser_name, laser_power = args[6:10]
+    state = States(state)
+        
+    # time of illumination during which signal readout occurs
+    signal_time = polarization_time
+    # time of illumination during which reference readout occurs
+    reference_time = polarization_time
+    pre_uwave_exp_wait_time = config['CommonDurations']['uwave_buffer']
+    post_uwave_exp_wait_time = config['CommonDurations']['uwave_buffer']
+    # time between signal and reference without illumination
+    sig_to_ref_wait_time_base = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
+#    sig_to_ref_wait_time_shrt = sig_to_ref_wait_time_base + 2*tau_shrt 
+#    sig_to_ref_wait_time_long = sig_to_ref_wait_time_base + 2*tau_long
+    sig_to_ref_wait_time_shrt = sig_to_ref_wait_time_base 
+    sig_to_ref_wait_time_long = sig_to_ref_wait_time_base 
+    aom_delay_time = config['Optics'][laser_name]['delay']
+    sig_gen_name = config['Microwaves']['sig_gen_{}'.format(state.name)]
+    rf_delay_time = config['Microwaves'][sig_gen_name]['delay']
+    back_buffer = 200
 
+    pulser_wiring = config['Wiring']['PulseStreamer']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-
-    sig_gen_name = tool_belt.get_signal_generator_name(States(state_value))
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
-
-    # specify the sig gen to give the initial state
-#    if init_state == 1:
-#        pulser_do_uwave_init = pulser_wiring['do_uwave_gate_0']
-#    elif init_state == -1:
-#        pulser_do_uwave_init = pulser_wiring['do_uwave_gate_1']
-#
-#    # specify the sig gen to give the readout state
-#    if read_state == 1:
-#        pulser_do_uwave_read = pulser_wiring['do_uwave_gate_0']
-#    elif read_state == -1:
-#        pulser_do_uwave_read = pulser_wiring['do_uwave_gate_1']
-#
-#    # as a special case, for measuring (-1, -1), we can try initializing with
-#    # the one sig gen and read out with the other
-##    if init_state == -1 and read_state == -1:
-##        pulser_do_uwave_init = pulser_wiring['do_uwave_gate_0']
-##        pulser_do_uwave_read = pulser_wiring['do_uwave_gate_1']
-#
-#    # I thing including 0 states will still work, but I don't see us using this
-#    # script to really measure that.
-#    if init_state == 0:
-#        pulser_do_uwave_init = pulser_wiring['do_uwave_gate_0']
-#    if read_state == 0:
-#        pulser_do_uwave_read = pulser_wiring['do_uwave_gate_0']
-
-    pulser_do_aom = pulser_wiring['do_532_aom']
 
     # %% Write the microwave sequence to be used.
 
@@ -91,7 +77,7 @@ def get_seq(pulser_wiring, args):
         polarization_time + pre_uwave_exp_wait_time + \
         uwave_experiment_shrt + post_uwave_exp_wait_time
 
-    up_to_long_gates = prep_time + signal_time + sig_to_ref_wait_time + \
+    up_to_long_gates = prep_time + signal_time + sig_to_ref_wait_time_shrt + \
         reference_time + pre_uwave_exp_wait_time + \
         uwave_experiment_long + post_uwave_exp_wait_time
 
@@ -101,9 +87,9 @@ def get_seq(pulser_wiring, args):
     # enough to accomodate the longest tau
     period = aom_delay_time + rf_delay_time + polarization_time + \
         pre_uwave_exp_wait_time + uwave_experiment_shrt + post_uwave_exp_wait_time + \
-        signal_time + sig_to_ref_wait_time + reference_time + pre_uwave_exp_wait_time + \
+        signal_time + sig_to_ref_wait_time_shrt + reference_time + pre_uwave_exp_wait_time + \
         uwave_experiment_long + post_uwave_exp_wait_time + \
-        signal_time + sig_to_ref_wait_time + reference_time
+        signal_time + sig_to_ref_wait_time_long + reference_time
 
     # %% Define the sequence
 
@@ -111,10 +97,10 @@ def get_seq(pulser_wiring, args):
 
     # APD gating
     pre_duration = prep_time
-    short_sig_to_short_ref = signal_time + sig_to_ref_wait_time - gate_time
-    short_ref_to_long_sig = up_to_long_gates - (prep_time + signal_time + sig_to_ref_wait_time + gate_time)
-    long_sig_to_long_ref = signal_time + sig_to_ref_wait_time - gate_time
-    post_duration = reference_time - gate_time
+    short_sig_to_short_ref = signal_time + sig_to_ref_wait_time_shrt - gate_time
+    short_ref_to_long_sig = up_to_long_gates - (prep_time + signal_time + sig_to_ref_wait_time_shrt + gate_time)
+    long_sig_to_long_ref = signal_time + sig_to_ref_wait_time_long - gate_time
+    post_duration = reference_time - gate_time + back_buffer
     train = [(pre_duration, LOW),
              (gate_time, HIGH),
              (short_sig_to_short_ref, LOW),
@@ -126,24 +112,26 @@ def get_seq(pulser_wiring, args):
              (post_duration, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
 
-    # Pulse the laser with the AOM for polarization and readout
+    # Laser
     train = [(rf_delay_time + polarization_time, HIGH),
              (pre_uwave_exp_wait_time + uwave_experiment_shrt + post_uwave_exp_wait_time, LOW),
              (signal_time, HIGH),
-             (sig_to_ref_wait_time, LOW),
+             (sig_to_ref_wait_time_shrt, LOW),
              (reference_time, HIGH),
              (pre_uwave_exp_wait_time + uwave_experiment_long + post_uwave_exp_wait_time, LOW),
              (signal_time, HIGH),
-             (sig_to_ref_wait_time, LOW),
-             (reference_time + aom_delay_time, HIGH)]
-    seq.setDigital(pulser_do_aom, train)
+             (sig_to_ref_wait_time_long, LOW),
+             (reference_time + aom_delay_time, HIGH),
+             (back_buffer, LOW)]
+    tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                laser_name, laser_power, train)
 
     # Pulse the microwave for tau
     pre_duration = aom_delay_time + polarization_time + pre_uwave_exp_wait_time
-    mid_duration = post_uwave_exp_wait_time + signal_time + sig_to_ref_wait_time + \
+    mid_duration = post_uwave_exp_wait_time + signal_time + sig_to_ref_wait_time_shrt + \
         reference_time + pre_uwave_exp_wait_time
     post_duration = post_uwave_exp_wait_time + signal_time + \
-        sig_to_ref_wait_time + reference_time + rf_delay_time
+        sig_to_ref_wait_time_long + reference_time + rf_delay_time + back_buffer
 
     train = [(pre_duration, LOW)]
     train.extend([(pi_on_2_pulse, HIGH), (tau_shrt, LOW)])
@@ -156,46 +144,12 @@ def get_seq(pulser_wiring, args):
     train.extend([(post_duration, LOW)])
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
-#    if init_state == 1 and read_state == 1:
-#        pulser_do_uwave = pulser_do_uwave_read
-#        train = [(pre_duration, LOW)]
-#        train.extend([(pi_pulse_init, HIGH), (tau_shrt, LOW), (pi_pulse_read, HIGH)])
-#        train.extend([(mid_duration, LOW)])
-#        train.extend([(pi_pulse_init, HIGH), (tau_long, LOW), (pi_pulse_read, HIGH)])
-#        train.extend([(post_duration, LOW)])
-#        seq.setDigital(pulser_do_uwave, train)
-#
-#    if init_state == -1 and read_state == -1:
-#        pulser_do_uwave = pulser_do_uwave_read
-#        train = [(pre_duration, LOW)]
-#        train.extend([(pi_pulse_init, HIGH), (tau_shrt, LOW), (pi_pulse_read, HIGH)])
-#        train.extend([(mid_duration, LOW)])
-#        train.extend([(pi_pulse_init, HIGH), (tau_long, LOW), (pi_pulse_read, HIGH)])
-#        train.extend([(post_duration, LOW)])
-#        seq.setDigital(pulser_do_uwave, train)
-
-    final_digital = [pulser_wiring['do_532_aom'],
-                     pulser_wiring['do_sample_clock']]
+    final_digital = [pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]
 
 if __name__ == '__main__':
-    wiring = {'do_sample_clock': 0,
-              'do_apd_0_gate': 4,
-              'do_532_aom': 1,
-              'do_signal_generator_tsg4104a_gate': 2,
-              'do_uwave_gate_1': 3,
-              }
-
-            # tau_shrt, polarization_time, signal_time, reference_time
-    args = [500, 3000, 3000, 3000,
-            # sig_to_ref_wait_time, pre_uwave_exp_wait_time
-            2000, 1000,
-            # post_uwave_exp_wait_time, aom_delay_time, rf_delay_time
-            1000, 0, 0, 
-            # gate_time, pi_pulse, pi_on_2_pulse, tau_long
-            320, 1000, 500, 2500,
-            # apd_index, state_value 
-            0, States.LOW.value]
-    seq, final, ret_vals = get_seq(wiring, args)
+    config = tool_belt.get_config_dict()
+    seq_args = [400, 10000.0, 350, 87, 44, 1200, 0, 1, 'cobolt_515', None]
+    seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()

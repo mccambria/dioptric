@@ -34,49 +34,90 @@ import sys
 import utils.tool_belt as tool_belt
 import logging
 import socket
+from pathlib import Path
 
 
 class PulseStreamer(LabradServer):
     name = 'pulse_streamer'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG,
-                format='%(asctime)s %(levelname)-8s %(message)s',
-                datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
+        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = filename.format(self.pc_name, self.name)
+        logging.basicConfig(level=logging.DEBUG, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
+        p.cd(['', 'Config', 'DeviceIDs'])
         p.get('pulse_streamer_ip')
-        p.get('sequence_library_path')
-        p.cd(['Wiring', 'Pulser'])
         p.dir()
         result = await p.send()
         return result
 
     def on_get_config(self, config):
-        get_result = config['get']
-        self.pulser = Pulser(get_result[0])
-        sys.path.append(get_result[1])
-        reg_keys = config['dir'][1]  # dir returns subdirs followed by keys
-        wiring = ensureDeferred(self.get_wiring(reg_keys))
-        wiring.addCallback(self.on_get_wiring, reg_keys)
+        self.pulser = Pulser(config['get'])
+        sequence_library_path = str(Path.home())
+        sequence_library_path += '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
+        sequence_library_path += '\\servers\\timing\\sequencelibrary'
+        sys.path.append(sequence_library_path)
+        self.get_config_dict()
 
-    async def get_wiring(self, reg_keys):
+    def get_config_dict(self):
+        """
+        Get the config dictionary on the registry recursively. Very similar
+        to the function of the same name in tool_belt.
+        """
+        config_dict = {}
+        _ = ensureDeferred(self.populate_config_dict(['', 'Config'],
+                                                     config_dict))
+        _.addCallback(self.on_get_config_dict, config_dict)
+    
+    async def populate_config_dict(self, reg_path, dict_to_populate):
+        """Populate the config dictionary recursively"""
+
+        # Sub-folders
         p = self.client.registry.packet()
-        for reg_key in reg_keys:
-            p.get(reg_key, key=reg_key)  # Return as a dictionary
+        p.cd(reg_path)
+        p.dir()
         result = await p.send()
-        return result
+        sub_folders, keys = result['dir']
+        for el in sub_folders:
+            sub_dict = {}
+            sub_path = reg_path + [el]
+            await self.populate_config_dict(sub_path, sub_dict)
+            logging.debug(sub_dict)
+            dict_to_populate[el] = sub_dict
+    
+        # Keys
+        if len(keys) == 1:
+            p = self.client.registry.packet()
+            p.cd(reg_path)
+            key = keys[0]
+            p.get(key)
+            result = await p.send()
+            val = result['get']
+            dict_to_populate[key] = val
+        
+        elif len(keys) > 1:
+            p = self.client.registry.packet()
+            p.cd(reg_path)
+            for key in keys:
+                p.get(key)
+            result = await p.send()
+            vals = result['get']
+        
+            for ind in range(len(keys)):
+                key = keys[ind]
+                val = vals[ind]
+                dict_to_populate[key] = val
 
-    def on_get_wiring(self, wiring, reg_keys):
-        self.pulser_wiring = {}
-        for reg_key in reg_keys:
-            self.pulser_wiring[reg_key] = wiring[reg_key]
+    def on_get_config_dict(self, _, config_dict):
+        self.config_dict = config_dict
+        self.pulser_wiring = self.config_dict['Wiring']['PulseStreamer']
         # Initialize state variables and reset
         self.seq = None
         self.loaded_seq_streamed = False
@@ -89,7 +130,8 @@ class PulseStreamer(LabradServer):
         if file_ext == '.py':  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tool_belt.decode_seq_args(seq_args_string)
-            seq, final, ret_vals = seq_module.get_seq(self.pulser_wiring, args)
+            seq, final, ret_vals = seq_module.get_seq(self, self.config_dict, 
+                                                      args)
         return seq, final, ret_vals
 
     @setting(0, seq_file='s', num_repeat='i',

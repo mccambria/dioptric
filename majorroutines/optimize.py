@@ -115,25 +115,22 @@ def read_manual_counts(cxn, period, apd_indices,
     return numpy.array(counts, dtype=int)
 
 
-def stationary_count_lite(cxn, nv_sig,  coords, shared_params,
-                          apd_indices, color_ind = 532):
-    try:
-        aom_ao_589_pwr = nv_sig['am_589_power']
-        ao_515_pwr = nv_sig['ao_515_pwr']
-    except Exception:
-        print('589 nm and 515 nm AM voltages not specified in nv_sig. Setting them to 0')
-        aom_ao_589_pwr = 0
-        ao_515_pwr = 0
+def stationary_count_lite(cxn, nv_sig,  coords, config, apd_indices):
+
+    seq_file_name = 'simple_readout.py'
 
     # Some initial values
-    readout = shared_params['continuous_readout_dur']
+    laser_name = nv_sig['imaging_laser']
+    power_key = 'imaging_laser_power'
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, 'imaging_laser')
+    readout = nv_sig['imaging_readout_dur']
     total_num_samples = 2
     x_center, y_center, z_center = coords
 
-    seq_args = [shared_params['532_aom_delay'], readout, aom_ao_589_pwr,  ao_515_pwr,
-                apd_indices[0], color_ind]
+    delay = config['Positioning']['xy_delay']
+    seq_args = [delay, readout, laser_name, laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)
+    cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
 
     tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
 
@@ -148,34 +145,31 @@ def stationary_count_lite(cxn, nv_sig,  coords, shared_params,
     return counts_kcps
 
 
-def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
-                     apd_indices, color_ind = 532, fig=None):
+def optimize_on_axis(cxn, nv_sig, axis_ind, config,
+                     apd_indices, fig=None):
 
     seq_file_name = 'simple_readout.py'
     num_steps = 61#31
     coords = nv_sig['coords']
     x_center, y_center, z_center = coords
-    readout = shared_params['continuous_readout_dur']
-
-    try:
-        aom_ao_589_pwr = nv_sig['am_589_power']
-        ao_515_pwr = nv_sig['ao_515_pwr']
-    except Exception:
-        print('589 nm and 515 nm AM voltages not specified in nv_sig. Setting them to 0')
-        aom_ao_589_pwr = 0
-        ao_515_pwr = 0
+    readout = nv_sig['imaging_readout_dur']
+    laser_key = 'imaging_laser'
 
     # Reset to centers
     tool_belt.set_xyz(cxn, coords)
+
+    laser_name = nv_sig[laser_key]
+    tool_belt.set_filter(cxn, nv_sig, laser_key)
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
     tool_belt.init_safe_stop()
     # xy
     if axis_ind in [0, 1]:
 
-        scan_range = shared_params['xy_optimize_range']
-        scan_dtype = eval(shared_params['xy_dtype'])
-        seq_args = [shared_params['xy_delay'], readout,aom_ao_589_pwr, ao_515_pwr,
-                    apd_indices[0], color_ind]
+        scan_range = config['Positioning']['xy_optimize_range']
+        scan_dtype = eval(config['Positioning']['xy_dtype'])
+        delay = config['Positioning']['xy_delay']
+        seq_args = [delay, readout, laser_name, laser_power, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string)
@@ -195,10 +189,10 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     # z
     elif axis_ind == 2:
 
-        scan_range = shared_params['z_optimize_range']
-        scan_dtype = eval(shared_params['z_dtype'])
-        seq_args = [shared_params['z_delay'], readout, aom_ao_589_pwr, ao_515_pwr,
-                    apd_indices[0], color_ind]
+        scan_range = config['Positioning']['z_optimize_range']
+        scan_dtype = eval(config['Positioning']['z_dtype'])
+        delay = config['Positioning']['z_delay']
+        seq_args = [delay, readout, laser_name, laser_power, apd_indices[0]]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string)
@@ -232,6 +226,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
     else:
         counts = read_manual_counts(cxn, period, apd_indices,
                                     manual_write_func, scan_vals)
+
     # counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     count_rates = (counts / 1000) / (readout / 10**9)
 
@@ -239,10 +234,6 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, shared_params,
         update_figure(fig, axis_ind, scan_vals, count_rates)
 
     opti_coord = fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig)
-
-    # if ('z_drift_adjust' in shared_params) and (scan_dtype is int):
-    #     diff = max(scan_vals) - opti_coord
-    #     opti_coord = round(opti_coord + z_drift_adjust*diff)
 
     return opti_coord, scan_vals, counts
 
@@ -352,61 +343,64 @@ def optimize_list_with_cxn(cxn, nv_sig_list, apd_indices, laser_ind,
         print(coords)
 
 
+def prepare_microscope(cxn, nv_sig, coords=None):
+     """
+     Prepares the microscope for a measurement. In particular,
+     sets up the optics (positioning, collection filter, etc) and magnet.
+     The laser set up must be handled by each routine since the same laser
+     may be specified for multiple purposes.
+     """
+
+     if coords is not None:
+         tool_belt.set_xyz(cxn, coords)
+
+     tool_belt.set_filter(cxn, optics_name='collection',
+                          filter_name=nv_sig['collection_filter'])
+
+     magnet_angle = nv_sig['magnet_angle']
+     if (magnet_angle is not None) and hasattr(cxn, 'rotation_stage_ell18k'):
+         cxn.rotation_stage_ell18k.set_angle(magnet_angle)
+
+     time.sleep(0.01)
+
+
 # %% Main
 
 
-def main(nv_sig, apd_indices, laser_ind = 532, color_filter = 'NV', disable = False,
+def main(nv_sig, apd_indices,
          set_to_opti_coords=True, save_data=False, plot_data=False):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices, laser_ind, color_filter,
-                      disable, set_to_opti_coords, save_data, plot_data)
+        main_with_cxn(cxn, nv_sig, apd_indices,
+                      set_to_opti_coords, save_data, plot_data)
 
-def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV', disable = False,
+def main_with_cxn(cxn, nv_sig,  apd_indices,
                   set_to_opti_coords=True, save_data=False,
                   plot_data=False, set_drift=True):
 
-    # Reset the microscope and make sure we're at the right ND
     tool_belt.reset_cfm(cxn)
-
-    # Be sure the right ND is in place and the magnet aligned
-    if hasattr(cxn, 'filter_slider_ell9k'):
-        cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
-    if hasattr(cxn, 'filter_slider_ell9k_color'):
-        if color_filter == 'NV':
-            cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
-        elif color_filter == 'SiV':
-            cxn.filter_slider_ell9k_color.set_filter('715 lp')
-        time.sleep(0.01)
-    magnet_angle = nv_sig['magnet_angle']
-    if (magnet_angle is not None) and hasattr(cxn, 'rotation_stage_ell18k'):
-        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
 
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
     passed_coords = nv_sig['coords']
     adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
+    # If optimize is disabled, just set the filters and magnet in place
+    if nv_sig['disable_opt']:
+        prepare_microscope(cxn, nv_sig, adjusted_coords)
+        return None
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig['coords'] = adjusted_coords
 
-    # Disable optimzie in nv_sig. If disabled, set coordinates to adjusted
-    # coords (as well as set color filter if possible)
-    try:
-        if nv_sig['disable_opt']:
-            coords = adjusted_nv_sig['coords']
-            tool_belt.set_xyz(cxn, coords)
-            # After we've optimized, set the color filter back to what we want
-            if hasattr(cxn, 'filter_slider_ell9k_color'):
-                measure_color_filter = nv_sig['color_filter']
-                cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
-            return coords
-    except Exception:
-        pass
+    if 'collection_filter' in nv_sig:
+        tool_belt.set_filter(cxn, 'collection', nv_sig['collection_filter'])
 
-    # Get the shared parameters from the registry
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    laser_name = nv_sig['imaging_laser']
+    if 'imaging_laser_filter' in nv_sig:
+        tool_belt.set_filter(cxn, laser_name, nv_sig['imaging_laser_filter'])
 
     expected_count_rate = adjusted_nv_sig['expected_count_rate']
+
+    config = tool_belt.get_config_dict(cxn)
 
     opti_succeeded = False
 
@@ -432,8 +426,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
         # xy
         for axis_ind in range(2):
             ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
-                                        shared_params,
-                                        apd_indices, laser_ind, fig)
+                                        config, apd_indices, fig)
             opti_coords.append(ret_vals[0])
             scan_vals_by_axis.append(ret_vals[1])
             counts_by_axis.append(ret_vals[2])
@@ -445,7 +438,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
             tool_belt.set_xyz(cxn, int_coords)
         axis_ind = 2
         ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
-                                    shared_params, apd_indices, laser_ind, fig)
+                                    config, apd_indices, fig)
         opti_coords.append(ret_vals[0])
         scan_vals_by_axis.append(ret_vals[1])
         counts_by_axis.append(ret_vals[2])
@@ -456,7 +449,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
 
         # Check the count rate
         opti_count_rate = stationary_count_lite(cxn, nv_sig, opti_coords,
-                                                shared_params, apd_indices, laser_ind)
+                                                config, apd_indices)
 
         # Verify that our optimization found a reasonable spot by checking
         # the count rate at the center against the expected count rate
@@ -506,12 +499,12 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
 
     if set_to_opti_coords:
         if opti_succeeded:
-            tool_belt.set_xyz(cxn, opti_coords)
+            prepare_microscope(cxn, nv_sig, opti_coords)
         else:
             # Let the user know something went wrong
             print('Optimization failed. Resetting to coordinates ' \
                   'about which we attempted to optimize.')
-            tool_belt.set_xyz(cxn, adjusted_coords)
+            prepare_microscope(cxn, nv_sig, adjusted_coords)
     else:
         if opti_succeeded:
             print('Optimized coordinates: ')
@@ -520,6 +513,7 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
             print('{:.3f}, {:.3f}, {:.2f}'.format(*drift))
         else:
             print('Optimization failed.')
+            prepare_microscope(cxn, nv_sig)
 
     print('\n')
 
@@ -537,7 +531,6 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
                    'opti_coords': opti_coords,
-                   'laser_ind': laser_ind,
                    'x_scan_vals': scan_vals_by_axis[0].tolist(),
                    'y_scan_vals': scan_vals_by_axis[1].tolist(),
                    'z_scan_vals': scan_vals_by_axis[2].tolist(),
@@ -556,575 +549,5 @@ def main_with_cxn(cxn, nv_sig,  apd_indices, laser_ind = 532, color_filter = 'NV
             tool_belt.save_figure(fig, filePath)
 
     # %% Return the optimized coordinates we found
-    if hasattr(cxn, 'filter_slider_ell9k_color'):
-        # After we've optimized, set the color filter back to what we want
-        measure_color_filter = nv_sig['color_filter']
-        cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
 
     return opti_coords
-
-# %%
-#
-#def opti_z(nv_sig, apd_indices,
-#                  set_to_opti_coords=True, save_data=False,
-#                  plot_data=False, set_drift=True):
-#
-#    with labrad.connect() as cxn:
-#            opti_z_cxn(cxn, nv_sig, apd_indices,
-#                          set_to_opti_coords, save_data, plot_data)
-#
-#def opti_z_cxn(cxn, nv_sig, apd_indices,
-#                  set_to_opti_coords=True, save_data=False,
-#                  plot_data=False, set_drift=True):
-#
-#    # Reset the microscope and make sure we're at the right ND
-#    tool_belt.reset_cfm(cxn)
-#
-#    # Be sure the right ND is in place and the magnet aligned
-#    cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
-#    magnet_angle = nv_sig['magnet_angle']
-#    if magnet_angle is not None:
-#        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
-#
-#    # Adjust the sig we use for drift
-#    drift = tool_belt.get_drift()
-#    passed_coords = nv_sig['coords']
-#    adjusted_coords = []
-#    for i in range(3):
-#        adjusted_coords.append(passed_coords[i] + drift[i])
-#    adjusted_nv_sig = copy.deepcopy(nv_sig)
-#    adjusted_nv_sig['coords'] = adjusted_coords
-#
-#    # Get the shared parameters from the registry
-#    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-#
-#    expected_count_rate = adjusted_nv_sig['expected_count_rate']
-#
-#    opti_succeeded = False
-#
-#    # %% Try to optimize
-#
-#    num_attempts = 2
-#
-#    for ind in range(num_attempts):
-#
-#        if ind > 0:
-#            print('Trying again...')
-#
-#        # Create 3 plots in the figure, one for each axis
-#        fig = None
-#        if plot_data:
-#            fig = create_figure()
-#
-#        # Optimize on each axis
-#        opti_coords = []
-#
-#        opti_coords.append(passed_coords[0])
-#        opti_coords.append(passed_coords[1])
-#
-#
-#        ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, 2,
-#                                    shared_params, apd_indices, fig)
-#        opti_coords.append(ret_vals[0])
-#        voltages_by_axis = ret_vals[1]
-#        counts_by_axis = ret_vals[2]
-#
-#        # We failed to get optimized coordinates, try again
-#        if None in opti_coords:
-#            continue
-#
-#        # Check the count rate
-#        ao_515_pwr = adjusted_nv_sig['ao_515_pwr']
-#        opti_count_rate = stationary_count_lite(cxn, opti_coords,shared_params,
-#                                            aom_ao_589_pwr, ao_515_pwr, apd_indices, color_ind)
-#
-#        # Verify that our optimization found a reasonable spot by checking
-#        # the count rate at the center against the expected count rate
-#        if expected_count_rate is not None:
-#
-#            lower_threshold = expected_count_rate * 0.78#3/4
-#            upper_threshold = expected_count_rate * 1.22#5/4
-#
-#            if ind == 0:
-#                print('Expected count rate: {}'.format(expected_count_rate))
-#
-#            print('Count rate at optimized coordinates: {:.1f}'.format(opti_count_rate))
-#
-#            # If the count rate close to what we expect, we succeeded!
-#            if lower_threshold <= opti_count_rate <= upper_threshold:
-#                print('Optimization succeeded!')
-#                opti_succeeded = True
-#            else:
-#                print('Count rate at optimized coordinates out of bounds.')
-#                # If we failed by expected counts, try again with the
-#                # coordinates we found. If x/y are off initially, then
-#                # z will give a false optimized coordinate. x/y will give
-#                # true optimized coordinates regardless of the other initial
-#                # coordinates, however. So we might succeed by trying z again
-#                # at the optimized x/y.
-#                adjusted_nv_sig['coords'] = opti_coords
-#
-#        # If the threshold is not set, we succeed based only on optimize
-#        else:
-#            print('Count rate at optimized coordinates: {:.0f}'.format(opti_count_rate))
-#            print('Optimization succeeded! (No expected count rate passed.)')
-#            opti_succeeded = True
-#        # Break out of the loop if optimization succeeded
-#        if opti_succeeded:
-#            break
-#
-#    if not opti_succeeded:
-#        opti_coords = None
-#
-#    # %% Calculate the drift relative to the passed coordinates
-#
-#    if opti_succeeded and set_drift:
-#        drift = (numpy.array(opti_coords) - numpy.array(passed_coords)).tolist()
-#        tool_belt.set_drift(drift)
-#
-#    # %% Set to the optimized coordinates, or just tell the user what they are
-#
-#    if set_to_opti_coords:
-#        if opti_succeeded:
-#            tool_belt.set_xyz(cxn, opti_coords)
-#        else:
-#            # Let the user know something went wrong
-#            print('Optimization failed. Resetting to coordinates ' \
-#                  'about which we attempted to optimize.')
-#            tool_belt.set_xyz(cxn, adjusted_coords)
-#    else:
-#        if opti_succeeded:
-#            print('Optimized coordinates: ')
-#            print('{:.3f}, {:.3f}, {:.2f}'.format(*opti_coords))
-#            print('Drift: ')
-#            print('{:.3f}, {:.3f}, {:.2f}'.format(*drift))
-#        else:
-#            print('Optimization failed.')
-#
-#    print('\n')
-#
-#    # After we've optimized, set the color filter back to what we want
-#    measure_color_filter = nv_sig['color_filter']
-#    cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
-#
-#    # %% Clean up and save the data
-#
-#    tool_belt.reset_cfm_wout_uwaves(cxn)
-#
-#    # Don't bother saving the data if we're just using this to find the
-#    # optimized coordinates
-#    if save_data:
-#
-#        timestamp = tool_belt.get_time_stamp()
-#
-#        rawData = {'timestamp': timestamp,
-#                   'nv_sig': nv_sig,
-#                   'nv_sig-units': tool_belt.get_nv_sig_units(),
-#                   'color_filter': color_filter,
-#                   'readout': shared_params['continuous_readout_dur'],
-#                   'readout-units': 'ns',
-#                   'opti_coords': opti_coords,
-#                   'opti_coords-units': 'V',
-#                   'color_ind': color_ind,
-#                   'aom_ao_589_pwr': aom_ao_589_pwr,
-#                   'x_voltages': voltages_by_axis[0].tolist(),
-#                   'x_voltages-units': 'V',
-#                   'y_voltages': voltages_by_axis[1].tolist(),
-#                   'y_voltages-units': 'V',
-#                   'z_voltages': voltages_by_axis[2].tolist(),
-#                   'z_voltages-units': 'V',
-#                   'z_counts': counts_by_axis.tolist(),
-#                   'z_counts-units': 'number'}
-#
-#        filePath = tool_belt.get_file_path(__file__, timestamp,
-#                                           nv_sig['name'])
-#        tool_belt.save_raw_data(rawData, filePath)
-#
-#        if fig is not None:
-#            tool_belt.save_figure(fig, filePath)
-#
-#    # %% Return the optimized coordinates we found
-#
-#    return opti_coords
-
-# %%
-#
-#def main_xy(nv_sig, apd_indices, color_ind, aom_ao_589_pwr = 1.0, color_filter = 'NV', disable = False,
-#         set_to_opti_coords=True, save_data=False, plot_data=False):
-#
-#    with labrad.connect() as cxn:
-#        main_xy_with_cxn(cxn, nv_sig, apd_indices, color_ind, aom_ao_589_pwr, color_filter,
-#                      disable, set_to_opti_coords, save_data, plot_data)
-#
-#def main_xy_with_cxn(cxn, nv_sig,  apd_indices, color_ind, aom_ao_589_pwr = 1.0, color_filter = 'NV', disable = False,
-#                  set_to_opti_coords=True, save_data=False,
-#                  plot_data=False, set_drift=True):
-#    '''
-#    just optimize in x and y
-#    '''
-##    print('HERE')
-#
-#    # Reset the microscope and make sure we're at the right ND
-#    tool_belt.reset_cfm_wout_uwaves(cxn)
-#
-#    # Be sure the right ND is in place and the magnet aligned
-#    cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
-#    # Make sure the color filter is set
-#    if color_filter == 'NV':
-#        cxn.filter_slider_ell9k_color.set_filter('635-715 bp')
-#    elif color_filter == 'SiV':
-#        cxn.filter_slider_ell9k_color.set_filter('715 lp')
-#    time.sleep(0.01)
-#
-#    magnet_angle = nv_sig['magnet_angle']
-#    if magnet_angle is not None:
-#        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
-#
-#    # Adjust the sig we use for drift
-#    drift = tool_belt.get_drift()
-#    passed_coords = nv_sig['coords']
-#    adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
-#    adjusted_nv_sig = copy.deepcopy(nv_sig)
-#    adjusted_nv_sig['coords'] = adjusted_coords
-#
-#    # Get the shared parameters from the registry
-#    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-#
-#    expected_count_rate = adjusted_nv_sig['expected_count_rate']
-#
-#    opti_succeeded = False
-#
-#    # If optimize is disabled, then this routine just sets the galvo at the
-#    # passed coordinates, and does not try to optimize
-#
-#    if disable:
-#        coords = adjusted_nv_sig['coords']
-#        tool_belt.set_xyz(cxn, coords)
-#        # After we've optimized, set the color filter back to what we want
-#        measure_color_filter = nv_sig['color_filter']
-#        cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
-#
-#        return coords
-#
-#    # %% Try to optimize
-#
-#    num_attempts = 2
-#
-#    for ind in range(num_attempts):
-#
-#        if ind > 0:
-#            print('Trying again...')
-#
-#        # Create 3 plots in the figure, one for each axis
-#        fig = None
-#        if plot_data:
-#            fig = create_figure()
-#
-#        # Optimize on each axis
-#        opti_coords = []
-#        voltages_by_axis = []
-#        counts_by_axis = []
-#        for axis_ind in range(2):
-#            ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, axis_ind,
-#                                        shared_params, aom_ao_589_pwr,
-#                                        apd_indices, color_ind, fig)
-#            opti_coords.append(ret_vals[0])
-#            voltages_by_axis.append(ret_vals[1])
-#            counts_by_axis.append(ret_vals[2])
-##            print(opti_coords)
-#        opti_coords.append( adjusted_coords[2])
-#        # We failed to get optimized coordinates, try again
-#        if None in opti_coords:
-#            continue
-#
-#        # Check the count rate
-#        ao_515_pwr = adjusted_nv_sig['ao_515_pwr']
-#        opti_count_rate = stationary_count_lite(cxn, opti_coords,shared_params,
-#                                            aom_ao_589_pwr, ao_515_pwr, apd_indices, color_ind)
-#
-#        # Verify that our optimization found a reasonable spot by checking
-#        # the count rate at the center against the expected count rate
-#        if expected_count_rate is not None:
-#
-#            lower_threshold = expected_count_rate * 3/4
-#            upper_threshold = expected_count_rate * 5/4
-#
-#            if ind == 0:
-#                print('Expected count rate: {}'.format(expected_count_rate))
-#
-#            print('Count rate at optimized coordinates: {:.1f}'.format(opti_count_rate))
-#
-#            # If the count rate close to what we expect, we succeeded!
-#            if lower_threshold <= opti_count_rate <= upper_threshold:
-#                print('Optimization succeeded!')
-#                opti_succeeded = True
-#            else:
-#                print('Count rate at optimized coordinates out of bounds.')
-#                # If we failed by expected counts, try again with the
-#                # coordinates we found. If x/y are off initially, then
-#                # z will give a false optimized coordinate. x/y will give
-#                # true optimized coordinates regardless of the other initial
-#                # coordinates, however. So we might succeed by trying z again
-#                # at the optimized x/y.
-#                adjusted_nv_sig['coords'] = opti_coords
-#
-#        # If the threshold is not set, we succeed based only on optimize
-#        else:
-#            print('Count rate at optimized coordinates: {:.0f}'.format(opti_count_rate))
-#            print('Optimization succeeded! (No expected count rate passed.)')
-#            opti_succeeded = True
-#        # Break out of the loop if optimization succeeded
-#        if opti_succeeded:
-#            break
-#
-#    if not opti_succeeded:
-#        opti_coords = None
-#
-#    # %% Calculate the drift relative to the passed coordinates
-#
-#    if opti_succeeded and set_drift:
-#        drift = (numpy.array(opti_coords) - numpy.array(passed_coords)).tolist()
-#        tool_belt.set_drift(drift)
-#
-#    # %% Set to the optimized coordinates, or just tell the user what they are
-#
-#    if set_to_opti_coords:
-#        if opti_succeeded:
-#            tool_belt.set_xyz(cxn, opti_coords)
-#        else:
-#            # Let the user know something went wrong
-#            print('Optimization failed. Resetting to coordinates ' \
-#                  'about which we attempted to optimize.')
-#            tool_belt.set_xyz(cxn, adjusted_coords)
-#    else:
-#        if opti_succeeded:
-#            print('Optimized coordinates: ')
-#            print('{:.3f}, {:.3f}, {:.2f}'.format(*opti_coords))
-#            print('Drift: ')
-#            print('{:.3f}, {:.3f}, {:.2f}'.format(*drift))
-#        else:
-#            print('Optimization failed.')
-#
-#    print('\n')
-#
-#    # After we've optimized, set the color filter back to what we want
-#    measure_color_filter = nv_sig['color_filter']
-#    cxn.filter_slider_ell9k_color.set_filter(measure_color_filter)
-#
-#    # %% Clean up and save the data
-#
-#    tool_belt.reset_cfm_wout_uwaves(cxn)
-#
-#    # Don't bother saving the data if we're just using this to find the
-#    # optimized coordinates
-#    if save_data:
-#
-#        timestamp = tool_belt.get_time_stamp()
-#
-#        rawData = {'timestamp': timestamp,
-#                   'nv_sig': nv_sig,
-#                   'nv_sig-units': tool_belt.get_nv_sig_units(),
-#                   'color_filter': color_filter,
-#                   'readout': shared_params['continuous_readout_dur'],
-#                   'readout-units': 'ns',
-#                   'opti_coords': opti_coords,
-#                   'opti_coords-units': 'V',
-#                   'color_ind': color_ind,
-#                   'aom_ao_589_pwr': aom_ao_589_pwr,
-#                   'x_voltages': voltages_by_axis[0].tolist(),
-#                   'x_voltages-units': 'V',
-#                   'y_voltages': voltages_by_axis[1].tolist(),
-#                   'y_voltages-units': 'V',
-##                   'z_voltages': voltages_by_axis[2].tolist(),
-##                   'z_voltages-units': 'V',
-#                   'x_counts': counts_by_axis[0].tolist(),
-#                   'x_counts-units': 'number',
-#                   'y_counts': counts_by_axis[1].tolist(),
-#                   'y_counts-units': 'number',
-##                   'z_counts': counts_by_axis[2].tolist(),
-##                   'z_counts-units': 'number'
-#                   }
-#
-#        filePath = tool_belt.get_file_path(__file__, timestamp,
-#                                           nv_sig['name'])
-#        tool_belt.save_raw_data(rawData, filePath)
-#
-#        if fig is not None:
-#            tool_belt.save_figure(fig, filePath)
-#
-#    # %% Return the optimized coordinates we found
-#
-#    return opti_coords
-
-# %%
-#
-#def opti_z(nv_sig, apd_indices,  color_ind, aom_ao_589_pwr = 1.0,
-#                  set_to_opti_coords=True, save_data=False,
-#                  plot_data=False, set_drift=True):
-#
-#    with labrad.connect() as cxn:
-#            opti_z_cxn(cxn, nv_sig, apd_indices,  color_ind, aom_ao_589_pwr,
-#                          set_to_opti_coords, save_data, plot_data)
-#
-#def opti_z_cxn(cxn, nv_sig, apd_indices, color_ind, aom_ao_589_pwr = 1.0,
-#                  set_to_opti_coords=True, save_data=False,
-#                  plot_data=False, set_drift=True):
-#
-#    # Reset the microscope and make sure we're at the right ND
-#    tool_belt.reset_cfm_wout_uwaves(cxn)
-#
-#    # Be sure the right ND is in place and the magnet aligned
-#    cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
-#    magnet_angle = nv_sig['magnet_angle']
-#    if magnet_angle is not None:
-#        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
-#
-#    # Adjust the sig we use for drift
-#    drift = tool_belt.get_drift()
-#    passed_coords = nv_sig['coords']
-#    adjusted_coords = (numpy.array(passed_coords) + numpy.array(drift)).tolist()
-#    adjusted_nv_sig = copy.deepcopy(nv_sig)
-#    adjusted_nv_sig['coords'] = adjusted_coords
-#
-#    # Get the shared parameters from the registry
-#    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-#
-#    expected_count_rate = adjusted_nv_sig['expected_count_rate']
-#
-#    opti_succeeded = False
-#
-#    # %% Try to optimize
-#
-#    num_attempts = 2
-#
-#    for ind in range(num_attempts):
-#
-#        if ind > 0:
-#            print('Trying again...')
-#
-#        # Create 3 plots in the figure, one for each axis
-#        fig = None
-#        if plot_data:
-#            fig = create_figure()
-#
-#        # Optimize on each axis
-#        opti_coords = []
-#
-#        opti_coords.append(passed_coords[0])
-#        opti_coords.append(passed_coords[1])
-#
-#
-#        ret_vals = optimize_on_axis(cxn, adjusted_nv_sig, 2,
-#                                    shared_params,aom_ao_589_pwr,
-#                                        apd_indices, color_ind, fig)
-#        opti_coords.append(ret_vals[0])
-#        voltages_by_axis = ret_vals[1]
-#        counts_by_axis = ret_vals[2]
-#
-#        # We failed to get optimized coordinates, try again
-#        if None in opti_coords:
-#            continue
-#
-#        # Check the count rate
-#        ao_515_pwr = adjusted_nv_sig['ao_515_pwr']
-#        opti_count_rate = stationary_count_lite(cxn, opti_coords,
-#                                                shared_params, aom_ao_589_pwr,
-#                          ao_515_pwr, apd_indices, color_ind)
-#
-#        # Verify that our optimization found a reasonable spot by checking
-#        # the count rate at the center against the expected count rate
-#        if expected_count_rate is not None:
-#
-#            lower_threshold = expected_count_rate * 3/4
-#            upper_threshold = expected_count_rate * 5/4
-#
-#            if ind == 0:
-#                print('Expected count rate: {}'.format(expected_count_rate))
-#
-#            print('Count rate at optimized coordinates: {:.1f}'.format(opti_count_rate))
-#
-#            # If the count rate close to what we expect, we succeeded!
-#            if lower_threshold <= opti_count_rate <= upper_threshold:
-#                print('Optimization succeeded!')
-#                opti_succeeded = True
-#            else:
-#                print('Count rate at optimized coordinates out of bounds.')
-#                # If we failed by expected counts, try again with the
-#                # coordinates we found. If x/y are off initially, then
-#                # z will give a false optimized coordinate. x/y will give
-#                # true optimized coordinates regardless of the other initial
-#                # coordinates, however. So we might succeed by trying z again
-#                # at the optimized x/y.
-#                adjusted_nv_sig['coords'] = opti_coords
-#
-#        # If the threshold is not set, we succeed based only on optimize
-#        else:
-#            print('Count rate at optimized coordinates: {:.0f}'.format(opti_count_rate))
-#            print('Optimization succeeded! (No expected count rate passed.)')
-#            opti_succeeded = True
-#        # Break out of the loop if optimization succeeded
-#        if opti_succeeded:
-#            break
-#
-#    if not opti_succeeded:
-#        opti_coords = None
-#
-#    # %% Calculate the drift relative to the passed coordinates
-#
-#    if opti_succeeded and set_drift:
-#        drift = (numpy.array(opti_coords) - numpy.array(passed_coords)).tolist()
-#        tool_belt.set_drift(drift)
-#
-#    # %% Set to the optimized coordinates, or just tell the user what they are
-#
-#    if set_to_opti_coords:
-#        if opti_succeeded:
-#            tool_belt.set_xyz(cxn, opti_coords)
-#        else:
-#            # Let the user know something went wrong
-#            print('Optimization failed. Resetting to coordinates ' \
-#                  'about which we attempted to optimize.')
-#            tool_belt.set_xyz(cxn, adjusted_coords)
-#    else:
-#        if opti_succeeded:
-#            print('Optimized coordinates: ')
-#            print('{:.3f}, {:.3f}, {:.2f}'.format(*opti_coords))
-#            print('Drift: ')
-#            print('{:.3f}, {:.3f}, {:.2f}'.format(*drift))
-#        else:
-#            print('Optimization failed.')
-#
-#    print('\n')
-#
-#    # %% Clean up and save the data
-#
-#    tool_belt.reset_cfm_wout_uwaves(cxn)
-#
-#    # Don't bother saving the data if we're just using this to find the
-#    # optimized coordinates
-#    if save_data:
-#
-#        timestamp = tool_belt.get_time_stamp()
-#
-#        rawData = {'timestamp': timestamp,
-#                   'nv_sig': nv_sig,
-#                   'nv_sig-units': tool_belt.get_nv_sig_units(),
-#                   'readout': shared_params['continuous_readout_dur'],
-#                   'readout-units': 'ns',
-#                   'opti_coords': opti_coords,
-#                   'opti_coords-units': 'V',
-#                   'z_voltages': voltages_by_axis.tolist(),
-#                   'z_voltages-units': 'V',
-#                   'z_counts': counts_by_axis.tolist(),
-#                   'z_counts-units': 'number'}
-#
-#        filePath = tool_belt.get_file_path(__file__, timestamp,
-#                                           nv_sig['name'])
-#        tool_belt.save_raw_data(rawData, filePath)
-#
-#        if fig is not None:
-#            tool_belt.save_figure(fig, filePath)
-#
-#    # %% Return the optimized coordinates we found
-#
-#    return opti_coords

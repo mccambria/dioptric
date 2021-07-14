@@ -36,20 +36,21 @@ import logging
 class SignalGeneratorTsg4104a(LabradServer):
     name = 'signal_generator_tsg4104a'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG, 
-                format='%(asctime)s %(levelname)-8s %(message)s',
-                datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
+        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = filename.format(self.pc_name, self.name)
+        logging.basicConfig(level=logging.DEBUG, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
+        p.cd(['', 'Config', 'DeviceIDs'])
         p.get('signal_generator_tsg4104a_visa_address')
-        p.cd(['Wiring', 'Daq'])
+        p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('di_clock')
         p.get('ao_uwave_sig_gen_mod')
         result = await p.send()
@@ -67,6 +68,7 @@ class SignalGeneratorTsg4104a(LabradServer):
         self.daq_ao_sig_gen_mod = config[2]
         self.task = None    # Initialize state variable
         self.reset(None)
+        logging.debug('Init complete')
 
     @setting(0)
     def uwave_on(self, c):

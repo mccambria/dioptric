@@ -75,6 +75,14 @@ def calc_res_pair(theta_B, center_freq, mag_B):
     return resonance_low, resonance_high
 
 
+def zfs_cost_func(center_freq, mag_B, theta_B,
+                  meas_res_low, meas_res_high):
+    calc_res_low, calc_res_high = calc_res_pair(theta_B, center_freq, mag_B)
+    diff_low = calc_res_low - meas_res_low
+    diff_high = calc_res_high - meas_res_high
+    return numpy.sqrt(diff_low**2 + diff_high**2)
+
+
 def theta_B_cost_func(theta_B, center_freq, mag_B,
                       meas_res_low, meas_res_high):
     calc_res_low, calc_res_high = calc_res_pair(theta_B, center_freq, mag_B)
@@ -148,7 +156,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     ax.plot(linspace_theta_B_deg, const, label='Measured high')
 
     if theta_B is not None:
-        text = 'theta_B = {:.3f} deg'.format(theta_B_deg)
+        text = r'$\theta_{B} = $%.3f'%(theta_B_deg)
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.05, 0.65, text, fontsize=14, transform=ax.transAxes,
                 verticalalignment='top', bbox=props)
@@ -157,7 +165,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     ax.set_ylabel('Resonances (GHz)')
     ax.legend()
 
-    return fit_func, popt, stes, fit_fig, theta_B, fig
+    return fit_func, popt, stes, fit_fig, theta_B_deg, fig
 
 
 # %% Functions
@@ -221,14 +229,18 @@ def fit_data(data):
     norm_avg_sig = avg_sig_counts / avg_ref
     norm_avg_sig_ste = ste_sig_counts / avg_ref
 
+#    avg_ref_counts = numpy.average(ref_counts[::], axis=0)
+#    norm_avg_sig = avg_sig_counts / avg_ref_counts
+#    norm_avg_sig_ste = ste_sig_counts / avg_ref_counts
+
     # %% Estimated fit parameters
 
     # Assume that the bulk of points are the floor and that revivals take
     # us back to 1.0
     amplitude = 1.0 - numpy.average(norm_avg_sig)
     offset = 1.0 - amplitude
-    decay_time = 1000.0
-    # decay_time /= 2
+    decay_time = 4500.0
+#    decay_time /= 2
 
     # To estimate the revival frequency let's find the highest peak in the FFT
     transform = numpy.fft.rfft(norm_avg_sig)
@@ -236,15 +248,17 @@ def fit_data(data):
     transform_mag = numpy.absolute(transform)
     # [1:] excludes frequency 0 (DC component)
     max_ind = numpy.argmax(transform_mag[1:])
+    # plt.plot(1/freqs, transform_mag)
+    # return
     frequency = freqs[max_ind+1]
-    revival_time = 2/frequency  # Double tends to work better for
+    revival_time = 2/frequency  # Revival time is double the dominant frequency
     # print(revival_time)
 
     # Hard guess
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-    # revival_time = 35000
+    revival_time = 35000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -264,7 +278,7 @@ def fit_data(data):
         popt, pcov = curve_fit(fit_func, tau_pis / 1000, norm_avg_sig,
                                sigma=norm_avg_sig_ste, absolute_sigma=True,
                                p0=init_params, bounds=(min_bounds, max_bounds))
-        # popt[1] = 35.7
+        # print(popt)
         popt[1] *= 1000
         popt[2] *= 1000
 
@@ -345,9 +359,9 @@ def main(nv_sig, apd_indices,
          state=States.LOW):
 
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, apd_indices,
-                  precession_dur_range, num_steps, num_reps, num_runs,
-                  state)
+        angle = main_with_cxn(cxn, nv_sig, apd_indices,
+                  precession_dur_range, num_steps, num_reps, num_runs, state)
+        return angle
 
 def main_with_cxn(cxn, nv_sig, apd_indices,
                   precession_time_range, num_steps, num_reps, num_runs,
@@ -355,24 +369,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     tool_belt.reset_cfm(cxn)
 
-    # %% Define the times to be used in the sequence
+    # %% Sequence setup
 
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    laser_key = 'spin_laser'
+    laser_name = nv_sig[laser_key]
+    tool_belt.set_filter(cxn, nv_sig, laser_key)
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    polarization_time = nv_sig['spin_pol_dur']
+    gate_time = nv_sig['spin_readout_dur']
 
-    polarization_time = shared_params['polarization_dur']
-    # time of illumination during which signal readout occurs
-    signal_time = polarization_time
-    # time of illumination during which reference readout occurs
-    reference_time = polarization_time
-    pre_uwave_exp_wait_time = shared_params['post_polarization_wait_dur']
-    post_uwave_exp_wait_time = shared_params['pre_readout_wait_dur']
-    # time between signal and reference without illumination
-    sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
-    aom_delay_time = shared_params['515_laser_delay']
-    rf_delay_time = shared_params['uwave_delay']
-    gate_time = nv_sig['pulsed_readout_dur']
-
-    # Default to the low state
     rabi_period = nv_sig['rabi_{}'.format(state.name)]
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
@@ -421,7 +426,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
 
-    sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
+    sig_counts = numpy.zeros([num_runs, num_steps])
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
 
@@ -432,17 +437,15 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
     # %% Analyze the sequence
 
-    # We can simply reuse t1_double_quantum for this if we pass a pi/2 pulse
-    # instead of a pi pulse and use the same states for init/readout
-    seq_args = [min_precession_time, polarization_time, signal_time, reference_time,
-                sig_to_ref_wait_time, pre_uwave_exp_wait_time,
-                post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
+    seq_args = [min_precession_time, polarization_time,
                 gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
-                max_precession_time, apd_indices[0], state.value]
+                max_precession_time, apd_indices[0],
+                state.value, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-#    print(sequence_args)
+#    print(seq_args)
+#    return
 #    print(seq_time)
 
     # %% Let the user know how long this will take
@@ -473,7 +476,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, aom_ao_589_pwr = 1.0, disable = True)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -481,6 +484,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
         sig_gen_cxn.set_freq(uwave_freq)
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.uwave_on()
+
+        # Set up the laser
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -511,11 +518,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
             print(' \nFirst relaxation time: {}'.format(taus[tau_ind_first]))
             print('Second relaxation time: {}'.format(taus[tau_ind_second]))
 
-            seq_args = [taus[tau_ind_first], polarization_time, signal_time, reference_time,
-                        sig_to_ref_wait_time, pre_uwave_exp_wait_time,
-                        post_uwave_exp_wait_time, aom_delay_time, rf_delay_time,
+            seq_args = [taus[tau_ind_first], polarization_time,
                         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
-                        taus[tau_ind_second], apd_indices[0], state.value]
+                        taus[tau_ind_second], apd_indices[0],
+                        state.value, laser_name, laser_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
             cxn.apd_tagger.clear_buffer()
@@ -674,10 +680,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
     # %% Fit and save figs
 
     ret_vals = plot_resonances_vs_theta_B(raw_data)
-    fit_func, popt, stes, fit_fig, theta_B, angle_fig = ret_vals
+    fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
 
     tool_belt.save_figure(fit_fig, file_path + '-fit')
     tool_belt.save_figure(angle_fig, file_path + '-angle')
+
+    return theta_B_deg
 
 
 # %% Run the file
@@ -685,11 +693,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 if __name__ == '__main__':
 
-    path = 'pc_hahn/branch_cryo-setup/spin_echo/2021_04'
-    file = '2021_04_30-21_55_35-hopper-nv1_2021_03_16'
+    path = 'pc_rabi\\branch_laser-consolidation\\spin_echo\\2021_07'
+    file = '2021_07_11-12_18_08-hopper-nv1_2021_03_16'
 
     data = tool_belt.get_raw_data(path, file)
 
-    # fit_func, popt, stes, fit_fig = fit_data_from_file(path, file)
+#    print(data['norm_avg_sig'])
 
-    plot_resonances_vs_theta_B(data)
+    ret_vals = plot_resonances_vs_theta_B(data)
+    fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals

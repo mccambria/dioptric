@@ -35,19 +35,20 @@ import socket
 class Galvo(LabradServer):
     name = 'galvo'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG,
-                format='%(asctime)s %(levelname)-8s %(message)s',
-                datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
+        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = filename.format(self.pc_name, self.name)
+        logging.basicConfig(level=logging.DEBUG, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.task = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd(['Config', 'Wiring', 'Daq'])
+        p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('ao_galvo_x')
         p.get('ao_galvo_y')
         p.get('di_clock')

@@ -35,21 +35,20 @@ import socket
 class RotationStageEll18k(LabradServer):
     name = 'rotation_stage_ell18k'
     pc_name = socket.gethostname()
-    logging.basicConfig(level=logging.DEBUG, 
-                format='%(asctime)s %(levelname)-8s %(message)s',
-                datefmt='%y-%m-%d_%H-%M-%S',
-                filename='E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'.format(pc_name, name))
 
     def initServer(self):
+        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = filename.format(self.pc_name, self.name)
+        logging.basicConfig(level=logging.DEBUG, 
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd('Config')
+        p.cd(['', 'Config', 'DeviceIDs'])
         p.get('rotation_stage_ell18k_address')
-        p.cd('FilterSliderEll9kFilterMapping')
-        p.dir()
         result = await p.send()
         return result
 

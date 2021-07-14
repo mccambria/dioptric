@@ -103,7 +103,7 @@ def get_data_lists(folder_name):
     # Unpack the data and sort into arrays. This allows multiple measurements of
     # the same type to be correctly sorted into one array
     for file in file_list:
-        data = tool_belt.get_raw_data(folder_name, file[:-4])
+        data = tool_belt.get_raw_data(file[:-4], folder_name)
         try:
 
             init_state_name = data['init_state']
@@ -576,19 +576,19 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 125
+    temp = 400
 
-    # est_omega = omega_calc(temp)
-    # est_gamma = gamma_calc(temp)
-    # print('good times in ms')
-    # print('Omega: {}'.format(4000/(3*est_omega)))
-    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+#    est_omega = omega_calc(temp)
+#    est_gamma = gamma_calc(temp)
+#    print('good times in ms')
+#    print('Omega: {}'.format(4000/(3*est_omega)))
+#    print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
 
-    path = 'pc_hahn\\branch_master\\t1_interleave_knill\\data_collections\\'
+    path = 'pc_rabi\\branch_laser-consolidation\\t1_interleave_knill\\data_collections\\'
     folders = [
                 'hopper-nv1_2021_03_16-{}K'.format(temp),
-                # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
-                # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
+                 # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
+                 # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
                 ]
 
     for folder in folders:

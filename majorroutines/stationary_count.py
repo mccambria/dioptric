@@ -24,207 +24,72 @@ import majorroutines.optimize as optimize
 
 def update_line_plot(new_samples, num_read_so_far, *args):
 
-    fig, samples, write_pos, readout_sec = args
+    fig, samples, write_pos, readout_sec, total_num_samples = args
 
-    # Write to the samples array
-    cur_write_pos = write_pos[0]
-    new_write_pos = cur_write_pos + len(new_samples)
-    samples[cur_write_pos: new_write_pos] = new_samples
-    write_pos[0] = new_write_pos
+
+    num_samples = numpy.count_nonzero(~numpy.isnan(samples))
+    num_new_samples = len(new_samples)
+    
+    # If we're going to overflow, just shift everything over and drop the 
+    # earliest samples
+    overflow = (num_samples + num_new_samples) - total_num_samples
+    if overflow > 0:
+        num_nans = max(total_num_samples - num_samples, 0)
+        samples[::] = numpy.append(samples[num_new_samples-num_nans: 
+                                           total_num_samples-num_nans], 
+                                   new_samples)
+    else:
+        cur_write_pos = write_pos[0]
+        new_write_pos = cur_write_pos + num_new_samples
+        samples[cur_write_pos: new_write_pos] = new_samples
+        write_pos[0] = new_write_pos
+        
 
     # Update the figure in k counts per sec
     tool_belt.update_line_plot_figure(fig, (samples / (10**3 * readout_sec)))
 
-# %% Main
-
-
-def two_pulse_main(nv_sig, num_steps, init_color, read_color, init_time, readout_time,
-                   apd_indices, continuous=False):
-
-    with labrad.connect() as cxn:
-        average, st_dev = two_pulse_main_with_cxn(cxn, nv_sig,num_steps,init_color,
-                    read_color, init_time, readout_time, apd_indices, continuous)
-
-    return average, st_dev
-
-def two_pulse_main_with_cxn(cxn, nv_sig,num_steps, init_color, read_color, init_time,
-            readout_time, apd_indices, continuous=False):
-
-    # %% Some initial setup
-
-    tool_belt.reset_cfm_wout_uwaves(cxn)
-
-    shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
-#    readout = shared_parameters['continuous_readout_dur']*10
-    readout_sec = readout_time / 10**9
-
-    aom_ao_589_pwr = nv_sig['am_589_power']
-
-    if init_color == 532:
-        init_delay = shared_parameters['515_laser_delay']
-    elif init_color == 589:
-        init_delay = shared_parameters['589_aom_delay']
-    elif init_color == 638:
-        init_delay = shared_parameters['638_laser_delay']
-
-    if read_color == 532:
-        read_delay = shared_parameters['515_laser_delay']
-    elif read_color == 589:
-        read_delay = shared_parameters['589_aom_delay']
-    elif read_color == 638:
-        read_delay = shared_parameters['638_laser_delay']
-
-    # %% Optimize
-
-#    optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532)
-
-    drift = numpy.array(tool_belt.get_drift())
-    coords = numpy.array(nv_sig['coords'])
-
-    coords_drift = coords + drift
-
-    cxn.galvo.write(coords_drift[0], coords_drift[1])
-    cxn.objective_piezo.write(coords_drift[2])
-#    print(coords_drift)
-
-    # %% Load the PulseStreamer
-    seq_args = [0, init_delay, read_delay, init_time,  readout_time, aom_ao_589_pwr, apd_indices[0],
-            init_color, read_color]
-
-#    print(seq_args)
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load('simple_readout_two_pulse.py',
-                                              seq_args_string)
-    period = ret_vals[0]
-
-#    total_num_samples = int(run_time / period)
-
-    # %% Set up the APD
-
-    cxn.apd_tagger.start_tag_stream(apd_indices)
-
-    # %% Initialize the figure
-
-    samples = numpy.empty(num_steps)
-    samples.fill(numpy.nan)  # Only floats support NaN
-    write_pos = [0]  # This is a list because we need a mutable variable
-
-    # Set up the line plot
-    x_vals = numpy.arange(num_steps) + 1
-    x_vals = x_vals / (10**9) * period   # Elapsed time in s
-
-    fig = tool_belt.create_line_plot_figure(samples, x_vals)
-#    fig = tool_belt.create_line_plot_figure(samples)
-
-    # Set labels
-    axes = fig.get_axes()
-    ax = axes[0]
-    ax.set_title('Stationary Counts')
-    ax.set_xlabel('Elapsed time (s)')
-    ax.set_ylabel('kcts/sec')
-
-    # Maximize the window
-    fig_manager = plt.get_current_fig_manager()
-    fig_manager.window.showMaximized()
-
-    # Args to pass to update_line_plot
-    args = fig, samples, write_pos, readout_sec
-
-    # %% Collect the data
-
-    cxn.pulse_streamer.stream_start(num_steps)
-
-    timeout_duration = ((period*(10**-9)) * num_steps) + 10
-    timeout_inst = time.time() + timeout_duration
-
-    num_read_so_far = 0
-
-    tool_belt.init_safe_stop()
-
-    while num_read_so_far < num_steps:
-
-        if time.time() > timeout_inst:
-            break
-
-        if tool_belt.safe_stop():
-            break
-
-        # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_simple()
-        num_new_samples = len(new_samples)
-        if num_new_samples > 0:
-            update_line_plot(new_samples, num_read_so_far, *args)
-            num_read_so_far += num_new_samples
-
-    # %% Clean up and report the data
-
-    tool_belt.reset_cfm_wout_uwaves(cxn)
-
-    # Replace x/0=inf with 0
-    try:
-        average = numpy.mean(samples[0:write_pos[0]]) / (10**3 * readout_sec)
-    except RuntimeWarning as e:
-        print(e)
-        inf_mask = numpy.isinf(average)
-        # Assign to 0 based on the passed conditional array
-        average[inf_mask] = 0
-
-    try:
-        st_dev = numpy.std(samples[0:write_pos[0]]) / (10**3 * readout_sec)
-    except RuntimeWarning as e:
-        print(e)
-        inf_mask = numpy.isinf(st_dev)
-        # Assign to 0 based on the passed conditional array
-        st_dev[inf_mask] = 0
-
-    return average, st_dev
-
 
 # %% Main
 
 
-def main(nv_sig, run_time, apd_indices, color_ind = 532, continuous=False):
+def main(nv_sig, run_time, apd_indices):
 
     with labrad.connect() as cxn:
-        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind, continuous)
+        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices)
 
     return average, st_dev
 
-def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind = 532, continuous=False):
+def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
 
     # %% Some initial setup
 
     tool_belt.reset_cfm(cxn)
 
-    if hasattr(cxn, 'filter_slider_ell9k_color'):
-        cxn.filter_slider_ell9k_color.set_filter('670 bp')
-    if hasattr(cxn, 'filter_slider_ell9k'):
-        cxn.filter_slider_ell9k.set_filter(nv_sig['nd_filter'])
-
-    shared_parameters = tool_belt.get_shared_parameters_dict(cxn)
-    readout = shared_parameters['continuous_readout_dur']*10
+    readout = nv_sig['imaging_readout_dur']
     readout_sec = readout / 10**9
-
-    try: 
-        ao_589_pwr = nv_sig['am_589_power']
-    except Exception:
-        print('589 nm AM voltage not specified in nv_sig. Setting it to 0')
-        ao_589_pwr = 0
 
     # %% Optimize
 
-#    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     coords = nv_sig['coords']
     drift = tool_belt.get_drift()
     adj_coords = []
     for i in range(3):
         adj_coords.append(coords[i] + drift[i])
     tool_belt.set_xyz(cxn, adj_coords)
+    
+    # %% Set up the imaging laser
+
+    laser_key = 'imaging_laser'
+    laser_name = nv_sig[laser_key]
+    tool_belt.set_filter(cxn, nv_sig, laser_key)
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
     # %% Load the PulseStreamer
 
-    seq_args = [0, readout, ao_589_pwr, 0.0, apd_indices[0], color_ind]
+    seq_args = [0, readout, apd_indices[0], laser_name, laser_power]
 #    print(seq_args)
+#    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                               seq_args_string)
@@ -247,51 +112,54 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, color_ind = 532, continuou
     x_vals = x_vals / (10**9) * period   # Elapsed time in s
 
     fig = tool_belt.create_line_plot_figure(samples, x_vals)
-#    fig = tool_belt.create_line_plot_figure(samples)
+    # fig = tool_belt.create_line_plot_figure(samples)
 
     # Set labels
     axes = fig.get_axes()
     ax = axes[0]
     ax.set_title('Stationary Counts')
-    ax.set_xlabel('Elapsed time (s)')
-    ax.set_ylabel('kcts/sec')
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('kcps')
 
     # Maximize the window
     fig_manager = plt.get_current_fig_manager()
     fig_manager.window.showMaximized()
 
     # Args to pass to update_line_plot
-    args = fig, samples, write_pos, readout_sec
+    args = fig, samples, write_pos, readout_sec, total_num_samples
 
     # %% Collect the data
 
-    cxn.pulse_streamer.stream_start(total_num_samples)
+    cxn.pulse_streamer.stream_start(-1)
 
-    timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
-    timeout_inst = time.time() + timeout_duration
+    # timeout_duration = ((period*(10**-9)) * total_num_samples) + 10
+    # timeout_inst = time.time() + timeout_duration
 
     num_read_so_far = 0
 
     tool_belt.init_safe_stop()
+    
 
-    while num_read_so_far < total_num_samples:
-
-        if time.time() > timeout_inst:
-            break
+    while True:
+        
+        # if time.time() > timeout_inst:
+        #     break
 
         if tool_belt.safe_stop():
             break
 
         # Read the samples and update the image
         new_samples = cxn.apd_tagger.read_counter_simple()
+#        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
+            
             update_line_plot(new_samples, num_read_so_far, *args)
             num_read_so_far += num_new_samples
-
+            
     # %% Clean up and report the data
     
-    tool_belt.reset_cfm_wout_uwaves(cxn)
+    tool_belt.reset_cfm(cxn)
 
     # Replace x/0=inf with 0
     try:

@@ -145,15 +145,15 @@ def simulate_single(drive_res, drive_rabi, nv_res, nv_rabi, num_pulses):
 
 
 def main(nv_sig, apd_indices, state,
-         max_num_pi_pulses, num_reps, num_runs):
+         max_num_pi_pulses, num_reps, num_runs, iq_delay=None):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, state,
-                      max_num_pi_pulses, num_reps, num_runs)
+                      max_num_pi_pulses, num_reps, num_runs, iq_delay)
     
     
 def main_with_cxn(cxn, nv_sig, apd_indices, state,
-                  max_num_pi_pulses, num_reps, num_runs):
+                  max_num_pi_pulses, num_reps, num_runs, iq_delay=None):
 
     tool_belt.reset_cfm(cxn)
 
@@ -171,36 +171,25 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     # uwave_pi_pulse = round(0.70 * nv_sig['rabi_{}'.format(state.name)])
     # uwave_pi_pulse = 0
     uwave_pi_on_2_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 4)
+    
+    laser_key = 'spin_laser'
+    laser_name = nv_sig[laser_key]
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-
-    # polarization_time = shared_params['polarization_dur'] 
-    polarization_time = 1e5
-    # time of illumination during which reference readout occurs
-    signal_wait_time = shared_params['post_polarization_wait_dur']
-    reference_time = signal_wait_time  # not sure what this is
-    background_wait_time = signal_wait_time  # not sure what this is
-    reference_wait_time = 2 * signal_wait_time  # not sure what this is
-    aom_delay_time = shared_params['532_aom_delay']
-    gate_time = nv_sig['pulsed_readout_dur']
-    sig_gen_name = tool_belt.get_signal_generator_name(state)
-    uwave_delay_time = shared_params['{}_delay'.format(sig_gen_name)]
-    iq_delay = shared_params['iq_delay']
+    polarization_time = nv_sig['spin_pol_dur'] 
+    if iq_delay is None:
+        iq_delay = tool_belt.get_registry_entry(cxn, 'iq_delay', ['', 'Config', 'Microwaves'])
+    gate_time = nv_sig['spin_readout_dur']
     # uwave_delay_time = 15
-    # iq_delay_time = 560
     # signal_wait_time = 1000
 
     # Analyze the sequence
     # file_name = os.path.basename(__file__)
     file_name = 'discrete_rabi2.py'
-    seq_args = [polarization_time, reference_time,
-                signal_wait_time, reference_wait_time,
-                background_wait_time,
-                aom_delay_time, uwave_delay_time, iq_delay,
+    seq_args = [polarization_time, iq_delay,
                 gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                 0, max_num_pi_pulses,
-                apd_indices[0], state.value]
-    seq_args = [int(el) for el in seq_args]
+                apd_indices[0], state.value, laser_name, laser_power]
 #    print(seq_args)
 #    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -274,14 +263,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
             pi_ind_master_list[run_ind].append(pi_ind)
 
             # Stream the sequence
-            seq_args = [polarization_time, reference_time,
-                        signal_wait_time, reference_wait_time,
-                        background_wait_time,
-                        aom_delay_time, uwave_delay_time, iq_delay,
+            seq_args = [polarization_time, iq_delay,
                         gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
                         pi_ind, max_num_pi_pulses,
-                        apd_indices[0], state.value]
-            seq_args = [int(el) for el in seq_args]
+                        apd_indices[0], state.value, laser_name, laser_power]
             # print(seq_args)
             # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -377,6 +362,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     raw_data = {'timestamp': timestamp,
                 'timeElapsed': timeElapsed,
                 'timeElapsed-units': 's',
+                'iq_delay': iq_delay,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 'uwave_freq': uwave_freq,

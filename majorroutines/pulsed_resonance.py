@@ -62,7 +62,39 @@ def create_fit_figure(freq_range, freq_center, num_steps,
     return fig
 
 
-# %% Functions
+# %% 
+
+
+def return_res_with_error(data):
+    """
+    Returns the frequency/error of the deepest resonance in a spectrum.
+    Intended for extracting the frequency/error of a single resonance.
+    """
+    
+    freq_center = data['freq_center']
+    freq_range = data['freq_range']
+    num_steps = data['num_steps']
+    ref_counts = data['ref_counts']
+    sig_counts = data['sig_counts']
+    num_runs = data['num_runs']
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
+    
+    fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
+                                         norm_avg_sig, norm_avg_sig_ste)
+    if len(popt) == 6:
+        print('Double resonance detected!')
+        low_res_depth = popt[0]
+        high_res_depth = popt[3]
+        if low_res_depth > high_res_depth:
+            res_ind = 2
+        else:
+            res_ind = 5
+    else:
+        res_ind = 2
+    res = popt[res_ind]
+    res_err = numpy.sqrt(pcov[res_ind, res_ind])
+    return res, res_err
 
 
 def calculate_freqs(freq_range, freq_center, num_steps):
@@ -90,7 +122,7 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
 
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
-    contrast = 0.10  # Arb
+    contrast = 0.15  # Arb
     sigma = 0.003  # GHz
 #    sigma = 0.010  # MHz
     fwhm = 2.355 * sigma
@@ -106,7 +138,7 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
     # rel_ref_std = ref_std / numpy.average(ref_counts)
     # height = max(rel_ref_std, contrast/4)
     # print(height)
-    height = 0.03
+    height = 0.08
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
@@ -186,24 +218,28 @@ def fit_resonance(freq_range, freq_center, num_steps,
                                    p0=guess_params, sigma=norm_avg_sig_ste,
                                    absolute_sigma=True)
             # popt = guess_params
-            if len(popt) == 6:
-                zfs = (popt[2] + popt[5]) / 2
-                print(zfs)
-                low_res_err = numpy.sqrt(pcov[2,2])
-                hig_res_err = numpy.sqrt(pcov[5,5])
-                zfs_err = numpy.sqrt(low_res_err**2 + hig_res_err**2) / 2
-                print(zfs_err)
-            else:
-                res_err = numpy.sqrt(pcov[2,2])
-                print(res_err)
+            # if len(popt) == 6:
+            #     zfs = (popt[2] + popt[5]) / 2
+            #     low_res_err = numpy.sqrt(pcov[2,2])
+            #     hig_res_err = numpy.sqrt(pcov[5,5])
+            #     zfs_err = numpy.sqrt(low_res_err**2 + hig_res_err**2) / 2
+            # else:
+            #     zfs = popt[2]
+            #     zfs_err = numpy.sqrt(pcov[2,2])
+            
+            # print(zfs)
+            # print(zfs_err)
+            # temp_from_resonances.main(zfs, zfs_err)
+                
         else:
             popt, pcov = curve_fit(fit_func, freqs, norm_avg_sig,
                                    p0=guess_params)
-    except Exception:
-        print('Something went wrong!')
+    except Exception as e:
+        print(e)
         popt = guess_params
+        pcov = None
 
-    return fit_func, popt
+    return fit_func, popt, pcov
 
 def simulate(res_freq, freq_range, contrast,
              rabi_period, uwave_pulse_dur):
@@ -223,6 +259,24 @@ def simulate(res_freq, freq_range, contrast,
     ax.plot(smooth_freqs, rel_counts)
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
+    
+    
+def process_counts(ref_counts, sig_counts, num_runs):
+    
+    # Find the averages across runs
+    avg_ref_counts = numpy.average(ref_counts, axis=0)
+    avg_sig_counts = numpy.average(sig_counts, axis=0)
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    
+    # Extract the error
+    # Typically we don't do many runs (<10), so this isn't a large enough
+    # sample to run stats on. Assume Poisson statistics instead. 
+    ste_ref_counts = numpy.sqrt(avg_ref_counts) / numpy.sqrt(num_runs)
+    ste_sig_counts = numpy.sqrt(avg_sig_counts) / numpy.sqrt(num_runs)
+    norm_avg_sig_ste = numpy.copy(norm_avg_sig)
+    norm_avg_sig_ste *= numpy.sqrt((ste_sig_counts/avg_sig_counts)**2 + (ste_ref_counts/avg_ref_counts)**2 + (ste_sig_counts/avg_sig_counts)**2)
+
+    return avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste
 
 
 # %% User functions
@@ -252,6 +306,8 @@ def main(nv_sig, apd_indices, freq_center, freq_range,
                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
                   state, composite)
     return resonance_list
+
+
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
               state=States.LOW, composite=False):
@@ -274,39 +330,26 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     ref_counts = numpy.empty([num_runs, num_steps])
     ref_counts[:] = numpy.nan
     sig_counts = numpy.copy(ref_counts)
+    
+    laser_key = 'spin_laser'
+    laser_name = nv_sig[laser_key]
+    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-    # Define some times for the sequence (in ns)
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-
-    polarization_time = shared_params['polarization_dur']
-    # time of illumination during which reference readout occurs
-    signal_wait_time = shared_params['post_polarization_wait_dur']
-    reference_time = signal_wait_time  # not sure what this is
-    background_wait_time = signal_wait_time  # not sure what this is
-    reference_wait_time = 2 * signal_wait_time  # not sure what this is
-    aom_delay_time = shared_params['532_aom_delay']
-    # aom_delay_time = shared_params['515_DM_laser_delay'] # for RabiCPU
-    uwave_delay_time = shared_params['uwave_delay']
-    iq_delay = shared_params['iq_delay']
-    readout = nv_sig['pulsed_readout_dur']
-    gate_time = readout
+    polarization_time = nv_sig['spin_pol_dur']
+    readout = nv_sig['spin_readout_dur']
     readout_sec = readout / (10**9)
     if composite:
         uwave_pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
         uwave_pi_on_2_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 4)
-        seq_args = [polarization_time, reference_time,
-                    signal_wait_time, reference_wait_time,
-                    background_wait_time,
-                    aom_delay_time, uwave_delay_time, iq_delay,
-                    gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse,
-                    1, 1, apd_indices[0], state.value]
+        seq_args = [polarization_time, readout, 
+                    uwave_pi_pulse, uwave_pi_on_2_pulse,
+                    1, 1, apd_indices[0],
+                    state.value, laser_name, laser_power]
         seq_args = [int(el) for el in seq_args]
     else:
-        seq_args = [uwave_pulse_dur, polarization_time, reference_time,
-                    signal_wait_time, reference_wait_time,
-                    background_wait_time, aom_delay_time, uwave_delay_time,
-                    gate_time, uwave_pulse_dur,
-                    apd_indices[0], state.value]
+        seq_args = [uwave_pulse_dur, polarization_time,
+                    readout, uwave_pulse_dur, apd_indices[0],
+                    state.value, laser_name, laser_power]
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -330,8 +373,23 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             break
 
         # Optimize and save the coords we found
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable = False)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
+        
+        # Set up the microwaves and laser. Then load the pulse streamer 
+        # (must happen after optimize and iq_switch since run their
+        # own sequences)
+        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
+        sig_gen_cxn.set_amp(uwave_power)
+        if composite:
+            sig_gen_cxn.load_iq()
+            cxn.arbitrary_waveform_generator.load_knill()
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        if composite:
+            ret_vals = cxn.pulse_streamer.stream_load('discrete_rabi2.py', seq_args_string)
+        else:
+            ret_vals = cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
 
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -343,21 +401,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             if tool_belt.safe_stop():
                 break
 
-            sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
             sig_gen_cxn.set_freq(freqs[step_ind])
-            sig_gen_cxn.set_amp(uwave_power)
-            if composite:
-                sig_gen_cxn.load_iq()
-                cxn.arbitrary_waveform_generator.load_knill()
             sig_gen_cxn.uwave_on()
-
-            # Load the pulse streamer (must happen after optimize and iq_switch
-            # since run their own sequences)
-            if composite:
-                ret_vals = cxn.pulse_streamer.stream_load('discrete_rabi2.py', seq_args_string)
-            else:
-                ret_vals = cxn.pulse_streamer.stream_load('rabi.py', seq_args_string)
-
 
             # It takes 400 us from receipt of the command to
             # switch frequencies so allow 1 ms total
@@ -416,13 +461,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # %% Process and plot the data
 
-    # Find the averages across runs
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
 
     # Convert to kilocounts per second
-
     kcps_uwave_off_avg = (avg_ref_counts / (num_reps * 1000)) / readout_sec
     kcpsc_uwave_on_avg = (avg_sig_counts / (num_reps * 1000)) / readout_sec
 
@@ -451,8 +493,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # %% Fit the data
 
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig)
+    fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
+                                         norm_avg_sig, norm_avg_sig_ste)
     if (fit_func is not None) and (popt is not None):
         fit_fig = create_fit_figure(freq_range, freq_center, num_steps,
                                     norm_avg_sig, fit_func, popt)
@@ -489,7 +531,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                'ref_counts': ref_counts.astype(int).tolist(),
                'ref_counts-units': 'counts',
                'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
-               'norm_avg_sig-units': 'arb'}
+               'norm_avg_sig-units': 'arb',
+               'norm_avg_sig_ste': norm_avg_sig_ste.astype(float).tolist(),
+               'norm_avg_sig_ste-units': 'arb'}
 
     name = nv_sig['name']
     filePath = tool_belt.get_file_path(__file__, timestamp, name)
@@ -520,32 +564,25 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 
 if __name__ == '__main__':
-
-
-
-    path = 'pc_hahn/branch_master/pulsed_resonance/2021_06'
-    file = '2021_06_05-17_03_55-hopper-nv1_2021_03_16'
-    data = tool_belt.get_raw_data(path, file)
+    
+    # file = '2021_05_12-23_08_06-hopper-nv1_2021_03_16'
+    file = '2021_05_12-23_13_52-hopper-nv1_2021_03_16'
+    data = tool_belt.get_raw_data(file)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']
     num_steps = data['num_steps']
     num_runs = data['num_runs']
-    norm_avg_sig = numpy.array(data['norm_avg_sig'])
-    ref_counts = numpy.array(data['ref_counts'])
-    sig_counts = numpy.array(data['sig_counts'])
+    ref_counts = data['ref_counts']
+    sig_counts = data['sig_counts']
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
+    
 
-    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
-    avg_ref_counts = numpy.average(ref_counts[::], axis=0)
-    ste_ref_counts = numpy.std(ref_counts[::], axis=0, ddof = 1) / numpy.sqrt(num_runs)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
-    norm_avg_sig_ste = norm_avg_sig * numpy.sqrt((ste_sig_counts/avg_sig_counts)**2 + (ste_ref_counts/avg_ref_counts)**2 + (ste_sig_counts/avg_sig_counts)**2)
+    fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
+                                         norm_avg_sig, norm_avg_sig_ste)
 
-    fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
-                                   norm_avg_sig, norm_avg_sig_ste)
-
-    # fit_func, popt = fit_resonance(freq_range, freq_center, num_steps,
+    # fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
     #                                norm_avg_sig, ref_counts)
 
     create_fit_figure(freq_range, freq_center, num_steps,
