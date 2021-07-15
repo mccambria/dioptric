@@ -304,11 +304,21 @@ def process_laser_seq(pulse_streamer, seq, config,
         seq.setDigital(pulser_laser_mod, processed_train)
         
     # Analog, convert LOW / HIGH to 0.0 / analog voltage
-    elif mod_type is Mod_types.ANALOG:  
-        power_dict = {LOW: 0.0, HIGH: laser_power}
+    # currently can't handle multiple powers of the AM within the same sequence
+    # Possibly, we could pass laser_power as a list, and then build the sequences
+    # for each power (element) in the list.
+    elif mod_type is Mod_types.ANALOG:
+        high_count = 0
         for el in train:
             dur = el[0]
             val = el[1]
+            if type(laser_power) == list:
+                power_dict = {LOW: 0.0, HIGH: laser_power[high_count]}
+                if val == HIGH:
+                    high_count += 1
+            # If a list wasn't passed, just use the single value for laser_power
+            elif type(laser_power) != list:
+                power_dict = {LOW: 0.0, HIGH: laser_power}
             processed_train.append((dur, power_dict[val]))
             
         pulser_laser_mod = pulser_wiring['ao_{}_am'.format(laser_name)]
