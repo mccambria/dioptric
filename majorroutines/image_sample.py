@@ -12,7 +12,7 @@ Created on Tue Apr  9 15:18:53 2019
 import numpy
 import utils.tool_belt as tool_belt
 import time
-import labrad
+# import labrad
 import majorroutines.optimize as optimize
 
 
@@ -91,7 +91,6 @@ def populate_img_array(valsToAdd, imgArray, writePos):
             The last x, y write position on the image array. [] will default
             to the bottom right corner.
     """
-
     yDim = imgArray.shape[0]
     xDim = imgArray.shape[1]
 

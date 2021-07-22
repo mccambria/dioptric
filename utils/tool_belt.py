@@ -22,10 +22,10 @@ import numpy
 from numpy import exp
 import json
 import time
-import labrad
-from tkinter import Tk
-from tkinter import filedialog
-from git import Repo
+# import labrad
+# from tkinter import Tk
+# from tkinter import filedialog
+# from git import Repo
 from pathlib import Path
 from pathlib import PurePath
 from enum import Enum, auto
@@ -570,7 +570,66 @@ def update_line_plot_figure(fig, vals):
     fig.canvas.draw()
     fig.canvas.flush_events()
 
-
+def radial_distrbution_data(center_coords, x_voltages, y_voltages, num_steps, img_range, img_array):
+    '''
+    Given a 2D image, calculate the average radial values from the center.
+    
+    Still work in progress (works best for odd number of steps)
+    '''
+    
+    # Initial calculations
+    x_coord = center_coords[0]          
+    y_coord = center_coords[1]
+    
+    # subtract the center coords from the x and y voltages so that we are working from the "origin"
+    x_voltages = numpy.array(x_voltages) - x_coord
+    y_voltages = numpy.array(y_voltages) - y_coord
+    
+    half_x_range = img_range / 2
+    # x_high = x_coord + half_x_range
+    
+    # Having trouble with very small differences in pixel values. (10**-15 V)
+    # Let's round to a relatively safe value and see if that helps
+    pixel_size = round(x_voltages[1] - x_voltages[0], 10)
+    half_pixel_size = pixel_size / 2
+    
+    # List to hold the values of each pixel within the ring
+    counts_r = []
+    # New 2D array to put the radial values of each pixel
+    r_array = numpy.empty((num_steps, num_steps))
+    
+    # Calculate the radial distance from each point to center
+    for i in range(num_steps):
+        x_pos = x_voltages[i]
+        for j in range(num_steps):
+            y_pos = y_voltages[j]
+            r = numpy.sqrt(x_pos**2 + y_pos**2)
+            r_array[i][j] = r
+    
+    # define bounds on each ring radial values, which will be one pixel in size
+    low_r = 0
+    high_r = pixel_size
+    # step throguh the radial ranges for each ring, add pixel within ring to list
+    # Note, I was runnign into rounding issue with the uper bound, probably a 
+    # poor fix of just adding a small bit to the bound
+    while high_r <= (half_x_range + half_pixel_size + 10**-9):
+        ring_counts = []
+        for i in range(num_steps):
+            for j in range(num_steps): 
+                radius = r_array[i][j]
+                if radius >= low_r and radius < high_r:
+                    ring_counts.append(img_array[i][j])
+        # average the counts of all counts in a ring
+        counts_r.append(numpy.average(ring_counts))
+        # advance the radial bounds
+        low_r = high_r
+        high_r = round(high_r + pixel_size, 10)
+    
+    # define the radial values as center values of pixels along x, convert to um
+    # we need to subtract the center value from the x voltages
+    radii = numpy.array(x_voltages[int(num_steps/2):])*35
+    
+    return radii, counts_r
 # %% Math functions
 
 
