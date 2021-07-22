@@ -246,19 +246,30 @@ def fit_data(data):
     transform = numpy.fft.rfft(norm_avg_sig)
     freqs = numpy.fft.rfftfreq(num_steps, d=tau_step)
     transform_mag = numpy.absolute(transform)
+    
     # [1:] excludes frequency 0 (DC component)
-    max_ind = numpy.argmax(transform_mag[1:])
+    # max_ind = numpy.argmax(transform_mag[1:])
     # plt.plot(1/freqs, transform_mag)
     # return
-    frequency = freqs[max_ind+1]
-    revival_time = 2/frequency  # Revival time is double the dominant frequency
+    # frequency = freqs[max_ind+1]
+    # revival_time = 1/frequency
     # print(revival_time)
+    # revival_time = 2/frequency  # Revival time is double the dominant frequency
+    
+    # For a nice spin echo there'll be two dominant frequencies of similar
+    # magnitudes. We want the smaller of the pair.
+    sorted_inds = numpy.argsort(transform_mag[1:])
+    dominant_freqs = [freqs[sorted_inds[-1]+1], freqs[sorted_inds[-2]+1]]
+    frequency = min(dominant_freqs)
+    revival_time = 1/frequency
+    # print(revival_time)
+    # return
 
     # Hard guess
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-    revival_time = 35000
+    # revival_time = 35000
 
     num_revivals = max_precession_dur / revival_time
     amplitudes = [amplitude for el in range(0, int(1.5*num_revivals))]
@@ -693,12 +704,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi\\branch_laser-consolidation\\spin_echo\\2021_07'
-    file = '2021_07_11-12_18_08-hopper-nv1_2021_03_16'
+    file = '2021_07_11-18_30_19-hopper-nv1_2021_03_16'
 
-    data = tool_belt.get_raw_data(path, file)
+    data = tool_belt.get_raw_data(file)
 
 #    print(data['norm_avg_sig'])
 
     ret_vals = plot_resonances_vs_theta_B(data)
     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
+    print(popt)
