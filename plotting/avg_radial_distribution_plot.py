@@ -206,7 +206,7 @@ def plot_radial_avg_moving_target(file,  pc_name, branch_name, data_folder,
     folder = pc_name + '/' + branch_name + '/' + data_folder + '/' + sub_folder
     
     # Get data from the file
-    data = tool_belt.get_raw_data(folder, file) 
+    data = tool_belt.get_raw_data(file, folder) 
     timestamp = data['timestamp']
     init_color = data['init_color']
     pulse_color = data['pulse_color']
