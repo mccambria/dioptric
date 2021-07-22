@@ -167,41 +167,39 @@ def measure(nv_sig, apd_indices, num_reps):
     return sig_counts, ref_counts
 def measure_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
-    tool_belt.reset_cfm_wout_uwaves(cxn)
+    tool_belt.reset_cfm(cxn)
 
-# Initial Calculation and setup
+    # Initial Calculation and setup
     
-    aom_ao_589_pwr = nv_sig['am_589_power']
-    nd_filter = nv_sig['nd_filter']
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
+    tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
+    tool_belt.set_filter(cxn, nv_sig, 'nv-_prep_laser')
+    
+    readout_laser_power = tool_belt.set_laser_power(cxn, nv_sig, 'charge_readout_laser')
+    nvm_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "nv-_prep_laser")
+    nv0_laser_power = tool_belt.set_laser_power(cxn,nv_sig,"nv0_prep_laser")
     
     
-    readout_pulse_time = nv_sig['pulsed_SCC_readout_dur']
+    readout_pulse_time = nv_sig['charge_readout_dur']
     
-    reionization_time = nv_sig['pulsed_reionization_dur']
-    ionization_time = nv_sig['pulsed_ionization_dur']
-    
-    #delay of aoms and laser
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    aom_589_delay = shared_params['589_aom_delay']
-    laser_515_delay = shared_params['515_DM_laser_delay']
-    laser_638_delay = shared_params['638_DM_laser_delay']
-    galvo_delay = shared_params['large_angle_galvo_delay']
-    
+    reionization_time = nv_sig['nv-_prep_laser_dur']
+    ionization_time = nv_sig['nv0_prep_laser_dur']
+      
 
     # Set up our data lists
     opti_coords_list = []
     
     # Optimize
-    opti_coords = optimize.main_xy_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     opti_coords_list.append(opti_coords)
 
     # Pulse sequence to do a single pulse followed by readout           
     seq_file = 'simple_readout_two_pulse.py'
         
-    #### Load the measuremnt with green laser ####
-    seq_args = [galvo_delay, laser_515_delay, aom_589_delay, reionization_time,
-                readout_pulse_time, aom_ao_589_pwr, apd_indices[0], 532, 589]
+    ################## Load the measuremnt with green laser ##################
+      
+    seq_args = [reionization_time, readout_pulse_time, nv_sig["nv-_prep_laser"], 
+                nv_sig["charge_readout_laser"], nv0_laser_power, 
+                readout_laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
 
@@ -214,9 +212,10 @@ def measure_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
     nvm = cxn.apd_tagger.read_counter_simple(num_reps)
     
-    #### Load the measuremnt with red laser ####
-    seq_args = [galvo_delay, laser_638_delay, aom_589_delay, ionization_time,
-                readout_pulse_time, aom_ao_589_pwr, apd_indices[0], 638, 589]
+    ################## Load the measuremnt with red laser ##################
+    seq_args = [ionization_time, readout_pulse_time, nv_sig["nv0_prep_laser"], 
+                nv_sig["charge_readout_laser"], nvm_laser_power, 
+                readout_laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
 
@@ -228,7 +227,6 @@ def measure_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
 
     nv0 = cxn.apd_tagger.read_counter_simple(num_reps)
-
     
     return nv0, nvm
 
@@ -251,8 +249,9 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
         nvm_power =[]
         for t in readout_times:
             nv_sig_copy = copy.deepcopy(nv_sig)
-            nv_sig_copy['pulsed_SCC_readout_dur'] = t
-            nv_sig_copy['am_589_power'] = p
+            nv_sig_copy['charge_readout_laser_filter'] = nd_filter
+            nv_sig_copy['charge_readout_dur'] = t
+            nv_sig_copy['charge_readout_laser_power'] = p
             
             print('Measuring  {} ms, at AOM voltage {} V'.format(t/10**6, p))
             nv0, nvm = measure(nv_sig_copy, apd_indices, num_reps)        
@@ -341,36 +340,39 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
     
 #%% 
 if __name__ == '__main__':
-    # load the data here 
-    nv_sig  = { 'coords':[0.063, 0.269, 5.09],
-            'name': 'goeppert-mayer-nv5_2021_04_15',
-            'expected_count_rate': 35,'nd_filter': 'nd_1.0',
-            'color_filter': '635-715 bp', 
-#            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 30*10**7,  'am_589_power': 0.15,
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10,
-            'ao_515_pwr': 0.65,
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+    sample_name = 'johnson'    
     
-#    determine_readout_dur(nv_sig, 
-#                          nd_filter = 'nd_0.5')
-    file = '2021_04_13-19_14_05-johnson-nv0_2021_04_13-readout_pulse_pwr'
-    folder = 'pc_rabi/branch_Spin_to_charge/SCC_optimize_pulses_wout_uwaves/2021_04'
-    data_f = tool_belt.get_raw_data(folder, file)
-    nv_sig = data_f['nv_sig']
-    readout_time = nv_sig['pulsed_SCC_readout_dur']
-    sig_count_raw = data_f['sig_count_raw']
-    NV0 = np.array(sig_count_raw[3])
-    ref_count_raw = data_f['ref_count_raw']
-    NVm = np.array(ref_count_raw[3])
-    get_photon_dis_curve_fit_plot(readout_time,NV0,NVm, do_plot = True)
+    green_laser = 'laserglow_532'
+    yellow_laser = 'laserglow_589'
+    red_laser = 'cobolt_638'
+    nd_green = 'nd_0.5'
+    
+    nv_sig = { 'coords': [0.031, 0.034, 5.00],
+            'name': '{}-nv1_2021_07_16'.format(sample_name),
+            'disable_opt': False, 'expected_count_rate': 42,
+            'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_filter': nd_green, 'nv-_prep_laser_dur': 1E3,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 130, 'nv0_prep_laser_dur': 1E3,
+            'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None, 
+            'charge_readout_laser_power': None, 'charge_readout_dur':None,
+            'collection_filter': '630_lp', 'magnet_angle': None,
+            'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
+    
+    determine_readout_dur(nv_sig, readout_times =[50*10**6, 250*10**6],
+                          readout_yellow_powers = [0.1, 0.2], 
+                          nd_filter = 'nd_0.5')
+    
+    # file = '2021_04_13-19_14_05-johnson-nv0_2021_04_13-readout_pulse_pwr'
+    # folder = 'pc_rabi/branch_Spin_to_charge/SCC_optimize_pulses_wout_uwaves/2021_04'
+    # data_f = tool_belt.get_raw_data(folder, file)
+    # nv_sig = data_f['nv_sig']
+    # readout_time = nv_sig['pulsed_SCC_readout_dur']
+    # sig_count_raw = data_f['sig_count_raw']
+    # NV0 = np.array(sig_count_raw[3])
+    # ref_count_raw = data_f['ref_count_raw']
+    # NVm = np.array(ref_count_raw[3])
+    # get_photon_dis_curve_fit_plot(readout_time,NV0,NVm, do_plot = True)
 
 
 
