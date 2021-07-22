@@ -128,7 +128,7 @@ def stationary_count_lite(cxn, nv_sig,  coords, config, apd_indices):
     x_center, y_center, z_center = coords
 
     delay = config['Positioning']['xy_delay']
-    seq_args = [delay, readout, laser_name, laser_power, apd_indices[0]]
+    seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
 
@@ -169,7 +169,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config,
         scan_range = config['Positioning']['xy_optimize_range']
         scan_dtype = eval(config['Positioning']['xy_dtype'])
         delay = config['Positioning']['xy_delay']
-        seq_args = [delay, readout, laser_name, laser_power, apd_indices[0]]
+        seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string)
@@ -192,7 +192,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config,
         scan_range = config['Positioning']['z_optimize_range']
         scan_dtype = eval(config['Positioning']['z_dtype'])
         delay = config['Positioning']['z_delay']
-        seq_args = [delay, readout, laser_name, laser_power, apd_indices[0]]
+        seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,
                                                   seq_args_string)
@@ -351,6 +351,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
      may be specified for multiple purposes.
      """
 
+     
      if coords is not None:
          tool_belt.set_xyz(cxn, coords)
 
@@ -392,11 +393,10 @@ def main_with_cxn(cxn, nv_sig,  apd_indices,
     adjusted_nv_sig['coords'] = adjusted_coords
 
     if 'collection_filter' in nv_sig:
-        tool_belt.set_filter(cxn, 'collection', nv_sig['collection_filter'])
+        tool_belt.set_filter(cxn, nv_sig, 'collection')
 
-    laser_name = nv_sig['imaging_laser']
     if 'imaging_laser_filter' in nv_sig:
-        tool_belt.set_filter(cxn, laser_name, nv_sig['imaging_laser_filter'])
+        tool_belt.set_filter(cxn, nv_sig, 'imaging_laser_filter')
 
     expected_count_rate = adjusted_nv_sig['expected_count_rate']
 

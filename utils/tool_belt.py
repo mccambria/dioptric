@@ -184,7 +184,10 @@ def set_filter(cxn, nv_sig=None, optics_key=None,
     """
     
     if (nv_sig is not None) and (optics_key is not None):
-        optics_name = nv_sig[optics_key]
+        if optics_key in nv_sig:
+            optics_name = nv_sig[optics_key]
+        else:
+            optics_name = optics_key
         filter_key = '{}_filter'.format(optics_key)
         # Just exit if there's no filter specified in the nv_sig
         if filter_key not in nv_sig:
@@ -1368,9 +1371,9 @@ def set_drift(drift):
     # Cast to the proper types
 
     xy_dtype = eval(get_registry_entry_no_cxn('xy_dtype',
-                                              ['', 'SharedParameters']))
+                                              ['Config', 'Positioning']))
     z_dtype = eval(get_registry_entry_no_cxn('z_dtype',
-                                             ['', 'SharedParameters']))
+                                             ['Config', 'Positioning']))
     drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
     with labrad.connect() as cxn:
         cxn.registry.cd(['', 'State'])

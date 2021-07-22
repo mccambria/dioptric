@@ -84,5 +84,6 @@ if __name__ == '__main__':
         tool_belt.set_xyz(cxn, pos)
 #        for el in laser_names:
         tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
+        tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
         constant(cxn, laser_name)
 #        main(cxn, laser_name)

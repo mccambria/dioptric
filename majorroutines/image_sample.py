@@ -168,9 +168,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.reset_cfm(cxn)
     laser_key = 'imaging_laser'
 
+    drift = tool_belt.get_drift()
     coords = nv_sig['coords']
-    x_center, y_center, z_center = coords
-    optimize.prepare_microscope(cxn, nv_sig, coords)
+    adjusted_coords = (numpy.array(coords) + numpy.array(drift)).tolist()
+    x_center, y_center, z_center = adjusted_coords
+    optimize.prepare_microscope(cxn, nv_sig, adjusted_coords)
 
     laser_name = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)

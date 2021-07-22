@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for a second Thorlabs ELL9K filter slider. 
+Output server for a third Thorlabs ELL9K filter slider. 
 Inherits from FilterSliderEll9k
 
 Created on Thu Apr  4 15:58:30 2019
@@ -9,7 +9,7 @@ Created on Thu Apr  4 15:58:30 2019
 
 ### BEGIN NODE INFO
 [info]
-name = filter_slider_ell9k_2
+name = filter_slider_ell9k_3
 version = 1.0
 description =
 
@@ -27,11 +27,11 @@ timeout = 5
 from servers.outputs.filter_slider_ell9k import FilterSliderEll9k
 
 
-class FilterSliderEll9k2(FilterSliderEll9k):
-    name = 'filter_slider_ell9k_2'
+class FilterSliderEll9k3(FilterSliderEll9k):
+    name = 'filter_slider_ell9k_3'
 
 
-__server__ = FilterSliderEll9k2()
+__server__ = FilterSliderEll9k3()
 
 if __name__ == '__main__':
     from labrad import util

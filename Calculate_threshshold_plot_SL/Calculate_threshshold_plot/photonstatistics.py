@@ -18,6 +18,7 @@ from scipy.optimize import curve_fit
 # measured power is in uW
 
 def measured_589_power(aom_volt, nd_filter):
+    # in uW
     if nd_filter == 'nd_0':
         if aom_volt ==  0.1:
             measured_p = 3.19
@@ -33,9 +34,9 @@ def measured_589_power(aom_volt, nd_filter):
             measured_p = 398
     if nd_filter == 'nd_0.5':
         if aom_volt ==  0.1:
-            measured_p = 0.64
+            measured_p = 1.0
         elif aom_volt ==  0.2:
-            measured_p = 10.98
+            measured_p = 10.7
         elif aom_volt ==  0.3:
             measured_p = 38.1
         elif aom_volt ==  0.4:
