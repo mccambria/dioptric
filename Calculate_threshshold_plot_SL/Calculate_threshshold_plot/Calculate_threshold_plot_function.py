@@ -71,13 +71,13 @@ def get_photon_dis_curve_fit_plot(readout_time,NV0,NVm, do_plot = True): # NV0, 
         plt.xlabel("Number of counts")
         plt.ylabel("Probability Density")
         plt.show()
-    return fit 
+    return fit, fig4
 
 # calculate the threshold of given NV0 and NV- data 
 # tR in units of ms
 def calculate_threshold_plot(readout_time,nv0_array,nvm_array):
     tR = readout_time
-    fit_rate = get_photon_dis_curve_fit_plot(readout_time,nv0_array,nvm_array)
+    fit_rate, _ = get_photon_dis_curve_fit_plot(readout_time,nv0_array,nvm_array)
     x_data = np.linspace(0,500,501)
     thresh_para = model.calculate_threshold(tR,x_data,fit_rate )
     print(thresh_para)
@@ -122,7 +122,7 @@ def fit_to_rates_g(power_list, g0_list,g1_list):
     B1 = round(B1,3)
     print("g0(P) = "+ str(A0) +"*P^2 + "+str(B0)+'*P')
     print("g1(P) = "+ str(A1) +"*P^2 + "+str(B1)+'*P')
-    return [A0,B0,A1,B1]
+    return [A0,B0,A1,B1], fig
     
  # power should be in unit of uW
 def fit_to_rates_y(power_list, y0_list,y1_list):    
@@ -147,7 +147,7 @@ def fit_to_rates_y(power_list, y0_list,y1_list):
     B1 = round(B1,3)
     print("y0(P) = "+ str(A0) +"*P + "+str(B0))
     print("y1(P) = "+ str(A1) +"*P + "+str(B1))
-    return [A0,B0,A1,B1]
+    return [A0,B0,A1,B1], fig
     
 def rate_model(x,A,B):
     return A*x**2 + B*x
@@ -244,9 +244,21 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
     nv0_master = []
     nvm_master =[]
     
+    g0_list = []
+    g1_list = []
+    y1_list = []
+    y0_list = []
+    
     for p in readout_yellow_powers:
         nv0_power =[]
-        nvm_power =[]
+        nvm_power =[]    
+        
+        # add in some fit parameters for sample 
+        temp_g0 = []
+        temp_g1 = []
+        temp_y1 = []
+        temp_y0 = []
+        
         for t in readout_times:
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['charge_readout_laser_filter'] = nd_filter
@@ -274,30 +286,17 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
             tool_belt.save_raw_data(raw_data, file_path)
             
             
+            
             nv0_power.append(nv0)
             nvm_power.append(nvm)
             
-        nv0_master.append(nv0_power)
-        nvm_master.append(nvm_power)
-    
-
-    ### Modeling 
-    print("calculating optimum readout params ...")
-    #readout time should be in units of ms
-    readout_times = np.array(readout_times)*10**-6
-    g0_list = []
-    g1_list = []
-    y1_list = []
-    y0_list = []
-    
-    for pi in range(len(nv0_master)):
-    # add in some fit parameters for sample 
-        temp_g0 = []
-        temp_g1 = []
-        temp_y1 = []
-        temp_y0 = []
-        for ti in range(np.size(readout_times)):
-            fit = get_photon_dis_curve_fit_plot(readout_times[ti],nv0_master[pi][ti],nvm_master[pi][ti], do_plot = True)
+            
+            print("calculating optimum readout params ...")
+            #readout time should be in units of ms
+            t_ms = t*10**-6
+            fit, fig_phton_dist = get_photon_dis_curve_fit_plot(t_ms, nv0, nvm, do_plot = True)
+            tool_belt.save_figure(fig_phton_dist, file_path)
+            
             # avoid diverging results
             if fit[0] < 0.1:
                 if fit[1] < 1:
@@ -305,6 +304,11 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
                     temp_g1.append(fit[1])
                     temp_y1.append(fit[2])
                     temp_y0.append(fit[3])
+        
+        
+        nv0_master.append(nv0_power)
+        nvm_master.append(nvm_power)
+        
         fit_time_array = np.array([np.mean(temp_g0),np.mean(temp_g1),np.mean(temp_y1),np.mean(temp_y0)])
         #g0,g1 in units of s^-1
         g0_list.append(fit_time_array[0]*10**3)
@@ -312,6 +316,41 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
         #y1,y0 in units of kcps
         y1_list.append(fit_time_array[2])
         y0_list.append(fit_time_array[3])
+            
+    
+
+    ### Modeling 
+    # print("calculating optimum readout params ...")
+    # #readout time should be in units of ms
+    # readout_times = np.array(readout_times)*10**-6
+    # g0_list = []
+    # g1_list = []
+    # y1_list = []
+    # y0_list = []
+    
+    # for pi in range(len(nv0_master)):
+    # # add in some fit parameters for sample 
+    #     temp_g0 = []
+    #     temp_g1 = []
+    #     temp_y1 = []
+    #     temp_y0 = []
+    #     for ti in range(np.size(readout_times)):
+    #         fit, fig_phton_dist = get_photon_dis_curve_fit_plot(readout_times[ti],nv0_master[pi][ti],nvm_master[pi][ti], do_plot = True)
+    #         tool_belt.save_figure(fig_phton_dist, file_path)
+    #         # avoid diverging results
+    #         if fit[0] < 0.1:
+    #             if fit[1] < 1:
+    #                 temp_g0.append(fit[0])
+    #                 temp_g1.append(fit[1])
+    #                 temp_y1.append(fit[2])
+    #                 temp_y0.append(fit[3])
+    #     fit_time_array = np.array([np.mean(temp_g0),np.mean(temp_g1),np.mean(temp_y1),np.mean(temp_y0)])
+    #     #g0,g1 in units of s^-1
+    #     g0_list.append(fit_time_array[0]*10**3)
+    #     g1_list.append(fit_time_array[1]*10**3)
+    #     #y1,y0 in units of kcps
+    #     y1_list.append(fit_time_array[2])
+    #     y0_list.append(fit_time_array[3])
         
 
     # need to define this measured_589_power model if the laser power is changed; it converts power unit AOM to uW
@@ -323,8 +362,16 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
     
    # fit each rate parameters to the power dependence model 
    # g0,g1 are quadratic, y1,y0 are linear w.r.t power 
-    nv_para = fit_to_rates_g(power_list, g0_list,g1_list)
-    nv_para = nv_para + fit_to_rates_y(power_list, y0_list,y1_list)
+         
+    timestamp = tool_belt.get_time_stamp()
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    
+    ret_vals = fit_to_rates_g(power_list, g0_list,g1_list)
+    tool_belt.save_figure(ret_vals[0], file_path)
+    nv_para = ret_vals[0]
+    ret_vals = fit_to_rates_y(power_list, y0_list,y1_list)
+    tool_belt.save_figure(ret_vals[0], file_path)
+    nv_para = nv_para + ret_vals[0]
     
     #this range can be changed case by case
     power_range = [0,max(power_list)]
@@ -359,8 +406,8 @@ if __name__ == '__main__':
             'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
-    determine_readout_dur(nv_sig, readout_times =[50*10**6, 250*10**6],
-                          readout_yellow_powers = [0.1, 0.2], 
+    determine_readout_dur(nv_sig, readout_times =[100*10**6, 250*10**6, 400*10**6],
+                          readout_yellow_powers = [0.1, 0.15, 0.2], 
                           nd_filter = 'nd_0.5')
     
     # file = '2021_04_13-19_14_05-johnson-nv0_2021_04_13-readout_pulse_pwr'

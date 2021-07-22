@@ -35,6 +35,8 @@ def measured_589_power(aom_volt, nd_filter):
     if nd_filter == 'nd_0.5':
         if aom_volt ==  0.1:
             measured_p = 1.0
+        elif aom_volt ==  0.15:
+            measured_p = 3.4
         elif aom_volt ==  0.2:
             measured_p = 10.7
         elif aom_volt ==  0.3:
