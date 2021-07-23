@@ -223,19 +223,15 @@ def populate_img_array(valsToAdd, imgArray, run_num):
     return
     
        # %%
-def main_data_collection(nv_sig, start_coords, optimize_coords, coords_list, pulse_time, 
-                         init_color, pulse_color, readout_color):
+def main_data_collection(nv_sig, coords_list):
     with labrad.connect() as cxn:
-        ret_vals = main_data_collection_with_cxn(cxn, nv_sig, 
-                        start_coords,optimize_coords,coords_list,pulse_time, 
-                       init_color, pulse_color, readout_color)
+        ret_vals = main_data_collection_with_cxn(cxn, nv_sig, coords_list)
     
     readout_counts_array, opti_coords_list = ret_vals
                         
     return readout_counts_array,  opti_coords_list
         
-def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coords_list,
-                     pulse_time, init_color, pulse_color, readout_color):
+def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     '''
     Runs a measurement where an initial pulse is pulsed on the start coords, 
     then a pulse is set on the first point in the coords list, then the 
@@ -255,24 +251,8 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     nv_sig : dict
         dictionary containing onformation about the pulse lengths, pusle powers,
         expected count rate, nd filter, color filter, etc
-    start_coords : list (float)
-        The coordinates that will be read out from. Note that the routine takes
-        this coord from this input not the nv_sig. [x,y,z]
-    optimize_coords : list (float)
-        The coordinates that wil be optimized about [x, y, z]
     coords_list : 2D list (float)
         A list of each coordinate that we will pulse the laser at.
-    pulse_time: int
-        The duration of the pulse on the target coords
-    init_color : str
-        Either '532' or '638'. This is the color that will initialize the 
-        starting coords
-    pulse_color : str
-        Either '532' or '638'. This is the color that will pulse on the target
-        coords
-    readout_color : str
-        Preferably '589'. This is the color that we will readout with on 
-        start coord
 
     Returns
     -------
@@ -290,37 +270,39 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
         
     # Define paramters
     apd_indices = [0]
-    green_2mw_power = 0.655
+    # green_2mw_power = 0.655
     
     num_samples = len(coords_list)
     #delay of aoms and laser, parameters, etc
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    laser_515_DM_delay = shared_params['515_DM_laser_delay']
-    laser_515_AM_delay = shared_params['515_AM_laser_delay']
-    aom_589_delay = shared_params['589_aom_delay']
-    laser_638_delay = shared_params['638_DM_laser_delay']
-    galvo_delay = shared_params['large_angle_galvo_delay']
+    # shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    # laser_515_DM_delay = shared_params['532_DM_laser_delay']
+    # laser_515_AM_delay = shared_params['515_AM_laser_delay']
+    # aom_589_delay = shared_params['589_aom_delay']
+    # laser_638_delay = shared_params['638_DM_laser_delay']
+    # galvo_delay = shared_params['large_angle_galvo_delay']
       
     # Get the pulser wiring
-    wiring = tool_belt.get_pulse_streamer_wiring(cxn)
-    pulser_wiring_green = wiring['do_532_aom']
-    pulser_wiring_red = wiring['do_638_laser']
+    # wiring = tool_belt.get_pulse_streamer_wiring(cxn)
+    # pulser_wiring_green = wiring['do_532_aom']
+    # pulser_wiring_red = wiring['do_638_laser']
     
     # get the ionization green power:
-    green_pulse_power = nv_sig['ao_515_pwr']
+    # green_pulse_power = nv_sig['ao_515_pwr']
     
     # copy the start coords onto the nv_sig
-    start_nv_sig = copy.deepcopy(nv_sig)
-    start_nv_sig['coords'] = start_coords
+    master_nv_sig = copy.deepcopy(nv_sig)
+    master_nv_sig['coords'] = nv_sig['coords']
     
-    opti_nv_sig = copy.deepcopy(nv_sig)
-    opti_nv_sig['coords'] = optimize_coords
-    opti_nv_sig['ao_515_pwr'] = green_2mw_power
+    # opti_nv_sig = copy.deepcopy(nv_sig)
+    # opti_nv_sig['coords'] = optimize_coords
+    # opti_nv_sig['ao_515_pwr'] = green_2mw_power
 
-    am_589_power = nv_sig['am_589_power']
-    ao_515_pwr = nv_sig['ao_515_pwr']
+    # am_589_power = nv_sig['am_589_power']
+    # ao_515_pwr = nv_sig['ao_515_pwr']
     nd_filter = nv_sig['nd_filter']
     cxn.filter_slider_ell9k.set_filter(nd_filter)
+    
+    
     color_filter = nv_sig['color_filter']
     cxn.filter_slider_ell9k_color.set_filter(color_filter)  
     
@@ -481,9 +463,9 @@ def main_data_collection_with_cxn(cxn, nv_sig, start_coords, optimize_coords,coo
     return readout_counts_list, opti_coords_list
 
 # %% 
-def main(nv_sig, start_coords, optimize_coords, img_range, pulse_time, 
-                              num_steps, num_runs, init_color, pulse_color, 
-                              measurement_type, readout_color = 589):
+def main(nv_sig, img_range, 
+                              num_steps, num_runs,
+                              measurement_type):
     '''
     A measurements to initialize on a single point, then pulse a laser off that
     point, and then read out the charge state on the single point.
@@ -492,31 +474,18 @@ def main(nv_sig, start_coords, optimize_coords, img_range, pulse_time,
     ----------
     nv_sig : dict
         dictionary specific to the nv, which contains parameters liek the
-        scc readout length, the yellow readout power, the expected count rate...
-    start_cords : [x,y,z] list
-        position (before drift) for the nv we wil measure on
-    optimize_coords: [x,y,z] list
-        position of feature we want to use to optimize. Often the same as 
-        start_coords
+        scc readout length, the yellow readout power, the expected count rate...\
     img_range: float
         the range that the 2D area will cover, in both x and y. NOTE: for 1D
         measurement, this is divided in half and used as the farthest point
         in the +x direction
-    pulse_time: int
-        length of time the remote pulse will be on each point
     num_steps: int
         number of steps in 1 direction. For 2D image, this is squared for the 
         total number of points
     num_runs: int
         the number of repetitions of the same measurement, which will be averaged over
-    init_color: 532, '515a', 589, or 638
-        the color of laser to use for the initial pulse on the NV
-    pulse_color: 532, '515a', 589, or 638
-        the color of laser to use for the remote pulse
     measurement_type: '1D' or '2D'
-        either run a 2D oving target or 1D moving target measurement.
-    readout_color: defaul 589
-        color of laser used to readout        
+        either run a 2D oving target or 1D moving target measurement.    
     '''
     # Record start time of the measurement
     startFunctionTime = time.time()
@@ -567,8 +536,12 @@ def main(nv_sig, start_coords, optimize_coords, img_range, pulse_time,
         readout_image_array[:] = numpy.nan
     
         # Create the figure
-    
-        title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse'.format(init_color, pulse_color, pulse_time/10**6)
+        init_color1 = eval(tool_belt.get_registry_entry_no_cxn('wavelength',
+                          ['Config', 'Optics', nv_sig['initialize_laser']]))
+        pulse_color1 = eval(tool_belt.get_registry_entry_no_cxn('wavelength',
+                          ['Config', 'Optics', nv_sig['CPG_laser']]))
+        pulse_time1 = nv_sig['CPG_laser_dur']
+        title = 'Counts on readout NV from moving target {} nm init pulse \n{} nm {} ms pulse'.format(init_color1, pulse_color1, pulse_time1/10**6)
         fig_2D = tool_belt.create_image_figure(readout_image_array, 
                                                numpy.array(img_extent)*35,
                                                 title = title, um_scaled = True)
@@ -589,9 +562,8 @@ def main(nv_sig, start_coords, optimize_coords, img_range, pulse_time,
             coords_voltages_shuffle.append(coords_voltages[i])
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
-        # Run the data collection
-        ret_vals = main_data_collection(nv_sig, start_coords, optimize_coords, coords_voltages_shuffle_list,
-                                pulse_time, init_color, pulse_color, readout_color)
+        #========================== Run the data collection====================
+        ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
         
         readout_counts_list_shfl, opti_coords_list = ret_vals
         opti_coords_master.append(opti_coords_list[0])
@@ -610,12 +582,6 @@ def main(nv_sig, start_coords, optimize_coords, img_range, pulse_time,
         readout_counts_ste = stats.sem(readout_counts_array_rot[-(n+1):], axis = 0)
         #Save incrementally
         raw_data = {'timestamp': start_timestamp,
-                    'init_color': init_color,
-                    'pulse_color': pulse_color,
-                    'readout_color': readout_color,
-                    'pulse_time': pulse_time,
-                    'pulse_time-units': 'ns',
-                'start_coords': start_coords,
                 'img_range': img_range,
                 'img_range-units': 'V',
                 'num_steps': num_steps,
@@ -669,30 +635,24 @@ def main(nv_sig, start_coords, optimize_coords, img_range, pulse_time,
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
                 'timeElapsed': timeElapsed,
-                'init_color': init_color,
-                'pulse_color': pulse_color,
-                'readout_color': readout_color,
-                'pulse_time': pulse_time,
-                'pulse_time-units': 'ns',
-            'start_coords': start_coords,
             'img_range': img_range,
             'img_range-units': 'V',
             'num_steps': num_steps,
             'num_runs':num_runs,
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            'green_optical_power_pd': green_optical_power_pd,
-            'green_optical_power_pd-units': 'V',
-            'green_optical_power_mW': green_optical_power_mW,
-            'green_optical_power_mW-units': 'mW',
-            'red_optical_power_pd': red_optical_power_pd,
-            'red_optical_power_pd-units': 'V',
-            'red_optical_power_mW': red_optical_power_mW,
-            'red_optical_power_mW-units': 'mW',
-            'yellow_optical_power_pd': yellow_optical_power_pd,
-            'yellow_optical_power_pd-units': 'V',
-            'yellow_optical_power_mW': yellow_optical_power_mW,
-            'yellow_optical_power_mW-units': 'mW',
+            # 'green_optical_power_pd': green_optical_power_pd,
+            # 'green_optical_power_pd-units': 'V',
+            # 'green_optical_power_mW': green_optical_power_mW,
+            # 'green_optical_power_mW-units': 'mW',
+            # 'red_optical_power_pd': red_optical_power_pd,
+            # 'red_optical_power_pd-units': 'V',
+            # 'red_optical_power_mW': red_optical_power_mW,
+            # 'red_optical_power_mW-units': 'mW',
+            # 'yellow_optical_power_pd': yellow_optical_power_pd,
+            # 'yellow_optical_power_pd-units': 'V',
+            # 'yellow_optical_power_mW': yellow_optical_power_mW,
+            # 'yellow_optical_power_mW-units': 'mW',
             'coords_voltages': coords_voltages,
             'coords_voltages-units': '[V, V]',
              'ind_list': ind_list,
@@ -713,7 +673,7 @@ def main(nv_sig, start_coords, optimize_coords, img_range, pulse_time,
         ax_1D.set_xlabel('Distance from readout NV (um)')
         ax_1D.set_ylabel('Average counts')
         ax_1D.set_title('Stationary readout NV, moving target ({} init, {} s {} pulse)'.\
-                                        format(init_color, pulse_time/10**9, pulse_color))
+                                        format(init_color1, pulse_time1/10**9, pulse_color1))
         ax_1D.legend()
         tool_belt.save_figure(fig_1D, file_path)
         

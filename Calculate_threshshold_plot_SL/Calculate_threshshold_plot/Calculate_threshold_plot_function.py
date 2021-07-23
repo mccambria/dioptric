@@ -19,6 +19,8 @@ import photonstatistics as model
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 
+import os
+
 #%% import your data in the data_file 
 import NV_data as data
 #%% functions 
@@ -266,30 +268,13 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
             nv_sig_copy['charge_readout_laser_power'] = p
             
             print('Measuring  {} ms, at AOM voltage {} V'.format(t/10**6, p))
-            nv0, nvm = measure(nv_sig_copy, apd_indices, num_reps)        
-            timestamp = tool_belt.get_time_stamp()
-            raw_data = {'timestamp': timestamp,
-                'readout_time': t,
-                'readout_time-units': 'ns',
-                'nd_filter': nd_filter,
-                'readout_aom_voltage': p,
-                'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'num_runs':num_reps,              
-                'nv0': nv0.tolist(),
-                'nv0-units': 'counts',
-                'nvm': nvm.tolist(),
-                'nvm-units': 'counts',
-                }
-        
-            file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-            tool_belt.save_raw_data(raw_data, file_path)
+            nv0, nvm = measure(nv_sig_copy, apd_indices, num_reps)       
             
-            
+            timestamp = tool_belt.get_time_stamp()  
+            file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name']) 
             
             nv0_power.append(nv0)
             nvm_power.append(nvm)
-            
             
             print("calculating optimum readout params ...")
             #readout time should be in units of ms
@@ -303,7 +288,29 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
                     temp_g0.append(fit[0])
                     temp_g1.append(fit[1])
                     temp_y1.append(fit[2])
-                    temp_y0.append(fit[3])
+                    temp_y0.append(fit[3])            
+            
+            raw_data = {'timestamp': timestamp,
+                'readout_time': t,
+                'readout_time-units': 'ns',
+                'nd_filter': nd_filter,
+                'readout_aom_voltage': p,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'num_runs':num_reps,    
+                'g0': fit[0],   
+                'g1': fit[1],   
+                'y0': fit[2],   
+                'y1': fit[3],
+                'readout_yellow_powers': readout_yellow_powers,
+                'readout_yellow_powers-units': 'V',
+                'nv0': nv0.tolist(),
+                'nv0-units': 'counts',
+                'nvm': nvm.tolist(),
+                'nvm-units': 'counts',
+                }
+        
+            tool_belt.save_raw_data(raw_data, file_path)
         
         
         nv0_master.append(nv0_power)
@@ -367,10 +374,10 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     
     ret_vals = fit_to_rates_g(power_list, g0_list,g1_list)
-    tool_belt.save_figure(ret_vals[0], file_path)
+    # tool_belt.save_figure(ret_vals[0], file_path)
     nv_para = ret_vals[0]
     ret_vals = fit_to_rates_y(power_list, y0_list,y1_list)
-    tool_belt.save_figure(ret_vals[0], file_path)
+    # tool_belt.save_figure(ret_vals[0], file_path)
     nv_para = nv_para + ret_vals[0]
     
     #this range can be changed case by case
@@ -380,7 +387,7 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
     
     result = model.optimize_single_shot_readout(power_range,time_range,nv_para,optimize_steps)
     print("optimized readout time ="+str(result[0]) +' ms')
-    print("optimized readout power ="+str(result[1])+' uW')
+    print("optimized readout power = {} nW".format(result[1]))
     print("optimized threshold ="+str(result[2]))
     print("optimized fidelity ="+str(result[3]))
     return result
@@ -407,8 +414,8 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     determine_readout_dur(nv_sig, readout_times =[100*10**6, 250*10**6, 400*10**6],
-                          readout_yellow_powers = [0.1, 0.15, 0.2], 
-                          nd_filter = 'nd_0.5')
+                          readout_yellow_powers = [0.1, 0.2, 0.3], 
+                          nd_filter = 'nd_1.0')
     
     # file = '2021_04_13-19_14_05-johnson-nv0_2021_04_13-readout_pulse_pwr'
     # folder = 'pc_rabi/branch_Spin_to_charge/SCC_optimize_pulses_wout_uwaves/2021_04'
@@ -420,6 +427,95 @@ if __name__ == '__main__':
     # ref_count_raw = data_f['ref_count_raw']
     # NVm = np.array(ref_count_raw[3])
     # get_photon_dis_curve_fit_plot(readout_time,NV0,NVm, do_plot = True)
+    
+    # source_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata'
+    # path_from_nvdata = 'pc_rabi/branch_master/Calculate_threshold_plot_function'
+    # subfolder = '2021_07/2021_07_22-johnson-nv1_2021_07_16'
+    # folder_dir = tool_belt.get_folder_dir(source_name + '/' + path_from_nvdata, subfolder)
+    # file_list = tool_belt.get_files_in_folder(folder_dir, filetype = 'txt')
+    # print(file_list)
+    
+    # temp_g0 = []
+    # temp_g1 = []
+    # temp_y1 = []
+    # temp_y0 = []
+    
+    # power_list = []
+        
+    # for file in file_list:
+    #     file = file[:-4]
+    #     data = tool_belt.get_raw_data(file, path_from_nvdata + '/' + subfolder)
+    #     t = data['readout_time']
+    #     nv0 = np.array(data['nv0'])
+    #     nvm = np.array(data['nvm'])
+    #     power = data['readout_aom_voltage']
+        
+    #     t_ms = t*10**-6
+    #     fit, fig_phton_dist = get_photon_dis_curve_fit_plot(t_ms, nv0, nvm, do_plot = True)
+        
+    #     if fit[0] < 0.1:
+    #             if fit[1] < 1:
+    #                 temp_g0.append(fit[0])
+    #                 temp_g1.append(fit[1])
+    #                 temp_y1.append(fit[2])
+    #                 temp_y0.append(fit[3])  
+        
+    #%% ======================================================================
+    # g0_100 = [0.25, 0.42, 0.38]
+    # g1_100 = [0, 1.06, 1.19]
+    # y0_100 = [0.03, 0.03, 0.03]
+    # y1_100 = [0.16, 0.16, 0.16]
+    
+    # g0_250 = [7.06, 5.8, 3.88]
+    # g1_250 = [15.56, 4.09, 2.23]
+    # y0_250 = [0.04, 0.04, 0.05]
+    # y1_250 = [0.3, 0.19, 0.2]
+    
+    
+    # g0_400 = [17.03, 7.04, 4.81]
+    # g1_400 = [3.16, 2.01, 0.77]
+    # y0_400 = [0.0, 0.12, 0.14]
+    # y1_400 = [0.4, 0.4, 0.38]
+    
+    # g0_temp = [g0_100, g0_250, g0_400]
+    # g1_temp = [g1_100, g1_250, g1_400]
+    # y0_temp = [y0_100, y0_250, y0_400]
+    # y1_temp = [y1_100, y1_250, y1_400]
+    
+    # g0_list = []
+    # g1_list = []
+    # y0_list= []
+    # y1_list = []
+    
+    # for i in range(len(g0_temp)):
+    #     fit_time_array = np.array([np.mean(g0_temp[i]),np.mean(g0_temp[i])
+    #                                ,np.mean(y0_temp[i]),np.mean(y1_temp[i])])
+    #     #g0,g1 in units of s^-1
+    #     g0_list.append(fit_time_array[0]*10**3)
+    #     g1_list.append(fit_time_array[1]*10**3)
+    #     #y1,y0 in units of kcps
+    #     y1_list.append(fit_time_array[2])
+    #     y0_list.append(fit_time_array[3])
+    
+    # power_list = [1, 3.4, 10.7]
+    
+    # ret_vals = fit_to_rates_g(power_list, g0_list,g1_list)
+    # # tool_belt.save_figure(ret_vals[0], file_path)
+    # nv_para = ret_vals[0]
+    # ret_vals = fit_to_rates_y(power_list, y0_list,y1_list)
+    # # tool_belt.save_figure(ret_vals[0], file_path)
+    # nv_para = nv_para + ret_vals[0]
+    
+    # #this range can be changed case by case
+    # power_range = [0,max(power_list)]
+    # time_range = [10,200]
+    # optimize_steps = 10
+    
+    # result = model.optimize_single_shot_readout(power_range,time_range,nv_para,optimize_steps)
+    # print("optimized readout time ="+str(result[0]) +' ms')
+    # print("optimized readout power ="+str(result[1])+' uW')
+    # print("optimized threshold ="+str(result[2]))
+    # print("optimized fidelity ="+str(result[3]))
 
 
 

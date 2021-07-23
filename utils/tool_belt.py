@@ -22,10 +22,10 @@ import numpy
 from numpy import exp
 import json
 import time
-# import labrad
-# from tkinter import Tk
-# from tkinter import filedialog
-# from git import Repo
+import labrad
+from tkinter import Tk
+from tkinter import filedialog
+from git import Repo
 from pathlib import Path
 from pathlib import PurePath
 from enum import Enum, auto
@@ -1022,6 +1022,24 @@ def get_folder_dir(source_name, subfolder):
         os.makedirs(folderDir)
 
     return folderDir
+
+def get_files_in_folder(folderDir, filetype = None):
+    '''
+    folderDir: str
+        full file path, use previous function get_folder_dir
+    filetype: str
+        must be a 3-letter file extension, do NOT include the period. ex: 'txt'
+    '''
+    file_list_temp = os.listdir(folderDir)
+    if filetype:
+        file_list = []
+        for file in file_list_temp:
+            if file[-3:] == filetype:
+                file_list.append(file)
+    else:
+        file_list = file_list_temp
+                
+    return file_list
 
 def get_data_path():
     return Path('E:/Shared drives/Kolkowitz Lab Group/nvdata')

@@ -20,14 +20,6 @@ import majorroutines.image_sample as image_sample
 import copy
 import scipy.stats as stats
 
-#reset_range = 0.3
-#num_steps_reset = int(75 * reset_range)
-#reset_time = 10**7
-
-#green_reset_power = 0.6085
-#green_pulse_power = 0.65
-#green_image_power = 0.65
-
 # %%
 def build_voltages_from_list(start_coords_drift, coords_list_drift):
 
@@ -55,76 +47,76 @@ def build_voltages_from_list(start_coords_drift, coords_list_drift):
         
     return x_points, y_points
 
-# def build_voltages_main(start_coords_drift, target_x_values, target_y_values):
-#     ''' This function does the basic building of the voltages we need in 
-#     this program, in the form of 
-#     [[readout], [target], [readout], [readout], 
-#                 [target], [readout], [readout],...]
-#     '''
+def build_xy_voltages_w_optimize(start_coords, CPG_coords,
+                              num_opti_steps, opti_scan_range):
+    # the start value is the nv's positions
+    start_x_value = start_coords[0]
+    start_y_value = start_coords[1]
     
-#     start_x_value = start_coords_drift[0]
-#     start_y_value = start_coords_drift[1]
-    
-#     x_points = [start_x_value]
-#     y_points = [start_y_value]
-    
-#     # now create a list of all the coords we want to feed to the galvo
-#     for x in target_x_values:
-#         x_points.append(x)
-#         x_points.append(start_x_value)
-#         x_points.append(start_x_value) 
+    ################# SPaCE measurement #################
+    x_points = [start_x_value, CPG_coords[0], start_x_value]
+    y_points = [start_y_value, CPG_coords[1], start_y_value] 
         
+    ################# optimization #################
+    half_scan_range = opti_scan_range / 2
 
-#     # now create a list of all the coords we want to feed to the galvo
-#     for y in target_y_values:
-#         y_points.append(y)
-#         y_points.append(start_y_value)
-#         y_points.append(start_y_value)   
+    x_low = start_x_value - half_scan_range
+    x_high = start_x_value + half_scan_range
+    
+    y_low = start_y_value - half_scan_range
+    y_high = start_y_value + half_scan_range
+
+    # build x and y values for scan in x
+    x_voltages = numpy.linspace(x_low, x_high, num_opti_steps).tolist()
+    y_voltages = numpy.full(num_opti_steps, start_y_value).tolist()
+    
+    x_points = x_points + x_voltages
+    y_points = y_points + y_voltages
+    
+    # build x and y values for scan in y
+    x_voltages = numpy.full(num_opti_steps, start_x_value).tolist()
+    y_voltages = numpy.linspace(y_low, y_high, num_opti_steps).tolist()
+    
+    x_points = x_points + x_voltages
+    y_points = y_points + y_voltages
+    
+    # build x and y values for scan in z
+    x_voltages = numpy.full(num_opti_steps, start_x_value).tolist()
+    y_voltages = numpy.full(num_opti_steps, start_y_value).tolist()
+    
+    x_points = x_points + x_voltages
+    y_points = y_points + y_voltages
         
-#     return x_points, y_points
+    return x_points, y_points
 
-# def build_voltages_start_end(start_coords_drift, end_coords_drift, num_steps):
-
-#     # calculate the x values we want to step thru
-#     start_x_value = start_coords_drift[0]
-#     end_x_value = end_coords_drift[0]
-#     target_x_values = numpy.linspace(start_x_value, end_x_value, num_steps)
+def build_z_voltages_w_optimize(start_z_coord, CPG_z_coord,
+                              num_opti_steps, opti_scan_range):
     
-#     # calculate the y values we want to step thru
-#     start_y_value = start_coords_drift[1]
-#     end_y_value = end_coords_drift[1]
-    
-# #    ## Change this code to be more general later:##
-# #    mid_y_value = start_y_value + 0.3
-# #    
-# #    dense_target_y_values = numpy.linspace(start_y_value, mid_y_value, 101)
-# #    sparse_target_y_values = numpy.linspace(mid_y_value+0.06, end_y_value, 20)
-# #    target_y_values = numpy.concatenate((dense_target_y_values, sparse_target_y_values))
-    
-    
-#     target_y_values = numpy.linspace(start_y_value, end_y_value, num_steps)
-    
-#     # make a list of the coords that we'll send to the glavo
-#     # we want this list to have the pattern [[readout], [target], [readout], [readout], 
-#     #                                                   [target], [readout], [readout],...]
-#     # The glavo needs a 0th coord, so we'll pass the readout NV as the "starting" point
-#     x_points = [start_x_value]
-#     y_points = [start_y_value]
-    
-#     # now create a list of all the coords we want to feed to the galvo
-#     for x in target_x_values:
-#         x_points.append(x)
-#         x_points.append(start_x_value)
-#         x_points.append(start_x_value) 
+    ################# SPaCE measurement #################
+    z_points = [start_z_coord, CPG_z_coord, start_z_coord] 
         
+    ################# optimization #################
+    half_scan_range = opti_scan_range / 2
 
-#     # now create a list of all the coords we want to feed to the galvo
-#     for y in target_y_values:
-#         y_points.append(y)
-#         y_points.append(start_y_value)
-#         y_points.append(start_y_value)   
+    z_low = start_z_coord - half_scan_range
+    z_high = start_z_coord + half_scan_range
+
+    # build x values for scan in x
+    z_voltages = numpy.full(num_opti_steps, start_z_coord).tolist()
+    
+    z_points = z_points + z_voltages
+    
+    # build x values for scan in y
+    z_voltages = numpy.full(num_opti_steps, start_z_coord).tolist()
+    
+    z_points = z_points + z_voltages
+    
+    # build z values for scan in z
+    z_voltages = numpy.linspace(z_low, z_high, num_opti_steps).tolist()
+    
+    z_points = z_points + z_voltages
         
-#     return x_points, y_points
+    return z_points
 
 def build_voltages_image(start_coords, img_range, num_steps):
     x_center = start_coords[0]
@@ -221,7 +213,174 @@ def populate_img_array(valsToAdd, imgArray, run_num):
                 xPos = xPos + 1
                 imgArray[yPos, xPos, run_num] = val
     return
+# %%
+def data_collection_optimize(nv_sig, coords_list):
+    with labrad.connect() as cxn:
+        ret_vals = main_data_collection_with_cxn(cxn, nv_sig, coords_list)
     
+    readout_counts_array, opti_coords_list = ret_vals
+                        
+    return readout_counts_array,  opti_coords_list
+        
+def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
+    '''
+    Runs a measurement where an initial pulse is pulsed on the start coords, 
+    then a pulse is set on the first point in the coords list, then the 
+    counts are recorded on the start coords. The routine steps through 
+    the coords list
+    
+    Here, we run each point individually, and we optimize before each point to
+    ensure we're centered on the NV. The optimize function is built into the 
+    sequence.
+
+    Parameters
+    ----------
+    cxn : 
+        labrad connection. See other our other python functions.
+    nv_sig : dict
+        dictionary containing onformation about the pulse lengths, pusle powers,
+        expected count rate, nd filter, color filter, etc
+    coords_list : 2D list (float)
+        A list of each coordinate that we will pulse the laser at.
+
+    Returns
+    -------
+    readout_counts_array : numpy.array
+        2D array with the raw counts from each run for each target coordinate 
+        measured on the start coord.
+        The first index refers to the coordinate, the secon index refers to the 
+        run.
+    opti_coords_list : list(float)
+        A list of the optimized coordinates recorded during the measurement.
+        In the form of [[x,y,z],...]
+
+    '''
+    tool_belt.reset_cfm(cxn)
+    
+    # Define paramters
+    apd_indices = [0]
+    num_opti_steps = 61
+    xy_opti_scan_range = tool_belt.get_registry_entry_no_cxn('xy_optimize_range',
+                           ['Positioning'])
+    z_opti_scan_range = tool_belt.get_registry_entry_no_cxn('z_optimize_range',
+                           ['Positioning'])
+    
+    init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                      ['Config', 'Optics', nv_sig['initialize_laser']])
+    pulse_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                      ['Config', 'Optics', nv_sig['CPG_laser']])
+    readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                      ['Config', 'Optics', nv_sig['charge_readout_laser']])
+    x_move_delay = tool_belt.get_registry_entry_no_cxn('xy_large_response_delay',
+                           ['Positioning'])
+    y_move_delay = tool_belt.get_registry_entry_no_cxn('xy_large_response_delay',
+                           ['Positioning'])
+    z_move_delay = tool_belt.get_registry_entry_no_cxn('z_delay',
+                           ['Positioning'])
+    
+    pulse_time = nv_sig['CPG_laser_dur']
+    initialization_time = nv_sig['initialize_dur']
+    charge_readout_time = nv_sig['charge_readout_dur']
+    charge_readout_laser_power = nv_sig['charge_readout_laser_power']
+    imaging_readout_dur = nv_sig['imaging_readout_dur']
+        
+    num_samples = len(coords_list)
+    start_coords = nv_sig['coords']
+    
+    # Set the charge readout (assumed to be yellow here) to the correct filter
+    if 'charge_readout_laser_filter' in nv_sig:
+        tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
+ 
+    # Readout array will be a list in this case. This will be a list with 
+    # dimensions [num_samples].
+    readout_counts_list = []
+    
+        
+    # define the sequence paramters
+    file_name = 'SPaCE_w_optimize.py'
+    seq_args = [ initialization_time, pulse_time, charge_readout_time,
+                imaging_readout_dur, x_move_delay, y_move_delay, z_move_delay,
+                charge_readout_laser_power, num_opti_steps, apd_indices[0], 
+                init_color, pulse_color, readout_color]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    # print(seq_args)
+    # return
+    
+    # print the expected run time
+    period = ret_vals[0]
+    period_s = period/10**9
+    period_s_total = (period_s*num_samples + 1)
+    print('{} ms pulse time'.format(pulse_time/10**6))
+    print('Expected total run time: {:.1f} m'.format(period_s_total/60))
+    # load the sequence
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+        
+    drift = numpy.array(tool_belt.get_drift())
+            
+    # get the readout coords with drift
+    start_coords_drift = start_coords + drift
+    coords_list_drift = numpy.array(coords_list) + [drift[0], drift[1]]
+                                             
+    # start on the readout NV
+    tool_belt.set_xyz(cxn, start_coords_drift)
+    
+    for i in range(len(num_samples)):
+        # step thru the coordinates to test as the cpg pulse
+        CPG_coord = [coords_list_drift[0], coords_list_drift[1], 
+                     start_coords_drift[2]]
+        
+        # Build the x,y, and z coordinate lists, which change with each CLK pulse
+        x_voltages, y_voltages = build_xy_voltages_w_optimize(start_coords_drift, 
+                      coords_list_drift, num_opti_steps, xy_opti_scan_range)
+        z_voltages = build_z_voltages_w_optimize(start_coords_drift[2],
+                             CPG_coord[2], num_opti_steps, z_opti_scan_range)
+        
+        # Load the galvo
+        xy_server = tool_belt.get_xy_server(cxn)
+        xy_server.load_multi_point_xy_scan(x_voltages, y_voltages, int(period))
+        z_server = tool_belt.get_z_server(cxn)
+        z_server.load_z_multi_point_scan(z_voltages, int(period))
+        
+        #  Set up the APD
+        cxn.apd_tagger.start_tag_stream(apd_indices)
+        
+        cxn.pulse_streamer.stream_start()
+        
+        # There will be three samples from the SPaCE measurement, folllowed by
+        # num_opti_steps sampels for each three optimize axes. 
+        total_num_samples = 3 + 3 * num_opti_steps
+        
+        total_samples_list = []
+        num_read_so_far = 0     
+        tool_belt.init_safe_stop()
+    
+        while num_read_so_far < total_num_samples:
+    
+            if tool_belt.safe_stop():
+                break
+    
+            # Read the samples and update the image
+            new_samples = cxn.apd_tagger.read_counter_simple()
+            num_new_samples = len(new_samples)
+            
+            if num_new_samples > 0:
+                for el in new_samples:
+                    total_samples_list.append(int(el))
+                num_read_so_far += num_new_samples
+            
+        # The third value is the charge readout. 
+        charge_readout_count = total_samples_list[2]
+        readout_counts_list.append(charge_readout_count)
+        x_opti_counts = total_samples_list[3:num_opti_steps+3]
+        print(i)
+        print(x_opti_counts)
+        y_opti_counts = total_samples_list[num_opti_steps+3:2*num_opti_steps+3]
+        z_opti_counts = total_samples_list[2*num_opti_steps+3:3*num_opti_steps+3]
+        
+        #fit to the x, y, and z lists, find drift, update drift. etc
+  
+    return readout_counts_list   
        # %%
 def main_data_collection(nv_sig, coords_list):
     with labrad.connect() as cxn:
@@ -238,12 +397,6 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     counts are recorded on the start coords. The routine steps through 
     the coords list
     
-    Two different methods are used for stepping throguh the coords list. If the
-    intended pusle is less than 1 s, then one sequence is used which tells the 
-    galvo to advance to each coord
-    If the pulse is 1 s or longer, then we manually pulse the laser using 
-    time.sleep()
-
     Parameters
     ----------
     cxn : 
@@ -284,33 +437,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     # green_2mw_power = 0.655
     
     num_samples = len(coords_list)
-    #delay of aoms and laser, parameters, etc
-    # shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    # laser_515_DM_delay = shared_params['532_DM_laser_delay']
-    # laser_515_AM_delay = shared_params['515_AM_laser_delay']
-    # aom_589_delay = shared_params['589_aom_delay']
-    # laser_638_delay = shared_params['638_DM_laser_delay']
-    # galvo_delay = shared_params['large_angle_galvo_delay']
-      
-    # Get the pulser wiring
-    # wiring = tool_belt.get_pulse_streamer_wiring(cxn)
-    # pulser_wiring_green = wiring['do_532_aom']
-    # pulser_wiring_red = wiring['do_638_laser']
-    
-    # get the ionization green power:
-    # green_pulse_power = nv_sig['ao_515_pwr']
-    
-    # copy the start coords onto the nv_sig
     start_coords = nv_sig['coords']
-    
-    # opti_nv_sig = copy.deepcopy(nv_sig)
-    # opti_nv_sig['coords'] = optimize_coords
-    # opti_nv_sig['ao_515_pwr'] = green_2mw_power
-
-    # am_589_power = nv_sig['am_589_power']
-    # ao_515_pwr = nv_sig['ao_515_pwr']
-    # nd_filter = nv_sig['nd_filter']
-    # cxn.filter_slider_ell9k.set_filter(nd_filter)
     
     # Set the charge readout (assumed to be yellow here) to the correct filter
     if 'charge_readout_laser_filter' in nv_sig:
@@ -322,8 +449,6 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     # dimensions [num_samples].
     readout_counts_list = []
     
-    ### different building of readout array and estimating measurement time
-    # if pulse_time < 10**9:
         
     # define the sequence paramters
     file_name = 'SPaCE.py'
@@ -343,12 +468,6 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     print('{} ms pulse time'.format(pulse_time/10**6))
     print('Expected total run time: {:.1f} m'.format(period_s_total/60))
     
-    # else:
-    #     period_s = pulse_time/10**9
-    #     period_s_total = (period_s*num_samples + 5)
-    #     print('Expected total run time: {:.0f} min'.format(period_s_total/60))
-    
-    ### Backto the same
     # Optimize at the start of the routine
     opti_coord = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     
@@ -357,9 +476,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     # get the readout coords with drift
     start_coords_drift = start_coords + drift
     coords_list_drift = numpy.array(coords_list) + [drift[0], drift[1]]
-                                  
-    # Different ways of stepping thru coords and recording data                   
-    # if pulse_time < 10**9:
+                                             
         # start on the readout NV
     tool_belt.set_xyz(cxn, start_coords_drift)
     
@@ -403,51 +520,6 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     # The last of the triplet of readout windows is the counts we are interested in
     readout_counts = total_samples_list[2::3]
     readout_counts_list = [int(el) for el in readout_counts]
-            
-    # ### Different way of measuring counts if s long pulses
-    # else:
-    #     # Get the x voltages and y voltages to step thru the target coords
-    #     x_voltages, y_voltages = list(zip(*coords_list_drift))
-        
-        
-    #     # Step throguh each coordinate in the coords list
-    #     for i in range(num_samples):
-    #         # start on the readout NV
-    #         tool_belt.set_xyz(cxn, start_coords_drift)
-                
-    #         # pulse the laser at the readout
-    #         seq_args = [init_laser_delay, int(initialization_time), 0.0, ao_515_pwr, init_color]           
-    #         seq_args_string = tool_belt.encode_seq_args(seq_args)            
-    #         cxn.pulse_streamer.stream_immediate('simple_pulse.py', 1, seq_args_string) 
-                
-    #         # move to next target spot
-    #         tool_belt.set_xyz(cxn, [x_voltages[i], y_voltages[i], start_coords_drift[2]])
-            
-    #         # pulse laser for X time with time.sleep
-    #         if pulse_color == '515a':
-    #             cxn.pulse_streamer.constant([], ao_515_pwr, 0.0)
-    #         else:
-    #             cxn.pulse_streamer.constant([direct_wiring], 0.0, 0.0)
-    #         time.sleep(pulse_time/10**9)
-    #         cxn.pulse_streamer.constant([], 0.0, 0.0)
-            
-    #         # Move galvo to start coords
-    #         tool_belt.set_xyz(cxn, start_coords_drift)
-                
-    #         # measure the counts
-    #         seq_args = [aom_589_delay, readout_pulse_time, am_589_power,ao_515_pwr,  apd_indices[0], readout_color]       
-    #         seq_args_string = tool_belt.encode_seq_args(seq_args)  
-    #         cxn.pulse_streamer.stream_load('simple_readout.py', seq_args_string)  
-                   
-    #         cxn.apd_tagger.start_tag_stream(apd_indices) 
-    #         cxn.pulse_streamer.stream_immediate('simple_readout.py', 1, seq_args_string) 
-             
-    #         new_samples = cxn.apd_tagger.read_counter_simple(1)
-    #         count = new_samples[0]
-            
-    #         readout_counts_list.append(count)
-            
-    #         cxn.apd_tagger.stop_tag_stream()
   
     return readout_counts_list, opti_coord
 
@@ -553,7 +625,8 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
         #========================== Run the data collection====================
-        ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
+        ret_vals = data_collection_optimize(nv_sig, coords_voltages_shuffle_list)
+        # ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
         
         readout_counts_list_shfl, opti_coord = ret_vals
         opti_coords_master.append(opti_coord)

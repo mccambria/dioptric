@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import time
 import copy
-# import labrad
+import labrad
 
 
 # %% Plotting functions
@@ -168,7 +168,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config,
 
         scan_range = config['Positioning']['xy_optimize_range']
         scan_dtype = eval(config['Positioning']['xy_dtype'])
-        delay = config['Positioning']['xy_delay']
+        delay = config['Positioning']['xy_small_response_delay']
         seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name,

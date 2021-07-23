@@ -33,7 +33,9 @@ def measured_589_power(aom_volt, nd_filter):
         elif aom_volt ==  0.6:
             measured_p = 398
     if nd_filter == 'nd_0.5':
-        if aom_volt ==  0.1:
+        if aom_volt ==  0.05:
+            measured_p = 0.1
+        elif aom_volt ==  0.1:
             measured_p = 1.0
         elif aom_volt ==  0.15:
             measured_p = 3.4
@@ -49,7 +51,7 @@ def measured_589_power(aom_volt, nd_filter):
             measured_p = 125.5
     if nd_filter == 'nd_1.0':
         if aom_volt ==  0.1:
-            measured_p = 0.1
+            measured_p = 0.2
         elif aom_volt ==  0.2:
             measured_p = 3.05
         elif aom_volt ==  0.3:
@@ -622,7 +624,7 @@ def optimize_single_shot_readout(power_range,time_range,nv_para,optimize_steps):
     max_fid_time = time_power_list[index]
     max_fid_power = power_array[index]
     max_fid_nth = thresh_power_list[index]
-    return np.array([max_fid_time,max_fid_power,max_fid_nth,max_fid])
+    return np.array([max_fid_time,max_fid_power*10**3,max_fid_nth,max_fid])
             
         
 #%% curve fit and figure drawing for each charge state

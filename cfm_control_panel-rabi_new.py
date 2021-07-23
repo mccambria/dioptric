@@ -413,9 +413,9 @@ def do_spin_echo(nv_sig, apd_indices):
     return angle
 
 def do_SPaCE(nv_sig):
-    img_range = 0.05 # V (35 um / 2 V)
-    num_steps = 45
-    num_runs = 5
+    img_range = 0.12 # V (35 um / 2 V)
+    num_steps = 41
+    num_runs = 1
     measurement_type = '2D'
 
     SPaCE.main(nv_sig, img_range, num_steps, num_runs, measurement_type)
@@ -491,10 +491,10 @@ if __name__ == '__main__':
             'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
             # 'initialize_laser': red_laser, 'initialize_laser_power': 130, 'initialize_dur': 1E3,
             'initialize_laser': green_laser, 'initialize_laser_filter': nd_green, 'initialize_dur': 1E3,
-            'CPG_laser': red_laser, 'CPG_laser_power': 60, 'CPG_laser_dur': 1E4,
+            'CPG_laser': red_laser, 'CPG_laser_power': 130, 'CPG_laser_dur': 1E4,
             # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
-            'charge_readout_laser_power': 0.1, 'charge_readout_dur':250*10**6,
+            'charge_readout_laser_power': 0.1, 'charge_readout_dur':200*10**6,
             'collection_filter': '630_lp', 'magnet_angle': None,
             'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
@@ -531,8 +531,7 @@ if __name__ == '__main__':
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
         #p =[80, 40, 15]
-        #10*10**3, 60
-        for t in [10*10**3]:
+        for t in [50*10**3]:
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['CPG_laser_dur'] = t
             do_SPaCE(nv_sig_copy)

@@ -9,8 +9,6 @@ import matplotlib.pyplot as plt
 import numpy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample as image_sample
-import math
-import fit_gaussians_function
 import csv
 
 # siv_min = 441
@@ -198,9 +196,9 @@ def do_plot_SPaCE_image(pc_name, branch_name, data_folder, sub_folder, file,
         charge_counts_avg = numpy.average(charge_counts, axis = 1)
         
         # only plot first run
-        # charge_counts_avg = []
-        # for r in charge_counts:
-        #     charge_counts_avg.append(r[0])
+        charge_counts_avg = []
+        for r in charge_counts:
+            charge_counts_avg.append(r[0])
     
     
     # create the img arrays
@@ -264,19 +262,23 @@ if __name__ == '__main__':
     data_folder = 'SPaCE'
     sub_folder = '2021_07'
     
+    file = '2021_07_23-09_32_56-johnson-nv1_2021_07_21'
+    
     threshold = 20
     # do_plot_SPaCE_radial_avg(file,  pc_name, branch_name, data_folder, 
     #                               sub_folder)
     
-    # do_plot_SPaCE_image(pc_name, branch_name, data_folder, sub_folder, file)
+    do_plot_SPaCE_image(pc_name, branch_name, data_folder, sub_folder, file)
                                                             # , threshold)
     
     # Plot radial average of files together:
         
     # 33 mW
-    file_33_100 = '2021_07_21-16_57_24-johnson-nv1_2021_07_21' # 100 us
-    file_33_10 = '2021_07_21-15_24_28-johnson-nv1_2021_07_21' # 10 us
-    file_33_4 = '2021_07_21-14_39_17-johnson-nv1_2021_07_21' # 4 us
+    file_33_1m = '2021_07_23-01_14_21-johnson-nv1_2021_07_21' # 1 ms
+    file_33_500u = '2021_07_23-09_32_56-johnson-nv1_2021_07_21' # 500 us
+    file_33_100u = '2021_07_23-07_28_07-johnson-nv1_2021_07_21' # 100 us
+    file_33_50u = '2021_07_23-05_23_30-johnson-nv1_2021_07_21' # 50 us
+    file_33_10u = '2021_07_23-03_18_55-johnson-nv1_2021_07_21' # 10 us
     
     # 22 mW
     file_22_100 = '2021_07_22-01_05_19-johnson-nv1_2021_07_21' # 100 us
@@ -285,10 +287,10 @@ if __name__ == '__main__':
     file_22_5 = '2021_07_22-05_07_14-johnson-nv1_2021_07_21' # 5 us
     file_22_1 = '2021_07_21-21_31_43-johnson-nv1_2021_07_21' # 1 us
 
-    file_list = [file_22_1, file_22_5, file_22_10, file_22_50,file_22_100 ]
-    title = '22 mW, 638 nm CPG pulse'
+    file_list = [file_33_10u, file_33_50u, file_33_100u, file_33_500u,file_33_1m ]
+    title = '33 mW, 638 nm CPG pulse'
     
-    label_list = ['1 us', '5 us', '10 us', '50 us', '100 us']
+    label_list = ['10 us', '50 us', '100 us', '500 us', '1 ms']
     
     # Start plotting
     fig, ax = plt.subplots(1,1, figsize = (8, 8))

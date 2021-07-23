@@ -25,20 +25,22 @@ def get_seq(pulse_streamer, config, args):
 
     # The first 2 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(3):
+    for ind in range(7):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
-    initialization_time, pulse_time, readout_time = durations
+    initialization_time, pulse_time, charge_readout_time, imaging_readout_dur, \
+        x_move_delay, y_move_delay, z_move_delay = durations
                 
-    aom_ao_589_pwr = args[3]
+    aom_ao_589_pwr = args[7]
+    num_opti_steps = args[8]
 
     # Get the APD index
-    apd_index = args[4]
+    apd_index = args[9]
 
-    init_color = args[5]
-    pulse_color = args[6]
-    read_color = args[7]
+    init_color = args[10]
+    pulse_color = args[11]
+    read_color = args[12]
     
     galvo_move_time = config['Positioning']['xy_large_response_delay']
     
@@ -61,35 +63,64 @@ def get_seq(pulse_streamer, config, args):
     # %% Calclate total period.
     
 #    We're going to readout the entire sequence, including the clock pulse
-    period = total_laser_delay + initialization_time + pulse_time + readout_time \
+    measurement_period = initialization_time + pulse_time + charge_readout_time \
         + 2 * galvo_move_time + 3* 100
+    optimize_x_time = (x_move_delay + imaging_readout_dur + 300) * num_opti_steps
+    optimize_y_time = (y_move_delay + imaging_readout_dur + 300) * num_opti_steps
+    optimize_z_time = (z_move_delay + imaging_readout_dur + 300) * num_opti_steps
+    total_optimize_time = optimize_x_time + optimize_y_time + optimize_z_time
+    period = total_laser_delay + measurement_period + total_optimize_time
     
     # %% Define the sequence
 
     seq = Sequence()
     
-    # APD 
-#    train = [(period - readout_time - 100, LOW), (readout_time, HIGH), (100, LOW)]
-#    train = [(readout_time, HIGH), (100, LOW)]
+    #################### APD ####################
+    # Sequence for the measurement
     train = [(total_laser_delay, LOW), (initialization_time, HIGH),
              (100 + galvo_move_time, LOW), (pulse_time, HIGH),
-             (100 + galvo_move_time, LOW), (readout_time, HIGH),
+             (100 + galvo_move_time, LOW), (charge_readout_time, HIGH),
              (100, LOW)]
+    # Sequence for optimizing in x
+    x_opti_train = [(x_move_delay, LOW), (imaging_readout_dur, HIGH), (300, LOW)]
+    for i in range(num_opti_steps):
+        train.extend(x_opti_train)
+    # Sequence for optimizing in y
+    y_opti_train = [(y_move_delay, LOW), (imaging_readout_dur, HIGH), (300, LOW)]
+    for i in range(num_opti_steps):
+        train.extend(y_opti_train)
+    # Sequence for optimizing in z
+    z_opti_train = [(z_move_delay, LOW), (imaging_readout_dur, HIGH), (300, LOW)]
+    for i in range(num_opti_steps):
+        train.extend(z_opti_train)
     seq.setDigital(pulser_do_apd_gate, train)
     
-    # clock 
+    #################### clock #################### 
+    # Sequence for the measurement
     # I needed to add 100 ns between the redout and the clock pulse, otherwise 
     # the tagger misses some of the gate open/close clicks
     train = [(total_laser_delay + initialization_time+ 100, LOW),(100, HIGH),
              (galvo_move_time + pulse_time, LOW), (100, HIGH), 
-             (galvo_move_time + readout_time, LOW), (100, HIGH),
+             (galvo_move_time + charge_readout_time, LOW), (100, HIGH),
              (100, LOW)] 
-#    train = [(period + 100, LOW), (100, HIGH), (100, LOW)]
+    # Sequence for optimizing in x
+    x_opti_train = [(x_move_delay + imaging_readout_dur + 100, LOW), 
+                    (100, HIGH), (100, LOW)]
+    for i in range(num_opti_steps):
+        train.extend(x_opti_train)
+    # Sequence for optimizing in y
+    y_opti_train = [(y_move_delay + imaging_readout_dur + 100, LOW), 
+                    (100, HIGH), (100, LOW)]
+    for i in range(num_opti_steps):
+        train.extend(y_opti_train)
+    # Sequence for optimizing in z
+    z_opti_train = [(y_move_delay + imaging_readout_dur + 100, LOW), 
+                    (100, HIGH), (100, LOW)]
+    for i in range(num_opti_steps):
+        train.extend(z_opti_train)
     seq.setDigital(pulser_do_clock, train)
     
-#    train = [(period, HIGH)]
-#    seq.setDigital(pulser_do_532_aom, train)
-    
+    #################### lasers #################### 
     # start each laser sequence
     train_532 = [(total_laser_delay - green_laser_delay , LOW)]
     train_589 = [(total_laser_delay - yellow_laser_delay, LOW)]
@@ -140,14 +171,14 @@ def get_seq(pulse_streamer, config, args):
     train_638.extend(galvo_delay_train)
     
     # add the readout pulse segment
-    read_train_on = [(readout_time, HIGH)]
-    read_train_off = [(readout_time, LOW)]
+    read_train_on = [(charge_readout_time, HIGH)]
+    read_train_off = [(charge_readout_time, LOW)]
     if read_color == 532:
         train_532.extend(read_train_on)
         train_589.extend(read_train_off)
         train_638.extend(read_train_off)
     if read_color == 589:
-        read_train_on = [(readout_time, aom_ao_589_pwr)]
+        read_train_on = [(charge_readout_time, aom_ao_589_pwr)]
         train_532.extend(read_train_off)
         train_589.extend(read_train_on)
         train_638.extend(read_train_off)
@@ -160,6 +191,9 @@ def get_seq(pulse_streamer, config, args):
     train_589.extend([(100, LOW)])
     train_638.extend([(100, LOW)])
         
+    
+    train_532.extend([(x_move_delay, LOW),
+      (total_optimize_time - x_move_delay, HIGH)])
         
 
     seq.setDigital(pulser_do_532_aom, train_532)
@@ -173,7 +207,6 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
-    # seq_args = [1000.0, 100000.0, 100000.0, 0.15, 0, 638, 532, 589]
-    seq_args = [10000.0, 10000.0, 50000000, 0.9, 0, 638, 532, 589]
+    seq_args = [100000.0, 100000.0, 500000, 200000, 100000,100000,100000, 0.9, 2, 0, 532, 638, 589]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
