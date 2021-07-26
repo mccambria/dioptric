@@ -329,7 +329,6 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
     
     for i in range(num_samples):
         print(i)
-        tool_belt.set_xyz(cxn, start_coords_drift)
         # step thru the coordinates to test as the cpg pulse
         CPG_coord = [coords_list_drift[i][0], coords_list_drift[i][1], 
                      start_coords_drift[2]]
@@ -347,7 +346,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
         print(x_voltages)
         print(len(y_voltages))
         # print(len(z_voltages))
-        z_server.load_z_scan(start_coords_drift[2], z_opti_scan_range, num_opti_steps, int(period))
+        # z_server.load_z_scan(start_coords_drift[2], z_opti_scan_range, num_opti_steps, int(period))
         _ = z_server.load_z_multi_point_scan(z_voltages, int(10**6))
         # print(z_voltages)
         
