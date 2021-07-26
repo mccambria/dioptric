@@ -25,7 +25,7 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     
-    galvo_move_time = config['Positioning']['xy_delay']
+    galvo_move_time = config['Positioning']['xy_small_response_delay']
     init_pulse_aom_delay_time = config['Optics'][init_laser_key]['delay']
     read_pulse_aom_delay_time = config['Optics'][readout_laser_key]['delay']
     

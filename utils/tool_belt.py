@@ -17,6 +17,7 @@ Created on Fri Nov 23 14:57:08 2018
 import matplotlib.pyplot as plt
 import threading
 import os
+import csv
 import datetime
 import numpy
 from numpy import exp
@@ -1245,6 +1246,34 @@ def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
         voltages = numpy.vstack((x_voltages, y_voltages))
 
         return x_voltages, y_voltages
+    
+def save_image_data_csv(img_array, x_voltages, y_voltages, 
+                        file_path = 'pc_rabi/branch_master/image_sample', 
+                        csv_file_name = None, timestamp=None,
+                        nvdata_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'):
+        
+    csv_data = []
+    for ind in range(len(img_array)):
+        csv_data.append(img_array[ind])
+        
+    x_voltages.insert(0,'x_voltages')
+    y_voltages.insert(0,'y_voltages')
+    csv_data.append(x_voltages)
+    csv_data.append(y_voltages)
+        
+    if not csv_file_name:
+        if not timestamp:
+            timestamp = get_time_stamp()
+        csv_file_name = '{}'.format(timestamp) 
+        
+    with open('{}/{}.csv'.format(nvdata_dir+'/'+file_path,csv_file_name ),
+              'w', newline='') as csv_file:
+        
+        csv_writer = csv.writer(csv_file, delimiter=',',
+                                quoting=csv.QUOTE_NONE)
+        csv_writer.writerows(csv_data)   
+    return
+
 # %% Misc
 
 def opt_power_via_photodiode(color_ind, AO_power_settings = None, nd_filter = None):

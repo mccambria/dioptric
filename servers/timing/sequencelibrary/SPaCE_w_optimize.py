@@ -53,7 +53,7 @@ def get_seq(pulse_streamer, config, args):
     pulser_ao_589_aom = pulser_wiring['ao_laserglow_589_am']
     pulser_do_638_aom = pulser_wiring['do_cobolt_638_dm']
     
-    green_laser_delay = config['Optics']['laserglow_532']['delay']
+    green_laser_delay =  config['Optics']['laserglow_532']['delay']
     yellow_laser_delay = config['Optics']['laserglow_589']['delay']
     red_laser_delay = config['Optics']['cobolt_638']['delay']
     

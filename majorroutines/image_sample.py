@@ -12,7 +12,7 @@ Created on Tue Apr  9 15:18:53 2019
 import numpy
 import utils.tool_belt as tool_belt
 import time
-# import labrad
+import labrad
 import majorroutines.optimize as optimize
 
 
@@ -181,7 +181,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         raise RuntimeError('x and y resolutions must match for now.')
 
     xy_server = tool_belt.get_xy_server(cxn)
-    xy_delay = tool_belt.get_registry_entry(cxn, 'xy_delay', ['', 'Config', 'Positioning'])
+    xy_delay = tool_belt.get_registry_entry(cxn, 'xy_small_response_delay', ['', 'Config', 'Positioning'])
     # Get the scale in um per unit
     xy_scale = tool_belt.get_registry_entry(cxn, 'xy_nm_per_unit', ['', 'Config', 'Positioning'])
     if xy_scale == -1:
@@ -336,10 +336,12 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_hahn/branch_cryo-setup/image_sample/2021_03'
-    file_name = '2021_03_02-14_57_01-johnson-nv14_2021_02_26'
+    path = 'pc_rabi/branch_master/image_sample/2021_07'
+    file_name = '2021_07_26-12_31_43-johnson-nv1_2021_07_21'
 
-    data = tool_belt.get_raw_data(path, file_name)
+    data = tool_belt.get_raw_data( file_name, path)
+    nv_sig = data['nv_sig']
+    timestamp = data['timestamp']
     img_array = data['img_array']
     x_voltages = data['x_voltages']
     y_voltages = data['y_voltages']
@@ -352,6 +354,13 @@ if __name__ == '__main__':
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
     
-    tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
-                        title=None, color_bar_label='Counts', 
-                        min_value=None, um_scaled=False)
+    csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
+    
+    
+    # tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
+    #                     title=None, color_bar_label='Counts', 
+    #                     min_value=None, um_scaled=False)
+    
+    
+    tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path, 
+                                  csv_name)

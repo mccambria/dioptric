@@ -127,7 +127,7 @@ def stationary_count_lite(cxn, nv_sig,  coords, config, apd_indices):
     total_num_samples = 2
     x_center, y_center, z_center = coords
 
-    delay = config['Positioning']['xy_delay']
+    delay = config['Positioning']['xy_small_response_delay']
     seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)

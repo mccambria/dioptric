@@ -216,7 +216,7 @@ def populate_img_array(valsToAdd, imgArray, run_num):
 # %%
 def data_collection_optimize(nv_sig, coords_list):
     with labrad.connect() as cxn:
-        ret_vals = main_data_collection_with_cxn(cxn, nv_sig, coords_list)
+        ret_vals = data_collection_optimize_with_cxn(cxn, nv_sig, coords_list)
     
     readout_counts_array, opti_coords_list = ret_vals
                         
@@ -259,11 +259,11 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
     
     # Define paramters
     apd_indices = [0]
-    num_opti_steps = 61
+    num_opti_steps = 3
     xy_opti_scan_range = tool_belt.get_registry_entry_no_cxn('xy_optimize_range',
-                           ['Positioning'])
+                           ['Config','Positioning'])
     z_opti_scan_range = tool_belt.get_registry_entry_no_cxn('z_optimize_range',
-                           ['Positioning'])
+                           ['Config','Positioning'])
     
     init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
                       ['Config', 'Optics', nv_sig['initialize_laser']])
@@ -272,11 +272,11 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
     readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
                       ['Config', 'Optics', nv_sig['charge_readout_laser']])
     x_move_delay = tool_belt.get_registry_entry_no_cxn('xy_large_response_delay',
-                           ['Positioning'])
+                           ['Config','Positioning'])
     y_move_delay = tool_belt.get_registry_entry_no_cxn('xy_large_response_delay',
-                           ['Positioning'])
+                           ['Config','Positioning'])
     z_move_delay = tool_belt.get_registry_entry_no_cxn('z_delay',
-                           ['Positioning'])
+                           ['Config','Positioning'])
     
     pulse_time = nv_sig['CPG_laser_dur']
     initialization_time = nv_sig['initialize_dur']
@@ -295,7 +295,9 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
     # dimensions [num_samples].
     readout_counts_list = []
     
-        
+    # optimize before the start of the measurement
+    # optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    
     # define the sequence paramters
     file_name = 'SPaCE_w_optimize.py'
     seq_args = [ initialization_time, pulse_time, charge_readout_time,
@@ -312,7 +314,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
     period_s = period/10**9
     period_s_total = (period_s*num_samples + 1)
     print('{} ms pulse time'.format(pulse_time/10**6))
-    print('Expected total run time: {:.1f} m'.format(period_s_total/60))
+    print('Expected run time for set of points: {:.1f} m'.format(period_s_total/60))
     # load the sequence
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         
@@ -325,14 +327,16 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
     # start on the readout NV
     tool_belt.set_xyz(cxn, start_coords_drift)
     
-    for i in range(len(num_samples)):
+    for i in range(num_samples):
+        print(i)
+        tool_belt.set_xyz(cxn, start_coords_drift)
         # step thru the coordinates to test as the cpg pulse
-        CPG_coord = [coords_list_drift[0], coords_list_drift[1], 
+        CPG_coord = [coords_list_drift[i][0], coords_list_drift[i][1], 
                      start_coords_drift[2]]
         
         # Build the x,y, and z coordinate lists, which change with each CLK pulse
         x_voltages, y_voltages = build_xy_voltages_w_optimize(start_coords_drift, 
-                      coords_list_drift, num_opti_steps, xy_opti_scan_range)
+                      CPG_coord, num_opti_steps, xy_opti_scan_range)
         z_voltages = build_z_voltages_w_optimize(start_coords_drift[2],
                              CPG_coord[2], num_opti_steps, z_opti_scan_range)
         
@@ -340,7 +344,12 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
         xy_server = tool_belt.get_xy_server(cxn)
         xy_server.load_multi_point_xy_scan(x_voltages, y_voltages, int(period))
         z_server = tool_belt.get_z_server(cxn)
-        z_server.load_z_multi_point_scan(z_voltages, int(period))
+        print(x_voltages)
+        print(len(y_voltages))
+        # print(len(z_voltages))
+        z_server.load_z_scan(start_coords_drift[2], z_opti_scan_range, num_opti_steps, int(period))
+        _ = z_server.load_z_multi_point_scan(z_voltages, int(10**6))
+        # print(z_voltages)
         
         #  Set up the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -354,6 +363,11 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
         total_samples_list = []
         num_read_so_far = 0     
         tool_belt.init_safe_stop()
+        
+        new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
+        # for el in new_samples:
+        #     total_samples_list.append(int(el))
+        
     
         while num_read_so_far < total_num_samples:
     
@@ -362,6 +376,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
     
             # Read the samples and update the image
             new_samples = cxn.apd_tagger.read_counter_simple()
+            print(new_samples)
             num_new_samples = len(new_samples)
             
             if num_new_samples > 0:
@@ -373,7 +388,6 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
         charge_readout_count = total_samples_list[2]
         readout_counts_list.append(charge_readout_count)
         x_opti_counts = total_samples_list[3:num_opti_steps+3]
-        print(i)
         print(x_opti_counts)
         y_opti_counts = total_samples_list[num_opti_steps+3:2*num_opti_steps+3]
         z_opti_counts = total_samples_list[2*num_opti_steps+3:3*num_opti_steps+3]
@@ -559,20 +573,28 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
     start_coords = nv_sig['coords']
             
     if measurement_type == '1D':
-        dx = img_range / 2
-        end_coords = numpy.array(start_coords) + [dx, 0, 0]
+        dir_1D = nv_sig['dir_1D']
+        dr = img_range / 2
+        if dir_1D == 'x':
+            low_coords = numpy.array(start_coords) - [dr, 0, 0]
+            high_coords = numpy.array(start_coords) + [dr, 0, 0]
+        elif dir_1D == 'y':
+            low_coords = numpy.array(start_coords) - [0, dr, 0]
+            high_coords = numpy.array(start_coords) + [0, dr, 0]
+        # end_coords = numpy.array(start_coords) + [dx, 0, 0]
         # calculate the x and y values for linearly spaced points between start and end
-        x_voltages = numpy.linspace(start_coords[0], 
-                                    end_coords[0], num_steps)
-        y_voltages = numpy.linspace(start_coords[1], 
-                                    end_coords[1], num_steps)
+        x_voltages = numpy.linspace(low_coords[0], 
+                                    high_coords[0], num_steps)
+        y_voltages = numpy.linspace(low_coords[1], 
+                                    high_coords[1], num_steps)
         # Zip the two list together
         coords_voltages = list(zip(x_voltages, y_voltages))
                     
         # calculate the radial distances from the readout NV to the target points
-        x_diffs = (x_voltages - start_coords[0])
-        y_diffs = (y_voltages- start_coords[1])
-        rad_dist = numpy.sqrt(x_diffs**2 + y_diffs**2)
+        if dir_1D == 'x':
+            rad_dist = (x_voltages - start_coords[0])
+        elif dir_1D == 'y':
+            rad_dist = (y_voltages- start_coords[1])
            
         
     elif measurement_type == '2D':
@@ -732,8 +754,11 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
     
     if measurement_type == '1D':    
         fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
-        ax_1D.plot(rad_dist*35,readout_counts_avg, label = nv_sig['name'])
-        ax_1D.set_xlabel('Distance from readout NV (um)')
+        ax_1D.plot(rad_dist*35000,readout_counts_avg, label = nv_sig['name'])
+        if dir_1D == 'x':
+            ax_1D.set_xlabel('x (nm)')
+        elif dir_1D == 'y':
+            ax_1D.set_xlabel('y num)')
         ax_1D.set_ylabel('Average counts')
         ax_1D.set_title('SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.\
                                         format(init_color, pulse_color, pulse_time/10**6,))
@@ -759,68 +784,36 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
 # %% Run the files
 
 if __name__ == '__main__':
-    sample_name= 'goeppert-mayer'
 
+    path = 'pc_rabi/branch_master/SPaCE/2021_07'
+    # file_name = '2021_07_23-09_32_56-johnson-nv1_2021_07_21'
+    # file_name = '2021_07_25-19_37_46-johnson-nv1_2021_07_21'
+    file_name = '2021_07_25-17_55_15-johnson-nv1_2021_07_21'
 
-
-    base_sig = { 'coords':[], 
-            'name': '{}-2021_04_15'.format(sample_name),
-            'expected_count_rate': None,'nd_filter': 'nd_1.0',
-            'color_filter': '635-715 bp', 
-#            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 10*10**7,  'am_589_power': 0.15, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
-            'pulsed_reionization_dur': 1*10**3, 'cobalt_532_power':10, 
-            'ao_515_pwr': 0.64,
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}   
-    expected_count_list = [40, 45, 65, 64, 55, 35,  40, 45  ] # 4/13/21 ###
-    start_coords_list = [
-[-0.037, 0.119, 5.14],
-[-0.090, 0.066, 5.04],
-[-0.110, 0.042, 5.13],
-[0.051, -0.115, 5.08],
-[-0.110, 0.042, 5.06],
-
-[0.063, 0.269, 5.09], 
-[0.243, 0.184, 5.12],
-[0.086, 0.220, 5.03],
-]
-
-#    end_coords = end_coords.tolist()
-    num_steps = 41
-#    num_runs = 50
-#    img_range = 0.45
-#    optimize_nv_ind = 3
-#    optimize_coords = start_coords_list[optimize_nv_ind]
-  
-    for s in [5]:
-             optimize_nv_ind = s
-             optimize_coords = start_coords_list[optimize_nv_ind]
-             start_coords = start_coords_list[s]
-             nv_sig = copy.deepcopy(base_sig)
-             # Set up for current NV
-             nv_sig['name']= 'goeppert-mayer-nv{}_2021_04_15'.format(s)
-             nv_sig['expected_count_rate'] = expected_count_list[optimize_nv_ind]
-             #########
-             num_runs = 20       
-             # Set up for NV band
-             t =5*10**6
-             init_color = '515a'
-             pulse_color = '515a' 
-#             main(nv_sig, start_coords,optimize_coords,  0.4, t, num_steps, num_runs, 
-#                                       init_color, pulse_color, measurement_type = '2D' ) 
-   
-             # Set up for SiV band
-#             nv_sig['color_filter'] = '715 lp'
-#             nv_sig['nd_filter'] = 'nd_0'
-#             nv_sig['am_589_power'] = 0.3
-#             nv_sig['pulsed_SCC_readout_dur'] = 4*10**7
+    data = tool_belt.get_raw_data( file_name, path)
+    nv_sig = data['nv_sig']
+    CPG_pulse_dur = nv_sig['CPG_laser_dur']
+    timestamp = data['timestamp']
+    img_array = data['readout_image_array']
+    x_voltages = data['x_voltages_1d']
+    y_voltages = data['y_voltages_1d']
+    x_low = x_voltages[0]
+    x_high = x_voltages[-1]
+    y_low = y_voltages[0]
+    y_high = y_voltages[-1]
+    pixel_size = x_voltages[1] - x_voltages[0]
+    half_pixel_size = pixel_size / 2
+    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                  y_low - half_pixel_size, y_high + half_pixel_size]
+    
+    # tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
+    #                     title=None, color_bar_label='Counts', 
+    #                     min_value=None, um_scaled=False)
+        
+    csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))
+    
+    tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages, path,
+                                  csv_filename)
 
              
 
