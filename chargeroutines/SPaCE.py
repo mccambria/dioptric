@@ -343,6 +343,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
         
         # Load the galvo
         xy_server = tool_belt.get_xy_server(cxn)
+        xyz_server = tool_belt.get_xyz_server(cxn)
         xy_server.load_multi_point_xy_scan(x_voltages, y_voltages, int(period))
         # z_server = tool_belt.get_z_server(cxn)
         # _ = z_server.load_z_multi_point_scan(z_voltages, int(period))
