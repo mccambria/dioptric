@@ -114,7 +114,7 @@ def get_seq(pulse_streamer, config, args):
     for i in range(num_opti_steps):
         train.extend(y_opti_train)
     # Sequence for optimizing in z
-    z_opti_train = [(y_move_delay + imaging_readout_dur + 100, LOW), 
+    z_opti_train = [(z_move_delay + imaging_readout_dur + 100, LOW), 
                     (100, HIGH), (100, LOW)]
     for i in range(num_opti_steps):
         train.extend(z_opti_train)
@@ -207,6 +207,7 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
-    seq_args = [100000.0, 100000.0, 500000, 200000, 100000,100000,100000, 0.9, 2, 0, 532, 638, 589]
+    # seq_args = [100000.0, 100000.0, 500000, 200000, 100000,100000,100000, 0.9, 2, 0, 532, 638, 589]
+    seq_args = [1000.0, 1000000, 250000000, 10000000.0, 2000000, 2000000, 500000, 0.1, 3, 0, 532, 638, 589]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

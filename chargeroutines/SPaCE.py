@@ -259,6 +259,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
     
     # Define paramters
     apd_indices = [0]
+    drift_list = []
     num_opti_steps = 3
     xy_opti_scan_range = tool_belt.get_registry_entry_no_cxn('xy_optimize_range',
                            ['Config','Positioning'])
@@ -306,7 +307,6 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
                 init_color, pulse_color, readout_color]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-    # print(seq_args)
     # return
     
     # print the expected run time
@@ -318,17 +318,16 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
     # load the sequence
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         
-    drift = numpy.array(tool_belt.get_drift())
-            
-    # get the readout coords with drift
-    start_coords_drift = start_coords + drift
-    coords_list_drift = numpy.array(coords_list) + [drift[0], drift[1]]
-                                             
-    # start on the readout NV
-    tool_belt.set_xyz(cxn, start_coords_drift)
     
     for i in range(num_samples):
         print(i)
+        # Get the current drift
+        drift = numpy.array(tool_belt.get_drift())
+                
+        # get the readout coords with drift
+        start_coords_drift = start_coords + drift
+        coords_list_drift = numpy.array(coords_list) + [drift[0], drift[1]]
+                                                 
         # step thru the coordinates to test as the cpg pulse
         CPG_coord = [coords_list_drift[i][0], coords_list_drift[i][1], 
                      start_coords_drift[2]]
@@ -339,16 +338,14 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
         z_voltages = build_z_voltages_w_optimize(start_coords_drift[2],
                              CPG_coord[2], num_opti_steps, z_opti_scan_range)
         
+        # start on the readout NV
+        tool_belt.set_xyz(cxn, start_coords_drift)
+        
         # Load the galvo
         xy_server = tool_belt.get_xy_server(cxn)
         xy_server.load_multi_point_xy_scan(x_voltages, y_voltages, int(period))
-        z_server = tool_belt.get_z_server(cxn)
-        print(x_voltages)
-        print(len(y_voltages))
-        # print(len(z_voltages))
-        # z_server.load_z_scan(start_coords_drift[2], z_opti_scan_range, num_opti_steps, int(period))
-        _ = z_server.load_z_multi_point_scan(z_voltages, int(10**6))
-        # print(z_voltages)
+        # z_server = tool_belt.get_z_server(cxn)
+        # _ = z_server.load_z_multi_point_scan(z_voltages, int(period))
         
         #  Set up the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -363,7 +360,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
         num_read_so_far = 0     
         tool_belt.init_safe_stop()
         
-        new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
+        # new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
         # for el in new_samples:
         #     total_samples_list.append(int(el))
         
@@ -375,7 +372,6 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
     
             # Read the samples and update the image
             new_samples = cxn.apd_tagger.read_counter_simple()
-            print(new_samples)
             num_new_samples = len(new_samples)
             
             if num_new_samples > 0:
@@ -387,13 +383,34 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list):
         charge_readout_count = total_samples_list[2]
         readout_counts_list.append(charge_readout_count)
         x_opti_counts = total_samples_list[3:num_opti_steps+3]
-        print(x_opti_counts)
         y_opti_counts = total_samples_list[num_opti_steps+3:2*num_opti_steps+3]
         z_opti_counts = total_samples_list[2*num_opti_steps+3:3*num_opti_steps+3]
         
         #fit to the x, y, and z lists, find drift, update drift. etc
+        x_scan_voltages = x_voltages[3:num_opti_steps+3]
+        y_scan_voltages = y_voltages[num_opti_steps+3:2*num_opti_steps+3]
+        z_scan_voltages = z_voltages[2*num_opti_steps+3:3*num_opti_steps+3]
+        x_opti_coord = optimize.fit_gaussian(nv_sig, x_scan_voltages, x_opti_counts, 0) 
+        y_opti_coord = optimize.fit_gaussian(nv_sig, y_scan_voltages, y_opti_counts, 1) 
+        # z_opti_coord = optimize.fit_gaussian(nv_sig, z_scan_voltages, z_opti_counts, 2)
+        z_opti_coord = start_coords[2]
+        
+        #(y optimzie not succeeding, put in something to handle this)
+        opti_coords = [x_opti_coord, y_opti_coord, z_opti_coord]
+        
+        # Later we can do some checks to make sure optimize worked, but for now
+        # let's just set the drift
+        print(opti_coords)
+        print(start_coords)
+        drift = (numpy.array(opti_coords) - numpy.array(start_coords)).tolist()
+        tool_belt.set_drift(drift)
+        print(drift)
+        
+        drift_list.append(drift)
+        
+        
   
-    return readout_counts_list   
+    return readout_counts_list, drift_list
        # %%
 def main_data_collection(nv_sig, coords_list):
     with labrad.connect() as cxn:
@@ -534,7 +551,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     readout_counts = total_samples_list[2::3]
     readout_counts_list = [int(el) for el in readout_counts]
   
-    return readout_counts_list, opti_coord
+    return readout_counts_list, drift
 
 # %% 
 def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
@@ -629,7 +646,7 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
                                                numpy.array(img_extent)*35,
                                                 title = title, um_scaled = True)
 
-    opti_coords_master = []
+    drift_list_master = []
     num_samples = len(coords_voltages)
     readout_counts_array = numpy.empty([num_samples, num_runs])
     
@@ -646,11 +663,11 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
         #========================== Run the data collection====================
-        ret_vals = data_collection_optimize(nv_sig, coords_voltages_shuffle_list)
-        # ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
+        # ret_vals = data_collection_optimize(nv_sig, coords_voltages_shuffle_list)
+        ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
         
-        readout_counts_list_shfl, opti_coord = ret_vals
-        opti_coords_master.append(opti_coord)
+        readout_counts_list_shfl, drift = ret_vals
+        drift_list_master.append(drift)
         readout_counts_list_shfl = numpy.array(readout_counts_list_shfl)
         
         # unshuffle the raw data
@@ -675,7 +692,7 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
                 'coords_voltages': coords_voltages,
                 'coords_voltages-units': '[V, V]',
                  'ind_list': ind_list,
-                 'opti_coords_list': opti_coords_master,
+                 #'drift_list_master': drift_list_master,
                 'readout_counts_array': readout_counts_array.tolist(),
                 'readout_counts_array-units': 'counts',
                 'readout_counts_avg': readout_counts_avg.tolist(),
@@ -740,7 +757,7 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
             'coords_voltages': coords_voltages,
             'coords_voltages-units': '[V, V]',
              'ind_list': ind_list,
-             'opti_coords_list': opti_coords_master,
+            # 'drift_list_master': drift_list_master,
             'readout_counts_array': readout_counts_array.tolist(),
             'readout_counts_array-units': 'counts',
             'readout_counts_avg': readout_counts_avg.tolist(),
@@ -757,7 +774,7 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
         if dir_1D == 'x':
             ax_1D.set_xlabel('x (nm)')
         elif dir_1D == 'y':
-            ax_1D.set_xlabel('y num)')
+            ax_1D.set_xlabel('y (nm)')
         ax_1D.set_ylabel('Average counts')
         ax_1D.set_title('SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.\
                                         format(init_color, pulse_color, pulse_time/10**6,))
