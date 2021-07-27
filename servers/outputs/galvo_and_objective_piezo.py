@@ -522,8 +522,8 @@ class GalvoAndObjectivePiezo(LabradServer):
         return z_voltages
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    @setting(6, x_points='*v[]', y_points='*v[]', period='i')
-    def load_arb_xyz_scan(self, c, x_points, y_points, period):
+    @setting(6, x_points='*v[]', y_points='*v[]', z_points='*v[]', period='i')
+    def load_arb_xyz_scan(self, c, x_points, y_points, z_points, period):
         """
         Load a scan around a seuqence of arbitrary xyz points 
 
