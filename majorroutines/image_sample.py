@@ -295,7 +295,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.reset_cfm(cxn)
 
     # Return to center
-    cxn.galvo.write_xy(x_center, y_center)
+    xy_server.write_xy(x_center, y_center)
 
     # %% Save the data
 

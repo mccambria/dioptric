@@ -174,7 +174,8 @@ class GalvoAndObjectivePiezo(LabradServer):
 
         # Write the initial voltages and stream the rest
         num_voltages = voltages.shape[1]
-        self.write_xy(c, voltages[0, 0], voltages[1, 0], voltages[2, 0])
+        self.write_xy(c, voltages[0, 0], voltages[1, 0])
+        self.write_z(c, voltages[2, 0])
         stream_voltages = voltages[:, 1:num_voltages]
         stream_voltages = numpy.ascontiguousarray(stream_voltages)
         num_stream_voltages = num_voltages - 1
@@ -216,6 +217,8 @@ class GalvoAndObjectivePiezo(LabradServer):
             task.close()
             self.task = None
         return 0
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
     @setting(0, xVoltage='v[]', yVoltage='v[]')
     def write_xy(self, c, xVoltage, yVoltage):
@@ -469,9 +472,34 @@ class GalvoAndObjectivePiezo(LabradServer):
 
         self.load_stream_writer_xy(c, 'GalvoAndObjectivePiezo-load_y_scan', voltages, period)
 
-        return y_voltages
+        return y_voltages   
+    
+    @setting(6, x_points='*v[]', y_points='*v[]', period='i')
+    def load_arb_xy_scan(self, c, x_points, y_points, period):
+        """Load a scan that goes between points. E.i., starts at [1,1] and
+        then on a clock pulse, moves to [2,1]. Can work for arbitrarily large
+        number of points 
+        (previously load_two_point_xy_scan)
 
-    @setting(2, voltage='v[]')
+        Params
+            x_points: list(float)
+                X values correspnding to positions in x
+                y_points: list(float)
+                Y values correspnding to positions in y
+            period: int
+                Expected period between clock signals in ns
+
+        """
+
+        voltages = numpy.vstack((x_points, y_points))
+
+        self.load_stream_writer_xy(c, 'Galvo-load_arb_xy_scan', voltages, period)
+
+        return
+    
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+    @setting(7, voltage='v[]')
     def write_z(self, c, voltage):
         """Write the specified voltage to the piezo"""
 
@@ -486,7 +514,7 @@ class GalvoAndObjectivePiezo(LabradServer):
                                                  min_val=0.0, max_val=10.0)
             task.write(voltage)
 
-    @setting(1, returns='v[]')
+    @setting(8, returns='v[]')
     def read_z(self, c):
         """Return the current voltages on the piezo's DAQ channel"""
         with nidaqmx.Task() as task:
@@ -499,7 +527,7 @@ class GalvoAndObjectivePiezo(LabradServer):
         return voltage
     
     
-    @setting(3, center='v[]', scan_range='v[]',
+    @setting(9, center='v[]', scan_range='v[]',
              num_steps='i', period='i', returns='*v[]')
     def load_z_scan(self, c, center, scan_range, num_steps, period):
         """Load a linear sweep with the DAQ"""
@@ -512,17 +540,17 @@ class GalvoAndObjectivePiezo(LabradServer):
                                 voltages, period)
         return voltages
     
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    @setting(4, z_voltages='*v[]', period='i', returns='*v[]')
-    def load_z_multi_point_scan(self, c, z_voltages, period):
+    @setting(10, z_voltages='*v[]', period='i', returns='*v[]')
+    def load_arb_z_scan(self, c, z_voltages, period):
         """Load a list of voltages with the DAQ"""
 
-        self.load_stream_writer_z(c, 'GalvoAndObjectivePiezo-load_z_multi_point_scan',
+        self.load_stream_writer_z(c, 'GalvoAndObjectivePiezo-load_arb_z_scann',
                                   numpy.array(z_voltages), period)
         return z_voltages
-    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-    @setting(6, x_points='*v[]', y_points='*v[]', z_points='*v[]', period='i')
+    @setting(11, x_points='*v[]', y_points='*v[]', z_points='*v[]', period='i')
     def load_arb_xyz_scan(self, c, x_points, y_points, z_points, period):
         """
         Load a scan around a seuqence of arbitrary xyz points 
@@ -539,7 +567,7 @@ class GalvoAndObjectivePiezo(LabradServer):
 
         """
 
-        voltages = numpy.vstack((x_points, y_points))
+        voltages = numpy.vstack((x_points, y_points, z_points))
 
         self.load_stream_writer_xyz(c, 'GalvoAndObjectivePiezo-load_arb_xyz_scan', voltages, period)
 

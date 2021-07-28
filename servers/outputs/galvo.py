@@ -369,7 +369,7 @@ class Galvo(LabradServer):
         return y_voltages
 
     @setting(6, x_points='*v[]', y_points='*v[]', period='i')
-    def load_multi_point_xy_scan(self, c, x_points, y_points, period):
+    def load_arb_xy_scan(self, c, x_points, y_points, period):
         """Load a scan that goes between points. E.i., starts at [1,1] and
         then on a clock pulse, moves to [2,1]. Can work for arbitrarily large
         number of points 
@@ -387,7 +387,7 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_points, y_points))
 
-        self.load_stream_writer(c, 'Galvo-load_multi_point_scan', voltages, period)
+        self.load_stream_writer(c, 'Galvo-load_arb_xy_scan', voltages, period)
 
         return
 __server__ = Galvo()

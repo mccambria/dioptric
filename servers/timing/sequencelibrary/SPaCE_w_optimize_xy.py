@@ -2,11 +2,7 @@
 """
 Created on Sat Mar  24 08:34:08 2020
 
-Thsi file is for use with the isolate_nv_charge_dynamics_moving_target' routine.
-
-This sequence has three pulses, seperated by wait times that allow time for
-the galvo to move. We also have two clock pulses instructing the galvo to move, 
-followed by a clock pulse at the end of the sequence to signifiy the counts to read.
+Run the SPaCE measuremnet, while optimizing in x, and y each sequence
 
 @author: Aedan
 """
@@ -25,22 +21,22 @@ def get_seq(pulse_streamer, config, args):
 
     # The first 2 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(7):
+    for ind in range(6):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
     initialization_time, pulse_time, charge_readout_time, imaging_readout_dur, \
-        x_move_delay, y_move_delay, z_move_delay = durations
+        x_move_delay, y_move_delay = durations
                 
-    aom_ao_589_pwr = args[7]
-    num_opti_steps = args[8]
+    aom_ao_589_pwr = args[6]
+    num_opti_steps = args[7]
 
     # Get the APD index
-    apd_index = args[9]
+    apd_index = args[8]
 
-    init_color = args[10]
-    pulse_color = args[11]
-    read_color = args[12]
+    init_color = args[9]
+    pulse_color = args[10]
+    read_color = args[11]
     
     galvo_move_time = config['Positioning']['xy_large_response_delay']
     
@@ -59,16 +55,16 @@ def get_seq(pulse_streamer, config, args):
     
     
     total_laser_delay = green_laser_delay + yellow_laser_delay + red_laser_delay
+    inter_optimize_delay = 0
 
     # %% Calclate total period.
     
 #    We're going to readout the entire sequence, including the clock pulse
     measurement_period = initialization_time + pulse_time + charge_readout_time \
         + 2 * galvo_move_time + 3* 100
-    optimize_x_time = (x_move_delay + imaging_readout_dur + 300) * num_opti_steps
-    optimize_y_time = (y_move_delay + imaging_readout_dur + 300) * num_opti_steps
-    optimize_z_time = (z_move_delay + imaging_readout_dur + 300) * num_opti_steps
-    total_optimize_time = optimize_x_time + optimize_y_time + optimize_z_time
+    optimize_x_time = inter_optimize_delay + (x_move_delay + imaging_readout_dur + 300) * num_opti_steps
+    optimize_y_time = inter_optimize_delay + (y_move_delay + imaging_readout_dur + 300) * num_opti_steps
+    total_optimize_time = optimize_x_time + optimize_y_time
     period = total_laser_delay + measurement_period + total_optimize_time
     
     # %% Define the sequence
@@ -82,17 +78,15 @@ def get_seq(pulse_streamer, config, args):
              (100 + galvo_move_time, LOW), (charge_readout_time, HIGH),
              (100, LOW)]
     # Sequence for optimizing in x
+    train.extend([(inter_optimize_delay, LOW)])
     x_opti_train = [(x_move_delay, LOW), (imaging_readout_dur, HIGH), (300, LOW)]
     for i in range(num_opti_steps):
         train.extend(x_opti_train)
     # Sequence for optimizing in y
+    train.extend([(inter_optimize_delay, LOW)])
     y_opti_train = [(y_move_delay, LOW), (imaging_readout_dur, HIGH), (300, LOW)]
     for i in range(num_opti_steps):
         train.extend(y_opti_train)
-    # Sequence for optimizing in z
-    z_opti_train = [(z_move_delay, LOW), (imaging_readout_dur, HIGH), (300, LOW)]
-    for i in range(num_opti_steps):
-        train.extend(z_opti_train)
     seq.setDigital(pulser_do_apd_gate, train)
     
     #################### clock #################### 
@@ -104,20 +98,17 @@ def get_seq(pulse_streamer, config, args):
              (galvo_move_time + charge_readout_time, LOW), (100, HIGH),
              (100, LOW)] 
     # Sequence for optimizing in x
+    train.extend([(inter_optimize_delay, LOW)])
     x_opti_train = [(x_move_delay + imaging_readout_dur + 100, LOW), 
                     (100, HIGH), (100, LOW)]
     for i in range(num_opti_steps):
         train.extend(x_opti_train)
     # Sequence for optimizing in y
+    train.extend([(inter_optimize_delay, LOW)])
     y_opti_train = [(y_move_delay + imaging_readout_dur + 100, LOW), 
                     (100, HIGH), (100, LOW)]
     for i in range(num_opti_steps):
         train.extend(y_opti_train)
-    # Sequence for optimizing in z
-    z_opti_train = [(z_move_delay + imaging_readout_dur + 100, LOW), 
-                    (100, HIGH), (100, LOW)]
-    for i in range(num_opti_steps):
-        train.extend(z_opti_train)
     seq.setDigital(pulser_do_clock, train)
     
     #################### lasers #################### 
@@ -208,6 +199,6 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
     # seq_args = [100000.0, 100000.0, 500000, 200000, 100000,100000,100000, 0.9, 2, 0, 532, 638, 589]
-    seq_args = [1000.0, 1000000, 250000000, 10000000.0, 2000000, 2000000, 500000, 0.1, 3, 0, 532, 638, 589]
+    seq_args = [1000.0, 1000000, 250000000, 10000000.0, 2000000, 2000000, 0.1, 3, 0, 532, 638, 589]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

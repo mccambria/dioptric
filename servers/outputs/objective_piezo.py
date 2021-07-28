@@ -164,10 +164,10 @@ class ObjectivePiezo(LabradServer):
     
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     @setting(4, z_voltages='*v[]', period='i', returns='*v[]')
-    def load_z_multi_point_scan(self, c, z_voltages, period):
+    def load_arb_z_scan(self, c, z_voltages, period):
         """Load a list of voltages with the DAQ"""
 
-        self.load_stream_writer(c, 'ObjectivePiezo-load_z_multi_point_scan',
+        self.load_stream_writer(c, 'ObjectivePiezo-load_arb_z_scan',
                                 numpy.array(z_voltages), period)
         return z_voltages
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
