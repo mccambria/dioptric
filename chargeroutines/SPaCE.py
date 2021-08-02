@@ -28,7 +28,7 @@ def exp_decay(x, c, a, d):
     return c + a * numpy.exp(-x/d)
 # %%
 def plot_1D_SpaCE(file_name, file_path, do_plot = True):
-    data = tool_belt.get_raw_data( file_name, path)
+    data = tool_belt.get_raw_data( file_name, file_path)
     nv_sig = data['nv_sig']
     CPG_pulse_dur = nv_sig['CPG_laser_dur']
     dir_1D = nv_sig['dir_1D']
@@ -67,10 +67,11 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True):
         ax.set_titel('{} us pulse'.foramt(CPG_pulse_dur/10**3))
     
     return rad_dist, counts
-def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions,  timestamp = None ):
+def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
     rad_dist, counts = plot_1D_SpaCE(file_name, file_path, do_plot = False)
     
-    data = tool_belt.get_raw_data( file_name, path)
+    data = tool_belt.get_raw_data(file_name, file_path)
+    timestamp = data['timestamp']
     nv_sig = data['nv_sig']
     dir_1D = nv_sig['dir_1D']
     num_steps = data['num_steps']
@@ -80,6 +81,9 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions,  timestamp 
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(0.05, 0.95, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
+    
+    ax.set_title('{} us pulse, power set to {}'.format(nv_sig['CPG_laser_dur']/10**3,
+                                                       nv_sig['CPG_laser_power']))
         
     ax.plot(rad_dist, counts, 'b.')
     if dir_1D == 'x':
@@ -92,59 +96,84 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions,  timestamp 
     zero_ind = int(num_steps/2)
     step_size_nm = rad_dist[1] - rad_dist[0]
     # Calculate the steps we'll consider around each ring position
-    wings_ind = int( 200/step_size_nm)
+    wings_ind = int( 400/step_size_nm)
     
+    lobe_widths = []
     ring_positions = lobe_positions
     for ri in range(len(ring_positions)):
+        fit_fail = False
         ring_r_nm = ring_positions[ri]
-        ring_ind_high = int(zero_ind + ring_r_nm / step_size_nm)
-        ring_range_high = [ring_ind_high-wings_ind,
-                            ring_ind_high+wings_ind]
-        ring_ind_low = int(zero_ind - ring_r_nm / step_size_nm)
-        ring_range_low = [ring_ind_low-wings_ind,
-                            ring_ind_low+wings_ind]
-    
+        if ring_r_nm > 0:
+            ring_ind = int(zero_ind + ring_r_nm / step_size_nm)
+        else:
+            ring_ind = int(zero_ind - abs(ring_r_nm / step_size_nm))
+        ring_range = [ring_ind-wings_ind,
+                            ring_ind+wings_ind]
+        # ring_ind_high = int(zero_ind + ring_r_nm / step_size_nm)
+        # ring_range_high = [ring_ind_high-wings_ind,
+        #                     ring_ind_high+wings_ind]
+        # ring_ind_low = int(zero_ind - ring_r_nm / step_size_nm)
+        # ring_range_low = [ring_ind_low-wings_ind,
+        #                     ring_ind_low+wings_ind]
         init_fit = [3, ring_r_nm, 15, 7]
         try:
             opti_params, cov_arr = curve_fit(tool_belt.gaussian, 
-                  rad_dist[ring_range_high[0]: ring_range_high[1]],
-                  counts[ring_range_high[0]: ring_range_high[1]],
-                  p0=init_fit)
+                  rad_dist[ring_range[0]: ring_range[1]],
+                  counts[ring_range[0]: ring_range[1]],
+                  p0=init_fit,
+                    bounds = ([-numpy.infty, -(abs(ring_r_nm) + 100), -80, 0], 
+                              [numpy.infty, abs(ring_r_nm) + 100, 80, 9])
+                  )
     
-            lin_radii = numpy.linspace(rad_dist[ring_range_high[0]],
-                            rad_dist[ring_range_high[1]], 100)
+            lin_radii = numpy.linspace(rad_dist[ring_range[0]],
+                            rad_dist[ring_range[1]], 100)
             ax.plot(lin_radii,
                    tool_belt.gaussian(lin_radii, *opti_params), 'r-')
             text = 'A={:.3f} sqrt(counts)\n$r_0$={:.3f} nm\n ' \
                 '$\sigma$={:.3f} nm\nC={:.3f} counts'.format(*opti_params)
-            ax.text(0.5+0.1*(1+ri), 0.1, text, transform=ax.transAxes, fontsize=12,
+            ax.text(0.3*(ri), 0.1, text, transform=ax.transAxes, fontsize=12,
                     verticalalignment='top', bbox=props)
             print(opti_params)
         except Exception:
-            text = 'Peak could not be fit for +{} nm lobe'.format(ring_r_nm)
-            ax.text(0.5+0.1*ri, 0.1, text, transform=ax.transAxes, fontsize=12,
+            fit_fail = True
+            text = 'Peak could not be\nfit for +{} nm lobe'.format(ring_r_nm)
+            ax.text(0.3*ri, 0.1, text, transform=ax.transAxes, fontsize=12,
                     verticalalignment='top', bbox=props)
+            
+        if not fit_fail:
+            lobe_widths.append(opti_params[2])
+        else:
+            lobe_widths.append(None)
         
-        init_fit = [3, -ring_r_nm, 15, 7]
-        try:
-            opti_params, cov_arr = curve_fit(tool_belt.gaussian, 
-                  rad_dist[ring_range_low[0]: ring_range_low[1]],
-                  counts[ring_range_low[0]: ring_range_low[1]],
-                  p0=init_fit)
+        # init_fit = [4, -ring_r_nm, 15, 3]
+        # try:
+        #     opti_params, cov_arr = curve_fit(tool_belt.gaussian, 
+        #           rad_dist[ring_range_low[0]: ring_range_low[1]],
+        #           counts[ring_range_low[0]: ring_range_low[1]],
+        #           p0=init_fit,
+        #           bounds = ([-numpy.infty, -numpy.infty, -numpy.infty, 0], 
+        #                     [numpy.infty, 0, 100, 9]))
         
-            lin_radii = numpy.linspace(rad_dist[ring_range_low[0]],
-                                rad_dist[ring_range_low[1]], 100)
-            ax.plot(lin_radii,
-                   tool_belt.gaussian(lin_radii, *opti_params), 'r-')
-            text = 'A={:.3f} sqrt(counts)\n$r_0$={:.3f} nm\n ' \
-                '$\sigma$={:.3f} nm\nC={:.3f} counts'.format(*opti_params)
-            ax.text(0.5-0.3*(1+ri), 0.1, text, transform=ax.transAxes, fontsize=12,
-                    verticalalignment='top', bbox=props)
-            print(opti_params)
-        except Exception:
-            text = 'Peak could not be fit for -{} nm lobe'.format(ring_r_nm)
-            ax.text(0.5-0.3*(1+ri), 0.1, text, transform=ax.transAxes, fontsize=12,
-                    verticalalignment='top', bbox=props)
+        #     lin_radii = numpy.linspace(rad_dist[ring_range_low[0]],
+        #                         rad_dist[ring_range_low[1]], 100)
+        #     ax.plot(lin_radii,
+        #            tool_belt.gaussian(lin_radii, *opti_params), 'r-')
+        #     text = 'A={:.3f} sqrt(counts)\n$r_0$={:.3f} nm\n ' \
+        #         '$\sigma$={:.3f} nm\nC={:.3f} counts'.format(*opti_params)
+        #     ax.text(0.5-0.3*(1+ri), 0.1, text, transform=ax.transAxes, fontsize=12,
+        #             verticalalignment='top', bbox=props)
+        #     print(opti_params)
+        # except Exception:
+        #     text = 'Peak could not be fit for -{} nm lobe'.format(ring_r_nm)
+        #     ax.text(0.5-0.3*(1+ri), 0.1, text, transform=ax.transAxes, fontsize=12,
+        #             verticalalignment='top', bbox=props)
+            
+    
+    # filePath = tool_belt.get_file_path(__file__, timestamp,
+    #                                        nv_sig['name'])
+    # tool_belt.save_figure(fig, filePath)
+    
+    return lobe_widths
 
 # %%
 def build_voltages_from_list(start_coords_drift, coords_list_drift):
@@ -943,7 +972,8 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/SPaCE/2021_07'
+    path = 'pc_rabi/branch_master/SPaCE/2021_08'
+    sub_folder = '2021_08_02 22 mW vary pulse dur/x'
     # file_name = '2021_07_26-22_23_54-johnson-nv1_2021_07_21'
     # file_name = '2021_07_27-09_03_48-johnson-nv1_2021_07_21'
     # file_name = '2021_07_26-23_35_05-johnson-nv1_2021_07_21'
@@ -951,7 +981,7 @@ if __name__ == '__main__':
     file_name_no_opt = '2021_07_27-15_10_17-johnson-nv1_2021_07_27'
     file_name_opt = '2021_07_27-19_03_17-johnson-nv1_2021_07_27'
     
-    #================ 2/27/2021 x and y scans @ 22 mW ================#
+    #================ 7/27/2021 x and y scans @ 22 mW ================#
     # file_list = ['2021_07_27-04_19_32-johnson-nv1_2021_07_21', # x
     #               '2021_07_27-01_57_21-johnson-nv1_2021_07_21',
     #               '2021_07_26-23_35_05-johnson-nv1_2021_07_21',
@@ -963,14 +993,14 @@ if __name__ == '__main__':
     #               '2021_07_27-00_46_16-johnson-nv1_2021_07_21',
     #               '2021_07_26-22_23_54-johnson-nv1_2021_07_21']
     
-    #================ 2/28/2021 x and y scans @ 33 mW ================#
+    #================ 7/28/2021 x and y scans @ 33 mW ================#
     # x
-    file_list = ['2021_07_28-00_46_22-johnson-nv1_2021_07_27', 
+    # file_list = ['2021_07_28-00_46_22-johnson-nv1_2021_07_27', 
                   # '2021_07_28-03_08_32-johnson-nv1_2021_07_27',
                   # '2021_07_28-05_30_52-johnson-nv1_2021_07_27',
                   # '2021_07_28-07_54_25-johnson-nv1_2021_07_27',
                   # '2021_07_27-21_13_36-johnson-nv1_2021_07_27'
-                  ]
+                  # ]
     
     # y
     # file_list = ['2021_07_28-01_57_24-johnson-nv1_2021_07_27',
@@ -980,11 +1010,54 @@ if __name__ == '__main__':
     #              '2021_07_27-22_39_56-johnson-nv1_2021_07_27']
     
     
+    #================ 8/2/2021 x and y scans @ 22 mW ================#
+    # x
+    file_list = [
+                '2021_07_30-18_15_21-johnson-nv1_2021_07_27',
+                   '2021_07_30-20_39_48-johnson-nv1_2021_07_27',
+                   '2021_07_31-10_49_04-johnson-nv1_2021_07_27',
+                  '2021_07_31-23_41_32-johnson-nv1_2021_07_27',
+                  '2021_07_31-13_13_29-johnson-nv1_2021_07_27',
+                  '2021_07_31-15_37_56-johnson-nv1_2021_07_27',
+                  '2021_07_31-18_02_29-johnson-nv1_2021_07_27',
+                  '2021_08_01-02_06_04-johnson-nv1_2021_07_27',
+                  '2021_08_01-04_30_39-johnson-nv1_2021_07_27',
+                  '2021_08_01-06_55_19-johnson-nv1_2021_07_27',
+                  '2021_08_01-09_20_02-johnson-nv1_2021_07_27',
+                  '2021_08_01-11_44_49-johnson-nv1_2021_07_27'
+                   ]
+    
+    # y
+    # file_list = ['2021_07_30-19_27_35-johnson-nv1_2021_07_27',
+    #              '2021_07_30-21_52_01-johnson-nv1_2021_07_27', 
+    #              '2021_07_31-12_01_16-johnson-nv1_2021_07_27',
+    #              '2021_08_01-00_53_48-johnson-nv1_2021_07_27',
+    #              '2021_07_31-14_25_41-johnson-nv1_2021_07_27',
+    #              '2021_07_31-16_50_12-johnson-nv1_2021_07_27',
+    #              '2021_07_31-19_14_50-johnson-nv1_2021_07_27',
+    #              '2021_08_01-03_18_22-johnson-nv1_2021_07_27',
+    #              '2021_08_01-05_42_58-johnson-nv1_2021_07_27',
+    #              '2021_08_01-08_07_40-johnson-nv1_2021_07_27',
+    #              '2021_08_01-10_32_24-johnson-nv1_2021_07_27',
+    #              '2021_08_01-12_57_13-johnson-nv1_2021_07_27',
+    #             ]
+    
     ########### Fit Gaussian to 1D files ###########
+    widths_master_list = []
     for file_name in file_list:
 
-        lobe_positions = [700, 1100, 1500] # 400, 800, 1200, 1600
-        gaussian_fit_1D_airy_rings(file_name, path, lobe_positions)
+        lobe_positions = [-762, 660] # 400, 800, 1200, 1600
+        widths = gaussian_fit_1D_airy_rings(file_name, path + '/' + sub_folder, 
+                                            lobe_positions)
+        widths_master_list.append(widths[1])
+        
+    x_vals = [100, 250, 300, 325, 350, 400, 500, 600, 700, 800, 900, 1000]
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    ax.plot(x_vals[:-2], widths_master_list[:-2], 'bo')
+    ax.set_xlabel('Pulse duration (us)')
+    ax.set_ylabel('Gaussian sigma (nm)')
+    ax.set_title('8/2/2021 22 mW, y axis, 660 nm lobe')
+        
         
     ############# Plot 1D comparisons ##############
     # rad_dist, counts_no_opt = plot_1D_SpaCE(file_name_no_opt, path, do_plot = False)
