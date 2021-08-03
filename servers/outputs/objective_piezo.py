@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the PI E709 objective piezo. Hysteresis adjustments are 
+Output server for the PI E709 objective piezo. 
 
 Created on Thu Apr  4 15:58:30 2019
 
@@ -45,7 +45,7 @@ class ObjectivePiezo(LabradServer):
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.task = None
-        self.last_turning_point = None
+        self.last_turning_voltage = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -135,6 +135,16 @@ class ObjectivePiezo(LabradServer):
         # This can happen if we quit out early
         if self.task is not None:
             self.close_task_internal()
+
+        # Adjust voltage decreases for hysteresis
+        current_voltage = self.read_z(c)
+        last_voltage_diff = current_voltage - self.last_turning_voltage
+        new_voltage_diff = voltage - current_voltage
+        # Determine if we're turning around or not
+        if numpy.sign(last_voltage_diff) + numpy.sign(new_voltage_diff) == 0:
+            voltage_diff = voltage - self.last_turning_voltage
+            voltage_adjustment = voltage_diff * self.hysteresis_slope
+            voltage_adjustment += self.hysteresis_offset
 
         with nidaqmx.Task() as task:
             # Set up the output channels
