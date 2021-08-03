@@ -530,6 +530,7 @@ def create_line_plots_figure(vals, xVals=None):
         matplotlib.figure.Figure
     """
 
+
     # Tell matplotlib to generate a figure with len(vals) plots
     fig, ax = plt.subplots(len(vals))
 

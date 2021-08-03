@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the PI E709 objective piezo.
+Output server for the PI E709 objective piezo. Hysteresis adjustments are 
 
 Created on Thu Apr  4 15:58:30 2019
 
@@ -45,6 +45,7 @@ class ObjectivePiezo(LabradServer):
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.task = None
+        self.last_turning_point = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -56,6 +57,9 @@ class ObjectivePiezo(LabradServer):
         p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('ao_objective_piezo')
         p.get('di_clock')
+        p.cd(['', 'Config', 'Positioning'])
+        p.get('objective_piezo_hysteresis_slope')
+        p.get('objective_piezo_hysteresis_offset')
         result = await p.send()
         return result['get']
 
@@ -72,6 +76,8 @@ class ObjectivePiezo(LabradServer):
         self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
         self.daq_ao_objective_piezo = config[2]
         self.daq_di_clock = config[3]
+        self.hysteresis_slope = config[4]
+        self.hysteresis_offset = config[5]
         logging.debug('Init complete')
 
     def load_stream_writer(self, c, task_name, voltages, period):
