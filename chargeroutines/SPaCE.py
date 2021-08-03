@@ -388,7 +388,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
     # num_opti_steps sampels for each three optimize axes.
     total_num_samples = 3 + 2 * num_opti_steps
 
-    xy_opti_scan_range = 1/2 * (tool_belt.get_registry_entry_no_cxn('xy_optimize_range',
+    xy_opti_scan_range = 2/3 * (tool_belt.get_registry_entry_no_cxn('xy_optimize_range',
                            ['Config','Positioning']))
 
     init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
@@ -423,16 +423,16 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
     # define the sequence paramters
-    # file_name = 'SPaCE_w_optimize_xy.py'
-    file_name = 'SPaCE.py'
-    # seq_args = [ initialization_time, pulse_time, charge_readout_time,
-    #             imaging_readout_dur, x_move_delay, y_move_delay,
-    #             charge_readout_laser_power, num_opti_steps, apd_indices[0],
-    #             init_color, pulse_color, readout_color]
+    file_name = 'SPaCE_w_optimize_xy.py'
+    # file_name = 'SPaCE.py'
     seq_args = [ initialization_time, pulse_time, charge_readout_time,
-        charge_readout_laser_power,
-        apd_indices[0],
-        init_color, pulse_color, readout_color]
+                imaging_readout_dur, x_move_delay, y_move_delay,
+                charge_readout_laser_power, num_opti_steps, apd_indices[0],
+                init_color, pulse_color, readout_color]
+    # seq_args = [ initialization_time, pulse_time, charge_readout_time,
+    #     charge_readout_laser_power,
+    #     apd_indices[0],
+    #     init_color, pulse_color, readout_color]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     # return
@@ -461,9 +461,9 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
                      start_coords_drift[2]]
         
         # Build the x,y, and z coordinate lists, which change with each CLK pulse
-        # x_voltages, y_voltages = build_xy_voltages_w_optimize(start_coords_drift,
-        #               CPG_coord, num_opti_steps, xy_opti_scan_range)
-        x_voltages, y_voltages = build_voltages_from_list(start_coords_drift, [CPG_coord])
+        x_voltages, y_voltages = build_xy_voltages_w_optimize(start_coords_drift,
+                      CPG_coord, num_opti_steps, xy_opti_scan_range)
+        # x_voltages, y_voltages = build_voltages_from_list(start_coords_drift, [CPG_coord])
 
         # start on the readout NV
         tool_belt.set_xyz(cxn, start_coords_drift)
@@ -477,91 +477,92 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         cxn.pulse_streamer.stream_start()
 
 
-        # We'll be lookign for three samples each repetition with how I have
-        # the sequence set up
-        total_num_samples = 3
-    
-        total_samples_list = []
-        num_read_so_far = 0
-        tool_belt.init_safe_stop()
-    
-        while num_read_so_far < total_num_samples:
-    
-            if tool_belt.safe_stop():
-                break
-    
-            # Read the samples and update the image
-            new_samples = cxn.apd_tagger.read_counter_simple()
-            num_new_samples = len(new_samples)
-    
-            if num_new_samples > 0:
-                for el in new_samples:
-                    total_samples_list.append(int(el))
-                num_read_so_far += num_new_samples
-    
-        # The last of the triplet of readout windows is the counts we are interested in
-        readout_counts = int(total_samples_list[2])
-        readout_counts_list.append(int(readout_counts))
+        #++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+        
+        # # We'll be lookign for three samples each repetition with how I have
+        # # the sequence set up
+        # total_num_samples = 3
     
         # total_samples_list = []
         # num_read_so_far = 0
         # tool_belt.init_safe_stop()
-
-        # # new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
-        # # for el in new_samples:
-        # #     total_samples_list.append(int(el))
-
-
+    
         # while num_read_so_far < total_num_samples:
-
+    
         #     if tool_belt.safe_stop():
         #         break
-
+    
         #     # Read the samples and update the image
         #     new_samples = cxn.apd_tagger.read_counter_simple()
         #     num_new_samples = len(new_samples)
-
+    
         #     if num_new_samples > 0:
         #         for el in new_samples:
         #             total_samples_list.append(int(el))
         #         num_read_so_far += num_new_samples
-
-        # # The third value is the charge readout.
-        # charge_readout_count = total_samples_list[2]
-        # readout_counts_list.append(charge_readout_count)
-        # x_opti_counts = total_samples_list[3:num_opti_steps+3]
-        # y_opti_counts = total_samples_list[num_opti_steps+3:2*num_opti_steps+3]
-
-        # #fit to the x, y, and z lists, find drift, update drift. etc
-        # x_scan_voltages = x_voltages[3:num_opti_steps+3]
-        # y_scan_voltages = y_voltages[num_opti_steps+3:2*num_opti_steps+3]
-
-        # # IF you want to see the optimize counts every time, set opti_plot to True
-        # if opti_plot:
-        #     fig = optimize.create_figure()
-        #     optimize.update_figure(fig, 0, x_scan_voltages, x_opti_counts, True)
-        #     optimize.update_figure(fig, 1, y_scan_voltages, y_opti_counts, True)
-
-        #     x_opti_coord = gaussian_fit(nv_sig, x_scan_voltages, x_opti_counts, 0, fig)
-        #     y_opti_coord = gaussian_fit(nv_sig, y_scan_voltages, y_opti_counts, 1, fig)
-        # else:
-        #     x_opti_coord = gaussian_fit(nv_sig, x_scan_voltages, x_opti_counts, 0)
-        #     y_opti_coord = gaussian_fit(nv_sig, y_scan_voltages, y_opti_counts, 1)
+    
+        # # The last of the triplet of readout windows is the counts we are interested in
+        # readout_counts = int(total_samples_list[2])
+        # readout_counts_list.append(int(readout_counts))
+        
+        #++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+    
+        total_samples_list = []
+        num_read_so_far = 0
+        tool_belt.init_safe_stop()
 
 
-        # opti_coords = [x_opti_coord, y_opti_coord, start_coords_drift[2]]
-        # #If optimize failed, jsut set that coordinate to the start coordinate
-        # for n, el in enumerate(opti_coords):
-        #     if el == None:
-        #         opti_coords[n] = start_coords[n]
 
-        # # print(opti_coords)
-        # # print(start_coords)
-        # drift = (numpy.array(opti_coords) - numpy.array(start_coords)).tolist()
-        # tool_belt.set_drift(drift)
-        # # print(drift)
+        while num_read_so_far < total_num_samples:
 
-        # drift_list.append(drift)
+            if tool_belt.safe_stop():
+                break
+
+            # Read the samples and update the image
+            new_samples = cxn.apd_tagger.read_counter_simple()
+            num_new_samples = len(new_samples)
+
+            if num_new_samples > 0:
+                for el in new_samples:
+                    total_samples_list.append(int(el))
+                num_read_so_far += num_new_samples
+
+        # The third value is the charge readout.
+        charge_readout_count = total_samples_list[2]
+        readout_counts_list.append(charge_readout_count)
+        x_opti_counts = total_samples_list[3:num_opti_steps+3]
+        y_opti_counts = total_samples_list[num_opti_steps+3:2*num_opti_steps+3]
+
+        #fit to the x, y, and z lists, find drift, update drift. etc
+        x_scan_voltages = x_voltages[3:num_opti_steps+3]
+        y_scan_voltages = y_voltages[num_opti_steps+3:2*num_opti_steps+3]
+
+        # IF you want to see the optimize counts every time, set opti_plot to True
+        if opti_plot:
+            fig = optimize.create_figure()
+            optimize.update_figure(fig, 0, x_scan_voltages, x_opti_counts)
+            optimize.update_figure(fig, 1, y_scan_voltages, y_opti_counts)
+
+            x_opti_coord = gaussian_fit(nv_sig, x_scan_voltages, x_opti_counts, 0, fig)
+            y_opti_coord = gaussian_fit(nv_sig, y_scan_voltages, y_opti_counts, 1, fig)
+        else:
+            x_opti_coord = gaussian_fit(nv_sig, x_scan_voltages, x_opti_counts, 0)
+            y_opti_coord = gaussian_fit(nv_sig, y_scan_voltages, y_opti_counts, 1)
+
+
+        opti_coords = [x_opti_coord, y_opti_coord, start_coords_drift[2]]
+        #If optimize failed, jsut set that coordinate to the start coordinate
+        for n, el in enumerate(opti_coords):
+            if el == None:
+                opti_coords[n] = start_coords[n]
+
+        # print(opti_coords)
+        # print(start_coords)
+        drift = (numpy.array(opti_coords) - numpy.array(start_coords)).tolist()
+        tool_belt.set_drift(drift)
+        # print(drift)
+
+        drift_list.append(drift)
 
 
 
@@ -818,7 +819,7 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
         #========================== Run the data collection====================
-        ret_vals = data_collection_optimize(nv_sig, coords_voltages_shuffle_list, n)
+        ret_vals = data_collection_optimize(nv_sig, coords_voltages_shuffle_list, n, opti_plot=False)
         # ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
 
         readout_counts_list_shfl, drift = ret_vals
@@ -966,9 +967,13 @@ if __name__ == '__main__':
 
     file_name_no_opt = '2021_07_27-15_10_17-johnson-nv1_2021_07_27'
     file_name_no_opt_2 = '2021_07_28-15_21_25-johnson-nv1_2021_07_27'
+    file_name_no_opt_dim = '2021_08_03-15_13_57-johnson-nv1_2021_07_27'
     file_name_opt = '2021_07_27-19_03_17-johnson-nv1_2021_07_27'
     file_name_opt_xy = '2021_07_28-14_00_23-johnson-nv1_2021_07_27'
     file_name_opt_mod = '2021_08_03-12_54_18-johnson-nv1_2021_07_27'
+    file_name_opt_dim = '2021_08_03-14_48_39-johnson-nv1_2021_07_27'
+    
+    file = '2021_07_31-18_02_29-johnson-nv1_2021_07_27'
 
     #================ 7/27/2021 x and y scans @ 22 mW ================#
     # file_list = ['2021_07_27-04_19_32-johnson-nv1_2021_07_21', # x
@@ -1076,16 +1081,17 @@ if __name__ == '__main__':
 
 
     ############# Plot 1D comparisons ##############
-    rad_dist, counts_no_opt_2 = plot_1D_SpaCE(file_name_no_opt_2, path_july, do_plot = False)
     rad_dist, counts_no_opt = plot_1D_SpaCE(file_name_no_opt, path_july, do_plot = False)
-    rad_dist, counts_opt = plot_1D_SpaCE(file_name_opt, path_july, do_plot = False)
-    rad_dist, counts_opt_xy = plot_1D_SpaCE(file_name_opt_xy, path_july, do_plot = False)
-    rad_dist, counts_opt_mod = plot_1D_SpaCE(file_name_opt_mod, path, do_plot = False)
+    rad_dist, counts_opt = plot_1D_SpaCE(file_name_opt_xy, path_july, do_plot = False)
+    
+    
+    rad_dist, counts = plot_1D_SpaCE(file, path_july, do_plot = False)
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
+    # ax.plot(rad_dist, counts, 'b-', label = 'Optimize every run')
     ax.plot(rad_dist, counts_no_opt, 'b-', label = 'Optimize every run')
-    ax.plot(rad_dist, counts_opt_mod, 'r-', label = 'Optimize every point shell, but sequence is optimize every run ')
+    ax.plot(rad_dist, counts_opt, 'r-', label = 'Optimize every point in x and y')
     ax.set_xlabel('y (nm)')
     ax.set_ylabel('Average counts')
     ax.legend()

@@ -521,11 +521,11 @@ if __name__ == '__main__':
 
     nv_sig = { 'coords': [0.056, -0.098, 5.0],
             'name': '{}-nv1_2021_07_27'.format(sample_name),
-            'disable_opt': False, 'expected_count_rate': 42,
+            'disable_opt': False, 'expected_count_rate': 42,#20,
             'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
             # 'initialize_laser': red_laser, 'initialize_laser_power': 130, 'initialize_dur': 1E3,
             'initialize_laser': green_laser, 'initialize_laser_filter': nd_green, 'initialize_dur': 1E3,
-            'CPG_laser': red_laser, 'CPG_laser_power': 130, 'CPG_laser_dur': 1E4,
+            'CPG_laser': red_laser, 'CPG_laser_power': 80, 'CPG_laser_dur': 1E4,
             # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
             'charge_readout_laser_power': 0.1, 'charge_readout_dur':250*10**6,
@@ -594,7 +594,7 @@ if __name__ == '__main__':
         #       do_SPaCE(nv_sig_copy)
         #       nv_sig_copy['dir_1D'] = 'y'
         #       do_SPaCE(nv_sig_copy)
-        for t in [5*10**5]:
+        for t in [3*10**5]:
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['CPG_laser_dur'] = t
             do_SPaCE(nv_sig_copy)
