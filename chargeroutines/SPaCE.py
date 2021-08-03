@@ -115,14 +115,14 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
         # ring_ind_low = int(zero_ind - ring_r_nm / step_size_nm)
         # ring_range_low = [ring_ind_low-wings_ind,
         #                     ring_ind_low+wings_ind]
-        init_fit = [3, ring_r_nm, 15, 7]
+        init_fit = [2, ring_r_nm, 15, 7]
         try:
             opti_params, cov_arr = curve_fit(tool_belt.gaussian,
                   rad_dist[ring_range[0]: ring_range[1]],
                   counts[ring_range[0]: ring_range[1]],
                   p0=init_fit,
-                    bounds = ([-numpy.infty, -(abs(ring_r_nm) + 100), -80, 0],
-                              [numpy.infty, abs(ring_r_nm) + 100, 80, 9])
+                    bounds = ([-numpy.infty, -(abs(ring_r_nm) + 10), -80, 0],
+                              [numpy.infty, abs(ring_r_nm) + 10, 80, 11])
                   )
 
             lin_radii = numpy.linspace(rad_dist[ring_range[0]],
@@ -169,9 +169,9 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
         #             verticalalignment='top', bbox=props)
 
 
-    # filePath = tool_belt.get_file_path(__file__, timestamp,
-    #                                        nv_sig['name'])
-    # tool_belt.save_figure(fig, filePath)
+    filePath = tool_belt.get_file_path(__file__, timestamp,
+                                            nv_sig['name'])
+    tool_belt.save_figure(fig, filePath + '-gaussian_fit')
 
     return lobe_widths
 
@@ -423,11 +423,16 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
     # define the sequence paramters
-    file_name = 'SPaCE_w_optimize_xy.py'
+    # file_name = 'SPaCE_w_optimize_xy.py'
+    file_name = 'SPaCE.py'
+    # seq_args = [ initialization_time, pulse_time, charge_readout_time,
+    #             imaging_readout_dur, x_move_delay, y_move_delay,
+    #             charge_readout_laser_power, num_opti_steps, apd_indices[0],
+    #             init_color, pulse_color, readout_color]
     seq_args = [ initialization_time, pulse_time, charge_readout_time,
-                imaging_readout_dur, x_move_delay, y_move_delay,
-                charge_readout_laser_power, num_opti_steps, apd_indices[0],
-                init_color, pulse_color, readout_color]
+        charge_readout_laser_power,
+        apd_indices[0],
+        init_color, pulse_color, readout_color]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     # return
@@ -454,10 +459,11 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         # step thru the coordinates to test as the cpg pulse
         CPG_coord = [coords_list_drift[i][0], coords_list_drift[i][1],
                      start_coords_drift[2]]
-
+        
         # Build the x,y, and z coordinate lists, which change with each CLK pulse
-        x_voltages, y_voltages = build_xy_voltages_w_optimize(start_coords_drift,
-                      CPG_coord, num_opti_steps, xy_opti_scan_range)
+        # x_voltages, y_voltages = build_xy_voltages_w_optimize(start_coords_drift,
+        #               CPG_coord, num_opti_steps, xy_opti_scan_range)
+        x_voltages, y_voltages = build_voltages_from_list(start_coords_drift, [CPG_coord])
 
         # start on the readout NV
         tool_belt.set_xyz(cxn, start_coords_drift)
@@ -471,65 +477,91 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         cxn.pulse_streamer.stream_start()
 
 
+        # We'll be lookign for three samples each repetition with how I have
+        # the sequence set up
+        total_num_samples = 3
+    
         total_samples_list = []
         num_read_so_far = 0
         tool_belt.init_safe_stop()
-
-        # new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
-        # for el in new_samples:
-        #     total_samples_list.append(int(el))
-
-
+    
         while num_read_so_far < total_num_samples:
-
+    
             if tool_belt.safe_stop():
                 break
-
+    
             # Read the samples and update the image
             new_samples = cxn.apd_tagger.read_counter_simple()
             num_new_samples = len(new_samples)
-
+    
             if num_new_samples > 0:
                 for el in new_samples:
                     total_samples_list.append(int(el))
                 num_read_so_far += num_new_samples
+    
+        # The last of the triplet of readout windows is the counts we are interested in
+        readout_counts = int(total_samples_list[2])
+        readout_counts_list.append(int(readout_counts))
+    
+        # total_samples_list = []
+        # num_read_so_far = 0
+        # tool_belt.init_safe_stop()
 
-        # The third value is the charge readout.
-        charge_readout_count = total_samples_list[2]
-        readout_counts_list.append(charge_readout_count)
-        x_opti_counts = total_samples_list[3:num_opti_steps+3]
-        y_opti_counts = total_samples_list[num_opti_steps+3:2*num_opti_steps+3]
-
-        #fit to the x, y, and z lists, find drift, update drift. etc
-        x_scan_voltages = x_voltages[3:num_opti_steps+3]
-        y_scan_voltages = y_voltages[num_opti_steps+3:2*num_opti_steps+3]
-
-        # IF you want to see the optimize counts every time, set opti_plot to True
-        if opti_plot:
-            fig = optimize.create_figure()
-            optimize.update_figure(fig, 0, x_scan_voltages, x_opti_counts, True)
-            optimize.update_figure(fig, 1, y_scan_voltages, y_opti_counts, True)
-
-            x_opti_coord = gaussian_fit(nv_sig, x_scan_voltages, x_opti_counts, 0, fig)
-            y_opti_coord = gaussian_fit(nv_sig, y_scan_voltages, y_opti_counts, 1, fig)
-        else:
-            x_opti_coord = gaussian_fit(nv_sig, x_scan_voltages, x_opti_counts, 0)
-            y_opti_coord = gaussian_fit(nv_sig, y_scan_voltages, y_opti_counts, 1)
+        # # new_samples = cxn.apd_tagger.read_counter_simple(total_num_samples)
+        # # for el in new_samples:
+        # #     total_samples_list.append(int(el))
 
 
-        opti_coords = [x_opti_coord, y_opti_coord, start_coords_drift[2]]
-        #If optimize failed, jsut set that coordinate to the start coordinate
-        for n, el in enumerate(opti_coords):
-            if el == None:
-                opti_coords[n] = start_coords[n]
+        # while num_read_so_far < total_num_samples:
 
-        # print(opti_coords)
-        # print(start_coords)
-        drift = (numpy.array(opti_coords) - numpy.array(start_coords)).tolist()
-        tool_belt.set_drift(drift)
-        # print(drift)
+        #     if tool_belt.safe_stop():
+        #         break
 
-        drift_list.append(drift)
+        #     # Read the samples and update the image
+        #     new_samples = cxn.apd_tagger.read_counter_simple()
+        #     num_new_samples = len(new_samples)
+
+        #     if num_new_samples > 0:
+        #         for el in new_samples:
+        #             total_samples_list.append(int(el))
+        #         num_read_so_far += num_new_samples
+
+        # # The third value is the charge readout.
+        # charge_readout_count = total_samples_list[2]
+        # readout_counts_list.append(charge_readout_count)
+        # x_opti_counts = total_samples_list[3:num_opti_steps+3]
+        # y_opti_counts = total_samples_list[num_opti_steps+3:2*num_opti_steps+3]
+
+        # #fit to the x, y, and z lists, find drift, update drift. etc
+        # x_scan_voltages = x_voltages[3:num_opti_steps+3]
+        # y_scan_voltages = y_voltages[num_opti_steps+3:2*num_opti_steps+3]
+
+        # # IF you want to see the optimize counts every time, set opti_plot to True
+        # if opti_plot:
+        #     fig = optimize.create_figure()
+        #     optimize.update_figure(fig, 0, x_scan_voltages, x_opti_counts, True)
+        #     optimize.update_figure(fig, 1, y_scan_voltages, y_opti_counts, True)
+
+        #     x_opti_coord = gaussian_fit(nv_sig, x_scan_voltages, x_opti_counts, 0, fig)
+        #     y_opti_coord = gaussian_fit(nv_sig, y_scan_voltages, y_opti_counts, 1, fig)
+        # else:
+        #     x_opti_coord = gaussian_fit(nv_sig, x_scan_voltages, x_opti_counts, 0)
+        #     y_opti_coord = gaussian_fit(nv_sig, y_scan_voltages, y_opti_counts, 1)
+
+
+        # opti_coords = [x_opti_coord, y_opti_coord, start_coords_drift[2]]
+        # #If optimize failed, jsut set that coordinate to the start coordinate
+        # for n, el in enumerate(opti_coords):
+        #     if el == None:
+        #         opti_coords[n] = start_coords[n]
+
+        # # print(opti_coords)
+        # # print(start_coords)
+        # drift = (numpy.array(opti_coords) - numpy.array(start_coords)).tolist()
+        # tool_belt.set_drift(drift)
+        # # print(drift)
+
+        # drift_list.append(drift)
 
 
 
@@ -786,8 +818,8 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
         #========================== Run the data collection====================
-        # ret_vals = data_collection_optimize(nv_sig, coords_voltages_shuffle_list, n)
-        ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
+        ret_vals = data_collection_optimize(nv_sig, coords_voltages_shuffle_list, n)
+        # ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
 
         readout_counts_list_shfl, drift = ret_vals
         drift_list_master.append(drift)
@@ -924,8 +956,10 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
 
 if __name__ == '__main__':
 
+    path_july = 'pc_rabi/branch_master/SPaCE/2021_07'
     path = 'pc_rabi/branch_master/SPaCE/2021_08'
-    sub_folder = '2021_08_02 22 mW vary pulse dur/x'
+    # sub_folder = '2021_08_02 22 mW vary pulse dur/y'
+    sub_folder = '2021_08_02 1000 us vary pulse power/y'
     # file_name = '2021_07_26-22_23_54-johnson-nv1_2021_07_21'
     # file_name = '2021_07_27-09_03_48-johnson-nv1_2021_07_21'
     # file_name = '2021_07_26-23_35_05-johnson-nv1_2021_07_21'
@@ -934,6 +968,7 @@ if __name__ == '__main__':
     file_name_no_opt_2 = '2021_07_28-15_21_25-johnson-nv1_2021_07_27'
     file_name_opt = '2021_07_27-19_03_17-johnson-nv1_2021_07_27'
     file_name_opt_xy = '2021_07_28-14_00_23-johnson-nv1_2021_07_27'
+    file_name_opt_mod = '2021_08_03-12_54_18-johnson-nv1_2021_07_27'
 
     #================ 7/27/2021 x and y scans @ 22 mW ================#
     # file_list = ['2021_07_27-04_19_32-johnson-nv1_2021_07_21', # x
@@ -966,90 +1001,96 @@ if __name__ == '__main__':
 
     #================ 8/2/2021 x and y scans @ 22 mW ================#
     # x
-    file_list = [
-                '2021_07_30-18_15_21-johnson-nv1_2021_07_27',
-                   '2021_07_30-20_39_48-johnson-nv1_2021_07_27',
-                   '2021_07_31-10_49_04-johnson-nv1_2021_07_27',
-                  '2021_07_31-23_41_32-johnson-nv1_2021_07_27',
-                  '2021_07_31-13_13_29-johnson-nv1_2021_07_27',
-                  '2021_07_31-15_37_56-johnson-nv1_2021_07_27',
-                  '2021_07_31-18_02_29-johnson-nv1_2021_07_27',
-                  '2021_08_01-02_06_04-johnson-nv1_2021_07_27',
-                  '2021_08_01-04_30_39-johnson-nv1_2021_07_27',
-                  '2021_08_01-06_55_19-johnson-nv1_2021_07_27',
-                  '2021_08_01-09_20_02-johnson-nv1_2021_07_27',
-                  '2021_08_01-11_44_49-johnson-nv1_2021_07_27'
-                   ]
+    # file_list = [
+    #             '2021_07_30-18_15_21-johnson-nv1_2021_07_27',
+    #                '2021_07_30-20_39_48-johnson-nv1_2021_07_27',
+    #                '2021_07_31-10_49_04-johnson-nv1_2021_07_27',
+    #               '2021_07_31-23_41_32-johnson-nv1_2021_07_27',
+    #               '2021_07_31-13_13_29-johnson-nv1_2021_07_27',
+    #               '2021_07_31-15_37_56-johnson-nv1_2021_07_27',
+    #               '2021_07_31-18_02_29-johnson-nv1_2021_07_27',
+    #               '2021_08_01-02_06_04-johnson-nv1_2021_07_27',
+    #               '2021_08_01-04_30_39-johnson-nv1_2021_07_27',
+    #               '2021_08_01-06_55_19-johnson-nv1_2021_07_27',
+    #               '2021_08_01-09_20_02-johnson-nv1_2021_07_27',
+    #               '2021_08_01-11_44_49-johnson-nv1_2021_07_27'
+    #                ]
 
     # y
-    # file_list = ['2021_07_30-19_27_35-johnson-nv1_2021_07_27',
-    #              '2021_07_30-21_52_01-johnson-nv1_2021_07_27',
-    #              '2021_07_31-12_01_16-johnson-nv1_2021_07_27',
-    #              '2021_08_01-00_53_48-johnson-nv1_2021_07_27',
-    #              '2021_07_31-14_25_41-johnson-nv1_2021_07_27',
-    #              '2021_07_31-16_50_12-johnson-nv1_2021_07_27',
-    #              '2021_07_31-19_14_50-johnson-nv1_2021_07_27',
-    #              '2021_08_01-03_18_22-johnson-nv1_2021_07_27',
-    #              '2021_08_01-05_42_58-johnson-nv1_2021_07_27',
-    #              '2021_08_01-08_07_40-johnson-nv1_2021_07_27',
-    #              '2021_08_01-10_32_24-johnson-nv1_2021_07_27',
-    #              '2021_08_01-12_57_13-johnson-nv1_2021_07_27',
+    # file_list = [
+    #             '2021_07_30-19_27_35-johnson-nv1_2021_07_27',
+    #                '2021_07_30-21_52_01-johnson-nv1_2021_07_27',
+    #                '2021_07_31-12_01_16-johnson-nv1_2021_07_27',
+    #                '2021_08_01-00_53_48-johnson-nv1_2021_07_27',
+    #                '2021_07_31-14_25_41-johnson-nv1_2021_07_27',
+    #                '2021_07_31-16_50_12-johnson-nv1_2021_07_27',
+    #                '2021_07_31-19_14_50-johnson-nv1_2021_07_27',
+    #                '2021_08_01-03_18_22-johnson-nv1_2021_07_27',
+    #                '2021_08_01-05_42_58-johnson-nv1_2021_07_27',
+    #                '2021_08_01-08_07_40-johnson-nv1_2021_07_27',
+    #                '2021_08_01-10_32_24-johnson-nv1_2021_07_27',
+    #                '2021_08_01-12_57_13-johnson-nv1_2021_07_27',
     #             ]
+    
+    #================ 8/2/2021 x scans @ 800 us ================#
+    
+    # x
+    # file_list = [
+    #     '2021_08_02-14_21_03-johnson-nv1_2021_07_27',
+    #     '2021_08_01-06_55_19-johnson-nv1_2021_07_27',
+    #     '2021_08_01-23_52_30-johnson-nv1_2021_07_27',
+    #     '2021_08_01-14_39_32-johnson-nv1_2021_07_27'
+    #     ]
+    
+    #================ 8/2/2021 y scans @ 1000 us ================#
+    
+    # y
+    file_list = [
+        '2021_08_01-12_57_13-johnson-nv1_2021_07_27',
+        '2021_08_02-03_29_37-johnson-nv1_2021_07_27',
+        '2021_08_01-18_16_42-johnson-nv1_2021_07_27'
+        ]
 
     ########### Fit Gaussian to 1D files ###########
-    widths_master_list = []
-    for file_name in file_list:
+    # widths_master_list = []
+    # for file_name in file_list:
 
-        lobe_positions = [-762, 660] # 400, 800, 1200, 1600
-        widths = gaussian_fit_1D_airy_rings(file_name, path + '/' + sub_folder,
-                                            lobe_positions)
-        widths_master_list.append(widths[1])
+    #     lobe_positions = [-750, 660] # 400, 800, 1200, 1600
+    #     widths = gaussian_fit_1D_airy_rings(file_name, path + '/' + sub_folder,
+    #                                         lobe_positions)
+    #     widths_master_list.append(widths[0])
 
-    x_vals = [100, 250, 300, 325, 350, 400, 500, 600, 700, 800, 900, 1000]
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.plot(x_vals[:-2], widths_master_list[:-2], 'bo')
-    ax.set_xlabel('Pulse duration (us)')
-    ax.set_ylabel('Gaussian sigma (nm)')
-    ax.set_title('8/2/2021 22 mW, y axis, 660 nm lobe')
+    # x_vals = [ 22, 25, 33]
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(x_vals, widths_master_list, 'go')
+    # ax.set_xlabel('Pulse power (mW)')
+    # ax.set_ylabel('Gaussian sigma (nm)')
+    # ax.set_title('8/2/2021 1000 us, y axis, -770 nm lobe')
+    
+    # x_vals = [100, 250, 300, 325, 350, 400, 500, 600, 700, 800, 900, 1000]
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(x_vals, widths_master_list, 'bo')
+    # ax.set_xlabel('Pulse duration (us)')
+    # ax.set_ylabel('Gaussian sigma (nm)')
+    # ax.set_title('8/2/2021 22 mW, y axis, +730 nm lobe')
 
 
     ############# Plot 1D comparisons ##############
-    rad_dist, counts_no_opt_2 = plot_1D_SpaCE(file_name_no_opt_2, path, do_plot = False)
-    rad_dist, counts_no_opt = plot_1D_SpaCE(file_name_no_opt, path, do_plot = False)
-    rad_dist, counts_opt = plot_1D_SpaCE(file_name_opt, path, do_plot = False)
-    rad_dist, counts_opt_xy = plot_1D_SpaCE(file_name_opt_xy, path, do_plot = False)
+    rad_dist, counts_no_opt_2 = plot_1D_SpaCE(file_name_no_opt_2, path_july, do_plot = False)
+    rad_dist, counts_no_opt = plot_1D_SpaCE(file_name_no_opt, path_july, do_plot = False)
+    rad_dist, counts_opt = plot_1D_SpaCE(file_name_opt, path_july, do_plot = False)
+    rad_dist, counts_opt_xy = plot_1D_SpaCE(file_name_opt_xy, path_july, do_plot = False)
+    rad_dist, counts_opt_mod = plot_1D_SpaCE(file_name_opt_mod, path, do_plot = False)
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
     ax.plot(rad_dist, counts_no_opt, 'b-', label = 'Optimize every run')
-    ax.plot(rad_dist, counts_no_opt_2, 'k.-', label = 'Optimize every run 2')
-    ax.plot(rad_dist, counts_opt, 'r-', label = 'Optimize every point')
-    ax.plot(rad_dist, counts_opt_xy, 'g-', label = 'Optimize every point, only in x and y')
+    ax.plot(rad_dist, counts_opt_mod, 'r-', label = 'Optimize every point shell, but sequence is optimize every run ')
     ax.set_xlabel('y (nm)')
     ax.set_ylabel('Average counts')
     ax.legend()
 
 
-
-    ######## Plotting lobe widths vs pulse time 7/27/2021 #########
-    # pulse_time_list = [50, 100, 500, 1000]
-    # lobe_widths_yh =[87.59, 68.934, 33.936,20.245 ] #y, high side
-    # lobe_widths_yl =[101.1, 74.985, 38.1, 32.443 ] #y, low side
-    # lobe_widths_xh =[51.680,46.508,  33.661, 27.560 ] #x, high side
-    # lobe_widths_xl =[ 89.257,86.725, 47.1, 30.007 ] #x, low side
-    # # init_guess = [15, 30]
-    # # fit_params, _ = curve_fit(inverse_func,pulse_time_list,lobe_widths, init_guess  )
-    # # print(fit_params)
-    # # lin_x = numpy.linspace( pulse_time_list[0], pulse_time_list[-1], 100)
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(pulse_time_list, lobe_widths_yh, 'go', label = 'y scan, positive lobe')
-    # ax.plot(pulse_time_list, lobe_widths_yl, 'ro', label = 'y scan, negative lobe')
-    # ax.plot(pulse_time_list, lobe_widths_xh, 'ko', label = 'x scan, positive lobe')
-    # ax.plot(pulse_time_list, lobe_widths_xl, 'bo', label = 'x scan, negative lobe')
-    # # ax.plot(lin_x, inverse_func(lin_x, *fit_params), 'r-')
-    # ax.set_xlabel('Pulse duration (us)')
-    # ax.set_ylabel('Airy lobe width (nm)')
-    # ax.legend()
 
 
     # specific for 2D scans

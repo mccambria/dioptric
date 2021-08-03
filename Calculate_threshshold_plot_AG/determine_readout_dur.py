@@ -179,6 +179,9 @@ def measure_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
     nv0 = cxn.apd_tagger.read_counter_simple(num_reps)
     
+    
+    tool_belt.reset_cfm(cxn)
+    
     return nv0, nvm
 
 def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = None,
@@ -195,10 +198,15 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
     nv0_master = []
     nvm_master =[]
     
+    tool_belt.init_safe_stop()
+    
     for p in readout_yellow_powers:
         nv0_power =[]
         nvm_power =[]
         for t in readout_times:
+            # Break out of the while if the user says stop
+            if tool_belt.safe_stop():
+                break
             
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['charge_readout_laser_filter'] = nd_filter
@@ -252,21 +260,34 @@ if __name__ == '__main__':
     red_laser = 'cobolt_638'
     nd_green = 'nd_0.5'
     
-    nv_sig = { 'coords': [0.031, 0.034, 5.00],
-            'name': '{}-nv1_2021_07_16'.format(sample_name),
+    nv_sig = { 'coords': [0.056, -0.098, 5.0],
+            'name': '{}-nv1_2021_07_27'.format(sample_name),
             'disable_opt': False, 'expected_count_rate': 42,
             'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_filter': nd_green, 'nv-_prep_laser_dur': 1E3,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 130, 'nv0_prep_laser_dur': 1E3,
+            # 'initialize_laser': red_laser, 'initialize_laser_power': 130, 'initialize_dur': 1E3,
+            'initialize_laser': green_laser, 'initialize_laser_filter': nd_green, 'initialize_dur': 1E3,
+            'CPG_laser': red_laser, 'CPG_laser_power': 40, 'CPG_laser_dur': 1E4,
+            # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None, 
-            'charge_readout_laser_power': None, 'charge_readout_dur':None,
+            'charge_readout_laser_power': None, 'charge_readout_dur':250*10**6,
+            'dir_1D': 'y',
             'collection_filter': '630_lp', 'magnet_angle': None,
             'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max 
 
-    determine_readout_dur(nv_sig, readout_times =[50*10**6, 100*10**6, 250*10**6],
-                          readout_yellow_powers = [0.1, 0.15],
+
+    try:
+        determine_readout_dur(nv_sig, readout_times =[ 250*10**6, 100*10**6],
+                          readout_yellow_powers = [0.1],
                            nd_filter = 'nd_0.5')
+    finally:
+        # Reset our hardware - this should be done in each routine, but
+        # let's double check here
+        tool_belt.reset_cfm()
+        # Kill safe stop
+        if tool_belt.check_safe_stop_alive():
+            print('\n\nRoutine complete. Press enter to exit.')
+            tool_belt.poll_safe_stop()
 
 #    file_name = 'pc_rabi/branch_Spin_to_charge/collect_charge_counts/2021_04/2021_04_28-17_18_59-goeppert-mayer-nv5_2021_04_15-nv_list'
 #    data_in = tool_belt.get_raw_data('', file_name)

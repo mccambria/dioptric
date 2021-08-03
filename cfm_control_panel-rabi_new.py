@@ -413,13 +413,13 @@ def do_spin_echo(nv_sig, apd_indices):
     return angle
 
 def do_SPaCE(nv_sig):
-    # img_range = 0.12 # V (35 um / 2 V)
-    # num_steps = 7
-    # num_runs = 2
-    
     img_range = 0.11 # V (35 um / 2 V)
-    num_steps = int(400)
-    num_runs = 40
+    num_steps = 400
+    num_runs = 10
+    
+    # img_range = 0.11 # V (35 um / 2 V)
+    # num_steps = int(400)
+    # num_runs = 40
     measurement_type = '1D'
 
     SPaCE.main(nv_sig, img_range, num_steps, num_runs, measurement_type)
@@ -525,7 +525,7 @@ if __name__ == '__main__':
             'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
             # 'initialize_laser': red_laser, 'initialize_laser_power': 130, 'initialize_dur': 1E3,
             'initialize_laser': green_laser, 'initialize_laser_filter': nd_green, 'initialize_dur': 1E3,
-            'CPG_laser': red_laser, 'CPG_laser_power': 60, 'CPG_laser_dur': 1E4,
+            'CPG_laser': red_laser, 'CPG_laser_power': 130, 'CPG_laser_dur': 1E4,
             # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
             'charge_readout_laser_power': 0.1, 'charge_readout_dur':250*10**6,
@@ -587,17 +587,17 @@ if __name__ == '__main__':
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
         # p =[80, 40, 15]
-        for t in [ 8*10**5, 10**6]:
-              nv_sig_copy = copy.deepcopy(nv_sig)
-              nv_sig_copy['CPG_laser_dur'] = t
-              nv_sig_copy['dir_1D'] = 'x'
-              do_SPaCE(nv_sig_copy)
-              nv_sig_copy['dir_1D'] = 'y'
-              do_SPaCE(nv_sig_copy)
-        # for t in [25*10**5]:
-        #     nv_sig_copy = copy.deepcopy(nv_sig)
-        #     nv_sig_copy['CPG_laser_dur'] = t
-        #     do_SPaCE(nv_sig_copy)
+        # for t in [ 8*10**5, 10**6]:
+        #       nv_sig_copy = copy.deepcopy(nv_sig)
+        #       nv_sig_copy['CPG_laser_dur'] = t
+        #       nv_sig_copy['dir_1D'] = 'x'
+        #       do_SPaCE(nv_sig_copy)
+        #       nv_sig_copy['dir_1D'] = 'y'
+        #       do_SPaCE(nv_sig_copy)
+        for t in [5*10**5]:
+            nv_sig_copy = copy.deepcopy(nv_sig)
+            nv_sig_copy['CPG_laser_dur'] = t
+            do_SPaCE(nv_sig_copy)
         # do_spin_echo_battery(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)

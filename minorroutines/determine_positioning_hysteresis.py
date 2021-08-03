@@ -22,7 +22,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import labrad
 
-
+def linear_line(x, m ,b):
+    return m*x + b
 # %% Main
 
 
@@ -217,3 +218,30 @@ if __name__ == '__main__':
         if tool_belt.check_safe_stop_alive():
             print('\n\nRoutine complete. Press enter to exit.')
             tool_belt.poll_safe_stop()
+
+
+    ###################### Plotting ##########################
+    # file = '2021_07_30-01_20_05-johnson-nv1_2021_07_27'
+    # data_path = 'pc_rabi/branch_master/determine_positioning_hysteresis/2021_07'
+    # data = tool_belt.get_raw_data(file,data_path )
+    # displacement_list = data['displacement_list']
+    # opti_delta_list = data['opti_delta_list']
+    
+    # opti_params, cov_arr = curve_fit(linear_line,
+    #               displacement_list,opti_delta_list)
+    
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(displacement_list, opti_delta_list, 'bo')
+    
+    # lin_x_vals = numpy.linspace(displacement_list[0], displacement_list[-1], 100)
+    # ax.plot(lin_x_vals, linear_line(lin_x_vals, *opti_params), 'r-')
+    # text = 'y = {:.4f} x + {:.5f}'.format(opti_params[0], opti_params[1])
+    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # ax.text(0.5, 0.1, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
+            
+    # ax.set_xlabel('Displacement in axis {} (V)'.format(2))
+    # ax.set_ylabel('Added adjustment to return to original position (V)')
+    # ax.set_title('Movement in axis {}'.format(2))
+    
+    

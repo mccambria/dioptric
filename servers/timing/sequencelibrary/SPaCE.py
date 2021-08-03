@@ -173,7 +173,7 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
-    # seq_args = [1000.0, 100000.0, 100000.0, 0.15, 0, 638, 532, 589]
-    seq_args = [10000.0, 10000.0, 50000000, 0.9, 0, 638, 532, 589]
+    seq_args = [1000.0, 100000.0, 100000.0, 0.15, 0, 638, 532, 589]
+    # seq_args = [10000.0, 10000.0, 50000000, 0.9, 0, 638, 532, 589]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
