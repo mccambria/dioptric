@@ -46,9 +46,9 @@ class ObjectivePiezo(LabradServer):
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.task = None
-        self.last_position = None
-        self.current_direction = None
-        self.last_turning_position = None
+        self.z_last_position = None
+        self.z_current_direction = None
+        self.z_last_turning_position = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -61,8 +61,8 @@ class ObjectivePiezo(LabradServer):
         p.get('ao_objective_piezo')
         p.get('di_clock')
         p.cd(['', 'Config', 'Positioning'])
-        p.get('objective_piezo_hysteresis_a')
-        p.get('objective_piezo_hysteresis_b')
+        p.get('z_hysteresis_a')
+        p.get('z_hysteresis_b')
         result = await p.send()
         return result['get']
 
@@ -79,11 +79,11 @@ class ObjectivePiezo(LabradServer):
         self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
         self.daq_ao_objective_piezo = config[2]
         self.daq_di_clock = config[3]
-        self.hysteresis_a = config[4]
-        self.hysteresis_b = config[5]
+        self.z_hysteresis_a = config[4]
+        self.z_hysteresis_b = config[5]
         logging.debug('Init complete')
         
-    def compensate_hysteresis(self, position):
+    def compensate_hysteresis_z(self, position):
         """
         The hysteresis curve is p(v) = a * v**2 + b * v.
         We want to feedforward using this curve to set the piezo voltage
@@ -104,27 +104,31 @@ class ObjectivePiezo(LabradServer):
             Compensated voltage to set
         """
         
+        single_value = False
         if type(position) not in [numpy.ndarray, list]:
             single_value = True
             position = [position]
         
         # Pull everything out of self to save some lookup time
-        last_position = self.last_position
-        current_direction = self.current_direction
-        last_turning_position = self.last_turning_position
+        last_position = self.z_last_position
+        current_direction = self.z_current_direction
+        last_turning_position = self.z_last_turning_position
         # If values are uninitialized, assume we just started heading up
         # (ie don't adjust the first position at all)
         if None in [last_position, current_direction, last_turning_position]:
             last_position = position[0]
             current_direction = +1
             last_turning_position = position[0]
-        a = self.hysteresis_a
-        b = self.hysteresis_b
+        a = self.z_hysteresis_a
+        b = self.z_hysteresis_b
         
         # We'll have to for loop because the (n+1)th value depends 
         # on the nth value
         compensated_voltage = []
         for val in position:
+            
+            compensated_voltage.append(val)
+            continue
             
             # First determine if we're turning around
             movement_direction = numpy.sign(val - last_position)
@@ -141,16 +145,16 @@ class ObjectivePiezo(LabradServer):
             # Cache the last position
             last_position = val
             
-        self.last_position = val
-        self.current_direction = movement_direction
-        self.last_turning_position = last_turning_position
+        # self.z_last_position = val
+        # self.z_current_direction = movement_direction
+        # self.z_last_turning_position = last_turning_position
         
         if single_value:
             return compensated_voltage[0]
         else:
-            return compensated_voltage
+            return numpy.array(compensated_voltage)
 
-    def load_stream_writer(self, c, task_name, voltages, period):
+    def load_stream_writer_z(self, c, task_name, voltages, period):
 
         # Close the existing task if there is one
         if self.task is not None:
@@ -159,7 +163,7 @@ class ObjectivePiezo(LabradServer):
         # Make sure the voltages are an array
         voltages = numpy.array(voltages)
             
-        compensated_voltages = self.compensate_hysteresis(voltages)
+        compensated_voltages = self.compensate_hysteresis_z(voltages)
 
         # Write the initial voltages and stream the rest
         num_voltages = len(compensated_voltages)
@@ -190,11 +194,11 @@ class ObjectivePiezo(LabradServer):
         writer.write_many_sample(stream_voltages)
 
         # Close the task once we've written all the samples
-        task.register_done_event(self.close_task_internal)
+        task.register_done_event(self.close_task_internal_z)
 
         task.start()
 
-    def close_task_internal(self, task_handle=None, status=None,
+    def close_task_internal_z(self, task_handle=None, status=None,
                             callback_data=None):
         task = self.task
         if task is not None:
@@ -202,17 +206,17 @@ class ObjectivePiezo(LabradServer):
             self.task = None
         return 0
 
-    @setting(2, voltage='v[]')
+    @setting(22, voltage='v[]')
     def write_z(self, c, voltage):
         """Write the specified voltage to the piezo"""
 
         # Close the stream task if it exists
         # This can happen if we quit out early
         if self.task is not None:
-            self.close_task_internal()
+            self.close_task_internal_z()
 
         # Adjust voltage turn for hysteresis
-        compensated_voltage = self.compensate_hysteresis(voltage)
+        compensated_voltage = self.compensate_hysteresis_z(voltage)
 
         with nidaqmx.Task() as task:
             # Set up the output channels
@@ -220,7 +224,7 @@ class ObjectivePiezo(LabradServer):
                                                  min_val=3.0, max_val=7.0)
             task.write(compensated_voltage)
 
-    @setting(1, returns='v[]')
+    @setting(21, returns='v[]')
     def read_z(self, c):
         """Return the current voltages on the piezo's DAQ channel"""
         with nidaqmx.Task() as task:
@@ -233,7 +237,7 @@ class ObjectivePiezo(LabradServer):
         return voltage
     
     
-    @setting(3, center='v[]', scan_range='v[]',
+    @setting(23, center='v[]', scan_range='v[]',
              num_steps='i', period='i', returns='*v[]')
     def load_z_scan(self, c, center, scan_range, num_steps, period):
         """Load a linear sweep with the DAQ"""
@@ -242,17 +246,17 @@ class ObjectivePiezo(LabradServer):
         low = center - half_scan_range
         high = center + half_scan_range
         voltages = numpy.linspace(low, high, num_steps)
-        self.load_stream_writer(c, 'ObjectivePiezo-load_z_scan',
-                                voltages, period)
+        self.load_stream_writer_z(c, 'ObjectivePiezo-load_z_scan',
+                                  voltages, period)
         return voltages
     
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    @setting(4, z_voltages='*v[]', period='i', returns='*v[]')
+    @setting(24, z_voltages='*v[]', period='i', returns='*v[]')
     def load_arb_z_scan(self, c, z_voltages, period):
         """Load a list of voltages with the DAQ"""
 
-        self.load_stream_writer(c, 'ObjectivePiezo-load_arb_z_scan',
-                                numpy.array(z_voltages), period)
+        self.load_stream_writer_z(c, 'ObjectivePiezo-load_arb_z_scan',
+                                  numpy.array(z_voltages), period)
         return z_voltages
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
