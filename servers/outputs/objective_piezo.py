@@ -22,7 +22,7 @@ timeout =
 ### END NODE INFO
 """
 
-from scrapcode.hysteresis import invert_hysteresis
+
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
@@ -46,9 +46,9 @@ class ObjectivePiezo(LabradServer):
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.task = None
-        self.last_turning_position = None
         self.last_position = None
         self.current_direction = None
+        self.last_turning_position = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -79,15 +79,15 @@ class ObjectivePiezo(LabradServer):
         self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
         self.daq_ao_objective_piezo = config[2]
         self.daq_di_clock = config[3]
-        # self.hysteresis_a = config[4]
-        # self.hysteresis_b = config[5]
+        self.hysteresis_a = config[4]
+        self.hysteresis_b = config[5]
         logging.debug('Init complete')
         
     def compensate_hysteresis(self, position):
         """
-        The hysteresis curve is p(v) = a * v**2 + b * v
+        The hysteresis curve is p(v) = a * v**2 + b * v.
         We want to feedforward using this curve to set the piezo voltage
-        such that the nominal voltage passed by the user functions 
+        such that the nominal voltage passed by the user functions
         linearly and without hysteresis. The goal is to prevent the
         accumulation of small errors until active feedback (eg 
         optimizing on an NV) can be performed
@@ -104,25 +104,51 @@ class ObjectivePiezo(LabradServer):
             Compensated voltage to set
         """
         
-        # First determine if we're turning around
-        movement_direction = numpy.sign(position - last_position)
-        if movement_direction == -self.current_direction:
-            self.prev_turning_position = self.last_position
-            self.current_direction = movement_direction
+        if type(position) not in [numpy.ndarray, list]:
+            single_value = True
+            position = [position]
         
-        # The adjustment voltage we need is obtained by inverting p(v)
-        abs_p = abs(position - self.prev_turning_position)
+        # Pull everything out of self to save some lookup time
+        last_position = self.last_position
+        current_direction = self.current_direction
+        last_turning_position = self.last_turning_position
+        # If values are uninitialized, assume we just started heading up
+        # (ie don't adjust the first position at all)
+        if None in [last_position, current_direction, last_turning_position]:
+            last_position = position[0]
+            current_direction = +1
+            last_turning_position = position[0]
         a = self.hysteresis_a
         b = self.hysteresis_b
-        prev_turning_position = self.prev_turning_position
-        last_turning_position = self.last_turning_position
-        v = (-b + numpy.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
-        compensated_voltage = prev_turning_position + (movement_direction * v)
         
-        # Cache the last position
-        self.last_position = position
+        # We'll have to for loop because the (n+1)th value depends 
+        # on the nth value
+        compensated_voltage = []
+        for val in position:
+            
+            # First determine if we're turning around
+            movement_direction = numpy.sign(val - last_position)
+            if movement_direction == -current_direction:
+                last_turning_position = last_position
+                current_direction = movement_direction
+            
+            # The adjustment voltage we need is obtained by inverting p(v)
+            abs_p = abs(val - last_turning_position)
+            v = (-b + numpy.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
+            result = last_turning_position + (movement_direction * v)
+            compensated_voltage.append(result)
+            
+            # Cache the last position
+            last_position = val
+            
+        self.last_position = val
+        self.current_direction = movement_direction
+        self.last_turning_position = last_turning_position
         
-        return compensated_voltage
+        if single_value:
+            return compensated_voltage[0]
+        else:
+            return compensated_voltage
 
     def load_stream_writer(self, c, task_name, voltages, period):
 
