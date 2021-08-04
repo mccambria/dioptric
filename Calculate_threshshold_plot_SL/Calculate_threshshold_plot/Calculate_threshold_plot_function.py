@@ -237,92 +237,107 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
     num_reps = 200
     apd_indices =[0]
     
-    if not readout_times:
-        readout_times = [50*10**6, 100*10**6, 250*10*6]
-    if not readout_yellow_powers:
-        readout_yellow_powers = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+    if len(readout_times) != len(readout_yellow_powers):
+        print('Readout durations and powers will be paired together. Please make lists the same size')
+        return
+    
+    parameter_list = list(zip(readout_yellow_powers, readout_times))
+    # if not readout_times:
+    #     readout_times = [50*10**6, 100*10**6, 250*10*6]
+    # if not readout_yellow_powers:
+    #     readout_yellow_powers = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+        
+    tool_belt.init_safe_stop()
         
     # first index will be power, second will be time, third wil be individual points
-    nv0_master = []
-    nvm_master =[]
+    nv0_list= []
+    nvm_list =[]
     
     g0_list = []
     g1_list = []
     y1_list = []
     y0_list = []
     
-    for p in readout_yellow_powers:
-        nv0_power =[]
-        nvm_power =[]    
+    for i in range(len(parameter_list)):
+        # nv0_power =[]
+        # nvm_power =[]    
         
         # add in some fit parameters for sample 
-        temp_g0 = []
-        temp_g1 = []
-        temp_y1 = []
-        temp_y0 = []
+        # temp_g0 = []
+        # temp_g1 = []
+        # temp_y1 = []
+        # temp_y0 = []
+        p = parameter_list[i][0]
         
-        for t in readout_times:
-            nv_sig_copy = copy.deepcopy(nv_sig)
-            nv_sig_copy['charge_readout_laser_filter'] = nd_filter
-            nv_sig_copy['charge_readout_dur'] = t
-            nv_sig_copy['charge_readout_laser_power'] = p
-            
-            print('Measuring  {} ms, at AOM voltage {} V'.format(t/10**6, p))
-            nv0, nvm = measure(nv_sig_copy, apd_indices, num_reps)       
-            
-            timestamp = tool_belt.get_time_stamp()  
-            file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name']) 
-            
-            nv0_power.append(nv0)
-            nvm_power.append(nvm)
-            
-            print("calculating optimum readout params ...")
-            #readout time should be in units of ms
-            t_ms = t*10**-6
-            fit, fig_phton_dist = get_photon_dis_curve_fit_plot(t_ms, nv0, nvm, do_plot = True)
-            tool_belt.save_figure(fig_phton_dist, file_path)
-            
-            # avoid diverging results
-            if fit[0] < 0.1:
-                if fit[1] < 1:
-                    temp_g0.append(fit[0])
-                    temp_g1.append(fit[1])
-                    temp_y1.append(fit[2])
-                    temp_y0.append(fit[3])            
-            
-            raw_data = {'timestamp': timestamp,
-                'readout_time': t,
-                'readout_time-units': 'ns',
-                'nd_filter': nd_filter,
-                'readout_aom_voltage': p,
-                'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'num_runs':num_reps,    
-                'g0': fit[0],   
-                'g1': fit[1],   
-                'y0': fit[2],   
-                'y1': fit[3],
-                'readout_yellow_powers': readout_yellow_powers,
-                'readout_yellow_powers-units': 'V',
-                'nv0': nv0.tolist(),
-                'nv0-units': 'counts',
-                'nvm': nvm.tolist(),
-                'nvm-units': 'counts',
-                }
+        # Break out of the while if the user says stop
+        if tool_belt.safe_stop():
+            break
         
-            tool_belt.save_raw_data(raw_data, file_path)
+        t = parameter_list[i][1]
         
+        nv_sig_copy = copy.deepcopy(nv_sig)
+        nv_sig_copy['charge_readout_laser_filter'] = nd_filter
+        nv_sig_copy['charge_readout_dur'] = t
+        nv_sig_copy['charge_readout_laser_power'] = p
         
-        nv0_master.append(nv0_power)
-        nvm_master.append(nvm_power)
+        print('Measuring  {} ms, at AOM voltage {} V'.format(t/10**6, p))
+        nv0, nvm = measure(nv_sig_copy, apd_indices, num_reps)       
         
-        fit_time_array = np.array([np.mean(temp_g0),np.mean(temp_g1),np.mean(temp_y1),np.mean(temp_y0)])
+        timestamp = tool_belt.get_time_stamp()  
+        file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name']) 
+        
+        nv0_list.append(nv0)
+        nvm_list.append(nvm)
+        
+        print("calculating optimum readout params ...")
+        #readout time should be in units of ms
+        t_ms = t*10**-6
+        fit, fig_phton_dist = get_photon_dis_curve_fit_plot(t_ms, nv0, nvm, do_plot = True)
+        tool_belt.save_figure(fig_phton_dist, file_path)
+        
+        # avoid diverging results
+        if fit[0] < 0.1:
+            if fit[1] < 1:
+                #g0,g1 in units of s^-1
+                g0_list.append(fit[0]*10**3)
+                g1_list.append(fit[1]*10**3)
+                #y1,y0 in units of kcps
+                y1_list.append(fit[2])
+                y0_list.append(fit[3])            
+        
+        raw_data = {'timestamp': timestamp,
+            'readout_time': t,
+            'readout_time-units': 'ns',
+            'nd_filter': nd_filter,
+            'readout_aom_voltage': p,
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'num_runs':num_reps,    
+            'g0': fit[0],   
+            'g1': fit[1],   
+            'y0': fit[2],   
+            'y1': fit[3],
+            'readout_yellow_powers': readout_yellow_powers,
+            'readout_yellow_powers-units': 'V',
+            'nv0': nv0.tolist(),
+            'nv0-units': 'counts',
+            'nvm': nvm.tolist(),
+            'nvm-units': 'counts',
+            }
+    
+        tool_belt.save_raw_data(raw_data, file_path)
+        #############
+        
+        # nv0_master.append(nv0_power)
+        # nvm_master.append(nvm_power)
+        
+        # fit_time_array = np.array([np.mean(g0_list),np.mean(g1_list),np.mean(y1_list),np.mean(y0_list)])
         #g0,g1 in units of s^-1
-        g0_list.append(fit_time_array[0]*10**3)
-        g1_list.append(fit_time_array[1]*10**3)
-        #y1,y0 in units of kcps
-        y1_list.append(fit_time_array[2])
-        y0_list.append(fit_time_array[3])
+        # g0_list.append(fit_time_array[0]*10**3)
+        # g1_list.append(fit_time_array[1]*10**3)
+        # #y1,y0 in units of kcps
+        # y1_list.append(fit_time_array[2])
+        # y0_list.append(fit_time_array[3])
             
     
 
@@ -401,8 +416,8 @@ if __name__ == '__main__':
     red_laser = 'cobolt_638'
     nd_green = 'nd_0.5'
     
-    nv_sig = { 'coords': [0.020, -0.050, 5.0],
-            'name': '{}-nv1_2021_07_16'.format(sample_name),
+    nv_sig = { 'coords': [0.056, -0.098, 5.0],
+            'name': '{}-nv1_2021_07_27'.format(sample_name),
             'disable_opt': False, 'expected_count_rate': 42,
             'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_filter': nd_green, 'nv-_prep_laser_dur': 1E3,
@@ -413,9 +428,19 @@ if __name__ == '__main__':
             'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
-    determine_readout_dur(nv_sig, readout_times =[100*10**6, 250*10**6, 400*10**6],
-                          readout_yellow_powers = [0.1, 0.2, 0.3], 
-                          nd_filter = 'nd_1.0')
+    try:
+        determine_readout_dur(nv_sig, readout_times =[150*10**6],
+                          readout_yellow_powers = [0.05, 0.1, 0.15, 0.2], 
+                          nd_filter = 'nd_0.5')
+        
+    finally:
+        # Reset our hardware - this should be done in each routine, but
+        # let's double check here
+        tool_belt.reset_cfm()
+        # Kill safe stop
+        if tool_belt.check_safe_stop_alive():
+            print('\n\nRoutine complete. Press enter to exit.')
+            tool_belt.poll_safe_stop()
     
     # file = '2021_04_13-19_14_05-johnson-nv0_2021_04_13-readout_pulse_pwr'
     # folder = 'pc_rabi/branch_Spin_to_charge/SCC_optimize_pulses_wout_uwaves/2021_04'

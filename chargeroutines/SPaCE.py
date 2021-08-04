@@ -746,19 +746,27 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
 
     if measurement_type == '1D':
         dir_1D = nv_sig['dir_1D']
-        dr = img_range / 2
-        if dir_1D == 'x':
-            low_coords = numpy.array(start_coords) - [dr, 0, 0]
-            high_coords = numpy.array(start_coords) + [dr, 0, 0]
-        elif dir_1D == 'y':
-            low_coords = numpy.array(start_coords) - [0, dr, 0]
-            high_coords = numpy.array(start_coords) + [0, dr, 0]
-        # end_coords = numpy.array(start_coords) + [dx, 0, 0]
-        # calculate the x and y values for linearly spaced points between start and end
-        x_voltages = numpy.linspace(low_coords[0],
-                                    high_coords[0], num_steps)
-        y_voltages = numpy.linspace(low_coords[1],
-                                    high_coords[1], num_steps)
+        if type(img_range) == float:
+            dr = img_range / 2
+            if dir_1D == 'x':
+                low_coords = numpy.array(start_coords) - [dr, 0, 0]
+                high_coords = numpy.array(start_coords) + [dr, 0, 0]
+            elif dir_1D == 'y':
+                low_coords = numpy.array(start_coords) - [0, dr, 0]
+                high_coords = numpy.array(start_coords) + [0, dr, 0]
+            # end_coords = numpy.array(start_coords) + [dx, 0, 0]
+            # calculate the x and y values for linearly spaced points between start and end
+            x_voltages = numpy.linspace(low_coords[0],
+                                        high_coords[0], num_steps)
+            y_voltages = numpy.linspace(low_coords[1],
+                                        high_coords[1], num_steps)
+        elif type(img_range) == list:
+            if dir_1D == 'x':
+                low_coords = numpy.array(start_coords) - [dr, 0, 0]
+                high_coords = numpy.array(start_coords) + [dr, 0, 0]
+            elif dir_1D == 'y':
+                low_coords = numpy.array(start_coords) - [0, dr, 0]
+                high_coords = numpy.array(start_coords) + [0, dr, 0]
         # Zip the two list together
         coords_voltages = list(zip(x_voltages, y_voltages))
 
@@ -973,6 +981,9 @@ if __name__ == '__main__':
     file_name_opt_mod = '2021_08_03-12_54_18-johnson-nv1_2021_07_27'
     file_name_opt_dim = '2021_08_03-14_48_39-johnson-nv1_2021_07_27'
     
+    file_name_no_opt_400_ms = '2021_08_03-16_21_50-johnson-nv1_2021_07_27'
+    file_name_opt_xy_2 = '2021_08_03-18_22_18-johnson-nv1_2021_07_27'
+    
     file = '2021_07_31-18_02_29-johnson-nv1_2021_07_27'
 
     #================ 7/27/2021 x and y scans @ 22 mW ================#
@@ -1081,8 +1092,8 @@ if __name__ == '__main__':
 
 
     ############# Plot 1D comparisons ##############
-    rad_dist, counts_no_opt = plot_1D_SpaCE(file_name_no_opt, path_july, do_plot = False)
-    rad_dist, counts_opt = plot_1D_SpaCE(file_name_opt_xy, path_july, do_plot = False)
+    rad_dist, counts_no_opt = plot_1D_SpaCE(file_name_no_opt_400_ms, path, do_plot = False)
+    rad_dist, counts_opt = plot_1D_SpaCE(file_name_opt_xy_2, path, do_plot = False)
     
     
     rad_dist, counts = plot_1D_SpaCE(file, path_july, do_plot = False)
@@ -1090,7 +1101,7 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
     # ax.plot(rad_dist, counts, 'b-', label = 'Optimize every run')
-    ax.plot(rad_dist, counts_no_opt, 'b-', label = 'Optimize every run')
+    ax.plot(rad_dist, counts_no_opt, 'b-', label = 'Optimize every run, add 400 ms of green pusle every point')
     ax.plot(rad_dist, counts_opt, 'r-', label = 'Optimize every point in x and y')
     ax.set_xlabel('y (nm)')
     ax.set_ylabel('Average counts')

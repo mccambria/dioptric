@@ -260,25 +260,22 @@ if __name__ == '__main__':
     red_laser = 'cobolt_638'
     nd_green = 'nd_0.5'
     
-    nv_sig = { 'coords': [0.056, -0.098, 5.0],
+    nv_sig = {  'coords': [0.056, -0.098, 5.0],
             'name': '{}-nv1_2021_07_27'.format(sample_name),
             'disable_opt': False, 'expected_count_rate': 42,
             'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
-            # 'initialize_laser': red_laser, 'initialize_laser_power': 130, 'initialize_dur': 1E3,
-            'initialize_laser': green_laser, 'initialize_laser_filter': nd_green, 'initialize_dur': 1E3,
-            'CPG_laser': red_laser, 'CPG_laser_power': 40, 'CPG_laser_dur': 1E4,
-            # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_filter': nd_green, 'nv-_prep_laser_dur': 1E3,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 80, 'nv0_prep_laser_dur': 1E3,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None, 
-            'charge_readout_laser_power': None, 'charge_readout_dur':250*10**6,
-            'dir_1D': 'y',
+            'charge_readout_laser_power': None, 'charge_readout_dur':None,
             'collection_filter': '630_lp', 'magnet_angle': None,
             'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max 
+            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
 
 
     try:
-        determine_readout_dur(nv_sig, readout_times =[ 250*10**6, 100*10**6],
-                          readout_yellow_powers = [0.1],
+        determine_readout_dur(nv_sig, readout_times =[ 150*10**6],
+                          readout_yellow_powers = [0.15],
                            nd_filter = 'nd_0.5')
     finally:
         # Reset our hardware - this should be done in each routine, but
