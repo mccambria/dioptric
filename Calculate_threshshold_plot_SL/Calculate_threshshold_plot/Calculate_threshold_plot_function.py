@@ -429,7 +429,7 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     try:
-        determine_readout_dur(nv_sig, readout_times =[150*10**6],
+        determine_readout_dur(nv_sig, readout_times =[150*10**6, 150*10**6, 150*10**6, 30*10**6],
                           readout_yellow_powers = [0.05, 0.1, 0.15, 0.2], 
                           nd_filter = 'nd_0.5')
         

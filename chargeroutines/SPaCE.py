@@ -761,12 +761,18 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
             y_voltages = numpy.linspace(low_coords[1],
                                         high_coords[1], num_steps)
         elif type(img_range) == list:
+            # Make sure the lower value is first.
+            img_range.sort()
             if dir_1D == 'x':
-                low_coords = numpy.array(start_coords) - [dr, 0, 0]
-                high_coords = numpy.array(start_coords) + [dr, 0, 0]
+                low_coords = numpy.array(start_coords) + [img_range[0], 0, 0]
+                high_coords = numpy.array(start_coords) + [img_range[1], 0, 0]
             elif dir_1D == 'y':
-                low_coords = numpy.array(start_coords) - [0, dr, 0]
-                high_coords = numpy.array(start_coords) + [0, dr, 0]
+                low_coords = numpy.array(start_coords) + [0, img_range[0], 0]
+                high_coords = numpy.array(start_coords) + [0, img_range[1], 0]
+            x_voltages = numpy.linspace(low_coords[0],
+                                        high_coords[0], num_steps)
+            y_voltages = numpy.linspace(low_coords[1],
+                                        high_coords[1], num_steps)
         # Zip the two list together
         coords_voltages = list(zip(x_voltages, y_voltages))
 
@@ -827,8 +833,8 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type):
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
         #========================== Run the data collection====================
-        ret_vals = data_collection_optimize(nv_sig, coords_voltages_shuffle_list, n, opti_plot=False)
-        # ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
+        # ret_vals = data_collection_optimize(nv_sig, coords_voltages_shuffle_list, n, opti_plot=False)
+        ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
 
         readout_counts_list_shfl, drift = ret_vals
         drift_list_master.append(drift)

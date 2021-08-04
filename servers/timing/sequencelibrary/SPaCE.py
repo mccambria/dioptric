@@ -161,7 +161,7 @@ def get_seq(pulse_streamer, config, args):
     train_638.extend([(100, LOW)])
     
         #######################
-    train_532.extend([(1E7 * 21 * 2, HIGH),(100, LOW)])
+    # train_532.extend([(1E7 * 21 * 2, HIGH),(100, LOW)])
         #######################
 
     seq.setDigital(pulser_do_532_aom, train_532)
