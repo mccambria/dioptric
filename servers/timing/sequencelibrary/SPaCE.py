@@ -159,8 +159,10 @@ def get_seq(pulse_streamer, config, args):
     train_532.extend([(100, LOW)])
     train_589.extend([(100, LOW)])
     train_638.extend([(100, LOW)])
-        
-        
+    
+        #######################
+    train_532.extend([(1E7 * 21 * 2, HIGH),(100, LOW)])
+        #######################
 
     seq.setDigital(pulser_do_532_aom, train_532)
     seq.setAnalog(pulser_ao_589_aom, train_589)
@@ -174,6 +176,6 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
     # seq_args = [1000.0, 100000.0, 100000.0, 0.15, 0, 638, 532, 589]
-    seq_args = [10000.0, 10000.0, 50000000, 0.9, 0, 638, 532, 589]
+    seq_args = [1000.0, 300000, 250000000, 0.1, 0, 532, 638, 589]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
