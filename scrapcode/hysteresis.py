@@ -18,10 +18,10 @@ def invert_hysteresis(position, prev_turning_position, a, b):
     # accumulation of small errors until active feedback (eg 
     # optimizing on an NV) can be performed
     
-    # The voltage we need is obtained by inverting the hysteresis curve
+    # The adjustment voltage we need is obtained by inverting p(v)
     p = position - prev_turning_position
-    p = abs(p)
-    v = (-b + np.sqrt(b**2 + 4 * a * position)) / (2 * a)
+    abs_p = abs(p)
+    v = (-b + np.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
     
     # return position
     return prev_turning_position + (np.sign(p) * v)
@@ -83,13 +83,13 @@ if __name__ == '__main__':
     b = 0.3
     
     exps = [
-        # [10, 0, 8, 0, 6, 0],  # Loop scale test
-        # [10, 2, 10, 4, 10, 6, 10],  # Reverse loop scale test
-        # [10, 0, 7.5, 2.5, 7.5, 2.5, 7.5],  # Halving the drive
-        # [10, 0, 9, 1, 8, 2, 7, 4],  # Spiral simple
-        # [10, 0, 9, 1, 8, 2, 7, 3, 6, 4, 6],  # Spiral simple 2
+        [10, 0, 8, 0, 6, 0],  # Loop scale test
+        [10, 2, 10, 4, 10, 6, 10],  # Reverse loop scale test
+        [10, 0, 7.5, 2.5, 7.5, 2.5, 7.5],  # Halving the drive
+        [10, 0, 9, 1, 8, 2, 7, 4],  # Spiral simple
+        [10, 0, 9, 1, 8, 2, 7, 3, 6, 4, 6],  # Spiral simple 2
         [10, 0, 5, 4, 10],  # Spiral simple 2
-        # [10]
+        [10]
     ]
     for exp in exps:
         plot_hysteresis(exp, full_scale_voltage, a, b)

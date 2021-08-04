@@ -22,6 +22,7 @@ timeout =
 ### END NODE INFO
 """
 
+from scrapcode.hysteresis import invert_hysteresis
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
@@ -45,7 +46,7 @@ class ObjectivePiezo(LabradServer):
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.task = None
-        self.last_turning_voltage = None
+        self.last_turning_position = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -57,9 +58,9 @@ class ObjectivePiezo(LabradServer):
         p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('ao_objective_piezo')
         p.get('di_clock')
-        p.cd(['', 'Config', 'Positioning'])
-        p.get('objective_piezo_hysteresis_a')
-        p.get('objective_piezo_hysteresis_b')
+        # p.cd(['', 'Config', 'Positioning'])
+        # p.get('objective_piezo_hysteresis_a')
+        # p.get('objective_piezo_hysteresis_b')
         result = await p.send()
         return result['get']
 
@@ -76,30 +77,39 @@ class ObjectivePiezo(LabradServer):
         self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
         self.daq_ao_objective_piezo = config[2]
         self.daq_di_clock = config[3]
-        self.hysteresis_a = config[4]
-        self.hysteresis_b = config[5]
+        # self.hysteresis_a = config[4]
+        # self.hysteresis_b = config[5]
         logging.debug('Init complete')
         
-    def invert_hysteresis(self, position, prev_turning_position):
-        # The hysteresis curve is p(v) = a * v**2 + b * v
-        # We want to feedforward using this curve to set the piezo voltage
-        # such that the nominal voltage passed by the user functions 
-        # linearly and without hysteresis. The goal is to prevent the
-        # accumulation of small errors until active feedback (eg 
-        # optimizing on an NV) can be performed
+    def invert_hysteresis(self, position):
+        """
+        The hysteresis curve is p(v) = a * v**2 + b * v
+        We want to feedforward using this curve to set the piezo voltage
+        such that the nominal voltage passed by the user functions 
+        linearly and without hysteresis. The goal is to prevent the
+        accumulation of small errors until active feedback (eg 
+        optimizing on an NV) can be performed
+
+        Parameters
+        ----------          
+        position : float
+            Voltage the user intends to move to for a linear response
+            without hysteresis
+
+        Returns
+        -------
+        float
+            Compensated voltage to set
+        """
         
-        # The voltage we need is obtained by inverting the hysteresis curve
-        p = position - prev_turning_position
-        direction = numpy.sign(p)
-        p = abs(p)
+        # The adjustment voltage we need is obtained by inverting p(v)
+        p = position - self.prev_turning_position
+        abs_p = abs(p)
         a = self.hysteresis_a
         b = self.hysteresis_b
-        v = (-b + numpy.sqrt(b**2 + 4 * a * position)) / (2 * a)
+        v = (-b + numpy.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
         
-        if direction == 1:
-            return position + v
-        else:
-            return position - v
+        return self.prev_turning_position + (numpy.sign(p) * v)
 
     def load_stream_writer(self, c, task_name, voltages, period):
 
@@ -120,7 +130,7 @@ class ObjectivePiezo(LabradServer):
 
         # Set up the output channels
         task.ao_channels.add_ao_voltage_chan(self.daq_ao_objective_piezo,
-                                             min_val=0.0, max_val=10.0)
+                                             min_val=3.0, max_val=7.0)
 
         # Set up the output stream
         output_stream = nidaqmx.task.OutStream(task)
@@ -158,20 +168,14 @@ class ObjectivePiezo(LabradServer):
             self.close_task_internal()
 
         # Adjust voltage turn for hysteresis
-        current_voltage = self.read_z(c)
-        last_voltage_diff = current_voltage - self.last_turning_voltage
-        new_voltage_diff = voltage - current_voltage
-        # Determine if we're turning around or not
-        if numpy.sign(last_voltage_diff) + numpy.sign(new_voltage_diff) == 0:
-            voltage_diff = voltage - self.last_turning_voltage
-            voltage_adjustment = voltage_diff * self.hysteresis_slope
-            voltage_adjustment += self.hysteresis_offset
+        compensated_voltage = voltage
+        # compensated_voltage = self.invert_hysteresis(voltage)
 
         with nidaqmx.Task() as task:
             # Set up the output channels
             task.ao_channels.add_ao_voltage_chan(self.daq_ao_objective_piezo,
-                                                 min_val=0.0, max_val=10.0)
-            task.write(voltage)
+                                                 min_val=3.0, max_val=7.0)
+            task.write(compensated_voltage)
 
     @setting(1, returns='v[]')
     def read_z(self, c):
@@ -181,7 +185,7 @@ class ObjectivePiezo(LabradServer):
             if self.daq_ao_objective_piezo == 'dev1/AO2':
                 chan_name = 'dev1/_ao2_vs_aognd'
             task.ai_channels.add_ai_voltage_chan(chan_name,
-                                                 min_val=0.0, max_val=10.0)
+                                                 min_val=3.0, max_val=7.0)
             voltage = task.read()
         return voltage
     
