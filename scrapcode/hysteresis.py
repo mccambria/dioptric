@@ -57,7 +57,7 @@ def plot_hysteresis(turning_voltages, full_scale_voltage, a, b):
                                        num_steps)
         segment_positions = []
         for vol in segment_voltages:
-            vol = invert_hysteresis(vol, prev_turning_voltage, a, b)
+            # vol = invert_hysteresis(vol, prev_turning_voltage, a, b)
             pos = hysteresis_curve(vol, prev_turning_delta, 
                                    prev_turning_voltage, prev_turning_pos,
                                    full_scale_voltage, a, b)

@@ -47,6 +47,8 @@ class ObjectivePiezo(LabradServer):
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.task = None
         self.last_turning_position = None
+        self.last_position = None
+        self.current_direction = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -58,9 +60,9 @@ class ObjectivePiezo(LabradServer):
         p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('ao_objective_piezo')
         p.get('di_clock')
-        # p.cd(['', 'Config', 'Positioning'])
-        # p.get('objective_piezo_hysteresis_a')
-        # p.get('objective_piezo_hysteresis_b')
+        p.cd(['', 'Config', 'Positioning'])
+        p.get('objective_piezo_hysteresis_a')
+        p.get('objective_piezo_hysteresis_b')
         result = await p.send()
         return result['get']
 
@@ -93,8 +95,8 @@ class ObjectivePiezo(LabradServer):
         Parameters
         ----------          
         position : float
-            Voltage the user intends to move to for a linear response
-            without hysteresis
+            Position (in this case the nominal voltage) the user intends 
+            to move to for a linear response without hysteresis
 
         Returns
         -------
@@ -102,14 +104,24 @@ class ObjectivePiezo(LabradServer):
             Compensated voltage to set
         """
         
+        # First, determine if we're turning around
+        movement_direction = numpy.sign(position - self.prev_turning_position)
+        if movement_direction == -self.current_direction:
+            self.prev_turning_position = self.last_position
+            self.current_direction = movement_direction
+        
         # The adjustment voltage we need is obtained by inverting p(v)
         p = position - self.prev_turning_position
         abs_p = abs(p)
         a = self.hysteresis_a
         b = self.hysteresis_b
         v = (-b + numpy.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
+        adj_voltage = self.prev_turning_position + (numpy.sign(p) * v)
         
-        return self.prev_turning_position + (numpy.sign(p) * v)
+        # Cache the last position
+        self.last_position = position
+        
+        return adj_voltage
 
     def load_stream_writer(self, c, task_name, voltages, period):
 
@@ -168,8 +180,7 @@ class ObjectivePiezo(LabradServer):
             self.close_task_internal()
 
         # Adjust voltage turn for hysteresis
-        compensated_voltage = voltage
-        # compensated_voltage = self.invert_hysteresis(voltage)
+        compensated_voltage = self.invert_hysteresis(voltage)
 
         with nidaqmx.Task() as task:
             # Set up the output channels
