@@ -58,8 +58,8 @@ class ObjectivePiezo(LabradServer):
         p.get('ao_objective_piezo')
         p.get('di_clock')
         p.cd(['', 'Config', 'Positioning'])
-        p.get('objective_piezo_hysteresis_slope')
-        p.get('objective_piezo_hysteresis_offset')
+        p.get('objective_piezo_hysteresis_a')
+        p.get('objective_piezo_hysteresis_b')
         result = await p.send()
         return result['get']
 
@@ -76,9 +76,30 @@ class ObjectivePiezo(LabradServer):
         self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
         self.daq_ao_objective_piezo = config[2]
         self.daq_di_clock = config[3]
-        self.hysteresis_slope = config[4]
-        self.hysteresis_offset = config[5]
+        self.hysteresis_a = config[4]
+        self.hysteresis_b = config[5]
         logging.debug('Init complete')
+        
+    def invert_hysteresis(self, position, prev_turning_position):
+        # The hysteresis curve is p(v) = a * v**2 + b * v
+        # We want to feedforward using this curve to set the piezo voltage
+        # such that the nominal voltage passed by the user functions 
+        # linearly and without hysteresis. The goal is to prevent the
+        # accumulation of small errors until active feedback (eg 
+        # optimizing on an NV) can be performed
+        
+        # The voltage we need is obtained by inverting the hysteresis curve
+        p = position - prev_turning_position
+        direction = numpy.sign(p)
+        p = abs(p)
+        a = self.hysteresis_a
+        b = self.hysteresis_b
+        v = (-b + numpy.sqrt(b**2 + 4 * a * position)) / (2 * a)
+        
+        if direction == 1:
+            return position + v
+        else:
+            return position - v
 
     def load_stream_writer(self, c, task_name, voltages, period):
 
