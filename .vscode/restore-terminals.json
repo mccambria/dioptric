@@ -1,0 +1,19 @@
+{
+    "artificialDelayMilliseconds": 300,
+    "keepExistingTerminalsOpen": false,
+    "runOnStartup": true,
+    "terminals": [
+      {
+        "splitTerminals": [
+        {
+            "name": "Python Debug Console",
+            "commands": ["source ~/anaconda3/bin/activate root"]
+        },
+        {
+            "name": "IPython",
+            "commands": ["source ~/anaconda3/bin/activate root", "ipython"]
+        }
+        ]
+    }
+    ]
+  }
