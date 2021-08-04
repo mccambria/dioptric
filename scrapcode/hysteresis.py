@@ -46,11 +46,11 @@ def plot_hysteresis(turning_voltages, full_scale_voltage, a, b):
     step_size = 0.01
 
     prev_turning_delta = 10
-    prev_turning_voltage = 0
-    prev_turning_pos = 0
+    prev_turning_voltage = turning_voltages[0]
+    prev_turning_pos = turning_voltages[0]
     voltages = []
     positions = []
-    for turning_voltage in turning_voltages:
+    for turning_voltage in turning_voltages[1:]:
         num_steps = round((turning_voltage - prev_turning_voltage) / step_size)
         num_steps = abs(num_steps)
         segment_voltages = np.linspace(prev_turning_voltage, turning_voltage, 
@@ -78,18 +78,22 @@ def plot_hysteresis(turning_voltages, full_scale_voltage, a, b):
 
 if __name__ == '__main__':
 
-    full_scale_voltage = 10
-    a = 0.07
-    b = 0.3
+    linear_scale = 4
+    full_scale_voltage = linear_scale
+    a = 0.055
+    # x = a * x**2 + b * x
+    b = (linear_scale - a * linear_scale**2) / linear_scale
+    print(b)
     
     exps = [
-        [10, 0, 8, 0, 6, 0],  # Loop scale test
-        [10, 2, 10, 4, 10, 6, 10],  # Reverse loop scale test
-        [10, 0, 7.5, 2.5, 7.5, 2.5, 7.5],  # Halving the drive
-        [10, 0, 9, 1, 8, 2, 7, 4],  # Spiral simple
-        [10, 0, 9, 1, 8, 2, 7, 3, 6, 4, 6],  # Spiral simple 2
-        [10, 0, 5, 4, 10],  # Spiral simple 2
-        [10]
+        [3,4,3,5,3,6,3,7,3],
+        # [0, 10, 0, 8, 0, 6, 0],  # Loop scale test
+        # [0, 10, 2, 10, 4, 10, 6, 10],  # Reverse loop scale test
+        # [0, 10, 0, 7.5, 2.5, 7.5, 2.5, 7.5],  # Halving the drive
+        # [0, 10, 0, 9, 1, 8, 2, 7, 4],  # Spiral simple
+        # [0, 10, 0, 9, 1, 8, 2, 7, 3, 6, 4, 6],  # Spiral simple 2
+        # [0, 10, 0, 5, 4, 10],  # Spiral simple 2
+        # [0, 10]
     ]
     for exp in exps:
         plot_hysteresis(exp, full_scale_voltage, a, b)

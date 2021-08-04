@@ -83,7 +83,7 @@ class ObjectivePiezo(LabradServer):
         # self.hysteresis_b = config[5]
         logging.debug('Init complete')
         
-    def invert_hysteresis(self, position):
+    def compensate_hysteresis(self, position):
         """
         The hysteresis curve is p(v) = a * v**2 + b * v
         We want to feedforward using this curve to set the piezo voltage
@@ -104,35 +104,41 @@ class ObjectivePiezo(LabradServer):
             Compensated voltage to set
         """
         
-        # First, determine if we're turning around
-        movement_direction = numpy.sign(position - self.prev_turning_position)
+        # First determine if we're turning around
+        movement_direction = numpy.sign(position - last_position)
         if movement_direction == -self.current_direction:
             self.prev_turning_position = self.last_position
             self.current_direction = movement_direction
         
         # The adjustment voltage we need is obtained by inverting p(v)
-        p = position - self.prev_turning_position
-        abs_p = abs(p)
+        abs_p = abs(position - self.prev_turning_position)
         a = self.hysteresis_a
         b = self.hysteresis_b
+        prev_turning_position = self.prev_turning_position
+        last_turning_position = self.last_turning_position
         v = (-b + numpy.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
-        adj_voltage = self.prev_turning_position + (numpy.sign(p) * v)
+        compensated_voltage = prev_turning_position + (movement_direction * v)
         
         # Cache the last position
         self.last_position = position
         
-        return adj_voltage
+        return compensated_voltage
 
     def load_stream_writer(self, c, task_name, voltages, period):
 
         # Close the existing task if there is one
         if self.task is not None:
             self.close_task_internal()
+            
+        # Make sure the voltages are an array
+        voltages = numpy.array(voltages)
+            
+        compensated_voltages = self.compensate_hysteresis(voltages)
 
         # Write the initial voltages and stream the rest
-        num_voltages = len(voltages)
-        self.write_z(c, voltages[0])
-        stream_voltages = voltages[1:num_voltages]
+        num_voltages = len(compensated_voltages)
+        self.write_z(c, compensated_voltages[0])
+        stream_voltages = compensated_voltages[1:num_voltages]
         stream_voltages = numpy.ascontiguousarray(stream_voltages)
         num_stream_voltages = num_voltages - 1
 
@@ -180,7 +186,7 @@ class ObjectivePiezo(LabradServer):
             self.close_task_internal()
 
         # Adjust voltage turn for hysteresis
-        compensated_voltage = self.invert_hysteresis(voltage)
+        compensated_voltage = self.compensate_hysteresis(voltage)
 
         with nidaqmx.Task() as task:
             # Set up the output channels
