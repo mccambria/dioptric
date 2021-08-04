@@ -136,7 +136,7 @@ class ObjectivePiezo(LabradServer):
         if self.task is not None:
             self.close_task_internal()
 
-        # Adjust voltage decreases for hysteresis
+        # Adjust voltage turn for hysteresis
         current_voltage = self.read_z(c)
         last_voltage_diff = current_voltage - self.last_turning_voltage
         new_voltage_diff = voltage - current_voltage
