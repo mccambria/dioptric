@@ -396,7 +396,7 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
     nv_para = nv_para + ret_vals[0]
     
     #this range can be changed case by case
-    power_range = [0,max(power_list)]
+    power_range = [0.01,max(power_list)]
     time_range = [10,200]
     optimize_steps = 10
     
