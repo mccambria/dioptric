@@ -73,6 +73,7 @@ def main_with_cxn(cxn, nv_sig, movement_displ, axis_ind,  apd_indices,  plot):
     tool_belt.init_safe_stop()
     # Loop
     for n in range(num_steps):
+        print('Run: {}'.format(n))
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
@@ -174,11 +175,11 @@ if __name__ == '__main__':
     sample_name = 'johnson'
     
     # movement_displ = 0.2
-    displacement_list =numpy.linspace(-0.48, 0.48, 41)
+    displacement_list = [0.12]#numpy.linspace(-0.48, 0.48, 41)
     
-    nv_sig = { 'coords': [0.056, -0.098, 5.0],
-            'name': '{}-nv1_2021_07_27'.format(sample_name),
-            'disable_opt': False, 'expected_count_rate': 42,
+    nv_sig = { 'coords': [0.021, -0.058, 4.77],
+            'name': '{}-nv2_2021_08_04'.format(sample_name),
+            'disable_opt': False, 'expected_count_rate': 50,
             'imaging_laser': 'laserglow_532', 'imaging_laser_filter': 'nd_0.5', 'imaging_readout_dur': 1E7,
             'collection_filter': '630_lp', 'magnet_angle': None,
             'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
@@ -190,26 +191,26 @@ if __name__ == '__main__':
             for movement_displ in displacement_list:
                 opti_delta = main( nv_sig, movement_displ, axis_ind,  apd_indices)
                 opti_delta_list.append(opti_delta)
-            print(opti_delta_list)
-            fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-            ax.plot(displacement_list, opti_delta_list, 'ro')
-            ax.set_xlabel('Displacement in axis {} (V)'.format(axis_ind))
-            ax.set_ylabel('Added adjustment to return to original position (V)')
-            ax.set_title('Movement in axis {}'.format(axis_ind))
+            # print(opti_delta_list)
+            # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+            # ax.plot(displacement_list, opti_delta_list, 'ro')
+            # ax.set_xlabel('Displacement in axis {} (V)'.format(axis_ind))
+            # ax.set_ylabel('Added adjustment to return to original position (V)')
+            # ax.set_title('Movement in axis {}'.format(axis_ind))
         
-            time.sleep(0.01)
-            # save data
-            timestamp = tool_belt.get_time_stamp()
-            raw_data = {'timestamp': timestamp,
-                        'axis_ind': axis_ind,
-                    'nv_sig': nv_sig,
-                    'displacement_list': displacement_list.tolist(),
-                    'opti_delta_list':opti_delta_list
-                    }
+            # time.sleep(0.01)
+            # # save data
+            # timestamp = tool_belt.get_time_stamp()
+            # raw_data = {'timestamp': timestamp,
+            #             'axis_ind': axis_ind,
+            #         'nv_sig': nv_sig,
+            #         'displacement_list': displacement_list.tolist(),
+            #         'opti_delta_list':opti_delta_list
+            #         }
         
-            file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-            tool_belt.save_figure(fig, file_path)
-            tool_belt.save_raw_data(raw_data, file_path)
+            # file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+            # tool_belt.save_figure(fig, file_path)
+            # tool_belt.save_raw_data(raw_data, file_path)
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here

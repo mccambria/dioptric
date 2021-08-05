@@ -39,7 +39,7 @@ class Galvo(LabradServer):
     def initServer(self):
         filename = (
             "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
+        ) 
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
             level=logging.DEBUG,
@@ -52,10 +52,10 @@ class Galvo(LabradServer):
 
     def sub_init_server_xy(self):
         """Sub-routine to be called by xyz server"""
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
+        config = ensureDeferred(self.get_config_xy())
+        config.addCallback(self.on_get_config_xy)
 
-    async def get_config(self):
+    async def get_config_xy(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "Wiring", "Daq"])
         p.get("ao_galvo_x")
@@ -64,20 +64,21 @@ class Galvo(LabradServer):
         result = await p.send()
         return result["get"]
 
-    def on_get_config(self, config):
+    def on_get_config_xy(self, config):
         self.daq_ao_galvo_x = config[0]
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
         # logging.debug(self.daq_di_clock)
+        logging.debug('Init complete')
 
     def stopServer(self):
-        self.close_task_internal_xy()
+        self.close_task_internal()
 
     def load_stream_writer_xy(self, c, task_name, voltages, period):
 
         # Close the existing task if there is one
         if self.task is not None:
-            self.close_task_internal_xy()
+            self.close_task_internal()
 
         # Write the initial voltages and stream the rest
         num_voltages = voltages.shape[1]
@@ -117,7 +118,7 @@ class Galvo(LabradServer):
 
         task.start()
 
-    def close_task_internal_xy(self, task_handle=None, status=None, callback_data=None):
+    def close_task_internal(self, task_handle=None, status=None, callback_data=None):
         task = self.task
         if task is not None:
             task.close()
@@ -138,7 +139,7 @@ class Galvo(LabradServer):
         # Close the stream task if it exists
         # This can happen if we quit out early
         if self.task is not None:
-            self.close_task_internal_xy()
+            self.close_task_internal()
 
         with nidaqmx.Task() as task:
             # Set up the output channels

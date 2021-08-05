@@ -52,10 +52,10 @@ class ObjectivePiezo(LabradServer):
         self.z_last_position = None
         self.z_current_direction = None
         self.z_last_turning_position = None
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
+        config = ensureDeferred(self.get_config_z())
+        config.addCallback(self.on_get_config_z)
 
-    async def get_config(self):
+    async def get_config_z(self):
         p = self.client.registry.packet()
         p.cd(['', 'Config', 'DeviceIDs'])
         p.get('objective_piezo_model')
@@ -69,7 +69,7 @@ class ObjectivePiezo(LabradServer):
         result = await p.send()
         return result['get']
 
-    def on_get_config(self, config):
+    def on_get_config_z(self, config):
         # Load the generic device
         gcs_dll_path = str(Path.home())
         gcs_dll_path += '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
@@ -130,8 +130,8 @@ class ObjectivePiezo(LabradServer):
         compensated_voltage = []
         for val in position:
             
-            compensated_voltage.append(val)
-            continue
+            # compensated_voltage.append(val)
+            # continue
             
             # First determine if we're turning around
             movement_direction = numpy.sign(val - last_position)
@@ -141,16 +141,17 @@ class ObjectivePiezo(LabradServer):
             
             # The adjustment voltage we need is obtained by inverting p(v)
             abs_p = abs(val - last_turning_position)
-            v = (-b + numpy.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
+            # v = (-b + numpy.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
+            v = abs_p
             result = last_turning_position + (movement_direction * v)
             compensated_voltage.append(result)
             
             # Cache the last position
             last_position = val
             
-        # self.z_last_position = val
-        # self.z_current_direction = movement_direction
-        # self.z_last_turning_position = last_turning_position
+        self.z_last_position = val
+        self.z_current_direction = movement_direction
+        self.z_last_turning_position = last_turning_position
         
         if single_value:
             return compensated_voltage[0]
@@ -197,11 +198,11 @@ class ObjectivePiezo(LabradServer):
         writer.write_many_sample(stream_voltages)
 
         # Close the task once we've written all the samples
-        task.register_done_event(self.close_task_internal_z)
+        task.register_done_event(self.close_task_internal)
 
         task.start()
 
-    def close_task_internal_z(self, task_handle=None, status=None,
+    def close_task_internal(self, task_handle=None, status=None,
                             callback_data=None):
         task = self.task
         if task is not None:
@@ -216,7 +217,7 @@ class ObjectivePiezo(LabradServer):
         # Close the stream task if it exists
         # This can happen if we quit out early
         if self.task is not None:
-            self.close_task_internal_z()
+            self.close_task_internal()
 
         # Adjust voltage turn for hysteresis
         compensated_voltage = self.compensate_hysteresis_z(voltage)
