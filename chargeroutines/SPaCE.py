@@ -21,6 +21,10 @@ import copy
 import scipy.stats as stats
 from scipy.optimize import curve_fit
 
+
+# Define the start time to track the time between optimzies
+time_start = time.time() 
+
 def inverse_func(x, c, a):
     return c + a*x**-1/2
 
@@ -655,10 +659,16 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     print('Expected total run time: {:.1f} m'.format(period_s_total/60))
 
     # Optimize at the start of the routine
-    opti_coord = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    # Set up a timed optimize--- every 2 min.
+    time_now = time.time()
+    global time_start
+    
+    if time_now - time_start > 2 * 60:
+        optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+
+        time_start = time_now
 
     drift = numpy.array(tool_belt.get_drift())
-
     # get the readout coords with drift
     start_coords_drift = start_coords + drift
     coords_list_drift = numpy.array(coords_list) + [drift[0], drift[1]]

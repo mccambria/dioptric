@@ -429,7 +429,7 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     try:
-        determine_readout_dur(nv_sig, readout_times =[150*10**6, 150*10**6, 150*10**6, 30*10**6],
+        determine_readout_dur(nv_sig, readout_times =[250*10**6, 150*10**6, 150*10**6, 60*10**6],
                           readout_yellow_powers = [0.05, 0.1, 0.15, 0.2], 
                           nd_filter = 'nd_0.5')
         
@@ -507,22 +507,22 @@ if __name__ == '__main__':
     # y0_temp = [y0_100, y0_250, y0_400]
     # y1_temp = [y1_100, y1_250, y1_400]
     
-    # g0_list = []
-    # g1_list = []
-    # y0_list= []
-    # y1_list = []
+    # g0_list = [2.7E-6, 1.28, 7.39, 34.0]
+    # g1_list = [63.35, 1.17, 7.74, 30.04]
+    # y0_list= [0.03, 0.02, 0.04, 0.10]
+    # y1_list = [0.12, 0.18, 0.25, 0.56]
     
-    # for i in range(len(g0_temp)):
-    #     fit_time_array = np.array([np.mean(g0_temp[i]),np.mean(g0_temp[i])
-    #                                ,np.mean(y0_temp[i]),np.mean(y1_temp[i])])
-    #     #g0,g1 in units of s^-1
-    #     g0_list.append(fit_time_array[0]*10**3)
-    #     g1_list.append(fit_time_array[1]*10**3)
-    #     #y1,y0 in units of kcps
-    #     y1_list.append(fit_time_array[2])
-    #     y0_list.append(fit_time_array[3])
+    # # for i in range(len(g0_temp)):
+    # #     fit_time_array = np.array([np.mean(g0_temp[i]),np.mean(g0_temp[i])
+    # #                                ,np.mean(y0_temp[i]),np.mean(y1_temp[i])])
+    # #     #g0,g1 in units of s^-1
+    # #     g0_list.append(fit_time_array[0]*10**3)
+    # #     g1_list.append(fit_time_array[1]*10**3)
+    # #     #y1,y0 in units of kcps
+    # #     y1_list.append(fit_time_array[2])
+    # #     y0_list.append(fit_time_array[3])
     
-    # power_list = [1, 3.4, 10.7]
+    # power_list = [0.1, 1, 3.4, 10.7]
     
     # ret_vals = fit_to_rates_g(power_list, g0_list,g1_list)
     # # tool_belt.save_figure(ret_vals[0], file_path)
