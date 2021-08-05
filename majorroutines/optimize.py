@@ -182,9 +182,9 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
         # Get the proper scan function
         xy_server = tool_belt.get_xy_server(cxn)
         if axis_ind == 0:
-            scan_func = xy_server.load_x_scan
+            scan_func = xy_server.load_scan_x
         elif axis_ind == 1:
-            scan_func = xy_server.load_y_scan
+            scan_func = xy_server.load_scan_y
 
         scan_vals = scan_func(x_center, y_center, scan_range, num_steps, period)
         auto_scan = True
@@ -201,8 +201,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
         period = ret_vals[0]
 
         z_server = tool_belt.get_z_server(cxn)
-        if hasattr(z_server, "load_z_scan"):
-            scan_vals = z_server.load_z_scan(z_center, scan_range, num_steps, period)
+        if hasattr(z_server, "load_scan_z"):
+            scan_vals = z_server.load_scan_z(z_center, scan_range, num_steps, period)
             auto_scan = True
         else:
             manual_write_func = z_server.write_z
@@ -303,7 +303,7 @@ def fit_gaussian(nv_sig, scan_vals, count_rates, axis_ind, fig=None):
         # mu: mean, defines the center of the Gaussian
         # sigma: standard deviation, defines the width of the Gaussian
         # offset: constant y value to account for background
-        text = "a={:.3f}\n $\mu$={:.3f}\n " "$\sigma$={:.3f}\n offset={:.3f}".format(
+        text = "a={:.3f}\n $\mu$={:.3f}\n $\sigma$={:.3f}\n offset={:.3f}".format(
             *opti_params
         )
         update_figure(fig, axis_ind, linspace_voltages, fit_count_rates, text)

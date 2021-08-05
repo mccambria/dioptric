@@ -46,6 +46,9 @@ class ObjectivePiezo(LabradServer):
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         self.task = None
+        
+    def sub_init_server_z(self):
+        """Sub-routine to be called by xyz server"""
         self.z_last_position = None
         self.z_current_direction = None
         self.z_last_turning_position = None
@@ -239,23 +242,23 @@ class ObjectivePiezo(LabradServer):
     
     @setting(23, center='v[]', scan_range='v[]',
              num_steps='i', period='i', returns='*v[]')
-    def load_z_scan(self, c, center, scan_range, num_steps, period):
+    def load_scan_z(self, c, center, scan_range, num_steps, period):
         """Load a linear sweep with the DAQ"""
 
         half_scan_range = scan_range / 2
         low = center - half_scan_range
         high = center + half_scan_range
         voltages = numpy.linspace(low, high, num_steps)
-        self.load_stream_writer_z(c, 'ObjectivePiezo-load_z_scan',
+        self.load_stream_writer_z(c, 'ObjectivePiezo-load_scan_z',
                                   voltages, period)
         return voltages
     
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     @setting(24, z_voltages='*v[]', period='i', returns='*v[]')
-    def load_arb_z_scan(self, c, z_voltages, period):
+    def load_arb_scan_z(self, c, z_voltages, period):
         """Load a list of voltages with the DAQ"""
 
-        self.load_stream_writer_z(c, 'ObjectivePiezo-load_arb_z_scan',
+        self.load_stream_writer_z(c, 'ObjectivePiezo-load_arb_scan_z',
                                   numpy.array(z_voltages), period)
         return z_voltages
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
