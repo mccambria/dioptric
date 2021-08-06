@@ -69,8 +69,9 @@ class ObjectivePiezo(LabradServer):
         p.get("ao_objective_piezo")
         p.get("di_clock")
         p.cd(["", "Config", "Positioning"])
-        p.get("z_hysteresis_a")
-        p.get("z_hysteresis_b")
+        # p.get("z_hysteresis_a")
+        # p.get("z_hysteresis_b")
+        p.get("z_hysteresis_linearity")
         result = await p.send()
         return result["get"]
 
@@ -87,8 +88,13 @@ class ObjectivePiezo(LabradServer):
         self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
         self.daq_ao_objective_piezo = config[2]
         self.daq_di_clock = config[3]
-        self.z_hysteresis_a = config[4]
-        self.z_hysteresis_b = config[5]
+        # self.z_hysteresis_a = config[4]
+        # self.z_hysteresis_b = config[5]
+        self.z_hysteresis_b = config[4]
+        # Define a such that 1 nominal volt corresponds to 
+        # 1 post-compensation volt 
+        # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
+        self.z_hysteresis_a = 1 - self.z_hysteresis_b
         logging.debug("Init complete")
 
     def compensate_hysteresis_z(self, position):
@@ -135,28 +141,31 @@ class ObjectivePiezo(LabradServer):
         compensated_voltage = []
         for val in position:
 
-            # First determine if we're turning around
+            # First determine if we're turning around - if we're not moving,
+            # don't consider us to be turning around
             movement_direction = numpy.sign(val - last_position)
-            if movement_direction == -current_direction:
+            if movement_direction == 0:
+                movement_direction = current_direction
+            elif movement_direction == -current_direction:
                 last_turning_position = last_position
                 current_direction = movement_direction
 
             # The adjustment voltage we need is obtained by inverting p(v)
             abs_p = abs(val - last_turning_position)
-            # v = (-b + numpy.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
-            v = abs_p
+            v = (-b + numpy.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
             result = last_turning_position + (movement_direction * v)
+            # result = val
             compensated_voltage.append(result)
 
             # Cache the last position
             last_position = val
 
-        self.z_last_position = val
+        self.z_last_position = last_position
         self.z_current_direction = movement_direction
         self.z_last_turning_position = last_turning_position
         
-        logging.debug(compensated_voltage)
-
+        # return position
+        
         if single_value:
             return compensated_voltage[0]
         else:
