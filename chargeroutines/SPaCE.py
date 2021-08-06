@@ -14,7 +14,7 @@ import majorroutines.optimize as optimize
 import numpy
 import time
 import matplotlib.pyplot as plt
-# import labrad
+import labrad
 from random import shuffle
 import majorroutines.image_sample as image_sample
 import copy

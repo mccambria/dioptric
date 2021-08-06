@@ -514,7 +514,7 @@ if __name__ == '__main__':
             'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
             # 'initialize_laser': red_laser, 'initialize_laser_power': 130, 'initialize_dur': 1E3,
             'initialize_laser': green_laser, 'initialize_laser_filter': nd_green, 'initialize_dur': 1E3,
-            'CPG_laser': red_laser, 'CPG_laser_power': 110, 'CPG_laser_dur': 1E4,
+            'CPG_laser': red_laser, 'CPG_laser_power': 50, 'CPG_laser_dur': 1E4,
             # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
             'charge_readout_laser_power': 0.1, 'charge_readout_dur':100*10**6,
