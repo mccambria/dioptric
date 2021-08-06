@@ -39,7 +39,7 @@ class Galvo(LabradServer):
     def initServer(self):
         filename = (
             "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
-        ) 
+        )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
             level=logging.DEBUG,
@@ -69,7 +69,7 @@ class Galvo(LabradServer):
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
         # logging.debug(self.daq_di_clock)
-        logging.debug('Init complete')
+        logging.debug("Init complete")
 
     def stopServer(self):
         self.close_task_internal()
@@ -258,7 +258,7 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(c, "Galvo-load_sweep_scan", voltages, period)
+        self.load_stream_writer_xy(c, "Galvo-load_sweep_scan_xy", voltages, period)
 
         return x_voltages_1d, y_voltages_1d
 
@@ -310,7 +310,7 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(c, "Galvo-load_cross_scan", voltages, period)
+        self.load_stream_writer_xy(c, "Galvo-load_cross_scan_xy", voltages, period)
 
         return x_voltages_1d, y_voltages_1d
 
@@ -354,7 +354,7 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(c, "Galvo-load_x_scan", voltages, period)
+        self.load_stream_writer_xy(c, "Galvo-load_scan_x", voltages, period)
 
         return x_voltages
 
@@ -398,7 +398,7 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(c, "Galvo-load_y_scan", voltages, period)
+        self.load_stream_writer_xy(c, "Galvo-load_scan_y", voltages, period)
 
         return y_voltages
 
@@ -421,7 +421,7 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_points, y_points))
 
-        self.load_stream_writer_xy(c, "Galvo-load_arb_xy_scan", voltages, period)
+        self.load_stream_writer_xy(c, "Galvo-load_arb_scan_xy", voltages, period)
 
         return
 

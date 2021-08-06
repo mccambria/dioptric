@@ -102,13 +102,13 @@ class ObjectivePiezo(LabradServer):
 
         Parameters
         ----------          
-        position : float
+        position : float or ndarray(float)
             Position (in this case the nominal voltage) the user intends 
             to move to for a linear response without hysteresis
 
         Returns
         -------
-        float
+        float or ndarray(float)
             Compensated voltage to set
         """
 
@@ -134,9 +134,6 @@ class ObjectivePiezo(LabradServer):
         # on the nth value
         compensated_voltage = []
         for val in position:
-
-            # compensated_voltage.append(val)
-            # continue
 
             # First determine if we're turning around
             movement_direction = numpy.sign(val - last_position)
