@@ -451,6 +451,18 @@ def main_with_cxn(
             opti_coords.append(ret_vals[0])
             scan_vals_by_axis.append(ret_vals[1])
             counts_by_axis.append(ret_vals[2])
+        # ret_vals = optimize_on_axis(
+        #     cxn, adjusted_nv_sig, 1, config, apd_indices, fig
+        # )
+        # opti_coords.append(ret_vals[0])
+        # scan_vals_by_axis.append(ret_vals[1])
+        # counts_by_axis.append(ret_vals[2])
+        # ret_vals = optimize_on_axis(
+        #     cxn, adjusted_nv_sig, 0, config, apd_indices, fig
+        # )
+        # opti_coords.insert(0, ret_vals[0])
+        # scan_vals_by_axis.insert(0, ret_vals[1])
+        # counts_by_axis.insert(0, ret_vals[2])
 
         # z
         # Help z out by ensuring we're centered in xy first

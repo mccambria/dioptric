@@ -154,6 +154,8 @@ class ObjectivePiezo(LabradServer):
         self.z_last_position = val
         self.z_current_direction = movement_direction
         self.z_last_turning_position = last_turning_position
+        
+        logging.debug(compensated_voltage)
 
         if single_value:
             return compensated_voltage[0]
@@ -169,12 +171,12 @@ class ObjectivePiezo(LabradServer):
         # Make sure the voltages are an array
         voltages = numpy.array(voltages)
 
-        compensated_voltages = self.compensate_hysteresis_z(voltages)
-
         # Write the initial voltages and stream the rest
-        num_voltages = len(compensated_voltages)
-        self.write_z(c, compensated_voltages[0])
-        stream_voltages = compensated_voltages[1:num_voltages]
+        num_voltages = len(voltages)
+        self.write_z(c, voltages[0])
+        stream_voltages = voltages[1:num_voltages]
+        # Compensate the remaining voltages
+        stream_voltages = self.compensate_hysteresis_z(stream_voltages)
         stream_voltages = numpy.ascontiguousarray(stream_voltages)
         num_stream_voltages = num_voltages - 1
 

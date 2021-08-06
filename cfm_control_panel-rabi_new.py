@@ -523,8 +523,8 @@ if __name__ == '__main__':
         #     nv_sig_copy['coords'] = [coords[0],coords[1],coords[2]+dz]
         #     do_image_sample(nv_sig_copy, apd_indices)
         
-        # do_optimize(nv_sig, apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        do_optimize(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
