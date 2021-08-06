@@ -126,7 +126,8 @@ def main_with_cxn(cxn, nv_sig, movement_displ, axis_ind,  apd_indices,  plot):
     ax.set_title('Movement {} V in axis {}'.format(movement_displ, axis_ind))
     
     # Fit to a gaussian
-    init_fit = [1, 0, scan_range_list[axis_ind]/2, 0]
+    init_fit = [1.0, 0.0, scan_range_list[axis_ind]/2.5, 0.0]
+    print(init_fit)
     opti_params, cov_arr = curve_fit(tool_belt.gaussian, 
               delta_list,count_ratio_list, p0=init_fit)
     
@@ -177,6 +178,7 @@ if __name__ == '__main__':
     # movement_displ = 0.2
     # displacement_list = [0.12]
     displacement_list = numpy.linspace(-0.48, 0.48, 41)
+    # displacement_list = displacement_list[26:]
     
     nv_sig = { 'coords': [0.021, -0.058, 4.77],
             'name': '{}-nv2_2021_08_04'.format(sample_name),
