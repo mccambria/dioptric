@@ -4,10 +4,14 @@
   "runOnStartup": true,
   "terminals": [
     {
-      "name": "IPython",
-      "commands": [
-        "source ~/anaconda3/bin/activate root",
-        "ipython"
+      "splitTerminals": [
+        {
+          "name": "IPython",
+          "commands": [
+            "source ~/anaconda3/bin/activate root",
+            "ipython"
+          ]
+        }
       ]
     }
   ]
