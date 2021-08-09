@@ -128,8 +128,13 @@ def main_with_cxn(cxn, nv_sig, movement_displ, axis_ind,  apd_indices,  plot):
     # Fit to a gaussian
     init_fit = [1.0, 0.0, scan_range_list[axis_ind]/2.5, 0.0]
     print(init_fit)
-    opti_params, cov_arr = curve_fit(tool_belt.gaussian, 
-              delta_list,count_ratio_list, p0=init_fit)
+    
+    try:
+        opti_params, cov_arr = curve_fit(tool_belt.gaussian, 
+                  delta_list,count_ratio_list, p0=init_fit)
+    except Exception as e:
+        print(e)
+        return None
     
     lin_radii = numpy.linspace(delta_list[0],
                         delta_list[-1], 100)
@@ -178,7 +183,7 @@ if __name__ == '__main__':
     # movement_displ = 0.2
     # displacement_list = [0.12]
     displacement_list = numpy.linspace(-0.48, 0.48, 41)
-    # displacement_list = displacement_list[26:]
+    displacement_list = displacement_list[12:]
     
     nv_sig = { 'coords': [0.021, -0.058, 4.77],
             'name': '{}-nv2_2021_08_04'.format(sample_name),
@@ -192,7 +197,10 @@ if __name__ == '__main__':
         for axis_ind in [2]:
             opti_delta_list = []
             for movement_displ in displacement_list:
-                opti_delta = main( nv_sig, movement_displ, axis_ind,  apd_indices)
+                opti_delta = None
+                # Just keep trying until we get the fit succeeds
+                while opti_delta is None:
+                    opti_delta = main( nv_sig, movement_displ, axis_ind,  apd_indices)
                 opti_delta_list.append(opti_delta)
             print(opti_delta_list)
             fig, ax = plt.subplots(1, 1, figsize=(10, 10))
