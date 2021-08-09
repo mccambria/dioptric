@@ -711,7 +711,7 @@ if __name__ == "__main__":
         "charge_readout_laser_filter": nd_yellow,
         "charge_readout_laser_power": 0.1,
         "charge_readout_dur": 100 * 10 ** 6,
-        "dir_1D": "y",
+        "dir_1D": "x",
         "collection_filter": "630_lp",
         "magnet_angle": None,
         "resonance_LOW": 2.8012,
@@ -750,38 +750,38 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig, apd_indices)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.1)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.220)
-        #         do_resonance_state(nv_sig, apd_indices, States.LOW)
-        #         do_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        #         do_optimize_magnet_angle(nv_sig, apd_indices)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        # do_spin_echo(nv_sig, apd_indices)
-        # p =[80, 40, 15]
-        # for t in [ 8*10**5, 10**6]:
-        #       nv_sig_copy = copy.deepcopy(nv_sig)
-        #       nv_sig_copy['CPG_laser_dur'] = t
-        #       nv_sig_copy['dir_1D'] = 'x'
-        #       do_SPaCE(nv_sig_copy)
-        #       nv_sig_copy['dir_1D'] = 'y'
-        #       do_SPaCE(nv_sig_copy)
-        for t in [4 * 10 ** 5]:
-            nv_sig_copy = copy.deepcopy(nv_sig)
-            nv_sig_copy["CPG_laser_dur"] = t
-            do_SPaCE(nv_sig_copy)
-        # do_spin_echo_battery(nv_sig, apd_indices)
-        # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
-        # do_t1_battery(nv_sig, apd_indices)
-        # do_t1_interleave_knill(nv_sig, apd_indices)
+    #         do_resonance_state(nv_sig, apd_indices, States.LOW)
+    #         do_resonance_state(nv_sig, apd_indices, States.HIGH)
+    # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+    # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+    #         do_optimize_magnet_angle(nv_sig, apd_indices)
+    # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+    # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+    # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+    # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+    # do_spin_echo(nv_sig, apd_indices)
+    # p =[80, 40, 15]
+    # for t in [ 8*10**5, 10**6]:
+    #       nv_sig_copy = copy.deepcopy(nv_sig)
+    #       nv_sig_copy['CPG_laser_dur'] = t
+    #       nv_sig_copy['dir_1D'] = 'x'
+    #       do_SPaCE(nv_sig_copy)
+    #       nv_sig_copy['dir_1D'] = 'y'
+    #       do_SPaCE(nv_sig_copy)
+    # for t in [3*10**5]:
+    #     nv_sig_copy = copy.deepcopy(nv_sig)
+    #     nv_sig_copy['CPG_laser_dur'] = t
+    #     do_SPaCE(nv_sig_copy)
+    # do_spin_echo_battery(nv_sig, apd_indices)
+    # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
+    # do_t1_battery(nv_sig, apd_indices)
+    # do_t1_interleave_knill(nv_sig, apd_indices)
 
-        # Operations that don't need an NV
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
-        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
-        # set_xyz([0.454, 0.832, -88])
+    # Operations that don't need an NV
+    # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+    # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+    # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
+    # set_xyz([0.454, 0.832, -88])
 
     finally:
         # Reset our hardware - this should be done in each routine, but

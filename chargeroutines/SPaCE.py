@@ -21,39 +21,40 @@ import copy
 import scipy.stats as stats
 from scipy.optimize import curve_fit
 
+
+# Define the start time to track the time between optimzies
+time_start = time.time() 
+
 def inverse_func(x, c, a):
     return c + a*x**-1/2
 
 def exp_decay(x, c, a, d):
     return c + a * numpy.exp(-x/d)
 # %%
-def plot_1D_SpaCE(file_name, file_path, do_plot = True):
+def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False, 
+                  do_save = True):
     data = tool_belt.get_raw_data( file_name, file_path)
+    timestamp = data['timestamp']
     nv_sig = data['nv_sig']
     CPG_pulse_dur = nv_sig['CPG_laser_dur']
     dir_1D = nv_sig['dir_1D']
     start_coords = nv_sig['coords']
 
     counts = data['readout_counts_avg']
-    img_range = data['img_range']
+    coords_voltages = data['coords_voltages']
     num_steps = data['num_steps']
 
     dir_1D = nv_sig['dir_1D']
     start_coords = nv_sig['coords']
 
-    dr = img_range / 2
-    dif_coords = [0,0,0]
     if dir_1D == 'x':
         coord_ind = 0
     elif dir_1D == 'y':
         coord_ind = 1
-    dif_coords[coord_ind] = dr
-    low_coords = numpy.array(start_coords) - dif_coords
-    high_coords = numpy.array(start_coords) + dif_coords
-
-    voltages = numpy.linspace(low_coords[coord_ind],
-                                    high_coords[coord_ind], num_steps)
+    voltages = [i[coord_ind] for i in coords_voltages]
+    voltages = numpy.array(voltages)
     rad_dist = (voltages - start_coords[coord_ind])*35000
+    opti_params = []
 
 
     if do_plot:
@@ -64,11 +65,45 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True):
         elif dir_1D == 'y':
             ax.set_xlabel('y (nm)')
         ax.set_ylabel('Average counts')
-        ax.set_titel('{} us pulse'.foramt(CPG_pulse_dur/10**3))
+        ax.set_title('{} us pulse'.format(CPG_pulse_dur/10**3))
+        
+    if do_fit:
+        init_fit = [2, rad_dist[int(num_steps/2)], 15, 7]
+        try:
+            opti_params, cov_arr = curve_fit(tool_belt.gaussian,
+                  rad_dist,
+                  counts,
+                  p0=init_fit
+                  )
+            if do_plot:
+                text = r'$C + A^2 e^{-(r - r_0)^2/(2*\sigma^2)}$'
+                props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+                ax.text(0.05, 0.95, text, transform=ax.transAxes, fontsize=12,
+                        verticalalignment='top', bbox=props)
+                lin_radii = numpy.linspace(rad_dist[0],
+                                rad_dist[-1], 100)
+                ax.plot(lin_radii,
+                       tool_belt.gaussian(lin_radii, *opti_params), 'r-')
+                text = 'A={:.3f} sqrt(counts)\n$r_0$={:.3f} nm\n ' \
+                    '$\sigma$={:.3f} nm\nC={:.3f} counts'.format(*opti_params)
+                ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+                        verticalalignment='top', bbox=props)
+            print(opti_params)
+        except Exception:
+            text = 'Peak could not be fit'
+            ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+                    verticalalignment='top', bbox=props)
+            
+    if do_plot and do_save:
+        filePath = tool_belt.get_file_path(__file__, timestamp,
+                                                nv_sig['name'])
+        tool_belt.save_figure(fig, filePath + '-gaussian_fit')
+            
+                  
 
-    return rad_dist, counts
+    return rad_dist, counts, opti_params
 def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
-    rad_dist, counts = plot_1D_SpaCE(file_name, file_path, do_plot = False)
+    rad_dist, counts, _ = plot_1D_SpaCE(file_name, file_path, do_plot = False)
 
     data = tool_belt.get_raw_data(file_name, file_path)
     timestamp = data['timestamp']
@@ -98,7 +133,7 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
     # Calculate the steps we'll consider around each ring position
     wings_ind = int( 400/step_size_nm)
 
-    lobe_widths = []
+    fit_params_list = []
     ring_positions = lobe_positions
     for ri in range(len(ring_positions)):
         fit_fail = False
@@ -141,9 +176,9 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
                     verticalalignment='top', bbox=props)
 
         if not fit_fail:
-            lobe_widths.append(opti_params[2])
+            fit_params_list.append(opti_params)
         else:
-            lobe_widths.append(None)
+            fit_params_list.append(None)
 
         # init_fit = [4, -ring_r_nm, 15, 3]
         # try:
@@ -173,7 +208,7 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
                                             nv_sig['name'])
     tool_belt.save_figure(fig, filePath + '-gaussian_fit')
 
-    return lobe_widths
+    return fit_params_list
 
 # %%
 def build_voltages_from_list(start_coords_drift, coords_list_drift):
@@ -655,10 +690,16 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     print('Expected total run time: {:.1f} m'.format(period_s_total/60))
 
     # Optimize at the start of the routine
-    opti_coord = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    # Set up a timed optimize--- every 2 min.
+    time_now = time.time()
+    global time_start
+    
+    if time_now - time_start > 12.5 * 60:
+        optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+
+        time_start = time_now
 
     drift = numpy.array(tool_belt.get_drift())
-
     # get the readout coords with drift
     start_coords_drift = start_coords + drift
     coords_list_drift = numpy.array(coords_list) + [drift[0], drift[1]]
@@ -1067,20 +1108,52 @@ if __name__ == '__main__':
     #================ 8/2/2021 y scans @ 1000 us ================#
     
     # y
+    # file_list = [
+    #     '2021_08_01-12_57_13-johnson-nv1_2021_07_27',
+    #     '2021_08_02-03_29_37-johnson-nv1_2021_07_27',
+    #     '2021_08_01-18_16_42-johnson-nv1_2021_07_27'
+    #     ]
+    #================ 8/5/2021 x scans @ 22 mW Feature 1A ================#
+    # x
     file_list = [
-        '2021_08_01-12_57_13-johnson-nv1_2021_07_27',
-        '2021_08_02-03_29_37-johnson-nv1_2021_07_27',
-        '2021_08_01-18_16_42-johnson-nv1_2021_07_27'
+        '2021_08_04-20_38_12-johnson-nv2_2021_08_04',
+        '2021_08_04-21_29_32-johnson-nv2_2021_08_04',
+        '2021_08_04-21_55_15-johnson-nv2_2021_08_04',
+        '2021_08_04-22_20_56-johnson-nv2_2021_08_04',
+        '2021_08_04-22_46_41-johnson-nv2_2021_08_04',
+        '2021_08_04-23_12_20-johnson-nv2_2021_08_04',
+        '2021_08_04-23_38_01-johnson-nv2_2021_08_04',
+        '2021_08_05-00_03_43-johnson-nv2_2021_08_04',
+        '2021_08_05-00_29_24-johnson-nv2_2021_08_04',
+        '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
+        '2021_08_05-00_55_06-johnson-nv2_2021_08_04',
+        '2021_08_05-01_20_49-johnson-nv2_2021_08_04',
+        '2021_08_05-01_46_33-johnson-nv2_2021_08_04',
+        '2021_08_05-02_12_17-johnson-nv2_2021_08_04',
+        '2021_08_05-02_38_00-johnson-nv2_2021_08_04',
+        '2021_08_05-03_03_43-johnson-nv2_2021_08_04',
+        '2021_08_05-03_29_28-johnson-nv2_2021_08_04',
+        '2021_08_05-03_55_11-johnson-nv2_2021_08_04',
+        '2021_08_05-09_01_01-johnson-nv2_2021_08_04',
+        '2021_08_05-09_26_52-johnson-nv2_2021_08_04',
+        '2021_08_05-09_52_38-johnson-nv2_2021_08_04',
+        '2021_08_05-10_45_26-johnson-nv2_2021_08_04',
+        '2021_08_05-11_43_11-johnson-nv2_2021_08_04',
+        '2021_08_05-12_12_58-johnson-nv2_2021_08_04',
+        '2021_08_05-15_54_52-johnson-nv2_2021_08_04'
         ]
 
     ########### Fit Gaussian to 1D files ###########
-    # widths_master_list = []
-    # for file_name in file_list:
+    widths_master_list = []
+    center_master_list = []
+    height_master_list = []
+    for file_name in file_list:
 
-    #     lobe_positions = [-750, 660] # 400, 800, 1200, 1600
-    #     widths = gaussian_fit_1D_airy_rings(file_name, path + '/' + sub_folder,
-    #                                         lobe_positions)
-    #     widths_master_list.append(widths[0])
+        lobe_positions = [750] # 400, 800, 1200, 1600
+        ret_vals = plot_1D_SpaCE(file_name, path, do_plot = True, do_fit = True)
+        widths_master_list.append(ret_vals[2][2])
+        center_master_list.append(ret_vals[2][1])
+        height_master_list.append(ret_vals[2][0]**2)
 
     # x_vals = [ 22, 25, 33]
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
@@ -1089,29 +1162,43 @@ if __name__ == '__main__':
     # ax.set_ylabel('Gaussian sigma (nm)')
     # ax.set_title('8/2/2021 1000 us, y axis, -770 nm lobe')
     
-    # x_vals = [100, 250, 300, 325, 350, 400, 500, 600, 700, 800, 900, 1000]
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(x_vals, widths_master_list, 'bo')
-    # ax.set_xlabel('Pulse duration (us)')
-    # ax.set_ylabel('Gaussian sigma (nm)')
-    # ax.set_title('8/2/2021 22 mW, y axis, +730 nm lobe')
+    x_vals = [90, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 
+              650, 700, 750, 800,850 , 900, 1000, 1100, 1200, 1300, 
+              1350, 1400, 1450]
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    ax.plot(x_vals, height_master_list, 'bo')
+    ax.set_xlabel('Pulse duration (us)')
+    ax.set_ylabel('Gaussian amplitude (counts)')
+    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    ax.plot(x_vals, widths_master_list, 'bo')
+    ax.set_xlabel('Pulse duration (us)')
+    ax.set_ylabel('Gaussian sigma (nm)')
+    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    ax.plot(x_vals, center_master_list, 'bo')
+    ax.set_xlabel('Pulse duration (us)')
+    ax.set_ylabel('Lobe position (nm)')
+    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
 
 
     ############# Plot 1D comparisons ##############
-    rad_dist, counts_no_opt = plot_1D_SpaCE(file_name_no_opt_400_ms, path, do_plot = False)
-    rad_dist, counts_opt = plot_1D_SpaCE(file_name_opt_xy_2, path, do_plot = False)
+    # rad_dist, counts_no_opt = plot_1D_SpaCE(file_name_no_opt_400_ms, path, do_plot = False)
+    # rad_dist, counts_opt = plot_1D_SpaCE(file_name_opt_xy_2, path, do_plot = False)
     
     
-    rad_dist, counts = plot_1D_SpaCE(file, path_july, do_plot = False)
+    # rad_dist, counts = plot_1D_SpaCE(file, path_july, do_plot = False)
 
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
-    # ax.plot(rad_dist, counts, 'b-', label = 'Optimize every run')
-    ax.plot(rad_dist, counts_no_opt, 'b-', label = 'Optimize every run, add 400 ms of green pusle every point')
-    ax.plot(rad_dist, counts_opt, 'r-', label = 'Optimize every point in x and y')
-    ax.set_xlabel('y (nm)')
-    ax.set_ylabel('Average counts')
-    ax.legend()
+    # # ax.plot(rad_dist, counts, 'b-', label = 'Optimize every run')
+    # ax.plot(rad_dist, counts_no_opt, 'b-', label = 'Optimize every run, add 400 ms of green pusle every point')
+    # ax.plot(rad_dist, counts_opt, 'r-', label = 'Optimize every point in x and y')
+    # ax.set_xlabel('y (nm)')
+    # ax.set_ylabel('Average counts')
+    # ax.legend()
 
 
 
