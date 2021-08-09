@@ -24,7 +24,7 @@ path = Path(
     "/home/mccambria/E/nvdata/pc_rabi/branch_piezo-hysteresis/determine_positioning_hysteresis/2021_08/"
 )
 file_paths = [f for f in listdir(path) if isfile(join(path, f))]
-file_paths = [f for f in file_paths if f.startswith("2021_08_06")]
+file_paths = [f for f in file_paths if f.startswith("2021_08_08")]
 file_paths = [f for f in file_paths if f.endswith("txt")]
 displacement_list = []
 opti_delta_list = []
@@ -42,7 +42,8 @@ plt.ion()
 
 opti_params, cov_arr = curve_fit(linear_line, displacement_list, opti_delta_list)
 
-fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+fig.set_tight_layout(True)
 ax.plot(displacement_list, opti_delta_list, "bo")
 
 lin_x_vals = numpy.linspace(min(displacement_list), max(displacement_list), 100)
