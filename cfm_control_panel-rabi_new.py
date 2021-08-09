@@ -422,7 +422,7 @@ def do_SPaCE(nv_sig):
     # num_steps = int(img_span / 2.75E-5) # about 1nm steps
     num_steps = int(img_span / 0.0001375) # about 5 nm steps
     # num_steps = 100
-    num_runs = 100
+    num_runs = 300
     
     measurement_type = '1D'
 
@@ -514,7 +514,7 @@ if __name__ == '__main__':
             'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
             # 'initialize_laser': red_laser, 'initialize_laser_power': 130, 'initialize_dur': 1E3,
             'initialize_laser': green_laser, 'initialize_laser_filter': nd_green, 'initialize_dur': 1E3,
-            'CPG_laser': red_laser, 'CPG_laser_power': 50, 'CPG_laser_dur': 1E4,
+            'CPG_laser': red_laser, 'CPG_laser_power': 110, 'CPG_laser_dur': 1E4,
             # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
             'charge_readout_laser_power': 0.1, 'charge_readout_dur':100*10**6,
@@ -558,7 +558,7 @@ if __name__ == '__main__':
         #     nv_sig_copy['coords'] = [coords[0],coords[1],coords[2]+dz]
         #     do_image_sample(nv_sig_copy, apd_indices)
         
-        # do_optimize(nv_sig, apd_indices)
+        do_optimize(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
@@ -586,8 +586,6 @@ if __name__ == '__main__':
         #       nv_sig_copy['dir_1D'] = 'y'
         #       do_SPaCE(nv_sig_copy)
         for t in [ 5*10**5]:
-        # for t in [1*10**5]:
-        # for t in [2.5*10**5]:
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['CPG_laser_dur'] = t
             do_SPaCE(nv_sig_copy)

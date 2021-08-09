@@ -694,7 +694,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     time_now = time.time()
     global time_start
     
-    if time_now - time_start > 2 * 60:
+    if time_now - time_start > 12.5 * 60:
         optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
         time_start = time_now
