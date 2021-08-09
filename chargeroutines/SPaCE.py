@@ -1115,32 +1115,50 @@ if __name__ == '__main__':
     #     ]
     #================ 8/5/2021 x scans @ 22 mW Feature 1A ================#
     # x
+    # file_list = [
+    #     '2021_08_04-20_38_12-johnson-nv2_2021_08_04',
+    #     '2021_08_04-21_29_32-johnson-nv2_2021_08_04',
+    #     '2021_08_04-21_55_15-johnson-nv2_2021_08_04',
+    #     '2021_08_04-22_20_56-johnson-nv2_2021_08_04',
+    #     '2021_08_04-22_46_41-johnson-nv2_2021_08_04',
+    #     '2021_08_04-23_12_20-johnson-nv2_2021_08_04',
+    #     '2021_08_04-23_38_01-johnson-nv2_2021_08_04',
+    #     '2021_08_05-00_03_43-johnson-nv2_2021_08_04',
+    #     '2021_08_05-00_29_24-johnson-nv2_2021_08_04',
+    #     '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
+    #     '2021_08_05-00_55_06-johnson-nv2_2021_08_04',
+    #     '2021_08_05-01_20_49-johnson-nv2_2021_08_04',
+    #     '2021_08_05-01_46_33-johnson-nv2_2021_08_04',
+    #     '2021_08_05-02_12_17-johnson-nv2_2021_08_04',
+    #     '2021_08_05-02_38_00-johnson-nv2_2021_08_04',
+    #     '2021_08_05-03_03_43-johnson-nv2_2021_08_04',
+    #     '2021_08_05-03_29_28-johnson-nv2_2021_08_04',
+    #     '2021_08_05-03_55_11-johnson-nv2_2021_08_04',
+    #     '2021_08_05-09_01_01-johnson-nv2_2021_08_04',
+    #     '2021_08_05-09_26_52-johnson-nv2_2021_08_04',
+    #     '2021_08_05-09_52_38-johnson-nv2_2021_08_04',
+    #     '2021_08_05-10_45_26-johnson-nv2_2021_08_04',
+    #     '2021_08_05-11_43_11-johnson-nv2_2021_08_04',
+    #     '2021_08_05-12_12_58-johnson-nv2_2021_08_04',
+    #     '2021_08_05-15_54_52-johnson-nv2_2021_08_04'
+    #     ]
+    
+    #================ 8/8/2021 x scans @ 22 mW Feature 1A, chaning time between optimize ================#
+    
     file_list = [
-        '2021_08_04-20_38_12-johnson-nv2_2021_08_04',
-        '2021_08_04-21_29_32-johnson-nv2_2021_08_04',
-        '2021_08_04-21_55_15-johnson-nv2_2021_08_04',
-        '2021_08_04-22_20_56-johnson-nv2_2021_08_04',
-        '2021_08_04-22_46_41-johnson-nv2_2021_08_04',
-        '2021_08_04-23_12_20-johnson-nv2_2021_08_04',
-        '2021_08_04-23_38_01-johnson-nv2_2021_08_04',
-        '2021_08_05-00_03_43-johnson-nv2_2021_08_04',
-        '2021_08_05-00_29_24-johnson-nv2_2021_08_04',
-        '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
-        '2021_08_05-00_55_06-johnson-nv2_2021_08_04',
-        '2021_08_05-01_20_49-johnson-nv2_2021_08_04',
-        '2021_08_05-01_46_33-johnson-nv2_2021_08_04',
-        '2021_08_05-02_12_17-johnson-nv2_2021_08_04',
-        '2021_08_05-02_38_00-johnson-nv2_2021_08_04',
-        '2021_08_05-03_03_43-johnson-nv2_2021_08_04',
-        '2021_08_05-03_29_28-johnson-nv2_2021_08_04',
-        '2021_08_05-03_55_11-johnson-nv2_2021_08_04',
-        '2021_08_05-09_01_01-johnson-nv2_2021_08_04',
-        '2021_08_05-09_26_52-johnson-nv2_2021_08_04',
-        '2021_08_05-09_52_38-johnson-nv2_2021_08_04',
-        '2021_08_05-10_45_26-johnson-nv2_2021_08_04',
-        '2021_08_05-11_43_11-johnson-nv2_2021_08_04',
-        '2021_08_05-12_12_58-johnson-nv2_2021_08_04',
-        '2021_08_05-15_54_52-johnson-nv2_2021_08_04'
+        '2021_08_06-22_42_26-johnson-nv2_2021_08_04',
+        '2021_08_06-21_23_20-johnson-nv2_2021_08_04',
+        '2021_08_06-18_01_46-johnson-nv2_2021_08_04',
+        '2021_08_07-13_42_12-johnson-nv2_2021_08_04',
+        '2021_08_07-14_53_25-johnson-nv2_2021_08_04',
+        '2021_08_07-20_57_08-johnson-nv2_2021_08_04',
+        '2021_08_07-21_55_58-johnson-nv2_2021_08_04',
+        '2021_08_06-23_50_50-johnson-nv2_2021_08_04',
+        '2021_08_08-12_40_24-johnson-nv2_2021_08_04',
+        '2021_08_07-22_57_03-johnson-nv2_2021_08_04',
+        '2021_08_08-11_40_13-johnson-nv2_2021_08_04',
+        '2021_08_07-12_14_46-johnson-nv2_2021_08_04',
+        '2021_08_07-23_57_53-johnson-nv2_2021_08_04'
         ]
 
     ########### Fit Gaussian to 1D files ###########
@@ -1162,26 +1180,24 @@ if __name__ == '__main__':
     # ax.set_ylabel('Gaussian sigma (nm)')
     # ax.set_title('8/2/2021 1000 us, y axis, -770 nm lobe')
     
-    x_vals = [90, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 
-              650, 700, 750, 800,850 , 900, 1000, 1100, 1200, 1300, 
-              1350, 1400, 1450]
+    x_vals = [0.1, 1, 2, 5, 7.5, 8, 9, 10, 12.5, 15, 17.5, 20, 30]
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     ax.plot(x_vals, height_master_list, 'bo')
-    ax.set_xlabel('Pulse duration (us)')
+    ax.set_xlabel('Time between optimization (s)')
     ax.set_ylabel('Gaussian amplitude (counts)')
     ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     ax.plot(x_vals, widths_master_list, 'bo')
-    ax.set_xlabel('Pulse duration (us)')
+    ax.set_xlabel('Time between optimization (s)')
     ax.set_ylabel('Gaussian sigma (nm)')
     ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
     
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.plot(x_vals, center_master_list, 'bo')
-    ax.set_xlabel('Pulse duration (us)')
-    ax.set_ylabel('Lobe position (nm)')
-    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(x_vals, center_master_list, 'bo')
+    # ax.set_xlabel('Pulse duration (us)')
+    # ax.set_ylabel('Lobe position (nm)')
+    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
 
 
     ############# Plot 1D comparisons ##############
