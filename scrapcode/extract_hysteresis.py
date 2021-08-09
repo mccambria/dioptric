@@ -26,6 +26,8 @@ path = Path(
 file_paths = [f for f in listdir(path) if isfile(join(path, f))]
 file_paths = [f for f in file_paths if f.startswith("2021_08_08")]
 file_paths = [f for f in file_paths if f.endswith("txt")]
+# displacement_list = [0.48]
+# opti_delta_list = [0.0026359643596501376]
 displacement_list = []
 opti_delta_list = []
 for file_path in file_paths:
