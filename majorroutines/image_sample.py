@@ -213,7 +213,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     
     # %% Set up the xy_server
 
-    x_voltages, y_voltages = xy_server.load_sweep_xy_scan(x_center, y_center,
+    x_voltages, y_voltages = xy_server.load_sweep_scan_xy(x_center, y_center,
                                        x_range, y_range, num_steps, period)
 
     x_num_steps = len(x_voltages)
