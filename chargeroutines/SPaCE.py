@@ -1204,16 +1204,16 @@ if __name__ == '__main__':
         ]
 
     ########### Fit Gaussian to 1D files ###########
-    widths_master_list = []
-    center_master_list = []
-    height_master_list = []
-    for file_name in file_list:
+    # widths_master_list = []
+    # center_master_list = []
+    # height_master_list = []
+    # for file_name in file_list:
 
-        lobe_positions = [750] # 400, 800, 1200, 1600
-        ret_vals = plot_1D_SpaCE(file_name, path, do_plot = True, do_fit = True)
-        widths_master_list.append(ret_vals[2][2])
-        center_master_list.append(ret_vals[2][1])
-        height_master_list.append(ret_vals[2][0]**2)
+    #     lobe_positions = [750] # 400, 800, 1200, 1600
+    #     ret_vals = plot_1D_SpaCE(file_name, path, do_plot = True, do_fit = True)
+    #     widths_master_list.append(ret_vals[2][2])
+    #     center_master_list.append(ret_vals[2][1])
+    #     height_master_list.append(ret_vals[2][0]**2)
 
     # x_vals = [ 22, 25, 33]
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
@@ -1222,18 +1222,18 @@ if __name__ == '__main__':
     # ax.set_ylabel('Gaussian sigma (nm)')
     # ax.set_title('8/2/2021 1000 us, y axis, -770 nm lobe')
     
-    x_vals = [0.1, 1, 2, 5, 7.5, 8, 9, 10, 12.5, 15, 17.5, 20, 30]
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.plot(x_vals, height_master_list, 'bo')
-    ax.set_xlabel('Time between optimization (s)')
-    ax.set_ylabel('Gaussian amplitude (counts)')
-    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    # x_vals = [0.1, 1, 2, 5, 7.5, 8, 9, 10, 12.5, 15, 17.5, 20, 30]
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(x_vals, height_master_list, 'bo')
+    # ax.set_xlabel('Time between optimization (s)')
+    # ax.set_ylabel('Gaussian amplitude (counts)')
+    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
     
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.plot(x_vals, widths_master_list, 'bo')
-    ax.set_xlabel('Time between optimization (s)')
-    ax.set_ylabel('Gaussian sigma (nm)')
-    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(x_vals, widths_master_list, 'bo')
+    # ax.set_xlabel('Time between optimization (s)')
+    # ax.set_ylabel('Gaussian sigma (nm)')
+    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
     
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, center_master_list, 'bo')
@@ -1261,25 +1261,58 @@ if __name__ == '__main__':
 
 
 
-    # specific for 2D scans
-    # try:
-    #     img_array = data['readout_image_array']
-    #     x_voltages = data['x_voltages_1d']
-    #     y_voltages = data['y_voltages_1d']
-    #     x_low = x_voltages[0]
-    #     x_high = x_voltages[-1]
-    #     y_low = y_voltages[0]
-    #     y_high = y_voltages[-1]
-    #     pixel_size = x_voltages[1] - x_voltages[0]
-    #     half_pixel_size = pixel_size / 2
-    #     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-    #                   y_low - half_pixel_size, y_high + half_pixel_size]
-    # except Exception:
-    #     pass
+    #================ specific for 2D scans ================#
+    file_list = [
+        '2021_08_09-22_21_26-johnson-nv2_2021_08_04',
+        '2021_08_09-21_46_54-johnson-nv2_2021_08_04',
+        '2021_08_09-21_12_28-johnson-nv2_2021_08_04',
+        '2021_08_09-20_37_48-johnson-nv2_2021_08_04',
+        '2021_08_09-20_03_07-johnson-nv2_2021_08_04',
+        '2021_08_09-19_28_27-johnson-nv2_2021_08_04',
+        '2021_08_09-18_53_42-johnson-nv2_2021_08_04',
+        '2021_08_09-18_18_57-johnson-nv2_2021_08_04',
+        ]
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    label_list = [
+        '-1.125 um',
+        '-0.75 um',
+        '-0.375 um',
+        '0 um',
+        '0.375 um',
+        '0.75 um',
+        '1.125 um',
+        '1.5 um',
+        ]
+    
+    for f in range(len(file_list)):
+        file = file_list[f]
+        data = tool_belt.get_raw_data(file, path)
+        try:
+            img_array = data['readout_image_array']
+            x_voltages = data['x_voltages_1d']
+            y_voltages = data['y_voltages_1d']
+            x_low = x_voltages[0]
+            x_high = x_voltages[-1]
+            y_low = y_voltages[0]
+            y_high = y_voltages[-1]
+            pixel_size = x_voltages[1] - x_voltages[0]
+            half_pixel_size = pixel_size / 2
+            img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                          y_low - half_pixel_size, y_high + half_pixel_size]
+            
+            # get jsut a slice throguh the middle
+            num_steps= len(img_array)
+            slice_counts = numpy.array(img_array[int(num_steps/2)])
+            
+            ax.plot(x_voltages, slice_counts + 10*f , '-', label = label_list[f])
+            ax.legend()
+            
+        except Exception:
+            pass
 
-    # tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
-    #                     title=None, color_bar_label='Counts',
-    #                     min_value=None, um_scaled=False)
+        # tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
+        #                     title=None, color_bar_label='Counts',
+        #                     min_value=None, um_scaled=False)
 
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))
