@@ -606,16 +606,17 @@ def do_spin_echo(nv_sig, apd_indices):
 
 
 def do_SPaCE(nv_sig):
-    # img_range = 0.11 # V (35 um / 2 V)
+    img_range = 0.04 # V (35 um / 2 V)
     # num_steps = 400
     # num_runs = 10
 
-    img_range = [-(0.0216 + 0.007), -(0.0216 - 0.007)]  # V (35 um / 2 V)
-    num_steps = 100
-    num_runs = 10
-    measurement_type = "1D"
-
-    SPaCE.main(nv_sig, img_range, num_steps, num_runs, measurement_type)
+    # img_range = [(0.02162 + 0.007), (0.02162 - 0.007)]  # V (35 um / 2 V)
+    num_steps = 55
+    num_runs = 1
+    measurement_type = "2D"
+    
+    dz = 0.09375
+    SPaCE.main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz)
 
 
 def do_sample_nvs(nv_sig_list, apd_indices):
@@ -705,7 +706,7 @@ if __name__ == "__main__":
         "initialize_dur": 1e3,
         "CPG_laser": red_laser,
         "CPG_laser_power": 80,
-        "CPG_laser_dur": 1e4,
+        "CPG_laser_dur": 500e3,
         # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
@@ -741,7 +742,7 @@ if __name__ == "__main__":
         #     nv_sig_copy['coords'] = [coords[0],coords[1],coords[2]+dz]
         #     do_image_sample(nv_sig_copy, apd_indices)
 
-        do_optimize(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
@@ -750,38 +751,31 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig, apd_indices)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.1)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.220)
-    #         do_resonance_state(nv_sig, apd_indices, States.LOW)
-    #         do_resonance_state(nv_sig, apd_indices, States.HIGH)
-    # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-    # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-    #         do_optimize_magnet_angle(nv_sig, apd_indices)
-    # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-    # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-    # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-    # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-    # do_spin_echo(nv_sig, apd_indices)
-    # p =[80, 40, 15]
-    # for t in [ 8*10**5, 10**6]:
-    #       nv_sig_copy = copy.deepcopy(nv_sig)
-    #       nv_sig_copy['CPG_laser_dur'] = t
-    #       nv_sig_copy['dir_1D'] = 'x'
-    #       do_SPaCE(nv_sig_copy)
-    #       nv_sig_copy['dir_1D'] = 'y'
-    #       do_SPaCE(nv_sig_copy)
-    # for t in [3*10**5]:
-    #     nv_sig_copy = copy.deepcopy(nv_sig)
-    #     nv_sig_copy['CPG_laser_dur'] = t
-    #     do_SPaCE(nv_sig_copy)
-    # do_spin_echo_battery(nv_sig, apd_indices)
-    # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
-    # do_t1_battery(nv_sig, apd_indices)
-    # do_t1_interleave_knill(nv_sig, apd_indices)
-
-    # Operations that don't need an NV
-    # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
-    # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-    # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
-    # set_xyz([0.454, 0.832, -88])
+        #         do_resonance_state(nv_sig, apd_indices, States.LOW)
+        #         do_resonance_state(nv_sig, apd_indices, States.HIGH)
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        #         do_optimize_magnet_angle(nv_sig, apd_indices)
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        # do_spin_echo(nv_sig, apd_indices)
+        t_list = [400e3, 100e3, 50e3, 1e3 ]
+        for t in t_list:
+            nv_sig_copy = copy.deepcopy(nv_sig)
+            nv_sig_copy['CPG_laser_dur'] = t
+            do_SPaCE(nv_sig_copy)
+        # do_spin_echo_battery(nv_sig, apd_indices)
+        # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
+        # do_t1_battery(nv_sig, apd_indices)
+        # do_t1_interleave_knill(nv_sig, apd_indices)
+    
+        # Operations that don't need an NV
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+        # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
+        # set_xyz([0.454, 0.832, -88])
 
     finally:
         # Reset our hardware - this should be done in each routine, but
