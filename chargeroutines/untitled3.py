@@ -23,7 +23,7 @@ from scipy.optimize import curve_fit
 
 
 # Define the start time to track the time between optimzies
-time_start = time.time()
+time_start = time.time() 
 
 def inverse_sqrt(x, a):
     return a*x**-1/2
@@ -38,7 +38,7 @@ def exp_sqrd_decay(x, a, d):
     return a * numpy.exp(-x**2/d)
 
 # %%
-def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
+def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False, 
                   do_save = True):
     data = tool_belt.get_raw_data( file_name, file_path)
     timestamp = data['timestamp']
@@ -73,7 +73,7 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
             ax.set_xlabel('y (nm)')
         ax.set_ylabel('Average counts')
         ax.set_title('{} us pulse'.format(CPG_pulse_dur/10**3))
-
+        
     if do_fit:
         init_fit = [2, rad_dist[int(num_steps/2)], 15, 7]
         try:
@@ -100,13 +100,13 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
             text = 'Peak could not be fit'
             ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
                     verticalalignment='top', bbox=props)
-
+            
     if do_plot and do_save:
         filePath = tool_belt.get_file_path(__file__, timestamp,
                                                 nv_sig['name'])
         tool_belt.save_figure(fig, filePath + '-gaussian_fit')
-
-
+            
+                  
 
     return rad_dist, counts, opti_params
 def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
@@ -496,11 +496,11 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         print("Run {}, point {}/{}".format(run_num, i, num_samples-1))
         # Set up a timed optimize--- every 4 min.
         time_now = time.time()
-
+        
         if time_now - time_start > opti_interval * 60:
             optimize.main_with_cxn(cxn, nv_sig, apd_indices)
             time_start = time_now
-
+        
         # set the sequence again, since optimize will have streamed new one to pulse_streamer
         # seq_args = [ initialization_time, pulse_time, charge_readout_time,
         #     charge_readout_laser_power,
@@ -508,7 +508,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         #     init_color, pulse_color, readout_color]
         # seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-
+    
         # Get the current drift
         drift = numpy.array(tool_belt.get_drift())
 
@@ -519,7 +519,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         # step thru the coordinates to test as the cpg pulse
         CPG_coord = [coords_list_drift[i][0], coords_list_drift[i][1],
                      coords_list_drift[i][2]]
-
+        
         # Build the x,y, and z coordinate lists, which change with each CLK pulse
         # x_voltages, y_voltages = build_xy_voltages_w_optimize(
         #             start_coords_drift,
@@ -529,17 +529,17 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         start_x_value = start_coords_drift[0]
         start_y_value = start_coords_drift[1]
         start_z_value = start_coords_drift[2]
-
+    
         ################# SPaCE measurement #################
         x_voltages = [start_x_value, CPG_coord[0], start_x_value]
         y_voltages = [start_y_value, CPG_coord[1], start_y_value]
         z_voltages = [start_z_value, CPG_coord[2], start_z_value]
-
+    
         # start on the readout NV
         tool_belt.set_xyz(cxn, start_coords_drift)
 
         # Load the galvo and objective piezo server
-        xyz_server.load_arb_scan_xyz(x_voltages, y_voltages, z_voltages,
+        xyz_server.load_arb_scan_xyz(x_voltages, y_voltages, z_voltages, 
                                     int(period))
 
         #  Set up the APD
@@ -549,32 +549,32 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
 
 
         #++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-
-
+        
+    
         total_samples_list = []
         num_read_so_far = 0
         tool_belt.init_safe_stop()
-
+    
         while num_read_so_far < total_num_samples:
-
+    
             if tool_belt.safe_stop():
                 break
-
+    
             # Read the samples and update the image
             new_samples = cxn.apd_tagger.read_counter_simple()
             num_new_samples = len(new_samples)
-
+    
             if num_new_samples > 0:
                 for el in new_samples:
                     total_samples_list.append(int(el))
                 num_read_so_far += num_new_samples
-
+    
         # The last of the triplet of readout windows is the counts we are interested in
         readout_counts = int(total_samples_list[2])
         readout_counts_list.append(int(readout_counts))
-
+        
         #++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-
+    
         # total_samples_list = []
         # num_read_so_far = 0
         # tool_belt.init_safe_stop()
@@ -726,7 +726,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     # Set up a timed optimize--- every 4 min.
     time_now = time.time()
     global time_start
-
+    
     if time_now - time_start > 4 * 60:
         optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
@@ -870,7 +870,7 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz = 0):
         # list the z values
         z_v = start_coords[2] + dz
         z_voltages = numpy.linspace(z_v, z_v, len(x_voltages))
-
+        
         # Combine the x and y voltages together into pairs
         coords_voltages = list(zip(x_voltages, y_voltages, z_voltages))
 
@@ -1076,10 +1076,10 @@ if __name__ == '__main__':
     file_name_opt_xy = '2021_07_28-14_00_23-johnson-nv1_2021_07_27'
     file_name_opt_mod = '2021_08_03-12_54_18-johnson-nv1_2021_07_27'
     file_name_opt_dim = '2021_08_03-14_48_39-johnson-nv1_2021_07_27'
-
+    
     file_name_no_opt_400_ms = '2021_08_03-16_21_50-johnson-nv1_2021_07_27'
     file_name_opt_xy_2 = '2021_08_03-18_22_18-johnson-nv1_2021_07_27'
-
+    
     file = '2021_07_31-18_02_29-johnson-nv1_2021_07_27'
 
     #================ 7/27/2021 x and y scans @ 22 mW ================#
@@ -1143,9 +1143,9 @@ if __name__ == '__main__':
     #                '2021_08_01-10_32_24-johnson-nv1_2021_07_27',
     #                '2021_08_01-12_57_13-johnson-nv1_2021_07_27',
     #             ]
-
+    
     #================ 8/2/2021 x scans @ 800 us ================#
-
+    
     # x
     # file_list = [
     #     '2021_08_02-14_21_03-johnson-nv1_2021_07_27',
@@ -1153,9 +1153,9 @@ if __name__ == '__main__':
     #     '2021_08_01-23_52_30-johnson-nv1_2021_07_27',
     #     '2021_08_01-14_39_32-johnson-nv1_2021_07_27'
     #     ]
-
+    
     #================ 8/2/2021 y scans @ 1000 us ================#
-
+    
     # y
     # file_list = [
     #     '2021_08_01-12_57_13-johnson-nv1_2021_07_27',
@@ -1191,9 +1191,9 @@ if __name__ == '__main__':
     #     '2021_08_05-12_12_58-johnson-nv2_2021_08_04',
     #     '2021_08_05-15_54_52-johnson-nv2_2021_08_04'
     #     ]
-
+    
     #================ 8/8/2021 x scans @ 22 mW Feature 1A, chaning time between optimize ================#
-
+    
     file_list = [
         '2021_08_06-22_42_26-johnson-nv2_2021_08_04',
         '2021_08_06-21_23_20-johnson-nv2_2021_08_04',
@@ -1225,28 +1225,29 @@ if __name__ == '__main__':
     #     '2021_08_05-22_01_58-johnson-nv2_2021_08_04'
     #     ]
     ########### Fit Gaussian to 1D files ###########
-    # widths_master_list = []
-    # center_master_list = []
-    # height_master_list = []
-    # for file_name in file_list:
+    widths_master_list = []
+    center_master_list = []
+    height_master_list = []
+    for file_name in file_list:
 
-    #     lobe_positions = [750] # 400, 800, 1200, 1600
-    #     ret_vals = plot_1D_SpaCE(file_name, path, do_plot = True, do_fit = True)
-    #     widths_master_list.append(ret_vals[2][2])
-    #     center_master_list.append(ret_vals[2][1])
-    #     height_master_list.append(ret_vals[2][0]**2)
+        lobe_positions = [750] # 400, 800, 1200, 1600
+        ret_vals = plot_1D_SpaCE(file_name, path, do_plot = False, do_fit = True,
+                                 do_save = False)
+        widths_master_list.append(ret_vals[2][2])
+        center_master_list.append(ret_vals[2][1])
+        height_master_list.append(ret_vals[2][0]**2)
 
     #_______ Power _______#
     # x_vals = [ 12.7, 15.8, 18.6, 21.7, 24.4, 26.8, 29.1, 30.9, 31.3]
     # lin_x_vals = numpy.linspace(x_vals[0],
     #                 x_vals[-1], 100)
-
+    
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, height_master_list, 'bo')
     # ax.set_xlabel('Pulse power (mW)')
     # ax.set_ylabel('Gaussian amplitude (counts)')
     # ax.set_title('8/6/2021 500 us, x axis, 1A lobe')
-
+    
     # init_fit = [5, 20]
     # opti_params, cov_arr = curve_fit(exp_sqrd_decay,
     #       x_vals,height_master_list,p0=init_fit)
@@ -1259,13 +1260,13 @@ if __name__ == '__main__':
     # text = 'A={:.3f} counts\n$d$={:.3f} mW^2'.format(*opti_params)
     # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
     #         verticalalignment='top', bbox=props)
-
+                
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, widths_master_list, 'bo')
     # ax.set_xlabel('Pulse power (mW)')
     # ax.set_ylabel('Gaussian sigma (nm)')
     # ax.set_title('8/6/2021 500 us x axis, 1A lobe')
-
+    
     # init_fit = [750]
     # opti_params, cov_arr = curve_fit(inverse_law,
     #       x_vals,widths_master_list,p0=init_fit)
@@ -1278,25 +1279,25 @@ if __name__ == '__main__':
     # text = 'A={:.3f} nm*mW'.format(*init_fit)
     # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
     #         verticalalignment='top', bbox=props)
-
+    
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, center_master_list, 'bo')
     # ax.set_xlabel('Pulse power (mW)')
     # ax.set_ylabel('Lobe position (nm)')
     # ax.set_title('8/6/2021 500 us, x axis, 1A lobe')
-
+    
     #_______ Time _______#
-    # x_vals = [90, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600,
-    #          650, 700, 750, 800,850 , 900, 1000, 1100, 1200, 1300,
-    #          1350, 1400, 1450]
-    #lin_x_vals = numpy.linspace(x_vals[0],
+    x_vals = [90, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 
+              650, 700, 750, 800,850 , 900, 1000, 1100, 1200, 1300, 
+              1350, 1400, 1450]
+    lin_x_vals = numpy.linspace(x_vals[0],
                     x_vals[-1], 100)
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, height_master_list, 'bo')
     # ax.set_xlabel('Pulse duration (us)')
     # ax.set_ylabel('Gaussian amplitude (counts)')
     # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
-
+      
     # init_fit = [5, 2000]
     # opti_params, cov_arr = curve_fit(exp_decay,
     #       x_vals,height_master_list,p0=init_fit)
@@ -1309,33 +1310,27 @@ if __name__ == '__main__':
     # text = 'A={:.3f} counts\n$d$={:.3f} us'.format(*opti_params)
     # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
     #         verticalalignment='top', bbox=props)
-
-    # x_vals = [0.1, 1, 2, 5, 7.5, 8, 9, 10, 12.5, 15, 17.5, 20, 30]
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(x_vals, height_master_list, 'bo')
-    # ax.set_xlabel('Time between optimization (s)')
-    # ax.set_ylabel('Gaussian amplitude (counts)')
-    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
-
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(x_vals, widths_master_list, 'bo')
-    # ax.set_xlabel('Time between optimization (s)')
-    # ax.set_ylabel('Gaussian sigma (nm)')
-    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
-
-    #init_fit = [13000]
-    #opti_params, cov_arr = curve_fit(inverse_sqrt,
-    #      x_vals,widths_master_list,p0=init_fit)
-    #print('Opti params: ' + str(opti_params))
-    #text = r'$A / t^{1/2}$'
-    #props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    #ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
-    #        verticalalignment='top', bbox=props)
-    #ax.plot(lin_x_vals, inverse_sqrt(lin_x_vals, *init_fit), 'r-')
-    #text = 'A={:.3f} nm*us^1/2'.format(*opti_params)
-    #ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+    
+    
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    ax.plot(x_vals, widths_master_list, 'bo')
+    ax.set_xlabel('Pulse duration (us)')
+    ax.set_ylabel('Gaussian width (nm)')
+    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    
+    init_fit = [13000]
+    opti_params, cov_arr = curve_fit(inverse_sqrt,
+          x_vals,widths_master_list,p0=init_fit)
+    print('Opti params: ' + str(opti_params))
+    text = r'$A / t^{1/2}$'
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
             verticalalignment='top', bbox=props)
-
+    ax.plot(lin_x_vals, inverse_sqrt(lin_x_vals, *init_fit), 'r-')
+    text = 'A={:.3f} nm*us^1/2'.format(*opti_params)
+    ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, center_master_list, 'bo')
     # ax.set_xlabel('Pulse duration (us)')
@@ -1346,8 +1341,8 @@ if __name__ == '__main__':
     ############# Plot 1D comparisons ##############
     # rad_dist, counts_no_opt = plot_1D_SpaCE(file_name_no_opt_400_ms, path, do_plot = False)
     # rad_dist, counts_opt = plot_1D_SpaCE(file_name_opt_xy_2, path, do_plot = False)
-
-
+    
+    
     # rad_dist, counts = plot_1D_SpaCE(file, path_july, do_plot = False)
 
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
@@ -1362,58 +1357,25 @@ if __name__ == '__main__':
 
 
 
-    #================ specific for 2D scans ================#
-    file_list = [
-        '2021_08_09-22_21_26-johnson-nv2_2021_08_04',
-        '2021_08_09-21_46_54-johnson-nv2_2021_08_04',
-        '2021_08_09-21_12_28-johnson-nv2_2021_08_04',
-        '2021_08_09-20_37_48-johnson-nv2_2021_08_04',
-        '2021_08_09-20_03_07-johnson-nv2_2021_08_04',
-        '2021_08_09-19_28_27-johnson-nv2_2021_08_04',
-        '2021_08_09-18_53_42-johnson-nv2_2021_08_04',
-        '2021_08_09-18_18_57-johnson-nv2_2021_08_04',
-        ]
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    label_list = [
-        '-1.125 um',
-        '-0.75 um',
-        '-0.375 um',
-        '0 um',
-        '0.375 um',
-        '0.75 um',
-        '1.125 um',
-        '1.5 um',
-        ]
+    # specific for 2D scans
+    # try:
+    #     img_array = data['readout_image_array']
+    #     x_voltages = data['x_voltages_1d']
+    #     y_voltages = data['y_voltages_1d']
+    #     x_low = x_voltages[0]
+    #     x_high = x_voltages[-1]
+    #     y_low = y_voltages[0]
+    #     y_high = y_voltages[-1]
+    #     pixel_size = x_voltages[1] - x_voltages[0]
+    #     half_pixel_size = pixel_size / 2
+    #     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+    #                   y_low - half_pixel_size, y_high + half_pixel_size]
+    # except Exception:
+    #     pass
 
-    for f in range(len(file_list)):
-        file = file_list[f]
-        data = tool_belt.get_raw_data(file, path)
-        try:
-            img_array = data['readout_image_array']
-            x_voltages = data['x_voltages_1d']
-            y_voltages = data['y_voltages_1d']
-            x_low = x_voltages[0]
-            x_high = x_voltages[-1]
-            y_low = y_voltages[0]
-            y_high = y_voltages[-1]
-            pixel_size = x_voltages[1] - x_voltages[0]
-            half_pixel_size = pixel_size / 2
-            img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                          y_low - half_pixel_size, y_high + half_pixel_size]
-
-            # get jsut a slice throguh the middle
-            num_steps= len(img_array)
-            slice_counts = numpy.array(img_array[int(num_steps/2)])
-
-            ax.plot(x_voltages, slice_counts + 10*f , '-', label = label_list[f])
-            ax.legend()
-
-        except Exception:
-            pass
-
-        # tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
-        #                     title=None, color_bar_label='Counts',
-        #                     min_value=None, um_scaled=False)
+    # tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
+    #                     title=None, color_bar_label='Counts',
+    #                     min_value=None, um_scaled=False)
 
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))

@@ -31,24 +31,29 @@ import socket
 
 
 class SignalGeneratorBnc835(LabradServer):
-    name = 'signal_generator_bnc835'
+    name = "signal_generator_bnc835"
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = (
+            "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
+        )
         filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(level=logging.DEBUG, 
-                    format='%(asctime)s %(levelname)-8s %(message)s',
-                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s %(levelname)-8s %(message)s",
+            datefmt="%y-%m-%d_%H-%M-%S",
+            filename=filename,
+        )
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
     async def get_config(self):
         p = self.client.registry.packet()
-        p.cd(['', 'Config', 'DeviceIDs'])
-        p.get('signal_generator_bnc835_visa_address')
+        p.cd(["", "Config", "DeviceIDs"])
+        p.get("signal_generator_bnc835_visa_address")
         result = await p.send()
-        return result['get']
+        return result["get"]
 
     def on_get_config(self, visa_address):
         # Note that this instrument works with pyvisa's default
@@ -56,12 +61,12 @@ class SignalGeneratorBnc835(LabradServer):
         resource_manager = visa.ResourceManager()
         self.sig_gen = resource_manager.open_resource(visa_address)
         logging.debug(self.sig_gen)
-        self.sig_gen.write('*RST')
-        # Set to the external frequency source 
-        self.sig_gen.write('ROSC:EXT:FREQ 10MHZ')
-        self.sig_gen.write('ROSC:SOUR EXT')
+        self.sig_gen.write("*RST")
+        # Set to the external frequency source
+        self.sig_gen.write("ROSC:EXT:FREQ 10MHZ")
+        self.sig_gen.write("ROSC:SOUR EXT")
         self.reset(None)
-        logging.debug('init complete')
+        logging.debug("init complete")
 
     @setting(0)
     def uwave_on(self, c):
@@ -69,7 +74,7 @@ class SignalGeneratorBnc835(LabradServer):
         the signal generator.
         """
 
-        self.sig_gen.write('OUTP 1')
+        self.sig_gen.write("OUTP 1")
 
     @setting(1)
     def uwave_off(self, c):
@@ -77,9 +82,9 @@ class SignalGeneratorBnc835(LabradServer):
         the signal generator.
         """
 
-        self.sig_gen.write('OUTP 0')
+        self.sig_gen.write("OUTP 0")
 
-    @setting(2, freq='v[]')
+    @setting(2, freq="v[]")
     def set_freq(self, c, freq):
         """Set the frequency of the signal.
 
@@ -88,12 +93,12 @@ class SignalGeneratorBnc835(LabradServer):
                 The frequency of the signal in GHz
         """
 
-        self.sig_gen.write('FREQ:MODE FIX')
+        self.sig_gen.write("FREQ:MODE FIX")
         # Determine how many decimal places we need
-        precision = len(str(freq).split('.')[1])
-        self.sig_gen.write('FREQ {0:.{1}f}GHZ'.format(freq, precision))
+        precision = len(str(freq).split(".")[1])
+        self.sig_gen.write("FREQ {0:.{1}f}GHZ".format(freq, precision))
 
-    @setting(3, amp='v[]')
+    @setting(3, amp="v[]")
     def set_amp(self, c, amp):
         """Set the amplitude of the signal.
 
@@ -102,45 +107,45 @@ class SignalGeneratorBnc835(LabradServer):
                 The amplitude of the signal in dBm
         """
 
-        self.sig_gen.write('POW:MODE FIX')
+        self.sig_gen.write("POW:MODE FIX")
         # Determine how many decimal places we need
-        precision = len(str(amp).split('.')[1])
-        self.sig_gen.write('POW {0:.{1}f}DBM'.format(amp, precision))
+        precision = len(str(amp).split(".")[1])
+        self.sig_gen.write("POW {0:.{1}f}DBM".format(amp, precision))
 
-    @setting(4, freqs='*v[]')
+    @setting(4, freqs="*v[]")
     def load_freq_list(self, c, freqs):
         # Configure the list itself
-        freqs_hz_str = ', '.join([str(int(freq * 10**9)) for freq in freqs])
-        self.sig_gen.write('LIST:FREQ {}'.format(freqs_hz_str))
-        
-        # Set the rising edge of an external trigger source to advance the
-        # frequency to the next point in the sweep
-        self.sig_gen.write('TRIG:TYPE POIN')
-        self.sig_gen.write('TRIG:SOUR EXT')
-        self.sig_gen.write('INIT:CONT 1')
-        
-        # Set the mode last as it assumes everything else
-        self.sig_gen.write('FREQ:MODE LIST')
+        freqs_hz_str = ", ".join([str(int(freq * 10 ** 9)) for freq in freqs])
+        self.sig_gen.write("LIST:FREQ {}".format(freqs_hz_str))
 
-    @setting(5, start_freq='v[]', end_freq='v[]', num_steps='i')
-    def load_freq_sweep(self, c, start_freq, end_freq, num_steps):
-        
-        # Configure the sweep itself
-        precision = len(str(start_freq).split('.')[1])
-        self.sig_gen.write('FREQ:STAR {0:.{1}f}GHZ'.format(start_freq, precision))
-        precision = len(str(end_freq).split('.')[1])
-        self.sig_gen.write('FREQ:STOP {0:.{1}f}GHZ'.format(end_freq, precision))
-        self.sig_gen.write('SWE:POIN {}'.format(num_steps))
-        self.sig_gen.write('SWE:SPAC LIN')
-        
         # Set the rising edge of an external trigger source to advance the
         # frequency to the next point in the sweep
-        self.sig_gen.write('TRIG:TYPE POIN')
-        self.sig_gen.write('TRIG:SOUR EXT')
-        self.sig_gen.write('INIT:CONT 1')
-        
+        self.sig_gen.write("TRIG:TYPE POIN")
+        self.sig_gen.write("TRIG:SOUR EXT")
+        self.sig_gen.write("INIT:CONT 1")
+
         # Set the mode last as it assumes everything else
-        self.sig_gen.write('FREQ:MODE SWE')
+        self.sig_gen.write("FREQ:MODE LIST")
+
+    @setting(5, start_freq="v[]", end_freq="v[]", num_steps="i")
+    def load_freq_sweep(self, c, start_freq, end_freq, num_steps):
+
+        # Configure the sweep itself
+        precision = len(str(start_freq).split(".")[1])
+        self.sig_gen.write("FREQ:STAR {0:.{1}f}GHZ".format(start_freq, precision))
+        precision = len(str(end_freq).split(".")[1])
+        self.sig_gen.write("FREQ:STOP {0:.{1}f}GHZ".format(end_freq, precision))
+        self.sig_gen.write("SWE:POIN {}".format(num_steps))
+        self.sig_gen.write("SWE:SPAC LIN")
+
+        # Set the rising edge of an external trigger source to advance the
+        # frequency to the next point in the sweep
+        self.sig_gen.write("TRIG:TYPE POIN")
+        self.sig_gen.write("TRIG:SOUR EXT")
+        self.sig_gen.write("INIT:CONT 1")
+
+        # Set the mode last as it assumes everything else
+        self.sig_gen.write("FREQ:MODE SWE")
 
     @setting(6)
     def reset(self, c):
@@ -152,6 +157,7 @@ class SignalGeneratorBnc835(LabradServer):
 
 __server__ = SignalGeneratorBnc835()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from labrad import util
+
     util.runServer(__server__)
