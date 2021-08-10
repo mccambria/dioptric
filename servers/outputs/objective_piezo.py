@@ -51,6 +51,7 @@ class ObjectivePiezo(LabradServer):
             filename=filename,
         )
         self.task = None
+        self.sub_init_server_z()
 
     def sub_init_server_z(self):
         """Sub-routine to be called by xyz server"""
@@ -91,8 +92,8 @@ class ObjectivePiezo(LabradServer):
         # self.z_hysteresis_a = config[4]
         # self.z_hysteresis_b = config[5]
         self.z_hysteresis_b = config[4]
-        # Define a such that 1 nominal volt corresponds to 
-        # 1 post-compensation volt 
+        # Define a such that 1 nominal volt corresponds to
+        # 1 post-compensation volt
         # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
         self.z_hysteresis_a = 1 - self.z_hysteresis_b
         logging.debug("Init complete")
@@ -152,7 +153,7 @@ class ObjectivePiezo(LabradServer):
 
             # The adjustment voltage we need is obtained by inverting p(v)
             abs_p = abs(val - last_turning_position)
-            v = (-b + numpy.sqrt(b**2 + 4 * a * abs_p)) / (2 * a)
+            v = (-b + numpy.sqrt(b ** 2 + 4 * a * abs_p)) / (2 * a)
             result = last_turning_position + (movement_direction * v)
             # result = val
             compensated_voltage.append(result)
@@ -163,9 +164,9 @@ class ObjectivePiezo(LabradServer):
         self.z_last_position = last_position
         self.z_current_direction = movement_direction
         self.z_last_turning_position = last_turning_position
-        
+
         # return position
-        
+
         if single_value:
             return compensated_voltage[0]
         else:
