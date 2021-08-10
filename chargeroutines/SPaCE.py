@@ -25,11 +25,18 @@ from scipy.optimize import curve_fit
 # Define the start time to track the time between optimzies
 time_start = time.time() 
 
-def inverse_func(x, c, a):
-    return c + a*x**-1/2
+def inverse_sqrt(x, a):
+    return a*x**-1/2
 
-def exp_decay(x, c, a, d):
-    return c + a * numpy.exp(-x/d)
+def inverse_law(x, a):
+    return a*x**-1
+
+def exp_decay(x, a, d):
+    return a * numpy.exp(-x/d)
+
+def exp_sqrd_decay(x, a, d):
+    return a * numpy.exp(-x**2/d)
+
 # %%
 def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False, 
                   do_save = True):
@@ -1143,6 +1150,20 @@ if __name__ == '__main__':
         '2021_08_05-15_54_52-johnson-nv2_2021_08_04'
         ]
 
+
+    #================ 8/6/2021 x scans @ 500 us Feature 1A ================#
+    # x
+    # file_list = [
+    #     '2021_08_05-23_11_42-johnson-nv2_2021_08_04',
+    #     '2021_08_05-22_46_43-johnson-nv2_2021_08_04',
+    #     '2021_08_05-22_25_21-johnson-nv2_2021_08_04',
+    #     '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
+    #     '2021_08_05-20_06_21-johnson-nv2_2021_08_04',
+    #     '2021_08_05-20_55_56-johnson-nv2_2021_08_04',
+    #     '2021_08_05-21_17_41-johnson-nv2_2021_08_04',
+    #     '2021_08_05-21_41_06-johnson-nv2_2021_08_04',
+    #     '2021_08_05-22_01_58-johnson-nv2_2021_08_04'
+    #     ]
     ########### Fit Gaussian to 1D files ###########
     widths_master_list = []
     center_master_list = []
@@ -1150,26 +1171,86 @@ if __name__ == '__main__':
     for file_name in file_list:
 
         lobe_positions = [750] # 400, 800, 1200, 1600
-        ret_vals = plot_1D_SpaCE(file_name, path, do_plot = True, do_fit = True)
+        ret_vals = plot_1D_SpaCE(file_name, path, do_plot = False, do_fit = True,
+                                 do_save = False)
         widths_master_list.append(ret_vals[2][2])
         center_master_list.append(ret_vals[2][1])
         height_master_list.append(ret_vals[2][0]**2)
 
-    # x_vals = [ 22, 25, 33]
+    #_______ Power _______#
+    # x_vals = [ 12.7, 15.8, 18.6, 21.7, 24.4, 26.8, 29.1, 30.9, 31.3]
+    # lin_x_vals = numpy.linspace(x_vals[0],
+    #                 x_vals[-1], 100)
+    
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(x_vals, widths_master_list, 'go')
+    # ax.plot(x_vals, height_master_list, 'bo')
+    # ax.set_xlabel('Pulse power (mW)')
+    # ax.set_ylabel('Gaussian amplitude (counts)')
+    # ax.set_title('8/6/2021 500 us, x axis, 1A lobe')
+    
+    # init_fit = [5, 20]
+    # opti_params, cov_arr = curve_fit(exp_sqrd_decay,
+    #       x_vals,height_master_list,p0=init_fit)
+    # print('Opti params: ' + str(opti_params))
+    # text = r'$A e^{-P^2/d}$'
+    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
+    # ax.plot(lin_x_vals, exp_sqrd_decay(lin_x_vals, *opti_params), 'r-')
+    # text = 'A={:.3f} counts\n$d$={:.3f} mW^2'.format(*opti_params)
+    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
+                
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(x_vals, widths_master_list, 'bo')
     # ax.set_xlabel('Pulse power (mW)')
     # ax.set_ylabel('Gaussian sigma (nm)')
-    # ax.set_title('8/2/2021 1000 us, y axis, -770 nm lobe')
+    # ax.set_title('8/6/2021 500 us x axis, 1A lobe')
+    
+    # init_fit = [750]
+    # opti_params, cov_arr = curve_fit(inverse_law,
+    #       x_vals,widths_master_list,p0=init_fit)
+    # print('Opti params: ' + str(opti_params))
+    # text = r'$A / P$'
+    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
+    # ax.plot(lin_x_vals, inverse_law(lin_x_vals, *opti_params), 'r-')
+    # text = 'A={:.3f} nm*mW'.format(*init_fit)
+    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
+    
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(x_vals, center_master_list, 'bo')
+    # ax.set_xlabel('Pulse power (mW)')
+    # ax.set_ylabel('Lobe position (nm)')
+    # ax.set_title('8/6/2021 500 us, x axis, 1A lobe')
+    
+    #_______ Time _______#
     
     x_vals = [90, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 
               650, 700, 750, 800,850 , 900, 1000, 1100, 1200, 1300, 
               1350, 1400, 1450]
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.plot(x_vals, height_master_list, 'bo')
-    ax.set_xlabel('Pulse duration (us)')
-    ax.set_ylabel('Gaussian amplitude (counts)')
-    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    lin_x_vals = numpy.linspace(x_vals[0],
+                    x_vals[-1], 100)
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(x_vals, height_master_list, 'bo')
+    # ax.set_xlabel('Pulse duration (us)')
+    # ax.set_ylabel('Gaussian amplitude (counts)')
+    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+      
+    # init_fit = [5, 2000]
+    # opti_params, cov_arr = curve_fit(exp_decay,
+    #       x_vals,height_master_list,p0=init_fit)
+    # print('Opti params: ' + str(opti_params))
+    # text = r'$A e^{-t/d}$'
+    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
+    # ax.plot(lin_x_vals, exp_decay(lin_x_vals, *opti_params), 'r-')
+    # text = 'A={:.3f} counts\n$d$={:.3f} us'.format(*opti_params)
+    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     ax.plot(x_vals, widths_master_list, 'bo')
@@ -1177,11 +1258,24 @@ if __name__ == '__main__':
     ax.set_ylabel('Gaussian sigma (nm)')
     ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
     
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.plot(x_vals, center_master_list, 'bo')
-    ax.set_xlabel('Pulse duration (us)')
-    ax.set_ylabel('Lobe position (nm)')
-    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    init_fit = [13000]
+    opti_params, cov_arr = curve_fit(inverse_sqrt,
+          x_vals,widths_master_list,p0=init_fit)
+    print('Opti params: ' + str(opti_params))
+    text = r'$A / t^{1/2}$'
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    ax.plot(lin_x_vals, inverse_sqrt(lin_x_vals, *init_fit), 'r-')
+    text = 'A={:.3f} nm*us^1/2'.format(*opti_params)
+    ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # ax.plot(x_vals, center_master_list, 'bo')
+    # ax.set_xlabel('Pulse duration (us)')
+    # ax.set_ylabel('Lobe position (nm)')
+    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
 
 
     ############# Plot 1D comparisons ##############
