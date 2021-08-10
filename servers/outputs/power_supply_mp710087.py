@@ -28,12 +28,13 @@ from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 import logging
 import socket
-import visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
+import visa
 
 
 class PowerSupplyMp710087(LabradServer):
     name = "power_supply_mp710087"
     pc_name = socket.gethostname()
+    reset_cfm_opt_out = True
 
     def initServer(self):
         filename = (
@@ -52,7 +53,7 @@ class PowerSupplyMp710087(LabradServer):
     async def get_config(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"])
-        p.get("power_supply_mp710087_visa_address")
+        p.get("{}_visa_address".format(self.name))
         result = await p.send()
         return result["get"]
 
@@ -65,6 +66,64 @@ class PowerSupplyMp710087(LabradServer):
         logging.debug(self.power_supply)
         self.power_supply.write("*RST")
         logging.debug("Init complete")
+
+    @setting(0)
+    def output_on(self, c):
+        self.power_supply.write("OUTP ON")
+
+    @setting(1)
+    def output_off(self, c):
+        self.power_supply.write("OUTP OFF")
+
+    @setting(2, limit="v[]")
+    def set_current_limit(self, c, limit):
+        """Set the maximum current the instrument will allow (up to 3 A)
+
+        Parameters
+        ----------
+        limit : float
+            Current limit in amps
+        """
+        self.power_supply.write("CURR:LIM {}".format(limit))
+
+    @setting(3, limit="v[]")
+    def set_voltage_limit(self, c, limit):
+        """Set the maximum voltage the instrument will allow (up to 60 V)
+
+        Parameters
+        ----------
+        limit : float
+            Voltage limit in volts
+        """
+        self.power_supply.write("VOLT:LIM {}".format(limit))
+
+    @setting(4, val="v[]")
+    def set_current(self, c, val):
+        """
+        Parameters
+        ----------
+        val : float
+            Current to set in amps
+        """
+        self.power_supply.write("CURR {}".format(val))
+
+    @setting(5, val="v[]")
+    def set_voltage(self, c, val):
+        """
+        Parameters
+        ----------
+        val : float
+            Voltage to set in volts
+        """
+        self.power_supply.write("VOLT {}".format(val))
+
+    @setting(6)
+    def reset(self, c):
+        """Reset the power supply. Turn off the output, leave the current
+        and voltage limits as they are. This instrument is not reset 
+        tool_belt.reset_cfm
+        """
+        self.output_off(c)
 
 
 __server__ = PowerSupplyMp710087()
