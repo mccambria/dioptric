@@ -605,8 +605,8 @@ def do_spin_echo(nv_sig, apd_indices):
     return angle
 
 
-def do_SPaCE(nv_sig):
-    img_range = 0.04 # V (35 um / 2 V)
+def do_SPaCE(nv_sig, dz):
+    img_range = 0.05 # V (35 um / 2 V)
     # num_steps = 400
     # num_runs = 10
 
@@ -615,7 +615,7 @@ def do_SPaCE(nv_sig):
     num_runs = 1
     measurement_type = "2D"
     
-    dz = 0.09375
+    # dz = 0.09375
     SPaCE.main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz)
 
 
@@ -761,11 +761,13 @@ if __name__ == "__main__":
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
-        t_list = [400e3, 100e3, 50e3, 1e3 ]
+        dz_list = numpy.linspace(0, 0.140625, 7)
+        t_list = [1e3, 2e3  ]
         for t in t_list:
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['CPG_laser_dur'] = t
-            do_SPaCE(nv_sig_copy)
+            for dz in dz_list:
+                do_SPaCE(nv_sig_copy, dz)
         # do_spin_echo_battery(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
