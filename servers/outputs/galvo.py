@@ -33,39 +33,48 @@ import socket
 
 
 class Galvo(LabradServer):
-    name = 'galvo'
+    name = "galvo"
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
+        filename = (
+            "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
+        )
         filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(level=logging.DEBUG, 
-                    format='%(asctime)s %(levelname)-8s %(message)s',
-                    datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s %(levelname)-8s %(message)s",
+            datefmt="%y-%m-%d_%H-%M-%S",
+            filename=filename,
+        )
         self.task = None
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
+        self.sub_init_server_xy()
 
-    async def get_config(self):
+    def sub_init_server_xy(self):
+        """Sub-routine to be called by xyz server"""
+        config = ensureDeferred(self.get_config_xy())
+        config.addCallback(self.on_get_config_xy)
+
+    async def get_config_xy(self):
         p = self.client.registry.packet()
-        p.cd(['', 'Config', 'Wiring', 'Daq'])
-        p.get('ao_galvo_x')
-        p.get('ao_galvo_y')
-        p.get('di_clock')
+        p.cd(["", "Config", "Wiring", "Daq"])
+        p.get("ao_galvo_x")
+        p.get("ao_galvo_y")
+        p.get("di_clock")
         result = await p.send()
-        return result['get']
+        return result["get"]
 
-    def on_get_config(self, config):
+    def on_get_config_xy(self, config):
         self.daq_ao_galvo_x = config[0]
         self.daq_ao_galvo_y = config[1]
         self.daq_di_clock = config[2]
         # logging.debug(self.daq_di_clock)
-
+        logging.debug("Init complete")
 
     def stopServer(self):
         self.close_task_internal()
 
-    def load_stream_writer(self, c, task_name, voltages, period):
+    def load_stream_writer_xy(self, c, task_name, voltages, period):
 
         # Close the existing task if there is one
         if self.task is not None:
@@ -83,10 +92,12 @@ class Galvo(LabradServer):
         self.task = task
 
         # Set up the output channels
-        task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_x,
-                                             min_val=-10.0, max_val=10.0)
-        task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_y,
-                                             min_val=-10.0, max_val=10.0)
+        task.ao_channels.add_ao_voltage_chan(
+            self.daq_ao_galvo_x, min_val=-10.0, max_val=10.0
+        )
+        task.ao_channels.add_ao_voltage_chan(
+            self.daq_ao_galvo_y, min_val=-10.0, max_val=10.0
+        )
 
         # Set up the output stream
         output_stream = nidaqmx.task.OutStream(task)
@@ -95,9 +106,10 @@ class Galvo(LabradServer):
         # Configure the sample to advance on the rising edge of the PFI input.
         # The frequency specified is just the max expected rate in this case.
         # We'll stop once we've run all the samples.
-        freq = float(1/(period*(10**-9)))  # freq in seconds as a float
-        task.timing.cfg_samp_clk_timing(freq, source=self.daq_di_clock,
-                                        samps_per_chan=num_stream_voltages)
+        freq = float(1 / (period * (10 ** -9)))  # freq in seconds as a float
+        task.timing.cfg_samp_clk_timing(
+            freq, source=self.daq_di_clock, samps_per_chan=num_stream_voltages
+        )
 
         writer.write_many_sample(stream_voltages)
 
@@ -106,15 +118,14 @@ class Galvo(LabradServer):
 
         task.start()
 
-    def close_task_internal(self, task_handle=None, status=None,
-                            callback_data=None):
+    def close_task_internal(self, task_handle=None, status=None, callback_data=None):
         task = self.task
         if task is not None:
             task.close()
             self.task = None
         return 0
 
-    @setting(0, xVoltage='v[]', yVoltage='v[]')
+    @setting(0, xVoltage="v[]", yVoltage="v[]")
     def write_xy(self, c, xVoltage, yVoltage):
         """Write the specified voltages to the galvo.
 
@@ -132,13 +143,15 @@ class Galvo(LabradServer):
 
         with nidaqmx.Task() as task:
             # Set up the output channels
-            task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_x,
-                                                 min_val=-10.0, max_val=10.0)
-            task.ao_channels.add_ao_voltage_chan(self.daq_ao_galvo_y,
-                                                 min_val=-10.0, max_val=10.0)
+            task.ao_channels.add_ao_voltage_chan(
+                self.daq_ao_galvo_x, min_val=-10.0, max_val=10.0
+            )
+            task.ao_channels.add_ao_voltage_chan(
+                self.daq_ao_galvo_y, min_val=-10.0, max_val=10.0
+            )
             task.write([xVoltage, yVoltage])
 
-    @setting(1, returns='*v[]')
+    @setting(1, returns="*v[]")
     def read_xy(self, c):
         """Return the current voltages on the x and y channels.
 
@@ -149,23 +162,29 @@ class Galvo(LabradServer):
         """
         with nidaqmx.Task() as task:
             # Set up the internal channels - to do: actual parsing...
-            if self.daq_ao_galvo_x == 'dev1/AO0':
-                chan_name = 'dev1/_ao0_vs_aognd'
-            task.ai_channels.add_ai_voltage_chan(chan_name,
-                                                 min_val=-10.0, max_val=10.0)
-            if self.daq_ao_galvo_y == 'dev1/AO1':
-                chan_name = 'dev1/_ao1_vs_aognd'
-            task.ai_channels.add_ai_voltage_chan(chan_name,
-                                                 min_val=-10.0, max_val=10.0)
+            if self.daq_ao_galvo_x == "dev1/AO0":
+                chan_name = "dev1/_ao0_vs_aognd"
+            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=-10.0, max_val=10.0)
+            if self.daq_ao_galvo_y == "dev1/AO1":
+                chan_name = "dev1/_ao1_vs_aognd"
+            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=-10.0, max_val=10.0)
             voltages = task.read()
 
         return voltages[0], voltages[1]
 
-    @setting(2, x_center='v[]', y_center='v[]',
-             x_range='v[]', y_range='v[]', num_steps='i', period='i',
-             returns='*v[]*v[]')
-    def load_sweep_xy_scan(self, c, x_center, y_center,
-                        x_range, y_range, num_steps, period):
+    @setting(
+        2,
+        x_center="v[]",
+        y_center="v[]",
+        x_range="v[]",
+        y_range="v[]",
+        num_steps="i",
+        period="i",
+        returns="*v[]*v[]",
+    )
+    def load_sweep_scan_xy(
+        self, c, x_center, y_center, x_range, y_range, num_steps, period
+    ):
         """Load a scan that will wind through the grid defined by the passed
         parameters. Samples are advanced by the clock. Currently x_range
         must equal y_range.
@@ -197,7 +216,7 @@ class Galvo(LabradServer):
         ######### Assumes x_range == y_range #########
 
         if x_range != y_range:
-            raise ValueError('x_range must equal y_range for now')
+            raise ValueError("x_range must equal y_range for now")
 
         x_num_steps = num_steps
         y_num_steps = num_steps
@@ -226,13 +245,12 @@ class Galvo(LabradServer):
         # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
 
         # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
-        x_inter = numpy.concatenate((x_voltages_1d,
-                                     numpy.flipud(x_voltages_1d)))
+        x_inter = numpy.concatenate((x_voltages_1d, numpy.flipud(x_voltages_1d)))
         # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
         if y_num_steps % 2 == 0:  # Even x size
-            x_voltages = numpy.tile(x_inter, int(y_num_steps/2))
+            x_voltages = numpy.tile(x_inter, int(y_num_steps / 2))
         else:  # Odd x size
-            x_voltages = numpy.tile(x_inter, int(numpy.floor(y_num_steps/2)))
+            x_voltages = numpy.tile(x_inter, int(numpy.floor(y_num_steps / 2)))
             x_voltages = numpy.concatenate((x_voltages, x_voltages_1d))
 
         # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
@@ -240,14 +258,20 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer(c, 'Galvo-load_sweep_scan', voltages, period)
+        self.load_stream_writer_xy(c, "Galvo-load_sweep_scan_xy", voltages, period)
 
         return x_voltages_1d, y_voltages_1d
 
-    @setting(3, x_center='v[]', y_center='v[]', xy_range='v[]',
-             num_steps='i', period='i', returns='*v[]*v[]')
-    def load_cross_xy_scan(self, c, x_center, y_center,
-                        xy_range, num_steps, period):
+    @setting(
+        3,
+        x_center="v[]",
+        y_center="v[]",
+        xy_range="v[]",
+        num_steps="i",
+        period="i",
+        returns="*v[]*v[]",
+    )
+    def load_cross_scan_xy(self, c, x_center, y_center, xy_range, num_steps, period):
         """Load a scan that will first step through xy_range in x keeping y
         constant at its center, then step through xy_range in y keeping x
         constant at its center.
@@ -281,21 +305,25 @@ class Galvo(LabradServer):
         x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
         y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
 
-        x_voltages = numpy.concatenate([x_voltages_1d,
-                                        numpy.full(num_steps, x_center)])
-        y_voltages = numpy.concatenate([numpy.full(num_steps, y_center),
-                                        y_voltages_1d])
+        x_voltages = numpy.concatenate([x_voltages_1d, numpy.full(num_steps, x_center)])
+        y_voltages = numpy.concatenate([numpy.full(num_steps, y_center), y_voltages_1d])
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer(c, 'Galvo-load_cross_scan', voltages, period)
+        self.load_stream_writer_xy(c, "Galvo-load_cross_scan_xy", voltages, period)
 
         return x_voltages_1d, y_voltages_1d
 
-    @setting(4, x_center='v[]', y_center='v[]', scan_range='v[]',
-             num_steps='i', period='i', returns='*v[]')
-    def load_x_scan(self, c, x_center, y_center,
-                    scan_range, num_steps, period):
+    @setting(
+        4,
+        x_center="v[]",
+        y_center="v[]",
+        scan_range="v[]",
+        num_steps="i",
+        period="i",
+        returns="*v[]",
+    )
+    def load_scan_x(self, c, x_center, y_center, scan_range, num_steps, period):
         """Load a scan that will step through scan_range in x keeping y
         constant at its center.
 
@@ -326,14 +354,20 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer(c, 'Galvo-load_x_scan', voltages, period)
+        self.load_stream_writer_xy(c, "Galvo-load_scan_x", voltages, period)
 
         return x_voltages
 
-    @setting(5, x_center='v[]', y_center='v[]', scan_range='v[]',
-             num_steps='i', period='i', returns='*v[]')
-    def load_y_scan(self, c, x_center, y_center,
-                    scan_range, num_steps, period):
+    @setting(
+        5,
+        x_center="v[]",
+        y_center="v[]",
+        scan_range="v[]",
+        num_steps="i",
+        period="i",
+        returns="*v[]",
+    )
+    def load_scan_y(self, c, x_center, y_center, scan_range, num_steps, period):
         """Load a scan that will step through scan_range in y keeping x
         constant at its center.
 
@@ -364,12 +398,12 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer(c, 'Galvo-load_y_scan', voltages, period)
+        self.load_stream_writer_xy(c, "Galvo-load_scan_y", voltages, period)
 
         return y_voltages
 
-    @setting(6, x_points='*v[]', y_points='*v[]', period='i')
-    def load_arb_xy_scan(self, c, x_points, y_points, period):
+    @setting(6, x_points="*v[]", y_points="*v[]", period="i")
+    def load_arb_scan_xy(self, c, x_points, y_points, period):
         """Load a scan that goes between points. E.i., starts at [1,1] and
         then on a clock pulse, moves to [2,1]. Can work for arbitrarily large
         number of points 
@@ -387,11 +421,14 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_points, y_points))
 
-        self.load_stream_writer(c, 'Galvo-load_arb_xy_scan', voltages, period)
+        self.load_stream_writer_xy(c, "Galvo-load_arb_scan_xy", voltages, period)
 
         return
+
+
 __server__ = Galvo()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from labrad import util
+
     util.runServer(__server__)

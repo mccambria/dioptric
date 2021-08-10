@@ -733,7 +733,6 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
     scan_vals = numpy.unique(scan_vals)
     return scan_vals
 
-
 # %% LabRAD utils
 
 
