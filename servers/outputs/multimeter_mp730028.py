@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Output server for Multicomp Pro's 5.5 digit benchtop multimeter
+Output server for Multicomp Pro's 5.5 digit benchtop multimeter.
+Programming manual here: https://www.farnell.com/datasheets/3205713.pdf
 
 Created on August 10th, 2021
 
@@ -63,17 +64,55 @@ class MultimeterMp730028(LabradServer):
         resource_manager = visa.ResourceManager()
         visa_address = config
         self.multimeter = resource_manager.open_resource(visa_address)
-        logging.debug(self.multimeter)
+        self.multimeter.baud_rate = 115200
         self.multimeter.write("*RST")
         logging.debug("Init complete")
+    
+    @setting(1, res_range='s')
+    def config_res_measurement(self, c, res_range):
+        """This probably doesn't work yet."""
+        self.multimeter.write("SENS:FUNC RES")
+        res_range_options = ["500", "5E3", "50E3", "500E3", "5E6", "50E6", "500E6"]
+        cmd = "CONF:SCAL:RES {}".format(res_range)
+        self.multimeter.write(cmd)
+        # Set the update rate to fast (maximum speed)
+        self.multimeter.write("RATE F")
+    
+    @setting(2, detector_type='s', units='s')
+    def config_temp_measurement(self, c, detector_type, units):
+        
+        # Set the measurement mode
+        self.multimeter.write('SENS:FUNC "TEMP"')
+        
+        # Reset the measurement parameters and supposedly set the detector
+        # type, but as far as I can tell this doesn't actually do... anything
+        cmd = 'CONF:SCAL:TEMP:RTD {}'.format(detector_type)
+        self.multimeter.write(cmd)
+        
+        # Set the detector type
+        cmd = "SENS:TEMP:RTD:TYP {}".format(detector_type)
+        self.multimeter.write(cmd)
+        
+        # Set the display type - just show the temperature
+        self.multimeter.write("SENS:TEMP:RTD:SHOW TEMP")
+        
+        # Set the units
+        cmd = "SENS:TEMP:RTD:UNIT {}".format(units)
+        self.multimeter.write(cmd)
+        
+        # Set the update rate to fast (maximum speed)
+        self.multimeter.write("RATE F")
 
-    @setting(0)
-    def meas_resistance(self, c):
-        return self.multimeter.query("")
+    @setting(5, returns='v[]')
+    def measure(self, c):
+        """Return the value from the main display."""
+        value = self.multimeter.query("MEAS1?")
+        return float(value)
 
     @setting(6)
     def reset(self, c):
-        pass
+        """Fully reset to factory defaults"""
+        self.multimeter.write("*RST")
 
 
 __server__ = MultimeterMp730028()
