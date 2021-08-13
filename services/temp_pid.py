@@ -26,16 +26,14 @@ def set_power(cxn, power):
     cxn.power_supply_mp710087.set_voltage(voltage)
 
 
-def calc_error(run_params, actual):
-    target, _, error_history, time_history = run_params
-    error = target - actual
-    error_history.append(error)
-    now = time.time()
-    time_history.append(now)
-    # Keep the last 50 or 1 minute of values, whichever is greater
-    if (now - time_history[0] > 60) or (len(time_history) >= 50):
-        error_history.pop(0)
-        time_history.pop(0)
+def calc_error(state, target):
+    last_meas_time, last_error, integral = state
+    cur_meas_time = time.time()
+    state[0] = cur_meas_time
+    cur_meas_temp = cxn.multimeter_mp730028.measure()
+    cur_error = target - cur_meas_temp
+    state[1] = cur_error
+    state[2] = integral + [(cur_meas_time-last_meas_time) * last_error]
 
 
 def pid(run_params, actual):
@@ -93,15 +91,13 @@ def pid(run_params, actual):
 
 def main_with_cxn(cxn, target, pid_coeffs):
     
-    error_history = []
-    time_history = []
-    run_params = [target, pid_coeffs, error_history, time_history]
+    # Last meas time, last error, integral
+    state = [None, None, None]
 
     # Get a few errors to boot strap the PID loop
     start_time = time.time()
     while time.time() - start_time < 1.0:
-        actual = cxn.multimeter_mp730028.measure()
-        calc_error(run_params, actual)
+        calc_error(state, target)
     power = pid(run_params, actual)
 
     # Start 'Press enter to stop...'
@@ -110,7 +106,6 @@ def main_with_cxn(cxn, target, pid_coeffs):
     # Break out of the while if the user says stop
     while not tool_belt.safe_stop():
         # Just run as fast as we can
-        actual = cxn.multimeter_mp730028.measure()
         power = pid(run_params, actual)
         # print(power)
         set_power(cxn, power)
