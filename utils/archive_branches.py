@@ -134,6 +134,6 @@ if __name__ == '__main__':
     repo_path = str(Path.home()) + '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
     
     # List of branches to archive
-    branches_to_archive = ['laser-consolidation']
+    branches_to_archive = ['piezo-hysteresis']
 
     main(repo_path, branches_to_archive)

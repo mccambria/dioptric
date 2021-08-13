@@ -29,6 +29,7 @@ from twisted.internet.defer import ensureDeferred
 import logging
 import socket
 import visa
+import time
 
 
 class PowerSupplyMp710087(LabradServer):
@@ -47,6 +48,8 @@ class PowerSupplyMp710087(LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
+        self.current_limit = None
+        self.voltage_limit = None
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -63,8 +66,12 @@ class PowerSupplyMp710087(LabradServer):
         resource_manager = visa.ResourceManager()
         visa_address = config
         self.power_supply = resource_manager.open_resource(visa_address)
+        self.power_supply.baud_rate = 115200
         logging.debug(self.power_supply)
         self.power_supply.write("*RST")
+        logging.debug('MCCTEST')
+        result = self.power_supply.query("IDN?")
+        logging.debug('MCCTEST: {}'.format(result))
         logging.debug("Init complete")
 
     @setting(0)
@@ -84,6 +91,7 @@ class PowerSupplyMp710087(LabradServer):
         limit : float
             Current limit in amps
         """
+        self.current_limit = limit
         self.power_supply.write("CURR:LIM {}".format(limit))
 
     @setting(3, limit="v[]")
@@ -95,6 +103,7 @@ class PowerSupplyMp710087(LabradServer):
         limit : float
             Voltage limit in volts
         """
+        self.voltage_limit = limit
         self.power_supply.write("VOLT:LIM {}".format(limit))
 
     @setting(4, val="v[]")
@@ -105,6 +114,9 @@ class PowerSupplyMp710087(LabradServer):
         val : float
             Current to set in amps
         """
+        lim = self.current_limit
+        if (lim is not None) and (val > lim):
+            val = lim
         self.power_supply.write("CURR {}".format(val))
 
     @setting(5, val="v[]")
@@ -115,6 +127,9 @@ class PowerSupplyMp710087(LabradServer):
         val : float
             Voltage to set in volts
         """
+        lim = self.voltage_limit
+        if (lim is not None) and (val > lim):
+            val = lim
         self.power_supply.write("VOLT {}".format(val))
 
     @setting(6)
