@@ -43,7 +43,7 @@ class MultimeterMp730028(LabradServer):
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
@@ -59,14 +59,17 @@ class MultimeterMp730028(LabradServer):
         return result["get"]
 
     def on_get_config(self, config):
-        # Note that this instrument works with pyvisa's default
-        # termination assumptions
         resource_manager = visa.ResourceManager()
         visa_address = config
         self.multimeter = resource_manager.open_resource(visa_address)
         self.multimeter.baud_rate = 115200
+        self.power_supply.read_termination = '\n'
+        self.power_supply.write_termination = '\n'
         self.multimeter.write("*RST")
-        logging.debug("Init complete")
+        self.multimeter.write("*IDN?")
+        test = self.multimeter.read()
+        logging.info(test)
+        logging.info("Init complete")
     
     @setting(1, res_range='s')
     def config_res_measurement(self, c, res_range):

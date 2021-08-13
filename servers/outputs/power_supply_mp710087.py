@@ -43,7 +43,7 @@ class PowerSupplyMp710087(LabradServer):
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
@@ -61,18 +61,24 @@ class PowerSupplyMp710087(LabradServer):
         return result["get"]
 
     def on_get_config(self, config):
-        # Note that this instrument works with pyvisa's default
-        # termination assumptions
         resource_manager = visa.ResourceManager()
         visa_address = config
+        logging.info(visa_address)
+        # visa_address = 'MCCTEST'
         self.power_supply = resource_manager.open_resource(visa_address)
         self.power_supply.baud_rate = 115200
-        logging.debug(self.power_supply)
+        self.power_supply.read_termination = '\n'
+        self.power_supply.write_termination = '\n'
+        logging.info(self.power_supply)
         self.power_supply.write("*RST")
-        logging.debug('MCCTEST')
-        result = self.power_supply.query("IDN?")
-        logging.debug('MCCTEST: {}'.format(result))
-        logging.debug("Init complete")
+        logging.info('MCCTEST')
+        self.power_supply.write('*IDN?')
+        # for i in range(30):
+        #     logging.debug(self.power_supply.read_bytes(1))
+        test = self.power_supply.read()
+        # test = self.multimeter.query("*IDN?")
+        logging.info(test)
+        logging.info("Init complete")
 
     @setting(0)
     def output_on(self, c):
