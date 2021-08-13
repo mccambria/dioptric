@@ -20,7 +20,7 @@ def set_power(cxn, power):
         power = 24
     # P = V2 / R
     # V = sqrt(P R)
-    resistance = 23.5  
+    resistance = 23.5
     voltage = numpy.sqrt(power * resistance)
     # print(voltage)
     cxn.power_supply_mp710087.set_voltage(voltage)
@@ -36,8 +36,8 @@ def calc_error(state, target):
     state[2] = integral + [(cur_meas_time-last_meas_time) * last_error]
 
 
-def pid(run_params, actual):
-    """Returns the power to set given the current actual temperature 
+def pid(state, pid_coeffs, actual):
+    """Returns the power to set given the current actual temperature
     measurement and the target temperature
 
     Parameters
@@ -46,59 +46,34 @@ def pid(run_params, actual):
         Current actual temperature (K)
     target : float
         Current target temperature (K)
-        
+
     Returns
     ----------
     float
         The power to set the power supply to
     """
 
-    calc_error(run_params, actual)
+    calc_error(state, actual)
 
-    _, pid_coeffs, error_history, time_history = run_params
-
+    last_meas_time, last_meas_temp, integral, derivative = state
     p_coeff, i_coeff, d_coeff = pid_coeffs
 
     # Proportional component
-    p_comp = p_coeff * error_history[-1]
+    p_comp = p_coeff * last_meas_temp
 
     # Integral component
-    # Riemann sum over the full 1 second memory
-    time_diffs = []
-    for ind in range(len(time_history) - 1):
-        time_diffs.append(time_history[ind + 1] - time_history[ind])
-    time_diffs.append(time.time() - time_history[-1])
-    integral = numpy.dot(error_history, time_diffs)
     i_comp = i_coeff * integral
 
     # Derivative component
-    # Find the index of the first error recorded more than 0.1 s back
-    current_time = time_history[-1]
-    ind = -2
-    while True:
-        diff = time_history[ind] - current_time
-        if (diff > 0.1) or (ind == -len(time_history)):
-            break
-        else:
-            ind -= 1
-    error_diff = error_history[-1] - error_history[ind]
-    time_diff = time_history[-1] - time_history[ind]
-    derivative = error_diff / time_diff
     d_comp = d_coeff * derivative
 
     return p_comp + i_comp + d_comp
 
 
 def main_with_cxn(cxn, target, pid_coeffs):
-    
+
     # Last meas time, last error, integral
     state = [None, None, None]
-
-    # Get a few errors to boot strap the PID loop
-    start_time = time.time()
-    while time.time() - start_time < 1.0:
-        calc_error(state, target)
-    power = pid(run_params, actual)
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -115,7 +90,7 @@ if __name__ == "__main__":
 
     target = 300.0
     pid_coeffs = [0.001, 0, 0]
-    
+
     with labrad.connect() as cxn:
         # Set up the multimeter for temperature measurement
         cxn.multimeter_mp730028.config_temp_measurement("PT100", "K")
@@ -124,8 +99,8 @@ if __name__ == "__main__":
         cxn.power_supply_mp710087.set_current(0)
         cxn.power_supply_mp710087.set_voltage(0)
         cxn.power_supply_mp710087.output_on()
-        
+
         # temp = cxn.multimeter_mp730028.measure()
         # print(temp)
-        
+
         main_with_cxn(cxn, target, pid_coeffs)
