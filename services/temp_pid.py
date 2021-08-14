@@ -2,7 +2,7 @@
 """
 Created on August 9th, 2021
 
-PID temperature control service with a multimeter and power supply
+PID temperature control service using a multimeter and power supply
 
 @author: mccambria
 """
@@ -85,10 +85,10 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs):
     # Last meas time, last error, integral, derivative
     now = time.time()
     actual = cxn.multimeter_mp730028.measure()
-    state = [time.time(), actual, 0.0, 0.0]
+    state = [now, actual, 0.0, 0.0]
 
     cycle_dur = 0.1
-    start_time = round(now)
+    start_time = now
     prev_time = now
 
     if do_plot:
@@ -121,7 +121,7 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs):
         # Plotting and logging
         if now - last_plot_time > plot_period:
             if do_plot:
-                elapsed_time = round(now) - start_time
+                elapsed_time = round(now - start_time)
                 plot_times.append(elapsed_time)
                 plot_temps.append(actual)
                 ax.plot(plot_times, plot_temps)
@@ -135,7 +135,7 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs):
                 plt.pause(0.01)
             last_plot_time = now
             with open(logging_file, "a") as f:
-                f.write("{}, {} \n".format(now, actual))
+                f.write("{}, {} \n".format(round(now), round(actual, 2)))
 
         # Update state and set the power accordingly
         # print(actual)
