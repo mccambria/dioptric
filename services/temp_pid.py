@@ -18,6 +18,8 @@ def set_power(cxn, power):
     # Thorlabs HT24S
     if power > 24:
         power = 24
+    if power <= 0.01:
+        power = 0.01  # Can't actually set 0 exactly, but this is close enough
     # P = V2 / R
     # V = sqrt(P R)
     resistance = 23.5
@@ -32,18 +34,29 @@ def calc_error(state, target, actual):
     state[0] = cur_meas_time
     cur_error = target - actual
     state[1] = cur_error
-    state[2] = integral + [(cur_meas_time-last_meas_time) * last_error]
-    cur_derivative = (cur_error - last_error) / (cur_meas_time - last_meas_time)
+    new_integral_term = (cur_meas_time-last_meas_time) * last_error
+    state[2] = integral + new_integral_term
+    
+    # cur_diff = cur_error - last_error
+    # cur_derivative = cur_diff / (cur_meas_time - last_meas_time)
     # If we just use the current derivative, then we'll likely be overly
     # sensitive to measurement noise. By mixing the current measured
     # derivative in with the current derivative value in state, we're 
     # performing a rolling average over all past derivative measurements
     # with geometric weighting such that past values, which we don't care
     # about, are exponentially suppressed. 
-    state[3] = 0.5 * (derivative + cur_derivative)
+    # state[3] = 0.5 * (derivative + cur_derivative)
+    
+    # Consider the noise to be 0.05 K
+    cur_diff = cur_error - last_error
+    if cur_diff > 0.05:
+        cur_derivative = cur_diff / (cur_meas_time - last_meas_time)
+        state[3] = cur_derivative
+    else:
+        state[3] = 0.0
 
 
-def pid(state, pid_coeffs, actual):
+def pid(state, pid_coeffs):
     """Returns the power to set given the current actual temperature
     measurement and the target temperature
     Parameters
@@ -82,36 +95,46 @@ def main_with_cxn(cxn, target, pid_coeffs):
              0.0,
              0.0]
 
+    cycle_dur = 0.1
+    prev_time = time.time()
+
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
-
+    
     # Break out of the while if the user says stop
     while not tool_belt.safe_stop():
+        now = time.time()
+        time_diff = now - prev_time
+        if time_diff < cycle_dur:
+            # print(time_diff)
+            time.sleep(cycle_dur - time_diff)
         actual = cxn.multimeter_mp730028.measure()
+        # print(actual)
         calc_error(state, target, actual)
-        power = pid(state)
+        power = pid(state, pid_coeffs)
         # print(power)
         set_power(cxn, power)
+        prev_time = now
 
 
 if __name__ == "__main__":
 
-    target = 300.0
-    pid_coeffs = [0.001, 0, 0]
+    target = 310.0
+    pid_coeffs = [0.5, 0.01, 0]
     
     with labrad.connect() as cxn:
         # Set up the multimeter for temperature measurement
         cxn.multimeter_mp730028.config_temp_measurement("PT100", "K")
-        cxn.power_supply_mp710087.set_current_limit(1)
-        cxn.power_supply_mp710087.set_voltage_limit(24)
-        cxn.power_supply_mp710087.set_current(0)
-        cxn.power_supply_mp710087.set_voltage(0.5)
+        cxn.power_supply_mp710087.set_current_limit(1.0)
+        cxn.power_supply_mp710087.set_voltage_limit(24.0)
+        cxn.power_supply_mp710087.set_current(0.0)
+        cxn.power_supply_mp710087.set_voltage(0.01)
         cxn.power_supply_mp710087.output_on()
         
-        temp = cxn.multimeter_mp730028.measure()
-        print(temp)
+        # temp = cxn.multimeter_mp730028.measure()
+        # print(temp)
         
-        # main_with_cxn(cxn, target, pid_coeffs)
+        main_with_cxn(cxn, target, pid_coeffs)
         
-        input("Press enter to stop...")
+        # input("Press enter to stop...")
         cxn.power_supply_mp710087.output_off()
