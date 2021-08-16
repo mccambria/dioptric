@@ -17,48 +17,53 @@ import socket
 import os
 
 
-def set_power(cxn, power):
-    # Thorlabs HT24S
-    if power > 24:
-        power = 24
+def set_power(cxn, power, resistance):
+    # Thorlabs HT24S: limit is 24 W, but let's not quite max it out
+    power_limit = 0.9 * 24
+    if power > power_limit:
+        power = power_limit
     if power <= 0.01:
         power = 0.01  # Can't actually set 0 exactly, but this is close enough
     # P = V2 / R
     # V = sqrt(P R)
-    resistance = 23.5
     voltage = numpy.sqrt(power * resistance)
-    # print(voltage)
+    # return
     cxn.power_supply_mp710087.set_voltage(voltage)
 
 
-def calc_error(state, target, actual):
+def calc_error(pid_state, target, actual):
+    
+    new_pid_state = []
 
     # Last meas time
-    last_meas_time, last_error, integral, derivative = state
+    last_meas_time, last_error, integral, derivative = pid_state
     cur_meas_time = time.time()
-    state[0] = cur_meas_time
+    new_pid_state.append(cur_meas_time)
 
     # Last error
     cur_error = target - actual
-    state[1] = cur_error
+    new_pid_state.append(cur_error)
 
     # Integral
     new_integral_term = (cur_meas_time - last_meas_time) * last_error
-    state[2] = integral + new_integral_term
+    new_pid_state.append(integral + new_integral_term)
 
     # Derivative
     # Ignore noise (0.05 K)
     cur_diff = cur_error - last_error
     if abs(cur_diff) > 0.05:
         cur_derivative = cur_diff / (cur_meas_time - last_meas_time)
-        state[3] = cur_derivative
+        new_derivative = cur_derivative
     else:
-        state[3] = 0.0
+        new_derivative = 0.0
+    new_pid_state.append(new_derivative)
+    
+    return new_pid_state
 
 
-def pid(state, pid_coeffs):
+def pid(pid_state, pid_coeffs):
 
-    _, last_error, integral, derivative = state
+    _, last_error, integral, derivative = pid_state
     p_coeff, i_coeff, d_coeff = pid_coeffs
 
     p_comp = p_coeff * last_error
@@ -68,7 +73,28 @@ def pid(state, pid_coeffs):
     return p_comp + i_comp + d_comp
 
 
-def main_with_cxn(cxn, do_plot, target, pid_coeffs):
+def update_resistance(cxn, nominal_resistance):
+    """The resistance may change as a function of temperature.
+    The real limit we care about is the power, so let's feed the current
+    measured resistance forward when we go to set the voltage (we can't
+    set power directly). This measurement is slow so only do it occasionally
+    """
+    
+    # Thorlabs HT24S: 23.5 ohms
+    nominal_resistance = 23.5
+    resistance = cxn.power_supply_mp710087.meas_resistance()
+    # If the measured resistance is more than 2.5 X or less than 1/2.5 X
+    # the nominal value, assume something funny is happening (maybe the
+    # output is not on yet) and just use the nominal resistance
+    too_high = (resistance > 2.5 * nominal_resistance)
+    too_low = (resistance < nominal_resistance / 2.5)
+    if too_high or too_low:
+        resistance = nominal_resistance
+    # print(resistance)
+    return resistance
+
+
+def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
 
     # We'll log all the plotted data to this file. (If plotting is turned off,
     # we'll log the data that we would've plotted.) The format is:
@@ -85,24 +111,38 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs):
     # Last meas time, last error, integral, derivative
     now = time.time()
     actual = cxn.multimeter_mp730028.measure()
-    state = [time.time(), actual, 0.0, 0.0]
+    resistance = update_resistance(cxn)
+    first_set = True
+    # Update the resistance every resistance_period seconds
+    resistance_period = 10  
+    last_resistance_time = now
+    last_meas_time = now
+    last_error = target - actual
+    integral = integral_bootstrap
+    derivative = 0.0
+    pid_state = [last_meas_time, last_error, integral, derivative]
 
     cycle_dur = 0.1
-    start_time = round(now)
+    start_time = now
     prev_time = now
 
+    plot_log_period = 2  # Plot and log every plot_period seconds
+    last_plot_log_time = now
     if do_plot:
         plt.ion()
         fig, ax = plt.subplots()
-        plot_times = [now]
+        plot_times = [0]
         plot_temps = [actual]
-        plot_period = 10  # Plot every plot_period seconds
         ax.plot(plot_times, plot_temps)
-        max_plot_vals = 600
-        plot_x_extent = int(1.1 * max_plot_vals * plot_period)
+        history = 600
+        max_plot_vals = history / plot_log_period
+        plot_x_extent = int(1.1 * max_plot_vals * plot_log_period)
         ax.set_xlim(0, plot_x_extent)
+        ax.set_ylim(actual-2, actual+2)
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Temp (K)")
+        fig.canvas.draw()
+        fig.canvas.flush_events()
 
     # Break out of the while if the user says stop
     tool_belt.init_safe_stop()
@@ -113,49 +153,71 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs):
         time_diff = now - prev_time
         prev_time = now
         if time_diff < cycle_dur:
-            # print(time_diff)
             time.sleep(cycle_dur - time_diff)
 
         actual = cxn.multimeter_mp730028.measure()
 
         # Plotting and logging
-        if now - last_plot_time > plot_period:
+        if now - last_plot_log_time > plot_log_period:
             if do_plot:
-                elapsed_time = round(now) - start_time
+                
+                elapsed_time = round(now - start_time)
                 plot_times.append(elapsed_time)
                 plot_temps.append(actual)
-                ax.plot(plot_times, plot_temps)
+                
+                lines = ax.get_lines()
+                line = lines[0]
+                line.set_xdata(plot_times)
+                line.set_ydata(plot_temps)
+    
                 # Relim as necessary
                 if len(plot_times) > max_plot_vals:
                     plot_times.pop(0)
                     plot_temps.pop(0)
                     min_plot_time = min(plot_times)
                     ax.set_xlim(min_plot_time, min_plot_time + plot_x_extent)
-                # Allow the plot to update
-                plt.pause(0.01)
-            last_plot_time = now
-            with open(logging_file, "a") as f:
+                ax.set_ylim(min(plot_temps)-2, max(plot_temps)+2)
+                
+                # Redraw the plot with the new data
+                fig.canvas.draw()
+                fig.canvas.flush_events()
+                
+            with open(logging_file, "a+") as f:
                 f.write("{}, {} \n".format(now, actual))
-
+            last_plot_log_time = now
+            
         # Update state and set the power accordingly
-        # print(actual)
-        calc_error(state, target, actual)
-        power = pid(state, pid_coeffs)
-        # print(power)
-        set_power(cxn, power)
+        pid_state = calc_error(pid_state, target, actual)
+        power = pid(pid_state, pid_coeffs)
+        if now - last_resistance_time > resistance_period:
+            resistance = update_resistance(cxn)
+            last_resistance_time = now
+        set_power(cxn, power, resistance)
+        # Immediately get a better resistance measurement after the first set
+        if first_set:
+            resistance = update_resistance(cxn)
+            first_set = False
 
 
 if __name__ == "__main__":
 
     do_plot = True
-    target = 310.0
+    target = 500.0
     pid_coeffs = [0.5, 0.01, 0]
+    # Bootstrap the integral term after restarting to mitigate windup, 
+    # ringing, etc
+    # integral_bootstrap = 0.0
+    integral_bootstrap = 20 / 0.01
 
     with labrad.connect() as cxn:
         # Set up the multimeter for temperature measurement
         cxn.multimeter_mp730028.config_temp_measurement("PT100", "K")
         cxn.power_supply_mp710087.set_current_limit(1.0)
-        cxn.power_supply_mp710087.set_voltage_limit(24.0)
+        # Allow the voltage to be somewhat higher than the specs suggest 
+        # it should max out at to account for temperature dependence of
+        # the heating element resistance. 36 is the voltage we'd get 
+        # driving 90% of 24 W for a resistance 2.5 times the nominal 23.5 ohms
+        cxn.power_supply_mp710087.set_voltage_limit(36)
         cxn.power_supply_mp710087.set_current(0.0)
         cxn.power_supply_mp710087.set_voltage(0.01)
         cxn.power_supply_mp710087.output_on()
@@ -163,7 +225,7 @@ if __name__ == "__main__":
         # temp = cxn.multimeter_mp730028.measure()
         # print(temp)
 
-        main_with_cxn(cxn, do_plot, target, pid_coeffs)
+        main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap)
 
         # input("Press enter to stop...")
         cxn.power_supply_mp710087.output_off()

@@ -28,7 +28,7 @@ from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 import logging
 import socket
-import visa
+import pyvisa as visa
 import time
 
 
@@ -36,6 +36,7 @@ class PowerSupplyMp710087(LabradServer):
     name = "power_supply_mp710087"
     pc_name = socket.gethostname()
     reset_cfm_opt_out = True
+    comms_delay = 0.1
 
     def initServer(self):
         filename = (
@@ -69,15 +70,14 @@ class PowerSupplyMp710087(LabradServer):
         self.power_supply.baud_rate = 115200
         self.power_supply.read_termination = '\n'
         self.power_supply.write_termination = '\n'
-        logging.info(self.power_supply)
+        self.power_supply.query_delay = self.comms_delay
         self.power_supply.write("*RST")
-        logging.info('MCCTEST')
-        self.power_supply.write('*IDN?')
-        # for i in range(30):
-        #     logging.debug(self.power_supply.read_bytes(1))
-        test = self.power_supply.read()
-        # test = self.multimeter.query("*IDN?")
-        logging.info(test)
+        # The IDN command seems to help set up the box for further queries.
+        # This may just be superstition though...
+        time.sleep(0.1)
+        idn = self.power_supply.query("*IDN?")
+        time.sleep(0.1)
+        logging.info(idn)
         logging.info("Init complete")
 
     @setting(0)
@@ -137,6 +137,100 @@ class PowerSupplyMp710087(LabradServer):
         if (lim is not None) and (val > lim):
             val = lim
         self.power_supply.write("VOLT {}".format(val))
+        
+    @staticmethod
+    def decode_query_response(response):
+        """The instrument (at leas sometimes...) returns values with a leading
+        \x00, which is a hex-escaped 0.
+        """
+        if response.startswith(chr(0)):
+            # split_string = response.split(".")
+            # integer_part = split_string[0][1:]
+            # decimal_part = float("." + split_string[1])
+            # return integer_part + decimal_part
+            response = response[1:]
+        return float(response)
+
+    # @setting(7, returns="v[]")
+    # def meas_resistance(self, c):
+    #     """Measure the resistance of the connected element by R = V / I
+        
+    #     Returns
+    #     ----------
+    #     float
+    #         Resistance in ohms
+    #     """
+        
+    #     high_z = 10E3  # Typical "high" impedance on a scope
+        
+    #     try:
+            
+    #         response = self.power_supply.query("MEAS:VOLT?")
+    #         voltage = self.decode_query_response(response)
+    #         logging.info(voltage)
+            
+    #         response = self.power_supply.query("MEAS:CURR?")
+    #         current = self.decode_query_response(response)
+    #         logging.info(current)
+            
+    #         logging.info('')
+            
+    #         resistance = voltage / current
+                
+    #         return resistance
+        
+    #     except Exception as e:
+    #         logging.info(e)
+    #         return high_z
+
+    @setting(7, returns="v[]")
+    def meas_resistance(self, c):
+        """Measure the resistance of the connected element by R = V / I.
+        It seems the read operations on the power supply are slow and 
+        serial will get out of sync if you run it too fast. Thus the 100 
+        ms delays. There's also a 'query delay' baked into on_get_config. 
+        This is an automatic delay between the write/read that makes up a 
+        query. Plain writes (no subsequent read) seem to be fast.
+        
+        Returns
+        ----------
+        float
+            Resistance in ohms
+        """
+        
+        high_z = 10E3  # Typical "high" impedance on a scope
+        
+        # Make sure everything is synced up. This shouldn't be necessary but...
+        # while True:
+        #     response = self.power_supply.read()
+        #     time.sleep(0.1)
+        #     if response == "":
+        #         break
+        # self.power_supply.clear()
+        # time.sleep(0.1)
+        
+        time.sleep(self.comms_delay)
+        
+        response = self.power_supply.query("MEAS:VOLT?")
+        voltage = self.decode_query_response(response)
+        logging.info(repr(response))
+        
+        time.sleep(self.comms_delay)
+        
+        response = self.power_supply.query("MEAS:CURR?")
+        current = self.decode_query_response(response)
+        logging.info(repr(response))
+        
+        time.sleep(self.comms_delay)
+        
+        logging.info("")
+        
+        if current < 0.001: 
+            resistance = high_z
+        else:
+            resistance = voltage / current
+            
+        return resistance
 
     @setting(6)
     def reset(self, c):
