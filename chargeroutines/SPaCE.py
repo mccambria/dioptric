@@ -466,6 +466,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
 
     # optimize before the start of the measurement
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    drift_list.append(numpy.array(tool_belt.get_drift()))
 
     # define the sequence paramters
     # file_name = 'SPaCE_w_optimize_xy.py'
@@ -500,6 +501,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         if time_now - time_start > opti_interval * 60:
             optimize.main_with_cxn(cxn, nv_sig, apd_indices)
             time_start = time_now
+            drift_list.append(numpy.array(tool_belt.get_drift()))
 
         # set the sequence again, since optimize will have streamed new one to pulse_streamer
         # seq_args = [ initialization_time, pulse_time, charge_readout_time,
@@ -1290,7 +1292,7 @@ if __name__ == '__main__':
     #          650, 700, 750, 800,850 , 900, 1000, 1100, 1200, 1300,
     #          1350, 1400, 1450]
     #lin_x_vals = numpy.linspace(x_vals[0],
-                    x_vals[-1], 100)
+                    # x_vals[-1], 100)
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, height_master_list, 'bo')
     # ax.set_xlabel('Pulse duration (us)')
@@ -1334,7 +1336,7 @@ if __name__ == '__main__':
     #ax.plot(lin_x_vals, inverse_sqrt(lin_x_vals, *init_fit), 'r-')
     #text = 'A={:.3f} nm*us^1/2'.format(*opti_params)
     #ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
+            # verticalalignment='top', bbox=props)
 
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, center_master_list, 'bo')
@@ -1364,56 +1366,31 @@ if __name__ == '__main__':
 
     #================ specific for 2D scans ================#
     file_list = [
-        '2021_08_09-22_21_26-johnson-nv2_2021_08_04',
-        '2021_08_09-21_46_54-johnson-nv2_2021_08_04',
-        '2021_08_09-21_12_28-johnson-nv2_2021_08_04',
-        '2021_08_09-20_37_48-johnson-nv2_2021_08_04',
-        '2021_08_09-20_03_07-johnson-nv2_2021_08_04',
-        '2021_08_09-19_28_27-johnson-nv2_2021_08_04',
-        '2021_08_09-18_53_42-johnson-nv2_2021_08_04',
-        '2021_08_09-18_18_57-johnson-nv2_2021_08_04',
-        ]
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    label_list = [
-        '-1.125 um',
-        '-0.75 um',
-        '-0.375 um',
-        '0 um',
-        '0.375 um',
-        '0.75 um',
-        '1.125 um',
-        '1.5 um',
+        '2021_08_12-21_25_37-johnson-nv2_2021_08_04'
         ]
 
     for f in range(len(file_list)):
         file = file_list[f]
         data = tool_belt.get_raw_data(file, path)
-        try:
-            img_array = data['readout_image_array']
-            x_voltages = data['x_voltages_1d']
-            y_voltages = data['y_voltages_1d']
-            x_low = x_voltages[0]
-            x_high = x_voltages[-1]
-            y_low = y_voltages[0]
-            y_high = y_voltages[-1]
-            pixel_size = x_voltages[1] - x_voltages[0]
-            half_pixel_size = pixel_size / 2
-            img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                          y_low - half_pixel_size, y_high + half_pixel_size]
-
-            # get jsut a slice throguh the middle
-            num_steps= len(img_array)
-            slice_counts = numpy.array(img_array[int(num_steps/2)])
-
-            ax.plot(x_voltages, slice_counts + 10*f , '-', label = label_list[f])
-            ax.legend()
-
-        except Exception:
-            pass
-
-        # tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
-        #                     title=None, color_bar_label='Counts',
-        #                     min_value=None, um_scaled=False)
+        img_array = data['readout_image_array']
+        x_voltages = data['x_voltages_1d']
+        y_voltages = data['y_voltages_1d']
+        num_steps = data['num_steps']
+        readout_counts_array = data['readout_counts_array']
+        img_extent = data['img_extent']
+        
+        writePos = []
+        readout_image_array = numpy.empty([num_steps, num_steps])
+            
+        init_color = '532'
+        pulse_color = '638'
+        pulse_time = 2e3
+        title = 'SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.format(init_color,
+                                                                          pulse_color, pulse_time/10**6)
+        
+        tool_belt.create_image_figure(img_array,  numpy.array(img_extent)*35, clickHandler=None,
+                            title=title, color_bar_label='Counts',
+                            min_value=None, um_scaled=True)
 
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))

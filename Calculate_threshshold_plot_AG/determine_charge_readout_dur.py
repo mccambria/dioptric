@@ -260,10 +260,18 @@ if __name__ == '__main__':
     red_laser = 'cobolt_638'
     nd_green = 'nd_0.5'
     
-    nv_sig = {  'coords': [0.021, -0.058, 4.77],
-            'name': '{}-nv2_2021_08_04'.format(sample_name),
-            'disable_opt': False, 'expected_count_rate': 42,
-            'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
+    nv_sig = {
+        "coords": [0.015, -0.114, 5.2],
+        "name": "{}-nv4_2021_08_17".format(sample_name),
+        "disable_opt": False,
+        "expected_count_rate": 4, #20
+        "imaging_laser": yellow_laser,
+        "imaging_laser_filter": 'nd_0',
+        "imaging_laser_power": 1,
+        "imaging_readout_dur": 5*1e7,
+        # "imaging_laser": green_laser,
+        # "imaging_laser_filter": nd_green,
+        # "imaging_readout_dur": 1e7,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_filter': nd_green, 'nv-_prep_laser_dur': 1E3,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 80, 'nv0_prep_laser_dur': 1E3,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None, 
@@ -274,9 +282,9 @@ if __name__ == '__main__':
 
 
     try:
-        determine_readout_dur(nv_sig, readout_times =[ 100*10**6],
+        determine_readout_dur(nv_sig, readout_times =[ 20*10**6],
                           readout_yellow_powers = [0.1],
-                           nd_filter = 'nd_0.5')
+                           nd_filter = 'nd_0.5') 
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here

@@ -404,11 +404,15 @@ def create_image_figure(imgArray, imgExtent, clickHandler=None, title=None,
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
 
+    #make sure the image is square
+    # plt.axis('square')
+    
     fig.set_tight_layout(True)
 
     # Tell the axes to show a grayscale image
     img = ax.imshow(imgArray, cmap='inferno',
-                    extent=tuple(imgExtent), vmin = min_value)
+                    extent=tuple(imgExtent), vmin = min_value,
+                    aspect='auto')
 
 #    if min_value == None:
 #        img.autoscale()
