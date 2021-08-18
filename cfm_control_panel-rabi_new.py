@@ -67,9 +67,9 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 1.0
     # scan_range = 0.5
     # scan_range = 0.3
-    # scan_range = 0.2
+    scan_range = 0.2
     # scan_range = 0.15
-    scan_range = 0.1
+    # scan_range = 0.1
     # scan_range = 0.05
     # scan_range = 0.025
     #
@@ -79,8 +79,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    num_steps = 60
-    #    num_steps = 50
+    # num_steps = 60
+    num_steps = 40
     # num_steps = 20
 
     # For now we only support square scans so pass scan_range twice
@@ -711,49 +711,13 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        "coords": [0.0, 0.0, 5.0],
+        "coords": [0.0, 0.0, 5.2],
         "name": "{}-search".format(sample_name),
         "disable_opt": False,
         "expected_count_rate": None,
-        # "imaging_laser": red_laser,
-        # "imaging_laser_power": 10,
-        "imaging_laser": yellow_laser,
-        "imaging_laser_filter": 'nd_0',
-        "imaging_laser_power": 1,
-        "imaging_readout_dur": 5*1e7,
-        "collection_filter": "630_lp",
-        "magnet_angle": None,
-        "resonance_LOW": 2.8012,
-        "rabi_LOW": 141.5,
-        "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.9445,
-        "rabi_HIGH": 191.9,
-        "uwave_power_HIGH": 14.5,
-    }  # 14.5 max
-    
-    
-    nv_sig = {
-        "coords": [0.123, -0.017, 5.06],
-        "name": "{}-nv2_2021_08_17".format(sample_name),
-        "disable_opt": False,
-        "expected_count_rate": 20,
-        # "imaging_laser": red_laser,
-        # "imaging_laser_power": 10,
         "imaging_laser": green_laser,
         "imaging_laser_filter": nd_green,
         "imaging_readout_dur": 1e7,
-        "initialize_laser": green_laser,
-        "initialize_laser_filter": nd_green,
-        "initialize_dur": 1e3,
-        "CPG_laser": red_laser,
-        "CPG_laser_power": 80,
-        "CPG_laser_dur": 500e3,
-        # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
-        "charge_readout_laser": yellow_laser,
-        "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.15,
-        "charge_readout_dur": 50e6,
-        "dir_1D": "x",
         "collection_filter": "630_lp",
         "magnet_angle": None,
         "resonance_LOW": 2.8012,
@@ -763,6 +727,39 @@ if __name__ == "__main__":
         "rabi_HIGH": 191.9,
         "uwave_power_HIGH": 14.5,
     }  # 14.5 max
+    
+    
+    # nv_sig = {
+    #     "coords": [0.123, -0.017, 5.06],
+    #     "name": "{}-nv2_2021_08_17".format(sample_name),
+    #     "disable_opt": False,
+    #     "expected_count_rate": 20,
+    #     # "imaging_laser": red_laser,
+    #     # "imaging_laser_power": 10,
+    #     "imaging_laser": green_laser,
+    #     "imaging_laser_filter": nd_green,
+    #     "imaging_readout_dur": 1e7,
+    #     "initialize_laser": green_laser,
+    #     "initialize_laser_filter": nd_green,
+    #     "initialize_dur": 1e3,
+    #     "CPG_laser": red_laser,
+    #     "CPG_laser_power": 80,
+    #     "CPG_laser_dur": 500e3,
+    #     # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
+    #     "charge_readout_laser": yellow_laser,
+    #     "charge_readout_laser_filter": nd_yellow,
+    #     "charge_readout_laser_power": 0.15,
+    #     "charge_readout_dur": 50e6,
+    #     "dir_1D": "x",
+    #     "collection_filter": "630_lp",
+    #     "magnet_angle": None,
+    #     "resonance_LOW": 2.8012,
+    #     "rabi_LOW": 141.5,
+    #     "uwave_power_LOW": 15.5,  # 15.5 max
+    #     "resonance_HIGH": 2.9445,
+    #     "rabi_HIGH": 191.9,
+    #     "uwave_power_HIGH": 14.5,
+    # }  # 14.5 max
     
     
     # nv_sig = {
@@ -798,39 +795,39 @@ if __name__ == "__main__":
     # }  # 14.5 max
     
     
-    nv_sig = {
-        "coords": [0.015, -0.114, 5.2],
-        "name": "{}-nv4_2021_08_17".format(sample_name),
-        "disable_opt": False,
-        # "expected_count_rate": 4, #20
-        # "imaging_laser": yellow_laser,
-        # "imaging_laser_filter": 'nd_0',
-        # "imaging_laser_power": 1,
-        # "imaging_readout_dur": 5*1e7,
-        "imaging_laser": green_laser,
-        "imaging_laser_filter": nd_green,
-        "imaging_readout_dur": 1e7,
-        "initialize_laser": green_laser,
-        "initialize_laser_filter": nd_green,
-        "initialize_dur": 1e3,
-        "CPG_laser": red_laser,
-        "CPG_laser_power": 80,
-        "CPG_laser_dur": 500e3,
-        # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
-        "charge_readout_laser": yellow_laser,
-        "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.15,
-        "charge_readout_dur": 50e6,
-        "dir_1D": "x",
-        "collection_filter": "630_lp",
-        "magnet_angle": None,
-        "resonance_LOW": 2.8012,
-        "rabi_LOW": 141.5,
-        "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.9445,
-        "rabi_HIGH": 191.9,
-        "uwave_power_HIGH": 14.5,
-    }  # 14.5 max
+    # nv_sig = {
+    #     "coords": [0.015, -0.114, 5.2],
+    #     "name": "{}-nv4_2021_08_17".format(sample_name),
+    #     "disable_opt": False,
+    #     # "expected_count_rate": 4, #20
+    #     # "imaging_laser": yellow_laser,
+    #     # "imaging_laser_filter": 'nd_0',
+    #     # "imaging_laser_power": 1,
+    #     # "imaging_readout_dur": 5*1e7,
+    #     "imaging_laser": green_laser,
+    #     "imaging_laser_filter": nd_green,
+    #     "imaging_readout_dur": 1e7,
+    #     "initialize_laser": green_laser,
+    #     "initialize_laser_filter": nd_green,
+    #     "initialize_dur": 1e3,
+    #     "CPG_laser": red_laser,
+    #     "CPG_laser_power": 80,
+    #     "CPG_laser_dur": 500e3,
+    #     # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
+    #     "charge_readout_laser": yellow_laser,
+    #     "charge_readout_laser_filter": nd_yellow,
+    #     "charge_readout_laser_power": 0.15,
+    #     "charge_readout_dur": 50e6,
+    #     "dir_1D": "x",
+    #     "collection_filter": "630_lp",
+    #     "magnet_angle": None,
+    #     "resonance_LOW": 2.8012,
+    #     "rabi_LOW": 141.5,
+    #     "uwave_power_LOW": 15.5,  # 15.5 max
+    #     "resonance_HIGH": 2.9445,
+    #     "rabi_HIGH": 191.9,
+    #     "uwave_power_HIGH": 14.5,
+    # }  # 14.5 max
     
     
     
