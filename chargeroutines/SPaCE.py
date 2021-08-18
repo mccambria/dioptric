@@ -475,6 +475,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
 
     # optimize before the start of the measurement
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    drift_list.append(numpy.array(tool_belt.get_drift()))
 
     # define the sequence paramters
     # file_name = 'SPaCE_w_optimize_xy.py'
@@ -509,6 +510,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         if time_now - time_start > opti_interval * 60:
             optimize.main_with_cxn(cxn, nv_sig, apd_indices)
             time_start = time_now
+            drift_list.append(numpy.array(tool_belt.get_drift()))
 
         # set the sequence again, since optimize will have streamed new one to pulse_streamer
         # seq_args = [ initialization_time, pulse_time, charge_readout_time,

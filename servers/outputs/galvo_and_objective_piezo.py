@@ -131,6 +131,95 @@ class GalvoAndObjectivePiezo(Galvo, ObjectivePiezo):
         )
 
         return
+    
+    @setting(
+        12,
+        x_center="v[]",
+        z_center="v[]",
+        x_range="v[]",
+        z_range="v[]",
+        num_steps="i",
+        period="i",
+        returns="*v[]*v[]",
+    )
+    def load_sweep_scan_xz(
+        self, c, x_center, y_center, z_center, x_range, z_range, num_steps, period
+    ):
+        """Load a scan that will wind through the grid defined by the passed
+        parameters. Samples are advanced by the clock.
+
+        Normal scan performed, starts in bottom right corner, and starts
+        heading left
+        
+
+        Params
+            x_center: float
+                Center x voltage of the scan
+            y_center: float
+                Center position y voltage (won't change in y)
+            z_center: float
+                Center z voltage of the scan
+            x_range: float
+                Full scan range in x
+            z_range: float
+                Full scan range in z
+            num_steps: int
+                Number of steps the break the ranges into
+            period: int
+                Expected period between clock signals in ns
+
+        Returns
+            list(float)
+                The x voltages that make up the scan
+            list(float)
+                The z voltages that make up the scan
+        """
+
+        # Must use same number of steps right now
+        x_num_steps = num_steps
+        z_num_steps = num_steps
+
+        # Force the scan to have square pixels by only applying num_steps
+        # to the shorter axis
+        half_x_range = x_range / 2
+        half_z_range = z_range / 2
+
+        x_low = x_center - half_x_range
+        x_high = x_center + half_x_range
+        z_low = z_center - half_z_range
+        z_high = z_center + half_z_range
+
+        # Apply scale and offset to get the voltages we'll apply.
+        x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
+        z_voltages_1d = numpy.linspace(z_low, z_high, num_steps)
+    
+
+        ######### Works for any x_range, y_range #########
+
+        # Winding cartesian product
+        # The x values are repeated and the z values are mirrored and tiled
+        # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
+
+        # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
+        x_inter = numpy.concatenate((x_voltages_1d, numpy.flipud(x_voltages_1d)))
+        # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
+        if z_num_steps % 2 == 0:  # Even x size
+            x_voltages = numpy.tile(x_inter, int(z_num_steps / 2))
+        else:  # Odd x size
+            x_voltages = numpy.tile(x_inter, int(numpy.floor(z_num_steps / 2)))
+            x_voltages = numpy.concatenate((x_voltages, x_voltages_1d))
+
+        # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
+        z_voltages = numpy.repeat(z_voltages_1d, x_num_steps)
+        
+        y_voltages = numpy.empty(len(z_voltages))
+        y_voltages.fill(y_center)
+
+        voltages = numpy.vstack((x_voltages, y_voltages, z_voltages))
+
+        self.load_stream_writer_xyz(c, "GalvoAndObjectivePiezo-load_sweep_scan_xz", voltages, period)
+
+        return x_voltages_1d, z_voltages_1d
 
 
 __server__ = GalvoAndObjectivePiezo()
