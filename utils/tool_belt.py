@@ -31,6 +31,10 @@ from pathlib import Path
 from pathlib import PurePath
 from enum import Enum, auto
 import socket
+import smtplib
+from email.mime.text import MIMEText
+import traceback
+import keyring
 
 
 # %% Constants
@@ -71,8 +75,12 @@ def get_signal_generator_cxn(cxn, state):
 
 
 def set_xyz(cxn, coords):
-    xy_dtype = eval(get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"]))
-    z_dtype = eval(get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"]))
+    xy_dtype = eval(
+        get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
+    )
+    z_dtype = eval(
+        get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
+    )
     xy_server = get_xy_server(cxn)
     z_server = get_z_server(cxn)
     if xy_dtype is int:
@@ -112,7 +120,9 @@ def laser_on(cxn, laser_name, laser_power=None):
 
 def laser_switch_sub(cxn, turn_on, laser_name, laser_power=None):
 
-    mod_type = get_registry_entry(cxn, "mod_type", ["", "Config", "Optics", laser_name])
+    mod_type = get_registry_entry(
+        cxn, "mod_type", ["", "Config", "Optics", laser_name]
+    )
     mod_type = eval(mod_type)
     feedthrough = get_registry_entry(
         cxn, "feedthrough", ["", "Config", "Optics", laser_name]
@@ -179,7 +189,9 @@ def set_laser_power(
 
     # If the power is controlled by analog modulation, we'll need to pass it
     # to the pulse streamer
-    mod_type = get_registry_entry(cxn, "mod_type", ["", "Config", "Optics", laser_name])
+    mod_type = get_registry_entry(
+        cxn, "mod_type", ["", "Config", "Optics", laser_name]
+    )
     mod_type = eval(mod_type)
     if mod_type == Mod_types.ANALOG:
         return laser_power
@@ -190,7 +202,9 @@ def set_laser_power(
         return None
 
 
-def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None):
+def set_filter(
+    cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=None
+):
     """
     optics_key should be either 'collection' or a laser key.
     Specify either an optics_key/nv_sig or an optics_name/filter_name.
@@ -210,14 +224,17 @@ def set_filter(cxn, nv_sig=None, optics_key=None, optics_name=None, filter_name=
         pass  # All good
     else:
         raise Exception(
-            "Specify either an optics_key/nv_sig or an optics_name/filter_name."
+            "Specify either an optics_key/nv_sig or an"
+            " optics_name/filter_name."
         )
 
     filter_server = get_filter_server(cxn, optics_name)
     if filter_server is None:
         return
     pos = get_registry_entry(
-        cxn, filter_name, ["", "Config", "Optics", optics_name, "FilterMapping"]
+        cxn,
+        filter_name,
+        ["", "Config", "Optics", optics_name, "FilterMapping"],
     )
     filter_server.set_filter(pos)
 
@@ -252,7 +269,9 @@ def get_laser_server(cxn, laser_name):
         return None
 
 
-def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, train):
+def process_laser_seq(
+    pulse_streamer, seq, config, laser_name, laser_power, train
+):
     """
     Some lasers may require special processing of their Pulse Streamer
     sequence. For example, the Cobolt lasers expect 3.5 V for digital
@@ -432,15 +451,19 @@ def create_image_figure(
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
 
-    #make sure the image is square
+    # make sure the image is square
     # plt.axis('square')
 
     fig.set_tight_layout(True)
 
     # Tell the axes to show a grayscale image
-    img = ax.imshow(imgArray, cmap='inferno',
-                    extent=tuple(imgExtent), vmin = min_value,
-                    aspect='auto')
+    img = ax.imshow(
+        imgArray,
+        cmap="inferno",
+        extent=tuple(imgExtent),
+        vmin=min_value,
+        aspect="auto",
+    )
 
     #    if min_value == None:
     #        img.autoscale()
@@ -882,7 +905,8 @@ def get_xy_server(cxn):
     # return an actual reference to the appropriate server so it can just
     # be used directly
     return getattr(
-        cxn, get_registry_entry(cxn, "xy_server", ["", "Config", "Positioning"])
+        cxn,
+        get_registry_entry(cxn, "xy_server", ["", "Config", "Positioning"]),
     )
 
 
@@ -898,7 +922,8 @@ def get_xyz_server(cxn):
     """Get an actual reference to the combined xyz server"""
 
     return getattr(
-        cxn, get_registry_entry(cxn, "xyz_server", ["", "Config", "Positioning"])
+        cxn,
+        get_registry_entry(cxn, "xyz_server", ["", "Config", "Positioning"]),
     )
 
 
@@ -1237,7 +1262,9 @@ def save_raw_data(rawData, filePath):
     # then they'll just be overwritten.
     try:
         rawData["nv_sig_units"] = get_nv_sig_units()
-        rawData["config"] = get_config_dict()  # Include a snapshot of the config
+        rawData[
+            "config"
+        ] = get_config_dict()  # Include a snapshot of the config
     except Exception as e:
         print(e)
 
@@ -1369,18 +1396,66 @@ def save_image_data_csv(
         csv_file_name = "{}".format(timestamp)
 
     with open(
-        "{}/{}.csv".format(nvdata_dir + "/" + file_path, csv_file_name), "w", newline=""
+        "{}/{}.csv".format(nvdata_dir + "/" + file_path, csv_file_name),
+        "w",
+        newline="",
     ) as csv_file:
 
-        csv_writer = csv.writer(csv_file, delimiter=",", quoting=csv.QUOTE_NONE)
+        csv_writer = csv.writer(
+            csv_file, delimiter=",", quoting=csv.QUOTE_NONE
+        )
         csv_writer.writerows(csv_data)
     return
+
+
+# %% Email utils
+
+
+def send_exception_email():
+    # format_exc extracts the stack and error message from
+    # the exception currently being handled.
+    now = time.localtime()
+    date = time.strftime(
+        "%A, %B %d, %Y",
+        now,
+    )
+    timex = time.strftime("%I:%M:%S %p", now)
+    exc_info = traceback.format_exc()
+    content = (
+        f"An unhandled exception occurred on {date} at {timex}.\n{exc_info}"
+    )
+    send_email(content)
+
+
+def send_email(
+    content,
+    email_from="kolkowitznvlab@gmail.com",
+    email_to="kolkowitznvlab@gmail.com",
+):
+
+    pc_name = socket.gethostname()
+    msg = MIMEText(content)
+    msg["Subject"] = f"Alert from {pc_name}"
+    msg["From"] = email_from
+    msg["To"] = email_to
+
+    pw = keyring.get_password("system", email_from)
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)  # port 465 or 587
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    server.login(email_from, pw)
+    server.sendmail(email_from, email_to, msg.as_string())
+    server.close()
 
 
 # %% Misc
 
 
-def opt_power_via_photodiode(color_ind, AO_power_settings=None, nd_filter=None):
+def opt_power_via_photodiode(
+    color_ind, AO_power_settings=None, nd_filter=None
+):
     cxn = labrad.connect()
     optical_power_list = []
     if color_ind == 532:
@@ -1437,7 +1512,9 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
 
     red_optical_power_mW = calc_optical_power_mW(638, red_optical_power_pd)
 
-    yellow_optical_power_mW = calc_optical_power_mW(589, yellow_optical_power_pd)
+    yellow_optical_power_mW = calc_optical_power_mW(
+        589, yellow_optical_power_pd
+    )
 
     return (
         green_optical_power_pd,
@@ -1577,7 +1654,11 @@ def get_drift():
             drift = drift[0:3]
     # Cast to appropriate type
     # MCC round instead of int?
-    drift_to_return = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
+    drift_to_return = [
+        xy_dtype(drift[0]),
+        xy_dtype(drift[1]),
+        z_dtype(drift[2]),
+    ]
     return drift_to_return
 
 
@@ -1588,8 +1669,12 @@ def set_drift(drift):
         print("Set drift unsuccessful.")
     # Cast to the proper types
 
-    xy_dtype = eval(get_registry_entry_no_cxn("xy_dtype", ["Config", "Positioning"]))
-    z_dtype = eval(get_registry_entry_no_cxn("z_dtype", ["Config", "Positioning"]))
+    xy_dtype = eval(
+        get_registry_entry_no_cxn("xy_dtype", ["Config", "Positioning"])
+    )
+    z_dtype = eval(
+        get_registry_entry_no_cxn("z_dtype", ["Config", "Positioning"])
+    )
     drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
     with labrad.connect() as cxn:
         cxn.registry.cd(["", "State"])
@@ -1621,8 +1706,12 @@ def reset_cfm_with_cxn(cxn):
 
     plt.rc("text", usetex=False)
 
-    xy_server_name = get_registry_entry(cxn, "xy_server", ["", "Config", "Positioning"])
-    z_server_name = get_registry_entry(cxn, "z_server", ["", "Config", "Positioning"])
+    xy_server_name = get_registry_entry(
+        cxn, "xy_server", ["", "Config", "Positioning"]
+    )
+    z_server_name = get_registry_entry(
+        cxn, "z_server", ["", "Config", "Positioning"]
+    )
     xyz_server_names = [xy_server_name, z_server_name]
     cxn_server_names = cxn.servers
     for name in cxn_server_names:

@@ -669,7 +669,7 @@ def do_test_major_routines(nv_sig, apd_indices):
 if __name__ == "__main__":
 
     # In debug mode, don't bother sending email notifications about exceptions
-    debug_mode = True
+    debug_mode = False
 
     # %% Shared parameters
 
