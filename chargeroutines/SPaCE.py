@@ -25,15 +25,17 @@ from scipy.optimize import curve_fit
 # Define the start time to track the time between optimzies
 time_start = time.time()
 
-def inverse_sqrt(x, a):
-    return a*x**(-1/2)
+def inverse_sqrt(x, a, o):
+    return a*x**(-1/2) + o
 
-def inverse_cube(x, a):
-    return a*x**(-1/3)
+def inverse_quarter(x, a):
+    return a*x**(-1/4) 
 
 
 def power_fnct(x, a,b):
-    return a*x**-b
+    # o = 15
+    # return numpy.sqrt((a*x**-b)**2 + (o )**2)
+    return a*x**(b) 
 
 def inverse_law(x, a):
     return a*x**-1
@@ -473,6 +475,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
 
     # optimize before the start of the measurement
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    drift_list.append(numpy.array(tool_belt.get_drift()))
 
     # define the sequence paramters
     # file_name = 'SPaCE_w_optimize_xy.py'
@@ -507,6 +510,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         if time_now - time_start > opti_interval * 60:
             optimize.main_with_cxn(cxn, nv_sig, apd_indices)
             time_start = time_now
+            drift_list.append(numpy.array(tool_belt.get_drift()))
 
         # set the sequence again, since optimize will have streamed new one to pulse_streamer
         # seq_args = [ initialization_time, pulse_time, charge_readout_time,
@@ -1171,47 +1175,47 @@ if __name__ == '__main__':
     #     ]
     #================ 8/5/2021 x scans @ 22 mW Feature 1A ================#
     # x
-    file_list = [
-        '2021_08_04-20_38_12-johnson-nv2_2021_08_04',
-        '2021_08_04-21_29_32-johnson-nv2_2021_08_04',
-        '2021_08_04-21_55_15-johnson-nv2_2021_08_04',
-        '2021_08_04-22_20_56-johnson-nv2_2021_08_04',
-        '2021_08_04-22_46_41-johnson-nv2_2021_08_04',
-        '2021_08_04-23_12_20-johnson-nv2_2021_08_04',
-        '2021_08_04-23_38_01-johnson-nv2_2021_08_04',
-        '2021_08_05-00_03_43-johnson-nv2_2021_08_04',
-        '2021_08_05-00_29_24-johnson-nv2_2021_08_04',
-        '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
-        '2021_08_05-00_55_06-johnson-nv2_2021_08_04',
-        '2021_08_05-01_20_49-johnson-nv2_2021_08_04',
-        '2021_08_05-01_46_33-johnson-nv2_2021_08_04',
-        '2021_08_05-02_12_17-johnson-nv2_2021_08_04',
-        '2021_08_05-02_38_00-johnson-nv2_2021_08_04',
-        '2021_08_05-03_03_43-johnson-nv2_2021_08_04',
-        '2021_08_05-03_29_28-johnson-nv2_2021_08_04',
-        '2021_08_05-03_55_11-johnson-nv2_2021_08_04',
-        '2021_08_05-09_01_01-johnson-nv2_2021_08_04',
-        '2021_08_05-09_26_52-johnson-nv2_2021_08_04',
-        '2021_08_05-09_52_38-johnson-nv2_2021_08_04',
-        '2021_08_05-10_45_26-johnson-nv2_2021_08_04',
-        '2021_08_05-11_43_11-johnson-nv2_2021_08_04',
-        '2021_08_05-12_12_58-johnson-nv2_2021_08_04',
-        '2021_08_05-15_54_52-johnson-nv2_2021_08_04'
-        ]
+    # file_list = [
+        # '2021_08_04-20_38_12-johnson-nv2_2021_08_04',
+        # '2021_08_04-21_29_32-johnson-nv2_2021_08_04',
+        # '2021_08_04-21_55_15-johnson-nv2_2021_08_04',
+        # '2021_08_04-22_20_56-johnson-nv2_2021_08_04',
+        # '2021_08_04-22_46_41-johnson-nv2_2021_08_04',
+        # '2021_08_04-23_12_20-johnson-nv2_2021_08_04',
+        # '2021_08_04-23_38_01-johnson-nv2_2021_08_04',
+        # '2021_08_05-00_03_43-johnson-nv2_2021_08_04',
+        # '2021_08_05-00_29_24-johnson-nv2_2021_08_04',
+        # '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
+        # '2021_08_05-00_55_06-johnson-nv2_2021_08_04',
+        # '2021_08_05-01_20_49-johnson-nv2_2021_08_04',
+        # '2021_08_05-01_46_33-johnson-nv2_2021_08_04',
+        # '2021_08_05-02_12_17-johnson-nv2_2021_08_04',
+        # '2021_08_05-02_38_00-johnson-nv2_2021_08_04',
+        # '2021_08_05-03_03_43-johnson-nv2_2021_08_04',
+        # '2021_08_05-03_29_28-johnson-nv2_2021_08_04',
+        # '2021_08_05-03_55_11-johnson-nv2_2021_08_04',
+        # '2021_08_05-09_01_01-johnson-nv2_2021_08_04',
+        # '2021_08_05-09_26_52-johnson-nv2_2021_08_04',
+        # '2021_08_05-09_52_38-johnson-nv2_2021_08_04',
+        # '2021_08_05-10_45_26-johnson-nv2_2021_08_04',
+        # '2021_08_05-11_43_11-johnson-nv2_2021_08_04',
+        # '2021_08_05-12_12_58-johnson-nv2_2021_08_04',
+        # '2021_08_05-15_54_52-johnson-nv2_2021_08_04'
+        # ]
 
     #================ 8/6/2021 x scans @ 500 us Feature 1A ================#
     # x
-    # file_list = [
-    #     '2021_08_05-23_11_42-johnson-nv2_2021_08_04',
-    #     '2021_08_05-22_46_43-johnson-nv2_2021_08_04',
-    #     '2021_08_05-22_25_21-johnson-nv2_2021_08_04',
-    #     '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
-    #     '2021_08_05-20_06_21-johnson-nv2_2021_08_04',
-    #     '2021_08_05-20_55_56-johnson-nv2_2021_08_04',
-    #     '2021_08_05-21_17_41-johnson-nv2_2021_08_04',
-    #     '2021_08_05-21_41_06-johnson-nv2_2021_08_04',
-    #     '2021_08_05-22_01_58-johnson-nv2_2021_08_04'
-    #     ]
+    file_list = [
+        '2021_08_05-23_11_42-johnson-nv2_2021_08_04',
+        '2021_08_05-22_46_43-johnson-nv2_2021_08_04',
+        '2021_08_05-22_25_21-johnson-nv2_2021_08_04',
+        '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
+        '2021_08_05-20_06_21-johnson-nv2_2021_08_04',
+        '2021_08_05-20_55_56-johnson-nv2_2021_08_04',
+        '2021_08_05-21_17_41-johnson-nv2_2021_08_04',
+        '2021_08_05-21_41_06-johnson-nv2_2021_08_04',
+        '2021_08_05-22_01_58-johnson-nv2_2021_08_04'
+        ]
     
     #================ 8/8/2021 x scans @ 22 mW Feature 1A, changing time between optimize ================#
 
@@ -1245,9 +1249,9 @@ if __name__ == '__main__':
         height_master_list.append(ret_vals[2][0]**2)
 
     #_______ Power _______#
-    # x_vals = [ 12.7, 15.8, 18.6, 21.7, 24.4, 26.8, 29.1, 30.9, 31.3]
-    # lin_x_vals = numpy.linspace(x_vals[0],
-    #                 x_vals[-1], 100)
+    x_vals = [ 12.7, 15.8, 18.6, 21.7, 24.4, 26.8, 29.1, 30.9, 31.3]
+    lin_x_vals = numpy.linspace(x_vals[0],
+                    x_vals[-1], 100)
 
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, height_master_list, 'bo')
@@ -1268,26 +1272,29 @@ if __name__ == '__main__':
     # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
     #         verticalalignment='top', bbox=props)
 
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(x_vals, widths_master_list, 'bo')
-    # ax.set_xlabel('Pulse power (mW)')
-    # ax.set_ylabel('Gaussian sigma (nm)')
-    # ax.set_title('8/6/2021 500 us x axis, 1A lobe')
-    # init_fit = [300, 1]
-    # opti_params, cov_arr = curve_fit(power_fnct,
-    #       x_vals,widths_master_list,p0=init_fit)
-    # print('Opti params: ' + str(opti_params))
-    # ax.plot(lin_x_vals, power_fnct(lin_x_vals, *opti_params), 'g-', 
-    #         label = "fit inverse power: t ^ -0.372")
-    # # ax.legend()
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(x_vals, widths_master_list, 'bo')
+    ax.set_xlabel('Pulse power (mW)')
+    ax.set_ylabel('Gaussian sigma (nm)')
+    ax.set_title('8/6/2021 500 us x axis, 1A lobe')
     
-    # text = r'$A / P^{b}$'
-    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-    # text = 'A={:.3f} nm*mw^b\nb= {:.3f} '.format(*opti_params)
-    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
+    init_fit = [300, 10]
+    opti_params, cov_arr = curve_fit(inverse_sqrt,
+          x_vals,widths_master_list,p0=init_fit)
+    print('Opti params: ' + str(opti_params))
+    ax.plot(lin_x_vals, inverse_sqrt(lin_x_vals, *opti_params), 'g-', 
+            label = "fit inverse power: t ^ -0.372")
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    # ax.legend()
+    
+    text = r'$A / P^{-1/2} + o$'
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    text = 'A={:.3f} nm*mw^-1/2\no = {:.1f} nm'.format(*opti_params)
+    ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
 
     # init_fit = [750]
     # opti_params, cov_arr = curve_fit(inverse_law,
@@ -1309,9 +1316,12 @@ if __name__ == '__main__':
     # ax.set_title('8/6/2021 500 us, x axis, 1A lobe')
 
     #_______ Time _______#
-    x_vals = [90, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600,
-              650, 700, 750, 800,850 , 900, 1000, 1100, 1200, 1300,
-              1350, 1400, 1450]
+    x_vals = [
+        90, 100, 150, 
+              200, 250, 300, 350, 400, 450, 500, 550, 600,
+              650, 700, 750, 800,850 , 900, 1000, 1100, 1200, 
+              # 1300, 1350, 1400, 1450
+              ]
     lin_x_vals = numpy.linspace(x_vals[0],
                     x_vals[-1], 100)
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
@@ -1333,19 +1343,21 @@ if __name__ == '__main__':
     # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
     #         verticalalignment='top', bbox=props)
 
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.plot(x_vals, widths_master_list, 'bo')
-    ax.set_xlabel('Pulse duration (us)')
-    ax.set_ylabel('Gaussian sigma (nm)')
-    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    # fig, ax = plt.subplots(1, 1)
+    # ax.plot(x_vals, widths_master_list, 'bo')
+    # ax.set_xlabel('Pulse duration (us)')
+    # ax.set_ylabel('Gaussian sigma (nm)')
+    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    # ax.set_yscale('log')
+    # ax.set_xscale('log')
 
 
-    init_fit = [300, 0.3]
-    opti_params, cov_arr = curve_fit(power_fnct,
-          x_vals,widths_master_list,p0=init_fit)
-    print('Opti params: ' + str(opti_params))
-    ax.plot(lin_x_vals, power_fnct(lin_x_vals, *opti_params), 'g-', 
-            label = "inverse square root")
+    # init_fit = [300, -1/4]
+    # opti_params, cov_arr = curve_fit(power_fnct,
+    #       x_vals,widths_master_list,p0=init_fit)
+    # print('Opti params: ' + str(opti_params))
+    # ax.plot(lin_x_vals, power_fnct(lin_x_vals, *opti_params), 'g-', 
+    #         label = "inverse square root")
     
     # init_fit = [300]
     # opti_params, cov_arr = curve_fit(power_fnct,
@@ -1355,13 +1367,13 @@ if __name__ == '__main__':
     #         label = "fit inverse power: t ^ -0.372")
     # # ax.legend()
     
-    text = r'$A / t^{b}$'
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    text = 'A={:.3f} nm*us^b\nb = {:.3f}'.format(*opti_params)
-    ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
+    # text = r'$A / t^{b}$'
+    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
+    # text = 'A={:.3f} nm*us^b\nb = {:.3f}'.format(*opti_params)
+    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
 
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, center_master_list, 'bo')
