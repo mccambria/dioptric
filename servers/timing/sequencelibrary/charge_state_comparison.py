@@ -92,6 +92,7 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     
-    args = [10000, 10000, 50000, 'laserglow_532', 'cobolt_638', 'laserglow_589', None, None, 0.8, 0, 0]
+    # args = [10000, 10000, 50000, 'laserglow_532', 'cobolt_638', 'laserglow_589', None, None, 0.8, 0, 0]
+    args= [1000.0, 1000.0, 15000000.0, "laserglow_532", "cobolt_638", "laserglow_589", None, None, 0.2, 500000, 0]
     seq = get_seq(None, config, args)[0]
     seq.plot()

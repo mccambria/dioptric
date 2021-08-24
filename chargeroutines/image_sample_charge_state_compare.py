@@ -332,7 +332,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  num_reps,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
         title = r'Red pulse followed by yellow'
         fig_nv0 = tool_belt.create_image_figure(img_array_nv0, img_extent,
-                        clickHandler=on_click_image, color_bar_label='kcps',
+                        clickHandler=on_click_image, color_bar_label='counts',
                         title=title, um_scaled=um_scaled)
 
     #  Collect the data
@@ -341,8 +341,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  num_reps,
     # This is a horribly inefficient way of getting kcps, but it
     # is easy and readable and probably fine up to some resolution
     if plot_data:
-        img_array_nv0_kcps[:] = (img_array_nv0[:] / 1000) / readout_sec
-        tool_belt.update_image_figure(fig_nv0, img_array_nv0_kcps)
+        tool_belt.update_image_figure(fig_nv0, img_array_nv0)
         
     # %% Plot nvm
 
@@ -370,7 +369,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  num_reps,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
         title = r'Green pulse followed by yellow'
         fig_nvm = tool_belt.create_image_figure(img_array_nvm, img_extent,
-                        clickHandler=on_click_image, color_bar_label='kcps',
+                        clickHandler=on_click_image, color_bar_label='counts',
                         title=title, um_scaled=um_scaled)
 
     #  Collect the data
@@ -379,8 +378,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  num_reps,
     # This is a horribly inefficient way of getting kcps, but it
     # is easy and readable and probably fine up to some resolution
     if plot_data:
-        img_array_nvm_kcps[:] = (img_array_nvm[:] / 1000) / readout_sec
-        tool_belt.update_image_figure(fig_nvm, img_array_nvm_kcps)
+        tool_belt.update_image_figure(fig_nvm, img_array_nvm)
 
     # %% Plot subtracted
 
@@ -407,7 +405,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  num_reps,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
         title = r'Confocal scan, {}, {} us readout'.format(charge_readout_laser_power, readout_us)
         fig = tool_belt.create_image_figure(img_array, img_extent,
-                        clickHandler=on_click_image, color_bar_label='Diff (kcps)',
+                        clickHandler=on_click_image, color_bar_label='Diff (counts)',
                         title=title, um_scaled=um_scaled)
 
     #  Collect the data
@@ -418,8 +416,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  num_reps,
     # This is a horribly inefficient way of getting kcps, but it
     # is easy and readable and probably fine up to some resolution
     if plot_data:
-        img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-        tool_belt.update_image_figure(fig, img_array_kcps)
+        tool_belt.update_image_figure(fig, img_array)
     # %% Clean up
 
     tool_belt.reset_cfm(cxn)
@@ -476,9 +473,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  num_reps,
 
 if __name__ == '__main__':
 
-    scan_range = 0.2
-    num_steps = 40
-    num_reps = 50
+    scan_range = 0.3
+    num_steps = 90
+    num_reps = 2
     apd_indices  =[0]
     
      # load the data here 
@@ -490,7 +487,7 @@ if __name__ == '__main__':
     nd_green = 'nd_0.5'
     
     nv_sig = {
-        "coords": [0.0, 0.0, 5.2],
+        "coords": [0,0,4.9],
         "name": "{}-search".format(sample_name),
         "disable_opt": False,
         "expected_count_rate": None,
@@ -502,14 +499,14 @@ if __name__ == '__main__':
         "imaging_laser_filter": nd_green,
         "imaging_readout_dur": 1e7,
             'nvm_prep_laser': green_laser, 'nvm_prep_laser_filter': nd_green, 'nvm_prep_laser_dur': 1E3,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,
-            'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': 'nd_0.5', 
-            'charge_readout_laser_power': 0.2, 'charge_readout_dur':15e6,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 80, 'nv0_prep_laser_dur': 1E3,
+            'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': 'nd_1.0', 
+            'charge_readout_laser_power': 0.25, 'charge_readout_dur':15e6,
             'collection_filter': '630_lp', 'magnet_angle': None,
             'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
 
-
+    # Best to try 100ms and nd_0.5 and 0.2 V. Will be a long measurement though...
     try:
         main(nv_sig, scan_range, scan_range, num_steps, num_reps, apd_indices) 
     finally:

@@ -21,60 +21,60 @@ def measured_589_power(aom_volt, nd_filter):
     # in uW
     if nd_filter == 'nd_0':
         if aom_volt ==  0.1:
-            measured_p = 3.19
+            measured_p = 5
         elif aom_volt ==  0.2:
-            measured_p = 38.1
+            measured_p = 58
         elif aom_volt ==  0.3:
-            measured_p = 125.1
+            measured_p = 197
         elif aom_volt ==  0.4:
-            measured_p = 251
+            measured_p = 390
         elif aom_volt ==  0.5:
-            measured_p = 335
+            measured_p = 563
         elif aom_volt ==  0.6:
-            measured_p = 398
-    if nd_filter == 'nd_0.5':
-        if aom_volt ==  0.05:
-            measured_p = 0.1
-        elif aom_volt ==  0.1:
-            measured_p = 1.0
-        elif aom_volt ==  0.15:
-            measured_p = 3.4
-        elif aom_volt ==  0.2:
-            measured_p = 10.7
-        elif aom_volt ==  0.3:
-            measured_p = 38.1
-        elif aom_volt ==  0.4:
-            measured_p = 71.5
-        elif aom_volt ==  0.5:
-            measured_p = 103.7
-        elif aom_volt ==  0.6:
-            measured_p = 125.5
-    if nd_filter == 'nd_1.0':
+            measured_p = 700
+    elif nd_filter == 'nd_0.5':
         if aom_volt ==  0.1:
-            measured_p = 0.2
+            measured_p = 2
         elif aom_volt ==  0.2:
-            measured_p = 3.05
+            measured_p = 17
         elif aom_volt ==  0.3:
-            measured_p = 11.09
+            measured_p = 58
         elif aom_volt ==  0.4:
-            measured_p = 21.5
+            measured_p = 110
         elif aom_volt ==  0.5:
-            measured_p = 31.3
+            measured_p = 160
         elif aom_volt ==  0.6:
-            measured_p = 37.2
-    if nd_filter == 'nd_1.5':
+            measured_p = 189
+    elif nd_filter == 'nd_1.0':
         if aom_volt ==  0.1:
-            measured_p = 0.05
+            measured_p = 0.5
+        elif aom_volt == 0.15:
+            measured_p = 2
         elif aom_volt ==  0.2:
-            measured_p = 0.27
+            measured_p = 5
+        elif aom_volt == 0.25:
+            measured_p = 11
         elif aom_volt ==  0.3:
-            measured_p = 1.9
+            measured_p = 18
         elif aom_volt ==  0.4:
-            measured_p = 4.2
+            measured_p = 35
         elif aom_volt ==  0.5:
-            measured_p = 6.1
+            measured_p = 51
         elif aom_volt ==  0.6:
-            measured_p = 7.4
+            measured_p = 65
+    # elif nd_filter == 'nd_1.5':
+    #     if aom_volt ==  0.1:
+    #         measured_p = 0.05
+    #     elif aom_volt ==  0.2:
+    #         measured_p = 0.27
+    #     elif aom_volt ==  0.3:
+    #         measured_p = 1.9
+    #     elif aom_volt ==  0.4:
+    #         measured_p = 4.2
+    #     elif aom_volt ==  0.5:
+    #         measured_p = 6.1
+    #     elif aom_volt ==  0.6:
+    #         measured_p = 7.4
             
     return measured_p
 #%% define the four parameters that are used in the photon statistics

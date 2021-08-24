@@ -475,7 +475,9 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
 
     # optimize before the start of the measurement
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-    drift_list.append(numpy.array(tool_belt.get_drift()))
+    drift_list.append(tool_belt.get_drift())
+    # print(type(drift[0]))
+    # return
 
     # define the sequence paramters
     # file_name = 'SPaCE_w_optimize_xy.py'
@@ -510,7 +512,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         if time_now - time_start > opti_interval * 60:
             optimize.main_with_cxn(cxn, nv_sig, apd_indices)
             time_start = time_now
-            drift_list.append(numpy.array(tool_belt.get_drift()))
+            drift_list.append(tool_belt.get_drift())
 
         # set the sequence again, since optimize will have streamed new one to pulse_streamer
         # seq_args = [ initialization_time, pulse_time, charge_readout_time,
@@ -938,7 +940,9 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz = 0):
         for f in ind_list:
             readout_counts_array[f][n] = readout_counts_list_shfl[list_ind]
             list_ind += 1
-
+            
+        if type(drift_list_master) != list:
+                drift_list_master =  drift_list_master.tolist()
         # Take the average and ste. Need to rotate the matrix, to then only
         # average the runs that have been completed
         readout_counts_array_rot = numpy.rot90(readout_counts_array)
@@ -959,7 +963,7 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz = 0):
                 'coords_voltages': coords_voltages,
                 'coords_voltages-units': '[V, V]',
                  'ind_list': ind_list,
-                 'drift_list_master': numpy.array(drift_list_master).tolist(),
+                 'drift_list_master': drift_list_master,
                 'readout_counts_array': readout_counts_array.tolist(),
                 'readout_counts_array-units': 'counts',
                 'readout_counts_avg': readout_counts_avg.tolist(),
@@ -1028,7 +1032,7 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz = 0):
             'coords_voltages': coords_voltages,
             'coords_voltages-units': '[V, V]',
              'ind_list': ind_list,
-            'drift_list_master': numpy.array(drift_list_master).tolist(),
+            'drift_list_master': drift_list_master,
             'readout_counts_array': readout_counts_array.tolist(),
             'readout_counts_array-units': 'counts',
             'readout_counts_avg': readout_counts_avg.tolist(),
@@ -1272,29 +1276,29 @@ if __name__ == '__main__':
     # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
     #         verticalalignment='top', bbox=props)
 
-    fig, ax = plt.subplots(1, 1)
-    ax.plot(x_vals, widths_master_list, 'bo')
-    ax.set_xlabel('Pulse power (mW)')
-    ax.set_ylabel('Gaussian sigma (nm)')
-    ax.set_title('8/6/2021 500 us x axis, 1A lobe')
+    # fig, ax = plt.subplots(1, 1)
+    # ax.plot(x_vals, widths_master_list, 'bo')
+    # ax.set_xlabel('Pulse power (mW)')
+    # ax.set_ylabel('Gaussian sigma (nm)')
+    # ax.set_title('8/6/2021 500 us x axis, 1A lobe')
     
-    init_fit = [300, 10]
-    opti_params, cov_arr = curve_fit(inverse_sqrt,
-          x_vals,widths_master_list,p0=init_fit)
-    print('Opti params: ' + str(opti_params))
-    ax.plot(lin_x_vals, inverse_sqrt(lin_x_vals, *opti_params), 'g-', 
-            label = "fit inverse power: t ^ -0.372")
-    ax.set_yscale('log')
-    ax.set_xscale('log')
-    # ax.legend()
+    # init_fit = [300, 10]
+    # opti_params, cov_arr = curve_fit(inverse_sqrt,
+    #       x_vals,widths_master_list,p0=init_fit)
+    # print('Opti params: ' + str(opti_params))
+    # ax.plot(lin_x_vals, inverse_sqrt(lin_x_vals, *opti_params), 'g-', 
+    #         label = "fit inverse power: t ^ -0.372")
+    # ax.set_yscale('log')
+    # ax.set_xscale('log')
+    # # ax.legend()
     
-    text = r'$A / P^{-1/2} + o$'
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
-    text = 'A={:.3f} nm*mw^-1/2\no = {:.1f} nm'.format(*opti_params)
-    ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
-            verticalalignment='top', bbox=props)
+    # text = r'$A / P^{-1/2} + o$'
+    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
+    # text = 'A={:.3f} nm*mw^-1/2\no = {:.1f} nm'.format(*opti_params)
+    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+    #         verticalalignment='top', bbox=props)
 
     # init_fit = [750]
     # opti_params, cov_arr = curve_fit(inverse_law,
@@ -1402,57 +1406,65 @@ if __name__ == '__main__':
 
 
     #================ specific for 2D scans ================#
-    # file_list = [
-    #     '2021_08_09-22_21_26-johnson-nv2_2021_08_04',
-    #     '2021_08_09-21_46_54-johnson-nv2_2021_08_04',
-    #     '2021_08_09-21_12_28-johnson-nv2_2021_08_04',
-    #     '2021_08_09-20_37_48-johnson-nv2_2021_08_04',
-    #     '2021_08_09-20_03_07-johnson-nv2_2021_08_04',
-    #     '2021_08_09-19_28_27-johnson-nv2_2021_08_04',
-    #     '2021_08_09-18_53_42-johnson-nv2_2021_08_04',
-    #     '2021_08_09-18_18_57-johnson-nv2_2021_08_04',
-    #     ]
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # label_list = [
-    #     '-1.125 um',
-    #     '-0.75 um',
-    #     '-0.375 um',
-    #     '0 um',
-    #     '0.375 um',
-    #     '0.75 um',
-    #     '1.125 um',
-    #     '1.5 um',
-    #     ]
+    file_list = [
+        '2021_08_22-00_15_56-johnson-nv2_2021_08_20'
+        ]
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    label_list = [
+        '-1.125 um',
+        '-0.75 um',
+        '-0.375 um',
+        '0 um',
+        '0.375 um',
+        '0.75 um',
+        '1.125 um',
+        '1.5 um',
+        ]
 
-    # for f in range(len(file_list)):
-    #     file = file_list[f]
-    #     data = tool_belt.get_raw_data(file, path)
-    #     try:
-    #         img_array = data['readout_image_array']
-    #         x_voltages = data['x_voltages_1d']
-    #         y_voltages = data['y_voltages_1d']
-    #         x_low = x_voltages[0]
-    #         x_high = x_voltages[-1]
-    #         y_low = y_voltages[0]
-    #         y_high = y_voltages[-1]
-    #         pixel_size = x_voltages[1] - x_voltages[0]
-    #         half_pixel_size = pixel_size / 2
-    #         img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-    #                       y_low - half_pixel_size, y_high + half_pixel_size]
+    for f in range(len(file_list)):
+        file = file_list[f]
+        data = tool_belt.get_raw_data(file, path)
+        try:
+            # img_array = data['readout_image_array']
+            readout_counts_array = data['readout_counts_array']
+            num_steps = data['num_steps']
+            x_voltages = data['x_voltages_1d']
+            y_voltages = data['y_voltages_1d']
+            x_low = x_voltages[0]
+            x_high = x_voltages[-1]
+            y_low = y_voltages[0]
+            y_high = y_voltages[-1]
+            pixel_size = x_voltages[1] - x_voltages[0]
+            half_pixel_size = pixel_size / 2
+            img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                          y_low - half_pixel_size, y_high + half_pixel_size]
 
-    #         # get jsut a slice throguh the middle
-    #         num_steps= len(img_array)
-    #         slice_counts = numpy.array(img_array[int(num_steps/2)])
+            # get jsut a slice throguh the middle
+            # num_steps= len(img_array)
+            # slice_counts = numpy.array(img_array[int(num_steps/2)])
 
-    #         ax.plot(x_voltages, slice_counts + 10*f , '-', label = label_list[f])
-    #         ax.legend()
+            # ax.plot(x_voltages, slice_counts + 10*f , '-', label = label_list[f])
+            # ax.legend()
+            
+            # just plot the 1st run
+            readout_counts_array_rot = numpy.rot90(readout_counts_array)
+            readout_counts_avg =(readout_counts_array_rot[-1])
+            
+            
+            readout_image_array = numpy.empty([num_steps, num_steps])
+            readout_image_array[:] = numpy.nan
+        
+            writePos = []
+            readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
+            title = 'SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.format('532 nm', '638 nm', 150e3/10**6)
+        
 
-    #     except Exception:
-    #         pass
+        except Exception:
+            pass
 
-        # tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
-        #                     title=None, color_bar_label='Counts',
-        #                     min_value=None, um_scaled=False)
+        tool_belt.create_image_figure(readout_image_array, img_extent, clickHandler=None,
+                            title=title, color_bar_label='Counts',
+                            min_value=None, um_scaled=False)
 
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))

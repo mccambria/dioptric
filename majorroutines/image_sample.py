@@ -336,8 +336,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_rabi/branch_master/image_sample/2021_07'
-    file_name = '2021_07_26-12_31_43-johnson-nv1_2021_07_21'
+    path = 'pc_rabi/branch_master/image_sample/2021_08'
+    file_name = '2021_08_20-22_54_15-johnson-nv1_2021_08_20'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']
@@ -354,13 +354,13 @@ if __name__ == '__main__':
     img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
     
-    csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
+    # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
     
     
-    # tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
-    #                     title=None, color_bar_label='Counts', 
-    #                     min_value=None, um_scaled=False)
+    tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
+                        title=None, color_bar_label='Counts', 
+                        min_value=None, um_scaled=False)
     
     
-    tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path, 
-                                  csv_name)
+    # tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path, 
+    #                               csv_name)
