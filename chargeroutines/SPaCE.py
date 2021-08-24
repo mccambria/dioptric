@@ -386,16 +386,16 @@ def populate_img_array(valsToAdd, imgArray, run_num):
                 imgArray[yPos, xPos, run_num] = val
     return
 # %%
-def data_collection_optimize(nv_sig, coords_list,run_num,  opti_interval = 4):
+def data_collection_optimize(nv_sig,opti_nv_sig,  coords_list,run_num,  opti_interval = 4):
     with labrad.connect() as cxn:
-        ret_vals = data_collection_optimize_with_cxn(cxn, nv_sig, coords_list,
+        ret_vals = data_collection_optimize_with_cxn(cxn, nv_sig, opti_nv_sig, coords_list,
                                                      run_num, opti_interval)
 
     readout_counts_array, drift_list = ret_vals
 
     return readout_counts_array,  drift_list
 
-def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
+def data_collection_optimize_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
                                       opti_interval = 4):
     '''
     Runs a measurement where an initial pulse is pulsed on the start coords,
@@ -414,6 +414,10 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
     nv_sig : dict
         dictionary containing onformation about the pulse lengths, pusle powers,
         expected count rate, nd filter, color filter, etc
+    opti_nv_sig : dict
+        dictionary that contains the coordinates of an NV to optimize on 
+        (parmaeters should include expected count rate, coords, imagine laser, 
+         and imaging laser duration)
     coords_list : 2D list (float)
         A list of each coordinate that we will pulse the laser at.
 
@@ -474,7 +478,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
     readout_counts_list = []
 
     # optimize before the start of the measurement
-    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
     drift_list.append(tool_belt.get_drift())
     # print(type(drift[0]))
     # return
@@ -510,7 +514,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
         time_now = time.time()
 
         if time_now - time_start > opti_interval * 60:
-            optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
             time_start = time_now
             drift_list.append(tool_belt.get_drift())
 
@@ -649,15 +653,15 @@ def data_collection_optimize_with_cxn(cxn, nv_sig, coords_list, run_num,
 
     return readout_counts_list, drift_list
        # %%
-def main_data_collection(nv_sig, coords_list):
+def main_data_collection(nv_sig, opti_nv_sig, coords_list):
     with labrad.connect() as cxn:
-        ret_vals = main_data_collection_with_cxn(cxn, nv_sig, coords_list)
+        ret_vals = main_data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list)
 
     readout_counts_array, opti_coords_list = ret_vals
 
     return readout_counts_array,  opti_coords_list
 
-def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
+def main_data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list):
     '''
     Runs a measurement where an initial pulse is pulsed on the start coords,
     then a pulse is set on the first point in the coords list, then the
@@ -671,6 +675,10 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     nv_sig : dict
         dictionary containing onformation about the pulse lengths, pusle powers,
         expected count rate, nd filter, color filter, etc
+    opti_nv_sig : dict
+        dictionary that contains the coordinates of an NV to optimize on 
+        (parmaeters should include expected count rate, coords, imagine laser, 
+         and imaging laser duration)
     coords_list : 2D list (float)
         A list of each coordinate that we will pulse the laser at.
 
@@ -741,7 +749,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     global time_start
 
     if time_now - time_start > 4 * 60:
-        optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
 
         time_start = time_now
 
@@ -797,7 +805,7 @@ def main_data_collection_with_cxn(cxn, nv_sig, coords_list):
     return readout_counts_list, drift
 
 # %%
-def main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz = 0):
+def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, dz = 0):
     '''
     A measurements to initialize on a single point, then pulse a laser off that
     point, and then read out the charge state on the single point.
@@ -807,6 +815,10 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz = 0):
     nv_sig : dict
         dictionary specific to the nv, which contains parameters liek the
         scc readout length, the yellow readout power, the expected count rate...\
+    opti_nv_sig : dict
+        dictionary that contains the coordinates of an NV to optimize on 
+        (parmaeters should include expected count rate, coords, imagine laser, 
+         and imaging laser duration)
     img_range: float
         the range that the 2D area will cover, in both x and y. NOTE: for 1D
         measurement, this is divided in half and used as the farthest point
@@ -928,8 +940,8 @@ def main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz = 0):
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
         #========================== Run the data collection====================
-        ret_vals = data_collection_optimize(nv_sig, coords_voltages_shuffle_list, n, opti_interval)
-        # ret_vals = main_data_collection(nv_sig, coords_voltages_shuffle_list)
+        ret_vals = data_collection_optimize(nv_sig,opti_nv_sig,  coords_voltages_shuffle_list, n, opti_interval)
+        # ret_vals = main_data_collection(nv_sig, opti_nv_sig, coords_voltages_shuffle_list)
 
         readout_counts_list_shfl, drift = ret_vals
         drift_list_master.append(drift)

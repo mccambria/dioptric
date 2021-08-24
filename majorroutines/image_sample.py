@@ -337,7 +337,7 @@ if __name__ == '__main__':
 
 
     path = 'pc_rabi/branch_master/image_sample/2021_08'
-    file_name = '2021_08_20-22_54_15-johnson-nv1_2021_08_20'
+    file_name = '2021_08_20-16_54_36-johnson-search'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']
@@ -357,7 +357,7 @@ if __name__ == '__main__':
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
     
     
-    tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
+    tool_belt.create_image_figure(img_array, img_extent, clickHandler=on_click_image,
                         title=None, color_bar_label='Counts', 
                         min_value=None, um_scaled=False)
     
