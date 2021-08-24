@@ -694,19 +694,19 @@ def do_spin_echo(nv_sig, apd_indices):
     return angle
 
 
-def do_SPaCE(nv_sig,img_range, num_steps,num_runs,  dz, measurement_type):
-    # img_range = 0.03 # V (35 um / 2 V)
-    # num_steps = 401
-    # num_runs = 10
-    # measurement_type = "1D"
+def do_SPaCE(nv_sig, opti_nv_sig):
+    img_range = 0.1 # V (35 um / 2 V)
+    num_steps = 401
+    num_runs = 30
+    measurement_type = "1D"
 
     # img_range = 0.075
     # num_steps = 71
     # num_runs = 1
     # measurement_type = "2D"
 
-    # dz = 0.09375
-    SPaCE.main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz)
+    dz = 0
+    SPaCE.main(nv_sig, opti_nv_sig,img_range, num_steps, num_runs, measurement_type, dz)
 
 
 def do_sample_nvs(nv_sig_list, apd_indices):
@@ -768,9 +768,9 @@ if __name__ == "__main__":
 
     # %% Shared parameters
 
-    # apd_indices = [0]
+    apd_indices = [0]
     # apd_indices = [1]
-    apd_indices = [0,1]
+    # apd_indices = [0,1]
 
     #    nd = 'nd_0'
     # nd = 'nd_0.5'
@@ -783,46 +783,14 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
-    nv_sig = {
-        "coords": [0, 0, 4.9],
-        "name": "{}-search".format(sample_name),
-        "disable_opt": False,
-        "expected_count_rate": None,
-        "imaging_laser": green_laser,
-        "imaging_laser_filter": nd_green,
-        "imaging_readout_dur": 1e7,
-        "collection_filter": "630_lp",
-        "magnet_angle": None,
-        "resonance_LOW": 2.8012,
-        "rabi_LOW": 141.5,
-        "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.9445,
-        "rabi_HIGH": 191.9,
-        "uwave_power_HIGH": 14.5,
-    }  # 14.5 max
-
-    # nv_sig = { # possibly two NVs, somewhat bright
-    #     "coords": [-0.004, -0.083, 4.85],
-    #     "name": "{}-nv1_2021_08_20".format(sample_name,),
+    # nv_sig = {
+    #     "coords": [0, 0, 4.9],
+    #     "name": "{}-search".format(sample_name),
     #     "disable_opt": False,
-    #     "expected_count_rate": 50,
-    #     # "imaging_laser": red_laser,
-    #     # "imaging_laser_power": 10,
+    #     "expected_count_rate": None,
     #     "imaging_laser": green_laser,
     #     "imaging_laser_filter": nd_green,
     #     "imaging_readout_dur": 1e7,
-    #     "initialize_laser": green_laser,
-    #     "initialize_laser_filter": nd_green,
-    #     "initialize_dur": 1e3,
-    #     "CPG_laser": red_laser,
-    #     "CPG_laser_power": 80,
-    #     "CPG_laser_dur": 500e3,
-    #     # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
-    #     "charge_readout_laser": yellow_laser,
-    #     "charge_readout_laser_filter": nd_yellow,
-    #     "charge_readout_laser_power": 0.25,
-    #     "charge_readout_dur": 100e6,
-    #     "dir_1D": "x",
     #     "collection_filter": "630_lp",
     #     "magnet_angle": None,
     #     "resonance_LOW": 2.8012,
@@ -833,12 +801,11 @@ if __name__ == "__main__":
     #     "uwave_power_HIGH": 14.5,
     # }  # 14.5 max
 
-
-    # nv_sig = { # really nice NV
-    #     "coords": [-0.020, -0.124, 4.94],
-    #     "name": "{}-nv2_2021_08_20".format(sample_name,),
+    # nv_sig = { # possibly two NVs, somewhat bright
+    #     "coords": [-0.004, -0.083, 4.85],
+    #     "name": "{}-nv1_2021_08_20".format(sample_name,),
     #     "disable_opt": False,
-    #     "expected_count_rate": 40,
+    #     "expected_count_rate": 50,
     #     # "imaging_laser": red_laser,
     #     # "imaging_laser_power": 10,
     #     "imaging_laser": green_laser,
@@ -867,13 +834,11 @@ if __name__ == "__main__":
     # }  # 14.5 max
 
 
-    
-
-    nv_sig = {
-        "coords": [0.097, -0.057, 5.00],
-        "name": "{}-nv1_2021_08_24".format(sample_name,),
+    opti_nv_sig = { # really nice NV
+        "coords": [-0.027, -0.131, 4.99],
+        "name": "{}-nv2_2021_08_20".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 55,
+        "expected_count_rate": 40,
         # "imaging_laser": red_laser,
         # "imaging_laser_power": 10,
         "imaging_laser": green_laser,
@@ -888,8 +853,8 @@ if __name__ == "__main__":
         # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.25,
-        "charge_readout_dur": 100e6,
+        "charge_readout_laser_power": 0.15,
+        "charge_readout_dur": 150e6,
         "dir_1D": "x",
         "collection_filter": "630_lp",
         "magnet_angle": None,
@@ -901,11 +866,14 @@ if __name__ == "__main__":
         "uwave_power_HIGH": 14.5,
     }  # 14.5 max
 
+
+    
+
     # nv_sig = {
-    #     "coords": [0.042, -0.026, 4.99],
-    #     "name": "{}-nv2_2021_08_24".format(sample_name,),
+    #     "coords": [-0.034, -0.123, 4.85],
+    #     "name": "{}-nv1_2021_08_24".format(sample_name,),
     #     "disable_opt": False,
-    #     "expected_count_rate": None,
+    #     "expected_count_rate": 55,
     #     # "imaging_laser": red_laser,
     #     # "imaging_laser_power": 10,
     #     "imaging_laser": green_laser,
@@ -920,8 +888,72 @@ if __name__ == "__main__":
     #     # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
     #     "charge_readout_laser": yellow_laser,
     #     "charge_readout_laser_filter": nd_yellow,
-    #     "charge_readout_laser_power": 0.25,
-    #     "charge_readout_dur": 100e6,
+    #     "charge_readout_laser_power": 0.15,
+    #     "charge_readout_dur": 150e6,
+    #     "dir_1D": "x",
+    #     "collection_filter": "630_lp",
+    #     "magnet_angle": None,
+    #     "resonance_LOW": 2.8012,
+    #     "rabi_LOW": 141.5,
+    #     "uwave_power_LOW": 15.5,  # 15.5 max
+    #     "resonance_HIGH": 2.9445,
+    #     "rabi_HIGH": 191.9,
+    #     "uwave_power_HIGH": 14.5,
+    # }  # 14.5 max
+
+    nv_sig = {
+        "coords": [-0.104, -0.133, 4.99],
+        "name": "{}-nv2_2021_08_24".format(sample_name,),
+        "disable_opt": False,
+        "expected_count_rate": 67,
+        # "imaging_laser": red_laser,
+        # "imaging_laser_power": 10,
+        "imaging_laser": green_laser,
+        "imaging_laser_filter": nd_green,
+        "imaging_readout_dur": 1e7,
+        "initialize_laser": green_laser,
+        "initialize_laser_filter": nd_green,
+        "initialize_dur": 1e3,
+        "CPG_laser": red_laser,
+        "CPG_laser_power": 80,
+        "CPG_laser_dur": 150e3,
+        # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
+        "charge_readout_laser": yellow_laser,
+        "charge_readout_laser_filter": nd_yellow,
+        "charge_readout_laser_power": 0.15,
+        "charge_readout_dur": 150e6,
+        "dir_1D": "y",
+        "collection_filter": "630_lp",
+        "magnet_angle": None,
+        "resonance_LOW": 2.8012,
+        "rabi_LOW": 141.5,
+        "uwave_power_LOW": 15.5,  # 15.5 max
+        "resonance_HIGH": 2.9445,
+        "rabi_HIGH": 191.9,
+        "uwave_power_HIGH": 14.5,
+    }  # 14.5 max
+
+    # nv_sig = {
+    #     "coords": [-0.120, -0.139, 4.95],
+    #     "name": "{}-nv3_2021_08_24".format(sample_name,),
+    #     "disable_opt": False,
+    #     "expected_count_rate": 89,
+    #     # "imaging_laser": red_laser,
+    #     # "imaging_laser_power": 10,
+    #     "imaging_laser": green_laser,
+    #     "imaging_laser_filter": nd_green,
+    #     "imaging_readout_dur": 1e7,
+    #     "initialize_laser": green_laser,
+    #     "initialize_laser_filter": nd_green,
+    #     "initialize_dur": 1e3,
+    #     "CPG_laser": red_laser,
+    #     "CPG_laser_power": 80,
+    #     "CPG_laser_dur": 150e3,
+    #     # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
+    #     "charge_readout_laser": yellow_laser,
+    #     "charge_readout_laser_filter": nd_yellow,
+    #     "charge_readout_laser_power": 0.15,
+    #     "charge_readout_dur": 150e6,
     #     "dir_1D": "x",
     #     "collection_filter": "630_lp",
     #     "magnet_angle": None,
@@ -955,7 +987,7 @@ if __name__ == "__main__":
         #     do_image_sample(nv_sig_copy, apd_indices)
 
         # do_optimize(nv_sig, apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
@@ -975,29 +1007,7 @@ if __name__ == "__main__":
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
-        # dz_list = numpy.linspace(0, 0.140625, 7)
-        # dz_list = [0.09375  , 0.1171875,  0.140625 ]
-        # t_list = [10e3, 15e3 , 12.5e3, 7.5e3, 5e3 ]
-        # for t in t_list:
-        # t = 7.5e3
-        # dz_list = numpy.array([0, 0.5, 1, 1.5, 2, 3])/16
-        # for dz in dz_list:
-        #     nv_sig_copy = copy.deepcopy(nv_sig)
-        #     nv_sig_copy['CPG_laser_dur'] = t
-
-        #     img_range = 0.05
-        #     num_steps = 401
-        #     num_runs = 25
-        #     measurement_type = "1D"
-        #     # dz = 2.5/16
-        #     do_SPaCE(nv_sig_copy,img_range, num_steps,num_runs,  dz, measurement_type)
-
-        #     img_range = 0.05
-        #     num_steps = 87
-        #     num_runs = 1
-        #     measurement_type = "2D"
-        #     # dz = 2.5/16
-        #     do_SPaCE(nv_sig_copy,img_range, num_steps,num_runs,  dz, measurement_type)
+        do_SPaCE(nv_sig, opti_nv_sig)
         # do_spin_echo_battery(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)

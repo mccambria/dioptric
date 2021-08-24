@@ -261,10 +261,10 @@ if __name__ == '__main__':
     nd_green = 'nd_0.5'
     
     nv_sig = {
-        "coords": [0.013, -0.090, 4.90],
-        "name": "{}-nv2_2021_08_20".format(sample_name,),
+        "coords": [-0.099, -0.129, 4.94],
+        "name": "{}-nv2_2021_08_24".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 36,
+        "expected_count_rate": 67,
         # "imaging_laser": yellow_laser,
         # "imaging_laser_filter": 'nd_0',
         # "imaging_laser_power": 1,
