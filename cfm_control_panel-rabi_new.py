@@ -85,34 +85,45 @@ def do_image_sample(nv_sig, apd_indices):
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
-    
+
+
 def do_image_sample_xz(nv_sig, apd_indices):
-    
+
     scan_range_x = 0.05
-    
+
     scan_range_z = 0.5
-    
+
     num_steps = 60
-    
-    image_sample_xz.main(nv_sig, scan_range_x, scan_range_z, num_steps,
-                         apd_indices, um_scaled=False)
-    
+
+    image_sample_xz.main(
+        nv_sig,
+        scan_range_x,
+        scan_range_z,
+        num_steps,
+        apd_indices,
+        um_scaled=False,
+    )
+
+
 def do_image_charge_states(nv_sig, apd_indices):
-    
+
     scan_range = 0.1
-    
-    
+
     num_steps = 90
-    
-    image_sample_charge_state_compare.main(nv_sig, scan_range, scan_range, 
-                                           num_steps, apd_indices)
-    
+
+    image_sample_charge_state_compare.main(
+        nv_sig, scan_range, scan_range, num_steps, apd_indices
+    )
 
 
 def do_optimize(nv_sig, apd_indices):
 
     optimize.main(
-        nv_sig, apd_indices, set_to_opti_coords=False, save_data=True, plot_data=True
+        nv_sig,
+        apd_indices,
+        set_to_opti_coords=False,
+        save_data=True,
+        plot_data=True,
     )
 
 
@@ -145,7 +156,9 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
     # diff_window = 200  # ns
     diff_window = 1000  # ns
 
-    g2_measurement.main(nv_sig, run_time, diff_window, apd_a_index, apd_b_index)
+    g2_measurement.main(
+        nv_sig, run_time, diff_window, apd_a_index, apd_b_index
+    )
 
 
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
@@ -181,7 +194,13 @@ def do_resonance_state(nv_sig, apd_indices, state):
     num_runs = 10
 
     resonance.main(
-        nv_sig, apd_indices, freq_center, freq_range, num_steps, num_runs, uwave_power
+        nv_sig,
+        apd_indices,
+        freq_center,
+        freq_range,
+        num_steps,
+        num_runs,
+        uwave_power,
     )
 
 
@@ -223,7 +242,14 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     composite = False
 
     res, _ = pulsed_resonance.state(
-        nv_sig, apd_indices, state, freq_range, num_steps, num_reps, num_runs, composite
+        nv_sig,
+        apd_indices,
+        state,
+        freq_range,
+        num_steps,
+        num_reps,
+        num_runs,
+        composite,
     )
     nv_sig["resonance_{}".format(state.name)] = res
 
@@ -274,7 +300,13 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
     num_runs = 10
 
     period = rabi.main(
-        nv_sig, apd_indices, uwave_time_range, state, num_steps, num_reps, num_runs
+        nv_sig,
+        apd_indices,
+        uwave_time_range,
+        state,
+        num_steps,
+        num_reps,
+        num_runs,
     )
     nv_sig["rabi_{}".format(state.name)] = period
 
@@ -288,7 +320,13 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
     iq_delay = None
 
     discrete_rabi.main(
-        nv_sig, apd_indices, state, max_num_pi_pulses, num_reps, num_runs, iq_delay
+        nv_sig,
+        apd_indices,
+        state,
+        max_num_pi_pulses,
+        num_reps,
+        num_runs,
+        iq_delay,
     )
 
 
@@ -507,8 +545,18 @@ def do_t1_interleave_knill(nv_sig, apd_indices):
     max_tau_gamma = int(6e6)
     t1_exp_array = numpy.array(
         [
-            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps],
-            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps],
+            [
+                [States.ZERO, States.HIGH],
+                [min_tau, max_tau_omega],
+                num_steps,
+                num_reps,
+            ],
+            [
+                [States.ZERO, States.ZERO],
+                [min_tau, max_tau_omega],
+                num_steps,
+                num_reps,
+            ],
             [
                 [States.ZERO, States.HIGH],
                 [min_tau, max_tau_omega // 3],
@@ -525,8 +573,18 @@ def do_t1_interleave_knill(nv_sig, apd_indices):
             #            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps],
             #            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps],
             #            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps],
-            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps],
-            [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps],
+            [
+                [States.LOW, States.HIGH],
+                [min_tau, max_tau_gamma],
+                num_steps,
+                num_reps,
+            ],
+            [
+                [States.LOW, States.LOW],
+                [min_tau, max_tau_gamma],
+                num_steps,
+                num_reps,
+            ],
             [
                 [States.LOW, States.HIGH],
                 [min_tau, max_tau_gamma // 3],
@@ -624,7 +682,13 @@ def do_spin_echo(nv_sig, apd_indices):
     state = States.LOW
 
     angle = spin_echo.main(
-        nv_sig, apd_indices, precession_time_range, num_steps, num_reps, num_runs, state
+        nv_sig,
+        apd_indices,
+        precession_time_range,
+        num_steps,
+        num_reps,
+        num_runs,
+        state,
     )
     return angle
 
@@ -634,12 +698,12 @@ def do_SPaCE(nv_sig,img_range, num_steps,num_runs,  dz, measurement_type):
     # num_steps = 401
     # num_runs = 10
     # measurement_type = "1D"
-    
+
     # img_range = 0.075
     # num_steps = 71
     # num_runs = 1
     # measurement_type = "2D"
-    
+
     # dz = 0.09375
     SPaCE.main(nv_sig, img_range, num_steps, num_runs, measurement_type, dz)
 
@@ -663,7 +727,12 @@ def do_sample_nvs(nv_sig_list, apd_indices):
     with labrad.connect() as cxn:
         for nv_sig in nv_sig_list:
             g2_zero = g2(
-                cxn, nv_sig, run_time, diff_window, apd_indices[0], apd_indices[1]
+                cxn,
+                nv_sig,
+                run_time,
+                diff_window,
+                apd_indices[0],
+                apd_indices[1],
             )
             if g2_zero < 0.5:
                 pesr(
@@ -692,6 +761,9 @@ def do_test_major_routines(nv_sig, apd_indices):
 
 
 if __name__ == "__main__":
+
+    # In debug mode, don't bother sending email notifications about exceptions
+    debug_mode = False
 
     # %% Shared parameters
 
@@ -727,7 +799,7 @@ if __name__ == "__main__":
         "rabi_HIGH": 191.9,
         "uwave_power_HIGH": 14.5,
     }  # 14.5 max
-    
+
     nv_sig = { # possibly two NVs, somewhat bright
         "coords": [0.030, -0.051, 4.80],
         "name": "{}-nv1_2021_08_20".format(sample_name,),
@@ -759,8 +831,8 @@ if __name__ == "__main__":
         "rabi_HIGH": 191.9,
         "uwave_power_HIGH": 14.5,
     }  # 14.5 max
-    
-    
+
+
     # nv_sig = { # really nice NV
     #     "coords": [0.013, -0.090, 4.90],
     #     "name": "{}-nv2_2021_08_20".format(sample_name,),
@@ -792,8 +864,8 @@ if __name__ == "__main__":
     #     "rabi_HIGH": 191.9,
     #     "uwave_power_HIGH": 14.5,
     # }  # 14.5 max
-    
-      
+
+
     # nv_sig = {
     #     "coords": [0.039, -0.126, 4.99],
     #     "name": "{}-nv3_2021_08_20".format(sample_name,),
@@ -825,8 +897,8 @@ if __name__ == "__main__":
     #     "rabi_HIGH": 191.9,
     #     "uwave_power_HIGH": 14.5,
     # }  # 14.5 max
-    
-    
+
+
     # %% Functions to run
 
     try:
@@ -877,14 +949,14 @@ if __name__ == "__main__":
         # for dz in dz_list:
         #     nv_sig_copy = copy.deepcopy(nv_sig)
         #     nv_sig_copy['CPG_laser_dur'] = t
-            
-        #     img_range = 0.05 
+
+        #     img_range = 0.05
         #     num_steps = 401
         #     num_runs = 25
         #     measurement_type = "1D"
         #     # dz = 2.5/16
         #     do_SPaCE(nv_sig_copy,img_range, num_steps,num_runs,  dz, measurement_type)
-            
+
         #     img_range = 0.05
         #     num_steps = 87
         #     num_runs = 1
@@ -895,12 +967,18 @@ if __name__ == "__main__":
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
         # do_t1_interleave_knill(nv_sig, apd_indices)
-    
+
         # Operations that don't need an NV
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
         # set_xyz([0.454, 0.832, -88])
+
+    except Exception as exc:
+        # Intercept the exception so we can email it out and re-raise it
+        if not debug_mode:
+            tool_belt.send_exception_email()
+        raise exc
 
     finally:
         # Reset our hardware - this should be done in each routine, but
