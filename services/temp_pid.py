@@ -46,7 +46,14 @@ def calc_error(pid_state, target, actual):
 
     # Integral
     new_integral_term = (cur_meas_time - last_meas_time) * last_error
-    new_pid_state.append(integral + new_integral_term)
+    new_integral = integral + new_integral_term
+    integral_max = 2160.0
+    integral_min = 0.0
+    if new_integral > integral_max:
+        new_integral = integral_max
+    elif new_integral < integral_min:
+        new_integral = integral_min
+    new_pid_state.append(new_integral)
 
     # Derivative
     # Ignore noise (0.05 K)
@@ -73,7 +80,7 @@ def pid(pid_state, pid_coeffs):
     return p_comp + i_comp + d_comp
 
 
-def update_resistance(cxn, nominal_resistance):
+def update_resistance(cxn):
     """The resistance may change as a function of temperature.
     The real limit we care about is the power, so let's feed the current
     measured resistance forward when we go to set the voltage (we can't
@@ -206,8 +213,9 @@ if __name__ == "__main__":
     pid_coeffs = [0.5, 0.01, 0]
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc
-    # integral_bootstrap = 0.0
-    integral_bootstrap = 20 / 0.01
+    # integral_bootstrap = 1.7 / 0.01
+    # integral_bootstrap = 0.6*24 / 0.01
+    integral_bootstrap = 0.9*24 / 0.01
 
     with labrad.connect() as cxn:
         # Set up the multimeter for temperature measurement
