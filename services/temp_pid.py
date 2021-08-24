@@ -2,7 +2,7 @@
 """
 Created on August 9th, 2021
 
-PID temperature control service with a multimeter and power supply
+PID temperature control service using a multimeter and power supply
 
 @author: mccambria
 """
@@ -32,7 +32,7 @@ def set_power(cxn, power, resistance):
 
 
 def calc_error(pid_state, target, actual):
-    
+
     new_pid_state = []
 
     # Last meas time
@@ -57,7 +57,7 @@ def calc_error(pid_state, target, actual):
     else:
         new_derivative = 0.0
     new_pid_state.append(new_derivative)
-    
+
     return new_pid_state
 
 
@@ -79,15 +79,15 @@ def update_resistance(cxn, nominal_resistance):
     measured resistance forward when we go to set the voltage (we can't
     set power directly). This measurement is slow so only do it occasionally
     """
-    
+
     # Thorlabs HT24S: 23.5 ohms
     nominal_resistance = 23.5
     resistance = cxn.power_supply_mp710087.meas_resistance()
     # If the measured resistance is more than 2.5 X or less than 1/2.5 X
     # the nominal value, assume something funny is happening (maybe the
     # output is not on yet) and just use the nominal resistance
-    too_high = (resistance > 2.5 * nominal_resistance)
-    too_low = (resistance < nominal_resistance / 2.5)
+    too_high = resistance > 2.5 * nominal_resistance
+    too_low = resistance < nominal_resistance / 2.5
     if too_high or too_low:
         resistance = nominal_resistance
     # print(resistance)
@@ -114,7 +114,7 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
     resistance = update_resistance(cxn)
     first_set = True
     # Update the resistance every resistance_period seconds
-    resistance_period = 10  
+    resistance_period = 10
     last_resistance_time = now
     last_meas_time = now
     last_error = target - actual
@@ -138,7 +138,7 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
         max_plot_vals = history / plot_log_period
         plot_x_extent = int(1.1 * max_plot_vals * plot_log_period)
         ax.set_xlim(0, plot_x_extent)
-        ax.set_ylim(actual-2, actual+2)
+        ax.set_ylim(actual - 2, actual + 2)
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Temp (K)")
         fig.canvas.draw()
@@ -160,32 +160,32 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
         # Plotting and logging
         if now - last_plot_log_time > plot_log_period:
             if do_plot:
-                
+
                 elapsed_time = round(now - start_time)
                 plot_times.append(elapsed_time)
                 plot_temps.append(actual)
-                
+
                 lines = ax.get_lines()
                 line = lines[0]
                 line.set_xdata(plot_times)
                 line.set_ydata(plot_temps)
-    
+
                 # Relim as necessary
                 if len(plot_times) > max_plot_vals:
                     plot_times.pop(0)
                     plot_temps.pop(0)
                     min_plot_time = min(plot_times)
                     ax.set_xlim(min_plot_time, min_plot_time + plot_x_extent)
-                ax.set_ylim(min(plot_temps)-2, max(plot_temps)+2)
-                
+                ax.set_ylim(min(plot_temps) - 2, max(plot_temps) + 2)
+
                 # Redraw the plot with the new data
                 fig.canvas.draw()
                 fig.canvas.flush_events()
-                
+
             with open(logging_file, "a+") as f:
                 f.write("{}, {} \n".format(now, actual))
             last_plot_log_time = now
-            
+
         # Update state and set the power accordingly
         pid_state = calc_error(pid_state, target, actual)
         power = pid(pid_state, pid_coeffs)
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     do_plot = True
     target = 500.0
     pid_coeffs = [0.5, 0.01, 0]
-    # Bootstrap the integral term after restarting to mitigate windup, 
+    # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc
     # integral_bootstrap = 0.0
     integral_bootstrap = 20 / 0.01
@@ -213,9 +213,9 @@ if __name__ == "__main__":
         # Set up the multimeter for temperature measurement
         cxn.multimeter_mp730028.config_temp_measurement("PT100", "K")
         cxn.power_supply_mp710087.set_current_limit(1.0)
-        # Allow the voltage to be somewhat higher than the specs suggest 
+        # Allow the voltage to be somewhat higher than the specs suggest
         # it should max out at to account for temperature dependence of
-        # the heating element resistance. 36 is the voltage we'd get 
+        # the heating element resistance. 36 is the voltage we'd get
         # driving 90% of 24 W for a resistance 2.5 times the nominal 23.5 ohms
         cxn.power_supply_mp710087.set_voltage_limit(36)
         cxn.power_supply_mp710087.set_current(0.0)

@@ -140,48 +140,12 @@ class PowerSupplyMp710087(LabradServer):
         
     @staticmethod
     def decode_query_response(response):
-        """The instrument (at leas sometimes...) returns values with a leading
-        \x00, which is a hex-escaped 0.
+        """The instrument (sometimes at least...) returns values with a 
+        leading \x00, which is a hex-escaped 0.
         """
         if response.startswith(chr(0)):
-            # split_string = response.split(".")
-            # integer_part = split_string[0][1:]
-            # decimal_part = float("." + split_string[1])
-            # return integer_part + decimal_part
             response = response[1:]
         return float(response)
-
-    # @setting(7, returns="v[]")
-    # def meas_resistance(self, c):
-    #     """Measure the resistance of the connected element by R = V / I
-        
-    #     Returns
-    #     ----------
-    #     float
-    #         Resistance in ohms
-    #     """
-        
-    #     high_z = 10E3  # Typical "high" impedance on a scope
-        
-    #     try:
-            
-    #         response = self.power_supply.query("MEAS:VOLT?")
-    #         voltage = self.decode_query_response(response)
-    #         logging.info(voltage)
-            
-    #         response = self.power_supply.query("MEAS:CURR?")
-    #         current = self.decode_query_response(response)
-    #         logging.info(current)
-            
-    #         logging.info('')
-            
-    #         resistance = voltage / current
-                
-    #         return resistance
-        
-    #     except Exception as e:
-    #         logging.info(e)
-    #         return high_z
 
     @setting(7, returns="v[]")
     def meas_resistance(self, c):
@@ -199,15 +163,6 @@ class PowerSupplyMp710087(LabradServer):
         """
         
         high_z = 10E3  # Typical "high" impedance on a scope
-        
-        # Make sure everything is synced up. This shouldn't be necessary but...
-        # while True:
-        #     response = self.power_supply.read()
-        #     time.sleep(0.1)
-        #     if response == "":
-        #         break
-        # self.power_supply.clear()
-        # time.sleep(0.1)
         
         time.sleep(self.comms_delay)
         
