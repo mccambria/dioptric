@@ -384,17 +384,20 @@ def decode_seq_args(seq_args_string):
 
 
 def get_pulse_streamer_wiring(cxn):
-    cxn.registry.cd(["", "Config", "Wiring", "Pulser"])
-    sub_folders, keys = cxn.registry.dir()
-    if keys == []:
-        return {}
-    p = cxn.registry.packet()
-    for key in keys:
-        p.get(key, key=key)  # Return as a dictionary
-    wiring = p.send()
-    pulse_streamer_wiring = {}
-    for key in keys:
-        pulse_streamer_wiring[key] = wiring[key]
+    config = get_config_dict(cxn)
+    pulse_streamer_wiring = config['Wiring']['PulseStreamer']
+    
+    # cxn.registry.cd(["", "Config", "Wiring", "Pulser"])
+    # sub_folders, keys = cxn.registry.dir()
+    # if keys == []:
+    #     return {}
+    # p = cxn.registry.packet()
+    # for key in keys:
+    #     p.get(key, key=key)  # Return as a dictionary
+    # wiring = p.send()
+    # pulse_streamer_wiring = {}
+    # for key in keys:
+    #     pulse_streamer_wiring[key] = wiring[key]
     return pulse_streamer_wiring
 
 

@@ -31,7 +31,7 @@ import labrad
 def illuminate(cxn, laser_power, laser_name):
     
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
-    if laser_power == -1:
+    if not laser_power:
         cxn.pulse_streamer.constant([wiring['do_{}_dm'.format(laser_name)]], 0.0, 0.0)
     else:
         analog_channel = wiring['ao_{}_am'.format(laser_name)]
@@ -320,6 +320,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
 
         elif collection_index > 1:
+            # print(buffer_timetags)
             hist, bin_edges = numpy.histogram(differences, num_bins,
                                       (-diff_window_ps, diff_window_ps))
             # diff_mod = (numpy.array(differences) // 1000) % mod
