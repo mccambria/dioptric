@@ -261,10 +261,10 @@ if __name__ == '__main__':
     nd_green = 'nd_0.5'
     
     nv_sig = {
-        "coords": [-0.099, -0.129, 4.94],
-        "name": "{}-nv2_2021_08_24".format(sample_name,),
+        "coords": [0.143, 0.099, 4.87],
+        "name": "{}-nv4_2021_08_24".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 67,
+        "expected_count_rate": 70,
         # "imaging_laser": yellow_laser,
         # "imaging_laser_filter": 'nd_0',
         # "imaging_laser_power": 1,
@@ -282,7 +282,7 @@ if __name__ == '__main__':
 
     try:
         determine_readout_dur(nv_sig, readout_times =[ 150*10**6],
-                          readout_yellow_powers = [0.15],
+                          readout_yellow_powers = [0.2],
                            nd_filter = 'nd_1.0') 
     finally:
         # Reset our hardware - this should be done in each routine, but
