@@ -14,12 +14,13 @@ def galvo_circle(radius, num_steps, period, laser_name):
     
     with labrad.connect() as cxn:
         
-        seq_args = [0, period, 0, laser_name, None]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
-        _ = cxn.pulse_streamer.stream_load("simple_readout.py", 
-                                           seq_args_string)
         
         cxn.galvo.load_circle_scan_xy(radius, num_steps, period)
+        
+        seq_args = [0, period, 0, laser_name, None]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        _ = cxn.pulse_streamer.stream_immediate("simple_readout.py", 
+                                                -1, seq_args_string)
         
         input("Press enter to stop...")
         
@@ -30,8 +31,8 @@ def galvo_circle(radius, num_steps, period, laser_name):
 if __name__ == "__main__":
     
     radius = 1.0
-    num_steps = 100
-    period = int(0.1E9)
+    num_steps = 200
+    period = int(0.025E9)
     laser_name = "cobolt_638"
     
     galvo_circle(radius, num_steps, period, laser_name)

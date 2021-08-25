@@ -356,6 +356,7 @@ class Galvo(LabradServer):
         x_voltages = radius * numpy.sin(angles)
 
         y_voltages = radius * numpy.cos(angles)
+        # y_voltages = numpy.zeros(len(angles))
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
