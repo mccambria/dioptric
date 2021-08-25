@@ -564,10 +564,6 @@ def data_collection_optimize_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run
 
         cxn.pulse_streamer.stream_start()
 
-
-        #++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-
-
         total_samples_list = []
         num_read_so_far = 0
         tool_belt.init_safe_stop()
@@ -590,64 +586,7 @@ def data_collection_optimize_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run
         readout_counts = int(total_samples_list[2])
         readout_counts_list.append(int(readout_counts))
 
-        #++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-
-        # total_samples_list = []
-        # num_read_so_far = 0
-        # tool_belt.init_safe_stop()
-
-
-
-        # while num_read_so_far < total_num_samples:
-
-        #     if tool_belt.safe_stop():
-        #         break
-
-        #     # Read the samples and update the image
-        #     new_samples = cxn.apd_tagger.read_counter_simple()
-        #     num_new_samples = len(new_samples)
-
-        #     if num_new_samples > 0:
-        #         for el in new_samples:
-        #             total_samples_list.append(int(el))
-        #         num_read_so_far += num_new_samples
-
-        # # The third value is the charge readout.
-        # charge_readout_count = total_samples_list[2]
-        # readout_counts_list.append(charge_readout_count)
-        # x_opti_counts = total_samples_list[3:num_opti_steps+3]
-        # y_opti_counts = total_samples_list[num_opti_steps+3:2*num_opti_steps+3]
-
-        # #fit to the x, y, and z lists, find drift, update drift. etc
-        # x_scan_voltages = x_voltages[3:num_opti_steps+3]
-        # y_scan_voltages = y_voltages[num_opti_steps+3:2*num_opti_steps+3]
-
-        # # IF you want to see the optimize counts every time, set opti_plot to True
-        # if opti_plot:
-        #     fig = optimize.create_figure()
-        #     optimize.update_figure(fig, 0, x_scan_voltages, x_opti_counts)
-        #     optimize.update_figure(fig, 1, y_scan_voltages, y_opti_counts)
-
-        #     x_opti_coord = gaussian_fit(nv_sig, x_scan_voltages, x_opti_counts, 0, fig)
-        #     y_opti_coord = gaussian_fit(nv_sig, y_scan_voltages, y_opti_counts, 1, fig)
-        # else:
-        #     x_opti_coord = gaussian_fit(nv_sig, x_scan_voltages, x_opti_counts, 0)
-        #     y_opti_coord = gaussian_fit(nv_sig, y_scan_voltages, y_opti_counts, 1)
-
-
-        # opti_coords = [x_opti_coord, y_opti_coord, start_coords_drift[2]]
-        # #If optimize failed, jsut set that coordinate to the start coordinate
-        # for n, el in enumerate(opti_coords):
-        #     if el == None:
-        #         opti_coords[n] = start_coords[n]
-
-        # # print(opti_coords)
-        # # print(start_coords)
-        # drift = (numpy.array(opti_coords) - numpy.array(start_coords)).tolist()
-        # tool_belt.set_drift(drift)
-        # # print(drift)
-
-        # drift_list.append(drift)
+        cxn.apd_tagger.stop_tag_stream()
 
 
 
