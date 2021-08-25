@@ -10,7 +10,7 @@ Created on Thu Apr  4 15:58:30 2019
 
 ### BEGIN NODE INFO
 [info]
-name = k_piezo_kpz101
+name = z_piezo_kpz101
 version = 1.0
 description =
 
@@ -38,7 +38,7 @@ import ctypes
 
 
 class ZPiezoKpz101(LabradServer):
-    name = "k_piezo_kpz101"
+    name = "z_piezo_kpz101"
     pc_name = socket.gethostname()
 
     def initServer(self):
@@ -47,7 +47,7 @@ class ZPiezoKpz101(LabradServer):
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
@@ -66,9 +66,9 @@ class ZPiezoKpz101(LabradServer):
     async def get_config_z(self):
         p = self.client.registry.packet()
         p.cd(["", "Config", "DeviceIDs"])
-        p.get("k_piezo_kpz101_serial")
+        p.get("z_piezo_kpz101_serial")
         p.cd(["", "Config", "Wiring", "Daq"])
-        p.get("ao_k_piezo_kpz101")
+        p.get("ao_z_piezo_kpz101")
         p.get("di_clock")
         p.cd(["", "Config", "Positioning"])
         p.get("z_hysteresis_linearity")
@@ -76,32 +76,38 @@ class ZPiezoKpz101(LabradServer):
         return result["get"]
 
     def on_get_config_z(self, config):
-        
-        # Connect to the device and set it to external control mode
-        # Get the dll
-        dll_path = str(Path.home())
-        dll_path += "\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0"
-        dll_path += "\\servers\\outputs\\k_piezo_kpz101_dll"
-        dll_path += "\\Thorlabs.MotionControl.KCube.Piezo.dll"
-        self.piezo_lib = ctypes.windll.LoadLibrary(dll_path)
-        self.serial = config[0]
-        self.piezo_lib.PCC_Open(self.serial)
-        self.piezo_lib.PCC_SetMaxOutputVoltage(self.serial, 150)
-        # 1 for open_loop, 2 for closed loop
-        self.piezo_lib.PCC_SetPositionControlMode(self.serial, 1) 
-        
-        # DAQ setup
-        self.daq_ao_k_piezo_kpz101 = config[1]
-        self.daq_di_clock = config[2]
-        
-        # Hysteresis compensation
-        self.z_hysteresis_b = config[3]
-        # Define a such that 1 nominal volt corresponds to
-        # 1 post-compensation volt
-        # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
-        self.z_hysteresis_a = 1 - self.z_hysteresis_b
-        
-        logging.debug("Init complete")
+        try:
+            # Connect to the device and set it to external control mode
+            # Get the dll
+            dll_path = 'C:\\Program Files\\Thorlabs\\Kinesis\\Thorlabs.MotionControl.KCube.Piezo.dll'
+            self.piezo_lib = ctypes.windll.LoadLibrary(dll_path)
+            self.serial = config[0]
+            self.piezo_lib.PCC_Open(self.serial)
+            self.piezo_lib.PCC_SetMaxOutputVoltage(self.serial, 150)
+            # 1 for open_loop, 2 for closed loop
+            self.piezo_lib.PCC_SetPositionControlMode(self.serial, 1)
+            # 1 for all hub bays, 2 for adjacent hub bays, 3 for external SMA
+            self.piezo_lib.PCC_SetHubAnalogInput(self.serial, 3)
+            self.piezo_lib.PCC_Enable(self.serial)
+            # 0 for software only, 2 is software and external,
+            # 2 for software and potentiometer, 3 for all three.
+            self.piezo_lib.PCC_SetVoltageSource(self.serial, 2)
+            
+            # DAQ setup
+            self.daq_ao_z_piezo_kpz101 = config[1]
+            self.daq_di_clock = config[2]
+            
+            # Hysteresis compensation
+            self.z_hysteresis_b = config[3]
+            # Define a such that 1 nominal volt corresponds to
+            # 1 post-compensation volt
+            # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
+            self.z_hysteresis_a = 1 - self.z_hysteresis_b
+            
+            logging.info("Init complete")
+        except Exception as e:
+            logging.info(e)
+            
 
     def compensate_hysteresis_z(self, position):
         """
@@ -206,7 +212,7 @@ class ZPiezoKpz101(LabradServer):
 
         # Set up the output channels
         task.ao_channels.add_ao_voltage_chan(
-            self.daq_ao_k_piezo_kpz101, min_val=3.0, max_val=7.0
+            self.daq_ao_z_piezo_kpz101, min_val=3.0, max_val=7.0
         )
 
         # Set up the output stream
@@ -250,7 +256,7 @@ class ZPiezoKpz101(LabradServer):
         with nidaqmx.Task() as task:
             # Set up the output channels
             task.ao_channels.add_ao_voltage_chan(
-                self.daq_ao_k_piezo_kpz101, min_val=3.0, max_val=7.0
+                self.daq_ao_z_piezo_kpz101, min_val=3.0, max_val=7.0
             )
             task.write(compensated_voltage)
 
@@ -259,7 +265,7 @@ class ZPiezoKpz101(LabradServer):
         """Return the current voltages on the piezo's DAQ channel"""
         with nidaqmx.Task() as task:
             # Set up the internal channels - to do: actual parsing...
-            if self.daq_ao_k_piezo_kpz101 == "dev1/AO2":
+            if self.daq_ao_z_piezo_kpz101 == "dev1/AO2":
                 chan_name = "dev1/_ao2_vs_aognd"
             task.ai_channels.add_ai_voltage_chan(chan_name, min_val=3.0, max_val=7.0)
             voltage = task.read()
@@ -289,6 +295,10 @@ class ZPiezoKpz101(LabradServer):
         return z_voltages
 
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    
+    @setting(25)
+    def reset(self, c):
+        self.piezo_lib.PCC_Disable(self.serialNo)
 
 
 __server__ = ZPiezoKpz101()
