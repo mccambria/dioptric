@@ -265,7 +265,7 @@ def main_with_cxn(cxn, nv_sig, x_range, z_range, num_steps,
         title = r'Confocal scan X and Z, {}, {} us readout'.format(laser_name, readout_us)
         fig = tool_belt.create_image_figure(img_array, img_extent,
                         clickHandler=on_click_image, color_bar_label='kcps',
-                        title=title, um_scaled=um_scaled)
+                        title=title, um_scaled=um_scaled, aspect_ratio = "auto")
 
     # %% Collect the data
     cxn.apd_tagger.clear_buffer()
@@ -346,31 +346,45 @@ def main_with_cxn(cxn, nv_sig, x_range, z_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_rabi/branch_master/image_sample/2021_07'
-    file_name = '2021_07_26-12_31_43-johnson-nv1_2021_07_21'
+    path = 'pc_rabi/branch_master/image_sample_xz/2021_08'
+    file_name = '2021_08_20-16_47_53-johnson-nv1_2021_08_20'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']
+    readout = nv_sig['imaging_readout_dur']
     timestamp = data['timestamp']
-    img_array = data['img_array']
+    img_array = numpy.array(data['img_array'])
     x_voltages = data['x_voltages']
-    y_voltages = data['y_voltages']
+    z_voltages = data['z_voltages']
     x_low = x_voltages[0]
     x_high = x_voltages[-1]
-    y_low = y_voltages[0]
-    y_high = y_voltages[-1]
-    pixel_size = x_voltages[1] - x_voltages[0]
-    half_pixel_size = pixel_size / 2
-    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                  y_low - half_pixel_size, y_high + half_pixel_size]
+    z_low = z_voltages[0]
+    z_high = z_voltages[-1]
+    pixel_size_x = x_voltages[1] - x_voltages[0]
+    pixel_size_z = z_voltages[1] - z_voltages[0]
     
-    csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
-    
-    
-    # tool_belt.create_image_figure(img_array, img_extent, clickHandler=None,
-    #                     title=None, color_bar_label='Counts', 
-    #                     min_value=None, um_scaled=False)
+    half_pixel_size_x = pixel_size_x / 2
+    half_pixel_size_z = pixel_size_z / 2
+    img_extent = [x_high + half_pixel_size_x, x_low - half_pixel_size_x,
+                  z_low - half_pixel_size_z, z_high + half_pixel_size_z]
     
     
-    tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path, 
-                                  csv_name)
+    
+    
+    readout_sec = readout / 10**9
+    img_array_kcps = numpy.copy(img_array)
+    img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
+    
+    title = r'Confocal scan X and Z'
+    tool_belt.create_image_figure(img_array_kcps, img_extent,
+                        clickHandler=on_click_image, color_bar_label='kcps',
+                        title=title, um_scaled=False, aspect_ratio = "auto")
+    
+    
+    
+    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+    #
+    # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
+    
+    # tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path, 
+    #                               csv_name)

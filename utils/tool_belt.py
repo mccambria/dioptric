@@ -427,6 +427,7 @@ def create_image_figure(
     color_bar_label="Counts",
     min_value=None,
     um_scaled=False,
+    aspect_ratio = None
 ):
     """
     Creates a figure containing a single grayscale image and a colorbar.
@@ -465,7 +466,7 @@ def create_image_figure(
         cmap="inferno",
         extent=tuple(imgExtent),
         vmin=min_value,
-        aspect="auto",
+        aspect=aspect_ratio,
     )
 
     #    if min_value == None:

@@ -694,12 +694,12 @@ def do_spin_echo(nv_sig, apd_indices):
     return angle
 
 
-def do_SPaCE(nv_sig, opti_nv_sig, img_range ):
-    # dr = 0.05 / numpy.sqrt(2)
+def do_SPaCE(nv_sig, opti_nv_sig, img_range, num_steps,num_runs, measurement_type ):
+    # dr = 0.025 / numpy.sqrt(2)
     # img_range = [[-dr,-dr],[dr, dr]] #[[x1, y1], [x2, y2]]
-    num_steps = 101
-    num_runs = 20
-    measurement_type = "1D"
+    # num_steps = 101
+    # num_runs = 50
+    # measurement_type = "1D"
 
     # img_range = 0.075
     # num_steps = 71
@@ -765,7 +765,7 @@ def do_test_major_routines(nv_sig, apd_indices):
 if __name__ == "__main__":
 
     # In debug mode, don't bother sending email notifications about exceptions
-    debug_mode = False
+    debug_mode = True
 
     # %% Shared parameters
 
@@ -776,7 +776,7 @@ if __name__ == "__main__":
     #    nd = 'nd_0'
     # nd = 'nd_0.5'
     # nd = 'nd_1.0'
-    nd_yellow = "nd_1.0"
+    nd_yellow = "nd_0.5"
     nd_green = "nd_0.5"
     sample_name = "johnson"
     #    green_laser = 'cobolt_515'
@@ -828,8 +828,8 @@ if __name__ == "__main__":
         # 'CPG_laser': green_laser, 'CPG_laser_filter': nd_green, 'CPG_laser_dur': 1E4,
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.15,
-        "charge_readout_dur": 200e6,
+        "charge_readout_laser_power": 0.1,
+        "charge_readout_dur": 150e6,
         "dir_1D": "x",
         "collection_filter": "630_lp",
         "magnet_angle": None,
@@ -895,6 +895,17 @@ if __name__ == "__main__":
         "imaging_laser_filter": nd_green,
         "imaging_readout_dur": 1e7,
         
+        "initialize_laser": red_laser,
+        "initialize_laser_power": 80,
+        "initialize_dur": 1e3,
+        "CPG_laser": green_laser,
+        'CPG_laser_filter': nd_green,
+        "CPG_laser_dur": 150e3,
+        "charge_readout_laser": yellow_laser,
+        "charge_readout_laser_filter": nd_yellow,
+        "charge_readout_laser_power": 0.1,
+        "charge_readout_dur": 150e6,
+        
         "dir_1D": "x",
         "collection_filter": "630_lp",
         "magnet_angle": None,
@@ -929,7 +940,7 @@ if __name__ == "__main__":
         # do_optimize(opti_nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # do_optimize(nv_sig, apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(opti_nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
@@ -950,18 +961,30 @@ if __name__ == "__main__":
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
-        t_list = [600e3, 700e3]
+        
+        nv_sig_copy = copy.deepcopy(nv_sig)
+        nv_sig_copy['CPG_laser_dur'] = 1250e3
+        
+        dr = 0.0271 / numpy.sqrt(2)
+        d = 0.007 / numpy.sqrt(2)
+        img_range = [[dr - d,dr- d],[dr + d, dr + d]] #[[x1, y1], [x2, y2]]
+        num_steps = 101
+        num_runs = 200
+        measurement_type = '1D'
+        
+        #do_SPaCE(nv_sig_copy, opti_nv_sig, img_range,  num_steps,num_runs, measurement_type)
+        
+        
+        t_list = [ 100e3,]
         for t in t_list:
-            nv_sig_copy = copy.deepcopy(nv_sig)
+            nv_sig_copy = copy.deepcopy(opti_nv_sig)
             nv_sig_copy['CPG_laser_dur'] = t
+            img_range = 0.035
+            num_steps = 21#71
+            num_runs = 1
+            measurement_type = "2D"
+            do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs, measurement_type)
             
-            dr = 0.0271 / numpy.sqrt(2)
-            d = 0.007 / numpy.sqrt(2)
-            img_range = [[dr - d,dr- d],[dr + d, dr + d]] #[[x1, y1], [x2, y2]]
-            do_SPaCE(nv_sig_copy, opti_nv_sig, img_range)
-            
-            img_range = [[-(dr - d),-(dr - d)],[-(dr + d),-(dr + d)]] #[[x1, y1], [x2, y2]]
-            do_SPaCE(nv_sig_copy, opti_nv_sig, img_range)
         # do_spin_echo_battery(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)

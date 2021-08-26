@@ -217,11 +217,38 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
             nv0_power.append(nv0)
             nvm_power.append(nvm)
             
+            timestamp = tool_belt.get_time_stamp()
+            raw_data = {'timestamp': timestamp,
+                    'nv_sig': nv_sig_copy,
+                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'num_runs':num_reps,
+                    'nv0': nv0.tolist(),
+                    'nv0_list-units': 'counts',
+                    'nvm': nvm.tolist(),
+                    'nvmt-units': 'counts',
+                    }
+            
+            fig_hist, ax = plt.subplots(1, 1)
+            max_0 = max(nv0)
+            max_m = max(nvm)
+            occur_0, x_vals_0 = numpy.histogram(nv0, numpy.linspace(0,max_0, max_0+1))
+            occur_m, x_vals_m = numpy.histogram(nvm, numpy.linspace(0,max_m, max_m+1))
+            ax.plot(x_vals_0[:-1],occur_0,  'r-o', label = 'Initial red pulse' )
+            ax.plot(x_vals_m[:-1],occur_m,  'g-o', label = 'Initial green pulse' )
+            ax.set_xlabel('Counts')
+            ax.set_ylabel('Occur.')
+            ax.set_title('{} ms readout, {}, {} V'.format(t/10**6, nd_filter, p))
+            ax.legend()
+            
+            file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+            tool_belt.save_raw_data(raw_data, file_path)
+            tool_belt.save_figure(fig_hist, file_path + '_histogram')
+            
             print('data collected!')
+            # return
             print('{} ms readout, {}, {} V'.format(t/10**6, nd_filter, p))
             threshold, fidelity, mu_1, mu_2, fig = calculate_threshold_plot(t/10**6, nv0, nvm, nd_filter, p)
             
-            timestamp = tool_belt.get_time_stamp()
             raw_data = {'timestamp': timestamp,
                     'nv_sig': nv_sig_copy,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
@@ -236,7 +263,6 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
                     'threshold': threshold
                     }
             
-            file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
             tool_belt.save_raw_data(raw_data, file_path)
             tool_belt.save_figure(fig, file_path)
     
@@ -261,10 +287,10 @@ if __name__ == '__main__':
     nd_green = 'nd_0.5'
     
     nv_sig = {
-        "coords": [0.143, 0.099, 4.87],
-        "name": "{}-nv4_2021_08_24".format(sample_name,),
+        "coords": [0.230, 0.094, 4.83],
+        "name": "{}-nv6_2021_08_24".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 70,
+        "expected_count_rate": 42,
         # "imaging_laser": yellow_laser,
         # "imaging_laser_filter": 'nd_0',
         # "imaging_laser_power": 1,
@@ -281,9 +307,9 @@ if __name__ == '__main__':
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
 
     try:
-        determine_readout_dur(nv_sig, readout_times =[ 150*10**6],
-                          readout_yellow_powers = [0.2],
-                           nd_filter = 'nd_1.0') 
+        determine_readout_dur(nv_sig, readout_times =[  150*10**6],
+                          readout_yellow_powers = [0.1],
+                            nd_filter = 'nd_0.5') 
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here
@@ -303,6 +329,4 @@ if __name__ == '__main__':
 
 
 # use 60 ms, 0.15 ND filter
-
-
 
