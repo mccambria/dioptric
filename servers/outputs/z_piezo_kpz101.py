@@ -33,8 +33,8 @@ import logging
 import numpy
 import nidaqmx.stream_writers as stream_writers
 import socket
-from pathlib import Path
 import ctypes
+import traceback
 
 
 class ZPiezoKpz101(LabradServer):
@@ -52,8 +52,13 @@ class ZPiezoKpz101(LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
-        self.task = None
-        self.sub_init_server_z()
+        try:
+            self.task = None
+            self.sub_init_server_z()
+        except Exception as exc:
+            exc_info = traceback.format_exc()
+            logging.info(exc_info)
+            raise exc
 
     def sub_init_server_z(self):
         """Sub-routine to be called by xyz server"""
@@ -76,37 +81,44 @@ class ZPiezoKpz101(LabradServer):
         return result["get"]
 
     def on_get_config_z(self, config):
-        try:
-            # Connect to the device and set it to external control mode
-            # Get the dll
-            dll_path = 'C:\\Program Files\\Thorlabs\\Kinesis\\Thorlabs.MotionControl.KCube.Piezo.dll'
-            self.piezo_lib = ctypes.windll.LoadLibrary(dll_path)
-            self.serial = config[0]
-            self.piezo_lib.PCC_Open(self.serial)
-            self.piezo_lib.PCC_SetMaxOutputVoltage(self.serial, 150)
-            # 1 for open_loop, 2 for closed loop
-            self.piezo_lib.PCC_SetPositionControlMode(self.serial, 1)
-            # 1 for all hub bays, 2 for adjacent hub bays, 3 for external SMA
-            self.piezo_lib.PCC_SetHubAnalogInput(self.serial, 3)
-            self.piezo_lib.PCC_Enable(self.serial)
-            # 0 for software only, 2 is software and external,
-            # 2 for software and potentiometer, 3 for all three.
-            self.piezo_lib.PCC_SetVoltageSource(self.serial, 2)
-            
-            # DAQ setup
-            self.daq_ao_z_piezo_kpz101 = config[1]
-            self.daq_di_clock = config[2]
-            
-            # Hysteresis compensation
-            self.z_hysteresis_b = config[3]
-            # Define a such that 1 nominal volt corresponds to
-            # 1 post-compensation volt
-            # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
-            self.z_hysteresis_a = 1 - self.z_hysteresis_b
-            
-            logging.info("Init complete")
-        except Exception as e:
-            logging.info(e)
+        
+        # Connect to the device and set it to external control mode
+        
+        # Get the dll
+        dll_path = 'C:\\Program Files\\Thorlabs\\Kinesis\\Thorlabs.MotionControl.KCube.Piezo.dll'
+        self.piezo_lib = ctypes.windll.LoadLibrary(dll_path)
+        self.piezo_lib.TLI_BuildDeviceList()
+        
+        # Get the serial number and convert it to bytes for the C library
+        self.serial = str(config[0]).encode("utf-8")
+        
+        # Open the connection and start the polling loop to monitor status
+        self.piezo_lib.PCC_Open(self.serial)
+        self.piezo_lib.PCC_StartPolling(self.serial, 10)
+        
+        # Set the control mode and enable the output.
+        self.piezo_lib.PCC_SetMaxOutputVoltage(self.serial, 150)
+        # 1 for open_loop, 2 for closed loop
+        self.piezo_lib.PCC_SetPositionControlMode(self.serial, 1)
+        # 1 for all hub bays, 2 for adjacent hub bays, 3 for external SMA
+        self.piezo_lib.PCC_SetHubAnalogInput(self.serial, 3)
+        self.piezo_lib.PCC_Enable(self.serial)
+        # 0 for software only, 2 is software and external,
+        # 2 for software and potentiometer, 3 for all three.
+        self.piezo_lib.PCC_SetVoltageSource(self.serial, 2)
+        
+        # DAQ setup
+        self.daq_ao_z_piezo_kpz101 = config[1]
+        self.daq_di_clock = config[2]
+        
+        # Hysteresis compensation
+        self.z_hysteresis_b = config[3]
+        # Define a such that 1 nominal volt corresponds to
+        # 1 post-compensation volt
+        # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
+        self.z_hysteresis_a = 1 - self.z_hysteresis_b
+        
+        logging.info("Init complete")
             
 
     def compensate_hysteresis_z(self, position):
