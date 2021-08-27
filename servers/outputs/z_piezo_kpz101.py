@@ -92,6 +92,9 @@ class ZPiezoKpz101(LabradServer):
         # Get the serial number and convert it to bytes for the C library
         self.serial = str(config[0]).encode("utf-8")
         
+        # Make sure existing connections are closed
+        self.piezo_lib.PCC_Close(self.serial)
+        
         # Open the connection and start the polling loop to monitor status
         self.piezo_lib.PCC_Open(self.serial)
         self.piezo_lib.PCC_StartPolling(self.serial, 10)
@@ -103,9 +106,10 @@ class ZPiezoKpz101(LabradServer):
         # 1 for all hub bays, 2 for adjacent hub bays, 3 for external SMA
         self.piezo_lib.PCC_SetHubAnalogInput(self.serial, 3)
         self.piezo_lib.PCC_Enable(self.serial)
-        # 0 for software only, 2 is software and external,
+        # self.piezo_lib.PCC_Disable(self.serial)
+        # 0 for software only, 1 is software and external,
         # 2 for software and potentiometer, 3 for all three.
-        self.piezo_lib.PCC_SetVoltageSource(self.serial, 2)
+        self.piezo_lib.PCC_SetVoltageSource(self.serial, 1)
         
         # DAQ setup
         self.daq_ao_z_piezo_kpz101 = config[1]
@@ -146,7 +150,7 @@ class ZPiezoKpz101(LabradServer):
         b = self.z_hysteresis_b
         
         # If there's 0 nonlinearity, then we have nothing to do
-        if (a == 1.0) and (b == 0.0):
+        if (a == 0.0) and (b == 1.0):
             return position
 
         single_value = False
@@ -224,7 +228,7 @@ class ZPiezoKpz101(LabradServer):
 
         # Set up the output channels
         task.ao_channels.add_ao_voltage_chan(
-            self.daq_ao_z_piezo_kpz101, min_val=3.0, max_val=7.0
+            self.daq_ao_z_piezo_kpz101, min_val=0.0, max_val=10.0
         )
 
         # Set up the output stream
@@ -261,14 +265,14 @@ class ZPiezoKpz101(LabradServer):
         # This can happen if we quit out early
         if self.task is not None:
             self.close_task_internal()
-
+        
         # Adjust voltage turn for hysteresis
         compensated_voltage = self.compensate_hysteresis_z(voltage)
-
+        
         with nidaqmx.Task() as task:
             # Set up the output channels
             task.ao_channels.add_ao_voltage_chan(
-                self.daq_ao_z_piezo_kpz101, min_val=3.0, max_val=7.0
+                self.daq_ao_z_piezo_kpz101, min_val=0.0, max_val=10.0
             )
             task.write(compensated_voltage)
 
@@ -276,10 +280,9 @@ class ZPiezoKpz101(LabradServer):
     def read_z(self, c):
         """Return the current voltages on the piezo's DAQ channel"""
         with nidaqmx.Task() as task:
-            # Set up the internal channels - to do: actual parsing...
-            if self.daq_ao_z_piezo_kpz101 == "dev1/AO2":
-                chan_name = "dev1/_ao2_vs_aognd"
-            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=3.0, max_val=7.0)
+            output_chan = self.daq_ao_z_piezo_kpz101.split('/')[1]
+            input_chan = "dev1/_{}_vs_aognd".format(output_chan.lower())
+            task.ai_channels.add_ai_voltage_chan(input_chan, min_val=0.0, max_val=10.0)
             voltage = task.read()
         return voltage
 

@@ -919,10 +919,7 @@ def get_registry_entry_no_cxn(key, directory):
     Same as above
     """
     with labrad.connect() as cxn:
-        p = cxn.registry.packet()
-        p.cd("", *directory)
-        p.get(key)
-        return p.send()["get"]
+        return get_registry_entry(cxn, key, directory)
 
 
 # %% Open utils

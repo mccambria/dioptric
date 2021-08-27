@@ -124,7 +124,7 @@ def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
     uwave_power = -5.0
 
     resonance.main(nv_sig, apd_indices, freq_center, freq_range,
-                   num_steps, num_runs, uwave_power)
+                   num_steps, num_runs, uwave_power, state=States.HIGH)
 
 
 def do_resonance_state(nv_sig, apd_indices, state):
@@ -184,14 +184,20 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     angle_range = [0, 150]
     # angle_range = [25, 35]
     num_angle_steps = 6
-    freq_center = 2.877
-    freq_range = 0.12
+    freq_center = 2.87
+    freq_range = 0.150
     num_freq_steps = 51
     num_freq_runs = 10
-    uwave_power = 14.5
-    # uwave_power = -5.0
-    uwave_pulse_dur = 100  # Set to None for CWESR
-    num_freq_reps = 1 * 10**4
+    
+    # Pulsed
+    # uwave_power = 14.5
+    # uwave_pulse_dur = 100
+    # num_freq_reps = 1 * 10**4
+    
+    # CW
+    uwave_power = -5.0
+    uwave_pulse_dur = None
+    num_freq_reps = None
 
     optimize_magnet_angle.main(nv_sig, apd_indices,
                angle_range, num_angle_steps, freq_center, freq_range,
@@ -416,12 +422,13 @@ if __name__ == '__main__':
 
 
     # apd_indices = [0]
-    # apd_indices = [1]
-    apd_indices = [0,1]
+    apd_indices = [1]
+    # apd_indices = [0,1]
     
     # nd = 'nd_0'
     nd = 'nd_0.5'
     # nd = 'nd_1.0'
+    # nd = 'nd_2.0'
     sample_name = 'hopper'
     
     # nv_sig = { 'coords': [0.0, 0.0, 0],
@@ -432,14 +439,14 @@ if __name__ == '__main__':
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
     # nv_sig = { 'coords': [0.0, 0.0, 35],
-    nv_sig = { 'coords': [0.0, 0.0, 0],
-            'name': '{}-nv1_2021_03_16'.format(sample_name),
+    nv_sig = { 'coords': [0.0, 0.0, 5.0],
+            'name': '{}-search'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
-            'imaging_laser': 'laser_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
-            'spin_laser': 'laser_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            'spin_laser': 'laserglow_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
-            'collection_filter': None, 'magnet_angle': None,
+            'collection_filter': None, 'magnet_angle': 0,
             'resonance_LOW': 2.8036, 'rabi_LOW': 242.9, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9512, 'rabi_HIGH': 219.6, 'uwave_power_HIGH': 12.0}   # 14.5 max
     
@@ -458,15 +465,15 @@ if __name__ == '__main__':
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(-770, 72)
         
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_stationary_count(nv_sig, apd_indices)
-        # do_resonance(nv_sig, apd_indices, 2.87, 0.1)
-        # do_pulsed_resonance(nv_sig, apd_indices, 2.872, 0.200)
+        do_resonance(nv_sig, apd_indices, 2.87, 0.175)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
