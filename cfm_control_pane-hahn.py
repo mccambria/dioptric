@@ -185,7 +185,7 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     # angle_range = [25, 35]
     num_angle_steps = 6
     freq_center = 2.87
-    freq_range = 0.150
+    freq_range = 0.180
     num_freq_steps = 51
     num_freq_runs = 10
     
@@ -446,7 +446,7 @@ if __name__ == '__main__':
             'spin_laser': 'laserglow_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
-            'collection_filter': None, 'magnet_angle': 0,
+            'collection_filter': None, 'magnet_angle': 148,
             'resonance_LOW': 2.8036, 'rabi_LOW': 242.9, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9512, 'rabi_HIGH': 219.6, 'uwave_power_HIGH': 12.0}   # 14.5 max
     
