@@ -245,7 +245,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
     # Use the pulsed_resonance fitting functions
     fit_func, popt, pcov = pulsed_resonance.fit_resonance(freq_range, freq_center,
-                                  num_steps, norm_avg_sig, norm_avg_sig_ste)
+                                  num_steps, norm_avg_sig, norm_avg_sig_ste, ref_counts)
     fit_fig = None
     if (fit_func is not None) and (popt is not None):
         fit_fig = pulsed_resonance.create_fit_figure(freq_range, freq_center,
@@ -272,26 +272,28 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
 
-    file_green = '2020_05_13-09_41_28-hopper-ensemble'
-    file_no_green = '2020_05_13-09_47_24-hopper-ensemble'
+    file = '2021_08_27-00_25_11-hopper-search'
+    file_path = "pc_hahn/branch_KPZ101-z-control/resonance/2021_08"
+    data = tool_belt.get_raw_data(file, file_path)
 
-    data_green = tool_belt.get_raw_data('resonance/branch_Spin_to_charge/2020_05', file_green)
-    freq_center = data_green['freq_center']
-    freq_range = data_green['freq_range']
-    num_steps = data_green['num_steps']
-    half_freq_range = freq_range / 2
-    freq_low = freq_center - half_freq_range
-    freq_high = freq_center + half_freq_range
-    freqs = numpy.linspace(freq_low, freq_high, num_steps)
+    freq_center = data['freq_center']
+    freq_range = data['freq_range']
+    num_steps = data['num_steps']
+    num_runs = data['num_runs']
+    ref_counts = data['ref_counts']
+    sig_counts = data['sig_counts']
+    print(len(ref_counts))
+    ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
+    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
+    # norm_avg_sig_ste = None
+    
 
-    norm_avg_sig_green = numpy.array(data_green['norm_avg_sig'])
+    fit_func, popt, pcov = pulsed_resonance.fit_resonance(freq_range, freq_center, num_steps,
+                                         norm_avg_sig, norm_avg_sig_ste, ref_counts)
 
-    data_no_green = tool_belt.get_raw_data('resonance/branch_Spin_to_charge/2020_05', file_no_green)
-    norm_avg_sig_no_green = numpy.array(data_no_green['norm_avg_sig'])
+    # fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
+    #                                norm_avg_sig, ref_counts)
 
-    fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    ax.plot(freqs, norm_avg_sig_green, 'g', label='with 1000 s green laser')
-    ax.plot(freqs, norm_avg_sig_no_green, 'b', label='without 1000 s green laser')
-    ax.set_xlabel('Frequency (GHz)')
-    ax.set_ylabel('Contrast (arb. units)')
-    ax.legend()
+    pulsed_resonance.create_fit_figure(freq_range, freq_center, num_steps,
+                      norm_avg_sig, fit_func, popt)
+    

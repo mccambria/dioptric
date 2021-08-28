@@ -364,10 +364,13 @@ def prepare_microscope(cxn, nv_sig, coords=None):
 
     if coords is not None:
         tool_belt.set_xyz(cxn, coords)
-
-    tool_belt.set_filter(
-        cxn, optics_name="collection", filter_name=nv_sig["collection_filter"]
-    )
+    
+    if "collection_filter" in nv_sig:
+        filter_name = nv_sig["collection_filter"]
+        if filter_name is not None:
+            tool_belt.set_filter(
+                cxn, optics_name="collection", filter_name=filter_name
+            )
 
     magnet_angle = nv_sig["magnet_angle"]
     if (magnet_angle is not None) and hasattr(cxn, "rotation_stage_ell18k"):

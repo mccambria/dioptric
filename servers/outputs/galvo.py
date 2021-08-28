@@ -26,6 +26,7 @@ from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 import nidaqmx
+from nidaqmx.constants import AcquisitionType
 import nidaqmx.stream_writers as stream_writers
 import numpy
 import logging
@@ -74,7 +75,8 @@ class Galvo(LabradServer):
     def stopServer(self):
         self.close_task_internal()
 
-    def load_stream_writer_xy(self, c, task_name, voltages, period):
+    def load_stream_writer_xy(self, c, task_name, voltages, period, 
+                              continuous=False):
 
         # Close the existing task if there is one
         if self.task is not None:
@@ -107,9 +109,17 @@ class Galvo(LabradServer):
         # The frequency specified is just the max expected rate in this case.
         # We'll stop once we've run all the samples.
         freq = float(1 / (period * (10 ** -9)))  # freq in seconds as a float
-        task.timing.cfg_samp_clk_timing(
-            freq, source=self.daq_di_clock, samps_per_chan=num_stream_voltages
-        )
+        if continuous:
+            task.timing.cfg_samp_clk_timing(
+                freq, source=self.daq_di_clock, 
+                samps_per_chan=num_stream_voltages,
+                sample_mode=AcquisitionType.CONTINUOUS,
+            )
+        else:
+            task.timing.cfg_samp_clk_timing(
+                freq, source=self.daq_di_clock, 
+                samps_per_chan=num_stream_voltages
+            )
 
         writer.write_many_sample(stream_voltages)
 
@@ -313,6 +323,47 @@ class Galvo(LabradServer):
         self.load_stream_writer_xy(c, "Galvo-load_cross_scan_xy", voltages, period)
 
         return x_voltages_1d, y_voltages_1d
+
+    @setting(
+        7,
+        radius="v[]",
+        num_steps="i",
+        period="i",
+        returns="*v[]*v[]",
+    )
+    def load_circle_scan_xy(self, c, radius, num_steps, period):
+        """Load a circle scan centered about 0,0. Useful for testing cat's eye
+        stationary point. For this reason, the scan runs continuously, not
+        just until it makes it through all the samples once. 
+
+        Params
+            radius: float
+                Radius of the circle in V
+            num_steps: int
+                Number of steps the break the x/y range into
+            period: int
+                Expected period between clock signals in ns
+
+        Returns
+            list(float)
+                The x voltages that make up the scan
+            list(float)
+                The y voltages that make up the scan
+        """
+        
+        angles = numpy.linspace(0, 2*numpy.pi, num_steps)
+
+        x_voltages = radius * numpy.sin(angles)
+
+        y_voltages = radius * numpy.cos(angles)
+        # y_voltages = numpy.zeros(len(angles))
+
+        voltages = numpy.vstack((x_voltages, y_voltages))
+
+        self.load_stream_writer_xy(c, "Galvo-load_circle_scan_xy", voltages, 
+                                   period, True)
+
+        return x_voltages, y_voltages
 
     @setting(
         4,
