@@ -704,7 +704,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices,
 
 if __name__ == '__main__':
 
-    file = '2021_07_11-18_30_19-hopper-nv1_2021_03_16'
+    file = '2021_08_28-15_35_35-hopper-search'
 
     data = tool_belt.get_raw_data(file)
 

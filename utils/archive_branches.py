@@ -80,10 +80,10 @@ def main(repo_path, branches_to_archive):
             print('Branch {} does not exist locally for this repo. Skipping.'.format(branch))
             archive = False
         elif branch not in merged_branches:
-            msg = 'Branch {} is not fully merged with master. Archive anyway? '
+            msg = 'Branch {} is not fully merged with master. Archive anyway? (y/[n])'
         else:
-            msg = 'Archive branch {}? '
-        if archive and not input(msg.format(branch)).startswith('y'):
+            msg = 'Archive branch {}? (y/[n])'
+        if archive and not input(msg.format(branch)) in ("y", "Y"):
             archive = False
         if archive:  # Change to if True to override checks
             # Add a timestamp to the tagged branch
@@ -134,6 +134,6 @@ if __name__ == '__main__':
     repo_path = str(Path.home()) + '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
     
     # List of branches to archive
-    branches_to_archive = ['piezo-hysteresis']
+    branches_to_archive = ['piezo-hysteresis', "KPZ101-z-control"]
 
     main(repo_path, branches_to_archive)

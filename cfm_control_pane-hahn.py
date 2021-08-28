@@ -161,17 +161,17 @@ def do_pulsed_resonance(nv_sig, apd_indices,
 
 def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
-    # freq_range = 0.150
-    # num_steps = 51
-    # num_reps = 10**4
-    # num_runs = 8
-    
-    # Zoom
-    freq_range = 0.035
-    # freq_range = 0.120
+    freq_range = 0.050
     num_steps = 51
     num_reps = 8000
     num_runs = 3
+    
+    # Zoom
+    # freq_range = 0.035
+    # # freq_range = 0.120
+    # num_steps = 51
+    # num_reps = 8000
+    # num_runs = 3
     
     composite = False
 
@@ -181,11 +181,11 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
 
-    angle_range = [0, 150]
+    angle_range = [180, 330]
     # angle_range = [25, 35]
     num_angle_steps = 6
     freq_center = 2.87
-    freq_range = 0.180
+    freq_range = 0.200
     num_freq_steps = 51
     num_freq_runs = 10
     
@@ -209,7 +209,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
     num_reps = 8000
-    num_runs = 10
+    num_runs = 3
 
     rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -363,17 +363,17 @@ def do_spin_echo(nv_sig, apd_indices):
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
     max_time = 120  # us
-    num_steps = max_time + 1  # 1 point per us
-    precession_time_range = [0, max_time * 10**3]
+    num_steps = max_time  # 1 point per us
+    precession_time_range = [1, max_time * 10**3]
     num_reps = 8000
-    num_runs = 20
+    num_runs = 10
     
 #    num_steps = 151
 #    precession_time_range = [0, 10*10**3]
 #    num_reps = int(10.0 * 10**4)
 #    num_runs = 6
     
-    state = States.HIGH
+    state = States.LOW
 
     spin_echo.main(nv_sig, apd_indices, precession_time_range,
                    num_steps, num_reps, num_runs, state)
@@ -445,10 +445,10 @@ if __name__ == '__main__':
             'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
             'spin_laser': 'laserglow_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
-            'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 350,
-            'collection_filter': None, 'magnet_angle': 148,
-            'resonance_LOW': 2.8036, 'rabi_LOW': 242.9, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9512, 'rabi_HIGH': 219.6, 'uwave_power_HIGH': 12.0}   # 14.5 max
+            'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
+            'collection_filter': None, 'magnet_angle': 240,
+            'resonance_LOW': 2.7709, 'rabi_LOW': 223.1, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9753, 'rabi_HIGH': 296.3, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -472,7 +472,7 @@ if __name__ == '__main__':
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_stationary_count(nv_sig, apd_indices)
-        do_resonance(nv_sig, apd_indices, 2.87, 0.175)
+        # do_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
@@ -481,7 +481,7 @@ if __name__ == '__main__':
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        # do_spin_echo(nv_sig, apd_indices)
+        do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
         # do_t1_interleave_knill(nv_sig, apd_indices)
