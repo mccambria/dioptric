@@ -35,6 +35,7 @@ import smtplib
 from email.mime.text import MIMEText
 import traceback
 import keyring
+import platform
 
 
 # %% Constants
@@ -385,8 +386,8 @@ def decode_seq_args(seq_args_string):
 
 def get_pulse_streamer_wiring(cxn):
     config = get_config_dict(cxn)
-    pulse_streamer_wiring = config['Wiring']['PulseStreamer']
-    
+    pulse_streamer_wiring = config["Wiring"]["PulseStreamer"]
+
     # cxn.registry.cd(["", "Config", "Wiring", "Pulser"])
     # sub_folders, keys = cxn.registry.dir()
     # if keys == []:
@@ -427,7 +428,7 @@ def create_image_figure(
     color_bar_label="Counts",
     min_value=None,
     um_scaled=False,
-    aspect_ratio = None
+    aspect_ratio=None,
 ):
     """
     Creates a figure containing a single grayscale image and a colorbar.
@@ -1022,10 +1023,21 @@ def get_file_list(
 #         return json.load(file)
 
 
+def get_nvdata_dir():
+    """Returns the directory for nvdata as appropriate for the OS."""
+    os_name = platform.system()
+    if os_name == "Windows":
+        nvdata_dir = PurePath("E:/Shared drives/Kolkowitz Lab Group/nvdata")
+    elif os_name == "Linux":
+        nvdata_dir = Path.home() / "E" / "nvdata"
+
+    return nvdata_dir
+
+
 def get_raw_data(
     file_name,
     path_from_nvdata=None,
-    nvdata_dir="E:\\Shared drives\\Kolkowitz Lab Group\\nvdata",
+    nvdata_dir=None,
 ):
     """
     Returns a dictionary containing the json object from the specified
@@ -1035,6 +1047,9 @@ def get_raw_data(
     folder named for the year_month part of the timestamp at the beginning
     of the file name
     """
+    
+    if nvdata_dir is None:
+        nvdata_dir = get_nvdata_dir()
 
     if path_from_nvdata is None:
         file_name_ext = "{}.txt".format(file_name)
@@ -1049,7 +1064,7 @@ def get_raw_data(
                     return json.load(file)
         print("File not found!")
     else:
-        data_dir = PurePath(nvdata_dir, path_from_nvdata)
+        data_dir = nvdata_dir / path_from_nvdata
         file_name_ext = "{}.txt".format(file_name)
         file_path = data_dir / file_name_ext
 
