@@ -181,6 +181,10 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     ax.set_ylabel("Resonances (GHz)")
     ax.legend()
 
+    fig.canvas.draw()
+    fig.set_tight_layout(True)
+    fig.canvas.flush_events()
+
     return fit_func, popt, stes, fit_fig, theta_B_deg, fig
 
 
@@ -232,8 +236,6 @@ def fit_data(data):
 
     # Account for the pi/2 pulse on each side of a tau
     pi_pulse_dur = tool_belt.get_pi_pulse_dur(rabi_period)
-    # print(pi_pulse_dur)
-    # pi_pulse_dur = 0
     tau_pis = taus + pi_pulse_dur
 
     fit_func = quartic
@@ -252,10 +254,6 @@ def fit_data(data):
     norm_avg_sig = avg_sig_counts / avg_ref
     norm_avg_sig_ste = ste_sig_counts / avg_ref
 
-    #    avg_ref_counts = numpy.average(ref_counts[::], axis=0)
-    #    norm_avg_sig = avg_sig_counts / avg_ref_counts
-    #    norm_avg_sig_ste = ste_sig_counts / avg_ref_counts
-
     # %% Estimated fit parameters
 
     # Assume that the bulk of points are the floor and that revivals take
@@ -270,21 +268,10 @@ def fit_data(data):
     freqs = numpy.fft.rfftfreq(num_steps, d=tau_step)
     transform_mag = numpy.absolute(transform)
 
-    # [1:] excludes frequency 0 (DC component)
-    # max_ind = numpy.argmax(transform_mag[1:])
-    # plt.plot(1/freqs, transform_mag)
-    # return
-    # frequency = freqs[max_ind+1]
-    # revival_time = 1/frequency
-    # print(revival_time)
-    # revival_time = 2/frequency  # Revival time is double the dominant frequency
-
-    # For a nice spin echo there'll be two dominant frequencies of similar
-    # magnitudes. We want the smaller of the pair.
-    sorted_inds = numpy.argsort(transform_mag[1:])
+    # For a nice spin echo there may be two dominant frequencies of similar
+    # magnitudes. We'll find the right one by brute force
+    sorted_inds = numpy.argsort(transform_mag[2:])
     dominant_freqs = [freqs[sorted_inds[-1] + 1], freqs[sorted_inds[-2] + 1]]
-    frequency = max(dominant_freqs)
-    revival_time = 1 / frequency
     # print(revival_time)
     # return
 
@@ -293,50 +280,71 @@ def fit_data(data):
     # offset = 0.90
     # decay_time = 2000.0
     # revival_time = 35000
-
-    num_revivals = max_precession_dur / revival_time
-    amplitudes = [amplitude for el in range(0, int(1.5 * num_revivals))]
+    # dominant_freqs = [1/revival_time]
 
     # %% Fit
 
     # The fit doesn't like dealing with vary large numbers. We'll convert to
     # us here and then convert back to ns after the fit for consistency.
 
-    init_params = [offset, revival_time / 1000, decay_time / 1000, *amplitudes]
-    min_bounds = (0.5, 0.0, 0.0, *[0.0 for el in amplitudes])
-    max_bounds = (
-        1.0,
-        max_precession_dur / 1000,
-        max_precession_dur / 1000,
-        *[0.3 for el in amplitudes],
-    )
-    print(init_params)
+    tau_pis_us = tau_pis / 1000
+    decay_time_us = decay_time / 1000
+    max_precession_dur_us = max_precession_dur / 1000
 
-    try:
-        popt, pcov = curve_fit(
-            fit_func,
-            tau_pis / 1000,
-            norm_avg_sig,
-            sigma=norm_avg_sig_ste,
-            absolute_sigma=True,
-            p0=init_params,
-            bounds=(min_bounds, max_bounds),
+    # Get the init params we want to test
+    init_params_tests = []
+    min_bounds_tests = []
+    max_bounds_tests = []
+    best_red_chi_sq = None
+    best_popt = None
+    for freq in dominant_freqs:
+        revival_time = 1 / freq
+        num_revivals = max_precession_dur / revival_time
+        amplitudes = [amplitude for el in range(0, int(1.5 * num_revivals))]
+        revival_time_us = revival_time / 1000
+        init_params = [
+            offset,
+            revival_time_us,
+            decay_time_us,
+            *amplitudes,
+        ]
+        min_bounds = (0.5, 0.0, 0.0, *[0.0 for el in amplitudes])
+        max_bounds = (
+            1.0,
+            max_precession_dur_us,
+            max_precession_dur_us,
+            *[0.3 for el in amplitudes],
         )
-        # print(popt)
-        popt[1] *= 1000
-        popt[2] *= 1000
+        min_bounds_tests.append(min_bounds)
+        max_bounds_tests.append(max_bounds)
+        init_params_tests.append(init_params)
 
-    except Exception as e:
+        try:
+            popt, pcov = curve_fit(
+                fit_func,
+                tau_pis_us,
+                norm_avg_sig,
+                sigma=norm_avg_sig_ste,
+                absolute_sigma=True,
+                p0=init_params,
+                bounds=(min_bounds, max_bounds),
+            )
 
-        print(e)
+            fit_func_lambda = lambda tau: fit_func(tau, *popt)
+            residuals = fit_func_lambda(tau_pis_us) - norm_avg_sig
+            chi_sq = numpy.sum((residuals ** 2) / (norm_avg_sig_ste ** 2))
+            red_chi_sq = chi_sq / len(popt)
+            print(red_chi_sq)
+            if best_red_chi_sq is None or (red_chi_sq < best_red_chi_sq):
+                best_red_chi_sq = red_chi_sq
+                best_popt = popt
 
-        popt = None
-        return None
+        except Exception as e:
+            print(e)
 
-        # popt = init_params
-        # popt[1] *= 1000
-        # popt[2] *= 1000
-        # pcov = [[0 for el in popt] for el in popt]
+    popt = best_popt
+    popt[1] *= 1000
+    popt[2] *= 1000
 
     revival_time = popt[1]
     stes = numpy.sqrt(numpy.diag(pcov))
@@ -816,6 +824,8 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
+    plt.ion()
+
     file_name = "2021_08_28-15_35_35-hopper-search"
 
     data = tool_belt.get_raw_data(file_name)
@@ -825,3 +835,5 @@ if __name__ == "__main__":
     ret_vals = plot_resonances_vs_theta_B(data)
     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     print(popt)
+
+    plt.show(block=True)
