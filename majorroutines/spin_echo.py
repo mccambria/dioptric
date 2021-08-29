@@ -283,7 +283,7 @@ def fit_data(data):
     # magnitudes. We want the smaller of the pair.
     sorted_inds = numpy.argsort(transform_mag[1:])
     dominant_freqs = [freqs[sorted_inds[-1] + 1], freqs[sorted_inds[-2] + 1]]
-    frequency = min(dominant_freqs)
+    frequency = max(dominant_freqs)
     revival_time = 1 / frequency
     # print(revival_time)
     # return
@@ -310,7 +310,7 @@ def fit_data(data):
         max_precession_dur / 1000,
         *[0.3 for el in amplitudes],
     )
-    # print(init_params)
+    print(init_params)
 
     try:
         popt, pcov = curve_fit(
@@ -816,10 +816,9 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_path = "pc_hahn/branch_master/spin_echo/2021_08/"
     file_name = "2021_08_28-15_35_35-hopper-search"
 
-    data = tool_belt.get_raw_data(file_name, file_path)
+    data = tool_belt.get_raw_data(file_name)
 
     #    print(data['norm_avg_sig'])
 
