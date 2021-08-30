@@ -40,18 +40,20 @@ def get_seq(pulse_streamer, config, args):
     pulse_color = args[6]
     read_color = args[7]
     
+   # compare objective peizo delay
     galvo_move_time = config['Positioning']['xy_large_response_delay']
+    galvo_move_time = numpy.int64(galvo_move_time)
     
     # Get what we need out of the wiring dictionary
     pulser_wiring = config['Wiring']['PulseStreamer']
     
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_clock = pulser_wiring['do_sample_clock']
-    pulser_do_532_aom = pulser_wiring['do_laserglow_532_dm']
-    pulser_ao_589_aom = pulser_wiring['ao_laserglow_589_am']
-    pulser_do_638_aom = pulser_wiring['do_cobolt_638_dm']
+    # pulser_do_532_aom = pulser_wiring['do_laserglow_532_dm']
+    # pulser_ao_589_aom = pulser_wiring['ao_laserglow_589_am']
+    # pulser_do_638_aom = pulser_wiring['do_cobolt_638_dm']
     
-    green_laser_delay = config['Optics']['laserglow_532']['delay']
+    green_laser_delay = config['Optics']['cobolt_515']['delay']
     yellow_laser_delay = config['Optics']['laserglow_589']['delay']
     red_laser_delay = config['Optics']['cobolt_638']['delay']
     
@@ -100,12 +102,12 @@ def get_seq(pulse_streamer, config, args):
     # add the initialization pulse segment
     init_train_on = [(initialization_time, HIGH)]
     init_train_off = [(initialization_time, LOW)]
-    if init_color == 532:
+    if init_color == 515 :
         train_532.extend(init_train_on)
         train_589.extend(init_train_off)
         train_638.extend(init_train_off)
     if init_color == 589:
-        init_train_on = [(initialization_time, aom_ao_589_pwr)]
+        # init_train_on = [(initialization_time, aom_ao_589_pwr)]
         train_532.extend(init_train_off)
         train_589.extend(init_train_on)
         train_638.extend(init_train_off)
@@ -121,12 +123,12 @@ def get_seq(pulse_streamer, config, args):
     # add the pulse pulse segment
     pulse_train_on = [(pulse_time, HIGH)]
     pulse_train_off = [(pulse_time, LOW)]
-    if pulse_color == 532:
+    if pulse_color == 515:
         train_532.extend(pulse_train_on)
         train_589.extend(pulse_train_off)
         train_638.extend(pulse_train_off)
     if pulse_color == 589:
-        pulse_train_on = [(pulse_time, aom_ao_589_pwr)]
+        # pulse_train_on = [(pulse_time, aom_ao_589_pwr)]
         train_532.extend(pulse_train_off)
         train_589.extend(pulse_train_on)
         train_638.extend(pulse_train_off)
@@ -142,12 +144,12 @@ def get_seq(pulse_streamer, config, args):
     # add the readout pulse segment
     read_train_on = [(readout_time, HIGH)]
     read_train_off = [(readout_time, LOW)]
-    if read_color == 532:
+    if read_color == 515:
         train_532.extend(read_train_on)
         train_589.extend(read_train_off)
         train_638.extend(read_train_off)
     if read_color == 589:
-        read_train_on = [(readout_time, aom_ao_589_pwr)]
+        # read_train_on = [(readout_time, aom_ao_589_pwr)]
         train_532.extend(read_train_off)
         train_589.extend(read_train_on)
         train_638.extend(read_train_off)
@@ -164,9 +166,15 @@ def get_seq(pulse_streamer, config, args):
     # train_532.extend([(1E7 * 21 * 2, HIGH),(100, LOW)])
         #######################
 
-    seq.setDigital(pulser_do_532_aom, train_532)
-    seq.setAnalog(pulser_ao_589_aom, train_589)
-    seq.setDigital(pulser_do_638_aom, train_638)    
+    # seq.setDigital(pulser_do_532_aom, train_532)
+    
+    # fix this so it isn't hard coded in
+    tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                            'cobolt_515', None, train_532)
+    tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                            'laserglow_589', aom_ao_589_pwr, train_589)
+    tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                            'cobolt_638', None, train_638)
         
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -176,6 +184,6 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
     # seq_args = [1000.0, 100000.0, 100000.0, 0.15, 0, 638, 532, 589]
-    seq_args = [1000.0, 300000, 250000000, 0.1, 0, 532, 638, 589]
+    seq_args = [1000.0, 200000.0, 1500000.0, 0.1, 0, 638, 515, 589]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

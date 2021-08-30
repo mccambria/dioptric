@@ -173,7 +173,6 @@ def set_laser_power(
     Set a laser power, or return it for analog modulation.
     Specify either a laser_key/nv_sig or a laser_name/laser_power.
     """
-
     if (nv_sig is not None) and (laser_key is not None):
         laser_name = nv_sig[laser_key]
         power_key = "{}_power".format(laser_key)
@@ -289,6 +288,7 @@ def process_laser_seq(
     HIGH = 1
 
     processed_train = []
+    print(feedthrough)
 
     if mod_type is Mod_types.DIGITAL:
         # Digital, feedthrough, bookend each pulse with 100 ns clock pulses
@@ -788,7 +788,8 @@ def calc_snr(sig_count, ref_count):
     sig_count_avg = numpy.average(sig_count)
     ref_count_avg = numpy.average(ref_count)
     dif = sig_count_avg - ref_count_avg
-    noise = numpy.sqrt(ref_count_avg)
+    sum_= sig_count_avg + ref_count_avg
+    noise = numpy.sqrt(sum_)
     snr = dif / noise
 
     return snr

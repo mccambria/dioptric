@@ -376,7 +376,6 @@ def collect_counts(cxn, num_samples, seq_args_string, apd_indices):
         
     total_samples_list = []
     num_read_so_far = 0
-    tool_belt.init_safe_stop()
 
     while num_read_so_far < num_samples:
 
@@ -532,12 +531,13 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
 
     # define the sequence paramters
     file_name = 'SPaCE.py'
-    seq_args = [ initialization_time, pulse_time, charge_readout_time,
+    seq_args = [initialization_time, pulse_time, charge_readout_time,
         charge_readout_laser_power,
         apd_indices[0],
         init_color, pulse_color, readout_color]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    # print(seq_args)
     # return
 
     # print the expected run time
@@ -547,6 +547,8 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     period_m_total = period_s_total/60
     print('{} ms pulse time'.format(pulse_time/10**6))
     print('Expected run time for set of points: {:.1f} m'.format(period_m_total))
+    # return
+    tool_belt.init_safe_stop()
     
     if period_m_total > opti_interval:
         num_optimize = int(numpy.ceil(period_m_total/opti_interval ))
@@ -568,7 +570,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
             
             # Build the list to step through the coords on readout NV and targets
             x_voltages, y_voltages, z_voltages = build_voltages_from_list_xyz(start_coords_drift, coords_list_drift)
-        
+            
             # Load the galvo
             xyz_server = tool_belt.get_xy_server(cxn)
             xyz_server.load_arb_scan_xyz(x_voltages, y_voltages, z_voltages, int(period))
@@ -680,7 +682,6 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
     opti_interval = 4 # min
 
     start_coords = nv_sig['coords']
-
     if measurement_type == '1D':
         # dir_1D = nv_sig['dir_1D']
         dx_list =[img_range[0][0], img_range[1][0]]
@@ -725,10 +726,8 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
                                     high_coords[2], num_steps)
         # Zip the two list together
         coords_voltages = list(zip(x_voltages, y_voltages, z_voltages))
-
         # calculate the radial distances from the readout NV to the target points
         rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)
-        
         neg_ints = int(numpy.floor(len(rad_dist)/2))
         rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
         
@@ -779,7 +778,7 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
     drift_list_master = []
     num_samples = len(coords_voltages)
     readout_counts_array = numpy.empty([num_samples, num_runs])
-
+    
     for n in range(num_runs):
         print('Run {}'.format(n))
         # shuffle the voltages that we're stepping thru
@@ -1266,66 +1265,104 @@ if __name__ == '__main__':
 
 
 
+    #================ specific for 1D scans ================#
+    file = '2021_08_27-08_18_02-johnson-nv1_2021_08_26'
+    data = tool_belt.get_raw_data(file, path)
+    
+    # img_array = data['readout_image_array']
+    readout_counts_avg = data['readout_counts_avg']
+    nv_sig = data['nv_sig']
+    start_coords = nv_sig['coords']
+    num_steps = data['num_steps']
+    img_range = data['img_range']
+    dz = data['dz']
+    pulse_time = nv_sig['CPG_laser_dur']
+
+    dx_list =[img_range[0][0], img_range[1][0]]
+    dy_list =[img_range[0][1], img_range[1][1]]
+    low_coords = numpy.array(start_coords) + [dx_list[0], dy_list[0], dz]
+    high_coords = numpy.array(start_coords) + [dx_list[1], dy_list[1], dz]
+    x_voltages = numpy.linspace(low_coords[0],
+                                high_coords[0], num_steps)
+    y_voltages = numpy.linspace(low_coords[1],
+                                high_coords[1], num_steps)
+    z_voltages = numpy.linspace(low_coords[2],
+                                high_coords[2], num_steps)
+    
+    rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)
+    
+    neg_ints = int(numpy.floor(len(rad_dist)/2))
+    rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
+    
+
+    
+    fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
+    ax_1D.plot(rad_dist*35000,readout_counts_avg, label = nv_sig['name'])
+    ax_1D.set_xlabel('r (nm)')
+    ax_1D.set_ylabel('Average counts')
+    ax_1D.set_title('SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.\
+                                    format(638, 515, pulse_time/10**6,))
+
     #================ specific for 2D scans ================#
-    file_list = [
-        '2021_08_22-00_15_56-johnson-nv2_2021_08_20'
-        ]
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    label_list = [
-        '-1.125 um',
-        '-0.75 um',
-        '-0.375 um',
-        '0 um',
-        '0.375 um',
-        '0.75 um',
-        '1.125 um',
-        '1.5 um',
-        ]
+    # file_list = [
+    #     '2021_08_22-00_15_56-johnson-nv2_2021_08_20'
+    #     ]
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # label_list = [
+    #     '-1.125 um',
+    #     '-0.75 um',
+    #     '-0.375 um',
+    #     '0 um',
+    #     '0.375 um',
+    #     '0.75 um',
+    #     '1.125 um',
+    #     '1.5 um',
+    #     ]
 
-    for f in range(len(file_list)):
-        file = file_list[f]
-        data = tool_belt.get_raw_data(file, path)
-        try:
-            # img_array = data['readout_image_array']
-            readout_counts_array = data['readout_counts_array']
-            num_steps = data['num_steps']
-            x_voltages = data['x_voltages_1d']
-            y_voltages = data['y_voltages_1d']
-            x_low = x_voltages[0]
-            x_high = x_voltages[-1]
-            y_low = y_voltages[0]
-            y_high = y_voltages[-1]
-            pixel_size = x_voltages[1] - x_voltages[0]
-            half_pixel_size = pixel_size / 2
-            img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                          y_low - half_pixel_size, y_high + half_pixel_size]
+    # for f in range(len(file_list)):
+    #     file = file_list[f]
+    #     data = tool_belt.get_raw_data(file, path)
+    #     try:
+    #         # img_array = data['readout_image_array']
+    #         readout_counts_array = data['readout_counts_array']
+    #         num_steps = data['num_steps']
+    #         x_voltages = data['x_voltages_1d']
+    #         y_voltages = data['y_voltages_1d']
+    #         x_low = x_voltages[0]
+    #         x_high = x_voltages[-1]
+    #         y_low = y_voltages[0]
+    #         y_high = y_voltages[-1]
+    #         pixel_size = x_voltages[1] - x_voltages[0]
+    #         half_pixel_size = pixel_size / 2
+    #         img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+    #                       y_low - half_pixel_size, y_high + half_pixel_size]
 
-            # get jsut a slice throguh the middle
-            # num_steps= len(img_array)
-            # slice_counts = numpy.array(img_array[int(num_steps/2)])
+    #         # get jsut a slice throguh the middle
+    #         # num_steps= len(img_array)
+    #         # slice_counts = numpy.array(img_array[int(num_steps/2)])
 
-            # ax.plot(x_voltages, slice_counts + 10*f , '-', label = label_list[f])
-            # ax.legend()
+    #         # ax.plot(x_voltages, slice_counts + 10*f , '-', label = label_list[f])
+    #         # ax.legend()
             
-            # just plot the 1st run
-            readout_counts_array_rot = numpy.rot90(readout_counts_array)
-            readout_counts_avg =(readout_counts_array_rot[-1])
+    #         # just plot the 1st run
+    #         readout_counts_array_rot = numpy.rot90(readout_counts_array)
+    #         readout_counts_avg =(readout_counts_array_rot[-1])
             
             
-            readout_image_array = numpy.empty([num_steps, num_steps])
-            readout_image_array[:] = numpy.nan
+    #         readout_image_array = numpy.empty([num_steps, num_steps])
+    #         readout_image_array[:] = numpy.nan
         
-            writePos = []
-            readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
-            title = 'SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.format('532 nm', '638 nm', 150e3/10**6)
+    #         writePos = []
+    #         readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
+    #         title = 'SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.format('532 nm', '638 nm', 150e3/10**6)
         
 
-        except Exception:
-            pass
+    #     except Exception:
+    #         pass
 
-        tool_belt.create_image_figure(readout_image_array, img_extent, clickHandler=None,
-                            title=title, color_bar_label='Counts',
-                            min_value=None, um_scaled=False)
+    #     tool_belt.create_image_figure(readout_image_array, img_extent, clickHandler=None,
+    #                         title=title, color_bar_label='Counts',
+    #                         min_value=None, um_scaled=False)
 
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))
