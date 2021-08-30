@@ -40,7 +40,7 @@ def get_seq(pulse_streamer, config, args):
     pulse_color = args[6]
     read_color = args[7]
     
-   # compare objective peizo delay
+   # compare objective peizo delay (make this more general)
     galvo_move_time = config['Positioning']['xy_large_response_delay']
     galvo_move_time = numpy.int64(galvo_move_time)
     

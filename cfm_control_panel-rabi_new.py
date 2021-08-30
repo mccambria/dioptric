@@ -69,8 +69,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.5
     # scan_range = 0.3
     # scan_range = 0.2
-    scan_range = 0.15
-    # scan_range = 0.1
+    # scan_range = 0.15
+    scan_range = 0.1
     # scan_range = 0.05
     # scan_range = 0.025
     #
@@ -780,7 +780,7 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        "coords": [0,0, 5.0],
+        "coords": [0,0, 4.7],
         "name": "{}-search".format(sample_name),
         "disable_opt": False,
         "expected_count_rate": None,
@@ -799,10 +799,10 @@ if __name__ == "__main__":
 
     
     nv_sig = {
-        "coords": [-0.025, -0.009, 4.89],
-        "name": "{}-nv1_2021_08_27".format(sample_name,),
+        "coords": [-0.008, -0.097, 4.7],
+        "name": "{}-nv1_2021_08_30".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 35,
+        "expected_count_rate": 18,
         "spin_laser": green_laser,
         "spin_laser_power": 6,
         "spin_pol_dur": 1e5,
@@ -819,10 +819,14 @@ if __name__ == "__main__":
         "CPG_laser": red_laser,
         'CPG_laser_power': 80,
         "CPG_laser_dur": 150e3,
-        "charge_readout_laser": yellow_laser,
-        "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.1,
-        "charge_readout_dur": 50e6,
+        "charge_readout_laser": green_laser,
+        # "charge_readout_laser_filter": nd_yellow,
+        "charge_readout_laser_power": 6,
+        "charge_readout_dur": 1e7,
+        # "charge_readout_laser": yellow_laser,
+        # "charge_readout_laser_filter": nd_yellow,
+        # "charge_readout_laser_power": 0.1,
+        # "charge_readout_dur": 50e6,
         
         "dir_1D": "x",
         "collection_filter": "630_lp",
@@ -917,11 +921,11 @@ if __name__ == "__main__":
         
         
         # t_list = [50e3 ]#, 400e3, 600e3, 800e3, 1000e3]
-        t_list = [0]
+        t_list = [50e3]
         for t in t_list:
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['CPG_laser_dur'] = t
-            dz = 3/16
+            dz = 2/16
             
             img_range = 0.055
             num_steps = 76
