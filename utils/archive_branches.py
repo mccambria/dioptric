@@ -32,13 +32,13 @@ def parse_string_array(string_array):
     to us. New lines are delimiters.
     """
     vals = []
-    val = ''
+    val = ""
     for char in string_array:
-        if char == ' ':
+        if char == " ":
             continue
-        elif char == '\n':
+        elif char == "\n":
             vals.append(val)
-            val = ''
+            val = ""
         else:
             val += char
     return vals
@@ -53,73 +53,87 @@ def main(repo_path, branches_to_archive):
     repo = Repo(repo_path)
     repo_git = repo.git
     origin = repo.remotes.origin
-    
+
     # Get fully merged branches
-    merged_branches = parse_string_array(repo_git.branch('--merged', 'master'))
-    merged_branches = [branch for branch in merged_branches
-                        if branch != '' and not '*' in branch and not branch == 'master']
-    print('Merged branches:')
+    merged_branches = parse_string_array(repo_git.branch("--merged", "master"))
+    merged_branches = [
+        branch
+        for branch in merged_branches
+        if branch != "" and not "*" in branch and not branch == "master"
+    ]
+    print("Merged branches:")
     print(merged_branches)
-    
+
     # Get all local branches
-    local_branches = parse_string_array(repo_git.branch('-l'))
-    local_branches  = [branch for branch in local_branches
-                        if branch != '' and not '*' in branch and not branch == 'master']
-    print('\nLocal branches:')
+    local_branches = parse_string_array(repo_git.branch("-l"))
+    local_branches = [
+        branch
+        for branch in local_branches
+        if branch != "" and not "*" in branch and not branch == "master"
+    ]
+    print("\nLocal branches:")
     print(local_branches)
-    
+
     # Confirm that the branch should be deleted
     archived_branches = []
     tagged_branches = []
     for branch in branches_to_archive:
         archive = True
-        if branch == 'master':
-            print("I'm sorry Dave. I'm afraid I can't archive the master branch.")
+        if branch == "master":
+            print(
+                "I'm sorry Dave. I'm afraid I can't archive the master branch."
+            )
             archive = False
         elif branch not in local_branches:
-            print('Branch {} does not exist locally for this repo. Skipping.'.format(branch))
+            print(
+                "Branch {} does not exist locally for this repo. Skipping."
+                .format(branch)
+            )
             archive = False
         elif branch not in merged_branches:
-            msg = 'Branch {} is not fully merged with master. Archive anyway? '
+            msg = (
+                "Branch {} is not fully merged with master. Archive anyway?"
+                " (y/[n])"
+            )
         else:
-            msg = 'Archive branch {}? '
-        if archive and not input(msg.format(branch)).startswith('y'):
+            msg = "Archive branch {}? (y/[n])"
+        if archive and not input(msg.format(branch)) in ("y", "Y"):
             archive = False
         if archive:  # Change to if True to override checks
             # Add a timestamp to the tagged branch
             inst = int(time.time())
-            tagged_name = '{}-{}'.format(branch, inst)
-            repo_git.tag(r'archive/{}'.format(tagged_name), branch)
+            tagged_name = "{}-{}".format(branch, inst)
+            repo_git.tag(r"archive/{}".format(tagged_name), branch)
             archived_branches.append(branch)
             tagged_branches.append(tagged_name)
-    
+
     if archived_branches == []:
-        print('No branches archived.')
-    
+        print("No branches archived.")
+
     # Push archive tags to remote
     for branch in tagged_branches:
         try:
-            print('tagging')
-            origin.push(r'archive/{}'.format(branch))
-            print('tagged')
+            print("tagging")
+            origin.push(r"archive/{}".format(branch))
+            print("tagged")
         except Exception as e:
             print(e)
-    
+
     # Delete remote branches
     for branch in archived_branches:
         try:
-            print('deleting remote')
-            origin.push(':{}'.format(branch))
-            print('deleted remote')
+            print("deleting remote")
+            origin.push(":{}".format(branch))
+            print("deleted remote")
         except Exception as e:
             print(e)
-    
+
     # Delete local branches
     for branch in archived_branches:
         try:
-            print('deleting local')
-            repo_git.branch('-D', branch)
-            print('deleted local')
+            print("deleting local")
+            repo_git.branch("-D", branch)
+            print("deleted local")
         except Exception as e:
             print(e)
 
@@ -127,13 +141,14 @@ def main(repo_path, branches_to_archive):
 # %% Run the file
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    
     # Path to your local checkout of the repo
-    repo_path = str(Path.home()) + '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
-    
+    repo_path = (
+        str(Path.home()) + "/Documents/GitHub/kolkowitz-nv-experiment-v1.0"
+    )
+
     # List of branches to archive
-    branches_to_archive = ['piezo-hysteresis']
+    branches_to_archive = ["fast-file-lookup"]
 
     main(repo_path, branches_to_archive)

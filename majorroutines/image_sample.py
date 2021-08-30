@@ -182,9 +182,20 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         raise RuntimeError('x and y resolutions must match for now.')
 
     xy_server = tool_belt.get_xy_server(cxn)
-    xy_delay = tool_belt.get_registry_entry(cxn, 'xy_small_response_delay', ['', 'Config', 'Positioning'])
+    
+    # Get a couple registry entries
+    # See if this setup has finely specified delay times, else just get the 
+    # one-size-fits-all value.
+    dir_path = ['', 'Config', 'Positioning']
+    cxn.registry.cd(*dir_path)
+    _, keys = cxn.registry.dir()
+    if 'xy_small_response_delay' in keys:
+        xy_delay = tool_belt.get_registry_entry(cxn, 
+                                        'xy_small_response_delay', dir_path)
+    else:
+        xy_delay = tool_belt.get_registry_entry(cxn, 'xy_delay', dir_path)
     # Get the scale in um per unit
-    xy_scale = tool_belt.get_registry_entry(cxn, 'xy_nm_per_unit', ['', 'Config', 'Positioning'])
+    xy_scale = tool_belt.get_registry_entry(cxn, 'xy_nm_per_unit', dir_path)
     if xy_scale == -1:
         um_scaled = False
     else: 

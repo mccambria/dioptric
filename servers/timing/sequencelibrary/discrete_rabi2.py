@@ -27,7 +27,7 @@ def get_seq(pulse_streamer, config, args):
     # Unpack the durations
     polarization_time, iq_delay_time, gate_time, uwave_pi_pulse, uwave_pi_on_2_pulse = durations
         
-    uwave_to_readout_time = config['CommonDurations']['uwave_to_readout_wait_dur']
+    uwave_to_readout_time = config['CommonDurations']['uwave_buffer']
     signal_wait_time = uwave_to_readout_time
     reference_time = signal_wait_time  # not sure what this is
     background_wait_time = signal_wait_time  # not sure what this is

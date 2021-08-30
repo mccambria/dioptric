@@ -35,9 +35,9 @@ def constant(cxn, laser_name, laser_power=None):
 
     tool_belt.laser_on(cxn, laser_name, laser_power)
 
-    input('Press enter to stop...')
+    # input('Press enter to stop...')
 
-    tool_belt.laser_off(cxn, laser_name)
+    # tool_belt.laser_off(cxn, laser_name)
 
 
 # %% Main
@@ -47,7 +47,7 @@ def main(cxn, laser_name, laser_power=None):
     """When you run the file, we'll call into main, which should contain the
     body of the script.
     """
-    
+
     seq_file = 'square_wave.py'
     period = 10**4
     seq_args = [period, laser_name, laser_power]
@@ -77,8 +77,10 @@ if __name__ == '__main__':
     pos = [-0.025, -0.009, 4.89]
 
     # Hahn
-#    laser_names = ['laser_532', 'laser_589', 'laser_638']
-#    pos = [0.0, 0.0, 0]
+    laser_name = 'laserglow_532'
+    filter_name = 'nd_1.0'
+    # laser_names = ['laserglow_532']
+    pos = [0.0, 0.0, 7.0]
 
     with labrad.connect() as cxn:
         tool_belt.set_xyz(cxn, pos)

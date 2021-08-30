@@ -116,7 +116,8 @@ def single_gaussian_dip(freq, constrast, sigma, center):
     return 1.0 - gaussian(freq, constrast, sigma, center)
 
 # def get_guess_params(freqs, norm_avg_sig, ref_counts):
-def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
+def get_guess_params(freq_range, freq_center, num_steps, 
+                     norm_avg_sig, ref_counts=None):
 
     # %% Guess the locations of the minimums
 
@@ -134,11 +135,16 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
 
     # Bit of processing
     inverted_norm_avg_sig = 1 - norm_avg_sig
-    # ref_std = numpy.std(ref_counts)
-    # rel_ref_std = ref_std / numpy.average(ref_counts)
-    # height = max(rel_ref_std, contrast/4)
-    # print(height)
-    height = 0.08
+    if ref_counts is not None:
+        # ref_counts contains a list of lists. Each list is a single run.
+        # Each point is a single freq in that run. We want to know the
+        # noise we should expect to see on a point averaged over the runs.
+        ref_ste = numpy.std(ref_counts) / numpy.sqrt(len(ref_counts))
+        rel_ref_ste = ref_ste / numpy.average(ref_counts)
+        height = 5 * rel_ref_ste
+        # print(height)
+    else:
+        height = 0.08
 
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
@@ -204,13 +210,13 @@ def get_guess_params(freq_range, freq_center, num_steps, norm_avg_sig):
     return fit_func, guess_params
 
 
-def fit_resonance(freq_range, freq_center, num_steps,
-                  norm_avg_sig, norm_avg_sig_ste=None):
-
+def fit_resonance(freq_range, freq_center, num_steps, norm_avg_sig, 
+                  norm_avg_sig_ste=None, ref_counts=None):
+ 
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
-
+    
     fit_func, guess_params = get_guess_params(freq_range, freq_center,
-                                              num_steps, norm_avg_sig)
+                                          num_steps, norm_avg_sig, ref_counts)
 
     try:
         if norm_avg_sig_ste is not None:
