@@ -34,8 +34,29 @@ def plot_peak(peak, P, t, do_plot = False):
     
     return lin_r, data, ax
 
+def plot_broadened_peak(peak, P, t, do_plot = False):
+    dr = 150
+    lin_r = numpy.linspace(peak - dr, peak + dr, 100)
+    data = eta(lin_r,v, P, t)
+    i = 0
+    shift_list = [0 for el in range(i)]
+    shifted_data = shift_list + data.tolist()
+    data = data.tolist() + shift_list
+    new_data = (numpy.array(data) + numpy.array(shifted_data))/2
+    
+    if do_plot:
+        fig, ax = plt.subplots(1, 1)
+        ax.plot(lin_r, new_data[len(shift_list):], 'bo')
+        ax.set_xlabel('r (nm)')
+        ax.set_ylabel('NV- probability')
+    else:
+        ax = []
+    
+    return lin_r, new_data[len(shift_list):], ax
+
 def fit_gaussian_peak(peak, P, t, do_plot = False):
-    ret_vals = plot_peak(peak, P, t, do_plot)
+    # ret_vals = plot_peak(peak, P, t, do_plot)
+    ret_vals = plot_broadened_peak(peak, P, t, do_plot)
     lin_r, data, ax = ret_vals
     
     init_guess = [0.5, peak, peak/10, 0]
@@ -54,16 +75,16 @@ def vary_powers(peak, P_range, t):
     width_list = []
     power_list = []
     
-    for P in numpy.linspace(P_range[0], P_range[1], 100):
+    for P in numpy.linspace(P_range[0], P_range[1], 10):
         failed = True
         try:
-            fit_params = fit_gaussian_peak(peak, P, t)
+            fit_params = fit_gaussian_peak(peak, P, t, True)
             failed = False
         except Exception:
             continue
         
         if not failed:
-            width_list.append(fit_params[2])
+            width_list.append(abs(fit_params[2]))
             power_list.append(P)
             
     init_guess = [50, -0.5]
@@ -78,6 +99,8 @@ def vary_powers(peak, P_range, t):
     ax.plot(lin_powers, power_law(lin_powers, *fit_params), 'r-')
     ax.set_xlabel('Power (mW)')
     ax.set_ylabel(r'Gaussian fit width, $\sigma$ (nm)')
+    ax.set_yscale('log')
+    ax.set_xscale('log')
     
     eq_text = 'a * x ^ b'
     ax.text(0.75, 0.95, eq_text, transform=ax.transAxes, fontsize=12,
@@ -100,7 +123,7 @@ def vary_duration(peak, P, t_range):
             continue
         
         if not failed:
-            width_list.append(fit_params[2])
+            width_list.append(abs(fit_params[2]))
             duration_list.append(t)
             
     init_guess = [50, -0.25]
@@ -115,6 +138,8 @@ def vary_duration(peak, P, t_range):
     ax.plot(lin_durations, power_law(lin_durations, *fit_params), 'r-')
     ax.set_xlabel('Duration (ms)')
     ax.set_ylabel(r'Gaussian fit width, $\sigma$ (nm)')
+    ax.set_yscale('log')
+    ax.set_xscale('log')
     
     eq_text = 'a * x ^ b'
     ax.text(0.75, 0.95, eq_text, transform=ax.transAxes, fontsize=12,
@@ -141,7 +166,7 @@ def intensity_airy_func(r, P):
     I = intensity_scaling(P)
     x = radial_scaling(r)
     
-    return I * (2*j1(x) / x)**2
+    return I * (2*j1(x) / x)**2 + 0.005*I
 
 def eta(r,v, P, t):
     return numpy.exp(-v*t*intensity_airy_func(r, P)**2)
@@ -151,7 +176,8 @@ def eta(r,v, P, t):
 # There is a fair bit of finess to the values to test. Too low, and the Gaussian 
 # width is overestimated. Too low, and the peak is not there and the fit doesn't pick it up
 
-vary_powers(300, [40, 340], 70)
-vary_duration(300, 50, [50, 500]) # as we go to shorter times, the fits over estimate the width
+# vary_powers(300, [40, 340], 70) # -0.5
+vary_duration(300, 50, [50, 500]) # -0.25
 
 # fit_gaussian_peak(300, 50, 70, do_plot = True)
+# plot_broadened_peak(300, 50, 70, do_plot = True)
