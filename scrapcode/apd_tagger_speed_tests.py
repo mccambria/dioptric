@@ -101,12 +101,15 @@ def read_counter_internal(channels):
             channel_counts_append = channel_counts.append
 
             for ind in range(len(gate_open_click_inds)):
+                # pass
                 gate_open_click_ind = gate_open_click_inds[ind]
                 gate_close_click_ind = gate_close_click_inds[ind]
                 gate_window = sample_channels[
                     gate_open_click_ind:gate_close_click_ind
                 ]
-                gate_count = numpy.count_nonzero(gate_window == apd_channel)
+                # gate_count = numpy.count_nonzero(gate_window == apd_channel)
+                gate_window = gate_window.tolist()
+                gate_count = gate_window.count(apd_channel)
                 channel_counts_append(gate_count)
 
             sample_counts_append(channel_counts)
