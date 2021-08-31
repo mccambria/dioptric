@@ -308,7 +308,7 @@ if __name__ == "__main__":
         # # laser_name = 'cobolt_515'
         # # delay_range = [0, 300]
         # laser_name = 'laserglow_532'
-        # delay_range = [-100, 1200]
+        # delay_range = [800, 1200]
         # laser_power = None
         # with labrad.connect() as cxn:
         #     aom_delay(cxn, nv_sig, apd_indices,
@@ -316,12 +316,12 @@ if __name__ == "__main__":
 
         # uwave_delay
         num_reps = int(4e4)
-        delay_range = [0, 200]
+        delay_range = [-200, 200]
         num_steps = 51
         # sg394
-        # state = States.LOW
+        state = States.LOW
         # tsg4104a
-        state = States.HIGH
+        # state = States.HIGH
         with labrad.connect() as cxn:
             uwave_delay(
                 cxn,
