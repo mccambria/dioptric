@@ -276,13 +276,13 @@ def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift):
     # now create a list of all the coords we want to feed to the galvo
     for i in range(num_samples):
         x_points.append(coords_list_drift[i][0])
-        x_points.append(coords_list_drift[i][0])
-        # x_points.append(start_x_value)
+        # x_points.append(coords_list_drift[i][0])
+        x_points.append(start_x_value)
         x_points.append(start_x_value)
 
         y_points.append(coords_list_drift[i][1])
-        y_points.append(coords_list_drift[i][1])
-        # y_points.append(start_y_value)
+        # y_points.append(coords_list_drift[i][1])
+        y_points.append(start_y_value)
         y_points.append(start_y_value)
         
         z_points.append(coords_list_drift[i][2])

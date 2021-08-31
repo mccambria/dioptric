@@ -473,21 +473,21 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,  num_reps,
 
 if __name__ == '__main__':
 
-    scan_range = 0.3
+    scan_range = 0.2
     num_steps = 90
-    num_reps = 2
+    num_reps = 3
     apd_indices  =[0]
     
      # load the data here 
     sample_name = 'johnson'    
     
-    green_laser = 'laserglow_532'
+    green_laser = 'cobolt_515'
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
-    nd_green = 'nd_0.5'
+    # nd_green = 'nd_0.5'
     
     nv_sig = {
-        "coords": [0,0,4.9],
+        "coords": [0,0,4.7],
         "name": "{}-search".format(sample_name),
         "disable_opt": False,
         "expected_count_rate": None,
@@ -496,12 +496,12 @@ if __name__ == '__main__':
         # "imaging_laser_power": 1,
         # "imaging_readout_dur": 5*1e7,
         "imaging_laser": green_laser,
-        "imaging_laser_filter": nd_green,
+        "imaging_laser_power": 6,
         "imaging_readout_dur": 1e7,
-            'nvm_prep_laser': green_laser, 'nvm_prep_laser_filter': nd_green, 'nvm_prep_laser_dur': 1E3,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 80, 'nv0_prep_laser_dur': 1E3,
-            'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': 'nd_1.0', 
-            'charge_readout_laser_power': 0.25, 'charge_readout_dur':15e6,
+            'nvm_prep_laser': green_laser, 'nvm_prep_laser_power': 6, 'nvm_prep_laser_dur': 1E3,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 110, 'nv0_prep_laser_dur': 1E3,
+            'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': 'nd_0.5', 
+            'charge_readout_laser_power': 0.1, 'charge_readout_dur':50e6,
             'collection_filter': '630_lp', 'magnet_angle': None,
             'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max

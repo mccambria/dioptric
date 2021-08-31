@@ -76,6 +76,10 @@ def get_signal_generator_cxn(cxn, state):
 
 
 def set_xyz(cxn, coords):
+    ####Update to step incrementally to this position from the current position
+    # get current x, y, z values
+    # divide up movement to this value based on step_size
+    #incrementally move to the final position
     xy_dtype = eval(
         get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
     )

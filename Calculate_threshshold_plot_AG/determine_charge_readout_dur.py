@@ -411,10 +411,10 @@ if __name__ == '__main__':
     red_laser = 'cobolt_638'
     
     nv_sig = {
-        "coords": [-0.008, -0.097, 4.7],
-        "name": "{}-nv1_2021_08_30".format(sample_name,),
+        "coords": [0.016, -0.046, 4.7],
+        "name": "{}-nv2_2021_08_30".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 18,
+        "expected_count_rate": 38,
         "imaging_laser": green_laser,
         "imaging_laser_power": 6,
         "imaging_readout_dur": 1e7,
