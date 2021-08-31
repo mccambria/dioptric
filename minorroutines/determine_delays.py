@@ -51,7 +51,7 @@ def measure_delay(cxn, nv_sig, apd_indices,
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
     tool_belt.reset_cfm(cxn)
-    
+
     # Turn on the microwaves for determining microwave delay
     sig_gen = None
     if seq_file == 'uwave_delay.py':
@@ -73,7 +73,7 @@ def measure_delay(cxn, nv_sig, apd_indices,
         tau = taus[tau_ind]
         if seq_file == 'aom_delay.py':
             readout = nv_sig['imaging_readout_dur']
-            seq_args = [tau, max_tau, readout, 
+            seq_args = [tau, max_tau, readout,
                         apd_indices[0], laser_name, laser_power]
         elif seq_file == 'uwave_delay.py':
             laser_key = 'spin_laser'
@@ -97,7 +97,7 @@ def measure_delay(cxn, nv_sig, apd_indices,
         sig_counts[tau_ind] = sum(sample_counts[1::2])
 
     cxn.apd_tagger.stop_tag_stream()
-    
+
     tool_belt.reset_cfm(cxn)
 
     # kcps
@@ -142,7 +142,7 @@ def measure_delay(cxn, nv_sig, apd_indices,
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
-    
+
     if tool_belt.check_safe_stop_alive():
         print('\n\nRoutine complete. Press enter to exit.')
         tool_belt.poll_safe_stop()
@@ -157,7 +157,7 @@ def aom_delay(cxn, nv_sig, apd_indices,
     seq_file = 'aom_delay.py'
 
     measure_delay(cxn, nv_sig, apd_indices,
-                  delay_range, num_steps, num_reps, seq_file, 
+                  delay_range, num_steps, num_reps, seq_file,
                   laser_name=laser_name, laser_power=laser_power)
 
 def uwave_delay(cxn, nv_sig, apd_indices, state,
@@ -168,13 +168,13 @@ def uwave_delay(cxn, nv_sig, apd_indices, state,
     If there were no delays, the sequence would look like this
     Uwaves
     APD
-    
-    
+
+
     '''
 
     seq_file = 'uwave_delay.py'
-    
-    measure_delay(cxn, nv_sig, apd_indices, delay_range, num_steps, 
+
+    measure_delay(cxn, nv_sig, apd_indices, delay_range, num_steps,
                   num_reps, seq_file, state=state)
 
 
@@ -202,7 +202,7 @@ if __name__ == '__main__':
             'resonance_LOW': 2.7549, 'rabi_LOW': 187.9, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9891, 'rabi_HIGH': 338.1, 'uwave_power_HIGH': 14.5}   # 14.5 max
     apd_indices = [1]
-    
+
     try:
 
         # aom_delay
@@ -228,7 +228,7 @@ if __name__ == '__main__':
         with labrad.connect() as cxn:
             uwave_delay(cxn, nv_sig, apd_indices, state,
                         delay_range, num_steps, num_reps)
-            
+
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here

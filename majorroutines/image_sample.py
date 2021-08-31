@@ -176,6 +176,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     laser_name = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    # print(laser_power)
     
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
@@ -348,7 +349,7 @@ if __name__ == '__main__':
 
 
     path = 'pc_rabi/branch_master/image_sample/2021_08'
-    file_name = '2021_08_20-16_54_36-johnson-search'
+    file_name = '2021_08_27-16_02_11-johnson-nv2_2021_08_27'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']

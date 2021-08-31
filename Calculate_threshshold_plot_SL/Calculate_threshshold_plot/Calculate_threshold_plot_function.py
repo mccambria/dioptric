@@ -411,18 +411,17 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
 if __name__ == '__main__':
     sample_name = 'johnson'    
     
-    green_laser = 'laserglow_532'
+    green_laser = "cobolt_515"
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
-    nd_green = 'nd_0.5'
     
     nv_sig = { 
-        "coords": [0.013, -0.090, 4.90],
-        "name": "{}-nv2_2021_08_20".format(sample_name,),
+        "coords": [0.014, 0.033, 5.02],
+        "name": "{}-nv1_2021_08_26".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 36,
-            'imaging_laser': green_laser, 'imaging_laser_filter': nd_green, 'imaging_readout_dur': 1E7,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_filter': nd_green, 'nv-_prep_laser_dur': 1E3,
+        "expected_count_rate": 35,
+            'imaging_laser': green_laser, 'imaging_laser_power': 6, 'imaging_readout_dur': 1E7,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': 6, 'nv-_prep_laser_dur': 1E3,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 80, 'nv0_prep_laser_dur': 1E3,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None, 
             'charge_readout_laser_power': None, 'charge_readout_dur':None,
@@ -434,7 +433,7 @@ if __name__ == '__main__':
         # make sure each power is unique, the durations can be the same
         determine_readout_dur(nv_sig, readout_times =[ 150*10**6, 150*10**6, 100*10**6],
                           readout_yellow_powers = [0.1, 0.15, 0.2], 
-                          nd_filter = 'nd_1.0')
+                          nd_filter = 'nd_0.5')
         
     finally:
         # Reset our hardware - this should be done in each routine, but

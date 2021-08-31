@@ -291,7 +291,8 @@ def fit_data(data):
     decay_time_us = decay_time / 1000
     max_precession_dur_us = max_precession_dur / 1000
 
-    # Get the init params we want to test
+    # Get the init params we want to test and try them out. Compare them with
+    # a reduced chi squared.
     init_params_tests = []
     min_bounds_tests = []
     max_bounds_tests = []
@@ -334,7 +335,6 @@ def fit_data(data):
             residuals = fit_func_lambda(tau_pis_us) - norm_avg_sig
             chi_sq = numpy.sum((residuals ** 2) / (norm_avg_sig_ste ** 2))
             red_chi_sq = chi_sq / len(popt)
-            print(red_chi_sq)
             if best_red_chi_sq is None or (red_chi_sq < best_red_chi_sq):
                 best_red_chi_sq = red_chi_sq
                 best_popt = popt

@@ -49,7 +49,7 @@ def main_with_cxn(cxn, nv_sig, movement_displ, axis_ind, apd_indices, plot):
     tool_belt.reset_cfm(cxn)
 
     # Define the parameters to be used in the sequence
-    num_steps = 25
+    num_steps = 10#25
     config = tool_belt.get_config_dict(cxn)
 
     xy_opti_scan_range = config["Positioning"]["xy_optimize_range"] / 2
@@ -193,16 +193,16 @@ if __name__ == "__main__":
 
     # movement_displ = 0.2
     # displacement_list = [0.12]
-    displacement_list = numpy.linspace(-0.48, 0.48, 41)
+    displacement_list = numpy.linspace(-0.20, 0.28, 21)
     # displacement_list = displacement_list[12:]
 
     nv_sig = {
-        "coords": [0.021, -0.058, 4.77],
-        "name": "{}-nv2_2021_08_04".format(sample_name),
+        "coords": [-0.025, -0.009, 4.89],
+        "name": "{}-nv1_2021_08_27".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 50,
-        "imaging_laser": "laserglow_532",
-        "imaging_laser_filter": "nd_0.5",
+        "expected_count_rate": 32,
+        "imaging_laser": "cobolt_515",
+        "imaging_laser_power": 6,
         "imaging_readout_dur": 1e7,
         "collection_filter": "630_lp",
         "magnet_angle": None,

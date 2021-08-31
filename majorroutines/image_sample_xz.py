@@ -347,7 +347,7 @@ if __name__ == '__main__':
 
 
     path = 'pc_rabi/branch_master/image_sample_xz/2021_08'
-    file_name = '2021_08_20-16_47_53-johnson-nv1_2021_08_20'
+    file_name = '2021_08_27-15_58_12-johnson-nv2_2021_08_27'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']
@@ -356,6 +356,10 @@ if __name__ == '__main__':
     img_array = numpy.array(data['img_array'])
     x_voltages = data['x_voltages']
     z_voltages = data['z_voltages']
+    num_steps = data['num_steps']
+    half_num_steps = int(num_steps/2)
+    print(z_voltages[half_num_steps])
+    
     x_low = x_voltages[0]
     x_high = x_voltages[-1]
     z_low = z_voltages[0]
