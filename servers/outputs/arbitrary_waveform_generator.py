@@ -53,7 +53,7 @@ class ArbitraryWaveformGenerator(LabradServer):
     def initServer(self):
         filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
         filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(level=logging.DEBUG, 
+        logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
@@ -70,12 +70,12 @@ class ArbitraryWaveformGenerator(LabradServer):
 
     def on_get_config(self, config):
         address = config[0]
-        logging.debug(address)
+        logging.info(address)
         self.do_arb_wave_trigger = int(config[1])
         resource_manager = visa.ResourceManager()
         self.wave_gen = resource_manager.open_resource(address)
         self.reset(None)
-        logging.debug('Init complete')
+        logging.info('Init complete')
 
 
     @setting(3)

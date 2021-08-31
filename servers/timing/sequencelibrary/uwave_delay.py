@@ -47,7 +47,7 @@ def get_seq(pulse_streamer, config, args):
     state = States(state)
     sig_gen = config['Microwaves']['sig_gen_{}'.format(state.name)]
     
-    wait_time = config['CommonDurations']['pol_to_uwave_wait_dur']
+    wait_time = config['CommonDurations']['uwave_buffer']
     aom_delay_time = config['Optics'][laser_name]['delay']
     
     pulser_wiring = config['Wiring']['PulseStreamer']
@@ -107,6 +107,9 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
 
     config = tool_belt.get_config_dict()
+    pulser_wiring = config['Wiring']['PulseStreamer']
+    print(pulser_wiring)
+    config['Optics']['laserglow_532']['delay'] = 0
 
     # Set up a dummy args list
     args = [0.0, 1200, 350, 83, 1000.0, 1, 0, 'laserglow_532', None]
