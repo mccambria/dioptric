@@ -100,20 +100,16 @@ if __name__ == '__main__':
     # can run the file to plot the sequence for debugging and analysis. We'll
     # go through that here.
 
-    # Set up a dummy pulser wiring dictionary
-    pulser_wiring = {'do_apd_0_gate': 0, 
-                     'do_532_aom': 1, 
-                     'do_sample_clock': 2,
-                     'do_cobolt_515_dm': 1,
-                     'ao_589_aom': 1, 
-                     'do_638_laser': 4}
+    config = tool_belt.get_config_dict()
+    pulser_wiring = config['Wiring']['PulseStreamer']
+    print(pulser_wiring)
 
     # Set up a dummy args list
-    args = [32.8, 200, 0, ['cobolt_515', 1, None, 'True']]
+    args = [0, 200, 1000, 0, 'laserglow_532', None]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.
-    seq = get_seq(pulser_wiring, args)[0]
+    seq = get_seq(None, config, args)[0]
 
     # Plot the sequence
     seq.plot()
