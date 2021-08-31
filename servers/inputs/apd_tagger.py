@@ -152,14 +152,60 @@ class ApdTagger(LabradServer):
 
         return counts
 
-    def read_counter_internal(self, num_to_read):
+    def get_gate_click_inds(self, sample_channels_arr, apd_index):
+
+        gate_open_channel = self.tagger_di_gate[
+            self.stream_apd_indices[apd_index]
+        ]
+        gate_close_channel = -gate_open_channel
+
+        # Find gate open clicks
+        result = numpy.nonzero(sample_channels_arr == gate_open_channel)
+        gate_open_inds = result[0].tolist()
+
+        # Find gate close clicks
+        # Gate close channel is negative of gate open channel,
+        # signifying the falling edge
+        result = numpy.nonzero(sample_channels_arr == gate_close_channel)
+        gate_close_inds = result[0].tolist()
+
+        return gate_open_inds, gate_close_inds
+
+    def append_apd_channel_counts(
+        self, gate_inds, apd_index, sample_channels_list, sample_counts_append
+    ):
+        # The zip must be recreated each time we want to use it
+        # since the generator it returns is a single-use object for
+        # memory reasons.
+        gate_zip = zip(gate_inds[0], gate_inds[1])
+        apd_channel = self.tagger_di_apd[apd_index]
+        channel_counts = [
+            sample_channels_list[open_ind:close_ind].count(apd_channel)
+            for open_ind, close_ind in gate_zip
+        ]
+        sample_counts_append(channel_counts)
+
+    def read_counter_internal(self):
+        """
+        This is the core counter function for the Time Tagger. It needs to be
+        fast since we often have a high data rate (say, 1 million counts per
+        second). If it's not fast enough, we may encounter unexpected behavior,
+        like certain samples returning 0 counts when clearly they should return
+        something > 0. As such, this function is already highly optimized. The
+        main approach is to use functions that map from Python to some
+        other language (like how list comprehension runs in C) since Python
+        is so slow. So unless you're prepared to run some performance tests
+        (apd_tagger_speed_tests makes this pretty easy), don't even make minor
+        changes to this function.
+        """
+
         if self.stream is None:
             logging.error(
                 "read_counter_internal attempted while stream is None."
             )
             return
 
-        timestamps, channels = self.read_raw_stream()
+        _, channels = self.read_raw_stream()
 
         # Find clock clicks (sample breaks)
         result = numpy.nonzero(channels == self.tagger_di_clock)
@@ -173,6 +219,12 @@ class ApdTagger(LabradServer):
         return_counts = []
         return_counts_append = return_counts.append
 
+        # If all APDs are running off the same gate, we can make things faster
+        single_gate = all(
+            self.tagger_di_gate[el] == self.tagger_di_gate[0]
+            for el in self.stream_apd_indices
+        )
+
         for clock_click_ind in clock_click_inds:
 
             # Clock clicks end samples, so they should be included with the
@@ -180,71 +232,54 @@ class ApdTagger(LabradServer):
             sample_end_ind = clock_click_ind + 1
 
             if previous_sample_end_ind is None:
-                sample_timestamps = self.leftover_timestamps
-                sample_timestamps.extend(timestamps[0:sample_end_ind])
                 sample_channels = self.leftover_channels
                 sample_channels.extend(channels[0:sample_end_ind])
             else:
-                sample_timestamps = timestamps[
-                    previous_sample_end_ind:sample_end_ind
-                ]
                 sample_channels = channels[
                     previous_sample_end_ind:sample_end_ind
                 ]
 
-            # Make sure we've got arrays or else comparison won't produce
-            # the boolean array we're looking for when we find gate clicks
-            sample_timestamps = numpy.array(sample_timestamps)
-            sample_channels = numpy.array(sample_channels)
+            # Make sure we've got an array for comparison to find click indices
+            # and a list for operations that necessarily scale linearly and
+            # need to be fast.
+            sample_channels_arr = numpy.array(sample_channels)
+            sample_channels_list = sample_channels.tolist()
 
             sample_counts = []
             sample_counts_append = sample_counts.append
 
-            # Loop through the APDs
-            for apd_index in self.stream_apd_indices:
-
-                apd_channel = self.tagger_di_apd[apd_index]
-                gate_open_channel = self.tagger_di_gate[apd_index]
-                gate_close_channel = -gate_open_channel
-
-                # Find gate open clicks
-                result = numpy.nonzero(sample_channels == gate_open_channel)
-                gate_open_click_inds = result[0].tolist()
-
-                # Find gate close clicks
-                # Gate close channel is negative of gate open channel,
-                # signifying the falling edge
-                result = numpy.nonzero(sample_channels == gate_close_channel)
-                gate_close_click_inds = result[0].tolist()
-
-                # The number of APD clicks is simply the number of items in the
-                # buffer between gate open and gate close clicks
-                channel_counts = []
-                channel_counts_append = channel_counts.append
-
-                for ind in range(len(gate_open_click_inds)):
-                    gate_open_click_ind = gate_open_click_inds[ind]
-                    gate_close_click_ind = gate_close_click_inds[ind]
-                    gate_window = sample_channels[
-                        gate_open_click_ind:gate_close_click_ind
-                    ]
-                    gate_count = numpy.count_nonzero(
-                        gate_window == apd_channel
+            # Get all the gates once and then count for each APD individually
+            if single_gate:
+                gate_inds = self.get_gate_click_inds(sample_channels_arr, 0)
+                for apd_index in self.stream_apd_indices:
+                    self.append_apd_channel_counts(
+                        gate_inds,
+                        apd_index,
+                        sample_channels_list,
+                        sample_counts_append,
                     )
-                    channel_counts_append(gate_count)
 
-                sample_counts_append(channel_counts)
+            # Loop through the APDs, getting the gates for each APD
+            else:
+                for apd_index in self.stream_apd_indices:
+                    gate_inds = self.get_gate_click_inds(
+                        sample_channels_arr, apd_index
+                    )
+                    self.append_apd_channel_counts(
+                        gate_inds,
+                        apd_index,
+                        sample_channels_list,
+                        sample_counts_append,
+                    )
 
             return_counts_append(sample_counts)
             previous_sample_end_ind = sample_end_ind
 
         if sample_end_ind is None:
             # No samples were clocked - add everything to leftovers
-            self.leftover_timestamps.extend(timestamps.tolist())
             self.leftover_channels.extend(channels.tolist())
         else:
             # Reset leftovers from the last sample clock
-            self.leftover_timestamps = timestamps[sample_end_ind:].tolist()
             self.leftover_channels = channels[sample_end_ind:].tolist()
 
         return return_counts
@@ -258,7 +293,6 @@ class ApdTagger(LabradServer):
         self.stream = None
         self.stream_apd_indices = []
         self.stream_channels = []
-        self.leftover_timestamps = []
         self.leftover_channels = []
 
     @setting(0, returns="*i")

@@ -48,7 +48,54 @@ def read_raw_stream():
     return numpy.array(sample_window, dtype=int)
 
 
+def get_gate_click_inds(sample_channels_arr, apd_index):
+
+    global stream_apd_indices, tagger_di_gate
+
+    gate_open_channel = tagger_di_gate[stream_apd_indices[apd_index]]
+    gate_close_channel = -gate_open_channel
+
+    # Find gate open clicks
+    result = numpy.nonzero(sample_channels_arr == gate_open_channel)
+    gate_open_inds = result[0].tolist()
+
+    # Find gate close clicks
+    # Gate close channel is negative of gate open channel,
+    # signifying the falling edge
+    result = numpy.nonzero(sample_channels_arr == gate_close_channel)
+    gate_close_inds = result[0].tolist()
+
+    return gate_open_inds, gate_close_inds
+
+
+def append_apd_channel_counts(
+    gate_inds, apd_index, sample_channels_list, sample_counts_append
+):
+    # The zip must be recreated each time we want to use it
+    # since the generator it returns is a single-use object for
+    # memory reasons.
+    gate_zip = zip(gate_inds[0], gate_inds[1])
+    apd_channel = tagger_di_apd[apd_index]
+    channel_counts = [
+        sample_channels_list[open_ind:close_ind].count(apd_channel)
+        for open_ind, close_ind in gate_zip
+    ]
+    sample_counts_append(channel_counts)
+
+
 def read_counter_internal(channels):
+    """
+    This is the core counter function for the Time Tagger. It needs to be
+    fast since we often have a high data rate (say, 1 million counts per
+    second). If it's not fast enough, we may encounter unexpected behavior,
+    like certain samples returning 0 counts when clearly they should return
+    something > 0. As such, this function is already highly optimized. The
+    main approach is to use functions that map from Python to some
+    other language (like how list comprehension runs in C) since Python is so
+    slow. So unless you're prepared to run some performance tests
+    (apd_tagger_speed_tests makes this pretty easy), don't even make minor
+    changes to this function.
+    """
 
     global tagger_di_clock, stream_apd_indices, tagger_di_apd, tagger_di_gate
 
@@ -86,30 +133,28 @@ def read_counter_internal(channels):
         sample_counts = []
         sample_counts_append = sample_counts.append
 
-        # Loop through the APDs
-        for apd_index in stream_apd_indices:
+        # Get all the gates once and then count for each APD individually
+        if single_gate:
+            gate_inds = get_gate_click_inds(sample_channels_arr, 0)
+            for apd_index in stream_apd_indices:
+                append_apd_channel_counts(
+                    gate_inds,
+                    apd_index,
+                    sample_channels_list,
+                    sample_counts_append,
+                )
 
-            apd_channel = tagger_di_apd[apd_index]
-            gate_open_channel = tagger_di_gate
-            gate_close_channel = -gate_open_channel
+        # Loop through the APDs, getting the gates for each APD
+        else:
+            for apd_index in stream_apd_indices:
+                gate_inds = get_gate_click_inds(sample_channels_arr, apd_index)
+                append_apd_channel_counts(
+                    gate_inds,
+                    apd_index,
+                    sample_channels_list,
+                    sample_counts_append,
+                )
 
-            # Find gate open clicks
-            result = numpy.nonzero(sample_channels_arr == gate_open_channel)
-            gate_open_click_inds = result[0].tolist()
-
-            # Find gate close clicks
-            # Gate close channel is negative of gate open channel,
-            # signifying the falling edge
-            result = numpy.nonzero(sample_channels_arr == gate_close_channel)
-            gate_close_click_inds = result[0].tolist()
-
-            gate_zip = zip(gate_open_click_inds, gate_close_click_inds)
-            channel_counts = [
-                sample_channels_list[open_ind:close_ind].count(apd_channel)
-                for open_ind, close_ind in gate_zip
-            ]
-
-            sample_counts_append(channel_counts)
         return_counts_append(sample_counts)
         previous_sample_end_ind = sample_end_ind
 
