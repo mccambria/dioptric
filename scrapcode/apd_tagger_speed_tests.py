@@ -4,7 +4,7 @@ import numpy
 tagger_di_clock = 1
 stream_apd_indices = [0, 1]
 tagger_di_apd = [2, 3]
-tagger_di_gate = 4
+tagger_di_gate = [4, 4]
 
 
 def read_raw_stream():
@@ -22,6 +22,7 @@ def read_raw_stream():
     # APDs according to the Poissonian statistics characterized by the average
     # numbers of counts.
     sample_window = []
+    gate_chan = tagger_di_gate[0]
     for ind in range(num_reps):
         gate_window = []
         pol_gate_window = []
@@ -32,7 +33,7 @@ def read_raw_stream():
             pol_gate_window.extend([chan] * pol_counts)
         numpy.random.shuffle(pol_gate_window)
         gate_window.extend(pol_gate_window)
-        gate_window.append(tagger_di_gate)
+        gate_window.append(gate_chan)
         readout_gate_window = []
         for chan in active_apd_chans:
             readout_counts = numpy.random.poisson(
@@ -41,7 +42,7 @@ def read_raw_stream():
             readout_gate_window.extend([chan] * readout_counts)
         numpy.random.shuffle(readout_gate_window)
         gate_window.extend(readout_gate_window)
-        gate_window.append(-tagger_di_gate)
+        gate_window.append(-gate_chan)
         sample_window.extend(gate_window)
     sample_window.append(tagger_di_clock)
     return numpy.array(sample_window, dtype=int)
@@ -62,6 +63,11 @@ def read_counter_internal(channels):
     # samples and the second will divide gatings within samples
     return_counts = []
     return_counts_append = return_counts.append
+
+    # If all APDs are running off the same gate, we can make things faster
+    single_gate = all(
+        tagger_di_gate[el] == tagger_di_gate[0] for el in stream_apd_indices
+    )
 
     for clock_click_ind in clock_click_inds:
 
@@ -88,11 +94,6 @@ def read_counter_internal(channels):
             gate_close_channel = -gate_open_channel
 
             # Find gate open clicks
-            # gate_open_click_inds = [
-            #     i
-            #     for i, value in enumerate(sample_channels)
-            #     if value == gate_open_channel
-            # ]
             result = numpy.nonzero(sample_channels_arr == gate_open_channel)
             gate_open_click_inds = result[0].tolist()
 
@@ -102,30 +103,11 @@ def read_counter_internal(channels):
             result = numpy.nonzero(sample_channels_arr == gate_close_channel)
             gate_close_click_inds = result[0].tolist()
 
-            # The number of APD clicks is simply the number of items in the
-            # buffer between gate open and gate close clicks
-            channel_counts = []
-            channel_counts_append = channel_counts.append
-
-            # for ind in range(len(gate_open_click_inds)):
-            #     # pass
-            #     gate_open_click_ind = gate_open_click_inds[ind]
-            #     gate_close_click_ind = gate_close_click_inds[ind]
-            # start = time.time()
             gate_zip = zip(gate_open_click_inds, gate_close_click_inds)
-            for gate_open_click_ind, gate_close_click_ind in gate_zip:
-                # pass
-                # gate_open_click_ind = gate_open_click_inds[ind]
-                # gate_close_click_ind = gate_close_click_inds[ind]
-
-                gate_window = sample_channels_list[
-                    gate_open_click_ind:gate_close_click_ind
-                ]
-                gate_count = gate_window.count(apd_channel)
-
-                # gate_count = gate_close_click_ind - gate_open_click_ind
-
-                channel_counts_append(gate_count)
+            channel_counts = [
+                sample_channels_list[open_ind:close_ind].count(apd_channel)
+                for open_ind, close_ind in gate_zip
+            ]
 
             sample_counts_append(channel_counts)
         return_counts_append(sample_counts)
