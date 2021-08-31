@@ -480,9 +480,9 @@ if __name__ == '__main__':
         # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        do_spin_echo(nv_sig, apd_indices)
+        # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
         # do_t1_interleave_knill(nv_sig, apd_indices)
