@@ -40,7 +40,7 @@ class SignalGeneratorSg394(LabradServer):
     def initServer(self):
         filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
         filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(level=logging.DEBUG, 
+        logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
@@ -52,7 +52,7 @@ class SignalGeneratorSg394(LabradServer):
         p.get('signal_generator_sg394_visa_address')
         p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('di_clock')
-        p.get('ao_uwave_sig_gen_mod')
+        # p.get('ao_uwave_sig_gen_mod')
         result = await p.send()
         return result['get']
 
@@ -65,10 +65,10 @@ class SignalGeneratorSg394(LabradServer):
         self.sig_gen.write_termination = '\r\n'
         # Set our channels for FM
         self.daq_di_pulser_clock = config[1]
-        self.daq_ao_sig_gen_mod = config[2]
+        # self.daq_ao_sig_gen_mod = config[2]
         self.task = None    # Initialize state variable
         self.reset(None)
-        logging.debug('Init complete')
+        logging.info('Init complete')
 
     @setting(0)
     def uwave_on(self, c):
