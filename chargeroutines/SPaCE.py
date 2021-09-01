@@ -253,42 +253,97 @@ def build_voltages_from_list(start_coords_drift, coords_list_drift):
 
     return x_points, y_points
 
-def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift):
-
+def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift, 
+                                 movement_incr,  step_size_list):
+    # adding some modifications to incrimentally step to the desired target position
     # calculate the x values we want to step thru
     start_x_value = start_coords_drift[0]
     start_y_value = start_coords_drift[1]
     start_z_value = start_coords_drift[2]
+    
+    step_size_x, step_size_y, step_size_z = step_size_list
+    
 
     num_samples = len(coords_list_drift)
 
-    # we want this list to have the pattern [[readout], [target], [readout], [readout],
-    #                                                   [target], [readout], [readout],...]
+    # we want this list to have the pattern [[readout], [target_1], [target_2]...
+    #                                                   [readout_1], [readout_2]...
+    #                                                   [readout], 
+    #                                                   ...]
     # The glavo needs a 0th coord, so we'll pass the readout NV as the "starting" point
     x_points = [start_x_value]
     y_points = [start_y_value]
     z_points = [start_z_value]
     
-    # x_points = []
-    # y_points = []
-    # z_points = []
 
     # now create a list of all the coords we want to feed to the galvo
     for i in range(num_samples):
-        x_points.append(coords_list_drift[i][0])
-        # x_points.append(coords_list_drift[i][0])
-        x_points.append(start_x_value)
-        x_points.append(start_x_value)
-
-        y_points.append(coords_list_drift[i][1])
-        # y_points.append(coords_list_drift[i][1])
-        y_points.append(start_y_value)
-        y_points.append(start_y_value)
+        dx = coords_list_drift[i][0] - start_x_value
+        dy = coords_list_drift[i][1] - start_y_value
+        dz = coords_list_drift[i][2] - start_z_value
         
-        z_points.append(coords_list_drift[i][2])
+        # how many steps, based on step size, will it take to get to final position?
+        # round up
+        num_steps_x = numpy.ceil(dx /step_size_x )
+        num_steps_y = numpy.ceil(dy /step_size_y )
+        num_steps_z = numpy.ceil(dz /step_size_z )
+        
+        # max_num_steps = max([num_steps_x, num_steps_y,num_steps_z])
+        # move to target in steps based on step size
+        for n in range(movement_incr):
+        # for the final move, just put in the prefered value to avoid rounding errors
+            if n > num_steps_x-1:
+                x_points.append(coords_list_drift[i][0])
+            else:
+                move_x = (n+1)*step_size_x
+                incr_x_val = move_x + start_x_value
+                x_points.append(incr_x_val)
+                
+            if n > num_steps_y-1:
+                y_points.append(coords_list_drift[i][1])
+            else:
+                move_y = (n+1)*step_size_y
+                incr_y_val = move_y + start_y_value
+                y_points.append(incr_y_val)
+                
+            if n > num_steps_z-1:
+                z_points.append(coords_list_drift[i][2])
+            else:
+                move_z = (n+1)*step_size_z
+                incr_z_val = move_z + start_z_value
+                z_points.append(incr_z_val)
+        
+        # readout, step back to NV
+        for n in range(movement_incr):
+        # for the final move, just put in the prefered value to avoid rounding errors
+            if n > num_steps_x-1:
+                x_points.append(start_x_value)
+            else:
+                move_x = (n+1)*step_size_x
+                incr_x_val = coords_list_drift[i][0] - move_x
+                x_points.append(incr_x_val)
+                
+            if n > num_steps_y-1:
+                y_points.append(start_y_value)
+            else:
+                move_y = (n+1)*step_size_y
+                incr_y_val = coords_list_drift[i][1] - move_y
+                y_points.append(incr_y_val)
+                
+            if n > num_steps_z-1:
+                z_points.append(start_z_value)
+            else:
+                move_z = (n+1)*step_size_z
+                incr_z_val = coords_list_drift[i][2] - move_z
+                z_points.append(incr_z_val)
+                
+        # initialize
+        x_points.append(start_x_value)
+        y_points.append(start_y_value)
         z_points.append(start_z_value)
-        z_points.append(start_z_value)
-
+        
+        
+    
     return x_points, y_points, z_points
 
 def build_xy_voltages_w_optimize(start_coords, CPG_coords,
@@ -371,12 +426,12 @@ def build_voltages_image(start_coords, img_range, num_steps):
 
     return target_x_values, target_y_values, x_voltages_1d, y_voltages_1d
 
-def collect_counts(cxn, num_samples, seq_args_string, apd_indices):
+def collect_counts(cxn, movement_incr, num_samples, seq_args_string, apd_indices):
         
     #  Set up the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)
     # prepare and run the sequence
-    file_name = 'SPaCE.py'
+    file_name = 'SPaCE_w_movement_steps.py'
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     cxn.pulse_streamer.stream_start(num_samples)
         
@@ -398,7 +453,10 @@ def collect_counts(cxn, num_samples, seq_args_string, apd_indices):
             num_read_so_far += num_new_samples
 
     # The last of the triplet of readout windows is the counts we are interested in
-    readout_counts = total_samples_list[2::3]
+    # readout_counts = total_samples_list[2::3]
+    # print(total_samples_list)
+    rep_samples = 2 * movement_incr + 1
+    readout_counts = total_samples_list[rep_samples-1::rep_samples]
     readout_counts_list = [int(el) for el in readout_counts]
     
     cxn.apd_tagger.stop_tag_stream()
@@ -461,14 +519,14 @@ def populate_img_array(valsToAdd, imgArray, run_num):
 def data_collection(nv_sig,opti_nv_sig,  coords_list,run_num,  opti_interval = 4):
     with labrad.connect() as cxn:
         ret_vals = data_collection_with_cxn(cxn, nv_sig, opti_nv_sig, coords_list,
-                                                     run_num, opti_interval)
+                                                     run_num,  opti_interval)
 
     readout_counts_array, drift_list = ret_vals
 
     return readout_counts_array,  drift_list
 
 def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
-                                      opti_interval = 4):
+                                       opti_interval = 4):
     '''
     Runs a measurement where an initial pulse is pulsed on the start coords,
     then a pulse is set on the first point in the coords list, then the
@@ -528,19 +586,54 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     initialization_time = nv_sig['initialize_dur']
     charge_readout_time = nv_sig['charge_readout_dur']
     charge_readout_laser_power = nv_sig['charge_readout_laser_power']
-
+    readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                      ['Config', 'Optics', nv_sig['charge_readout_laser']])
 
     # Set the charge readout (assumed to be yellow here) to the correct filter
     if 'charge_readout_laser_filter' in nv_sig:
         tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
 
+    # movement
+    xy_delay = tool_belt.get_registry_entry_no_cxn('xy_small_response_delay',
+                      ['Config', 'Positioning'])
+    z_delay = tool_belt.get_registry_entry_no_cxn('z_delay',
+                      ['Config', 'Positioning'])
+    step_size_x = tool_belt.get_registry_entry_no_cxn('xy_incremental_step_size',
+                      ['Config', 'Positioning'])
+    step_size_y = tool_belt.get_registry_entry_no_cxn('xy_incremental_step_size',
+                      ['Config', 'Positioning'])
+    step_size_z = tool_belt.get_registry_entry_no_cxn('z_incremental_step_size',
+                      ['Config', 'Positioning'])
+    step_size_list = [step_size_x, step_size_y, step_size_z]
+    
+    # determine max num_steps between NV and each coord
+    num_steps_list = []
+    for i in range(len(coords_list)):
+        #x 
+        diff = abs(start_coords[0] - coords_list[i][0])
+        num_steps_list.append(numpy.ceil(diff/step_size_x))
+        #y 
+        diff = abs(start_coords[1] - coords_list[i][1])
+        num_steps_list.append(numpy.ceil(diff/step_size_y))
+    #z (assuming a single dz value)
+    diff = abs(start_coords[2] - coords_list[0][2])
+    num_steps_list.append(numpy.ceil(diff/step_size_z))
+        
+    
+    if xy_delay > z_delay:
+        movement_delay = xy_delay
+    else:
+        movement_delay = z_delay
+        
+    movement_incr = int(max(num_steps_list))
+    
 
     # define the sequence paramters
-    file_name = 'SPaCE.py'
+    file_name = 'SPaCE_w_movement_steps.py'
     seq_args = [initialization_time, pulse_time, charge_readout_time,
-        charge_readout_laser_power,
+        movement_delay, charge_readout_laser_power,
         apd_indices[0],
-        init_color, pulse_color, readout_color]
+        init_color, pulse_color, readout_color, movement_incr]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     # print(seq_args)
@@ -576,17 +669,18 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
             
             
             # Build the list to step through the coords on readout NV and targets
-            x_voltages, y_voltages, z_voltages = build_voltages_from_list_xyz(start_coords_drift, coords_list_drift)
+            x_voltages, y_voltages, z_voltages = build_voltages_from_list_xyz(start_coords_drift, 
+                                                  coords_list_drift,movement_incr,  step_size_list)
             
             # Load the galvo
-            xyz_server = tool_belt.get_xy_server(cxn)
+            xyz_server = tool_belt.get_xyz_server(cxn) 
             xyz_server.load_arb_scan_xyz(x_voltages, y_voltages, z_voltages, int(period))
         
         
             # We'll be lookign for three samples each repetition with how I have
             # the sequence set up
-            total_num_samples = 3*redux_num_samples
-            readout_counts = collect_counts(cxn, total_num_samples, seq_args_string, apd_indices)   
+            total_num_samples = (2*movement_incr + 1)*redux_num_samples
+            readout_counts = collect_counts(cxn, movement_incr, total_num_samples, seq_args_string, apd_indices)   
             
             readout_counts_list.append(readout_counts)
             i += 1
@@ -607,17 +701,17 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
             coords_list_drift = numpy.array(remain_coords_list) + drift
             
             # Build the list to step through the coords on readout NV and targets
-            x_voltages, y_voltages, z_voltages = build_voltages_from_list_xyz(start_coords_drift, coords_list_drift)
-        
+            x_voltages, y_voltages, z_voltages =build_voltages_from_list_xyz(start_coords_drift, 
+                                                  coords_list_drift,movement_incr,  step_size_list)
             # Load the galvo
-            xyz_server = tool_belt.get_xy_server(cxn)
+            xyz_server = tool_belt.get_xyz_server(cxn)
             xyz_server.load_arb_scan_xyz(x_voltages, y_voltages, z_voltages, int(period))
         
         
             # We'll be lookign for three samples each repetition with how I have
             # the sequence set up
-            total_num_samples = 3*remain_num_samples
-            readout_counts = collect_counts(cxn, total_num_samples, seq_args_string, apd_indices)    
+            total_num_samples = (2*movement_incr + 1)*remain_num_samples
+            readout_counts = collect_counts(cxn,movement_incr,  total_num_samples, seq_args_string, apd_indices)    
             
             readout_counts_list.append(readout_counts)
     else:
@@ -632,25 +726,23 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         start_coords_drift = start_coords + drift
         coords_list_drift = numpy.array(coords_list) + drift
         # Build the list to step through the coords on readout NV and targets
-        x_voltages, y_voltages, z_voltages = build_voltages_from_list_xyz(start_coords_drift, coords_list_drift)
-
+        x_voltages, y_voltages, z_voltages = build_voltages_from_list_xyz(start_coords_drift, 
+                                                  coords_list_drift, movement_incr,  step_size_list)
         # Load the galvo
-        xyz_server = tool_belt.get_xy_server(cxn)
+        xyz_server = tool_belt.get_xyz_server(cxn)
         xyz_server.load_arb_scan_xyz(x_voltages, y_voltages, z_voltages, int(period))
     
         # We'll be lookign for three samples each repetition with how I have
         # the sequence set up
-        total_num_samples = 3*num_samples
-        readout_counts = collect_counts(cxn, total_num_samples, seq_args_string, apd_indices)   
-        
+        total_num_samples = (2*movement_incr + 1)*num_samples
+        readout_counts = collect_counts(cxn,movement_incr,  total_num_samples, seq_args_string, apd_indices)   
         readout_counts_list.append(readout_counts)
-
-
+        
 
     return list(numpy.concatenate(readout_counts_list).flat), drift_list
 
 # %%
-def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, dz = 0):
+def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type,   dz = 0):
     '''
     A measurements to initialize on a single point, then pulse a laser off that
     point, and then read out the charge state on the single point.
@@ -734,8 +826,8 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
         coords_voltages = list(zip(x_voltages, y_voltages, z_voltages))
         # calculate the radial distances from the readout NV to the target points
         rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)
-        neg_ints = int(numpy.floor(len(rad_dist)/2))
-        rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
+        # neg_ints = int(numpy.floor(len(rad_dist)/2))
+        # rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
         
         
         # rad_dist = r_voltages - start_coords
@@ -798,12 +890,11 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
         #========================== Run the data collection====================#
-        ret_vals = data_collection(nv_sig,opti_nv_sig,  coords_voltages_shuffle_list, n, opti_interval)
+        ret_vals = data_collection(nv_sig,opti_nv_sig,  coords_voltages_shuffle_list, n,  opti_interval)
 
         readout_counts_list_shfl, drift = ret_vals
         drift_list_master.append(drift)
         readout_counts_list_shfl = numpy.array(readout_counts_list_shfl)
-
         # unshuffle the raw data
         list_ind = 0
         for f in ind_list:

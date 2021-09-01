@@ -38,8 +38,7 @@ import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
 import majorroutines.lifetime_v2 as lifetime_v2
-import chargeroutines.SPaCE_stepping_movement as SPaCE
-# import chargeroutines.SPaCE as SPaCE
+import chargeroutines.SPaCE as SPaCE
 import chargeroutines.g2_measurement as g2_SCC_branch
 
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
@@ -892,13 +891,13 @@ if __name__ == "__main__":
         #     do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         #     do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
 
-        # for dz in numpy.linspace(3.5, 6, 7)/16:
-        # for dz in numpy.linspace(-0.1, 0.1, 5):
-            # # do_optimize(nv_sig, apd_indices)
-            # nv_sig_copy = copy.deepcopy(nv_sig)
-            # coords = nv_sig['coords']
-            # nv_sig_copy['coords'] = [coords[0],coords[1],coords[2]+dz]
-            # do_image_sample(nv_sig_copy, apd_indices)
+        # for dz in numpy.linspace(2.5, 3, 7)/16:
+        # # for dz in numpy.linspace(-0.1, 0.1, 5):
+        #     # do_optimize(nv_sig, apd_indices)
+        #     nv_sig_copy = copy.deepcopy(nv_sig)
+        #     coords = nv_sig['coords']
+        #     nv_sig_copy['coords'] = [coords[0],coords[1],coords[2]+dz]
+        #     do_image_sample(nv_sig_copy, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
@@ -923,13 +922,12 @@ if __name__ == "__main__":
         # do_spin_echo(nv_sig, apd_indices)
         
         
-        # t_list = [50e3 ]#, 400e3, 600e3, 800e3, 1000e3]
-        dz_list = [2.64]#[0, 0.5, 1,1.5,2,3]
+        dz_list = [0, 0.5, 1, 1.5, 2, 2.5, 3,  3.5, 4, 4.5]
         for dz in dz_list:
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['CPG_laser_dur'] = 1e6
             
-            img_range = 0.07
+            img_range = 0.08
             num_steps =101
             num_runs = 1
             measurement_type = '2D'
@@ -937,31 +935,78 @@ if __name__ == "__main__":
             dz = dz/16
             
             do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz, measurement_type)
-        t_list = [100e6]
+            
+        
+        nv_sig_copy = copy.deepcopy(nv_sig)
+        nv_sig_copy['CPG_laser_dur'] = 150e6
+        
+        img_range = 0.09
+        num_steps =101
+        num_runs = 4
+        measurement_type = '2D'
+        
+        dz = 0
+        
+        do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz, measurement_type)
+            
+        scale = 35000
+        t_list = [1e6, 1.25e6, 1.5e6]
         for t in t_list:
             dz = 0
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['CPG_laser_dur'] = t
-            dr =  0.09/2
-            img_range = [[-dr ,0],[dr, 0]] #[[x1, y1], [x2, y2]]
-            num_steps = 401
-            num_runs = 75
+            # dr =  0.06/2
+            num_steps = 151
+            num_runs = 100
             measurement_type = '1D'
         
+            d = 150/scale
+            xp = 550/scale
+            xm = -314/scale
+            img_range = [[xp - d ,0],[xp+d, 0]]
             # do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz,  measurement_type)
+            img_range =  [[xm - d ,0],[xm+d, 0]]
+            # do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz,  measurement_type)
+            yp = 340/scale
+            ym = -490/scale
+            img_range = [[0, yp - d ],[0,yp+d]]
+            # do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz,  measurement_type)
+            img_range =  [[0,ym - d ],[0,ym+d,]]
+            do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz,  measurement_type)
             
-        t_list = [2e6]
+        t_list = [ 100e6,   150e6, 200e6]
         for t in t_list:
+            dz = 0
             nv_sig_copy = copy.deepcopy(nv_sig)
             nv_sig_copy['CPG_laser_dur'] = t
-            dz = 0#2/16
+            # dr =  0.09/2
+            num_steps = 151
+            num_runs = 100
+            measurement_type = '1D'
             
-            img_range = 0.06
-            num_steps = 101
-            num_runs = 5
-            measurement_type = '2D'
-        
+            d = 150/scale
+            xp = 1089/scale
+            xm = -825/scale
+            img_range = [[xp - d ,0],[xp+d, 0]]
+            do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz,  measurement_type)
+            img_range =  [[xm - d ,0],[xm+d, 0]]
             # do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz,  measurement_type)
+            yp = 874/scale
+            ym = -968/scale
+            img_range = [[0, yp - d ],[0,yp+d]]
+            # do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz,  measurement_type)
+            img_range =  [[0,ym - d ],[0,ym+d,]]
+            # do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz,  measurement_type)
+            
+        nv_sig_copy = copy.deepcopy(nv_sig)
+        nv_sig_copy['CPG_laser_dur'] = 5e6
+        img_range = 0.06
+        num_steps =101
+        num_runs = 4
+        measurement_type = '2D'
+        dz = 0
+        
+        do_SPaCE(nv_sig_copy, nv_sig_copy, img_range,  num_steps,num_runs,dz, measurement_type)
             
         # do_spin_echo_battery(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
