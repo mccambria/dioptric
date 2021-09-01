@@ -222,9 +222,12 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
     num_reps = 5000
     num_runs = 10
     
-    for iq_delay in numpy.linspace(500, 700, 41):
+    # discrete_rabi.main(nv_sig, apd_indices,
+    #                    state, max_num_pi_pulses, num_reps, num_runs, iq_delay=605)
+    
+    for iq_delay in numpy.linspace(300, 900, 121):
         discrete_rabi.main(nv_sig, apd_indices,
-                           state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
+                            state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
 
 
 def do_t1_battery(nv_sig, apd_indices):
