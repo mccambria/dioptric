@@ -3,7 +3,7 @@ import numpy
 from numpy import count_nonzero, nonzero
 
 tagger_di_clock = 1
-stream_apd_indices = [0]
+stream_apd_indices = [0, 1]
 tagger_di_apd = [2, 3]
 tagger_di_gate = [4, 4]
 
@@ -13,15 +13,16 @@ def read_raw_stream():
     global tagger_di_clock, stream_apd_indices, tagger_di_apd, tagger_di_gate
     num_active_apd_chans = len(stream_apd_indices)
     active_apd_chans = [tagger_di_apd[el] for el in stream_apd_indices]
-    # num_reps = int(1000)
-    num_reps = int(1e4)
+    num_reps = int(2)
+    # num_reps = int(1e4)
     # Say our sequence has the laser on constantly, then 2 us polarization
     # time before a 350 ns readout. Say the count rate is 1000 kcps
     count_rate = 1e6
     # count_rate = 30e3
+    # count_rate = 0
     pol_count_avg = count_rate * 2e-6
-    # readout = 0.01
-    readout = 350e-9
+    readout = 0.01
+    # readout = 350e-9
     readout_count_avg = count_rate * readout
     # For each rep, we'll insert a random number of counts split between the
     # APDs according to the Poissonian statistics characterized by the average
@@ -57,24 +58,23 @@ def get_gate_click_inds(sample_channels_arr, apd_index):
 
     global stream_apd_indices, tagger_di_gate
 
-    gate_open_channel = tagger_di_gate[stream_apd_indices[apd_index]]
-    gate_close_channel = -gate_open_channel
+    open_channel = tagger_di_gate[stream_apd_indices[apd_index]]
+    close_channel = -open_channel
 
     # Find gate open clicks
-    result = nonzero(sample_channels_arr == gate_open_channel)
-    gate_open_inds = result[0].tolist()
+    open_inds = nonzero(sample_channels_arr == open_channel)[0].tolist()
+    # gate_open_inds = result[0].tolist()
 
     # Find gate close clicks
     # Gate close channel is negative of gate open channel,
     # signifying the falling edge
-    result = nonzero(sample_channels_arr == gate_close_channel)
-    gate_close_inds = result[0].tolist()
+    close_inds = nonzero(sample_channels_arr == close_channel)[0].tolist()
 
-    return gate_open_inds, gate_close_inds
+    return open_inds, close_inds
 
 
 def append_apd_channel_counts(
-    gate_inds, apd_index, sample_channels_list, sample_counts_append
+    gate_inds, apd_index, sample_channels, sample_counts_append
 ):
     # The zip must be recreated each time we want to use it
     # since the generator it returns is a single-use object for
@@ -86,7 +86,7 @@ def append_apd_channel_counts(
     #     for open_ind, close_ind in gate_zip
     # ]
     channel_counts = [
-        count_nonzero(sample_channels_list[open_ind:close_ind] == apd_channel)
+        count_nonzero(sample_channels[open_ind:close_ind] == apd_channel)
         for open_ind, close_ind in gate_zip
     ]
     # channel_counts = 0
@@ -111,7 +111,7 @@ def read_counter_internal(channels):
 
     # Find clock clicks (sample breaks)
     result = nonzero(channels == tagger_di_clock)
-    clock_click_inds = result[0].tolist()
+    clock_click_inds = result[0]
 
     previous_sample_end_ind = None
     sample_end_ind = None
@@ -122,10 +122,7 @@ def read_counter_internal(channels):
     return_counts_append = return_counts.append
 
     # If all APDs are running off the same gate, we can make things faster
-    single_gate = all(
-        tagger_di_gate[el] == tagger_di_gate[0] for el in stream_apd_indices
-    )
-    # single_gate = False
+    single_gate = len(set(tagger_di_gate)) == 1
 
     for clock_click_ind in clock_click_inds:
 
@@ -136,36 +133,32 @@ def read_counter_internal(channels):
         # Make sure we've got an array for comparison to find click indices
         # and a list for operations that necessarily scale linearly and
         # need to be fast.
-        sample_channels_arr = channels[previous_sample_end_ind:sample_end_ind]
-        # sample_channels_list = sample_channels_arr.tolist()
-        sample_channels_list = sample_channels_arr
+        sample_channels = channels[previous_sample_end_ind:sample_end_ind]
 
         sample_counts = []
         sample_counts_append = sample_counts.append
 
-        # start = time.time()
-        # sample_counts_append(0)
         # return
 
         # Get all the gates once and then count for each APD individually
         if single_gate:
-            gate_inds = get_gate_click_inds(sample_channels_arr, 0)
+            gate_inds = get_gate_click_inds(sample_channels, 0)
             for apd_index in stream_apd_indices:
                 append_apd_channel_counts(
                     gate_inds,
                     apd_index,
-                    sample_channels_list,
+                    sample_channels,
                     sample_counts_append,
                 )
 
         # Loop through the APDs, getting the gates for each APD
         else:
             for apd_index in stream_apd_indices:
-                gate_inds = get_gate_click_inds(sample_channels_arr, apd_index)
+                gate_inds = get_gate_click_inds(sample_channels, apd_index)
                 append_apd_channel_counts(
                     gate_inds,
                     apd_index,
-                    sample_channels_list,
+                    sample_channels,
                     sample_counts_append,
                 )
         # stop = time.time()
@@ -183,7 +176,7 @@ def read_counter_internal_original(channels):
 
     # Find clock clicks (sample breaks)
     result = numpy.nonzero(channels == tagger_di_clock)
-    clock_click_inds = result[0].tolist()
+    clock_click_inds = result[0]
 
     previous_sample_end_ind = None
     sample_end_ind = None
@@ -257,6 +250,8 @@ if __name__ == "__main__":
     res = read_counter_internal(channels)
     stop = time.time()
     print(stop - start)
+
+    # channels = read_raw_stream()
 
     start = time.time()
     res_original = read_counter_internal_original(channels)

@@ -155,22 +155,18 @@ class ApdTagger(LabradServer):
 
     def get_gate_click_inds(self, sample_channels_arr, apd_index):
 
-        gate_open_channel = self.tagger_di_gate[
-            self.stream_apd_indices[apd_index]
-        ]
-        gate_close_channel = -gate_open_channel
+        open_channel = self.tagger_di_gate[self.stream_apd_indices[apd_index]]
+        close_channel = -open_channel
 
         # Find gate open clicks
-        result = nonzero(sample_channels_arr == gate_open_channel)
-        gate_open_inds = result[0].tolist()
+        open_inds = nonzero(sample_channels_arr == open_channel)[0].tolist()
 
         # Find gate close clicks
         # Gate close channel is negative of gate open channel,
         # signifying the falling edge
-        result = nonzero(sample_channels_arr == gate_close_channel)
-        gate_close_inds = result[0].tolist()
+        close_inds = nonzero(sample_channels_arr == close_channel)[0].tolist()
 
-        return gate_open_inds, gate_close_inds
+        return open_inds, close_inds
 
     def append_apd_channel_counts(
         self, gate_inds, apd_index, sample_channels, sample_counts_append
@@ -221,12 +217,6 @@ class ApdTagger(LabradServer):
         return_counts = []
         return_counts_append = return_counts.append
 
-        # If all APDs are running off the same gate, we can make things faster
-        single_gate = all(
-            self.tagger_di_gate[el] == self.tagger_di_gate[0]
-            for el in self.stream_apd_indices
-        )
-
         for clock_click_ind in clock_click_inds:
 
             # Clock clicks end samples, so they should be included with the
@@ -250,7 +240,7 @@ class ApdTagger(LabradServer):
             sample_counts_append = sample_counts.append
 
             # Get all the gates once and then count for each APD individually
-            if single_gate:
+            if self.stream_single_gate:
                 gate_inds = self.get_gate_click_inds(sample_channels, 0)
                 for apd_index in self.stream_apd_indices:
                     self.append_apd_channel_counts(
@@ -347,6 +337,10 @@ class ApdTagger(LabradServer):
         # etc. The sync call waits until this process is complete.
         self.tagger.sync()
         self.stream_apd_indices = apd_indices
+
+        # If all APDs are running off the same gate, we can make things faster
+        active_gates = [self.tagger_di_gate[ind] for ind in apd_indices]
+        self.stream_single_gate = len(set(active_gates)) == 1
 
     @setting(2)
     def stop_tag_stream(self, c):
