@@ -1,5 +1,6 @@
 import time
 import numpy
+from numpy import count_nonzero, nonzero
 
 tagger_di_clock = 1
 stream_apd_indices = [0]
@@ -12,14 +13,15 @@ def read_raw_stream():
     global tagger_di_clock, stream_apd_indices, tagger_di_apd, tagger_di_gate
     num_active_apd_chans = len(stream_apd_indices)
     active_apd_chans = [tagger_di_apd[el] for el in stream_apd_indices]
-    num_reps = int(1000)
-    # num_reps = int(1e4)
+    # num_reps = int(1000)
+    num_reps = int(1e4)
     # Say our sequence has the laser on constantly, then 2 us polarization
     # time before a 350 ns readout. Say the count rate is 1000 kcps
     count_rate = 1e6
+    # count_rate = 30e3
     pol_count_avg = count_rate * 2e-6
-    readout = 0.01
-    # readout = 350e-9
+    # readout = 0.01
+    readout = 350e-9
     readout_count_avg = count_rate * readout
     # For each rep, we'll insert a random number of counts split between the
     # APDs according to the Poissonian statistics characterized by the average
@@ -59,13 +61,13 @@ def get_gate_click_inds(sample_channels_arr, apd_index):
     gate_close_channel = -gate_open_channel
 
     # Find gate open clicks
-    result = numpy.nonzero(sample_channels_arr == gate_open_channel)
+    result = nonzero(sample_channels_arr == gate_open_channel)
     gate_open_inds = result[0].tolist()
 
     # Find gate close clicks
     # Gate close channel is negative of gate open channel,
     # signifying the falling edge
-    result = numpy.nonzero(sample_channels_arr == gate_close_channel)
+    result = nonzero(sample_channels_arr == gate_close_channel)
     gate_close_inds = result[0].tolist()
 
     return gate_open_inds, gate_close_inds
@@ -79,8 +81,12 @@ def append_apd_channel_counts(
     # memory reasons.
     gate_zip = zip(gate_inds[0], gate_inds[1])
     apd_channel = tagger_di_apd[apd_index]
+    # channel_counts = [
+    #     sample_channels_list[open_ind:close_ind].count(apd_channel)
+    #     for open_ind, close_ind in gate_zip
+    # ]
     channel_counts = [
-        sample_channels_list[open_ind:close_ind].count(apd_channel)
+        count_nonzero(sample_channels_list[open_ind:close_ind] == apd_channel)
         for open_ind, close_ind in gate_zip
     ]
     # channel_counts = 0
@@ -104,7 +110,7 @@ def read_counter_internal(channels):
     global tagger_di_clock, stream_apd_indices, tagger_di_apd, tagger_di_gate
 
     # Find clock clicks (sample breaks)
-    result = numpy.nonzero(channels == tagger_di_clock)
+    result = nonzero(channels == tagger_di_clock)
     clock_click_inds = result[0].tolist()
 
     previous_sample_end_ind = None
@@ -119,6 +125,7 @@ def read_counter_internal(channels):
     single_gate = all(
         tagger_di_gate[el] == tagger_di_gate[0] for el in stream_apd_indices
     )
+    # single_gate = False
 
     for clock_click_ind in clock_click_inds:
 
@@ -130,13 +137,15 @@ def read_counter_internal(channels):
         # and a list for operations that necessarily scale linearly and
         # need to be fast.
         sample_channels_arr = channels[previous_sample_end_ind:sample_end_ind]
-        sample_channels_list = sample_channels_arr.tolist()
+        # sample_channels_list = sample_channels_arr.tolist()
+        sample_channels_list = sample_channels_arr
 
         sample_counts = []
         sample_counts_append = sample_counts.append
 
         # start = time.time()
         # sample_counts_append(0)
+        # return
 
         # Get all the gates once and then count for each APD individually
         if single_gate:
@@ -198,6 +207,7 @@ def read_counter_internal_original(channels):
 
         sample_counts = []
         sample_counts_append = sample_counts.append
+        # return
 
         # Loop through the APDs
         for apd_index in stream_apd_indices:

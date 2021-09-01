@@ -27,6 +27,7 @@ from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 import TimeTagger
+from numpy import count_nonzero, nonzero, concatenate
 import numpy
 import logging
 import re
@@ -160,19 +161,19 @@ class ApdTagger(LabradServer):
         gate_close_channel = -gate_open_channel
 
         # Find gate open clicks
-        result = numpy.nonzero(sample_channels_arr == gate_open_channel)
+        result = nonzero(sample_channels_arr == gate_open_channel)
         gate_open_inds = result[0].tolist()
 
         # Find gate close clicks
         # Gate close channel is negative of gate open channel,
         # signifying the falling edge
-        result = numpy.nonzero(sample_channels_arr == gate_close_channel)
+        result = nonzero(sample_channels_arr == gate_close_channel)
         gate_close_inds = result[0].tolist()
 
         return gate_open_inds, gate_close_inds
 
     def append_apd_channel_counts(
-        self, gate_inds, apd_index, sample_channels_list, sample_counts_append
+        self, gate_inds, apd_index, sample_channels, sample_counts_append
     ):
         # The zip must be recreated each time we want to use it
         # since the generator it returns is a single-use object for
@@ -180,7 +181,7 @@ class ApdTagger(LabradServer):
         gate_zip = zip(gate_inds[0], gate_inds[1])
         apd_channel = self.tagger_di_apd[apd_index]
         channel_counts = [
-            sample_channels_list[open_ind:close_ind].count(apd_channel)
+            count_nonzero(sample_channels[open_ind:close_ind] == apd_channel)
             for open_ind, close_ind in gate_zip
         ]
         sample_counts_append(channel_counts)
@@ -209,7 +210,7 @@ class ApdTagger(LabradServer):
         _, channels = self.read_raw_stream()
 
         # Find clock clicks (sample breaks)
-        result = numpy.nonzero(channels == self.tagger_di_clock)
+        result = nonzero(channels == self.tagger_di_clock)
         clock_click_inds = result[0].tolist()
 
         previous_sample_end_ind = None
@@ -232,30 +233,30 @@ class ApdTagger(LabradServer):
             # sample itself
             sample_end_ind = clock_click_ind + 1
 
+            # Get leftovers and make sure we've got an array for comparison
+            # to find click indices
             if previous_sample_end_ind is None:
-                sample_channels_list = self.leftover_channels
-                sample_channels_list.extend(channels[0:sample_end_ind])
+                join_tuple = (
+                    self.leftover_channels,
+                    channels[0:sample_end_ind],
+                )
+                sample_channels = concatenate(join_tuple)
             else:
-                sample_channels_list = channels[
+                sample_channels = channels[
                     previous_sample_end_ind:sample_end_ind
-                ].tolist()
-
-            # Make sure we've got an array for comparison to find click 
-            # indices. We also need the list for operations that necessarily 
-            # scale linearly and need to be fast.
-            sample_channels_arr = numpy.array(sample_channels_list)
+                ]
 
             sample_counts = []
             sample_counts_append = sample_counts.append
 
             # Get all the gates once and then count for each APD individually
             if single_gate:
-                gate_inds = self.get_gate_click_inds(sample_channels_arr, 0)
+                gate_inds = self.get_gate_click_inds(sample_channels, 0)
                 for apd_index in self.stream_apd_indices:
                     self.append_apd_channel_counts(
                         gate_inds,
                         apd_index,
-                        sample_channels_list,
+                        sample_channels,
                         sample_counts_append,
                     )
 
@@ -263,12 +264,12 @@ class ApdTagger(LabradServer):
             else:
                 for apd_index in self.stream_apd_indices:
                     gate_inds = self.get_gate_click_inds(
-                        sample_channels_arr, apd_index
+                        sample_channels, apd_index
                     )
                     self.append_apd_channel_counts(
                         gate_inds,
                         apd_index,
-                        sample_channels_list,
+                        sample_channels,
                         sample_counts_append,
                     )
 
@@ -277,7 +278,7 @@ class ApdTagger(LabradServer):
 
         if sample_end_ind is None:
             # No samples were clocked - add everything to leftovers
-            self.leftover_channels.extend(channels.tolist())
+            self.leftover_channels.extend(channels)
         else:
             # Reset leftovers from the last sample clock
             self.leftover_channels = channels[sample_end_ind:].tolist()
