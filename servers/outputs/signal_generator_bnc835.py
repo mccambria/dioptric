@@ -25,7 +25,7 @@ timeout = 5
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
-import visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
+import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 import logging
 import socket
 
@@ -40,7 +40,7 @@ class SignalGeneratorBnc835(LabradServer):
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
@@ -60,13 +60,13 @@ class SignalGeneratorBnc835(LabradServer):
         # termination assumptions
         resource_manager = visa.ResourceManager()
         self.sig_gen = resource_manager.open_resource(visa_address)
-        logging.debug(self.sig_gen)
+        logging.info(self.sig_gen)
         self.sig_gen.write("*RST")
         # Set to the external frequency source
         self.sig_gen.write("ROSC:EXT:FREQ 10MHZ")
         self.sig_gen.write("ROSC:SOUR EXT")
         self.reset(None)
-        logging.debug("init complete")
+        logging.info("init complete")
 
     @setting(0)
     def uwave_on(self, c):

@@ -45,7 +45,7 @@ class ApdTagger(LabradServer):
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
@@ -105,7 +105,7 @@ class ApdTagger(LabradServer):
             self.tagger_di_gate[apd_index] = di_gate
         self.reset_tag_stream_state()  # Initialize state variables
         self.reset(None)
-        logging.debug("init complete")
+        logging.info("init complete")
 
     def read_raw_stream(self):
         if self.stream is None:
@@ -122,7 +122,7 @@ class ApdTagger(LabradServer):
             return
         if num_to_read is None:
             # Poll once and return the result
-            counts = self.read_counter_internal(None)
+            counts = self.read_counter_internal()
         else:
             # Poll until we've read the requested number of samples
             start = time.time()
@@ -130,7 +130,7 @@ class ApdTagger(LabradServer):
             while len(counts) < num_to_read:
                 overflows = self.tagger.getOverflows()
                 if overflows > 0:
-                    logging.debug("Overflows: {}".format(overflows))
+                    logging.info("Overflows: {}".format(overflows))
                 # Timeout after 2 minutes - pad counts with 0s
                 # This is broken right now...
                 # if time.time() > start + 120:
@@ -139,7 +139,7 @@ class ApdTagger(LabradServer):
                 #     logging.error('Timed out trying to last {} counts out ' \
                 #                   'of {}'.format(num_remaining, num_to_read))
                 #     break
-                counts.extend(self.read_counter_internal(num_to_read))
+                counts.extend(self.read_counter_internal())
             if len(counts) > num_to_read:
                 msg = "Read {} samples, only requested {}".format(
                     len(counts), num_to_read
@@ -148,7 +148,7 @@ class ApdTagger(LabradServer):
 
         overflows = self.tagger.getOverflowsAndClear()
         if overflows > 0:
-            logging.debug("Overflows: {}".format(overflows))
+            logging.info("Overflows: {}".format(overflows))
 
         return counts
 
@@ -205,6 +205,7 @@ class ApdTagger(LabradServer):
             )
             return
 
+        # channels is an array
         _, channels = self.read_raw_stream()
 
         # Find clock clicks (sample breaks)
@@ -232,18 +233,17 @@ class ApdTagger(LabradServer):
             sample_end_ind = clock_click_ind + 1
 
             if previous_sample_end_ind is None:
-                sample_channels = self.leftover_channels
-                sample_channels.extend(channels[0:sample_end_ind])
+                sample_channels_list = self.leftover_channels
+                sample_channels_list.extend(channels[0:sample_end_ind])
             else:
-                sample_channels = channels[
+                sample_channels_list = channels[
                     previous_sample_end_ind:sample_end_ind
-                ]
+                ].tolist()
 
-            # Make sure we've got an array for comparison to find click indices
-            # and a list for operations that necessarily scale linearly and
-            # need to be fast.
-            sample_channels_arr = numpy.array(sample_channels)
-            sample_channels_list = sample_channels.tolist()
+            # Make sure we've got an array for comparison to find click 
+            # indices. We also need the list for operations that necessarily 
+            # scale linearly and need to be fast.
+            sample_channels_arr = numpy.array(sample_channels_list)
 
             sample_counts = []
             sample_counts_append = sample_counts.append

@@ -25,12 +25,13 @@ timeout = 5
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
-import visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
+import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 import nidaqmx
 import nidaqmx.stream_writers as stream_writers
 from nidaqmx.constants import AcquisitionType
 import socket
 import logging
+import time
 
 
 class SignalGeneratorTsg4104a(LabradServer):
@@ -40,7 +41,7 @@ class SignalGeneratorTsg4104a(LabradServer):
     def initServer(self):
         filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
         filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(level=logging.DEBUG, 
+        logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
@@ -52,23 +53,24 @@ class SignalGeneratorTsg4104a(LabradServer):
         p.get('signal_generator_tsg4104a_visa_address')
         p.cd(['', 'Config', 'Wiring', 'Daq'])
         p.get('di_clock')
-        p.get('ao_uwave_sig_gen_mod')
+        # p.get('ao_uwave_sig_gen_mod')
         result = await p.send()
         return result['get']
 
     def on_get_config(self, config):
         resource_manager = visa.ResourceManager()
-        self.sig_gen = resource_manager.open_resource(config[0])
+        self.sig_gen = resource_manager.open_resource(config[0], 
+                                                      open_timeout=60)
         # Set the VISA read and write termination. This is specific to the
         # instrument - you can find it in the instrument's programming manual
         self.sig_gen.read_termination = '\r\n'
         self.sig_gen.write_termination = '\r\n'
         # Set our channels for FM
         self.daq_di_pulser_clock = config[1]
-        self.daq_ao_sig_gen_mod = config[2]
+        # self.daq_ao_sig_gen_mod = config[2]
         self.task = None    # Initialize state variable
         self.reset(None)
-        logging.debug('Init complete')
+        logging.info('Init complete')
 
     @setting(0)
     def uwave_on(self, c):
