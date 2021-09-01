@@ -404,6 +404,7 @@ class ApdTagger(LabradServer):
     def read_counter_separate_gates(self, c, num_to_read=None):
 
         complete_counts = self.read_counter_setting_internal(num_to_read)
+        # logging.info(complete_counts)
 
         # To combine APDs we assume all the APDs have the same gate
         gate_channels = list(self.tagger_di_gate.values())
