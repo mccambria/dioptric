@@ -46,6 +46,26 @@ def exp_decay(x, a, d):
 def exp_sqrd_decay(x, a, d):
     return a * numpy.exp(-x**2/d)
 
+def sq_gaussian(x, *params):
+    """
+    Calculates the value of a gaussian for the given input and parameters
+
+    Params:
+        x: float
+            Input value
+        params: tuple
+            The parameters that define the Gaussian
+            0: coefficient that defines the peak height
+            1: mean, defines the center of the Gaussian
+            2: standard deviation, defines the width of the Gaussian
+            3: constant y value to account for background
+    """
+
+    coeff, mean, stdev, offset = params
+    var = stdev ** 4  # variance
+    centDist = x - mean  # distance from the center
+    return offset + coeff ** 2 * numpy.exp(-(centDist ** 4) / (4 * var))
+
 # %%
 def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
                   do_save = True):
@@ -53,53 +73,55 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
     timestamp = data['timestamp']
     nv_sig = data['nv_sig']
     CPG_pulse_dur = nv_sig['CPG_laser_dur']
-    dir_1D = nv_sig['dir_1D']
+    # dir_1D = nv_sig['dir_1D']
     start_coords = nv_sig['coords']
 
     counts = data['readout_counts_avg']
     coords_voltages = data['coords_voltages']
+    x_voltages = numpy.array([el[0] for el in coords_voltages])
+    y_voltages = numpy.array([el[1] for el in coords_voltages])
     num_steps = data['num_steps']
 
-    dir_1D = nv_sig['dir_1D']
     start_coords = nv_sig['coords']
+    
+    # calculate the radial distances from the readout NV to the target points
+    rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)*35000
+        
 
-    if dir_1D == 'x':
-        coord_ind = 0
-    elif dir_1D == 'y':
-        coord_ind = 1
-    voltages = [i[coord_ind] for i in coords_voltages]
-    voltages = numpy.array(voltages)
-    rad_dist = (voltages - start_coords[coord_ind])*35000
+    # if dir_1D == 'x':
+    #     coord_ind = 0
+    # elif dir_1D == 'y':
+    #     coord_ind = 1
+    # voltages = [i[coord_ind] for i in coords_voltages]
+    # voltages = numpy.array(voltages)
+    # rad_dist = (voltages - start_coords[coord_ind])*35000
     opti_params = []
 
 
     if do_plot:
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
         ax.plot(rad_dist, counts, 'b.')
-        if dir_1D == 'x':
-            ax.set_xlabel('x (nm)')
-        elif dir_1D == 'y':
-            ax.set_xlabel('y (nm)')
+        ax.set_xlabel('r (nm)')
         ax.set_ylabel('Average counts')
         ax.set_title('{} us pulse'.format(CPG_pulse_dur/10**3))
 
     if do_fit:
         init_fit = [2, rad_dist[int(num_steps/2)], 15, 7]
         try:
-            opti_params, cov_arr = curve_fit(tool_belt.gaussian,
+            opti_params, cov_arr = curve_fit(sq_gaussian,
                   rad_dist,
                   counts,
                   p0=init_fit
                   )
             if do_plot:
-                text = r'$C + A^2 e^{-(r - r_0)^2/(2*\sigma^2)}$'
+                text = r'$C + A^2 e^{-(r - r_0)^4/(2*\sigma^4)}$'
                 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
                 ax.text(0.05, 0.95, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
                 lin_radii = numpy.linspace(rad_dist[0],
                                 rad_dist[-1], 100)
                 ax.plot(lin_radii,
-                       tool_belt.gaussian(lin_radii, *opti_params), 'r-')
+                       sq_gaussian(lin_radii, *opti_params), 'r-')
                 text = 'A={:.3f} sqrt(counts)\n$r_0$={:.3f} nm\n ' \
                     '$\sigma$={:.3f} nm\nC={:.3f} counts'.format(*opti_params)
                 ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
@@ -113,7 +135,7 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
     if do_plot and do_save:
         filePath = tool_belt.get_file_path(__file__, timestamp,
                                                 nv_sig['name'])
-        tool_belt.save_figure(fig, filePath + '-gaussian_fit')
+        tool_belt.save_figure(fig, filePath + '-sq_gaussian_fit')
 
 
 
@@ -226,32 +248,38 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
 
     return fit_params_list
 
+def plot_2D_space(file, path):
+        data = tool_belt.get_raw_data(file, path)
+        # try:
+        nv_sig = data['nv_sig']
+        CPG_laser_dur = nv_sig['CPG_laser_dur']
+        readout_counts_array = data['readout_counts_array']
+        # num_steps = data['num_steps']    
+        x_voltages = data['x_voltages_1d']
+        y_voltages = data['y_voltages_1d']
+        x_low = x_voltages[0]
+        x_high = x_voltages[-1]
+        y_low = y_voltages[0]
+        y_high = y_voltages[-1]
+        pixel_size = x_voltages[1] - x_voltages[0]
+        half_pixel_size = pixel_size / 2
+        img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                      y_low - half_pixel_size, y_high + half_pixel_size]
+        
+        # readout_image_array = numpy.empty([num_steps, num_steps])
+        # readout_image_array[:] = numpy.nan
+    
+        # writePos = []
+        # readout_image_array = image_sample.populate_img_array(readout_counts_array, readout_image_array, writePos)
+        title = 'SPaCE - {} ms depletion pulse'.format(CPG_laser_dur)
+        
+
+
+        tool_belt.create_image_figure(readout_counts_array, img_extent, clickHandler=None,
+                            title=title, color_bar_label='Counts',
+                            min_value=None, um_scaled=False)
+
 # %%
-def build_voltages_from_list(start_coords_drift, coords_list_drift):
-
-    # calculate the x values we want to step thru
-    start_x_value = start_coords_drift[0]
-    start_y_value = start_coords_drift[1]
-
-    num_samples = len(coords_list_drift)
-
-    # we want this list to have the pattern [[readout], [target], [readout], [readout],
-    #                                                   [target], [readout], [readout],...]
-    # The glavo needs a 0th coord, so we'll pass the readout NV as the "starting" point
-    x_points = [start_x_value]
-    y_points = [start_y_value]
-
-    # now create a list of all the coords we want to feed to the galvo
-    for i in range(num_samples):
-        x_points.append(coords_list_drift[i][0])
-        x_points.append(start_x_value)
-        x_points.append(start_x_value)
-
-        y_points.append(coords_list_drift[i][1])
-        y_points.append(start_y_value)
-        y_points.append(start_y_value)
-
-    return x_points, y_points
 
 def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift, 
                                  movement_incr,  step_size_list):
@@ -275,7 +303,6 @@ def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift,
     y_points = [start_y_value]
     z_points = [start_z_value]
     
-
     # now create a list of all the coords we want to feed to the galvo
     for i in range(num_samples):
         dx = coords_list_drift[i][0] - start_x_value
@@ -284,9 +311,9 @@ def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift,
         
         # how many steps, based on step size, will it take to get to final position?
         # round up
-        num_steps_x = numpy.ceil(dx /step_size_x )
-        num_steps_y = numpy.ceil(dy /step_size_y )
-        num_steps_z = numpy.ceil(dz /step_size_z )
+        num_steps_x = numpy.ceil(abs(dx) /step_size_x )
+        num_steps_y = numpy.ceil(abs(dy) /step_size_y )
+        num_steps_z = numpy.ceil(abs(dz) /step_size_z )
         
         # max_num_steps = max([num_steps_x, num_steps_y,num_steps_z])
         # move to target in steps based on step size
@@ -295,21 +322,21 @@ def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift,
             if n > num_steps_x-1:
                 x_points.append(coords_list_drift[i][0])
             else:
-                move_x = (n+1)*step_size_x
+                move_x = (n+1)*step_size_x * dx / abs(dx)
                 incr_x_val = move_x + start_x_value
                 x_points.append(incr_x_val)
                 
             if n > num_steps_y-1:
                 y_points.append(coords_list_drift[i][1])
             else:
-                move_y = (n+1)*step_size_y
+                move_y = (n+1)*step_size_y * dy / abs(dy)
                 incr_y_val = move_y + start_y_value
                 y_points.append(incr_y_val)
                 
             if n > num_steps_z-1:
                 z_points.append(coords_list_drift[i][2])
             else:
-                move_z = (n+1)*step_size_z
+                move_z = (n+1)*step_size_z * dz / abs(dz)
                 incr_z_val = move_z + start_z_value
                 z_points.append(incr_z_val)
         
@@ -319,21 +346,20 @@ def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift,
             if n > num_steps_x-1:
                 x_points.append(start_x_value)
             else:
-                move_x = (n+1)*step_size_x
+                move_x = (n+1)*step_size_x * dx / abs(dx)
                 incr_x_val = coords_list_drift[i][0] - move_x
                 x_points.append(incr_x_val)
-                
             if n > num_steps_y-1:
                 y_points.append(start_y_value)
             else:
-                move_y = (n+1)*step_size_y
+                move_y = (n+1)*step_size_y * dy / abs(dy)
                 incr_y_val = coords_list_drift[i][1] - move_y
                 y_points.append(incr_y_val)
                 
             if n > num_steps_z-1:
                 z_points.append(start_z_value)
             else:
-                move_z = (n+1)*step_size_z
+                move_z = (n+1)*step_size_z * dz / abs(dz)
                 incr_z_val = coords_list_drift[i][2] - move_z
                 z_points.append(incr_z_val)
                 
@@ -346,85 +372,53 @@ def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift,
     
     return x_points, y_points, z_points
 
-def build_xy_voltages_w_optimize(start_coords, CPG_coords,
-                              num_opti_steps, opti_scan_range):
-    # the start value is the nv's positions
-    start_x_value = start_coords[0]
-    start_y_value = start_coords[1]
-
-    ################# SPaCE measurement #################
-    x_points = [start_x_value, CPG_coords[0], start_x_value]
-    y_points = [start_y_value, CPG_coords[1], start_y_value]
-
-    ################# optimization #################
-    half_scan_range = opti_scan_range / 2
-
-    x_low = start_x_value - half_scan_range
-    x_high = start_x_value + half_scan_range
-
-    y_low = start_y_value - half_scan_range
-    y_high = start_y_value + half_scan_range
-
-    # build x and y values for scan in x
-    x_voltages = numpy.linspace(x_low, x_high, num_opti_steps).tolist()
-    y_voltages = numpy.full(num_opti_steps, start_y_value).tolist()
-
-    x_points = x_points + x_voltages
-    y_points = y_points + y_voltages
-
-    # build x and y values for scan in y
-    x_voltages = numpy.full(num_opti_steps, start_x_value).tolist()
-    y_voltages = numpy.linspace(y_low, y_high, num_opti_steps).tolist()
-
-    x_points = x_points + x_voltages
-    y_points = y_points + y_voltages
-
-    return x_points, y_points
 
 
 
-def build_voltages_image(start_coords, img_range, num_steps):
-    x_center = start_coords[0]
-    y_center = start_coords[1]
+def build_voltages_image(start_coords, img_range_2D,axes, num_steps):
+    # Make this arbitrary for building image in x, y, or z
+                
+    center_a = start_coords[axes[0]]
+    center_b = start_coords[axes[1]]
 
-    x_num_steps = num_steps
-    y_num_steps = num_steps
+    num_steps_a = num_steps
+    num_steps_b = num_steps
 
     # Force the scan to have square pixels by only applying num_steps
     # to the shorter axis
-    half_x_range = img_range / 2
-    half_y_range = img_range / 2
+    half_a_range = img_range_2D[axes[0]] / 2
+    half_b_range = img_range_2D[axes[1]] / 2
 
-    x_low = x_center - half_x_range
-    x_high = x_center + half_x_range
-    y_low = y_center - half_y_range
-    y_high = y_center + half_y_range
+    a_low = center_a - half_a_range
+    a_high = center_a + half_a_range
+    b_low = center_b - half_b_range
+    b_high = center_b + half_b_range
 
     # Apply scale and offset to get the voltages we'll apply to the galvo
     # Note that the polar/azimuthal angles, not the actual x/y positions
     # are linear in these voltages. For a small range, however, we don't
     # really care.
-    x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
-    y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
+    a_voltages_1d = numpy.linspace(a_low, a_high, num_steps_a)
+    b_voltages_1d = numpy.linspace(b_low, b_high, num_steps_b)
 
     # Winding cartesian product
     # The x values are repeated and the y values are mirrored and tiled
     # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
 
     # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
-    x_inter = numpy.concatenate((x_voltages_1d,
-                                 numpy.flipud(x_voltages_1d)))
+    a_inter = numpy.concatenate((a_voltages_1d,
+                                 numpy.flipud(a_voltages_1d)))
     # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
-    if y_num_steps % 2 == 0:  # Even x size
-        target_x_values = numpy.tile(x_inter, int(y_num_steps/2))
+    if num_steps_b % 2 == 0:  # Even x size
+        target_a_values = numpy.tile(a_inter, int(num_steps_b/2))
     else:  # Odd x size
-        target_x_values = numpy.tile(x_inter, int(numpy.floor(y_num_steps/2)))
-        target_x_values = numpy.concatenate((target_x_values, x_voltages_1d))
+        target_a_values = numpy.tile(a_inter, int(numpy.floor(num_steps_b/2)))
+        target_a_values = numpy.concatenate((target_a_values, a_voltages_1d))
 
     # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
-    target_y_values = numpy.repeat(y_voltages_1d, x_num_steps)
+    target_b_values = numpy.repeat(b_voltages_1d, num_steps_a)
 
-    return target_x_values, target_y_values, x_voltages_1d, y_voltages_1d
+    return target_a_values, target_b_values, a_voltages_1d, b_voltages_1d
 
 def collect_counts(cxn, movement_incr, num_samples, seq_args_string, apd_indices):
         
@@ -615,17 +609,17 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         #y 
         diff = abs(start_coords[1] - coords_list[i][1])
         num_steps_list.append(numpy.ceil(diff/step_size_y))
-    #z (assuming a single dz value)
-    diff = abs(start_coords[2] - coords_list[0][2])
-    num_steps_list.append(numpy.ceil(diff/step_size_z))
+        #z 
+        diff = abs(start_coords[2] - coords_list[i][2])
+        num_steps_list.append(numpy.ceil(diff/step_size_z))
         
+    movement_incr = int(max(num_steps_list))
     
     if xy_delay > z_delay:
         movement_delay = xy_delay
     else:
         movement_delay = z_delay
         
-    movement_incr = int(max(num_steps_list))
     
 
     # define the sequence paramters
@@ -742,7 +736,8 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     return list(numpy.concatenate(readout_counts_list).flat), drift_list
 
 # %%
-def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type,   dz = 0):
+def main(nv_sig, opti_nv_sig, num_steps, num_runs, 
+         img_range_1D =None, img_range_2D=None,  ):
     '''
     A measurements to initialize on a single point, then pulse a laser off that
     point, and then read out the charge state on the single point.
@@ -756,10 +751,9 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
         dictionary that contains the coordinates of an NV to optimize on 
         (parmaeters should include expected count rate, coords, imagine laser, 
          and imaging laser duration)
-    img_range: float
-        the range that the 2D area will cover, in both x and y. NOTE: for 1D
-        measurement, this is divided in half and used as the farthest point
-        in the +x direction
+    img_range: list (2D)
+    
+        
     num_steps: int
         number of steps in 1 direction. For 2D image, this is squared for the
         total number of points
@@ -768,6 +762,10 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
     measurement_type: '1D' or '2D'
         either run a 2D oving target or 1D moving target measurement.
     '''
+    direction_labels = ['x', 'y', 'z']
+    axes= []
+    direction_title = []
+    
     # Record start time of the measurement
     startFunctionTime = time.time()
     start_timestamp = tool_belt.get_time_stamp()
@@ -780,42 +778,23 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
     opti_interval = 4 # min
 
     start_coords = nv_sig['coords']
-    if measurement_type == '1D':
+    if img_range_1D != None:
+        measurement_type = '1D'
         # dir_1D = nv_sig['dir_1D']
-        dx_list =[img_range[0][0], img_range[1][0]]
-        dy_list =[img_range[0][1], img_range[1][1]]
-        # dx_list.sort()
-        # dy_list.sort()
-        low_coords = numpy.array(start_coords) + [dx_list[0], dy_list[0], dz]
-        high_coords = numpy.array(start_coords) + [dx_list[1], dy_list[1], dz]
-        # print(low_coords)
-        # print(high_coords)
-        # return
-        # if type(img_range) == float:
-            # dr = img_range / 2
-            # if dir_1D == 'x':
-            #     low_coords = numpy.array(start_coords) + [-dr, 0, dz]
-            #     high_coords = numpy.array(start_coords) + [dr, 0, dz]
-            # elif dir_1D == 'y':
-            #     low_coords = numpy.array(start_coords) + [0, -dr, dz]
-            #     high_coords = numpy.array(start_coords) + [0, dr, dz]
-            # # end_coords = numpy.array(start_coords) + [dx, 0, 0]
-            # # calculate the x and y values for linearly spaced points between start and end
-            # x_voltages = numpy.linspace(low_coords[0],
-            #                             high_coords[0], num_steps)
-            # y_voltages = numpy.linspace(low_coords[1],
-            #                             high_coords[1], num_steps)
-            # z_voltages = numpy.linspace(low_coords[2],
-                                        # high_coords[2], num_steps)
-        # elif type(img_range) == list:
-        #     # Make sure the lower value is first.
-        #     img_range.sort()
-        #     if dir_1D == 'x':
-        #         low_coords = numpy.array(start_coords) + [img_range[0], 0, dz]
-        #         high_coords = numpy.array(start_coords) + [img_range[1], 0, dz]
-        #     elif dir_1D == 'y':
-        #         low_coords = numpy.array(start_coords) + [0, img_range[0], dz]
-        #         high_coords = numpy.array(start_coords) + [0, img_range[1], dz]
+        dx_list =[img_range_1D[0][0], img_range_1D[1][0]]
+        dy_list =[img_range_1D[0][1], img_range_1D[1][1]]
+        dz_list =[img_range_1D[0][2], img_range_1D[1][2]]
+        
+        if dx_list[0] - dx_list[1] !=0 :
+            direction_title.append(direction_labels[0])
+        if dy_list[0] - dy_list[1] !=0 :
+            direction_title.append(direction_labels[1])
+        if dz_list[0] - dz_list[1] !=0 :
+            direction_title.append(direction_labels[2])
+        
+        low_coords = numpy.array(start_coords) + [dx_list[0], dy_list[0], dz_list[0]]
+        high_coords = numpy.array(start_coords) + [dx_list[1], dy_list[1], dz_list[1]]
+        
         x_voltages = numpy.linspace(low_coords[0],
                                     high_coords[0], num_steps)
         y_voltages = numpy.linspace(low_coords[1],
@@ -826,40 +805,59 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
         coords_voltages = list(zip(x_voltages, y_voltages, z_voltages))
         # calculate the radial distances from the readout NV to the target points
         rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)
-        # neg_ints = int(numpy.floor(len(rad_dist)/2))
-        # rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
         
+        neg_ints = int(numpy.floor(len(rad_dist)/2))
+        rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
         
-        # rad_dist = r_voltages - start_coords
-        # if dir_1D == 'x':
-            # rad_dist = (x_voltages - start_coords[0])
-        # elif dir_1D == 'y':
-            # rad_dist = (y_voltages- start_coords[1])
 
-
-    elif measurement_type == '2D':
+    elif img_range_2D != None:
+        measurement_type = '2D'
+        for v in range(len(img_range_2D)):
+            val = img_range_2D[v]
+            if val != 0:
+                direction_title.append(direction_labels[v])
+                axes.append(v)
+            else:
+                stationary_axis = v
+                
+        xy_scale = tool_belt.get_registry_entry_no_cxn('xy_nm_per_unit', ['', 'Config', 'Positioning'])
+        z_scale = tool_belt.get_registry_entry_no_cxn('z_nm_per_unit', ['', 'Config', 'Positioning'])
+        scale_list = [xy_scale, xy_scale, z_scale]        
+        
         # calculate the list of x and y voltages we'll need to step through
-        ret_vals= build_voltages_image(start_coords, img_range, num_steps)
-        x_voltages, y_voltages, x_voltages_1d, y_voltages_1d  = ret_vals
-
-        # list the z values
-        z_v = start_coords[2] + dz
-        z_voltages = numpy.linspace(z_v, z_v, len(x_voltages))
+        ret_vals= build_voltages_image(start_coords, img_range_2D, axes, num_steps)
+        a_voltages, b_voltages, a_voltages_1d, b_voltages_1d  = ret_vals
+        
+        
+        # list the values of the axis that won't move
+        c_voltages = numpy.linspace(start_coords[stationary_axis], 
+                        start_coords[stationary_axis], len(a_voltages))
+        
+        # sort which voltage lists go to which axes
+        voltage_list = numpy.empty(3)
+        voltage_list[axes[0]] = a_voltages
+        voltage_list[axes[1]] = b_voltages
+        voltage_list[stationary_axis] = c_voltages
+        
 
         # Combine the x and y voltages together into pairs
-        coords_voltages = list(zip(x_voltages, y_voltages, z_voltages))
+        coords_voltages = list(zip(voltage_list[0], voltage_list[1], voltage_list[2]))
 
         # prep for the figure
-        x_low = x_voltages_1d[0]
-        x_high = x_voltages_1d[num_steps-1]
-        y_low = y_voltages_1d[0]
-        y_high = y_voltages_1d[num_steps-1]
+        a_low = a_voltages_1d[0]
+        a_high = a_voltages_1d[num_steps-1]
+        b_low = a_voltages_1d[0]
+        b_high = a_voltages_1d[num_steps-1]
 
-        pixel_size = (x_voltages_1d[1] - x_voltages_1d[0])
+        pixel_size_a = (a_voltages_1d[1] - a_voltages_1d[0])
+        pixel_size_b = (b_voltages_1d[1] - b_voltages_1d[0])
 
-        half_pixel_size = pixel_size / 2
-        img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                      y_low - half_pixel_size, y_high + half_pixel_size]
+        half_pixel_size_a = pixel_size_a / 2
+        half_pixel_size_b = pixel_size_b / 2
+        img_extent = [(a_high + half_pixel_size_a)*scale_list[axes[0]], 
+                      (a_low - half_pixel_size_a)*scale_list[axes[0]],
+                      (b_low - half_pixel_size_b)*scale_list[axes[1]], 
+                      (b_high + half_pixel_size_b)*scale_list[axes[1]] ]
 
 
         # Create some empty data lists
@@ -868,10 +866,12 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
         readout_image_array[:] = numpy.nan
 
         # Create the figure
-        title = 'SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.format(init_color, pulse_color, pulse_time/10**6)
+        title = 'SPaCE {} vs {} - {} nm init pulse \n{} nm {} ms CPG pulse'.format(direction_title[0], 
+                       direction_title[1], init_color, pulse_color, pulse_time/10**6)
         fig_2D = tool_belt.create_image_figure(readout_image_array,
-                                               numpy.array(img_extent)*35,
-                                                title = title, um_scaled = True)
+                                               numpy.array(img_extent),
+                                                title = title, um_scaled = True,
+                                                aspect_ratio = "auto")
 
     drift_list_master = []
     num_samples = len(coords_voltages)
@@ -910,10 +910,10 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
         readout_counts_ste = stats.sem(readout_counts_array_rot[-(n+1):], axis = 0)
         #Save incrementally
         raw_data = {'timestamp': start_timestamp,
-                'img_range': img_range,
+                'img_range_1D': img_range_1D,
+                'img_range_2D': img_range_2D,
                 'img_range-units': 'V',
-                'dz': dz,
-                'dz-units': 'V',
+                'direction_title': direction_title,
                 'num_steps': num_steps,
                 'num_runs':num_runs,
                 'opti_interval': opti_interval,
@@ -940,8 +940,8 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
 
             tool_belt.update_image_figure(fig_2D, readout_image_array)
 
-            raw_data['x_voltages_1d'] = x_voltages_1d.tolist()
-            raw_data['y_voltages_1d'] = y_voltages_1d.tolist()
+            raw_data['a_voltages_1d'] = a_voltages_1d.tolist()
+            raw_data['b_voltages_1d'] = b_voltages_1d.tolist()
             raw_data['img_extent'] = img_extent
             raw_data['img_extent-units'] = 'V'
             raw_data['readout_image_array'] = readout_image_array.tolist()
@@ -951,44 +951,24 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
             tool_belt.save_figure(fig_2D, file_path)
 
         tool_belt.save_raw_data(raw_data, file_path)
-
-    # Save at the end of the whole measurement
-    # measure laser powers:
-    # green_optical_power_pd, green_optical_power_mW, \
-    #         red_optical_power_pd, red_optical_power_mW, \
-    #         yellow_optical_power_pd, yellow_optical_power_mW = \
-    #         tool_belt.measure_g_r_y_power(
-    #                           nv_sig['am_589_power'], nv_sig['nd_filter'])
-
+        
     endFunctionTime = time.time()
 
     # Save
     timeElapsed = endFunctionTime - startFunctionTime
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
-                'timeElapsed': timeElapsed,
-            'img_range': img_range,
+            'timeElapsed': timeElapsed,
+            'img_range_1D': img_range_1D,
+            'img_range_2D': img_range_2D,
             'img_range-units': 'V',
-            'dz': dz,
-            'dz-units': 'V',
+            'direction_title': direction_title,
             'num_steps': num_steps,
             'num_runs':num_runs,
             'opti_interval': opti_interval,
             'opti_interval-units': 's',
             'nv_sig': nv_sig,
             'nv_sig-units': tool_belt.get_nv_sig_units(),
-            # 'green_optical_power_pd': green_optical_power_pd,
-            # 'green_optical_power_pd-units': 'V',
-            # 'green_optical_power_mW': green_optical_power_mW,
-            # 'green_optical_power_mW-units': 'mW',
-            # 'red_optical_power_pd': red_optical_power_pd,
-            # 'red_optical_power_pd-units': 'V',
-            # 'red_optical_power_mW': red_optical_power_mW,
-            # 'red_optical_power_mW-units': 'mW',
-            # 'yellow_optical_power_pd': yellow_optical_power_pd,
-            # 'yellow_optical_power_pd-units': 'V',
-            # 'yellow_optical_power_mW': yellow_optical_power_mW,
-            # 'yellow_optical_power_mW-units': 'mW',
             'coords_voltages': coords_voltages,
             'coords_voltages-units': '[V, V]',
              'ind_list': ind_list,
@@ -1008,14 +988,15 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
         ax_1D.plot(rad_dist*35000,readout_counts_avg, label = nv_sig['name'])
         ax_1D.set_xlabel('r (nm)')
         ax_1D.set_ylabel('Average counts')
-        ax_1D.set_title('SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.\
-                                        format(init_color, pulse_color, pulse_time/10**6,))
+        ax_1D.set_title('SPaCE {}- {} nm init pulse \n{} nm {} ms CPG pulse'.\
+                                        format(direction_title, init_color, 
+                                               pulse_color, pulse_time/10**6,))
         ax_1D.legend()
         tool_belt.save_figure(fig_1D, file_path)
 
     if measurement_type == '2D':
-            raw_data['x_voltages_1d'] = x_voltages_1d.tolist()
-            raw_data['y_voltages_1d'] = y_voltages_1d.tolist()
+            raw_data['a_voltages_1d'] = a_voltages_1d.tolist()
+            raw_data['b_voltages_1d'] = b_voltages_1d.tolist()
             raw_data['img_extent'] = img_extent
             raw_data['img_extent-units'] = 'V'
             raw_data['readout_image_array'] = readout_image_array.tolist()
@@ -1033,13 +1014,8 @@ def main(nv_sig, opti_nv_sig, img_range, num_steps, num_runs, measurement_type, 
 
 if __name__ == '__main__':
 
-    path_july = 'pc_rabi/branch_master/SPaCE/2021_07'
-    path = 'pc_rabi/branch_master/SPaCE/2021_08'
-    # sub_folder = '2021_08_02 22 mW vary pulse dur/y'
-    sub_folder = '2021_08_02 1000 us vary pulse power/y'
-    # file_name = '2021_07_26-22_23_54-johnson-nv1_2021_07_21'
-    # file_name = '2021_07_27-09_03_48-johnson-nv1_2021_07_21'
-    # file_name = '2021_07_26-23_35_05-johnson-nv1_2021_07_21'
+    path_august = 'pc_rabi/branch_master/SPaCE/2021_08'
+    path = 'pc_rabi/branch_master/SPaCE/2021_09'
 
     file_name_no_opt = '2021_07_27-15_10_17-johnson-nv1_2021_07_27'
     file_name_no_opt_2 = '2021_07_28-15_21_25-johnson-nv1_2021_07_27'
@@ -1166,17 +1142,17 @@ if __name__ == '__main__':
 
     #================ 8/6/2021 x scans @ 500 us Feature 1A ================#
     # x
-    file_list = [
-        '2021_08_05-23_11_42-johnson-nv2_2021_08_04',
-        '2021_08_05-22_46_43-johnson-nv2_2021_08_04',
-        '2021_08_05-22_25_21-johnson-nv2_2021_08_04',
-        '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
-        '2021_08_05-20_06_21-johnson-nv2_2021_08_04',
-        '2021_08_05-20_55_56-johnson-nv2_2021_08_04',
-        '2021_08_05-21_17_41-johnson-nv2_2021_08_04',
-        '2021_08_05-21_41_06-johnson-nv2_2021_08_04',
-        '2021_08_05-22_01_58-johnson-nv2_2021_08_04'
-        ]
+    # file_list = [
+        # '2021_08_05-23_11_42-johnson-nv2_2021_08_04',
+        # '2021_08_05-22_46_43-johnson-nv2_2021_08_04',
+        # '2021_08_05-22_25_21-johnson-nv2_2021_08_04',
+        # '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
+        # '2021_08_05-20_06_21-johnson-nv2_2021_08_04',
+        # '2021_08_05-20_55_56-johnson-nv2_2021_08_04',
+        # '2021_08_05-21_17_41-johnson-nv2_2021_08_04',
+        # '2021_08_05-21_41_06-johnson-nv2_2021_08_04',
+        # '2021_08_05-22_01_58-johnson-nv2_2021_08_04'
+        # ]
     
     #================ 8/8/2021 x scans @ 22 mW Feature 1A, changing time between optimize ================#
 
@@ -1196,23 +1172,43 @@ if __name__ == '__main__':
     #     '2021_08_07-23_57_53-johnson-nv2_2021_08_04'
     #     ]
 
+ 
+    #================ 8/31/2021  ================#
 
+    file_list = [
+        '2021_09_01-04_36_52-johnson-nv2_2021_08_30',
+        '2021_09_01-05_00_07-johnson-nv2_2021_08_30',
+        '2021_09_01-05_23_28-johnson-nv2_2021_08_30',
+        '2021_09_01-06_13_43-johnson-nv2_2021_08_30',
+        '2021_09_01-07_16_36-johnson-nv2_2021_08_30',
+        '2021_09_01-08_32_02-johnson-nv2_2021_08_30',
+        ]
+    #================ 9/1/2021  ================#
+
+    file_list = [
+        '2021_08_31-19_37_16-johnson-nv2_2021_08_30',
+        '2021_08_31-21_39_38-johnson-nv2_2021_08_30',
+        '2021_09_01-11_10_15-johnson-nv2_2021_08_30'
+        ]
+    
     ########### Fit Gaussian to 1D files ###########
     widths_master_list = []
     center_master_list = []
     height_master_list = []
-    for file_name in file_list:
-
-        lobe_positions = [750] # 400, 800, 1200, 1600
-        ret_vals = plot_1D_SpaCE(file_name, path, do_plot = False, do_fit = True)
+    path_list = [path_august,path_august, path]
+    for f in range(len(file_list)):
+        file_name = file_list[f]
+        path = path_list[f]
+        lobe_positions = [975] 
+        ret_vals = plot_1D_SpaCE(file_name, path, do_plot = True, do_fit = True)
         widths_master_list.append(ret_vals[2][2])
         center_master_list.append(ret_vals[2][1])
         height_master_list.append(ret_vals[2][0]**2)
 
-    #_______ Power _______#
-    x_vals = [ 12.7, 15.8, 18.6, 21.7, 24.4, 26.8, 29.1, 30.9, 31.3]
-    lin_x_vals = numpy.linspace(x_vals[0],
-                    x_vals[-1], 100)
+    # #_______ Power _______#
+    # x_vals = [ 12.7, 15.8, 18.6, 21.7, 24.4, 26.8, 29.1, 30.9, 31.3]
+    # lin_x_vals = numpy.linspace(x_vals[0],
+    #                 x_vals[-1], 100)
 
     # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # ax.plot(x_vals, height_master_list, 'bo')
@@ -1278,37 +1274,15 @@ if __name__ == '__main__':
 
     #_______ Time _______#
     x_vals = [
-        90, 100, 150, 
-              200, 250, 300, 350, 400, 450, 500, 550, 600,
-              650, 700, 750, 800,850 , 900, 1000, 1100, 1200, 
-              # 1300, 1350, 1400, 1450
+        100, 150, 1000
               ]
     lin_x_vals = numpy.linspace(x_vals[0],
                     x_vals[-1], 100)
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(x_vals, height_master_list, 'bo')
-    # ax.set_xlabel('Pulse duration (us)')
-    # ax.set_ylabel('Gaussian amplitude (counts)')
-    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
-
-    # init_fit = [5, 2000]
-    # opti_params, cov_arr = curve_fit(exp_decay,
-    #       x_vals,height_master_list,p0=init_fit)
-    # print('Opti params: ' + str(opti_params))
-    # text = r'$A e^{-t/d}$'
-    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-    # ax.plot(lin_x_vals, exp_decay(lin_x_vals, *opti_params), 'r-')
-    # text = 'A={:.3f} counts\n$d$={:.3f} us'.format(*opti_params)
-    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-
-    # fig, ax = plt.subplots(1, 1)
-    # ax.plot(x_vals, widths_master_list, 'bo')
-    # ax.set_xlabel('Pulse duration (us)')
-    # ax.set_ylabel('Gaussian sigma (nm)')
-    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(x_vals, widths_master_list, 'bo')
+    ax.set_xlabel('Pulse duration (us)')
+    ax.set_ylabel('Sq Gaussian sigma (nm)')
+    ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
     # ax.set_yscale('log')
     # ax.set_xscale('log')
 
@@ -1320,27 +1294,20 @@ if __name__ == '__main__':
     # ax.plot(lin_x_vals, power_fnct(lin_x_vals, *opti_params), 'g-', 
     #         label = "inverse square root")
     
-    # init_fit = [300]
-    # opti_params, cov_arr = curve_fit(power_fnct,
-    #       x_vals,widths_master_list,p0=init_fit)
-    # print('Opti params: ' + str(opti_params))
-    # ax.plot(lin_x_vals, power_fnct(lin_x_vals, *opti_params), 'g-', 
-    #         label = "fit inverse power: t ^ -0.372")
-    # # ax.legend()
+    init_fit = [300]
+    opti_params, cov_arr = curve_fit(inverse_quarter,
+          x_vals,widths_master_list,p0=init_fit)
+    print('Opti params: ' + str(opti_params))
+    ax.plot(lin_x_vals, inverse_quarter(lin_x_vals, *opti_params), 'g-',)
+    ax.legend()
     
-    # text = r'$A / t^{b}$'
-    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-    # text = 'A={:.3f} nm*us^b\nb = {:.3f}'.format(*opti_params)
-    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(x_vals, center_master_list, 'bo')
-    # ax.set_xlabel('Pulse duration (us)')
-    # ax.set_ylabel('Lobe position (nm)')
-    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
+    text = r'$A / t^{1/4}$'
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
+    text = 'A={:.3f} nm*us^0.25'.format(*opti_params)
+    ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=props)
 
 
     ############# Plot 1D comparisons ##############
@@ -1363,103 +1330,51 @@ if __name__ == '__main__':
 
 
     #================ specific for 1D scans ================#
-    file = '2021_08_27-08_18_02-johnson-nv1_2021_08_26'
-    data = tool_belt.get_raw_data(file, path)
+    # file = '2021_08_27-08_18_02-johnson-nv1_2021_08_26'
+    # data = tool_belt.get_raw_data(file, path)
     
-    # img_array = data['readout_image_array']
-    readout_counts_avg = data['readout_counts_avg']
-    nv_sig = data['nv_sig']
-    start_coords = nv_sig['coords']
-    num_steps = data['num_steps']
-    img_range = data['img_range']
-    dz = data['dz']
-    pulse_time = nv_sig['CPG_laser_dur']
+    # # img_array = data['readout_image_array']
+    # readout_counts_avg = data['readout_counts_avg']
+    # nv_sig = data['nv_sig']
+    # start_coords = nv_sig['coords']
+    # num_steps = data['num_steps']
+    # img_range = data['img_range']
+    # dz = data['dz']
+    # pulse_time = nv_sig['CPG_laser_dur']
 
-    dx_list =[img_range[0][0], img_range[1][0]]
-    dy_list =[img_range[0][1], img_range[1][1]]
-    low_coords = numpy.array(start_coords) + [dx_list[0], dy_list[0], dz]
-    high_coords = numpy.array(start_coords) + [dx_list[1], dy_list[1], dz]
-    x_voltages = numpy.linspace(low_coords[0],
-                                high_coords[0], num_steps)
-    y_voltages = numpy.linspace(low_coords[1],
-                                high_coords[1], num_steps)
-    z_voltages = numpy.linspace(low_coords[2],
-                                high_coords[2], num_steps)
+    # dx_list =[img_range[0][0], img_range[1][0]]
+    # dy_list =[img_range[0][1], img_range[1][1]]
+    # low_coords = numpy.array(start_coords) + [dx_list[0], dy_list[0], dz]
+    # high_coords = numpy.array(start_coords) + [dx_list[1], dy_list[1], dz]
+    # x_voltages = numpy.linspace(low_coords[0],
+    #                             high_coords[0], num_steps)
+    # y_voltages = numpy.linspace(low_coords[1],
+    #                             high_coords[1], num_steps)
+    # z_voltages = numpy.linspace(low_coords[2],
+    #                             high_coords[2], num_steps)
     
-    rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)
+    # rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)
     
-    neg_ints = int(numpy.floor(len(rad_dist)/2))
-    rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
+    # neg_ints = int(numpy.floor(len(rad_dist)/2))
+    # rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
     
 
     
-    fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
-    ax_1D.plot(rad_dist*35000,readout_counts_avg, label = nv_sig['name'])
-    ax_1D.set_xlabel('r (nm)')
-    ax_1D.set_ylabel('Average counts')
-    ax_1D.set_title('SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.\
-                                    format(638, 515, pulse_time/10**6,))
+    # fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
+    # ax_1D.plot(rad_dist*35000,readout_counts_avg, label = nv_sig['name'])
+    # ax_1D.set_xlabel('r (nm)')
+    # ax_1D.set_ylabel('Average counts')
+    # ax_1D.set_title('SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.\
+    #                                 format(638, 515, pulse_time/10**6,))
 
     #================ specific for 2D scans ================#
-    # file_list = [
-    #     '2021_08_22-00_15_56-johnson-nv2_2021_08_20'
-    #     ]
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # label_list = [
-    #     '-1.125 um',
-    #     '-0.75 um',
-    #     '-0.375 um',
-    #     '0 um',
-    #     '0.375 um',
-    #     '0.75 um',
-    #     '1.125 um',
-    #     '1.5 um',
-    #     ]
+    file_list = [
+        '2021_09_01-15_10_35-johnson-nv2_2021_08_30'
+        ]
 
-    # for f in range(len(file_list)):
-    #     file = file_list[f]
-    #     data = tool_belt.get_raw_data(file, path)
-    #     try:
-    #         # img_array = data['readout_image_array']
-    #         readout_counts_array = data['readout_counts_array']
-    #         num_steps = data['num_steps']
-    #         x_voltages = data['x_voltages_1d']
-    #         y_voltages = data['y_voltages_1d']
-    #         x_low = x_voltages[0]
-    #         x_high = x_voltages[-1]
-    #         y_low = y_voltages[0]
-    #         y_high = y_voltages[-1]
-    #         pixel_size = x_voltages[1] - x_voltages[0]
-    #         half_pixel_size = pixel_size / 2
-    #         img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-    #                       y_low - half_pixel_size, y_high + half_pixel_size]
-
-    #         # get jsut a slice throguh the middle
-    #         # num_steps= len(img_array)
-    #         # slice_counts = numpy.array(img_array[int(num_steps/2)])
-
-    #         # ax.plot(x_voltages, slice_counts + 10*f , '-', label = label_list[f])
-    #         # ax.legend()
-            
-    #         # just plot the 1st run
-    #         readout_counts_array_rot = numpy.rot90(readout_counts_array)
-    #         readout_counts_avg =(readout_counts_array_rot[-1])
-            
-            
-    #         readout_image_array = numpy.empty([num_steps, num_steps])
-    #         readout_image_array[:] = numpy.nan
-        
-    #         writePos = []
-    #         readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
-    #         title = 'SPaCE - {} nm init pulse \n{} nm {} ms CPG pulse'.format('532 nm', '638 nm', 150e3/10**6)
-        
-
-    #     except Exception:
-    #         pass
-
-    #     tool_belt.create_image_figure(readout_image_array, img_extent, clickHandler=None,
-    #                         title=title, color_bar_label='Counts',
-    #                         min_value=None, um_scaled=False)
+    for f in range(len(file_list)):
+        file = file_list[f]
+        # plot_2D_space(file, path)
 
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))

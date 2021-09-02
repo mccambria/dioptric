@@ -2,11 +2,14 @@
 """
 Created on Sat Mar  24 08:34:08 2020
 
-Thsi file is for use with the isolate_nv_charge_dynamics_moving_target' routine.
+Thsi file is for use with the' SPaCE' routine.
 
 This sequence has three pulses, seperated by wait times that allow time for
 the galvo to move. We also have two clock pulses instructing the galvo to move, 
 followed by a clock pulse at the end of the sequence to signifiy the counts to read.
+
+8/30/2021 Modified so that galvo and objective piezo will step incrementally
+to desired position, instead of one sudden jump.
 
 @author: Aedan
 """
