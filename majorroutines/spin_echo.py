@@ -831,22 +831,25 @@ if __name__ == "__main__":
 
     plt.ion()
 
-    file_name = "2021_09_03-20_36_12-hopper-search"
-    file_names = [
-        "2021_09_03-22_04_25-hopper-search",
-        "2021_08_29-10_07_58-hopper-search",
-        "2021_09_03-20_36_12-hopper-search",
-        "2021_04_27-17_08_36-hopper-nv1_2021_03_16",
-        "2021_04_30-01_24_09-hopper-nv1_2021_03_16",
-    ]
-    # file_names = [file_name]
+    path_from_nvdata = "pc_hahn/branch_time-tagger-speedup/spin_echo/2021_09"
+    # file_name = "2021_09_03-20_36_12-hopper-search"
+    # file_name = "2021_09_03-22_04_25-hopper-search"
+    file_name = "2021_09_03-23_31_54-hopper-search"
+    # file_names = [
+    #     # "2021_09_03-22_04_25-hopper-search",
+    #     # "2021_08_29-10_07_58-hopper-search",
+    #     # "2021_09_03-20_36_12-hopper-search",
+    #     "2021_04_27-17_08_36-hopper-nv1_2021_03_16",
+    #     # "2021_04_30-01_24_09-hopper-nv1_2021_03_16",
+    # ]
+    file_names = [file_name]
 
     for f in file_names:
 
-        start = time.time()
-        data = tool_belt.get_raw_data(f)
-        stop = time.time()
-        print(stop - start)
+        # start = time.time()
+        data = tool_belt.get_raw_data(f, path_from_nvdata)
+        # stop = time.time()
+        # print(stop - start)
 
         #    print(data['norm_avg_sig'])
 
