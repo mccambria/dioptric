@@ -164,7 +164,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     freq_range = 0.050
     num_steps = 51
     num_reps = 8000
-    num_runs = 5
+    num_runs = 3
     
     # Zoom
     # freq_range = 0.035
@@ -175,8 +175,9 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     
     composite = False
 
-    pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
-                          num_steps, num_reps, num_runs, composite)
+    res, _ = pulsed_resonance.state(nv_sig, apd_indices, state, freq_range,
+                                    num_steps, num_reps, num_runs, composite)
+    nv_sig["resonance_{}".format(state.name)] = res
 
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
@@ -210,10 +211,11 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
     num_reps = 8000
-    num_runs = 5
+    num_runs = 3
 
-    rabi.main(nv_sig, apd_indices, uwave_time_range,
+    period = rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
+    nv_sig["rabi_{}".format(state.name)] = period
 
 
 def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
@@ -380,8 +382,27 @@ def do_spin_echo(nv_sig, apd_indices):
     
     state = States.LOW
 
-    spin_echo.main(nv_sig, apd_indices, precession_time_range,
-                   num_steps, num_reps, num_runs, state)
+    angle = spin_echo.main(nv_sig, apd_indices, precession_time_range,
+                           num_steps, num_reps, num_runs, state)
+    return angle
+    
+    
+def do_spin_echo_battery(nv_sig, apd_indices):
+    do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+    do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+    do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+    do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+    angle = do_spin_echo(nv_sig, apd_indices)
+    return angle
+    
+    
+def do_optimize_magnet_angle_fine(nv_sig, apd_indices):
+
+    for magnet_angle in numpy.linspace(220, 230, 6):
+        nv_sig["magnet_angle"] = magnet_angle
+        angle = do_spin_echo_battery(nv_sig, apd_indices)
+        if angle < 6:
+            break
 
 
 def do_sample_nvs(nv_sig_list, apd_indices):
@@ -452,8 +473,8 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
             'collection_filter': None, 'magnet_angle': 225,
-            'resonance_LOW': 2.7546, 'rabi_LOW': 189.0, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9889, 'rabi_HIGH': 338.2, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.8000, 'rabi_LOW': 195.9, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9430, 'rabi_HIGH': 338.2, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -477,11 +498,12 @@ if __name__ == '__main__':
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_stationary_count(nv_sig, apd_indices)
-        # do_resonance(nv_sig, apd_indices, 2.87, 0.300)
+        # do_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
+        do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
@@ -489,7 +511,7 @@ if __name__ == '__main__':
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
-        do_t1_interleave_knill(nv_sig, apd_indices)
+        # do_t1_interleave_knill(nv_sig, apd_indices)
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
