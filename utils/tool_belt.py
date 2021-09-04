@@ -36,7 +36,6 @@ from email.mime.text import MIMEText
 import traceback
 import keyring
 import platform
-import glob
 
 # %% Constants
 
@@ -789,7 +788,7 @@ def calc_snr(sig_count, ref_count):
     sig_count_avg = numpy.average(sig_count)
     ref_count_avg = numpy.average(ref_count)
     dif = sig_count_avg - ref_count_avg
-    sum_= sig_count_avg + ref_count_avg
+    sum_ = sig_count_avg + ref_count_avg
     noise = numpy.sqrt(sum_)
     snr = dif / noise
 
@@ -1054,10 +1053,13 @@ def get_raw_data(
 
     if path_from_nvdata is None:
         year_month = file_name[0:7]
-        glob_str = "{}/*/*/*/{}/{}.txt".format(
-            str(nvdata_dir), year_month, file_name
-        )
-        for el in glob.glob(glob_str):
+        # glob_str = "{}/*/*/*/{}/{}.txt".format(
+        #     str(nvdata_dir), year_month, file_name
+        # )
+        # gen = glob.iglob(glob_str)
+        glob_str = "*/*/*/{}/{}.txt".format(year_month, file_name)
+        gen = nvdata_dir.glob(glob_str)
+        for el in gen:
             # The file has to be unique so we can just assign the first
             # elemnent we find to file_path
             file_path = el
