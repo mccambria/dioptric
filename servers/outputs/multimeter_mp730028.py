@@ -29,13 +29,14 @@ from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
 import logging
 import socket
-import visa
+import pyvisa as visa
+import time
+import numpy
 
 
 class MultimeterMp730028(LabradServer):
     name = "multimeter_mp730028"
     pc_name = socket.gethostname()
-    reset_cfm_opt_out = True
 
     def initServer(self):
         filename = (
@@ -48,6 +49,7 @@ class MultimeterMp730028(LabradServer):
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
         )
+        self.measuring_temp = True
         config = ensureDeferred(self.get_config())
         config.addCallback(self.on_get_config)
 
@@ -63,56 +65,74 @@ class MultimeterMp730028(LabradServer):
         visa_address = config
         self.multimeter = resource_manager.open_resource(visa_address)
         self.multimeter.baud_rate = 115200
-        self.power_supply.read_termination = '\n'
-        self.power_supply.write_termination = '\n'
+        self.multimeter.read_termination = '\n'
+        self.multimeter.write_termination = '\n'
         self.multimeter.write("*RST")
-        self.multimeter.write("*IDN?")
-        test = self.multimeter.read()
-        logging.info(test)
+        # test = self.multimeter.query("*IDN?")
+        # logging.info(test)
         logging.info("Init complete")
     
     @setting(1, res_range='s')
     def config_res_measurement(self, c, res_range):
-        """This probably doesn't work yet."""
-        self.multimeter.write("SENS:FUNC RES")
-        res_range_options = ["500", "5E3", "50E3", "500E3", "5E6", "50E6", "500E6"]
+        self.multimeter.write('SENS:FUNC "RES"')
+        # res_range_options = ["500", "5E3", "50E3", "500E3", "5E6", "50E6", "500E6"]
         cmd = "CONF:SCAL:RES {}".format(res_range)
         self.multimeter.write(cmd)
         # Set the update rate to fast (maximum speed)
         self.multimeter.write("RATE F")
+        self.measuring_temp = False
+        # Query the device until it finishes setting up and starts
+        # returning valid data
+        start = time.time()
+        while True:
+            time.sleep(0.25)
+            if self.measure_internal() > 0:
+                break
+            if time.time() - start > 5:
+                raise RuntimeError("multimeter_mp730028 timed out configuring resistance measurement.")
     
-    @setting(2, detector_type='s', units='s')
-    def config_temp_measurement(self, c, detector_type, units):
+    @setting(2, detector='s')
+    def config_temp_measurement(self, c, detector):
+        """There is an option to measure temperature directly on this
+        multimeter but it's buggy. In particular, the measurement
+        stops returning values much outside room temperature if the unit is
+        left on for several days. By monitioring the resistance directly
+        we avoid this problem."""
         
-        # Set the measurement mode
-        self.multimeter.write('SENS:FUNC "TEMP"')
+        detector_ranges = {"PT100": "500"}
+        self.config_res_measurement(c, detector_ranges[detector])
+        self.measuring_temp = True
+        self.detector = detector
         
-        # Reset the measurement parameters and supposedly set the detector
-        # type, but as far as I can tell this doesn't actually do... anything
-        cmd = 'CONF:SCAL:TEMP:RTD {}'.format(detector_type)
-        self.multimeter.write(cmd)
+    def convert_res_to_temp(self, value):
+        # From this Texas Instruments whitepaper: https://www.ti.com/lit/an/sbaa275/sbaa275.pdf?ts=1630965124219&ref_url=https%253A%252F%252Fwww.google.com%252F
+        # We have R(T) = 100 (1 + (3.9083E-3 T) + (-5.775E-7 T**2)) in C
+        # Inverted this gives:
+        if self.detector == "PT100":
+            return 3656.96 - 0.287154 * numpy.sqrt(159861899 - 210000 * value)
         
-        # Set the detector type
-        cmd = "SENS:TEMP:RTD:TYP {}".format(detector_type)
-        self.multimeter.write(cmd)
-        
-        # Set the display type - just show the temperature
-        self.multimeter.write("SENS:TEMP:RTD:SHOW TEMP")
-        
-        # Set the units
-        cmd = "SENS:TEMP:RTD:UNIT {}".format(units)
-        self.multimeter.write(cmd)
-        
-        # Set the update rate to fast (maximum speed)
-        self.multimeter.write("RATE F")
+    def measure_internal(self):
+        value = self.multimeter.query("MEAS1?")
+        return float(value)
 
     @setting(5, returns='v[]')
     def measure(self, c):
         """Return the value from the main display."""
-        value = self.multimeter.query("MEAS1?")
-        return float(value)
-
+        value = self.measure_internal()
+        if self.measuring_temp:
+            return self.convert_res_to_temp(value)
+        else:
+            return value
+        
     @setting(6)
+    def reset_cfm_opt_out(self, c):
+        """This setting is just a flag for the client. If you include this 
+        setting on a server, then the server won't be reset along with the 
+        rest of the instruments when we call tool_belt.reset_cfm.
+        """
+        pass
+
+    @setting(7)
     def reset(self, c):
         """Fully reset to factory defaults"""
         self.multimeter.write("*RST")

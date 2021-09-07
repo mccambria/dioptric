@@ -202,7 +202,6 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
         power = pid(pid_state, pid_coeffs)
         if now - last_resistance_time > resistance_period:
             resistance = update_resistance(cxn)
-            print(resistance)
             last_resistance_time = now
         set_power(cxn, power, resistance)
         # Immediately get a better resistance measurement after the first set
@@ -213,19 +212,19 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
 
 if __name__ == "__main__":
 
-    do_plot = True
+    do_plot = False
     target = 350.0
     pid_coeffs = [0.5, 0.01, 0]
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc
     # integral_bootstrap = 0.0
-    # integral_bootstrap = 1.7 / 0.01
-    # integral_bootstrap = 0.6*24 / 0.01
-    integral_bootstrap = integral_max
+    integral_bootstrap = 0.3 * integral_max
+    # integral_bootstrap = 0.6 * integral_max
+    # integral_bootstrap = integral_max
 
     with labrad.connect() as cxn:
-        # Set up the multimeter for temperature measurement
-        cxn.multimeter_mp730028.config_temp_measurement("PT100", "K")
+        # Set up the multimeter for resistance measurement
+        cxn.multimeter_mp730028.config_temp_measurement("PT100")
         cxn.power_supply_mp710087.set_current_limit(1.0)
         # Allow the voltage to be somewhat higher than the specs suggest
         # it should max out at to account for temperature dependence of
