@@ -212,8 +212,8 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
 
 if __name__ == "__main__":
 
-    do_plot = False
-    target = 350.0
+    do_plot = True
+    target = 500.0
     pid_coeffs = [0.5, 0.01, 0]
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc

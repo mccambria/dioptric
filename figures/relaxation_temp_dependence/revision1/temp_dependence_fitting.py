@@ -778,10 +778,10 @@ if __name__ == "__main__":
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [70, 400]
+    temp_range = [70, 500]
     rate_range = [0, 4.5]
     xscale = "linear"
-    rate_range = [-5, 300]
+    rate_range = [-5, 500]
     yscale = "linear"
     # rate_range = [1e-2, 300]
     # yscale = 'log'
@@ -813,4 +813,4 @@ if __name__ == "__main__":
     # gamma_popt = [2049.116503275054, 73.77518971996268]
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
-    plt.show(block=True)
+    plt.show()

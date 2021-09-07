@@ -113,6 +113,11 @@ class MultimeterMp730028(LabradServer):
         
     def measure_internal(self):
         value = self.multimeter.query("MEAS1?")
+        if value == "":
+            logging.info("Read blank string in measure_internal!")
+            while value == "":
+                time.sleep(0.1)
+                value = self.multimeter.query("MEAS1?")
         return float(value)
 
     @setting(5, returns='v[]')
