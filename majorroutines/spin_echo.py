@@ -279,8 +279,8 @@ def fit_data(data):
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-    # revival_time = 35000
-    # dominant_freqs = [1/revival_time]
+    revival_time = 35000
+    dominant_freqs = [1 / revival_time]
 
     # %% Fit
 
@@ -832,17 +832,16 @@ if __name__ == "__main__":
     plt.ion()
 
     path_from_nvdata = "pc_hahn/branch_time-tagger-speedup/spin_echo/2021_09"
-    # file_name = "2021_09_03-20_36_12-hopper-search"
-    # file_name = "2021_09_03-22_04_25-hopper-search"
-    file_name = "2021_09_03-23_31_54-hopper-search"
-    # file_names = [
-    #     # "2021_09_03-22_04_25-hopper-search",
-    #     # "2021_08_29-10_07_58-hopper-search",
-    #     # "2021_09_03-20_36_12-hopper-search",
-    #     "2021_04_27-17_08_36-hopper-nv1_2021_03_16",
-    #     # "2021_04_30-01_24_09-hopper-nv1_2021_03_16",
-    # ]
-    file_names = [file_name]
+    file_names = [
+        # "2021_09_03-20_36_12-hopper-search",
+        # "2021_09_03-22_04_25-hopper-search",
+        # "2021_09_03-23_31_54-hopper-search",
+        # "2021_09_04-01_07_44-hopper-search",
+        "2021_09_04-08_34_53-hopper-search",
+        "2021_09_04-10_03_27-hopper-search",
+        "2021_09_04-11_31_49-hopper-search",
+        "2021_09_04-13_00_14-hopper-search",
+    ]
 
     for f in file_names:
 
