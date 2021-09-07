@@ -1736,7 +1736,7 @@ def reset_cfm_with_cxn(cxn):
             continue
         server = cxn[name]
         # Check for servers that ask not to be reset automatically
-        if hasattr(server, "reset_cfm_opt_out") and server.reset_cfm_opt_out:
+        if hasattr(server, "reset_cfm_opt_out"):
             continue
         if hasattr(server, "reset"):
             server.reset()
