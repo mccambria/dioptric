@@ -778,10 +778,9 @@ if __name__ == "__main__":
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [70, 500]
-    rate_range = [0, 4.5]
+    temp_range = [70, 400]
     xscale = "linear"
-    rate_range = [-5, 500]
+    rate_range = [-5, 300]
     yscale = "linear"
     # rate_range = [1e-2, 300]
     # yscale = 'log'

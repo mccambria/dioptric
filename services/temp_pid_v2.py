@@ -127,6 +127,9 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
     # Update the resistance every resistance_period seconds
     resistance_period = 10
     last_resistance_time = now
+    # Check the third-party temperature monitor to make sure nothing is melting
+    safety_check_period = 10 
+    last_safety_check_time = now + 5  # Offset this from the resistance checks
     last_meas_time = now
     last_error = target - actual
     integral = integral_bootstrap
@@ -203,6 +206,14 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
         if now - last_resistance_time > resistance_period:
             resistance = update_resistance(cxn)
             last_resistance_time = now
+        if now - last_safety_check_time > safety_check_period:
+            safety_check_temp = cxn.temp_controller_tc200.measure()
+            with open(logging_file, "a+") as f:
+                f.write("safety check: {}, {} \n".format(now, safety_check_temp))
+            last_safety_check_time = now
+            if (safety_check_temp < 285) or (safety_check_temp > 305):
+                print("Safety check temperature out of bounds at {}! Exiting.".format(safety_check_temp))
+                return
         set_power(cxn, power, resistance)
         # Immediately get a better resistance measurement after the first set
         if first_set:
@@ -212,19 +223,20 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
 
 if __name__ == "__main__":
 
-    do_plot = True
-    target = 500.0
+    do_plot = False
+    target = 487.5
     pid_coeffs = [0.5, 0.01, 0]
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc
     # integral_bootstrap = 0.0
-    integral_bootstrap = 0.3 * integral_max
+    # integral_bootstrap = 0.3 * integral_max
     # integral_bootstrap = 0.6 * integral_max
-    # integral_bootstrap = integral_max
+    integral_bootstrap = integral_max
 
     with labrad.connect() as cxn:
         # Set up the multimeter for resistance measurement
         cxn.multimeter_mp730028.config_temp_measurement("PT100")
+        cxn.temp_controller_tc200.config_measurement("ptc100", "k")
         cxn.power_supply_mp710087.set_current_limit(1.0)
         # Allow the voltage to be somewhat higher than the specs suggest
         # it should max out at to account for temperature dependence of
@@ -238,7 +250,7 @@ if __name__ == "__main__":
         # temp = cxn.multimeter_mp730028.measure()
         # print(temp)
 
-        main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap)
-
-        # input("Press enter to stop...")
-        cxn.power_supply_mp710087.output_off()
+        try:
+            main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap)
+        finally:
+            cxn.power_supply_mp710087.output_off()

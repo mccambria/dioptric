@@ -64,7 +64,8 @@ class TempControllerTc200(LabradServer):
         # Get the slider
         try:
             self.controller = serial.Serial(config, 115200, serial.EIGHTBITS,
-                                            serial.PARITY_NONE, serial.STOPBITS_ONE)
+                                    serial.PARITY_NONE, serial.STOPBITS_ONE, 
+                                    timeout=2)
         except Exception as e:
             logging.debug(e)
             del self.controller
@@ -73,62 +74,35 @@ class TempControllerTc200(LabradServer):
         time.sleep(0.1)
         logging.info("Init complete")
     
-    @setting(1, res_range='s')
-    def config_res_measurement(self, c, res_range):
-        self.multimeter.write('SENS:FUNC "RES"')
-        # res_range_options = ["500", "5E3", "50E3", "500E3", "5E6", "50E6", "500E6"]
-        cmd = "CONF:SCAL:RES {}".format(res_range)
-        self.multimeter.write(cmd)
-        # Set the update rate to fast (maximum speed)
-        self.multimeter.write("RATE F")
-        self.measuring_temp = False
-        # Query the device until it finishes setting up and starts
-        # returning valid data
-        start = time.time()
-        while True:
-            time.sleep(0.25)
-            if self.measure_internal() > 0:
-                break
-            if time.time() - start > 5:
-                raise RuntimeError("multimeter_mp730028 timed out configuring resistance measurement.")
-    
-    @setting(2, detector='s')
-    def config_temp_measurement(self, c, detector):
+    @setting(2, detector='s', unit="s")
+    def config_measurement(self, c, detector, unit):
         """There is an option to measure temperature directly on this
         multimeter but it's buggy. In particular, the measurement
         stops returning values much outside room temperature if the unit is
         left on for several days. By monitioring the resistance directly
         we avoid this problem."""
         
-        detector_ranges = {"PT100": "500"}
-        self.config_res_measurement(c, detector_ranges[detector])
-        self.measuring_temp = True
-        self.detector = detector
-        
-    def convert_res_to_temp(self, value):
-        # From this Texas Instruments whitepaper: https://www.ti.com/lit/an/sbaa275/sbaa275.pdf?ts=1630965124219&ref_url=https%253A%252F%252Fwww.google.com%252F
-        # We have R(T) = 100 (1 + (3.9083E-3 T) + (-5.775E-7 T**2)) in C
-        # Inverted this gives:
-        if self.detector == "PT100":
-            return 3656.96 - 0.287154 * numpy.sqrt(159861899 - 210000 * value)
-        
-    def measure_internal(self):
-        value = self.multimeter.query("MEAS1?")
-        if value == "":
-            logging.info("Read blank string in measure_internal!")
-            while value == "":
-                time.sleep(0.1)
-                value = self.multimeter.query("MEAS1?")
-        return float(value)
+        # Options ptc100, ptc1000, th10k
+        self.controller.write("sns={}\r".format(detector).encode())
+        self.controller.readline()
+        # Options c, k, f
+        self.controller.write("unit={}\r".format(unit).encode())
+        self.controller.readline()
 
     @setting(5, returns='v[]')
     def measure(self, c):
         """Return the value from the main display."""
-        value = self.measure_internal()
-        if self.measuring_temp:
-            return self.convert_res_to_temp(value)
-        else:
-            return value
+        self.controller.write(b"tact?\r")
+        value = self.controller.readline()
+        if value == "":
+            logging.info("Read blank string in measure!")
+            while value == "":
+                time.sleep(0.1)
+                value = self.controller.readline()
+        # Extract the temp from the returned string.
+        float_value = float(value.decode().split(" ")[1])
+        # The box always writes temps to serial as C, so convert to K.
+        return float_value + 273.15
         
     @setting(6)
     def reset_cfm_opt_out(self, c):
@@ -138,10 +112,10 @@ class TempControllerTc200(LabradServer):
         """
         pass
 
-    @setting(7)
-    def reset(self, c):
-        """Fully reset to factory defaults"""
-        self.multimeter.write("*RST")
+    # @setting(7)
+    # def reset(self, c):
+    #     """Fully reset to factory defaults"""
+    #     pass
 
 
 __server__ = TempControllerTc200()
@@ -150,3 +124,18 @@ if __name__ == "__main__":
     from labrad import util
 
     util.runServer(__server__)
+    
+    # with serial.Serial("COM8", 115200, serial.EIGHTBITS, serial.PARITY_NONE, serial.STOPBITS_ONE, timeout=2) as controller:
+    #     controller.write(b"sns=ptc100\r")
+    #     controller.readline()
+    #     # # controller.flush()
+    #     controller.write(b"unit=k\r")
+    #     controller.readline()
+    #     # # controller.readline()
+    #     # # controller.flush()
+    #     controller.write(b"tact?\r")
+    #     # # controller.flush()
+    #     # time.sleep(0.1)
+    #     value = controller.readline()
+        
+    #     print(float(value.decode().split(" ")[1]))

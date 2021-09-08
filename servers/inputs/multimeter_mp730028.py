@@ -118,6 +118,7 @@ class MultimeterMp730028(LabradServer):
             while value == "":
                 time.sleep(0.1)
                 value = self.multimeter.query("MEAS1?")
+            logging.info("Recovered!")
         return float(value)
 
     @setting(5, returns='v[]')
