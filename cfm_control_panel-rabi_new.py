@@ -695,7 +695,7 @@ def do_spin_echo(nv_sig, apd_indices):
 
 
 def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
-               img_range_1D, img_range_2D, offset):
+               img_range_1D, img_range_2D, offset, charge_state_threshold = None):
     # dr = 0.025 / numpy.sqrt(2)
     # img_range = [[-dr,-dr],[dr, dr]] #[[x1, y1], [x2, y2]]
     # num_steps = 101
@@ -709,7 +709,7 @@ def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
 
     # dz = 0
     SPaCE.main(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
-               img_range_1D, img_range_2D, offset )
+               charge_state_threshold, img_range_1D, img_range_2D, offset )
 
 
 def do_sample_nvs(nv_sig_list, apd_indices):
@@ -868,12 +868,12 @@ if __name__ == "__main__":
         # do_image_charge_states(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         
-        offset_x = -0.0254
-        offset_y = 0.00657
+        offset_x = 0.0289
+        offset_y = -0.0059
         offset_z = 0
         offset_list = [offset_x, -offset_y, -offset_z] # figure out why y and z are opposite direction than what I expect...
-        num_steps_x = 65#91
-        num_steps_y = 65#91
+        num_steps_x =91
+        num_steps_y = 91
         num_steps_z = 151
         
         # t_list = [500e3]
@@ -902,8 +902,10 @@ if __name__ == "__main__":
             do_SPaCE(nv_sig_copy, nv_sig_copy,  1, num_steps_x, num_steps_y, None, 
                         img_range_2D, offset_list)
             img_range_2D = [0.1, 0, 6/16]
-            # do_SPaCE(nv_sig_copy, nv_sig_copy, 2, num_steps_x, num_steps_z, None, 
-            #           img_range_2D, [offset_x, -offset_y, 2/16])
+            do_SPaCE(nv_sig_copy, nv_sig_copy, 2, num_steps_x, num_steps_z, None, 
+                      img_range_2D, [offset_x, -offset_y, 2/16])
+            do_SPaCE(nv_sig_copy, nv_sig_copy, 2, num_steps_x, num_steps_z, None, 
+                      img_range_2D, [offset_x, -offset_y, -2/16])
             
             
             # img_range_2D = [0, 0.1, 10/16]
