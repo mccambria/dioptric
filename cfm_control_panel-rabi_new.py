@@ -153,7 +153,7 @@ def do_stationary_count(nv_sig, apd_indices):
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 2*60  # s
+    run_time = 5*60  # s
     diff_window = 150  # ns
 
     # g2_measurement.main(
@@ -694,7 +694,8 @@ def do_spin_echo(nv_sig, apd_indices):
     return angle
 
 
-def do_SPaCE(nv_sig, opti_nv_sig, num_steps, num_runs,img_range_1D, img_range_2D):
+def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
+               img_range_1D, img_range_2D, offset):
     # dr = 0.025 / numpy.sqrt(2)
     # img_range = [[-dr,-dr],[dr, dr]] #[[x1, y1], [x2, y2]]
     # num_steps = 101
@@ -707,7 +708,8 @@ def do_SPaCE(nv_sig, opti_nv_sig, num_steps, num_runs,img_range_1D, img_range_2D
     # measurement_type = "2D"
 
     # dz = 0
-    SPaCE.main(nv_sig, opti_nv_sig, num_steps, num_runs, img_range_1D, img_range_2D )
+    SPaCE.main(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
+               img_range_1D, img_range_2D, offset )
 
 
 def do_sample_nvs(nv_sig_list, apd_indices):
@@ -774,62 +776,60 @@ if __name__ == "__main__":
     # apd_indices = [0,1]
 
     nd_yellow = "nd_0.5"
+    green_power = 10
+    red_power = 50
     sample_name = "johnson"
     green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
-    # nv_sig = {
-    #     "coords": [0,0, 4.7],
-    #     "name": "{}-search".format(sample_name),
-    #     "disable_opt": False,
-    #     "expected_count_rate": None,
-    #     "imaging_laser": green_laser,
-    #     "imaging_laser_power": 6,
-    #     "imaging_readout_dur": 1e7,
-    #     "collection_filter": "630_lp",
-    #     "magnet_angle": None,
-    #     "resonance_LOW": 2.8012,
-    #     "rabi_LOW": 141.5,
-    #     "uwave_power_LOW": 15.5,  # 15.5 max
-    #     "resonance_HIGH": 2.9445,
-    #     "rabi_HIGH": 191.9,
-    #     "uwave_power_HIGH": 14.5,
-    # }  # 14.5 max
+    nv_sig = {
+        "coords": [0,0, 5.0],
+        "name": "{}-search".format(sample_name),
+        "disable_opt": False,
+        "expected_count_rate": None,
+        "imaging_laser": green_laser,
+        "imaging_laser_power": green_power,
+        "imaging_readout_dur": 1e7,
+        "collection_filter": "630_lp",
+        "magnet_angle": None,
+        "resonance_LOW": 2.8012,
+        "rabi_LOW": 141.5,
+        "uwave_power_LOW": 15.5,  # 15.5 max
+        "resonance_HIGH": 2.9445,
+        "rabi_HIGH": 191.9,
+        "uwave_power_HIGH": 14.5,
+    }  # 14.5 max
 
     
     
     nv_sig = {
-        "coords": [0.032, -0.123, 4.6],
-        "name": "{}-nv1_2021_09_01".format(sample_name,),
+        "coords": [-0.010, -0.041, 5.0],
+        "name": "{}-nv1_2021_09_07".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 45,
+        "expected_count_rate": 27,
         
         "spin_laser": green_laser,
-        "spin_laser_power": 6,
+        "spin_laser_power": green_power,
         "spin_pol_dur": 1e5,
-        "spin_readout_laser_power": 6,
+        "spin_readout_laser_power": green_power,
         "spin_readout_dur": 350,
         
         "imaging_laser":green_laser,
-        "imaging_laser_power": 6,
+        "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
         
         "initialize_laser": green_laser,
-        "initialize_laser_power": 6,
+        "initialize_laser_power": green_power,
         "initialize_dur": 1e3,
         "CPG_laser": red_laser,
-        'CPG_laser_power': 80,
+        'CPG_laser_power': red_power,
         "CPG_laser_dur": 150e3,
-        # "charge_readout_laser": green_laser,
-        # "charge_readout_laser_power": 6,
-        # "charge_readout_dur": 1e7,
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.1,
+        "charge_readout_laser_power": 0.15,
         "charge_readout_dur": 50e6,
         
-        "dir_1D": "x",
         "collection_filter": "630_lp",
         "magnet_angle": None,
         "resonance_LOW": 2.8012,
@@ -841,6 +841,8 @@ if __name__ == "__main__":
     }  # 14.5 max
     
 
+    
+    
     # %% Functions to run
 
     try:
@@ -855,18 +857,63 @@ if __name__ == "__main__":
 
         # for dz in numpy.linspace(2.5, 3, 7)/16:
         # for dz in numpy.linspace(-0.1, 0.1, 5):
-        #     # do_optimize(nv_sig, apd_indices)
+        #     do_optimize(nv_sig, apd_indices)
         #     nv_sig_copy = copy.deepcopy(nv_sig)
         #     coords = nv_sig['coords']
         #     nv_sig_copy['coords'] = [coords[0],coords[1],coords[2]+dz]
-        #     do_image_sample(nv_sig_copy, apd_indices)
+            # do_image_sample(nv_sig_copy, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        
+        offset_x = -0.0254
+        offset_y = 0.00657
+        offset_z = 0
+        offset_list = [offset_x, -offset_y, -offset_z] # figure out why y and z are opposite direction than what I expect...
+        num_steps_x = 65#91
+        num_steps_y = 65#91
+        num_steps_z = 151
+        
+        # t_list = [500e3]
+        # for t in t_list:
+        #     nv_sig_copy = copy.deepcopy(nv_sig)
+        #     nv_sig_copy['CPG_laser_dur'] = t
+        #     num_runs = 1
+            
+        #     img_range_2D = [0.05, 0.08, 0]
+        #     # do_SPaCE(nv_sig_copy, nv_sig_copy,  num_runs, num_steps_x, num_steps_y, None, 
+        #     #           img_range_2D, offset_list)
+        #     img_range_2D = [0.06, 0, 10/16]
+        #     # do_SPaCE(nv_sig_copy, nv_sig_copy,  num_runs, num_steps_x, num_steps_z, None, 
+        #     #           img_range_2D, offset_list)
+        #     img_range_2D = [0, 0.06, 10/16]
+        #     # do_SPaCE(nv_sig_copy, nv_sig_copy,  num_runs, num_steps_y, num_steps_z, None, 
+        #     #          img_range_2D, offset_list)
+            
+        t_list = [1e6]
+        for t in t_list:
+            nv_sig_copy = copy.deepcopy(nv_sig)
+            nv_sig_copy['CPG_laser_dur'] = t
+            # num_runs = 1
+            
+            img_range_2D = [0.1, 0.1, 0]
+            do_SPaCE(nv_sig_copy, nv_sig_copy,  1, num_steps_x, num_steps_y, None, 
+                        img_range_2D, offset_list)
+            img_range_2D = [0.1, 0, 6/16]
+            # do_SPaCE(nv_sig_copy, nv_sig_copy, 2, num_steps_x, num_steps_z, None, 
+            #           img_range_2D, [offset_x, -offset_y, 2/16])
+            
+            
+            # img_range_2D = [0, 0.1, 10/16]
+            # do_SPaCE(nv_sig_copy, nv_sig_copy,  num_runs, num_steps_y, num_steps_z, None, 
+            #          img_range_2D, offset_list)
+        
+        # add some [dz, dy, dz} that is added to the coord voltages to test
+        
         # drift = tool_belt.get_drift()
-        # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
+        #tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_stationary_count(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1) 
@@ -883,18 +930,6 @@ if __name__ == "__main__":
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
-        
-        
-        nv_sig_copy = copy.deepcopy(nv_sig)
-        nv_sig_copy['CPG_laser_dur'] = 1e6
-        num_steps = 51#91
-        num_runs = 1
-        
-        # img_range_2D = [0.08, 0, 0.125]
-        img_range_2D = [0.08, 0.08, 0]
-        do_SPaCE(nv_sig_copy, nv_sig_copy,  num_steps,num_runs, None,  img_range_2D)
-            
-            
         # do_spin_echo_battery(nv_sig, apd_indices)
         # do_t1_battery(nv_sig, apd_indices)
         # do_t1_interleave_knill(nv_sig, apd_indices)
