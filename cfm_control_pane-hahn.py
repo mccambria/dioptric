@@ -224,12 +224,12 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
     num_reps = 5000
     num_runs = 10
     
-    # discrete_rabi.main(nv_sig, apd_indices,
-    #                     state, max_num_pi_pulses, num_reps, num_runs)
+    discrete_rabi.main(nv_sig, apd_indices,
+                        state, max_num_pi_pulses, num_reps, num_runs)
     
-    for iq_delay in numpy.linspace(670, 680, 6):
-        discrete_rabi.main(nv_sig, apd_indices,
-                            state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
+    # for iq_delay in numpy.linspace(670, 680, 6):
+    #     discrete_rabi.main(nv_sig, apd_indices,
+    #                         state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
 
 
 def do_t1_battery(nv_sig, apd_indices):
@@ -316,12 +316,12 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 80
+    num_runs = 120
     num_reps = 1500
     num_steps = 12
     min_tau = 20e3
-    max_tau_omega = int(11.5e6)
-    max_tau_gamma = int(8e6)
+    max_tau_omega = int(4e6)
+    max_tau_gamma = int(3.5e6)
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
@@ -473,8 +473,8 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
             'collection_filter': None, 'magnet_angle': 212,
-            'resonance_LOW': 2.7774, 'rabi_LOW': 223.3, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9246, 'rabi_HIGH': 196.3, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.7815, 'rabi_LOW': 324.2, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9294, 'rabi_HIGH': 283.7, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -508,13 +508,23 @@ if __name__ == '__main__':
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
         # do_t1_interleave_knill(nv_sig, apd_indices)
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
+        
+        # Automatic T1 setup
+        # do_stationary_count(nv_sig, apd_indices)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        do_t1_interleave_knill(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
         #     nv_sig['resonance_HIGH'] = res

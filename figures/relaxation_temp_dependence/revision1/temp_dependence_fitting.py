@@ -150,8 +150,40 @@ def simultaneous_orbach_T5_free(
     return ret_vals
 
 
+def simultaneous_test(
+    temps, omega_coeff_orbach, omega_coeff_T5, gamma_coeff, gamma_coeff_T5, activation
+):
+    """
+    Only use this for fitting to Omega and gamma simultaneously. This assumes
+    the temp argument is a list/array.
+    """
+
+    omega_rate_lambda = lambda temp_val: orbach_T5_free(
+        temp_val, omega_coeff_orbach, activation, omega_coeff_T5
+    )
+    gamma_rate_lambda = lambda temp_val: orbach_T5_free(
+        temp_val, gamma_coeff, activation, gamma_coeff_T5
+    )
+    ret_vals = []
+    num_vals = len(temps)
+    for ind in range(num_vals):
+        temp_val = temps[ind]
+        # Omegas are even indexed
+        if ind % 2 == 0:
+            ret_vals.append(omega_rate_lambda(temp_val))
+        # gammas are odd indexed
+        else:
+            ret_vals.append(gamma_rate_lambda(temp_val))
+
+    return ret_vals
+
+
 def simultaneous_orbach_T5_free_odr(beta, x):
     return numpy.array(simultaneous_orbach_T5_free(x, *beta))
+
+
+def simultaneous_test_odr(beta, x):
+    return numpy.array(simultaneous_test(x, *beta))
 
 
 def T5_free(temp, coeff_T5):
@@ -293,8 +325,12 @@ def fit_simultaneous(data_points):
     # print(combined_rates)
     # print(combined_errs)
 
-    fit_func = simultaneous_orbach_T5_free
-    init_params = (510, 1.38e-11, 2000, 74.0)
+    # fit_func = simultaneous_orbach_T5_free
+    # fit_func = simultaneous_orbach_T5_free_odr
+    # init_params = (510, 1.38e-11, 2000, 74.0)
+    
+    fit_func = simultaneous_test_odr
+    init_params = (510, 1.38e-11, 510, 1.38e-11, 74.0)
 
     num_params = len(init_params)
     # popt, pcov = curve_fit(fit_func, temps, combined_rates, p0=init_params,
@@ -302,7 +338,6 @@ def fit_simultaneous(data_points):
     #                        bounds=([0]*num_params,[numpy.inf]*num_params),
     #                        method='dogbox')
     data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
-    fit_func = simultaneous_orbach_T5_free_odr
     model = Model(fit_func)
     odr = ODR(data, model, beta0=numpy.array(init_params))
     odr.set_job(fit_type=0)
@@ -310,13 +345,21 @@ def fit_simultaneous(data_points):
     popt = output.beta
     pcov = output.cov_beta
 
-    omega_popt = [popt[0], popt[3], popt[1]]
-    omega_pvar = [pcov[0, 0], pcov[3, 3], pcov[1, 1]]
+    # omega_popt = [popt[0], popt[3], popt[1]]
+    # omega_pvar = [pcov[0, 0], pcov[3, 3], pcov[1, 1]]
+    # omega_fit_func = orbach_T5_free
+
+    # gamma_popt = [popt[2], popt[3]]
+    # gamma_pvar = [pcov[2, 2], pcov[3, 3]]
+    # gamma_fit_func = orbach_free
+
+    omega_popt = [popt[0], popt[4], popt[1]]
+    omega_pvar = [pcov[0, 0], pcov[4, 4], pcov[1, 1]]
     omega_fit_func = orbach_T5_free
 
-    gamma_popt = [popt[2], popt[3]]
-    gamma_pvar = [pcov[2, 2], pcov[3, 3]]
-    gamma_fit_func = orbach_free
+    gamma_popt = [popt[2], popt[4], popt[3]]
+    gamma_pvar = [pcov[2, 2], pcov[4, 4]]
+    gamma_fit_func = orbach_T5_free
 
     return (
         omega_popt,
@@ -778,9 +821,9 @@ if __name__ == "__main__":
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [70, 400]
+    temp_range = [70, 500]
     xscale = "linear"
-    rate_range = [-5, 300]
+    rate_range = [-5, 600]
     yscale = "linear"
     # rate_range = [1e-2, 300]
     # yscale = 'log'

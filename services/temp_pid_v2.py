@@ -197,7 +197,7 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
                 fig.canvas.flush_events()
 
             with open(logging_file, "a+") as f:
-                f.write("{}, {} \n".format(now, actual))
+                f.write("{}, {} \n".format(round(now, 3), round(actual, 3)))
             last_plot_log_time = now
 
         # Update state and set the power accordingly
@@ -209,7 +209,7 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
         if now - last_safety_check_time > safety_check_period:
             safety_check_temp = cxn.temp_controller_tc200.measure()
             with open(logging_file, "a+") as f:
-                f.write("safety check: {}, {} \n".format(now, safety_check_temp))
+                f.write("safety check: {}, {} \n".format(round(now), round(safety_check_temp, 1)))
             last_safety_check_time = now
             if (safety_check_temp < 285) or (safety_check_temp > 305):
                 print("Safety check temperature out of bounds at {}! Exiting.".format(safety_check_temp))
@@ -224,7 +224,7 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
 if __name__ == "__main__":
 
     do_plot = False
-    target = 487.5
+    target = 450
     pid_coeffs = [0.5, 0.01, 0]
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc

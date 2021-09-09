@@ -241,8 +241,8 @@ if __name__ == "__main__":
     # main_files(files, mag_B, theta_B_deg)
 
     files = [
-        "2021_09_08-00_04_27-hopper-search",
-        "2021_09_08-00_13_15-hopper-search",
+        "2021_09_09-00_09_42-hopper-search",
+        "2021_09_09-00_18_41-hopper-search",
     ]
     main_files(files)
 
