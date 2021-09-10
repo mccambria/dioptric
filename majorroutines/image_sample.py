@@ -349,7 +349,7 @@ if __name__ == '__main__':
 
 
     path = 'pc_rabi/branch_master/image_sample/2021_09'
-    file_name = '2021_09_08-10_57_32-johnson-nv1_2021_09_07'
+    file_name = '2021_09_10-10_43_08-johnson-dnv0_2021_09_09'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']
@@ -359,13 +359,20 @@ if __name__ == '__main__':
     y_range= data['y_range']
     x_voltages = data['x_voltages']
     y_voltages = data['y_voltages']
-    x_low = -x_range/2 #x_voltages[0]
-    x_high = x_range/2 #_voltages[-1]
-    y_low = -y_range/2 # y_voltages[0]
-    y_high = y_range/2 #y_voltages[-1]
+    # x_low = x_voltages[0]
+    # x_high = x_voltages[-1]
+    # y_low = y_voltages[0]
+    # y_high = y_voltages[-1]
+    
+    
+    x_low = -x_range/2
+    x_high = x_range/2
+    y_low = -y_range/2
+    y_high = y_range/2
+    
     pixel_size = y_voltages[1] - x_voltages[0]
     half_pixel_size = pixel_size / 2
-    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+    img_extent = [x_low - half_pixel_size,x_high + half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
     
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
