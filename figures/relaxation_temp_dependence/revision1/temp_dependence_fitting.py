@@ -840,8 +840,7 @@ if __name__ == "__main__":
         rates_to_plot,
         temp_range,
         rate_range,
-        xscale,
-        yscale,
+        xscale,yscale,
     )
 
     # # process_to_plot = 'Walker'
@@ -855,4 +854,5 @@ if __name__ == "__main__":
     # gamma_popt = [2049.116503275054, 73.77518971996268]
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
-    plt.show()
+    plt.show(block=True)
+    # plt.show()
