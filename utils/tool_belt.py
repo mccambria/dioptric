@@ -36,6 +36,7 @@ from email.mime.text import MIMEText
 import traceback
 import keyring
 import platform
+import math
 
 # %% Constants
 
@@ -1543,6 +1544,18 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
         yellow_optical_power_pd,
         yellow_optical_power_mW,
     )
+    
+    
+def round_sig_figs(val, num_sig_figs):
+    func = lambda val, num_sig_figs: round(val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1))
+    if type(val) is list:
+        return [func(el, num_sig_figs) for el in val]
+    elif type(val) is numpy.ndarray:
+        val_list = val.tolist()
+        rounded_val_list = [func(el, num_sig_figs) for el in val_list]
+        return numpy.array(rounded_val_list)
+    else:
+        return func(val, num_sig_figs)
 
 
 # %% Safe stop (TM mccambria)

@@ -122,6 +122,14 @@ def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 5)
 
 
+def orbach_T7_free(temp, coeff_orbach, activation, coeff_T5):
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 7)
+
+
+def orbach_T3_free(temp, coeff_orbach, activation, coeff_T3):
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T3 * temp ** 3)
+
+
 def simultaneous_orbach_T5_free(
     temps, omega_coeff_orbach, omega_coeff_T5, gamma_coeff, activation
 ):
@@ -151,7 +159,7 @@ def simultaneous_orbach_T5_free(
 
 
 def simultaneous_test(
-    temps, omega_coeff_orbach, omega_coeff_T5, gamma_coeff, gamma_coeff_T5, activation
+    temps, omega_coeff_orbach, omega_coeff_T5, gamma_coeff, gamma_coeff_power, activation
 ):
     """
     Only use this for fitting to Omega and gamma simultaneously. This assumes
@@ -162,7 +170,7 @@ def simultaneous_test(
         temp_val, omega_coeff_orbach, activation, omega_coeff_T5
     )
     gamma_rate_lambda = lambda temp_val: orbach_T5_free(
-        temp_val, gamma_coeff, activation, gamma_coeff_T5
+        temp_val, gamma_coeff, activation, gamma_coeff_power
     )
     ret_vals = []
     num_vals = len(temps)
@@ -330,7 +338,12 @@ def fit_simultaneous(data_points):
     # init_params = (510, 1.38e-11, 2000, 74.0)
     
     fit_func = simultaneous_test_odr
+    # # T5
     init_params = (510, 1.38e-11, 510, 1.38e-11, 74.0)
+    # T7
+    # init_params = (510, 1.38e-11, 510, 1.38e-15, 74.0)
+    # # T3
+    # init_params = (510, 1.38e-11, 510, 1.38e-11, 74.0)
 
     num_params = len(init_params)
     # popt, pcov = curve_fit(fit_func, temps, combined_rates, p0=init_params,
@@ -344,12 +357,17 @@ def fit_simultaneous(data_points):
     output = odr.run()
     popt = output.beta
     pcov = output.cov_beta
+    pvar = output.sd_beta ** 2
+    red_chi_square = output.res_var
+    print("Reduced chi squared: {}".format(tool_belt.round_sig_figs(red_chi_square, 3)))
 
     # omega_popt = [popt[0], popt[3], popt[1]]
+    # # omega_pvar = [pvar[0], pvar[3], pvar[1]]
     # omega_pvar = [pcov[0, 0], pcov[3, 3], pcov[1, 1]]
     # omega_fit_func = orbach_T5_free
 
     # gamma_popt = [popt[2], popt[3]]
+    # # gamma_pvar = [pvar[2], pvar[3]]
     # gamma_pvar = [pcov[2, 2], pcov[3, 3]]
     # gamma_fit_func = orbach_free
 
@@ -359,7 +377,7 @@ def fit_simultaneous(data_points):
 
     gamma_popt = [popt[2], popt[4], popt[3]]
     gamma_pvar = [pcov[2, 2], pcov[4, 4], pcov[3, 3]]
-    gamma_fit_func = orbach_T5_free
+    gamma_fit_func = orbach_T3_free
 
     return (
         omega_popt,
@@ -597,11 +615,11 @@ def main(
 
     omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
     # omega_popt[0] = 0
-    print(omega_popt)
+    print("omega_popt: {}".format(tool_belt.round_sig_figs(omega_popt, 5)))
     # omega_popt[0] = 650
     # omega_popt[1] = 73
     # omega_popt[2] = 6.9e-12
-    print(numpy.sqrt(omega_pvar))
+    print("omega_psd: {}".format(tool_belt.round_sig_figs(numpy.sqrt(omega_pvar), 2)))
     if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
         ax.plot(
             temp_linspace,
@@ -614,8 +632,8 @@ def main(
         #         label=r'$\Omega$ fit', color=omega_edge_color)
 
     gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
-    print(gamma_popt)
-    print(numpy.sqrt(gamma_pvar))
+    print("gamma_popt: {}".format(tool_belt.round_sig_figs(gamma_popt, 5)))
+    print("gamma_psd: {}".format(tool_belt.round_sig_figs(numpy.sqrt(gamma_pvar), 2)))
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
         ax.plot(
             temp_linspace,
@@ -635,6 +653,19 @@ def main(
             label=r"$\gamma/\Omega$",
             color=gamma_edge_color,
         )
+    if plot_type == "T2_max":
+        T2_max_qubit = lambda temp: 2 / (3 * omega_lambda(temp) + gamma_lambda(temp))
+        ax.plot(
+            temp_linspace,
+            T2_max_qubit(temp_linspace),
+            label=r"Qubit T2 max",
+        )
+        T2_max_qutrit = lambda temp: 1 / (omega_lambda(temp) + gamma_lambda(temp))
+        ax.plot(
+            temp_linspace,
+            T2_max_qutrit(temp_linspace),
+            label=r"Qutrit T2 max",
+        )
 
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
     # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
@@ -648,6 +679,8 @@ def main(
         ax.set_ylabel(r"Ratio of fits")
     elif plot_type == "residuals":
         ax.set_ylabel(r"Residuals (s$^{-1}$)")
+    elif plot_type == "T2_max":
+        ax.set_ylabel(r"T2 max (ms)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
@@ -748,6 +781,29 @@ def main(
                     ms=ms,
                     lw=lw,
                 )
+        # elif plot_type == "T2_max":
+        #     omega_val = point[omega_column_title]
+        #     omega_err = point[omega_err_column_title]
+        #     gamma_val = point[gamma_column_title]
+        #     gamma_err = point[gamma_err_column_title]
+        #     if (omega_val is not None) and (gamma_val is not None):
+        #         ratio = gamma_val / omega_val
+        #         ratio_err = ratio * numpy.sqrt(
+        #             (omega_err / omega_val) ** 2 + (gamma_err / gamma_val) ** 2
+        #         )
+        #         ax.errorbar(
+        #             temp,
+        #             ratio,
+        #             yerr=ratio_err,
+        #             xerr=temp_error,
+        #             label=r"$\gamma/\Omega$",
+        #             marker=marker,
+        #             color=ratio_edge_color,
+        #             markerfacecolor=ratio_face_color,
+        #             linestyle="None",
+        #             ms=ms,
+        #             lw=lw,
+        #         )
 
     # %% Legend
 
@@ -806,6 +862,9 @@ def main(
 
     if leg1 is not None:
         ax.add_artist(leg1)
+        
+    if plot_type == "T2_max":
+        ax.legend()
 
 
 # %% Run the file
@@ -815,10 +874,11 @@ if __name__ == "__main__":
 
     plt.ion()
 
-    plot_type = "rates"
+    # plot_type = "rates"
     # plot_type = 'ratios'
     # plot_type = 'ratio_fits'
     # plot_type = 'residuals'
+    plot_type = 'T2_max'
 
     rates_to_plot = "both"
     # rates_to_plot = 'Omega'
@@ -830,8 +890,8 @@ if __name__ == "__main__":
     # xscale = "log"
     
     # Rates
-    y_range = [-5, 600]
-    yscale = "linear"
+    # y_range = [-5, 600]
+    # yscale = "linear"
     # y_range = [1e-2, 1000]
     # yscale = 'log'
     # y_range = [1e-2, 600]
@@ -840,6 +900,10 @@ if __name__ == "__main__":
     # Ratios
     # y_range = [0, 4]
     # yscale = "linear"
+    
+    # T2_max
+    y_range = [1e-3, 10]
+    yscale = "log"
 
     file_name = "compiled_data"
     # file_name = 'compiled_data-test'
@@ -868,4 +932,5 @@ if __name__ == "__main__":
     # gamma_popt = [2049.116503275054, 73.77518971996268]
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
-    plt.show()
+    plt.show(block=True)
+    # plt.show()
