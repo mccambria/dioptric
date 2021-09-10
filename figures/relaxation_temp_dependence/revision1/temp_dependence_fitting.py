@@ -358,7 +358,7 @@ def fit_simultaneous(data_points):
     omega_fit_func = orbach_T5_free
 
     gamma_popt = [popt[2], popt[4], popt[3]]
-    gamma_pvar = [pcov[2, 2], pcov[4, 4]]
+    gamma_pvar = [pcov[2, 2], pcov[4, 4], pcov[3, 3]]
     gamma_fit_func = orbach_T5_free
 
     return (
@@ -598,6 +598,9 @@ def main(
     omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
     # omega_popt[0] = 0
     print(omega_popt)
+    # omega_popt[0] = 650
+    # omega_popt[1] = 73
+    # omega_popt[2] = 6.9e-12
     print(numpy.sqrt(omega_pvar))
     if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
         ax.plot(
@@ -625,7 +628,7 @@ def main(
     ratio_lambda = lambda temp: gamma_lambda(temp_linspace) / omega_lambda(
         temp_linspace
     )
-    if plot_type == "ratio_fits":
+    if plot_type in ["ratios", "ratio_fits"]:
         ax.plot(
             temp_linspace,
             ratio_lambda(temp_linspace),
@@ -823,10 +826,20 @@ if __name__ == "__main__":
 
     temp_range = [70, 500]
     xscale = "linear"
-    rate_range = [-5, 600]
+    # temp_range = [70, 500]
+    # xscale = "log"
+    
+    # Rates
+    y_range = [-5, 600]
     yscale = "linear"
-    # rate_range = [1e-2, 300]
+    # y_range = [1e-2, 1000]
     # yscale = 'log'
+    # y_range = [1e-2, 600]
+    # yscale = 'log'
+    
+    # Ratios
+    # y_range = [0, 4]
+    # yscale = "linear"
 
     file_name = "compiled_data"
     # file_name = 'compiled_data-test'
@@ -839,8 +852,9 @@ if __name__ == "__main__":
         plot_type,
         rates_to_plot,
         temp_range,
-        rate_range,
-        xscale,yscale,
+        y_range,
+        xscale,
+        yscale,
     )
 
     # # process_to_plot = 'Walker'
