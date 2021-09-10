@@ -59,7 +59,8 @@ def exp_eq_offset(t, rate, amp, offset):
 
 # A function to collect folders in mass analysis
 def get_folder_list(keyword):
-    path = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/t1_double_quantum'
+    nvdata_dir = tool_belt.get_nvdata_dir()
+    path = nvdata_dir / "t1_double_quantum"
 
     folders = []
 
@@ -533,8 +534,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         fig.canvas.flush_events()
 
         # Saving the data
-
-        data_dir='E:/Shared drives/Kolkowitz Lab Group/nvdata'
+        data_dir = tool_belt.get_nvdata_dir()
 
         time_stamp = tool_belt.get_time_stamp()
         raw_data = {'time_stamp': time_stamp,
@@ -567,7 +567,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
                     }
 
         file_name = '{}-analysis'.format(folder)
-        file_path = '{}/{}/{}'.format(data_dir, path_folder, file_name)
+        file_path = str(data_dir / path_folder / file_name)
         tool_belt.save_raw_data(raw_data, file_path)
         tool_belt.save_figure(fig, file_path)
         
@@ -587,19 +587,23 @@ if __name__ == '__main__':
 
     temp = 450
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print('good times in ms')
-    print('Omega: {}'.format(4000/(3*est_omega)))
-    print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    # est_omega = omega_calc(temp)
+    # est_gamma = gamma_calc(temp)
+    # print('good times in ms')
+    # print('Omega: {}'.format(4000/(3*est_omega)))
+    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    
+    # plt.ion()
 
-    # path = 'pc_hahn\\branch_time-tagger-speedup\\t1_interleave_knill\\data_collections\\'
-    # folders = [
-    #             'hopper-search-{}K'.format(temp),
-    #               # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
-    #               # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
-    #             ]
+    path = 'pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/'
+    folders = [
+                'hopper-search-{}K'.format(temp),
+                  # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
+                  # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
+                ]
 
-    # for folder in folders:
-    #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
-    #                       doPlot=True, offset=False)
+    for folder in folders:
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                          doPlot=True, offset=False)
+        
+    plt.show(block=True)

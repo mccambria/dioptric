@@ -984,14 +984,17 @@ def ask_open_file(file_path):
 def get_file_list(
     path_from_nvdata,
     file_ends_with,
-    data_dir="E:/Shared drives/Kolkowitz Lab Group/nvdata",
+    data_dir=None,
 ):
     """
     Creates a list of all the files in the folder for one experiment, based on
     the ending file name
     """
-
-    data_dir = Path(data_dir)
+    
+    if data_dir is None:
+        data_dir = get_nvdata_dir()
+    else:
+        data_dir = Path(data_dir)
     file_path = data_dir / path_from_nvdata
 
     file_list = []
