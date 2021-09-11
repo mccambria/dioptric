@@ -348,30 +348,39 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_rabi/branch_master/image_sample/2021_08'
-    file_name = '2021_08_27-16_02_11-johnson-nv2_2021_08_27'
+    path = 'pc_rabi/branch_master/image_sample/2021_09'
+    file_name = '2021_09_10-10_43_08-johnson-dnv0_2021_09_09'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']
     timestamp = data['timestamp']
     img_array = data['img_array']
+    x_range= data['x_range']
+    y_range= data['y_range']
     x_voltages = data['x_voltages']
     y_voltages = data['y_voltages']
-    x_low = x_voltages[0]
-    x_high = x_voltages[-1]
-    y_low = y_voltages[0]
-    y_high = y_voltages[-1]
-    pixel_size = x_voltages[1] - x_voltages[0]
+    # x_low = x_voltages[0]
+    # x_high = x_voltages[-1]
+    # y_low = y_voltages[0]
+    # y_high = y_voltages[-1]
+    
+    
+    x_low = -x_range/2
+    x_high = x_range/2
+    y_low = -y_range/2
+    y_high = y_range/2
+    
+    pixel_size = y_voltages[1] - x_voltages[0]
     half_pixel_size = pixel_size / 2
-    img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+    img_extent = [x_low - half_pixel_size,x_high + half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
     
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
     
     
-    tool_belt.create_image_figure(img_array, img_extent, clickHandler=on_click_image,
+    tool_belt.create_image_figure(img_array, numpy.array(img_extent)*35, clickHandler=on_click_image,
                         title=None, color_bar_label='Counts', 
-                        min_value=None, um_scaled=False)
+                        min_value=None, um_scaled=True)
     
     
     # tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path, 

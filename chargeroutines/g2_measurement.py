@@ -139,7 +139,9 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
     opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
-    cxn.pulse_streamer.constant([wiring['do_laserglow_532_dm']])
+    imaging_laser = nv_sig['imaging_laser']
+    imaging_laser_key = 'do_{}_dm'.format(imaging_laser)
+    cxn.pulse_streamer.constant([wiring[imaging_laser_key]])
 
     num_tags = 0
     collection_index = 0

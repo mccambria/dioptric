@@ -411,16 +411,13 @@ if __name__ == '__main__':
     red_laser = 'cobolt_638'
     
     nv_sig = {
-        "coords": [-0.008, -0.097, 4.7],
-        "name": "{}-nv1_2021_08_30".format(sample_name,),
+        "coords": [-0.010, -0.041, 5.0],
+        "name": "{}-nv1_2021_09_07".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 18,
-        "imaging_laser": green_laser,
-        "imaging_laser_power": 6,
-        "imaging_readout_dur": 1e7,
-            'imaging_laser': green_laser, 'imaging_laser_power': 6, 'imaging_readout_dur': 1E7,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': 6, 'nv-_prep_laser_dur': 1E3,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 80, 'nv0_prep_laser_dur': 1E3,
+        "expected_count_rate": 27,
+            'imaging_laser': green_laser, 'imaging_laser_power': 10, 'imaging_readout_dur': 1E7,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': 10, 'nv-_prep_laser_dur': 1E3,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 50, 'nv0_prep_laser_dur': 1E3,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None, 
             'charge_readout_laser_power': None, 'charge_readout_dur':None,
             'collection_filter': '630_lp', 'magnet_angle': None,
@@ -430,7 +427,7 @@ if __name__ == '__main__':
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
-        determine_readout_dur(nv_sig, readout_times = [50e6], readout_yellow_powers = [0.1],
+        determine_readout_dur(nv_sig, readout_times = [50e6], readout_yellow_powers = [0.15],
                           nd_filter = 'nd_0.5')
     finally:
         # Reset our hardware - this should be done in each routine, but
