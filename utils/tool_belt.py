@@ -1268,11 +1268,12 @@ def save_raw_data(rawData, filePath):
     except Exception as e:
         print(e)
 
-    with open(filePath + ".txt", "w") as file:
+    file_path_ext = filePath + ".txt"
+    with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)
 
     # Add this to the search index
-    search_index.add_to_search_index
+    search_index.add_to_search_index(file_path_ext)
 
 
 def get_nv_sig_units():
