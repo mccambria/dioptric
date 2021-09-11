@@ -13,15 +13,12 @@ Created on Fri Mar  5 12:42:32 2021
 
 
 import numpy
-from numpy.linalg import eigvals
-from numpy import pi
 from scipy.optimize import root_scalar
-from numpy import exp
-import matplotlib.pyplot as plt
 from majorroutines.pulsed_resonance import return_res_with_error
 import utils.tool_belt as tool_belt
 from majorroutines.spin_echo import zfs_cost_func
 from scipy.optimize import minimize_scalar
+import time
 
 
 # %% Functions
@@ -175,7 +172,10 @@ def main_files(files, mag_B=None, theta_B_deg=None):
 
     for ind in range(2):
         file = files[ind]
+        start = time.time()
         data = tool_belt.get_raw_data(file)
+        stop = time.time()
+        print(stop - start)
         res, res_err = return_res_with_error(data)
         resonances.append(res)
         res_errs.append(res_err)
