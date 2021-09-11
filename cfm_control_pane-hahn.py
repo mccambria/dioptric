@@ -320,8 +320,8 @@ def do_t1_interleave_knill(nv_sig, apd_indices):
     num_reps = 1500
     num_steps = 12
     min_tau = 20e3
-    max_tau_omega = int(16e6)
-    max_tau_gamma = int(10e6)
+    max_tau_omega = int(18e6)
+    max_tau_gamma = int(11e6)
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
@@ -465,7 +465,7 @@ if __name__ == '__main__':
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
     # nv_sig = { 'coords': [0.0, 0.0, 35],
-    nv_sig = { 'coords': [0.0, 0.0, 5.0],
+    nv_sig = { 'coords': [0.0, 0.0, 1.0],
             'name': '{}-search'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
             'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
@@ -473,8 +473,8 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
             'collection_filter': None, 'magnet_angle': 212,
-            'resonance_LOW': 2.7938, 'rabi_LOW': 330.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9420, 'rabi_HIGH': 324.7, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.7951, 'rabi_LOW': 323.0, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9430, 'rabi_HIGH': 317.2, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -518,12 +518,12 @@ if __name__ == '__main__':
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         do_t1_interleave_knill(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
