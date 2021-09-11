@@ -228,22 +228,24 @@ if __name__ == "__main__":
 
     # mag_B = 26.377
     # theta_B_deg = 7.315
-    # files = ['2021_07_11-23_13_00-hopper-nv1_2021_03_16',
-    #          '2021_07_11-23_09_57-hopper-nv1_2021_03_16']  # room
+    files = [
+        "2021_07_11-23_13_00-hopper-nv1_2021_03_16",
+        "2021_07_11-23_09_57-hopper-nv1_2021_03_16",
+    ]  # room
 
     # mag_B = 26.297
     # theta_B_deg = 9.803
-    # # files = ['2021_07_08-18_16_31-hopper-nv1_2021_03_16',
-    # #          '2021_07_08-18_19_47-hopper-nv1_2021_03_16']  # 350
+    # files = ['2021_07_08-18_16_31-hopper-nv1_2021_03_16',
+    #          '2021_07_08-18_19_47-hopper-nv1_2021_03_16']  # 350
     # files = ['2021_07_09-18_04_22-hopper-nv1_2021_03_16',
     #           '2021_07_09-18_07_34-hopper-nv1_2021_03_16']  # 400
 
     # main_files(files, mag_B, theta_B_deg)
 
-    files = [
-        "2021_09_10-11_21_53-hopper-search",
-        "2021_09_10-11_30_51-hopper-search",
-    ]
+    # files = [
+    #     "2021_09_10-11_21_53-hopper-search",
+    #     "2021_09_10-11_30_51-hopper-search",
+    # ]
     main_files(files)
 
     # process_res_list()

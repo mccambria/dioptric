@@ -991,7 +991,7 @@ def get_file_list(
     Creates a list of all the files in the folder for one experiment, based on
     the ending file name
     """
-    
+
     if data_dir is None:
         data_dir = common.get_nvdata_dir()
     else:
@@ -1046,13 +1046,14 @@ def get_raw_data(
 
     if path_from_nvdata is None:
         path_from_nvdata = search_index.get_data_path(file_name)
-        
+
     data_dir = nvdata_dir / path_from_nvdata
     file_name_ext = "{}.txt".format(file_name)
     file_path = data_dir / file_name_ext
 
     with open(file_path) as f:
-        return json.load(f)
+        res = json.load(f)
+        return res
 
 
 # %%  Save utils
@@ -1269,7 +1270,7 @@ def save_raw_data(rawData, filePath):
 
     with open(filePath + ".txt", "w") as file:
         json.dump(rawData, file, indent=2)
-        
+
     # Add this to the search index
     search_index.add_to_search_index
 
@@ -1526,10 +1527,12 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
         yellow_optical_power_pd,
         yellow_optical_power_mW,
     )
-    
-    
+
+
 def round_sig_figs(val, num_sig_figs):
-    func = lambda val, num_sig_figs: round(val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1))
+    func = lambda val, num_sig_figs: round(
+        val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1)
+    )
     if type(val) is list:
         return [func(el, num_sig_figs) for el in val]
     elif type(val) is numpy.ndarray:

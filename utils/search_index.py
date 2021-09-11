@@ -42,7 +42,7 @@ def process_full_path(full_path):
 def gen_search_index():
     """Create the search index from scratch. Does not delete the existing 
     index so you should probably do that. Just delete the search_index files
-    in nvdata.
+    in nvdata. This will take several minutes.
     """
     
     # Create the table
@@ -54,9 +54,7 @@ def gen_search_index():
         for f in files:
             # Only index data files in their original locations
             regex = "{}\/pc_[a-z]+\/branch_[a-z\-]+\/[a-z\_]+\/[0-9]{{4}}_[0-9]{{2}}".format(str_path_nvdata_dir)
-            if not re.match(regex, root):
-                continue
-            if f.endswith(".txt"):
+            if re.match(regex, root) and f.endswith(".txt"):
                 db_vals = process_full_path("{}/{}".format(root, f))
                 cursor.execute("INSERT INTO search_index VALUES (?, ?)", db_vals)
 
