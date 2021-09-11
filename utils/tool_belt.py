@@ -28,15 +28,15 @@ from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
 from pathlib import Path
-from pathlib import PurePath
 from enum import Enum, auto
 import socket
 import smtplib
 from email.mime.text import MIMEText
 import traceback
 import keyring
-import platform
-import glob
+import math
+import utils.common as common
+import utils.search_index as search_index
 
 # %% Constants
 
@@ -890,7 +890,7 @@ def calc_snr(sig_count, ref_count):
     sig_count_avg = numpy.average(sig_count)
     ref_count_avg = numpy.average(ref_count)
     dif = sig_count_avg - ref_count_avg
-    sum_= sig_count_avg + ref_count_avg
+    sum_ = sig_count_avg + ref_count_avg
     noise = numpy.sqrt(sum_)
     snr = dif / noise
 
@@ -1086,14 +1086,17 @@ def ask_open_file(file_path):
 def get_file_list(
     path_from_nvdata,
     file_ends_with,
-    data_dir="E:/Shared drives/Kolkowitz Lab Group/nvdata",
+    data_dir=None,
 ):
     """
     Creates a list of all the files in the folder for one experiment, based on
     the ending file name
     """
 
-    data_dir = Path(data_dir)
+    if data_dir is None:
+        data_dir = common.get_nvdata_dir()
+    else:
+        data_dir = Path(data_dir)
     file_path = data_dir / path_from_nvdata
 
     file_list = []
@@ -1125,17 +1128,6 @@ def get_file_list(
 #         return json.load(file)
 
 
-def get_nvdata_dir():
-    """Returns the directory for nvdata as appropriate for the OS."""
-    os_name = platform.system()
-    if os_name == "Windows":
-        nvdata_dir = PurePath("E:/Shared drives/Kolkowitz Lab Group/nvdata")
-    elif os_name == "Linux":
-        nvdata_dir = Path.home() / "E" / "nvdata"
-
-    return nvdata_dir
-
-
 def get_raw_data(
     file_name,
     path_from_nvdata=None,
@@ -1151,24 +1143,18 @@ def get_raw_data(
     """
 
     if nvdata_dir is None:
-        nvdata_dir = get_nvdata_dir()
+        nvdata_dir = common.get_nvdata_dir()
 
     if path_from_nvdata is None:
-        year_month = file_name[0:7]
-        glob_str = "{}/*/*/*/{}/{}.txt".format(
-            str(nvdata_dir), year_month, file_name
-        )
-        for el in glob.glob(glob_str):
-            # The file has to be unique so we can just assign the first
-            # elemnent we find to file_path
-            file_path = el
-    else:
-        data_dir = nvdata_dir / path_from_nvdata
-        file_name_ext = "{}.txt".format(file_name)
-        file_path = data_dir / file_name_ext
+        path_from_nvdata = search_index.get_data_path(file_name)
+
+    data_dir = nvdata_dir / path_from_nvdata
+    file_name_ext = "{}.txt".format(file_name)
+    file_path = data_dir / file_name_ext
 
     with open(file_path) as f:
-        return json.load(f)
+        res = json.load(f)
+        return res
 
 
 # %%  Save utils
@@ -1383,8 +1369,12 @@ def save_raw_data(rawData, filePath):
     except Exception as e:
         print(e)
 
-    with open(filePath + ".txt", "w") as file:
+    file_path_ext = filePath + ".txt"
+    with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)
+
+    # Add this to the search index
+    search_index.add_to_search_index(file_path_ext)
 
 
 def get_nv_sig_units():
@@ -1641,6 +1631,20 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
     )
 
 
+def round_sig_figs(val, num_sig_figs):
+    func = lambda val, num_sig_figs: round(
+        val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1)
+    )
+    if type(val) is list:
+        return [func(el, num_sig_figs) for el in val]
+    elif type(val) is numpy.ndarray:
+        val_list = val.tolist()
+        rounded_val_list = [func(el, num_sig_figs) for el in val_list]
+        return numpy.array(rounded_val_list)
+    else:
+        return func(val, num_sig_figs)
+
+
 # %% Safe stop (TM mccambria)
 
 
@@ -1835,7 +1839,7 @@ def reset_cfm_with_cxn(cxn):
             continue
         server = cxn[name]
         # Check for servers that ask not to be reset automatically
-        if hasattr(server, "reset_cfm_opt_out") and server.reset_cfm_opt_out:
+        if hasattr(server, "reset_cfm_opt_out"):
             continue
         if hasattr(server, "reset"):
             server.reset()

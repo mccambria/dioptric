@@ -142,6 +142,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
             sig_gate_counts = sample_counts[1::2]
             sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
+            # break
 
         cxn.apd_tagger.stop_tag_stream()
 

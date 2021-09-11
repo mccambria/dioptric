@@ -279,8 +279,8 @@ def fit_data(data):
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-    # revival_time = 35000
-    # dominant_freqs = [1/revival_time]
+    revival_time = 35000
+    dominant_freqs = [1 / revival_time]
 
     # %% Fit
 
@@ -292,14 +292,16 @@ def fit_data(data):
     max_precession_dur_us = max_precession_dur / 1000
 
     # Get the init params we want to test and try them out. Compare them with
-    # a reduced chi squared.
+    # a scaled chi squared: the sum of squared residuals times the number
+    # of degrees of freedom to account for overfitting.
     init_params_tests = []
     min_bounds_tests = []
     max_bounds_tests = []
-    best_red_chi_sq = None
+    best_scaled_chi_sq = None
     best_popt = None
     for freq in dominant_freqs:
         revival_time = 1 / freq
+        # print(revival_time)
         num_revivals = max_precession_dur / revival_time
         amplitudes = [amplitude for el in range(0, int(1.5 * num_revivals))]
         revival_time_us = revival_time / 1000
@@ -334,9 +336,12 @@ def fit_data(data):
             fit_func_lambda = lambda tau: fit_func(tau, *popt)
             residuals = fit_func_lambda(tau_pis_us) - norm_avg_sig
             chi_sq = numpy.sum((residuals ** 2) / (norm_avg_sig_ste ** 2))
-            red_chi_sq = chi_sq / len(popt)
-            if best_red_chi_sq is None or (red_chi_sq < best_red_chi_sq):
-                best_red_chi_sq = red_chi_sq
+            scaled_chi_sq = chi_sq * len(popt)
+            # print(scaled_chi_sq)
+            if best_scaled_chi_sq is None or (
+                scaled_chi_sq < best_scaled_chi_sq
+            ):
+                best_scaled_chi_sq = scaled_chi_sq
                 best_popt = popt
 
         except Exception as e:
@@ -826,14 +831,29 @@ if __name__ == "__main__":
 
     plt.ion()
 
-    file_name = "2021_08_28-15_35_35-hopper-search"
+    path_from_nvdata = "pc_hahn/branch_time-tagger-speedup/spin_echo/2021_09"
+    file_names = [
+        # "2021_09_03-20_36_12-hopper-search",
+        # "2021_09_03-22_04_25-hopper-search",
+        # "2021_09_03-23_31_54-hopper-search",
+        # "2021_09_04-01_07_44-hopper-search",
+        "2021_09_04-08_34_53-hopper-search",
+        "2021_09_04-10_03_27-hopper-search",
+        "2021_09_04-11_31_49-hopper-search",
+        "2021_09_04-13_00_14-hopper-search",
+    ]
 
-    data = tool_belt.get_raw_data(file_name)
+    for f in file_names:
 
-    #    print(data['norm_avg_sig'])
+        # start = time.time()
+        data = tool_belt.get_raw_data(f, path_from_nvdata)
+        # stop = time.time()
+        # print(stop - start)
 
-    ret_vals = plot_resonances_vs_theta_B(data)
-    fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
-    print(popt)
+        #    print(data['norm_avg_sig'])
+
+        ret_vals = plot_resonances_vs_theta_B(data)
+        fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
+        # print(popt)
 
     plt.show(block=True)

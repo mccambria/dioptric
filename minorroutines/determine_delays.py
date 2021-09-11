@@ -117,6 +117,8 @@ def measure_delay(
 
         new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
         sample_counts = new_counts[0]
+        if len(sample_counts) != 2 * num_reps:
+            print("Error!")
         ref_counts[tau_ind] = sum(sample_counts[0::2])
         sig_counts[tau_ind] = sum(sample_counts[1::2])
 

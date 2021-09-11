@@ -35,7 +35,6 @@ import time
 class PowerSupplyMp710087(LabradServer):
     name = "power_supply_mp710087"
     pc_name = socket.gethostname()
-    reset_cfm_opt_out = True
     comms_delay = 0.1
 
     def initServer(self):
@@ -77,7 +76,6 @@ class PowerSupplyMp710087(LabradServer):
         time.sleep(0.1)
         idn = self.power_supply.query("*IDN?")
         time.sleep(0.1)
-        logging.info(idn)
         logging.info("Init complete")
 
     @setting(0)
@@ -168,17 +166,13 @@ class PowerSupplyMp710087(LabradServer):
         
         response = self.power_supply.query("MEAS:VOLT?")
         voltage = self.decode_query_response(response)
-        logging.info(repr(response))
         
         time.sleep(self.comms_delay)
         
         response = self.power_supply.query("MEAS:CURR?")
         current = self.decode_query_response(response)
-        logging.info(repr(response))
         
         time.sleep(self.comms_delay)
-        
-        logging.info("")
         
         if current < 0.001: 
             resistance = high_z
@@ -186,8 +180,16 @@ class PowerSupplyMp710087(LabradServer):
             resistance = voltage / current
             
         return resistance
+        
+    @setting(8)
+    def reset_cfm_opt_out(self, c):
+        """This setting is just a flag for the client. If you include this 
+        setting on a server, then the server won't be reset along with the 
+        rest of the instruments when we call tool_belt.reset_cfm.
+        """
+        pass
 
-    @setting(6)
+    @setting(9)
     def reset(self, c):
         """Reset the power supply. Turn off the output, leave the current
         and voltage limits as they are. This instrument is not reset 
