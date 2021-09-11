@@ -13,15 +13,12 @@ Created on Fri Mar  5 12:42:32 2021
 
 
 import numpy
-from numpy.linalg import eigvals
-from numpy import pi
 from scipy.optimize import root_scalar
-from numpy import exp
-import matplotlib.pyplot as plt
 from majorroutines.pulsed_resonance import return_res_with_error
 import utils.tool_belt as tool_belt
 from majorroutines.spin_echo import zfs_cost_func
 from scipy.optimize import minimize_scalar
+import time
 
 
 # %% Functions
@@ -175,7 +172,10 @@ def main_files(files, mag_B=None, theta_B_deg=None):
 
     for ind in range(2):
         file = files[ind]
+        start = time.time()
         data = tool_belt.get_raw_data(file)
+        stop = time.time()
+        print(stop - start)
         res, res_err = return_res_with_error(data)
         resonances.append(res)
         res_errs.append(res_err)
@@ -228,22 +228,24 @@ if __name__ == "__main__":
 
     # mag_B = 26.377
     # theta_B_deg = 7.315
-    # files = ['2021_07_11-23_13_00-hopper-nv1_2021_03_16',
-    #          '2021_07_11-23_09_57-hopper-nv1_2021_03_16']  # room
+    files = [
+        "2021_07_11-23_13_00-hopper-nv1_2021_03_16",
+        "2021_07_11-23_09_57-hopper-nv1_2021_03_16",
+    ]  # room
 
     # mag_B = 26.297
     # theta_B_deg = 9.803
-    # # files = ['2021_07_08-18_16_31-hopper-nv1_2021_03_16',
-    # #          '2021_07_08-18_19_47-hopper-nv1_2021_03_16']  # 350
+    # files = ['2021_07_08-18_16_31-hopper-nv1_2021_03_16',
+    #          '2021_07_08-18_19_47-hopper-nv1_2021_03_16']  # 350
     # files = ['2021_07_09-18_04_22-hopper-nv1_2021_03_16',
     #           '2021_07_09-18_07_34-hopper-nv1_2021_03_16']  # 400
 
     # main_files(files, mag_B, theta_B_deg)
 
-    files = [
-        "2021_09_10-11_21_53-hopper-search",
-        "2021_09_10-11_30_51-hopper-search",
-    ]
+    # files = [
+    #     "2021_09_10-11_21_53-hopper-search",
+    #     "2021_09_10-11_30_51-hopper-search",
+    # ]
     main_files(files)
 
     # process_res_list()

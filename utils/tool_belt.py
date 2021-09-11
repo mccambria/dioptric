@@ -28,15 +28,15 @@ from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
 from pathlib import Path
-from pathlib import PurePath
 from enum import Enum, auto
 import socket
 import smtplib
 from email.mime.text import MIMEText
 import traceback
 import keyring
-import platform
 import math
+import utils.common as common
+import utils.search_index as search_index
 
 # %% Constants
 
@@ -991,9 +991,9 @@ def get_file_list(
     Creates a list of all the files in the folder for one experiment, based on
     the ending file name
     """
-    
+
     if data_dir is None:
-        data_dir = get_nvdata_dir()
+        data_dir = common.get_nvdata_dir()
     else:
         data_dir = Path(data_dir)
     file_path = data_dir / path_from_nvdata
@@ -1027,17 +1027,6 @@ def get_file_list(
 #         return json.load(file)
 
 
-def get_nvdata_dir():
-    """Returns the directory for nvdata as appropriate for the OS."""
-    os_name = platform.system()
-    if os_name == "Windows":
-        nvdata_dir = Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
-    elif os_name == "Linux":
-        nvdata_dir = Path.home() / "E" / "nvdata"
-
-    return nvdata_dir
-
-
 def get_raw_data(
     file_name,
     path_from_nvdata=None,
@@ -1053,27 +1042,18 @@ def get_raw_data(
     """
 
     if nvdata_dir is None:
-        nvdata_dir = get_nvdata_dir()
+        nvdata_dir = common.get_nvdata_dir()
 
     if path_from_nvdata is None:
-        year_month = file_name[0:7]
-        # glob_str = "{}/*/*/*/{}/{}.txt".format(
-        #     str(nvdata_dir), year_month, file_name
-        # )
-        # gen = glob.iglob(glob_str)
-        glob_str = "*/*/*/{}/{}.txt".format(year_month, file_name)
-        gen = nvdata_dir.glob(glob_str)
-        for el in gen:
-            # The file has to be unique so we can just assign the first
-            # elemnent we find to file_path
-            file_path = el
-    else:
-        data_dir = nvdata_dir / path_from_nvdata
-        file_name_ext = "{}.txt".format(file_name)
-        file_path = data_dir / file_name_ext
+        path_from_nvdata = search_index.get_data_path(file_name)
+
+    data_dir = nvdata_dir / path_from_nvdata
+    file_name_ext = "{}.txt".format(file_name)
+    file_path = data_dir / file_name_ext
 
     with open(file_path) as f:
-        return json.load(f)
+        res = json.load(f)
+        return res
 
 
 # %%  Save utils
@@ -1290,6 +1270,9 @@ def save_raw_data(rawData, filePath):
 
     with open(filePath + ".txt", "w") as file:
         json.dump(rawData, file, indent=2)
+
+    # Add this to the search index
+    search_index.add_to_search_index
 
 
 def get_nv_sig_units():
@@ -1544,10 +1527,12 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
         yellow_optical_power_pd,
         yellow_optical_power_mW,
     )
-    
-    
+
+
 def round_sig_figs(val, num_sig_figs):
-    func = lambda val, num_sig_figs: round(val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1))
+    func = lambda val, num_sig_figs: round(
+        val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1)
+    )
     if type(val) is list:
         return [func(el, num_sig_figs) for el in val]
     elif type(val) is numpy.ndarray:
