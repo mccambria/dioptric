@@ -19,6 +19,7 @@ import matplotlib.lines as mlines
 from scipy.optimize import curve_fit
 import pandas as pd
 import utils.tool_belt as tool_belt
+import utils.common as common
 from scipy.odr import ODR, Model, RealData
 
 
@@ -159,7 +160,12 @@ def simultaneous_orbach_T5_free(
 
 
 def simultaneous_test(
-    temps, omega_coeff_orbach, omega_coeff_T5, gamma_coeff, gamma_coeff_power, activation
+    temps,
+    omega_coeff_orbach,
+    omega_coeff_T5,
+    gamma_coeff,
+    gamma_coeff_power,
+    activation,
 ):
     """
     Only use this for fitting to Omega and gamma simultaneously. This assumes
@@ -336,7 +342,7 @@ def fit_simultaneous(data_points):
     # fit_func = simultaneous_orbach_T5_free
     # fit_func = simultaneous_orbach_T5_free_odr
     # init_params = (510, 1.38e-11, 2000, 74.0)
-    
+
     fit_func = simultaneous_test_odr
     # # T5
     init_params = (510, 1.38e-11, 510, 1.38e-11, 74.0)
@@ -359,7 +365,11 @@ def fit_simultaneous(data_points):
     pcov = output.cov_beta
     pvar = output.sd_beta ** 2
     red_chi_square = output.res_var
-    print("Reduced chi squared: {}".format(tool_belt.round_sig_figs(red_chi_square, 3)))
+    print(
+        "Reduced chi squared: {}".format(
+            tool_belt.round_sig_figs(red_chi_square, 3)
+        )
+    )
 
     # omega_popt = [popt[0], popt[3], popt[1]]
     # # omega_pvar = [pvar[0], pvar[3], pvar[1]]
@@ -451,17 +461,6 @@ def plot_scalings(
 ):
 
     # %% Setup
-
-    plt.rcParams["text.latex.preamble"] = [
-        r"\usepackage{physics}",
-        r"\usepackage{sfmath}",
-        r"\usepackage{upgreek}",
-        r"\usepackage{helvet}",
-    ]
-    plt.rcParams.update({"font.size": 11.25})
-    plt.rcParams.update({"font.family": "sans-serif"})
-    plt.rcParams.update({"font.sans-serif": ["Helvetica"]})
-    plt.rc("text", usetex=True)
 
     min_temp = temp_range[0]
     max_temp = temp_range[1]
@@ -559,16 +558,6 @@ def main(
 
     # %% Setup
 
-    plt.rcParams["text.latex.preamble"] = [
-        r"\usepackage{physics}",
-        r"\usepackage{sfmath}",
-        r"\usepackage{upgreek}",
-        r"\usepackage{helvet}",
-    ]
-    plt.rcParams.update({"font.size": 11.25})
-    plt.rcParams.update({"font.family": "sans-serif"})
-    plt.rcParams.update({"font.sans-serif": ["Helvetica"]})
-    plt.rc("text", usetex=True)
     file_path = path / "{}.xlsx".format(file_name)
     csv_file_path = path / "{}.csv".format(file_name)
 
@@ -619,7 +608,11 @@ def main(
     # omega_popt[0] = 650
     # omega_popt[1] = 73
     # omega_popt[2] = 6.9e-12
-    print("omega_psd: {}".format(tool_belt.round_sig_figs(numpy.sqrt(omega_pvar), 2)))
+    print(
+        "omega_psd: {}".format(
+            tool_belt.round_sig_figs(numpy.sqrt(omega_pvar), 2)
+        )
+    )
     if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
         ax.plot(
             temp_linspace,
@@ -633,7 +626,11 @@ def main(
 
     gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
     print("gamma_popt: {}".format(tool_belt.round_sig_figs(gamma_popt, 5)))
-    print("gamma_psd: {}".format(tool_belt.round_sig_figs(numpy.sqrt(gamma_pvar), 2)))
+    print(
+        "gamma_psd: {}".format(
+            tool_belt.round_sig_figs(numpy.sqrt(gamma_pvar), 2)
+        )
+    )
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
         ax.plot(
             temp_linspace,
@@ -654,13 +651,17 @@ def main(
             color=gamma_edge_color,
         )
     if plot_type == "T2_max":
-        T2_max_qubit = lambda temp: 2 / (3 * omega_lambda(temp) + gamma_lambda(temp))
+        T2_max_qubit = lambda temp: 2 / (
+            3 * omega_lambda(temp) + gamma_lambda(temp)
+        )
         ax.plot(
             temp_linspace,
             T2_max_qubit(temp_linspace),
             label=r"Qubit T2 max",
         )
-        T2_max_qutrit = lambda temp: 1 / (omega_lambda(temp) + gamma_lambda(temp))
+        T2_max_qutrit = lambda temp: 1 / (
+            omega_lambda(temp) + gamma_lambda(temp)
+        )
         ax.plot(
             temp_linspace,
             T2_max_qutrit(temp_linspace),
@@ -862,7 +863,7 @@ def main(
 
     if leg1 is not None:
         ax.add_artist(leg1)
-        
+
     if plot_type == "T2_max":
         ax.legend()
 
@@ -872,13 +873,13 @@ def main(
 
 if __name__ == "__main__":
 
-    plt.ion()
+    tool_belt.init_matplotlib()
 
-    # plot_type = "rates"
+    plot_type = "rates"
     # plot_type = 'ratios'
     # plot_type = 'ratio_fits'
     # plot_type = 'residuals'
-    plot_type = 'T2_max'
+    # plot_type = "T2_max"
 
     rates_to_plot = "both"
     # rates_to_plot = 'Omega'
@@ -888,26 +889,26 @@ if __name__ == "__main__":
     xscale = "linear"
     # temp_range = [70, 500]
     # xscale = "log"
-    
+
     # Rates
     # y_range = [-5, 600]
     # yscale = "linear"
-    # y_range = [1e-2, 1000]
-    # yscale = 'log'
+    y_range = [1e-2, 1000]
+    yscale = "log"
     # y_range = [1e-2, 600]
     # yscale = 'log'
-    
+
     # Ratios
     # y_range = [0, 4]
     # yscale = "linear"
-    
+
     # T2_max
-    y_range = [1e-3, 10]
-    yscale = "log"
+    # y_range = [1e-3, 10]
+    # yscale = "log"
 
     file_name = "compiled_data"
     # file_name = 'compiled_data-test'
-    home = tool_belt.get_nvdata_dir()
+    home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
     main(
