@@ -473,8 +473,8 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
             'collection_filter': None, 'magnet_angle': 212,
-            'resonance_LOW': 2.7951, 'rabi_LOW': 323.0, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9430, 'rabi_HIGH': 317.2, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.7789, 'rabi_LOW': 273.2, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9252, 'rabi_HIGH': 317.2, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -522,9 +522,9 @@ if __name__ == '__main__':
         do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        # do_t1_interleave_knill(nv_sig, apd_indices)
+        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        do_t1_interleave_knill(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
         #     nv_sig['resonance_HIGH'] = res

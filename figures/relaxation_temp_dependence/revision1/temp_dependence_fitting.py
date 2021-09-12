@@ -206,6 +206,13 @@ def gamma_calc(temp):
 # %% Other functions
 
 
+def omega_calc(temp):
+    popt = []
+    return orbach_T5_free(temp, *popt)
+    
+
+
+
 def get_temp(point):
     temp = point[temp_column_title]
     if temp == "":
@@ -932,5 +939,5 @@ if __name__ == "__main__":
     # gamma_popt = [2049.116503275054, 73.77518971996268]
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
-    plt.show(block=True)
-    # plt.show()
+    # plt.show(block=True)
+    plt.show()
