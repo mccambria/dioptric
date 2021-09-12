@@ -34,6 +34,7 @@ import matplotlib.pyplot as plt
 import os
 
 import utils.tool_belt as tool_belt
+import utils.common as common
 from utils.tool_belt import States
 from figures.relaxation_temp_dependence.old.orbach import omega_calc
 from figures.relaxation_temp_dependence.old.orbach import gamma_calc
@@ -534,7 +535,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         fig.canvas.flush_events()
 
         # Saving the data
-        data_dir = tool_belt.get_nvdata_dir()
+        data_dir = common.get_nvdata_dir()
 
         time_stamp = tool_belt.get_time_stamp()
         raw_data = {'time_stamp': time_stamp,
@@ -585,7 +586,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 312.5
+    temp = 460
 
     est_omega = omega_calc(temp)
     est_gamma = gamma_calc(temp)

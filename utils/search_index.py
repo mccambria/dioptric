@@ -16,7 +16,8 @@ import sqlite3
 
 search_index_file_name = "search_index.db"
 nvdata_dir = common.get_nvdata_dir()
-str_path_nvdata_dir = str(nvdata_dir)
+nvdata_dir_str = common.get_nvdata_dir_str()
+search_index_regex = "{}\/pc_[a-z]+\/branch_[a-z\-]+\/[a-z\_]+\/[0-9]{{4}}_[0-9]{{2}}".format(nvdata_dir_str.replace("/", "\\/"))
 
 def process_full_path(full_path):
     """Return just what we want for writing to the database. Expects a string
@@ -30,7 +31,7 @@ def process_full_path(full_path):
     str_path_root = str(PurePath(path_to_file))
     
     # Ditch nvdata
-    split_path_root = str_path_root.split(str_path_nvdata_dir)[1]
+    split_path_root = str_path_root.split(nvdata_dir_str)[1]
     index_path = split_path_root[1:]
     
     # Ditch the extension
@@ -53,8 +54,7 @@ def gen_search_index():
     for root, _, files in os.walk(nvdata_dir):
         for f in files:
             # Only index data files in their original locations
-            regex = "{}\/pc_[a-z]+\/branch_[a-z\-]+\/[a-z\_]+\/[0-9]{{4}}_[0-9]{{2}}".format(str_path_nvdata_dir)
-            if re.match(regex, root) and f.endswith(".txt"):
+            if re.match(search_index_regex, root) and f.endswith(".txt"):
                 db_vals = process_full_path("{}/{}".format(root, f))
                 cursor.execute("INSERT INTO search_index VALUES (?, ?)", db_vals)
 
