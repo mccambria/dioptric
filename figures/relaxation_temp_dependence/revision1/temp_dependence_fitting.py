@@ -110,13 +110,6 @@ def test_T_seventh(temp):
     return A_7 * (temp ** 7)
 
 
-def omega_calc(temp):
-    """Using fit from May 12th, 2021"""
-    return orbach_T5_free(temp, 510, 76.0, 1.38e-11)
-    # return A_1 + test_T_cubed(temp) + raman(temp)
-    # return (A_1 + orbach(temp) + raman(temp) + test_T_seventh(temp)) / 3
-
-
 def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     # activation = 78
     # coeff_T5 = 0
@@ -204,20 +197,18 @@ def T5_free(temp, coeff_T5):
     return coeff_T5 * temp ** 5
 
 
-def gamma_calc(temp):
-    """Using fit from May 12th, 2021"""
-    return orbach_free(temp, 2200, 75.2)
-
-
 # %% Other functions
 
 
 def omega_calc(temp):
-    popt = []
+    popt = [421.88, 69.205, 1.1124e-11]
+    return orbach_T5_free(temp, *popt)
+
+
+def gamma_calc(temp):
+    popt = [1357.2, 69.205, 9.8064e-12]
     return orbach_T5_free(temp, *popt)
     
-
-
 
 def get_temp(point):
     temp = point[temp_column_title]
@@ -394,7 +385,7 @@ def fit_simultaneous(data_points):
 
     gamma_popt = [popt[2], popt[4], popt[3]]
     gamma_pvar = [pcov[2, 2], pcov[4, 4], pcov[3, 3]]
-    gamma_fit_func = orbach_T3_free
+    gamma_fit_func = orbach_T5_free
 
     return (
         omega_popt,
@@ -898,10 +889,10 @@ if __name__ == "__main__":
     # xscale = "log"
 
     # Rates
-    # y_range = [-5, 600]
-    # yscale = "linear"
-    y_range = [1e-2, 1000]
-    yscale = "log"
+    y_range = [-5, 600]
+    yscale = "linear"
+    # y_range = [1e-2, 1000]
+    # yscale = "log"
     # y_range = [1e-2, 600]
     # yscale = 'log'
 

@@ -36,8 +36,7 @@ import os
 import utils.tool_belt as tool_belt
 import utils.common as common
 from utils.tool_belt import States
-from figures.relaxation_temp_dependence.old.orbach import omega_calc
-from figures.relaxation_temp_dependence.old.orbach import gamma_calc
+from figures.relaxation_temp_dependence.revision1.temp_dependence_fitting import omega_calc, gamma_calc
 
 # %% Constants
 
