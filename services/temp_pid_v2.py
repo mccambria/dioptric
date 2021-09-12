@@ -224,14 +224,14 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
 if __name__ == "__main__":
 
     do_plot = False
-    target = 312.5
+    target = 475
     pid_coeffs = [0.5, 0.01, 0]
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc
-    integral_bootstrap = 0.0
+    # integral_bootstrap = 0.0
     # integral_bootstrap = 0.3 * integral_max
     # integral_bootstrap = 0.6 * integral_max
-    # integral_bootstrap = integral_max
+    integral_bootstrap = integral_max
 
     with labrad.connect() as cxn:
         # Set up the multimeter for resistance measurement

@@ -37,6 +37,7 @@ import keyring
 import math
 import utils.common as common
 import utils.search_index as search_index
+import re
 
 # %% Constants
 
@@ -1273,7 +1274,10 @@ def save_raw_data(rawData, filePath):
         json.dump(rawData, file, indent=2)
 
     # Add this to the search index
-    search_index.add_to_search_index(file_path_ext)
+    root = "/".join(file_path_ext.split("/")[0:-1])
+    # print(repr(search_index.search_index_regex))
+    if re.match(search_index.search_index_regex, root):
+        search_index.add_to_search_index(file_path_ext)
 
 
 def get_nv_sig_units():

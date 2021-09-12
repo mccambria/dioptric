@@ -34,6 +34,7 @@ import matplotlib.pyplot as plt
 import os
 
 import utils.tool_belt as tool_belt
+import utils.common as common
 from utils.tool_belt import States
 from figures.relaxation_temp_dependence.old.orbach import omega_calc
 from figures.relaxation_temp_dependence.old.orbach import gamma_calc
@@ -534,7 +535,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
         fig.canvas.flush_events()
 
         # Saving the data
-        data_dir = tool_belt.get_nvdata_dir()
+        data_dir = common.get_nvdata_dir()
 
         time_stamp = tool_belt.get_time_stamp()
         raw_data = {'time_stamp': time_stamp,
@@ -587,24 +588,24 @@ if __name__ == '__main__':
 
     temp = 312.5
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print('good times in ms')
-    print('Omega: {}'.format(4000/(3*est_omega)))
-    print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    # est_omega = omega_calc(temp)
+    # est_gamma = gamma_calc(temp)
+    # print('good times in ms')
+    # print('Omega: {}'.format(4000/(3*est_omega)))
+    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
     
-    # plt.ion()
+    plt.ion()
 
-    # path = 'pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/'
-    # folders = [
-    #             'hopper-search-{}K'.format(temp),
-    #               # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
-    #               # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
-    #             ]
+    path = 'pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/'
+    folders = [
+                'hopper-search-{}K'.format(temp),
+                  # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
+                  # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
+                ]
 
-    # for folder in folders:
-    #     gamma, ste = main(path, folder, omega=None, omega_ste=None,
-    #                       doPlot=True, offset=False)
+    for folder in folders:
+        gamma, ste = main(path, folder, omega=None, omega_ste=None,
+                          doPlot=True, offset=False)
         
-    # plt.show()
+    plt.show()
     # plt.show(block=True)
