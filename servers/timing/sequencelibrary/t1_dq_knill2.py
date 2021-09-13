@@ -33,8 +33,8 @@ def get_seq(pulse_streamer, config, args):
     signal_time = polarization_time
     # time of illumination during which reference readout occurs
     reference_time = polarization_time
-    pre_uwave_exp_wait_time = config['CommonDurations']['pol_to_uwave_wait_dur']
-    post_uwave_exp_wait_time = config['CommonDurations']['uwave_to_readout_wait_dur']
+    pre_uwave_exp_wait_time = config['CommonDurations']['uwave_buffer']
+    post_uwave_exp_wait_time = config['CommonDurations']['uwave_buffer']
     # time between signal and reference without illumination
     sig_to_ref_wait_time = pre_uwave_exp_wait_time + post_uwave_exp_wait_time
             

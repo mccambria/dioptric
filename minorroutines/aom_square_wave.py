@@ -35,9 +35,9 @@ def constant(cxn, laser_name, laser_power=None):
 
     tool_belt.laser_on(cxn, laser_name, laser_power)
 
-    # input('Press enter to stop...')
+    input('Press enter to stop...')
 
-    # tool_belt.laser_off(cxn, laser_name)
+    tool_belt.laser_off(cxn, laser_name)
 
 
 # %% Main
@@ -72,20 +72,19 @@ if __name__ == '__main__':
 
     # Rabi
 #    laser_name = 'cobolt_515'
-    laser_name = 'cobolt_638'
-    filter_name = 'nd_0.5'
-    pos = [-0.025, -0.009, 4.89]
+    # laser_name = 'cobolt_638'
+    # filter_name = 'nd_0.5'
+    # pos = [-0.025, -0.009, 4.89]
 
     # Hahn
     laser_name = 'laserglow_532'
     filter_name = 'nd_1.0'
-    # laser_names = ['laserglow_532']
-    pos = [0.0, 0.0, 7.0]
+    pos = [0.0, 0.0, 5.0]
 
     with labrad.connect() as cxn:
         tool_belt.set_xyz(cxn, pos)
 #        for el in laser_names:
-        # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
-        tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
-        # constant(cxn, laser_name)
-        main(cxn, laser_name)
+        tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
+        # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
+        constant(cxn, laser_name)
+        # main(cxn, laser_name)
