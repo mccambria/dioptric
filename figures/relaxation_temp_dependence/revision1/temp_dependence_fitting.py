@@ -889,7 +889,7 @@ if __name__ == "__main__":
     # xscale = "log"
 
     # Rates
-    y_range = [-5, 600]
+    y_range = [-10, 600]
     yscale = "linear"
     # y_range = [1e-2, 1000]
     # yscale = "log"
