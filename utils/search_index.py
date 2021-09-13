@@ -94,13 +94,13 @@ if __name__ == "__main__":
     root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2021_09"
     # root = nvdata_dir / PurePath("pc_hahn", "branch_master", "pulsed_resonance", "2021_09")
     files = [
-        "2021_09_12-22_57_11-hopper-search.txt",
-        "2021_09_12-23_06_01-hopper-search.txt",
+        "2021_09_13-15_29_34-hopper-search.txt",
+        "2021_09_13-15_41_02-hopper-search.txt",
     ]
-    paths = [str(root / el) for el in files]
+    paths = [root / el for el in files]
     
     # print(search_index_glob)
     for el in paths:
         # print(el)
-        print(PurePath(el).match(search_index_glob))
-        # add_to_search_index(el)
+        # print(el.match(search_index_glob))
+        add_to_search_index(el)

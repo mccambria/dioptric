@@ -474,7 +474,7 @@ if __name__ == '__main__':
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
             'collection_filter': None, 'magnet_angle': 212,
             'resonance_LOW': 2.7873, 'rabi_LOW': 322.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9347, 'rabi_HIGH': 270.8, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_HIGH': 2.9353, 'rabi_HIGH': 270.8, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run

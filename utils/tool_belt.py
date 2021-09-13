@@ -1394,10 +1394,8 @@ def save_raw_data(rawData, filePath):
     with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)
 
-    # Add this to the search index
-    root = file_path_ext.parent
     # print(repr(search_index.search_index_regex))
-    if root.match(search_index.search_index_glob):
+    if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
 
 
