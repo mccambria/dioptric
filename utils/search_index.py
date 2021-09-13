@@ -10,32 +10,34 @@ Created 2021_09_10
 
 import utils.common as common
 import os
-from pathlib import PurePath
+from pathlib import PurePath, PurePosixPath
 import re
 import sqlite3
 
 search_index_file_name = "search_index.db"
 nvdata_dir = common.get_nvdata_dir()
-nvdata_dir_str = common.get_nvdata_dir_str()
-search_index_regex = "{}\/pc_[a-z]+\/branch_[a-z\-]+\/[a-z\_]+\/[0-9]{{4}}_[0-9]{{2}}".format(nvdata_dir_str.replace("/", "\\/"))
+nvdata_dir_str = str(nvdata_dir)
+date_glob = "[0-9][0-9][0-9][0-9]_[0-9][0-9]"
+search_index_glob = "{}/pc_*/branch_*/*/{}/*.txt".format(nvdata_dir_str, date_glob)
 
 def process_full_path(full_path):
     """Return just what we want for writing to the database. Expects a string
     containing the entire path to the file, including nvdata, the file 
     name, the extension..."""
     
-    # Get the path to the file separated from the file name itself
-    full_path_split = full_path.split("/")
-    path_to_file = "/".join(full_path_split[0:-1])
-    file_name = full_path_split[-1]
-    str_path_root = str(PurePath(path_to_file))
+    # Make sure we have a PurePath to manipulate
+    full_path = PurePath(full_path)
     
-    # Ditch nvdata
-    split_path_root = str_path_root.split(nvdata_dir_str)[1]
-    index_path = split_path_root[1:]
+    # Get the path to the file separated from the file name itself and nvdata
+    path_to_file = full_path.parent
+    path_to_file_parts = path_to_file.parts
+    nvdata_ind = path_to_file_parts.index("nvdata")
+    index_path_parts = path_to_file_parts[nvdata_ind+1:]
+    index_path = PurePath(index_path_parts[0]).joinpath(*index_path_parts[1:])
+    index_path = str(index_path)
     
-    # Ditch the extension
-    index_file_name = file_name.split(".")[0]
+    # Get the file name, no extension
+    index_file_name = full_path.stem
     
     return (index_file_name, index_path)
     
@@ -54,7 +56,7 @@ def gen_search_index():
     for root, _, files in os.walk(nvdata_dir):
         for f in files:
             # Only index data files in their original locations
-            if re.match(search_index_regex, root) and f.endswith(".txt"):
+            if PurePath(f).match(search_index_glob):
                 db_vals = process_full_path("{}/{}".format(root, f))
                 cursor.execute("INSERT INTO search_index VALUES (?, ?)", db_vals)
 
@@ -86,4 +88,19 @@ def get_data_path(data_file_name):
 
 
 if __name__ == "__main__":
-    gen_search_index()
+    
+    # gen_search_index()
+    
+    root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2021_09"
+    # root = nvdata_dir / PurePath("pc_hahn", "branch_master", "pulsed_resonance", "2021_09")
+    files = [
+        "2021_09_12-22_57_11-hopper-search.txt",
+        "2021_09_12-23_06_01-hopper-search.txt",
+    ]
+    paths = [str(root / el) for el in files]
+    
+    # print(search_index_glob)
+    for el in paths:
+        # print(el)
+        print(PurePath(el).match(search_index_glob))
+        # add_to_search_index(el)

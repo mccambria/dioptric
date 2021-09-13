@@ -27,7 +27,7 @@ import labrad
 from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
-from pathlib import Path
+from pathlib import Path, PurePath
 from enum import Enum, auto
 import socket
 import smtplib
@@ -1124,7 +1124,7 @@ def get_file_list(
     if data_dir is None:
         data_dir = common.get_nvdata_dir()
     else:
-        data_dir = Path(data_dir)
+        data_dir = PurePath(data_dir)
     file_path = data_dir / path_from_nvdata
 
     file_list = []
@@ -1190,8 +1190,8 @@ def get_raw_data(
 
 def get_branch_name():
     """Return the name of the active branch of kolkowitz-nv-experiment-v1.0"""
-    home_to_repo = Path("Documents/GitHub/kolkowitz-nv-experiment-v1.0")
-    repo_path = Path.home() / home_to_repo
+    home_to_repo = PurePath("Documents/GitHub/kolkowitz-nv-experiment-v1.0")
+    repo_path = PurePath(Path.home()) / home_to_repo
     repo = Repo(repo_path)
     return repo.active_branch.name
 
@@ -1268,14 +1268,6 @@ def get_files_in_folder(folderDir, filetype=None):
         file_list = file_list_temp
 
     return file_list
-
-
-def get_data_path():
-    return Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
-
-
-def get_data_path():
-    return Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
 
 
 def get_file_path(source_name, time_stamp="", name="", subfolder=None):
@@ -1384,6 +1376,8 @@ def save_raw_data(rawData, filePath):
             The file path to save to including the file name, excluding the
             extension
     """
+    
+    file_path_ext = PurePath(filePath + ".txt")
 
     # Add in a few things that should always be saved here. In particular,
     # sharedparameters so we have as snapshot of the configuration and
@@ -1397,14 +1391,13 @@ def save_raw_data(rawData, filePath):
     except Exception as e:
         print(e)
 
-    file_path_ext = filePath + ".txt"
     with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)
 
     # Add this to the search index
-    root = "/".join(file_path_ext.split("/")[0:-1])
+    root = file_path_ext.parent
     # print(repr(search_index.search_index_regex))
-    if re.match(search_index.search_index_regex, root):
+    if root.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
 
 
