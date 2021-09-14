@@ -191,8 +191,8 @@ def aom_delay(
     laser_power,
 ):
     """
-    This will repeatedly run the same sequence with different laser delays.
-    If there were no delays, the sequence would look like this
+    This will repeatedly run the same sequence with different passed laser 
+    delays. If there were no delays, the sequence would look like this
     laser ________|--------|________|--------|___
     APD   ___________|--|_________________|--|___
     The first readout is a reference - the laser should be on long enough such
@@ -231,8 +231,8 @@ def uwave_delay(
 ):
 
     """
-    This will repeatedly run the same sequence with different microwave delays.
-    If there were no delays, the sequence would look like this
+    This will repeatedly run the same sequence with different passed microwave 
+    delays. If there were no delays, the sequence would look like this
     uwave ______________________|---|____________
     laser ________|--------|________|--------|___
     APD   ________|----|____________|----|_______

@@ -37,7 +37,6 @@ import keyring
 import math
 import utils.common as common
 import utils.search_index as search_index
-import re
 
 # %% Constants
 
@@ -1180,7 +1179,7 @@ def get_raw_data(
     file_name_ext = "{}.txt".format(file_name)
     file_path = data_dir / file_name_ext
 
-    with open(file_path) as f:
+    with file_path.open() as f:
         res = json.load(f)
         return res
 
@@ -1376,7 +1375,7 @@ def save_raw_data(rawData, filePath):
             The file path to save to including the file name, excluding the
             extension
     """
-    
+
     file_path_ext = PurePath(filePath + ".txt")
 
     # Add in a few things that should always be saved here. In particular,
