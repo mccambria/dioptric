@@ -1180,7 +1180,7 @@ def get_raw_data(
     file_name_ext = "{}.txt".format(file_name)
     file_path = data_dir / file_name_ext
 
-    with open(file_path) as f:
+    with open(str(file_path)) as f:
         res = json.load(f)
         return res
 
