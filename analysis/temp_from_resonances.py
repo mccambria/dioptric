@@ -170,7 +170,7 @@ def main_files(files, mag_B=None, theta_B_deg=None):
     resonances = []
     res_errs = []
     
-    path_from_nvdata = "branch_master/pulsed_resonance/2021_09"
+    path_from_nvdata = "pc_hahn/branch_master/pulsed_resonance/2021_09"
 
     for ind in range(2):
         file = files[ind]
@@ -226,8 +226,8 @@ def main(zfs, zfs_err):
 if __name__ == "__main__":
 
     files = [
-        "2021_09_14-00_37_51-hopper-search",
-        "2021_09_14-00_46_41-hopper-search",
+        "2021_09_14-13_35_32-hopper-search",
+        "2021_09_14-13_44_24-hopper-search",
     ]
 
     main_files(files)
