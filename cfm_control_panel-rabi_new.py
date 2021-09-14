@@ -70,8 +70,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.3
     # scan_range = 0.2
     # scan_range = 0.15
-    # scan_range = 0.1
-    scan_range = 0.05
+    scan_range = 0.1
+    # scan_range = 0.05
     # scan_range = 0.025
     #
     # num_steps = 300
@@ -208,10 +208,10 @@ def do_resonance_state(nv_sig, apd_indices, state):
 def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
-    num_reps = 10**4
-    num_runs = 1
+    num_reps = 10000 
+    num_runs = 10
     uwave_power = 14.5
-    uwave_pulse_dur = 100
+    uwave_pulse_dur = 105.2 / 2
 
     pulsed_resonance.main(
         nv_sig,
@@ -237,8 +237,8 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     freq_range = 0.1
     # freq_range = 0.120
     num_steps = 51
-    num_reps = 500
-    num_runs = 5
+    num_reps = 1000
+    num_runs = 10
 
     composite = False
 
@@ -298,7 +298,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 1000
-    num_runs = 5
+    num_runs = 10
 
     period = rabi.main(
         nv_sig,
@@ -851,49 +851,49 @@ if __name__ == "__main__":
     }  # 14.5 max
     
     
-    nv_sig = {
-        "coords": [0.078, 0.065, 4.86],
-        "name": "{}-dnv0_2021_09_09".format(sample_name,),
-        "disable_opt": False,
-        "expected_count_rate": 36,
+    # nv_sig = {
+    #     "coords": [0.078, 0.065, 4.86],
+    #     "name": "{}-dnv0_2021_09_09".format(sample_name,),
+    #     "disable_opt": False,
+    #     "expected_count_rate": 36,
         
-        "spin_laser": green_laser,
-        "spin_laser_power": green_power,
-        "spin_pol_dur": 1e5,
-        "spin_readout_laser_power": green_power,
-        "spin_readout_dur": 350,
+    #     "spin_laser": green_laser,
+    #     "spin_laser_power": green_power,
+    #     "spin_pol_dur": 1e5,
+    #     "spin_readout_laser_power": green_power,
+    #     "spin_readout_dur": 350,
         
-        "imaging_laser":green_laser,
-        "imaging_laser_power": green_power,
-        "imaging_readout_dur": 1e7,
+    #     "imaging_laser":green_laser,
+    #     "imaging_laser_power": green_power,
+    #     "imaging_readout_dur": 1e7,
         
-        "initialize_laser": green_laser,
-        "initialize_laser_power": green_power,
-        "initialize_dur": 1e3,
-        "CPG_laser": red_laser,
-        'CPG_laser_power': red_power,
-        "CPG_laser_dur": 150e3,
-        "charge_readout_laser": yellow_laser,
-        "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.15,
-        "charge_readout_dur": 50e6,
+    #     "initialize_laser": green_laser,
+    #     "initialize_laser_power": green_power,
+    #     "initialize_dur": 1e3,
+    #     "CPG_laser": red_laser,
+    #     'CPG_laser_power': red_power,
+    #     "CPG_laser_dur": 150e3,
+    #     "charge_readout_laser": yellow_laser,
+    #     "charge_readout_laser_filter": nd_yellow,
+    #     "charge_readout_laser_power": 0.15,
+    #     "charge_readout_dur": 50e6,
         
-        # "charge_readout_laser": green_laser,
-        # "charge_readout_laser_power": green_power,
-        # "charge_readout_dur": 1e7,
+    #     # "charge_readout_laser": green_laser,
+    #     # "charge_readout_laser_power": green_power,
+    #     # "charge_readout_dur": 1e7,
         
         
-        "collection_filter": "630_lp",
-        "magnet_angle": None,
-        "resonance_LOW": 2.8012,
-        "rabi_LOW": 141.5,
-        "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.9445,
-        "rabi_HIGH": 191.9,
-        "uwave_power_HIGH": 14.5,
-    }  # 14.5 max
+    #     "collection_filter": "630_lp",
+    #     "magnet_angle": None,
+    #     "resonance_LOW": 2.8012,
+    #     "rabi_LOW": 141.5,
+    #     "uwave_power_LOW": 15.5,  # 15.5 max
+    #     "resonance_HIGH": 2.9445,
+    #     "rabi_HIGH": 191.9,
+    #     "uwave_power_HIGH": 14.5,
+    # }  # 14.5 max
     
-    opti_nv_sig = {
+    nv_sig = {
         "coords": [-0.012, -0.016, 4.85],
         "name": "{}-nv1_2021_09_07".format(sample_name,),
         "disable_opt": False,
@@ -923,12 +923,15 @@ if __name__ == "__main__":
         "collection_filter": "630_lp",
         "magnet_angle": None,
         "resonance_LOW": 2.8691,
-        "rabi_LOW": 141.5,
+        "rabi_LOW": 105.2,
         "uwave_power_LOW": 14.5,  # 15.5 max
-        "resonance_HIGH": 2.9445,
+        "resonance_HIGH": 2.91,
         "rabi_HIGH": 191.9,
         "uwave_power_HIGH": 14.5,
     }  # 14.5 max
+    
+    
+    
     
 
     
@@ -963,15 +966,15 @@ if __name__ == "__main__":
         offset_x = 0.00189
         offset_y = 0
         offset_z = 0
-        offset_list = [offset_x, offset_y, offset_z] # figure out why y and z are opposite direction than what I expect...
+        offset_list = [offset_x, offset_y, offset_z]
         num_steps_x =60
         num_steps_y = 60
         num_steps_z = 201
         
         
         
-        # do_optimize(opti_nv_sig, apd_indices)
-        # do_image_sample(opti_nv_sig, apd_indices)
+        do_optimize(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])
         # do_g2_measurement(nv_sig, 0, 1) 
         
@@ -1000,15 +1003,15 @@ if __name__ == "__main__":
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_stationary_count(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1) 
-        # do_resonance(opti_nv_sig, apd_indices, 2.875, 0.25)
+        # do_resonance(nv_sig, apd_indices, 2.875, 0.25)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_pulsed_resonance(opti_nv_sig, apd_indices, 2.87, 0.220)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.875, 0.15)
         # do_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         #         do_optimize_magnet_angle(nv_sig, apd_indices)
-        do_rabi(opti_nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)

@@ -52,8 +52,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     file_name = 'resonance.py'
     seq_args = [readout, state.value, laser_name, laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-#    print(seq_args)
-#    return
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -128,6 +126,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                 break
 
             freq_ind = freq_ind_list[step_ind]
+            print(freqs[freq_ind])
             sig_gen_cxn.set_freq(freqs[freq_ind])
 
             # Start the timing stream
