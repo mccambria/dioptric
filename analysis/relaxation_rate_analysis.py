@@ -585,7 +585,7 @@ def main(path, folder, omega = None, omega_ste = None, doPlot = False, offset = 
 
 if __name__ == '__main__':
 
-    temp = 460
+    temp = 395
 
     est_omega = omega_calc(temp)
     est_gamma = gamma_calc(temp)
@@ -595,7 +595,7 @@ if __name__ == '__main__':
     
     # plt.ion()
 
-    # path = 'pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/'
+    # path = 'pc_hahn/branch_master/t1_interleave_knill/data_collections/'
     # folders = [
     #             'hopper-search-{}K'.format(temp),
     #               # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
