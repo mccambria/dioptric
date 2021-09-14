@@ -70,8 +70,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.3
     # scan_range = 0.2
     # scan_range = 0.15
-    scan_range = 0.1
-    # scan_range = 0.05
+    # scan_range = 0.1
+    scan_range = 0.05
     # scan_range = 0.025
     #
     # num_steps = 300
@@ -81,7 +81,7 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 120
     # num_steps = 90
     num_steps = 60
-    # num_steps = 40
+    # num_steps = 31
     # num_steps = 20
 
     # For now we only support square scans so pass scan_range twice
@@ -208,8 +208,8 @@ def do_resonance_state(nv_sig, apd_indices, state):
 def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
-    num_reps = 500
-    num_runs = 2
+    num_reps = 10**4
+    num_runs = 1
     uwave_power = 14.5
     uwave_pulse_dur = 100
 
@@ -298,7 +298,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 1000
-    num_runs = 10
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -767,7 +767,7 @@ def do_test_major_routines(nv_sig, apd_indices):
 if __name__ == "__main__":
 
     # In debug mode, don't bother sending email notifications about exceptions
-    debug_mode = False
+    debug_mode = True
 
     # %% Shared parameters
 
@@ -873,14 +873,14 @@ if __name__ == "__main__":
         "CPG_laser": red_laser,
         'CPG_laser_power': red_power,
         "CPG_laser_dur": 150e3,
-        # "charge_readout_laser": yellow_laser,
-        # "charge_readout_laser_filter": nd_yellow,
-        # "charge_readout_laser_power": 0.15,
-        # "charge_readout_dur": 50e6,
+        "charge_readout_laser": yellow_laser,
+        "charge_readout_laser_filter": nd_yellow,
+        "charge_readout_laser_power": 0.15,
+        "charge_readout_dur": 50e6,
         
-        "charge_readout_laser": green_laser,
-        "charge_readout_laser_power": green_power,
-        "charge_readout_dur": 1e7,
+        # "charge_readout_laser": green_laser,
+        # "charge_readout_laser_power": green_power,
+        # "charge_readout_dur": 1e7,
         
         
         "collection_filter": "630_lp",
@@ -922,9 +922,9 @@ if __name__ == "__main__":
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
-        "resonance_LOW": 2.8012,
+        "resonance_LOW": 2.8691,
         "rabi_LOW": 141.5,
-        "uwave_power_LOW": 15.5,  # 15.5 max
+        "uwave_power_LOW": 14.5,  # 15.5 max
         "resonance_HIGH": 2.9445,
         "rabi_HIGH": 191.9,
         "uwave_power_HIGH": 14.5,
@@ -953,45 +953,46 @@ if __name__ == "__main__":
         #     nv_sig_copy['coords'] = [coords[0],coords[1],coords[2]+dz]
             # do_image_sample(nv_sig_copy, apd_indices)
         # do_optimize(opti_nv_sig, apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(opti_nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         
         
         
-        offset_x = 0#.00189
+        offset_x = 0.00189
         offset_y = 0
         offset_z = 0
-        offset_list = [offset_x, -offset_y, -offset_z] # figure out why y and z are opposite direction than what I expect...
-        num_steps_x = 60#121
-        num_steps_y = 60#121
-        num_steps_z = 151
+        offset_list = [offset_x, offset_y, offset_z] # figure out why y and z are opposite direction than what I expect...
+        num_steps_x =60
+        num_steps_y = 60
+        num_steps_z = 201
         
         
         
-        # do_optimize(nv_sig, apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        # do_optimize(opti_nv_sig, apd_indices)
+        # do_image_sample(opti_nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])
         # do_g2_measurement(nv_sig, 0, 1) 
         
         
-        t_list = [10e3,]#500e3, 1e6]
+        t_list = [1e6, ]
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
             
-            # img_range_2D = [0.05, 0.05, 0]
-            img_range_2D = [0.1, 0.1, 0]
-            do_SPaCE(nv_sig, opti_nv_sig,  1, num_steps_x, num_steps_y, None, 
-                      img_range_2D, offset_list)
-            
-        t_list = [1e6, 2e6]
-        for t in t_list:
-            nv_sig['CPG_laser_dur'] = t
-            
-            # img_range_2D = [0.1, 0.1, 0]
+            img_range_2D = [0.07,  0, 4/16]
             # do_SPaCE(nv_sig, opti_nv_sig,  1, num_steps_x, num_steps_y, None, 
-            #             img_range_2D, offset_list)
+            #           img_range_2D, [offset_x, offset_y, (2/16)])
+            
+        t_list = [ 6e6]
+        for t in t_list:
+            nv_sig['CPG_laser_dur'] = t
+            
+            img_range_2D = [0.1,  0.1, 0]
+            # do_SPaCE(nv_sig, opti_nv_sig,  5, num_steps_x, num_steps_y, None, 
+            #             img_range_2D, [offset_x, offset_y, (0)])
+            # do_SPaCE(nv_sig, opti_nv_sig,  10, 121, 121, None, 
+            #           img_range_2D, [offset_x, offset_y, -(-2/16)])
         
         
         # drift = tool_belt.get_drift()
@@ -999,15 +1000,15 @@ if __name__ == "__main__":
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_stationary_count(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1) 
-        # do_resonance(nv_sig, apd_indices, 2.87, 0.25)
+        # do_resonance(opti_nv_sig, apd_indices, 2.875, 0.25)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.220)
+        # do_pulsed_resonance(opti_nv_sig, apd_indices, 2.87, 0.220)
         # do_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         #         do_optimize_magnet_angle(nv_sig, apd_indices)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(opti_nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
