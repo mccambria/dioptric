@@ -44,7 +44,7 @@ class PulseStreamer(LabradServer):
     def initServer(self):
         filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
         filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(level=logging.DEBUG, 
+        logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
@@ -89,7 +89,6 @@ class PulseStreamer(LabradServer):
             sub_dict = {}
             sub_path = reg_path + [el]
             await self.populate_config_dict(sub_path, sub_dict)
-            logging.debug(sub_dict)
             dict_to_populate[el] = sub_dict
     
         # Keys
@@ -122,7 +121,7 @@ class PulseStreamer(LabradServer):
         self.seq = None
         self.loaded_seq_streamed = False
         self.reset(None)
-        logging.debug('Init complete')
+        logging.info('Init complete')
 
     def get_seq(self, seq_file, seq_args_string):
         seq = None

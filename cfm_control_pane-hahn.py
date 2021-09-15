@@ -316,12 +316,12 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 125
+    num_runs = 85
     num_reps = 1500
     num_steps = 12
     min_tau = 20e3
-    max_tau_omega = int(4e6)
-    max_tau_gamma = int(3e6)
+    max_tau_omega = int(10e6)
+    max_tau_gamma = int(6.5e6)
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
@@ -465,7 +465,7 @@ if __name__ == '__main__':
     #         'resonance_HIGH': None, 'rabi_HIGH': None, 'uwave_power_HIGH': 13.0}
     
     # nv_sig = { 'coords': [0.0, 0.0, 35],
-    nv_sig = { 'coords': [0.0, 0.0, 1.0],
+    nv_sig = { 'coords': [0.0, 0.0, 5.0],
             'name': '{}-search'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
             'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
@@ -473,8 +473,8 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
             'collection_filter': None, 'magnet_angle': 212,
-            'resonance_LOW': 2.7789, 'rabi_LOW': 273.2, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9252, 'rabi_HIGH': 227.7, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.7896, 'rabi_LOW': 286.6, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9384, 'rabi_HIGH': 262.8, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
