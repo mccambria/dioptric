@@ -116,8 +116,8 @@ def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 5)
 
 
-def orbach_T7_free(temp, coeff_orbach, activation, coeff_T5):
-    return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 7)
+def orbach_T7_free(temp, coeff_orbach, activation, coeff_T7):
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T7 * temp ** 7)
 
 
 def orbach_T3_free(temp, coeff_orbach, activation, coeff_T3):
@@ -126,27 +126,6 @@ def orbach_T3_free(temp, coeff_orbach, activation, coeff_T3):
 
 def T5_free(temp, coeff_T5):
     return coeff_T5 * temp ** 5
-
-
-def simultaneous_test_lambda(
-    temps, beta, omega_rate_lambda, gamma_rate_lambda
-):
-    """
-    Lambda variation of simultaneous_test
-    """
-
-    ret_vals = []
-    num_vals = len(temps)
-    for ind in range(num_vals):
-        temp_val = temps[ind]
-        # Omegas are even indexed
-        if ind % 2 == 0:
-            ret_vals.append(omega_rate_lambda(temp_val, beta))
-        # gammas are odd indexed
-        else:
-            ret_vals.append(gamma_rate_lambda(temp_val, beta))
-
-    return numpy.array(ret_vals)
 
 
 # %% Other functions
@@ -187,6 +166,27 @@ def get_temp_error(point):
         return numpy.average([temp - temp_bounds[0], temp_bounds[1] - temp])
 
 
+def simultaneous_test_lambda(
+    temps, beta, omega_rate_lambda, gamma_rate_lambda
+):
+    """
+    Lambda variation of simultaneous_test
+    """
+
+    ret_vals = []
+    num_vals = len(temps)
+    for ind in range(num_vals):
+        temp_val = temps[ind]
+        # Omegas are even indexed
+        if ind % 2 == 0:
+            ret_vals.append(omega_rate_lambda(temp_val, beta))
+        # gammas are odd indexed
+        else:
+            ret_vals.append(gamma_rate_lambda(temp_val, beta))
+
+    return numpy.array(ret_vals)
+
+
 def fit_simultaneous(data_points):
 
     # To fit to Omega and gamma simultaneously, set up a combined list of the
@@ -218,27 +218,64 @@ def fit_simultaneous(data_points):
 
     # region DECLARE FIT FUNCTIONS HERE
 
-    # T5
-    init_params = (510, 1.38e-11, 2000, 1.38e-11, 72.0)
-    omega_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[0], beta[4], beta[1]
-    )
-    gamma_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[2], beta[4], beta[3]
-    )
-    beta_desc = (
-        "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
-        " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
-    )
+    # Just exp
+    # init_params = (510, 1.38e-11, 2000, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[0], beta[3], beta[1]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_free(temp, beta[2], beta[3])
+    # beta_desc = (
+    #     "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV)]"
+    # )
+
+    # T5 free
+    # init_params = (510, 1.38e-11, 2000, 1.38e-11, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[0], beta[4], beta[1]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[2], beta[4], beta[3]
+    # )
+    # beta_desc = (
+    #     "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
+    #     " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
+    # )
+
+    # T5 fixed
+    # init_params = (1.38e-11, 510, 2000, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[1], beta[3], beta[0]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[2], beta[3], beta[0]
+    # )
+    # beta_desc = (
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
+    # )
 
     # T7
-    # init_params = (510, 1.38e-11, 510, 1.38e-15, 74.0)
+    # init_params = (510, 1.38e-11, 2000, 1.38e-15, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[0], beta[4], beta[1]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T7_free(
+    #     temp, beta[2], beta[4], beta[3]
+    # )
+    # beta_desc = (
+    #     "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
+    #     " (s^-1), gamma_T7_coeff (K^-7 s^-1), activation (meV)]"
+    # )
 
-    # double T7
-    # init_params = (510, 1.38e-15, 510, 1.38e-15, 74.0)
-
-    # T3
-    # init_params = (510, 1.38e-11, 510, 1.38e-11, 74.0)
+    # Ariel
+    init_params = (2000,)
+    ariel_params = (653, 73, 6.87e-12)
+    omega_fit_func = lambda temp, beta: orbach_T5_free(temp, *ariel_params)
+    gamma_fit_func = lambda temp, beta: orbach_T5_free(
+        temp, beta[0], *ariel_params[1:]
+    )
+    beta_desc = "[gamma_exp_coeff]"
 
     # endregion
 
@@ -437,13 +474,9 @@ def main(
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
-    # temp_linspace = numpy.linspace(5, 600, 1000)
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
-    # temp_linspace = numpy.linspace(5, 300, 1000)
-    # temp_linspace = numpy.linspace(5, 5000, 1000)
     fig, ax = plt.subplots()
     fig.set_tight_layout(True)
-    # ax.set_title('Relaxation rates')
 
     # Fit to Omega and gamma simultaneously
     popt, pvar, beta_desc, omega_fit_func, gamma_fit_func = fit_simultaneous(
@@ -715,8 +748,8 @@ if __name__ == "__main__":
     # xscale = "log"
 
     # Rates
-    y_range = [-10, 600]
-    yscale = "linear"
+    # y_range = [-10, 600]
+    # yscale = "linear"
     # y_range = [1e-2, 1000]
     # yscale = "log"
     # y_range = [1e-2, 600]
@@ -735,16 +768,19 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    main(
-        file_name,
-        path,
-        plot_type,
-        rates_to_plot,
-        temp_range,
-        y_range,
-        xscale,
-        yscale,
-    )
+    plot_types = [[[-10, 600], "linear"], [[1e-2, 1000], "log"]]
+    for el in plot_types:
+        y_range, yscale = el
+        main(
+            file_name,
+            path,
+            plot_type,
+            rates_to_plot,
+            temp_range,
+            y_range,
+            xscale,
+            yscale,
+        )
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
