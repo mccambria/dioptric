@@ -155,8 +155,8 @@ def simultaneous_orbach_T5_free(
 def simultaneous_test(
     temps,
     omega_coeff_orbach,
-    omega_coeff_T5,
-    gamma_coeff,
+    omega_coeff_power,
+    gamma_coeff_orbach,
     gamma_coeff_power,
     activation,
 ):
@@ -166,10 +166,10 @@ def simultaneous_test(
     """
 
     omega_rate_lambda = lambda temp_val: orbach_T5_free(
-        temp_val, omega_coeff_orbach, activation, omega_coeff_T5
+        temp_val, omega_coeff_orbach, activation, omega_coeff_power
     )
-    gamma_rate_lambda = lambda temp_val: orbach_T5_free(
-        temp_val, gamma_coeff, activation, gamma_coeff_power
+    gamma_rate_lambda = lambda temp_val: orbach_T7_free(
+        temp_val, gamma_coeff_orbach, activation, gamma_coeff_power
     )
     ret_vals = []
     num_vals = len(temps)
@@ -208,7 +208,7 @@ def omega_calc(temp):
 def gamma_calc(temp):
     popt = [1357.2, 69.205, 9.8064e-12]
     return orbach_T5_free(temp, *popt)
-    
+
 
 def get_temp(point):
     temp = point[temp_column_title]
@@ -343,9 +343,11 @@ def fit_simultaneous(data_points):
 
     fit_func = simultaneous_test_odr
     # # T5
-    init_params = (510, 1.38e-11, 510, 1.38e-11, 74.0)
+    # init_params = (510, 1.38e-11, 510, 1.38e-11, 74.0)
     # T7
-    # init_params = (510, 1.38e-11, 510, 1.38e-15, 74.0)
+    init_params = (510, 1.38e-11, 510, 1.38e-15, 74.0)
+    # double T7
+    # init_params = (510, 1.38e-15, 510, 1.38e-15, 74.0)
     # # T3
     # init_params = (510, 1.38e-11, 510, 1.38e-11, 74.0)
 
@@ -385,7 +387,7 @@ def fit_simultaneous(data_points):
 
     gamma_popt = [popt[2], popt[4], popt[3]]
     gamma_pvar = [pcov[2, 2], pcov[4, 4], pcov[3, 3]]
-    gamma_fit_func = orbach_T5_free
+    gamma_fit_func = orbach_T7_free
 
     return (
         omega_popt,
@@ -889,10 +891,10 @@ if __name__ == "__main__":
     # xscale = "log"
 
     # Rates
-    y_range = [-5, 600]
-    yscale = "linear"
-    # y_range = [1e-2, 1000]
-    # yscale = "log"
+    # y_range = [-5, 600]
+    # yscale = "linear"
+    y_range = [1e-2, 1000]
+    yscale = "log"
     # y_range = [1e-2, 600]
     # yscale = 'log'
 
@@ -931,5 +933,5 @@ if __name__ == "__main__":
     # gamma_popt = [2049.116503275054, 73.77518971996268]
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
-    # plt.show(block=True)
-    plt.show()
+    plt.show(block=True)
+    # plt.show()
