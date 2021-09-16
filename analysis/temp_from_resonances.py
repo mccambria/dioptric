@@ -169,12 +169,10 @@ def main_files(files, mag_B=None, theta_B_deg=None):
 
     resonances = []
     res_errs = []
-    
-    path_from_nvdata = "pc_hahn/branch_master/pulsed_resonance/2021_09"
 
     for ind in range(2):
         file = files[ind]
-        data = tool_belt.get_raw_data(file, path_from_nvdata)
+        data = tool_belt.get_raw_data(file)
         res, res_err = return_res_with_error(data)
         resonances.append(res)
         res_errs.append(res_err)
@@ -226,8 +224,8 @@ def main(zfs, zfs_err):
 if __name__ == "__main__":
 
     files = [
-        "2021_09_15-01_16_57-hopper-search",
-        "2021_09_15-01_25_47-hopper-search",
+        "2021_09_15-16_24_27-hopper-search",
+        "2021_09_15-16_33_17-hopper-search",
     ]
 
     main_files(files)
