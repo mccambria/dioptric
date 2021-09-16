@@ -66,7 +66,8 @@ sample_column_title = "Sample"
 skip_column_title = "Skip"
 # temp_column_title = 'Nominal temp (K)'
 nominal_temp_column_title = "Nominal temp (K)"
-temp_column_title = "ZFS temp (K)"
+# temp_column_title = "ZFS temp (K)"
+temp_column_title = "Nominal temp (K)"
 temp_lb_column_title = "ZFS temp lower bound (K)"
 temp_ub_column_title = "ZFS temp upper bound (K)"
 omega_column_title = "Omega (s^-1)"
@@ -793,5 +794,4 @@ if __name__ == "__main__":
     # gamma_popt = [2049.116503275054, 73.77518971996268]
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
-    plt.show(block=True)
-    # plt.show()
+    # plt.show(block=True)
