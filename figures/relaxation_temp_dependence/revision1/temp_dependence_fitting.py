@@ -793,4 +793,4 @@ if __name__ == "__main__":
     # gamma_popt = [2049.116503275054, 73.77518971996268]
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
-    # plt.show(block=True)
+    plt.show(block=True)
