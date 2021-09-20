@@ -356,8 +356,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         seq_args = [uwave_pulse_dur, polarization_time,
                     readout, uwave_pulse_dur, apd_indices[0],
                     state.value, laser_name, laser_power]
-    # print(seq_args)
-    # return
+    print(seq_args)
+    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
     opti_coords_list = []
@@ -416,7 +416,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             # Clear the tagger buffer of any excess counts
             cxn.apd_tagger.clear_buffer()
             # Start the timing stream
-            cxn.pulse_streamer.stream_start(num_reps)
+            cxn.pulse_streamer.stream_start(int(num_reps))
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
