@@ -243,17 +243,17 @@ def fit_simultaneous(data_points):
     # )
 
     # T5 fixed
-    # init_params = (1.38e-11, 510, 2000, 72.0)
-    # omega_fit_func = lambda temp, beta: orbach_T5_free(
-    #     temp, beta[1], beta[3], beta[0]
-    # )
-    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
-    #     temp, beta[2], beta[3], beta[0]
-    # )
-    # beta_desc = (
-    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
-    #     " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
-    # )
+    init_params = (1.38e-11, 510, 2000, 72.0)
+    omega_fit_func = lambda temp, beta: orbach_T5_free(
+        temp, beta[1], beta[3], beta[0]
+    )
+    gamma_fit_func = lambda temp, beta: orbach_T5_free(
+        temp, beta[2], beta[3], beta[0]
+    )
+    beta_desc = (
+        "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+        " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
+    )
 
     # T7
     # init_params = (510, 1.38e-11, 2000, 1.38e-15, 72.0)
@@ -269,13 +269,13 @@ def fit_simultaneous(data_points):
     # )
 
     # Ariel
-    init_params = (2000,)
-    ariel_params = (653, 73, 6.87e-12)
-    omega_fit_func = lambda temp, beta: orbach_T5_free(temp, *ariel_params)
-    gamma_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[0], *ariel_params[1:]
-    )
-    beta_desc = "[gamma_exp_coeff]"
+    # init_params = (2000,)
+    # ariel_params = (653, 73, 6.87e-12)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(temp, *ariel_params)
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[0], *ariel_params[1:]
+    # )
+    # beta_desc = "[gamma_exp_coeff]"
 
     # endregion
 
