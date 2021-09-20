@@ -396,7 +396,6 @@ def process_laser_seq(
     HIGH = 1
 
     processed_train = []
-    print(feedthrough)
 
     if mod_type is Mod_types.DIGITAL:
         # Digital, feedthrough, bookend each pulse with 100 ns clock pulses

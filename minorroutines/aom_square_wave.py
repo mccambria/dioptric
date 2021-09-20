@@ -49,7 +49,7 @@ def main(cxn, laser_name, laser_power=None):
     """
 
     seq_file = 'square_wave.py'
-    period = 10**4
+    period = int(1e6)
     seq_args = [period, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
@@ -57,7 +57,7 @@ def main(cxn, laser_name, laser_power=None):
 
     input('Press enter to stop...')
 
-    cxn.pulse_streamer.constant([])
+    tool_belt.laser_off(cxn, laser_name)
 
 
 # %% Run the file
@@ -77,14 +77,14 @@ if __name__ == '__main__':
     # pos = [-0.025, -0.009, 4.89]
 
     # Hahn
-    laser_name = 'laserglow_532'
-    filter_name = 'nd_1.0'
+    laser_name = 'integrated_520'
+    # filter_name = 'nd_1.0'
     pos = [0.0, 0.0, 5.0]
 
     with labrad.connect() as cxn:
-        tool_belt.set_xyz(cxn, pos)
+        # tool_belt.set_xyz(cxn, pos)
 #        for el in laser_names:
-        tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
+        # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
-        constant(cxn, laser_name)
-        # main(cxn, laser_name)
+        # constant(cxn, laser_name)
+        main(cxn, laser_name)

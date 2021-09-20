@@ -113,16 +113,14 @@ class Cobolt515(LabradServer):
     def load_feedthrough(self, c):
         # Just flip the TTL out on the rising edge of the TTL in
         stream_bools = numpy.array([True, False], dtype=bool)
-        self.load_stream_writer(c, 'cobolt_515-load_feedthrough', 
+        self.load_stream_writer(c, '{}-load_feedthrough'.format(self.name), 
                                 stream_bools)
         
         
     @setting(1)
     def reset(self, c):
-        # Make sure the laser is off.
+        # Make sure the laser is off
         self.laser_off(c)
-        # Reload the feedthrough
-        self.load_feedthrough(c)
         
         
     @setting(2)
