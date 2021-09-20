@@ -64,9 +64,9 @@ ratio_edge_color = "#EF2424"
 
 sample_column_title = "Sample"
 skip_column_title = "Skip"
+# temp_column_title = 'Nominal temp (K)'
 nominal_temp_column_title = "Nominal temp (K)"
-# temp_column_title = "ZFS temp (K)"
-temp_column_title = "Nominal temp (K)"
+temp_column_title = "ZFS temp (K)"
 temp_lb_column_title = "ZFS temp lower bound (K)"
 temp_ub_column_title = "ZFS temp upper bound (K)"
 omega_column_title = "Omega (s^-1)"
@@ -116,12 +116,102 @@ def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 5)
 
 
-def orbach_T7_free(temp, coeff_orbach, activation, coeff_T7):
-    return (coeff_orbach * bose(activation, temp)) + (coeff_T7 * temp ** 7)
+def orbach_T7_free(temp, coeff_orbach, activation, coeff_T5):
+    return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 7)
 
 
 def orbach_T3_free(temp, coeff_orbach, activation, coeff_T3):
     return (coeff_orbach * bose(activation, temp)) + (coeff_T3 * temp ** 3)
+
+
+def simultaneous_orbach_T5_free(
+    temps, omega_coeff_orbach, omega_coeff_T5, gamma_coeff, activation
+):
+    """
+    Only use this for fitting to Omega and gamma simultaneously. This assumes
+    the temp argument is a list/array.
+    """
+
+    omega_rate_lambda = lambda temp_val: orbach_T5_free(
+        temp_val, omega_coeff_orbach, activation, omega_coeff_T5
+    )
+    gamma_rate_lambda = lambda temp_val: orbach_free(
+        temp_val, gamma_coeff, activation
+    )
+    ret_vals = []
+    num_vals = len(temps)
+    for ind in range(num_vals):
+        temp_val = temps[ind]
+        # Omegas are even indexed
+        if ind % 2 == 0:
+            ret_vals.append(omega_rate_lambda(temp_val))
+        # gammas are odd indexed
+        else:
+            ret_vals.append(gamma_rate_lambda(temp_val))
+
+    return ret_vals
+
+
+def simultaneous_test(
+    temps,
+    omega_coeff_orbach,
+    omega_coeff_power,
+    gamma_coeff_orbach,
+    gamma_coeff_power,
+    activation,
+):
+    """
+    Only use this for fitting to Omega and gamma simultaneously. This assumes
+    the temp argument is a list/array.
+    """
+
+    omega_rate_lambda = lambda temp_val: orbach_T5_free(
+        temp_val, omega_coeff_orbach, activation, omega_coeff_power
+    )
+    gamma_rate_lambda = lambda temp_val: orbach_T7_free(
+        temp_val, gamma_coeff_orbach, activation, gamma_coeff_power
+    )
+    ret_vals = []
+    num_vals = len(temps)
+    for ind in range(num_vals):
+        temp_val = temps[ind]
+        # Omegas are even indexed
+        if ind % 2 == 0:
+            ret_vals.append(omega_rate_lambda(temp_val))
+        # gammas are odd indexed
+        else:
+            ret_vals.append(gamma_rate_lambda(temp_val))
+
+    return ret_vals
+
+
+def simultaneous_test_lambda(
+    temps, beta, omega_rate_lambda, gamma_rate_lambda
+):
+    """
+    Lambda variation of simultaneous_test
+    """
+
+    ret_vals = []
+    num_vals = len(temps)
+    for ind in range(num_vals):
+        temp_val = temps[ind]
+        # Omegas are even indexed
+        if ind % 2 == 0:
+            ret_vals.append(omega_rate_lambda(temp_val, beta))
+        # gammas are odd indexed
+        else:
+            ret_vals.append(gamma_rate_lambda(temp_val, beta))
+
+    return numpy.array(ret_vals)
+
+
+def simultaneous_orbach_T5_free_odr(beta, x):
+    return numpy.array(simultaneous_orbach_T5_free(x, *beta))
+
+
+def simultaneous_test_odr(beta, x):
+    return numpy.array(simultaneous_test(x, *beta))
 
 
 def T5_free(temp, coeff_T5):
@@ -166,25 +256,75 @@ def get_temp_error(point):
         return numpy.average([temp - temp_bounds[0], temp_bounds[1] - temp])
 
 
-def simultaneous_test_lambda(
-    temps, beta, omega_rate_lambda, gamma_rate_lambda
-):
-    """
-    Lambda variation of simultaneous_test
-    """
+def fit_omega_orbach_T5(data_points):
 
-    ret_vals = []
-    num_vals = len(temps)
-    for ind in range(num_vals):
-        temp_val = temps[ind]
-        # Omegas are even indexed
-        if ind % 2 == 0:
-            ret_vals.append(omega_rate_lambda(temp_val, beta))
-        # gammas are odd indexed
-        else:
-            ret_vals.append(gamma_rate_lambda(temp_val, beta))
+    temps = []
+    omegas = []
+    omega_errs = []
+    for point in data_points:
+        if point[omega_column_title] is not None:
+            temps.append(point[temp_column_title])
+            omegas.append(point[omega_column_title])
+            omega_errs.append(point[omega_err_column_title])
 
-    return numpy.array(ret_vals)
+    # fit_func = orbach_free
+    # init_params = (A_2 / 3, quasi)
+
+    fit_func = orbach_T5_free
+    init_params = (A_2 / 3, quasi, A_3 / 3)
+
+    # fit_func = T5_free
+    # init_params = (2 * A_3 / 3, )
+
+    num_params = len(init_params)
+    popt, pcov = curve_fit(
+        fit_func,
+        temps,
+        omegas,
+        p0=init_params,
+        sigma=omega_errs,
+        absolute_sigma=True,
+        bounds=([0] * num_params, [numpy.inf] * num_params),
+        method="dogbox",
+    )
+
+    return popt, pcov, fit_func
+
+
+def fit_gamma_orbach(data_points):
+
+    temps = []
+    gammas = []
+    gamma_errs = []
+    for point in data_points:
+        if point[gamma_column_title] is not None:
+            temp = get_temp(point)
+            temps.append(temp)
+            gammas.append(point[gamma_column_title])
+            gamma_errs.append(point[gamma_err_column_title])
+
+    fit_func = orbach_free
+    init_params = ((2 / 3) * A_2, quasi)
+
+    # fit_func = orbach_T5_free
+    # init_params = ((2/3) * A_2, quasi, 1E-11)
+
+    # fit_func = T5_free
+    # init_params = ((2/3) * A_3)
+
+    num_params = len(init_params)
+    popt, pcov = curve_fit(
+        fit_func,
+        temps,
+        gammas,
+        p0=init_params,
+        sigma=gamma_errs,
+        absolute_sigma=True,
+        bounds=([0] * num_params, [numpy.inf] * num_params),
+        method="dogbox",
+    )
+
+    return popt, pcov, fit_func
 
 
 def fit_simultaneous(data_points):
@@ -214,74 +354,38 @@ def fit_simultaneous(data_points):
         combined_rates.append(point[gamma_column_title])
         combined_errs.append(point[gamma_err_column_title])
 
+    # print(temps)
+    # print(combined_rates)
+    # print(combined_errs)
+
+    # fit_func = simultaneous_orbach_T5_free
+    # fit_func = simultaneous_orbach_T5_free_odr
+    # init_params = (510, 1.38e-11, 2000, 74.0)
+
     fit_func = simultaneous_test_lambda
-
-    # region DECLARE FIT FUNCTIONS HERE
-
-    # Just exp
-    # init_params = (510, 1.38e-11, 2000, 72.0)
-    # omega_fit_func = lambda temp, beta: orbach_T5_free(
-    #     temp, beta[0], beta[3], beta[1]
-    # )
-    # gamma_fit_func = lambda temp, beta: orbach_free(temp, beta[2], beta[3])
-    # beta_desc = (
-    #     "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
-    #     " (s^-1), activation (meV)]"
-    # )
-
-    # T5 free
-    # init_params = (510, 1.38e-11, 2000, 1.38e-11, 72.0)
-    # omega_fit_func = lambda temp, beta: orbach_T5_free(
-    #     temp, beta[0], beta[4], beta[1]
-    # )
-    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
-    #     temp, beta[2], beta[4], beta[3]
-    # )
-    # beta_desc = (
-    #     "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
-    #     " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
-    # )
-
-    # T5 fixed
-    init_params = (1.38e-11, 510, 2000, 72.0)
-    omega_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[1], beta[3], beta[0]
+    # T5
+    init_params = (510, 1.38e-11, 510, 1.38e-11, 74.0)
+    omega_fit_lambda = lambda temp, beta: orbach_T5_free(
+        temp, beta[0], beta[1], beta[4]
     )
-    gamma_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[2], beta[3], beta[0]
+    gamma_fit_lambda = lambda temp, beta: orbach_T5_free(
+        temp, beta[2], beta[3], beta[4]
     )
-    beta_desc = (
-        "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
-        " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
-    )
-
-    # T7
-    # init_params = (510, 1.38e-11, 2000, 1.38e-15, 72.0)
-    # omega_fit_func = lambda temp, beta: orbach_T5_free(
-    #     temp, beta[0], beta[4], beta[1]
-    # )
-    # gamma_fit_func = lambda temp, beta: orbach_T7_free(
-    #     temp, beta[2], beta[4], beta[3]
-    # )
-    # beta_desc = (
-    #     "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
-    #     " (s^-1), gamma_T7_coeff (K^-7 s^-1), activation (meV)]"
-    # )
-
-    # Ariel
-    # init_params = (2000,)
-    # ariel_params = (653, 73, 6.87e-12)
-    # omega_fit_func = lambda temp, beta: orbach_T5_free(temp, *ariel_params)
-    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
-    #     temp, beta[0], *ariel_params[1:]
-    # )
-    # beta_desc = "[gamma_exp_coeff]"
-
-    # endregion
-
     fit_func = lambda beta, temp: simultaneous_test_lambda(
-        temp, beta, omega_fit_func, gamma_fit_func
+        beta, temp, omega_fit_lambda, gamma_fit_lambda
     )
+    # T7
+    # init_params = (510, 1.38e-11, 510, 1.38e-15, 74.0)
+    # double T7
+    # init_params = (510, 1.38e-15, 510, 1.38e-15, 74.0)
+    # T3
+    # init_params = (510, 1.38e-11, 510, 1.38e-11, 74.0)
+
+    num_params = len(init_params)
+    # popt, pcov = curve_fit(fit_func, temps, combined_rates, p0=init_params,
+    #                        sigma=combined_errs, absolute_sigma=True,
+    #                        bounds=([0]*num_params,[numpy.inf]*num_params),
+    #                        method='dogbox')
     data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
     model = Model(fit_func)
     odr = ODR(data, model, beta0=numpy.array(init_params))
@@ -301,7 +405,7 @@ def fit_simultaneous(data_points):
         "Sum of squared residuals: {}".format(tool_belt.round_sig_figs(ssr, 3))
     )
 
-    return popt, numpy.diag(pcov), beta_desc, omega_fit_func, gamma_fit_func
+    return popt, pvar, omega_fit_lambda, gamma_fit_lambda
 
 
 def get_data_points_csv(file):
@@ -474,20 +578,50 @@ def main(
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
+    # temp_linspace = numpy.linspace(5, 600, 1000)
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
+    # temp_linspace = numpy.linspace(5, 300, 1000)
+    # temp_linspace = numpy.linspace(5, 5000, 1000)
     fig, ax = plt.subplots()
     fig.set_tight_layout(True)
+    # ax.set_title('Relaxation rates')
+
+    # # Fit to Omega
+    # omega_popt, omega_pcov, omega_fit_func = fit_omega_orbach_T5(data_points)
+    # # omega_popt[2] = 0
+    # # omega_popt[1] = 78
+    # # omega_popt = [5.10064267e+02, 7.59685834e+01, 1.37858651e-11]
+    # omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
+    # # omega_lambda = lambda temp: omega_calc(temp)
+
+    # # Fit to gamma
+    # gamma_popt, gamma_pcov, gamma_fit_func = fit_gamma_orbach(data_points)
+    # gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
+    # # gamma_lambda = lambda temp: gamma_calc(temp)
+    # # gamma_popt[1] = omega_popt[1]
 
     # Fit to Omega and gamma simultaneously
-    popt, pvar, beta_desc, omega_fit_func, gamma_fit_func = fit_simultaneous(
-        data_points
-    )
+    ret_vals = fit_simultaneous(data_points)
+    (
+        omega_popt,
+        omega_pvar,
+        omega_fit_func,
+        gamma_popt,
+        gamma_pvar,
+        gamma_fit_func,
+    ) = ret_vals
 
-    omega_lambda = lambda temp: omega_fit_func(temp, popt)
-    gamma_lambda = lambda temp: gamma_fit_func(temp, popt)
-    print("Parameter description: {}".format(beta_desc))
-    print("popt: {}".format(tool_belt.round_sig_figs(popt, 5)))
-    print("psd: {}".format(tool_belt.round_sig_figs(numpy.sqrt(pvar), 2)))
+    omega_lambda = lambda temp: omega_fit_func(temp, *omega_popt)
+    # omega_popt[0] = 0
+    print("omega_popt: {}".format(tool_belt.round_sig_figs(omega_popt, 5)))
+    # omega_popt[0] = 650
+    # omega_popt[1] = 73
+    # omega_popt[2] = 6.9e-12
+    print(
+        "omega_psd: {}".format(
+            tool_belt.round_sig_figs(numpy.sqrt(omega_pvar), 2)
+        )
+    )
     if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
         ax.plot(
             temp_linspace,
@@ -499,6 +633,13 @@ def main(
         # ax.plot(temp_linspace, omega_calc(temp_linspace),
         #         label=r'$\Omega$ fit', color=omega_edge_color)
 
+    gamma_lambda = lambda temp: gamma_fit_func(temp, *gamma_popt)
+    print("gamma_popt: {}".format(tool_belt.round_sig_figs(gamma_popt, 5)))
+    print(
+        "gamma_psd: {}".format(
+            tool_belt.round_sig_figs(numpy.sqrt(gamma_pvar), 2)
+        )
+    )
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
         ax.plot(
             temp_linspace,
@@ -556,6 +697,10 @@ def main(
     if rate_range is not None:
         ax.set_ylim(rate_range[0], rate_range[1])
 
+    # ind in range(len(nv_data)):
+
+    #     nv = nv_data[ind]
+
     # %% Plot the points
 
     samples = []
@@ -563,6 +708,7 @@ def main(
 
     for point in data_points:
 
+        # print(point)
         sample = point[sample_column_title]
         marker = point["marker"]
 
@@ -572,6 +718,12 @@ def main(
             markers.append(marker)
 
         temp = get_temp(point)
+        # temp_bounds = get_temp_bounds(point)
+        # if temp_bounds is None:
+        #     temp_bounds_arg = None
+        # else:
+        #     temp_bounds_arg = [[temp-temp_bounds[0]], [temp_bounds[1]-temp]]
+        # print(temp_bounds_arg)
         temp_error = get_temp_error(point)
 
         if plot_type in ["rates", "residuals"]:
@@ -748,8 +900,8 @@ if __name__ == "__main__":
     # xscale = "log"
 
     # Rates
-    # y_range = [-10, 600]
-    # yscale = "linear"
+    y_range = [-10, 600]
+    yscale = "linear"
     # y_range = [1e-2, 1000]
     # yscale = "log"
     # y_range = [1e-2, 600]
@@ -768,19 +920,16 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    plot_types = [[[-10, 600], "linear"], [[1e-2, 1000], "log"]]
-    for el in plot_types:
-        y_range, yscale = el
-        main(
-            file_name,
-            path,
-            plot_type,
-            rates_to_plot,
-            temp_range,
-            y_range,
-            xscale,
-            yscale,
-        )
+    main(
+        file_name,
+        path,
+        plot_type,
+        rates_to_plot,
+        temp_range,
+        y_range,
+        xscale,
+        yscale,
+    )
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
@@ -794,3 +943,4 @@ if __name__ == "__main__":
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
     plt.show(block=True)
+    # plt.show()
