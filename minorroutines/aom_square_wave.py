@@ -50,6 +50,8 @@ def main(cxn, laser_name, laser_power=None):
 
     seq_file = 'square_wave.py'
     period = int(1e6)
+    # period = int(0.25e6)
+    # period = int(1000)
     seq_args = [period, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
@@ -71,7 +73,7 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     # Rabi
-#    laser_name = 'cobolt_515'
+    # laser_name = 'cobolt_515'
     # laser_name = 'cobolt_638'
     # filter_name = 'nd_0.5'
     # pos = [-0.025, -0.009, 4.89]
