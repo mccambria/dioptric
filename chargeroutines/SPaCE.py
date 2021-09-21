@@ -248,7 +248,7 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
 
     return fit_params_list
 
-def plot_2D_space(file, path):
+def plot_2D_space(file, path, centered_coords = True):
         data = tool_belt.get_raw_data(file, path)
         # try:
         nv_sig = data['nv_sig']
@@ -264,43 +264,48 @@ def plot_2D_space(file, path):
         readout_counts_array_rot = numpy.rot90(readout_counts_array)
              
         # Take the average and ste. 
-        readout_counts_avg = numpy.average(readout_counts_array_rot[0:5], axis = 0)
+        # readout_counts_avg = numpy.average(readout_counts_array_rot[0:5], axis = 0)
         
         
         
-        # x_low = x_voltages[0]
-        # x_high = x_voltages[-1]
-        # y_low = y_voltages[0]
-        # y_high = y_voltages[-1]
-        # pixel_size = x_voltages[1] - x_voltages[0]
-        # half_pixel_size = pixel_size / 2
-        # img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-        #               y_low - half_pixel_size, y_high + half_pixel_size]
+        if centered_coords:
+            half_range_a = img_range_2D[axes[0]]/2
+            half_range_b = img_range_2D[axes[1]]/2
+            a_low = -half_range_a
+            a_high = half_range_a
+            b_low = -half_range_b
+            b_high = half_range_b
+            
+            # a_low = -half_range_a + offset_2D[axes[0]]
+            # a_high = half_range_a + offset_2D[axes[0]]
+            # b_low = -half_range_b + offset_2D[axes[1]]
+            # b_high = half_range_b + offset_2D[axes[1]]
+    
+    
+            pixel_size_a = (a_voltages_1d[1] - a_voltages_1d[0])
+            pixel_size_b = (b_voltages_1d[1] - b_voltages_1d[0])
+    
+            half_pixel_size_a = pixel_size_a / 2
+            half_pixel_size_b = pixel_size_b / 2
+            
+            img_extent = [(a_low - half_pixel_size_a)*35,
+                          (a_high + half_pixel_size_a)*35, 
+                         
+                         (b_low - half_pixel_size_b)*35, 
+                         (b_high + half_pixel_size_b)*35 ]
+            um_scaled = True
+        else:
+            
         
-        half_range_a = img_range_2D[axes[0]]/2
-        half_range_b = img_range_2D[axes[1]]/2
-        a_low = -half_range_a
-        a_high = half_range_a
-        b_low = -half_range_b
-        b_high = half_range_b
-        
-        # a_low = -half_range_a + offset_2D[axes[0]]
-        # a_high = half_range_a + offset_2D[axes[0]]
-        # b_low = -half_range_b + offset_2D[axes[1]]
-        # b_high = half_range_b + offset_2D[axes[1]]
-
-
-        pixel_size_a = (a_voltages_1d[1] - a_voltages_1d[0])
-        pixel_size_b = (b_voltages_1d[1] - b_voltages_1d[0])
-
-        half_pixel_size_a = pixel_size_a / 2
-        half_pixel_size_b = pixel_size_b / 2
-        
-        img_extent = [(a_low - half_pixel_size_a)*35,
-                      (a_high + half_pixel_size_a)*35, 
-                     
-                     (b_low - half_pixel_size_b)*35, 
-                     (b_high + half_pixel_size_b)*35 ]
+            x_low = a_voltages_1d[0]
+            x_high = a_voltages_1d[-1]
+            y_low = b_voltages_1d[0]
+            y_high = b_voltages_1d[-1]
+            pixel_size = a_voltages_1d[1] - a_voltages_1d[0]
+            half_pixel_size = pixel_size / 2
+            img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                          y_low - half_pixel_size, y_high + half_pixel_size]
+            um_scaled = False
 
 
         
@@ -317,10 +322,27 @@ def plot_2D_space(file, path):
         
 
 
-        tool_belt.create_image_figure(readout_image_array, img_extent, clickHandler=None,
+        tool_belt.create_image_figure(readout_image_array, img_extent, clickHandler=on_click_image,
                             title=title, color_bar_label='Counts',
-                            min_value=None, um_scaled=False)
+                            min_value=None, um_scaled=um_scaled)
 
+# %%
+def on_click_image(event):
+    """
+    Click handler for images. Prints the click coordinates to the console.
+
+    Params:
+        event: dictionary
+            Dictionary containing event details
+    """
+
+    try:
+        print('{:.3f}, {:.3f}'.format(event.xdata, event.ydata))
+#        print('[{:.3f}, {:.3f}, 50.0],'.format(event.xdata, event.ydata))
+    except TypeError:
+        # Ignore TypeError if you click in the figure but out of the image
+        pass
+    
 # %%
 
 def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift, 
@@ -1513,12 +1535,12 @@ if __name__ == '__main__':
 
     #================ specific for 2D scans ================#
     file_list = [
-        '2021_09_18-14_27_56-johnson-dnv0_2021_09_09'
+        '2021_09_20-07_30_20-johnson-dnv0_2021_09_09'
         ]
 
     for f in range(len(file_list)):
         file = file_list[f]
-        plot_2D_space(file, path)
+        plot_2D_space(file, path, centered_coords = False)
 
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))

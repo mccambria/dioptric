@@ -917,7 +917,7 @@ def calc_snr(sig_count, ref_count):
     ref_count_avg = numpy.average(ref_count)
     dif = sig_count_avg - ref_count_avg
     sum_ = sig_count_avg + ref_count_avg
-    noise = numpy.sqrt(sum_)
+    noise = numpy.sqrt(sig_count_avg)
     snr = dif / noise
 
     return snr

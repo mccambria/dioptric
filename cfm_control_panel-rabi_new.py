@@ -68,9 +68,9 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 1.0
     # scan_range = 0.5
     # scan_range = 0.3
-    scan_range = 0.2
+    # scan_range = 0.2
     # scan_range = 0.15
-    #scan_range = 0.1
+    scan_range = 0.1
     # scan_range = 0.05
     # scan_range = 0.025
     #
@@ -78,9 +78,9 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 200
     # num_steps = 150
     # num_steps = 135
-    num_steps = 120
+    # num_steps = 120
     # num_steps = 90
-    #num_steps = 60
+    num_steps = 60
     # num_steps = 31
     # num_steps = 20
 
@@ -164,8 +164,8 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
-    num_steps = 75
-    num_runs = 5
+    num_steps = 101
+    num_runs = 15
     uwave_power = -10.0
 
     resonance.main(
@@ -185,9 +185,9 @@ def do_resonance_state(nv_sig, apd_indices, state):
     freq_center = nv_sig["resonance_{}".format(state.name)]
     uwave_power = -10.0
 
-    freq_range = 0.200
+    freq_range = 0.100
     num_steps = 51
-    num_runs = 2
+    num_runs = 15
 
     # Zoom
     # freq_range = 0.060
@@ -777,7 +777,7 @@ if __name__ == "__main__":
 
     nd_yellow = "nd_0.5"
     green_power = 20
-    red_power = 50
+    red_power = 110
     sample_name = "johnson"
     green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
@@ -855,7 +855,7 @@ if __name__ == "__main__":
         "coords": [0.078, 0.065, 4.86],
         "name": "{}-dnv0_2021_09_09".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 36,
+        "expected_count_rate": 23,
         
         "spin_laser": green_laser,
         "spin_laser_power": green_power,
@@ -890,10 +890,10 @@ if __name__ == "__main__":
         
         "collection_filter": "630_lp",
         "magnet_angle": 120,
-        "resonance_LOW": 2.8012,
-        "rabi_LOW": 141.5,
+        "resonance_LOW": 2.8342,
+        "rabi_LOW": 169.0,
         "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.9445,
+        "resonance_HIGH": 2.9115,
         "rabi_HIGH": 191.9,
         "uwave_power_HIGH": 14.5,
     }  # 14.5 max
@@ -927,8 +927,8 @@ if __name__ == "__main__":
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
-        "resonance_LOW": 2.7756,
-        "rabi_LOW":  176.1,
+        "resonance_LOW": 2.8342, 
+        "rabi_LOW": 169.0,
         "uwave_power_LOW": 14.5,  # 15.5 max
         "resonance_HIGH": 2.9641,
         "rabi_HIGH": 166,
@@ -979,7 +979,7 @@ if __name__ == "__main__":
         
         
         # do_optimize(opti_nv_sig, apd_indices)
-        #do_image_sample(opti_nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])
         # do_g2_measurement(nv_sig, 0, 1) 
         
@@ -989,8 +989,8 @@ if __name__ == "__main__":
             nv_sig['CPG_laser_dur'] = t
             
             img_range_2D = [0.035,  0.035, 0]
-            do_SPaCE(nv_sig, opti_nv_sig,  5, num_steps_x, num_steps_y, None, 
-                      img_range_2D, offset_list)
+            # do_SPaCE(nv_sig, opti_nv_sig,  5, num_steps_x, num_steps_y, None, 
+            #           img_range_2D, offset_list)
             
         t_list = [4e6]
         for t in t_list:
@@ -1008,17 +1008,17 @@ if __name__ == "__main__":
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_stationary_count(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1) 
-        # do_resonance(nv_sig, apd_indices, 2.875, 0.25)
+        #do_resonance(opti_nv_sig, apd_indices, 2.875, 0.25)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.875, 0.25)
         # nv_sig['magnet_angle'] = 75
         # do_pulsed_resonance(nv_sig, apd_indices, 2.875, 0.25)
-        # do_resonance_state(nv_sig, apd_indices, States.LOW)
+        #do_resonance_state(opti_nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        # do_pulsed_resonance_state(opti_nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
+        #do_rabi(opti_nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 300])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)

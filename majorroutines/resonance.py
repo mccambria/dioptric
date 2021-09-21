@@ -117,7 +117,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         
         # Shuffle the list of frequency indices so that we step through
         # them randomly
-        # shuffle(freq_ind_list)
+        shuffle(freq_ind_list)
         freq_ind_master_list.append(freq_ind_list)
 
         # Take a sample and increment the frequency

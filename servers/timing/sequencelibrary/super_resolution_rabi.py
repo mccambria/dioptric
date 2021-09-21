@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Mar 30 20:40:44 2020
+Created on Mon Sep 20 13:40:44 2021
 
 @author: agardill
 """
@@ -18,13 +18,14 @@ HIGH = 1
 def get_seq(pulse_streamer, config, args):
 
     # Unpack the args
-    readout_time, reion_time, ion_time, pi_pulse, shelf_time,\
+    readout_time, init_time, depletion_time, ion_time, pi_pulse, shelf_time,\
             uwave_tau_max, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name, \
             apd_indices, readout_power, shelf_power = args
 
     # Convert all times to int64
     readout_time = numpy.int64(readout_time)
-    reion_time = numpy.int64(reion_time)
+    init_time = numpy.int64(init_time)
+    depletion_time = numpy.int64(depletion_time)
     ion_time = numpy.int64(ion_time)
     pi_pulse = numpy.int64(pi_pulse)
     shelf_time = numpy.int64(shelf_time)
@@ -32,11 +33,14 @@ def get_seq(pulse_streamer, config, args):
     
     # Get the wait time between pulses
     wait_time = config['CommonDurations']['uwave_buffer']
+    galvo_move_time = config['Positioning']['xy_small_response_delay']
+    galvo_move_time = numpy.int64(galvo_move_time)
+    
         
     # delays
     green_delay_time = config['Optics'][green_laser_name]['delay']
     yellow_delay_time = config['Optics'][yellow_laser_name]['delay']
-    red_delay_time = config['Optics'][red_laser_name]['delay']
+    red_delay_time =config['Optics'][red_laser_name]['delay']
     rf_delay_time = config['Microwaves'][sig_gen_name]['delay']
     
     
@@ -44,11 +48,10 @@ def get_seq(pulse_streamer, config, args):
     
     # For rabi experiment, we want to have sequence take same amount of time 
     # over each tau, so have some waittime after the readout to accoutn for this
-    # +++ Artifact from rabi experiments, in determine SCC durations, this is 0
     post_wait_time = uwave_tau_max - pi_pulse
     # Test period
-    period =  total_delay + (reion_time + ion_time + shelf_time + pi_pulse + \
-                           readout_time + post_wait_time + 4 * wait_time)*2
+    period =  total_delay + (init_time + depletion_time + ion_time + shelf_time + pi_pulse + \
+                           readout_time + post_wait_time + 3 * wait_time + 2*galvo_move_time)*2
     
     # Get what we need out of the wiring dictionary
     pulser_wiring = config['Wiring']['PulseStreamer']
@@ -65,27 +68,29 @@ def get_seq(pulse_streamer, config, args):
     seq = Sequence()
 
     #collect photons for certain timewindow tR in APD
-    train = [(total_delay + reion_time  + pi_pulse + shelf_time + ion_time + 3*wait_time, LOW), 
+    train = [(total_delay + init_time + depletion_time + 2*galvo_move_time + pi_pulse + wait_time + shelf_time + ion_time + wait_time, LOW), 
+             (readout_time, HIGH),
+             (post_wait_time + wait_time + init_time + depletion_time + 2*galvo_move_time + pi_pulse + wait_time + shelf_time + ion_time + wait_time, LOW),
              (readout_time, HIGH), 
-             (post_wait_time  + reion_time + pi_pulse + shelf_time + ion_time + 4*wait_time, LOW), 
-             (readout_time, HIGH), (post_wait_time + wait_time, LOW)]
+             (post_wait_time + wait_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
-    # reionization pulse (green)
+    # Green laser
     delay = total_delay - green_delay_time
-    train = [ (delay, LOW), (reion_time, HIGH), 
-             (4*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time, LOW), 
-             (reion_time, HIGH), 
-             (4*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time + green_delay_time, LOW)]  
+    train = [ (delay + init_time + galvo_move_time, LOW), (depletion_time, HIGH), 
+             (galvo_move_time + 3*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time + init_time + galvo_move_time, LOW), 
+             (depletion_time, HIGH), 
+             (galvo_move_time + 3*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time + green_delay_time, LOW)]  
     # seq.setDigital(pulser_do_532_aom, train)
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                             green_laser_name, None, train)
  
-    # ionization pulse (red)
+    # Red laser
     delay = total_delay - red_delay_time
-    train = [(delay + 2*wait_time + reion_time + pi_pulse + shelf_time, LOW), 
+    train = [(delay, LOW), (init_time, HIGH), (galvo_move_time + depletion_time + galvo_move_time + pi_pulse + wait_time + shelf_time, LOW), 
              (ion_time, HIGH), 
-             (4*wait_time + post_wait_time + readout_time + reion_time + pi_pulse + shelf_time, LOW), 
+             (2*wait_time + post_wait_time + readout_time, LOW),
+             (init_time, HIGH), (galvo_move_time + depletion_time + galvo_move_time + pi_pulse + wait_time + shelf_time, LOW), 
              (ion_time, HIGH), 
              (2*wait_time + post_wait_time + readout_time + red_delay_time, LOW)]
     # seq.setDigital(pulser_do_638_aom, train)
@@ -94,18 +99,17 @@ def get_seq(pulse_streamer, config, args):
     
     # uwave pulses
     delay = total_delay - rf_delay_time
-    train = [(delay  + reion_time + wait_time, LOW), (pi_pulse, HIGH), 
-             (7*wait_time + 2*shelf_time + pi_pulse + reion_time \
-              + 2*post_wait_time + 2*readout_time + 2*ion_time + rf_delay_time, LOW)]
+    train = [(delay  + init_time + depletion_time + galvo_move_time + galvo_move_time, LOW), (pi_pulse, HIGH), 
+             (wait_time, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
     
-    # readout with 589
+    # Yellow laser
     delay = total_delay - yellow_delay_time
-    train = [(delay + reion_time + 2*wait_time + pi_pulse, LOW), 
-             (shelf_time + ion_time,shelf_power), 
+    train = [(delay + init_time + depletion_time + 2*galvo_move_time + pi_pulse + wait_time, LOW), 
+             (shelf_time + ion_time, shelf_power), 
              (wait_time, LOW), 
              (readout_time, readout_power),
-             (post_wait_time + 3*wait_time + reion_time + pi_pulse, LOW),
+             (post_wait_time + wait_time + init_time + depletion_time + 2*galvo_move_time + pi_pulse + wait_time, LOW),
              (shelf_time + ion_time, shelf_power),
              (wait_time, LOW), 
              (readout_time, readout_power), 
@@ -113,8 +117,20 @@ def get_seq(pulse_streamer, config, args):
     seq.setAnalog(pulser_ao_589_aom, train) 
     
 
+    # clock 
+    # I needed to add 100 ns between the redout and the clock pulse, otherwise 
+    # the tagger misses some of the gate open/close clicks
+    train = [(total_delay + init_time + 100, LOW),(100, HIGH),
+             (galvo_move_time - 100 + depletion_time, LOW), (100, HIGH), 
+             (galvo_move_time + pi_pulse - 100 + wait_time + shelf_time + ion_time + wait_time + readout_time, LOW), (100, HIGH),
+             (post_wait_time + wait_time + init_time - 100, LOW),(100, HIGH),
+             (galvo_move_time - 100 + depletion_time, LOW), (100, HIGH), 
+             (galvo_move_time + pi_pulse - 100 + wait_time + shelf_time + ion_time + wait_time + readout_time, LOW), (100, HIGH), (100, LOW)
+             ] 
+#    train = [(period + 100, LOW), (100, HIGH), (100, LOW)]
+    seq.setDigital(pulser_do_clock, train)
     
-    final_digital = [pulser_do_clock]
+    final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
 
     return seq, final, [period]
@@ -124,8 +140,8 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     
             
-    # args = [1000,  100, 500, 100, 100, 200, 'cobolt_515','laserglow_589', 'cobolt_638', 'signal_generator_bnc835',
-    #         0, 0.8, 0.8]
-    args = [500000.0, 100000.0, 1500.0, 84, 200, 84, 'cobolt_515', 'laserglow_589', 'cobolt_638', 'signal_generator_bnc835', 0, 0.2, 0.6]
+    args = [1000,  100, 400, 500, 100, 100, 200, 'cobolt_515','laserglow_589', 'cobolt_638', 'signal_generator_bnc835',
+            0, 0.8, 0.8]
+    # args = [500000.0, 100000.0, 1500.0, 84, 200, 84, 'cobolt_515', 'laserglow_589', 'cobolt_638', 'signal_generator_bnc835', 0, 0.2, 0.6]
     seq = get_seq(None, config, args)[0]
     seq.plot()
