@@ -32,7 +32,7 @@ def get_seq(pulse_streamer, config, args):
     uwave_tau_max = numpy.int64(uwave_tau_max)
     
     # Get the wait time between pulses
-    wait_time = config['CommonDurations']['uwave_buffer']
+    wait_time =config['CommonDurations']['uwave_buffer']
     galvo_move_time = config['Positioning']['xy_small_response_delay']
     galvo_move_time = numpy.int64(galvo_move_time)
     
@@ -42,6 +42,15 @@ def get_seq(pulse_streamer, config, args):
     yellow_delay_time = config['Optics'][yellow_laser_name]['delay']
     red_delay_time =config['Optics'][red_laser_name]['delay']
     rf_delay_time = config['Microwaves'][sig_gen_name]['delay']
+    
+    # TESTING
+    # wait_time =100
+    # galvo_move_time = 500
+    # galvo_move_time = numpy.int64(galvo_move_time)
+    # green_delay_time = 0
+    # yellow_delay_time = 0
+    # red_delay_time =0
+    # rf_delay_time = 0
     
     
     total_delay = green_delay_time + yellow_delay_time + red_delay_time + rf_delay_time
@@ -68,9 +77,13 @@ def get_seq(pulse_streamer, config, args):
     seq = Sequence()
 
     #collect photons for certain timewindow tR in APD
-    train = [(total_delay + init_time + depletion_time + 2*galvo_move_time + pi_pulse + wait_time + shelf_time + ion_time + wait_time, LOW), 
+    train = [(total_delay + init_time + galvo_move_time, LOW),
+             (depletion_time, HIGH),
+             (galvo_move_time + pi_pulse + wait_time + shelf_time + ion_time + wait_time, LOW), 
              (readout_time, HIGH),
-             (post_wait_time + wait_time + init_time + depletion_time + 2*galvo_move_time + pi_pulse + wait_time + shelf_time + ion_time + wait_time, LOW),
+             (post_wait_time + wait_time + init_time + galvo_move_time, LOW),
+             (depletion_time, HIGH),
+             (galvo_move_time + pi_pulse + wait_time + shelf_time + ion_time + wait_time, LOW),
              (readout_time, HIGH), 
              (post_wait_time + wait_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)

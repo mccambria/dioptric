@@ -571,9 +571,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-    # file = '2021_05_12-23_08_06-hopper-nv1_2021_03_16'
-    file = '2021_05_12-23_13_52-hopper-nv1_2021_03_16'
-    data = tool_belt.get_raw_data(file)
+    folder = 'pc_rabi/branch_master/pulsed_resonance/2021_09'
+    file = '2021_09_15-13_30_13-johnson-dnv0_2021_09_09'
+    data = tool_belt.get_raw_data(file, folder)
 
     freq_center = data['freq_center']
     freq_range = data['freq_range']

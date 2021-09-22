@@ -165,7 +165,7 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 101
-    num_runs = 15
+    num_runs = 10
     uwave_power = -10.0
 
     resonance.main(
@@ -852,7 +852,7 @@ if __name__ == "__main__":
     
     
     nv_sig = {
-        "coords": [0.078, 0.065, 4.86],
+        "coords": [0.0555, 0.0526, 4.86],
         "name": "{}-dnv0_2021_09_09".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 23,
@@ -899,7 +899,7 @@ if __name__ == "__main__":
     }  # 14.5 max
     
     opti_nv_sig = {
-        "coords": [-0.012, -0.016, 4.85],
+        "coords": [-0.034, -0.0283, 4.85],
         "name": "{}-nv1_2021_09_07".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 17,
@@ -979,7 +979,7 @@ if __name__ == "__main__":
         
         
         # do_optimize(opti_nv_sig, apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])
         # do_g2_measurement(nv_sig, 0, 1) 
         
@@ -1008,7 +1008,7 @@ if __name__ == "__main__":
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_stationary_count(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1) 
-        #do_resonance(opti_nv_sig, apd_indices, 2.875, 0.25)
+        do_resonance(nv_sig, apd_indices, 2.875, 0.15)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.875, 0.25)
         # nv_sig['magnet_angle'] = 75

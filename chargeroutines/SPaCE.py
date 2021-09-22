@@ -248,7 +248,7 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
 
     return fit_params_list
 
-def plot_2D_space(file, path, centered_coords = True):
+def plot_2D_space(file, path, true_position = False):
         data = tool_belt.get_raw_data(file, path)
         # try:
         nv_sig = data['nv_sig']
@@ -259,6 +259,7 @@ def plot_2D_space(file, path, centered_coords = True):
         a_voltages_1d = data['a_voltages_1d']
         b_voltages_1d = data['b_voltages_1d']
         img_range_2D= data['img_range_2D']
+        drift_list = data['drift_list_master']
         axes = [0,1]
         
         readout_counts_array_rot = numpy.rot90(readout_counts_array)
@@ -268,7 +269,7 @@ def plot_2D_space(file, path, centered_coords = True):
         
         
         
-        if centered_coords:
+        if true_position == False:
             half_range_a = img_range_2D[axes[0]]/2
             half_range_b = img_range_2D[axes[1]]/2
             a_low = -half_range_a
@@ -295,8 +296,9 @@ def plot_2D_space(file, path, centered_coords = True):
                          (b_high + half_pixel_size_b)*35 ]
             um_scaled = True
         else:
+            # a_voltages_1d = numpy.array(a_voltages_1d) + drift_list[0][0][0]
+            # b_voltages_1d = numpy.array(b_voltages_1d) + drift_list[0][0][1]
             
-        
             x_low = a_voltages_1d[0]
             x_high = a_voltages_1d[-1]
             y_low = b_voltages_1d[0]
@@ -1166,7 +1168,7 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         raw_data['img_extent'] = img_extent
         raw_data['img_extent-units'] = 'V'
         raw_data['readout_image_array'] = readout_image_array.tolist()
-        raw_data['readout_counts_array-units'] = 'counts'
+        raw_data['readout_image_array-units'] = 'counts'
 
 
         tool_belt.save_figure(fig_2D, file_path)
@@ -1540,7 +1542,7 @@ if __name__ == '__main__':
 
     for f in range(len(file_list)):
         file = file_list[f]
-        plot_2D_space(file, path, centered_coords = False)
+        plot_2D_space(file, path, true_position = True)
 
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))

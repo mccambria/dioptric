@@ -38,8 +38,8 @@ def build_voltages(adjusted_nv_coords, adjusted_depletion_coords, num_reps):
     seq_x = [dep_x_value, start_x_value, start_x_value]
     seq_y = [dep_y_value, start_y_value, start_y_value]
     
-    x_voltages = seq_x*num_reps
-    y_voltages = seq_y*num_reps
+    x_voltages = seq_x*num_reps*2
+    y_voltages = seq_y*num_reps*2
     
     # and then add on the initial coordinate
     x_voltages = [start_x_value] + x_voltages
@@ -74,7 +74,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
     freqs = numpy.linspace(freq_low, freq_high, num_steps)
-    freqs = [freq_center]
+    # freqs = [freq_center]
     freq_ind_list = list(range(num_steps))
     
     opti_interval = 4 # min
@@ -135,6 +135,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     start_time = time.time()
     start_function_time = start_time
     
+    print(depletion_coords)
     for run_ind in range(num_runs):
         print('Run index: {}'. format(run_ind))
 
@@ -164,7 +165,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         period_s_total = (period_s*num_reps*num_steps + 1)
         period_m_total = period_s_total/60
         print('Expected time for this run: {:.1f} m'.format(period_m_total))
-        
+        # return
 
         # Shuffle the freqs we step thru
         # shuffle(freq_ind_list)
@@ -231,12 +232,12 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
                         total_samples_list.append(int(el))
                     num_read_so_far += num_new_samples
             # print(total_samples_list)
-            # sig_gate_counts = total_samples_list[2::6]
-            sig_gate_counts = total_samples_list[1::6]
+            sig_gate_counts = total_samples_list[2::6]
+            # sig_gate_counts = total_samples_list[1::6]
             sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
 
-            # ref_gate_counts = total_samples_list[5::6]
-            ref_gate_counts = total_samples_list[4::6]
+            ref_gate_counts = total_samples_list[5::6]
+            # ref_gate_counts = total_samples_list[4::6]
             ref_counts[run_ind, freq_ind] = sum(ref_gate_counts)
 
         cxn.apd_tagger.stop_tag_stream()
@@ -280,6 +281,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
 
     # Convert to kilocounts per second
+    # readout_sec = depletion_time / 1e9
     cts_uwave_off_avg = (avg_ref_counts / (num_reps))# * 1000)) / readout_sec
     cts_uwave_on_avg = (avg_sig_counts / (num_reps))# * 1000)) / readout_sec
 
@@ -289,15 +291,15 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
 
     # The first plot will display both the uwave_off and uwave_off counts
     ax = axes_pack[0]
-    ax.plot(freqs, cts_uwave_off_avg, 'ro', label = 'Reference')
-    ax.plot(freqs, cts_uwave_on_avg, 'go', label = 'Signal')
+    ax.plot(freqs, cts_uwave_off_avg, 'r-', label = 'Reference')
+    ax.plot(freqs, cts_uwave_on_avg, 'g-', label = 'Signal')
     ax.set_title('Non-normalized Count Rate Versus Frequency')
     ax.set_xlabel('Frequency (GHz)')
-    ax.set_ylabel('Count rate (kcps)')
+    ax.set_ylabel('NV fluorescence (counts)')
     ax.legend()
     # The second plot will show their subtracted values
     ax = axes_pack[1]
-    ax.plot(freqs, norm_avg_sig, 'bo')
+    ax.plot(freqs, norm_avg_sig, 'b-')
     ax.set_title('Normalized Count Rate vs Frequency')
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
@@ -390,7 +392,7 @@ if __name__ == '__main__':
     nd_yellow = "nd_0.5"
     
     opti_nv_sig = {
-        "coords": [-0.012, -0.016, 4.85],
+        "coords": [-0.034, -0.0283, 4.85],
         "name": "{}-nv1_2021_09_07".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 15,
@@ -403,9 +405,14 @@ if __name__ == '__main__':
     
     
     nv_sig = {
-        "coords": [0.078, 0.065, 4.86],
-        # "depletion_coords": [0.089, 0.056, 4.86], # dark ring
-        "depletion_coords": [0.092, 0.053, 4.86], # less dark ring
+        "coords": [0.0555, 0.0526, 4.86],
+        "depletion_coords": [0.0665, 0.0436, 4.86], # dark ring
+        # "depletion_coords": [0.0695, 0.0406, 4.86], # less dark ring
+        # "depletion_coords": [0.0455, 0.0466, 4.86], # darkest point ring
+        # "depletion_coords": [0.0565, 0.0516, 4.86], # center
+        
+        # "depletion_coords": [0.065, 0.087, 4.86], # on another NV
+        # "depletion_coords": [0.058, 0.028, 4.86], # off NV
         "name": "{}-dnv0_2021_09_09".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 23,
@@ -418,10 +425,10 @@ if __name__ == '__main__':
             
             "CPG_laser": green_laser,
             'CPG_laser_power': green_power,
-            "CPG_laser_dur": 1e7,#5e6,
+            "CPG_laser_dur": 5e6,
         
             'nv0_ionization_laser': red_laser, 'nv0_ionization_laser_power': red_power,
-            'nv0_ionization_dur': 300,
+            'nv0_ionization_dur':300,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
             'spin_shelf_laser_power': 0.6, 'spin_shelf_dur':0,
@@ -431,23 +438,52 @@ if __name__ == '__main__':
             
             'collection_filter': '630_lp', 'magnet_angle': None,
             
-            "resonance_LOW": 2.8342, "rabi_LOW": 169.0, 'uwave_power_LOW': 15.5,  # 15.5 max
+            # "resonance_LOW": 2.8351, "rabi_LOW": 169.0, 'uwave_power_LOW': 15.5,  # 15.5 max
+            "resonance_LOW": 2.806, "rabi_LOW":169.0, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max  
     
     
-    freq_center = nv_sig["resonance_LOW"]
     freq_range = 0.04
     
     uwave_power = nv_sig['uwave_power_LOW']
-    uwave_pulse_dur = nv_sig['rabi_LOW'] / 2
-    num_steps = 1
-    num_reps = 5*10**3
+    uwave_pulse_dur =  nv_sig['rabi_LOW'] / 2
+    num_steps = 21
+    num_reps = int(2*10**3)
     num_runs = 1
     
     try:
          
-        main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
-                 num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+        nv_sig['depletion_coords'] = [0.0565, 0.0516, 4.86] # center
+        nv_sig['resonance_LOW'] = 2.8351
+        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+         
+        nv_sig['depletion_coords'] = [0.0565, 0.0516, 4.86] # center
+        nv_sig['resonance_LOW'] = 2.806
+        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+        
+        nv_sig['depletion_coords'] = [0.0665, 0.0436, 4.86] # dark ring
+        nv_sig['resonance_LOW'] = 2.8351
+        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+         
+        nv_sig['depletion_coords'] = [0.0665, 0.0436, 4.86] # dark ring
+        nv_sig['resonance_LOW'] = 2.806
+        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+        
+        nv_sig['depletion_coords'] = [0.0695, 0.0406, 4.86] # less dark ring
+        nv_sig['resonance_LOW'] = 2.8351
+        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+         
+        nv_sig['depletion_coords'] = [0.0695, 0.0406, 4.86] # less dark ring
+        nv_sig['resonance_LOW'] = 2.806
+        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+        
+        
         
     
     
