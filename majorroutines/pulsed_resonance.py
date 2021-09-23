@@ -356,8 +356,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         seq_args = [uwave_pulse_dur, polarization_time,
                     readout, uwave_pulse_dur, apd_indices[0],
                     state.value, laser_name, laser_power]
-    print(seq_args)
-    return
+    # print(seq_args)
+    # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
     opti_coords_list = []
