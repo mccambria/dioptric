@@ -82,7 +82,7 @@ if __name__ == '__main__':
     # laser_name = 'integrated_520'
     laser_name = 'laserglow_532'
     # filter_name = 'nd_1.0'
-    pos = [0.0, 0.0, 5.0]
+    pos = [0.0, 0.0, 0]
 
     with labrad.connect() as cxn:
         # tool_belt.set_xyz(cxn, pos)
