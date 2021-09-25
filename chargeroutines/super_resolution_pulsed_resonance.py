@@ -47,6 +47,51 @@ def build_voltages(adjusted_nv_coords, adjusted_depletion_coords, num_reps):
     
     return x_voltages, y_voltages
 
+def plot_esr(ref_counts, sig_counts, num_runs, freqs = None, freq_center = None, freq_range = None, num_steps = None):
+    
+    # if all.freqs() == None:
+    #     half_freq_range = freq_range / 2
+    #     freq_low = freq_center - half_freq_range
+    #     freq_high = freq_center + half_freq_range
+    #     freqs = numpy.linspace(freq_low, freq_high, num_steps)
+    
+
+    ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
+    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
+
+    # Convert to kilocounts per second
+    # readout_sec = depletion_time / 1e9
+    cts_uwave_off_avg = (avg_ref_counts / (num_reps))# * 1000)) / readout_sec
+    cts_uwave_on_avg = (avg_sig_counts / (num_reps))# * 1000)) / readout_sec
+
+    # Create an image with 2 plots on one row, with a specified size
+    # Then draw the canvas and flush all the previous plots from the canvas
+    fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+
+    if len(freqs) == 1:
+        marker = 'o'
+    else:
+        marker = '-'
+    # The first plot will display both the uwave_off and uwave_off counts
+    ax = axes_pack[0]
+    ax.plot(freqs, cts_uwave_off_avg, 'r{}'.format(marker), label = 'Reference')
+    ax.plot(freqs, cts_uwave_on_avg, 'g{}'.format(marker), label = 'Signal')
+    ax.set_title('Non-normalized Count Rate Versus Frequency')
+    ax.set_xlabel('Frequency (GHz)')
+    ax.set_ylabel('NV fluorescence (counts)')
+    ax.legend()
+    # The second plot will show their subtracted values
+    ax = axes_pack[1]
+    ax.plot(freqs, norm_avg_sig, 'b{}'.format(marker))
+    ax.set_title('Normalized Count Rate vs Frequency')
+    ax.set_xlabel('Frequency (GHz)')
+    ax.set_ylabel('Contrast (arb. units)')
+
+    fig.canvas.draw()
+    fig.tight_layout()
+    fig.canvas.flush_events()
+    
+    return fig, norm_avg_sig, norm_avg_sig_ste 
 # %% Main
 
 
@@ -74,7 +119,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
     freqs = numpy.linspace(freq_low, freq_high, num_steps)
-    # freqs = [freq_center]
+    freqs = numpy.array([freq_center])
     freq_ind_list = list(range(num_steps))
     
     opti_interval = 4 # min
@@ -95,6 +140,12 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     # imaging_laser_name = nv_sig[imaging_laser_key]
     # imaging_laser_power = tool_belt.set_laser_power(cxn, nv_sig, imaging_laser_key)
     
+    init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                      ['Config', 'Optics', nv_sig['initialize_laser']])
+    depletion_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                      ['Config', 'Optics', nv_sig['CPG_laser']])
+    
+    
     # Set the charge readout (assumed to be yellow here) to the correct filter
     if 'charge_readout_laser_filter' in nv_sig:
         tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
@@ -104,18 +155,18 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     depletion_time = nv_sig['CPG_laser_dur']
     readout_power = nv_sig['charge_readout_laser_power']
     ionization_time = nv_sig['nv0_ionization_dur']
-    # reionization_time = nv_sig['nv-_reionization_dur']
     shelf_time = nv_sig['spin_shelf_dur']
     shelf_power = nv_sig['spin_shelf_laser_power']
     
     
-    green_laser_name = nv_sig['CPG_laser']
-    red_laser_name = nv_sig['initialize_laser']
+    green_laser_name = nv_sig['imaging_laser']
+    red_laser_name = nv_sig['nv0_ionization_laser']
     yellow_laser_name = nv_sig['charge_readout_laser']
     sig_gen_name = tool_belt.get_signal_generator_name_no_cxn(state)    
             
     seq_args = [readout_time, init_time, depletion_time, ionization_time, uwave_pulse_dur, shelf_time,
-            uwave_pulse_dur, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name, 
+            uwave_pulse_dur,init_color, depletion_color, 
+            green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name, 
              apd_indices[0], readout_power, shelf_power ]
     # print(seq_args)
     # return
@@ -136,6 +187,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     start_function_time = start_time
     
     print(depletion_coords)
+    
     for run_ind in range(num_runs):
         print('Run index: {}'. format(run_ind))
 
@@ -168,7 +220,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         # return
 
         # Shuffle the freqs we step thru
-        # shuffle(freq_ind_list)
+        shuffle(freq_ind_list)
         
         # Take a sample and increment the frequency
         for step_ind in range(num_steps):
@@ -258,6 +310,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
                    'run_ind': run_ind,
                    'uwave_power': uwave_power,
                    'uwave_power-units': 'dBm',
+                   'freqs': freqs.tolist(),
                    'drift_list': drift_list,
                    'opti_interval': opti_interval,
                    'sig_counts': sig_counts.astype(int).tolist(),
@@ -277,36 +330,8 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     time_elapsed = end_function_time - start_function_time
     # print(time_elapsed)
     
-    ret_vals = pulsed_resonance.process_counts(ref_counts, sig_counts, num_runs)
-    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
+    fig, norm_avg_sig,norm_avg_sig_ste  = plot_esr(ref_counts, sig_counts, num_runs, freqs)
 
-    # Convert to kilocounts per second
-    # readout_sec = depletion_time / 1e9
-    cts_uwave_off_avg = (avg_ref_counts / (num_reps))# * 1000)) / readout_sec
-    cts_uwave_on_avg = (avg_sig_counts / (num_reps))# * 1000)) / readout_sec
-
-    # Create an image with 2 plots on one row, with a specified size
-    # Then draw the canvas and flush all the previous plots from the canvas
-    fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-
-    # The first plot will display both the uwave_off and uwave_off counts
-    ax = axes_pack[0]
-    ax.plot(freqs, cts_uwave_off_avg, 'r-', label = 'Reference')
-    ax.plot(freqs, cts_uwave_on_avg, 'g-', label = 'Signal')
-    ax.set_title('Non-normalized Count Rate Versus Frequency')
-    ax.set_xlabel('Frequency (GHz)')
-    ax.set_ylabel('NV fluorescence (counts)')
-    ax.legend()
-    # The second plot will show their subtracted values
-    ax = axes_pack[1]
-    ax.plot(freqs, norm_avg_sig, 'b-')
-    ax.set_title('Normalized Count Rate vs Frequency')
-    ax.set_xlabel('Frequency (GHz)')
-    ax.set_ylabel('Contrast (arb. units)')
-
-    fig.canvas.draw()
-    fig.tight_layout()
-    fig.canvas.flush_events()
 
     # %% Fit the data
 
@@ -340,6 +365,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
                 'num_runs': num_runs,
                 'uwave_power': uwave_power,
                 'uwave_power-units': 'dBm',
+                'freqs': freqs.tolist(),
                 'drift_list': drift_list,
                 'opti_interval': opti_interval,
                 'sig_counts': sig_counts.astype(int).tolist(),
@@ -387,12 +413,12 @@ if __name__ == '__main__':
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
     
-    green_power = 20
-    red_power = 110
+    green_power = 7
+    red_power = 120
     nd_yellow = "nd_0.5"
     
     opti_nv_sig = {
-        "coords": [-0.034, -0.0283, 4.85],
+        "coords": [-0.033, -0.021, 4.85],
         "name": "{}-nv1_2021_09_07".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 15,
@@ -405,87 +431,122 @@ if __name__ == '__main__':
     
     
     nv_sig = {
-        "coords": [0.0555, 0.0526, 4.86],
-        "depletion_coords": [0.0665, 0.0436, 4.86], # dark ring
-        # "depletion_coords": [0.0695, 0.0406, 4.86], # less dark ring
-        # "depletion_coords": [0.0455, 0.0466, 4.86], # darkest point ring
-        # "depletion_coords": [0.0565, 0.0516, 4.86], # center
+        "coords": [-0.020, 0.282, 4.85],
+        "depletion_coords": [-0.032, 0.275, 4.85], # A
+        #"depletion_coords": [-0.035, 0.276, 4.85], # B
         
-        # "depletion_coords": [0.065, 0.087, 4.86], # on another NV
-        # "depletion_coords": [0.058, 0.028, 4.86], # off NV
-        "name": "{}-dnv0_2021_09_09".format(sample_name,),
+        "name": "{}-dnv7_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 23,
+        "expected_count_rate": 65,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power,
             'imaging_readout_dur': 1E7,
             
-            "initialize_laser": red_laser,
-            "initialize_laser_power": red_power,
-            "initialize_dur": 1e3,
+            "initialize_laser": green_laser,
+            "initialize_laser_power": green_power,
+            "initialize_dur": 1e4,
             
-            "CPG_laser": green_laser,
-            'CPG_laser_power': green_power,
-            "CPG_laser_dur": 5e6,
+            "CPG_laser": red_laser,
+            'CPG_laser_power': red_power,
+            "CPG_laser_dur": 1.5e4,
         
             'nv0_ionization_laser': red_laser, 'nv0_ionization_laser_power': red_power,
             'nv0_ionization_dur':300,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
-            'spin_shelf_laser_power': 0.6, 'spin_shelf_dur':0,
+            'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,
             
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
-            'charge_readout_laser_power': 0.2, 'charge_readout_dur':50e6,
+            'charge_readout_laser_power': 0.15, 'charge_readout_dur':50e6,
             
-            'collection_filter': '630_lp', 'magnet_angle': None,
+            'collection_filter': '630_lp', 'magnet_angle': 60,
             
             # "resonance_LOW": 2.8351, "rabi_LOW": 169.0, 'uwave_power_LOW': 15.5,  # 15.5 max
             "resonance_LOW": 2.806, "rabi_LOW":169.0, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max  
     
     
-    freq_range = 0.04
+    freq_range = 0.05
     
     uwave_power = nv_sig['uwave_power_LOW']
-    uwave_pulse_dur =  nv_sig['rabi_LOW'] / 2
-    num_steps = 21
-    num_reps = int(2*10**3)
+    # uwave_pulse_dur =  nv_sig['rabi_LOW'] / 2
+    num_steps = 1
+    num_reps = int(10**3)
     num_runs = 1
     
-    try:
-         
-        nv_sig['depletion_coords'] = [0.0565, 0.0516, 4.86] # center
-        nv_sig['resonance_LOW'] = 2.8351
-        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
-                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-         
-        nv_sig['depletion_coords'] = [0.0565, 0.0516, 4.86] # center
-        nv_sig['resonance_LOW'] = 2.806
-        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
-                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-        
-        nv_sig['depletion_coords'] = [0.0665, 0.0436, 4.86] # dark ring
-        nv_sig['resonance_LOW'] = 2.8351
-        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
-                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-         
-        nv_sig['depletion_coords'] = [0.0665, 0.0436, 4.86] # dark ring
-        nv_sig['resonance_LOW'] = 2.806
-        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
-                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-        
-        nv_sig['depletion_coords'] = [0.0695, 0.0406, 4.86] # less dark ring
-        nv_sig['resonance_LOW'] = 2.8351
-        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
-                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-         
-        nv_sig['depletion_coords'] = [0.0695, 0.0406, 4.86] # less dark ring
-        nv_sig['resonance_LOW'] = 2.806
-        main(nv_sig, opti_nv_sig, apd_indices, nv_sig["resonance_LOW"] , freq_range,
-                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-        
-        
-        
+    A = [ -0.0318, 0.275, 4.85]
+    B = [-0.035, 0.276, 4.85]
     
+    try:
+         # 2.71
+         # 0.15
+        nv_sig['depletion_coords'] = A
+        nv_sig['resonance_LOW'] = 2.8231
+        nv_sig['rabi_LOW']  = 127.4
+        main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+         
+        nv_sig['depletion_coords'] =  B
+        nv_sig['resonance_LOW'] = 2.8641
+        nv_sig['rabi_LOW']  = 89.2
+        main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+               num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+         
+        nv_sig['depletion_coords'] = B
+        nv_sig['resonance_LOW'] = 2.8231
+        nv_sig['rabi_LOW']  = 127.4
+        main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+          num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+                                                 
+        nv_sig['depletion_coords'] =  A
+        nv_sig['resonance_LOW']  =2.8641
+        nv_sig['rabi_LOW']  = 89.2
+        main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+                num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+        
+        
+        # ++++ COMPARE +++++
+        folder = 'pc_rabi/branch_master/super_resolution_pulsed_resonance/2021_09'
+        file_list = ['2021_09_23-03_06_43-johnson-dnv0_2021_09_09',
+                      '2021_09_23-08_13_46-johnson-dnv0_2021_09_09']
+        label_list = ['Point A', 'Point B']
+            
+        # fig, ax = plt.subplots(figsize=(8.5, 8.5))
+        # for f in [0]:#range(len(file_list)):
+        #     file = file_list[f]
+        #     data = tool_belt.get_raw_data(file, folder)
+    
+        #     freq_center = data['freq_center']
+        #     freq_range = data['freq_range']
+        #     num_steps = data['num_steps']
+        #     num_runs = data['num_runs']
+        #     norm_avg_sig = data['norm_avg_sig']
+            
+            
+        #     freqs = pulsed_resonance.calculate_freqs(freq_range, freq_center, num_steps)
+        
+        #     smooth_freqs, rel_counts = pulsed_resonance.simulate(2.8351, 
+        #                                             freq_range, 0.04,
+        #                                             169.0, 169.0/2)
+        
+        #     ax.plot(freqs, norm_avg_sig, 'b-', label='data')#label_list[f])
+        #     ax.plot(smooth_freqs, rel_counts,'r--',  label='simulation')#label_list[f])
+        #     ax.set_xlabel('Frequency (GHz)')
+        #     ax.set_ylabel('Contrast (arb. units)')
+        #     ax.legend(loc='lower right')
+        
+        # # +++++++ REPLOT ++++++++
+        # file = '2021_09_23-03_06_43-johnson-dnv0_2021_09_09'
+        # # file = '2021_09_23-08_13_46-johnson-dnv0_2021_09_09'
+        # data = tool_belt.get_raw_data(file, folder)
+        # ref_counts = data['ref_counts']
+        # sig_counts = data['sig_counts']
+        # num_runs = data['num_runs']
+        # freq_center = data['freq_center']
+        # freq_range = data['freq_range']
+        # num_steps = data['num_steps']
+        
+        # plot_esr(ref_counts, sig_counts, num_runs, None, freq_center, freq_range, num_steps)
+        
     
     finally:
         # Reset our hardware - this should be done in each routine, but

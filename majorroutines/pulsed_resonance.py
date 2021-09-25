@@ -256,16 +256,17 @@ def simulate(res_freq, freq_range, contrast,
 
     omega = numpy.sqrt((smooth_freqs-res_freq)**2 + rabi_freq**2)
     amp = (rabi_freq / omega)**2
-    angle = omega * 2 * numpy.pi * uwave_pulse_dur / 2
+    angle = omega * 2 * numpy.pi * uwave_pulse_dur /2 # we use frequencies, so we have to convert by 2 pi here
     prob = amp * (numpy.sin(angle))**2
 
-    rel_counts = 1.0 - (contrast * prob)
+    rel_counts = 1.0 + (contrast * prob)
 
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
     ax.plot(smooth_freqs, rel_counts)
     ax.set_xlabel('Frequency (GHz)')
     ax.set_ylabel('Contrast (arb. units)')
     
+    return smooth_freqs, rel_counts
     
 def process_counts(ref_counts, sig_counts, num_runs):
     
@@ -298,7 +299,7 @@ def state(nv_sig, apd_indices, state, freq_range,
     resonance_list = main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state, composite)
 
-    return resonance_list
+    return resonance_list, nv_sig
 
 # %% Main
 
@@ -356,8 +357,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
         seq_args = [uwave_pulse_dur, polarization_time,
                     readout, uwave_pulse_dur, apd_indices[0],
                     state.value, laser_name, laser_power]
-    print(seq_args)
-    return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
     opti_coords_list = []
@@ -571,28 +570,40 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-    folder = 'pc_rabi/branch_master/pulsed_resonance/2021_09'
-    file = '2021_09_15-13_30_13-johnson-dnv0_2021_09_09'
-    data = tool_belt.get_raw_data(file, folder)
+    # folder = 'pc_rabi/branch_master/pulsed_resonance/2021_09'
+    # # file = '2021_09_15-13_30_13-johnson-dnv0_2021_09_09'
+    # file_list = ['2021_09_22-03_13_05-johnson-dnv0_2021_09_09',
+    #              '2021_09_22-05_52_28-johnson-dnv0_2021_09_09',
+    #              '2021_09_22-00_33_40-johnson-dnv0_2021_09_09']
+    # label_list = ['Point A', 'Point B', 'Point C']
+        
+    # fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    # for f in range(len(file_list)):
+    #     file = file_list[f]
+    #     data = tool_belt.get_raw_data(file, folder)
 
-    freq_center = data['freq_center']
-    freq_range = data['freq_range']
-    num_steps = data['num_steps']
-    num_runs = data['num_runs']
-    ref_counts = data['ref_counts']
-    sig_counts = data['sig_counts']
-    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
-    avg_ref_counts, avg_sig_counts, norm_avg_sig, ste_ref_counts, ste_sig_counts, norm_avg_sig_ste = ret_vals
+    #     freq_center = data['freq_center']
+    #     freq_range = data['freq_range']
+    #     num_steps = data['num_steps']
+    #     num_runs = data['num_runs']
+    #     norm_avg_sig = data['norm_avg_sig']
+        
+        
+    #     freqs = calculate_freqs(freq_range, freq_center, num_steps)
     
-
-    fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
-                                         norm_avg_sig, norm_avg_sig_ste)
+    #     ax.plot(freqs, norm_avg_sig,  label=label_list[f])
+    #     ax.set_xlabel('Frequency (GHz)')
+    #     ax.set_ylabel('Contrast (arb. units)')
+    #     ax.legend(loc='lower right')
+    
+    # fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
+    #                                      norm_avg_sig, norm_avg_sig_ste)
 
     # fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
     #                                norm_avg_sig, ref_counts)
 
-    create_fit_figure(freq_range, freq_center, num_steps,
-                      norm_avg_sig, fit_func, popt)
+    # create_fit_figure(freq_range, freq_center, num_steps,
+    #               norm_avg_sig, fit_func, popt)
 
     # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
-#    simulate(2.87, 0.2, 0.1, 100, 50)
+    simulate(2.8351, 0.035, 0.02, 170, 170/2)

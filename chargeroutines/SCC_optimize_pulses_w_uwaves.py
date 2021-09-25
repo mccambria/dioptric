@@ -847,7 +847,7 @@ def test_rabi(nv_sig):
 def test_esr(nv_sig):
     from random import shuffle
     apd_indices = [0]
-    num_reps =5* 10**3
+    num_reps =10**3
     freq_center = nv_sig['resonance_LOW']
     freq_range = 0.05
     
@@ -936,15 +936,16 @@ if __name__ == '__main__':
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
     
-    green_power = 20
-    red_power = 110
+    green_power = 7
+    red_power = 120
     nd_yellow = "nd_0.5"
     
+    
     nv_sig = {
-        "coords": [0.0555, 0.0526, 4.86],
-        "name": "{}-dnv0_2021_09_09".format(sample_name,),
+                "coords": [-0.020, 0.282, 4.85],
+        "name": "{}-dn70_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 23,
+        "expected_count_rate": 70,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power,
             'imaging_readout_dur': 1E7,
             
@@ -958,12 +959,12 @@ if __name__ == '__main__':
             'spin_shelf_laser_power': 0.6, 'spin_shelf_dur':0,
             
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
-            'charge_readout_laser_power': 0.2, 'charge_readout_dur':50e6,
+            'charge_readout_laser_power': 0.15, 'charge_readout_dur':50e6,
             
             'collection_filter': '630_lp', 'magnet_angle': None,
             
-            # "resonance_LOW": 2.8351, "rabi_LOW": 169.0, 'uwave_power_LOW': 15.5,  # 15.5 max
-            "resonance_LOW": 2.806, "rabi_LOW": 169.0, 'uwave_power_LOW': 15.5,  # 15.5 max
+            #"resonance_LOW": 2.8710, "rabi_LOW": 100, 'uwave_power_LOW': 15.5,  # 15.5 max
+            "resonance_LOW":2.8231, "rabi_LOW":100, 'uwave_power_LOW': 15.5,  # 15.5 max
             
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max  
     

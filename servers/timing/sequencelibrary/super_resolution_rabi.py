@@ -19,7 +19,8 @@ def get_seq(pulse_streamer, config, args):
 
     # Unpack the args
     readout_time, init_time, depletion_time, ion_time, pi_pulse, shelf_time,\
-            uwave_tau_max, green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name, \
+            uwave_tau_max, init_color, depletion_color, \
+            green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name, \
             apd_indices, readout_power, shelf_power = args
 
     # Convert all times to int64
@@ -88,33 +89,92 @@ def get_seq(pulse_streamer, config, args):
              (post_wait_time + wait_time, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
-    # Green laser
-    delay = total_delay - green_delay_time
-    train = [ (delay + init_time + galvo_move_time, LOW), (depletion_time, HIGH), 
-             (galvo_move_time + 3*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time + init_time + galvo_move_time, LOW), 
-             (depletion_time, HIGH), 
-             (galvo_move_time + 3*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time + green_delay_time, LOW)]  
-    # seq.setDigital(pulser_do_532_aom, train)
-    tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                            green_laser_name, None, train)
- 
-    # Red laser
-    delay = total_delay - red_delay_time
-    train = [(delay, LOW), (init_time, HIGH), (galvo_move_time + depletion_time + galvo_move_time + pi_pulse + wait_time + shelf_time, LOW), 
-             (ion_time, HIGH), 
-             (2*wait_time + post_wait_time + readout_time, LOW),
-             (init_time, HIGH), (galvo_move_time + depletion_time + galvo_move_time + pi_pulse + wait_time + shelf_time, LOW), 
-             (ion_time, HIGH), 
-             (2*wait_time + post_wait_time + readout_time + red_delay_time, LOW)]
-    # seq.setDigital(pulser_do_638_aom, train)
-    tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                            red_laser_name, None, train)
+    # clock 
+    # I needed to add 100 ns between the redout and the clock pulse, otherwise 
+    # the tagger misses some of the gate open/close clicks
+    train = [(total_delay + init_time + 100, LOW),(100, HIGH),
+             (galvo_move_time - 100 + depletion_time, LOW), (100, HIGH), 
+             (galvo_move_time + pi_pulse - 100 + wait_time + shelf_time + ion_time + wait_time + readout_time, LOW), (100, HIGH),
+             (post_wait_time + wait_time + init_time - 100, LOW),(100, HIGH),
+             (galvo_move_time - 100 + depletion_time, LOW), (100, HIGH), 
+             (galvo_move_time + pi_pulse - 100 + wait_time + shelf_time + ion_time + wait_time + readout_time, LOW), (100, HIGH), (100, LOW)
+             ] 
+    seq.setDigital(pulser_do_clock, train)
+    
     
     # uwave pulses
     delay = total_delay - rf_delay_time
     train = [(delay  + init_time + depletion_time + galvo_move_time + galvo_move_time, LOW), (pi_pulse, HIGH), 
              (wait_time, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
+    
+    # Green laser
+    green_delay = total_delay - green_delay_time
+    green_train = [ (green_delay, LOW)]
+    
+    # Red laser
+    red_delay = total_delay - red_delay_time
+    red_train = [(red_delay, LOW)]
+    
+    init_train_on = [(init_time, HIGH)]
+    init_train_off = [(init_time, LOW)]
+    if init_color < 589 :
+        green_train.extend(init_train_on)
+        red_train.extend(init_train_off)
+    if init_color > 589:
+        green_train.extend(init_train_off)
+        red_train.extend(init_train_on)
+    
+    green_train.extend([(galvo_move_time, LOW)])
+    red_train.extend([(galvo_move_time, LOW)])
+    
+    deplete_train_on = [(depletion_time, HIGH)]
+    deplete_train_off = [(depletion_time, LOW)]
+    if depletion_color < 589 :
+        green_train.extend(deplete_train_on)
+        red_train.extend(deplete_train_off)
+    if depletion_color > 589:
+        green_train.extend(deplete_train_off)
+        red_train.extend(deplete_train_on)
+        
+    
+    green_train.extend([(galvo_move_time + 3*wait_time + post_wait_time + \
+                         pi_pulse + shelf_time + ion_time + readout_time, LOW)])
+    red_train.extend([(galvo_move_time + pi_pulse + wait_time + shelf_time, LOW), 
+             (ion_time, HIGH), 
+             (2*wait_time + post_wait_time + readout_time, LOW)])
+    
+    
+    if init_color < 589 :
+        green_train.extend(init_train_on)
+        red_train.extend(init_train_off)
+    if init_color > 589:
+        green_train.extend(init_train_off)
+        red_train.extend(init_train_on)
+    
+    green_train.extend([(galvo_move_time, LOW)])
+    red_train.extend([(galvo_move_time, LOW)])
+    
+    if depletion_color < 589 :
+        green_train.extend(deplete_train_on)
+        red_train.extend(deplete_train_off)
+    if depletion_color > 589:
+        green_train.extend(deplete_train_off)
+        red_train.extend(deplete_train_on)
+        
+    green_train.extend([(galvo_move_time + 3*wait_time + post_wait_time + \
+                         pi_pulse + shelf_time + ion_time + readout_time + \
+                             green_delay_time, LOW)])
+    red_train.extend([(galvo_move_time + pi_pulse + wait_time + shelf_time, LOW), 
+             (ion_time, HIGH), 
+             (2*wait_time + post_wait_time + readout_time + red_delay_time, LOW)])
+    
+    
+    tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                            green_laser_name, None, green_train)
+ 
+    tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                            red_laser_name, None, red_train)
     
     # Yellow laser
     delay = total_delay - yellow_delay_time
@@ -130,18 +190,7 @@ def get_seq(pulse_streamer, config, args):
     seq.setAnalog(pulser_ao_589_aom, train) 
     
 
-    # clock 
-    # I needed to add 100 ns between the redout and the clock pulse, otherwise 
-    # the tagger misses some of the gate open/close clicks
-    train = [(total_delay + init_time + 100, LOW),(100, HIGH),
-             (galvo_move_time - 100 + depletion_time, LOW), (100, HIGH), 
-             (galvo_move_time + pi_pulse - 100 + wait_time + shelf_time + ion_time + wait_time + readout_time, LOW), (100, HIGH),
-             (post_wait_time + wait_time + init_time - 100, LOW),(100, HIGH),
-             (galvo_move_time - 100 + depletion_time, LOW), (100, HIGH), 
-             (galvo_move_time + pi_pulse - 100 + wait_time + shelf_time + ion_time + wait_time + readout_time, LOW), (100, HIGH), (100, LOW)
-             ] 
 #    train = [(period + 100, LOW), (100, HIGH), (100, LOW)]
-    seq.setDigital(pulser_do_clock, train)
     
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -153,7 +202,7 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
     
             
-    args = [1000,  100, 400, 500, 100, 100, 200, 'cobolt_515','laserglow_589', 'cobolt_638', 'signal_generator_bnc835',
+    args = [1000,  100, 400, 500, 100, 100, 200, 515, 638, 'cobolt_515','laserglow_589', 'cobolt_638', 'signal_generator_bnc835',
             0, 0.8, 0.8]
     # args = [500000.0, 100000.0, 1500.0, 84, 200, 84, 'cobolt_515', 'laserglow_589', 'cobolt_638', 'signal_generator_bnc835', 0, 0.2, 0.6]
     seq = get_seq(None, config, args)[0]
