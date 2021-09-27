@@ -265,7 +265,7 @@ def plot_2D_space(file, path, true_position = False):
         readout_counts_array_rot = numpy.rot90(readout_counts_array)
              
         # Take the average and ste. 
-        # readout_counts_avg = numpy.average(readout_counts_array_rot[0:5], axis = 0)
+        readout_counts_avg = numpy.average(readout_counts_array_rot[0:5], axis = 0)
         
         
         

@@ -165,7 +165,7 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 def do_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 101
-    num_runs = 30
+    num_runs = 15
     uwave_power = -10.0
 
     resonance.main(
@@ -207,7 +207,7 @@ def do_resonance_state(nv_sig, apd_indices, state):
 
 def do_pulsed_resonance(nv_sig, apd_indices, freq_center=2.87, freq_range=0.2):
 
-    num_steps = 75
+    num_steps = 51
     num_reps = 1e4
     num_runs = 10
     uwave_power = 14.5
@@ -270,14 +270,14 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     num_freq_runs = 10
 
     # Pulsed
-    #uwave_power = 14.5
-    #uwave_pulse_dur = 80
-    #num_freq_reps = int(1e4)
+    uwave_power = 14.5
+    uwave_pulse_dur = 110/2
+    num_freq_reps = int(1e4)
 
     # CW
-    uwave_power = -10.0
-    uwave_pulse_dur = None
-    num_freq_reps = None
+    #uwave_power = -10.0
+    #uwave_pulse_dur = None
+    #num_freq_reps = None
 
     optimize_magnet_angle.main(
         nv_sig,
@@ -853,7 +853,7 @@ if __name__ == "__main__":
         
         
         "collection_filter": "630_lp",
-        "magnet_angle": 60,
+        "magnet_angle": 175,
         # "resonance_LOW": 2.8231,"rabi_LOW": 127.4,
         # "resonance_LOW":2.8641,"rabi_LOW": 89.2,
         "resonance_LOW":2.7568, "rabi_LOW": 89.2,
@@ -934,16 +934,16 @@ if __name__ == "__main__":
         
         
         offset_x = 0#0.00189
-        offset_y = 0
+        offset_y = -0.0057
         offset_z = 0
         offset_list = [offset_x, offset_y, offset_z]
-        num_steps_x = 81
-        num_steps_y = 81
+        num_steps_x = 61
+        num_steps_y = 61
         num_steps_z = 201
         
         
         for i in [7,]:#range(len(coords_list)):
-            for t in [0.5e4]:
+            for t in [1.5e4]:
                 nv_sig_copy = copy.deepcopy(nv_sig)
                 nv_sig_copy['coords'] = coords_list[i]
                 nv_sig_copy['name'] = "{}-dnv{}_2021_09_23".format(sample_name,i)
@@ -954,12 +954,14 @@ if __name__ == "__main__":
                 #do_image_sample(nv_sig_copy, apd_indices)
                 # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
                 # do_g2_measurement(nv_sig_copy, 0, 1)
-                img_range_2D = [0.04,  0.04, 0]
-                #do_SPaCE(nv_sig_copy, nv_sig_copy, 10, num_steps_x, num_steps_y, None,  img_range_2D, offset_list)
-                #do_optimize_magnet_angle(nv_sig_copy, apd_indices)
-                #do_pulsed_resonance_state(nv_sig_copy, apd_indices, States.LOW)
-                do_rabi(nv_sig_copy, apd_indices, States.LOW, uwave_time_range=[0, 300])
+                
+                img_range_2D = [0.04,  0, 6/16]
+                # do_SPaCE(nv_sig_copy, nv_sig_copy, 3, num_steps_x, num_steps_z, None,  img_range_2D, offset_list)
+               # do_optimize_magnet_angle(nv_sig_copy, apd_indices)
+                # do_pulsed_resonance_state(nv_sig_copy, apd_indices, States.LOW)
+                # do_rabi(nv_sig_copy, apd_indices, States.LOW, uwave_time_range=[0, 300])
                 # do_resonance(nv_sig_copy, apd_indices, 2.875, 0.3)
+                do_pulsed_resonance(nv_sig_copy, apd_indices, 2.875, 0.12)
                 # do_pulsed_resonance_state(nv_sig_copy, apd_indices, States.LOW)
             
         
