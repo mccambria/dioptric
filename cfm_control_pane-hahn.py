@@ -161,7 +161,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
 
 def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
-    freq_range = 0.050
+    freq_range = 0.040
     num_steps = 51
     num_reps = 4000
     num_runs = 10
@@ -227,7 +227,7 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
     discrete_rabi.main(nv_sig, apd_indices,
                         state, max_num_pi_pulses, num_reps, num_runs)
     
-    # for iq_delay in numpy.linspace(670, 680, 6):
+    # for iq_delay in numpy.linspace(670, 680, 11):
     #     discrete_rabi.main(nv_sig, apd_indices,
     #                         state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
 
@@ -316,12 +316,12 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 100
-    num_reps = 1500
+    num_runs = 500
+    num_reps = 150
     num_steps = 12
     min_tau = 20e3
-    max_tau_omega = int(17e6)
-    max_tau_gamma = int(10e6)
+    max_tau_omega = int(335e6)
+    max_tau_gamma = int(165e6)
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
@@ -498,7 +498,7 @@ if __name__ == '__main__':
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
-        do_spin_echo_battery(nv_sig, apd_indices)
+        # do_spin_echo_battery(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
@@ -512,13 +512,13 @@ if __name__ == '__main__':
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        # do_t1_interleave_knill(nv_sig, apd_indices)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        do_t1_interleave_knill(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
         #     nv_sig['resonance_HIGH'] = res
