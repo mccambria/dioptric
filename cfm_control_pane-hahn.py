@@ -316,12 +316,12 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 500
-    num_reps = 150
+    num_runs = 300
+    num_reps = 250
     num_steps = 12
     min_tau = 20e3
-    max_tau_omega = int(335e6)
-    max_tau_gamma = int(165e6)
+    max_tau_omega = int(190e6)
+    max_tau_gamma = int(95e6)
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
@@ -465,8 +465,8 @@ if __name__ == '__main__':
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
             'collection_filter': None, 'magnet_angle': 94.28571429,
-            'resonance_LOW': 2.8083, 'rabi_LOW': 204.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9465, 'rabi_HIGH': 276.4, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'resonance_LOW': 2.8068, 'rabi_LOW': 163.8, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9466, 'rabi_HIGH': 214.6, 'uwave_power_HIGH': 14.5}   # 14.5 max
     
     
     # %% Functions to run
@@ -511,13 +511,13 @@ if __name__ == '__main__':
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
         # Automatic T1 setup
-        do_stationary_count(nv_sig, apd_indices)
+        # do_stationary_count(nv_sig, apd_indices)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_t1_interleave_knill(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
