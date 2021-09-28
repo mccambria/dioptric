@@ -65,8 +65,8 @@ ratio_edge_color = "#EF2424"
 sample_column_title = "Sample"
 skip_column_title = "Skip"
 nominal_temp_column_title = "Nominal temp (K)"
-temp_column_title = "ZFS temp (K)"
-# temp_column_title = "Nominal temp (K)"
+# temp_column_title = "ZFS temp (K)"
+temp_column_title = "Nominal temp (K)"
 temp_lb_column_title = "ZFS temp lower bound (K)"
 temp_ub_column_title = "ZFS temp upper bound (K)"
 omega_column_title = "Omega (s^-1)"
@@ -114,6 +114,16 @@ def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     # activation = 78
     # coeff_T5 = 0
     return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 5)
+
+
+def orbach_T5_free_linear(
+    temp, coeff_orbach, activation, coeff_T5, coeff_linear
+):
+    return (
+        (coeff_orbach * bose(activation, temp))
+        + (coeff_T5 * temp ** 5)
+        + (coeff_linear * temp)
+    )
 
 
 def orbach_T7_free(temp, coeff_orbach, activation, coeff_T7):
@@ -252,8 +262,21 @@ def fit_simultaneous(data_points):
     )
     beta_desc = (
         "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
-        " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
+        " (s^-1), activation (meV)]"
     )
+
+    # T5 fixed + linear
+    # init_params = (1.38e-11, 510, 2000, 72.0, 0.07, 0.035)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free_linear(
+    #     temp, beta[1], beta[3], beta[0], beta[4]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free_linear(
+    #     temp, beta[2], beta[3], beta[0], beta[5]
+    # )
+    # beta_desc = (
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV), linear_coeff (K^-1 s^-1)]"
+    # )
 
     # T7
     # init_params = (510, 1.38e-11, 2000, 1.38e-15, 72.0)
@@ -794,3 +817,13 @@ if __name__ == "__main__":
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
     plt.show(block=True)
+
+    # Parameter description: [T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff (s^-1), activation (meV)]
+
+    # ZFS:
+    # popt: [1.0041e-11 4.7025e+02 1.3495e+03 6.9394e+01]
+    # psd: [5.7e-13 6.9e+01 1.6e+02 2.5e+00]
+
+    # Nominal:
+    # popt: [7.1350e-12 6.5556e+02 1.6383e+03 7.2699e+01]
+    # psd: [5.5e-13 8.4e+01 1.7e+02 2.2e+00]
