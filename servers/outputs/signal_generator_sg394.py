@@ -97,7 +97,7 @@ class SignalGeneratorSg394(LabradServer):
 
         # Determine how many decimal places we need
         precision = len(str(freq).split('.')[1])
-        self.sig_gen.write('FREQ {0:.{1}f}GHZ'.format(freq, precision))
+        self.sig_gen.write('FREQ {0:.{1}f} GHZ'.format(freq, precision))
 
     @setting(3, amp='v[]')
     def set_amp(self, c, amp):
@@ -110,7 +110,9 @@ class SignalGeneratorSg394(LabradServer):
 
         # Determine how many decimal places we need
         precision = len(str(amp).split('.')[1])
-        self.sig_gen.write('AMPR {0:.{1}f}DBM'.format(amp, precision))
+        cmd = 'AMPR {0:.{1}f} DBM'.format(amp, precision)
+        logging.info(cmd)
+        self.sig_gen.write(cmd)
 
     # def load_stream_writer(self, task_name, voltages, period):
     #     # Close the existing task and create a new one
