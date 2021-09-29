@@ -110,13 +110,13 @@ def calculate_threshold_plot(readout_time,nv0_array,nvm_array, nd_filter, aom_po
 # Apply a gren or red pulse, then measure the counts under yellow illumination. 
 # Repeat num_reps number of times and returns the list of counts after red illumination, then green illumination
 # Use with DM on red and green
-def measure(nv_sig, apd_indices, num_reps):
+def measure(nv_sig, opti_nv_sig, apd_indices, num_reps):
 
     with labrad.connect() as cxn:
-        sig_counts, ref_counts = measure_with_cxn(cxn, nv_sig, apd_indices, num_reps)
+        sig_counts, ref_counts = measure_with_cxn(cxn, nv_sig,opti_nv_sig,  apd_indices, num_reps)
         
     return sig_counts, ref_counts
-def measure_with_cxn(cxn, nv_sig, apd_indices, num_reps):
+def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
 
     tool_belt.reset_cfm(cxn)
 
@@ -134,14 +134,18 @@ def measure_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     
     reionization_time = nv_sig['nv-_prep_laser_dur']
     ionization_time = nv_sig['nv0_prep_laser_dur']
+    coords = nv_sig['coords']
       
 
     # Set up our data lists
     opti_coords_list = []
     
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
     opti_coords_list.append(opti_coords)
+    drift = tool_belt.get_drift()
+    adjusted_nv_coords = coords + numpy.array(drift)
+    tool_belt.set_xyz(cxn, adjusted_nv_coords)
 
     # Pulse sequence to do a single pulse followed by readout           
     seq_file = 'simple_readout_two_pulse.py'
@@ -184,7 +188,7 @@ def measure_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     
     return nv0, nvm
 
-def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = None,
+def determine_readout_dur(nv_sig, opti_nv_sig, readout_times = None, readout_yellow_powers = None,
                           nd_filter = 'nd_0.5'):
     num_reps = 250
     apd_indices =[0]
@@ -213,7 +217,7 @@ def determine_readout_dur(nv_sig, readout_times = None, readout_yellow_powers = 
             nv_sig_copy['charge_readout_dur'] = t
             nv_sig_copy['charge_readout_laser_power'] = p
             
-            nv0, nvm = measure(nv_sig_copy, apd_indices, num_reps)
+            nv0, nvm = measure(nv_sig_copy, opti_nv_sig, apd_indices, num_reps)
             nv0_power.append(nv0)
             nvm_power.append(nvm)
             
@@ -409,15 +413,29 @@ if __name__ == '__main__':
     green_laser = "cobolt_515"
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
+    green_power= 7
+    
+    
+    opti_nv_sig = {
+        "coords": [-0.037, 0.273, 4.85],
+        "name": "{}-nv0_2021_09_23".format(sample_name,),
+        "disable_opt": False,
+        "expected_count_rate": 42,
+        "imaging_laser":green_laser,
+        "imaging_laser_power": green_power,
+        "imaging_readout_dur": 1e7,
+        "collection_filter": "630_lp",
+        "magnet_angle": None,
+    }  # 14.5 max
     
     nv_sig = {
-        "coords": [-0.010, -0.041, 5.0],
-        "name": "{}-nv1_2021_09_07".format(sample_name,),
+        "coords": [-0.037, 0.273, 4.85],
+        "name": "{}-nv0_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 27,
-            'imaging_laser': green_laser, 'imaging_laser_power': 10, 'imaging_readout_dur': 1E7,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': 10, 'nv-_prep_laser_dur': 1E3,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 50, 'nv0_prep_laser_dur': 1E3,
+        "expected_count_rate": 42,
+            'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None, 
             'charge_readout_laser_power': None, 'charge_readout_dur':None,
             'collection_filter': '630_lp', 'magnet_angle': None,
@@ -427,7 +445,7 @@ if __name__ == '__main__':
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
-        determine_readout_dur(nv_sig, readout_times = [50e6], readout_yellow_powers = [0.15],
+        determine_readout_dur(nv_sig, nv_sig, readout_times = [50e6], readout_yellow_powers = [0.12],
                           nd_filter = 'nd_0.5')
     finally:
         # Reset our hardware - this should be done in each routine, but

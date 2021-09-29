@@ -62,12 +62,12 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 
 # %%
 
-num_runs = 80
-num_reps = 1000
+num_runs = 300
+num_reps = 250
 num_steps = 12
 min_tau = 20e3
-max_tau_omega = int(8e6)
-max_tau_gamma = int(6e6)
+max_tau_omega = int(190e6)
+max_tau_gamma = int(95e6)
 t1_exp_array = numpy.array([
         [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
         [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],

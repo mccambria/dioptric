@@ -57,6 +57,8 @@ def measure_delay(
     ref_counts = numpy.copy(sig_counts)
 
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    if 'charge_readout_laser_filter' in nv_sig:
+        tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
 
     tool_belt.reset_cfm(cxn)
 
@@ -106,8 +108,9 @@ def measure_delay(
                 laser_name,
                 laser_power,
             ]
-        #        print(seq_args)
-        #        return
+
+        # print(seq_args)
+        # return
         # Clear the tagger buffer of any excess counts
         cxn.apd_tagger.clear_buffer()
         seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -117,6 +120,8 @@ def measure_delay(
 
         new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
         sample_counts = new_counts[0]
+        if len(sample_counts) != 2 * num_reps:
+            print("Error!")
         ref_counts[tau_ind] = sum(sample_counts[0::2])
         sig_counts[tau_ind] = sum(sample_counts[1::2])
 
@@ -188,8 +193,8 @@ def aom_delay(
     laser_power,
 ):
     """
-    This will repeatedly run the same sequence with different laser delays.
-    If there were no delays, the sequence would look like this
+    This will repeatedly run the same sequence with different passed laser
+    delays. If there were no delays, the sequence would look like this
     laser ________|--------|________|--------|___
     APD   ___________|--|_________________|--|___
     The first readout is a reference - the laser should be on long enough such
@@ -228,8 +233,8 @@ def uwave_delay(
 ):
 
     """
-    This will repeatedly run the same sequence with different microwave delays.
-    If there were no delays, the sequence would look like this
+    This will repeatedly run the same sequence with different passed microwave
+    delays. If there were no delays, the sequence would look like this
     uwave ______________________|---|____________
     laser ________|--------|________|--------|___
     APD   ________|----|____________|----|_______
@@ -267,71 +272,71 @@ def uwave_delay(
 if __name__ == "__main__":
 
     # Set up your parameters to be passed to main here
-    sample_name = "hopper"
+    sample_name = "johnson"
+    green_power = 20
     nd = "nd_0.5"
-    # green_laser = 'cobolt_515'
-    green_laser = "laserglow_532"
+    green_laser = 'cobolt_515'
+    # green_laser = "laserglow_532"
     nv_sig = {
-        "coords": [0.0, 0.0, 5.0],
-        "name": "{}-search".format(sample_name),
-        "disable_opt": True,
-        "expected_count_rate": 1000,
-        "imaging_laser": "laserglow_532",
-        "imaging_laser_filter": nd,
-        "imaging_readout_dur": 1e7,
-        "spin_laser": "laserglow_532",
-        "spin_laser_filter": nd,
+        "coords": [-0.012, -0.016, 4.85],
+        "name": "{}-nv1_2021_09_07".format(sample_name,),
+        "disable_opt": False,
+        "expected_count_rate": 17,
+
+        "spin_laser": green_laser,
+        "spin_laser_power": green_power,
         "spin_pol_dur": 1e5,
+        "spin_readout_laser_power": green_power,
         "spin_readout_dur": 350,
-        "charge_readout_laser": "laser_589",
-        "charge_readout_laser_filter": nd,
-        "charge_readout_dur": 350,
-        "NV-_pol_laser": "laser_589",
-        "NV-_pol_laser_filter": nd,
-        "NV-_pol_dur": 240,
-        "collection_filter": None,
-        "magnet_angle": 225,
-        "resonance_LOW": 2.7549,
-        "rabi_LOW": 187.9,
-        "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.9891,
-        "rabi_HIGH": 338.1,
+
+        "imaging_laser":green_laser,
+        "imaging_laser_power": green_power,
+        "imaging_readout_dur": 1e7,
+        "charge_readout_laser": 'nd_0',
+
+        "collection_filter": "630_lp",
+        "magnet_angle": None,
+        "resonance_LOW": 2.8521,
+        "rabi_LOW": 100,
+        "uwave_power_LOW": 14.5,  # 15.5 max
+        "resonance_HIGH": 2.8691,
+        "rabi_HIGH": 150,
         "uwave_power_HIGH": 14.5,
-    }  # 14.5 max
-    apd_indices = [1]
+        }
+    apd_indices = [0]
 
     try:
 
         # aom_delay
-        # num_reps = int(5E4)
-        # num_steps = 51
-        # # laser_name = 'cobolt_515'
-        # # delay_range = [0, 300]
+        num_reps = int(5E4)
+        num_steps = 101
+        laser_name = 'laserglow_589'
+        # delay_range = [0, 300]
         # laser_name = 'laserglow_532'
-        # delay_range = [800, 1200]
-        # laser_power = None
-        # with labrad.connect() as cxn:
-        #     aom_delay(cxn, nv_sig, apd_indices,
-        #               delay_range, num_steps, num_reps, laser_name, laser_power)
+        delay_range = [1000, 2000]
+        laser_power = 1.0
+        with labrad.connect() as cxn:
+            aom_delay(cxn, nv_sig, apd_indices,
+                      delay_range, num_steps, num_reps, laser_name, laser_power)
 
         # uwave_delay
-        num_reps = int(4e4)
-        delay_range = [-200, 200]
-        num_steps = 51
-        # sg394
-        state = States.LOW
-        # tsg4104a
-        # state = States.HIGH
-        with labrad.connect() as cxn:
-            uwave_delay(
-                cxn,
-                nv_sig,
-                apd_indices,
-                state,
-                delay_range,
-                num_steps,
-                num_reps,
-            )
+        # num_reps = int(1e4)
+        # delay_range = [-200, 200]
+        # num_steps = 101
+        # # sg394
+        # state = States.LOW
+        # # tsg4104a
+        # # state = States.HIGH
+        # with labrad.connect() as cxn:
+        #     uwave_delay(
+        #         cxn,
+        #         nv_sig,
+        #         apd_indices,
+        #         state,
+        #         delay_range,
+        #         num_steps,
+        #         num_reps,
+        #     )
 
     finally:
         # Reset our hardware - this should be done in each routine, but

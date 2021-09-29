@@ -16,10 +16,14 @@ import labrad
 import socket
 import os
 
+power_limit_factor = 0.96
+integral_max = power_limit_factor * 24 / 0.01
+
 
 def set_power(cxn, power, resistance):
+    global power_limit_factor
     # Thorlabs HT24S: limit is 24 W, but let's not quite max it out
-    power_limit = 0.9 * 24
+    power_limit = power_limit_factor * 24
     if power > power_limit:
         power = power_limit
     if power <= 0.01:
@@ -47,7 +51,7 @@ def calc_error(pid_state, target, actual):
     # Integral
     new_integral_term = (cur_meas_time - last_meas_time) * last_error
     new_integral = integral + new_integral_term
-    integral_max = 2160.0
+    global integral_max
     integral_min = 0.0
     if new_integral > integral_max:
         new_integral = integral_max
@@ -198,6 +202,7 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
         power = pid(pid_state, pid_coeffs)
         if now - last_resistance_time > resistance_period:
             resistance = update_resistance(cxn)
+            print(resistance)
             last_resistance_time = now
         set_power(cxn, power, resistance)
         # Immediately get a better resistance measurement after the first set
@@ -209,13 +214,14 @@ def main_with_cxn(cxn, do_plot, target, pid_coeffs, integral_bootstrap=0.0):
 if __name__ == "__main__":
 
     do_plot = True
-    target = 500.0
+    target = 350.0
     pid_coeffs = [0.5, 0.01, 0]
     # Bootstrap the integral term after restarting to mitigate windup,
     # ringing, etc
+    # integral_bootstrap = 0.0
     # integral_bootstrap = 1.7 / 0.01
     # integral_bootstrap = 0.6*24 / 0.01
-    integral_bootstrap = 0.9*24 / 0.01
+    integral_bootstrap = integral_max
 
     with labrad.connect() as cxn:
         # Set up the multimeter for temperature measurement

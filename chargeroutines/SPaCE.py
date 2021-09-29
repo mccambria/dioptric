@@ -248,50 +248,66 @@ def gaussian_fit_1D_airy_rings(file_name, file_path, lobe_positions):
 
     return fit_params_list
 
-def plot_2D_space(file, path):
+def plot_2D_space(file, path, true_position = False):
         data = tool_belt.get_raw_data(file, path)
         # try:
         nv_sig = data['nv_sig']
         CPG_laser_dur = nv_sig['CPG_laser_dur']
         readout_counts_avg = numpy.array(data['readout_counts_avg'])
+        readout_counts_array = numpy.array(data['readout_counts_array'])
         num_steps_b = data['num_steps_b']    
         a_voltages_1d = data['a_voltages_1d']
         b_voltages_1d = data['b_voltages_1d']
         img_range_2D= data['img_range_2D']
+        drift_list = data['drift_list_master']
         axes = [0,1]
-        # x_low = x_voltages[0]
-        # x_high = x_voltages[-1]
-        # y_low = y_voltages[0]
-        # y_high = y_voltages[-1]
-        # pixel_size = x_voltages[1] - x_voltages[0]
-        # half_pixel_size = pixel_size / 2
-        # img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-        #               y_low - half_pixel_size, y_high + half_pixel_size]
         
-        half_range_a = img_range_2D[axes[0]]/2
-        half_range_b = img_range_2D[axes[1]]/2
-        a_low = -half_range_a
-        a_high = half_range_a
-        b_low = -half_range_b
-        b_high = half_range_b
+        readout_counts_array_rot = numpy.rot90(readout_counts_array)
+             
+        # Take the average and ste. 
+        # readout_counts_avg = numpy.average(readout_counts_array_rot[0:5], axis = 0)
         
-        # a_low = -half_range_a + offset_2D[axes[0]]
-        # a_high = half_range_a + offset_2D[axes[0]]
-        # b_low = -half_range_b + offset_2D[axes[1]]
-        # b_high = half_range_b + offset_2D[axes[1]]
-
-
-        pixel_size_a = (a_voltages_1d[1] - a_voltages_1d[0])
-        pixel_size_b = (b_voltages_1d[1] - b_voltages_1d[0])
-
-        half_pixel_size_a = pixel_size_a / 2
-        half_pixel_size_b = pixel_size_b / 2
         
-        img_extent = [(a_low - half_pixel_size_a)*35,
-                      (a_high + half_pixel_size_a)*35, 
-                     
-                     (b_low - half_pixel_size_b)*35, 
-                     (b_high + half_pixel_size_b)*35 ]
+        
+        if true_position == False:
+            half_range_a = img_range_2D[axes[0]]/2
+            half_range_b = img_range_2D[axes[1]]/2
+            a_low = -half_range_a
+            a_high = half_range_a
+            b_low = -half_range_b
+            b_high = half_range_b
+            
+            # a_low = -half_range_a + offset_2D[axes[0]]
+            # a_high = half_range_a + offset_2D[axes[0]]
+            # b_low = -half_range_b + offset_2D[axes[1]]
+            # b_high = half_range_b + offset_2D[axes[1]]
+    
+    
+            pixel_size_a = (a_voltages_1d[1] - a_voltages_1d[0])
+            pixel_size_b = (b_voltages_1d[1] - b_voltages_1d[0])
+    
+            half_pixel_size_a = pixel_size_a / 2
+            half_pixel_size_b = pixel_size_b / 2
+            
+            img_extent = [(a_low - half_pixel_size_a)*35,
+                          (a_high + half_pixel_size_a)*35, 
+                         
+                         (b_low - half_pixel_size_b)*35, 
+                         (b_high + half_pixel_size_b)*35 ]
+            um_scaled = True
+        else:
+            # a_voltages_1d = numpy.array(a_voltages_1d) + drift_list[0][0][0]
+            # b_voltages_1d = numpy.array(b_voltages_1d) + drift_list[0][0][1]
+            
+            x_low = a_voltages_1d[0]
+            x_high = a_voltages_1d[-1]
+            y_low = b_voltages_1d[0]
+            y_high = b_voltages_1d[-1]
+            pixel_size = a_voltages_1d[1] - a_voltages_1d[0]
+            half_pixel_size = pixel_size / 2
+            img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+                          y_low - half_pixel_size, y_high + half_pixel_size]
+            um_scaled = False
 
 
         
@@ -302,15 +318,33 @@ def plot_2D_space(file, path):
             if r % 2 == 0:
                 readout_image_array[i] = list(reversed(readout_image_array[i]))
             r += 1
-                
+        
+        readout_image_array = numpy.flipud(readout_image_array)
         title = 'SPaCE - {} ms depletion pulse'.format(CPG_laser_dur)
         
 
 
-        tool_belt.create_image_figure(numpy.fliplr(numpy.flipud(readout_image_array)), img_extent, clickHandler=None,
+        tool_belt.create_image_figure(readout_image_array, img_extent, clickHandler=on_click_image,
                             title=title, color_bar_label='Counts',
-                            min_value=None, um_scaled=False)
+                            min_value=None, um_scaled=um_scaled)
 
+# %%
+def on_click_image(event):
+    """
+    Click handler for images. Prints the click coordinates to the console.
+
+    Params:
+        event: dictionary
+            Dictionary containing event details
+    """
+
+    try:
+        print('{:.3f}, {:.3f}'.format(event.xdata, event.ydata))
+#        print('[{:.3f}, {:.3f}, 50.0],'.format(event.xdata, event.ydata))
+    except TypeError:
+        # Ignore TypeError if you click in the figure but out of the image
+        pass
+    
 # %%
 
 def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift, 
@@ -376,25 +410,25 @@ def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift,
         for n in range(movement_incr):
         # for the final move, just put in the prefered value to avoid rounding errors
             if n > num_steps_x-1:
-                # x_points.append(start_x_value)
-                x_points.append(coords_list_drift[i][0])
+                x_points.append(start_x_value)
+                # x_points.append(coords_list_drift[i][0])
             else:
-                # move_x = (n+1)*step_size_x * dx / abs(dx)
-                # incr_x_val = coords_list_drift[i][0] - move_x
-                # x_points.append(incr_x_val)
                 move_x = (n+1)*step_size_x * dx / abs(dx)
-                incr_x_val = move_x + start_x_value
+                incr_x_val = coords_list_drift[i][0] - move_x
                 x_points.append(incr_x_val)
+                # move_x = (n+1)*step_size_x * dx / abs(dx)
+                # incr_x_val = move_x + start_x_value
+                # x_points.append(incr_x_val)
             if n > num_steps_y-1:
-                # y_points.append(start_y_value)
-                y_points.append(coords_list_drift[i][1])
+                y_points.append(start_y_value)
+                # y_points.append(coords_list_drift[i][1])
             else:
-                # move_y = (n+1)*step_size_y * dy / abs(dy)
-                # incr_y_val = coords_list_drift[i][1] - move_y
-                # y_points.append(incr_y_val)
                 move_y = (n+1)*step_size_y * dy / abs(dy)
-                incr_y_val = move_y + start_y_value
+                incr_y_val = coords_list_drift[i][1] - move_y
                 y_points.append(incr_y_val)
+                # move_y = (n+1)*step_size_y * dy / abs(dy)
+                # incr_y_val = move_y + start_y_value
+                # y_points.append(incr_y_val)
                 
             if n > num_steps_z-1:
                 z_points.append(start_z_value)
@@ -887,13 +921,9 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         # sort which voltage lists go to which axes
         voltage_list = [[],[],[]]
         voltage_list[axes[0]] = numpy.array(a_voltages) + offset_2D[axes[0]]
-        # print(offset_2D[axes[1]])
-        # print((numpy.array(b_voltages) - start_coords[axes[1]])*35)
-        # return
         voltage_list[axes[1]] = numpy.array(b_voltages) + offset_2D[axes[1]]
         voltage_list[stationary_axis] = c_voltages + offset_2D[stationary_axis]
         
-
         # Combine the x and y voltages together into pairs
         coords_voltages = list(zip(voltage_list[0], voltage_list[1], voltage_list[2]))
 
@@ -905,11 +935,11 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         b_low = -half_range_b
         b_high = half_range_b
         if axes[0] == 2:
-            a_low   -= offset_2D[axes[0]]
-            a_high  -= offset_2D[axes[0]]
+            a_low   += offset_2D[axes[0]]
+            a_high  += offset_2D[axes[0]]
         elif axes[1] == 2:
-            b_low   -= offset_2D[axes[1]]
-            b_high -= offset_2D[axes[1]]
+            b_low   += offset_2D[axes[1]]
+            b_high += offset_2D[axes[1]]
         
         # a_low = -half_range_a + offset_2D[axes[0]]
         # a_high = half_range_a + offset_2D[axes[0]]
@@ -929,14 +959,14 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
                      (b_high + half_pixel_size_b)*scale_list[axes[1]] ]
 
 # ###
-        x_low = a_voltages_1d[0]
-        x_high = a_voltages_1d[-1]
-        y_low = b_voltages_1d[0]
-        y_high = b_voltages_1d[-1]
-        pixel_size = a_voltages_1d[1] - a_voltages_1d[0]
-        half_pixel_size = pixel_size / 2
-        img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
-                      y_low - half_pixel_size, y_high + half_pixel_size]
+        #x_low = a_voltages_1d[0]
+        #x_high = a_voltages_1d[-1]
+        #y_low = b_voltages_1d[0]
+        #y_high = b_voltages_1d[-1]
+       # pixel_size = a_voltages_1d[1] - a_voltages_1d[0]
+        #half_pixel_size = pixel_size / 2
+        #img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
+        #              y_low - half_pixel_size, y_high + half_pixel_size]
  # ###       
         # Create some empty data lists
 
@@ -1040,20 +1070,32 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         file_path = tool_belt.get_file_path(__file__, start_timestamp, nv_sig['name'], 'incremental')
 
         if measurement_type == '2D':
-            # create the img arrays
-            # writePos = []
             # create image array from list of  readout counts
             split_counts = numpy.split(readout_counts_avg, num_steps_b)
             readout_image_array = numpy.vstack(split_counts)
             r = 0
-            for i in reversed(range(len(readout_image_array))):
+            # our voltages are built from the bottom right corner, and then listed as a 
+            # raster pattern (bottom right to bottom left, then up one row. 
+            #Then the row progresses to the reight, and the pattern is repeated.
+            
+            #However, pyplot.imshow expects the array to be built from the top left.
+            
+            # we will prepare the data so that is presented in this way
+            # first, we need to flip every other row, sin ce we assumed it was rastered
+            for i in range(len(readout_image_array)):
                 if r % 2 == 0:
                     readout_image_array[i] = list(reversed(readout_image_array[i]))
                 r += 1
+                
+            #Lastly, I need to flip the whole array up to down
+            readout_image_array = numpy.flipud(readout_image_array)
                     
             
+            # create the img arrays
+            # writePos = []
             # readout_image_array = image_sample.populate_img_array(readout_counts_avg, readout_image_array, writePos)
-
+            
+            # print(readout_image_array)
             tool_belt.update_image_figure(fig_2D, readout_image_array)
 
             raw_data['a_voltages_1d'] = a_voltages_1d.tolist()
@@ -1126,7 +1168,7 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         raw_data['img_extent'] = img_extent
         raw_data['img_extent-units'] = 'V'
         raw_data['readout_image_array'] = readout_image_array.tolist()
-        raw_data['readout_counts_array-units'] = 'counts'
+        raw_data['readout_image_array-units'] = 'counts'
 
 
         tool_belt.save_figure(fig_2D, file_path)
@@ -1495,12 +1537,12 @@ if __name__ == '__main__':
 
     #================ specific for 2D scans ================#
     file_list = [
-        '2021_09_10-04_31_06-johnson-dnv4_2021_09_09'
+        '2021_09_24-19_30_38-johnson-dnv7_2021_09_23'
         ]
 
     for f in range(len(file_list)):
         file = file_list[f]
-        plot_2D_space(file, path)
+        plot_2D_space(file, path, true_position = True)
 
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))

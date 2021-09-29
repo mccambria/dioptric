@@ -27,16 +27,16 @@ import labrad
 from tkinter import Tk
 from tkinter import filedialog
 from git import Repo
-from pathlib import Path
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from enum import Enum, auto
 import socket
 import smtplib
 from email.mime.text import MIMEText
 import traceback
 import keyring
-import platform
-import glob
+import math
+import utils.common as common
+import utils.search_index as search_index
 
 # %% Constants
 
@@ -79,7 +79,7 @@ def set_xyz(cxn, coords):
     ####Update to step incrementally to this position from the current position
     # get current x, y, z values
     # divide up movement to this value based on step_size
-    #incrementally move to the final position
+    # incrementally move to the final position
     xy_dtype = eval(
         get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
     )
@@ -96,14 +96,13 @@ def set_xyz(cxn, coords):
         z_op = round
     else:
         z_op = z_dtype
-        
-        
-        
+
     xy_server.write_xy(xy_op(coords[0]), xy_op(coords[1]))
     z_server.write_z(z_op(coords[2]))
     # Force some delay before proceeding to account
     # for the effective write time
     time.sleep(0.002)
+
 
 def set_xyz_step(cxn, coords):
     xy_dtype = eval(
@@ -114,91 +113,98 @@ def set_xyz_step(cxn, coords):
     )
     # Get the min step size
     step_size_xy = eval(
-        get_registry_entry(cxn, "xy_incremental_step_size", 
-                           ["", "Config", "Positioning"]))
+        get_registry_entry(
+            cxn, "xy_incremental_step_size", ["", "Config", "Positioning"]
+        )
+    )
     step_size_z = eval(
-        get_registry_entry(cxn, "z_incremental_step_size", 
-                           ["", "Config", "Positioning"]) )
+        get_registry_entry(
+            cxn, "z_incremental_step_size", ["", "Config", "Positioning"]
+        )
+    )
     # Get the delay between movements
     try:
         xy_delay = eval(
-            get_registry_entry(cxn, "xy_delay", 
-                           ["", "Config", "Positioning"]))
+            get_registry_entry(cxn, "xy_delay", ["", "Config", "Positioning"])
+        )
     except Exception:
         xy_delay = eval(
-            get_registry_entry(cxn, "xy_small_response_delay", # AG Eventually pahse out large angle response
-                           ["", "Config", "Positioning"]))
-        
+            get_registry_entry(
+                cxn,
+                "xy_small_response_delay",  # AG Eventually pahse out large angle response
+                ["", "Config", "Positioning"],
+            )
+        )
+
     z_delay = eval(
-            get_registry_entry(cxn, "z_delay", 
-                           ["", "Config", "Positioning"]))
+        get_registry_entry(cxn, "z_delay", ["", "Config", "Positioning"])
+    )
     # Take whichever one is longer
     if xy_delay > z_delay:
         movement_delay = xy_delay
     else:
         movement_delay = z_delay
-    
+
     xyz_server = get_xyz_server(cxn)
-    
+
     # if the movement type is int, just skip this and move to the desired position
-    if xy_dtype is int or  z_dtype is int:
+    if xy_dtype is int or z_dtype is int:
         set_xyz(cxn, coords)
         return
-    
-        
+
     # Get current and final position
     current_x, current_y = xyz_server.read_xy()
     current_z = xyz_server.read_z()
     final_x, final_y, final_z = coords
-    
-    num_steps_x = numpy.ceil(abs(final_x - current_x)/step_size_xy)
-    num_steps_y = numpy.ceil(abs(final_y - current_y)/step_size_xy)
-    num_steps_z = numpy.ceil(abs(final_z - current_z)/step_size_z)
-    
+
+    num_steps_x = numpy.ceil(abs(final_x - current_x) / step_size_xy)
+    num_steps_y = numpy.ceil(abs(final_y - current_y) / step_size_xy)
+    num_steps_z = numpy.ceil(abs(final_z - current_z) / step_size_z)
+
     max_steps = max([num_steps_x, num_steps_y, num_steps_z])
     x_points = [current_x]
     y_points = [current_y]
     z_points = [current_z]
-    
+
     # set up the voltages to step thru. Once x, y, or z reach their final
     # value, just pass the final position for the remaining steps
     for n in range(max_steps):
-            if n > num_steps_x-1:
-                x_points.append(final_x)
-            else:
-                move_x = (n+1)*step_size_xy
-                incr_x_val = move_x + current_x
-                x_points.append(incr_x_val)
-                
-            if n > num_steps_y-1:
-                y_points.append(final_y)
-            else:
-                move_y = (n+1)*step_size_xy
-                incr_y_val = move_y + current_y
-                y_points.append(incr_y_val)
-                
-            if n > num_steps_z-1:
-                z_points.append(final_z)
-            else:
-                move_z = (n+1)*step_size_z
-                incr_z_val = move_z + current_z
-                z_points.append(incr_z_val)
+        if n > num_steps_x - 1:
+            x_points.append(final_x)
+        else:
+            move_x = (n + 1) * step_size_xy
+            incr_x_val = move_x + current_x
+            x_points.append(incr_x_val)
+
+        if n > num_steps_y - 1:
+            y_points.append(final_y)
+        else:
+            move_y = (n + 1) * step_size_xy
+            incr_y_val = move_y + current_y
+            y_points.append(incr_y_val)
+
+        if n > num_steps_z - 1:
+            z_points.append(final_z)
+        else:
+            move_z = (n + 1) * step_size_z
+            incr_z_val = move_z + current_z
+            z_points.append(incr_z_val)
 
     # Run a simple clock pulse repeatedly to move through votlages
-    file_name = 'simple_clock.py'
+    file_name = "simple_clock.py"
     seq_args = [movement_delay]
     seq_args_string = encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     period = ret_vals[0]
-    
+
     xyz_server.load_arb_scan_xyz(x_points, x_points, z_points, int(period))
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     cxn.pulse_streamer.stream_start(max_steps)
-    
+
     # Force some delay before proceeding to account
     # for the effective write time
     time.sleep(0.002)
-    
+
 
 def set_xyz_center(cxn):
     # MCC Generalize this for Hahn
@@ -390,7 +396,6 @@ def process_laser_seq(
     HIGH = 1
 
     processed_train = []
-    print(feedthrough)
 
     if mod_type is Mod_types.DIGITAL:
         # Digital, feedthrough, bookend each pulse with 100 ns clock pulses
@@ -519,6 +524,27 @@ def get_tagger_wiring(cxn):
 
 
 # %% Matplotlib plotting utils
+
+
+def init_matplotlib(font_size=11.25):
+    """Runs the default initialization/configuration for matplotlib"""
+
+    # Interactive mode so plots update as soon as the event loop runs
+    plt.ion()
+
+    # Default latex packages
+    plt.rcParams["text.latex.preamble"] = (
+        r"\usepackage{physics} \usepackage{sfmath} \usepackage{upgreek}"
+        r" \usepackage{helvet}"
+    )
+
+    plt.rcParams["font.size"] = font_size
+
+    # Use Google's free alternative to Helvetica
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = "Roboto"
+
+    plt.rc("text", usetex=True)
 
 
 def create_image_figure(
@@ -890,8 +916,8 @@ def calc_snr(sig_count, ref_count):
     sig_count_avg = numpy.average(sig_count)
     ref_count_avg = numpy.average(ref_count)
     dif = sig_count_avg - ref_count_avg
-    sum_= sig_count_avg + ref_count_avg
-    noise = numpy.sqrt(sum_)
+    sum_ = sig_count_avg + ref_count_avg
+    noise = numpy.sqrt(sig_count_avg)
     snr = dif / noise
 
     return snr
@@ -1086,14 +1112,17 @@ def ask_open_file(file_path):
 def get_file_list(
     path_from_nvdata,
     file_ends_with,
-    data_dir="E:/Shared drives/Kolkowitz Lab Group/nvdata",
+    data_dir=None,
 ):
     """
     Creates a list of all the files in the folder for one experiment, based on
     the ending file name
     """
 
-    data_dir = Path(data_dir)
+    if data_dir is None:
+        data_dir = common.get_nvdata_dir()
+    else:
+        data_dir = PurePath(data_dir)
     file_path = data_dir / path_from_nvdata
 
     file_list = []
@@ -1125,17 +1154,6 @@ def get_file_list(
 #         return json.load(file)
 
 
-def get_nvdata_dir():
-    """Returns the directory for nvdata as appropriate for the OS."""
-    os_name = platform.system()
-    if os_name == "Windows":
-        nvdata_dir = PurePath("E:/Shared drives/Kolkowitz Lab Group/nvdata")
-    elif os_name == "Linux":
-        nvdata_dir = Path.home() / "E" / "nvdata"
-
-    return nvdata_dir
-
-
 def get_raw_data(
     file_name,
     path_from_nvdata=None,
@@ -1151,24 +1169,18 @@ def get_raw_data(
     """
 
     if nvdata_dir is None:
-        nvdata_dir = get_nvdata_dir()
+        nvdata_dir = common.get_nvdata_dir()
 
     if path_from_nvdata is None:
-        year_month = file_name[0:7]
-        glob_str = "{}/*/*/*/{}/{}.txt".format(
-            str(nvdata_dir), year_month, file_name
-        )
-        for el in glob.glob(glob_str):
-            # The file has to be unique so we can just assign the first
-            # elemnent we find to file_path
-            file_path = el
-    else:
-        data_dir = nvdata_dir / path_from_nvdata
-        file_name_ext = "{}.txt".format(file_name)
-        file_path = data_dir / file_name_ext
+        path_from_nvdata = search_index.get_data_path(file_name)
 
-    with open(file_path) as f:
-        return json.load(f)
+    data_dir = nvdata_dir / path_from_nvdata
+    file_name_ext = "{}.txt".format(file_name)
+    file_path = data_dir / file_name_ext
+
+    with file_path.open() as f:
+        res = json.load(f)
+        return res
 
 
 # %%  Save utils
@@ -1176,8 +1188,8 @@ def get_raw_data(
 
 def get_branch_name():
     """Return the name of the active branch of kolkowitz-nv-experiment-v1.0"""
-    home_to_repo = Path("Documents/GitHub/kolkowitz-nv-experiment-v1.0")
-    repo_path = Path.home() / home_to_repo
+    home_to_repo = PurePath("Documents/GitHub/kolkowitz-nv-experiment-v1.0")
+    repo_path = PurePath(Path.home()) / home_to_repo
     repo = Repo(repo_path)
     return repo.active_branch.name
 
@@ -1206,23 +1218,10 @@ def get_folder_dir(source_name, subfolder):
     branch_name = get_branch_name()
     pc_name = socket.gethostname()
 
-    # # Check where we should save to
-    # if branch_name == 'master':
-    #     # master should save without a branch sub-folder
-    #     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
-    #                                source_name)
-    # else:
-    #     # Otherwise we want a branch sub-folder so that we know this data was
-    #     # produced by code that's under development
-    #     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
-    #                                source_name,
-    #                                'branch_{}'.format(branch_name))
-
-    joined_path = os.path.join(
-        "E:/Shared drives/Kolkowitz Lab Group/nvdata",
-        "pc_{}".format(pc_name),
-        "branch_{}".format(branch_name),
-        source_name,
+    nvdata_dir = common.get_nvdata_dir()
+    joined_path = (
+        nvdata_dir / "pc_{}".format(pc_name) /
+        "branch_{}".format(branch_name) / source_name
     )
 
     if subfolder is not None:
@@ -1254,14 +1253,6 @@ def get_files_in_folder(folderDir, filetype=None):
         file_list = file_list_temp
 
     return file_list
-
-
-def get_data_path():
-    return Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
-
-
-def get_data_path():
-    return Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
 
 
 def get_file_path(source_name, time_stamp="", name="", subfolder=None):
@@ -1371,6 +1362,8 @@ def save_raw_data(rawData, filePath):
             extension
     """
 
+    file_path_ext = PurePath(filePath + ".txt")
+
     # Add in a few things that should always be saved here. In particular,
     # sharedparameters so we have as snapshot of the configuration and
     # nv_sig_units. If these have already been defined in the routine,
@@ -1383,8 +1376,14 @@ def save_raw_data(rawData, filePath):
     except Exception as e:
         print(e)
 
-    with open(filePath + ".txt", "w") as file:
+    with open(file_path_ext, "w") as file:
         json.dump(rawData, file, indent=2)
+
+    # print(repr(search_index.search_index_regex))
+    
+    # cuasing issues 9/23/2021 AG
+    # if file_path_ext.match(search_index.search_index_glob):
+    #     search_index.add_to_search_index(file_path_ext)
 
 
 def get_nv_sig_units():
@@ -1641,6 +1640,20 @@ def measure_g_r_y_power(aom_ao_589_pwr, nd_filter):
     )
 
 
+def round_sig_figs(val, num_sig_figs):
+    func = lambda val, num_sig_figs: round(
+        val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1)
+    )
+    if type(val) is list:
+        return [func(el, num_sig_figs) for el in val]
+    elif type(val) is numpy.ndarray:
+        val_list = val.tolist()
+        rounded_val_list = [func(el, num_sig_figs) for el in val_list]
+        return numpy.array(rounded_val_list)
+    else:
+        return func(val, num_sig_figs)
+
+
 # %% Safe stop (TM mccambria)
 
 
@@ -1835,7 +1848,7 @@ def reset_cfm_with_cxn(cxn):
             continue
         server = cxn[name]
         # Check for servers that ask not to be reset automatically
-        if hasattr(server, "reset_cfm_opt_out") and server.reset_cfm_opt_out:
+        if hasattr(server, "reset_cfm_opt_out"):
             continue
         if hasattr(server, "reset"):
             server.reset()

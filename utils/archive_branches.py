@@ -149,6 +149,6 @@ if __name__ == "__main__":
     )
 
     # List of branches to archive
-    branches_to_archive = ["fast-file-lookup"]
+    branches_to_archive = ["time-tagger-speedup"]
 
     main(repo_path, branches_to_archive)

@@ -112,7 +112,7 @@ if __name__ == '__main__':
     config['Optics']['laserglow_532']['delay'] = 0
 
     # Set up a dummy args list
-    args = [0.0, 1200, 350, 83, 1000.0, 1, 0, 'laserglow_532', None]
+    args = [-300.0, 500, 350, 75, 1000.0, 1, 0, 'cobolt_515', None]
 
     # get_seq returns the sequence and an arbitrary list to pass back to the
     # client. We just want the sequence.

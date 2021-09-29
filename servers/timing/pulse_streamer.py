@@ -44,7 +44,7 @@ class PulseStreamer(LabradServer):
     def initServer(self):
         filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
         filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(level=logging.DEBUG, 
+        logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
@@ -60,10 +60,8 @@ class PulseStreamer(LabradServer):
 
     def on_get_config(self, config):
         self.pulser = Pulser(config['get'])
-        sequence_library_path = str(Path.home())
-        sequence_library_path += '\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0'
-        sequence_library_path += '\\servers\\timing\\sequencelibrary'
-        sys.path.append(sequence_library_path)
+        sequence_library_path = Path.home() / 'Documents/GitHub/kolkowitz-nv-experiment-v1.0/servers/timing/sequencelibrary'
+        sys.path.append(str(sequence_library_path))
         self.get_config_dict()
 
     def get_config_dict(self):
@@ -89,7 +87,6 @@ class PulseStreamer(LabradServer):
             sub_dict = {}
             sub_path = reg_path + [el]
             await self.populate_config_dict(sub_path, sub_dict)
-            logging.debug(sub_dict)
             dict_to_populate[el] = sub_dict
     
         # Keys
@@ -118,11 +115,19 @@ class PulseStreamer(LabradServer):
     def on_get_config_dict(self, _, config_dict):
         self.config_dict = config_dict
         self.pulser_wiring = self.config_dict['Wiring']['PulseStreamer']
+        self.feedthrough_lasers = []
+        optics_dict = config_dict["Optics"]
+        for key in optics_dict:
+            optic = optics_dict[key]
+            feedthrough_str = optic["feedthrough"]
+            if eval(feedthrough_str):
+                self.feedthrough_lasers.append(key)
+        logging.info(self.feedthrough_lasers)
         # Initialize state variables and reset
         self.seq = None
         self.loaded_seq_streamed = False
         self.reset(None)
-        logging.debug('Init complete')
+        logging.info('Init complete')
 
     def get_seq(self, seq_file, seq_args_string):
         seq = None
@@ -178,7 +183,7 @@ class PulseStreamer(LabradServer):
             list(any)
                 Arbitrary list returned by the sequence file
         """
-
+        
         self.pulser.setTrigger(start=TriggerStart.SOFTWARE)
         seq, final, ret_vals = self.get_seq(seq_file, seq_args_string)
         if seq is not None:
@@ -196,6 +201,12 @@ class PulseStreamer(LabradServer):
             num_repeat: int
                 Number of times to repeat the sequence. Default is 1
         """
+        
+        # Make sure the lasers that require it are set to feedthrough
+        for laser in self.feedthrough_lasers:
+            self_client = self.client
+            if hasattr(self_client, laser):
+                yield self_client[laser].load_feedthrough()
 
         if self.seq == None:
             raise RuntimeError('Stream started with no sequence.')
