@@ -849,7 +849,7 @@ def test_esr(nv_sig):
     apd_indices = [0]
     num_reps =10**3
     freq_center = nv_sig['resonance_LOW']
-    freq_range = 0.05
+    freq_range = 0.12
     
     half_freq_range = freq_range / 2
     freq_low = freq_center - half_freq_range

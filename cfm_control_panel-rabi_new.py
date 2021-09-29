@@ -236,7 +236,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # Zoom
     freq_range = 0.05
     # freq_range = 0.120
-    num_steps = 31
+    num_steps = 51
     num_reps = 1000
     num_runs = 10
 
@@ -298,7 +298,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 5000
-    num_runs = 10
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -854,9 +854,10 @@ if __name__ == "__main__":
         
         "collection_filter": "630_lp",
         "magnet_angle": 175,
-        # "resonance_LOW": 2.8231,"rabi_LOW": 127.4,
-        # "resonance_LOW":2.8641,"rabi_LOW": 89.2,
-        "resonance_LOW":2.7568, "rabi_LOW": 89.2,
+        "resonance_LOW": 2.8374,"rabi_LOW": 129.0,
+        # "resonance_LOW":2.8622,"rabi_LOW": 89.2,
+        # "resonance_LOW":2.8844,"rabi_LOW": 89.2,
+        # "resonance_LOW":2.9114,"rabi_LOW": 89.2,
         "uwave_power_LOW": 15.5,  # 15.5 max
         "resonance_HIGH": 2.9115,
         "rabi_HIGH": 191.9,
@@ -951,17 +952,22 @@ if __name__ == "__main__":
                 nv_sig_copy['CPG_laser_dur'] = t
                 
                 #do_optimize(nv_sig_copy, apd_indices)
-                #do_image_sample(nv_sig_copy, apd_indices)
+                # do_image_sample(nv_sig_copy, apd_indices)
                 # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
                 # do_g2_measurement(nv_sig_copy, 0, 1)
                 
-                img_range_2D = [0.04,  0, 6/16]
+                # img_range_2D = [0.04,  0, 6/16]
                 # do_SPaCE(nv_sig_copy, nv_sig_copy, 3, num_steps_x, num_steps_z, None,  img_range_2D, offset_list)
                # do_optimize_magnet_angle(nv_sig_copy, apd_indices)
                 # do_pulsed_resonance_state(nv_sig_copy, apd_indices, States.LOW)
                 # do_rabi(nv_sig_copy, apd_indices, States.LOW, uwave_time_range=[0, 300])
-                # do_resonance(nv_sig_copy, apd_indices, 2.875, 0.3)
-                do_pulsed_resonance(nv_sig_copy, apd_indices, 2.875, 0.12)
+                # do_resonance(nv_sig_copy, apd_indices, 2.875, 0.12)
+                
+                for f in [2.8622, 2.8844, 2.9114]:
+                    nv_sig_copy['resonance_LOW'] =f
+                    do_rabi(nv_sig_copy, apd_indices, States.LOW, uwave_time_range=[0, 300])
+                
+                # do_pulsed_resonance(nv_sig_copy, apd_indices, 2.875, 0.12)
                 # do_pulsed_resonance_state(nv_sig_copy, apd_indices, States.LOW)
             
         

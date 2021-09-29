@@ -570,40 +570,38 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
 if __name__ == '__main__':
     
-    # folder = 'pc_rabi/branch_master/pulsed_resonance/2021_09'
-    # # file = '2021_09_15-13_30_13-johnson-dnv0_2021_09_09'
-    # file_list = ['2021_09_22-03_13_05-johnson-dnv0_2021_09_09',
-    #              '2021_09_22-05_52_28-johnson-dnv0_2021_09_09',
-    #              '2021_09_22-00_33_40-johnson-dnv0_2021_09_09']
-    # label_list = ['Point A', 'Point B', 'Point C']
+    folder = 'pc_rabi/branch_master/pulsed_resonance/2021_09'
+    # file = '2021_09_15-13_30_13-johnson-dnv0_2021_09_09'
+    file_list = ['2021_09_27-13_52_00-johnson-dnv7_2021_09_23']
+    label_list = ['Point A', 'Point B', 'Point C']
         
-    # fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    # for f in range(len(file_list)):
-    #     file = file_list[f]
-    #     data = tool_belt.get_raw_data(file, folder)
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    for f in range(len(file_list)):
+        file = file_list[f]
+        data = tool_belt.get_raw_data(file, folder)
 
-    #     freq_center = data['freq_center']
-    #     freq_range = data['freq_range']
-    #     num_steps = data['num_steps']
-    #     num_runs = data['num_runs']
-    #     norm_avg_sig = data['norm_avg_sig']
+        freq_center = data['freq_center']
+        freq_range = data['freq_range']
+        num_steps = data['num_steps']
+        num_runs = data['num_runs']
+        norm_avg_sig = data['norm_avg_sig']
         
         
-    #     freqs = calculate_freqs(freq_range, freq_center, num_steps)
+        freqs = calculate_freqs(freq_range, freq_center, num_steps)
     
-    #     ax.plot(freqs, norm_avg_sig,  label=label_list[f])
-    #     ax.set_xlabel('Frequency (GHz)')
-    #     ax.set_ylabel('Contrast (arb. units)')
-    #     ax.legend(loc='lower right')
+        ax.plot(freqs, norm_avg_sig,  label=label_list[f])
+        ax.set_xlabel('Frequency (GHz)')
+        ax.set_ylabel('Contrast (arb. units)')
+        ax.legend(loc='lower right')
     
     # fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
-    #                                      norm_avg_sig, norm_avg_sig_ste)
+    #                                       norm_avg_sig, norm_avg_sig_ste)
 
     # fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
-    #                                norm_avg_sig, ref_counts)
+    #                                 norm_avg_sig, ref_counts)
 
     # create_fit_figure(freq_range, freq_center, num_steps,
     #               norm_avg_sig, fit_func, popt)
 
     # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
-    simulate(2.8351, 0.035, 0.02, 170, 170/2)
+    # simulate(2.8351, 0.035, 0.02, 170, 170/2)
