@@ -11,7 +11,6 @@ Created 2021_09_10
 import utils.common as common
 import os
 from pathlib import PurePath
-import re
 import sqlite3
 
 search_index_file_name = "search_index.db"
@@ -47,22 +46,28 @@ def process_full_path(full_path):
 
 
 def gen_search_index():
-    """Create the search index from scratch. Does not delete the existing
-    index so you should probably do that. Just delete the search_index files
-    in nvdata. This will take several minutes.
+    """Create the search index from scratch. This will take several minutes.
+    Once complete, delete the old index file and remove the "new_" prefix
+    from the fresh index.
     """
 
     # Create the table
-    search_index = sqlite3.connect(nvdata_dir / search_index_file_name)
+    temp_name = "new_" + search_index_file_name
+    search_index = sqlite3.connect(nvdata_dir / temp_name)
     cursor = search_index.cursor()
     cursor.execute(
         """CREATE TABLE search_index (file_name text, path_from_nvdata text)"""
     )
 
     for root, _, files in os.walk(nvdata_dir):
+        path_root = PurePath(root)
+        # Before looping through all the files make sure the folder fits
+        # the glob
+        test_path_root = path_root / "test.txt"
+        if not test_path_root.match(search_index_glob):
+            continue
         for f in files:
-            # Only index data files in their original locations
-            if PurePath(f).match(search_index_glob):
+            if f.split(".")[-1] == "txt":
                 db_vals = process_full_path("{}/{}".format(root, f))
                 cursor.execute(
                     "INSERT INTO search_index VALUES (?, ?)", db_vals

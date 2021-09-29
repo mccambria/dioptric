@@ -108,7 +108,7 @@ def measure_delay(
                 laser_name,
                 laser_power,
             ]
-            
+
         # print(seq_args)
         # return
         # Clear the tagger buffer of any excess counts
@@ -193,7 +193,7 @@ def aom_delay(
     laser_power,
 ):
     """
-    This will repeatedly run the same sequence with different passed laser 
+    This will repeatedly run the same sequence with different passed laser
     delays. If there were no delays, the sequence would look like this
     laser ________|--------|________|--------|___
     APD   ___________|--|_________________|--|___
@@ -233,7 +233,7 @@ def uwave_delay(
 ):
 
     """
-    This will repeatedly run the same sequence with different passed microwave 
+    This will repeatedly run the same sequence with different passed microwave
     delays. If there were no delays, the sequence would look like this
     uwave ______________________|---|____________
     laser ________|--------|________|--------|___
@@ -282,18 +282,18 @@ if __name__ == "__main__":
         "name": "{}-nv1_2021_09_07".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 17,
-        
+
         "spin_laser": green_laser,
         "spin_laser_power": green_power,
         "spin_pol_dur": 1e5,
         "spin_readout_laser_power": green_power,
         "spin_readout_dur": 350,
-        
+
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
         "charge_readout_laser": 'nd_0',
-        
+
         "collection_filter": "630_lp",
         "magnet_angle": None,
         "resonance_LOW": 2.8521,

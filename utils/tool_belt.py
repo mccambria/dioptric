@@ -1218,23 +1218,10 @@ def get_folder_dir(source_name, subfolder):
     branch_name = get_branch_name()
     pc_name = socket.gethostname()
 
-    # # Check where we should save to
-    # if branch_name == 'master':
-    #     # master should save without a branch sub-folder
-    #     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
-    #                                source_name)
-    # else:
-    #     # Otherwise we want a branch sub-folder so that we know this data was
-    #     # produced by code that's under development
-    #     joined_path = os.path.join('E:/Shared drives/Kolkowitz Lab Group/nvdata',
-    #                                source_name,
-    #                                'branch_{}'.format(branch_name))
-
-    joined_path = os.path.join(
-        "E:/Shared drives/Kolkowitz Lab Group/nvdata",
-        "pc_{}".format(pc_name),
-        "branch_{}".format(branch_name),
-        source_name,
+    nvdata_dir = common.get_nvdata_dir()
+    joined_path = (
+        nvdata_dir / "pc_{}".format(pc_name) /
+        "branch_{}".format(branch_name) / source_name
     )
 
     if subfolder is not None:
