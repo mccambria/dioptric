@@ -416,7 +416,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             # Clear the tagger buffer of any excess counts
             cxn.apd_tagger.clear_buffer()
             # Start the timing stream
-            cxn.pulse_streamer.stream_start(num_reps)
+            cxn.pulse_streamer.stream_start(int(num_reps))
 
             # Get the counts
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)

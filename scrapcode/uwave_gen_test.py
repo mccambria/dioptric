@@ -16,9 +16,7 @@ import nidaqmx
 import labrad
 import time
 import numpy
-from pulsestreamer import PulseStreamer as Pulser
-from pulsestreamer import TriggerStart
-from pulsestreamer import OutputState
+import utils.tool_belt as tool_belt
 
 
 # %% Constants
@@ -36,20 +34,18 @@ def main(cxn=None):
     """
     
     # instr = cxn.signal_generator_sg394
-    # freq = 2.7992
-    # power = 15.0
+    # freq = 2.8083
+    # power = 16.5
     # gate = 7
     instr = cxn.signal_generator_tsg4104a
-    freq = 2.9444
-    power = 14.0
+    freq = 2.9465
+    power = 16.5
     gate = 4
     instr.set_amp(power)
     instr.set_freq(freq)
     instr.uwave_on()
-    pulser = cxn.pulse_streamer
-    pulser.constant([gate])
+    cxn.pulse_streamer.constant([gate])
     input('Press enter to stop...')
-    pulser.constant([])
     
 #    cxn.signal_generator_bnc835.reset()
 #            
@@ -128,5 +124,4 @@ if __name__ == '__main__':
         try:
             main(cxn)
         finally:
-            cxn.signal_generator_sg394.reset()
-            cxn.signal_generator_tsg4104a.reset()
+            tool_belt.reset_cfm()

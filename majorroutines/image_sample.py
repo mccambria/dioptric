@@ -349,7 +349,7 @@ if __name__ == '__main__':
 
 
     path = 'pc_rabi/branch_master/image_sample/2021_09'
-    file_name = '2021_09_13-14_12_04-johnson-dnv0_2021_09_09'
+    file_name = '2021_09_10-10_43_08-johnson-dnv0_2021_09_09'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']

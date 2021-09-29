@@ -254,11 +254,20 @@ def plot_2D_space(file, path):
         nv_sig = data['nv_sig']
         CPG_laser_dur = nv_sig['CPG_laser_dur']
         readout_counts_avg = numpy.array(data['readout_counts_avg'])
+        readout_counts_array = numpy.array(data['readout_counts_array'])
         num_steps_b = data['num_steps_b']    
         a_voltages_1d = data['a_voltages_1d']
         b_voltages_1d = data['b_voltages_1d']
         img_range_2D= data['img_range_2D']
         axes = [0,1]
+        
+        readout_counts_array_rot = numpy.rot90(readout_counts_array)
+             
+        # Take the average and ste. 
+        readout_counts_avg = numpy.average(readout_counts_array_rot[0:5], axis = 0)
+        
+        
+        
         # x_low = x_voltages[0]
         # x_high = x_voltages[-1]
         # y_low = y_voltages[0]
@@ -302,12 +311,13 @@ def plot_2D_space(file, path):
             if r % 2 == 0:
                 readout_image_array[i] = list(reversed(readout_image_array[i]))
             r += 1
-                
+        
+        readout_image_array = numpy.flipud(readout_image_array)
         title = 'SPaCE - {} ms depletion pulse'.format(CPG_laser_dur)
         
 
 
-        tool_belt.create_image_figure(numpy.fliplr(numpy.flipud(readout_image_array)), img_extent, clickHandler=None,
+        tool_belt.create_image_figure(readout_image_array, img_extent, clickHandler=None,
                             title=title, color_bar_label='Counts',
                             min_value=None, um_scaled=False)
 
@@ -1503,7 +1513,7 @@ if __name__ == '__main__':
 
     #================ specific for 2D scans ================#
     file_list = [
-        '2021_09_10-04_31_06-johnson-dnv4_2021_09_09'
+        '2021_09_18-14_27_56-johnson-dnv0_2021_09_09'
         ]
 
     for f in range(len(file_list)):
