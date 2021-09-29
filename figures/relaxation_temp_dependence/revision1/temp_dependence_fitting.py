@@ -65,8 +65,8 @@ ratio_edge_color = "#EF2424"
 sample_column_title = "Sample"
 skip_column_title = "Skip"
 nominal_temp_column_title = "Nominal temp (K)"
-# temp_column_title = "ZFS temp (K)"
-temp_column_title = "Nominal temp (K)"
+temp_column_title = "ZFS temp (K)"
+# temp_column_title = "Nominal temp (K)"
 temp_lb_column_title = "ZFS temp lower bound (K)"
 temp_ub_column_title = "ZFS temp upper bound (K)"
 omega_column_title = "Omega (s^-1)"
@@ -230,30 +230,30 @@ def fit_simultaneous(data_points):
     # )
 
     # T5 free
-    # init_params = (510, 1.38e-11, 2000, 1.38e-11, 72.0)
-    # omega_fit_func = lambda temp, beta: orbach_T5_free(
-    #     temp, beta[0], beta[4], beta[1]
-    # )
-    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
-    #     temp, beta[2], beta[4], beta[3]
-    # )
-    # beta_desc = (
-    #     "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
-    #     " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
-    # )
-
-    # T5 fixed
-    init_params = (1.38e-11, 510, 2000, 72.0)
+    init_params = (510, 1.38e-11, 2000, 1.38e-11, 72.0)
     omega_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[1], beta[3], beta[0]
+        temp, beta[0], beta[4], beta[1]
     )
     gamma_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[2], beta[3], beta[0]
+        temp, beta[2], beta[4], beta[3]
     )
     beta_desc = (
-        "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+        "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
         " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
     )
+
+    # T5 fixed
+    # init_params = (1.38e-11, 510, 2000, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[1], beta[3], beta[0]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[2], beta[3], beta[0]
+    # )
+    # beta_desc = (
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
+    # )
 
     # T7
     # init_params = (510, 1.38e-11, 2000, 1.38e-15, 72.0)
