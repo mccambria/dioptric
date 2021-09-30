@@ -573,7 +573,7 @@ def main(
     elif plot_type == "residuals":
         ax.set_ylabel(r"Residuals (s$^{-1}$)")
     elif plot_type == "T2_max":
-        ax.set_ylabel(r"T2 max (ms)")
+        ax.set_ylabel(r"T2 max (s)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
