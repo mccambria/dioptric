@@ -10,6 +10,7 @@ import numpy
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import utils.tool_belt as tool_belt
+import random
 
 wavelength = 638
 NA = 1.3
@@ -34,29 +35,47 @@ def plot_peak(peak, P, t, do_plot = False):
     
     return lin_r, data, ax
 
-def plot_broadened_peak(peak, P, t, do_plot = False):
+def plot_broadened_peak(peak, P, t, broadened = False, do_plot = False):
     dr = 150
     lin_r = numpy.linspace(peak - dr, peak + dr, 100)
-    data = eta(lin_r,v, P, t)
-    i = 0
-    shift_list = [0 for el in range(i)]
-    shifted_data = shift_list + data.tolist()
-    data = data.tolist() + shift_list
-    new_data = (numpy.array(data) + numpy.array(shifted_data))/2
+    data_original = eta(lin_r,v, P, t)
+    num_rand = 10
+    if broadened:
+        rand_shifts = random.sample(range(-10, 10), num_rand)
+    else:
+        rand_shifts = [0]
+        
+    data_out = numpy.array(data_original)
+    for i in rand_shifts:
+        data_shift = data_original.tolist()
+        if i > 0:
+            data_shift = [0]*i + data_shift[:-i]
+        elif i < 0:
+            data_shift = data_shift[-i:] + [0]*-i
+        
+        data_new = data_out + data_shift
+        data_out = data_new
+        
+    data_out = data_out / num_rand
+    # i = 0
+    # shift_list = [0 for el in range(i)]
+    # shifted_data = shift_list + data.tolist()
+    # data = data.tolist() + shift_list
+    # new_data = (numpy.array(data) + numpy.array(shifted_data))/2
     
     if do_plot:
         fig, ax = plt.subplots(1, 1)
-        ax.plot(lin_r, new_data[len(shift_list):], 'bo')
+        ax.plot(lin_r, data_out, 'bo')
         ax.set_xlabel('r (nm)')
         ax.set_ylabel('NV- probability')
     else:
         ax = []
     
-    return lin_r, new_data[len(shift_list):], ax
+    return lin_r, data_out, ax
 
-def fit_gaussian_peak(peak, P, t, do_plot = False):
+def fit_gaussian_peak(peak, P, t, broadened = False, do_plot = False):
     # ret_vals = plot_peak(peak, P, t, do_plot)
-    ret_vals = plot_broadened_peak(peak, P, t, do_plot)
+    ret_vals = plot_broadened_peak(peak, P, t, broadened, do_plot)
     lin_r, data, ax = ret_vals
     
     init_guess = [0.5, peak, peak/10, 0]
@@ -70,15 +89,15 @@ def fit_gaussian_peak(peak, P, t, do_plot = False):
     
     return fit_params
 
-def vary_powers(peak, P_range, t):
+def vary_powers(peak, P_range, t, broadened = False):
     
     width_list = []
     power_list = []
     
-    for P in numpy.linspace(P_range[0], P_range[1], 10):
+    for P in numpy.linspace(P_range[0], P_range[1], 50):
         failed = True
         try:
-            fit_params = fit_gaussian_peak(peak, P, t, True)
+            fit_params = fit_gaussian_peak(peak, P, t, broadened, False)
             failed = False
         except Exception:
             continue
@@ -110,14 +129,14 @@ def vary_powers(peak, P_range, t):
             verticalalignment='top', bbox=props)
     return
 
-def vary_duration(peak, P, t_range):
+def vary_duration(peak, P, t_range, broadened = False):
     width_list = []
     duration_list = []
     
     for t in numpy.linspace(t_range[0], t_range[1], 100):
         failed = True
         try:
-            fit_params = fit_gaussian_peak(peak, P, t)
+            fit_params = fit_gaussian_peak(peak, P, t, broadened)
             failed = False
         except Exception:
             continue
@@ -176,8 +195,8 @@ def eta(r,v, P, t):
 # There is a fair bit of finess to the values to test. Too low, and the Gaussian 
 # width is overestimated. Too low, and the peak is not there and the fit doesn't pick it up
 
-# vary_powers(300, [40, 340], 70) # -0.5
+vary_powers(300, [40, 340], 70) # -0.5
 vary_duration(300, 50, [50, 500]) # -0.25
 
 # fit_gaussian_peak(300, 50, 70, do_plot = True)
-# plot_broadened_peak(300, 50, 70, do_plot = True)
+# plot_broadened_peak(300, 70, 70, do_plot = True)

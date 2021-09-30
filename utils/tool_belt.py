@@ -917,7 +917,7 @@ def calc_snr(sig_count, ref_count):
     ref_count_avg = numpy.average(ref_count)
     dif = sig_count_avg - ref_count_avg
     sum_ = sig_count_avg + ref_count_avg
-    noise = numpy.sqrt(sum_)
+    noise = numpy.sqrt(sig_count_avg)
     snr = dif / noise
 
     return snr
@@ -1380,8 +1380,10 @@ def save_raw_data(rawData, filePath):
         json.dump(rawData, file, indent=2)
 
     # print(repr(search_index.search_index_regex))
-    if file_path_ext.match(search_index.search_index_glob):
-        search_index.add_to_search_index(file_path_ext)
+    
+    # cuasing issues 9/23/2021 AG
+    # if file_path_ext.match(search_index.search_index_glob):
+    #     search_index.add_to_search_index(file_path_ext)
 
 
 def get_nv_sig_units():
