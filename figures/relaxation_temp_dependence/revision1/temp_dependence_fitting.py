@@ -756,11 +756,11 @@ if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
 
-    # plot_type = "rates"
+    plot_type = "rates"
     # plot_type = 'ratios'
     # plot_type = 'ratio_fits'
     # plot_type = 'residuals'
-    plot_type = "T2_max"
+    # plot_type = "T2_max"
 
     rates_to_plot = "both"
     # rates_to_plot = 'Omega'
@@ -792,8 +792,8 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    # plot_types = [[[-10, 600], "linear"], [[1e-2, 1000], "log"]]  # Rates
-    plot_types = [[[-1, 6], "linear"], [[1e-3, 10], "log"]]  # T2_max
+    plot_types = [[[-10, 600], "linear"], [[1e-2, 1000], "log"]]  # Rates
+    # plot_types = [[[-1, 6], "linear"], [[1e-3, 10], "log"]]  # T2_max
     for el in plot_types:
         y_range, yscale = el
         main(
