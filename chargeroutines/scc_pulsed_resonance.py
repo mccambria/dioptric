@@ -348,26 +348,23 @@ if __name__ == '__main__':
     nd_yellow = "nd_0.5"
     
     opti_nv_sig = {
-        "coords": [-0.033, -0.021, 4.85],
-        "name": "{}-nv1_2021_09_07".format(sample_name,),
+        "coords": [-0.037, 0.273, 4.85],
+        "name": "{}-nv0_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 15,
+        "expected_count_rate": 33,
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
         "collection_filter": "630_lp",
-        "magnet_angle": 175,
+        "magnet_angle": None,
     }  # 14.5 max
     
-    
     nv_sig = {
-        "coords": [-0.020, 0.282, 4.85],
-        "depletion_coords": [ -0.0318, 0.275, 4.85], # A
-        #"depletion_coords": [-0.035, 0.276, 4.85], # B
+        "coords": [0.163, 0.130, 4.79],
         
-        "name": "{}-dnv7_2021_09_23".format(sample_name,),
+        "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 65,
+        "expected_count_rate": 75,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power,
             'imaging_readout_dur': 1E7,
             
@@ -381,33 +378,27 @@ if __name__ == '__main__':
             'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,
             
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
-            'charge_readout_laser_power': 0.2, 'charge_readout_dur':2e6,
+            'charge_readout_laser_power': 0.3, 'charge_readout_dur':0.5e6,
             
-            'collection_filter': '630_lp', 'magnet_angle': 175,
+            'collection_filter': '630_lp', 'magnet_angle': 114,
             
-        "resonance_LOW": 2.8374,"rabi_LOW": 129.0,
-        # "resonance_LOW":2.8622,"rabi_LOW": 89.2,
-        # "resonance_LOW":2.8844,"rabi_LOW": 89.2,
-        # "resonance_LOW":2.9114,"rabi_LOW": 89.2,
-        'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max  
+        "resonance_LOW":2.7926,"rabi_LOW": 143.1,"uwave_power_LOW": 15.5, 
+        "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5} 
     
     
-    freq_range = 0.16
+    freq_range = 0.05
     
     uwave_power = nv_sig['uwave_power_LOW']
     # uwave_pulse_dur =  nv_sig['rabi_LOW'] / 2
-    num_steps = 101
-    num_reps = int(10**4)
-    num_runs = 3
+    num_steps = 31#51
+    num_reps = int(10**3)
+    num_runs = 10
     
     do_plot = False
     
     try:
         
-        nv_sig['resonance_LOW'] = 2.875
-        nv_sig['rabi_LOW']  = 120
-        main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+        main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
                 num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         

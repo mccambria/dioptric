@@ -259,6 +259,7 @@ def plot_2D_space(file, path, true_position = False):
         a_voltages_1d = data['a_voltages_1d']
         b_voltages_1d = data['b_voltages_1d']
         img_range_2D= data['img_range_2D']
+        offset_2D = data["offset_2D"]
         drift_list = data['drift_list_master']
         axes = [0,1]
         
@@ -272,7 +273,7 @@ def plot_2D_space(file, path, true_position = False):
         if true_position == False:
             half_range_a = img_range_2D[axes[0]]/2
             half_range_b = img_range_2D[axes[1]]/2
-            a_low = -half_range_a
+            a_low = -half_range_a 
             a_high = half_range_a
             b_low = -half_range_b
             b_high = half_range_b
@@ -299,10 +300,11 @@ def plot_2D_space(file, path, true_position = False):
             # a_voltages_1d = numpy.array(a_voltages_1d) + drift_list[0][0][0]
             # b_voltages_1d = numpy.array(b_voltages_1d) + drift_list[0][0][1]
             
-            x_low = a_voltages_1d[0]
-            x_high = a_voltages_1d[-1]
-            y_low = b_voltages_1d[0]
-            y_high = b_voltages_1d[-1]
+            x_low = a_voltages_1d[0]+ offset_2D[axes[0]]
+            x_high = a_voltages_1d[-1]+ offset_2D[axes[0]]
+            y_low = b_voltages_1d[0]+ offset_2D[axes[1]]
+            y_high = b_voltages_1d[-1]+ offset_2D[axes[1]]
+            
             pixel_size = a_voltages_1d[1] - a_voltages_1d[0]
             half_pixel_size = pixel_size / 2
             img_extent = [x_high + half_pixel_size, x_low - half_pixel_size,
@@ -1182,317 +1184,7 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
 
 if __name__ == '__main__':
 
-    path_august = 'pc_rabi/branch_master/SPaCE/2021_08'
-    path = 'pc_rabi/branch_master/SPaCE/2021_09'
-
-    file_name_no_opt = '2021_07_27-15_10_17-johnson-nv1_2021_07_27'
-    file_name_no_opt_2 = '2021_07_28-15_21_25-johnson-nv1_2021_07_27'
-    file_name_no_opt_dim = '2021_08_03-15_13_57-johnson-nv1_2021_07_27'
-    file_name_opt = '2021_07_27-19_03_17-johnson-nv1_2021_07_27'
-    file_name_opt_xy = '2021_07_28-14_00_23-johnson-nv1_2021_07_27'
-    file_name_opt_mod = '2021_08_03-12_54_18-johnson-nv1_2021_07_27'
-    file_name_opt_dim = '2021_08_03-14_48_39-johnson-nv1_2021_07_27'
-
-    file_name_no_opt_400_ms = '2021_08_03-16_21_50-johnson-nv1_2021_07_27'
-    file_name_opt_xy_2 = '2021_08_03-18_22_18-johnson-nv1_2021_07_27'
-
-    file = '2021_07_31-18_02_29-johnson-nv1_2021_07_27'
-
-    #================ 7/27/2021 x and y scans @ 22 mW ================#
-    # file_list = ['2021_07_27-04_19_32-johnson-nv1_2021_07_21', # x
-    #               '2021_07_27-01_57_21-johnson-nv1_2021_07_21',
-    #               '2021_07_26-23_35_05-johnson-nv1_2021_07_21',
-    #               '2021_07_26-21_12_36-johnson-nv1_2021_07_21']
-
-
-    # file_list = ['2021_07_27-05_30_36-johnson-nv1_2021_07_21', # y
-    #               '2021_07_27-03_08_29-johnson-nv1_2021_07_21',
-    #               '2021_07_27-00_46_16-johnson-nv1_2021_07_21',
-    #               '2021_07_26-22_23_54-johnson-nv1_2021_07_21']
-
-    #================ 7/28/2021 x and y scans @ 33 mW ================#
-    # x
-    # file_list = ['2021_07_28-00_46_22-johnson-nv1_2021_07_27',
-                  # '2021_07_28-03_08_32-johnson-nv1_2021_07_27',
-                  # '2021_07_28-05_30_52-johnson-nv1_2021_07_27',
-                  # '2021_07_28-07_54_25-johnson-nv1_2021_07_27',
-                  # '2021_07_27-21_13_36-johnson-nv1_2021_07_27'
-                  # ]
-
-    # y
-    # file_list = ['2021_07_28-01_57_24-johnson-nv1_2021_07_27',
-    #              '2021_07_28-04_19_38-johnson-nv1_2021_07_27',
-    #              '2021_07_28-06_42_07-johnson-nv1_2021_07_27',
-    #              '2021_07_28-09_06_42-johnson-nv1_2021_07_27',
-    #              '2021_07_27-22_39_56-johnson-nv1_2021_07_27']
-
-
-    #================ 8/2/2021 x and y scans @ 22 mW ================#
-    # x
-    # file_list = [
-    #             '2021_07_30-18_15_21-johnson-nv1_2021_07_27',
-    #                '2021_07_30-20_39_48-johnson-nv1_2021_07_27',
-    #                '2021_07_31-10_49_04-johnson-nv1_2021_07_27',
-    #               '2021_07_31-23_41_32-johnson-nv1_2021_07_27',
-    #               '2021_07_31-13_13_29-johnson-nv1_2021_07_27',
-    #               '2021_07_31-15_37_56-johnson-nv1_2021_07_27',
-    #               '2021_07_31-18_02_29-johnson-nv1_2021_07_27',
-    #               '2021_08_01-02_06_04-johnson-nv1_2021_07_27',
-    #               '2021_08_01-04_30_39-johnson-nv1_2021_07_27',
-    #               '2021_08_01-06_55_19-johnson-nv1_2021_07_27',
-    #               '2021_08_01-09_20_02-johnson-nv1_2021_07_27',
-    #               '2021_08_01-11_44_49-johnson-nv1_2021_07_27'
-    #                ]
-
-    # y
-    # file_list = [
-    #             '2021_07_30-19_27_35-johnson-nv1_2021_07_27',
-    #                '2021_07_30-21_52_01-johnson-nv1_2021_07_27',
-    #                '2021_07_31-12_01_16-johnson-nv1_2021_07_27',
-    #                '2021_08_01-00_53_48-johnson-nv1_2021_07_27',
-    #                '2021_07_31-14_25_41-johnson-nv1_2021_07_27',
-    #                '2021_07_31-16_50_12-johnson-nv1_2021_07_27',
-    #                '2021_07_31-19_14_50-johnson-nv1_2021_07_27',
-    #                '2021_08_01-03_18_22-johnson-nv1_2021_07_27',
-    #                '2021_08_01-05_42_58-johnson-nv1_2021_07_27',
-    #                '2021_08_01-08_07_40-johnson-nv1_2021_07_27',
-    #                '2021_08_01-10_32_24-johnson-nv1_2021_07_27',
-    #                '2021_08_01-12_57_13-johnson-nv1_2021_07_27',
-    #             ]
-
-    #================ 8/2/2021 x scans @ 800 us ================#
-
-    # x
-    # file_list = [
-    #     '2021_08_02-14_21_03-johnson-nv1_2021_07_27',
-    #     '2021_08_01-06_55_19-johnson-nv1_2021_07_27',
-    #     '2021_08_01-23_52_30-johnson-nv1_2021_07_27',
-    #     '2021_08_01-14_39_32-johnson-nv1_2021_07_27'
-    #     ]
-
-    #================ 8/2/2021 y scans @ 1000 us ================#
-
-    # y
-    # file_list = [
-    #     '2021_08_01-12_57_13-johnson-nv1_2021_07_27',
-    #     '2021_08_02-03_29_37-johnson-nv1_2021_07_27',
-    #     '2021_08_01-18_16_42-johnson-nv1_2021_07_27'
-    #     ]
-    #================ 8/5/2021 x scans @ 22 mW Feature 1A ================#
-    # x
-    # file_list = [
-        # '2021_08_04-20_38_12-johnson-nv2_2021_08_04',
-        # '2021_08_04-21_29_32-johnson-nv2_2021_08_04',
-        # '2021_08_04-21_55_15-johnson-nv2_2021_08_04',
-        # '2021_08_04-22_20_56-johnson-nv2_2021_08_04',
-        # '2021_08_04-22_46_41-johnson-nv2_2021_08_04',
-        # '2021_08_04-23_12_20-johnson-nv2_2021_08_04',
-        # '2021_08_04-23_38_01-johnson-nv2_2021_08_04',
-        # '2021_08_05-00_03_43-johnson-nv2_2021_08_04',
-        # '2021_08_05-00_29_24-johnson-nv2_2021_08_04',
-        # '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
-        # '2021_08_05-00_55_06-johnson-nv2_2021_08_04',
-        # '2021_08_05-01_20_49-johnson-nv2_2021_08_04',
-        # '2021_08_05-01_46_33-johnson-nv2_2021_08_04',
-        # '2021_08_05-02_12_17-johnson-nv2_2021_08_04',
-        # '2021_08_05-02_38_00-johnson-nv2_2021_08_04',
-        # '2021_08_05-03_03_43-johnson-nv2_2021_08_04',
-        # '2021_08_05-03_29_28-johnson-nv2_2021_08_04',
-        # '2021_08_05-03_55_11-johnson-nv2_2021_08_04',
-        # '2021_08_05-09_01_01-johnson-nv2_2021_08_04',
-        # '2021_08_05-09_26_52-johnson-nv2_2021_08_04',
-        # '2021_08_05-09_52_38-johnson-nv2_2021_08_04',
-        # '2021_08_05-10_45_26-johnson-nv2_2021_08_04',
-        # '2021_08_05-11_43_11-johnson-nv2_2021_08_04',
-        # '2021_08_05-12_12_58-johnson-nv2_2021_08_04',
-        # '2021_08_05-15_54_52-johnson-nv2_2021_08_04'
-        # ]
-
-    #================ 8/6/2021 x scans @ 500 us Feature 1A ================#
-    # x
-    # file_list = [
-        # '2021_08_05-23_11_42-johnson-nv2_2021_08_04',
-        # '2021_08_05-22_46_43-johnson-nv2_2021_08_04',
-        # '2021_08_05-22_25_21-johnson-nv2_2021_08_04',
-        # '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
-        # '2021_08_05-20_06_21-johnson-nv2_2021_08_04',
-        # '2021_08_05-20_55_56-johnson-nv2_2021_08_04',
-        # '2021_08_05-21_17_41-johnson-nv2_2021_08_04',
-        # '2021_08_05-21_41_06-johnson-nv2_2021_08_04',
-        # '2021_08_05-22_01_58-johnson-nv2_2021_08_04'
-        # ]
-    
-    #================ 8/8/2021 x scans @ 22 mW Feature 1A, changing time between optimize ================#
-
-    # file_list = [
-    #     '2021_08_06-22_42_26-johnson-nv2_2021_08_04',
-    #     '2021_08_06-21_23_20-johnson-nv2_2021_08_04',
-    #     '2021_08_06-18_01_46-johnson-nv2_2021_08_04',
-    #     '2021_08_07-13_42_12-johnson-nv2_2021_08_04',
-    #     '2021_08_07-14_53_25-johnson-nv2_2021_08_04',
-    #     '2021_08_07-20_57_08-johnson-nv2_2021_08_04',
-    #     '2021_08_07-21_55_58-johnson-nv2_2021_08_04',
-    #     '2021_08_06-23_50_50-johnson-nv2_2021_08_04',
-    #     '2021_08_08-12_40_24-johnson-nv2_2021_08_04',
-    #     '2021_08_07-22_57_03-johnson-nv2_2021_08_04',
-    #     '2021_08_08-11_40_13-johnson-nv2_2021_08_04',
-    #     '2021_08_07-12_14_46-johnson-nv2_2021_08_04',
-    #     '2021_08_07-23_57_53-johnson-nv2_2021_08_04'
-    #     ]
-
- 
-    #================ 8/31/2021  ================#
-
-    file_list = [
-        '2021_09_01-04_36_52-johnson-nv2_2021_08_30',
-        '2021_09_01-05_00_07-johnson-nv2_2021_08_30',
-        '2021_09_01-05_23_28-johnson-nv2_2021_08_30',
-        '2021_09_01-06_13_43-johnson-nv2_2021_08_30',
-        '2021_09_01-07_16_36-johnson-nv2_2021_08_30',
-        '2021_09_01-08_32_02-johnson-nv2_2021_08_30',
-        ]
-    #================ 9/1/2021  ================#
-
-    file_list = [
-        '2021_08_31-19_37_16-johnson-nv2_2021_08_30',
-        '2021_08_31-21_39_38-johnson-nv2_2021_08_30',
-        '2021_09_01-11_10_15-johnson-nv2_2021_08_30'
-        ]
-    
-    ########### Fit Gaussian to 1D files ###########
-    # widths_master_list = []
-    # center_master_list = []
-    # height_master_list = []
-    # path_list = [path_august,path_august, path]
-    # for f in range(len(file_list)):
-    #     file_name = file_list[f]
-    #     path = path_list[f]
-    #     lobe_positions = [975] 
-    #     ret_vals = plot_1D_SpaCE(file_name, path, do_plot = True, do_fit = True)
-    #     widths_master_list.append(ret_vals[2][2])
-    #     center_master_list.append(ret_vals[2][1])
-    #     height_master_list.append(ret_vals[2][0]**2)
-
-    # #_______ Power _______#
-    # x_vals = [ 12.7, 15.8, 18.6, 21.7, 24.4, 26.8, 29.1, 30.9, 31.3]
-    # lin_x_vals = numpy.linspace(x_vals[0],
-    #                 x_vals[-1], 100)
-
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(x_vals, height_master_list, 'bo')
-    # ax.set_xlabel('Pulse power (mW)')
-    # ax.set_ylabel('Gaussian amplitude (counts)')
-    # ax.set_title('8/6/2021 500 us, x axis, 1A lobe')
-
-    # init_fit = [5, 20]
-    # opti_params, cov_arr = curve_fit(exp_sqrd_decay,
-    #       x_vals,height_master_list,p0=init_fit)
-    # print('Opti params: ' + str(opti_params))
-    # text = r'$A e^{-P^2/d}$'
-    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-    # ax.plot(lin_x_vals, exp_sqrd_decay(lin_x_vals, *opti_params), 'r-')
-    # text = 'A={:.3f} counts\n$d$={:.3f} mW^2'.format(*opti_params)
-    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-
-    # fig, ax = plt.subplots(1, 1)
-    # ax.plot(x_vals, widths_master_list, 'bo')
-    # ax.set_xlabel('Pulse power (mW)')
-    # ax.set_ylabel('Gaussian sigma (nm)')
-    # ax.set_title('8/6/2021 500 us x axis, 1A lobe')
-    
-    # init_fit = [300, 10]
-    # opti_params, cov_arr = curve_fit(inverse_sqrt,
-    #       x_vals,widths_master_list,p0=init_fit)
-    # print('Opti params: ' + str(opti_params))
-    # ax.plot(lin_x_vals, inverse_sqrt(lin_x_vals, *opti_params), 'g-', 
-    #         label = "fit inverse power: t ^ -0.372")
-    # ax.set_yscale('log')
-    # ax.set_xscale('log')
-    # # ax.legend()
-    
-    # text = r'$A / P^{-1/2} + o$'
-    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-    # text = 'A={:.3f} nm*mw^-1/2\no = {:.1f} nm'.format(*opti_params)
-    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-
-    # init_fit = [750]
-    # opti_params, cov_arr = curve_fit(inverse_law,
-    #       x_vals,widths_master_list,p0=init_fit)
-    # print('Opti params: ' + str(opti_params))
-    # text = r'$A / P$'
-    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-    # ax.plot(lin_x_vals, inverse_law(lin_x_vals, *opti_params), 'r-')
-    # text = 'A={:.3f} nm*mW'.format(*init_fit)
-    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # ax.plot(x_vals, center_master_list, 'bo')
-    # ax.set_xlabel('Pulse power (mW)')
-    # ax.set_ylabel('Lobe position (nm)')
-    # ax.set_title('8/6/2021 500 us, x axis, 1A lobe')
-
-    #_______ Time _______#
-    # x_vals = [
-    #     100, 150, 1000
-    #           ]
-    # lin_x_vals = numpy.linspace(x_vals[0],
-    #                 x_vals[-1], 100)
-    # fig, ax = plt.subplots(1, 1)
-    # ax.plot(x_vals, widths_master_list, 'bo')
-    # ax.set_xlabel('Pulse duration (us)')
-    # ax.set_ylabel('Sq Gaussian sigma (nm)')
-    # ax.set_title('8/5/2021 22 mW, x axis, 1A lobe')
-    # ax.set_yscale('log')
-    # ax.set_xscale('log')
-
-
-    # init_fit = [300, -1/4]
-    # opti_params, cov_arr = curve_fit(power_fnct,
-    #       x_vals,widths_master_list,p0=init_fit)
-    # print('Opti params: ' + str(opti_params))
-    # ax.plot(lin_x_vals, power_fnct(lin_x_vals, *opti_params), 'g-', 
-    #         label = "inverse square root")
-    
-    # init_fit = [300]
-    # opti_params, cov_arr = curve_fit(inverse_quarter,
-    #       x_vals,widths_master_list,p0=init_fit)
-    # print('Opti params: ' + str(opti_params))
-    # ax.plot(lin_x_vals, inverse_quarter(lin_x_vals, *opti_params), 'g-',)
-    # ax.legend()
-    
-    # text = r'$A / t^{1/4}$'
-    # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    # ax.text(0.85, 0.95, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-    # text = 'A={:.3f} nm*us^0.25'.format(*opti_params)
-    # ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
-    #         verticalalignment='top', bbox=props)
-
-
-    ############# Plot 1D comparisons ##############
-    # rad_dist, counts_no_opt = plot_1D_SpaCE(file_name_no_opt_400_ms, path, do_plot = False)
-    # rad_dist, counts_opt = plot_1D_SpaCE(file_name_opt_xy_2, path, do_plot = False)
-
-
-    # rad_dist, counts = plot_1D_SpaCE(file, path_july, do_plot = False)
-
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-
-    # # ax.plot(rad_dist, counts, 'b-', label = 'Optimize every run')
-    # ax.plot(rad_dist, counts_no_opt, 'b-', label = 'Optimize every run, add 400 ms of green pusle every point')
-    # ax.plot(rad_dist, counts_opt, 'r-', label = 'Optimize every point in x and y')
-    # ax.set_xlabel('y (nm)')
-    # ax.set_ylabel('Average counts')
-    # ax.legend()
+    path = 'pc_rabi/branch_master/SPaCE/2021_10'
 
 
 
@@ -1537,12 +1229,65 @@ if __name__ == '__main__':
 
     #================ specific for 2D scans ================#
     file_list = [
-        '2021_09_24-19_30_38-johnson-dnv7_2021_09_23'
+        '2021_10_05-15_17_47-johnson-dnv5_2021_09_23'
         ]
 
     for f in range(len(file_list)):
         file = file_list[f]
         plot_2D_space(file, path, true_position = True)
+        
+        
+    # file_1 = '2021_09_30-11_58_58-johnson-dnv7_2021_09_23'
+    # data_1 = tool_belt.get_raw_data(file_1, path)
+    # # try:
+    # nv_sig = data_1['nv_sig']
+    # CPG_laser_dur = nv_sig['CPG_laser_dur']
+    # readout_image_array_1 = numpy.array(data_1['readout_image_array'])
+    # num_steps_b = data_1['num_steps_b']    
+    # a_voltages_1d = data_1['a_voltages_1d']
+    # b_voltages_1d = data_1['b_voltages_1d']
+    # img_range_2D= data_1['img_range_2D']
+    # drift_list = data_1['drift_list_master']
+    # axes = [0,1]
+    
+    
+    # file_2 = 'incremental/2021_09_30-12_02_15-johnson-dnv7_2021_09_23'
+    # data_2 = tool_belt.get_raw_data(file_2, path)
+    # readout_counts_avg_2 = numpy.array(data_2['readout_counts_avg'])
+    # split_counts = numpy.split(readout_counts_avg_2, num_steps_b)
+    # readout_image_array = numpy.vstack(split_counts)
+    # r = 0
+    # for i in range(len(readout_image_array)):
+    #     if r % 2 == 0:
+    #         readout_image_array[i] = list(reversed(readout_image_array[i]))
+    #     r += 1
+    # readout_image_array_2 = numpy.flipud(readout_image_array)
+
+    # half_range_a = img_range_2D[axes[0]]/2
+    # half_range_b = img_range_2D[axes[1]]/2
+    # a_low = -half_range_a
+    # a_high = half_range_a
+    # b_low = -half_range_b
+    # b_high = half_range_b
+    # pixel_size_a = (a_voltages_1d[1] - a_voltages_1d[0])
+    # pixel_size_b = (b_voltages_1d[1] - b_voltages_1d[0])
+
+    # half_pixel_size_a = pixel_size_a / 2
+    # half_pixel_size_b = pixel_size_b / 2
+    
+    # img_extent = [(a_low - half_pixel_size_a)*35,
+    #               (a_high + half_pixel_size_a)*35, 
+                 
+    #              (b_low - half_pixel_size_b)*35, 
+    #              (b_high + half_pixel_size_b)*35 ]
+    # um_scaled = True
+
+    # tool_belt.create_image_figure(readout_image_array_1 + readout_image_array_2,
+    #                       img_extent, clickHandler=on_click_image,
+    #                     title='', color_bar_label='Counts',
+    #                     min_value=None, um_scaled=um_scaled)
+        
+        
 
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))
