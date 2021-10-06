@@ -240,17 +240,17 @@ def fit_simultaneous(data_points):
     # )
 
     # T5 free
-    init_params = (510, 1.38e-11, 2000, 1.38e-11, 72.0)
-    omega_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[0], beta[4], beta[1]
-    )
-    gamma_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[2], beta[4], beta[3]
-    )
-    beta_desc = (
-        "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
-        " (s^-1), activation (meV)]"
-    )
+    # init_params = (510, 1.38e-11, 2000, 1.38e-11, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[0], beta[4], beta[1]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[2], beta[4], beta[3]
+    # )
+    # beta_desc = (
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV)]"
+    # )
 
     # T5 fixed + linear
     # init_params = (1.38e-11, 510, 2000, 72.0, 0.07, 0.035)
@@ -264,6 +264,19 @@ def fit_simultaneous(data_points):
     #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
     #     " (s^-1), activation (meV), linear_coeff (K^-1 s^-1)]"
     # )
+
+    # T5 fixed
+    init_params = (1.38e-11, 510, 2000, 72.0)
+    omega_fit_func = lambda temp, beta: orbach_T5_free(
+        temp, beta[1], beta[3], beta[0]
+    )
+    gamma_fit_func = lambda temp, beta: orbach_T5_free(
+        temp, beta[2], beta[3], beta[0]
+    )
+    beta_desc = (
+        "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+        " (s^-1), activation (meV)]"
+    )
 
     # T7
     # init_params = (510, 1.38e-11, 2000, 1.38e-15, 72.0)
@@ -363,6 +376,7 @@ def get_data_points_csv(file):
                 point[column] = val
             if not point[skip_column_title]:
                 data_points.append(point)
+            # data_points.append(point)
 
     return data_points
 
@@ -559,7 +573,7 @@ def main(
     elif plot_type == "residuals":
         ax.set_ylabel(r"Residuals (s$^{-1}$)")
     elif plot_type == "T2_max":
-        ax.set_ylabel(r"T2 max (ms)")
+        ax.set_ylabel(r"T2 max (s)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
@@ -778,7 +792,8 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    plot_types = [[[-10, 600], "linear"], [[1e-2, 1000], "log"]]
+    plot_types = [[[-10, 600], "linear"], [[1e-2, 1000], "log"]]  # Rates
+    # plot_types = [[[-1, 6], "linear"], [[1e-3, 10], "log"]]  # T2_max
     for el in plot_types:
         y_range, yscale = el
         main(
