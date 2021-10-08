@@ -351,7 +351,7 @@ if __name__ == '__main__':
         "coords": [-0.037, 0.273, 4.85],
         "name": "{}-nv0_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 33,
+        "expected_count_rate": 50,
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
@@ -360,7 +360,7 @@ if __name__ == '__main__':
     }  # 14.5 max
     
     nv_sig = {
-        "coords": [0.163, 0.130, 4.79],
+        "coords":[0.1614328 , 0.13376454,4.79 ],
         
         "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
@@ -382,17 +382,17 @@ if __name__ == '__main__':
             
             'collection_filter': '630_lp', 'magnet_angle': 114,
             
-        "resonance_LOW":2.7926,"rabi_LOW": 143.1,"uwave_power_LOW": 15.5, 
-        "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5} 
+            "resonance_LOW":2.7897,"rabi_LOW": 139.7,"uwave_power_LOW": 15.5,
+            "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5} 
     
     
     freq_range = 0.05
     
     uwave_power = nv_sig['uwave_power_LOW']
     # uwave_pulse_dur =  nv_sig['rabi_LOW'] / 2
-    num_steps = 31#51
-    num_reps = int(10**3)
-    num_runs = 10
+    num_steps = 1#51
+    num_reps = int(10**4)
+    num_runs = 1
     
     do_plot = False
     

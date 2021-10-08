@@ -395,7 +395,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
 # %%
 def sweep_readout_time(nv_sig, opti_nv_sig, apd_indices, readout_time_list, depletion_coords, 
                        resonance, rabi_period):
-    measurement_dur = 4
+    measurement_dur = 3
     num_runs = 1
     num_steps = 1
     freq_range = 0.1
@@ -560,7 +560,7 @@ if __name__ == '__main__':
         "coords": [-0.037, 0.273, 4.85],
         "name": "{}-nv0_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 30,
+        "expected_count_rate": 50,
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
@@ -570,7 +570,7 @@ if __name__ == '__main__':
     
     
     nv_sig = {
-        "coords": [0.16108189, 0.13252713, 4.79 ],
+        "coords": [0.1614328 , 0.13376454,4.79 ],
         
         "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
@@ -597,7 +597,7 @@ if __name__ == '__main__':
             
             'collection_filter': '630_lp',  'magnet_angle': 114,
             
-        "resonance_LOW":2.7926,"rabi_LOW": 143.1,"uwave_power_LOW": 15.5, 
+        "resonance_LOW":2.7897,"rabi_LOW": 139.7,"uwave_power_LOW": 15.5, 
         "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5}  
     
     
@@ -607,11 +607,11 @@ if __name__ == '__main__':
     # uwave_pulse_dur =  nv_sig['rabi_LOW'] / 2
     num_steps =1
     num_reps = int(10**4) # 1.7 hr for each run
-    num_runs = 3
+    num_runs = 1
     
     # [0.16108189, 0.13252713, 4.79 ]
-    A = [0.153, 0.128, 4.79]
-    B = [0.148, 0.128, 4.79]
+    A = [0.153, 0.125, 4.79]
+    B = [0.148, 0.125, 4.79]
     
     do_plot = False
     
@@ -620,19 +620,19 @@ if __name__ == '__main__':
         # readout_time_list = [1e5,2e5, 3e5, 4e5, 5e5, 6e5, 7e5, 8e5, 9e5,
         #                      1e6,2e6, 3e6, 4e6,  5e6, 6e6, 7e6, 8e6, 9e6,
         #                      1e7,2e7, 3e7, 4e7,  5e7]
-        #readout_time_list = [1e5, 5e5, 6e5, 7e5, 8e5, 9e5, 1e6,2e6,  2.5e6, 3e6,3.5e6, 4e6, 5e6, 1e7,  2e7]
+         #readout_time_list = [1e5, 5e5, 1e6,2e6,   3e6,4e6, 5e6, 1e7,  2e7]
         readout_time_list = numpy.linspace(0,3,13)*1e6
         
-        # sweep_readout_time(nv_sig, opti_nv_sig, apd_indices, readout_time_list.tolist(), A, nv_sig['resonance_LOW'], nv_sig['rabi_LOW'])
+        #sweep_readout_time(nv_sig, opti_nv_sig, apd_indices, readout_time_list, B, nv_sig['resonance_LOW'], nv_sig['rabi_LOW'])
         
         readout_power_list = [0.05, 0.1,0.15, 0.2,0.25, 0.3,0.35, 0.4, 0.45, 0.5,0.55, 0.6]
-        # sweep_readout_power(nv_sig,opti_nv_sig,  apd_indices, readout_power_list, A, nv_sig['resonance_LOW'], nv_sig['rabi_LOW'])
+        #sweep_readout_power(nv_sig,opti_nv_sig,  apd_indices, readout_power_list, A, nv_sig['resonance_LOW'], nv_sig['rabi_LOW'])
         
         
         nv_sig['depletion_coords'] = A
         nv_sig['CPG_laser_dur'] = 3e3
         main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
-                  num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+               num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         nv_sig['depletion_coords'] = B
         nv_sig['CPG_laser_dur'] = 2e3

@@ -290,14 +290,14 @@ def process_counts(ref_counts, sig_counts, num_runs):
 
 
 def state(nv_sig, apd_indices, state, freq_range,
-          num_steps, num_reps, num_runs, composite=False):
+          num_steps, num_reps, num_runs, composite=False, opti_nv_sig = None):
 
     freq_center = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
     uwave_pulse_dur = nv_sig['rabi_{}'.format(state.name)] // 2
 
     resonance_list = main(nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state, composite)
+         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state, composite, opti_nv_sig)
 
     return resonance_list, nv_sig
 

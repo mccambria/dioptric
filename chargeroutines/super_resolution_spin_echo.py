@@ -47,6 +47,53 @@ def build_voltages(adjusted_nv_coords, adjusted_depletion_coords, num_reps):
     
     return x_voltages, y_voltages
 
+# %%
+def combine_revivals(file_list, folder):
+    
+    norm_counts_tot = []
+    taus_tot = []
+    for file in file_list:
+        data = tool_belt.get_raw_data(file, folder)
+        taus = data['taus']
+        norm_avg_sig = data['norm_avg_sig']
+        norm_counts_tot = norm_counts_tot + norm_avg_sig
+        taus_tot = taus_tot + taus
+    nv_sig = data['nv_sig']
+    uwave_pi_on_2_pulse = data['uwave_pi_on_2_pulse']
+    uwave_pi_pulse = data['uwave_pi_pulse']
+    state = data['state']
+    num_reps = data['num_reps']
+    num_runs = ['num_runs']
+    
+    timestamp = tool_belt.get_time_stamp()
+    rawData = {'timestamp': timestamp,
+        'nv_sig': nv_sig,
+        'nv_sig-units': tool_belt.get_nv_sig_units(),
+        "uwave_pi_pulse": uwave_pi_pulse,
+        "uwave_pi_pulse-units": "ns",
+        "uwave_pi_on_2_pulse": uwave_pi_on_2_pulse,
+        "uwave_pi_on_2_pulse-units": "ns",
+        'state': state,
+        'num_reps': num_reps,
+        'num_runs': num_runs,
+        'taus': taus_tot,
+        "norm_avg_sig": norm_counts_tot,
+        "norm_avg_sig-units": "arb",
+        }
+    
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    ax.plot(taus_tot, norm_counts_tot, 'bo')
+    ax.set_xlabel('Taus (us)')
+    ax.set_ylabel('Contrast (arb. units)')
+    ax.legend(loc='lower right')
+    
+    
+    name = nv_sig['name']
+    filePath = tool_belt.get_file_path(__file__, timestamp, name)
+    tool_belt.save_figure(fig, filePath)
+    tool_belt.save_raw_data(rawData, filePath)
+            
+    return
 # %% Main
 
 
@@ -84,7 +131,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
         num=num_steps,
         dtype=numpy.int32,
     )
-    # print(taus)
+    print(taus)
     # return
     # Fix the length of the sequence to account for odd amount of elements
 
@@ -181,6 +228,16 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
     
     start_time = time.time()
     start_function_time = start_time
+    
+    inc_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    plot_taus = (taus + uwave_pi_pulse) / 1000
+    ax = axes_pack[0]
+    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+    ax.set_ylabel("Counts")
+    
+    ax = axes_pack[1]
+    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+    ax.set_ylabel("Contrast (arb. units)")
     
     print(depletion_coords)
     
@@ -343,12 +400,44 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
                    'sig_counts-units': 'counts',
                    'ref_counts': ref_counts.astype(int).tolist(),
                    'ref_counts-units': 'counts'}
+        
+        
+        avg_sig_counts = numpy.average(sig_counts[:run_ind+1], axis=0)
+        avg_ref_counts = numpy.average(ref_counts[:run_ind+1], axis=0)
+    
+        # Replace x/0=inf with 0
+        try:
+            norm_avg_sig = avg_sig_counts / avg_ref_counts
+        except RuntimeWarning as e:
+            print(e)
+            inf_mask = numpy.isinf(norm_avg_sig)
+            # Assign to 0 based on the passed conditional array
+            norm_avg_sig[inf_mask] = 0
+            
+        #  Plot the data incrementally
+    
+        ax = axes_pack[0]
+        ax.cla()  
+        # Account for the pi/2 pulse on each side of a tau
+        ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
+        ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
+        ax.legend()
+    
+        ax = axes_pack[1]
+        ax.cla()  
+        ax.plot(plot_taus, norm_avg_sig, "b-")
+        ax.set_title("Spin Echo Measurement")
+        inc_fig.canvas.draw()
+        inc_fig.set_tight_layout(True)
+        inc_fig.canvas.flush_events()
+    
 
         # This will continuously be the same file path so we will overwrite
         # the existing file with the latest version
         file_path = tool_belt.get_file_path(__file__, start_timestamp,
                                             nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(rawData, file_path)
+        tool_belt.save_figure(inc_fig, file_path)
 
 
 
@@ -383,9 +472,9 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
     plot_taus = (taus + uwave_pi_pulse) / 1000
     ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
     ax.plot(plot_taus, avg_ref_counts, "g-", label="reference")
+    ax.legend()
     ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
     ax.set_ylabel("Counts")
-    ax.legend()
 
     ax = axes_pack[1]
     ax.plot(plot_taus, norm_avg_sig, "b-")
@@ -598,7 +687,7 @@ if __name__ == '__main__':
         "coords": [-0.037, 0.273, 4.85],
         "name": "{}-nv0_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 30,
+        "expected_count_rate": 50,
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
@@ -608,7 +697,7 @@ if __name__ == '__main__':
     
     
     nv_sig = {
-        "coords": [0.16108189, 0.13252713, 4.79 ],
+        "coords": [0.1614328 , 0.13376454,4.79 ],
         
         "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
@@ -635,7 +724,7 @@ if __name__ == '__main__':
             
             'collection_filter': '630_lp',  'magnet_angle': 114,
             
-        "resonance_LOW":2.7926,"rabi_LOW": 143.1,"uwave_power_LOW": 15.5, 
+                    "resonance_LOW":2.7897,"rabi_LOW": 139.7,"uwave_power_LOW": 15.5, 
         "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5}  
     
     
@@ -645,20 +734,20 @@ if __name__ == '__main__':
     # precession_time_range = [0, max_time * 10 ** 3]
     
     start = 0
-    stop =40
-    num_steps = int(stop - start + 1)  # 1 point per us
+    stop =20
+    num_steps = int((stop - start)*1 + 1)  # 1 point per us
     precession_time_range = [start *1e3, stop *1e3]
     
     num_reps = int(1e3)
-    num_runs = int(4*30) #60
+    num_runs = 1 #60
     
-    A = [0.153, 0.128, 4.79]
-    B = [0.148, 0.128, 4.79]
+    A = [0.153, 0.125, 4.79]
+    B = [0.148, 0.125, 4.79]
     
-    depletion_point = [A, B]
+    depletion_point = [A]#, B]
     
     depletion_times = [3e3, 2e3]
-    do_plot = True
+    do_plot = False
     
     try:
         
@@ -712,6 +801,8 @@ if __name__ == '__main__':
             folder = 'pc_rabi/branch_master/super_resolution_spin_echo/2021_10'
             # ++++ COMPARE +++++
             
+            file_list_0 =[ '',
+                        '']
             file_list_30 =[ '2021_10_05-19_18_00-johnson-dnv5_2021_09_23',
                         '2021_10_05-20_31_21-johnson-dnv5_2021_09_23']
             file_list_60 =[ '2021_10_05-23_09_33-johnson-dnv5_2021_09_23',
@@ -736,13 +827,33 @@ if __name__ == '__main__':
                 uwave_pi_pulse = data['uwave_pi_pulse']
                 plot_taus = (numpy.array(taus) + uwave_pi_pulse) / 1000
             
-                ax.plot(plot_taus, norm_avg_sig, fmt_list[f], label = label_list[f])
+                #ax.plot(plot_taus, norm_avg_sig, fmt_list[f], label = label_list[f])
+            #ax.set_ylabel('Contrast (arb. units)')
+            #ax.set_xlabel('Taus (us)')
+            #ax.legend(loc='lower right')
+            
+            
+            file = 'incremental/2021_10_07-00_05_19-johnson-dnv5_2021_09_23'
+            data = tool_belt.get_raw_data(file, folder)
+            taus = data['taus']
+            sig_counts = numpy.array(data['sig_counts'])
+            ref_counts = numpy.array(data['ref_counts'])
+            run_ind =data['run_ind']
+            
+            avg_sig_counts = numpy.average(sig_counts[:30], axis=0)
+            avg_ref_counts = numpy.average(ref_counts[:30], axis=0)
+            norm= avg_sig_counts/avg_ref_counts
+            uwave_pi_pulse = data['uwave_pi_pulse']
+            plot_taus = (numpy.array(taus) + uwave_pi_pulse) / 1000
+                                                                                                                        
+            ax.plot(plot_taus, norm)
             ax.set_ylabel('Contrast (arb. units)')
             ax.set_xlabel('Taus (us)')
             ax.legend(loc='lower right')
             
             
             
+            combine_revivals(file_list, folder)
             
             
             

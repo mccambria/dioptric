@@ -466,7 +466,7 @@ if __name__ == '__main__':
         "coords": [-0.037, 0.273, 4.85],
         "name": "{}-nv0_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 30,
+        "expected_count_rate": 50,
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
@@ -499,7 +499,7 @@ if __name__ == '__main__':
             
             'collection_filter': '630_lp', 'magnet_angle': 114,
             
-        "resonance_LOW":2.7926,"rabi_LOW": 143.1,"uwave_power_LOW": 15.5, 
+                    "resonance_LOW":2.7897,"rabi_LOW": 139.7,"uwave_power_LOW": 15.5, 
         "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5} 
     
     
@@ -510,14 +510,14 @@ if __name__ == '__main__':
     # precession_time_range = [0, max_time * 10 ** 3]
     
     start = 0
-    stop = 190
-    num_steps = int(stop - start + 1)  # 1 point per us
+    stop = 10
+    num_steps = int((stop - start)*2 + 1)  # 1 point per us
     precession_time_range = [start *1e3, stop *1e3]
     
     num_reps = int(1e3)
-    num_runs = 30 #60
+    num_runs = 10 #60
     
-    do_plot = True
+    do_plot = False
     
     try:
         if not do_plot:
