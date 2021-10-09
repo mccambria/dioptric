@@ -161,18 +161,18 @@ def simulate(uwave_time_range, freq, resonant_freq, contrast,
 
 
 def main(nv_sig, apd_indices, uwave_time_range, state,
-         num_steps, num_reps, num_runs):
+         num_steps, num_reps, num_runs, opti_nv_sig = None):
 
     with labrad.connect() as cxn:
         rabi_per, sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, 
                                          apd_indices, uwave_time_range, state,
-                                         num_steps, num_reps, num_runs)
+                                         num_steps, num_reps, num_runs, opti_nv_sig)
 
         return rabi_per
 
 
 def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
-                  num_steps, num_reps, num_runs):
+                  num_steps, num_reps, num_runs, opti_nv_sig = None):
 
     tool_belt.reset_cfm(cxn)
 
@@ -244,8 +244,14 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         if tool_belt.safe_stop():
             break
 
-        # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        # Optimize and save the coords we found
+        if opti_nv_sig:
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            drift = tool_belt.get_drift()
+            adj_coords = nv_sig['coords'] + numpy.array(drift)
+            tool_belt.set_xyz(cxn, adj_coords)
+        else:
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Apply the microwaves

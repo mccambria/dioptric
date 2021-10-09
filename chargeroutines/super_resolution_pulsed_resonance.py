@@ -61,8 +61,8 @@ def plot_esr(ref_counts, sig_counts, num_runs, freqs = None, freq_center = None,
 
     # Convert to kilocounts per second
     # readout_sec = depletion_time / 1e9
-    cts_uwave_off_avg = (avg_ref_counts / (num_runs))# * 1000)) / readout_sec
-    cts_uwave_on_avg = (avg_sig_counts / (num_runs))# * 1000)) / readout_sec
+    cts_uwave_off_avg = (avg_ref_counts / (1))# * 1000)) / readout_sec
+    cts_uwave_on_avg = (avg_sig_counts / (1))# * 1000)) / readout_sec
 
     # Create an image with 2 plots on one row, with a specified size
     # Then draw the canvas and flush all the previous plots from the canvas
@@ -600,7 +600,7 @@ if __name__ == '__main__':
             
             'collection_filter': '630_lp',  'magnet_angle': 114,
             
-        "resonance_LOW":2.7897,"rabi_LOW": 139.7,"uwave_power_LOW": 15.5, 
+        "resonance_LOW":2.7911,"rabi_LOW": 137.3,"uwave_power_LOW": 15.5, 
         "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5}  
     
     
@@ -610,7 +610,7 @@ if __name__ == '__main__':
     # uwave_pulse_dur =  nv_sig['rabi_LOW'] / 2
     num_steps =1
     num_reps = int(10**4) # 1.7 hr for each run
-    num_runs = 1
+    num_runs = 3
     
     # [0.16108189, 0.13252713, 4.79 ]
     z = nv_sig['coords'][2]
@@ -634,14 +634,24 @@ if __name__ == '__main__':
         
         
         nv_sig['depletion_coords'] = A
-        nv_sig['CPG_laser_dur'] = 10e3
+        nv_sig['CPG_laser_dur'] = 1e3 # 10
+        
+        # 10: 17
+        # 7.5: 17
+        # 5: 14
+        # 1: 29 
         main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
-               num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+                num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         nv_sig['depletion_coords'] = B
-        nv_sig['CPG_laser_dur'] = 10e3
-        main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
-                  num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+        nv_sig['CPG_laser_dur'] = 1e3 # 5
+        
+        # 10: 11
+        # 7.5: 17
+        # 5: 14
+        # 1: 29
+        # main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+        #           num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         # nv_sig['depletion_coords'] = C
         # nv_sig['CPG_laser_dur'] = 5e3
