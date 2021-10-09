@@ -159,6 +159,10 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     shelf_time = nv_sig['spin_shelf_dur']
     shelf_power = nv_sig['spin_shelf_laser_power']
     
+    magnet_angle = nv_sig['magnet_angle']
+    if (magnet_angle is not None) and hasattr(cxn, "rotation_stage_ell18k"):
+        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
+    
     
     green_laser_name = nv_sig['imaging_laser']
     red_laser_name = nv_sig['nv0_ionization_laser']
@@ -513,6 +517,7 @@ def sweep_readout_power(nv_sig, opti_nv_sig, apd_indices, readout_power_list,
                'measurement_dur-units': 'min',
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'opti_nv_sig': opti_nv_sig,
                 'freq_center': resonance,
                 'freq_center-units': 'GHz',
                 'uwave_pulse_dur': rabi_period/2,
@@ -557,8 +562,8 @@ if __name__ == '__main__':
     nd_yellow = "nd_0.5"
     
     opti_nv_sig = {
-        "coords": [-0.037, 0.273, 4.85],
-        "name": "{}-nv0_2021_09_23".format(sample_name,),
+        "coords": [-0.02331254,  0.01495828,  4.09457485],
+        "name": "{}-nv0_2021_10_08".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 50,
         "imaging_laser":green_laser,
@@ -568,13 +573,11 @@ if __name__ == '__main__':
         "magnet_angle": None,
     }  # 14.5 max
     
-    
     nv_sig = {
-        "coords": [0.1614328 , 0.13376454,4.79 ],
-        
+        "coords": [0.00949217, -0.00614178, 4.08457485],#+0.2/16],
         "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 75,
+        "expected_count_rate": 110,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power,
             'imaging_readout_dur': 1E7,
             
@@ -587,7 +590,7 @@ if __name__ == '__main__':
             "CPG_laser_dur": 1e4,
         
             'nv0_ionization_laser': red_laser, 'nv0_ionization_laser_power': red_power,
-            'nv0_ionization_dur':300,
+            'nv0_ionization_dur':500,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
             'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,
@@ -610,8 +613,9 @@ if __name__ == '__main__':
     num_runs = 1
     
     # [0.16108189, 0.13252713, 4.79 ]
-    A = [0.153, 0.125, 4.79]
-    B = [0.148, 0.125, 4.79]
+    z = nv_sig['coords'][2]
+    A = [-0.003, -0.008, z]
+    B = [-0.008, -0.008, z]
     
     do_plot = False
     
@@ -630,12 +634,12 @@ if __name__ == '__main__':
         
         
         nv_sig['depletion_coords'] = A
-        nv_sig['CPG_laser_dur'] = 3e3
+        nv_sig['CPG_laser_dur'] = 10e3
         main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
                num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         nv_sig['depletion_coords'] = B
-        nv_sig['CPG_laser_dur'] = 2e3
+        nv_sig['CPG_laser_dur'] = 10e3
         main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
                   num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         

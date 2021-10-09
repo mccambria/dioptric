@@ -137,6 +137,9 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     shelf_time = nv_sig['spin_shelf_dur']
     shelf_power = nv_sig['spin_shelf_laser_power']
     
+    magnet_angle = nv_sig['magnet_angle']
+    if (magnet_angle is not None) and hasattr(cxn, "rotation_stage_ell18k"):
+        cxn.rotation_stage_ell18k.set_angle(magnet_angle)    
     
     green_laser_name = nv_sig['nv-_reionization_laser']
     red_laser_name = nv_sig['nv0_ionization_laser']
@@ -187,6 +190,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         # own sequences)
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_amp(uwave_power)
+        
         ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         
         period = ret_vals[0]
@@ -296,6 +300,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
                'time_elapsed': time_elapsed,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                   'opti_nv_sig': opti_nv_sig,
                 'freq_center': freq_center,
                 'freq_center-units': 'GHz',
                 'freq_range': freq_range,
@@ -348,8 +353,8 @@ if __name__ == '__main__':
     nd_yellow = "nd_0.5"
     
     opti_nv_sig = {
-        "coords": [-0.037, 0.273, 4.85],
-        "name": "{}-nv0_2021_09_23".format(sample_name,),
+        "coords": [-0.02331254,  0.01495828,  4.09457485],
+        "name": "{}-nv0_2021_10_08".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 50,
         "imaging_laser":green_laser,
@@ -360,11 +365,10 @@ if __name__ == '__main__':
     }  # 14.5 max
     
     nv_sig = {
-        "coords":[0.1614328 , 0.13376454,4.79 ],
-        
+        "coords": [0.01, -0.007, 4.08457485],
         "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 75,
+        "expected_count_rate": 110,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power,
             'imaging_readout_dur': 1E7,
             
@@ -372,7 +376,7 @@ if __name__ == '__main__':
             'nv-_reionization_dur': 1E5,
         
             'nv0_ionization_laser': red_laser, 'nv0_ionization_laser_power': red_power,
-            'nv0_ionization_dur':300,
+            'nv0_ionization_dur':500,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
             'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,

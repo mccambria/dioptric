@@ -179,6 +179,10 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, precession_time_range,
     shelf_time = nv_sig['spin_shelf_dur']
     shelf_power = nv_sig['spin_shelf_laser_power']
     
+    magnet_angle = nv_sig['magnet_angle']
+    if (magnet_angle is not None) and hasattr(cxn, "rotation_stage_ell18k"):
+        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
+    
     
     green_laser_name = nv_sig['nv-_reionization_laser']
     red_laser_name = nv_sig['nv0_ionization_laser']
@@ -410,6 +414,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, precession_time_range,
                'time_elapsed': time_elapsed,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                   'opti_nv_sig': opti_nv_sig,
                 "uwave_freq": uwave_freq,
                 "uwave_freq-units": "GHz",
                 "uwave_power": uwave_power,
@@ -463,8 +468,8 @@ if __name__ == '__main__':
     nd_yellow = "nd_0.5"
     
     opti_nv_sig = {
-        "coords": [-0.037, 0.273, 4.85],
-        "name": "{}-nv0_2021_09_23".format(sample_name,),
+        "coords": [0.128, 0.156, 4.8],
+        "name": "{}-nv0_2021_10_08".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 50,
         "imaging_laser":green_laser,
@@ -477,7 +482,7 @@ if __name__ == '__main__':
     
     
     nv_sig = {
-        "coords":[0.16108189, 0.13252713, 4.79 ],
+        "coords":[0.16031254, 0.13304172, 4.79 ],
         
         "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
@@ -489,7 +494,7 @@ if __name__ == '__main__':
             'nv-_reionization_dur': 1E5,
         
             'nv0_ionization_laser': red_laser, 'nv0_ionization_laser_power': red_power,
-            'nv0_ionization_dur':300,
+            'nv0_ionization_dur':500,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
             'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,

@@ -89,7 +89,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
     
-    
     for run_ind in range(num_runs):
         print('Run index: {}'. format(run_ind))
 

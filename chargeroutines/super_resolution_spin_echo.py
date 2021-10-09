@@ -184,6 +184,10 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
     shelf_time = nv_sig['spin_shelf_dur']
     shelf_power = nv_sig['spin_shelf_laser_power']
     
+    magnet_angle = nv_sig['magnet_angle']
+    if (magnet_angle is not None) and hasattr(cxn, "rotation_stage_ell18k"):
+        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
+    
     green_laser_name = nv_sig['imaging_laser']
     red_laser_name = nv_sig['nv0_ionization_laser']
     yellow_laser_name = nv_sig['charge_readout_laser']
@@ -215,7 +219,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
     period_s_total = (period_s*num_reps*num_steps*num_runs/2 + 1)
     period_m_total = period_s_total/60
     print('Expected time: {:.1f} m'.format(period_m_total))
-    # return
+    #return
 
     # %% Get the starting time of the function
 
@@ -378,6 +382,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
         rawData = {'start_timestamp': start_timestamp,
                    'nv_sig': nv_sig,
                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                   'opti_nv_sig': opti_nv_sig,
                     "uwave_freq": uwave_freq,
                     "uwave_freq-units": "GHz",
                     "uwave_power": uwave_power,
@@ -684,8 +689,8 @@ if __name__ == '__main__':
     nd_yellow = "nd_0.5"
     
     opti_nv_sig = {
-        "coords": [-0.037, 0.273, 4.85],
-        "name": "{}-nv0_2021_09_23".format(sample_name,),
+        "coords": [0.128, 0.156, 4.8],
+        "name": "{}-nv0_2021_10_08".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 50,
         "imaging_laser":green_laser,
@@ -695,9 +700,8 @@ if __name__ == '__main__':
         "magnet_angle": None,
     }  # 14.5 max
     
-    
     nv_sig = {
-        "coords": [0.1614328 , 0.13376454,4.79 ],
+        "coords":[0.16031254, 0.13304172,4.79  ],
         
         "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
@@ -714,7 +718,7 @@ if __name__ == '__main__':
             "CPG_laser_dur": 1e4,
         
             'nv0_ionization_laser': red_laser, 'nv0_ionization_laser_power': red_power,
-            'nv0_ionization_dur':300,
+            'nv0_ionization_dur':500,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
             'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,
@@ -741,7 +745,7 @@ if __name__ == '__main__':
     num_reps = int(1e3)
     num_runs = 1 #60
     
-    A = [0.153, 0.125, 4.79]
+    A = [0.151, 0.126, 4.79]
     B = [0.148, 0.125, 4.79]
     
     depletion_point = [A]#, B]
