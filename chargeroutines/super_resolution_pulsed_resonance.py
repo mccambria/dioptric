@@ -213,7 +213,6 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         # (must happen after optimize and iq_switch since run their
         # own sequences)
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-        sig_gen_cxn.set_amp(uwave_power)
         ret_vals = cxn.pulse_streamer.stream_load('super_resolution_rabi.py', seq_args_string)
         
         period = ret_vals[0]
@@ -255,6 +254,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             
             # print(freqs[freq_ind])
             sig_gen_cxn.set_freq(freqs[freq_ind])
+            sig_gen_cxn.set_amp(uwave_power)
             sig_gen_cxn.uwave_on()
 
             # Start the tagger stream
@@ -610,12 +610,12 @@ if __name__ == '__main__':
     # uwave_pulse_dur =  nv_sig['rabi_LOW'] / 2
     num_steps =1
     num_reps = int(10**4) # 1.7 hr for each run
-    num_runs = 3
+    num_runs = 1
     
     # [0.16108189, 0.13252713, 4.79 ]
     z = nv_sig['coords'][2]
-    A = [-0.003, -0.008, z]
-    B = [-0.008, -0.008, z]
+    A = [-0.001, -0.008, z]
+    B = [-0.007, -0.008, z]
     
     do_plot = False
     
@@ -634,7 +634,7 @@ if __name__ == '__main__':
         
         
         nv_sig['depletion_coords'] = A
-        nv_sig['CPG_laser_dur'] = 1e3 # 10
+        nv_sig['CPG_laser_dur'] = 10e3 # 10
         
         # 10: 17
         # 7.5: 17
@@ -644,14 +644,14 @@ if __name__ == '__main__':
                 num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         nv_sig['depletion_coords'] = B
-        nv_sig['CPG_laser_dur'] = 1e3 # 5
+        nv_sig['CPG_laser_dur'] = 7.5e3 # 5
         
         # 10: 11
         # 7.5: 17
         # 5: 14
         # 1: 29
-        # main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
-        #           num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+        main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         # nv_sig['depletion_coords'] = C
         # nv_sig['CPG_laser_dur'] = 5e3

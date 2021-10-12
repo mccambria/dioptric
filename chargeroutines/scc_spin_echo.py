@@ -239,9 +239,6 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, precession_time_range,
         # own sequences)
         # Set up the microwaves
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-        sig_gen_cxn.set_freq(uwave_freq)
-        sig_gen_cxn.set_amp(uwave_power)
-        sig_gen_cxn.uwave_on()
 
         
 
@@ -275,9 +272,14 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, precession_time_range,
                 tau_ind_first = -tau_ind - 1
                 tau_ind_second = tau_ind
                 
-            # add the tau indexxes used to a list to save at the end
+            # add the tau indexes used to a list to save at the end
             tau_index_master_list[run_ind].append(tau_ind_first)
             tau_index_master_list[run_ind].append(tau_ind_second)
+            
+            # turn on the uwaves AFTER optimizing
+            sig_gen_cxn.set_freq(uwave_freq)
+            sig_gen_cxn.set_amp(uwave_power)
+            sig_gen_cxn.uwave_on()
             
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
@@ -287,9 +289,9 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, precession_time_range,
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
            
             seq_args = [readout_time, reionization_time, ionization_time, shelf_time ,
-          taus[tau_ind_first], taus[tau_ind_second], uwave_pi_pulse, uwave_pi_on_2_pulse, 
-          green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
-          apd_indices[0], readout_power, shelf_power]
+                  taus[tau_ind_first], taus[tau_ind_second], uwave_pi_pulse, uwave_pi_on_2_pulse, 
+                  green_laser_name, yellow_laser_name, red_laser_name, sig_gen_name,
+                  apd_indices[0], readout_power, shelf_power]
             
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts

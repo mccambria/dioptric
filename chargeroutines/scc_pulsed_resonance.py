@@ -189,7 +189,6 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         # (must happen after optimize and iq_switch since run their
         # own sequences)
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-        sig_gen_cxn.set_amp(uwave_power)
         
         ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         
@@ -228,6 +227,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             
             # print(freqs[freq_ind])
             sig_gen_cxn.set_freq(freqs[freq_ind])
+            sig_gen_cxn.set_amp(uwave_power)
             sig_gen_cxn.uwave_on()
 
             # Start the tagger stream

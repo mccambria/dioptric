@@ -13,11 +13,8 @@ import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import time
-from scipy.optimize import curve_fit
-from scipy.signal import find_peaks
 import labrad
 from utils.tool_belt import States
-import majorroutines.pulsed_resonance as pulsed_resonance
 from random import shuffle
 
 # %%
@@ -104,13 +101,13 @@ def main(nv_sig, opti_nv_sig, apd_indices, precession_time_range,
     with labrad.connect() as cxn:
         sig_gate_counts, ref_gate_counts = main_with_cxn(cxn, nv_sig, opti_nv_sig, 
                              apd_indices, precession_time_range,
-                             num_steps, num_reps, num_runs,  
+                             num_steps, num_reps, num_runs,
                              state)
     return sig_gate_counts, ref_gate_counts
 
 
 def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
-         num_steps, num_reps, num_runs,  
+         num_steps, num_reps, num_runs, 
          state=States.LOW):
 
     #  Initial calculations and setup
@@ -191,7 +188,8 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
     green_laser_name = nv_sig['imaging_laser']
     red_laser_name = nv_sig['nv0_ionization_laser']
     yellow_laser_name = nv_sig['charge_readout_laser']
-    sig_gen_name = tool_belt.get_signal_generator_name_no_cxn(state)    
+    sig_gen_name = tool_belt.get_signal_generator_name_no_cxn(state) 
+    sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)   
             
     init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
                       ['Config', 'Optics', nv_sig['initialize_laser']])
@@ -233,7 +231,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
     start_time = time.time()
     start_function_time = start_time
     
-    inc_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
     plot_taus = (taus + uwave_pi_pulse) / 1000
     ax = axes_pack[0]
     ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
@@ -261,14 +259,6 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
         adjusted_depletion_coords = numpy.array(depletion_coords) + drift
         
         
-        # Set up the microwaves and laser. Then load the pulse streamer 
-        # (must happen after optimize and iq_switch since run their
-        # own sequences)
-        # Set up the microwaves
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-        sig_gen_cxn.set_freq(uwave_freq)
-        sig_gen_cxn.set_amp(uwave_power)
-        sig_gen_cxn.uwave_on()
         
         # Shuffle the taus we step thru
         shuffle(tau_ind_list)
@@ -289,6 +279,14 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
                 
                 start_time = time_current
             
+            # Set up the microwaves and laser. Then load the pulse streamer 
+            # (must happen after optimize and iq_switch since run their
+            # own sequences)
+            # Set up the microwaves
+            sig_gen_cxn.set_freq(uwave_freq)
+            sig_gen_cxn.set_amp(uwave_power)
+            sig_gen_cxn.uwave_on()
+        
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
@@ -323,6 +321,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
                     apd_indices[0], readout_power, shelf_power]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # print(seq_args)
+            # return
             
             # Start the tagger stream
             cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -341,7 +340,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
             num_samples = num_reps * 3 * 4
             num_read_so_far = 0
             total_samples_list = []
-            while num_read_so_far < num_samples:
+            while num_read_so_far < num_samples: 
         
                 if tool_belt.safe_stop():
                     break
@@ -432,9 +431,9 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
         ax.cla()  
         ax.plot(plot_taus, norm_avg_sig, "b-")
         ax.set_title("Spin Echo Measurement")
-        inc_fig.canvas.draw()
-        inc_fig.set_tight_layout(True)
-        inc_fig.canvas.flush_events()
+        raw_fig.canvas.draw()
+        raw_fig.set_tight_layout(True)
+        raw_fig.canvas.flush_events()
     
 
         # This will continuously be the same file path so we will overwrite
@@ -442,7 +441,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
         file_path = tool_belt.get_file_path(__file__, start_timestamp,
                                             nv_sig['name'], 'incremental')
         tool_belt.save_raw_data(rawData, file_path)
-        tool_belt.save_figure(inc_fig, file_path)
+        tool_belt.save_figure(raw_fig, file_path)
 
 
 
@@ -470,9 +469,10 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
         
     # %% Plot the data
 
-    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
+    #raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
+    ax.cla() 
     # Account for the pi/2 pulse on each side of a tau
     plot_taus = (taus + uwave_pi_pulse) / 1000
     ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
@@ -482,6 +482,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
     ax.set_ylabel("Counts")
 
     ax = axes_pack[1]
+    ax.cla() 
     ax.plot(plot_taus, norm_avg_sig, "b-")
     ax.set_title("Spin Echo Measurement")
     ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
@@ -689,10 +690,10 @@ if __name__ == '__main__':
     nd_yellow = "nd_0.5"
     
     opti_nv_sig = {
-        "coords": [0.128, 0.156, 4.8],
+        "coords": [-0.02331254,  0.01495828,  4.09457485],
         "name": "{}-nv0_2021_10_08".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 50,
+        "expected_count_rate": 46,
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
@@ -701,7 +702,7 @@ if __name__ == '__main__':
     }  # 14.5 max
     
     nv_sig = {
-        "coords":[0.16031254, 0.13304172,4.79  ],
+        "coords":[0.00949217, -0.00614178,4.08457485 ],
         
         "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
@@ -728,7 +729,7 @@ if __name__ == '__main__':
             
             'collection_filter': '630_lp',  'magnet_angle': 114,
             
-                    "resonance_LOW":2.7897,"rabi_LOW": 139.7,"uwave_power_LOW": 15.5, 
+                    "resonance_LOW":2.791,"rabi_LOW": 139.7,"uwave_power_LOW": 15.5, 
         "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5}  
     
     
@@ -737,31 +738,33 @@ if __name__ == '__main__':
     # num_steps = int(max_time + 1)  # 1 point per us
     # precession_time_range = [0, max_time * 10 ** 3]
     
-    start = 0
-    stop =20
+    start = 13
+    stop =14
     num_steps = int((stop - start)*1 + 1)  # 1 point per us
     precession_time_range = [start *1e3, stop *1e3]
     
-    num_reps = int(1e3)
-    num_runs = 1 #60
+    num_reps = int(20e3)
+    num_runs = 3 #60
     
-    A = [0.151, 0.126, 4.79]
-    B = [0.148, 0.125, 4.79]
+    z = nv_sig['coords'][2]
+    A = [-0.001, -0.008, z]
+    B = [-0.007, -0.008, z]
     
     depletion_point = [A]#, B]
     
-    depletion_times = [3e3, 2e3]
+    depletion_times = [10e3, 2e3]
     do_plot = False
     
     try:
         
         if not do_plot:
+            # try to run a single point and see if that works
              for p in range(len(depletion_point)):   
                 nv_sig['depletion_coords'] = depletion_point[p]
                 nv_sig['CPG_laser_dur'] = depletion_times[p]
                
-                main(nv_sig, opti_nv_sig, apd_indices,precession_time_range,
-                  num_steps, num_reps, num_runs)
+                main(nv_sig, opti_nv_sig, apd_indices, precession_time_range,
+                  num_steps, num_reps, num_runs, 4)
             
             # for i in [ 5]:#range(5):
                 
