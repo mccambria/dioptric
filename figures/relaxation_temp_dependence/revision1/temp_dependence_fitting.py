@@ -69,6 +69,10 @@ temp_column_title = "ZFS temp (K)"
 # temp_column_title = "Nominal temp (K)"
 temp_lb_column_title = "ZFS temp lower bound (K)"
 temp_ub_column_title = "ZFS temp upper bound (K)"
+
+low_res_file_column_title = "-1 resonance file"
+high_res_file_column_title = "+1 resonance file"
+
 omega_column_title = "Omega (s^-1)"
 omega_err_column_title = "Omega err (s^-1)"
 gamma_column_title = "gamma (s^-1)"
@@ -327,7 +331,13 @@ def fit_simultaneous(data_points):
     return popt, numpy.diag(pcov), beta_desc, omega_fit_func, gamma_fit_func
 
 
-def get_data_points_csv(file):
+def get_data_points(path, file_name):
+
+    file_path = path / "{}.xlsx".format(file_name)
+    csv_file_path = path / "{}.csv".format(file_name)
+
+    file = pd.read_excel(file_path, engine="openpyxl")
+    file.to_csv(csv_file_path, index=None, header=True)
 
     # Marker and color combination to distinguish samples
     marker_ind = 0
@@ -342,7 +352,7 @@ def get_data_points_csv(file):
     samples = []
     sample_markers = {}
     header = True
-    with open(file, newline="") as f:
+    with open(csv_file_path, newline="") as f:
         reader = csv.reader(f)
         for row in reader:
             # Create columns from the header (first row)
@@ -487,13 +497,7 @@ def main(
 
     # %% Setup
 
-    file_path = path / "{}.xlsx".format(file_name)
-    csv_file_path = path / "{}.csv".format(file_name)
-
-    file = pd.read_excel(file_path, engine="openpyxl")
-    file.to_csv(csv_file_path, index=None, header=True)
-
-    data_points = get_data_points_csv(csv_file_path)
+    data_points = get_data_points(path, file_name)
 
     min_temp = temp_range[0]
     max_temp = temp_range[1]
@@ -530,6 +534,8 @@ def main(
             label=r"$\gamma$ fit",
             color=gamma_edge_color,
         )
+    # print(omega_lambda(50))
+    # print(gamma_lambda(50))
 
     # Plot ratio
     ratio_lambda = lambda temp: gamma_lambda(temp_linspace) / omega_lambda(

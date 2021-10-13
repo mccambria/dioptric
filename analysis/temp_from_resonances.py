@@ -19,103 +19,56 @@ import utils.tool_belt as tool_belt
 from majorroutines.spin_echo import zfs_cost_func
 from scipy.optimize import minimize_scalar
 import time
+from figures.relaxation_temp_dependence.revision1.temp_dependence_fitting import (
+    get_data_points,
+    nominal_temp_column_title,
+    low_res_file_column_title,
+    high_res_file_column_title,
+)
+from utils import common
 
 
 # %% Functions
 
 
 def process_res_list():
-    nominal_temps = [
-        275,
-        200,
-        262.5,
-        225,
-        212.5,
-        237.5,
-        287.5,
-        300,
-        250,
-        150,
-        85,
-        175,
-        125,
-        295,
-        350,
-        400,
-    ]
 
-    resonances = [
-        [
-            "2021_04_30-20_20_44-hopper-nv1_2021_03_16",
-            "2021_04_30-20_25_01-hopper-nv1_2021_03_16",
-        ],  # 275
-        [
-            "2021_05_02-19_46_43-hopper-nv1_2021_03_16",
-            "2021_05_02-19_51_00-hopper-nv1_2021_03_16",
-        ],  # 200
-        [
-            "2021_05_05-16_52_20-hopper-nv1_2021_03_16",
-            "2021_05_05-16_58_19-hopper-nv1_2021_03_16",
-        ],  # 262.5
-        [
-            "2021_05_06-10_57_36-hopper-nv1_2021_03_16",
-            "2021_05_06-11_03_36-hopper-nv1_2021_03_16",
-        ],  # 225
-        [
-            "2021_05_07-11_29_42-hopper-nv1_2021_03_16",
-            "2021_05_07-11_35_40-hopper-nv1_2021_03_16",
-        ],  # 212.5
-        [
-            "2021_05_09-00_28_20-hopper-nv1_2021_03_16",
-            "2021_05_09-00_34_24-hopper-nv1_2021_03_16",
-        ],  # 237.5
-        [
-            "2021_05_10-09_47_22-hopper-nv1_2021_03_16",
-            "2021_05_10-09_53_17-hopper-nv1_2021_03_16",
-        ],  # 287.5
-        [
-            "2021_05_11-08_21_59-hopper-nv1_2021_03_16",
-            "2021_05_11-08_27_51-hopper-nv1_2021_03_16",
-        ],  # 300
-        [
-            "2021_05_11-23_13_54-hopper-nv1_2021_03_16",
-            "2021_05_11-23_19_48-hopper-nv1_2021_03_16",
-        ],  # 250
-        [
-            "2021_05_12-23_08_06-hopper-nv1_2021_03_16",
-            "2021_05_12-23_13_52-hopper-nv1_2021_03_16",
-        ],  # 150
-        [
-            "2021_05_20-23_57_25-hopper-nv1_2021_03_16",
-            "2021_05_20-23_52_42-hopper-nv1_2021_03_16",
-        ],  # 85
-        [
-            "2021_06_05-16_57_26-hopper-nv1_2021_03_16",
-            "2021_06_05-17_03_55-hopper-nv1_2021_03_16",
-        ],  # 175
-        [
-            "2021_06_09-22_52_51-hopper-nv1_2021_03_16",
-            "2021_06_09-22_58_18-hopper-nv1_2021_03_16",
-        ],  # 125
-        [
-            "2021_07_07-22_21_10-hopper-nv1_2021_03_16",
-            "2021_07_07-22_22_55-hopper-nv1_2021_03_16",
-        ],  # 295
-        [
-            "2021_07_08-18_16_31-hopper-nv1_2021_03_16",
-            "2021_07_08-18_19_47-hopper-nv1_2021_03_16",
-        ],  # 350
-        [
-            "2021_07_09-18_04_22-hopper-nv1_2021_03_16",
-            "2021_07_09-18_07_34-hopper-nv1_2021_03_16",
-        ],  # 400
-    ]
+    nominal_temps = []
+    resonances = []
 
     for ind in range(len(resonances)):
         nominal_temp = nominal_temps[ind]
         res_pair = resonances[ind]
         print("Nominal temp: {}".format(nominal_temp))
         main_files(res_pair)
+        print()
+
+
+def process_temp_dep_res_files():
+
+    file_name = "compiled_data"
+    home = common.get_nvdata_dir()
+    path = home / "paper_materials/relaxation_temp_dependence"
+
+    data_points = get_data_points(path, file_name)
+    nominal_temps = []
+    resonances = []
+    for el in data_points:
+        if el[low_res_file_column_title] == "":
+            continue
+        nominal_temps.append(el[nominal_temp_column_title])
+        resonances.append(
+            [el[low_res_file_column_title], el[high_res_file_column_title]]
+        )
+
+    for ind in range(len(resonances)):
+        nominal_temp = nominal_temps[ind]
+        res_pair = resonances[ind]
+        print("Nominal temp: {}".format(nominal_temp))
+        try:
+            main_files(res_pair)
+        except Exception as exc:
+            print(exc)
         print()
 
 
@@ -223,14 +176,14 @@ def main(zfs, zfs_err):
 
 if __name__ == "__main__":
 
-    files = [
-        "2021_10_01-16_01_47-hopper-search",
-        "2021_10_01-16_11_08-hopper-search",
-    ]
+    # files = [
+    #     "2021_10_01-16_01_47-hopper-search",
+    #     "2021_10_01-16_11_08-hopper-search",
+    # ]
 
-    main_files(files)
+    # main_files(files)
 
-    # process_res_list()
+    process_temp_dep_res_files()
 
 #    print(zfs_from_temp(280))
 
