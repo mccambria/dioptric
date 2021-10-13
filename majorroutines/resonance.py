@@ -26,14 +26,14 @@ from random import shuffle
 
 
 def main(nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_runs, uwave_power, state=States.LOW):
+         num_steps, num_runs, uwave_power, state=States.LOW, opti_nv_sig = None):
 
     with labrad.connect() as cxn:
         main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-                      num_steps, num_runs, uwave_power, state)
+                      num_steps, num_runs, uwave_power, state, opti_nv_sig)
 
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
-                  num_steps, num_runs, uwave_power, state=States.LOW):
+                  num_steps, num_runs, uwave_power, state=States.LOW, opti_nv_sig = None):
 
     # %% Initial calculations and setup
 
@@ -89,7 +89,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
     
-    
     for run_ind in range(num_runs):
         print('Run index: {}'. format(run_ind))
 
@@ -98,7 +97,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             break
 
         # Optimize and save the coords we found
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        if opti_nv_sig:
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            drift = tool_belt.get_drift()
+            adj_coords = nv_sig['coords'] + numpy.array(drift)
+            tool_belt.set_xyz(cxn, adj_coords)
+        else:
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
         
         # Laser setup

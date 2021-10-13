@@ -307,9 +307,9 @@ def optimize_ion_pulse_length(nv_sig):
     NV state.
     '''
     apd_indices = [0]
-    num_reps = 10**3
+    num_reps = 10**4
     # test_pulse_dur_ist = numpy.linspace(0,1500,16).tolist()
-    test_pulse_dur_list = numpy.linspace(0,600,7)
+    test_pulse_dur_list = numpy.linspace(0,1000,11)#numpy.linspace(0,600,7)
     
     # measure laser powers:
     # green_optical_power_pd, green_optical_power_mW, \
@@ -369,7 +369,7 @@ def optimize_reion_pulse_length(nv_sig):
     This function will test green pulse lengths on the LOW NV state.
     '''
     apd_indices = [0]
-    num_reps = 10**3
+    num_reps = 10**4
 #    test_pulse_dur_list = [0,5*10**3, 10*10**3, 20*10**3, 30*10**3, 40*10**3, 50*10**3, 
 #                           100*10**3,200*10**3,300*10**3,400*10**3,500*10**3,
 #                           600*10**3, 700*10**3, 800*10**3, 900*10**3, 
@@ -392,10 +392,6 @@ def optimize_reion_pulse_length(nv_sig):
     
     # Step through the pulse lengths for the test laser
     for test_pulse_length in test_pulse_dur_list:
-        # shine the red laser before each measurement
-        with labrad.connect() as cxn:
-            cxn.pulse_streamer.constant([7], 0.0, 0.0)
-            time.sleep(2) 
         nv_sig['nv-_reionization_dur'] = test_pulse_length
         sig_count, ref_count = main(nv_sig, apd_indices, num_reps,
                                     States.LOW, plot = False)
@@ -942,10 +938,10 @@ if __name__ == '__main__':
     
     
     nv_sig = {
-                "coords": [-0.020, 0.282, 4.85],
-        "name": "{}-dn70_2021_09_23".format(sample_name,),
+        "coords":[0.1614328 , 0.13376454,4.79  ],
+        "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 70,
+        "expected_count_rate": 110,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power,
             'imaging_readout_dur': 1E7,
             
@@ -953,32 +949,30 @@ if __name__ == '__main__':
             'nv-_reionization_dur': 1E5,
             
             'nv0_ionization_laser': red_laser, 'nv0_ionization_laser_power': red_power,
-            'nv0_ionization_dur': 300,
+            'nv0_ionization_dur': 500,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
             'spin_shelf_laser_power': 0.6, 'spin_shelf_dur':0,
             
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
-            'charge_readout_laser_power': 0.15, 'charge_readout_dur':50e6,
+            'charge_readout_laser_power': 0.3, 'charge_readout_dur':0.5e6,
             
-            'collection_filter': '630_lp', 'magnet_angle': None,
+            'collection_filter': '630_lp', 'magnet_angle': 114,
             
-            #"resonance_LOW": 2.8710, "rabi_LOW": 100, 'uwave_power_LOW': 15.5,  # 15.5 max
-            "resonance_LOW":2.8231, "rabi_LOW":100, 'uwave_power_LOW': 15.5,  # 15.5 max
-            
-            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max  
+            "resonance_LOW":2.7897,"rabi_LOW": 139.7,"uwave_power_LOW": 15.5, 
+            "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5} 
     
     try:
         
         # Run the program
-        # optimize_ion_pulse_length(nv_sig)
-        # optimize_reion_pul1se_length(nv_sig)
+        optimize_ion_pulse_length(nv_sig)
+        # optimize_reion_pulse_length(nv_sig)
     #    optimize_readout_pulse_length(nv_sig)
         # optimize_readout_pulse_power(nv_sig)
         # optimize_shelf_pulse_length(nv_sig)
     #    optimize_shelf_pulse_power(nv_sig)
         # test_rabi(nv_sig)
-        test_esr(nv_sig)
+        # test_esr(nv_sig)
         
     #    sig_counts, ref_counts = main(nv_sig, apd_indices, 10**3, States.LOW)
     

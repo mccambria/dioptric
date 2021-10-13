@@ -49,10 +49,20 @@ def main(cxn, laser_name, laser_power=None):
     """
 
     seq_file = 'square_wave.py'
-    # period = int(1e6)
+    period = int(1e6)
     # period = int(0.25e6)
-    period = int(1000)
-    seq_args = [period, laser_name, laser_power]
+    # period = int(1000)
+    seq_args = [period,  laser_name, laser_power]
+    
+    
+    # seq_file = 'square_wave_vary_wait_time.py'
+    # laser_on_time = 1e4
+    # wait_time_1 = 1.5e6+1e3
+    # wait_time_2 = 1.5e6+100e3
+    # seq_args = [laser_on_time,wait_time_1,wait_time_2,  laser_name, laser_power]
+    
+    
+    
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
     cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
@@ -80,7 +90,7 @@ if __name__ == '__main__':
 
     # Hahn
     # laser_name = 'integrated_520'
-    laser_name = 'laserglow_532'
+    laser_name = 'cobolt_638'
     # filter_name = 'nd_1.0'
     pos = [0.0, 0.0, 0]
 
@@ -89,5 +99,5 @@ if __name__ == '__main__':
 #        for el in laser_names:
         # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
-        constant(cxn, laser_name)
-        # main(cxn, laser_name)
+        # constant(cxn, laser_name)
+        main(cxn, laser_name)

@@ -61,8 +61,8 @@ def plot_esr(ref_counts, sig_counts, num_runs, freqs = None, freq_center = None,
 
     # Convert to kilocounts per second
     # readout_sec = depletion_time / 1e9
-    cts_uwave_off_avg = (avg_ref_counts / (num_runs))# * 1000)) / readout_sec
-    cts_uwave_on_avg = (avg_sig_counts / (num_runs))# * 1000)) / readout_sec
+    cts_uwave_off_avg = (avg_ref_counts / (1))# * 1000)) / readout_sec
+    cts_uwave_on_avg = (avg_sig_counts / (1))# * 1000)) / readout_sec
 
     # Create an image with 2 plots on one row, with a specified size
     # Then draw the canvas and flush all the previous plots from the canvas
@@ -119,7 +119,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
     freqs = numpy.linspace(freq_low, freq_high, num_steps)
-    if single_point:
+    if num_steps==1:
         freqs = numpy.array([freq_center])
     freq_ind_list = list(range(num_steps))
     
@@ -158,6 +158,10 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     ionization_time = nv_sig['nv0_ionization_dur']
     shelf_time = nv_sig['spin_shelf_dur']
     shelf_power = nv_sig['spin_shelf_laser_power']
+    
+    magnet_angle = nv_sig['magnet_angle']
+    if (magnet_angle is not None) and hasattr(cxn, "rotation_stage_ell18k"):
+        cxn.rotation_stage_ell18k.set_angle(magnet_angle)
     
     
     green_laser_name = nv_sig['imaging_laser']
@@ -209,7 +213,6 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         # (must happen after optimize and iq_switch since run their
         # own sequences)
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-        sig_gen_cxn.set_amp(uwave_power)
         ret_vals = cxn.pulse_streamer.stream_load('super_resolution_rabi.py', seq_args_string)
         
         period = ret_vals[0]
@@ -251,6 +254,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             
             # print(freqs[freq_ind])
             sig_gen_cxn.set_freq(freqs[freq_ind])
+            sig_gen_cxn.set_amp(uwave_power)
             sig_gen_cxn.uwave_on()
 
             # Start the tagger stream
@@ -291,7 +295,8 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             ref_gate_counts = total_samples_list[5::6]
             # ref_gate_counts = total_samples_list[4::6]
             ref_counts[run_ind, freq_ind] = sum(ref_gate_counts)
-
+        print(sig_counts)
+        print(ref_counts)
         cxn.apd_tagger.stop_tag_stream()
 
         # %% Save the data we have incrementally for long measurements
@@ -332,6 +337,9 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     
     if do_plot:
         fig, norm_avg_sig,norm_avg_sig_ste  = plot_esr(ref_counts, sig_counts, num_runs, freqs)
+        
+        if num_steps == 1:
+            print('Normalized signal at point: {}'.format(norm_avg_sig))
 
 
     # %% Fit the data
@@ -389,9 +397,9 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     return sig_gate_counts, ref_gate_counts
 
 # %%
-def sweep_readout_time(nv_sig, apd_indices, readout_time_list, depletion_coords, 
+def sweep_readout_time(nv_sig, opti_nv_sig, apd_indices, readout_time_list, depletion_coords, 
                        resonance, rabi_period):
-    measurement_dur = 4
+    measurement_dur = 3
     num_runs = 1
     num_steps = 1
     freq_range = 0.1
@@ -407,7 +415,7 @@ def sweep_readout_time(nv_sig, apd_indices, readout_time_list, depletion_coords,
         num_reps = int(measurement_dur * 60e9 / (2*(t + 1e6)) )
         nv_sig['charge_readout_dur'] = t
         
-        sig_counts, ref_counts = main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+        sig_counts, ref_counts = main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
               num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2, single_point = True, do_plot = False)
         signal = numpy.average(numpy.array(sig_counts) - numpy.array(ref_counts))
         noise = numpy.std(sig_counts, ddof=1) / numpy.sqrt(num_reps)
@@ -463,7 +471,7 @@ def sweep_readout_time(nv_sig, apd_indices, readout_time_list, depletion_coords,
         
     return
     
-def sweep_readout_power(nv_sig, apd_indices, readout_power_list,
+def sweep_readout_power(nv_sig, opti_nv_sig, apd_indices, readout_power_list,
                         depletion_coords, resonance, rabi_period):
     measurement_dur = 4
     num_runs = 1
@@ -482,7 +490,7 @@ def sweep_readout_power(nv_sig, apd_indices, readout_power_list,
     for p in readout_power_list:
         nv_sig['charge_readout_laser_power'] = p
         
-        sig_counts, ref_counts = main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+        sig_counts, ref_counts = main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
               num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2, single_point = True, do_plot = False)
         signal = numpy.average(numpy.array(sig_counts) - numpy.array(ref_counts))
         noise = numpy.std(sig_counts, ddof=1) / numpy.sqrt(num_reps)
@@ -509,6 +517,7 @@ def sweep_readout_power(nv_sig, apd_indices, readout_power_list,
                'measurement_dur-units': 'min',
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'opti_nv_sig': opti_nv_sig,
                 'freq_center': resonance,
                 'freq_center-units': 'GHz',
                 'uwave_pulse_dur': rabi_period/2,
@@ -553,26 +562,22 @@ if __name__ == '__main__':
     nd_yellow = "nd_0.5"
     
     opti_nv_sig = {
-        "coords": [-0.033, -0.021, 4.85],
-        "name": "{}-nv1_2021_09_07".format(sample_name,),
+        "coords": [-0.02331254,  0.01495828,  4.09457485],
+        "name": "{}-nv0_2021_10_08".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 15,
+        "expected_count_rate": 50,
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
         "collection_filter": "630_lp",
-        "magnet_angle": 175,
+        "magnet_angle": None,
     }  # 14.5 max
     
-    
     nv_sig = {
-        "coords": [-0.020, 0.282, 4.85],
-        "depletion_coords": [ -0.0318, 0.275, 4.85], # A
-        #"depletion_coords": [-0.035, 0.276, 4.85], # B
-        
-        "name": "{}-dnv7_2021_09_23".format(sample_name,),
+        "coords": [0.00949217, -0.00614178, 4.08457485],#+0.2/16],
+        "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 65,
+        "expected_count_rate": 110,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power,
             'imaging_readout_dur': 1E7,
             
@@ -582,66 +587,76 @@ if __name__ == '__main__':
             
             "CPG_laser": red_laser,
             'CPG_laser_power': red_power,
-            "CPG_laser_dur": 1.5e4,
+            "CPG_laser_dur": 1e4,
         
             'nv0_ionization_laser': red_laser, 'nv0_ionization_laser_power': red_power,
-            'nv0_ionization_dur':300,
+            'nv0_ionization_dur':500,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
             'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,
             
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
-            'charge_readout_laser_power': 0.2, 'charge_readout_dur':2e6,
+            'charge_readout_laser_power': 0.3, 'charge_readout_dur':0.5e6,
             
-            'collection_filter': '630_lp', 'magnet_angle': 175,
+            'collection_filter': '630_lp',  'magnet_angle': 114,
             
-        "resonance_LOW": 2.8374,"rabi_LOW": 129.0,
-        # "resonance_LOW":2.8622,"rabi_LOW": 89.2,
-        # "resonance_LOW":2.8844,"rabi_LOW": 89.2,
-        # "resonance_LOW":2.9114,"rabi_LOW": 89.2,
-        'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max  
+        "resonance_LOW":2.7911,"rabi_LOW": 137.3,"uwave_power_LOW": 15.5, 
+        "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5}  
     
     
-    freq_range = 0.16
+    freq_range = 0.05
     
     uwave_power = nv_sig['uwave_power_LOW']
     # uwave_pulse_dur =  nv_sig['rabi_LOW'] / 2
-    num_steps = 101
+    num_steps =1
     num_reps = int(10**4) # 1.7 hr for each run
-    num_runs = 6
+    num_runs = 1
     
-    A = [ -0.0318, 0.275, 4.85]
-    B = [-0.035, 0.276, 4.85]
-    C = [-0.029, 0.267, 4.85]
-    do_plot = True
+    # [0.16108189, 0.13252713, 4.79 ]
+    z = nv_sig['coords'][2]
+    A = [-0.001, -0.008, z]
+    B = [-0.007, -0.008, z]
+    
+    do_plot = False
     
     try:
         
         # readout_time_list = [1e5,2e5, 3e5, 4e5, 5e5, 6e5, 7e5, 8e5, 9e5,
         #                      1e6,2e6, 3e6, 4e6,  5e6, 6e6, 7e6, 8e6, 9e6,
         #                      1e7,2e7, 3e7, 4e7,  5e7]
-        # readout_time_list = [1e5, 5e5, 6e5, 7e5, 8e5, 9e5, 1e6, 2e6, 3e6, 4e6, 5e6, 1e7,  2e7]
+         #readout_time_list = [1e5, 5e5, 1e6,2e6,   3e6,4e6, 5e6, 1e7,  2e7]
+        readout_time_list = numpy.linspace(0,3,13)*1e6
         
-        #sweep_readout_time(nv_sig, apd_indices, readout_time_list, A, 2.8374, 129)
+        #sweep_readout_time(nv_sig, opti_nv_sig, apd_indices, readout_time_list, B, nv_sig['resonance_LOW'], nv_sig['rabi_LOW'])
         
-        # readout_power_list = [0.05, 0.1,0.15, 0.2,0.25, 0.3,0.35, 0.4, 0.45, 0.5,0.55, 0.6]
-        # sweep_readout_power(nv_sig, apd_indices, readout_power_list, A, 2.8374, 129 )
+        readout_power_list = [0.05, 0.1,0.15, 0.2,0.25, 0.3,0.35, 0.4, 0.45, 0.5,0.55, 0.6]
+        #sweep_readout_power(nv_sig,opti_nv_sig,  apd_indices, readout_power_list, A, nv_sig['resonance_LOW'], nv_sig['rabi_LOW'])
         
         
-        nv_sig['depletion_coords'] = A 
-        nv_sig['resonance_LOW'] = 2.875
-        nv_sig['rabi_LOW']  = 120
-        #main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
-        #          num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+        nv_sig['depletion_coords'] = A
+        nv_sig['CPG_laser_dur'] = 10e3 # 10
+        
+        # 10: 17
+        # 7.5: 17
+        # 5: 14
+        # 1: 29 
+        main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+                num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         nv_sig['depletion_coords'] = B
-        #main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
-        #          num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+        nv_sig['CPG_laser_dur'] = 7.5e3 # 5
         
-        nv_sig['depletion_coords'] = C
-        #main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
-        #          num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+        # 10: 11
+        # 7.5: 17
+        # 5: 14
+        # 1: 29
+        main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+        
+        # nv_sig['depletion_coords'] = C
+        # nv_sig['CPG_laser_dur'] = 5e3
+        # main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+        #           num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         
             
@@ -651,17 +666,20 @@ if __name__ == '__main__':
             folder = 'pc_rabi/branch_master/super_resolution_pulsed_resonance/2021_09'
             folder_scc = 'pc_rabi/branch_master/scc_pulsed_resonance/2021_09'
     
-            folder_list = [folder, folder+ '\incremental', folder_scc]
+            folder_list = [folder, folder, folder]
             # ++++ COMPARE +++++
             file_list = ['2021_09_29-02_09_19-johnson-dnv7_2021_09_23',
-                          '2021_09_29-02_09_20-johnson-dnv7_2021_09_23',
-                          '2021_09_28-10_04_05-johnson-dnv7_2021_09_23-compilation']
-            label_list = ['Point A', 'Point B', 'No super resolution technique']
-            fmt_list = ['b-', 'r-', 'g--']
+                          '2021_09_29-12_39_34-johnson-dnv7_2021_09_23',
+                           '2021_09_30-09_20_45-johnson-dnv7_2021_09_23'
+                          ]
+            label_list = ['Point A', 'Point B', 'Point C']
+            fmt_list = ['b-', 'r-', 'g-']
                 
             fig, ax = plt.subplots(figsize=(8.5, 8.5))
             for f in range(len(file_list)):
+                
                 file = file_list[f]
+                print(file)
                 folder_ = folder_list[f]
                 data = tool_belt.get_raw_data(file, folder_)
         
@@ -671,12 +689,12 @@ if __name__ == '__main__':
                     num_runs = data['num_runs']
                     norm_avg_sig = data['norm_avg_sig']
                 except Exception:
-                    num_runs = 3
+                    num_runs = 4
                     ref_counts = data['ref_counts']
                     sig_counts = data['sig_counts']
                     
-                    avg_ref_counts = numpy.average(ref_counts[:num_runs+1], axis=0)
-                    avg_sig_counts = numpy.average(sig_counts[:num_runs+1], axis=0)
+                    avg_ref_counts = numpy.average(ref_counts[:num_runs], axis=0)
+                    avg_sig_counts = numpy.average(sig_counts[:num_runs], axis=0)
                     norm_avg_sig = avg_sig_counts / avg_ref_counts
             
                 ax.plot(freqs, norm_avg_sig, fmt_list[f], label=label_list[f])

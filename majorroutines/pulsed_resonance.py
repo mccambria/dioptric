@@ -290,14 +290,14 @@ def process_counts(ref_counts, sig_counts, num_runs):
 
 
 def state(nv_sig, apd_indices, state, freq_range,
-          num_steps, num_reps, num_runs, composite=False):
+          num_steps, num_reps, num_runs, composite=False, opti_nv_sig = None):
 
     freq_center = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
     uwave_pulse_dur = nv_sig['rabi_{}'.format(state.name)] // 2
 
     resonance_list = main(nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state, composite)
+         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state, composite, opti_nv_sig)
 
     return resonance_list, nv_sig
 
@@ -306,18 +306,18 @@ def state(nv_sig, apd_indices, state, freq_range,
 
 def main(nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-         state=States.LOW, composite=False):
+         state=States.LOW, composite=False, opti_nv_sig = None):
 
     with labrad.connect() as cxn:
         resonance_list = main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-                  state, composite)
+                  state, composite, opti_nv_sig)
     return resonance_list
 
 
 def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur,
-              state=States.LOW, composite=False):
+              state=States.LOW, composite=False, opti_nv_sig = None):
 
     # %% Initial calculations and setup
 
@@ -380,7 +380,13 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
             break
 
         # Optimize and save the coords we found
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        if opti_nv_sig:
+            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            drift = tool_belt.get_drift()
+            adj_coords = nv_sig['coords'] + numpy.array(drift)
+            tool_belt.set_xyz(cxn, adj_coords)
+        else:
+            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves and laser. Then load the pulse streamer
