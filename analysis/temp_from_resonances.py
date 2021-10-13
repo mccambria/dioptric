@@ -57,6 +57,8 @@ def process_temp_dep_res_files():
     for el in data_points:
         if el[low_res_file_column_title] == "":
             continue
+        # if int(el[nominal_temp_column_title]) != 50:
+        #     continue
         nominal_temps.append(el[nominal_temp_column_title])
         resonances.append(
             [el[low_res_file_column_title], el[high_res_file_column_title]]
@@ -121,22 +123,25 @@ def zfs_from_temp_barson(temp):
     Comes from Barson paper!
     """
 
-    X1 = 0.4369e-7  # 10**-7 / K
-    X2 = 15.7867e-7  # 10**-7 / K
-    X3 = 42.5598e-7  # 10**-7 / K
+    X1 = 0.4369e-7  # 1 / K
+    X2 = 15.7867e-7  # 1 / K
+    X3 = 42.5598e-7  # 1 / K
     Theta1 = 200  # K
     Theta2 = 880  # K
     Theta3 = 2137.5  # K
     dV_over_V_partial = lambda X, Theta, T: (X * Theta) / (
         numpy.exp(Theta / T) - 1
     )
-    dV_over_V = lambda T: numpy.exp(
-        3
-        * (
-            dV_over_V_partial(X1, Theta1, T)
-            + dV_over_V_partial(X2, Theta2, T)
-            + dV_over_V_partial(X3, Theta3, T)
+    dV_over_V = (
+        lambda T: numpy.exp(
+            3
+            * (
+                dV_over_V_partial(X1, Theta1, T)
+                + dV_over_V_partial(X2, Theta2, T)
+                + dV_over_V_partial(X3, Theta3, T)
+            )
         )
+        - 1
     )
 
     A = 14.6  # MHz /GPa
@@ -144,14 +149,16 @@ def zfs_from_temp_barson(temp):
     b4 = -1.44e-9
     b5 = 3.1e-12
     b6 = -1.8e-15
-    D_of_T = lambda T: -(A * B * dV_over_V(T)) - (
-        b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6
+    D_of_T = (
+        lambda T: 2.877656435574434
+        + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6))
+        / 1000
     )
-    # Branch depending on if temp is single- or multi-valued
+    # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
     if type(temp) in [list, numpy.ndarray]:
         ret_vals = []
         for val in temp:
-            ret_vals.append(D_of_T(temp))
+            ret_vals.append(D_of_T(val))
         ret_vals = numpy.array(ret_vals)
         return ret_vals
     else:
@@ -195,17 +202,19 @@ def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
 
 def main(zfs, zfs_err):
 
-    zfs_diff = lambda temp: zfs_from_temp(temp) - zfs
+    func_to_invert = zfs_from_temp_barson
+
+    zfs_diff = lambda temp: func_to_invert(temp) - zfs
     results = root_scalar(zfs_diff, x0=50, x1=500)
     temp_mid = results.root
 
     zfs_lower = zfs - zfs_err
-    zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_lower
+    zfs_diff = lambda temp: func_to_invert(temp) - zfs_lower
     results = root_scalar(zfs_diff, x0=50, x1=500)
     temp_higher = results.root
 
     zfs_higher = zfs + zfs_err
-    zfs_diff = lambda temp: zfs_from_temp(temp) - zfs_higher
+    zfs_diff = lambda temp: func_to_invert(temp) - zfs_higher
     results = root_scalar(zfs_diff, x0=50, x1=500)
     temp_lower = results.root
 
@@ -226,17 +235,21 @@ if __name__ == "__main__":
 
     # main_files(files)
 
-    # process_temp_dep_res_files()
+    process_temp_dep_res_files()
 
     #    print(zfs_from_temp(280))
 
-    plt.ion()
+    # temp = 295
+    # print(zfs_from_temp(temp) - zfs_from_temp_barson(temp))
 
-    temps = numpy.linspace(5, 500, 1000)
-    plt.plot(temps, zfs_from_temp_barson(temps))
-    # fig, ax = plt.subplots()
-    # ax.plot(temps, sub_room_zfs_from_temp(temps), label='sub')
-    # ax.plot(temps, super_room_zfs_from_temp(temps), label='super')
-    # ax.legend()
+    # plt.ion()
 
-    plt.show(block=True)
+    # temps = numpy.linspace(10, 700, 1000)
+    # plt.plot(temps, zfs_from_temp_barson(temps))
+    # plt.plot(temps, zfs_from_temp(temps))
+    # # fig, ax = plt.subplots()
+    # # ax.plot(temps, sub_room_zfs_from_temp(temps), label='sub')
+    # # ax.plot(temps, super_room_zfs_from_temp(temps), label='super')
+    # # ax.legend()
+
+    # plt.show(block=True)
