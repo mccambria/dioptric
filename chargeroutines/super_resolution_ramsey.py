@@ -16,8 +16,125 @@ import time
 import labrad
 from utils.tool_belt import States
 from random import shuffle
+from scipy.optimize import curve_fit
+from scipy.signal import find_peaks
+
+# %% fit
+
+def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning):
+    # Create an empty array for the frequency arrays
+    FreqParams = numpy.empty([3])
+    # Perform the fft
+    time_step = (precession_time_range[1]/1e3 - precession_time_range[0]/1e3) \
+                                                    / (num_steps - 1)
+
+    transform = numpy.fft.rfft(norm_avg_sig)
+#    window = max_precession_time - min_precession_time
+    freqs = numpy.fft.rfftfreq(num_steps, d=time_step)
+    transform_mag = numpy.absolute(transform)
+
+    # Plot the fft
+    fig_fft, ax= plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(freqs[1:], transform_mag[1:])  # [1:] excludes frequency 0 (DC component)
+    ax.set_xlabel('Frequency (MHz)')
+    ax.set_ylabel('FFT magnitude')
+    ax.set_title('Ramsey FFT')
+    fig_fft.canvas.draw()
+    fig_fft.canvas.flush_events()
+
+
+    # Guess the peaks in the fft. There are parameters that can be used to make
+    # this more efficient
+    freq_guesses_ind = find_peaks(transform_mag[1:]
+                                  , prominence = 0.5
+#                                  , height = 0.8
+#                                  , distance = 2.2 / freq_step
+                                  )
+
+#    print(freq_guesses_ind[0])
+
+    # Check to see if there are three peaks. If not, try the detuning passed in
+    if len(freq_guesses_ind[0]) != 3:
+        print('Number of frequencies found: {}'.format(len(freq_guesses_ind[0])))
+#        detuning = 3 # MHz
+
+        FreqParams[0] = detuning - 2.2
+        FreqParams[1] = detuning
+        FreqParams[2] = detuning + 2.2
+    else:
+        FreqParams[0] = freqs[freq_guesses_ind[0][0]]
+        FreqParams[1] = freqs[freq_guesses_ind[0][1]]
+        FreqParams[2] = freqs[freq_guesses_ind[0][2]]
+        
+    return fig_fft, FreqParams # In MHz
+
+def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
+    
+    taus_us = numpy.array(taus)/1e3
+    # Guess the other params for fitting
+    amp_1 = -0.1
+    amp_2 = -amp_1
+    amp_3 = -amp_1
+    decay = 10
+    offset = 1.1
+
+    guess_params = (offset, decay, amp_1, FreqParams[0],
+                        amp_2, FreqParams[1],
+                        amp_3, FreqParams[2])
+
+    # Try the fit to a sum of three cosines
+
+    try:
+        popt,pcov = curve_fit(tool_belt.cosine_sum, taus_us, norm_avg_sig,
+                      p0=guess_params,
+                       bounds=([0, 0,
+                                -numpy.infty, 0,
+                                -numpy.infty, 0,
+                                -numpy.infty, 0,
+                                ], 
+                               [numpy.infty, numpy.infty, 
+                                numpy.infty, numpy.infty,
+                                numpy.infty, numpy.infty,
+                                numpy.infty, numpy.infty, ])
+                      )
+    except Exception:
+        print('Something went wrong!')
+        popt = guess_params
+    print(popt)
+
+    taus_us_linspace = numpy.linspace(precession_time_range[0]/1e3, precession_time_range[1]/1e3,
+                          num=1000)
+
+    fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
+    ax.plot(taus_us, norm_avg_sig,'b',label='data')
+    ax.plot(taus_us_linspace, tool_belt.cosine_sum(taus_us_linspace,*popt),'r',label='fit')
+    ax.set_xlabel('Free precesion time (ns)')
+    ax.set_ylabel('Contrast (arb. units)')
+    ax.legend()
+    text1 = "\n".join((r'$C + e^{-t/d} [a_1 \mathrm{cos}(2 \pi \nu_1 t) + a_2 \mathrm{cos}(2 \pi \nu_2 t) + a_3 \mathrm{cos}(2 \pi \nu_3 t)]$',
+                       r'$d = $' + '%.2f'%(abs(popt[1])) + ' us',
+                       r'$\nu_1 = $' + '%.2f'%(popt[3]) + ' MHz',
+                       r'$\nu_2 = $' + '%.2f'%(popt[5]) + ' MHz',
+                       r'$\nu_3 = $' + '%.2f'%(popt[7]) + ' MHz'
+                       ))
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+
+    ax.text(0.40, 0.25, text1, transform=ax.transAxes, fontsize=12,
+                            verticalalignment="top", bbox=props)
+
+
+
+#  Plot the data itself and the fitted curve
+
+    fig_fit.canvas.draw()
+#    fig.set_tight_layout(True)
+    fig_fit.canvas.flush_events()
+    
+    return fig_fit
+
 
 # %%
+
 
 def build_voltages(adjusted_nv_coords, adjusted_depletion_coords, num_reps):
     start_x_value = adjusted_nv_coords[0]
@@ -492,149 +609,33 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
 
     return sig_gate_count_1 + sig_gate_count_2, ref_gate_count_1 + ref_gate_count_2
 
-# %%
+# %% Run the file
 
-if __name__ == '__main__':
 
-    apd_indices = [0]
-    sample_name = 'johnson'    
+if __name__ == "__main__":
+
+
+    folder = "pc_rabi/branch_master/super_resolution_ramsey/2021_10"
+    file = '2021_10_13-18_05_57-johnson-dnv5_2021_09_23'
     
-    green_laser = "cobolt_515"
-    yellow_laser = 'laserglow_589'
-    red_laser = 'cobolt_638'
-    
-    green_power = 7
-    red_power = 120
-    nd_yellow = "nd_0.5"
-    
-    opti_nv_sig = {
-        "coords": [-0.02331254,  0.01495828,  4.09457485],
-        "name": "{}-nv0_2021_10_08".format(sample_name,),
-        "disable_opt": False,
-        "expected_count_rate": 46,
-        "imaging_laser":green_laser,
-        "imaging_laser_power": green_power,
-        "imaging_readout_dur": 1e7,
-        "collection_filter": "630_lp",
-        "magnet_angle": None,
-    }  # 14.5 max
-    
-    nv_sig = {
-        "coords":[0.00949217, -0.00614178,4.08457485 ],
-        
-        "name": "{}-dnv5_2021_09_23".format(sample_name,),
-        "disable_opt": False,
-        "expected_count_rate": 75,
-            'imaging_laser': green_laser, 'imaging_laser_power': green_power,
-            'imaging_readout_dur': 1E7,
-            
-            "initialize_laser": green_laser,
-            "initialize_laser_power": green_power,
-            "initialize_dur": 1e4,
-            
-            "CPG_laser": red_laser,
-            'CPG_laser_power': red_power,
-            "CPG_laser_dur": 1e4,
-        
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_laser_power': red_power,
-            'nv0_ionization_dur':500,
-            
-            'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
-            'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,
-            
-            'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': nd_yellow, 
-            'charge_readout_laser_power': 0.3, 'charge_readout_dur':0.5e6,
-            
-            'collection_filter': '630_lp',  'magnet_angle': 114,
-            
-                    "resonance_LOW":2.791,"rabi_LOW": 139.7,"uwave_power_LOW": 15.5, 
-        "resonance_HIGH": 2.9496,"rabi_HIGH": 215,"uwave_power_HIGH": 14.5}  
-    
-    
-    
-    # max_time = 100 # us
-    # num_steps = int(max_time + 1)  # 1 point per us
-    # precession_time_range = [0, max_time * 10 ** 3]
-    
-    start = 13
-    stop =14
-    num_steps = int((stop - start)*1 + 1)  # 1 point per us
-    precession_time_range = [start *1e3, stop *1e3]
-    
-    num_reps = int(20e3)
-    num_runs = 3 #60
-    
-    z = nv_sig['coords'][2]
-    A = [-0.001, -0.008, z]
-    B = [-0.007, -0.008, z]
-    
-    depletion_point = [A]#, B]
-    
-    depletion_times = [10e3, 2e3]
-    do_plot = False
-    
+    # detuning = 0
+    data = tool_belt.get_raw_data(file, folder)
+    detuning= 0#data['detuning']
+    norm_avg_sig = data['norm_avg_sig']
+    precession_time_range = data['precession_time_range']
+    num_steps = data['num_steps']
     try:
+        taus = data['taus']
+    except Exception:
         
-        if not do_plot:
-            # try to run a single point and see if that works
-             for p in range(len(depletion_point)):   
-                nv_sig['depletion_coords'] = depletion_point[p]
-                nv_sig['CPG_laser_dur'] = depletion_times[p]
-               
-                main(nv_sig, opti_nv_sig, apd_indices, precession_time_range,
-                  num_steps, num_reps, num_runs, 4)
-            
-            # for i in [ 5]:#range(5):
-                
-                 # for p in range(len(depletion_point)):
-                 #     nv_sig['depletion_coords'] = depletion_point[p]
-                 #     nv_sig['CPG_laser_dur'] = depletion_times[p]
-            
-                 #     t = (i ) * 30.5
-                 #     start = t-10
-                 #     if t < 10:
-                 #         start = 0
-                 #     stop = t+10
-                 #     num_steps = int((stop - start)*2 + 1)  # 1 point per us
-                 #     precession_time_range = [start *1e3, stop *1e3]
-                    
-                 #     main(nv_sig, opti_nv_sig, apd_indices,precession_time_range,
-                 #       num_steps, num_reps, num_runs)
-                
-            # readout_time_list = [1e5, 5e5, 6e5, 7e5, 8e5, 9e5, 1e6,2e6,  2.5e6, 3e6,3.5e6, 4e6, 5e6, 1e7,  2e7]
-            # readout_time_list = numpy.linspace(0,3,13)*1e6
-            # readout_time_list = readout_time_list.tolist()
-            #sweep_readout_time(nv_sig, opti_nv_sig, apd_indices, readout_time_list, A, 
-             #          30)
-            
-            # readout_power_list = [0.05, 0.1,0.15, 0.2,0.25, 0.3,0.35, 0.4, 0.45, 0.5,0.55, 0.6]
-            # sweep_readout_power(nv_sig,opti_nv_sig,  apd_indices, readout_power_list, A, 30)
+        taus = numpy.linspace(
+            precession_time_range[0],
+            precession_time_range[1],
+            num=num_steps,
+        )
         
         
-            
-            # nv_sig['depletion_coords'] = B
-            # main(nv_sig, opti_nv_sig, apd_indices, precession_time_range,
-            #         num_steps, num_reps, num_runs)
-            
-            # nv_sig['depletion_coords'] = C
-            # main(nv_sig, opti_nv_sig, apd_indices, precession_time_range,
-            #         num_steps, num_reps, num_runs)
-        
-        else:
-            
-            
-            folder = 'pc_rabi/branch_master/super_resolution_ramsey/2021_10'
-            # ++++ COMPARE +++++
-            
-                
-            
-
-    
-    finally:
-        # Reset our hardware - this should be done in each routine, but
-        # let's double check here
-        # tool_belt.reset_cfm()
-        # Kill safe stop
-        if tool_belt.check_safe_stop_alive():
-            print('\n\nRoutine complete. Press enter to exit.')
-            tool_belt.poll_safe_stop()
+    _, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
+    print(FreqParams)
+    # FreqParams = [9-4.4, 9+2.2, 9]
+    fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)

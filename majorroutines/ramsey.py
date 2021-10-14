@@ -43,7 +43,8 @@ def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detunin
     FreqParams = numpy.empty([3])
 
     # Perform the fft
-    time_step = (precession_time_range[1] - precession_time_range[0]) / (num_steps - 1)
+    time_step = (precession_time_range[1]/1e3 - precession_time_range[0]/1e3) \
+                                                    / (num_steps - 1)
 
     transform = numpy.fft.rfft(norm_avg_sig)
 #    window = max_precession_time - min_precession_time
@@ -52,7 +53,7 @@ def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detunin
 
     # Plot the fft
     fig_fft, ax= plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(freqs[1:]*1e3, transform_mag[1:])  # [1:] excludes frequency 0 (DC component)
+    ax.plot(freqs[1:], transform_mag[1:])  # [1:] excludes frequency 0 (DC component)
     ax.set_xlabel('Frequency (MHz)')
     ax.set_ylabel('FFT magnitude')
     ax.set_title('Ramsey FFT')
@@ -104,13 +105,14 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     try:
         popt,pcov = curve_fit(tool_belt.cosine_sum, taus_us, norm_avg_sig,
                       p0=guess_params,
-                      bounds=(0, [numpy.infty, numpy.infty, numpy.infty, numpy.infty,
-                                  numpy.infty, numpy.infty,
-                                  numpy.infty, numpy.infty, ]))
+                       bounds=(0, [numpy.infty, numpy.infty, numpy.infty, numpy.infty,
+                                   numpy.infty, numpy.infty,
+                                   numpy.infty, numpy.infty, ])
+                      )
     except Exception:
         print('Something went wrong!')
         popt = guess_params
-    # print(popt)
+    print(popt)
 
     taus_us_linspace = numpy.linspace(precession_time_range[0]/1e3, precession_time_range[1]/1e3,
                           num=1000)

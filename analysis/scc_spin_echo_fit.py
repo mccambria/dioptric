@@ -88,12 +88,30 @@ def combine_revivals(file_list, folder):
     
     norm_counts_tot = []
     taus_tot = []
+    boo = 0
     for file in file_list:
         data = tool_belt.get_raw_data(file, folder)
         taus = data['taus']
-        norm_avg_sig = data['norm_avg_sig']
+        try:
+            norm_avg_sig = data['norm_avg_sig']
+        except Exception:
+            run_ind = data['run_ind']
+            sig_counts = data['sig_counts']
+            ref_counts = data['ref_counts']
+            avg_sig_counts = numpy.average(sig_counts[:run_ind+1], axis=0)
+            avg_ref_counts = numpy.average(ref_counts[:run_ind+1], axis=0)
+        
+            norm_avg_sig = avg_sig_counts / avg_ref_counts
+            norm_avg_sig = norm_avg_sig.tolist()
+            
+        if boo == 0:
+            taus = taus[1:]
+            norm_avg_sig = norm_avg_sig[1:]
+            
         norm_counts_tot = norm_counts_tot + norm_avg_sig
         taus_tot = taus_tot + taus
+        boo += 1
+        
     nv_sig = data['nv_sig']
     uwave_pi_on_2_pulse = data['uwave_pi_on_2_pulse']
     uwave_pi_pulse = data['uwave_pi_pulse']
@@ -118,7 +136,7 @@ def combine_revivals(file_list, folder):
         }
     
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    ax.plot(numpy.array(taus_tot)/1e3, norm_counts_tot, 'bo')
+    ax.plot(numpy.array(taus_tot)/1e3, norm_counts_tot, 'b-')
     ax.set_xlabel('Taus (us)')
     ax.set_ylabel('Contrast (arb. units)')
     ax.legend(loc='lower right')
@@ -238,50 +256,43 @@ file_list = ['2021_10_10-02_14_13-johnson-dnv5_2021_09_23',
 # do_average_files_together(file_list, folder)
 
 ##### Combine data over different taus into one data
-# file_list_A = ['2021_10_08-13_29_07-johnson-dnv5_2021_09_23',
-#              '2021_10_05-19_18_00-johnson-dnv5_2021_09_23',
-#              '2021_10_05-23_09_33-johnson-dnv5_2021_09_23',
-#              '2021_10_06-01_44_05-johnson-dnv5_2021_09_23',
-#              '2021_10_06-09_31_43-johnson-dnv5_2021_09_23',
-#              '2021_10_06-13_34_33-johnson-dnv5_2021_09_23',
+file_list_A = ['2021_10_13-01_15_35-johnson-dnv5_2021_09_23',
+            '2021_10_14-05_29_56-johnson-dnv5_2021_09_23'
              
-#     ]
-# file_list_B = ['2021_10_08-13_29_45-johnson-dnv5_2021_09_23',
-#                '2021_10_05-20_31_21-johnson-dnv5_2021_09_23',
-#                '2021_10_06-00_25_35-johnson-dnv5_2021_09_23',
-#                '2021_10_06-03_02_34-johnson-dnv5_2021_09_23',
-#                '2021_10_06-10_52_10-johnson-dnv5_2021_09_23',
-#                '2021_10_06-14_57_46-johnson-dnv5_2021_09_23'
-    # ]
+    ]
+file_list_B = [
+                'incremental/2021_10_14-05_29_57-johnson-dnv5_2021_09_23',
+                '2021_10_13-08_43_23-johnson-dnv5_2021_09_23',
+    ]
 
-# combine_revivals(file_list_B, folder)
+combine_revivals(file_list_B, folder)
 
 
 ###################
-file_list = ['2021_10_11-10_44_03-johnson-dnv5_2021_09_23',
-              '2021_10_11-10_42_12-johnson-dnv5_2021_09_23'
-    ]
+# file_list = ['2021_10_13-01_15_35-johnson-dnv5_2021_09_23',
+#               '2021_10_13-08_43_23-johnson-dnv5_2021_09_23'
+#     ]
 
-fmt_list = ['b-', 'r-']
-label_list = ['A', 'B']
-fig, ax = plt.subplots(figsize=(8.5, 8.5))
+# fmt_list = ['b-', 'r-']
+# label_list = ['A', 'B']
+# fig, ax = plt.subplots(figsize=(8.5, 8.5))
 
-for f in range(len(file_list)):
-    file = file_list[f]
-    data = tool_belt.get_raw_data(file, folder)
-    taus = data['taus']
-    norm_avg_sig = numpy.array(data['norm_avg_sig'])
-    uwave_pi_pulse = data['uwave_pi_pulse']
-    plot_taus = (numpy.array(taus) + uwave_pi_pulse) / 1000
+# for f in range(len(file_list)):
+#     file = file_list[f]
+#     data = tool_belt.get_raw_data(file, folder)
+#     taus = data['taus']
+#     norm_avg_sig = numpy.array(data['norm_avg_sig'])
+#     uwave_pi_pulse = data['uwave_pi_pulse']
+#     plot_taus = (numpy.array(taus) + uwave_pi_pulse) / 1000
     
-    h = numpy.average(norm_avg_sig[26:46])
-    l = 1
+#     h = numpy.average(norm_avg_sig[26:46])
+#     l = 1
     
-    scaled_sig = (norm_avg_sig-l)/ (h-l)
+#     scaled_sig = (norm_avg_sig-l)/ (h-l)
     
 
-    ax.plot(plot_taus, scaled_sig, fmt_list[f], label = label_list[f])
-    # ax.plot(plot_taus, norm_avg_sig, fmt_list[f], label = label_list[f])
-ax.set_ylabel('Contrast (arb. units)')
-ax.set_xlabel('Taus (us)')
-ax.legend(loc='lower right')
+#     ax.plot(plot_taus, scaled_sig, fmt_list[f], label = label_list[f])
+#     # ax.plot(plot_taus, norm_avg_sig, fmt_list[f], label = label_list[f])
+# ax.set_ylabel('Contrast (arb. units)')
+# ax.set_xlabel('Taus (us)')
+# ax.legend(loc='lower right')
