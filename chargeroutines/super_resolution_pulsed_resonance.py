@@ -627,7 +627,7 @@ if __name__ == '__main__':
          #readout_time_list = [1e5, 5e5, 1e6,2e6,   3e6,4e6, 5e6, 1e7,  2e7]
         readout_time_list = numpy.linspace(0,3,13)*1e6
         
-        #sweep_readout_time(nv_sig, opti_nv_sig, apd_indices, readout_time_list, B, nv_sig['resonance_LOW'], nv_sig['rabi_LOW'])
+        sweep_readout_time(nv_sig, opti_nv_sig, apd_indices, readout_time_list, A, nv_sig['resonance_LOW'], nv_sig['rabi_LOW'])
         
         readout_power_list = [0.05, 0.1,0.15, 0.2,0.25, 0.3,0.35, 0.4, 0.45, 0.5,0.55, 0.6]
         #sweep_readout_power(nv_sig,opti_nv_sig,  apd_indices, readout_power_list, A, nv_sig['resonance_LOW'], nv_sig['rabi_LOW'])
@@ -640,8 +640,8 @@ if __name__ == '__main__':
         # 7.5: 17
         # 5: 14
         # 1: 29 
-        main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
-                num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+        #main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+        #        num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         nv_sig['depletion_coords'] = B
         nv_sig['CPG_laser_dur'] = 7.5e3 # 5
@@ -650,8 +650,8 @@ if __name__ == '__main__':
         # 7.5: 17
         # 5: 14
         # 1: 29
-        main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
-                  num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
+        #main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
+        #          num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
         # nv_sig['depletion_coords'] = C
         # nv_sig['CPG_laser_dur'] = 5e3

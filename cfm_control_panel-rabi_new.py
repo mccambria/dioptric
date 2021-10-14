@@ -36,6 +36,7 @@ import chargeroutines.SPaCE as SPaCE
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import chargeroutines.scc_spin_echo as scc_spin_echo
 import chargeroutines.super_resolution_pulsed_resonance as super_resolution_pulsed_resonance
+import chargeroutines.super_resolution_ramsey as super_resolution_ramsey
 import chargeroutines.super_resolution_spin_echo as super_resolution_spin_echo
 import chargeroutines.g2_measurement as g2_SCC_branch
 
@@ -90,9 +91,9 @@ def do_image_sample(nv_sig, apd_indices):
 
 def do_image_sample_xz(nv_sig, apd_indices):
 
-    scan_range_x = 0.1
+    scan_range_x = 0.03
 
-    scan_range_z = 0.7
+    scan_range_z = 0.4
 
     num_steps = 90
 
@@ -186,9 +187,9 @@ def do_resonance_state(nv_sig, opti_nv_sig, apd_indices, state):
     freq_center = nv_sig["resonance_{}".format(state.name)]
     uwave_power = -10.0
 
-    freq_range = 0.100
+    freq_range = 0.1
     num_steps = 51
-    num_runs = 5
+    num_runs = 15
 
     # Zoom
     # freq_range = 0.060
@@ -241,7 +242,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 51
     num_reps = 1000
-    num_runs = 10
+    num_runs = 5
 
     composite = False
 
@@ -302,7 +303,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 5000
-    num_runs = 15
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -342,13 +343,13 @@ def do_lifetime(nv_sig, apd_indices, filter, voltage, reference=False):
     )
 
 
-def do_ramsey(nv_sig, apd_indices):
+def do_ramsey(nv_sig, opti_nv_sig, apd_indices):
 
-    detuning = 2.5  # MHz
+    detuning = 0  # MHz
     precession_time_range = [0, 4 * 10 ** 3]
-    num_steps = 151
-    num_reps = 3 * 10 ** 5
-    num_runs = 1
+    num_steps = 101
+    num_reps = int( 10 ** 4)
+    num_runs = 12
 
     ramsey.main(
         nv_sig,
@@ -358,6 +359,7 @@ def do_ramsey(nv_sig, apd_indices):
         num_steps,
         num_reps,
         num_runs,
+        opti_nv_sig = opti_nv_sig
     )
 
 
@@ -455,15 +457,34 @@ def do_super_resolution_resonance(nv_sig, opti_nv_sig, apd_indices, state=States
     super_resolution_pulsed_resonance.main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state )
     
-def do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices,
+def do_super_resolution_ramsey(nv_sig, opti_nv_sig, apd_indices,
                                   tau_start, tau_stop, state=States.LOW):
-    num_point_per_us = 1
-    num_steps = int((tau_stop - tau_start)*num_point_per_us + 1)
+    
+    detuning = 0  # MHz
+    
+    step_size = 0.05 # us
+    num_steps = int((tau_stop - tau_start)/step_size + 1)
+    num_steps = 101
     precession_time_range = [tau_start *1e3, tau_stop *1e3]
     
     
     num_reps = int(10**3)
-    num_runs = 30
+    num_runs = 10
+    
+    super_resolution_ramsey.main(nv_sig, opti_nv_sig, apd_indices, 
+                                    precession_time_range, detuning,
+         num_steps, num_reps, num_runs, state )
+    
+def do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices,
+                                  tau_start, tau_stop, state=States.LOW):
+    step_size = 0.01 # us
+    num_steps = int((tau_stop - tau_start)/step_size + 1)
+    print(num_steps)
+    precession_time_range = [tau_start *1e3, tau_stop *1e3]
+    
+    
+    num_reps = int(10**3)
+    num_runs = 40
     
     super_resolution_spin_echo.main(nv_sig, opti_nv_sig, apd_indices, 
                                     precession_time_range,
@@ -618,7 +639,7 @@ if __name__ == "__main__":
     
     nv_sig_5 = {
         "coords": [0.00949217, -0.00614178, #[0.01, -0.007,
-                   4.08457485],#+0.2/16],
+                   4.08457485],#-0.012, 5.146
         "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 110,
@@ -755,17 +776,18 @@ if __name__ == "__main__":
         # do_g2_measurement(nv_sig, 0, 1)
         
         #do_optimize_magnet_angle(nv_sig, apd_indices)
-        # do_resonance(opti_nv_sig, opti_nv_sig, apd_indices,  2.875, 0.2)
+        # do_resonance(nv_sig, opti_nv_sig, apd_indices,  2.875, 0.2)
         # do_resonance_state(nv_sig,opti_nv_sig, apd_indices, States.LOW)
         
-        # do_rabi(nv_sig,opti_nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
+        # do_rabi(nv_sig, opti_nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_rabi(nv_sig, opti_nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 300])
         
         # do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, 2.875, 0.2)
         # do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, States.LOW)
+        # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
         # do_spin_echo(nv_sig, apd_indices)
     
-        for t in [5e3, 7.5e3, 10e3]:
+        for t in [7.5e3]:
             nv_sig['CPG_laser_dur'] = t
             img_range_2D = [0.05,0, 4/16 ]
             # do_SPaCE(nv_sig, opti_nv_sig, 15, num_steps_x, num_steps_z, None,  img_range_2D, offset_list)
@@ -775,7 +797,7 @@ if __name__ == "__main__":
                # coords = nv_sig['coords']
                 #nv_sig_copy['coords'] = [coords[0],coords[1],coords[2]+dz]
             img_range_2D = [0.05,0.05, 0 ]
-            #do_SPaCE(nv_sig, opti_nv_sig, 10, num_steps_x, num_steps_y, None,  img_range_2D, offset_list)
+            # do_SPaCE(nv_sig, opti_nv_sig, 10, num_steps_x, num_steps_y, None,  img_range_2D, offset_list)
           
             
          
@@ -786,7 +808,8 @@ if __name__ == "__main__":
         A = [-0.001, -0.008, z]
         B = [-0.007, -0.008, z]
         
-        depletion_point = [A]#, B]
+        depletion_point = [A, B]
+        # depletion_point = [ B]
         
         depletion_times = [10e3, 7.5e3]
         for i in range(1): #do the measurement 4 times over
@@ -796,7 +819,10 @@ if __name__ == "__main__":
                 nv_sig['CPG_laser_dur'] = depletion_times[p]
         
                 # do_super_resolution_resonance(nv_sig, opti_nv_sig, apd_indices)
-                do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 40 )
+                do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 2, 5 )
+                
+                # if p == 1:
+                #     do_super_resolution_ramsey(nv_sig, opti_nv_sig, apd_indices, 0, 4)
         
         # drift = tool_belt.get_drift()
         #tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
