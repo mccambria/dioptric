@@ -94,7 +94,7 @@ def combine_revivals(file_list, folder):
         taus = data['taus']
         try:
             norm_avg_sig = data['norm_avg_sig']
-        except Exception:
+        except Exception: # if using incremental data, this will take care of it
             run_ind = data['run_ind']
             sig_counts = data['sig_counts']
             ref_counts = data['ref_counts']
@@ -104,7 +104,7 @@ def combine_revivals(file_list, folder):
             norm_avg_sig = avg_sig_counts / avg_ref_counts
             norm_avg_sig = norm_avg_sig.tolist()
             
-        if boo == 0:
+        if boo == 0: # get rid of overlapping point at 200 us
             taus = taus[1:]
             norm_avg_sig = norm_avg_sig[1:]
             
@@ -265,34 +265,34 @@ file_list_B = [
                 '2021_10_13-08_43_23-johnson-dnv5_2021_09_23',
     ]
 
-combine_revivals(file_list_B, folder)
+# combine_revivals(file_list_B, folder)
 
 
 ###################
-# file_list = ['2021_10_13-01_15_35-johnson-dnv5_2021_09_23',
-#               '2021_10_13-08_43_23-johnson-dnv5_2021_09_23'
-#     ]
+file_list = ['2021_10_14-10_39_50-johnson-dnv5_2021_09_23',
+              '2021_10_14-10_39_18-johnson-dnv5_2021_09_23'
+    ]
 
-# fmt_list = ['b-', 'r-']
-# label_list = ['A', 'B']
-# fig, ax = plt.subplots(figsize=(8.5, 8.5))
+fmt_list = ['b-', 'r-']
+label_list = ['A', 'B']
+fig, ax = plt.subplots(figsize=(8.5, 8.5))
 
-# for f in range(len(file_list)):
-#     file = file_list[f]
-#     data = tool_belt.get_raw_data(file, folder)
-#     taus = data['taus']
-#     norm_avg_sig = numpy.array(data['norm_avg_sig'])
-#     uwave_pi_pulse = data['uwave_pi_pulse']
-#     plot_taus = (numpy.array(taus) + uwave_pi_pulse) / 1000
+for f in range(len(file_list)):
+    file = file_list[f]
+    data = tool_belt.get_raw_data(file, folder)
+    taus = data['taus']
+    norm_avg_sig = numpy.array(data['norm_avg_sig'])
+    uwave_pi_pulse = data['uwave_pi_pulse']
+    plot_taus = (numpy.array(taus) + uwave_pi_pulse) / 1000
     
-#     h = numpy.average(norm_avg_sig[26:46])
-#     l = 1
+    h = numpy.average(norm_avg_sig[26:46])
+    l = 1
     
-#     scaled_sig = (norm_avg_sig-l)/ (h-l)
+    scaled_sig = (norm_avg_sig-l)/ (h-l)
     
 
-#     ax.plot(plot_taus, scaled_sig, fmt_list[f], label = label_list[f])
-#     # ax.plot(plot_taus, norm_avg_sig, fmt_list[f], label = label_list[f])
-# ax.set_ylabel('Contrast (arb. units)')
-# ax.set_xlabel('Taus (us)')
-# ax.legend(loc='lower right')
+    # ax.plot(plot_taus, scaled_sig, fmt_list[f], label = label_list[f])
+    ax.plot(plot_taus, norm_avg_sig, fmt_list[f], label = label_list[f])
+ax.set_ylabel('Contrast (arb. units)')
+ax.set_xlabel('Taus (us)')
+ax.legend(loc='lower right')
