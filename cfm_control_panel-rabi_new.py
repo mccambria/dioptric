@@ -345,8 +345,8 @@ def do_lifetime(nv_sig, apd_indices, filter, voltage, reference=False):
 
 def do_ramsey(nv_sig, opti_nv_sig, apd_indices):
 
-    detuning = 0  # MHz
-    precession_time_range = [0, 4 * 10 ** 3]
+    detuning = 5  # MHz
+    precession_time_range = [0, 2 * 10 ** 3]
     num_steps = 101
     num_reps = int( 10 ** 4)
     num_runs = 12
@@ -430,13 +430,13 @@ def do_scc_resonance(nv_sig, opti_nv_sig, apd_indices, state=States.LOW):
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state )
     
 def do_scc_spin_echo(nv_sig, opti_nv_sig, apd_indices, tau_start, tau_stop, state=States.LOW):
-    num_point_per_us = 1
-    num_steps = int((tau_stop - tau_start)*num_point_per_us + 1)
-    precession_time_range = [tau_start *1e3, tau_start *1e3]
+    step_size = 0.01 # us
+    num_steps = int((tau_stop - tau_start)/step_size + 1)
     
+    precession_time_range = [tau_start *1e3, tau_stop *1e3]
     
     num_reps = int(10**3)
-    num_runs = 30
+    num_runs = 80
     
     scc_spin_echo.main(nv_sig, opti_nv_sig, apd_indices, precession_time_range,
          num_steps, num_reps, num_runs,  
@@ -802,7 +802,7 @@ if __name__ == "__main__":
             
          
         # do_scc_resonance(nv_sig, opti_nv_sig, apd_indices)
-        # do_scc_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 15)
+        do_scc_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 5)
         
         z = nv_sig['coords'][2]
         A = [-0.001, -0.008, z]
@@ -819,7 +819,7 @@ if __name__ == "__main__":
                 nv_sig['CPG_laser_dur'] = depletion_times[p]
         
                 # do_super_resolution_resonance(nv_sig, opti_nv_sig, apd_indices)
-                do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 2, 5 )
+                # do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 2, 5 )
                 
                 # if p == 1:
                 #     do_super_resolution_ramsey(nv_sig, opti_nv_sig, apd_indices, 0, 4)

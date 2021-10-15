@@ -104,7 +104,7 @@ def combine_revivals(file_list, folder):
             norm_avg_sig = avg_sig_counts / avg_ref_counts
             norm_avg_sig = norm_avg_sig.tolist()
             
-        if boo == 0: # get rid of overlapping point at 200 us
+        if boo == 1:
             taus = taus[1:]
             norm_avg_sig = norm_avg_sig[1:]
             
@@ -261,11 +261,11 @@ file_list_A = ['2021_10_13-01_15_35-johnson-dnv5_2021_09_23',
              
     ]
 file_list_B = [
-                'incremental/2021_10_14-05_29_57-johnson-dnv5_2021_09_23',
                 '2021_10_13-08_43_23-johnson-dnv5_2021_09_23',
+                '2021_10_14-16_40_01-johnson-dnv5_2021_09_23',
     ]
 
-# combine_revivals(file_list_B, folder)
+combine_revivals(file_list_B, folder)
 
 
 ###################
