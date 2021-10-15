@@ -345,11 +345,11 @@ def do_lifetime(nv_sig, apd_indices, filter, voltage, reference=False):
 
 def do_ramsey(nv_sig, opti_nv_sig, apd_indices):
 
-    detuning = 5  # MHz
+    detuning = 7  # MHz
     precession_time_range = [0, 2 * 10 ** 3]
     num_steps = 101
     num_reps = int( 10 ** 4)
-    num_runs = 12
+    num_runs = 10
 
     ramsey.main(
         nv_sig,
@@ -783,8 +783,8 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, opti_nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 300])
         
         # do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, 2.875, 0.2)
-        # do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, States.LOW)
-        # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
+        # do_pulsed_resonance_state(opti_nv_sig, opti_nv_sig,apd_indices, States.LOW)
+        do_ramsey(nv_sig, opti_nv_sig,apd_indices)
         # do_spin_echo(nv_sig, apd_indices)
     
         for t in [7.5e3]:
@@ -802,7 +802,7 @@ if __name__ == "__main__":
             
          
         # do_scc_resonance(nv_sig, opti_nv_sig, apd_indices)
-        do_scc_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 5)
+        # do_scc_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 5)
         
         z = nv_sig['coords'][2]
         A = [-0.001, -0.008, z]
