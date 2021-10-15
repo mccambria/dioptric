@@ -104,7 +104,7 @@ def combine_revivals(file_list, folder):
             norm_avg_sig = avg_sig_counts / avg_ref_counts
             norm_avg_sig = norm_avg_sig.tolist()
             
-        if boo == 0:
+        if boo == 1:
             taus = taus[1:]
             norm_avg_sig = norm_avg_sig[1:]
             
@@ -116,7 +116,7 @@ def combine_revivals(file_list, folder):
     uwave_pi_on_2_pulse = data['uwave_pi_on_2_pulse']
     uwave_pi_pulse = data['uwave_pi_pulse']
     state = data['state']
-    num_reps = data['num_reps']
+    num_reps = 1e3#data['num_reps']
     num_runs = ['num_runs']
     
     timestamp = tool_belt.get_time_stamp()
@@ -261,11 +261,11 @@ file_list_A = ['2021_10_13-01_15_35-johnson-dnv5_2021_09_23',
              
     ]
 file_list_B = [
-                'incremental/2021_10_14-05_29_57-johnson-dnv5_2021_09_23',
                 '2021_10_13-08_43_23-johnson-dnv5_2021_09_23',
+                'incremental/2021_10_14-05_29_57-johnson-dnv5_2021_09_23',
     ]
 
-combine_revivals(file_list_B, folder)
+combine_revivals(file_list_A, folder)
 
 
 ###################
