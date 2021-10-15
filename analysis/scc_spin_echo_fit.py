@@ -265,12 +265,12 @@ file_list_B = [
                 '2021_10_14-16_40_01-johnson-dnv5_2021_09_23',
     ]
 
-combine_revivals(file_list_B, folder)
+# combine_revivals(file_list_B, folder)
 
 
 ###################
 file_list = ['2021_10_14-10_39_50-johnson-dnv5_2021_09_23',
-              '2021_10_14-10_39_18-johnson-dnv5_2021_09_23'
+              '2021_10_15-09_38_47-johnson-dnv5_2021_09_23'
     ]
 
 fmt_list = ['b-', 'r-']

@@ -89,40 +89,42 @@ def do_fit(file, folder):
     ax.set_ylabel('Contrast (arb. units)')
     ax.legend(loc='lower right')
     
+
 # %%
 folder = 'pc_rabi/branch_master/super_resolution_spin_echo/2021_10'
 
 ###################
 file_list = [
-    '2021_10_14-10_39_50-johnson-dnv5_2021_09_23',
-                '2021_10_14-10_39_18-johnson-dnv5_2021_09_23'
+    # '2021_10_14-10_39_50-johnson-dnv5_2021_09_23',
+                '2021_10_15-09_38_47-johnson-dnv5_2021_09_23'
     ]
 
 fmt_list = ['b-', 'r-']
 label_list = ['A', 'B']
-# fig, ax = plt.subplots()
+fig, ax = plt.subplots()
 
-# for f in range(len(file_list)):
-#     file = file_list[f]
-#     data = tool_belt.get_raw_data(file, folder)
-#     taus = data['taus']
-#     norm_avg_sig = numpy.array(data['norm_avg_sig'])
-#     uwave_pi_pulse = data['uwave_pi_pulse']
-#     plot_taus = (numpy.array(taus) + uwave_pi_pulse) / 1000
+for f in range(len(file_list)):
+    file = file_list[f]
+    data = tool_belt.get_raw_data(file, folder)
+    taus = data['taus']
+    norm_avg_sig = numpy.array(data['norm_avg_sig'])
+    uwave_pi_pulse = data['uwave_pi_pulse']
+    plot_taus = (numpy.array(taus) + uwave_pi_pulse) / 1000
     
-#     ft = numpy.fft.rfft(norm_avg_sig)
-#     freqs = numpy.fft.rfftfreq(len(plot_taus), d = (plot_taus[1] - plot_taus[0]))
-#     ft_mag = numpy.absolute(ft)
+    ft = numpy.fft.rfft(norm_avg_sig)
+    freqs = numpy.fft.rfftfreq(len(plot_taus), d = (plot_taus[1] - plot_taus[0]))
+    ft_mag = numpy.absolute(ft)
 
-#     ax.plot(freqs[1:], ft_mag[1:], 'b-')
+    ax.plot(freqs[1:], ft_mag[1:], 'b-')
     
-# ax.set_ylabel('FFT Amplitude')
-# ax.set_xlabel('Frequency (MHz)')
+ax.set_ylabel('FFT Amplitude')
+ax.set_xlabel('Frequency (MHz)')
 
 # ax.set_ylabel('Contrast (arb. units)')
 # ax.set_xlabel('Taus (us)')
 # ax.legend(loc='lower right')
 
-do_fit(file_list[1], folder)
+
+# do_fit(file_list[1], folder)
 
 
