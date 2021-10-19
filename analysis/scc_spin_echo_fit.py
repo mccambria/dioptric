@@ -236,24 +236,22 @@ def do_fit(file, folder):
 folder = 'pc_rabi/branch_master/super_resolution_spin_echo/2021_10'
 
 # file = '2021_10_08-13_39_25-johnson-dnv5_2021_09_23' #A
-file = '2021_10_08-13_40_09-johnson-dnv5_2021_09_23' #B
+# file = '2021_10_08-13_40_09-johnson-dnv5_2021_09_23' #B
 
-#do_fit(file, folder)
+file = '2021_10_04-18_35_52-johnson-dnv5_2021_09_23'
+
+# do_fit(file, folder)
 
 
 ##### combine similar data and average data together
-file_list = ['2021_10_10-02_14_13-johnson-dnv5_2021_09_23',
-              '2021_10_10-11_29_28-johnson-dnv5_2021_09_23',
-        '2021_10_10-20_47_20-johnson-dnv5_2021_09_23',
-        '2021_10_11-06_02_32-johnson-dnv5_2021_09_23'
-      ]
-# file_list = ['2021_10_10-06_51_44-johnson-dnv5_2021_09_23',
-#              '2021_10_10-16_06_30-johnson-dnv5_2021_09_23',
-#  '2021_10_11-01_24_52-johnson-dnv5_2021_09_23',
-#  '2021_10_11-10_39_33-johnson-dnv5_2021_09_23'
-#     ]
+# file_list = ['2021_10_16-21_40_52-johnson-dnv5_2021_09_23',
+#              '2021_10_18-02_01_11-johnson-dnv5_2021_09_23'
+#       ]
+file_list = ['2021_10_17-11_33_58-johnson-dnv5_2021_09_23',
+              '2021_10_18-08_58_39-johnson-dnv5_2021_09_23'
+    ]
 
-# do_average_files_together(file_list, folder)
+do_average_files_together(file_list, folder)
 
 ##### Combine data over different taus into one data
 file_list_A = ['2021_10_13-01_15_35-johnson-dnv5_2021_09_23',
@@ -269,30 +267,30 @@ file_list_B = [
 
 
 ###################
-file_list = ['2021_10_14-10_39_50-johnson-dnv5_2021_09_23',
-              '2021_10_15-09_38_47-johnson-dnv5_2021_09_23'
-    ]
+# file_list = ['2021_10_14-10_39_50-johnson-dnv5_2021_09_23',
+#               '2021_10_15-09_38_47-johnson-dnv5_2021_09_23'
+#     ]
 
-fmt_list = ['b-', 'r-']
-label_list = ['A', 'B']
-fig, ax = plt.subplots(figsize=(8.5, 8.5))
+# fmt_list = ['b-', 'r-']
+# label_list = ['A', 'B']
+# fig, ax = plt.subplots(figsize=(8.5, 8.5))
 
-for f in range(len(file_list)):
-    file = file_list[f]
-    data = tool_belt.get_raw_data(file, folder)
-    taus = data['taus']
-    norm_avg_sig = numpy.array(data['norm_avg_sig'])
-    uwave_pi_pulse = data['uwave_pi_pulse']
-    plot_taus = (numpy.array(taus) + uwave_pi_pulse) / 1000
+# for f in range(len(file_list)):
+#     file = file_list[f]
+#     data = tool_belt.get_raw_data(file, folder)
+#     taus = data['taus']
+#     norm_avg_sig = numpy.array(data['norm_avg_sig'])
+#     uwave_pi_pulse = data['uwave_pi_pulse']
+#     plot_taus = (numpy.array(taus) + uwave_pi_pulse) / 1000
     
-    h = numpy.average(norm_avg_sig[26:46])
-    l = 1
+#     h = numpy.average(norm_avg_sig[26:46])
+#     l = 1
     
-    scaled_sig = (norm_avg_sig-l)/ (h-l)
+#     scaled_sig = (norm_avg_sig-l)/ (h-l)
     
 
-    # ax.plot(plot_taus, scaled_sig, fmt_list[f], label = label_list[f])
-    ax.plot(plot_taus, norm_avg_sig, fmt_list[f], label = label_list[f])
-ax.set_ylabel('Contrast (arb. units)')
-ax.set_xlabel('Taus (us)')
-ax.legend(loc='lower right')
+#     # ax.plot(plot_taus, scaled_sig, fmt_list[f], label = label_list[f])
+#     ax.plot(plot_taus, norm_avg_sig, fmt_list[f], label = label_list[f])
+# ax.set_ylabel('Contrast (arb. units)')
+# ax.set_xlabel('Taus (us)')
+# ax.legend(loc='lower right')
