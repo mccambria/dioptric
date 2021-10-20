@@ -417,10 +417,10 @@ if __name__ == '__main__':
     
     
     opti_nv_sig = {
-        "coords": [-0.037, 0.273, 4.85],
-        "name": "{}-nv0_2021_09_23".format(sample_name,),
+        "coords": [-0.20177, 0.12953,  4.09457485],
+        "name": "{}-nv0_2021_10_08".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 42,
+        "expected_count_rate": 35,
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
@@ -429,10 +429,10 @@ if __name__ == '__main__':
     }  # 14.5 max
     
     nv_sig = {
-        "coords": [-0.037, 0.273, 4.85],
-        "name": "{}-nv0_2021_09_23".format(sample_name,),
+        "coords": [-0.18577,  0.14153,  4.14457485],
+        "name": "{}-dnv7_2021_09_23".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 42,
+        "expected_count_rate": 70,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,
@@ -445,7 +445,7 @@ if __name__ == '__main__':
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
-        determine_readout_dur(nv_sig, nv_sig, readout_times = [50e6], readout_yellow_powers = [0.12],
+        determine_readout_dur(nv_sig, opti_nv_sig, readout_times = [10e6], readout_yellow_powers = [0.2],
                           nd_filter = 'nd_0.5')
     finally:
         # Reset our hardware - this should be done in each routine, but

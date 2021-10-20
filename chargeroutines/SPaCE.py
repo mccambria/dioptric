@@ -1229,7 +1229,7 @@ if __name__ == '__main__':
 
     #================ specific for 2D scans ================#
     file_list = [
-        '2021_10_11-18_38_54-johnson-dnv5_2021_09_23'
+        '2021_10_17-12_09_00-johnson-dnv5_2021_09_23'
         ]
 
     for f in range(len(file_list)):

@@ -36,6 +36,7 @@ import chargeroutines.SPaCE as SPaCE
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import chargeroutines.scc_spin_echo as scc_spin_echo
 import chargeroutines.super_resolution_pulsed_resonance as super_resolution_pulsed_resonance
+import chargeroutines.super_resolution_ramsey as super_resolution_ramsey
 import chargeroutines.super_resolution_spin_echo as super_resolution_spin_echo
 import chargeroutines.g2_measurement as g2_SCC_branch
 
@@ -70,8 +71,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.2
     # scan_range = 0.15
     # scan_range = 0.1
-    # scan_range = 0.05
-    scan_range = 0.025
+    scan_range = 0.05
+    # scan_range = 0.025
     #
     # num_steps = 400
     # num_steps = 300
@@ -80,7 +81,7 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    num_steps = 71
+    num_steps = 81
     # num_steps = 31
     # num_steps = 20
 
@@ -90,9 +91,9 @@ def do_image_sample(nv_sig, apd_indices):
 
 def do_image_sample_xz(nv_sig, apd_indices):
 
-    scan_range_x = 0.1
+    scan_range_x = 0.03
 
-    scan_range_z = 0.7
+    scan_range_z = 0.4
 
     num_steps = 90
 
@@ -186,9 +187,9 @@ def do_resonance_state(nv_sig, opti_nv_sig, apd_indices, state):
     freq_center = nv_sig["resonance_{}".format(state.name)]
     uwave_power = -10.0
 
-    freq_range = 0.100
+    freq_range = 0.1
     num_steps = 51
-    num_runs = 5
+    num_runs = 15
 
     # Zoom
     # freq_range = 0.060
@@ -241,7 +242,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 51
     num_reps = 1000
-    num_runs = 10
+    num_runs = 15
 
     composite = False
 
@@ -302,7 +303,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = 5000
-    num_runs = 15
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -342,13 +343,13 @@ def do_lifetime(nv_sig, apd_indices, filter, voltage, reference=False):
     )
 
 
-def do_ramsey(nv_sig, apd_indices):
+def do_ramsey(nv_sig, opti_nv_sig, apd_indices):
 
-    detuning = 2.5  # MHz
-    precession_time_range = [0, 4 * 10 ** 3]
-    num_steps = 151
-    num_reps = 3 * 10 ** 5
-    num_runs = 1
+    detuning = 10  # MHz
+    precession_time_range = [0, 2 * 10 ** 3]
+    num_steps = 101
+    num_reps = int( 10 ** 4)
+    num_runs = 6
 
     ramsey.main(
         nv_sig,
@@ -358,6 +359,7 @@ def do_ramsey(nv_sig, apd_indices):
         num_steps,
         num_reps,
         num_runs,
+        opti_nv_sig = opti_nv_sig
     )
 
 
@@ -428,13 +430,13 @@ def do_scc_resonance(nv_sig, opti_nv_sig, apd_indices, state=States.LOW):
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state )
     
 def do_scc_spin_echo(nv_sig, opti_nv_sig, apd_indices, tau_start, tau_stop, state=States.LOW):
-    num_point_per_us = 1
-    num_steps = int((tau_stop - tau_start)*num_point_per_us + 1)
-    precession_time_range = [tau_start *1e3, tau_start *1e3]
+    step_size = 1 # us
+    num_steps = int((tau_stop - tau_start)/step_size + 1)
     
+    precession_time_range = [tau_start *1e3, tau_stop *1e3]
     
     num_reps = int(10**3)
-    num_runs = 30
+    num_runs = 40
     
     scc_spin_echo.main(nv_sig, opti_nv_sig, apd_indices, precession_time_range,
          num_steps, num_reps, num_runs,  
@@ -455,15 +457,34 @@ def do_super_resolution_resonance(nv_sig, opti_nv_sig, apd_indices, state=States
     super_resolution_pulsed_resonance.main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
          num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state )
     
-def do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices,
+def do_super_resolution_ramsey(nv_sig, opti_nv_sig, apd_indices,
                                   tau_start, tau_stop, state=States.LOW):
-    num_point_per_us = 1
-    num_steps = int((tau_stop - tau_start)*num_point_per_us + 1)
+    
+    detuning = 5  # MHz
+    
+    # step_size = 0.05 # us
+    # num_steps = int((tau_stop - tau_start)/step_size + 1)
+    num_steps = 101
     precession_time_range = [tau_start *1e3, tau_stop *1e3]
     
     
     num_reps = int(10**3)
     num_runs = 30
+    
+    super_resolution_ramsey.main(nv_sig, opti_nv_sig, apd_indices, 
+                                    precession_time_range, detuning,
+         num_steps, num_reps, num_runs, state )
+    
+def do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices,
+                                  tau_start, tau_stop, state=States.LOW):
+    step_size = 1 # us
+    num_steps = int((tau_stop - tau_start)/step_size + 1)
+    print(num_steps)
+    precession_time_range = [tau_start *1e3, tau_stop *1e3]
+    
+    
+    num_reps = int(10**3)
+    num_runs = 20
     
     super_resolution_spin_echo.main(nv_sig, opti_nv_sig, apd_indices, 
                                     precession_time_range,
@@ -524,7 +545,7 @@ def do_test_major_routines(nv_sig, apd_indices):
 if __name__ == "__main__":
 
     # In debug mode, don't bother sending email notifications about exceptions
-    debug_mode = False
+    debug_mode = True
 
     # %% Shared parameters
 
@@ -572,7 +593,7 @@ if __name__ == "__main__":
     
     
     nv_sig_7 = {
-        "coords": [-0.17131254,  0.14095828,  4.14457485],
+        "coords": [-0.18577,  0.14153,  4.14457485],
         "name": "{}-dnv7_2021_09_23".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 70,
@@ -604,8 +625,10 @@ if __name__ == "__main__":
         "CPG_laser_dur": 3e3,
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.3,
-        "charge_readout_dur": 0.5e6,
+        # "charge_readout_laser_power": 0.1,
+        # "charge_readout_dur": 100e6,
+        "charge_readout_laser_power": 0.2,
+        "charge_readout_dur": 10e6,
         
         "collection_filter": "630_lp",
         "magnet_angle": 175,
@@ -618,7 +641,7 @@ if __name__ == "__main__":
     
     nv_sig_5 = {
         "coords": [0.00949217, -0.00614178, #[0.01, -0.007,
-                   4.08457485],#+0.2/16],
+                   4.08457485],#-0.012, 5.146
         "name": "{}-dnv5_2021_09_23".format(sample_name,),
         "disable_opt": False,
         "expected_count_rate": 110,
@@ -656,18 +679,18 @@ if __name__ == "__main__":
         
         "collection_filter": "630_lp",
         "magnet_angle": 114,
-        "resonance_LOW":2.7911,"rabi_LOW": 138.1,
+        "resonance_LOW":2.7919,"rabi_LOW": 138.1,
         "uwave_power_LOW": 15.5,  # 15.5 max
         "resonance_HIGH": 2.9496,
         "rabi_HIGH": 215,
         "uwave_power_HIGH": 14.5,
     }  # 14.5 max
     
-    opti_nv_sig = {
-        "coords": [-0.02331254,  0.01495828,  4.09457485],
+    opti_nv_sig_7 = {
+        "coords": [-0.20177, 0.12953,  4.09457485],
         "name": "{}-nv0_2021_10_08".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 46,
+        "expected_count_rate": 35,
         
         "spin_laser": green_laser,
         "spin_laser_power": green_power,
@@ -692,7 +715,44 @@ if __name__ == "__main__":
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
-        "resonance_LOW": 2.7881, 
+        "resonance_LOW": 2.7901, 
+        "rabi_LOW": 136.0,
+        "uwave_power_LOW": 14.5,  # 15.5 max
+        "resonance_HIGH": 2.9641,
+        "rabi_HIGH": 166,
+        "uwave_power_HIGH": 14.5,
+    }  # 14.5 max
+    
+    opti_nv_sig_5 = {
+        "coords": [-0.02331254,  0.01495828,  4.09457485],
+        "name": "{}-nv0_2021_10_08".format(sample_name,),
+        "disable_opt": False,
+        "expected_count_rate": 42,
+        
+        "spin_laser": green_laser,
+        "spin_laser_power": green_power,
+        "spin_pol_dur": 1e5,
+        "spin_readout_laser_power": green_power,
+        "spin_readout_dur": 350,
+        
+        "imaging_laser":green_laser,
+        "imaging_laser_power": green_power,
+        "imaging_readout_dur": 1e7,
+        
+        "initialize_laser": green_laser,
+        "initialize_laser_power": green_power,
+        "initialize_dur": 1e3,
+        "CPG_laser": red_laser,
+        'CPG_laser_power': red_power,
+        "CPG_laser_dur": 500e3,
+        "charge_readout_laser": yellow_laser,
+        "charge_readout_laser_filter": nd_yellow,
+        "charge_readout_laser_power": 0.15,
+        "charge_readout_dur": 50e6,
+        
+        "collection_filter": "630_lp",
+        "magnet_angle": None,
+        "resonance_LOW": 2.7901, 
         "rabi_LOW": 136.0,
         "uwave_power_LOW": 14.5,  # 15.5 max
         "resonance_HIGH": 2.9641,
@@ -701,9 +761,10 @@ if __name__ == "__main__":
     }  # 14.5 max
     
     
+    
       
     
-    nv_sig = nv_sig_5
+    nv_sig = nv_sig_7
     
     
     # %% Functions to run
@@ -731,62 +792,72 @@ if __name__ == "__main__":
         #     coords = nv_sig['coords']
         #     nv_sig_copy['coords'] = [coords[0]+dx,coords[1]+dy,coords[2]+dz]
         #     do_image_sample(nv_sig_copy, apd_indices)
-        # do_optimize(opti_nv_sig, apd_indices)
-        # do_image_sample(opti_nv_sig, apd_indices)
+        # do_optimize(opti_nv_sig_7, apd_indices)
+        # do_image_sample(nv_sig_7, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         
         
         
-        offset_x = 0#0.00062857
-        offset_y = 0#-0.00657143
-        offset_z = 0
+        offset_x =- 0.028/35
+        offset_y = -0.1/35
+        offset_z = 3/16
         offset_list = [offset_x, offset_y, offset_z]
         num_steps_x = 81
         num_steps_y = 81
-        num_steps_z = 151
+        num_steps_z = 75#151
         
         
             
-        # do_optimize(nv_sig, apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        # do_optimize(opti_nv_sig_5, apd_indices)
+        # do_optimize(nv_sig_7, apd_indices)
+        do_image_sample(nv_sig_7, apd_indices)
+        # do_image_sample(nv_sig_5, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # do_g2_measurement(nv_sig, 0, 1)
         
         #do_optimize_magnet_angle(nv_sig, apd_indices)
-        # do_resonance(opti_nv_sig, opti_nv_sig, apd_indices,  2.875, 0.2)
+        # do_resonance(nv_sig, opti_nv_sig, apd_indices,  2.875, 0.2)
         # do_resonance_state(nv_sig,opti_nv_sig, apd_indices, States.LOW)
         
-        # do_rabi(nv_sig,opti_nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
+        # do_rabi(nv_sig, opti_nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 300])
         # do_rabi(nv_sig, opti_nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 300])
         
         # do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, 2.875, 0.2)
-        # do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, States.LOW)
+        # do_pulsed_resonance_state(opti_nv_sig, opti_nv_sig,apd_indices, States.LOW)
+        # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
         # do_spin_echo(nv_sig, apd_indices)
     
-        for t in [5e3, 7.5e3, 10e3]:
+        for t in [5e3]:
             nv_sig['CPG_laser_dur'] = t
-            img_range_2D = [0.05,0, 4/16 ]
-            # do_SPaCE(nv_sig, opti_nv_sig, 15, num_steps_x, num_steps_z, None,  img_range_2D, offset_list)
+            img_range_2D = [0.06,0,2 /16 ]
+            # do_SPaCE(nv_sig, opti_nv_sig_7, 5, num_steps_x, num_steps_z, 
+            # None,  img_range_2D, offset_list)
         
-            # for dz in numpy.array([-0.3, -0.2, 0.2, 0.3])/16:
-                #nv_sig_copy = copy.deepcopy(nv_sig)
-               # coords = nv_sig['coords']
-                #nv_sig_copy['coords'] = [coords[0],coords[1],coords[2]+dz]
+            img_range_2D = [0, 0.06, 2/16 ]
+            # do_SPaCE(nv_sig, opti_nv_sig_7, 5, num_steps_x, num_steps_z, None,  img_range_2D, offset_list)
+        
             img_range_2D = [0.05,0.05, 0 ]
-            #do_SPaCE(nv_sig, opti_nv_sig, 10, num_steps_x, num_steps_y, None,  img_range_2D, offset_list)
+            for dz in numpy.linspace(-2, 2, 7):
+                do_SPaCE(nv_sig, opti_nv_sig_7, 10, num_steps_x, num_steps_y, 
+                          None,  img_range_2D, [offset_x, offset_y, dz/16])
+            #do_SPaCE(nv_sig, opti_nv_sig_7, 5, 81, 81, 
+            #          None,  img_range_2D, [offset_x, offset_y, -0.75/16])
+            # do_SPaCE(nv_sig, opti_nv_sig_7, 5, num_steps_x, num_steps_y, 
+            #           None,  img_range_2D, offset_list)
           
             
          
         # do_scc_resonance(nv_sig, opti_nv_sig, apd_indices)
-        # do_scc_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 15)
+        #do_scc_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 315)
         
         z = nv_sig['coords'][2]
         A = [-0.001, -0.008, z]
         B = [-0.007, -0.008, z]
         
-        depletion_point = [A]#, B]
+        depletion_point = [A, B]
+        # depletion_point = [ B]
         
         depletion_times = [10e3, 7.5e3]
         for i in range(1): #do the measurement 4 times over
@@ -796,7 +867,11 @@ if __name__ == "__main__":
                 nv_sig['CPG_laser_dur'] = depletion_times[p]
         
                 # do_super_resolution_resonance(nv_sig, opti_nv_sig, apd_indices)
-                do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 40 )
+                # do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 5 )
+                # do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 40 )
+                # do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 315 )
+                
+                # do_super_resolution_ramsey(nv_sig, opti_nv_sig, apd_indices, 0, 2)
         
         # drift = tool_belt.get_drift()
         #tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
