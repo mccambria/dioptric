@@ -235,11 +235,12 @@ if __name__ == "__main__":
 
     # main_files(files)
 
-    process_temp_dep_res_files()
+    # process_temp_dep_res_files()
 
     #    print(zfs_from_temp(280))
 
-    # temp = 295
+    temp = 0
+    print(zfs_from_temp(temp))
     # print(zfs_from_temp(temp) - zfs_from_temp_barson(temp))
 
     # plt.ion()
