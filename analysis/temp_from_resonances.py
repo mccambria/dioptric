@@ -13,6 +13,7 @@ Created on Fri Mar  5 12:42:32 2021
 
 
 import numpy
+from numpy.core.shape_base import block
 from scipy.optimize import root_scalar
 from majorroutines.pulsed_resonance import return_res_with_error
 import utils.tool_belt as tool_belt
@@ -57,7 +58,7 @@ def process_temp_dep_res_files():
     for el in data_points:
         if el[low_res_file_column_title] == "":
             continue
-        # if int(el[nominal_temp_column_title]) != 50:
+        # if float(el[nominal_temp_column_title]) not in [5.5, 50]:
         #     continue
         nominal_temps.append(el[nominal_temp_column_title])
         resonances.append(
@@ -150,7 +151,7 @@ def zfs_from_temp_barson(temp):
     b5 = 3.1e-12
     b6 = -1.8e-15
     D_of_T = (
-        lambda T: 2.877656435574434
+        lambda T: 2.87771
         + (-(A * B * dV_over_V(T)) + (b4 * T ** 4 + b5 * T ** 5 + b6 * T ** 6))
         / 1000
     )
@@ -202,21 +203,42 @@ def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
 
 def main(zfs, zfs_err):
 
-    func_to_invert = zfs_from_temp_barson
+    # func_to_invert = zfs_from_temp_barson
+    func_to_invert = zfs_from_temp
+
+    x0 = 199
+    x1 = 201
+
+    next_to_zero = 1e-5
 
     zfs_diff = lambda temp: func_to_invert(temp) - zfs
-    results = root_scalar(zfs_diff, x0=50, x1=500)
-    temp_mid = results.root
+    if zfs_diff(next_to_zero) < 0:
+        temp_mid = 0
+    else:
+        results = root_scalar(zfs_diff, x0=x0, x1=x1)
+        temp_mid = results.root
+        # print(zfs_diff(results.root))
+    # x_vals = numpy.linspace(0, 2, 100)
+    # plt.plot(x_vals, zfs_diff(x_vals))
+    # print(zfs)
+    # plt.show(block=True)
 
     zfs_lower = zfs - zfs_err
     zfs_diff = lambda temp: func_to_invert(temp) - zfs_lower
-    results = root_scalar(zfs_diff, x0=50, x1=500)
-    temp_higher = results.root
+    if zfs_diff(next_to_zero) < 0:
+        temp_higher = 0
+    else:
+        results = root_scalar(zfs_diff, x0=x0, x1=x1)
+        temp_higher = results.root
 
     zfs_higher = zfs + zfs_err
     zfs_diff = lambda temp: func_to_invert(temp) - zfs_higher
-    results = root_scalar(zfs_diff, x0=50, x1=500)
-    temp_lower = results.root
+    # print(zfs_diff(50))
+    if zfs_diff(next_to_zero) < 0:
+        temp_lower = 0
+    else:
+        results = root_scalar(zfs_diff, x0=x0, x1=x1)
+        temp_lower = results.root
 
     print("T: [{}\t{}\t{}]".format(temp_lower, temp_mid, temp_higher))
     temp_error = numpy.average([temp_mid - temp_lower, temp_higher - temp_mid])
@@ -235,12 +257,12 @@ if __name__ == "__main__":
 
     # main_files(files)
 
-    # process_temp_dep_res_files()
+    process_temp_dep_res_files()
 
     #    print(zfs_from_temp(280))
 
-    temp = 0
-    print(zfs_from_temp(temp))
+    # temp = 0
+    # print(zfs_from_temp(temp))
     # print(zfs_from_temp(temp) - zfs_from_temp_barson(temp))
 
     # plt.ion()
