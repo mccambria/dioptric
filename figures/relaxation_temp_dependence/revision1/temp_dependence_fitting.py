@@ -65,10 +65,12 @@ ratio_edge_color = "#EF2424"
 sample_column_title = "Sample"
 skip_column_title = "Skip"
 nominal_temp_column_title = "Nominal temp (K)"
-temp_column_title = "ZFS temp (K)"
+temp_model = "Barson"
+# temp_model = "comp"
+temp_column_title = "ZFS temp, {} (K)".format(temp_model)
 # temp_column_title = "Nominal temp (K)"
-temp_lb_column_title = "ZFS temp lower bound (K)"
-temp_ub_column_title = "ZFS temp upper bound (K)"
+temp_lb_column_title = "ZFS temp, lb, {} (K)".format(temp_model)
+temp_ub_column_title = "ZFS temp, ub, {} (K)".format(temp_model)
 
 low_res_file_column_title = "-1 resonance file"
 high_res_file_column_title = "+1 resonance file"
@@ -77,6 +79,8 @@ omega_column_title = "Omega (s^-1)"
 omega_err_column_title = "Omega err (s^-1)"
 gamma_column_title = "gamma (s^-1)"
 gamma_err_column_title = "gamma err (s^-1)"
+
+bad_zfs_temps = 100  # Below this consider zfs temps inaccurate
 
 
 # %% Processes and sum functions
@@ -120,6 +124,14 @@ def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 5)
 
 
+def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
+    return (
+        const
+        + (coeff_orbach * bose(activation, temp))
+        + (coeff_T5 * temp ** 5)
+    )
+
+
 def orbach_T5_free_linear(
     temp, coeff_orbach, activation, coeff_T5, coeff_linear
 ):
@@ -156,17 +168,26 @@ def gamma_calc(temp):
 
 
 def get_temp(point):
-    temp = point[temp_column_title]
-    if temp == "":
-        temp = point[nominal_temp_column_title]
+    nominal_temp = point[nominal_temp_column_title]
+    if nominal_temp <= bad_zfs_temps:
+        temp = nominal_temp
+    else:
+        temp = point[temp_column_title]
+        if temp == "":
+            temp = point[nominal_temp_column_title]
     return temp
 
 
 def get_temp_bounds(point):
-    lower_bound = point[temp_lb_column_title]
-    if lower_bound == "":
+    if temp_lb_column_title == nominal_temp_column_title:
         return None
+    nominal_temp = point[nominal_temp_column_title]
+    if nominal_temp <= bad_zfs_temps:
+        return [nominal_temp - 5, nominal_temp + 5]
     else:
+        lower_bound = point[temp_lb_column_title]
+        if lower_bound == "":
+            return None
         upper_bound = point[temp_ub_column_title]
         return [lower_bound, upper_bound]
 
@@ -269,18 +290,32 @@ def fit_simultaneous(data_points):
     #     " (s^-1), activation (meV), linear_coeff (K^-1 s^-1)]"
     # )
 
-    # T5 fixed
-    init_params = (1.38e-11, 510, 2000, 72.0)
-    omega_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[1], beta[3], beta[0]
+    # T5 fixed + constant
+    init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
+    omega_fit_func = lambda temp, beta: orbach_T5_free_const(
+        temp, beta[1], beta[3], beta[0], beta[4]
     )
-    gamma_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[2], beta[3], beta[0]
+    gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
+        temp, beta[2], beta[3], beta[0], beta[5]
     )
     beta_desc = (
         "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
-        " (s^-1), activation (meV)]"
+        " (s^-1), activation (meV), Omega constant (K^-1 s^-1), gamma constant"
+        " (K^-1 s^-1)]"
     )
+
+    # T5 fixed
+    # init_params = (1.38e-11, 510, 2000, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[1], beta[3], beta[0]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[2], beta[3], beta[0]
+    # )
+    # beta_desc = (
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV)]"
+    # )
 
     # T7
     # init_params = (510, 1.38e-11, 2000, 1.38e-15, 72.0)
@@ -772,7 +807,7 @@ if __name__ == "__main__":
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [70, 500]
+    temp_range = [0, 500]
     xscale = "linear"
     # temp_range = [70, 500]
     # xscale = "log"

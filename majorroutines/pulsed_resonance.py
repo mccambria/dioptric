@@ -232,7 +232,9 @@ def get_guess_params(
         low_freq_guess = freqs[peak_inds[0]]
         high_freq_guess = None
     else:
-        print("Could not locate peaks")
+        print("Could not locate peaks, using center frequency")
+        low_freq_guess = freq_center
+        high_freq_guess = None
 
     # low_freq_guess = 2.8620
     # high_freq_guess = 2.8936
