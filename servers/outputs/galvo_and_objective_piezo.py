@@ -215,7 +215,7 @@ class GalvoAndObjectivePiezo(Galvo, ObjectivePiezo):
         y_voltages = numpy.empty(len(z_voltages))
         y_voltages.fill(y_center)
 
-        voltages = numpy.vstack(x_voltages,(y_voltages, z_voltages))
+        voltages = numpy.vstack((x_voltages,y_voltages, z_voltages))
 
         self.load_stream_writer_xyz(c, "GalvoAndObjectivePiezo-load_sweep_scan_xz", voltages, period)
 

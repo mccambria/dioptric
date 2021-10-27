@@ -883,6 +883,8 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         
         low_coords = numpy.array(start_coords) + [dx_list[0], dy_list[0], dz_list[0]]
         high_coords = numpy.array(start_coords) + [dx_list[1], dy_list[1], dz_list[1]]
+        # print(low_coords)
+        # print(high_coords)
         
         x_voltages = numpy.linspace(low_coords[0],
                                     high_coords[0], num_steps_a)
@@ -895,8 +897,9 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         # calculate the radial distances from the readout NV to the target points
         rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)
         
-        neg_ints = int(numpy.floor(len(rad_dist)/2))
-        rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
+        # This bit of code is used if the 1D scan is symmetric across the NV, then we need negative and positive values of r
+        # neg_ints = int(numpy.floor(len(rad_dist)/2))
+        # rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
         
 
     elif img_range_2D != None:
@@ -1153,7 +1156,7 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
     if measurement_type == '1D':
         fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
         ax_1D.plot(rad_dist*scale,readout_counts_avg, label = nv_sig['name'])
-        ax_1D.set_xlabel('r (nm)')
+        ax_1D.set_xlabel('r (um)')
         ax_1D.set_ylabel('Average counts')
         ax_1D.set_title('SPaCE {}- {} nm init pulse \n{} nm {} ms CPG pulse'.\
                                         format(direction_title, init_color, 
@@ -1229,7 +1232,7 @@ if __name__ == '__main__':
 
     #================ specific for 2D scans ================#
     file_list = [
-        '2021_10_17-12_09_00-johnson-dnv5_2021_09_23'
+        '2021_10_20-11_27_57-ayrton_101-nv0_2021_10_20'
         ]
 
     for f in range(len(file_list)):
