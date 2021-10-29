@@ -554,7 +554,7 @@ if __name__ == "__main__":
     # apd_indices = [0,1]
 
     nd_yellow = "nd_0.5"
-    green_power = 7
+    green_power = 8
     red_power = 120
     sample_name = "ayrton_101"
     green_laser = "cobolt_515"
@@ -694,8 +694,8 @@ if __name__ == "__main__":
         offset_y = -0.003
         offset_z = 0
         offset_list = [offset_x, offset_y, offset_z]
-        num_steps_x = 81
-        num_steps_y = 81
+        num_steps_x = 101
+        num_steps_y = 101
         num_steps_z = 101
         
         
@@ -719,11 +719,12 @@ if __name__ == "__main__":
         # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
         # do_spin_echo(nv_sig, apd_indices)
     
-        for t in [500e3]:
+        for t in [150e3]: #10e3, 50e3
             nv_sig['CPG_laser_dur'] = t
-            img_range_2D = [0.08,0.08, 0 ]
-            do_SPaCE(nv_sig, nv_sig, 3, num_steps_x, num_steps_y, 
-                      None,  img_range_2D, offset_list)
+            nv_sig['CPG_laser_power'] = 60 #60, 90 
+            img_range_2D = [0.045,0.045, 0 ]
+            do_SPaCE(nv_sig, nv_sig, 25, num_steps_x, num_steps_y, 
+                       None,  img_range_2D, offset_list)
             img_range_2D = [0.05,0, 4/16 ]
             #do_SPaCE(nv_sig, nv_sig, 3, num_steps_x, num_steps_z, 
             #          None,  img_range_2D, [offset_x, offset_y, +6/16])
@@ -733,15 +734,27 @@ if __name__ == "__main__":
             # do_SPaCE(nv_sig, nv_sig, 5, num_steps_y, num_steps_z, 
             #           None,  img_range_2D, offset_list)
             
-        t_list = [0.5e3, 0.75e3, 1e3,2.5e3, 5e3, 7.5e3, 10e3,25e3, 50e3, 
-                  70e3,100e3,250e3, 500e3]
+            
+        # 1st airy ring power
+        t_list = [150e3]
+
+        for t in t_list:
+            nv_sig['CPG_laser_dur'] = t
+            nv_sig['CPG_laser_power'] = 115 #85,  95, 105, 110, 115
+            num_steps = 401
+            num_runs = 100
+            #do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+            #        [[-0.2/35, -0.003,0 ], [-0.6/35, -0.003, 0]],  None, offset_list)
+            
+        # 2nd Airy ring time
+        t_list = [ 200e3, ]
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
             num_steps = 401
             num_runs = 100
             # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[-0.2/35, -0.003,0 ], [-0.6/35, -0.003, 0]],  None, offset_list)
+            #          [[-0.75/35, -0.003,0 ], [-1.15/35, -0.003, 0]],  None, offset_list)
           
           
             
