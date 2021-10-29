@@ -65,8 +65,8 @@ ratio_edge_color = "#EF2424"
 sample_column_title = "Sample"
 skip_column_title = "Skip"
 nominal_temp_column_title = "Nominal temp (K)"
-temp_model = "Barson"
-# temp_model = "comp"
+# temp_model = "Barson"
+temp_model = "comp"
 temp_column_title = "ZFS temp, {} (K)".format(temp_model)
 # temp_column_title = "Nominal temp (K)"
 temp_lb_column_title = "ZFS temp, lb, {} (K)".format(temp_model)
@@ -80,7 +80,7 @@ omega_err_column_title = "Omega err (s^-1)"
 gamma_column_title = "gamma (s^-1)"
 gamma_err_column_title = "gamma err (s^-1)"
 
-bad_zfs_temps = 100  # Below this consider zfs temps inaccurate
+bad_zfs_temps = 300.1  # Below this consider zfs temps inaccurate
 
 
 # %% Processes and sum functions
@@ -183,7 +183,7 @@ def get_temp_bounds(point):
         return None
     nominal_temp = point[nominal_temp_column_title]
     if nominal_temp <= bad_zfs_temps:
-        return [nominal_temp - 5, nominal_temp + 5]
+        return [nominal_temp - 3, nominal_temp + 3]
     else:
         lower_bound = point[temp_lb_column_title]
         if lower_bound == "":
@@ -193,7 +193,7 @@ def get_temp_bounds(point):
 
 
 def get_temp_error(point):
-    temp = point[temp_column_title]
+    temp = get_temp(point)
     temp_bounds = get_temp_bounds(point)
     if temp_bounds is None:
         return 1.0
@@ -797,8 +797,8 @@ if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
 
-    plot_type = "rates"
-    # plot_type = 'ratios'
+    # plot_type = "rates"
+    plot_type = "ratios"
     # plot_type = 'ratio_fits'
     # plot_type = 'residuals'
     # plot_type = "T2_max"
@@ -833,7 +833,7 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    plot_types = [[[-10, 600], "linear"], [[1e-2, 1000], "log"]]  # Rates
+    plot_types = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]  # Rates
     # plot_types = [[[-1, 6], "linear"], [[1e-3, 10], "log"]]  # T2_max
     for el in plot_types:
         y_range, yscale = el
