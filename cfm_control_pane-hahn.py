@@ -151,7 +151,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
     num_steps = 51
     num_reps = 4000
     num_runs = 4
-    uwave_power = 14.5
+    uwave_power = 16.5
     uwave_pulse_dur = 150
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
@@ -211,7 +211,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
     num_reps = 4000
-    num_runs = 10
+    num_runs = 4
 
     period = rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -316,12 +316,12 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 300
-    num_reps = 250
-    num_steps = 12
+    num_runs = 500
+    num_reps = 20
+    num_steps = 4
     min_tau = 20e3
-    max_tau_omega = int(190e6)
-    max_tau_gamma = int(95e6)
+    max_tau_omega = int(10e9)
+    max_tau_gamma = int(10e9)
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
@@ -369,7 +369,7 @@ def do_spin_echo(nv_sig, apd_indices):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    max_time = 120  # us
+    max_time = 140  # us
     num_steps = max_time  # 1 point per us
     precession_time_range = [1, max_time * 10**3]
     num_reps = 8000
@@ -398,7 +398,7 @@ def do_spin_echo_battery(nv_sig, apd_indices):
     
 def do_optimize_magnet_angle_fine(nv_sig, apd_indices):
 
-    for magnet_angle in numpy.linspace(84, 96, 8):
+    for magnet_angle in numpy.linspace(88, 100, 7):
         nv_sig["magnet_angle"] = magnet_angle
         angle = do_spin_echo_battery(nv_sig, apd_indices)
         if angle < 3:
@@ -457,16 +457,16 @@ if __name__ == '__main__':
     # nd = 'nd_2.0'
     sample_name = 'hopper'
     
-    nv_sig = { 'coords': [0.0, 0.0, 10],
+    nv_sig = { 'coords': [0.0, 0.0, 0],
             'name': '{}-search'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
             'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
             'spin_laser': 'laserglow_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
             'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
-            'collection_filter': None, 'magnet_angle': 94.28571429,
-            'resonance_LOW': 2.8068, 'rabi_LOW': 163.8, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9466, 'rabi_HIGH': 214.6, 'uwave_power_HIGH': 14.5}   # 14.5 max
+            'collection_filter': None, 'magnet_angle': 94,
+            'resonance_LOW': 2.835, 'rabi_LOW': 200, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.920, 'rabi_HIGH': 280, 'uwave_power_HIGH': 16.5}  
     
     
     # %% Functions to run
@@ -481,7 +481,7 @@ if __name__ == '__main__':
         #     do_image_sample(nv_sig, apd_indices)
         
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0, 0)
+        #     cxn.cryo_piezos.write_xy(0, -20)
         
         # do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
@@ -493,7 +493,7 @@ if __name__ == '__main__':
         # do_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.150)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
@@ -512,13 +512,13 @@ if __name__ == '__main__':
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        # do_t1_interleave_knill(nv_sig, apd_indices)
+        do_t1_interleave_knill(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
         #     nv_sig['resonance_HIGH'] = res

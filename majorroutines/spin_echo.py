@@ -279,7 +279,7 @@ def fit_data(data):
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-    revival_time = 35000
+    revival_time = 35000 * 2
     dominant_freqs = [1 / revival_time]
 
     # %% Fit
@@ -829,31 +829,34 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    plt.ion()
+    # plt.ion()
 
-    path_from_nvdata = "pc_hahn/branch_time-tagger-speedup/spin_echo/2021_09"
-    file_names = [
-        # "2021_09_03-20_36_12-hopper-search",
-        # "2021_09_03-22_04_25-hopper-search",
-        # "2021_09_03-23_31_54-hopper-search",
-        # "2021_09_04-01_07_44-hopper-search",
-        "2021_09_04-08_34_53-hopper-search",
-        "2021_09_04-10_03_27-hopper-search",
-        "2021_09_04-11_31_49-hopper-search",
-        "2021_09_04-13_00_14-hopper-search",
-    ]
+    # file_names = [
+    #     # "2021_09_03-20_36_12-hopper-search",
+    #     # "2021_09_03-22_04_25-hopper-search",
+    #     # "2021_09_03-23_31_54-hopper-search",
+    #     # "2021_09_04-01_07_44-hopper-search",
+    #     "2021_09_04-08_34_53-hopper-search",
+    #     "2021_09_04-10_03_27-hopper-search",
+    #     "2021_09_04-11_31_49-hopper-search",
+    #     "2021_09_04-13_00_14-hopper-search",
+    # ]
 
-    for f in file_names:
+    # for f in file_names:
 
-        # start = time.time()
-        data = tool_belt.get_raw_data(f, path_from_nvdata)
-        # stop = time.time()
-        # print(stop - start)
+    #     # start = time.time()
+    #     data = tool_belt.get_raw_data(f)
+    #     # stop = time.time()
+    #     # print(stop - start)
 
-        #    print(data['norm_avg_sig'])
+    #     #    print(data['norm_avg_sig'])
 
-        ret_vals = plot_resonances_vs_theta_B(data)
-        fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
-        # print(popt)
+    #     ret_vals = plot_resonances_vs_theta_B(data)
+    #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
+    #     # print(popt)
+    
+    file_name = "2021_10_20-17_49_37-hopper-search"
+    data = tool_belt.get_raw_data(file_name)
+    ret_vals = plot_resonances_vs_theta_B(data)
 
-    plt.show(block=True)
+    # plt.show(block=True)

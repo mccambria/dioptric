@@ -629,7 +629,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, t1_exp_array, num_runs):
 if __name__ == "__main__":
 
     path = "pc_hahn/branch_master/t1_interleave_knill/data_collections/"
-    folder = "hopper-search-160K"
+    folder = "hopper-search-5.5K-low_B"
     file_name = "incremental"
     data = tool_belt.get_raw_data(file_name, path + folder)
 

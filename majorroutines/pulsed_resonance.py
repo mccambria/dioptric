@@ -145,7 +145,7 @@ def get_guess_params(freq_range, freq_center, num_steps,
         # print(height)
     else:
         height = 0.08
-
+        
     # Peaks must be separated from each other by the estimated fwhm (rayleigh
     # criteria), have a contrast of at least the noise or 5% (whichever is
     # greater), and have a width of at least two points
@@ -188,7 +188,10 @@ def get_guess_params(freq_range, freq_center, num_steps,
         low_freq_guess = freqs[peak_inds[0]]
         high_freq_guess = None
     else:
-        print('Could not locate peaks')
+        # If we didn't find anything just guess the center
+        low_freq_guess = freq_center
+        high_freq_guess = None
+        
 
     # low_freq_guess = 2.8620
     # high_freq_guess = 2.8936

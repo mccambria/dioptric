@@ -51,7 +51,7 @@ def main(cxn, laser_name, laser_power=None):
     seq_file = 'square_wave.py'
     # period = int(1e6)
     # period = int(0.25e6)
-    period = int(1000)
+    period = int(2000)
     seq_args = [period, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
@@ -80,7 +80,8 @@ if __name__ == '__main__':
 
     # Hahn
     # laser_name = 'integrated_520'
-    laser_name = 'laserglow_532'
+    # laser_name = 'laserglow_532'
+    laser_name = 'laserglow_589'
     # filter_name = 'nd_1.0'
     pos = [0.0, 0.0, 0]
 
@@ -89,5 +90,5 @@ if __name__ == '__main__':
 #        for el in laser_names:
         # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
-        constant(cxn, laser_name)
-        # main(cxn, laser_name)
+        # constant(cxn, laser_name)
+        main(cxn, laser_name)
