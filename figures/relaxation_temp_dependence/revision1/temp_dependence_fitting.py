@@ -65,14 +65,22 @@ ratio_edge_color = "#EF2424"
 sample_column_title = "Sample"
 skip_column_title = "Skip"
 nominal_temp_column_title = "Nominal temp (K)"
-temp_column_title = "ZFS temp (K)"
+# temp_model = "Barson"
+temp_model = "comp"
+temp_column_title = "ZFS temp, {} (K)".format(temp_model)
 # temp_column_title = "Nominal temp (K)"
-temp_lb_column_title = "ZFS temp lower bound (K)"
-temp_ub_column_title = "ZFS temp upper bound (K)"
+temp_lb_column_title = "ZFS temp, lb, {} (K)".format(temp_model)
+temp_ub_column_title = "ZFS temp, ub, {} (K)".format(temp_model)
+
+low_res_file_column_title = "-1 resonance file"
+high_res_file_column_title = "+1 resonance file"
+
 omega_column_title = "Omega (s^-1)"
 omega_err_column_title = "Omega err (s^-1)"
 gamma_column_title = "gamma (s^-1)"
 gamma_err_column_title = "gamma err (s^-1)"
+
+bad_zfs_temps = 300.1  # Below this consider zfs temps inaccurate
 
 
 # %% Processes and sum functions
@@ -116,6 +124,24 @@ def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
     return (coeff_orbach * bose(activation, temp)) + (coeff_T5 * temp ** 5)
 
 
+def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
+    return (
+        const
+        + (coeff_orbach * bose(activation, temp))
+        + (coeff_T5 * temp ** 5)
+    )
+
+
+def orbach_T5_free_linear(
+    temp, coeff_orbach, activation, coeff_T5, coeff_linear
+):
+    return (
+        (coeff_orbach * bose(activation, temp))
+        + (coeff_T5 * temp ** 5)
+        + (coeff_linear * temp)
+    )
+
+
 def orbach_T7_free(temp, coeff_orbach, activation, coeff_T7):
     return (coeff_orbach * bose(activation, temp)) + (coeff_T7 * temp ** 7)
 
@@ -142,23 +168,32 @@ def gamma_calc(temp):
 
 
 def get_temp(point):
-    temp = point[temp_column_title]
-    if temp == "":
-        temp = point[nominal_temp_column_title]
+    nominal_temp = point[nominal_temp_column_title]
+    if nominal_temp <= bad_zfs_temps:
+        temp = nominal_temp
+    else:
+        temp = point[temp_column_title]
+        if temp == "":
+            temp = point[nominal_temp_column_title]
     return temp
 
 
 def get_temp_bounds(point):
-    lower_bound = point[temp_lb_column_title]
-    if lower_bound == "":
+    if temp_lb_column_title == nominal_temp_column_title:
         return None
+    nominal_temp = point[nominal_temp_column_title]
+    if nominal_temp <= bad_zfs_temps:
+        return [nominal_temp - 3, nominal_temp + 3]
     else:
+        lower_bound = point[temp_lb_column_title]
+        if lower_bound == "":
+            return None
         upper_bound = point[temp_ub_column_title]
         return [lower_bound, upper_bound]
 
 
 def get_temp_error(point):
-    temp = point[temp_column_title]
+    temp = get_temp(point)
     temp_bounds = get_temp_bounds(point)
     if temp_bounds is None:
         return 1.0
@@ -238,22 +273,49 @@ def fit_simultaneous(data_points):
     #     temp, beta[2], beta[4], beta[3]
     # )
     # beta_desc = (
-    #     "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
-    #     " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV)]"
     # )
 
-    # T5 fixed
-    init_params = (1.38e-11, 510, 2000, 72.0)
-    omega_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[1], beta[3], beta[0]
+    # T5 fixed + linear
+    # init_params = (1.38e-11, 510, 2000, 72.0, 0.07, 0.035)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free_linear(
+    #     temp, beta[1], beta[3], beta[0], beta[4]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free_linear(
+    #     temp, beta[2], beta[3], beta[0], beta[5]
+    # )
+    # beta_desc = (
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV), linear_coeff (K^-1 s^-1)]"
+    # )
+
+    # T5 fixed + constant
+    init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
+    omega_fit_func = lambda temp, beta: orbach_T5_free_const(
+        temp, beta[1], beta[3], beta[0], beta[4]
     )
-    gamma_fit_func = lambda temp, beta: orbach_T5_free(
-        temp, beta[2], beta[3], beta[0]
+    gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
+        temp, beta[2], beta[3], beta[0], beta[5]
     )
     beta_desc = (
         "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
-        " (s^-1), gamma_T5_coeff (K^-5 s^-1), activation (meV)]"
+        " (s^-1), activation (meV), Omega constant (K^-1 s^-1), gamma constant"
+        " (K^-1 s^-1)]"
     )
+
+    # T5 fixed
+    # init_params = (1.38e-11, 510, 2000, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[1], beta[3], beta[0]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[2], beta[3], beta[0]
+    # )
+    # beta_desc = (
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV)]"
+    # )
 
     # T7
     # init_params = (510, 1.38e-11, 2000, 1.38e-15, 72.0)
@@ -304,7 +366,13 @@ def fit_simultaneous(data_points):
     return popt, numpy.diag(pcov), beta_desc, omega_fit_func, gamma_fit_func
 
 
-def get_data_points_csv(file):
+def get_data_points(path, file_name):
+
+    file_path = path / "{}.xlsx".format(file_name)
+    csv_file_path = path / "{}.csv".format(file_name)
+
+    file = pd.read_excel(file_path, engine="openpyxl")
+    file.to_csv(csv_file_path, index=None, header=True)
 
     # Marker and color combination to distinguish samples
     marker_ind = 0
@@ -319,7 +387,7 @@ def get_data_points_csv(file):
     samples = []
     sample_markers = {}
     header = True
-    with open(file, newline="") as f:
+    with open(csv_file_path, newline="") as f:
         reader = csv.reader(f)
         for row in reader:
             # Create columns from the header (first row)
@@ -353,6 +421,7 @@ def get_data_points_csv(file):
                 point[column] = val
             if not point[skip_column_title]:
                 data_points.append(point)
+            # data_points.append(point)
 
     return data_points
 
@@ -463,13 +532,7 @@ def main(
 
     # %% Setup
 
-    file_path = path / "{}.xlsx".format(file_name)
-    csv_file_path = path / "{}.csv".format(file_name)
-
-    file = pd.read_excel(file_path, engine="openpyxl")
-    file.to_csv(csv_file_path, index=None, header=True)
-
-    data_points = get_data_points_csv(csv_file_path)
+    data_points = get_data_points(path, file_name)
 
     min_temp = temp_range[0]
     max_temp = temp_range[1]
@@ -506,6 +569,8 @@ def main(
             label=r"$\gamma$ fit",
             color=gamma_edge_color,
         )
+    # print(omega_lambda(50))
+    # print(gamma_lambda(50))
 
     # Plot ratio
     ratio_lambda = lambda temp: gamma_lambda(temp_linspace) / omega_lambda(
@@ -549,7 +614,7 @@ def main(
     elif plot_type == "residuals":
         ax.set_ylabel(r"Residuals (s$^{-1}$)")
     elif plot_type == "T2_max":
-        ax.set_ylabel(r"T2 max (ms)")
+        ax.set_ylabel(r"T2 max (s)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
@@ -732,8 +797,8 @@ if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
 
-    plot_type = "rates"
-    # plot_type = 'ratios'
+    # plot_type = "rates"
+    plot_type = "ratios"
     # plot_type = 'ratio_fits'
     # plot_type = 'residuals'
     # plot_type = "T2_max"
@@ -742,7 +807,7 @@ if __name__ == "__main__":
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [70, 500]
+    temp_range = [0, 500]
     xscale = "linear"
     # temp_range = [70, 500]
     # xscale = "log"
@@ -768,7 +833,8 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    plot_types = [[[-10, 600], "linear"], [[1e-2, 1000], "log"]]
+    plot_types = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]  # Rates
+    # plot_types = [[[-1, 6], "linear"], [[1e-3, 10], "log"]]  # T2_max
     for el in plot_types:
         y_range, yscale = el
         main(
@@ -794,3 +860,13 @@ if __name__ == "__main__":
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
     plt.show(block=True)
+
+    # Parameter description: [T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff (s^-1), activation (meV)]
+
+    # ZFS:
+    # popt: [1.0041e-11 4.7025e+02 1.3495e+03 6.9394e+01]
+    # psd: [5.7e-13 6.9e+01 1.6e+02 2.5e+00]
+
+    # Nominal:
+    # popt: [7.1350e-12 6.5556e+02 1.6383e+03 7.2699e+01]
+    # psd: [5.5e-13 8.4e+01 1.7e+02 2.2e+00]

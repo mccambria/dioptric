@@ -765,4 +765,4 @@ if __name__ == "__main__":
             path, folder, omega=None, omega_ste=None, doPlot=True, offset=False
         )
 
-    # plt.show(block=True)
+    plt.show(block=True)

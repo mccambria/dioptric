@@ -33,7 +33,7 @@ from utils.tool_belt import States
 
 # %% Functions
 
-
+    
 def measure_delay(
     cxn,
     nv_sig,
@@ -57,6 +57,8 @@ def measure_delay(
     ref_counts = numpy.copy(sig_counts)
 
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    if 'charge_readout_laser_filter' in nv_sig:
+        tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
 
     tool_belt.reset_cfm(cxn)
 
@@ -106,7 +108,7 @@ def measure_delay(
                 laser_name,
                 laser_power,
             ]
-            
+
         # print(seq_args)
         # return
         # Clear the tagger buffer of any excess counts
@@ -191,7 +193,7 @@ def aom_delay(
     laser_power,
 ):
     """
-    This will repeatedly run the same sequence with different passed laser 
+    This will repeatedly run the same sequence with different passed laser
     delays. If there were no delays, the sequence would look like this
     laser ________|--------|________|--------|___
     APD   ___________|--|_________________|--|___
@@ -231,7 +233,7 @@ def uwave_delay(
 ):
 
     """
-    This will repeatedly run the same sequence with different passed microwave 
+    This will repeatedly run the same sequence with different passed microwave
     delays. If there were no delays, the sequence would look like this
     uwave ______________________|---|____________
     laser ________|--------|________|--------|___
@@ -269,49 +271,62 @@ def uwave_delay(
 # the script that you set up here.
 if __name__ == "__main__":
 
-    # apd_indices = [0]
-    apd_indices = [1]
-    # apd_indices = [0,1]
-    
-    # nd = 'nd_0'
-    nd = 'nd_0.5'
-    # nd = 'nd_1.0'
-    # nd = 'nd_2.0'
-    sample_name = 'hopper'
-    
-    nv_sig = { 'coords': [0.0, 0.0, 10],
-            'name': '{}-search'.format(sample_name),
-            'disable_opt': True, 'expected_count_rate': 1000,
-            'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
-            'spin_laser': 'laserglow_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-            'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
-            'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
-            'collection_filter': None, 'magnet_angle': 94.28571429,
-            'resonance_LOW': 2.8079, 'rabi_LOW': 205.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9460, 'rabi_HIGH': 283.3, 'uwave_power_HIGH': 14.5}   # 14.5 max
+    # Set up your parameters to be passed to main here
+    sample_name = "johnson"
+    green_power = 7
+    nd = "nd_0.5"
+    green_laser = 'cobolt_515'
+    # green_laser = "laserglow_532"
+    nv_sig = {
+        "coords": [-0.02331254,  0.01495828,  4.09457485],
+        "name": "{}-nv0_2021_10_08".format(sample_name,),
+        "disable_opt": False,
+        "expected_count_rate": 50,
+
+        "spin_laser": green_laser,
+        "spin_laser_power": green_power,
+        "spin_pol_dur": 1e5,
+        "spin_readout_laser_power": green_power,
+        "spin_readout_dur": 350,
+
+        "imaging_laser":green_laser,
+        "imaging_laser_power": green_power,
+        "imaging_readout_dur": 1e7,
+        "charge_readout_laser": 'nd_0',
+
+        "collection_filter": "630_lp",
+        "magnet_angle": 114,
+        "resonance_LOW": 2.7881, 
+        "rabi_LOW": 136.0,
+        "uwave_power_LOW": 14.5,  # 15.5 max
+        "resonance_HIGH": 2.8691,
+        "rabi_HIGH": 150,
+        "uwave_power_HIGH": 14.5,
+        }
+    apd_indices = [0]
 
     try:
 
         # aom_delay
         # num_reps = int(5E4)
-        # num_steps = 51
-        # laser_name = 'cobolt_515'
+        # num_steps = 101
+        # laser_name = 'laserglow_589'
         # # delay_range = [0, 300]
         # # laser_name = 'laserglow_532'
-        # delay_range = [0, 400]
-        # laser_power = None
+        # delay_range = [1000, 2000]
+        # laser_power = 1.0
         # with labrad.connect() as cxn:
         #     aom_delay(cxn, nv_sig, apd_indices,
         #               delay_range, num_steps, num_reps, laser_name, laser_power)
 
         # uwave_delay
-        num_reps = int(2e4)
-        delay_range = [-150, 250]
-        num_steps = 51
+        num_reps = int(1e4)
+        delay_range = [-200, 200]
+        num_steps = 101
         # sg394
-        # state = States.LOW
+        state = States.LOW
         # tsg4104a
-        state = States.HIGH
+        # state = States.HIGH
         with labrad.connect() as cxn:
             uwave_delay(
                 cxn,
