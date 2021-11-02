@@ -31,13 +31,28 @@ HIGH = 1
 # %% Functions
 
 
-def constant(cxn, laser_name, laser_power=None):
+def constant(cxn, laser_names, laser_power=None):
+    
+    # seq_file = 'square_wave.py'
+    # period = int(1000)
+    # # period = int(0.25e6)
+    # # period = int(2000)
+    # seq_args = [period, laser_name, laser_power]
+    # seq_args_string = tool_belt.encode_seq_args(seq_args)
 
-    tool_belt.laser_on(cxn, laser_name, laser_power)
+    # cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
+
+    # input('Press enter to stop...')
+
+    # tool_belt.laser_off(cxn, laser_name)
+
+    for laser in laser_names:
+        tool_belt.laser_on(cxn, laser, laser_power)
 
     input('Press enter to stop...')
 
-    tool_belt.laser_off(cxn, laser_name)
+    for laser in laser_names:
+        tool_belt.laser_off(cxn, laser)
 
 
 # %% Main
@@ -49,9 +64,9 @@ def main(cxn, laser_name, laser_power=None):
     """
 
     seq_file = 'square_wave.py'
-    # period = int(1e6)
+    period = int(1000)
     # period = int(0.25e6)
-    period = int(2000)
+    # period = int(2000)
     seq_args = [period, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
@@ -73,6 +88,8 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     # Rabi
+    
+    
     # laser_name = 'cobolt_515'
     # laser_name = 'cobolt_638'
     # filter_name = 'nd_0.5'
@@ -81,7 +98,12 @@ if __name__ == '__main__':
     # Hahn
     # laser_name = 'integrated_520'
     # laser_name = 'laserglow_532'
-    laser_name = 'laserglow_589'
+    # laser_names = ['cobolt_638']
+    # laser_names = ['laserglow_589']
+    laser_names = ['laserglow_532']
+    # laser_names = ['cobolt_638', 'laserglow_532']
+    # laser_names = ['laserglow_589', 'laserglow_532']
+    # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']
     # filter_name = 'nd_1.0'
     pos = [0.0, 0.0, 0]
 
@@ -90,5 +112,5 @@ if __name__ == '__main__':
 #        for el in laser_names:
         # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
-        # constant(cxn, laser_name)
-        main(cxn, laser_name)
+        constant(cxn, laser_names)
+        # main(cxn, laser_name)

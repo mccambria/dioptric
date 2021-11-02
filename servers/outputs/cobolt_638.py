@@ -8,7 +8,7 @@ Created on Mon Apr  8 19:50:12 2019
 
 ### BEGIN NODE INFO
 [info]
-name = cobolt_515
+name = cobolt_638
 version = 1.0
 description =
 
@@ -33,12 +33,12 @@ import socket
 from cobolt_base import CoboltBase
 
 
-class Cobolt515(CoboltBase):
-    wavelength = 515
+class Cobolt638(CoboltBase):
+    wavelength = 638
     name = 'cobolt_{}'.format(wavelength)
         
         
-__server__ = Cobolt515()
+__server__ = Cobolt638()
 
 if __name__ == '__main__':
     from labrad import util

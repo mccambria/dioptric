@@ -47,8 +47,9 @@ import time
 
 def do_image_sample(nv_sig, apd_indices):
     
-    scan_range = 0.5
-    # num_steps = 90
+    # scan_range = 0.5
+    scan_range = 1.0
+    num_steps = 90
     # num_steps = 120
     
     # scan_range = 0.15
@@ -75,7 +76,7 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    num_steps = 60
+    # num_steps = 60
     # num_steps = 50
     # num_steps = 20
 
@@ -457,7 +458,7 @@ if __name__ == '__main__':
     # nd = 'nd_2.0'
     sample_name = 'hopper'
     
-    nv_sig = { 'coords': [0.0, 0.0, 0],
+    nv_sig = { 'coords': [0.0, 0.0, -15],
             'name': '{}-search'.format(sample_name),
             'disable_opt': True, 'expected_count_rate': 1000,
             'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
@@ -480,10 +481,18 @@ if __name__ == '__main__':
         #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         #     do_image_sample(nv_sig, apd_indices)
         
-        # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0, -20)
+        # for x in numpy.linspace(-90, 90, 7, dtype=int):
+        #     for y in numpy.linspace(-90, 90, 7, dtype=int):
         
-        # do_image_sample(nv_sig, apd_indices)
+                # with labrad.connect() as cxn:
+                #     cxn.cryo_piezos.write_xy(x, y)
+                
+                # do_image_sample(nv_sig, apd_indices)
+            
+        with labrad.connect() as cxn:
+            cxn.cryo_piezos.write_xy(0, 0)
+        
+        do_image_sample(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
@@ -512,13 +521,13 @@ if __name__ == '__main__':
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
-        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        do_t1_interleave_knill(nv_sig, apd_indices)
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        # do_t1_interleave_knill(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):
         #     nv_sig['resonance_HIGH'] = res
