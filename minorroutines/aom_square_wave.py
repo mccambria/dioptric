@@ -59,14 +59,12 @@ def constant(cxn, laser_names, laser_power=None):
 
 
 def main(cxn, laser_name, laser_power=None):
-    """When you run the file, we'll call into main, which should contain the
-    body of the script.
-    """
-
+    """Run a laser on on a square wave."""
+    
     seq_file = 'square_wave.py'
     period = int(1000)
     # period = int(0.25e6)
-    # period = int(2000)
+    # period = int(10000)
     seq_args = [period, laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
@@ -98,14 +96,14 @@ if __name__ == '__main__':
     # Hahn
     # laser_name = 'integrated_520'
     # laser_name = 'laserglow_532'
-    # laser_names = ['cobolt_638']
+    laser_names = ['cobolt_638']
     # laser_names = ['laserglow_589']
-    laser_names = ['laserglow_532']
+    # laser_names = ['laserglow_532']
     # laser_names = ['cobolt_638', 'laserglow_532']
     # laser_names = ['laserglow_589', 'laserglow_532']
     # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']
     # filter_name = 'nd_1.0'
-    pos = [0.0, 0.0, 0]
+    # pos = [0.0, 0.0, 0]
 
     with labrad.connect() as cxn:
         # tool_belt.set_xyz(cxn, pos)
@@ -113,4 +111,4 @@ if __name__ == '__main__':
         # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
         constant(cxn, laser_names)
-        # main(cxn, laser_name)
+        # main(cxn, laser_names[0])

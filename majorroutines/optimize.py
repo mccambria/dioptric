@@ -132,8 +132,12 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
     readout = nv_sig["imaging_readout_dur"]
     total_num_samples = 2
     x_center, y_center, z_center = coords
-
-    delay = config["Positioning"]["xy_small_response_delay"]
+    
+    config_positioning = config["Positioning"]
+    if "xy_small_response_delay" in config_positioning:
+        delay = config["Positioning"]["xy_small_response_delay"]
+    else:
+        delay = config["Positioning"]["xy_delay"]
     seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
@@ -170,10 +174,14 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
     tool_belt.init_safe_stop()
     # xy
     if axis_ind in [0, 1]:
-
-        scan_range = config["Positioning"]["xy_optimize_range"]
-        scan_dtype = eval(config["Positioning"]["xy_dtype"])
-        delay = config["Positioning"]["xy_small_response_delay"]
+        
+        config_positioning = config["Positioning"]
+        scan_range = config_positioning["xy_optimize_range"]
+        scan_dtype = eval(config_positioning["xy_dtype"])
+        if "xy_small_response_delay" in config_positioning:
+            delay = config["Positioning"]["xy_small_response_delay"]
+        else:
+            delay = config["Positioning"]["xy_delay"]
         seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
@@ -429,7 +437,7 @@ def main_with_cxn(
 
     # %% Try to optimize
 
-    num_attempts = 4
+    num_attempts = 6
 
     for ind in range(num_attempts):
 
