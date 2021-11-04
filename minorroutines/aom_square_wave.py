@@ -94,11 +94,9 @@ if __name__ == '__main__':
     # pos = [-0.025, -0.009, 4.89]
 
     # Hahn
-    # laser_name = 'integrated_520'
-    # laser_name = 'laserglow_532'
-    laser_names = ['cobolt_638']
+    # laser_names = ['cobolt_638']
     # laser_names = ['laserglow_589']
-    # laser_names = ['laserglow_532']
+    laser_names = ['laserglow_532']
     # laser_names = ['cobolt_638', 'laserglow_532']
     # laser_names = ['laserglow_589', 'laserglow_532']
     # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']

@@ -131,11 +131,11 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     
     
     readout_time = nv_sig['charge_readout_dur']
-    readout_power = nv_sig['charge_readout_laser_power']
+    readout_power = nv_sig['charge_readout_laser_power'] if 'charge_readout_laser_power' in nv_sig else None
     ionization_time = nv_sig['nv0_ionization_dur']
     reionization_time = nv_sig['nv-_reionization_dur']
     shelf_time = nv_sig['spin_shelf_dur']
-    shelf_power = nv_sig['spin_shelf_laser_power']
+    shelf_power = nv_sig['spin_shelf_laser_power'] if 'spin_shelf_laser_power' in nv_sig else None
     
     magnet_angle = nv_sig['magnet_angle']
     if (magnet_angle is not None) and hasattr(cxn, "rotation_stage_ell18k"):
@@ -340,6 +340,16 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
 # %%
 
 if __name__ == '__main__':
+    
+    folder = 'pc_hahn/branch_master/scc_pulsed_resonance/2021_11'
+    file_name = "2021_11_04-09_51_56-wu-nv3_2021_11_03"
+    raw_data = tool_belt.get_raw_data(file_name, folder)
+    ref_counts = raw_data["ref_counts"]
+    sig_counts = raw_data["sig_counts"]
+    num_runs = 5
+    freqs = raw_data["freqs"]
+    plot_esr(ref_counts, sig_counts, num_runs, freqs=freqs)
+    exit
 
     apd_indices = [0]
     sample_name = 'johnson'    
@@ -405,9 +415,6 @@ if __name__ == '__main__':
         main(nv_sig, opti_nv_sig, apd_indices, nv_sig['resonance_LOW'], freq_range,
                 num_steps, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
         
-        
-        
-        
         # nv_sig['resonance_LOW'] = 2.80364866
         # nv_sig['rabi_LOW']  = 120
         # main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], 0.01945944,
@@ -417,8 +424,6 @@ if __name__ == '__main__':
         # nv_sig['rabi_LOW']  = 120
         # main(nv_sig, nv_sig, apd_indices, nv_sig['resonance_LOW'], 0.01945944,
         #         13, num_reps, num_runs, uwave_power, nv_sig['rabi_LOW']/2)
-        
-        
          
         # freq_high = 2.81337838
         # freq_low = 2.79391894
@@ -434,23 +439,22 @@ if __name__ == '__main__':
         # num_steps = 13
         
         if do_plot:
-            folder= 'pc_rabi/branch_master/scc_pulsed_resonance/2021_09'
             file_low = '2021_09_28-13_32_45-johnson-dnv7_2021_09_23'
             file_center = '2021_09_28-10_04_05-johnson-dnv7_2021_09_23'
             file_high = '2021_09_28-15_24_19-johnson-dnv7_2021_09_23'
-            data_low = tool_belt.get_raw_data(file_low, folder)
+            data_low = tool_belt.get_raw_data(file_low)
             freqs_low = data_low['freqs']
             freq_range_low = data_low['freq_range']
             num_steps_low = data_low['num_steps']
             norm_avg_sig_low = data_low['norm_avg_sig']
             
-            data = tool_belt.get_raw_data(file_center, folder)
+            data = tool_belt.get_raw_data(file_center)
             freqs_center = data['freqs']
             freq_range_center = data['freq_range']
             num_steps_center = data['num_steps']
             norm_avg_sig_center = data['norm_avg_sig']
             
-            data_high = tool_belt.get_raw_data(file_high, folder)
+            data_high = tool_belt.get_raw_data(file_high)
             freqs_high = data_high['freqs']
             freq_range_high = data_high['freq_range']
             num_steps_high = data_high['num_steps']
