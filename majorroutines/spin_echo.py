@@ -279,7 +279,7 @@ def fit_data(data):
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-    revival_time = 35000 * 2
+    revival_time = 45000
     dominant_freqs = [1 / revival_time]
 
     # %% Fit
@@ -855,7 +855,7 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2021_10_20-17_49_37-hopper-search"
+    file_name = "2021_11_03-05_55_55-wu-nv15_2021_11_02"
     data = tool_belt.get_raw_data(file_name)
     ret_vals = plot_resonances_vs_theta_B(data)
 
