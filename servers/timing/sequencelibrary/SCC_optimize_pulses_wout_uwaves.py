@@ -15,13 +15,20 @@ import numpy
 LOW = 0
 HIGH = 1
 
-def get_seq(pulser_wiring, args):
+def get_seq(pulse_streamer, config, args):
 
     # Unpack the args
     readout_time, init_ion_pulse_time, reion_time, ion_time, \
             wait_time, laser_515_delay, aom_589_delay, laser_638_delay, \
-            apd_indices, aom_ao_589_pwr = args
+            apd_indices, aom_ao_589_pwr, \
+            reion_laser, readout_laser, ion_laser = args  # green, yellow, red
 
+    # We're in analog yellow mode if the wiring says yellow is wired to an
+    # analog output
+    pulser_wiring = config['Wiring']['PulseStreamer']
+    analog_yellow_key = 'ao_{}_am'.format(readout_laser)
+    analog_yellow = (analog_yellow_key in pulser_wiring)
+    
     readout_time = numpy.int64(readout_time)
     init_ion_pulse_time = numpy.int64(init_ion_pulse_time)
     ion_time = numpy.int64(ion_time)
@@ -35,13 +42,18 @@ def get_seq(pulser_wiring, args):
     # Get what we need out of the wiring dictionary
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_indices)]
     pulser_do_clock = pulser_wiring['do_sample_clock']
-    pulser_do_532_aom = pulser_wiring['do_532_aom']
-    pulser_ao_589_aom = pulser_wiring['ao_589_aom']
-    pulser_do_638_aom = pulser_wiring['do_638_laser']
+    pulser_do_532_aom = pulser_wiring['do_{}_dm'.format(reion_laser)]
+    if analog_yellow:
+        pulser_589_chan = pulser_wiring[analog_yellow_key]
+    else:
+        digital_yellow_key = 'do_{}_dm'.format(readout_laser)
+        pulser_589_chan = pulser_wiring[digital_yellow_key]
+    pulser_do_638_aom = pulser_wiring['do_{}_dm'.format(ion_laser)]
 
 
     # Make sure the ao_aom voltage to the 589 aom is within 0 and 1 V
-    tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
+    if analog_yellow:
+        tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
     
     seq = Sequence()
 
@@ -70,13 +82,15 @@ def get_seq(pulser_wiring, args):
     seq.setDigital(pulser_do_638_aom, train)
     
     # readout with 589
+    yellow_high = aom_ao_589_pwr if analog_yellow else HIGH
     train = [(laser_515_delay + laser_638_delay + init_ion_pulse_time + reion_time + ion_time +  3*wait_time, LOW), 
-             (readout_time, aom_ao_589_pwr),
+             (readout_time, yellow_high),
              (init_ion_pulse_time + reion_time + ion_time + 4*wait_time, LOW), 
-             (readout_time, aom_ao_589_pwr), (wait_time + aom_589_delay, LOW)]
-    seq.setAnalog(pulser_ao_589_aom, train) 
-    
-
+             (readout_time, yellow_high), (wait_time + aom_589_delay, LOW)]
+    if analog_yellow:
+        seq.setAnalog(pulser_589_chan, train) 
+    else:
+        seq.setDigital(pulser_589_chan, train) 
     
     final_digital = [pulser_do_clock]
     final = OutputState(final_digital, 0.0, 0.0)

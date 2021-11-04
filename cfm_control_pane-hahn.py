@@ -479,17 +479,6 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    # nv_sig = { 'coords': [0.0, 0.0, 15],
-    #         'name': '{}-search'.format(sample_name),
-    #         'disable_opt': True, 'expected_count_rate': 1000,
-    #         'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
-    #         'spin_laser': 'laserglow_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-    #         'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
-    #         'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
-    #         'collection_filter': None, 'magnet_angle': 94,
-    #         'resonance_LOW': 2.835, 'rabi_LOW': 200, 'uwave_power_LOW': 16.5,
-    #         'resonance_HIGH': 2.920, 'rabi_HIGH': 280, 'uwave_power_HIGH': 16.5}  
-    
     nv_sig = { 'coords': [0.099, -0.141, 15], 'name': '{}-nv3_2021_11_03'.format(sample_name),
             'disable_opt': False, 'expected_count_rate': 15,
             # 'disable_opt': True, 'expected_count_rate': None,
@@ -507,6 +496,17 @@ if __name__ == '__main__':
             'collection_filter': None, 'magnet_angle': 60,
             'resonance_LOW': 2.8240, 'rabi_LOW': 139.1, 'uwave_power_LOW': 16.5,
             'resonance_HIGH': 2.9191, 'rabi_HIGH': 202.4, 'uwave_power_HIGH': 16.5}  
+    
+    # nv_sig = { 'coords': [0.0, 0.0, 15],
+    #         'name': '{}-search'.format(sample_name),
+    #         'disable_opt': True, 'expected_count_rate': 1000,
+    #         'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+    #         'spin_laser': 'laserglow_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+    #         'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
+    #         'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
+    #         'collection_filter': None, 'magnet_angle': 94,
+    #         'resonance_LOW': 2.835, 'rabi_LOW': 200, 'uwave_power_LOW': 16.5,
+    #         'resonance_HIGH': 2.920, 'rabi_HIGH': 280, 'uwave_power_HIGH': 16.5}  
     
     
     # %% Functions to run
@@ -553,8 +553,8 @@ if __name__ == '__main__':
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.150)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        do_scc_resonance(nv_sig, apd_indices, States.LOW)
-        do_scc_resonance(nv_sig, apd_indices, States.HIGH)
+        # do_scc_resonance(nv_sig, apd_indices, States.LOW)
+        # do_scc_resonance(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # do_spin_echo_battery(nv_sig, apd_indices)
