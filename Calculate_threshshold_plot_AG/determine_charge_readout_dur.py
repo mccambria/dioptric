@@ -413,7 +413,7 @@ if __name__ == '__main__':
     green_laser = "cobolt_515"
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
-    green_power= 7
+    green_power= 10
     
     
     opti_nv_sig = {
@@ -429,10 +429,10 @@ if __name__ == '__main__':
     }  # 14.5 max
     
     nv_sig = {
-        "coords": [0.245, -0.046, 5.0],
-        "name": "{}-nv0_2021_10_20".format(sample_name,),
+        "coords": [0.027, 0.024, 3.0],
+        "name": "{}-nv0_2021_11_05".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 40,
+        "expected_count_rate": 50,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,
@@ -446,7 +446,7 @@ if __name__ == '__main__':
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
         determine_readout_dur(nv_sig, nv_sig, readout_times = [50e6], readout_yellow_powers = [0.15],
-                          nd_filter = 'nd_0.5')
+                          nd_filter = 'nd_1.0')
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here

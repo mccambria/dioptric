@@ -85,7 +85,7 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
     start_coords = nv_sig['coords']
     
     # calculate the radial distances from the readout NV to the target points
-    rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)*35000
+    rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)*50000
         
 
     # if dir_1D == 'x':
@@ -290,11 +290,11 @@ def plot_2D_space(file, path, true_position = False):
             half_pixel_size_a = pixel_size_a / 2
             half_pixel_size_b = pixel_size_b / 2
             
-            img_extent = [(a_low - half_pixel_size_a)*35,
-                          (a_high + half_pixel_size_a)*35, 
+            img_extent = [(a_low - half_pixel_size_a)*50,
+                          (a_high + half_pixel_size_a)*50, 
                          
-                         (b_low - half_pixel_size_b)*35, 
-                         (b_high + half_pixel_size_b)*35 ]
+                         (b_low - half_pixel_size_b)*50, 
+                         (b_high + half_pixel_size_b)*50 ]
             um_scaled = True
         else:
             # a_voltages_1d = numpy.array(a_voltages_1d) + drift_list[0][0][0]
@@ -689,7 +689,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         diff = abs(start_coords[2] - coords_list[i][2])
         num_steps_list.append(numpy.ceil(diff/step_size_z))
         
-    movement_incr = int(max(num_steps_list))
+    movement_incr = 1# int(max(num_steps_list)) # removing for now, too long of a sequence
     
     if xy_delay > z_delay:
         movement_delay = xy_delay
@@ -704,10 +704,10 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         movement_delay, charge_readout_laser_power,
         apd_indices[0],
         init_color, pulse_color, readout_color, movement_incr]
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     # print(seq_args)
     # return
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
 
     # print the expected run time
     period = ret_vals[0]

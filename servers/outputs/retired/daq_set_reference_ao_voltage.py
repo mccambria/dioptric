@@ -36,5 +36,35 @@ def test_define_reference():
         channel.ao_dac_ref_val = 5.0
         print(channel.ao_dac_ref_val)
     
+    
 
-test_define_reference()
+def set_ao_voltage(voltage):
+    # task_name = 'set_ao_voltage'
+    # Create a new task
+    # task = nidaqmx.Task(task_name)
+    # self.task = task
+    scaling = 5.0
+    with nidaqmx.Task() as task:
+        # Set up the output channels
+        channel_ao = task.ao_channels.add_ao_voltage_chan(
+            "dev1/AO0", min_val=-scaling, max_val=scaling
+        )
+        channel_ao.ao_dac_ref_val = scaling
+        #By default, the channel reference value is set to 10.0 V. 
+        # print(channel_ao.ao_dac_ref_val)
+    
+    with nidaqmx.Task() as task:
+        task.ao_channels.add_ao_voltage_chan("dev1/AO0", min_val=-scaling, max_val=scaling
+            )
+        task.write(voltage)
+        
+    with nidaqmx.Task() as task:
+        chan_name = "dev1/_ao0_vs_aognd"
+        task.ai_channels.add_ai_voltage_chan(chan_name, min_val=-scaling, max_val=scaling)
+        voltages = task.read()
+        print("Voltage_out = {}".format(voltages))
+    
+    
+
+# test_define_reference()
+set_ao_voltage(-0.1)

@@ -69,8 +69,6 @@ class ObjectivePiezo(LabradServer):
         p.get("ao_objective_piezo")
         p.get("di_clock")
         p.cd(["", "Config", "Positioning"])
-        # p.get("z_hysteresis_a")
-        # p.get("z_hysteresis_b")
         p.get("z_hysteresis_linearity")
         result = await p.send()
         return result["get"]
@@ -88,8 +86,6 @@ class ObjectivePiezo(LabradServer):
         self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
         self.daq_ao_objective_piezo = config[2]
         self.daq_di_clock = config[3]
-        # self.z_hysteresis_a = config[4]
-        # self.z_hysteresis_b = config[5]
         self.z_hysteresis_b = config[4]
         # Define a such that 1 nominal volt corresponds to
         # 1 post-compensation volt

@@ -165,6 +165,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Some initial setup
     
     tool_belt.reset_cfm(cxn)
+    
     laser_key = 'imaging_laser'
 
     drift = tool_belt.get_drift()
@@ -221,13 +222,14 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     # %% Initialize at the starting point
 
-    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+    # tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
     
     # %% Set up the xy_server
 
     x_voltages, y_voltages = xy_server.load_sweep_scan_xy(x_center, y_center,
                                        x_range, y_range, num_steps, period)
-
+    
+    # return
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]
     x_high = x_voltages[x_num_steps-1]
