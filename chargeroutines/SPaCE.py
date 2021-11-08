@@ -526,7 +526,10 @@ def collect_counts(cxn, movement_incr, num_samples, seq_args_string, apd_indices
     # readout_counts = total_samples_list[2::3]
     # print(total_samples_list)
     rep_samples = 2 * movement_incr + 1
-    readout_counts = total_samples_list[rep_samples-1::rep_samples]
+    # print(total_samples_list)
+    # readout_counts = total_samples_list[rep_samples-3::rep_samples] #init pulse
+    # readout_counts = total_samples_list[3::rep_samples] #depletion pulse
+    readout_counts = total_samples_list[rep_samples-1::rep_samples] #readout pulse
     readout_counts_list = [int(el) for el in readout_counts]
     
     cxn.apd_tagger.stop_tag_stream()
@@ -688,8 +691,8 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         #z 
         diff = abs(start_coords[2] - coords_list[i][2])
         num_steps_list.append(numpy.ceil(diff/step_size_z))
-        
-    movement_incr = 1# int(max(num_steps_list)) # removing for now, too long of a sequence
+    print(int(max(num_steps_list)))
+    movement_incr = int(max(num_steps_list)) # removing for now, too long of a sequence
     
     if xy_delay > z_delay:
         movement_delay = xy_delay

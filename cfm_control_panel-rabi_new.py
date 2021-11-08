@@ -71,7 +71,7 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.25
     # scan_range = 0.15
     # scan_range = 0.1
-    scan_range = 0.05
+    scan_range = 0.04
     # scan_range = 0.025
     #
     # num_steps = 400
@@ -81,9 +81,9 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    num_steps = 60
-    #num_steps = 31
-    # num_steps = 20
+    # num_steps = 60
+    # num_steps = 31
+    num_steps = 15
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -582,10 +582,10 @@ if __name__ == "__main__":
     
     
     nv_sig = {
-        "coords": [0.052, -0.008, 5.0],
+        "coords": [-0.063, -0.145, 5.0],
         "name": "{}-nv0_2021_11_08".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": None,
+        "expected_count_rate": 65,
         
         "spin_laser": green_laser,
         "spin_laser_power": green_power,
@@ -611,7 +611,7 @@ if __name__ == "__main__":
         "initialize_dur": 1e4,
         "CPG_laser": red_laser,
         'CPG_laser_power': red_power,
-        "CPG_laser_dur": 3e3,
+        "CPG_laser_dur": 1e5,
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
         "charge_readout_laser_power": 0.15,
@@ -669,7 +669,7 @@ if __name__ == "__main__":
             
         # do_optimize(opti_nv_sig_5, apd_indices)
         # do_optimize(nv_sig, apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_image_sample(nv_sig_5, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # do_g2_measurement(nv_sig, 0, 1)
@@ -690,15 +690,15 @@ if __name__ == "__main__":
         offset_y = 0
         offset_z = 0
         offset_list = [offset_x, offset_y, offset_z]
-        num_steps_x = 31
-        num_steps_y = 31
+        num_steps_x = 61
+        num_steps_y = 61
         num_steps_z = 101
     
         for t in [1e3]:
-            nv_sig['CPG_laser_dur'] = t
-            img_range_2D = [0.025,0.025, 0 ]
-            #do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
-            #            None,  img_range_2D, offset_list)
+            # nv_sig['CPG_laser_dur'] = t
+            img_range_2D = [0.04,0.04, 0 ]
+            do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
+                        None,  img_range_2D, offset_list)
             # img_range_2D = [0.05,0, 4/16 ]
             #do_SPaCE(nv_sig, nv_sig, 3, num_steps_x, num_steps_z, 
             #          None,  img_range_2D, [offset_x, offset_y, +6/16])
