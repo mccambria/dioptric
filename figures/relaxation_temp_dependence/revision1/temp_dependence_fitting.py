@@ -797,8 +797,8 @@ if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
 
-    # plot_type = "rates"
-    plot_type = "ratios"
+    plot_type = "rates"
+    # plot_type = "ratios"
     # plot_type = 'ratio_fits'
     # plot_type = 'residuals'
     # plot_type = "T2_max"
@@ -809,7 +809,7 @@ if __name__ == "__main__":
 
     temp_range = [0, 500]
     xscale = "linear"
-    # temp_range = [70, 500]
+    # temp_range = [1, 500]
     # xscale = "log"
 
     # Rates
