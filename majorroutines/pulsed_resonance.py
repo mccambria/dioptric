@@ -398,7 +398,8 @@ def state(
         opti_nv_sig,
     )
 
-    return resonance_list, nv_sig
+    return resonance_list
+    # return resonance_list, nv_sig
 
 
 # %% Main
