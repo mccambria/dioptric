@@ -639,7 +639,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
 
     '''
     tool_belt.reset_cfm(cxn)
-    xyz_server = tool_belt.get_xyz_server(cxn)
+    # xyz_server = tool_belt.get_xyz_server(cxn)
 
     # Define paramters
     apd_indices = [0]

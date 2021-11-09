@@ -349,7 +349,7 @@ class PiezoStage(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        logging.debug(voltages)
+        # logging.debug(voltages)
         self.load_stream_writer_xy(c, "Piezo_stage-load_sweep_scan_xy", voltages, period)
 
         return x_voltages_1d, y_voltages_1d

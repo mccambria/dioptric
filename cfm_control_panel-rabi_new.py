@@ -673,11 +673,12 @@ if __name__ == "__main__":
         # do_image_charge_states(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         
-        
-
+        # with labrad.connect() as cxn :
+        #     coords = [-0.09, -0.1, 5.0]
+        #     tool_belt.set_xyz_ramp(cxn, coords)
             
         # do_optimize(nv_sig_search, apd_indices)
-        do_optimize(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample(nv_sig_5, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
@@ -719,15 +720,15 @@ if __name__ == "__main__":
             
             
         # 1st airy ring power
-        t_list = [75e3] #1e3, 1e4, 1e5
+        t_list = [500e3] #1e3, 1e4, 1e5
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
             num_steps = 301
             num_runs = 25
             ## +x
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[-0.275/50, -0.25/50,0 ], [-0.575/50, -0.25/50,0 ]],  None, offset_list)
+            do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+                    [[-0.275/50, -0.25/50,0 ], [-0.575/50, -0.25/50,0 ]],  None, offset_list)
             # #-x
             # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
             #         [[0.15/50, -0.25/50,0 ], [0.45/50, -0.25/50,0 ]],  None, offset_list)
