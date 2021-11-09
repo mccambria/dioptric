@@ -429,10 +429,11 @@ if __name__ == '__main__':
     }  # 14.5 max
     
     nv_sig = {
-        "coords": [0.027, 0.024, 3.0],
-        "name": "{}-nv0_2021_11_05".format(sample_name,),
+        "coords": [-0.063, -0.13, 5.0],
+        "name": "{}-nv1_2021_11_08".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 50,
+        "ramp_voltages": False,
+        "expected_count_rate": 55,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,

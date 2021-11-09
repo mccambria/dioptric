@@ -132,13 +132,26 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
     readout = nv_sig["imaging_readout_dur"]
     total_num_samples = 2
     x_center, y_center, z_center = coords
-
+    
+    # xyz_server =tool_belt. get_xyz_server(cxn)
+    # current_x, current_y = xyz_server.read_xy()
+    # current_z = xyz_server.read_z()
+    # print(coords)
+    # print(current_y)
+    if nv_sig["ramp_voltages"] == True:
+        tool_belt.set_xyz_ramp(cxn, [x_center, y_center, z_center])
+        # tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+    else:
+        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+    
+    # current_x, current_y = xyz_server.read_xy()
+    # print(current_y)
+    time.sleep(0.01)
+    # return
     delay = config["Positioning"]["xy_small_response_delay"]
     seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
-
-    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
 
     # Collect the data
     cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -160,9 +173,6 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
     readout = nv_sig["imaging_readout_dur"]
     laser_key = "imaging_laser"
 
-    # Reset to centers
-    tool_belt.set_xyz(cxn, coords)
-
     laser_name = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -174,13 +184,30 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
         scan_range = config["Positioning"]["xy_optimize_range"]
         scan_dtype = eval(config["Positioning"]["xy_dtype"])
         delay = config["Positioning"]["xy_small_response_delay"]
+
+
+        # Move to first point in scan
+        half_scan_range = scan_range / 2
+        x_low = x_center - half_scan_range
+        y_low = y_center - half_scan_range
+        if axis_ind == 0:
+            start_coords = [x_low, coords[1], coords[2]]
+        elif axis_ind == 1:
+            start_coords = [coords[0], y_low, coords[2]]
+            
+        if nv_sig["ramp_voltages"] == True:
+            tool_belt.set_xyz_ramp(cxn, start_coords)
+        else:
+            tool_belt.set_xyz(cxn, start_coords)
+    
+        # Get the proper scan function
+        xy_server = tool_belt.get_xy_server(cxn)
+            
         seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
-
-        # Get the proper scan function
-        xy_server = tool_belt.get_xy_server(cxn)
+        
         if axis_ind == 0:
             scan_func = xy_server.load_scan_x
         elif axis_ind == 1:
@@ -195,12 +222,24 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
         scan_range = config["Positioning"]["z_optimize_range"]
         scan_dtype = eval(config["Positioning"]["z_dtype"])
         delay = config["Positioning"]["z_delay"]
+        
+        # Move to first point in scan
+        half_scan_range = scan_range / 2
+        z_low = z_center - half_scan_range
+        start_coords = [coords[0], coords[1], z_low]
+        if nv_sig["ramp_voltages"] == True:
+            tool_belt.set_xyz_ramp(cxn, start_coords)
+        else:
+            tool_belt.set_xyz(cxn, start_coords)
+            
+
+        z_server = tool_belt.get_z_server(cxn)
+        
         seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
-
-        z_server = tool_belt.get_z_server(cxn)
+        
         if hasattr(z_server, "load_scan_z"):
             scan_vals = z_server.load_scan_z(z_center, scan_range, num_steps, period)
             auto_scan = True
@@ -222,7 +261,6 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
                 adj_z_center, scan_range, num_steps, scan_dtype
             )
             auto_scan = False
-
     if auto_scan:
         counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     else:
@@ -230,6 +268,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
             cxn, period, apd_indices, manual_write_func, scan_vals
         )
 
+    # print(scan_vals)
     # counts = read_timed_counts(cxn, num_steps, period, apd_indices)
     count_rates = (counts / 1000) / (readout / 10 ** 9)
 
@@ -363,7 +402,10 @@ def prepare_microscope(cxn, nv_sig, coords=None):
      """
 
     if coords is not None:
-        tool_belt.set_xyz(cxn, coords)
+        if nv_sig["ramp_voltages"] == True:
+            tool_belt.set_xyz_ramp(cxn, coords)
+        else:
+            tool_belt.set_xyz(cxn, coords)
     
     if "collection_filter" in nv_sig:
         filter_name = nv_sig["collection_filter"]
@@ -383,8 +425,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
 
 
 def main(
-    nv_sig, apd_indices, set_to_opti_coords=True, save_data=False, plot_data=False
-):
+    nv_sig, apd_indices, set_to_opti_coords=True, save_data=False, plot_data=False):
 
     with labrad.connect() as cxn:
         main_with_cxn(
@@ -448,6 +489,7 @@ def main_with_cxn(
 
         # xy
         for axis_ind in range(2):
+            # print(axis_ind)
             ret_vals = optimize_on_axis(
                 cxn, adjusted_nv_sig, axis_ind, config, apd_indices, fig
             )
@@ -471,15 +513,27 @@ def main_with_cxn(
         # Help z out by ensuring we're centered in xy first
         if None not in opti_coords:
             int_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
-            tool_belt.set_xyz(cxn, int_coords)
+            adjusted_nv_sig_z = copy.deepcopy(nv_sig)
+            adjusted_nv_sig_z["coords"] = int_coords
+            
+            # if nv_sig["ramp_voltages"] == True:
+            #     tool_belt.set_xyz_ramp(cxn, int_coords)
+            # else:
+            #     tool_belt.set_xyz(cxn, int_coords)
+        else:
+            adjusted_nv_sig_z = copy.deepcopy(nv_sig)
+            adjusted_nv_sig_z["coords"] = adjusted_coords
         axis_ind = 2
+        # print(axis_ind)
         ret_vals = optimize_on_axis(
-            cxn, adjusted_nv_sig, axis_ind, config, apd_indices, fig
+            cxn, adjusted_nv_sig_z, axis_ind, config, apd_indices, fig
         )
         opti_coords.append(ret_vals[0])
         scan_vals_by_axis.append(ret_vals[1])
         counts_by_axis.append(ret_vals[2])
 
+
+        # return
         # We failed to get optimized coordinates, try again
         if None in opti_coords:
             continue

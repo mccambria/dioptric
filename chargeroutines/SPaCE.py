@@ -589,7 +589,7 @@ def populate_img_array(valsToAdd, imgArray, run_num):
                 imgArray[yPos, xPos, run_num] = val
     return
 # %%
-def data_collection(nv_sig,opti_nv_sig,  coords_list,run_num,  opti_interval = 4):
+def data_collection(nv_sig, opti_nv_sig,  coords_list,run_num, opti_interval = 4):
     with labrad.connect() as cxn:
         ret_vals = data_collection_with_cxn(cxn, nv_sig, opti_nv_sig, coords_list,
                                                      run_num,  opti_interval)
@@ -667,7 +667,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
 
     # movement
-    xy_delay = tool_belt.get_registry_entry_no_cxn('xy_small_response_delay',
+    xy_delay = tool_belt.get_registry_entry_no_cxn('xy_large_response_delay',
                       ['Config', 'Positioning'])
     z_delay = tool_belt.get_registry_entry_no_cxn('z_delay',
                       ['Config', 'Positioning'])
@@ -677,34 +677,42 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
                       ['Config', 'Positioning'])
     step_size_z = tool_belt.get_registry_entry_no_cxn('z_incremental_step_size',
                       ['Config', 'Positioning'])
+    
     step_size_list = [step_size_x, step_size_y, step_size_z]
     
-    # determine max num_steps between NV and each coord
-    num_steps_list = []
+    # determine max displacement for depletion pulse
+    displacement_list = []
     for i in range(len(coords_list)):
         #x 
         diff = abs(start_coords[0] - coords_list[i][0])
-        num_steps_list.append(numpy.ceil(diff/step_size_x))
+        displacement_list.append(diff)
         #y 
         diff = abs(start_coords[1] - coords_list[i][1])
-        num_steps_list.append(numpy.ceil(diff/step_size_y))
+        displacement_list.append(diff)
         #z 
         diff = abs(start_coords[2] - coords_list[i][2])
-        num_steps_list.append(numpy.ceil(diff/step_size_z))
-    print(int(max(num_steps_list)))
-    movement_incr = int(max(num_steps_list)) # removing for now, too long of a sequence
+        displacement_list.append(diff)
+        
+    max_displacement = max(displacement_list)
+    #divide maximum displacement by 1 mV to determine num incr steps
+    movement_incr = int(numpy.ceil(max_displacement/min(step_size_list)))
     
+    # The delay between incremental steps should add up to the total delay for the movement
+    # with the piezo stage, that should be 100 ms
     if xy_delay > z_delay:
-        movement_delay = xy_delay
+        total_movement_delay = xy_delay
     else:
-        movement_delay = z_delay
+        total_movement_delay = z_delay
+    movement_delay = int(total_movement_delay/movement_incr)
+        
+    
         
     
 
     # define the sequence paramters
     file_name = 'SPaCE_w_movement_steps.py'
     seq_args = [initialization_time, pulse_time, charge_readout_time,
-        movement_delay, charge_readout_laser_power,
+        movement_delay, total_movement_delay,  charge_readout_laser_power,
         apd_indices[0],
         init_color, pulse_color, readout_color, movement_incr]
     # print(seq_args)
@@ -1190,7 +1198,7 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/SPaCE/2021_10'
+    path = 'pc_rabi/branch_CFMIII/SPaCE/2021_11'
 
 
 
@@ -1235,12 +1243,12 @@ if __name__ == '__main__':
 
     #================ specific for 2D scans ================#
     file_list = [
-        '2021_10_20-11_27_57-ayrton_101-nv0_2021_10_20'
+        '2021_11_08-18_13_14-johnson-nv0_2021_11_08'
         ]
 
     for f in range(len(file_list)):
         file = file_list[f]
-        plot_2D_space(file, path, true_position = True)
+        plot_2D_space(file, path, true_position = False)
         
         
     # file_1 = '2021_09_30-11_58_58-johnson-dnv7_2021_09_23'

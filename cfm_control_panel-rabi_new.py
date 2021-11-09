@@ -81,9 +81,9 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    # num_steps = 60
+    num_steps = 60
     # num_steps = 31
-    num_steps = 15
+    #num_steps = 15
 
     # For now we only support square scans so pass scan_range twice
     image_sample.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -562,9 +562,10 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig_search = {
-        "coords": [0.042, 0.039, 5.0],
+        "coords": [0.012, -0.014, 6.0],
         "name": "{}-search".format(sample_name),
         "disable_opt": False,
+        "ramp_voltages": False,
         "expected_count_rate": None,
         "imaging_laser": green_laser,
         "imaging_laser_power": green_power,
@@ -582,10 +583,17 @@ if __name__ == "__main__":
     
     
     nv_sig = {
-        "coords": [-0.063, -0.145, 5.0],
-        "name": "{}-nv0_2021_11_08".format(sample_name,),
+        "coords": [-0.063, -0.13, 5.0],
+        "name": "{}-nv1_2021_11_08".format(sample_name,),
         "disable_opt": False,
-        "expected_count_rate": 65,
+        "ramp_voltages": False,
+        "expected_count_rate": 55,
+        
+        # "coords": [-0.063, -0.145, 5.0],
+        # "name": "{}-nv0_2021_11_08".format(sample_name,),
+        # "disable_opt": False,
+        # "ramp_voltages": False,
+        # "expected_count_rate": 65,
         
         "spin_laser": green_laser,
         "spin_laser_power": green_power,
@@ -593,9 +601,12 @@ if __name__ == "__main__":
         "spin_readout_laser_power": green_power,
         "spin_readout_dur": 350,
         
-        "imaging_laser":green_laser,
-        "imaging_laser_power": green_power,
-        "imaging_readout_dur": 1e7,
+        # "imaging_laser":green_laser,
+        # "imaging_laser_power": green_power,
+        "imaging_laser":yellow_laser,
+        "imaging_laser_filter": nd_yellow,
+        "imaging_laser_power": 0.15,
+        "imaging_readout_dur": 50e6,
         
         
         'nv-_reionization_laser': green_laser, 'nv-_reionization_laser_power': green_power, 
@@ -667,9 +678,9 @@ if __name__ == "__main__":
         
         
             
-        # do_optimize(opti_nv_sig_5, apd_indices)
+        # do_optimize(nv_sig_search, apd_indices)
         # do_optimize(nv_sig, apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_image_sample(nv_sig_5, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # do_g2_measurement(nv_sig, 0, 1)
@@ -690,15 +701,15 @@ if __name__ == "__main__":
         offset_y = 0
         offset_z = 0
         offset_list = [offset_x, offset_y, offset_z]
-        num_steps_x = 61
-        num_steps_y = 61
+        num_steps_x = 51
+        num_steps_y = 51
         num_steps_z = 101
     
         for t in [1e3]:
             # nv_sig['CPG_laser_dur'] = t
             img_range_2D = [0.04,0.04, 0 ]
-            do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
-                        None,  img_range_2D, offset_list)
+            # do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
+            #             None,  img_range_2D, offset_list)
             # img_range_2D = [0.05,0, 4/16 ]
             #do_SPaCE(nv_sig, nv_sig, 3, num_steps_x, num_steps_z, 
             #          None,  img_range_2D, [offset_x, offset_y, +6/16])
@@ -710,25 +721,25 @@ if __name__ == "__main__":
             
             
         # 1st airy ring power
-        t_list = [150e3]
+        t_list = [1e4, 1e3, 1e5] #1e3, 1e4, 1e5
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
-            nv_sig['CPG_laser_power'] = 115 #85,  95, 105, 110, 115
-            num_steps = 401
-            num_runs = 100
-            #do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #        [[-0.2/35, -0.003,0 ], [-0.6/35, -0.003, 0]],  None, offset_list)
-            
-        # 2nd Airy ring time
-        t_list = [ 200e3, ]
-
-        for t in t_list:
-            nv_sig['CPG_laser_dur'] = t
-            num_steps = 401
-            num_runs = 100
+            num_steps = 301
+            num_runs = 25
+            ## +x
             # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #          [[-0.75/35, -0.003,0 ], [-1.15/35, -0.003, 0]],  None, offset_list)
+            #         [[-0.275/50, -0.25/50,0 ], [-0.575/50, -0.25/50,0 ]],  None, offset_list)
+            # #-x
+            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+            #         [[0.15/50, -0.25/50,0 ], [0.45/50, -0.25/50,0 ]],  None, offset_list)
+            # #+y
+            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+            #         [[-0.055/50, -0.475/50,0 ], [-0.055/50, -0.775/50,0 ]],  None, offset_list)
+            # #-y
+            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+            #         [[-0.055/50, 0.05/50,0 ], [-0.055/50, 0.35/50,0 ]],  None, offset_list)
+            
           
           
             
