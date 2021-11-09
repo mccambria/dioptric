@@ -80,7 +80,7 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
     coords_voltages = data['coords_voltages']
     x_voltages = numpy.array([el[0] for el in coords_voltages])
     y_voltages = numpy.array([el[1] for el in coords_voltages])
-    num_steps = data['num_steps']
+    num_steps = data['num_steps_a']
 
     start_coords = nv_sig['coords']
     
@@ -96,7 +96,8 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
     # voltages = numpy.array(voltages)
     # rad_dist = (voltages - start_coords[coord_ind])*35000
     opti_params = []
-
+    
+    fit_func = tool_belt.gaussian
 
     if do_plot:
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
@@ -108,20 +109,21 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
     if do_fit:
         init_fit = [2, rad_dist[int(num_steps/2)], 15, 7]
         try:
-            opti_params, cov_arr = curve_fit(sq_gaussian,
+            opti_params, cov_arr = curve_fit(fit_func,
                   rad_dist,
                   counts,
                   p0=init_fit
                   )
             if do_plot:
-                text = r'$C + A^2 e^{-(r - r_0)^4/(2*\sigma^4)}$'
+                # text = r'$C + A^2 e^{-(r - r_0)^4/(2*\sigma^4)}$'
+                text = r'$C + A^2 e^{-(r - r_0)^2/(2*\sigma^2)}$'
                 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
                 ax.text(0.05, 0.95, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
                 lin_radii = numpy.linspace(rad_dist[0],
                                 rad_dist[-1], 100)
                 ax.plot(lin_radii,
-                       sq_gaussian(lin_radii, *opti_params), 'r-')
+                       fit_func(lin_radii, *opti_params), 'r-')
                 text = 'A={:.3f} sqrt(counts)\n$r_0$={:.3f} nm\n ' \
                     '$\sigma$={:.3f} nm\nC={:.3f} counts'.format(*opti_params)
                 ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
@@ -1204,6 +1206,12 @@ if __name__ == '__main__':
 
 
     #================ specific for 1D scans ================#
+
+    file_path = 'pc_rabi/branch_CFMIII/SPaCE/2021_11'
+    
+    file_name = '2021_11_09-12_11_52-johnson-nv1_2021_11_08'
+    plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = True,
+                  do_save = False)
     # file = '2021_08_27-08_18_02-johnson-nv1_2021_08_26'
     # data = tool_belt.get_raw_data(file, path)
     
@@ -1248,7 +1256,7 @@ if __name__ == '__main__':
 
     for f in range(len(file_list)):
         file = file_list[f]
-        plot_2D_space(file, path, true_position = False)
+        # plot_2D_space(file, path, true_position = False)
         
         
     # file_1 = '2021_09_30-11_58_58-johnson-dnv7_2021_09_23'

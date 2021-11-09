@@ -133,21 +133,12 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
     total_num_samples = 2
     x_center, y_center, z_center = coords
     
-    # xyz_server =tool_belt. get_xyz_server(cxn)
-    # current_x, current_y = xyz_server.read_xy()
-    # current_z = xyz_server.read_z()
-    # print(coords)
-    # print(current_y)
     if nv_sig["ramp_voltages"] == True:
         tool_belt.set_xyz_ramp(cxn, [x_center, y_center, z_center])
-        # tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
     else:
         tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
     
-    # current_x, current_y = xyz_server.read_xy()
-    # print(current_y)
     time.sleep(0.01)
-    # return
     delay = config["Positioning"]["xy_small_response_delay"]
     seq_args = [delay, readout, apd_indices[0], laser_name, laser_power]
     seq_args_string = tool_belt.encode_seq_args(seq_args)

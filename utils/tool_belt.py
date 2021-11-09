@@ -158,8 +158,6 @@ def set_xyz_ramp(cxn, coords):
     # The delay between steps will be the total delay divided by the num of incr steps
     movement_delay = int(total_movement_delay/max_steps)
     
-    print(final_x)
-    print(current_x)
     x_points = [current_x]
     y_points = [current_y]
     z_points = [current_z]
@@ -187,7 +185,6 @@ def set_xyz_ramp(cxn, coords):
             move_z = (n + 1) * step_size_z * dz / abs(dz)
             incr_z_val = move_z + current_z
             z_points.append(incr_z_val)
-    print(x_points)
     # Run a simple clock pulse repeatedly to move through votlages
     file_name = "simple_clock.py"
     seq_args = [movement_delay]
@@ -195,7 +192,7 @@ def set_xyz_ramp(cxn, coords):
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     period = ret_vals[0]
 
-    xyz_server.load_arb_scan_xyz(x_points, x_points, z_points, int(period))
+    xyz_server.load_arb_scan_xyz(x_points, y_points, z_points, int(period))
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     cxn.pulse_streamer.stream_start(max_steps)
 
@@ -203,8 +200,6 @@ def set_xyz_ramp(cxn, coords):
     # for the effective write time, as well as settling time for movement
     time.sleep(total_movement_delay/1e9)
     
-    # current_x, current_y = xyz_server.read_xy()
-    print(current_x)
 
 
 def set_xyz_center(cxn):

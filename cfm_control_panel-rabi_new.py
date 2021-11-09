@@ -586,7 +586,7 @@ if __name__ == "__main__":
         "coords": [-0.063, -0.13, 5.0],
         "name": "{}-nv1_2021_11_08".format(sample_name,),
         "disable_opt": False,
-        "ramp_voltages": False,
+        "ramp_voltages": True,
         "expected_count_rate": 55,
         
         # "coords": [-0.063, -0.145, 5.0],
@@ -601,12 +601,12 @@ if __name__ == "__main__":
         "spin_readout_laser_power": green_power,
         "spin_readout_dur": 350,
         
-        # "imaging_laser":green_laser,
-        # "imaging_laser_power": green_power,
-        "imaging_laser":yellow_laser,
-        "imaging_laser_filter": nd_yellow,
-        "imaging_laser_power": 0.15,
-        "imaging_readout_dur": 50e6,
+        "imaging_laser":green_laser,
+        "imaging_laser_power": green_power,
+        # "imaging_laser":yellow_laser,
+        # "imaging_laser_filter": nd_yellow,
+        # "imaging_laser_power": 0.15,
+        "imaging_readout_dur": 1e7,
         
         
         'nv-_reionization_laser': green_laser, 'nv-_reionization_laser_power': green_power, 
@@ -674,13 +674,11 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         
         
-        
-        
-        
+
             
         # do_optimize(nv_sig_search, apd_indices)
-        # do_optimize(nv_sig, apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        do_optimize(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_image_sample(nv_sig_5, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # do_g2_measurement(nv_sig, 0, 1)
@@ -721,7 +719,7 @@ if __name__ == "__main__":
             
             
         # 1st airy ring power
-        t_list = [1e4, 1e3, 1e5] #1e3, 1e4, 1e5
+        t_list = [75e3] #1e3, 1e4, 1e5
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
@@ -733,10 +731,10 @@ if __name__ == "__main__":
             # #-x
             # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
             #         [[0.15/50, -0.25/50,0 ], [0.45/50, -0.25/50,0 ]],  None, offset_list)
-            # #+y
+            # #-y
             # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
             #         [[-0.055/50, -0.475/50,0 ], [-0.055/50, -0.775/50,0 ]],  None, offset_list)
-            # #-y
+            # #+y
             # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
             #         [[-0.055/50, 0.05/50,0 ], [-0.055/50, 0.35/50,0 ]],  None, offset_list)
             
