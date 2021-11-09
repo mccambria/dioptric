@@ -309,31 +309,40 @@ if __name__ == "__main__":
     apd_indices = [1]
     nd = 'nd_0'
     sample_name = 'wu'
-    nv_sig = { 'coords': [-0.005, -0.018, 15],
-            'name': '{}-nv15_2021_11_02'.format(sample_name),
-            'disable_opt': False, 'expected_count_rate': 23,
+    green_laser = "laserglow_532"
+    yellow_laser = "laserglow_589"
+    red_laser = "cobolt_638"
+    nv_sig = { 'coords': [0.099, -0.141, 15], 'name': '{}-nv3_2021_11_03'.format(sample_name),
+            'disable_opt': False, 'expected_count_rate': 15,
             # 'disable_opt': True, 'expected_count_rate': None,
-            'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
-            'spin_laser': 'laserglow_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-            'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
-            'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
-            'collection_filter': None, 'magnet_angle': 94,
-            'resonance_LOW': 2.8298, 'rabi_LOW': 241.1, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9135, 'rabi_HIGH': 306.8, 'uwave_power_HIGH': 16.5}  
+            
+            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur':500,
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
+            "initialize_laser": green_laser, "initialize_dur": 1e4,
+            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
+            
+            'collection_filter': None, 'magnet_angle': 60,
+            'resonance_LOW': 2.8240, 'rabi_LOW': 139.1, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9191, 'rabi_HIGH': 202.4, 'uwave_power_HIGH': 16.5}  
     
 
     try:
 
         # laser delay
-        num_reps = int(5E4)
+        num_reps = int(50E4)
         num_steps = 101
-        # laser_name = 'laserglow_589'
-        # delay_range = [1200, 2200]
+        laser_name = 'laserglow_589'
+        delay_range = [0, 2500]
         # laser_name = 'laserglow_532'
         # delay_range = [600, 1400]
-        laser_name = 'cobolt_638'
-        delay_range = [0, 2000]
-        laser_power = None
+        # laser_name = 'cobolt_638'
+        # delay_range = [0, 2000]
+        laser_power = 1.0
         with labrad.connect() as cxn:
             aom_delay(cxn, nv_sig, apd_indices,
                       delay_range, num_steps, num_reps, laser_name, laser_power)
