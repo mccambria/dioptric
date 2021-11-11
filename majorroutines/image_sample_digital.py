@@ -195,39 +195,25 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             break
         
         
-        xy_server.write_xy(cur_x_pos, cur_y_pos)
-        #check that we have made it to the target position
-        # on_target_x = 0
-        # on_target_y = 0
+        flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
+            
+    #check that we have made it to the target position
+                 
+        # x_diff = 500
+        # y_diff = 500
         # flag = False
         # # cur_time = time.time()
         # time_start_check = time.time()
-        # while on_target_x == 0 or on_target_y == 0:
-        #     on_target_x, on_target_y = xy_server.check_on_target()
-        #     # print(on_target_x, on_target_y)
+        # while x_diff > 0.001 or y_diff > 0.001:
+            
+        #     actual_x_pos, actual_y_pos = xy_server.read_xy()
+        #     x_diff = abs(actual_x_pos - cur_x_pos)
+        #     y_diff = abs(actual_y_pos - cur_y_pos)
         #     time_check = time.time()
         #     if time_check - time_start_check > timeout:
         #         print("target not reached!")
         #         flag = True
-        #         break
-            
-    #check that we have made it to the target position
-                 
-        x_diff = 500
-        y_diff = 500
-        flag = False
-        # cur_time = time.time()
-        time_start_check = time.time()
-        while x_diff > 0.001 or y_diff > 0.001:
-            
-            actual_x_pos, actual_y_pos = xy_server.read_xy()
-            x_diff = abs(actual_x_pos - cur_x_pos)
-            y_diff = abs(actual_y_pos - cur_y_pos)
-            time_check = time.time()
-            if time_check - time_start_check > timeout:
-                print("target not reached!")
-                flag = True
-                break   
+        #         break   
             
             
             

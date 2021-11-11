@@ -34,6 +34,7 @@ import numpy
 import nidaqmx.stream_writers as stream_writers
 import socket
 from pathlib import Path
+import time
 
 
 class PiezoStageDigital(LabradServer):
@@ -82,7 +83,9 @@ class PiezoStageDigital(LabradServer):
         # p.get("ao_piezo_stage_626_2cd_x")
         # p.get("ao_piezo_stage_626_2cd_y")
         # p.get("di_clock")
-        # p.cd(["", "Config", "Positioning"])
+        p.cd(["", "Config", "Positioning"])
+        p.get("xy_positional_accuracy")
+        p.get("xy_timeout")
         # p.get("x_hysteresis_linearity")
         # p.get("y_hysteresis_linearity")
         result = await p.send()
@@ -101,6 +104,8 @@ class PiezoStageDigital(LabradServer):
         # Axis for device
         self.axis_0 = self.piezo.axes[0] 
         self.axis_1 = self.piezo.axes[1]
+        self.positioning_accuracy = config[2]
+        self.timeout = config[3]
         # self.piezo_stage_channel_x = config[2]
         # self.piezo_stage_channel_y = config[3]
         
@@ -187,7 +192,7 @@ class PiezoStageDigital(LabradServer):
     #         self.task = None
     #     return 0
 
-    @setting(32,  xPosition="v[]", yPosition="v[]")
+    @setting(32,  xPosition="v[]", yPosition="v[]", returns="v[]",)
     def write_xy(self, c, xPosition, yPosition):
         """Write the specified x and y voltages to the piezo stage"""
         if xPosition > 500 or yPosition > 500:
@@ -198,9 +203,84 @@ class PiezoStageDigital(LabradServer):
             raise ValueError("Piezo stage position must be above 0 um")
             
         # manually send voltage task to controller
-        
         self.piezo.MOV(self.axis_0, xPosition)
         self.piezo.MOV(self.axis_1, yPosition) 
+        
+        # Then check that we made it to the actual position, to within some threshold
+        x_diff = 1000
+        y_diff = 1000
+        flag = 0
+        time_start_check = time.time()
+        while x_diff > self.positioning_accuracy or y_diff > self.positioning_accuracy:
+            
+            actual_x_pos, actual_y_pos = self.read_xy(c)
+            x_diff = abs(actual_x_pos - xPosition)
+            y_diff = abs(actual_y_pos - yPosition)
+            time_check = time.time()
+            if time_check - time_start_check > self.timeout:
+                logging.debug("Target position not reached!")
+                flag = 1
+                break 
+            
+        return flag
+    
+    @setting(35,  xPosition="v[]", returns="v[]",)
+    def write_x(self, c, xPosition):
+        """Write the specified x  voltage to the piezo stage"""
+        if xPosition > 500 :
+            logging.debug("Piezo stage position must not exceed 500 um")
+            raise ValueError("Piezo stage position must not exceed 500 um")
+        if xPosition < 0:
+            logging.debug("Piezo stage position must be above 0 um")
+            raise ValueError("Piezo stage position must be above 0 um")
+            
+        # manually send voltage task to controller
+        self.piezo.MOV(self.axis_0, xPosition)
+        
+        # Then check that we made it to the actual position, to within some threshold
+        x_diff = 1000
+        flag = 0
+        time_start_check = time.time()
+        while x_diff > self.positioning_accuracy :
+            
+            actual_x_pos, actual_y_pos = self.read_xy(c)
+            x_diff = abs(actual_x_pos - xPosition)
+            time_check = time.time()
+            if time_check - time_start_check > self.timeout:
+                logging.debug("Target position not reached!")
+                flag = 1
+                break 
+            
+        return flag
+    
+    @setting(36,   yPosition="v[]", returns="v[]",)
+    def write_y(self, c, yPosition):
+        """Write the specified  y voltage to the piezo stage"""
+        if yPosition > 500:
+            logging.debug("Piezo stage position must not exceed 500 um")
+            raise ValueError("Piezo stage position must not exceed 500 um")
+        if yPosition < 0:
+            logging.debug("Piezo stage position must be above 0 um")
+            raise ValueError("Piezo stage position must be above 0 um")
+            
+        # manually send voltage task to controller
+        self.piezo.MOV(self.axis_1, yPosition) 
+        
+        # Then check that we made it to the actual position, to within some threshold
+        y_diff = 1000
+        flag = 0
+        time_start_check = time.time()
+        while y_diff > self.positioning_accuracy:
+            
+            actual_x_pos, actual_y_pos = self.read_xy(c)
+            y_diff = abs(actual_y_pos - yPosition)
+            time_check = time.time()
+            if time_check - time_start_check > self.timeout:
+                logging.debug("Target position not reached!")
+                flag = 1
+                break 
+            
+        return flag
 
     @setting(31, returns="*v[]")
     def read_xy(self, c):

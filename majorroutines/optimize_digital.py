@@ -199,13 +199,17 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
         ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
         period = ret_vals[0]
         
+        auto_scan = False
+        
         if axis_ind == 0:
             scan_func = xy_server.load_scan_x
+            manual_write_func = xy_server.write_x
         elif axis_ind == 1:
             scan_func = xy_server.load_scan_y
-
+            manual_write_func = xy_server.write_y
+        
         scan_vals = scan_func(x_center, y_center, scan_range, num_steps, period)
-        auto_scan = False
+            
 
     # z
     elif axis_ind == 2:
@@ -236,16 +240,6 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
             auto_scan = True
         else:
             manual_write_func = z_server.write_z
-
-            # Get the scan vals, adjusting fo step size anisotropy if necessary
-            # This is necessary to do here as well as on the server since
-            # the adjustment on the server end doesn't do anything for small
-            # integer steps (ie steps of 1)
-            # if ('z_drift_adjust' in shared_params) and (scan_dtype is int):
-            #     z_drift_adjust = shared_params['z_drift_adjust']
-            #     adj_z_center = round(z_center + 0.5*z_drift_adjust*scan_range)
-            # else:
-            #     adj_z_center = z_center
             adj_z_center = z_center
 
             scan_vals = tool_belt.get_scan_vals(

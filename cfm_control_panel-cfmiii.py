@@ -20,7 +20,7 @@ import time
 import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample_digital as image_sample_digital
-import majorroutines.optimize as optimize
+import majorroutines.optimize_digital as optimize_digital
 import chargeroutines.SPaCE as SPaCE
 
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
@@ -56,8 +56,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    num_steps = 60
-    # num_steps = 31
+    # num_steps = 60
+    num_steps = 31
     # num_steps = 5
 
     # For now we only support square scans so pass scan_range twice
@@ -66,7 +66,7 @@ def do_image_sample(nv_sig, apd_indices):
 
 def do_optimize(nv_sig, apd_indices):
 
-    optimize.main(
+    optimize_digital.main(
         nv_sig,
         apd_indices,
         set_to_opti_coords=False,
@@ -77,12 +77,12 @@ def do_optimize(nv_sig, apd_indices):
 
 def do_optimize_list(nv_sig_list, apd_indices):
 
-    optimize.optimize_list(nv_sig_list, apd_indices)
+    optimize_digital.optimize_list(nv_sig_list, apd_indices)
 
 
 def do_opti_z(nv_sig_list, apd_indices):
 
-    optimize.opti_z(
+    optimize_digital.opti_z(
         nv_sig_list,
         apd_indices,
         set_to_opti_coords=False,
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     
     
     nv_sig = {
-        "coords": [246.643, 242.909, 5],#249.8425, 249.675, 5.0],
+        "coords": [246.867, 243.083, 5],#249.8425, 249.675, 5.0],
         "name": "{}-nv1_2021_11_08".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
@@ -219,8 +219,8 @@ if __name__ == "__main__":
     # %% Functions to run
 
     try:
-        # do_optimize(nv_sig, apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        do_optimize(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         
         offset_x = 0
         offset_y = 0
