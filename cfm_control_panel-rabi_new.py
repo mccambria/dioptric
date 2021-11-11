@@ -586,7 +586,7 @@ if __name__ == "__main__":
         "coords": [-0.063, -0.13, 5.0],
         "name": "{}-nv1_2021_11_08".format(sample_name,),
         "disable_opt": False,
-        "ramp_voltages": True,
+        "ramp_voltages": False,
         "expected_count_rate": 55,
         
         # "coords": [-0.063, -0.145, 5.0],
@@ -720,7 +720,7 @@ if __name__ == "__main__":
             
             
         # 1st airy ring power
-        t_list = [1e5, 2e5, 3e5, 4e5, 6e5, 7e5, 8e5, 9e5, 1e6] #1e3, 1e4, 1e5
+        t_list = [750e3] #1e3, 1e4, 1e5
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t

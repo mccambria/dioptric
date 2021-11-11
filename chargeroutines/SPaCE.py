@@ -1218,7 +1218,7 @@ if __name__ == '__main__':
     #               do_save = False)
     
     
-    do_plot_comps = False
+    do_plot_comps = True
     if do_plot_comps:
         file_list_ramp = [
             '2021_11_10-00_33_56-johnson-nv1_2021_11_08',
@@ -1249,9 +1249,10 @@ if __name__ == '__main__':
         
         file_list_no_ramp = [
             '2021_11_09-05_56_06-johnson-nv1_2021_11_08',
+            '2021_11_09-13_28_22-johnson-nv1_2021_11_08',
             '2021_11_09-14_45_39-johnson-nv1_2021_11_08',
             '2021_11_09-12_11_52-johnson-nv1_2021_11_08',
-            '2021_11_09-13_28_22-johnson-nv1_2021_11_08'
+            '2021_11_10-12_00_54-johnson-nv1_2021_11_08',
             ]
         width_list_no_ramp = []
         width_list_err_no_ramp = []
@@ -1342,11 +1343,11 @@ if __name__ == '__main__':
             
         fig, ax = plt.subplots()
         ax.errorbar(dur_list_ramp, width_list_ramp, yerr= width_list_err_ramp, 
-                    fmt='bo', label = 'new confocal microscope')#'optimize w ramping')
-        # ax.errorbar(dur_list_no_ramp, width_list_no_ramp,yerr=width_list_err_no_ramp, 
-        #             fmt='ro', label = 'optimize w/out ramping')
-        ax.errorbar(dur_list_cfm1, width_list_cfm1, yerr =width_list_err_cfm1, 
-                    fmt= 'go', label = 'previous confocal microscope (nanodiamonds)')
+                    fmt='bo', label ='optimize w ramping') # 'new confocal microscope')
+        ax.errorbar(dur_list_no_ramp, width_list_no_ramp,yerr=width_list_err_no_ramp, 
+                    fmt='ro', label = 'optimize w/out ramping')
+        # ax.errorbar(dur_list_cfm1, width_list_cfm1, yerr =width_list_err_cfm1, 
+        #             fmt= 'go', label = 'previous confocal microscope (nanodiamonds)')
         # ax.errorbar(dur_list_cfm1_old, width_list_cfm1_old, yerr =width_list_err_cfm1_old, 
         #             fmt= 'ko', label = 'previous confocal microscope (bulk diamond)')
         ax.set_xlabel('Depletion pulse duration (us)')
