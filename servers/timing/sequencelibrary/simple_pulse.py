@@ -17,26 +17,20 @@ LOW = 0
 HIGH = 1
 
 
-def get_seq(pulser_wiring, args):
+
+
+def get_seq(pulse_streamer, config, args):
 
     # Unpack the args
-    delay, duration, aom_ao_589_pwr, ao_515_pwr, color_ind = args
+    delay, duration, laser_key, laser_power  = args
+      
 
-    # Get what we need out of the wiring dictionary
-    pulser_do_532_aom = pulser_wiring['do_532_aom']
-    pulser_ao_589_aom = pulser_wiring['ao_589_aom']
-    pulser_do_638_aom = pulser_wiring['do_638_laser']
-    pulser_ao_515_aom = pulser_wiring['ao_515_laser']
 
     # Convert the 32 bit ints into 64 bit ints
     duration = numpy.int64(duration)
     delay = numpy.int64(delay)
     
-    # Make sure the aom_ao_589_pwer is within range of +1 and 0
-    tool_belt.aom_ao_589_pwr_err(aom_ao_589_pwr)
         
-    # make sure only the color passed is either 532 or 589
-#    tool_belt.color_ind_err(color_ind)
         
     # Define the sequence
     seq = Sequence()
@@ -45,24 +39,9 @@ def get_seq(pulser_wiring, args):
         
     final_digital = []
     
-    if color_ind == 638:
-        train = [(delay, LOW), (duration, HIGH)]
-        seq.setDigital(pulser_do_638_aom, train)
-        
-    elif color_ind == 589:
-        
-        train = [(delay, LOW), (duration, aom_ao_589_pwr)]
-        seq.setAnalog(pulser_ao_589_aom, train)
-    
-    elif color_ind == 532:
-        
-        train = [(delay, LOW), (duration, HIGH)]
-        seq.setDigital(pulser_do_532_aom, train)
-        
-    elif color_ind == '515a':
-        
-        train = [(delay, LOW), (duration, ao_515_pwr)]
-        seq.setAnalog(pulser_ao_515_aom, train)
+    train = [(delay, LOW), (duration, HIGH)]
+    tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                            laser_key, laser_power, train)
 
     final = OutputState(final_digital, 0.0, 0.0)
     
@@ -70,12 +49,7 @@ def get_seq(pulser_wiring, args):
 
 
 if __name__ == '__main__':
-    wiring = {'do_sample_clock': 0,
-              'do_apd_0_gate': 1,
-              'do_532_aom': 2,
-              'do_638_laser': 3,
-              'ao_515_laser': 0,
-              'ao_589_aom': 1}
-    args = [100, 500, 0.0,1.0,  '515a']
-    seq, ret_vals, _ = get_seq(wiring, args)
+    config = tool_belt.get_config_dict()
+    args = [100, 500, 'cobolt_515', -1]
+    seq = get_seq(None, config, args)[0]
     seq.plot()

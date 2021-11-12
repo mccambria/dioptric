@@ -413,10 +413,10 @@ def main(
     nv_sig, apd_indices, set_to_opti_coords=True, save_data=False, plot_data=False):
 
     with labrad.connect() as cxn:
-        main_with_cxn(
+        optimize_coords = main_with_cxn(
             cxn, nv_sig, apd_indices, set_to_opti_coords, save_data, plot_data
         )
-
+    return optimize_coords
 
 def main_with_cxn(
     cxn,
@@ -428,6 +428,7 @@ def main_with_cxn(
     set_drift=True,
 ):
 
+    startFunctionTime = time.time()
     tool_belt.reset_cfm(cxn)
 
     # Adjust the sig we use for drift
@@ -599,6 +600,8 @@ def main_with_cxn(
     # %% Clean up and save the data
 
     tool_belt.reset_cfm(cxn)
+    endFunctionTime = time.time()
+    time_elapsed = endFunctionTime - startFunctionTime
 
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates
@@ -608,6 +611,7 @@ def main_with_cxn(
 
         rawData = {
             "timestamp": timestamp,
+            'time_elapsed': time_elapsed,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
             "opti_coords": opti_coords,

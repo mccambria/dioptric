@@ -218,28 +218,19 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             
             
             
-            
+        # Some diagnostic stuff - checking how far we are from the target pos
         actual_x_pos, actual_y_pos = xy_server.read_xy()
         dx_list.append((actual_x_pos-cur_x_pos)*1e3)
         dy_list.append((actual_y_pos-cur_y_pos)*1e3)
         
-        
-        
-        # print('dx = {} nm'.format((actual_x_pos-cur_x_pos)*1e3))
-        # print('dy = {} nm'.format((actual_y_pos-cur_y_pos)*1e3))
-        # end_time = time.time()
-        # print(end_time-cur_time)
-        
-        # Do I have to turn on clsed loop vs open loop??
+        # read the counts at this location
         seq_args = [0, readout, apd_indices[0], laser_name, laser_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        
         cxn.pulse_streamer.stream_immediate('simple_readout.py',1,
                                                   seq_args_string)
-        
         new_samples = cxn.apd_tagger.read_counter_simple(1) 
-        # print(new_samples)
         
+        # update the image arrays
         populate_img_array(new_samples, img_array, img_write_pos)
         populate_img_array([flag], flag_img_array, flag_img_write_pos)
         

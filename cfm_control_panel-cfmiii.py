@@ -21,7 +21,7 @@ import copy
 import utils.tool_belt as tool_belt
 import majorroutines.image_sample_digital as image_sample_digital
 import majorroutines.optimize_digital as optimize_digital
-import chargeroutines.SPaCE as SPaCE
+import chargeroutines.SPaCE_digital as SPaCE_digital
 
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
@@ -56,8 +56,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    # num_steps = 60
-    num_steps = 31
+    num_steps = 60
+    # num_steps = 31
     # num_steps = 5
 
     # For now we only support square scans so pass scan_range twice
@@ -66,14 +66,14 @@ def do_image_sample(nv_sig, apd_indices):
 
 def do_optimize(nv_sig, apd_indices):
 
-    optimize_digital.main(
+    optimize_coords = optimize_digital.main(
         nv_sig,
         apd_indices,
         set_to_opti_coords=False,
         save_data=True,
         plot_data=True,
     )
-
+    return optimize_coords
 
 def do_optimize_list(nv_sig_list, apd_indices):
 
@@ -106,7 +106,7 @@ def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
     # measurement_type = "2D"
 
     # dz = 0
-    SPaCE.main(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
+    SPaCE_digital.main(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
                charge_state_threshold, img_range_1D, img_range_2D, offset )
 
 
@@ -219,42 +219,56 @@ if __name__ == "__main__":
     # %% Functions to run
 
     try:
-        do_optimize(nv_sig, apd_indices)
+        x_list = []
+        y_list = []
+        z_list = []
+        dx_list = []
+        dy_list = []
+        dz_list = []
+        time_list = []
+        for i in range(50):
+            optimize_coords = do_optimize(nv_sig, apd_indices)
+            time = time.time()
+            x_list.append(optimize_coords[0])
+            y_list.append(optimize_coords[1])
+            z_list.append(optimize_coords[2])
+            time_list.append(time)
+        for i in range(len(x_list)-1):
+            dx = x_list[i+1] - x_list[i]
+            dx_list.append(dx)
+            dy = y_list[i+1] - y_list[i]
+            dy_list.append(dy)
+            dz = z_list[i+1] - z_list[i]
+            dz_list.append(dz)
+        
+            
         # do_image_sample(nv_sig, apd_indices)
         
         offset_x = 0
         offset_y = 0
         offset_z = 0
         offset_list = [offset_x, offset_y, offset_z]
-        num_steps_x = 51
-        num_steps_y = 51
+        num_steps_x = 60
+        num_steps_y = 60
         num_steps_z = 101
     
         for t in [1e3]:
             # nv_sig['CPG_laser_dur'] = t
-            img_range_2D = [0.04,0.04, 0 ]
-            # do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
-            #             None,  img_range_2D, offset_list)
-            # img_range_2D = [0.05,0, 4/16 ]
-            #do_SPaCE(nv_sig, nv_sig, 3, num_steps_x, num_steps_z, 
-            #          None,  img_range_2D, [offset_x, offset_y, +6/16])
-            #do_SPaCE(nv_sig, nv_sig, 3, num_steps_x, num_steps_z, 
-            #            None,  img_range_2D, [offset_x, offset_y, -6/16])
-            # img_range_2D = [0,0.05, 4/16 ]
-            # do_SPaCE(nv_sig, nv_sig, 5, num_steps_y, num_steps_z, 
-            #           None,  img_range_2D, offset_list)
+            img_range_2D = [2,2, 0 ]
+            #do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
+            #            None,  img_range_2D, offset_list)
             
             
         # 1st airy ring power
-        t_list = [750e3] #1e3, 1e4, 1e5
+        t_list = [800e3] #1e3, 1e4, 1e5
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
             num_steps = 301
-            num_runs = 25
+            num_runs = 50
             ## +x
             # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[-0.275/50, -0.25/50,0 ], [-0.575/50, -0.25/50,0 ]],  None, offset_list)
+            #         [[-0.275, -0.250,0 ], [-0.575, -0.25,0 ]],  None, offset_list)
             # #-x
             # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
             #         [[0.15/50, -0.25/50,0 ], [0.45/50, -0.25/50,0 ]],  None, offset_list)

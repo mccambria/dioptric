@@ -2,6 +2,8 @@
 """
 Created on Tue Apr  9 21:24:36 2019
 
+11/11/2021: added readout_on_pulse_ind, so that you can choose whether to 
+readout on first of second pulse.
 @author: mccambria
 """
 
@@ -18,7 +20,7 @@ def get_seq(pulse_streamer, config, args):
 
     # Unpack the args
     init_pulse_time, readout_time, init_laser_key, readout_laser_key,\
-      init_laser_power, read_laser_power, apd_index  = args
+      init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
 
     # Get what we need out of the wiring dictionary
     pulser_wiring = config['Wiring']['PulseStreamer']
@@ -51,7 +53,11 @@ def get_seq(pulse_streamer, config, args):
     seq.setDigital(pulser_do_daq_clock, train)
 
     # APD gate
-    train = [(galvo_move_time + total_delay + init_pulse_time + intra_pulse_delay, LOW), (readout_time, HIGH), (300, LOW)]
+    if readout_on_pulse_ind == 1: # readout on first pulse
+        train = [(galvo_move_time + total_delay, LOW), (init_pulse_time, HIGH), 
+                 (intra_pulse_delay + readout_time + 300, LOW)]
+    elif readout_on_pulse_ind == 2: # readout on second pulse
+        train = [(galvo_move_time + total_delay + init_pulse_time + intra_pulse_delay, LOW), (readout_time, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
     
     if init_laser_key == readout_laser_key:
@@ -85,7 +91,7 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    # args = [10000, 10000, 'cobolt_638', 'laserglow_589', None, 0.8, 0]
-    args = [1000.0, 100000000, 'laserglow_532', 'laserglow_589', None, 0.15, 0]
+    args = [10000, 10000, 'cobolt_515', 'laserglow_589', None, 0.8, 0]
+    # args = [1000.0, 100000000, 'cobolt_515', 'laserglow_589', None, 0.15, 0]
     seq = get_seq(None, config, args)[0]
     seq.plot()
