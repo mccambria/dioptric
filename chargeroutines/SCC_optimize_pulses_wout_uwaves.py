@@ -181,7 +181,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     ion_time = nv_sig['nv0_ionization_dur']
     reion_time = nv_sig['nv-_reionization_dur']
     init_ion_time = nv_sig['initialize_dur']
-    key = 'am_589_power'
+    key = 'charge_readout_power'
     aom_ao_589_pwr = nv_sig[key] if key in nv_sig else None
     
     tool_belt.reset_cfm(cxn)
@@ -763,7 +763,7 @@ if __name__ == '__main__':
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
             "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6, "charge_readout_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': 60,
             'resonance_LOW': 2.8240, 'rabi_LOW': 139.1, 'uwave_power_LOW': 16.5,

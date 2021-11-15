@@ -93,8 +93,8 @@ if __name__ == '__main__':
 
     # Hahn
     # laser_names = ['cobolt_638']
-    laser_names = ['laserglow_589']
-    # laser_names = ['laserglow_532']
+    # laser_names = ['laserglow_589']
+    laser_names = ['laserglow_532']
     # laser_names = ['cobolt_638', 'laserglow_532']
     # laser_names = ['laserglow_589', 'laserglow_532']
     # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']
@@ -106,11 +106,11 @@ if __name__ == '__main__':
 #        for el in laser_names:
         # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
-        # constant(cxn, laser_names)
+        constant(cxn, laser_names)
         # main(cxn, laser_names[0])
     
-        cxn.pulse_streamer.constant([], 0.6)
+        # cxn.pulse_streamer.constant([], 0.6)
     
-        input('Press enter to stop...')
+        # input('Press enter to stop...')
         
-        cxn.pulse_streamer.constant()
+        # cxn.pulse_streamer.constant()
