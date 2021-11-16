@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Various calculations from the note "Confocal Microscope Optimizations"
+Various calculations from the note "Confocal Microscope Optimizations". 
+Everything assumes cylindrical symmetry about the optical axis.
 
 Created on November 15th, 2021
 
@@ -16,12 +17,63 @@ import scipy.integrate as integrate
 from scipy.special import jv as bessel_func
 
 wavelength = 700e-9
-wavenumber = 2 * pi / wavelength
+k = 2 * pi / wavelength
 sample_focal_length = 2.87e-3
 sample_aperture_radius = 2.35e-3
-# sample_aperture_radius = 10e-6
+# sample_aperture_radius = 50e-6
 # sample_aperture_radius = np.infty
 fiber_mfr = 2e-6
+
+
+def riemann_sum(integrand, delta):
+    """Calculate an 1D integral using a midpoint Riemann sum with a uniform
+    discretization delta. The domain of the integral is the entirety of the
+    integrand
+
+    Parameters
+    ----------
+    integrand : numpy.ndarray(float)
+        May be complex
+    delta : float
+        Discretization size
+    """
+
+    return np.sum(integrand) * delta
+
+
+def intensity(field):
+    return np.abs(field) ** 2
+
+
+def lens_phase_mask(field, r, f):
+    """Apply a phase mask for a parabolic lens to the input field
+
+    Parameters
+    ----------
+    field : [type]
+        [description]
+    """
+
+    phase_mask = np.exp(-1j * k * r ** 2 / (2 * f))
+    return field * phase_mask
+
+
+def aperture_propagate(input_field, input_r, output_r, z, aperture_rad):
+
+    delta = (input_r[-1] - input_r[0]) / (len(input_r) - 1)
+    output_field = []
+
+    # Apply the aperture
+    trunc_inds = np.where(input_r <= aperture_rad)[0]
+    input_r_trunc = input_r[trunc_inds]
+    input_field_trunc = input_field[trunc_inds]
+
+    for val in output_r:
+        phase = np.exp(1j * k * (val ** 2 + input_r_trunc ** 2) / (2 * z))
+        bessel = bessel_func(0, -k * val * input_r_trunc / z)
+        integrand = input_field_trunc * input_r_trunc * phase * bessel
+        output_field.append(riemann_sum(integrand, delta))
+    return np.array(output_field)
 
 
 def psf_field_integrand(r_prime, r, z, f, k):
@@ -128,7 +180,7 @@ def calc_overlap():
     norm = 1 / psf_field_single(
         0, z, sample_focal_length, wavenumber, 1, sample_aperture_radius
     )
-    NV_field = psf_field(
+    nv_field = psf_field(
         r_linspace,
         z,
         # r,  # r_linspace,
@@ -148,18 +200,8 @@ def calc_overlap():
         fiber_field = (1 / (np.pi * omega_col ** 2)) * np.exp(
             -((r_linspace / omega_col) ** 2)
         )
-        overlaps.append(
-            np.abs(
-                np.sum(
-                    (
-                        NV_field
-                        * fiber_field
-                        * (2 * np.pi * r_linspace * r_step)
-                    )
-                )
-            )
-            ** 2
-        )
+        integrand = nv_field * fiber_field * (2 * np.pi * r_linspace)
+        overlaps.append(np.abs(riemann_sum(integrand, r_step)) ** 2)
 
     overlaps = np.array(overlaps)
 
@@ -167,12 +209,129 @@ def calc_overlap():
     ax.plot(collection_focal_lengths, overlaps)
 
 
+def plot_nv_field_at_fiber():
+
+    num_points = 1000
+    r_range = 0.005
+    # r_range = 150e-6
+    input_r_linspace = np.linspace(0, +r_range, num_points)
+    norm = 1e35
+    free_space_distance = 0.1
+
+    ###### Calculate fields coming out of objective here ######
+
+    # Point source
+
+    # phase = np.exp(
+    #     1j * k * np.sqrt(r_linspace ** 2 + sample_focal_length ** 2)
+    # )
+    # mag = norm / np.sqrt(r_linspace ** 2 + sample_focal_length ** 2)
+    # nv_field = phase * mag
+    # nv_field = lens_phase_mask(nv_field, input_r_linspace, sample_focal_length)
+
+    # Collimated Gaussian beam coming out of objective (standard calculation,
+    # focus is placed at objective aperture)
+
+    # phase = np.exp(
+    #     -1j * k * input_r_linspace ** 2 / (4 * sample_aperture_radius)
+    # )
+    # mag = norm * np.exp(
+    #     -((input_r_linspace / (2 * sample_aperture_radius)) ** 2)
+    # )
+    # nv_field = phase * mag
+    nv_field = norm * np.exp(
+        -((input_r_linspace / sample_aperture_radius) ** 2)
+    )
+
+    # Plane wave
+
+    # nv_field = np.array([1] * num_points)
+
+    ######
+
+    nv_field = aperture_propagate(
+        nv_field,
+        input_r_linspace,
+        input_r_linspace,
+        0.4,
+        sample_aperture_radius,
+    )
+
+    # First sample telescope lens
+    nv_field = lens_phase_mask(nv_field, input_r_linspace, 0.4)
+    output_r_linspace = input_r_linspace / 4
+    nv_field = aperture_propagate(
+        nv_field,
+        input_r_linspace,
+        output_r_linspace,
+        0.5,
+        0.025,
+    )
+
+    # Second sample telescope lens
+    input_r_linspace = output_r_linspace
+    output_r_linspace = input_r_linspace
+    nv_field = lens_phase_mask(nv_field, input_r_linspace, 0.1)
+    nv_field = aperture_propagate(
+        nv_field,
+        input_r_linspace,
+        output_r_linspace,
+        free_space_distance,
+        0.025,
+    )
+
+    # First collection telescope lens
+    input_r_linspace = output_r_linspace
+    output_r_linspace = input_r_linspace * 3
+    nv_field = lens_phase_mask(nv_field, input_r_linspace, 0.05)
+    nv_field = aperture_propagate(
+        nv_field,
+        input_r_linspace,
+        output_r_linspace,
+        0.2,
+        0.0125,
+    )
+
+    # Second collection telescope lens
+    input_r_linspace = output_r_linspace
+    output_r_linspace = input_r_linspace
+    nv_field = lens_phase_mask(nv_field, input_r_linspace, 0.15)
+    nv_field = aperture_propagate(
+        nv_field,
+        input_r_linspace,
+        output_r_linspace,
+        free_space_distance,
+        0.0125,
+    )
+
+    # Collection objective
+    input_r_linspace = output_r_linspace
+    output_r_linspace = np.linspace(0, 3 * fiber_mfr, num_points)
+    nv_field = lens_phase_mask(nv_field, input_r_linspace, 0.018)
+    nv_field = aperture_propagate(
+        nv_field,
+        input_r_linspace,
+        output_r_linspace,
+        0.018,
+        0.0125,
+    )
+
+    fig, ax = plt.subplots()
+    ax.plot(output_r_linspace, intensity(nv_field))
+    # ax.plot(r_linspace, intensity(nv_field_phase_mask))
+
+
 if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
 
     # plot_psf()
-
-    calc_overlap()
+    # calc_overlap()
+    plot_nv_field_at_fiber()
 
     plt.show(block=True)
+
+    # x_vals = np.linspace(0, 3, 1000)
+    # delta = (x_vals[-1] - x_vals[0]) / (len(x_vals) - 1)
+    # integrand = np.exp(1j * x_vals)
+    # print(riemann_sum(integrand, delta))
