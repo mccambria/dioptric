@@ -70,6 +70,93 @@ def sq_gaussian(x, *params):
     centDist = x - mean  # distance from the center
     return offset + coeff ** 2 * numpy.exp(-(centDist ** 4) / (4 * var))
 
+
+# %%
+def combine_1D(file_list, folder):
+    
+    readout_counts_array = []
+    drift_list_master = []
+    opti_timestamps =[]
+    flag_array_d =[]
+    flag_array_n=[]
+    ind_list = []
+    
+    for file in file_list:
+        data = tool_belt.get_raw_data(file, folder)
+        readout_counts_array_rot = numpy.rot90(data['readout_counts_array'])
+        readout_counts_array = readout_counts_array + readout_counts_array_rot.tolist()
+        drift_list_master = drift_list_master + data['drift_list_master']
+        opti_timestamps = opti_timestamps + data['opti_timestamps']
+        flag_array_d_rot = numpy.rot90(data['flag_array_d'])
+        flag_array_d = flag_array_d + flag_array_d_rot.tolist()
+        flag_array_n_rot = numpy.rot90(data['flag_array_n'])
+        flag_array_n = flag_array_n + flag_array_n_rot.tolist()
+        
+    readout_counts_array = numpy.rot90(readout_counts_array, k=3).tolist()
+    flag_array_d = numpy.rot90(flag_array_d, k=3).tolist()
+    flag_array_n = numpy.rot90(flag_array_n, k=3).tolist()
+        
+    img_range_1D = data['img_range_1D']
+    direction_title = data['direction_title']
+    num_steps_a= data['num_steps_a']
+    num_steps_b= data['num_steps_b']
+    nv_sig = data['nv_sig']
+    num_runs = ['num_runs']
+    opti_interval = data['opti_interval']
+    coords_voltages = data['coords_voltages']
+    rad_dist = data['rad_dist']
+    
+    
+    readout_counts_array_rot = numpy.rot90(readout_counts_array)
+    readout_counts_avg = numpy.average(readout_counts_array_rot, axis = 0)
+    readout_counts_ste = stats.sem(readout_counts_array_rot, axis = 0)
+    
+    timestamp = tool_belt.get_time_stamp()
+    
+    rawData = {'timestamp': timestamp,
+            'img_range_1D': img_range_1D,
+            'direction_title': direction_title,
+            'num_steps_a': num_steps_a,
+            'num_steps_b': num_steps_b,
+            'num_runs':num_runs,
+            'opti_interval': opti_interval,
+            'opti_interval-units': 's',
+            'nv_sig': nv_sig,
+            'nv_sig-units': tool_belt.get_nv_sig_units(),
+            'coords_voltages': coords_voltages,
+            'coords_voltages-units': '[V, V]',
+            'drift_list_master': drift_list_master,
+            'opti_timestamps':  opti_timestamps,
+            'file_list': file_list,
+            'flag_array_d':flag_array_d,
+            'flag_array_d-explanation': 'if 1, the positioner did not reach the corresponding position on its way to the depletion pulse',
+            'flag_array_n': flag_array_n,
+            'flag_array_n-explanation': 'if 1, the positioner did not reach the corresponding position on its way to the NV',
+            'readout_counts_array': readout_counts_array,
+            'readout_counts_array-units': 'counts',
+            'readout_counts_avg': readout_counts_avg.tolist(),
+            'readout_counts_avg-units': 'counts',
+            'readout_counts_ste': readout_counts_ste.tolist(),
+            'readout_counts_ste-units': 'counts',
+            'rad_dist': rad_dist
+            }
+    
+    
+    fig, ax = plt.subplots()
+    ax.plot(rad_dist, readout_counts_avg)
+    ax.set_xlabel('r (nm)')
+    ax.set_ylabel('Counts')
+    pulse_time = nv_sig['CPG_laser_dur']
+    ax.set_title('SPaCE {}- {} ms CPG pulse'.\
+                                        format(direction_title, pulse_time/10**6,))
+    
+    name = nv_sig['name']
+    filePath = tool_belt.get_file_path(__file__, timestamp, name)
+    tool_belt.save_figure(fig, filePath)
+    tool_belt.save_raw_data(rawData, filePath)
+            
+    return
+
 # %%
 def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
                   do_save = True, scale = 50000):
@@ -83,7 +170,7 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
     counts = data['readout_counts_avg']
     
     # plot only the first n a5erages
-    # num_averages = 25
+    num_averages = 25
     # readout_counts_array = data['readout_counts_array']
     # readout_counts_array_rot = numpy.rot90(readout_counts_array)
     # counts = numpy.average(readout_counts_array_rot[:num_averages], axis = 0)
@@ -140,7 +227,8 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
                 ax.plot(lin_radii,
                        fit_func(lin_radii, *opti_params), 'r-')
                 text = 'A={:.3f} sqrt(counts)\n$r_0$={:.3f} nm\n ' \
-                    '$\sigma$={:.3f} nm\nC={:.3f} counts'.format(*opti_params)
+                    '$\sigma$={:.3f}+/-{:.3f} nm\nC={:.3f} counts'.format(opti_params[0],
+                                opti_params[1],opti_params[2],cov_arr[2][2],opti_params[3])
                 ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
             print(opti_params[2])
@@ -816,7 +904,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
 # %%
 def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None, 
          charge_state_threshold = None, img_range_1D =None, img_range_2D=None, 
-         offset_2D = [0,0,0] ):
+         offset_2D = [0,0,0], opti_interval = 4 ):
     '''
     A measurements to initialize on a single point, then pulse a laser off that
     point, and then read out the charge state on the single point.
@@ -859,7 +947,7 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
     z_scale = tool_belt.get_registry_entry_no_cxn('z_nm_per_unit', ['', 'Config', 'Positioning'])
     scale_list = [xy_scale/1e3, xy_scale/1e3, z_scale/1e3] 
         
-    opti_interval = 4 # min
+    # opti_interval = 4 # min
     
     if not num_steps_b:
         num_steps_b = num_steps_a
@@ -1213,9 +1301,22 @@ if __name__ == '__main__':
 
     file_path = 'pc_rabi/branch_CFMIII/SPaCE_digital/2021_11'
     
-    file_name = '2021_11_11-23_50_24-johnson-nv1_2021_11_08'
-    plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
-                   do_save = False,scale=1000)
+    #file_name = '2021_11_12-22_51_16-johnson-nv1_2021_11_08' #1 min test
+    
+    #file_name="2021_11_12-18_40_06-johnson-nv1_2021_11_08"#2 min test
+    file_name = '2021_11_16-09_49_09-johnson-nv3_2021_11_08'#1.5 ms combined
+    # file_name='2021_11_16-06_41_26-johnson-nv3_2021_11_08' #1.8 Ms
+    file_name = '2021_11_16-12_14_49-johnson-nv3_2021_11_08'
+    
+    
+    plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = True,
+                    do_save = True
+                    ,scale=1000)
+    
+    file_list = ['2021_11_15-23_08_16-johnson-nv3_2021_11_08',
+                 '2021_11_16-09_09_47-johnson-nv3_2021_11_08',
+                 '2021_11_15-13_49_04-johnson-nv3_2021_11_08']
+    # combine_1D(file_list, file_path)
     
     
     do_plot_comps = False

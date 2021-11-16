@@ -27,6 +27,7 @@ import chargeroutines.SPaCE_digital as SPaCE_digital
 import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
 import time
+import matplotlib.pyplot as plt
 
 
 # %% Major Routines
@@ -45,7 +46,7 @@ def do_image_sample(nv_sig, apd_indices):
     #scan_range = 0.3*scale
     #scan_range = 0.25*scale
     # scan_range = 0.15*scale
-    # scan_range = 0.1*scale
+    #scan_range = 0.1*scale
     scan_range = 0.04*scale
     # scan_range = 0.025*scale
     #
@@ -57,7 +58,7 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 120
     # num_steps = 90
     num_steps = 60
-    # num_steps = 31
+    #num_steps = 31
     # num_steps = 5
 
     # For now we only support square scans so pass scan_range twice
@@ -93,7 +94,7 @@ def do_opti_z(nv_sig_list, apd_indices):
 
 
 def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
-               img_range_1D, img_range_2D, offset, charge_state_threshold = None):
+               img_range_1D, img_range_2D, offset,opti_interval = 4, charge_state_threshold = None):
     # dr = 0.025 / numpy.sqrt(2)
     # img_range = [[-dr,-dr],[dr, dr]] #[[x1, y1], [x2, y2]]
     # num_steps = 101
@@ -107,7 +108,7 @@ def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
 
     # dz = 0
     SPaCE_digital.main(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
-               charge_state_threshold, img_range_1D, img_range_2D, offset )
+               charge_state_threshold, img_range_1D, img_range_2D, offset, opti_interval = opti_interval)
 
 
 # %% Run the file
@@ -116,7 +117,8 @@ def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
 if __name__ == "__main__":
 
     # In debug mode, don't bother sending email notifications about exceptions
-    debug_mode = True
+    debug_mode = False
+    
 
     # %% Shared parameters
 
@@ -154,8 +156,8 @@ if __name__ == "__main__":
     
     
     nv_sig = {
-        "coords": [246.867, 243.083, 5],#249.8425, 249.675, 5.0],
-        "name": "{}-nv1_2021_11_08".format(sample_name,),
+        "coords": [247.088, 245.529, 5],#249.8425, 249.675, 5.0],
+        "name": "{}-nv3_2021_11_08".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
         "expected_count_rate": 55,
@@ -219,30 +221,71 @@ if __name__ == "__main__":
     # %% Functions to run
 
     try:
-        x_list = []
-        y_list = []
-        z_list = []
-        dx_list = []
-        dy_list = []
-        dz_list = []
-        time_list = []
-        for i in range(50):
-            optimize_coords = do_optimize(nv_sig, apd_indices)
-            time = time.time()
-            x_list.append(optimize_coords[0])
-            y_list.append(optimize_coords[1])
-            z_list.append(optimize_coords[2])
-            time_list.append(time)
-        for i in range(len(x_list)-1):
-            dx = x_list[i+1] - x_list[i]
-            dx_list.append(dx)
-            dy = y_list[i+1] - y_list[i]
-            dy_list.append(dy)
-            dz = z_list[i+1] - z_list[i]
-            dz_list.append(dz)
+        # x_list = []
+        # y_list = []
+        # z_list = []
+        # dx_list = []
+        # dy_list = []
+        # dz_list = []
+        # time_list = []
+        # for i in range(50):
+        #optimize_coords = do_optimize(nv_sig, apd_indices)
+        #     time_ = time.time()
+        #     x_list.append(optimize_coords[0])
+        #     y_list.append(optimize_coords[1])
+        #     z_list.append(optimize_coords[2])
+        #     time_list.append(time_)
+        # for i in range(len(x_list)-1):
+        #     dx = x_list[i+1] - x_list[i]
+        #     dx_list.append(dx)
+        #     dy = y_list[i+1] - y_list[i]
+        #     dy_list.append(dy)
+        #     dz = z_list[i+1] - z_list[i]
+        #     dz_list.append(dz)
+        # start_time = time_list[0]
+        # times =( numpy.array(time_list) - start_time)/60
+        # fig, axes = plt.subplots(1,3)
+        # ax=axes[0]
+        # ax.plot(times, x_list, 'b')
+        # ax.set_xlabel('Time elapsed (m)')
+        # ax.set_ylabel('Optimize position (um)')
+        # ax.set_title('X')
+        # ax=axes[1]
+        # ax.plot(times, y_list,'b')
+        # ax.set_xlabel('Time elapsed (m)')
+        # ax.set_ylabel('Optimize position (um)')
+        # ax.set_title('Y')
+        # ax=axes[2]
+        # ax.plot(times, z_list, 'b')
+        # ax.set_xlabel('Time elapsed (m)')
+        # ax.set_ylabel('Optimize position (V)')
+        # ax.set_title('Z')
+        # plt.tight_layout()
         
+        # print('dx st. dev: {} um'.format(numpy.std(abs(numpy.array(dx_list))) ))
+        # print('dy st. dev: {} um'.format(numpy.std(abs(numpy.array(dy_list))) ))
+        # print('dz st. dev: {} V'.format(numpy.std(abs(numpy.array(dz_list))) ))
+        # fig, axes = plt.subplots(1,3)
+        # ax=axes[0]
+        # ax.plot(times[:-1], numpy.array(dx_list)*1e3, 'r')
+        # ax.set_xlabel('Time elapsed (m)')
+        # ax.set_ylabel('Change in position, n+1 - n (nm)')
+        # ax.set_title('X')
+        # ax=axes[1]
+        # ax.plot(times[:-1], numpy.array(dy_list)*1e3,'r')
+        # ax.set_xlabel('Time elapsed (m)')
+        # ax.set_ylabel('Change in position, n+1 - n (nm)')
+        # ax.set_title('Y')
+        # ax=axes[2]
+        # ax.plot(times[:-1], dz_list, 'r')
+        # ax.set_xlabel('Time elapsed (m)')
+        # ax.set_ylabel('Change in position, n+1 - n (V)')
+        # ax.set_title('Z')
+        # plt.tight_layout()
             
-        # do_image_sample(nv_sig, apd_indices)
+        
+        #do_optimize(nv_sig, apd_indices)
+        #do_image_sample(nv_sig, apd_indices)
         
         offset_x = 0
         offset_y = 0
@@ -255,20 +298,27 @@ if __name__ == "__main__":
         for t in [1e3]:
             # nv_sig['CPG_laser_dur'] = t
             img_range_2D = [2,2, 0 ]
-            #do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
-            #            None,  img_range_2D, offset_list)
+            # do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
+            #             None,  img_range_2D, offset_list)
             
             
         # 1st airy ring power
-        t_list = [800e3] #1e3, 1e4, 1e5
+        t_list = [2e6]#1300e3] #1e3, 1e4, 1e5
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
             num_steps = 301
-            num_runs = 50
+            num_runs = 15
+            
+            
+            
+            
+            
             ## +x
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[-0.275, -0.250,0 ], [-0.575, -0.25,0 ]],  None, offset_list)
+            do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+                    [[-0.275, -0.250,0 ], [-0.575, -0.25,0 ]],  None, offset_list, 2)
+            #do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+            #        [[-0.275, -0.250,0 ], [-0.575, -0.25,0 ]],  None, offset_list, 1)
             # #-x
             # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
             #         [[0.15/50, -0.25/50,0 ], [0.45/50, -0.25/50,0 ]],  None, offset_list)
