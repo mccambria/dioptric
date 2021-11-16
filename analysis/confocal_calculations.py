@@ -18,7 +18,8 @@ from scipy.special import jv as bessel_func
 wavelength = 700e-9
 wavenumber = 2 * pi / wavelength
 sample_focal_length = 2.87e-3
-sample_aperture_radius = 2.35e-3
+# sample_aperture_radius = 2.35e-3
+sample_aperture_radius = 100e-6
 
 
 def psf_field_integrand(r_prime, r, z, f, k):
@@ -74,13 +75,19 @@ def psf_field(r, z, f, k, norm, phi):
 def plot_psf():
 
     norm = 100
-    z = 2
-    r_range = 3e-3
     num_points = 100
+
+    z = 1
+    r_range = 5e-3
     r_linspace = np.linspace(-r_range, +r_range, num_points)
+
+    r = 0
+    z_range = 10
+    z_linspace = np.linspace(-r_range, +r_range, num_points)
+
     field = psf_field(
-        r_linspace,
-        z,
+        r,  # r_linspace,
+        z_linspace,  # z,
         sample_focal_length,
         wavenumber,
         norm,
@@ -88,7 +95,8 @@ def plot_psf():
     )
     intensity = np.abs(field) ** 2
     fig, ax = plt.subplots()
-    ax.plot(r_linspace, intensity)
+    # ax.plot(r_linspace, intensity)
+    ax.plot(z_linspace, intensity)
 
 
 if __name__ == "__main__":
