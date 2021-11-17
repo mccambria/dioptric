@@ -39,7 +39,8 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     
-    wait_time = config['CommonDurations']['uwave_buffer']
+    wait_time = config['CommonDurations']['cw_meas_buffer']
+    # wait_time = config['Positioning']['xy_small_response_delay']
     green_delay = config['Optics'][yellow_laser_key]['delay']
     yellow_delay = config['Optics'][green_laser_key]['delay']
     red_delay = config['Optics'][red_laser_key]['delay']

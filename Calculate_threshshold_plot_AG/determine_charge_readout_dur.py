@@ -19,7 +19,7 @@ import photonstatistics as model
 import labrad
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
+import majorroutines.optimize_digital as optimize
 
 #%% import your data in the data_file 
 import NV_data as data
@@ -154,7 +154,7 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
       
     seq_args = [reionization_time, readout_pulse_time, nv_sig["nv-_prep_laser"], 
                 nv_sig["charge_readout_laser"], nv0_laser_power, 
-                readout_laser_power, apd_indices[0]]
+                readout_laser_power, 2, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
 
@@ -170,7 +170,7 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
     ################## Load the measuremnt with red laser ##################
     seq_args = [ionization_time, readout_pulse_time, nv_sig["nv0_prep_laser"], 
                 nv_sig["charge_readout_laser"], nvm_laser_power, 
-                readout_laser_power, apd_indices[0]]
+                readout_laser_power, 2,apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
 
@@ -429,8 +429,8 @@ if __name__ == '__main__':
     }  # 14.5 max
     
     nv_sig = {
-        "coords": [-0.063, -0.13, 5.0],
-        "name": "{}-nv1_2021_11_08".format(sample_name,),
+        "coords": [249.787, 250.073, 5],
+        "name": "{}-nv1_2021_11_17".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
         "expected_count_rate": 55,
@@ -446,7 +446,7 @@ if __name__ == '__main__':
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
-        determine_readout_dur(nv_sig, nv_sig, readout_times = [50e6], readout_yellow_powers = [0.15],
+        determine_readout_dur(nv_sig, nv_sig, readout_times = [100e6], readout_yellow_powers = [0.12],
                           nd_filter = 'nd_1.0')
     finally:
         # Reset our hardware - this should be done in each routine, but

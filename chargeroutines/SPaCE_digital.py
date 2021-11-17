@@ -904,7 +904,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
 # %%
 def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None, 
          charge_state_threshold = None, img_range_1D =None, img_range_2D=None, 
-         offset_2D = [0,0,0], opti_interval = 4 ):
+         offset_2D = [0,0,0], opti_interval = 2 ):
     '''
     A measurements to initialize on a single point, then pulse a laser off that
     point, and then read out the charge state on the single point.

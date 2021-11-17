@@ -22,6 +22,8 @@ import utils.tool_belt as tool_belt
 import majorroutines.image_sample_digital as image_sample_digital
 import majorroutines.optimize_digital as optimize_digital
 import chargeroutines.SPaCE_digital as SPaCE_digital
+import chargeroutines.g2_measurement as g2_SCC_branch
+import majorroutines.stationary_count as stationary_count
 
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import debug.test_major_routines as test_major_routines
@@ -43,12 +45,13 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 1.0*scale
     # scan_range = 0.8*scale
     # scan_range = 0.5*scale
-    #scan_range = 0.3*scale
-    #scan_range = 0.25*scale
+    # scan_range = 0.3*scale
+    # scan_range = 0.25*scale
     # scan_range = 0.15*scale
-    #scan_range = 0.1*scale
+    # scan_range = 0.1*scale
     scan_range = 0.04*scale
     # scan_range = 0.025*scale
+   # scan_range = 0.01*scale
     #
     # num_steps = 400
     # num_steps = 300
@@ -57,8 +60,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    num_steps = 60
-    #num_steps = 31
+    # num_steps = 60
+    num_steps = 31
     # num_steps = 5
 
     # For now we only support square scans so pass scan_range twice
@@ -91,10 +94,25 @@ def do_opti_z(nv_sig_list, apd_indices):
         plot_data=True,
     )
 
+def do_stationary_count(nv_sig, apd_indices):
+
+    run_time = 1 * 60 * 10 ** 9  # ns
+
+    stationary_count.main(nv_sig, run_time, apd_indices)
+
+def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
+
+    run_time = 5*60  # s
+    diff_window = 150  # ns
+
+    # g2_measurement.main(
+    g2_SCC_branch.main(
+        nv_sig, run_time, diff_window, apd_a_index, apd_b_index
+    )
 
 
 def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
-               img_range_1D, img_range_2D, offset,opti_interval = 4, charge_state_threshold = None):
+               img_range_1D, img_range_2D, offset,opti_interval = 2, charge_state_threshold = None):
     # dr = 0.025 / numpy.sqrt(2)
     # img_range = [[-dr,-dr],[dr, dr]] #[[x1, y1], [x2, y2]]
     # num_steps = 101
@@ -117,14 +135,14 @@ def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
 if __name__ == "__main__":
 
     # In debug mode, don't bother sending email notifications about exceptions
-    debug_mode = False
+    debug_mode = True
     
 
     # %% Shared parameters
 
-    apd_indices = [0]
+    # apd_indices = [0]
     # apd_indices = [1]
-    # apd_indices = [0,1]
+    apd_indices = [0,1]
 
     nd_yellow = "nd_1.0"
     green_power = 10
@@ -135,7 +153,7 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig_search = {
-        "coords": [250, 250, 6.0],
+        "coords": [250, 250, 5.0],
         "name": "{}-search".format(sample_name),
         "disable_opt": False,
         "ramp_voltages": False,
@@ -155,18 +173,13 @@ if __name__ == "__main__":
 
     
     
-    nv_sig = {
-        "coords": [247.088, 245.529, 5],#249.8425, 249.675, 5.0],
-        "name": "{}-nv3_2021_11_08".format(sample_name,),
+    nv_sig_0 = {
+        "coords": [248.037, 251.257, 5],
+        "name": "{}-nv0_2021_11_17".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate": 55,
+        "expected_count_rate": 60,
         
-        # "coords": [-0.063, -0.145, 5.0],
-        # "name": "{}-nv0_2021_11_08".format(sample_name,),
-        # "disable_opt": False,
-        # "ramp_voltages": False,
-        # "expected_count_rate": 65,
         
         "spin_laser": green_laser,
         "spin_laser_power": green_power,
@@ -176,9 +189,6 @@ if __name__ == "__main__":
         
         "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
-        # "imaging_laser":yellow_laser,
-        # "imaging_laser_filter": nd_yellow,
-        # "imaging_laser_power": 0.15,
         "imaging_readout_dur": 1e7,
         
         
@@ -199,7 +209,55 @@ if __name__ == "__main__":
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
         "charge_readout_laser_power": 0.15,
-        "charge_readout_dur": 50e6,
+        "charge_readout_dur": 200e6,
+        
+        "collection_filter": "630_lp",
+        "magnet_angle": None,
+        "resonance_LOW":2.9250,"rabi_LOW": 182.3,
+        "uwave_power_LOW": 15.5,  # 15.5 max
+        "resonance_HIGH": 2.9496,
+        "rabi_HIGH": 215,
+        "uwave_power_HIGH": 14.5,
+    }  # 14.5 max
+    
+     
+    nv_sig_1 = {
+        "coords": [249.787, 250.073, 5],
+        "name": "{}-nv1_2021_11_17".format(sample_name,),
+        "disable_opt": False,
+        "ramp_voltages": False,
+        "expected_count_rate": 55,
+        
+        
+        "spin_laser": green_laser,
+        "spin_laser_power": green_power,
+        "spin_pol_dur": 1e5,
+        "spin_readout_laser_power": green_power,
+        "spin_readout_dur": 350,
+        
+        "imaging_laser":green_laser,
+        "imaging_laser_power": green_power,
+        "imaging_readout_dur": 1e7,
+        
+        
+        'nv-_reionization_laser': green_laser, 'nv-_reionization_laser_power': green_power, 
+        'nv-_reionization_dur': 1E5,
+        'nv0_ionization_laser': red_laser, 'nv0_ionization_laser_power': red_power,
+        'nv0_ionization_dur':500,
+        
+        'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
+        'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,
+            
+        "initialize_laser": green_laser,
+        "initialize_laser_power": green_power,
+        "initialize_dur": 1e4,
+        "CPG_laser": red_laser,
+        'CPG_laser_power': red_power,
+        "CPG_laser_dur": 1e5,
+        "charge_readout_laser": yellow_laser,
+        "charge_readout_laser_filter": nd_yellow,
+        "charge_readout_laser_power": 0.12,
+        "charge_readout_dur": 100e6,
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
@@ -211,95 +269,34 @@ if __name__ == "__main__":
     }  # 14.5 max
     
     
-    
-    
       
     
-    # nv_sig = nv_sig_7
+    nv_sig = nv_sig_1
     
     
     # %% Functions to run
 
     try:
-        # x_list = []
-        # y_list = []
-        # z_list = []
-        # dx_list = []
-        # dy_list = []
-        # dz_list = []
-        # time_list = []
-        # for i in range(50):
-        #optimize_coords = do_optimize(nv_sig, apd_indices)
-        #     time_ = time.time()
-        #     x_list.append(optimize_coords[0])
-        #     y_list.append(optimize_coords[1])
-        #     z_list.append(optimize_coords[2])
-        #     time_list.append(time_)
-        # for i in range(len(x_list)-1):
-        #     dx = x_list[i+1] - x_list[i]
-        #     dx_list.append(dx)
-        #     dy = y_list[i+1] - y_list[i]
-        #     dy_list.append(dy)
-        #     dz = z_list[i+1] - z_list[i]
-        #     dz_list.append(dz)
-        # start_time = time_list[0]
-        # times =( numpy.array(time_list) - start_time)/60
-        # fig, axes = plt.subplots(1,3)
-        # ax=axes[0]
-        # ax.plot(times, x_list, 'b')
-        # ax.set_xlabel('Time elapsed (m)')
-        # ax.set_ylabel('Optimize position (um)')
-        # ax.set_title('X')
-        # ax=axes[1]
-        # ax.plot(times, y_list,'b')
-        # ax.set_xlabel('Time elapsed (m)')
-        # ax.set_ylabel('Optimize position (um)')
-        # ax.set_title('Y')
-        # ax=axes[2]
-        # ax.plot(times, z_list, 'b')
-        # ax.set_xlabel('Time elapsed (m)')
-        # ax.set_ylabel('Optimize position (V)')
-        # ax.set_title('Z')
-        # plt.tight_layout()
-        
-        # print('dx st. dev: {} um'.format(numpy.std(abs(numpy.array(dx_list))) ))
-        # print('dy st. dev: {} um'.format(numpy.std(abs(numpy.array(dy_list))) ))
-        # print('dz st. dev: {} V'.format(numpy.std(abs(numpy.array(dz_list))) ))
-        # fig, axes = plt.subplots(1,3)
-        # ax=axes[0]
-        # ax.plot(times[:-1], numpy.array(dx_list)*1e3, 'r')
-        # ax.set_xlabel('Time elapsed (m)')
-        # ax.set_ylabel('Change in position, n+1 - n (nm)')
-        # ax.set_title('X')
-        # ax=axes[1]
-        # ax.plot(times[:-1], numpy.array(dy_list)*1e3,'r')
-        # ax.set_xlabel('Time elapsed (m)')
-        # ax.set_ylabel('Change in position, n+1 - n (nm)')
-        # ax.set_title('Y')
-        # ax=axes[2]
-        # ax.plot(times[:-1], dz_list, 'r')
-        # ax.set_xlabel('Time elapsed (m)')
-        # ax.set_ylabel('Change in position, n+1 - n (V)')
-        # ax.set_title('Z')
-        # plt.tight_layout()
             
         
-        #do_optimize(nv_sig, apd_indices)
-        #do_image_sample(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
+        # do_g2_measurement(nv_sig, 0, 1)
+        # do_stationary_count(nv_sig_search, apd_indices)
         
-        offset_x = 0
-        offset_y = 0
+        offset_x = 0.24700
+        offset_y = -0.755
         offset_z = 0
         offset_list = [offset_x, offset_y, offset_z]
-        num_steps_x = 60
-        num_steps_y = 60
+        num_steps_x = 41
+        num_steps_y = 41
         num_steps_z = 101
     
-        for t in [1e3]:
-            # nv_sig['CPG_laser_dur'] = t
-            img_range_2D = [2,2, 0 ]
-            # do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
-            #             None,  img_range_2D, offset_list)
+        for t in [0.2e6]:
+            nv_sig['CPG_laser_dur'] = t
+            img_range_2D = [2.5,2.5, 0 ]
+            do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
+                        None,  img_range_2D, offset_list)
             
             
         # 1st airy ring power
@@ -315,8 +312,8 @@ if __name__ == "__main__":
             
             
             ## +x
-            do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-                    [[-0.275, -0.250,0 ], [-0.575, -0.25,0 ]],  None, offset_list, 2)
+            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+            #         [[-0.275, -0.250,0 ], [-0.575, -0.25,0 ]],  None, offset_list, 2)
             #do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
             #        [[-0.275, -0.250,0 ], [-0.575, -0.25,0 ]],  None, offset_list, 1)
             # #-x

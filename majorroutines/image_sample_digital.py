@@ -10,7 +10,7 @@ import numpy
 import utils.tool_belt as tool_belt
 import time
 import labrad
-import majorroutines.optimize as optimize
+import majorroutines.optimize_digital as optimize
 import majorroutines.image_sample as image_sample
 import matplotlib.pyplot as plt
   
@@ -83,14 +83,12 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.reset_cfm(cxn)
     
     laser_key = 'imaging_laser'
-    timeout = 1
 
-    drift = tool_belt.get_drift() # ???
-    drift_z = drift[2]
+    drift = tool_belt.get_drift() 
     coords = nv_sig['coords']
-    adjusted_coords = (numpy.array(coords) + numpy.array([0,0,drift_z])).tolist() 
+    adjusted_coords = (numpy.array(coords) + numpy.array(drift)).tolist() 
     x_center, y_center, z_center = adjusted_coords
-    # optimize.prepare_microscope(cxn, nv_sig, adjusted_coords) # ???
+    optimize.prepare_microscope(cxn, nv_sig, adjusted_coords)
     
     readout = nv_sig['imaging_readout_dur']
     readout_us = readout / 10**3
@@ -111,8 +109,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # one-size-fits-all value.
     dir_path = ['', 'Config', 'Positioning']
     
-    xy_delay = tool_belt.get_registry_entry(cxn, 
-                                        'xy_large_response_delay', dir_path)
     
     cxn.registry.cd(*dir_path)
     _, keys = cxn.registry.dir()
@@ -237,11 +233,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         populate_img_array([(actual_x_pos-cur_x_pos)*1e3], dx_img_array, dx_img_write_pos)
         populate_img_array([(actual_y_pos-cur_y_pos)*1e3], dy_img_array, dy_img_write_pos)
         
-    # This is a horribly inefficient way of getting kcps, but it
-    # is easy and readable and probably fine up to some resolution
-    if plot_data:
-        img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
-        update_image_figure(fig, img_array_kcps)
+        # This is a horribly inefficient way of getting kcps, but it
+        # is easy and readable and probably fine up to some resolution
+        if plot_data:
+            img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
+            update_image_figure(fig, img_array_kcps)
         
     
     tool_belt.create_image_figure(dx_img_array, img_extent,
