@@ -9,6 +9,7 @@ Created on November 15th, 2021
 """
 
 
+from numpy.lib.type_check import imag
 import utils.tool_belt as tool_belt
 import matplotlib.pyplot as plt
 from numpy import pi
@@ -20,6 +21,8 @@ wavelength = 700e-9
 k = 2 * pi / wavelength
 sample_focal_length = 2.87e-3
 sample_aperture_radius = 2.35e-3
+sample_na = 0.82
+sample_divergence_angle = np.arcsin(sample_na)
 # sample_aperture_radius = 1e-3
 # sample_aperture_radius = 10e-6
 # sample_aperture_radius = np.infty
@@ -72,6 +75,10 @@ def normalize_field(field, r_linspace, r_max=None):
     return field
 
 
+def get_linspace_delta(linspace):
+    return (linspace[-1] - linspace[0]) / (len(linspace) - 1)
+
+
 def lens_phase_mask(field, r, f):
     """Apply a phase mask for a spherical lens to the input field
 
@@ -84,10 +91,6 @@ def lens_phase_mask(field, r, f):
     # phase_mask = np.exp(-1j * k * np.sqrt(r ** 2 + f ** 2))
     phase_mask = np.exp(-1j * k * r ** 2 / (2 * f))
     return field * phase_mask
-
-
-def get_linspace_delta(linspace):
-    return (linspace[-1] - linspace[0]) / (len(linspace) - 1)
 
 
 def aperture_propagate(input_field, input_r, output_r, z, aperture_rad):
@@ -107,6 +110,39 @@ def aperture_propagate(input_field, input_r, output_r, z, aperture_rad):
         integrand = coeff * input_field_trunc * input_r_trunc * phase * bessel
         output_field.append(riemann_sum(integrand, delta))
     return np.array(output_field)
+
+
+def gu_psf_integrand(r, z, theta):
+    bessel = 2 * pi * bessel_func(0, k * r * np.sin(theta))
+    exp_part = np.exp(-1j * k * z * np.cos(theta))
+    integrand = bessel * exp_part * np.sin(theta)
+    return integrand
+
+
+def gu_psf(r_linspace, z):
+    # Charrière optics letter 2007
+    psf = []
+    coeff = 1j / wavelength
+    theta_linspace = np.linspace(0, sample_divergence_angle, 1000)
+    for r in r_linspace:
+
+        # real_integrand = lambda theta: np.real(gu_psf_integrand(r, z, theta))
+        # real_part = integrate.quad(real_integrand, 0, sample_divergence_angle)[
+        #     0
+        # ]
+        # imag_integrand = lambda theta: np.imag(gu_psf_integrand(r, z, theta))
+        # imag_part = integrate.quad(imag_integrand, 0, sample_divergence_angle)[
+        #     0
+        # ]
+        # integral = real_part + 1j * imag_part
+
+        integrand = gu_psf_integrand(r, z, theta_linspace)
+        delta = get_linspace_delta(theta_linspace)
+        integral = riemann_sum(integrand, delta)
+
+        psf.append(coeff * integral)
+
+    return np.array(psf)
 
 
 def calc_overlap(field_1, field_2, r_linspace):
@@ -161,6 +197,7 @@ def calc_nv_field_at_fiber(
     input_r_linspace = np.linspace(0, sample_aperture_radius, num_points)
     output_r_linspace = np.linspace(0, 5 * sample_aperture_radius, num_points)
     first_aperture_radius = sample_aperture_radius
+    skip_sample_propagation = False
     norm_r_max = sample_aperture_radius
     free_space_distance = 0.1
 
@@ -199,33 +236,40 @@ def calc_nv_field_at_fiber(
         nv_field = np.exp(-((input_r_linspace / sample_aperture_radius) ** 2))
 
     # # Plane wave
+    # else:
+    #     nv_field = np.array([1.0] * num_points)
+
+    # Gu psf
     else:
-        nv_field = np.array([1.0] * num_points)
+        skip_sample_propagation = True
+        input_r_linspace = output_r_linspace
+        nv_field = gu_psf(input_r_linspace, 0.4)
 
     ######
 
     nv_field = normalize_field(nv_field, input_r_linspace, r_max=norm_r_max)
 
     # Sample objective aperture
-    nv_field = aperture_propagate(
-        nv_field,
-        input_r_linspace,
-        output_r_linspace,
-        0.4,
-        first_aperture_radius,
-    )
+    if not skip_sample_propagation:
+        nv_field = aperture_propagate(
+            nv_field,
+            input_r_linspace,
+            output_r_linspace,
+            0.4,
+            first_aperture_radius,
+        )
 
-    # print(get_intensity_norm(nv_field, output_r_linspace))
-    # # ax.plot(output_r_linspace, np.angle(nv_field))
-    # ax.plot(output_r_linspace, output_r_linspace * intensity(nv_field))
-    # # ax.plot(output_r_linspace, intensity(nv_field))
-    # test_field = np.exp(-((output_r_linspace / sample_aperture_radius) ** 2))
-    # test_field = normalize_field(
-    #     test_field, output_r_linspace, r_max=norm_r_max
-    # )
-    # ax.plot(output_r_linspace, output_r_linspace * intensity(test_field))
-    # # ax.plot(output_r_linspace, intensity(test_field))
-    # return
+    print(get_intensity_norm(nv_field, output_r_linspace))
+    # ax.plot(output_r_linspace, np.angle(nv_field))
+    ax.plot(output_r_linspace, output_r_linspace * intensity(nv_field))
+    # ax.plot(output_r_linspace, intensity(nv_field))
+    test_field = np.exp(-((output_r_linspace / sample_aperture_radius) ** 2))
+    test_field = normalize_field(
+        test_field, output_r_linspace, r_max=norm_r_max
+    )
+    ax.plot(output_r_linspace, output_r_linspace * intensity(test_field))
+    # ax.plot(output_r_linspace, intensity(test_field))
+    return
 
     # First sample telescope lens
     nv_intensity = intensity(nv_field)
