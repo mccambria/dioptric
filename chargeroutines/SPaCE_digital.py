@@ -984,7 +984,7 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         # Zip the two list together
         coords_voltages = list(zip(x_voltages, y_voltages, z_voltages))
         # calculate the radial distances from the readout NV to the target points
-        rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)
+        rad_dist = numpy.sqrt((x_voltages - low_coords[0])**2 +( y_voltages - low_coords[1])**2)
         
         # This bit of code is used if the 1D scan is symmetric across the NV, then we need negative and positive values of r
         # neg_ints = int(numpy.floor(len(rad_dist)/2))

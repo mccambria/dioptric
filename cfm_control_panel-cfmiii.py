@@ -135,14 +135,16 @@ def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
 if __name__ == "__main__":
 
     # In debug mode, don't bother sending email notifications about exceptions
-    debug_mode = True
+    debug_mode = False
+    
+    
     
 
     # %% Shared parameters
 
-    # apd_indices = [0]
+    apd_indices = [0]
     # apd_indices = [1]
-    apd_indices = [0,1]
+    # apd_indices = [0,1]
 
     nd_yellow = "nd_1.0"
     green_power = 10
@@ -279,7 +281,7 @@ if __name__ == "__main__":
     try:
             
         
-        # do_optimize(nv_sig, apd_indices)
+        #do_optimize(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)
         # do_stationary_count(nv_sig_search, apd_indices)
@@ -292,28 +294,24 @@ if __name__ == "__main__":
         num_steps_y = 41
         num_steps_z = 101
     
-        for t in [0.2e6]:
+        for t in [5e3]:
             nv_sig['CPG_laser_dur'] = t
-            img_range_2D = [2.5,2.5, 0 ]
-            do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
-                        None,  img_range_2D, offset_list)
+            img_range_2D = [1.5,1.5, 0 ]
+            #do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
+             #           None,  img_range_2D, offset_list)
             
             
         # 1st airy ring power
-        t_list = [2e6]#1300e3] #1e3, 1e4, 1e5
+        t_list = [1e3, 5e3, 10e3, 50e3, 100e3, 500e3, 1000e3]
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
-            num_steps = 301
-            num_runs = 15
-            
-            
-            
-            
+            num_steps = 125
+            num_runs = 40
             
             ## +x
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[-0.275, -0.250,0 ], [-0.575, -0.25,0 ]],  None, offset_list, 2)
+            do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+                   [[0+0.24700, -0.755,0 ], [-1.25+0.24700, -0.755,0 ]],  None, offset_list, 2)
             #do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
             #        [[-0.275, -0.250,0 ], [-0.575, -0.25,0 ]],  None, offset_list, 1)
             # #-x

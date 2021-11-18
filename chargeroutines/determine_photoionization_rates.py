@@ -40,15 +40,15 @@ def main_with_cxn(cxn, nv_sig, apd_index, num_reps):
     yellow_laser_power = tool_belt.set_laser_power(cxn, nv_sig, 'charge_readout_laser')
     green_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "nv-_prep_laser")
     red_laser_power = tool_belt.set_laser_power(cxn,nv_sig,"nv0_prep_laser")
+    test_laser_power = tool_belt.set_laser_power(cxn,nv_sig,"test_laser")
     
     yellow_laser_key = nv_sig['charge_readout_laser']
     green_laser_key = nv_sig['nv-_prep_laser']
     red_laser_key = nv_sig['nv0_prep_laser']
     
     test_laser_key = nv_sig["test_laser"]
-    test_laser_power = nv_sig["test_laser_power"]
+    #test_laser_power = nv_sig["test_laser_power"]
     test_laser_dur = nv_sig["test_laser_duration"]
-    
     
     readout_pulse_time = nv_sig['charge_readout_dur']
     
@@ -61,19 +61,19 @@ def main_with_cxn(cxn, nv_sig, apd_index, num_reps):
     opti_coords_list = []
     
     # Optimize
-    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_index)
-    opti_coords_list.append(opti_coords)
+    # opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_index)
+    # opti_coords_list.append(opti_coords)
     drift = tool_belt.get_drift()
     adjusted_nv_coords = coords + numpy.array(drift)
     tool_belt.set_xyz(cxn, adjusted_nv_coords)
     
     
-    # # Pulse sequence to do a single pulse followed by readout           
-    # seq_file = 'photoionization_rates.py'
+    # Pulse sequence to do a single pulse followed by readout           
+    # seq_file = 'photoionization_rates_temp.py'
       
     # seq_args = [readout_pulse_time, reionization_time, ionization_time, test_laser_dur, \
     #     yellow_laser_key, green_laser_key, red_laser_key, test_laser_key, \
-    #      yellow_laser_power, green_laser_power, red_laser_power,  \
+    #       yellow_laser_power, green_laser_power, red_laser_power,  \
     #         apd_index[0]]
     # seq_args_string = tool_belt.encode_seq_args(seq_args)
 
@@ -84,22 +84,32 @@ def main_with_cxn(cxn, nv_sig, apd_index, num_reps):
     # # Run the sequence
     # cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
 
-    # ret_vals = cxn.apd_tagger.read_counter_separate_gates(1)
-    # counts = ret_vals[0]
+    # # ret_vals = cxn.apd_tagger.read_counter_separate_gates(1)
+    # # counts = ret_vals[0]
     
+    # # green_counts = counts[0::2]
+    # # red_counts = counts[1::2]
+    
+    
+    # counts = cxn.apd_tagger.read_counter_simple(num_reps*2)
     # green_counts = counts[0::2]
     # red_counts = counts[1::2]
-    
+    # print(len(ret_vals))
+    # return
     
     # Pulse sequence to do a single pulse followed by readout           
-    seq_file = 'simple_readout_two_pulse.py'
+    seq_file = 'photoionization_rates.py'
         
     ################## Load the measuremnt with green laser ##################
       
-    seq_args = [reionization_time, readout_pulse_time, nv_sig["nv-_prep_laser"], 
-                nv_sig["charge_readout_laser"], green_laser_power, 
-                yellow_laser_power, 2, apd_index[0]]
+            
+    seq_args = [readout_pulse_time, reionization_time, test_laser_dur, 
+                yellow_laser_key, green_laser_key, test_laser_key,
+                yellow_laser_power, green_laser_power, test_laser_power,
+                apd_index[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    print(seq_args)
+    
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
 
     # Load the APD
@@ -112,12 +122,13 @@ def main_with_cxn(cxn, nv_sig, apd_index, num_reps):
     green_counts = cxn.apd_tagger.read_counter_simple(num_reps)
     
     ################## Load the measuremnt with red laser ##################
-    seq_args = [ionization_time, readout_pulse_time, nv_sig["nv0_prep_laser"], 
-                nv_sig["charge_readout_laser"], red_laser_power, 
-                yellow_laser_power, 2,apd_index[0]]
+    seq_args = [readout_pulse_time, ionization_time, test_laser_dur, 
+                yellow_laser_key, red_laser_key, test_laser_key,
+                yellow_laser_power, red_laser_power, test_laser_power,
+                apd_index[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
-
+    print(seq_args)
     # Load the APD
     cxn.apd_tagger.start_tag_stream(apd_index)
     # Clear the buffer

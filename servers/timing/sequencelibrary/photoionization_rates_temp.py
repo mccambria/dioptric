@@ -41,9 +41,9 @@ def get_seq(pulse_streamer, config, args):
     
     wait_time = config['CommonDurations']['cw_meas_buffer']
     # wait_time = config['Positioning']['xy_small_response_delay']
-    green_delay = config['Optics'][yellow_laser_key]['delay']
-    yellow_delay = config['Optics'][green_laser_key]['delay']
-    red_delay = config['Optics'][red_laser_key]['delay']
+    green_delay = 0#config['Optics'][yellow_laser_key]['delay']
+    yellow_delay = 0#config['Optics'][green_laser_key]['delay']
+    red_delay = 0#config['Optics'][red_laser_key]['delay']
     
     total_laser_delay = green_delay + yellow_delay + red_delay
     # Test period
@@ -53,7 +53,14 @@ def get_seq(pulse_streamer, config, args):
     
     seq = Sequence()
 
-
+    # clock
+    
+    train = [(total_laser_delay + green_prep_time + test_time + 2*wait_time + readout_time + 100, LOW), 
+             (100, HIGH),
+             (red_prep_time + test_time  + 3*wait_time + readout_time - 100, LOW), 
+             (100, HIGH), (wait_time - 100, LOW)]
+    seq.setDigital(pulser_do_daq_clock, train)
+    
     #collect photons for certain timewindow tR in APD
     train = [(total_laser_delay + green_prep_time + test_time + 2*wait_time, LOW), 
              (readout_time, HIGH),
@@ -113,7 +120,8 @@ def get_seq(pulse_streamer, config, args):
     
 
     
-    final_digital = [pulser_do_daq_clock]
+    # final_digital = [pulser_do_daq_clock]
+    final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
 
     return seq, final, [period]
