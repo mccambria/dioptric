@@ -113,9 +113,9 @@ def aperture_propagate(input_field, input_r, output_r, z, aperture_rad):
 
 
 def gu_psf_integrand(r, z, theta):
+    phase = np.exp(-1j * k * z * np.cos(theta))
     bessel = 2 * pi * bessel_func(0, k * r * np.sin(theta))
-    exp_part = np.exp(-1j * k * z * np.cos(theta))
-    integrand = bessel * exp_part * np.sin(theta)
+    integrand = phase * bessel * np.sin(theta)
     return integrand
 
 
@@ -124,6 +124,7 @@ def gu_psf(r_linspace, z):
     psf = []
     coeff = 1j / wavelength
     theta_linspace = np.linspace(0, sample_divergence_angle, 1000)
+    delta = get_linspace_delta(theta_linspace)
     for r in r_linspace:
 
         # real_integrand = lambda theta: np.real(gu_psf_integrand(r, z, theta))
@@ -135,9 +136,8 @@ def gu_psf(r_linspace, z):
         #     0
         # ]
         # integral = real_part + 1j * imag_part
-
+        # integrand = [gu_psf_integrand(r, z, theta) for theta in theta_linspace]
         integrand = gu_psf_integrand(r, z, theta_linspace)
-        delta = get_linspace_delta(theta_linspace)
         integral = riemann_sum(integrand, delta)
 
         psf.append(coeff * integral)
@@ -242,8 +242,7 @@ def calc_nv_field_at_fiber(
     # Gu psf
     else:
         skip_sample_propagation = True
-        input_r_linspace = output_r_linspace
-        nv_field = gu_psf(input_r_linspace, 0.4)
+        nv_field = gu_psf(output_r_linspace, 0)
 
     ######
 
@@ -261,13 +260,13 @@ def calc_nv_field_at_fiber(
 
     print(get_intensity_norm(nv_field, output_r_linspace))
     # ax.plot(output_r_linspace, np.angle(nv_field))
-    ax.plot(output_r_linspace, output_r_linspace * intensity(nv_field))
-    # ax.plot(output_r_linspace, intensity(nv_field))
-    test_field = np.exp(-((output_r_linspace / sample_aperture_radius) ** 2))
-    test_field = normalize_field(
-        test_field, output_r_linspace, r_max=norm_r_max
-    )
-    ax.plot(output_r_linspace, output_r_linspace * intensity(test_field))
+    # ax.plot(output_r_linspace, output_r_linspace * intensity(nv_field))
+    ax.plot(output_r_linspace, intensity(nv_field))
+    # test_field = np.exp(-((output_r_linspace / sample_aperture_radius) ** 2))
+    # test_field = normalize_field(
+    #     test_field, output_r_linspace, r_max=norm_r_max
+    # )
+    # ax.plot(output_r_linspace, output_r_linspace * intensity(test_field))
     # ax.plot(output_r_linspace, intensity(test_field))
     return
 
@@ -384,7 +383,7 @@ if __name__ == "__main__":
         fiber_r_range=3.5e-6,
         collection_focal_length=18e-3,
         do_plot=True,
-        num_points=1000,
+        num_points=10000,
     )
 
     plt.show(block=True)
