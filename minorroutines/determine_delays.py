@@ -271,72 +271,100 @@ def uwave_delay(
 # the script that you set up here.
 if __name__ == "__main__":
 
-    # Set up your parameters to be passed to main here
-    sample_name = "johnson"
-    green_power = 7
-    nd = "nd_0.5"
-    green_laser = 'cobolt_515'
-    # green_laser = "laserglow_532"
-    nv_sig = {
-        "coords": [-0.02331254,  0.01495828,  4.09457485],
-        "name": "{}-nv0_2021_10_08".format(sample_name,),
-        "disable_opt": False,
-        "expected_count_rate": 50,
+    # Rabi parameters
+    # sample_name = "johnson"
+    # green_power = 7
+    # nd = "nd_0.5"
+    # green_laser = 'cobolt_515'
+    # # green_laser = "laserglow_532"
+    # nv_sig = {
+    #     "coords": [-0.02331254,  0.01495828,  4.09457485],
+    #     "name": "{}-nv0_2021_10_08".format(sample_name,),
+    #     "disable_opt": False,
+    #     "expected_count_rate": 50,
 
-        "spin_laser": green_laser,
-        "spin_laser_power": green_power,
-        "spin_pol_dur": 1e5,
-        "spin_readout_laser_power": green_power,
-        "spin_readout_dur": 350,
+    #     "spin_laser": green_laser,
+    #     "spin_laser_power": green_power,
+    #     "spin_pol_dur": 1e5,
+    #     "spin_readout_laser_power": green_power,
+    #     "spin_readout_dur": 350,
 
-        "imaging_laser":green_laser,
-        "imaging_laser_power": green_power,
-        "imaging_readout_dur": 1e7,
-        "charge_readout_laser": 'nd_0',
+    #     "imaging_laser":green_laser,
+    #     "imaging_laser_power": green_power,
+    #     "imaging_readout_dur": 1e7,
+    #     "charge_readout_laser": 'nd_0',
 
-        "collection_filter": "630_lp",
-        "magnet_angle": 114,
-        "resonance_LOW": 2.7881, 
-        "rabi_LOW": 136.0,
-        "uwave_power_LOW": 14.5,  # 15.5 max
-        "resonance_HIGH": 2.8691,
-        "rabi_HIGH": 150,
-        "uwave_power_HIGH": 14.5,
-        }
-    apd_indices = [0]
+    #     "collection_filter": "630_lp",
+    #     "magnet_angle": 114,
+    #     "resonance_LOW": 2.7881, 
+    #     "rabi_LOW": 136.0,
+    #     "uwave_power_LOW": 14.5,  # 15.5 max
+    #     "resonance_HIGH": 2.8691,
+    #     "rabi_HIGH": 150,
+    #     "uwave_power_HIGH": 14.5,
+    #     }
+    # apd_indices = [0]
+    
+    # Hahn parameters
+    apd_indices = [1]
+    nd = 'nd_0'
+    sample_name = 'wu'
+    green_laser = "laserglow_532"
+    yellow_laser = "laserglow_589"
+    red_laser = "cobolt_638"
+    nv_sig = { 'coords': [0.099, -0.141, 15], 'name': '{}-nv3_2021_11_03'.format(sample_name),
+            'disable_opt': False, 'expected_count_rate': 15,
+            # 'disable_opt': True, 'expected_count_rate': None,
+            
+            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur':500,
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
+            "initialize_laser": green_laser, "initialize_dur": 1e4,
+            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
+            
+            'collection_filter': None, 'magnet_angle': 60,
+            'resonance_LOW': 2.8240, 'rabi_LOW': 139.1, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9191, 'rabi_HIGH': 202.4, 'uwave_power_HIGH': 16.5}  
+    
 
     try:
 
-        # aom_delay
-        # num_reps = int(5E4)
-        # num_steps = 101
-        # laser_name = 'laserglow_589'
-        # # delay_range = [0, 300]
-        # # laser_name = 'laserglow_532'
-        # delay_range = [1000, 2000]
-        # laser_power = 1.0
-        # with labrad.connect() as cxn:
-        #     aom_delay(cxn, nv_sig, apd_indices,
-        #               delay_range, num_steps, num_reps, laser_name, laser_power)
+        # laser delay
+        num_reps = int(50E4)
+        num_steps = 101
+        laser_name = 'laserglow_589'
+        delay_range = [0, 2500]
+        # laser_name = 'laserglow_532'
+        # delay_range = [600, 1400]
+        # laser_name = 'cobolt_638'
+        # delay_range = [0, 2000]
+        laser_power = 1.0
+        with labrad.connect() as cxn:
+            aom_delay(cxn, nv_sig, apd_indices,
+                      delay_range, num_steps, num_reps, laser_name, laser_power)
 
         # uwave_delay
-        num_reps = int(1e4)
-        delay_range = [-200, 200]
-        num_steps = 101
-        # sg394
-        state = States.LOW
-        # tsg4104a
-        # state = States.HIGH
-        with labrad.connect() as cxn:
-            uwave_delay(
-                cxn,
-                nv_sig,
-                apd_indices,
-                state,
-                delay_range,
-                num_steps,
-                num_reps,
-            )
+        # num_reps = int(1e4)
+        # delay_range = [-200, 200]
+        # num_steps = 101
+        # # sg394
+        # state = States.LOW
+        # # tsg4104a
+        # # state = States.HIGH
+        # with labrad.connect() as cxn:
+        #     uwave_delay(
+        #         cxn,
+        #         nv_sig,
+        #         apd_indices,
+        #         state,
+        #         delay_range,
+        #         num_steps,
+        #         num_reps,
+        #     )
 
     finally:
         # Reset our hardware - this should be done in each routine, but

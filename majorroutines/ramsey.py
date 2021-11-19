@@ -562,12 +562,12 @@ def main_with_cxn(
 if __name__ == "__main__":
 
 
-    folder = "pc_rabi/branch_master/super_resolution_ramsey/2021_10"
-    file = '2021_10_13-18_05_57-johnson-dnv5_2021_09_23'
+    folder = "pc_rabi/branch_master/ramsey/2021_10"
+    file = '2021_10_15-10_37_22-johnson-nv0_2021_10_08'
     
     # detuning = 0
     data = tool_belt.get_raw_data(file, folder)
-    detuning= 0#data['detuning']
+    detuning= data['detuning']
     norm_avg_sig = data['norm_avg_sig']
     precession_time_range = data['precession_time_range']
     num_steps = data['num_steps']
@@ -585,4 +585,4 @@ if __name__ == "__main__":
     _, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
     print(FreqParams)
 
-    fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)
+    fit_ramsey(norm_avg_sig,taus,  precession_time_range, [2.4, 4.5, 6.9])

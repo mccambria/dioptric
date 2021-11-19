@@ -198,7 +198,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
         num=num_steps,
         dtype=numpy.int32,
     )
-    print(taus)
+    # print(taus)
     #return
     # Fix the length of the sequence to account for odd amount of elements
 
@@ -306,15 +306,14 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
     plot_taus = (taus + uwave_pi_pulse) / 1000
     ax = axes_pack[0]
-    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+    ax.set_xlabel(r"$\taui$ ($\mathrm{\mu s}$)")
     ax.set_ylabel("Counts")
     
     ax = axes_pack[1]
-    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+    ax.set_xlabel(r"$\tau$ ($\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
     
     print(depletion_coords)
-    
     for run_ind in range(num_runs):
         print('Run index: {}'. format(run_ind))
 
@@ -558,7 +557,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, precession_time_range,
     ax.cla() 
     ax.plot(plot_taus, norm_avg_sig, "b-")
     ax.set_title("Ramsey Measurement")
-    ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
+    ax.set_xlabel(r"$\tau$ ($\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
 
     raw_fig.canvas.draw()
@@ -616,11 +615,12 @@ if __name__ == "__main__":
 
 
     folder = "pc_rabi/branch_master/super_resolution_ramsey/2021_10"
-    file = '2021_10_13-18_05_57-johnson-dnv5_2021_09_23'
+    file = '2021_10_15-17_39_48-johnson-dnv5_2021_09_23'
+    # file = '2021_10_15-20_32_32-johnson-dnv5_2021_09_23'
     
     # detuning = 0
     data = tool_belt.get_raw_data(file, folder)
-    detuning= 0#data['detuning']
+    detuning= data['detuning']
     norm_avg_sig = data['norm_avg_sig']
     precession_time_range = data['precession_time_range']
     num_steps = data['num_steps']
@@ -637,5 +637,6 @@ if __name__ == "__main__":
         
     _, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
     print(FreqParams)
-    # FreqParams = [9-4.4, 9+2.2, 9]
+    f = 4
+    FreqParams = [f-2.2, f+2.2, f]
     fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)

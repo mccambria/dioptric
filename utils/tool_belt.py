@@ -1383,9 +1383,8 @@ def save_raw_data(rawData, filePath):
 
     # print(repr(search_index.search_index_regex))
 
-    # cuasing issues 9/23/2021 AG
-    # if file_path_ext.match(search_index.search_index_glob):
-    #     search_index.add_to_search_index(file_path_ext)
+    if file_path_ext.match(search_index.search_index_glob):
+        search_index.add_to_search_index(file_path_ext)
 
 
 def get_nv_sig_units():
@@ -1799,13 +1798,13 @@ def set_drift(drift):
         print("Set drift unsuccessful.")
     # Cast to the proper types
 
-    xy_dtype = eval(
-        get_registry_entry_no_cxn("xy_dtype", ["Config", "Positioning"])
-    )
-    z_dtype = eval(
-        get_registry_entry_no_cxn("z_dtype", ["Config", "Positioning"])
-    )
-    drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
+    # xy_dtype = eval(
+    #     get_registry_entry_no_cxn("xy_dtype", ["Config", "Positioning"])
+    # )
+    # z_dtype = eval(
+    #     get_registry_entry_no_cxn("z_dtype", ["Config", "Positioning"])
+    # )
+    # drift = [xy_dtype(drift[0]), xy_dtype(drift[1]), z_dtype(drift[2])]
     with labrad.connect() as cxn:
         cxn.registry.cd(["", "State"])
         return cxn.registry.set("DRIFT", drift)

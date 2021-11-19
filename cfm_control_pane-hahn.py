@@ -37,6 +37,7 @@ import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
 import majorroutines.lifetime_v2 as lifetime_v2
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
+import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import debug.test_major_routines as test_major_routines
 from utils.tool_belt import States
 import time
@@ -47,12 +48,15 @@ import time
 
 def do_image_sample(nv_sig, apd_indices):
     
-    scan_range = 0.5
+    # scan_range = 0.5
+    # scan_range = 1.0
     # num_steps = 90
     # num_steps = 120
     
+    # scan_range = 0.1
     # scan_range = 0.15
-    # num_steps = 60
+    scan_range = 0.2
+    num_steps = 60
     
     # scan_range = 0.75
     # num_steps = 150
@@ -75,7 +79,7 @@ def do_image_sample(nv_sig, apd_indices):
 #    num_steps = 135
     # num_steps = 120
     # num_steps = 90
-    num_steps = 60
+    # num_steps = 60
     # num_steps = 50
     # num_steps = 20
 
@@ -149,10 +153,10 @@ def do_pulsed_resonance(nv_sig, apd_indices,
                         freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
-    num_reps = 4000
-    num_runs = 4
-    uwave_power = 14.5
-    uwave_pulse_dur = 150
+    num_reps = 10000
+    num_runs = 10
+    uwave_power = 16.5
+    uwave_pulse_dur = 70
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -163,7 +167,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
     freq_range = 0.040
     num_steps = 51
-    num_reps = 4000
+    num_reps = 10000
     num_runs = 10
     
     # Zoom
@@ -180,6 +184,20 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     nv_sig["resonance_{}".format(state.name)] = res
 
 
+def do_scc_resonance(nv_sig, apd_indices, state=States.LOW):
+    freq_center = nv_sig['resonance_{}'.format(state.name)]
+    uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
+    uwave_pulse_dur = nv_sig['rabi_{}'.format(state.name)]/2
+    
+    freq_range = 0.05
+    num_steps = 51
+    num_reps = int(10)  # int(10**3)
+    num_runs = 30
+    
+    scc_pulsed_resonance.main(nv_sig, nv_sig, apd_indices, freq_center, freq_range,
+         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state)
+
+
 def do_optimize_magnet_angle(nv_sig, apd_indices):
 
     angle_range = [0, 150]
@@ -188,13 +206,13 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
     num_angle_steps = 6
     freq_center = 2.87
     freq_range = 0.200
-    num_freq_steps = 101
+    num_freq_steps = 76
     num_freq_runs = 10
     
     # Pulsed
-    uwave_power = 14.5
-    uwave_pulse_dur = 150
-    num_freq_reps = 4000
+    uwave_power = 16.5
+    uwave_pulse_dur = 125
+    num_freq_reps = 5000
     
     # CW
     # uwave_power = -5.0
@@ -210,7 +228,7 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
-    num_reps = 4000
+    num_reps = 10000
     num_runs = 10
 
     period = rabi.main(nv_sig, apd_indices, uwave_time_range,
@@ -221,7 +239,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 
     # num_reps = 2 * 10**4
-    num_reps = 5000
+    num_reps = 10000
     num_runs = 10
     
     discrete_rabi.main(nv_sig, apd_indices,
@@ -316,12 +334,12 @@ def do_t1_dq_knill_battery(nv_sig, apd_indices):
 def do_t1_interleave_knill(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 300
-    num_reps = 250
-    num_steps = 12
+    num_runs = 500
+    num_reps = 20
+    num_steps = 4
     min_tau = 20e3
-    max_tau_omega = int(190e6)
-    max_tau_gamma = int(95e6)
+    max_tau_omega = int(10e9)
+    max_tau_gamma = int(10e9)
     t1_exp_array = numpy.array([
             [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
             [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
@@ -369,11 +387,11 @@ def do_spin_echo(nv_sig, apd_indices):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    max_time = 120  # us
+    max_time = 140  # us
     num_steps = max_time  # 1 point per us
     precession_time_range = [1, max_time * 10**3]
-    num_reps = 8000
-    num_runs = 10
+    num_reps = 10000
+    num_runs = 40
     
 #    num_steps = 151
 #    precession_time_range = [0, 10*10**3]
@@ -398,7 +416,7 @@ def do_spin_echo_battery(nv_sig, apd_indices):
     
 def do_optimize_magnet_angle_fine(nv_sig, apd_indices):
 
-    for magnet_angle in numpy.linspace(84, 96, 8):
+    for magnet_angle in numpy.linspace(88, 100, 7):
         nv_sig["magnet_angle"] = magnet_angle
         angle = do_spin_echo_battery(nv_sig, apd_indices)
         if angle < 3:
@@ -455,47 +473,105 @@ if __name__ == '__main__':
     nd = 'nd_0.5'
     # nd = 'nd_1.0'
     # nd = 'nd_2.0'
-    sample_name = 'hopper'
     
-    nv_sig = { 'coords': [0.0, 0.0, 10],
-            'name': '{}-search'.format(sample_name),
-            'disable_opt': True, 'expected_count_rate': 1000,
-            'imaging_laser': 'laserglow_532', 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
-            'spin_laser': 'laserglow_532', 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-            'charge_readout_laser': 'laser_589', 'charge_readout_laser_filter': nd, 'charge_readout_dur': 350,
-            'NV-_pol_laser': 'laser_589', 'NV-_pol_laser_filter': nd, 'NV-_pol_dur': 240,
-            'collection_filter': None, 'magnet_angle': 94.28571429,
-            'resonance_LOW': 2.8068, 'rabi_LOW': 163.8, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9466, 'rabi_HIGH': 214.6, 'uwave_power_HIGH': 14.5}   # 14.5 max
+    sample_name = 'wu'
+    
+    green_laser = "laserglow_532"
+    yellow_laser = "laserglow_589"
+    red_laser = "cobolt_638"
+    
+    nv_sig = { 'coords': [0.102, 0.088, -1], 'name': '{}-nv5_2021_11_07'.format(sample_name),
+            'disable_opt': False, 'expected_count_rate': 15,
+            # 'disable_opt': True, 'expected_count_rate': None,
+            
+            # 'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1E8,
+            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1E5,
+            'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0.5',
+            
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 1000,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
+            
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
+            "initialize_laser": green_laser, "initialize_dur": 1e4,
+            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
+            
+            'collection_filter': None, 'magnet_angle': 60,
+            'resonance_LOW': 2.8125, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9286, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5} 
+    
+    # nv_sig = { 'coords': [0.0, 0.0, -6], 'name': '{}-search'.format(sample_name),
+    #         'disable_opt': True, 'expected_count_rate': None,
+            
+    #         'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+    #         'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            
+    #         'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
+    #         'nv0_ionization_laser': red_laser, 'nv0_ionization_dur':500,
+    #         'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
+    #         "initialize_laser": green_laser, "initialize_dur": 1e4,
+    #         "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
+    #         "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
+            
+    #         'collection_filter': None, 'magnet_angle': 60,
+    #         'resonance_LOW': 2.8240, 'rabi_LOW': 139.1, 'uwave_power_LOW': 16.5,
+    #         'resonance_HIGH': 2.9191, 'rabi_HIGH': 202.4, 'uwave_power_HIGH': 16.5} 
     
     
     # %% Functions to run
 
     try:
         
-        # for pos in numpy.linspace(35, -50, 11, dtype=int): 
-        #     with labrad.connect() as cxn:
-        #         cxn.cryo_piezos.write_xy(pos, 915)
-        #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        #     do_image_sample(nv_sig, apd_indices)
+        # tool_belt.init_safe_stop()
         
-        # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0, 0)
-        
-        # do_image_sample(nv_sig, apd_indices)
-        # do_optimize(nv_sig, apd_indices)
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
+        
+        # for pos in numpy.linspace(50, -50, 21): 
+        #     if tool_belt.safe_stop():
+        #         break
+        #     nv_sig["coords"][2] = int(pos)
+        #     # with labrad.connect() as cxn:
+        #     #     cxn.cryo_piezos.write_xy(pos, 915)
+        #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+            # do_image_sample(nv_sig, apd_indices)
+        
+        # for x in numpy.linspace(-60, 60, 5, dtype=int):
+        #     for y in numpy.linspace(-60, 60, 5, dtype=int):
+        # for x in numpy.linspace(-30, 30, 3, dtype=int):
+        #     for y in numpy.linspace(-30, 30, 3, dtype=int):
+        
+        #         with labrad.connect() as cxn:
+        #             cxn.cryo_piezos.write_xy(x, y)
+                
+        #         do_image_sample(nv_sig, apd_indices)
+                
+        #         if tool_belt.safe_stop():
+        #             break
+            # if tool_belt.safe_stop():
+            #     break
+            
+        # with labrad.connect() as cxn:
+        #     cxn.cryo_piezos.write_xy(75, 0)
+        
+        do_image_sample(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.150)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        # do_scc_resonance(nv_sig, apd_indices, States.LOW)
+        # do_scc_resonance(nv_sig, apd_indices, States.HIGH)
         # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # do_spin_echo_battery(nv_sig, apd_indices)
@@ -516,8 +592,8 @@ if __name__ == '__main__':
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-        do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_t1_interleave_knill(nv_sig, apd_indices)
         
         # for res in numpy.linspace(2.9435, 2.9447, 7):

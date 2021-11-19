@@ -25,7 +25,11 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     
-    galvo_move_time = config['Positioning']['xy_small_response_delay']
+    positioning = config['Positioning']
+    if 'xy_small_response_delay' in positioning:
+        galvo_move_time = positioning['xy_small_response_delay']
+    else:
+        galvo_move_time = positioning['xy_delay']
     init_pulse_aom_delay_time = config['Optics'][init_laser_key]['delay']
     read_pulse_aom_delay_time = config['Optics'][readout_laser_key]['delay']
     
@@ -85,7 +89,6 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    # args = [10000, 10000, 'cobolt_638', 'laserglow_589', None, 0.8, 0]
-    args = [1000.0, 100000000, 'laserglow_532', 'laserglow_589', None, 0.15, 0]
-    seq = get_seq(None, config, args)[0]
+    seq_args = [100000.0, 50000000, 'laserglow_532', 'laserglow_589', None, 1.0, 1]
+    seq = get_seq(None, config, seq_args)[0]
     seq.plot()

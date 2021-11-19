@@ -54,13 +54,21 @@ def get_seq(pulse_streamer, config, args):
     pulser_wiring = config['Wiring']['PulseStreamer']
     pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_indices)]
     pulser_do_clock = pulser_wiring['do_sample_clock']
-    pulser_ao_589_aom = pulser_wiring['ao_{}_am'.format(yellow_laser_name)]
+    analog_key = 'ao_{}_am'.format(yellow_laser_name)
+    digital_key = 'do_{}_dm'.format(yellow_laser_name)
+    analog_yellow = (analog_key in pulser_wiring)
+    if analog_yellow:
+        pulser_ao_589_aom = pulser_wiring[analog_key]
+    else:
+        pulser_do_589_dm = pulser_wiring[digital_key]
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
     
     # Make sure the ao_aom voltage to the 589 aom is within 0 and 1 V
-    tool_belt.aom_ao_589_pwr_err(readout_power)
-    tool_belt.aom_ao_589_pwr_err(shelf_power)
+    if readout_power is not None:
+        tool_belt.aom_ao_589_pwr_err(readout_power)
+    if shelf_power is not None:
+        tool_belt.aom_ao_589_pwr_err(shelf_power)
     
     seq = Sequence()
 
@@ -100,6 +108,10 @@ def get_seq(pulse_streamer, config, args):
     seq.setDigital(pulser_do_sig_gen_gate, train)
     
     # readout with 589
+    # Dummy values for digital modulation
+    if not analog_yellow is None:
+        shelf_power = HIGH 
+        readout_power = HIGH
     delay = total_delay - yellow_delay_time
     train = [(delay + reion_time + 2*wait_time + pi_pulse, LOW), 
              (shelf_time + ion_time,shelf_power), 
@@ -110,7 +122,10 @@ def get_seq(pulse_streamer, config, args):
              (wait_time, LOW), 
              (readout_time, readout_power), 
              (post_wait_time + wait_time + yellow_delay_time, LOW)]
-    seq.setAnalog(pulser_ao_589_aom, train) 
+    if analog_yellow:
+        seq.setAnalog(pulser_ao_589_aom, train) 
+    else:
+        seq.setDigital(pulser_do_589_dm, train) 
     
 
     

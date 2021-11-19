@@ -159,27 +159,44 @@ def main(nv_sig, apd_indices, num_reps):
     return sig_counts, ref_counts
 def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
 
-    tool_belt.reset_cfm_wout_uwaves(cxn)
-
-# Initial Calculation and setup
-    readout_time = nv_sig['pulsed_SCC_readout_dur']
-    ion_time = nv_sig['pulsed_ionization_dur']
-    reion_time = nv_sig['pulsed_reionization_dur']
-    init_ion_time = nv_sig['pulsed_initial_ion_dur']
-    aom_ao_589_pwr = nv_sig['am_589_power']
-    nd_filter = nv_sig['nd_filter']
-        
+    # Old Rabi-specific version setup
+    
+    # laser_515_delay = shared_params['515_DM_laser_delay']
+    # aom_589_delay = shared_params['589_aom_delay']
+    # laser_638_delay = shared_params['638_DM_laser_delay']
+    # tool_belt.reset_cfm_wout_uwaves(cxn)
+    # Initial Calculation and setup
+    # readout_time = nv_sig['pulsed_SCC_readout_dur']
+    # ion_time = nv_sig['pulsed_ionization_dur']
+    # reion_time = nv_sig['pulsed_reionization_dur']
+    # init_ion_time = nv_sig['pulsed_initial_ion_dur']
+    # aom_ao_589_pwr = nv_sig['am_589_power']
+    # nd_filter = nv_sig['nd_filter']
     # set the nd_filter for yellow
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
+    # cxn.filter_slider_ell9k.set_filter(nd_filter)
     
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    # New version setup
+    
+    readout_time = nv_sig['charge_readout_dur']
+    ion_time = nv_sig['nv0_ionization_dur']
+    reion_time = nv_sig['nv-_reionization_dur']
+    init_ion_time = nv_sig['initialize_dur']
+    key = 'charge_readout_power'
+    aom_ao_589_pwr = nv_sig[key] if key in nv_sig else None
+    
+    tool_belt.reset_cfm(cxn)
+    
+    config = tool_belt.get_config_dict(cxn)
 
-    #delay of aoms and laser
-    laser_515_delay = shared_params['515_DM_laser_delay']
-    aom_589_delay = shared_params['589_aom_delay']
-    laser_638_delay = shared_params['638_DM_laser_delay']
+    # Get lasers and their params
+    reion_laser = nv_sig['nv-_reionization_laser']
+    readout_laser = nv_sig['charge_readout_laser']
+    ion_laser = nv_sig['nv0_ionization_laser']
+    laser_515_delay = config["Optics"][reion_laser]["delay"]
+    aom_589_delay = config["Optics"][readout_laser]["delay"]
+    laser_638_delay = config["Optics"][ion_laser]["delay"]
     
-    wait_time = shared_params['post_polarization_wait_dur']
+    wait_time = config["CommonDurations"]['cw_meas_buffer']
 
     # Set up our data lists
     opti_coords_list = []
@@ -187,8 +204,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     # Estimate the lenth of the sequance            
     file_name = 'SCC_optimize_pulses_wout_uwaves.py'
     seq_args = [readout_time,init_ion_time, reion_time, ion_time,
-            wait_time, laser_515_delay, aom_589_delay, laser_638_delay, 
-            apd_indices[0], aom_ao_589_pwr]
+                wait_time, laser_515_delay, aom_589_delay, laser_638_delay, 
+                apd_indices[0], aom_ao_589_pwr, 
+                reion_laser, readout_laser, ion_laser]
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
@@ -207,11 +225,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     # Collect data
 
     # Optimize
-    opti_coords = optimize.main_xy_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
+    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    # opti_coords = optimize.main_xy_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
     opti_coords_list.append(opti_coords)
     
-    
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
+    # Optimize does this already
+    # cxn.filter_slider_ell9k.set_filter(nd_filter)
 
     # Load the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -508,23 +527,32 @@ def optimize_ion_pulse_length(nv_sig, test_pulse_dur_list = [     0,  100, 500, 
 
 # %%
 
-def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3, 
-                               50*10**3, 100*10**3,500*10**3, 
+def optimize_readout_pulse_length(nv_sig, apd_indices, test_pulse_dur_list=None, 
+                                  measure_powers=True):
+    
+    if test_pulse_dur_list is None:
+        test_pulse_dur_list = [10*10**3, 50*10**3, 100*10**3, 500*10**3, 
                                1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
                                6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
-                               2*10**7,3*10**7,4*10**7,
-                               5*10**7
-                               ]):
-    apd_indices = [0]
-    num_reps = 500#1000
-
+                               2*10**7, 3*10**7, 4*10**7, 5*10**7]
+    
+    num_reps = 500  # 1000
     
     # measure laser powers:
-    green_optical_power_pd, green_optical_power_mW, \
+    if measure_powers:
+        ret_vals = tool_belt.measure_g_r_y_power(nv_sig['am_589_power'],
+                                                 nv_sig['nd_filter'])
+        green_optical_power_pd, green_optical_power_mW, \
             red_optical_power_pd, red_optical_power_mW, \
-            yellow_optical_power_pd, yellow_optical_power_mW = \
-            tool_belt.measure_g_r_y_power( 
-                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+            yellow_optical_power_pd, yellow_optical_power_mW = ret_vals
+                
+    else:
+        green_optical_power_pd = None
+        green_optical_power_mW = None
+        red_optical_power_pd = None
+        red_optical_power_mW = None
+        yellow_optical_power_pd = None
+        yellow_optical_power_mW = None
         
     # create some lists for data
     sig_count_raw = []
@@ -556,7 +584,10 @@ def optimize_readout_pulse_length(nv_sig, test_pulse_dur_list  = [10*10**3,
     
     # Plot
     title = 'Sweep pulse length for 589 nm'
-    text = 'Yellow pulse power set to ' + '%.0f'%(yellow_optical_power_mW*10**3) + ' uW'
+    if yellow_optical_power_mW is None:
+        text = None
+    else:
+        text = 'Yellow pulse power set to ' + '%.0f'%(yellow_optical_power_mW*10**3) + ' uW'
     fig = plot_time_sweep(test_pulse_dur_list, sig_counts_avg, ref_counts_avg, 
                           snr_list, title, text = text)
     
@@ -641,62 +672,102 @@ def optimize_readout_pulse_power(nv_sig, power_list = None):
     
     print(' \nRoutine complete!')
     return
-# %% Run the files
+
+
+# %% Run the file
+
     
 if __name__ == '__main__':
-    sample_name = 'goepert-mayer'
+#     sample_name = 'goepert-mayer'
     
         
-    expected_count_list = [40, 45, 65, 64, 55, 42,  40, 45 ] # 4/13/21 ###
-    nv_coords_list = [
-[-0.037, 0.119, 5.14],
-[-0.090, 0.066, 5.04],
-[-0.110, 0.042, 5.13],
-[0.051, -0.115, 5.08],
-[-0.110, 0.042, 5.06],
+#     expected_count_list = [40, 45, 65, 64, 55, 42,  40, 45 ] # 4/13/21 ###
+#     nv_coords_list = [
+# [-0.037, 0.119, 5.14],
+# [-0.090, 0.066, 5.04],
+# [-0.110, 0.042, 5.13],
+# [0.051, -0.115, 5.08],
+# [-0.110, 0.042, 5.06],
 
-[0.063, 0.269, 5.09], 
-[0.243, 0.184, 5.12],
-[0.086, 0.220, 5.03],
-]
+# [0.063, 0.269, 5.09], 
+# [0.243, 0.184, 5.12],
+# [0.086, 0.220, 5.03],
+# ]
     
-    nv_2021_03_30 = { 'coords':[], 
-            'name': 'goepert-mayer-nv_2021_04_02',
-            'expected_count_rate': None,'nd_filter': 'nd_1.0',
-            'color_filter': '635-715 bp', 
-#            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 15*10**7,  'am_589_power': 0.15, 
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
-            'ao_515_pwr':0.65,
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
-    test_pulses  = [10*10**3, 
-                                100*10**3,
-                               1*10**6,  5*10**6, 
-                                1*10**7,
-                               2*10**7,3*10**7,4*10**7,
-                               5*10**7
-                               ]
-    for i in [7]:#range(len(nv_coords_list)):
-        nv_sig = copy.deepcopy(nv_2021_03_30)
-        nv_sig['coords'] = nv_coords_list[i]
-        nv_sig['expected_count_rate'] = expected_count_list[i]
-        nv_sig['name'] = 'johnson-nv{}_2021_04_15'.format(i)
-        nv_sig['nd_filter'] = 'nd_1.0'
-#        nv_sig['am_589_power'] = 0.20
-#        optimize_readout_pulse_length(nv_sig  )
-        nv_sig['am_589_power'] = 0.15
-        optimize_readout_pulse_length(nv_sig  , test_pulse_dur_list  = test_pulses)
-#        optimize_readout_pulse_power(nv_sig,power_list=  [ 0.15,0.16, 0.17,0.18, 0.19, 0.2])
+#     nv_2021_03_30 = { 'coords':[], 
+#             'name': 'goepert-mayer-nv_2021_04_02',
+#             'expected_count_rate': None,'nd_filter': 'nd_1.0',
+#             'color_filter': '635-715 bp', 
+# #            'color_filter': '715 lp',
+#             'pulsed_readout_dur': 300,
+#             'pulsed_SCC_readout_dur': 15*10**7,  'am_589_power': 0.15, 
+#             'pulsed_initial_ion_dur': 25*10**3,
+#             'pulsed_shelf_dur': 200, 
+#             'am_589_shelf_power': 0.35,
+#             'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
+#             'ao_515_pwr':0.65,
+#             'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10, 
+#             'magnet_angle': 0,
+#             "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
+#             "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+#     test_pulses  = [10*10**3, 
+#                                 100*10**3,
+#                                1*10**6,  5*10**6, 
+#                                 1*10**7,
+#                                2*10**7,3*10**7,4*10**7,
+#                                5*10**7
+#                                ]
+#     for i in [7]:#range(len(nv_coords_list)):
+#         nv_sig = copy.deepcopy(nv_2021_03_30)
+#         nv_sig['coords'] = nv_coords_list[i]
+#         nv_sig['expected_count_rate'] = expected_count_list[i]
+#         nv_sig['name'] = 'johnson-nv{}_2021_04_15'.format(i)
+#         nv_sig['nd_filter'] = 'nd_1.0'
+# #        nv_sig['am_589_power'] = 0.20
+# #        optimize_readout_pulse_length(nv_sig  )
+#         nv_sig['am_589_power'] = 0.15
+#         optimize_readout_pulse_length(nv_sig  , test_pulse_dur_list  = test_pulses)
+# #        optimize_readout_pulse_power(nv_sig,power_list=  [ 0.15,0.16, 0.17,0.18, 0.19, 0.2])
     
-#        optimize_reion_pulse_length(nv_sig)
+# #        optimize_reion_pulse_length(nv_sig)
    
         
-#    optimize_readout_pulse_power(nv18_2020_11_10)
+# #    optimize_readout_pulse_power(nv18_2020_11_10)
+
+    # %% Hahn main
+
+    # apd_indices = [0]
+    apd_indices = [1]
+    # apd_indices = [0,1]
+    
+    # nd = 'nd_0'
+    nd = 'nd_0.5'
+    # nd = 'nd_1.0'
+    # nd = 'nd_2.0'
+    
+    sample_name = 'wu'
+    
+    green_laser = "laserglow_532"
+    yellow_laser = "laserglow_589"
+    red_laser = "cobolt_638"
+    
+    nv_sig = { 'coords': [0.099, -0.141, 15], 'name': '{}-nv3_2021_11_03'.format(sample_name),
+            'disable_opt': False, 'expected_count_rate': 15,
+            # 'disable_opt': True, 'expected_count_rate': None,
+            
+            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur':500,
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
+            "initialize_laser": green_laser, "initialize_dur": 1e4,
+            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6, "charge_readout_power": 1.0,
+            
+            'collection_filter': None, 'magnet_angle': 60,
+            'resonance_LOW': 2.8240, 'rabi_LOW': 139.1, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9191, 'rabi_HIGH': 202.4, 'uwave_power_HIGH': 16.5}  
+    
+    optimize_readout_pulse_length(nv_sig, apd_indices, measure_powers=False)
     

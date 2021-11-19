@@ -741,19 +741,21 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
 if __name__ == "__main__":
 
-    temp = 162.5
+    temp = 5.5
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)
-    # print('good times in ms')
-    # print('Omega: {}'.format(4000/(3*est_omega)))
-    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    # # print('good times in ms')
+    # # print('Omega: {}'.format(4000/(3*est_omega)))
+    # # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    # print('Omega: {}'.format(est_omega))
+    # print('gamma: {}'.format(est_gamma))
 
     plt.ion()
 
     path = "pc_hahn/branch_master/t1_interleave_knill/data_collections/"
     folders = [
-        "hopper-search-{}K".format(temp),
+        "hopper-search-{}K-low_B".format(temp),
         # 'hopper-nv1_2021_03_16-{}K-gamma_minus_1'.format(temp),
         # 'hopper-nv1_2021_03_16-{}K-gamma_plus_1'.format(temp),
     ]
