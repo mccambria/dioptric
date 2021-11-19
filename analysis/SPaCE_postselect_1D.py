@@ -19,7 +19,10 @@ dz_max= 0.11 #V
 def do_postselect(file, folder, scale = 1000):
     data = tool_belt.get_raw_data(file, folder)
     drift_list_master = data['drift_list_master']
-    rad_dist =data['rad_dist']
+    # rad_dist =data['rad_dist']
+    coords_voltages = data['coords_voltages']
+    x_voltages = numpy.array([el[0] for el in coords_voltages])
+    y_voltages = numpy.array([el[1] for el in coords_voltages])
     num_steps = data['num_steps_a']
     readout_counts_array = numpy.flipud(numpy.rot90(data['readout_counts_array']))
     ps_readout_counts_array = []
@@ -77,7 +80,7 @@ def do_postselect(file, folder, scale = 1000):
     readout_counts_avg = numpy.average(ps_readout_counts_array, axis = 0)
 
 # %% Plot    
-    rad_dist = numpy.array(rad_dist)*scale
+    rad_dist = numpy.sqrt((x_voltages - x_voltages[0])**2 + (y_voltages - y_voltages[0])**2 )*scale
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     ax.plot(rad_dist,readout_counts_avg, 'b.')
     ax.set_xlabel('r (m)')
