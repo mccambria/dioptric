@@ -1306,7 +1306,7 @@ if __name__ == '__main__':
     #file_name="2021_11_12-18_40_06-johnson-nv1_2021_11_08"#2 min test
     file_name = '2021_11_16-09_49_09-johnson-nv3_2021_11_08'#1.5 ms combined
     # file_name='2021_11_16-06_41_26-johnson-nv3_2021_11_08' #1.8 Ms
-    file_name = '2021_11_16-12_14_49-johnson-nv3_2021_11_08'
+    file_name = '2021_11_16-09_49_09-johnson-nv3_2021_11_08'
     
     
     plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = True,

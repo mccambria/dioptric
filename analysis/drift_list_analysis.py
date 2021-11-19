@@ -53,34 +53,37 @@ def do_plot_drift(file, folder, x_unit, y_unit, z_unit):
     ax.set_title('Z')
     plt.tight_layout()
     
-    # plot changes in drift
-    dx_drift = []
-    dy_drift = []
-    dz_drift = []
+    # create a signle lists of the change in drift from point n-1 to point n, 
+    # starting at 1. Put in a 0th index with value of 0
+    dx_drift = [0]
+    dy_drift = [0]
+    dz_drift = [0]
     
     for i in range(len(drift_x)-1):
-        dx = drift_x[i+1] - drift_x[i]
+        i = i+1
+        dx = drift_x[i] - drift_x[i-1]
         dx_drift.append(dx)
-        dy = drift_y[i+1] - drift_y[i]
+        dy = drift_y[i] - drift_y[i-1]
         dy_drift.append(dy)
-        dz = drift_z[i+1] - drift_z[i]
+        dz = drift_z[i] - drift_z[i-1]
         dz_drift.append(dz)
+
     print('dx st. dev: {} {}'.format(numpy.std(abs(numpy.array(dx_drift))), x_unit ))
     print('dy st. dev: {} {}'.format(numpy.std(abs(numpy.array(dy_drift))), y_unit ))
     print('dz st. dev: {} {}'.format(numpy.std(abs(numpy.array(dz_drift))), z_unit ))
     fig, axes = plt.subplots(1,3)
     ax=axes[0]
-    ax.plot(time_vals[:-1], dx_drift, 'r')
+    ax.plot(time_vals, dx_drift, 'r')
     ax.set_xlabel('Time elapsed (m)')
     ax.set_ylabel('Change in drift, n+1 - n ({})'.format(x_unit))
     ax.set_title('X')
     ax=axes[1]
-    ax.plot(time_vals[:-1], dy_drift,'r')
+    ax.plot(time_vals, dy_drift,'r')
     ax.set_xlabel('Time elapsed (m)')
     ax.set_ylabel('Change in drift, n+1 - n ({})'.format(y_unit))
     ax.set_title('Y')
     ax=axes[2]
-    ax.plot(time_vals[:-1], dz_drift, 'r')
+    ax.plot(time_vals, dz_drift, 'r')
     ax.set_xlabel('Time elapsed (m)')
     ax.set_ylabel('Change in drift, n+1 - n ({})'.format(z_unit))
     ax.set_title('Z')
@@ -90,10 +93,8 @@ def do_plot_drift(file, folder, x_unit, y_unit, z_unit):
 
 
 folder = 'pc_rabi/branch_CFMIII/SPaCE_digital/2021_11'
-# file = '2021_11_12-06_48_05-johnson-nv1_2021_11_08' #700 us
-# file = '2021_11_12-03_20_07-johnson-nv1_2021_11_08'#600 us
-file = '2021_11_11-23_50_24-johnson-nv1_2021_11_08'#500 us
-# do_plot_drift(file, folder, 'um', 'um', 'V')
+file = '2021_11_16-09_49_09-johnson-nv3_2021_11_08'
+do_plot_drift(file, folder, 'um', 'um', 'V')
 
 
 folder = 'pc_rabi/branch_CFMIII/SPaCE/2021_11'
@@ -102,4 +103,4 @@ file = '2021_11_09-17_08_05-johnson-nv1_2021_11_08'
 
 folder = 'pc_rabi/branch_master/SPaCE/2021_10'
 file = '2021_10_23-11_24_22-ayrton_101-nv0_2021_10_20'
-do_plot_drift(file, folder, 'V', 'V', 'V')
+# do_plot_drift(file, folder, 'V', 'V', 'V')
