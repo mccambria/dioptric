@@ -169,11 +169,12 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
 
     counts = data['readout_counts_avg']
     
-    # plot only the first n a5erages
-    num_averages = 25
+    # plot only the first n averages
+    num_averages = 8
     # readout_counts_array = data['readout_counts_array']
     # readout_counts_array_rot = numpy.rot90(readout_counts_array)
-    # counts = numpy.average(readout_counts_array_rot[:num_averages], axis = 0)
+    # print(readout_counts_array_rot)
+    # counts = numpy.average(readout_counts_array_rot[num_averages:], axis = 0)
     
     
     coords_voltages = data['coords_voltages']
@@ -186,9 +187,13 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
 
     start_coords = nv_sig['coords']
     
-    # calculate the radial distances from the readout NV to the target points
-    rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)*scale
-        
+    # calculate the radial distances from the readout NV to the target point
+
+    rad_dist = numpy.sqrt((x_voltages - x_voltages[0])**2 +( y_voltages - y_voltages[0])**2)*scale
+    # rad_dist = numpy.sqrt((x_voltages -start_coords[0])**2 +( y_voltages - start_coords[1])**2)*scale
+    # rad_dist = (x_voltages - x_voltages[0])*scale
+    # print(y_voltages - start_coords[1])
+    #rad_dist=data['rad_dist']
 
     # if dir_1D == 'x':
     #     coord_ind = 0
@@ -826,17 +831,19 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     movement_delay = int(total_movement_delay/movement_incr)
         
     
-        
-    # set up sequence for yellow then green
+    movement_delay =0#50e6
     readout_file = 'simple_readout.py'
-    seq_args = [0, charge_readout_time, apd_indices[0],
+    #readout sequence
+    seq_args = [movement_delay, charge_readout_time, apd_indices[0],
                 charge_readout_laser_key ,
                 charge_readout_laser_power]
     y_seq_args_string = tool_belt.encode_seq_args(seq_args)
     simple_pulse_file = 'simple_pulse.py'
+    #initalize sequence
     seq_args = [0, initialization_time, initialization_laser_key, initialization_laser_power]
-    g_seq_args_string = tool_belt.encode_seq_args(seq_args)  
-    seq_args = [0, pulse_time, depletion_laser_key, depletion_laser_power]
+    g_seq_args_string = tool_belt.encode_seq_args(seq_args) 
+    #depletion sequence 
+    seq_args = [movement_delay, pulse_time, depletion_laser_key, depletion_laser_power]
     r_seq_args_string = tool_belt.encode_seq_args(seq_args) 
 
 
@@ -886,10 +893,11 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
                                                   g_seq_args_string)
         
         flag_d = xy_server.write_xy(coords_list_drift[i][0],coords_list_drift[i][1])
+        time.sleep(0.05)
         cxn.pulse_streamer.stream_immediate(simple_pulse_file,1,
                                                   r_seq_args_string)
         flag_n = xy_server.write_xy(start_coords_drift[0],start_coords_drift[1])
-        
+        time.sleep(0.05)
         cxn.pulse_streamer.stream_immediate(readout_file,1,
                                                   y_seq_args_string)
         
@@ -990,6 +998,8 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         # neg_ints = int(numpy.floor(len(rad_dist)/2))
         # rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
         
+        fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
+
 
     elif img_range_2D != None:
         measurement_type = '2D'
@@ -1174,6 +1184,24 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         
         file_path = tool_belt.get_file_path(__file__, start_timestamp, nv_sig['name'], 'incremental')
 
+        if measurement_type == '1D':
+            
+            ax_1D.cla()
+            ax_1D.plot(rad_dist*scale,readout_counts_avg, label = nv_sig['name'])
+            ax_1D.set_xlabel('r (um)')
+            ax_1D.set_ylabel('Average counts')
+            ax_1D.set_title('SPaCE {}- {} nm init pulse \n{} nm {} ms CPG pulse'.\
+                                        format(direction_title, init_color, 
+                                               pulse_color, pulse_time/10**6,))
+            fig_1D.canvas.draw()
+            fig_1D.set_tight_layout(True)
+            fig_1D.canvas.flush_events()
+            
+
+            # This will continuously be the same file path so we will overwrite
+            # the existing file with the latest version
+            tool_belt.save_figure(fig_1D, file_path)
+        
         if measurement_type == '2D':
             # create image array from list of  readout counts
             split_counts = numpy.split(readout_counts_avg, num_steps_b)
@@ -1259,14 +1287,13 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
             raw_data['readout_counts_array_charge-units'] = 'counts'
                 
     if measurement_type == '1D':
-        fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
+        ax_1D.cla()
         ax_1D.plot(rad_dist*scale,readout_counts_avg, label = nv_sig['name'])
         ax_1D.set_xlabel('r (um)')
         ax_1D.set_ylabel('Average counts')
         ax_1D.set_title('SPaCE {}- {} nm init pulse \n{} nm {} ms CPG pulse'.\
                                         format(direction_title, init_color, 
                                                pulse_color, pulse_time/10**6,))
-        ax_1D.legend()
         tool_belt.save_figure(fig_1D, file_path)
         
         raw_data['rad_dist'] = (rad_dist*scale).tolist()
@@ -1301,12 +1328,10 @@ if __name__ == '__main__':
 
     file_path = 'pc_rabi/branch_CFMIII/SPaCE_digital/2021_11'
     
-    #file_name = '2021_11_12-22_51_16-johnson-nv1_2021_11_08' #1 min test
+    file_name = '2021_11_19-13_57_47-johnson-nv1_2021_11_17'
+    file_name ='2021_11_19-19_54_25-johnson-nv1_2021_11_17' #no delay
     
-    #file_name="2021_11_12-18_40_06-johnson-nv1_2021_11_08"#2 min test
-    file_name = '2021_11_16-09_49_09-johnson-nv3_2021_11_08'#1.5 ms combined
-    # file_name='2021_11_16-06_41_26-johnson-nv3_2021_11_08' #1.8 Ms
-    file_name = '2021_11_16-12_14_49-johnson-nv3_2021_11_08'
+    file_name ='2021_11_19-21_57_12-johnson-nv1_2021_11_17' #50 Ms delay using time.sleep
     
     
     plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = True,

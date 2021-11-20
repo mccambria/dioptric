@@ -228,7 +228,7 @@ if __name__ == "__main__":
         "name": "{}-nv1_2021_11_17".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate": 55,
+        "expected_count_rate": 60,
         
         
         "spin_laser": green_laser,
@@ -258,8 +258,8 @@ if __name__ == "__main__":
         "CPG_laser_dur": 1e5,
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.12,
-        "charge_readout_dur": 100e6,
+        "charge_readout_laser_power": 0.13,
+        "charge_readout_dur": 50e6,
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
@@ -281,8 +281,8 @@ if __name__ == "__main__":
     try:
             
         
-        #do_optimize(nv_sig, apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
+        #do_image_sample(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)
         # do_stationary_count(nv_sig_search, apd_indices)
         
@@ -302,27 +302,30 @@ if __name__ == "__main__":
             
             
         # 1st airy ring power
-        t_list = [1e3, 5e3, 10e3, 50e3, 100e3, 500e3, 1000e3]
+        t_list = [22.5e6]
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
-            num_steps = 125
-            num_runs = 40
+            # num_steps = 301
+            # num_runs = 100
             
-            ## +x
+            
+            ## Radially out to 1.25 um
+            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+            #         [[0+0.24700, -0.755,0 ], [-1.25+0.24700, -0.755,0 ]],  None, offset_list, 2)
+            
+            ## First airy ring (around 50e3)
+            # nv_sig['CPG_laser_dur'] = 35e3
+            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+            #         [[-0.2+0.24700, -0.755,0 ], [-0.5+0.24700, -0.755,0 ]],  None, offset_list, 2)
+            
+            num_steps = 201
+            num_runs = 25
+            # nv_sig['CPG_laser_dur'] = 10e6
+            ## Second airy ring (around 10e6)
             do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-                   [[0+0.24700, -0.755,0 ], [-1.25+0.24700, -0.755,0 ]],  None, offset_list, 2)
-            #do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #        [[-0.275, -0.250,0 ], [-0.575, -0.25,0 ]],  None, offset_list, 1)
-            # #-x
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[0.15/50, -0.25/50,0 ], [0.45/50, -0.25/50,0 ]],  None, offset_list)
-            # #-y
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[-0.055/50, -0.475/50,0 ], [-0.055/50, -0.775/50,0 ]],  None, offset_list)
-            # #+y
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[-0.055/50, 0.05/50,0 ], [-0.055/50, 0.35/50,0 ]],  None, offset_list)
+                    [[-0.7+0.24700, -0.755,0 ], [-0.9+0.24700, -0.755,0 ]],  None, offset_list, 2)
+            
             
 
         # Operations that don't need an NV

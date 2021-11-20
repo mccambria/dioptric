@@ -148,15 +148,17 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
     tool_belt.set_xyz(cxn, adjusted_nv_coords)
 
     # Pulse sequence to do a single pulse followed by readout           
-    seq_file = 'simple_readout_two_pulse.py'
+    seq_file = 'simple_readout_two_pulse.py'     
+        
         
     ################## Load the measuremnt with green laser ##################
       
     seq_args = [reionization_time, readout_pulse_time, nv_sig["nv-_prep_laser"], 
-                nv_sig["charge_readout_laser"], nv0_laser_power, 
+                nv_sig["charge_readout_laser"], nvm_laser_power, 
                 readout_laser_power, 2, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+    # print(seq_args)
 
     # Load the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -169,10 +171,11 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
     
     ################## Load the measuremnt with red laser ##################
     seq_args = [ionization_time, readout_pulse_time, nv_sig["nv0_prep_laser"], 
-                nv_sig["charge_readout_laser"], nvm_laser_power, 
+                nv_sig["charge_readout_laser"], nv0_laser_power, 
                 readout_laser_power, 2,apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+    # print(seq_args)
 
     # Load the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -220,7 +223,6 @@ def determine_readout_dur(nv_sig, opti_nv_sig, readout_times = None, readout_yel
             nv0, nvm = measure(nv_sig_copy, opti_nv_sig, apd_indices, num_reps)
             nv0_power.append(nv0)
             nvm_power.append(nvm)
-            
             timestamp = tool_belt.get_time_stamp()
             raw_data = {'timestamp': timestamp,
                     'nv_sig': nv_sig_copy,
@@ -446,7 +448,7 @@ if __name__ == '__main__':
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
-        determine_readout_dur(nv_sig, nv_sig, readout_times = [100e6], readout_yellow_powers = [0.12],
+        determine_readout_dur(nv_sig, nv_sig, readout_times = [50e6], readout_yellow_powers = [0.13],
                           nd_filter = 'nd_1.0')
     finally:
         # Reset our hardware - this should be done in each routine, but
