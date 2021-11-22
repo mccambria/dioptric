@@ -153,14 +153,15 @@ def calc_overlap(field_1, field_2, r_linspace):
 
 def calc_overlap_sweep():
 
+    fig, ax = plt.subplots()
     overlaps = []
-    fiber_r_range = 10e-6
-    num_points = 10000
+    fiber_r_range = 3 * fiber_mfr
+    num_points = 1000
     r_linspace = np.linspace(0, fiber_r_range, num_points)
 
     # Collection focal lengths
     # sweep_linspace = np.linspace(100e-6, 2e-3, 50)
-    # fiber_field = np.exp(-2 * ((r_linspace / fiber_mfr) ** 2))
+    # fiber_field = np.exp(-((r_linspace / fiber_mfr) ** 2))
     # fiber_field = normalize_field(fiber_field, r_linspace)
     # for f in collection_focal_lengths:
     #     nv_field = calc_nv_field_at_fiber(fiber_r_range, num_points, f)
@@ -168,23 +169,56 @@ def calc_overlap_sweep():
     #     overlaps.append(np.abs(riemann_sum(integrand, delta)) ** 2)
 
     # Fiber mode field radii
-    nv_field = calc_nv_field_at_fiber(fiber_r_range, num_points)
-    sweep_linspace = np.linspace(0.1e-6, 4.1e-6, 21)
-    for mfr in sweep_linspace:
-        fiber_field = np.exp(-((r_linspace / mfr) ** 2))
-        fiber_field = normalize_field(fiber_field, r_linspace)
+    # nv_field = calc_nv_field_at_fiber(fiber_r_range, num_points)
+    # sweep_linspace = np.linspace(0.1e-6, 4.1e-6, 21)
+    # for mfr in sweep_linspace:
+    #     fiber_field = np.exp(-((r_linspace / mfr) ** 2))
+    #     fiber_field = normalize_field(fiber_field, r_linspace)
+    #     overlap = calc_overlap(fiber_field, nv_field, r_linspace)
+    #     overlaps.append(overlap)
+
+    # Collection alignment
+    # fiber_field = np.exp(-((r_linspace / fiber_mfr) ** 2))
+    # fiber_field = normalize_field(fiber_field, r_linspace)
+    # sweep_linspace = np.linspace(17.95e-3, 18.05e-3, 21)
+    # ax.set_xlabel("Fiber to collection objective distance (m)")
+    # for val in sweep_linspace:
+    #     nv_field = calc_nv_field_at_fiber(collection_to_fiber_distance=val)
+    #     overlap = calc_overlap(fiber_field, nv_field, r_linspace)
+    #     overlaps.append(overlap)
+
+    # Second collection telescope focal length
+    # fiber_field = np.exp(-((r_linspace / fiber_mfr) ** 2))
+    # fiber_field = normalize_field(fiber_field, r_linspace)
+    # sweep_linspace = np.linspace(100e-3, 200e-3, 21)
+    # ax.set_xlabel("Second collection telescope lens focal length (m)")
+    # for val in sweep_linspace:
+    #     nv_field = calc_nv_field_at_fiber(collection_telescope_2_f=val)
+    #     overlap = calc_overlap(fiber_field, nv_field, r_linspace)
+    #     overlaps.append(overlap)
+
+    # First collection telescope focal length
+    fiber_field = np.exp(-((r_linspace / fiber_mfr) ** 2))
+    fiber_field = normalize_field(fiber_field, r_linspace)
+    sweep_linspace = np.linspace(20e-3, 60e-3, 21)
+    ax.set_xlabel("First collection telescope lens focal length (m)")
+    for val in sweep_linspace:
+        nv_field = calc_nv_field_at_fiber(collection_telescope_1_f=val)
         overlap = calc_overlap(fiber_field, nv_field, r_linspace)
         overlaps.append(overlap)
 
     overlaps = np.array(overlaps)
-    fig, ax = plt.subplots()
     ax.plot(sweep_linspace, overlaps)
+    ax.set_ylabel("Overlap")
 
 
 def calc_nv_field_at_fiber(
     fiber_r_range=fiber_mfr * 3,
     num_points=1000,
     collection_focal_length=18e-3,
+    collection_to_fiber_distance=18e-3,
+    collection_telescope_1_f=50e-3,
+    collection_telescope_2_f=150e-3,
     do_plot=False,
 ):
 
@@ -193,6 +227,7 @@ def calc_nv_field_at_fiber(
     output_r_linspace = np.linspace(0, 5 * sample_aperture_radius, num_points)
     first_aperture_radius = sample_aperture_radius
     skip_sample_propagation = False
+    skip_first_sample_telescope_lens = False
     norm_r_max = sample_aperture_radius
     free_space_distance = 0.1
     sample_telescope_1_f = 0.4
@@ -238,6 +273,7 @@ def calc_nv_field_at_fiber(
     # Gu psf
     else:
         skip_sample_propagation = True
+        skip_first_sample_telescope_lens = True
         spot_size = (wavelength / np.pi) * (
             sample_telescope_1_f / sample_aperture_radius
         )
@@ -279,7 +315,7 @@ def calc_nv_field_at_fiber(
     # return
 
     # First sample telescope lens
-    if not skip_sample_propagation:
+    if not skip_first_sample_telescope_lens:
         nv_intensity = intensity(nv_field)
         nv_field = lens_phase_mask(
             nv_field, input_r_linspace, sample_telescope_1_f
@@ -325,19 +361,23 @@ def calc_nv_field_at_fiber(
     # First collection telescope lens
     input_r_linspace = output_r_linspace
     output_r_linspace = input_r_linspace * 2
-    nv_field = lens_phase_mask(nv_field, input_r_linspace, 0.050)
+    nv_field = lens_phase_mask(
+        nv_field, input_r_linspace, collection_telescope_1_f
+    )
     nv_field = aperture_propagate(
         nv_field,
         input_r_linspace,
         output_r_linspace,
-        0.2,
+        collection_telescope_1_f + collection_telescope_2_f,
         inch / 2,
     )
 
     # Second collection telescope lens
     input_r_linspace = output_r_linspace
     output_r_linspace = input_r_linspace
-    nv_field = lens_phase_mask(nv_field, input_r_linspace, 0.150)
+    nv_field = lens_phase_mask(
+        nv_field, input_r_linspace, collection_telescope_2_f
+    )
     nv_field = aperture_propagate(
         nv_field,
         input_r_linspace,
@@ -367,7 +407,7 @@ def calc_nv_field_at_fiber(
         nv_field,
         input_r_linspace,
         output_r_linspace,
-        collection_focal_length,
+        collection_to_fiber_distance,
         inch / 2,
     )
 
