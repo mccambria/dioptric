@@ -49,8 +49,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.25*scale
     # scan_range = 0.15*scale
     # scan_range = 0.1*scale
-    scan_range = 0.04*scale
-    # scan_range = 0.025*scale
+    # scan_range = 0.04*scale
+    scan_range = 0.025*scale
    # scan_range = 0.01*scale
     #
     # num_steps = 400
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     
      
     nv_sig_1 = {
-        "coords": [249.787, 250.073, 5],
+        "coords": [250.241, 249.371, 5],
         "name": "{}-nv1_2021_11_17".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
@@ -281,8 +281,15 @@ if __name__ == "__main__":
     try:
             
         
+        # Operations that don't need an NV
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+        # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
+
+
+
         # do_optimize(nv_sig, apd_indices)
-        #do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)
         # do_stationary_count(nv_sig_search, apd_indices)
         
@@ -294,15 +301,8 @@ if __name__ == "__main__":
         num_steps_y = 41
         num_steps_z = 101
     
-        for t in [5e3]:
-            nv_sig['CPG_laser_dur'] = t
-            img_range_2D = [1.5,1.5, 0 ]
-            #do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
-             #           None,  img_range_2D, offset_list)
-            
-            
         # 1st airy ring power
-        t_list = [22.5e6]
+        t_list = [20e6]
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
@@ -323,15 +323,17 @@ if __name__ == "__main__":
             num_runs = 25
             # nv_sig['CPG_laser_dur'] = 10e6
             ## Second airy ring (around 10e6)
-            do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-                    [[-0.7+0.24700, -0.755,0 ], [-0.9+0.24700, -0.755,0 ]],  None, offset_list, 2)
-            
+            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
+            #         [[-0.7+0.24700, -0.755,0 ], [-0.9+0.24700, -0.755,0 ]],  None, offset_list, 2)
             
 
-        # Operations that don't need an NV
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
-        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
+        for t in [20e6]:
+            nv_sig['CPG_laser_dur'] = t
+            img_range_2D = [1.5,1.5, 0 ]
+            #do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
+            #            None,  img_range_2D, offset_list)
+            
+                        
 
     except Exception as exc:
         # Intercept the exception so we can email it out and re-raise it
