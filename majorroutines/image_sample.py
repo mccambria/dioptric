@@ -348,10 +348,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_rabi/branch_master/image_sample/2021_10'
-    file_name = '2021_10_20-09_16_28-ayrton_101-search'
+    # path = 'pc_rabi/branch_master/image_sample/2021_10'
+    file_name = '2021_11_11-16_01_03-wu-nv1_2021_11_11'
 
-    data = tool_belt.get_raw_data( file_name, path)
+    data = tool_belt.get_raw_data(file_name)
     nv_sig = data['nv_sig']
     timestamp = data['timestamp']
     img_array = data['img_array']

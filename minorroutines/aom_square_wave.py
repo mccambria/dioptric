@@ -31,7 +31,7 @@ HIGH = 1
 # %% Functions
 
 
-def constant(cxn, laser_names, laser_power=None):
+def constant(cxn, laser_names, laser_powers=None):
     
     # seq_file = 'square_wave.py'
     # period = int(1000)
@@ -43,14 +43,24 @@ def constant(cxn, laser_names, laser_power=None):
     # cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
 
     # tool_belt.laser_off(cxn, laser_name)
+    
+    num_lasers = len(laser_names)
+    
+    if laser_powers is None:
+        laser_powers = [None] * num_lasers
 
-    for laser in laser_names:
-        tool_belt.laser_on(cxn, laser, laser_power)
+    for ind in range(num_lasers):
+        laser_name = laser_names[ind]
+        laser_power = laser_powers[ind]
+        tool_belt.laser_on(cxn, laser_name, laser_power)
+        
+    # cxn.pulse_streamer.constant([3], 1.0)
+    # cxn.pulse_streamer.constant([], 1.0)
 
     input('Press enter to stop...')
 
-    for laser in laser_names:
-        tool_belt.laser_off(cxn, laser)
+    for laser_name in laser_names:
+        tool_belt.laser_off(cxn, laser_name)
 
 
 # %% Main
@@ -94,23 +104,28 @@ if __name__ == '__main__':
     # Hahn
     # laser_names = ['cobolt_638']
     # laser_names = ['laserglow_589']
-    laser_names = ['laserglow_532']
-    # laser_names = ['cobolt_638', 'laserglow_532']
-    # laser_names = ['laserglow_589', 'laserglow_532']
+    # laser_names = ['laserglow_532']
+    laser_names = ['cobolt_638', 'laserglow_532']
+    # laser_names = ['laserglow_532', 'laserglow_589']
+    # laser_powers = [None, 1.0]
+    # laser_powers = [1.0]
     # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']
     # filter_name = 'nd_1.0'
-    # pos = [0.0, 0.0, 0]
+    pos = [0.0, 0.0, -123]
+    laser_powers = None
 
     with labrad.connect() as cxn:
         # tool_belt.set_xyz(cxn, pos)
 #        for el in laser_names:
         # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
-        constant(cxn, laser_names)
+        # constant(cxn, laser_names, laser_powers)
         # main(cxn, laser_names[0])
     
-        # cxn.pulse_streamer.constant([], 0.6)
+        cxn.pulse_streamer.constant([3], 1.0)
+        # cxn.pulse_streamer.constant([], 1.0)
+        # cxn.pulse_streamer.constant([3])
     
-        # input('Press enter to stop...')
+        input('Press enter to stop...')
         
-        # cxn.pulse_streamer.constant()
+        cxn.pulse_streamer.constant()

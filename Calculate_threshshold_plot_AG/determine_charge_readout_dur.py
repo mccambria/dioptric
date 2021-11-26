@@ -126,7 +126,9 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
     opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
     opti_coords_list.append(opti_coords)
     drift = tool_belt.get_drift()
-    # drift[1] -= 0.025
+    drift[0] -= 0.01
+    drift[1] += 0.01
+    drift[2] += 1
     adjusted_nv_coords = coords + numpy.array(drift)
     tool_belt.set_xyz(cxn, adjusted_nv_coords)
 
@@ -189,7 +191,7 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
 def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices, 
                           readout_times=None, readout_yellow_powers=None,
                           nd_filter='nd_0.5'):
-    num_reps = 250
+    num_reps = 500
     
     if readout_times is None:
         readout_times = [50*10**6, 100*10**6, 250*10**6]
@@ -422,11 +424,12 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.102, 0.088, -1], 'name': '{}-nv5_2021_11_07'.format(sample_name),
-            'disable_opt': False, 'expected_count_rate': 15,
-            # 'disable_opt': True, 'expected_count_rate': None,
+    nv_sig = { 'coords': [0.080, 0.347, 0], 'name': '{}-nv2_2021_11_24'.format(sample_name),
+            'disable_opt': False, 'expected_count_rate': 20,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
             'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
@@ -440,22 +443,27 @@ if __name__ == '__main__':
             "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
             "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
             
-            'collection_filter': None, 'magnet_angle': 60,
-            'resonance_LOW': 2.8125, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9286, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5} 
+            'collection_filter': None, 'magnet_angle': None,
+            'resonance_LOW': 2.8153, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9258, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5}
     
     # readout_times = [10*10**3, 50*10**3, 100*10**3, 500*10**3, 
     #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6, 
     #                 6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
     #                 2*10**7, 3*10**7, 4*10**7, 5*10**7]
     # readout_times = numpy.linspace(10e6, 50e6, 5)
-    readout_times = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6]
-    # readout_times = [400e6]
+    # readout_times = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 1e9]
+    # readout_times = numpy.linspace(100e6, 1e9, 10)
+    readout_times = numpy.linspace(700e6, 1e9, 7)
+    # readout_times = [50e6, 100e6, 200e6, 400e6, 1e9]
+    # readout_times = [2e9]
     readout_times = [int(el) for el in readout_times]
     
-    readout_yellow_powers = numpy.linspace(0.6, 1.0, 5)
+    # readout_yellow_powers = numpy.linspace(0.6, 1.0, 5)
+    # readout_yellow_powers = numpy.linspace(0.7, 0.9, 6)
+    readout_yellow_powers = numpy.linspace(0.76, 0.8, 5)
     # readout_yellow_powers = numpy.linspace(0.2, 1.0, 5)
-    # readout_yellow_powers = [0.0]
+    # readout_yellow_powers = [0.65]
 
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,

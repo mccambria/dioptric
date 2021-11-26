@@ -52,16 +52,19 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(nv_sig, run_time, apd_indices):
+def main(nv_sig, run_time, apd_indices, disable_opt=None):
 
     with labrad.connect() as cxn:
-        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices)
+        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt)
 
     return average, st_dev
 
-def main_with_cxn(cxn, nv_sig, run_time, apd_indices):
+def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None):
 
     # %% Some initial setup
+    
+    if disable_opt is not None:
+        nv_sig["disable_opt"] = disable_opt
 
     tool_belt.reset_cfm(cxn)
 

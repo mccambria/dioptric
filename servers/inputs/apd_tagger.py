@@ -68,7 +68,10 @@ class ApdTagger(LabradServer):
     def on_get_config(self, config):
         get_result = config["get"]
         tagger_serial = get_result[0]
-        self.tagger = TimeTagger.createTimeTagger(tagger_serial)
+        try:
+            self.tagger = TimeTagger.createTimeTagger(tagger_serial)
+        except Exception as e:
+            logging.info(e)
         self.tagger.reset()
         # The APDs share a clock, but everything else is distinct
         self.tagger_di_clock = get_result[1]
