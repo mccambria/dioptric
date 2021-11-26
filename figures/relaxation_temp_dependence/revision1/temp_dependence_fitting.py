@@ -11,6 +11,7 @@ Created on Fri Jun 26 17:40:09 2020
 # %% Imports
 
 
+import matplotlib
 import numpy
 import matplotlib.pyplot as plt
 import csv
@@ -52,8 +53,11 @@ quasi = 76.0  # meV, empirical fit
 # quasi = 65.0  # meV, quasilocalized resonance
 # quasi = 1.17e-20  # J
 
-ms = 7
-lw = 1.75
+# marker_size = 7
+# line_width = 3
+marker_size = 7
+line_width = 1.5
+marker_edge_width = line_width
 
 gamma_face_color = "#CC99CC"
 gamma_edge_color = "#993399"
@@ -61,6 +65,13 @@ omega_face_color = "#FFCC33"
 omega_edge_color = "#FF9933"
 ratio_face_color = "#FB9898"
 ratio_edge_color = "#EF2424"
+qubit_max_face_color = "#81bfeb"
+qubit_max_edge_color = "#1f77b4"
+qutrit_max_face_color = "#e5e667"
+qutrit_max_edge_color = "#bcbd22"
+
+figsize = [6.4, 4.8]  # default
+figsize = [0.7 * el for el in figsize]
 
 sample_column_title = "Sample"
 skip_column_title = "Skip"
@@ -423,6 +434,7 @@ def get_data_points(path, file_name):
                 data_points.append(point)
             # data_points.append(point)
 
+    data_points.append(data_points.pop(0))
     return data_points
 
 
@@ -443,7 +455,7 @@ def plot_scalings(
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
     # temp_linspace = numpy.linspace(5, 300, 1000)
     # temp_linspace = numpy.linspace(5, 5000, 1000)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=figsize)
     fig.set_tight_layout(True)
     # ax.set_title('Relaxation rates')
 
@@ -505,7 +517,7 @@ def plot_T2_max(
     max_temp = temp_range[1]
 
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=figsize)
     fig.set_tight_layout(True)
 
     ax.plot(temp_linspace, T2_max(temp_linspace))
@@ -538,7 +550,7 @@ def main(
     max_temp = temp_range[1]
 
     temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=figsize)
     fig.set_tight_layout(True)
 
     # Fit to Omega and gamma simultaneously
@@ -557,6 +569,7 @@ def main(
             omega_lambda(temp_linspace),
             label=r"$\Omega$ fit",
             color=omega_edge_color,
+            linewidth=line_width,
         )
         # Plot Jarmola 2012 Eq. 1 for S3
         # ax.plot(temp_linspace, omega_calc(temp_linspace),
@@ -568,6 +581,7 @@ def main(
             gamma_lambda(temp_linspace),
             label=r"$\gamma$ fit",
             color=gamma_edge_color,
+            linewidth=line_width,
         )
     # print(omega_lambda(50))
     # print(gamma_lambda(50))
@@ -582,23 +596,38 @@ def main(
             ratio_lambda(temp_linspace),
             label=r"$\gamma/\Omega$",
             color=gamma_edge_color,
+            linewidth=line_width,
         )
     if plot_type == "T2_max":
-        T2_max_qubit = lambda temp: 2 / (
-            3 * omega_lambda(temp) + gamma_lambda(temp)
+        T2_max_qubit = lambda omega, gamma: 2 / (3 * omega + gamma)
+        T2_max_qubit_temp = lambda temp: T2_max_qubit(
+            omega_lambda(temp), gamma_lambda(temp)
+        )
+        T2_max_qubit_err = lambda T2max, omega_err, gamma_err: (
+            (T2max ** 2) / 2
+        ) * numpy.sqrt((3 * omega_err) ** 2 + gamma_err ** 2)
+        ax.plot(
+            temp_linspace,
+            T2_max_qubit_temp(temp_linspace),
+            label=r"Superposition of $\ket{0}$, $\ket{\pm 1}$",
+            # label=r"Qubit T2 max",
+            color=qubit_max_edge_color,
+            linewidth=line_width,
+        )
+        T2_max_qutrit = lambda omega, gamma: 1 / (omega + gamma)
+        T2_max_qutrit_err = lambda T2max, omega_err, gamma_err: (
+            T2max ** 2
+        ) * numpy.sqrt(omega_err ** 2 + gamma_err ** 2)
+        T2_max_qutrit_temp = lambda temp: T2_max_qutrit(
+            omega_lambda(temp), gamma_lambda(temp)
         )
         ax.plot(
             temp_linspace,
-            T2_max_qubit(temp_linspace),
-            label=r"Qubit T2 max",
-        )
-        T2_max_qutrit = lambda temp: 1 / (
-            omega_lambda(temp) + gamma_lambda(temp)
-        )
-        ax.plot(
-            temp_linspace,
-            T2_max_qutrit(temp_linspace),
-            label=r"Qutrit T2 max",
+            T2_max_qutrit_temp(temp_linspace),
+            label=r"Superposition of $\ket{-1}$, $\ket{+1}$",
+            # label=r"Qutrit T2 max",
+            color=qutrit_max_edge_color,
+            linewidth=line_width,
         )
 
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
@@ -614,7 +643,7 @@ def main(
     elif plot_type == "residuals":
         ax.set_ylabel(r"Residuals (s$^{-1}$)")
     elif plot_type == "T2_max":
-        ax.set_ylabel(r"T2 max (s)")
+        ax.set_ylabel(r"$T_{2,\text{max}}$ (s)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
@@ -657,8 +686,9 @@ def main(
                     color=omega_edge_color,
                     markerfacecolor=omega_face_color,
                     linestyle="None",
-                    ms=ms,
-                    lw=lw,
+                    ms=marker_size,
+                    lw=line_width,
+                    markeredgewidth=marker_edge_width,
                 )
             # gamma
             rate = point[gamma_column_title]
@@ -677,8 +707,9 @@ def main(
                     color=gamma_edge_color,
                     markerfacecolor=gamma_face_color,
                     linestyle="None",
-                    ms=ms,
-                    lw=lw,
+                    ms=marker_size,
+                    lw=line_width,
+                    markeredgewidth=marker_edge_width,
                 )
 
         elif plot_type == "ratios":
@@ -701,8 +732,8 @@ def main(
                     color=ratio_edge_color,
                     markerfacecolor=ratio_face_color,
                     linestyle="None",
-                    ms=ms,
-                    lw=lw,
+                    ms=marker_size,
+                    lw=line_width,
                 )
         # elif plot_type == "T2_max":
         #     omega_val = point[omega_column_title]
@@ -710,22 +741,37 @@ def main(
         #     gamma_val = point[gamma_column_title]
         #     gamma_err = point[gamma_err_column_title]
         #     if (omega_val is not None) and (gamma_val is not None):
-        #         ratio = gamma_val / omega_val
-        #         ratio_err = ratio * numpy.sqrt(
-        #             (omega_err / omega_val) ** 2 + (gamma_err / gamma_val) ** 2
+        #         qubit_max_val = T2_max_qubit(omega_val, gamma_val)
+        #         qubit_max_err = T2_max_qubit_err(
+        #             qubit_max_val, omega_err, gamma_err
         #         )
         #         ax.errorbar(
         #             temp,
-        #             ratio,
-        #             yerr=ratio_err,
+        #             qubit_max_val,
+        #             yerr=qubit_max_err,
         #             xerr=temp_error,
-        #             label=r"$\gamma/\Omega$",
         #             marker=marker,
-        #             color=ratio_edge_color,
-        #             markerfacecolor=ratio_face_color,
+        #             color=qubit_max_edge_color,
+        #             markerfacecolor=qubit_max_face_color,
         #             linestyle="None",
-        #             ms=ms,
-        #             lw=lw,
+        #             ms=marker_size,
+        #             lw=line_width,
+        #         )
+        #         qutrit_max_val = T2_max_qutrit(omega_val, gamma_val)
+        #         qutrit_max_err = T2_max_qutrit_err(
+        #             qutrit_max_val, omega_err, gamma_err
+        #         )
+        #         ax.errorbar(
+        #             temp,
+        #             qutrit_max_val,
+        #             yerr=qutrit_max_err,
+        #             xerr=temp_error,
+        #             marker=marker,
+        #             color=qutrit_max_edge_color,
+        #             markerfacecolor=qutrit_max_face_color,
+        #             linestyle="None",
+        #             ms=marker_size,
+        #             lw=line_width,
         #         )
 
     # %% Legend
@@ -737,11 +783,13 @@ def main(
             label=r"$\Omega$",
             facecolor=omega_face_color,
             edgecolor=omega_edge_color,
+            lw=marker_edge_width,
         )
         gamma_patch = patches.Patch(
             label=r"$\gamma$",
             facecolor=gamma_face_color,
             edgecolor=gamma_edge_color,
+            lw=marker_edge_width,
         )
         leg1 = ax.legend(
             handles=[omega_patch, gamma_patch], loc="upper left", title="Rates"
@@ -752,6 +800,7 @@ def main(
             label=r"$\gamma/\Omega$",
             facecolor=ratio_face_color,
             edgecolor=ratio_edge_color,
+            lw=marker_edge_width,
         )
         leg1 = ax.legend(handles=[ratio_patch], loc="upper left")
 
@@ -770,7 +819,8 @@ def main(
                 color="black",
                 marker=markers[ind],
                 linestyle="None",
-                markersize=ms,
+                markersize=marker_size,
+                markeredgewidth=marker_edge_width,
                 label=label,
             )
             sample_patches.append(patch)
@@ -796,18 +846,20 @@ def main(
 if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
+    matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    plot_type = "rates"
+    # plot_type = "rates"
     # plot_type = "ratios"
     # plot_type = 'ratio_fits'
     # plot_type = 'residuals'
-    # plot_type = "T2_max"
+    plot_type = "T2_max"
 
     rates_to_plot = "both"
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [0, 500]
+    # temp_range = [0, 500]
+    temp_range = [80, 500]
     xscale = "linear"
     # temp_range = [1, 500]
     # xscale = "log"
@@ -833,8 +885,8 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    plot_types = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]  # Rates
-    # plot_types = [[[-1, 6], "linear"], [[1e-3, 10], "log"]]  # T2_max
+    # plot_types = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]  # Rates
+    plot_types = [[[-1, 6], "linear"], [[1e-3, 10], "log"]]  # T2_max
     for el in plot_types:
         y_range, yscale = el
         main(
