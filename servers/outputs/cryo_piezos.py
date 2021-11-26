@@ -144,6 +144,15 @@ class CryoPiezos(LabradServer):
         # Cache the position
         self.pos[ax - 1] = pos_in_steps
 
+    def write_ax(self, pos_in_steps, ax):
+
+        # Set to step mode
+        self.send_cmd("setm", ax, "stp")
+
+        # Set to ground mode once we're done stepping
+        self.send_cmd("stepw", ax)
+        self.send_cmd("setm", ax, "gnd")
+
     def send_cmd(self, cmd, axis, arg=None):
         """
         Set attribute to value for the specified axis. See the manual for
