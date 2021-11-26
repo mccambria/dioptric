@@ -49,14 +49,15 @@ import time
 def do_image_sample(nv_sig, apd_indices):
     
     # scan_range = 0.5
-    # scan_range = 1.0
     # num_steps = 90
-    # num_steps = 120
     
-    # scan_range = 0.1
+    # scan_range = 0.2
     # scan_range = 0.15
-    scan_range = 0.2
-    num_steps = 60
+    # scan_range = 0.1
+    # num_steps = 60
+    
+    scan_range = 0.05
+    num_steps = 30
     
     # scan_range = 0.75
     # num_steps = 150
@@ -104,11 +105,11 @@ def do_opti_z(nv_sig_list, apd_indices):
               set_to_opti_coords=False, save_data=True, plot_data=True)
 
 
-def do_stationary_count(nv_sig, apd_indices):
+def do_stationary_count(nv_sig, apd_indices, disable_opt=None):
 
     run_time = 3 * 60 * 10**9  # ns
 
-    stationary_count.main(nv_sig, run_time, apd_indices)
+    stationary_count.main(nv_sig, run_time, apd_indices, disable_opt)
 
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
@@ -156,7 +157,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
     num_reps = 10000
     num_runs = 10
     uwave_power = 16.5
-    uwave_pulse_dur = 70
+    uwave_pulse_dur = 100
 
     pulsed_resonance.main(nv_sig, apd_indices, freq_center, freq_range,
                           num_steps, num_reps, num_runs,
@@ -480,13 +481,12 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.102, 0.088, -1], 'name': '{}-nv5_2021_11_07'.format(sample_name),
-            'disable_opt': False, 'expected_count_rate': 15,
-            # 'disable_opt': True, 'expected_count_rate': None,
+    nv_sig = { 'coords': [0.080, 0.347, -3], 'name': '{}-nv2_2021_11_24'.format(sample_name),
+            'disable_opt': False, 'expected_count_rate': 20,
             
-            # 'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
-            'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1E8,
-            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1E5,
+            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
             'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
@@ -500,11 +500,11 @@ if __name__ == '__main__':
             "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
             "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
             
-            'collection_filter': None, 'magnet_angle': 60,
-            'resonance_LOW': 2.8125, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9286, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5} 
+            'collection_filter': None, 'magnet_angle': None,
+            'resonance_LOW': 2.8153, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9258, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5}
     
-    # nv_sig = { 'coords': [0.0, 0.0, -6], 'name': '{}-search'.format(sample_name),
+    # nv_sig = { 'coords': [-0.0, 0.2, -20], 'name': '{}-search'.format(sample_name),
     #         'disable_opt': True, 'expected_count_rate': None,
             
     #         'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
@@ -525,23 +525,27 @@ if __name__ == '__main__':
     # %% Functions to run
 
     try:
-        
+    
         # tool_belt.init_safe_stop()
         
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
+        # with labrad.connect() as cxn:
+        #     cxn.cryo_piezos.write_xy(-10, 0)
+        
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         
-        # for pos in numpy.linspace(50, -50, 21): 
+        # for pos in numpy.linspace(-5, -30, 6): 
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig["coords"][2] = int(pos)
+        #     do_image_sample(nv_sig, apd_indices)
+        
         #     # with labrad.connect() as cxn:
         #     #     cxn.cryo_piezos.write_xy(pos, 915)
         #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         #     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-            # do_image_sample(nv_sig, apd_indices)
         
         # for x in numpy.linspace(-60, 60, 5, dtype=int):
         #     for y in numpy.linspace(-60, 60, 5, dtype=int):
@@ -557,17 +561,14 @@ if __name__ == '__main__':
         #             break
             # if tool_belt.safe_stop():
             #     break
-            
-        # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(75, 0)
         
-        do_image_sample(nv_sig, apd_indices)
-        # do_optimize(nv_sig, apd_indices)
-        # do_stationary_count(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
+        do_optimize(nv_sig, apd_indices)
+        # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.150)
+        # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_scc_resonance(nv_sig, apd_indices, States.LOW)
