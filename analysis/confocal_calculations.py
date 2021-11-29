@@ -462,11 +462,11 @@ if __name__ == "__main__":
 
     # plot_psf()
     # calc_overlap_sweep()
-    calc_nv_field_at_fiber(
-        collection_telescope_1_f=50e-3,  # 13.86e-3,
-        collection_telescope_2_f=150e-3,
-        do_plot=True,
-    )
+    # calc_nv_field_at_fiber(
+    #     collection_telescope_1_f=50e-3,  # 13.86e-3,
+    #     collection_telescope_2_f=150e-3,
+    #     do_plot=True,
+    # )
 
     # plt.show(block=True)
 
