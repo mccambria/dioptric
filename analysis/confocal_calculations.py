@@ -352,7 +352,7 @@ def calc_nv_field_at_fiber(
         nv_field,
         input_r_linspace,
         output_r_linspace,
-        free_space_distance,
+        0.7,  # free_space_distance,
         inch,
     )
 
@@ -462,12 +462,11 @@ if __name__ == "__main__":
 
     # plot_psf()
     # calc_overlap_sweep()
-    # calc_nv_field_at_fiber(
-    #     fiber_r_range=2 * 3.5e-6,
-    #     collection_focal_length=18e-3,
-    #     do_plot=True,
-    #     num_points=1000,
-    # )
+    calc_nv_field_at_fiber(
+        collection_telescope_1_f=50e-3,  # 13.86e-3,
+        collection_telescope_2_f=150e-3,
+        do_plot=True,
+    )
 
     # plt.show(block=True)
 

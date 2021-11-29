@@ -434,12 +434,40 @@ def main_with_cxn(
     config = tool_belt.get_config_dict(cxn)
 
     opti_succeeded = False
+    
+    # %% Check if we need to optimize
+    
+    print("Expected count rate: {}".format(expected_count_rate))
+        
+    lower_threshold = expected_count_rate * 9 / 10
+    upper_threshold = expected_count_rate * 6 / 5
+    
+    # Check the count rate
+    opti_count_rate = stationary_count_lite(cxn, nv_sig, adjusted_coords, 
+                                            config, apd_indices)
+
+    print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
+
+    # If the count rate close to what we expect, we succeeded!
+    if lower_threshold <= opti_count_rate <= upper_threshold:
+        print("No need to optimize.")
+        opti_unnecessary = True
+        # opti_unnecessary = False
+        opti_coords = adjusted_coords
+    else:
+        print("Count rate at optimized coordinates out of bounds.")
+        opti_unnecessary = False
+
 
     # %% Try to optimize
 
-    num_attempts = 6
+    num_attempts = 10
 
     for ind in range(num_attempts):
+        
+        # Break out of the loop if optimization succeeded or was unnecessary
+        if opti_succeeded or opti_unnecessary:
+            break
 
         if ind > 0:
             print("Trying again...")
@@ -462,18 +490,6 @@ def main_with_cxn(
             opti_coords.append(ret_vals[0])
             scan_vals_by_axis.append(ret_vals[1])
             counts_by_axis.append(ret_vals[2])
-        # ret_vals = optimize_on_axis(
-        #     cxn, adjusted_nv_sig, 1, config, apd_indices, fig
-        # )
-        # opti_coords.append(ret_vals[0])
-        # scan_vals_by_axis.append(ret_vals[1])
-        # counts_by_axis.append(ret_vals[2])
-        # ret_vals = optimize_on_axis(
-        #     cxn, adjusted_nv_sig, 0, config, apd_indices, fig
-        # )
-        # opti_coords.insert(0, ret_vals[0])
-        # scan_vals_by_axis.insert(0, ret_vals[1])
-        # counts_by_axis.insert(0, ret_vals[2])
 
         # z
         # Help z out by ensuring we're centered in xy first
@@ -501,12 +517,6 @@ def main_with_cxn(
         # the count rate at the center against the expected count rate
         if expected_count_rate is not None:
 
-            lower_threshold = expected_count_rate * 4 / 5
-            upper_threshold = expected_count_rate * 6 / 5
-
-            if ind == 0:
-                print("Expected count rate: {}".format(expected_count_rate))
-
             print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
 
             # If the count rate close to what we expect, we succeeded!
@@ -528,11 +538,8 @@ def main_with_cxn(
             print("Count rate at optimized coordinates: {:.0f}".format(opti_count_rate))
             print("Optimization succeeded! (No expected count rate passed.)")
             opti_succeeded = True
-        # Break out of the loop if optimization succeeded
-        if opti_succeeded:
-            break
 
-    if not opti_succeeded:
+    if not opti_unnecessary and not opti_succeeded:
         opti_coords = None
 
     # %% Calculate the drift relative to the passed coordinates
@@ -544,7 +551,7 @@ def main_with_cxn(
     # %% Set to the optimized coordinates, or just tell the user what they are
 
     if set_to_opti_coords:
-        if opti_succeeded:
+        if opti_succeeded or opti_unnecessary:
             prepare_microscope(cxn, nv_sig, opti_coords)
         else:
             # Let the user know something went wrong
@@ -554,7 +561,7 @@ def main_with_cxn(
             )
             prepare_microscope(cxn, nv_sig, adjusted_coords)
     else:
-        if opti_succeeded:
+        if opti_succeeded or opti_unnecessary:
             print("Optimized coordinates: ")
             print("{:.3f}, {:.3f}, {:.2f}".format(*opti_coords))
             print("Drift: ")
@@ -571,7 +578,7 @@ def main_with_cxn(
 
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates
-    if save_data:
+    if save_data and not opti_unnecessary:
 
         timestamp = tool_belt.get_time_stamp()
 
