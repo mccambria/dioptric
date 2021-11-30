@@ -353,7 +353,7 @@ class ApdTagger(LabradServer):
         _ = self.tagger.getOverflowsAndClear()
 
     @setting(3, returns="*s*i")
-    def read_tag_stream(self, c):
+    def read_tag_stream(self, c, num_to_read=None):
         """Read the stream started with start_tag_stream. Returns two lists,
         each as long as the number of counts that have occurred since the
         buffer was refreshed. First list is timestamps in ps, second is
@@ -362,7 +362,22 @@ class ApdTagger(LabradServer):
         if self.stream is None:
             logging.error("read_tag_stream attempted while stream is None.")
             return
-        timestamps, channels = self.read_raw_stream()
+        if num_to_read is None:
+            timestamps, channels = self.read_raw_stream()
+        else:
+            timestamps = []
+            channels = []
+            while (
+                numpy.count_nonzero(
+                    numpy.array(channels) == self.tagger_di_clock
+                )
+                < num_to_read
+            ):
+                timestamps_chunk, channels_chunk = self.read_raw_stream()
+                timestamps.append(timestamps_chunk.tolist())
+                channels.append(channels_chunk.tolist())
+            timestamps = numpy.array(timestamps)
+            channels = numpy.array(channels)
         # Convert timestamps to strings since labrad does not support int64s
         # It must be converted to int64s back on the client
         timestamps = timestamps.astype(str).tolist()
