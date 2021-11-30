@@ -103,6 +103,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         raise RuntimeError('x and y resolutions must match for now.')
 
     xy_server = tool_belt.get_xy_server(cxn)
+    z_server = tool_belt.get_z_server(cxn)
     
     # Get a couple registry entries
     # See if this setup has finely specified delay times, else just get the 
@@ -180,9 +181,24 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     
     dx_list = []
     dy_list = []
-    
-    for i in range(total_num_samples):
+    x_center1, y_center1, z_center1 = coords
+    #ret_vals = xy_scan_voltages(x_center1, y_center1,
+     #                                  x_range, y_range, num_steps)
+    #x_positions1, y_positions1, _, _ = ret_vals
+    time_start= time.time()
+    opti_interval=2
+    for i in range(total_num_samples): 
+        #time_now = time.time()
+        #if (time_now - time_start)/60 >= opti_interval:
+       #     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+       #     drift = tool_belt.get_drift() 
+       #     time_start= time.time()
+       #     cur_z_pos = z_center1 +drift[2]
+       #     z_server.write_z(cur_z_pos)
+
         
+        
+        #cxn.apd_tagger.start_tag_stream(apd_indices)
         
         cur_x_pos = x_positions[i]
         cur_y_pos = y_positions[i]
@@ -192,25 +208,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         
         
         flag = xy_server.write_xy(cur_x_pos, cur_y_pos)
-            
-    #check that we have made it to the target position
-                 
-        # x_diff = 500
-        # y_diff = 500
-        # flag = False
-        # # cur_time = time.time()
-        # time_start_check = time.time()
-        # while x_diff > 0.001 or y_diff > 0.001:
-            
-        #     actual_x_pos, actual_y_pos = xy_server.read_xy()
-        #     x_diff = abs(actual_x_pos - cur_x_pos)
-        #     y_diff = abs(actual_y_pos - cur_y_pos)
-        #     time_check = time.time()
-        #     if time_check - time_start_check > timeout:
-        #         print("target not reached!")
-        #         flag = True
-        #         break   
-            
             
             
             
@@ -235,34 +232,39 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         
         # This is a horribly inefficient way of getting kcps, but it
         # is easy and readable and probably fine up to some resolution
-        if plot_data:
+    if plot_data:
             img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
             update_image_figure(fig, img_array_kcps)
         
-    
-    tool_belt.create_image_figure(dx_img_array, img_extent,
+    do_analysis=False
+    if do_analysis:
+       tool_belt.create_image_figure(dx_img_array, img_extent,
                         clickHandler=image_sample.on_click_image, color_bar_label='nm',
                         title = "positional accuracy (dx)", um_scaled=um_scaled,
                         color_map = 'bwr')
-    tool_belt.create_image_figure(dy_img_array, img_extent,
+       tool_belt.create_image_figure(dy_img_array, img_extent,
                         clickHandler=image_sample.on_click_image, color_bar_label='nm',
                         title = "positional accuracy (dy)", um_scaled=um_scaled,
                         color_map = 'bwr')
         
         
-    print(numpy.std(abs(numpy.array(dx_list))))
-    print(numpy.std(abs(numpy.array(dy_list))))
-    fig_pos, axes = plt.subplots(1,2)
-    ax = axes[0]
-    ax.plot(dx_list)
-    ax.set_xlabel('data point')
-    ax.set_ylabel('Difference between set values and actual value (nm)')
-    ax.set_title('X')
-    ax = axes[1]
-    ax.plot(dy_list)
-    ax.set_xlabel('data point')
-    ax.set_ylabel('Difference between set values and actual value (nm)')
-    ax.set_title('Y')
+    
+    
+    
+    
+       print(numpy.std(abs(numpy.array(dx_list))))
+       print(numpy.std(abs(numpy.array(dy_list))))
+       fig_pos, axes = plt.subplots(1,2)
+       ax = axes[0]
+       ax.plot(dx_list)
+       ax.set_xlabel('data point')
+       ax.set_ylabel('Difference between set values and actual value (nm)')
+       ax.set_title('X')
+       ax = axes[1]
+       ax.plot(dy_list)
+       ax.set_xlabel('data point')
+       ax.set_ylabel('Difference between set values and actual value (nm)')
+       ax.set_title('Y')
 
     # %% Clean up
 
