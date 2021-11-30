@@ -121,16 +121,9 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
     tool_belt.reset_cfm(cxn)
     
     # Optimize
-    coords = nv_sig['coords']
     opti_coords_list = []
     opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
     opti_coords_list.append(opti_coords)
-    drift = tool_belt.get_drift()
-    drift[0] -= 0.01
-    drift[1] += 0.01
-    drift[2] += 1
-    adjusted_nv_coords = coords + numpy.array(drift)
-    tool_belt.set_xyz(cxn, adjusted_nv_coords)
 
     # Initial Calculation and setup
     
@@ -424,7 +417,7 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [-0.003, -0.006, 4], 'name': '{}-nv3_2021_11_29'.format(sample_name),
+    nv_sig = { 'coords': [-0.020, -0.033, 0], 'name': '{}-nv3_2021_11_29'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 27,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
