@@ -29,6 +29,8 @@ sample_divergence_angle = np.arcsin(sample_na)
 # sample_aperture_radius = np.infty
 fiber_mfr = 2e-6
 inch = 25.4e-3
+air_index = 1
+diamond_index = 2.4
 
 
 def riemann_sum(integrand, delta):
@@ -436,6 +438,24 @@ def calc_nv_field_at_fiber(
     return nv_field
 
 
+def nv_to_objective_efficiency():
+
+    t_max = np.arcsin((air_index / diamond_index) * sample_na)
+    t2 = lambda t1: np.arcsin((air_index / diamond_index) * np.sin(t1))
+    R_s = lambda t1: (
+        (air_index * np.cos(t1) - diamond_index * np.cos(t2(t1)))
+        / (air_index * np.cos(t1) + diamond_index * np.cos(t2(t1))) ** 2
+    )
+    R_p = lambda t1: (
+        (air_index * np.cos(t2(t1)) - diamond_index * np.cos(t1))
+        / (air_index * np.cos(t2(t1)) + diamond_index * np.cos(t1)) ** 2
+    )
+    R_ave = lambda t1: (1 / 2) * (R_s(t1) + R_p(t1))
+    integrand = lambda t1: (1 - R_ave(t1)) * np.sin(t1)
+    C0 = (1 / 2) * integrate.quad(integrand, 0, t_max)[0]
+    print(C0)
+
+
 if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
@@ -443,8 +463,8 @@ if __name__ == "__main__":
     # plot_psf()
     # calc_overlap_sweep()
     calc_nv_field_at_fiber(
-        collection_telescope_1_f=50e-3,  # 13.86e-3,
-        collection_telescope_2_f=150e-3,
+        collection_telescope_1_f=12.86e-3,  # 13.86e-3,
+        collection_telescope_2_f=50e-3,
         do_plot=True,
     )
 
@@ -454,3 +474,5 @@ if __name__ == "__main__":
     # delta = (x_vals[-1] - x_vals[0]) / (len(x_vals) - 1)
     # integrand = np.exp(1j * x_vals)
     # print(riemann_sum(integrand, delta))
+
+    # nv_to_objective_efficiency()
