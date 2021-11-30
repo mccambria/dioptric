@@ -13,7 +13,6 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 import labrad
-import time
 
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
@@ -22,23 +21,23 @@ import majorroutines.optimize as optimize
 # %%
 
 
-def plot_histogram(nv_sig, nv0, nvm, readout):
+def plot_histogram(nv_sig, nv0, nvm, dur, power):
 
     # Counts are in us, readout is in ns
-    readout_us = readout / 1e3
-    nv0_counts = np.count_nonzero(nv0 < readout)
-    nvm_counts = np.count_nonzero(nvm < readout)
+    dur_us = dur / 1e3
+    nv0_counts = np.count_nonzero(nv0 < dur_us)
+    nvm_counts = np.count_nonzero(nvm < dur_us)
 
     fig_hist, ax = plt.subplots(1, 1)
-    max_0 = max(nv0)
-    max_m = max(nvm)
+    max_0 = max(nv0_counts)
+    max_m = max(nvm_counts)
     occur_0, x_vals_0 = np.histogram(nv0, np.linspace(0, max_0, max_0 + 1))
-    occur_m, x_vals_m = np.histogram(nvm, np.linspace(0, max_m, max_m + 1))
+    occur_m, x_vals_m = np.histogram(nvm_counts, np.linspace(0, max_m, max_m + 1))
     ax.plot(x_vals_0[:-1], occur_0, "r-o", label="Initial red pulse")
     ax.plot(x_vals_m[:-1], occur_m, "g-o", label="Initial green pulse")
     ax.set_xlabel("Counts")
     ax.set_ylabel("Occur.")
-    ax.set_title("{} ms readout, {} V".format(t / 10 ** 6, p))
+    ax.set_title("{} ms readout, {} V".format(dur / 1e6, power))
     ax.legend()
 
     timestamp = tool_belt.get_time_stamp()
@@ -106,7 +105,7 @@ def measure_histograms_sub(
             seq_file, num_reps_to_run, seq_args_string
         )
 
-        ret_vals = cxn.apd_tagger.read_tag_stream()
+        ret_vals = cxn.apd_tagger.read_tag_stream(num_reps_to_run)
         buffer_timetags, buffer_channels = ret_vals
         # We don't care about picosecond resolution here, so just round to us
         # We also don't care about the offset value, so subtract that off
@@ -117,6 +116,8 @@ def measure_histograms_sub(
         ]
         timetags.append(buffer_timetags)
         channels.append(buffer_channels)
+        
+        cxn.apd_tagger.stop_tag_stream()
 
         num_reps_remaining -= num_reps_per_cycle
 
@@ -154,22 +155,17 @@ def measure_histograms_with_cxn(
     readout_laser_power = tool_belt.set_laser_power(
         cxn, nv_sig, "charge_readout_laser"
     )
-    nvm_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "nv-_prep_laser")
-    nv0_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "nv0_prep_laser")
 
     readout_pulse_time = nv_sig["charge_readout_dur"]
-
-    reionization_time = nv_sig["nv-_prep_laser_dur"]
-    ionization_time = nv_sig["nv0_prep_laser_dur"]
 
     # Pulse sequence to do a single pulse followed by readout
     seq_file = "simple_readout_two_pulse.py"
     gen_seq_args = lambda init_laser: [
-        reionization_time,
+        nv_sig["{}_dur".format(init_laser)],
         readout_pulse_time,
         nv_sig[init_laser],
         nv_sig["charge_readout_laser"],
-        nv0_laser_power,
+        tool_belt.set_laser_power(cxn, nv_sig, init_laser),
         readout_laser_power,
         apd_index,
     ]
@@ -201,15 +197,16 @@ def determine_readout_dur_power(
     apd_indices,
     max_readout_dur=1e9,
     readout_powers=None,
+    plot_readout_durs = None,
 ):
     num_reps = 500
 
     if readout_powers is None:
-        readout_yellow_powers = [0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6]
+        readout_powers = [0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6]
 
     tool_belt.init_safe_stop()
 
-    for p in readout_yellow_powers:
+    for p in readout_powers:
 
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
@@ -244,6 +241,10 @@ def determine_readout_dur_power(
         }
 
         tool_belt.save_raw_data(raw_data, file_path)
+        
+        if plot_readout_durs is not None:
+            for dur in plot_readout_durs:
+                plot_histogram(nv_sig, nv0, nvm, dur, p)
 
         print("data collected!")
 
@@ -259,8 +260,8 @@ if __name__ == "__main__":
     apd_indices = [1]
     # apd_indices = [0,1]
 
-    # nd = 'nd_0'
-    nd = "nd_0.5"
+    nd = 'nd_0'
+    # nd = "nd_0.5"
     # nd = 'nd_1.0'
     # nd = 'nd_2.0'
 
@@ -269,60 +270,42 @@ if __name__ == "__main__":
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
+    
+    nv_sig = { 'coords': [-0.020, -0.033, 0], 'name': '{}-nv3_2021_11_29'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 27,
+            
+            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
+            'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0',
+            
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 1000,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
+            
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
+            "initialize_laser": green_laser, "initialize_dur": 1e4,
+            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
+            
+            'collection_filter': None, 'magnet_angle': None,
+            'resonance_LOW': 2.8144, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9239, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5}
 
-    nv_sig = {
-        "coords": [0.126, 0.297, -1],
-        "name": "{}-nv1_2021_11_26".format(sample_name),
-        "disable_opt": False,
-        "expected_count_rate": 23,
-        "imaging_laser": green_laser,
-        "imaging_laser_filter": nd,
-        "imaging_readout_dur": 1e7,
-        # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-        # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
-        "spin_laser": green_laser,
-        "spin_laser_filter": nd,
-        "spin_pol_dur": 1e5,
-        "spin_readout_dur": 350,
-        "nv-_reionization_laser": green_laser,
-        "nv-_reionization_dur": 1e5,
-        "nv-_prep_laser": green_laser,
-        "nv-_prep_laser_dur": 1e5,
-        "nv-_prep_laser_filter": "nd_0.5",
-        "nv0_ionization_laser": red_laser,
-        "nv0_ionization_dur": 1000,
-        "nv0_prep_laser": red_laser,
-        "nv0_prep_laser_dur": 1000,
-        "spin_shelf_laser": yellow_laser,
-        "spin_shelf_dur": 0,
-        "initialize_laser": green_laser,
-        "initialize_dur": 1e4,
-        "CPG_laser": red_laser,
-        "CPG_laser_dur": 3e3,
-        "charge_readout_laser": yellow_laser,
-        "charge_readout_dur": 50e6,
-        "collection_filter": None,
-        "magnet_angle": None,
-        "resonance_LOW": 2.8144,
-        "rabi_LOW": 131.0,
-        "uwave_power_LOW": 16.5,
-        "resonance_HIGH": 2.9239,
-        "rabi_HIGH": 183.5,
-        "uwave_power_HIGH": 16.5,
-    }
-
-    # readout_times = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
+    # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
     #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
     #                 6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
     #                 2*10**7, 3*10**7, 4*10**7, 5*10**7]
-    # readout_times = numpy.linspace(10e6, 50e6, 5)
-    readout_times = [10e6, 25e6, 50e6, 100e6, 200e6]  # , 400e6, 700e6, 1e9]
-    # readout_times = numpy.linspace(100e6, 1e9, 10)
-    # readout_times = numpy.linspace(700e6, 1e9, 7)
-    # readout_times = [50e6, 100e6, 200e6, 400e6, 1e9]
-    # readout_times = [2e9]
-    readout_times = [int(el) for el in readout_times]
-    max_readout = max(readout_times)
+    # readout_durs = numpy.linspace(10e6, 50e6, 5)
+    readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]  # , 400e6, 700e6, 1e9]
+    # readout_durs = numpy.linspace(100e6, 1e9, 10)
+    # readout_durs = numpy.linspace(700e6, 1e9, 7)
+    # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
+    # readout_durs = [2e9]
+    readout_durs = [int(el) for el in readout_durs]
+    max_readout_dur = max(readout_durs)
 
     # readout_powers = numpy.linspace(0.6, 1.0, 5)
     readout_powers = np.linspace(0.7, 0.9, 6)
@@ -331,16 +314,14 @@ if __name__ == "__main__":
     # readout_powers = [0.65]
 
     try:
-        nv0, nvm = determine_readout_dur_power(
+        determine_readout_dur_power(
             nv_sig,
             nv_sig,
             apd_indices,
-            max_readout=max_readout,
+            max_readout_dur=max_readout_dur,
             readout_powers=readout_powers,
-            nd_filter=None,
+            plot_readout_durs=readout_durs,
         )
-        for dur in readout_times:
-            plot_histogram(nv_sig, nv0, nvm, dur)
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here
