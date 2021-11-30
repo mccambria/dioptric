@@ -1080,6 +1080,11 @@ def get_registry_entry_no_cxn(key, directory):
         return get_registry_entry(cxn, key, directory)
 
 
+def get_apd_gate_channel(cxn, apd_index):
+    directory = ["", "Config", "Wiring", "Tagger", "Apd_{}".format(apd_index)]
+    return get_registry_entry(cxn, "di_gate", directory)
+
+
 # %% Open utils
 
 
