@@ -458,21 +458,21 @@ def nv_to_objective_efficiency():
 
 if __name__ == "__main__":
 
-    # tool_belt.init_matplotlib()
+    tool_belt.init_matplotlib()
 
     # plot_psf()
     # calc_overlap_sweep()
-    # calc_nv_field_at_fiber(
-    #     collection_telescope_1_f=50e-3,  # 13.86e-3,
-    #     collection_telescope_2_f=150e-3,
-    #     do_plot=True,
-    # )
+    calc_nv_field_at_fiber(
+        collection_telescope_1_f=12.86e-3,  # 13.86e-3,
+        collection_telescope_2_f=50e-3,
+        do_plot=True,
+    )
 
-    # plt.show(block=True)
+    plt.show(block=True)
 
     # x_vals = np.linspace(0, 3, 1000)
     # delta = (x_vals[-1] - x_vals[0]) / (len(x_vals) - 1)
     # integrand = np.exp(1j * x_vals)
     # print(riemann_sum(integrand, delta))
 
-    nv_to_objective_efficiency()
+    # nv_to_objective_efficiency()
