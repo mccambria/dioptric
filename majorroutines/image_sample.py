@@ -149,23 +149,22 @@ def on_click_image(event):
 
 def main(nv_sig, x_range, y_range, num_steps, apd_indices,
          save_data=True, plot_data=True, 
-         um_scaled=False):
+         um_scaled=False, nv_minus_initialization=False):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
                       y_range, num_steps, apd_indices, save_data, plot_data, 
-                      um_scaled)
+                      um_scaled, nv_minus_initialization)
 
     return img_array, x_voltages, y_voltages
 
 def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
                   apd_indices, save_data=True, plot_data=True, 
-                  um_scaled=False):
+                  um_scaled=False, nv_minus_initialization=False):
 
     # %% Some initial setup
     
     tool_belt.reset_cfm(cxn)
-    laser_key = 'imaging_laser'
 
     drift = tool_belt.get_drift()
     coords = nv_sig['coords']
@@ -173,9 +172,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     x_center, y_center, z_center = adjusted_coords
     optimize.prepare_microscope(cxn, nv_sig, adjusted_coords)
 
-    laser_name = nv_sig[laser_key]
+    laser_key = 'imaging_laser'
+    readout_laser = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
-    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
     # print(laser_power)
     
     if x_range != y_range:
@@ -209,13 +209,22 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     
     readout_sec = readout / 10**9
     readout_us = readout / 10**3
-
-    seq_args = [xy_delay, readout, apd_indices[0], laser_name, laser_power]
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
-    # print(seq_args_string)
-    # return
-    ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
-                                              seq_args_string)
+    
+    if nv_minus_initialization:
+        laser_key = "nv-_prep_laser"
+        init = nv_sig['{}_dur'.format(laser_key)]
+        init_laser = nv_sig[laser_key]
+        init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        seq_args = [init, readout, apd_indices[0], init_laser, init_power, 
+                    readout_laser, readout_power]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        ret_vals = cxn.pulse_streamer.stream_load('nv_minus_initialization-simple_readout.py',
+                                                  seq_args_string)
+    else:
+        seq_args = [xy_delay, readout, apd_indices[0], readout_laser, readout_power]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
+                                                  seq_args_string)
     period = ret_vals[0]
 
 
@@ -264,7 +273,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         if um_scaled:
             img_extent = [(x_high + half_pixel_size)*xy_scale, (x_low - half_pixel_size)*xy_scale,
                       (y_low - half_pixel_size)*xy_scale, (y_high + half_pixel_size)*xy_scale]
-        title = r'Confocal scan, {}, {} us readout'.format(laser_name, readout_us)
+        title = r'Confocal scan, {}, {} us readout'.format(readout_laser, readout_us)
         fig = tool_belt.create_image_figure(img_array, img_extent,
                         clickHandler=on_click_image, color_bar_label='kcps',
                         title=title, um_scaled=um_scaled)

@@ -77,10 +77,6 @@ def read_timed_counts(cxn, num_steps, period, apd_indices):
         if time.time() > timeout_inst:
             break
 
-        # Break out of the while if the user says stop
-        if tool_belt.safe_stop():
-            break
-
         # Read the samples and update the image
         new_samples = cxn.apd_tagger.read_counter_simple()
         num_new_samples = len(new_samples)
@@ -99,10 +95,6 @@ def read_manual_counts(cxn, period, apd_indices, axis_write_func, scan_vals):
     counts = []
 
     for ind in range(len(scan_vals)):
-
-        # Break out of the while if the user says stop
-        if tool_belt.safe_stop():
-            break
 
         # Write the new value to the axis and run a rep. The delay to account
         # for the time it takes the axis to move is already handled in the
@@ -171,7 +163,6 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
-    tool_belt.init_safe_stop()
     # xy
     if axis_ind in [0, 1]:
         
@@ -411,6 +402,8 @@ def main_with_cxn(
 ):
 
     tool_belt.reset_cfm(cxn)
+    
+    tool_belt.init_safe_stop()
 
     # Adjust the sig we use for drift
     drift = tool_belt.get_drift()
@@ -438,9 +431,10 @@ def main_with_cxn(
     # %% Check if we need to optimize
     
     print("Expected count rate: {}".format(expected_count_rate))
-        
-    lower_threshold = expected_count_rate * 9 / 10
-    upper_threshold = expected_count_rate * 6 / 5
+    
+    if expected_count_rate is not None:
+        lower_threshold = expected_count_rate * 9 / 10
+        upper_threshold = expected_count_rate * 6 / 5
     
     # Check the count rate
     opti_count_rate = stationary_count_lite(cxn, nv_sig, adjusted_coords, 
@@ -449,7 +443,7 @@ def main_with_cxn(
     print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
 
     # If the count rate close to what we expect, we succeeded!
-    if lower_threshold <= opti_count_rate <= upper_threshold:
+    if (expected_count_rate is not None) and (lower_threshold <= opti_count_rate <= upper_threshold):
         print("No need to optimize.")
         opti_unnecessary = True
         # opti_unnecessary = False
@@ -467,6 +461,9 @@ def main_with_cxn(
         
         # Break out of the loop if optimization succeeded or was unnecessary
         if opti_succeeded or opti_unnecessary:
+            break
+        
+        if tool_belt.safe_stop():
             break
 
         if ind > 0:
@@ -492,17 +489,22 @@ def main_with_cxn(
             counts_by_axis.append(ret_vals[2])
 
         # z
-        # Help z out by ensuring we're centered in xy first
-        if None not in opti_coords:
-            int_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
-            tool_belt.set_xyz(cxn, int_coords)
-        axis_ind = 2
-        ret_vals = optimize_on_axis(
-            cxn, adjusted_nv_sig, axis_ind, config, apd_indices, fig
-        )
-        opti_coords.append(ret_vals[0])
-        scan_vals_by_axis.append(ret_vals[1])
-        counts_by_axis.append(ret_vals[2])
+        if "disable_z_opt" in nv_sig and nv_sig["disable_z_opt"]:
+            opti_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
+            scan_vals_by_axis.append(numpy.array([]))
+            counts_by_axis.append(numpy.array([]))
+        else:
+            # Help z out by ensuring we're centered in xy first
+            if None not in opti_coords:
+                int_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
+                tool_belt.set_xyz(cxn, int_coords)
+            axis_ind = 2
+            ret_vals = optimize_on_axis(
+                cxn, adjusted_nv_sig, axis_ind, config, apd_indices, fig
+            )
+            opti_coords.append(ret_vals[0])
+            scan_vals_by_axis.append(ret_vals[1])
+            counts_by_axis.append(ret_vals[2])
 
         # We failed to get optimized coordinates, try again
         if None in opti_coords:

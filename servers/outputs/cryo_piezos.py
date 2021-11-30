@@ -62,14 +62,14 @@ class CryoPiezos(LabradServer):
         p.get("cryo_piezos_ip")
         p.cd(["", "Config", "Positioning"])
         p.get("cryo_piezos_voltage")
-        p.get("z_drift_adjust")
+        p.get("z_bias_adjust")
         result = await p.send()
         return result["get"]
 
     def on_get_config(self, reg_vals):
         ip_address = reg_vals[0]
         cryo_piezos_voltage = reg_vals[1]
-        self.z_drift_adjust = reg_vals[2]
+        self.z_bias_adjust = reg_vals[2]
         # Connect via telnet
         try:
             self.piezos = Telnet(ip_address, 7230)
@@ -128,12 +128,12 @@ class CryoPiezos(LabradServer):
         if steps_to_move > 0:
             cmd = "stepu"
             # if ax == 3:
-            #     abs_steps_to_move = round((1+self.z_drift_adjust)*abs_steps_to_move)
+            #     abs_steps_to_move = round((1+self.z_bias_adjust)*abs_steps_to_move)
         else:
             cmd = "stepd"
             if ax == 3:
                 abs_steps_to_move = round(
-                    (1 - self.z_drift_adjust) * abs_steps_to_move
+                    (1 - self.z_bias_adjust) * abs_steps_to_move
                 )
         self.send_cmd(cmd, ax, abs_steps_to_move)
 
@@ -143,15 +143,6 @@ class CryoPiezos(LabradServer):
 
         # Cache the position
         self.pos[ax - 1] = pos_in_steps
-
-    def write_ax(self, pos_in_steps, ax):
-
-        # Set to step mode
-        self.send_cmd("setm", ax, "stp")
-
-        # Set to ground mode once we're done stepping
-        self.send_cmd("stepw", ax)
-        self.send_cmd("setm", ax, "gnd")
 
     def send_cmd(self, cmd, axis, arg=None):
         """
