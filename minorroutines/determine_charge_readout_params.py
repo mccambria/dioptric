@@ -123,12 +123,13 @@ def measure_histograms_sub(
 ):
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    period = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+    ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+    period = ret_vals[0]
     period_sec = period / 10 ** 9
 
     # Some initial parameters
     opti_period = 2.5 * 60
-    num_reps_per_cycle = opti_period // period_sec
+    num_reps_per_cycle = round(opti_period / period_sec)
     num_reps_remaining = num_reps
     timetags = []
     channels = []
@@ -307,21 +308,21 @@ def determine_readout_dur_power(
 if __name__ == "__main__":
 
     # Replots
-    tool_belt.init_matplotlib()
-    file_name = "2021_11_30-18_32_46-wu-nv3_2021_11_29"
-    data = tool_belt.get_raw_data(file_name)
-    nv_sig = data["nv_sig"]
-    nv0 = data["nv0"]
-    nvm = data["nvm"]
-    readout_power = nv_sig["charge_readout_laser_power"]
-    max_readout_dur = nv_sig["charge_readout_dur"]
-    opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
-    plot_histogram(nv_sig, nv0, nvm, opti_readout_dur, readout_power)
-    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
-    # for dur in readout_durs:
-    #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
-    plt.show(block=True)
-    exit()
+    # tool_belt.init_matplotlib()
+    # file_name = "2021_11_30-18_32_46-wu-nv3_2021_11_29"
+    # data = tool_belt.get_raw_data(file_name)
+    # nv_sig = data["nv_sig"]
+    # nv0 = data["nv0"]
+    # nvm = data["nvm"]
+    # readout_power = nv_sig["charge_readout_laser_power"]
+    # max_readout_dur = nv_sig["charge_readout_dur"]
+    # opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
+    # plot_histogram(nv_sig, nv0, nvm, opti_readout_dur, readout_power)
+    # # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
+    # # for dur in readout_durs:
+    # #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
+    # plt.show(block=True)
+    # exit()
 
     # apd_indices = [0]
     apd_indices = [1]
@@ -374,8 +375,8 @@ if __name__ == "__main__":
     readout_durs = [int(el) for el in readout_durs]
     max_readout_dur = max(readout_durs)
 
-    readout_powers = np.linspace(0.6, 1.0, 9)
-    # readout_powers = np.linspace(0.7, 0.9, 6)
+    # readout_powers = np.linspace(0.6, 1.0, 9)
+    readout_powers = np.linspace(0.7, 1.0, 31)
     # readout_powers = np.linspace(0.76, 0.8, 5)
     # readout_powers = np.linspace(0.2, 1.0, 5)
     # readout_powers = [0.65]

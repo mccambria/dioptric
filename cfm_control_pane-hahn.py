@@ -529,12 +529,12 @@ if __name__ == '__main__':
 
     try:
     
-        tool_belt.init_safe_stop()
+        # tool_belt.init_safe_stop()
         
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(2, -1)
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
