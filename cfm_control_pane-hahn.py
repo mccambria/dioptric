@@ -483,8 +483,8 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.021, -0.002, 2], 'name': '{}-nv4_2021_11_29'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 38,
+    nv_sig = { 'coords': [-0.016, -0.028, 117], 'name': '{}-nv1_2021_12_01'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 40,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
@@ -529,7 +529,7 @@ if __name__ == '__main__':
 
     try:
     
-        # tool_belt.init_safe_stop()
+        tool_belt.init_safe_stop()
         
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(2, -1)
@@ -539,7 +539,7 @@ if __name__ == '__main__':
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         
-        # for pos in numpy.linspace(90, 0, 10): 
+        # for pos in numpy.linspace(100, 145, 10): 
         # # for pos in [0,10]*10:
         #     if tool_belt.safe_stop():
         #         break
@@ -566,9 +566,9 @@ if __name__ == '__main__':
             # if tool_belt.safe_stop():
             #     break
         
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
-        do_optimize(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.200)
