@@ -472,8 +472,8 @@ if __name__ == '__main__':
     apd_indices = [1]
     # apd_indices = [0,1]
     
-    nd = 'nd_0'
-    # nd = 'nd_0.5'
+    # nd = 'nd_0'
+    nd = 'nd_0.5'
     # nd = 'nd_1.0'
     # nd = 'nd_2.0'
     
@@ -483,8 +483,8 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [-0.020, -0.033, 0], 'name': '{}-nv3_2021_11_29'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 27,
+    nv_sig = { 'coords': [-0.015, -0.027, -7], 'name': '{}-nv3_2021_11_29'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 16,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
@@ -529,12 +529,12 @@ if __name__ == '__main__':
 
     try:
     
-        tool_belt.init_safe_stop()
+        # tool_belt.init_safe_stop()
         
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(-2, 4)
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
@@ -568,7 +568,7 @@ if __name__ == '__main__':
         
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
-        # do_optimize(nv_sig, apd_indices)
+        do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.200)

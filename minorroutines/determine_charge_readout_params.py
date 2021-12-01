@@ -13,6 +13,7 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 import labrad
+import time
 
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
@@ -25,13 +26,13 @@ def plot_histogram(nv_sig, nv0, nvm, dur, power):
 
     # Counts are in us, readout is in ns
     dur_us = dur / 1e3
-    nv0_counts = np.count_nonzero(nv0 < dur_us)
-    nvm_counts = np.count_nonzero(nvm < dur_us)
+    nv0_counts = [np.count_nonzero(np.array(rep) < dur_us) for rep in nv0]
+    nvm_counts = [np.count_nonzero(np.array(rep) < dur_us) for rep in nvm]
 
     fig_hist, ax = plt.subplots(1, 1)
     max_0 = max(nv0_counts)
     max_m = max(nvm_counts)
-    occur_0, x_vals_0 = np.histogram(nv0, np.linspace(0, max_0, max_0 + 1))
+    occur_0, x_vals_0 = np.histogram(nv0_counts, np.linspace(0, max_0, max_0 + 1))
     occur_m, x_vals_m = np.histogram(nvm_counts, np.linspace(0, max_m, max_m + 1))
     ax.plot(x_vals_0[:-1], occur_0, "r-o", label="Initial red pulse")
     ax.plot(x_vals_m[:-1], occur_m, "g-o", label="Initial green pulse")
@@ -43,23 +44,27 @@ def plot_histogram(nv_sig, nv0, nvm, dur, power):
     timestamp = tool_belt.get_time_stamp()
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
     tool_belt.save_figure(fig_hist, file_path + "_histogram")
+    
+    # Sleep for a second so we don't overwrite any other histograms
+    time.sleep(1.1)
 
 
 def process_timetags(apd_gate_channel, timetags, channels):
 
     processed_timetags = []
-
     gate_open_channel = apd_gate_channel
     gate_close_channel = -gate_open_channel
+        
+    channels_array = np.array(channels)
+    gate_open_inds = np.where(channels_array == gate_open_channel)[0]
+    gate_close_inds = np.where(channels_array == gate_close_channel)[0]
 
-    gate_open_inds = np.where(channels == gate_open_channel)[0]
-    gate_close_inds = np.where(channels == gate_close_channel)[0]
-
-    for ind in range(len(gate_open_inds)):
-        open_ind = gate_open_inds[ind]
-        close_ind = gate_close_inds[ind]
+    num_reps = len(gate_open_inds)
+    for rep_ind in range(num_reps):
+        open_ind = gate_open_inds[rep_ind]
+        close_ind = gate_close_inds[rep_ind]
         open_timetag = timetags[open_ind]
-        rep_processed_timetags = timetags[open_ind + 1 : close_ind].tolist()
+        rep_processed_timetags = timetags[open_ind + 1 : close_ind]
         rep_processed_timetags = [
             val - open_timetag for val in rep_processed_timetags
         ]
@@ -74,7 +79,7 @@ def measure_histograms_sub(
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     period = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
-    period_sec = period * 10 ** 9
+    period_sec = period / 10 ** 9
 
     # Some initial parameters
     opti_period = 2.5 * 60
@@ -92,9 +97,11 @@ def measure_histograms_sub(
         drift = tool_belt.get_drift()
         adjusted_nv_coords = coords + np.array(drift)
         tool_belt.set_xyz(cxn, adjusted_nv_coords)
-
+        # print(num_reps_remaining)
+        
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
+        cxn.apd_tagger.clear_buffer()
 
         # Run the sequence
         if num_reps_remaining > num_reps_per_cycle:
@@ -104,6 +111,7 @@ def measure_histograms_sub(
         cxn.pulse_streamer.stream_immediate(
             seq_file, num_reps_to_run, seq_args_string
         )
+        # print(num_reps_to_run)
 
         ret_vals = cxn.apd_tagger.read_tag_stream(num_reps_to_run)
         buffer_timetags, buffer_channels = ret_vals
@@ -112,17 +120,14 @@ def measure_histograms_sub(
         if len(timetags) == 0:
             offset = np.int64(buffer_timetags[0])
         buffer_timetags = [
-            int((val - offset) / 1e6) for val in buffer_timetags
+            int((np.int64(val) - offset) / 1e6) for val in buffer_timetags
         ]
-        timetags.append(buffer_timetags)
-        channels.append(buffer_channels)
+        timetags.extend(buffer_timetags)
+        channels.extend(buffer_channels)
         
         cxn.apd_tagger.stop_tag_stream()
 
         num_reps_remaining -= num_reps_per_cycle
-
-    timetags = np.array(timetags)
-    channels = np.array(channels)
 
     return timetags, channels
 
@@ -233,11 +238,11 @@ def determine_readout_dur_power(
             "timestamp": timestamp,
             "nv_sig": nv_sig_copy,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
-            "num_runs": num_reps,
-            "nv0": nv0.tolist(),
-            "nv0-units": "list(us)",
-            "nvm": nvm.tolist(),
-            "nvm-units": "list(us)",
+            "num_reps": num_reps,
+            "nv0": nv0,
+            "nv0-units": "list(list(us))",
+            "nvm": nvm,
+            "nvm-units": "list(list(us))",
         }
 
         tool_belt.save_raw_data(raw_data, file_path)
@@ -255,13 +260,25 @@ def determine_readout_dur_power(
 
 
 if __name__ == "__main__":
+        
+    # Replots
+    # file_name = "2021_11_30-14_38_32-wu-nv3_2021_11_29"
+    # data = tool_belt.get_raw_data(file_name)
+    # nv_sig = data["nv_sig"]
+    # nv0 = data["nv0"]
+    # nvm = data["nvm"]
+    # readout_power = nv_sig["charge_readout_laser_power"]
+    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
+    # for dur in readout_durs:
+    #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
+    # exit()
 
     # apd_indices = [0]
     apd_indices = [1]
     # apd_indices = [0,1]
 
-    nd = 'nd_0'
-    # nd = "nd_0.5"
+    # nd = 'nd_0'
+    nd = "nd_0.5"
     # nd = 'nd_1.0'
     # nd = 'nd_2.0'
 
@@ -271,8 +288,8 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [-0.020, -0.033, 0], 'name': '{}-nv3_2021_11_29'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 27,
+    nv_sig = { 'coords': [-0.015, -0.027, -7], 'name': '{}-nv3_2021_11_29'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 16,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
@@ -280,7 +297,7 @@ if __name__ == "__main__":
             'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0',
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': nd,
             
             'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 1000,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
