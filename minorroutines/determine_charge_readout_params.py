@@ -22,31 +22,76 @@ import majorroutines.optimize as optimize
 # %%
 
 
-def plot_histogram(nv_sig, nv0, nvm, dur, power):
+def calc_histogram(nv0, nvm, dur):
 
     # Counts are in us, readout is in ns
     dur_us = dur / 1e3
     nv0_counts = [np.count_nonzero(np.array(rep) < dur_us) for rep in nv0]
     nvm_counts = [np.count_nonzero(np.array(rep) < dur_us) for rep in nvm]
 
-    fig_hist, ax = plt.subplots(1, 1)
     max_0 = max(nv0_counts)
     max_m = max(nvm_counts)
-    occur_0, x_vals_0 = np.histogram(nv0_counts, np.linspace(0, max_0, max_0 + 1))
-    occur_m, x_vals_m = np.histogram(nvm_counts, np.linspace(0, max_m, max_m + 1))
+    occur_0, x_vals_0 = np.histogram(
+        nv0_counts, np.linspace(0, max_0, max_0 + 1)
+    )
+    occur_m, x_vals_m = np.histogram(
+        nvm_counts, np.linspace(0, max_m, max_m + 1)
+    )
+
+    return occur_0, x_vals_0, occur_m, x_vals_m
+
+
+def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
+
+    num_reps = len(nv0)
+    readout_dur_linspace = np.linspace(10e6, max_readout_dur, 100)
+    # Round to nearest ms
+    readout_dur_linspace = [
+        int(1e6 * round(val / 1e6)) for val in readout_dur_linspace
+    ]
+
+    overlaps = []
+
+    for dur in readout_dur_linspace:
+
+        occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0, nvm, dur)
+
+        min_max_x_vals = int(min(x_vals_0[-1], x_vals_m[-1]))
+
+        occur_0_clip = occur_0[0:min_max_x_vals]
+        occur_m_clip = occur_m[0:min_max_x_vals]
+        overlap = np.sum(np.minimum(occur_0_clip, occur_m_clip))
+
+        overlaps.append(overlap)
+
+    min_overlap = min(overlaps)
+    print("fractional overlap: {}".format(min_overlap / num_reps))
+    opti_readout_dur_ind = overlaps.index(min_overlap)
+    opti_readout_dur = readout_dur_linspace[opti_readout_dur_ind]
+
+    return opti_readout_dur
+
+
+def plot_histogram(nv_sig, nv0, nvm, dur, power, do_save=True):
+
+    occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0, nvm, dur)
+
+    fig_hist, ax = plt.subplots(1, 1)
     ax.plot(x_vals_0[:-1], occur_0, "r-o", label="Initial red pulse")
     ax.plot(x_vals_m[:-1], occur_m, "g-o", label="Initial green pulse")
     ax.set_xlabel("Counts")
     ax.set_ylabel("Occur.")
-    ax.set_title("{} ms readout, {} V".format(dur / 1e6, power))
+    ax.set_title("{} ms readout, {} V".format(int(dur / 1e6), power))
     ax.legend()
 
-    timestamp = tool_belt.get_time_stamp()
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
-    tool_belt.save_figure(fig_hist, file_path + "_histogram")
-    
-    # Sleep for a second so we don't overwrite any other histograms
-    time.sleep(1.1)
+    if do_save:
+        timestamp = tool_belt.get_time_stamp()
+        file_path = tool_belt.get_file_path(
+            __file__, timestamp, nv_sig["name"]
+        )
+        tool_belt.save_figure(fig_hist, file_path + "_histogram")
+        # Sleep for a second so we don't overwrite any other histograms
+        time.sleep(1.1)
 
 
 def process_timetags(apd_gate_channel, timetags, channels):
@@ -54,7 +99,7 @@ def process_timetags(apd_gate_channel, timetags, channels):
     processed_timetags = []
     gate_open_channel = apd_gate_channel
     gate_close_channel = -gate_open_channel
-        
+
     channels_array = np.array(channels)
     gate_open_inds = np.where(channels_array == gate_open_channel)[0]
     gate_close_inds = np.where(channels_array == gate_close_channel)[0]
@@ -98,7 +143,7 @@ def measure_histograms_sub(
         adjusted_nv_coords = coords + np.array(drift)
         tool_belt.set_xyz(cxn, adjusted_nv_coords)
         # print(num_reps_remaining)
-        
+
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
         cxn.apd_tagger.clear_buffer()
@@ -124,7 +169,7 @@ def measure_histograms_sub(
         ]
         timetags.extend(buffer_timetags)
         channels.extend(buffer_channels)
-        
+
         cxn.apd_tagger.stop_tag_stream()
 
         num_reps_remaining -= num_reps_per_cycle
@@ -202,7 +247,7 @@ def determine_readout_dur_power(
     apd_indices,
     max_readout_dur=1e9,
     readout_powers=None,
-    plot_readout_durs = None,
+    plot_readout_durs=None,
 ):
     num_reps = 500
 
@@ -246,7 +291,7 @@ def determine_readout_dur_power(
         }
 
         tool_belt.save_raw_data(raw_data, file_path)
-        
+
         if plot_readout_durs is not None:
             for dur in plot_readout_durs:
                 plot_histogram(nv_sig, nv0, nvm, dur, p)
@@ -260,18 +305,23 @@ def determine_readout_dur_power(
 
 
 if __name__ == "__main__":
-        
+
     # Replots
-    # file_name = "2021_11_30-14_38_32-wu-nv3_2021_11_29"
-    # data = tool_belt.get_raw_data(file_name)
-    # nv_sig = data["nv_sig"]
-    # nv0 = data["nv0"]
-    # nvm = data["nvm"]
-    # readout_power = nv_sig["charge_readout_laser_power"]
+    tool_belt.init_matplotlib()
+    file_name = "2021_11_30-18_32_46-wu-nv3_2021_11_29"
+    data = tool_belt.get_raw_data(file_name)
+    nv_sig = data["nv_sig"]
+    nv0 = data["nv0"]
+    nvm = data["nvm"]
+    readout_power = nv_sig["charge_readout_laser_power"]
+    max_readout_dur = nv_sig["charge_readout_dur"]
+    opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
+    plot_histogram(nv_sig, nv0, nvm, opti_readout_dur, readout_power)
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
     # for dur in readout_durs:
     #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
-    # exit()
+    plt.show(block=True)
+    exit()
 
     # apd_indices = [0]
     apd_indices = [1]
@@ -287,29 +337,48 @@ if __name__ == "__main__":
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
-    
-    nv_sig = { 'coords': [-0.015, -0.027, -7], 'name': '{}-nv3_2021_11_29'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 16,
-            
-            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
-            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
-            'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-            
-            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': nd,
-            
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 1000,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
-            
-            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
-            "initialize_laser": green_laser, "initialize_dur": 1e4,
-            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
-            
-            'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8144, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9239, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5}
+
+    nv_sig = {
+        "coords": [-0.015, -0.027, -7],
+        "name": "{}-nv3_2021_11_29".format(sample_name),
+        "disable_opt": False,
+        "disable_z_opt": False,
+        "expected_count_rate": 16,
+        "imaging_laser": green_laser,
+        "imaging_laser_filter": nd,
+        "imaging_readout_dur": 1e7,
+        # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+        # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
+        "spin_laser": green_laser,
+        "spin_laser_filter": nd,
+        "spin_pol_dur": 1e5,
+        "spin_readout_dur": 350,
+        "nv-_reionization_laser": green_laser,
+        "nv-_reionization_dur": 1e5,
+        "nv-_prep_laser": green_laser,
+        "nv-_prep_laser_dur": 1e5,
+        "nv-_prep_laser_filter": nd,
+        "nv0_ionization_laser": red_laser,
+        "nv0_ionization_dur": 1000,
+        "nv0_prep_laser": red_laser,
+        "nv0_prep_laser_dur": 1000,
+        "spin_shelf_laser": yellow_laser,
+        "spin_shelf_dur": 0,
+        "initialize_laser": green_laser,
+        "initialize_dur": 1e4,
+        "CPG_laser": red_laser,
+        "CPG_laser_dur": 3e3,
+        "charge_readout_laser": yellow_laser,
+        "charge_readout_dur": 50e6,
+        "collection_filter": None,
+        "magnet_angle": None,
+        "resonance_LOW": 2.8144,
+        "rabi_LOW": 131.0,
+        "uwave_power_LOW": 16.5,
+        "resonance_HIGH": 2.9239,
+        "rabi_HIGH": 183.5,
+        "uwave_power_HIGH": 16.5,
+    }
 
     # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
     #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
