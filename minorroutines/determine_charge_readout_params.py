@@ -339,8 +339,8 @@ if __name__ == "__main__":
     apd_indices = [1]
     # apd_indices = [0,1]
 
-    # nd = 'nd_0'
-    nd = "nd_0.5"
+    nd = 'nd_0'
+    # nd = "nd_0.5"
     # nd = 'nd_1.0'
     # nd = 'nd_2.0'
 
@@ -350,54 +350,35 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
-    nv_sig = {
-        "coords": [-0.015, -0.027, -7],
-        "name": "{}-nv3_2021_11_29".format(sample_name),
-        "disable_opt": False,
-        "disable_z_opt": False,
-        "expected_count_rate": 16,
-        "imaging_laser": green_laser,
-        "imaging_laser_filter": nd,
-        "imaging_readout_dur": 1e7,
-        # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-        # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
-        "spin_laser": green_laser,
-        "spin_laser_filter": nd,
-        "spin_pol_dur": 1e5,
-        "spin_readout_dur": 350,
-        "nv-_reionization_laser": green_laser,
-        "nv-_reionization_dur": 1e5,
-        "nv-_prep_laser": green_laser,
-        "nv-_prep_laser_dur": 1e5,
-        "nv-_prep_laser_filter": nd,
-        "nv0_ionization_laser": red_laser,
-        "nv0_ionization_dur": 1000,
-        "nv0_prep_laser": red_laser,
-        "nv0_prep_laser_dur": 1000,
-        "spin_shelf_laser": yellow_laser,
-        "spin_shelf_dur": 0,
-        "initialize_laser": green_laser,
-        "initialize_dur": 1e4,
-        "CPG_laser": red_laser,
-        "CPG_laser_dur": 3e3,
-        "charge_readout_laser": yellow_laser,
-        "charge_readout_dur": 50e6,
-        "collection_filter": None,
-        "magnet_angle": None,
-        "resonance_LOW": 2.8144,
-        "rabi_LOW": 131.0,
-        "uwave_power_LOW": 16.5,
-        "resonance_HIGH": 2.9239,
-        "rabi_HIGH": 183.5,
-        "uwave_power_HIGH": 16.5,
-    }
+    nv_sig = { 'coords': [0.021, -0.002, 2], 'name': '{}-nv4_2021_11_29'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 38,
+
+            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
+            'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0',
+
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 1000,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
+
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
+            "initialize_laser": green_laser, "initialize_dur": 1e4,
+            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
+
+            'collection_filter': None, 'magnet_angle': None,
+            'resonance_LOW': 2.8144, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9239, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5}
 
     # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
     #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
     #                 6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
     #                 2*10**7, 3*10**7, 4*10**7, 5*10**7]
     # readout_durs = numpy.linspace(10e6, 50e6, 5)
-    readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]  # , 400e6, 700e6, 1e9]
+    readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9]
     # readout_durs = numpy.linspace(100e6, 1e9, 10)
     # readout_durs = numpy.linspace(700e6, 1e9, 7)
     # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
@@ -405,10 +386,10 @@ if __name__ == "__main__":
     readout_durs = [int(el) for el in readout_durs]
     max_readout_dur = max(readout_durs)
 
-    # readout_powers = numpy.linspace(0.6, 1.0, 5)
-    readout_powers = np.linspace(0.7, 0.9, 6)
-    # readout_powers = numpy.linspace(0.76, 0.8, 5)
-    # readout_powers = numpy.linspace(0.2, 1.0, 5)
+    readout_powers = np.linspace(0.6, 1.0, 9)
+    # readout_powers = np.linspace(0.7, 0.9, 6)
+    # readout_powers = np.linspace(0.76, 0.8, 5)
+    # readout_powers = np.linspace(0.2, 1.0, 5)
     # readout_powers = [0.65]
 
     try:
