@@ -171,7 +171,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
     # xy
     if axis_ind in [0, 1]:
 
-        scan_range = config["Positioning"]["xy_optimize_range"]
+        scan_range =  config["Positioning"]["xy_optimize_range"]
         scan_dtype = eval(config["Positioning"]["xy_dtype"])
         delay = config["Positioning"]["xy_small_response_delay"]
 

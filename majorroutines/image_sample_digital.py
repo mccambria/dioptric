@@ -232,7 +232,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         
         # This is a horribly inefficient way of getting kcps, but it
         # is easy and readable and probably fine up to some resolution
-    if plot_data:
+        if plot_data:
             img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
             update_image_figure(fig, img_array_kcps)
         
