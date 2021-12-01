@@ -339,7 +339,7 @@ if __name__ == "__main__":
     # for dur in readout_durs:
     #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
 
-    # plt.show(block=True)
+    plt.show(block=True)
     exit()
 
     ########################
