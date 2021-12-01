@@ -41,9 +41,19 @@ def calc_histogram(nv0, nvm, dur):
     return occur_0, x_vals_0, occur_m, x_vals_m
 
 
-def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
+def calc_overlap(occur_0, x_vals_0, occur_m, x_vals_m):
 
     num_reps = len(nv0)
+    min_max_x_vals = int(min(x_vals_0[-1], x_vals_m[-1]))
+    occur_0_clip = occur_0[0:min_max_x_vals]
+    occur_m_clip = occur_m[0:min_max_x_vals]
+    overlap = np.sum(np.minimum(occur_0_clip, occur_m_clip))
+    fractional_overlap = overlap / num_reps
+    return fractional_overlap
+
+
+def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
+
     readout_dur_linspace = np.linspace(10e6, max_readout_dur, 100)
     # Round to nearest ms
     readout_dur_linspace = [
@@ -53,19 +63,11 @@ def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
     overlaps = []
 
     for dur in readout_dur_linspace:
-
         occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0, nvm, dur)
-
-        min_max_x_vals = int(min(x_vals_0[-1], x_vals_m[-1]))
-
-        occur_0_clip = occur_0[0:min_max_x_vals]
-        occur_m_clip = occur_m[0:min_max_x_vals]
-        overlap = np.sum(np.minimum(occur_0_clip, occur_m_clip))
-
+        overlap = calc_overlap(occur_0, x_vals_0, occur_m, x_vals_m)
         overlaps.append(overlap)
 
     min_overlap = min(overlaps)
-    print("fractional overlap: {}".format(min_overlap / num_reps))
     opti_readout_dur_ind = overlaps.index(min_overlap)
     opti_readout_dur = readout_dur_linspace[opti_readout_dur_ind]
 
@@ -75,6 +77,8 @@ def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
 def plot_histogram(nv_sig, nv0, nvm, dur, power, do_save=True):
 
     occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0, nvm, dur)
+    overlap = calc_overlap(occur_0, x_vals_0, occur_m, x_vals_m)
+    print("fractional overlap: {}".format(overlap))
 
     fig_hist, ax = plt.subplots(1, 1)
     ax.plot(x_vals_0[:-1], occur_0, "r-o", label="Initial red pulse")
@@ -306,22 +310,30 @@ def determine_readout_dur_power(
 
 if __name__ == "__main__":
 
-    # Replots
+    ############ Replots ############
+
     tool_belt.init_matplotlib()
-    file_name = "2021_11_30-18_32_46-wu-nv3_2021_11_29"
+    file_name = "2021_11_30-23_09_57-wu-nv4_2021_11_29"
     data = tool_belt.get_raw_data(file_name)
     nv_sig = data["nv_sig"]
     nv0 = data["nv0"]
     nvm = data["nvm"]
     readout_power = nv_sig["charge_readout_laser_power"]
     max_readout_dur = nv_sig["charge_readout_dur"]
+
     opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
     plot_histogram(nv_sig, nv0, nvm, opti_readout_dur, readout_power)
+
+    # plot_histogram(nv_sig, nv0, nvm, 1e9, readout_power)
+
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
     # for dur in readout_durs:
     #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
+
     plt.show(block=True)
     exit()
+
+    ########################
 
     # apd_indices = [0]
     apd_indices = [1]
