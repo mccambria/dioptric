@@ -75,7 +75,7 @@ def process_raw_buffer(timestamps, channels,
     
     # Throw out probable afterpulses
     # Something is wrong with this... see 2019-06-03_17-05-01_ayrton12
-    if True:
+    if False:
         num_vals = timestamps.size
         click_index = 0
         last_deleted_a_index = -1
@@ -120,9 +120,9 @@ def process_raw_buffer(timestamps, channels,
         # Determine the channel to take the difference with
         click_channel = channels[click_index]
         if click_channel == apd_b_chan_name:
-            diff_channel = apd_b_chan_name
-        elif click_channel == apd_a_chan_name:
             diff_channel = apd_a_chan_name
+        elif click_channel == apd_a_chan_name:
+            diff_channel = apd_b_chan_name
             
         # if click_channel == apd_a_chan_name:
         #     continue
@@ -208,11 +208,12 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
     num_tags = 0
     collection_index = 0
+    cent_diff_window = diff_window + 0.5
 
-    diff_window_ps = diff_window * 1000
+    cent_diff_window_ps = cent_diff_window * 1000
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
-    num_bins = int(2 * diff_window) + 1
+    num_bins = int(2 * cent_diff_window)
     # num_bins = 151
     # num_bins = diff_window + 1
     # num_bins = int(2*mod)-1
@@ -283,7 +284,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
         # Process data
         process_raw_buffer(buffer_timetags, buffer_channels,
-                       diff_window_ps, afterpulse_window, differences_append,
+                       cent_diff_window_ps, afterpulse_window, differences_append,
                        apd_a_chan_name, apd_b_chan_name)
 #        print(differences)
         # return
@@ -292,10 +293,12 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         if collection_index == 0:
             fig, ax = plt.subplots()
             hist, bin_edges = numpy.histogram(differences, num_bins,
-                                      (-diff_window_ps, diff_window_ps))
+                                      (-cent_diff_window_ps, cent_diff_window_ps))
             bin_edges = bin_edges / 1000  # ps to ns
-            bin_center_offset = (bin_edges[1] - bin_edges[0]) / 2
-            bin_centers = bin_edges[0: num_bins] + bin_center_offset
+            bin_centers = []
+            for ind in range(len(bin_edges) - 1):
+                center = (bin_edges[ind] + bin_edges[ind+1]) // 2
+                bin_centers.append(int(center))
             ax.plot(bin_centers, hist)
             # ax.plot(bin_centers, hist, marker='o', linestyle='none', markersize=3)
             xlim = int(1.1 * diff_window)
@@ -322,7 +325,7 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
         elif collection_index > 1:
             # print(buffer_timetags)
             hist, bin_edges = numpy.histogram(differences, num_bins,
-                                      (-diff_window_ps, diff_window_ps))
+                                      (-cent_diff_window_ps, cent_diff_window_ps))
             # diff_mod = (numpy.array(differences) // 1000) % mod
             # hist, bin_edges = numpy.histogram(diff_mod, num_bins,
             #                           (-mod+1, mod-1))
@@ -365,9 +368,6 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
     print('g2(0) = {}'.format(g2_zero))
 
-    raw_data = {'total_tags': total_tags}
-    tool_belt.save_raw_data(raw_data, filePath)
-
     return g2_zero
 
 
@@ -399,9 +399,8 @@ def calculate_relative_g2_zero_mod(hist):
 
 if __name__ == '__main__':
 
-    folder_name = 'pc_hahn/branch_cryo-setup/g2_measurement/2021_03'
-    file_name = '2021_03_10-15_22_06-johnson-nv14_2021_02_26'
-    data = tool_belt.get_raw_data(folder_name, file_name)
+    file_name = '2021_12_03-12_10_11-wu-nv3_2021_12_02'
+    data = tool_belt.get_raw_data(file_name)
 
     differences = data['differences']
     num_bins = data['num_bins']

@@ -71,10 +71,6 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None, nv_minus
 
     readout = nv_sig['imaging_readout_dur']
     readout_sec = readout / 10**9
-    laser_key = 'nv-_prep_laser'
-    init = nv_sig['{}_dur'.format(laser_key)]
-    init_laser = nv_sig[laser_key]
-    init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
     # %% Optimize
 
@@ -96,6 +92,10 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None, nv_minus
     # %% Load the PulseStreamer
 
     if nv_minus_initialization:
+        laser_key = 'nv-_prep_laser'
+        init = nv_sig['{}_dur'.format(laser_key)]
+        init_laser = nv_sig[laser_key]
+        init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         seq_args = [init, readout, apd_indices[0], init_laser, init_power, 
                     readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)

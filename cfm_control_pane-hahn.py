@@ -51,13 +51,10 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
     # scan_range = 0.5
     # num_steps = 90
     
-    # scan_range = 0.2
-    # # # scan_range = 0.15
-    # # # scan_range = 0.1
-    # num_steps = 60
-    
-    scan_range = 0.05
-    num_steps = 30
+    scan_range = 0.2
+    # # scan_range = 0.15
+    # # scan_range = 0.1
+    num_steps = 60
     
     # scan_range = 0.75
     # num_steps = 150
@@ -89,6 +86,15 @@ def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
                       apd_indices, nv_minus_initialization=nv_minus_initialization)
 
 
+def do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=False):
+    
+    scan_range = 0.05
+    num_steps = 30
+    
+    image_sample.main(nv_sig, scan_range, scan_range, num_steps, 
+                      apd_indices, nv_minus_initialization=nv_minus_initialization)
+
+
 def do_optimize(nv_sig, apd_indices):
 
     optimize.main(nv_sig, apd_indices,
@@ -116,9 +122,8 @@ def do_stationary_count(nv_sig, apd_indices, disable_opt=None, nv_minus_initiali
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 30  # s
-    # diff_window = 200  # ns
-    diff_window = 1000  # ns
+    run_time = 60*10  # s
+    diff_window = 200  # ns
 
     g2_measurement.main(nv_sig, run_time, diff_window,
                         apd_a_index, apd_b_index)
@@ -157,7 +162,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
 
     num_steps = 51
     num_reps = 10000
-    num_runs = 4
+    num_runs = 10
     uwave_power = 16.5
     uwave_pulse_dur = 100
 
@@ -469,8 +474,8 @@ if __name__ == '__main__':
 
 
     # apd_indices = [0]
-    apd_indices = [1]
-    # apd_indices = [0,1]
+    # apd_indices = [1]
+    apd_indices = [0,1]
     
     nd = 'nd_0'
     # nd = 'nd_0.5'
@@ -483,8 +488,8 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [-0.016, -0.028, 117], 'name': '{}-nv1_2021_12_01'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 40,
+    nv_sig = { 'coords': [0.020, 0.016, 2], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 32,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
@@ -503,26 +508,31 @@ if __name__ == '__main__':
             "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8144, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9239, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.8141, 'rabi_LOW': 136.8, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9273, 'rabi_HIGH': 189.7, 'uwave_power_HIGH': 16.5}
     
-    # nv_sig = { 'coords': [0.0, 0.0, 2], 'name': '{}-search'.format(sample_name),
+    # nv_sig = { 'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
     #         'disable_opt': True, 'expected_count_rate': None,
-            
+                    
     #         'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+    #         # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+    #         # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
     #         'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             
     #         'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
-    
-    #         'nv0_ionization_laser': red_laser, 'nv0_ionization_dur':500,
+    #         'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0',
+            
+    #         'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 1000,
+    #         'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
+            
     #         'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
     #         "initialize_laser": green_laser, "initialize_dur": 1e4,
     #         "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
     #         "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
             
-    #         'collection_filter': None, 'magnet_angle': 60,
-    #         'resonance_LOW': 2.8240, 'rabi_LOW': 139.1, 'uwave_power_LOW': 16.5,
-    #         'resonance_HIGH': 2.9191, 'rabi_HIGH': 202.4, 'uwave_power_HIGH': 16.5} 
+    #         'collection_filter': None, 'magnet_angle': None,
+    #         'resonance_LOW': 2.8144, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
+    #         'resonance_HIGH': 2.9239, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5}
     
     
     # %% Functions to run
@@ -532,14 +542,14 @@ if __name__ == '__main__':
         tool_belt.init_safe_stop()
         
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(2, -1)
+        #     cxn.cryo_piezos.write_xy(4, -2)
         
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         
-        # for pos in numpy.linspace(100, 145, 10): 
+        # for pos in numpy.linspace(0, -100, 11): 
         # # for pos in [0,10]*10:
         #     if tool_belt.safe_stop():
         #         break
@@ -566,9 +576,11 @@ if __name__ == '__main__':
             # if tool_belt.safe_stop():
             #     break
         
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
+        # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
-        # do_optimize(nv_sig, apd_indices)
+        # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
+        do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.200)

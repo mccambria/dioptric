@@ -124,8 +124,8 @@ if __name__ == '__main__':
         # main(cxn, laser_names[0])
     
     
-        # cxn.pulse_streamer.constant([3], 1.0)
-        cxn.pulse_streamer.constant([], 1.0)
+        cxn.pulse_streamer.constant([3], 1.0)
+        # cxn.pulse_streamer.constant([], 1.0)
         # cxn.pulse_streamer.constant([3])
     
         input('Press enter to stop...')

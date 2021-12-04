@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import labrad
 import time
+import sys
 
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
@@ -141,6 +142,10 @@ def measure_histograms_sub(
 
     while num_reps_remaining > 0:
 
+        # Break out of the while if the user says stop
+        if tool_belt.safe_stop():
+            break
+
         coords = nv_sig["coords"]
         opti_coords_list = []
         opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
@@ -149,6 +154,15 @@ def measure_histograms_sub(
         adjusted_nv_coords = coords + np.array(drift)
         tool_belt.set_xyz(cxn, adjusted_nv_coords)
         # print(num_reps_remaining)
+        
+        # Make sure the lasers are at the right powers
+        # Initial Calculation and setup
+        tool_belt.set_filter(cxn, nv_sig, "nv0_prep_laser")
+        tool_belt.set_filter(cxn, nv_sig, "nv-_prep_laser")
+        tool_belt.set_filter(cxn, nv_sig, "charge_readout_laser")
+        _ = tool_belt.set_laser_power(cxn, nv_sig, "nv0_prep_laser")
+        _ = tool_belt.set_laser_power(cxn, nv_sig, "nv-_prep_laser")
+        _ = tool_belt.set_laser_power(cxn, nv_sig, "charge_readout_laser")
 
         # Load the APD
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -314,33 +328,33 @@ if __name__ == "__main__":
 
     ############ Replots ############
 
-    tool_belt.init_matplotlib()
-    path_from_nvdata = (
-        "pc_hahn/branch_master/determine_charge_readout_params/2021_12/"
-    )
-    file_name = "2021_12_01-00_36_17-wu-nv4_2021_11_29"
-    data = tool_belt.get_raw_data(file_name, path_from_nvdata)
-    nv_sig = data["nv_sig"]
-    nv0 = data["nv0"]
-    nvm = data["nvm"]
-    readout_power = nv_sig["charge_readout_laser_power"]
-    max_readout_dur = nv_sig["charge_readout_dur"]
+    # tool_belt.init_matplotlib()
+    # path_from_nvdata = (
+    #     "pc_hahn/branch_master/determine_charge_readout_params/2021_12/"
+    # )
+    # file_name = "2021_12_02-15_51_24-wu-nv1_2021_12_02"
+    # data = tool_belt.get_raw_data(file_name, path_from_nvdata)
+    # nv_sig = data["nv_sig"]
+    # nv0 = data["nv0"]
+    # nvm = data["nvm"]
+    # readout_power = nv_sig["charge_readout_laser_power"]
+    # max_readout_dur = nv_sig["charge_readout_dur"]
 
-    opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
-    do_save = True
-    # do_save = False
-    plot_histogram(
-        nv_sig, nv0, nvm, opti_readout_dur, readout_power, do_save=do_save
-    )
+    # opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
+    # do_save = True
+    # # do_save = False
+    # plot_histogram(
+    #     nv_sig, nv0, nvm, opti_readout_dur, readout_power, do_save=do_save
+    # )
 
-    # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
+    # # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
 
-    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
-    # for dur in readout_durs:
-    #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
+    # # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
+    # # for dur in readout_durs:
+    # #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
 
-    plt.show(block=True)
-    exit()
+    # # plt.show(block=True)
+    # sys.exit()
 
     ########################
 
@@ -359,8 +373,8 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [-0.016, -0.028, 117], 'name': '{}-nv1_2021_12_01'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 40,
+    nv_sig = { 'coords': [0.020, 0.016, 2], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 32,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
@@ -379,8 +393,8 @@ if __name__ == "__main__":
             "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8144, 'rabi_LOW': 131.0, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9239, 'rabi_HIGH': 183.5, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.8141, 'rabi_LOW': 136.8, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9273, 'rabi_HIGH': 189.7, 'uwave_power_HIGH': 16.5}
 
     # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
     #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
@@ -395,11 +409,11 @@ if __name__ == "__main__":
     readout_durs = [int(el) for el in readout_durs]
     max_readout_dur = max(readout_durs)
 
-    # readout_powers = np.linspace(0.6, 1.0, 9)
-    readout_powers = np.linspace(0.7, 1.0, 31)
+    readout_powers = np.linspace(0.6, 1.0, 9)
+    # readout_powers = np.linspace(0.7, 1.0, 31)
     # readout_powers = np.linspace(0.76, 0.8, 5)
     # readout_powers = np.linspace(0.2, 1.0, 5)
-    # readout_powers = [0.65]
+    # readout_powers = [1.0]
 
     try:
         determine_readout_dur_power(
