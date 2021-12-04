@@ -373,8 +373,8 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.020, 0.016, 2], 'name': '{}-nv3_2021_12_03'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 32,
+    nv_sig = { 'coords': [0.019, 0.015, 3], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
@@ -382,7 +382,7 @@ if __name__ == "__main__":
             'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0',
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0.5',
             
             'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 1000,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
@@ -409,11 +409,11 @@ if __name__ == "__main__":
     readout_durs = [int(el) for el in readout_durs]
     max_readout_dur = max(readout_durs)
 
-    readout_powers = np.linspace(0.6, 1.0, 9)
-    # readout_powers = np.linspace(0.7, 1.0, 31)
-    # readout_powers = np.linspace(0.76, 0.8, 5)
+    # readout_powers = np.linspace(0.6, 1.0, 9)
+    readout_powers = np.linspace(0.65, 0.7, 6)
+    # readout_powers = np.linspace(0.85, 1.0, 4)
     # readout_powers = np.linspace(0.2, 1.0, 5)
-    # readout_powers = [1.0]
+    # readout_powers = [0.68]
 
     try:
         determine_readout_dur_power(
