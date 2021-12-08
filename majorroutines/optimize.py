@@ -487,6 +487,20 @@ def main_with_cxn(
             opti_coords.append(ret_vals[0])
             scan_vals_by_axis.append(ret_vals[1])
             counts_by_axis.append(ret_vals[2])
+            
+        # Check the count rate before moving on to z
+        if expected_count_rate is not None:
+            test_coords = [opti_coords[0], opti_coords[1], adjusted_coords[2]]
+            opti_count_rate = stationary_count_lite(
+                cxn, nv_sig, test_coords, config, apd_indices
+            )
+            if lower_threshold <= opti_count_rate <= upper_threshold:
+                opti_coords = test_coords
+                print("Z optimization unnecessary.")
+                print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
+                print("Optimization succeeded!")
+                opti_succeeded = True
+                break
 
         # z
         if "disable_z_opt" in nv_sig and nv_sig["disable_z_opt"]:
