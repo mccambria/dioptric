@@ -38,13 +38,13 @@ def calc_histogram(nv0, nvm, dur):
     occur_m, bin_edge_m = np.histogram(
         nvm_counts, np.linspace(0, max_m, max_m + 1)
     )
-    
-    # Histogram returns bin edges. A bin is defined with the first point 
-    # inclusive and the last exclusive - eg a count a 2 will fall into 
+
+    # Histogram returns bin edges. A bin is defined with the first point
+    # inclusive and the last exclusive - eg a count a 2 will fall into
     # bin [2,3) - so just drop the last bin edge for our x vals
     x_vals_0 = bin_edges_0[:-1]
     x_vals_m = bin_edge_m[:-1]
-    
+
     return occur_0, x_vals_0, occur_m, x_vals_m
 
 
@@ -59,7 +59,7 @@ def calc_overlap(occur_0, x_vals_0, occur_m, x_vals_m, num_reps):
 
 
 def calc_separation(occur_0, x_vals_0, occur_m, x_vals_m, num_reps):
-    
+
     mean_0 = sum(occur_0 * x_vals_0) / num_reps
     std_0 = np.sqrt(sum(occur_0 * (x_vals_0 - mean_0)**2) / (num_reps - 1))
     mean_m = sum(occur_m * x_vals_m) / num_reps
@@ -175,7 +175,7 @@ def measure_histograms_sub(
         adjusted_nv_coords = coords + np.array(drift)
         tool_belt.set_xyz(cxn, adjusted_nv_coords)
         # print(num_reps_remaining)
-        
+
         # Make sure the lasers are at the right powers
         # Initial Calculation and setup
         tool_belt.set_filter(cxn, nv_sig, "nv0_prep_laser")
@@ -398,25 +398,25 @@ if __name__ == "__main__":
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
-    
+
     nv_sig = { 'coords': [0.017, 0.017, 1], 'name': '{}-nv3_2021_12_03'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
-            
+
             'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
             # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
             'spin_laser': green_laser, 'spin_laser_filter': 'nd_1.0', 'spin_pol_dur': 1E5, 'spin_readout_dur': 500,
-            
+
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
-            
+
             'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 150,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 2000,
-            
+
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 150, "spin_shelf_laser_power": 1.0,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
             "charge_readout_laser": yellow_laser, "charge_readout_dur": 580e6, "charge_readout_laser_power": 0.68,
-            
+
             'collection_filter': None, 'magnet_angle': None,
             'resonance_LOW': 2.8141, 'rabi_LOW': 136.8, 'uwave_power_LOW': 16.5,
             'resonance_HIGH': 2.9273, 'rabi_HIGH': 189.7, 'uwave_power_HIGH': 16.5}
