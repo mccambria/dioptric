@@ -253,6 +253,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
         else:
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
+            
+        tool_belt.set_filter(cxn, nv_sig, "spin_laser")
 
         # Apply the microwaves
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)

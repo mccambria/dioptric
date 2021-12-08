@@ -441,8 +441,10 @@ def process_laser_seq(
                 if (ind == 0) and (val is LOW):
                     processed_train.append((dur, LOW))
                     continue
-                processed_train.append((100, HIGH))
-                processed_train.append((dur - 100, LOW))
+                if dur < 100:
+                    raise ValueError("Feedthrough lasers do not support pulses shorter than 100 ns.")
+                processed_train.append((50, HIGH))
+                processed_train.append((dur - 50, LOW))
         # Digital, no feedthrough, do nothing
         else:
             processed_train = train.copy()
@@ -824,14 +826,6 @@ def radial_distrbution_data(
 
 
 # %% Math functions
-
-
-def get_pi_pulse_dur(rabi_period):
-    return round(rabi_period / 2)
-
-
-def get_pi_on_2_pulse_dur(rabi_period):
-    return round(rabi_period / 4)
 
 
 def get_pi_pulse_dur(rabi_period):

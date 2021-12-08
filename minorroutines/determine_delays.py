@@ -83,9 +83,10 @@ def measure_delay(
         tau = taus[tau_ind]
         if seq_file == "aom_delay.py":
             readout = nv_sig["imaging_readout_dur"]
+            # readout = 1500
             seq_args = [
                 tau,
-                max_tau,
+                1e4, #max_tau,
                 readout,
                 apd_indices[0],
                 laser_name,
@@ -312,36 +313,43 @@ if __name__ == "__main__":
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
-    nv_sig = { 'coords': [0.099, -0.141, 15], 'name': '{}-nv3_2021_11_03'.format(sample_name),
-            'disable_opt': False, 'expected_count_rate': 15,
-            # 'disable_opt': True, 'expected_count_rate': None,
+    
+    nv_sig = { 'coords': [0.017, 0.017, 1], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
             
-            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
-            'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
+            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
+            'spin_laser': green_laser, 'spin_laser_filter': 'nd_1.0', 'spin_pol_dur': 1E5, 'spin_readout_dur': 500,
             
-            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur':500,
-            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0.5',
+            
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 300,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
+            
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, "spin_shelf_laser_power": 1.0,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 580e6, "charge_readout_laser_power": 0.68,
             
-            'collection_filter': None, 'magnet_angle': 60,
-            'resonance_LOW': 2.8240, 'rabi_LOW': 139.1, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9191, 'rabi_HIGH': 202.4, 'uwave_power_HIGH': 16.5}  
+            'collection_filter': None, 'magnet_angle': None,
+            'resonance_LOW': 2.8141, 'rabi_LOW': 136.8, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9273, 'rabi_HIGH': 189.7, 'uwave_power_HIGH': 16.5} 
     
 
     try:
 
         # laser delay
-        num_reps = int(50E4)
         num_steps = 101
-        laser_name = 'laserglow_589'
-        delay_range = [0, 2500]
+        # num_reps = int(1e4)
         # laser_name = 'laserglow_532'
         # delay_range = [600, 1400]
-        # laser_name = 'cobolt_638'
-        # delay_range = [0, 2000]
+        # num_reps = int(1e5)
+        # laser_name = 'laserglow_589'
+        # delay_range = [800, 1700]
+        num_reps = int(1E2)
+        laser_name = 'cobolt_638'
+        delay_range = [0, 600]
         laser_power = 1.0
         with labrad.connect() as cxn:
             aom_delay(cxn, nv_sig, apd_indices,

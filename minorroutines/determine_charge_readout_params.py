@@ -32,13 +32,19 @@ def calc_histogram(nv0, nvm, dur):
 
     max_0 = max(nv0_counts)
     max_m = max(nvm_counts)
-    occur_0, x_vals_0 = np.histogram(
+    occur_0, bin_edges_0 = np.histogram(
         nv0_counts, np.linspace(0, max_0, max_0 + 1)
     )
-    occur_m, x_vals_m = np.histogram(
+    occur_m, bin_edge_m = np.histogram(
         nvm_counts, np.linspace(0, max_m, max_m + 1)
     )
-
+    
+    # Histogram returns bin edges. A bin is defined with the first point 
+    # inclusive and the last exclusive - eg a count a 2 will fall into 
+    # bin [2,3) - so just drop the last bin edge for our x vals
+    x_vals_0 = bin_edges_0[:-1]
+    x_vals_m = bin_edge_m[:-1]
+    
     return occur_0, x_vals_0, occur_m, x_vals_m
 
 
@@ -52,6 +58,19 @@ def calc_overlap(occur_0, x_vals_0, occur_m, x_vals_m, num_reps):
     return fractional_overlap
 
 
+def calc_separation(occur_0, x_vals_0, occur_m, x_vals_m, num_reps):
+    
+    mean_0 = sum(occur_0 * x_vals_0) / num_reps
+    std_0 = np.sqrt(sum(occur_0 * (x_vals_0 - mean_0)**2) / (num_reps - 1))
+    mean_m = sum(occur_m * x_vals_m) / num_reps
+    std_m = np.sqrt(sum(occur_m * (x_vals_m - mean_m)**2) / (num_reps - 1))
+    avg_std = (std_0 + std_m) / 2
+    norm_sep = (std_m - std_0) / avg_std
+    # print(mean_0)
+    # print(mean_m)
+    return norm_sep
+
+
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
 
     readout_dur_linspace = np.linspace(10e6, max_readout_dur, 100)
@@ -60,16 +79,16 @@ def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
         int(1e6 * round(val / 1e6)) for val in readout_dur_linspace
     ]
 
-    overlaps = []
+    separations = []
     num_reps = len(nv0)
 
     for dur in readout_dur_linspace:
         occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0, nvm, dur)
-        overlap = calc_overlap(occur_0, x_vals_0, occur_m, x_vals_m, num_reps)
-        overlaps.append(overlap)
+        separation = calc_separation(occur_0, x_vals_0, occur_m, x_vals_m, num_reps)
+        separations.append(separation)
 
-    min_overlap = min(overlaps)
-    opti_readout_dur_ind = overlaps.index(min_overlap)
+    max_separation = max(separations)
+    opti_readout_dur_ind = separations.index(max_separation)
     opti_readout_dur = readout_dur_linspace[opti_readout_dur_ind]
 
     return opti_readout_dur
@@ -79,12 +98,14 @@ def plot_histogram(nv_sig, nv0, nvm, dur, power, do_save=True):
 
     num_reps = len(nv0)
     occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0, nvm, dur)
-    overlap = calc_overlap(occur_0, x_vals_0, occur_m, x_vals_m, num_reps)
-    print("fractional overlap: {}".format(overlap))
+    # overlap = calc_overlap(occur_0, x_vals_0, occur_m, x_vals_m, num_reps)
+    # print("fractional overlap: {}".format(overlap))
+    separation = calc_separation(occur_0, x_vals_0, occur_m, x_vals_m, num_reps)
+    print("Normalized separation: {}".format(separation))
 
     fig_hist, ax = plt.subplots(1, 1)
-    ax.plot(x_vals_0[:-1], occur_0, "r-o", label="Initial red pulse")
-    ax.plot(x_vals_m[:-1], occur_m, "g-o", label="Initial green pulse")
+    ax.plot(x_vals_0, occur_0, "r-o", label="Initial red pulse")
+    ax.plot(x_vals_m, occur_m, "g-o", label="Initial green pulse")
     ax.set_xlabel("Counts")
     ax.set_ylabel("Occur.")
     ax.set_title("{} ms readout, {} V".format(int(dur / 1e6), power))
@@ -221,6 +242,7 @@ def measure_histograms_with_cxn(
     # Initial Calculation and setup
     tool_belt.set_filter(cxn, nv_sig, "charge_readout_laser")
     tool_belt.set_filter(cxn, nv_sig, "nv-_prep_laser")
+    tool_belt.set_filter(cxn, nv_sig, "nv0_prep_laser")
 
     readout_laser_power = tool_belt.set_laser_power(
         cxn, nv_sig, "charge_readout_laser"
@@ -239,6 +261,9 @@ def measure_histograms_with_cxn(
         readout_laser_power,
         apd_index,
     ]
+    # seq_args = gen_seq_args("nv0_prep_laser")
+    # print(seq_args)
+    # return
 
     apd_gate_channel = tool_belt.get_apd_gate_channel(cxn, apd_index)
 
@@ -332,7 +357,7 @@ if __name__ == "__main__":
     # path_from_nvdata = (
     #     "pc_hahn/branch_master/determine_charge_readout_params/2021_12/"
     # )
-    # file_name = "2021_12_02-15_51_24-wu-nv1_2021_12_02"
+    # file_name = "2021_12_08-11_17_50-wu-nv3_2021_12_03"
     # data = tool_belt.get_raw_data(file_name, path_from_nvdata)
     # nv_sig = data["nv_sig"]
     # nv0 = data["nv0"]
@@ -341,8 +366,9 @@ if __name__ == "__main__":
     # max_readout_dur = nv_sig["charge_readout_dur"]
 
     # opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
-    # do_save = True
-    # # do_save = False
+    # # opti_readout_dur = 580e6
+    # # do_save = True
+    # do_save = False
     # plot_histogram(
     #     nv_sig, nv0, nvm, opti_readout_dur, readout_power, do_save=do_save
     # )
@@ -373,24 +399,23 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.019, 0.015, 3], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+    nv_sig = { 'coords': [0.017, 0.017, 1], 'name': '{}-nv3_2021_12_03'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
             
-            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
+            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
             # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
-            'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            'spin_laser': green_laser, 'spin_laser_filter': 'nd_1.0', 'spin_pol_dur': 1E5, 'spin_readout_dur': 500,
             
-            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0.5',
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
             
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 1000,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 150,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 2000,
             
-            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 150, "spin_shelf_laser_power": 1.0,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 580e6, "charge_readout_laser_power": 0.68,
             
             'collection_filter': None, 'magnet_angle': None,
             'resonance_LOW': 2.8141, 'rabi_LOW': 136.8, 'uwave_power_LOW': 16.5,

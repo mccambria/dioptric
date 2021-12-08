@@ -160,7 +160,6 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
     tool_belt.set_xyz(cxn, coords)
 
     laser_name = nv_sig[laser_key]
-    tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
 
     # xy
@@ -416,11 +415,8 @@ def main_with_cxn(
     adjusted_nv_sig = copy.deepcopy(nv_sig)
     adjusted_nv_sig["coords"] = adjusted_coords
 
-    if "collection_filter" in nv_sig:
-        tool_belt.set_filter(cxn, nv_sig, "collection")
-
-    if "imaging_laser_filter" in nv_sig:
-        tool_belt.set_filter(cxn, nv_sig, "imaging_laser_filter")
+    tool_belt.set_filter(cxn, nv_sig, "collection")
+    tool_belt.set_filter(cxn, nv_sig, "imaging_laser")
 
     expected_count_rate = adjusted_nv_sig["expected_count_rate"]
 
