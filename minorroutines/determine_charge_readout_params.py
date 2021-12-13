@@ -72,8 +72,8 @@ def calc_separation(occur_0, x_vals_0, occur_m, x_vals_m, num_reps):
 
 
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
-
-    readout_dur_linspace = np.linspace(10e6, max_readout_dur, 100)
+    
+    readout_dur_linspace = np.arange(10e6, max_readout_dur, 10e6)
     # Round to nearest ms
     readout_dur_linspace = [
         int(1e6 * round(val / 1e6)) for val in readout_dur_linspace
@@ -357,7 +357,7 @@ if __name__ == "__main__":
     # path_from_nvdata = (
     #     "pc_hahn/branch_master/determine_charge_readout_params/2021_12/"
     # )
-    # file_name = "2021_12_08-11_17_50-wu-nv3_2021_12_03"
+    # file_name = "2021_12_09-13_29_36-wu-nv3_2021_12_03"
     # data = tool_belt.get_raw_data(file_name, path_from_nvdata)
     # nv_sig = data["nv_sig"]
     # nv0 = data["nv0"]
@@ -365,8 +365,8 @@ if __name__ == "__main__":
     # readout_power = nv_sig["charge_readout_laser_power"]
     # max_readout_dur = nv_sig["charge_readout_dur"]
 
-    # opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
-    # # opti_readout_dur = 580e6
+    # # opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
+    # opti_readout_dur = 700e6
     # # do_save = True
     # do_save = False
     # plot_histogram(
@@ -399,7 +399,7 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
-    nv_sig = { 'coords': [0.017, 0.017, 1], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+    nv_sig = { 'coords': [0.016, 0.012, 0], 'name': '{}-nv3_2021_12_03'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
 
             'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
@@ -415,7 +415,7 @@ if __name__ == "__main__":
 
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 150, "spin_shelf_laser_power": 1.0,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 580e6, "charge_readout_laser_power": 0.68,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 650e6, "charge_readout_laser_power": 0.7,
 
             'collection_filter': None, 'magnet_angle': None,
             'resonance_LOW': 2.8141, 'rabi_LOW': 136.8, 'uwave_power_LOW': 16.5,
@@ -435,10 +435,10 @@ if __name__ == "__main__":
     max_readout_dur = max(readout_durs)
 
     # readout_powers = np.linspace(0.6, 1.0, 9)
-    readout_powers = np.linspace(0.65, 0.7, 6)
+    # readout_powers = np.linspace(0.71, 0.75, 5)
     # readout_powers = np.linspace(0.85, 1.0, 4)
     # readout_powers = np.linspace(0.2, 1.0, 5)
-    # readout_powers = [0.68]
+    readout_powers = [0.71]
 
     try:
         determine_readout_dur_power(
