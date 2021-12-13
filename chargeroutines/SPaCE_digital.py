@@ -990,11 +990,17 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         cxn.pulse_streamer.stream_immediate(simple_pulse_file,1,
                                                   g_seq_args_string)
 
-        flag_d = xy_server.write_xy(coords_list_drift[i][0],coords_list_drift[i][1])
+        #flag_d = xy_server.write_xy(coords_list_drift[i][0],coords_list_drift[i][1])
+        flag_d = 0
+        tool_belt.set_xyz(cxn,
+                [coords_list_drift[i][0],coords_list_drift[i][1],coords_list_drift[i][2]])
         # time.sleep(0.05)
         cxn.pulse_streamer.stream_immediate(simple_pulse_file,1,
                                                   r_seq_args_string)
-        flag_n = xy_server.write_xy(start_coords_drift[0],start_coords_drift[1])
+        #flag_n = xy_server.write_xy(start_coords_drift[0],start_coords_drift[1])
+        flag_n =0
+        tool_belt.set_xyz(cxn,
+               [start_coords_drift[0],start_coords_drift[1],start_coords_drift[2]])
         # time.sleep(0.05)
         cxn.pulse_streamer.stream_immediate(readout_file,1,
                                                   y_seq_args_string)
@@ -1090,8 +1096,9 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         # Zip the two list together
         coords_voltages = list(zip(x_voltages, y_voltages, z_voltages))
         # calculate the radial distances from the readout NV to the target points
-        rad_dist = numpy.sqrt((x_voltages - low_coords[0])**2 +( y_voltages - low_coords[1])**2)
+        #rad_dist = numpy.sqrt((x_voltages - offset_2D[0]-start_coords[0])**2 +( y_voltages - offset_2D[1]-start_coords[1])**2)
 
+        rad_dist = (x_voltages - offset_2D[0]-start_coords[0]) 
         # This bit of code is used if the 1D scan is symmetric across the NV, then we need negative and positive values of r
         # neg_ints = int(numpy.floor(len(rad_dist)/2))
         # rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
@@ -1417,27 +1424,16 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_CFMIII/SPaCE/2021_11'
+    path = 'pc_rabi/branch_CFMIII/SPaCE/2021_12'
 
 
 
 
     #================ specific for 1D scans ================#
 
-    file_path = 'pc_rabi/branch_CFMIII/SPaCE_digital/2021_11'
+    file_path = 'pc_rabi/branch_CFMIII/SPaCE_digital/2021_12'
 
-    file_name ='2021_11_19-19_54_25-johnson-nv1_2021_11_17' #no delay
-    file_name ='2021_11_19-21_57_12-johnson-nv1_2021_11_17' #50 Ms delay using time.sleep
-    
-    file_name = '2021_11_20-01_12_38-johnson-nv1_2021_11_17' #12.5 ms
-    file_name = '2021_11_20-04_07_33-johnson-nv1_2021_11_17' #15 ms
-    file_name = '2021_11_22-08_16_37-johnson-nv1_2021_11_17' #20 ms
-    file_name = '2021_11_22-09_01_24-johnson-nv1_2021_11_17' #22.5 ms
-    file_name = '2021_11_22-16_06_49-johnson-nv1_2021_11_17'
-    file_name='2021_11_22-17_57_54-johnson-nv1_2021_11_17'
-    file_name='2021_11_30-14_53_34-johnson-nv1_2021_11_17'
-
-
+    file_name='2021_12_13-01_54_20-johnson-nv0_2021_12_10'
     plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = True,
                     do_save = True ,scale=1000)
 
@@ -1447,7 +1443,8 @@ if __name__ == '__main__':
 
     file_list = ['2021_11_20-09_56_16-johnson-nv1_2021_11_17',
                   '2021_11_20-15_26_26-johnson-nv1_2021_11_17',
-                  '2021_11_22-08_54_18-johnson-nv1_2021_11_17']#22.5 ms     
+                  '2021_11_22-08_54_18-johnson-nv1_2021_11_17']#22.5 ms
+     
     
     # combine_1D(file_list, file_path)
 
