@@ -54,7 +54,7 @@ def do_image_sample(nv_sig, apd_indices):
     #scan_range = 0.025*scale
    # scan_range = 0.01*scale
     #scan_range = 1.8
-    scan_range = 1
+    scan_range = 2
     #
     # num_steps = 400
     # num_steps = 300
@@ -63,11 +63,11 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps = 120
     # num_steps =401
-    num_steps=101
+    #num_steps=101
     #num_steps = 91
-    # num_steps = 61
-    #num_steps = 31
-    # num_steps = 5
+    #num_steps = 61
+    # num_steps = 31
+    num_steps = 21
 
     # For now we only support square scans so pass scan_range twice
     image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
     nd_yellow = "nd_1.0"
     green_power = 10
-    red_power = 120
+    red_power = 60
     sample_name = "johnson"
     green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
@@ -189,11 +189,11 @@ if __name__ == "__main__":
     
      
     nv_sig_1 = {
-        "coords":[247.367, 247.484, 5.0],
+        "coords":[246.801, 247.150, 5.0],
         "name": "{}-nv0_2021_12_10".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate":70,
+        "expected_count_rate":80,
         
         
         "spin_laser": green_laser,
@@ -248,73 +248,52 @@ if __name__ == "__main__":
         
         # Operations that don't need an NV
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
-        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+        #tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
 
 
-       # do_optimize(nv_sig, apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        do_optimize(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)
         # do_stationary_count(nv_sig, apd_indices)
         
-        offset_x = 0.477
-        offset_y = 0.071
-        offset_z = 0.25
+        offset_x = 0.477-0.035+0.045
+        offset_y = 0.071+0.055
+        offset_z = 0
         offset_list = [offset_x, offset_y, offset_z]
     
         # 1st airy ring power
-        t_list = [1.5e4] 
+        t_list = [5e4] 
 
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
-            do_SPaCE(nv_sig, nv_sig, 15, 201, None, 
-                       [[-0.35+offset_x, offset_y,offset_z ], [-0.55+offset_x, offset_y,offset_z]], 
-                     None, offset_list, 2)
-            do_SPaCE(nv_sig, nv_sig, 15, 201, None, 
-                       [[0.275+offset_x, offset_y,offset_z ], [0.475+offset_x, offset_y,offset_z]], 
-                       None, offset_list, 2)
-            #2D scans
-            #img_range_2D = [1.8, 1.8, 0 ]
-            img_range_2D = [1, 1, 0 ]
-            do_SPaCE(nv_sig, nv_sig, 3, 101, 101, #1.0 range, 101 steps
-                      None,  img_range_2D, [offset_x-0.035, offset_y, offset_z])
+            #positive and negative X line scans
+            # do_SPaCE(nv_sig, nv_sig, 15, 201, None, 
+            #            [[-0.35+offset_x, offset_y,offset_z ], [-0.55+offset_x, offset_y,offset_z]], 
+            #          None, offset_list, 2)
+            # do_SPaCE(nv_sig, nv_sig, 15, 201, None, 
+            #            [[0.275+offset_x, offset_y,offset_z ], [0.475+offset_x, offset_y,offset_z]], 
+            #            None, offset_list, 2)
             
+            #large line scan
             # do_SPaCE(nv_sig, nv_sig, 15, 251, None, 
             #           [[offset_x-0.5,offset_y,offset_z ], [offset_x+2.0, offset_y,offset_z]], 
             #          None, offset_list, 2)
             
-
-        
-        
-        
-        
-        
+            # 2D scans
+            # img_range_2D = [1.8, 1.8, 0 ]
+            img_range_2D = [2, 2, 0 ]
+            do_SPaCE(nv_sig, nv_sig, 1, 31,31, #1.0 range, 101 steps
+                      None,  img_range_2D,offset_list)
+            
+            
         # well resolved 2D annulus scan for 5 ms
-        nv_sig['CPG_laser_dur'] = 2e5
+        # nv_sig['CPG_laser_dur'] = 2.5e5
         
         # 
         # do_SPaCE_annulus(nv_sig, nv_sig, 1, 81, 81, 
-        #                None,  [2.0,2.0,0], [offset_x, offset_y, offset_z], ring_radii = [0.7, 0.95])
-        
-        # nv_sig['CPG_laser_dur'] = 1e5
-        #do_SPaCE_annulus(nv_sig, nv_sig, 1, 101, 101, 
-        #              None,  [2.0,2.0,0], [offset_x+0.01, offset_y+0.04, offset_z], ring_radii = [0.7, 0.95])
-        
-        # 2D scans
-        # nv_sig['CPG_laser_dur'] = 5e4
-        # img_range_2D = [2.4,2.4, 0 ]
-        # do_SPaCE(nv_sig, nv_sig, 2, 81, 81, 
-        #           None,  img_range_2D, offset_list)
-        # nv_sig['CPG_laser_dur'] = 5e5
-        #do_SPaCE(nv_sig, nv_sig, 4, 81, 81, 
-        #          None,  img_range_2D, offset_list)
-            
-        # left side at 5 ms
-        # num_steps = 201
-        # nv_sig['CPG_laser_dur'] = 5e6
-        # do_SPaCE(nv_sig, nv_sig, 25, num_steps, None,  [[0.775+0.24700, -0.755,0 ], [0.875+0.24700, -0.755,0 ]],  None, offset_list, 2)            
+        #                 None,  [2.0,2.0,0], [offset_x, offset_y, offset_z], ring_radii = [0.65, 0.95])
 
-                      
 
     except Exception as exc:
         # Intercept the exception so we can email it out and re-raise it
