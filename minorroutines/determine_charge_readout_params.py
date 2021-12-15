@@ -154,7 +154,7 @@ def measure_histograms_sub(
         adjusted_nv_coords = coords + np.array(drift)
         tool_belt.set_xyz(cxn, adjusted_nv_coords)
         # print(num_reps_remaining)
-        
+
         # Make sure the lasers are at the right powers
         # Initial Calculation and setup
         tool_belt.set_filter(cxn, nv_sig, "nv0_prep_laser")
@@ -328,33 +328,35 @@ if __name__ == "__main__":
 
     ############ Replots ############
 
-    # tool_belt.init_matplotlib()
-    # path_from_nvdata = (
-    #     "pc_hahn/branch_master/determine_charge_readout_params/2021_12/"
-    # )
-    # file_name = "2021_12_02-15_51_24-wu-nv1_2021_12_02"
-    # data = tool_belt.get_raw_data(file_name, path_from_nvdata)
-    # nv_sig = data["nv_sig"]
-    # nv0 = data["nv0"]
-    # nvm = data["nvm"]
-    # readout_power = nv_sig["charge_readout_laser_power"]
-    # max_readout_dur = nv_sig["charge_readout_dur"]
+    tool_belt.init_matplotlib()
+    path_from_nvdata = (
+        "pc_hahn/branch_master/determine_charge_readout_params/2021_12/"
+    )
+    file_name = "2021_12_04-14_15_12-wu-nv3_2021_12_03"
+    data = tool_belt.get_raw_data(file_name, path_from_nvdata)
+    nv_sig = data["nv_sig"]
+    nv0 = data["nv0"]
+    nvm = data["nvm"]
+    readout_power = nv_sig["charge_readout_laser_power"]
+    max_readout_dur = nv_sig["charge_readout_dur"]
+    # max_readout_dur = 250e6
 
-    # opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
-    # do_save = True
-    # # do_save = False
-    # plot_histogram(
-    #     nv_sig, nv0, nvm, opti_readout_dur, readout_power, do_save=do_save
-    # )
+    opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
+    # opti_readout_dur = 580e6
+    do_save = True
+    # do_save = False
+    plot_histogram(
+        nv_sig, nv0, nvm, opti_readout_dur, readout_power, do_save=do_save
+    )
 
-    # # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
+    # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
 
-    # # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
-    # # for dur in readout_durs:
-    # #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
+    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
+    # for dur in readout_durs:
+    #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
 
-    # # plt.show(block=True)
-    # sys.exit()
+    plt.show(block=True)
+    sys.exit()
 
     ########################
 
@@ -372,29 +374,48 @@ if __name__ == "__main__":
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
-    
-    nv_sig = { 'coords': [0.020, 0.016, 2], 'name': '{}-nv3_2021_12_03'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 32,
-            
-            'imaging_laser': green_laser, 'imaging_laser_filter': nd, 'imaging_readout_dur': 1E7,
-            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
-            'spin_laser': green_laser, 'spin_laser_filter': nd, 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-            
-            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0',
-            
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 1000,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
-            
-            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
-            "initialize_laser": green_laser, "initialize_dur": 1e4,
-            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
-            
-            'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8141, 'rabi_LOW': 136.8, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9273, 'rabi_HIGH': 189.7, 'uwave_power_HIGH': 16.5}
+
+    nv_sig = {
+        "coords": [0.020, 0.016, 2],
+        "name": "{}-nv3_2021_12_03".format(sample_name),
+        "disable_opt": False,
+        "disable_z_opt": False,
+        "expected_count_rate": 32,
+        "imaging_laser": green_laser,
+        "imaging_laser_filter": nd,
+        "imaging_readout_dur": 1e7,
+        # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+        # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
+        "spin_laser": green_laser,
+        "spin_laser_filter": nd,
+        "spin_pol_dur": 1e5,
+        "spin_readout_dur": 350,
+        "nv-_reionization_laser": green_laser,
+        "nv-_reionization_dur": 1e5,
+        "nv-_prep_laser": green_laser,
+        "nv-_prep_laser_dur": 1e5,
+        "nv-_prep_laser_filter": "nd_0",
+        "nv0_ionization_laser": red_laser,
+        "nv0_ionization_dur": 1000,
+        "nv0_prep_laser": red_laser,
+        "nv0_prep_laser_dur": 1000,
+        "spin_shelf_laser": yellow_laser,
+        "spin_shelf_dur": 0,
+        "initialize_laser": green_laser,
+        "initialize_dur": 1e4,
+        "CPG_laser": red_laser,
+        "CPG_laser_dur": 3e3,
+        "charge_readout_laser": yellow_laser,
+        "charge_readout_dur": 50e6,
+        "collection_filter": None,
+        "magnet_angle": None,
+        "resonance_LOW": 2.8141,
+        "rabi_LOW": 136.8,
+        "uwave_power_LOW": 16.5,
+        "resonance_HIGH": 2.9273,
+        "rabi_HIGH": 189.7,
+        "uwave_power_HIGH": 16.5,
+    }
 
     # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
     #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
