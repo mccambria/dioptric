@@ -15,34 +15,37 @@ LOW = 0
 HIGH = 1
 
 
-def get_seq(pulser_wiring, args):
+def get_seq(pulse_streamer, config, args):
 
     # %% Parse wiring and args
 
     # The first 6 args are ns durations and we need them as int64s
     durations = []
-    for ind in range(6):
+    for ind in range(4):
         durations.append(numpy.int64(args[ind]))
 
     # Unpack the durations
-    polarization_dur, exp_dur, aom_delay, rf_delay, \
-    readout_dur, pi_pulse = durations
+    polarization_dur, exp_dur, readout_dur, pi_pulse = durations
 
     # Get the APD index
-    apd_index = args[6]
+    apd_index = args[4]
+    state_value = args[5]  # Spin state tells us which get sig gen to use
+    laser_name = args[6]
     
-    # Signify which signal generator to use
-    state_value = args[7]
-
     # Get what we need out of the wiring dictionary
+    pulser_wiring = config['Wiring']['PulseStreamer']
     key = 'do_apd_{}_gate'.format(apd_index)
     apd_index = pulser_wiring[key]
     
-    sig_gen_name = tool_belt.get_signal_generator_name(States(state_value))
+    sig_gen_name = config["Microwaves"]["sig_gen_{}".format(States(state_value).name)]
     sig_gen_gate_chan_name = 'do_{}_gate'.format(sig_gen_name)
     pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
     
-    pulser_do_aom = pulser_wiring['do_532_aom']
+    pulser_do_aom = pulser_wiring['do_{}_dm'.format(laser_name)]
+    
+    # Get delays
+    aom_delay = config["Optics"][laser_name]["delay"]
+    rf_delay = config["Microwaves"][sig_gen_name]["delay"]
 
     # %% Couple calculated values
 
@@ -92,7 +95,7 @@ def get_seq(pulser_wiring, args):
              (half_clock_pulse + rf_delay, LOW)]
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
-    final_digital = [pulser_wiring['do_532_aom'],
+    final_digital = [pulser_do_aom,
                      pulser_wiring['do_sample_clock']]
     final = OutputState(final_digital, 0.0, 0.0)
     return seq, final, [period]

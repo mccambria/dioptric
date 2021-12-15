@@ -72,7 +72,7 @@ class CoboltBase(LabradServer):
 
         # Configure the sample to advance on the rising edge of the PFI input.
         # The frequency specified is just the max expected rate in this case.
-        freq = 1E6  # 1 MHz, every microsecond
+        freq = 10E6  # 10 MHz, every 100 ns. Thjs is the max freq for PCIE6738
         clock = self.di_feedthrough
         sample_mode = nidaqmx.constants.AcquisitionType.CONTINUOUS
         task.timing.cfg_samp_clk_timing(freq, source=clock,

@@ -32,6 +32,9 @@ def get_seq(pulse_streamer, config, args):
         galvo_move_time = positioning['xy_delay']
     init_pulse_aom_delay_time = config['Optics'][init_laser_key]['delay']
     read_pulse_aom_delay_time = config['Optics'][readout_laser_key]['delay']
+    # init_pulse_aom_delay_time = 0
+    # read_pulse_aom_delay_time = 0
+    # galvo_move_time = 0
     
     # Convert the 32 bit ints into 64 bit ints
     init_pulse_time = numpy.int64(init_pulse_time)
@@ -89,6 +92,7 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    seq_args = [100000.0, 50000000, 'laserglow_532', 'laserglow_589', None, 1.0, 1]
+    config["Optics"]["cobolt_638"]["feedthrough"] = "False"
+    seq_args = [1000, 10000, 'cobolt_638', 'laserglow_589', None, 0.68, 1]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

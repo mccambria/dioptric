@@ -26,6 +26,7 @@ def get_seq(pulse_streamer, config, args):
     seq = Sequence()
 
     train = [(half_period, HIGH), (half_period, LOW)]
+    # train = [(75, HIGH), (5000, LOW)]
     tool_belt.process_laser_seq(pulse_streamer, seq, config, 
                                 laser_name, laser_power, train)
 

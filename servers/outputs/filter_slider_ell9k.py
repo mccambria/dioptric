@@ -39,7 +39,7 @@ class FilterSliderEll9k(LabradServer):
     def initServer(self):
         filename = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log'
         filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(level=logging.DEBUG, 
+        logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%y-%m-%d_%H-%M-%S', filename=filename)
         config = ensureDeferred(self.get_config())
@@ -69,13 +69,21 @@ class FilterSliderEll9k(LabradServer):
                               1: '0ma00000020'.encode(),
                               2: '0ma00000040'.encode(),
                               3: '0ma00000060'.encode()}
-        logging.debug('Init complete')
-
+        logging.info('Init complete')
+        
     @setting(0, pos='i')
     def set_filter(self, c, pos):
         cmd = self.move_commands[pos]
-        self.slider.write(cmd)
-        self.slider.readline()
+        incomplete = True
+        while incomplete:
+            self.slider.write(cmd)
+            time.sleep(0.1)
+            res = self.slider.readline()
+            # The device returns a status message if it's not done moving. It
+            # returns the current position if it is done moving.
+            incomplete = ("0GS" in res.decode())
+            if incomplete:
+                logging.info("huh")
 
 
 __server__ = FilterSliderEll9k()

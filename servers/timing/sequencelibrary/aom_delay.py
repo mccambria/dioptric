@@ -51,9 +51,8 @@ def get_seq(pulse_streamer, config, args):
     do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
     pulser_do_daq_clock = pulser_wiring['do_sample_clock']
         
-    illumination = 10**4
+    illumination = 10*readout
     half_illumination = illumination // 2
-    readout = illumination // 10
     inter_time = max(10**3, max_tau) + 100
     back_buffer = inter_time
     period = (2 * illumination) + inter_time + back_buffer

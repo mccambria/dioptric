@@ -218,7 +218,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         seq_args = [init, readout, apd_indices[0], init_laser, init_power, 
                     readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load('nv_minus_initialization-simple_readout.py',
+        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',
                                                   seq_args_string)
     else:
         seq_args = [xy_delay, readout, apd_indices[0], readout_laser, readout_power]

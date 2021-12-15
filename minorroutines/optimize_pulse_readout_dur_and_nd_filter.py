@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from random import shuffle
 from utils.tool_belt import States
+import copy
 
 
 # %%
@@ -63,17 +64,20 @@ def raw_plot(num_steps ,avg_sig_counts, avg_ref_counts ,norm_avg_sig):
 # %% Main, this allows any one of the inputs to be varied, like the readout
 #    time or the nd_filter
 
-def snr_measurement(nv_sig, readout_time, green_power, num_steps, num_reps, num_runs,
-                             do_plot, save_raw_data):
+def snr_measurement(nv_sig, readout_time, 
+                    num_steps, num_reps, num_runs, apd_indices,
+                    do_plot, save_raw_data):
 
     with labrad.connect() as cxn:
-        sig_to_noise_ratio = snr_measurement_with_cxn(cxn, nv_sig, readout_time, green_power,
-                      num_steps, num_reps, num_runs, do_plot, save_raw_data)
-
+        sig_to_noise_ratio = snr_measurement_with_cxn(cxn, nv_sig, readout_time,
+                                                      num_steps, num_reps, num_runs, 
+                                                      apd_indices, do_plot, save_raw_data)
         return sig_to_noise_ratio
-def snr_measurement_with_cxn(cxn, nv_sig, readout_time, green_power,
-                 num_steps, num_reps, num_runs,
-                 do_plot = False, save_raw_data = False):
+    
+    
+def snr_measurement_with_cxn(cxn, nv_sig, readout_time,
+                             num_steps, num_reps, num_runs, apd_indices, 
+                             do_plot = False, save_raw_data = False):
 
 
     # %% Get the starting time of the function
@@ -82,19 +86,16 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, green_power,
 
     # %% Initial calculations and setup
 
-    apd_indices = [0,1]
-
     # Assume the low state
-#    state = States.LOW
-    state = States.HIGH
+    state = States.LOW
+    # state = States.HIGH
 
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
+    config = tool_belt.get_config_dict(cxn)
 
     # Define some times (in ns)
-    polarization_dur = 5 * 10**3
     exp_dur = 5 * 10**3
-    aom_delay = shared_params['532_aom_delay']
-    uwave_delay = shared_params['uwave_delay']
+    polarization_dur = nv_sig["spin_pol_dur"]
+    laser_name = nv_sig["spin_laser"]
     pi_pulse = round(nv_sig['rabi_{}'.format(state.name)] / 2)
 
     # The two parameters we currently alter
@@ -108,7 +109,6 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, green_power,
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
     sig_counts = numpy.empty([num_runs, num_steps], dtype=numpy.uint32)
-    sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
 
     # %% Make some lists and variables to save at the end
@@ -129,12 +129,11 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, green_power,
             break
 
         # Optimize
-#        opti_coords = optimize.main(cxn, nv_sig, apd_indices, 532, disable = True)
-#        opti_coords_list.append(opti_coords)
+        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+        opti_coords_list.append(opti_coords)
 
-        # After optimizing, change the filter to the nd_filter passed
-        cxn.filter_slider_ell9k.set_filter(nd_filter)
-        time.sleep(0.5)
+        tool_belt.set_filter(cxn, nv_sig, "collection")
+        tool_belt.set_filter(cxn, nv_sig, "spin_laser")
 
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         sig_gen_cxn.set_freq(nv_sig['resonance_{}'.format(state.name)])
@@ -156,9 +155,8 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, green_power,
             # Stream the sequence
             # polarization_dur, exp_dur, aom_delay, uwave_delay,
             # readout_dur, pi_pulse, apd_index, uwave_gate_index
-            seq_args = [polarization_dur, exp_dur, aom_delay, uwave_delay,
-                    readout_time, pi_pulse, apd_indices[0], state.value]
-            seq_args = [int(el) for el in seq_args]
+            seq_args = [polarization_dur, exp_dur, readout_time, 
+                        pi_pulse, apd_indices[0], state.value, laser_name]
             seq_args_string = tool_belt.encode_seq_args(seq_args)
 
             cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
@@ -222,7 +220,6 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, green_power,
                     'nv_sig': nv_sig,
                     'opti_coords_list': opti_coords_list,
                     'coords-units': 'V',
-                    'green_power': green_power,
                     'state': state,
                     'num_steps': num_steps,
                     'num_reps': num_reps,
@@ -242,7 +239,7 @@ def snr_measurement_with_cxn(cxn, nv_sig, readout_time, green_power,
 
 # %%
 
-def optimize_readout(nv_sig, readout_range, num_readout_steps, green_power):
+def optimize_readout(nv_sig, readout_range, num_readout_steps, apd_indices):
 
     # don't plot or save each individual raw data of the snr
     do_plot = False
@@ -259,7 +256,9 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, green_power):
     # make a linspace for the various readout times to test
     readout_time_list = numpy.linspace(readout_range[0], readout_range[-1],
                                            num=num_readout_steps).astype(int)
-
+    
+    with labrad.connect() as cxn:
+        laser_power = tool_belt.set_laser_power(cxn, nv_sig, "spin_laser")
 
     # Step thru the readout times and take a snr measurement
     for readout_ind_time in readout_time_list:
@@ -270,8 +269,9 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, green_power):
 
         readout_time = readout_ind_time
 
-        snr_value = snr_measurement(nv_sig, readout_time, green_power,
-                 num_steps, num_reps, num_runs, do_plot, save_raw_data)
+        snr_value = snr_measurement(nv_sig, readout_time, 
+                                    num_steps, num_reps, num_runs,
+                                    apd_indices, do_plot, save_raw_data)
 
         snr_list.append(snr_value)
 
@@ -281,7 +281,7 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, green_power):
     ax.plot(readout_time_list, snr_list, 'ro', label = 'data')
     ax.set_xlabel('Readout time (ns)')
     ax.set_ylabel('Signal-to-noise ratio')
-    ax.set_title('Optimize readout window at {} mW'.format(green_power))
+    ax.set_title('Optimize readout window at {} mW'.format(laser_power))
 
     # Fit the data to a parabola
     offset = 130
@@ -321,9 +321,7 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, green_power):
                 'num_runs': num_runs,
                 'snr_list': snr_list,
                 'readout_time_list': readout_time_list.tolist(),
-                'green_power': green_power
-#                'nd_filter': nd_filter,
-}
+                }
 
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
     tool_belt.save_figure(snr_fig, file_path)
@@ -332,11 +330,12 @@ def optimize_readout(nv_sig, readout_range, num_readout_steps, green_power):
 
 # %%
 
-def main(nv_sig):
+def main(nv_sig, apd_indices):
     # Step through the nd filters and find the optimized gate time in each one.
 
 #    nd_filter_list = ['nd_0', 'nd_0.5', 'nd_1.0', 'nd_1.5']
-    nd_filter_list = ['nd_0.5']
+    # nd_filter_list = ['nd_0.5', "nd_1.0"]
+    nd_filter_list = ["nd_1.0"]
 #    nd_filter_list = ['nd_1.0', 'nd_1.5']
 
     # Start 'Press enter to stop...'
@@ -358,36 +357,61 @@ def main(nv_sig):
             readout_range = [200, 600]
             num_readout_steps = 9
         elif nd_filter == 'nd_1.0':
-            readout_range = [250, 600]
-            num_readout_steps = 8
+            # readout_range = [250, 600]
+            # num_readout_steps = 8
+            readout_range = [300, 800]
+            num_readout_steps = 11
         elif nd_filter == 'nd_1.5':
             readout_range = [250, 600]
             num_readout_steps = 8
+        
+        adjusted_nv_sig = copy.deepcopy(nv_sig)
+        adjusted_nv_sig["spin_laser_filter"] = nd_filter
 
         print('nd filter set to {}'.format(nd_filter))
 
-#    print('nd filter set to {}'.format(nd_filter))
-
-    optimize_readout(nv_sig, readout_range, num_readout_steps, green_power)
+        optimize_readout(nv_sig, readout_range, num_readout_steps, apd_indices)
 
 # %%
 
 if __name__ == '__main__':
+    
+    apd_indices = [1]
 
     # Define the nv_sig to be used
     # nd = 'nd_0'  # 250-400 ns, 55 kcps
-    nd = 'nd_0.5'  # 250-400 ns, 30 kcps
-    sample_name = 'johnson'
-
-    nv_sig = { 'coords': [0.020, 0.662, 0],
-            'name': '{}-nv2_2021_02_09'.format(sample_name),
-            'expected_count_rate': 30, 'nd_filter': nd,
-            'pulsed_readout_dur': 350, 'magnet_angle': None,
-            'resonance_LOW': 2.8583, 'rabi_LOW': 150.6, 'uwave_power_LOW': 12.0,
-            'resonance_HIGH': 2.8836, 'rabi_HIGH': 149.3, 'uwave_power_HIGH': 12.0}
+    # nd = 'nd_0.5'  # 250-400 ns, 30 kcps
+    sample_name = 'wu'
+    
+    green_laser = "laserglow_532"
+    yellow_laser = "laserglow_589"
+    red_laser = "cobolt_638"
+    
+    nv_sig = { 'coords': [0.019, 0.015, 3], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
+            
+            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
+            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
+            'spin_laser': green_laser, 'spin_laser_filter': 'nd_1.0', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_1.0',
+            
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 1000,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
+            
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0,
+            "initialize_laser": green_laser, "initialize_dur": 1e4,
+            "CPG_laser": red_laser, "CPG_laser_dur": 3e3,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 50e6,
+            
+            'collection_filter': None, 'magnet_angle': None,
+            'resonance_LOW': 2.8141, 'rabi_LOW': 136.8, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9273, 'rabi_HIGH': 189.7, 'uwave_power_HIGH': 16.5}
 
     ### MAIN ###
-    main(nv_sig)
+    main(nv_sig, apd_indices)
 
     # The individual functions in this file
 #    snr_measurement(nv_sig, 320, 'nd_1.5', 51, 10**5, 1, True, True)
@@ -397,12 +421,8 @@ if __name__ == '__main__':
     do_plot = False
     if do_plot:
 
-        snr_list = [
-                ]
-
-        readout_time_list = [
-                ]
-
+        snr_list = []
+        readout_time_list = []
         init_guess_list = [10, 10, 450]
 
         popt = fit_parabola(readout_time_list, snr_list, init_guess_list)

@@ -35,7 +35,7 @@ def create_fit_figure(splittings, angles, fit_func, popt):
     ax.set_ylabel('Splitting (MHz)')
     ax.scatter(angles, splittings, c='r')
 
-    x_vals = numpy.linspace(0, 180, 1000)
+    x_vals = numpy.linspace(min(angles), max(angles) + 30, 1000)
     y_vals = fit_func(x_vals, *popt)
     ax.plot(x_vals, y_vals)
     text = ('Optimized Angle: {}'.format('%.1f'%opti_angle))
@@ -58,7 +58,7 @@ def fit_data(splittings, angles):
 
     fit_func = AbsCos
     amp = max(splittings)
-    phase = angles[numpy.argmax(splittings)]
+    phase = angles[numpy.argmax(splittings)] % 180
     offset = 0
     guess_params = [offset, amp, phase]
     bounds = ([0, 0, 0], [numpy.inf, numpy.inf, 180])
@@ -218,9 +218,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, angle_range, num_angle_steps,
 # the script that you set up here.
 if __name__ == '__main__':
 
-    path = 'optimize_magnet_angle/2020_02'
-    file = '2020_02_05-10_16_21-johnson-nv3_2020_02_04'
-    data = tool_belt.get_raw_data(path, file)
+    file = '2021_12_10-19_55_40-wu-nv3_2021_12_03'
+    data = tool_belt.get_raw_data(file)
     splittings = data['splittings']
 
     angle_range = data['angle_range']
