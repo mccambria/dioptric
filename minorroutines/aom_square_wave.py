@@ -129,8 +129,8 @@ if __name__ == '__main__':
         # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
         # tool_belt.set_filter(cxn, optics_name='laserglow_532', filter_name="nd_2.0")
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
-        constant(cxn, laser_names, laser_powers)
-        # main(cxn, laser_names[0])
+        # constant(cxn, laser_names, laser_powers)
+        main(cxn, laser_names[0])
     
         
     

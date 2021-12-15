@@ -441,10 +441,10 @@ def process_laser_seq(
                 if (ind == 0) and (val is LOW):
                     processed_train.append((dur, LOW))
                     continue
-                if dur < 100:
+                if dur < 75:
                     raise ValueError("Feedthrough lasers do not support pulses shorter than 100 ns.")
-                processed_train.append((50, HIGH))
-                processed_train.append((dur - 50, LOW))
+                processed_train.append((20, HIGH))
+                processed_train.append((dur - 20, LOW))
         # Digital, no feedthrough, do nothing
         else:
             processed_train = train.copy()

@@ -178,8 +178,8 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
     freq_range = 0.040
     num_steps = 51
-    num_reps = 7500
-    num_runs = 10
+    num_reps = 5000
+    num_runs = 40
     
     # Zoom
     # freq_range = 0.035
@@ -238,8 +238,8 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
-    num_reps = 7500
-    num_runs = 10
+    num_reps = 5000
+    num_runs = 40
 
     period = rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -397,11 +397,11 @@ def do_spin_echo(nv_sig, apd_indices):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    max_time = 100  # us
+    max_time = 140  # us
     num_steps = max_time  # 1 point per us
-    precession_time_range = [1, max_time * 10**3]
-    num_reps = 2000
-    num_runs = 30
+    precession_time_range = [1e3, max_time * 10**3]
+    num_reps = 3000
+    num_runs = 100
     
 #    num_steps = 151
 #    precession_time_range = [0, 10*10**3]
@@ -494,11 +494,13 @@ if __name__ == '__main__':
     nv_sig = { 'coords': [0.011, 0.013, 3], 'name': '{}-nv3_2021_12_03'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
             
-            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
+            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
+            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
             # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e3,
+            'spin_laser': green_laser, 'spin_laser_filter': 'nd_1.0', 'spin_pol_dur': 1E6, 'spin_readout_dur': 350,
             # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-            'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
+            # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 350,
             
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
@@ -511,8 +513,8 @@ if __name__ == '__main__':
             "charge_readout_laser": yellow_laser, "charge_readout_dur": 580e6, "charge_readout_power": 0.68,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8009, 'rabi_LOW': 132, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9405, 'rabi_HIGH': 177, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.7995, 'rabi_LOW': 133.1, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9417, 'rabi_HIGH': 182.8, 'uwave_power_HIGH': 16.5}
     
     # nv_sig = { 'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
     #         'disable_opt': True, 'expected_count_rate': None,
@@ -586,7 +588,7 @@ if __name__ == '__main__':
         # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)
-        # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_zero_initialization=True)
+        do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_zero_initialization=True)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
@@ -602,7 +604,7 @@ if __name__ == '__main__':
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        do_spin_echo(nv_sig, apd_indices)
+        # do_spin_echo(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)  # 0, (394.6-206.0)/31 = 6.084 ns, 164.3 MHz; 1, (396.8-203.6)/33 = 5.855 ns, 170.8 MHz
         # do_t1_battery(nv_sig, apd_indices)
         # do_t1_interleave_knill(nv_sig, apd_indices)
