@@ -207,7 +207,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
                 break
             
             freq_ind = freq_ind_list[step_ind]
-            print(freqs[freq_ind])
+            # print(freqs[freq_ind])
             
             time_current = time.time()
             if time_current - start_time > opti_interval * 60:
@@ -355,27 +355,31 @@ if __name__ == '__main__':
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
     
-    nv_sig = { 'coords': [0.017, 0.017, 1], 'name': '{}-nv3_2021_12_03'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
+    nv_sig = { 'coords': [0.003, -0.005, 9], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 28,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1000,
-            'spin_laser': green_laser, 'spin_laser_filter': 'nd_1.0', 'spin_pol_dur': 1E5, 'spin_readout_dur': 500,
+            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e3,
+            'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
             
-            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0.5',
+            # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
             
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 4000,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1000,
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 170,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1e3,
             
-            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, "spin_shelf_laser_power": 1.0,
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 45, 'spin_shelf_laser_power': 1.0,
+            # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 580e6, "charge_readout_laser_power": 0.68,
+            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 700e6, "charge_readout_laser_power": 0.71,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 40e6, "charge_readout_laser_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8141, 'rabi_LOW': 136.8, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9273, 'rabi_HIGH': 189.7, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.7995, 'rabi_LOW': 133.1, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9417, 'rabi_HIGH': 182.8, 'uwave_power_HIGH': 16.5}
     
     opti_nv_sig = nv_sig
     
@@ -383,31 +387,33 @@ if __name__ == '__main__':
     uwave_power = nv_sig['uwave_power_LOW']
     uwave_pulse_dur =  tool_belt.get_pi_pulse_dur(nv_sig['rabi_LOW'])
     freq_range = 0.040
-    # num_steps = 26
+    # num_steps = 21
     num_steps = 1
-    num_reps = 20
+    num_reps = 200
     # num_runs = 80
-    num_runs = 10
+    num_runs = 10#*4
     
     do_plot = False
     
     try:
         
-        # for red_dur in numpy.linspace(100, 350, 6):
+        # for red_dur in numpy.linspace(75, 200, 6):
         #     nv_sig['nv0_ionization_dur'] = red_dur
-        #     for shelf_dur in numpy.linspace(50, 300, 6):
+        #     for shelf_dur in numpy.linspace(0, 100, 5):
         #         nv_sig['spin_shelf_dur'] = shelf_dur
-        #         for pwr in numpy.linspace(0.6, 1.0, 5):
+        #         for pwr in numpy.linspace(0.9, 1.0, 3):
         #             nv_sig['spin_shelf_laser_power'] = pwr
         #             main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
         #                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
         # sys.exit()
             
-        # for red_dur in numpy.linspace(100, 1500, 15):
+        # for red_dur in numpy.linspace(150, 200, 6):
+        #     for shelf_dur in numpy.linspace(0, 50, 6):
         # # for red_dur in numpy.linspace(100, 350, 11):
-        #     nv_sig['nv0_ionization_dur'] = red_dur
-        #     main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
-        #           num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+        #         nv_sig['nv0_ionization_dur'] = red_dur
+        #         nv_sig['spin_shelf_dur'] = shelf_dur
+        #         main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
+        #               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
         # sys.exit()
             
         main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,

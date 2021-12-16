@@ -115,13 +115,13 @@ if __name__ == '__main__':
     # laser_powers = [None, 1.0]
     # laser_powers = [1.0]
     # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']
-    filter_name = 'nd_0'
+    filter_name = 'nd_2.0'
     pos = [0.0, 0.0, -123]
     laser_powers = None
 
     with labrad.connect() as cxn:
         # start = time.time()
-        tool_belt.set_filter(cxn, optics_name='laserglow_532', filter_name=filter_name)
+        # tool_belt.set_filter(cxn, optics_name='laserglow_532', filter_name=filter_name)
         # finish = time.time()
         # print(finish - start)
         # tool_belt.set_xyz(cxn, pos)
@@ -135,9 +135,9 @@ if __name__ == '__main__':
         
     
         # cxn.pulse_streamer.constant([3], 1.0)
-        # # cxn.pulse_streamer.constant([], 1.0)
+        cxn.pulse_streamer.constant([], 1.0)
         # cxn.pulse_streamer.constant([3])
     
-        # input('Press enter to stop...')
+        input('Press enter to stop...')
         
-        # cxn.pulse_streamer.constant()
+        cxn.pulse_streamer.constant()

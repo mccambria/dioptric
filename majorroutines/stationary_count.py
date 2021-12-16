@@ -52,15 +52,17 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(nv_sig, run_time, apd_indices, disable_opt=None, nv_minus_initialization=False):
+def main(nv_sig, run_time, apd_indices, disable_opt=None, 
+         nv_minus_initialization=False, nv_zero_initialization=False):
 
     with labrad.connect() as cxn:
-        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices, 
-                                        disable_opt, nv_minus_initialization)
+        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt, 
+                                        nv_minus_initialization, nv_zero_initialization)
 
     return average, st_dev
 
-def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None, nv_minus_initialization=False):
+def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None, 
+                  nv_minus_initialization=False, nv_zero_initialization=False):
 
     # %% Some initial setup
     
@@ -93,13 +95,25 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None, nv_minus
 
     if nv_minus_initialization:
         laser_key = 'nv-_prep_laser'
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
         init = nv_sig['{}_dur'.format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         seq_args = [init, readout, apd_indices[0], init_laser, init_power, 
                     readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
-        ret_vals = cxn.pulse_streamer.stream_load('nv_minus_initialization-simple_readout.py',
+        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',
+                                                  seq_args_string)
+    elif nv_zero_initialization:
+        laser_key = 'nv0_prep_laser'
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        init = nv_sig['{}_dur'.format(laser_key)]
+        init_laser = nv_sig[laser_key]
+        init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        seq_args = [init, readout, apd_indices[0], init_laser, init_power, 
+                    readout_laser, readout_power]
+        seq_args_string = tool_belt.encode_seq_args(seq_args)
+        ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',
                                                   seq_args_string)
     else:
         seq_args = [0, readout, apd_indices[0], readout_laser, readout_power]
