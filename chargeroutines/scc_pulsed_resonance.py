@@ -364,18 +364,18 @@ if __name__ == '__main__':
             'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
             
-            # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
-            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
+            # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
             
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 170,
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 200,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1e3,
             
-            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 45, 'spin_shelf_laser_power': 1.0,
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 30, 'spin_shelf_laser_power': 1.0,
             # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
             # "charge_readout_laser": yellow_laser, "charge_readout_dur": 700e6, "charge_readout_laser_power": 0.71,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 40e6, "charge_readout_laser_power": 1.0,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 31e6, "charge_readout_laser_power": 0.96,
             
             'collection_filter': None, 'magnet_angle': None,
             'resonance_LOW': 2.7995, 'rabi_LOW': 133.1, 'uwave_power_LOW': 16.5,
@@ -389,7 +389,7 @@ if __name__ == '__main__':
     freq_range = 0.040
     # num_steps = 21
     num_steps = 1
-    num_reps = 200
+    num_reps = 400
     # num_runs = 80
     num_runs = 10#*4
     
@@ -407,17 +407,17 @@ if __name__ == '__main__':
         #                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
         # sys.exit()
             
-        # for red_dur in numpy.linspace(150, 200, 6):
-        #     for shelf_dur in numpy.linspace(0, 50, 6):
-        # # for red_dur in numpy.linspace(100, 350, 11):
-        #         nv_sig['nv0_ionization_dur'] = red_dur
-        #         nv_sig['spin_shelf_dur'] = shelf_dur
-        #         main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
-        #               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-        # sys.exit()
+        for red_dur in numpy.linspace(80, 200, 7):
+            for shelf_dur in numpy.linspace(0, 50, 6):
+        # for red_dur in numpy.linspace(100, 350, 11):
+                nv_sig['nv0_ionization_dur'] = red_dur
+                nv_sig['spin_shelf_dur'] = shelf_dur
+                main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
+                      num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+        sys.exit()
             
-        main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
-              num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+        # main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
+        #       num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
         
         if do_plot:
             file_low = '2021_09_28-13_32_45-johnson-dnv7_2021_09_23'
