@@ -66,14 +66,15 @@ def calc_separation(occur_0, x_vals_0, occur_m, x_vals_m, num_reps):
     std_m = np.sqrt(sum(occur_m * (x_vals_m - mean_m) ** 2) / (num_reps - 1))
     avg_std = (std_0 + std_m) / 2
     norm_sep = (std_m - std_0) / avg_std
-    print(mean_0)
-    print(mean_m)
+    # print(mean_0)
+    # print(mean_m)
     return norm_sep
 
 
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
 
     readout_dur_linspace = np.arange(10e6, max_readout_dur, 10e6)
+    # readout_dur_linspace = np.arange(10e6, 100e6, 1e6)
     # Round to nearest ms
     readout_dur_linspace = [
         int(1e6 * round(val / 1e6)) for val in readout_dur_linspace
@@ -361,7 +362,7 @@ if __name__ == "__main__":
     path_from_nvdata = (
         "pc_hahn/branch_master/determine_charge_readout_params/2021_12/"
     )
-    file_name = "2021_12_14-00_19_53-wu-nv3_2021_12_03"
+    file_name = "2021_12_13-22_53_45-wu-nv3_2021_12_03"
     data = tool_belt.get_raw_data(file_name, path_from_nvdata)
     nv_sig = data["nv_sig"]
     nv0 = data["nv0"]
@@ -370,9 +371,9 @@ if __name__ == "__main__":
     max_readout_dur = nv_sig["charge_readout_dur"]
 
     # opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
-    opti_readout_dur = 40e6
-    # do_save = True
-    do_save = False
+    opti_readout_dur = 990e6
+    do_save = True
+    # do_save = False
     plot_histogram(
         nv_sig, nv0, nvm, opti_readout_dur, readout_power, do_save=do_save
     )
