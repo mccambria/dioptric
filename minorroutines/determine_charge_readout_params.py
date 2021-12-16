@@ -378,14 +378,14 @@ if __name__ == "__main__":
         nv_sig, nv0, nvm, opti_readout_dur, readout_power, do_save=do_save
     )
 
-    # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
+    # # plot_histogram(nv_sig, nv0, nvm, 700e6, readout_power)
 
-    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
-    # for dur in readout_durs:
-    #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
+    # # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
+    # # for dur in readout_durs:
+    # #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
 
-    plt.show(block=True)
-    sys.exit()
+    # # plt.show(block=True)
+    # sys.exit()
 
     ########################
 
@@ -405,11 +405,11 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        "coords": [0.011, 0.013, 3],
+        "coords": [0.003, -0.005, 9],
         "name": "{}-nv3_2021_12_03".format(sample_name),
         "disable_opt": False,
         "disable_z_opt": False,
-        "expected_count_rate": 30,
+        "expected_count_rate": 28,
         "imaging_laser": green_laser,
         "imaging_laser_filter": "nd_0",
         "imaging_readout_dur": 1e7,
@@ -461,9 +461,9 @@ if __name__ == "__main__":
     readout_durs = [int(el) for el in readout_durs]
     max_readout_dur = max(readout_durs)
 
-    readout_powers = np.linspace(0.6, 1.0, 9)
+    # readout_powers = np.linspace(0.6, 1.0, 9)
     # readout_powers = np.linspace(0.71, 0.75, 5)
-    # readout_powers = np.linspace(0.85, 1.0, 4)
+    readout_powers = np.linspace(0.9, 1.0, 3)
     # readout_powers = np.linspace(0.2, 1.0, 5)
     # readout_powers = [0.71]
 

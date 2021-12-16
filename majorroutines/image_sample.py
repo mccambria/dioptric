@@ -212,6 +212,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     
     if nv_minus_initialization:
         laser_key = "nv-_prep_laser"
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
         init = nv_sig['{}_dur'.format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
