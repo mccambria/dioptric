@@ -399,7 +399,7 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.011, 0.013, 3], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+    nv_sig = { 'coords': [0.006, -0.006, 9], 'name': '{}-nv3_2021_12_03'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,

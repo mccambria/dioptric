@@ -95,6 +95,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     if nv_minus_initialization:
         laser_key = 'nv-_prep_laser'
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
         init = nv_sig['{}_dur'.format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -103,8 +104,9 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',
                                                   seq_args_string)
-    if nv_zero_initialization:
+    elif nv_zero_initialization:
         laser_key = 'nv0_prep_laser'
+        tool_belt.set_filter(cxn, nv_sig, laser_key)
         init = nv_sig['{}_dur'.format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
