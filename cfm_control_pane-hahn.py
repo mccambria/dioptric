@@ -548,7 +548,7 @@ if __name__ == '__main__':
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(4, -2)
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
@@ -581,10 +581,10 @@ if __name__ == '__main__':
             #     break
         
         # do_image_sample(nv_sig, apd_indices)
-        # do_image_sample_zoom(nv_sig, apd_indices)
+        do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
-        do_optimize(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_zero_initialization=True)

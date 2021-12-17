@@ -358,32 +358,32 @@ if __name__ == "__main__":
 
     ############ Replots ############
 
-    tool_belt.init_matplotlib()
-    path_from_nvdata = (
-        "pc_hahn/branch_master/determine_charge_readout_params/2021_12/"
-    )
-    file_name = "2021_12_13-22_53_45-wu-nv3_2021_12_03"
-    data = tool_belt.get_raw_data(file_name, path_from_nvdata)
-    nv_sig = data["nv_sig"]
-    nv0 = data["nv0"]
-    nvm = data["nvm"]
-    readout_power = nv_sig["charge_readout_laser_power"]
-    max_readout_dur = nv_sig["charge_readout_dur"]
+    # tool_belt.init_matplotlib()
+    # path_from_nvdata = (
+    #     "pc_hahn/branch_master/determine_charge_readout_params/2021_12/"
+    # )
+    # file_name = "2021_12_13-22_53_45-wu-nv3_2021_12_03"
+    # data = tool_belt.get_raw_data(file_name, path_from_nvdata)
+    # nv_sig = data["nv_sig"]
+    # nv0 = data["nv0"]
+    # nvm = data["nvm"]
+    # readout_power = nv_sig["charge_readout_laser_power"]
+    # max_readout_dur = nv_sig["charge_readout_dur"]
 
-    # opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
-    opti_readout_dur = 990e6
-    do_save = True
-    # do_save = False
-    plot_histogram(
-        nv_sig, nv0, nvm, opti_readout_dur, readout_power, do_save=do_save
-    )
+    # # opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
+    # opti_readout_dur = 990e6
+    # do_save = True
+    # # do_save = False
+    # plot_histogram(
+    #     nv_sig, nv0, nvm, opti_readout_dur, readout_power, do_save=do_save
+    # )
 
-    # # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
-    # # for dur in readout_durs:
-    # #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
+    # # # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6]
+    # # # for dur in readout_durs:
+    # # #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
 
-    plt.show(block=True)
-    sys.exit()
+    # plt.show(block=True)
+    # sys.exit()
 
     ########################
 
@@ -401,50 +401,32 @@ if __name__ == "__main__":
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
-
-    nv_sig = {
-        "coords": [0.003, -0.005, 9],
-        "name": "{}-nv3_2021_12_03".format(sample_name),
-        "disable_opt": False,
-        "disable_z_opt": False,
-        "expected_count_rate": 28,
-        "imaging_laser": green_laser,
-        "imaging_laser_filter": "nd_0",
-        "imaging_readout_dur": 1e7,
-        # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-        # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e3,
-        "spin_laser": green_laser,
-        "spin_laser_filter": "nd_0.5",
-        "spin_pol_dur": 1e5,
-        "spin_readout_dur": 350,
-        # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
-        "nv-_reionization_laser": green_laser,
-        "nv-_reionization_dur": 1e5,
-        "nv-_prep_laser": green_laser,
-        "nv-_prep_laser_dur": 1e6,
-        "nv-_prep_laser_filter": "nd_1.0",
-        "nv0_ionization_laser": red_laser,
-        "nv0_ionization_dur": 100,
-        "nv0_prep_laser": red_laser,
-        "nv0_prep_laser_dur": 1000,
-        "spin_shelf_laser": yellow_laser,
-        "spin_shelf_dur": 50,
-        "spin_shelf_laser_power": 1.0,
-        # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
-        "initialize_laser": green_laser,
-        "initialize_dur": 1e4,
-        "charge_readout_laser": yellow_laser,
-        "charge_readout_dur": 700e6,
-        "charge_readout_laser_power": 0.71,
-        "collection_filter": None,
-        "magnet_angle": None,
-        "resonance_LOW": 2.7995,
-        "rabi_LOW": 133.1,
-        "uwave_power_LOW": 16.5,
-        "resonance_HIGH": 2.9417,
-        "rabi_HIGH": 182.8,
-        "uwave_power_HIGH": 16.5,
-    }
+    
+    nv_sig = { 'coords': [0.003, -0.005, 9], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 28,
+            
+            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
+            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e3,
+            'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
+            
+            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
+            # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
+            
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 170,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1e3,
+            
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 45, 'spin_shelf_laser_power': 1.0,
+            # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
+            "initialize_laser": green_laser, "initialize_dur": 1e4,
+            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 700e6, "charge_readout_laser_power": 0.71,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 31e6, "charge_readout_laser_power": 0.96,
+            
+            'collection_filter': None, 'magnet_angle': None,
+            'resonance_LOW': 2.7995, 'rabi_LOW': 133.1, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9417, 'rabi_HIGH': 182.8, 'uwave_power_HIGH': 16.5}
 
     # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
     #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
@@ -462,9 +444,9 @@ if __name__ == "__main__":
 
     # readout_powers = np.linspace(0.6, 1.0, 9)
     # readout_powers = np.linspace(0.71, 0.75, 5)
-    readout_powers = np.linspace(0.8, 1.0, 6)
+    # readout_powers = np.linspace(0.8, 1.0, 6)
     # readout_powers = np.linspace(0.2, 1.0, 5)
-    # readout_powers = [0.71]
+    readout_powers = [1.0]
 
     try:
         determine_readout_dur_power(
