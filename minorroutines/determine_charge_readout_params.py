@@ -304,7 +304,7 @@ def determine_readout_dur_power(
     readout_powers=None,
     plot_readout_durs=None,
 ):
-    num_reps = 500
+    num_reps = 5000
 
     if readout_powers is None:
         readout_powers = [0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6]
@@ -464,7 +464,8 @@ if __name__ == "__main__":
     #                 6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
     #                 2*10**7, 3*10**7, 4*10**7, 5*10**7]
     # readout_durs = numpy.linspace(10e6, 50e6, 5)
-    readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9]
+    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9]
+    readout_durs = [5e6, 20e6, 40e6, 70e6, 100e6]
     # readout_durs = numpy.linspace(100e6, 1e9, 10)
     # readout_durs = numpy.linspace(700e6, 1e9, 7)
     # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
@@ -474,7 +475,7 @@ if __name__ == "__main__":
 
     # readout_powers = np.linspace(0.6, 1.0, 9)
     # readout_powers = np.linspace(0.71, 0.75, 5)
-    readout_powers = np.linspace(0.9, 1.0, 3)
+    readout_powers = np.linspace(0.8, 1.0, 6)
     # readout_powers = np.linspace(0.2, 1.0, 5)
     # readout_powers = [0.71]
 
