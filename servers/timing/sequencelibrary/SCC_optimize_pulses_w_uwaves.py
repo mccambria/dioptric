@@ -131,30 +131,27 @@ def get_seq(pulse_streamer, config, args):
     # reionization pulse (green)
     # MCC
     delay = common_delay - green_delay_time
-    # train = [(delay, LOW), (reion_time, HIGH),
-    #           (4*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time, LOW),
+    train = [(delay, LOW), (reion_time, HIGH),
+              (4*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time, LOW),
+              (reion_time, HIGH),
+              (4*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time + green_delay_time, LOW)]
+    # train = [(delay, LOW),
     #           (reion_time, HIGH),
-    #           (4*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time + green_delay_time, LOW)]
-    train = [
-        (delay, LOW),
-        (reion_time, HIGH),
-        (wait_time + pi_pulse + wait_time, LOW),
-        (shelf_time, HIGH),
-        (ion_time, LOW),
-        (wait_time, LOW),
-        (readout_time, LOW),
-        (post_wait_time + wait_time, LOW),
-        (reion_time, HIGH),
-        (wait_time + pi_pulse + wait_time, LOW),
-        (shelf_time, HIGH),
-        (ion_time, LOW),
-        (wait_time, LOW),
-        (readout_time, LOW),
-        (post_wait_time + wait_time + green_delay_time, LOW),
-    ]
-    tool_belt.process_laser_seq(
-        pulse_streamer, seq, config, green_laser_name, None, train
-    )
+    #           (wait_time + pi_pulse + wait_time, LOW),
+    #           (shelf_time, HIGH),
+    #           (ion_time, LOW),
+    #           (wait_time, LOW),
+    #           (readout_time, LOW),
+    #           (post_wait_time + wait_time, LOW),
+    #           (reion_time, HIGH),
+    #           (wait_time + pi_pulse + wait_time, LOW),
+    #           (shelf_time, HIGH),
+    #           (ion_time, LOW),
+    #           (wait_time, LOW),
+    #           (readout_time, LOW),
+    #           (post_wait_time + wait_time + green_delay_time, LOW)]
+    tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                green_laser_name, None, train)
 
     # ionization pulse (red)
     delay = common_delay - red_delay_time
@@ -198,7 +195,7 @@ def get_seq(pulse_streamer, config, args):
 
     # readout with 589
     # Dummy values for digital modulation
-    shelf_power = 0.0  # MCC
+    # shelf_power = 0.0  # MCC
     if not analog_yellow:
         shelf_power = HIGH
         readout_power = HIGH
