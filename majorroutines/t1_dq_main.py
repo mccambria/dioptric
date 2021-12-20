@@ -604,6 +604,8 @@ def main_with_cxn(
                 # Stream the sequence
                 seq_args[0] = taus[tau_ind_first]
                 seq_args[5] = taus[tau_ind_second]
+                seq_args[7] = init_state.value
+                seq_args[8] = read_state.value
                 seq_args_string = tool_belt.encode_seq_args(seq_args)
 
                 cxn.pulse_streamer.stream_immediate(
@@ -735,8 +737,8 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    path = "pc_hahn/branch_master/t1_interleave_knill/data_collections/"
-    folder = "hopper-search-5.5K-low_B"
+    path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
+    folder = "wu-nv3_2021_12_03-295K-2"
     file_name = "incremental"
     data = tool_belt.get_raw_data(file_name, path + folder)
 
