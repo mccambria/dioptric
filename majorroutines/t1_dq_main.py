@@ -234,9 +234,9 @@ def main_with_cxn(
 
         laser_tag = "nv-_reionization"
         laser_key = "{}_laser".format(laser_tag)
-        scc_pol_laser_name = nv_sig[laser_key]
-        scc_pol_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        scc_pol_dur = nv_sig["{}_dur".format(laser_tag)]
+        pol_laser_name = nv_sig[laser_key]
+        pol_laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        polarization_dur = nv_sig["{}_dur".format(laser_tag)]
 
         laser_tag = "nv0_ionization"
         laser_key = "{}_laser".format(laser_tag)
@@ -413,6 +413,8 @@ def main_with_cxn(
                 apd_indices[0],
                 init_state.value,
                 read_state.value,
+                None,
+                None,
                 pol_laser_name,
                 pol_laser_power,
                 polarization_dur,
@@ -456,10 +458,11 @@ def main_with_cxn(
                 laser_name,
                 laser_power,
             ]
-
+        # print(seq_args)
+        # continue
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
-        seq_time = int(ret_vals[0])
+        seq_time = numpy.int64(ret_vals[0])
 
         seq_time_s = seq_time / (10 ** 9)  # s
         expected_run_time = (
@@ -468,6 +471,8 @@ def main_with_cxn(
         expected_run_time_m = expected_run_time / 60  # m
 
         exp_time_list.append(expected_run_time_m)
+
+    # return
 
     # %% Report the total time for the experiment
 
@@ -512,9 +517,9 @@ def main_with_cxn(
             print(" \nOptimizing...\n")
             # Optimize
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            if opti_coords is None:
+                return
             opti_coords_master_list[exp_ind].append(opti_coords)
-
-            # Set up the microwaves for the low and high states
 
             # Set up the microwaves for the low and high states
             low_sig_gen_cxn = tool_belt.get_signal_generator_cxn(
@@ -610,6 +615,7 @@ def main_with_cxn(
                 # parse the returned list into what we want.
                 new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
                 sample_counts = new_counts[0]
+                # print(len(sample_counts))
 
                 count = sum(sample_counts[0::4])
                 sig_counts_master_list[exp_ind][run_ind][tau_ind_first] = int(
@@ -643,8 +649,6 @@ def main_with_cxn(
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
-            "readout": readout,
-            "readout-units": "ns",
             "run_ind": run_ind,
             "params_master_list": params_master_list,
             "params_master_list-format": (
@@ -695,8 +699,6 @@ def main_with_cxn(
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
-        "readout": readout,
-        "readout-units": "ns",
         "num_runs": num_runs,
         "params_master_list": params_master_list,
         "params_master_list-format": (

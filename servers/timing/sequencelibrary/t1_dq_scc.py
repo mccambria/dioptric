@@ -22,7 +22,9 @@ def get_seq(pulse_streamer, config, args):
     # The first few args are ns durations and we need them as int64s
     durations = []
     for ind in range(6):
-        durations.append(numpy.int64(args[ind]))
+        val = args[ind]
+        val = 0 if val == None else val
+        durations.append(numpy.int64(val))
 
     # Unpack the durations
     (
@@ -59,7 +61,7 @@ def get_seq(pulse_streamer, config, args):
         readout_dur,
     ) = args[11:]
     ionization_dur = numpy.int64(ionization_dur)
-    shelf_dur = numpy.int64(ionization_dur)
+    shelf_dur = numpy.int64(shelf_dur)
     readout_dur = numpy.int64(readout_dur)
 
     uwave_buffer = config["CommonDurations"]["uwave_buffer"]
@@ -99,7 +101,7 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_sig_gen_low_gate = pulser_wiring[low_sig_gen_gate_chan_name]
     high_sig_gen_gate_chan_name = "do_{}_gate".format(high_sig_gen_name)
     pulser_do_sig_gen_high_gate = pulser_wiring[high_sig_gen_gate_chan_name]
-    readout_laser_gate = pulser_wiring["do_{}_dm".format(readout_laser_name)]
+    readout_laser_gate = pulser_wiring["ao_{}_am".format(readout_laser_name)]
 
     # %% Some further setup
 
@@ -152,26 +154,29 @@ def get_seq(pulse_streamer, config, args):
         + post_uwave_exp_wait_time
     )
 
-    # Microsecond buffer at the end where everything is off
+    # Microsecond buffer at the end of each experiment where everything is off
     end_buffer = 1000
 
     # The period is independent of the particular tau, but it must be long
     # enough to accomodate the longest tau
-    period = (
+    period = numpy.int64(
         common_delay
         + polarization_dur
         + pre_uwave_exp_wait_time
         + uwave_experiment_shrt
         + post_uwave_exp_wait_time
         + total_readout_dur
+        + end_buffer
         + polarization_dur
         + sig_to_ref_wait_time
         + total_readout_dur
+        + end_buffer
         + polarization_dur
         + pre_uwave_exp_wait_time
         + uwave_experiment_long
         + post_uwave_exp_wait_time
         + total_readout_dur
+        + end_buffer
         + polarization_dur
         + sig_to_ref_wait_time
         + total_readout_dur
@@ -206,21 +211,24 @@ def get_seq(pulse_streamer, config, args):
         (pre_duration, LOW),
         (shelf_dur + ionization_dur + scc_ion_readout_buffer, LOW),
         (readout_dur, HIGH),
+        (end_buffer, LOW),
         (short_sig_to_short_ref, LOW),
         (shelf_dur + ionization_dur + scc_ion_readout_buffer, LOW),
         (readout_dur, HIGH),
+        (end_buffer, LOW),
         (short_ref_to_long_sig, LOW),
         (shelf_dur + ionization_dur + scc_ion_readout_buffer, LOW),
         (readout_dur, HIGH),
+        (end_buffer, LOW),
         (long_sig_to_long_ref, LOW),
         (shelf_dur + ionization_dur + scc_ion_readout_buffer, LOW),
         (readout_dur, HIGH),
         (end_buffer, LOW),
     ]
     seq.setDigital(pulser_do_apd_gate, train)
-    durs_only = [el[0] for el in train]
-    total_dur = sum(durs_only)
-    print(total_dur)
+    # durs_only = [el[0] for el in train]
+    # total_dur = sum(durs_only)
+    # print(total_dur)
 
     # %% Polarization (green laser)
 
@@ -234,8 +242,11 @@ def get_seq(pulse_streamer, config, args):
             LOW,
         ),
         (total_readout_dur, LOW),
+        (end_buffer, LOW),
         (polarization_dur, HIGH),
         (sig_to_ref_wait_time, LOW),
+        (total_readout_dur, LOW),
+        (end_buffer, LOW),
         (polarization_dur, HIGH),
         (
             pre_uwave_exp_wait_time
@@ -243,6 +254,8 @@ def get_seq(pulse_streamer, config, args):
             + post_uwave_exp_wait_time,
             LOW,
         ),
+        (total_readout_dur, LOW),
+        (end_buffer, LOW),
         (polarization_dur, HIGH),
         (sig_to_ref_wait_time, LOW),
         (total_readout_dur + pol_laser_delay, LOW),
@@ -256,9 +269,9 @@ def get_seq(pulse_streamer, config, args):
         pol_laser_power,
         train,
     )
-    durs_only = [el[0] for el in train]
-    total_dur = sum(durs_only)
-    print(total_dur)
+    # durs_only = [el[0] for el in train]
+    # total_dur = sum(durs_only)
+    # print(total_dur)
 
     # %% Ionization (red laser)
 
@@ -267,14 +280,17 @@ def get_seq(pulse_streamer, config, args):
         (shelf_dur, LOW),
         (ionization_dur, HIGH),
         (scc_ion_readout_buffer + readout_dur, LOW),
+        (end_buffer, LOW),
         (short_sig_to_short_ref, LOW),
         (shelf_dur, LOW),
         (ionization_dur, HIGH),
         (scc_ion_readout_buffer + readout_dur, LOW),
+        (end_buffer, LOW),
         (short_ref_to_long_sig, LOW),
         (shelf_dur, LOW),
         (ionization_dur, HIGH),
         (scc_ion_readout_buffer + readout_dur, LOW),
+        (end_buffer, LOW),
         (long_sig_to_long_ref, LOW),
         (shelf_dur, LOW),
         (ionization_dur, HIGH),
@@ -289,9 +305,9 @@ def get_seq(pulse_streamer, config, args):
         ion_laser_power,
         train,
     )
-    durs_only = [el[0] for el in train]
-    total_dur = sum(durs_only)
-    print(total_dur)
+    # durs_only = [el[0] for el in train]
+    # total_dur = sum(durs_only)
+    # print(total_dur)
 
     # %% Shelf/readout (yellow laser)
 
@@ -300,14 +316,17 @@ def get_seq(pulse_streamer, config, args):
         (shelf_dur, shelf_laser_power),
         (ionization_dur + scc_ion_readout_buffer, LOW),
         (readout_dur, readout_laser_power),
+        (end_buffer, LOW),
         (short_sig_to_short_ref, LOW),
         (shelf_dur, shelf_laser_power),
         (ionization_dur + scc_ion_readout_buffer, LOW),
         (readout_dur, readout_laser_power),
+        (end_buffer, LOW),
         (short_ref_to_long_sig, LOW),
         (shelf_dur, shelf_laser_power),
         (ionization_dur + scc_ion_readout_buffer, LOW),
         (readout_dur, readout_laser_power),
+        (end_buffer, LOW),
         (long_sig_to_long_ref, LOW),
         (shelf_dur, shelf_laser_power),
         (ionization_dur + scc_ion_readout_buffer, LOW),
@@ -315,9 +334,9 @@ def get_seq(pulse_streamer, config, args):
         (end_buffer + readout_laser_delay, LOW),
     ]
     seq.setAnalog(readout_laser_gate, train)
-    durs_only = [el[0] for el in train]
-    total_dur = sum(durs_only)
-    print(total_dur)
+    # durs_only = [el[0] for el in train]
+    # total_dur = sum(durs_only)
+    # print(total_dur)
 
     # %% Microwaves
 
@@ -326,15 +345,18 @@ def get_seq(pulse_streamer, config, args):
         post_uwave_exp_wait_time
         + polarization_dur
         + total_readout_dur
+        + end_buffer
         + sig_to_ref_wait_time
         + polarization_dur
         + total_readout_dur
+        + end_buffer
         + pre_uwave_exp_wait_time
     )
     post_duration = (
         post_uwave_exp_wait_time
         + polarization_dur
         + total_readout_dur
+        + end_buffer
         + sig_to_ref_wait_time
         + total_readout_dur
     )
@@ -365,6 +387,9 @@ def get_seq(pulse_streamer, config, args):
         ]
     )
     seq.setDigital(pulser_do_sig_gen_high_gate, train)
+    # durs_only = [el[0] for el in train]
+    # total_dur = sum(durs_only)
+    # print(total_dur)
 
     train = [(pre_duration - rf_low_delay, LOW)]
     train.extend(
@@ -392,9 +417,9 @@ def get_seq(pulse_streamer, config, args):
         ]
     )
     seq.setDigital(pulser_do_sig_gen_low_gate, train)
-    durs_only = [el[0] for el in train]
-    total_dur = sum(durs_only)
-    print(total_dur)
+    # durs_only = [el[0] for el in train]
+    # total_dur = sum(durs_only)
+    # print(total_dur)
 
     # %% Return the sequence
 
@@ -406,7 +431,13 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == "__main__":
 
     config = tool_belt.get_config_dict()
-    args = []
+    optics = config["Optics"]
+    for key in optics:
+        if "delay" in optics[key]:
+            config["Optics"][key]["delay"] = 0
+    args = [2000, None, None, 67, 91, 4000, 1, 1, 3, None, None, 
+            'laserglow_532', None, 1000.0, 'cobolt_638', None, 200, 
+            'laserglow_589', 1.0, 0, 'laserglow_589', 1.0, 1000.0]
 
     seq, final, ret_vals = get_seq(None, config, args)
     seq.plot()
