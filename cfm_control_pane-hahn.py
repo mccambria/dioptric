@@ -509,21 +509,16 @@ if __name__ == '__main__':
     apd_indices = [1]
     # apd_indices = [0,1]
     
-    nd = 'nd_0'
-    # nd = 'nd_0.5'
-    # nd = 'nd_1.0'
-    # nd = 'nd_2.0'
-    
     sample_name = 'wu'
     
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.025, 0.018, 13], 'name': '{}-nv3_2021_12_03'.format(sample_name),
+    nv_sig = { 'coords': [0.028, 0.017, -1], 'name': '{}-nv3_2021_12_03'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 28,
             
-            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
+            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
             # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e3,
             'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
@@ -534,7 +529,7 @@ if __name__ == '__main__':
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
             
             'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 200,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1e3,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 200,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
             # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
@@ -543,8 +538,8 @@ if __name__ == '__main__':
             "charge_readout_laser": yellow_laser, "charge_readout_dur": 32e6, "charge_readout_laser_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.7995, 'rabi_LOW': 133.1, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9417, 'rabi_HIGH': 182.8, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.8000, 'rabi_LOW': 133.6, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9416, 'rabi_HIGH': 181.0, 'uwave_power_HIGH': 16.5}
     
     # nv_sig = { 'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
     #         'disable_opt': True, 'expected_count_rate': None,
@@ -579,17 +574,17 @@ if __name__ == '__main__':
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(4, -2)
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         
-        # for pos in numpy.linspace(0, -100, 11): 
+        # for pos in numpy.linspace(0, -50, 6): 
         # # for pos in [0,10]*10:
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig["coords"][2] = int(pos)
-        #     do_image_sample(nv_sig, apd_indices)
+        #     do_image_sample_zoom(nv_sig, apd_indices)
         
         #     # with labrad.connect() as cxn:
         #     #     cxn.cryo_piezos.write_xy(pos, 915)
@@ -618,9 +613,9 @@ if __name__ == '__main__':
         # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)
-        # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_zero_initialization=True)
+        do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_zero_initialization=True)
         # do_resonance(nv_sig, apd_indices, 2.87, 0.200)
-        # do_resonance_state(nv_sig, apd_indices, States.LOW)
+        # do_resonance_state(nv_sig , apd_indices, States.LOW)
         # do_resonance_state(nv_sig, apd_indices, States.HIGH)
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)

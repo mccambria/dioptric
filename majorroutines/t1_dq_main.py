@@ -517,8 +517,8 @@ def main_with_cxn(
             print(" \nOptimizing...\n")
             # Optimize
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
-            if opti_coords is None:
-                return
+            # if opti_coords is None:
+            #     return
             opti_coords_master_list[exp_ind].append(opti_coords)
 
             # Set up the microwaves for the low and high states
