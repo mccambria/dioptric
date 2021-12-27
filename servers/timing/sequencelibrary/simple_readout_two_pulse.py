@@ -40,7 +40,8 @@ def get_seq(pulse_streamer, config, args):
     init_pulse_time = numpy.int64(init_pulse_time)
     readout_time = numpy.int64(readout_time)
     
-    intra_pulse_delay = config['CommonDurations']['cw_meas_buffer']
+    # intra_pulse_delay = config['CommonDurations']['cw_meas_buffer']
+    intra_pulse_delay = config['CommonDurations']['scc_ion_readout_buffer']
     
     if init_laser_key == readout_laser_key:
         total_delay = init_pulse_aom_delay_time
