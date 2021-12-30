@@ -53,8 +53,8 @@ def do_image_sample(nv_sig, apd_indices):
     #scan_range = 0.04*scale
     #scan_range = 0.025*scale
    # scan_range = 0.01*scale
-    #scan_range = 1.8
-    scan_range = 2
+    scan_range = 2.2
+    # scan_range = 1
     #
     # num_steps = 400
     # num_steps = 300
@@ -62,12 +62,12 @@ def do_image_sample(nv_sig, apd_indices):
     #num_steps = 150
     # num_steps = 135
     # num_steps = 120
-    # num_steps =401
-    #num_steps=101
-    #num_steps = 91
-    #num_steps = 61
-    # num_steps = 31
-    num_steps = 21
+    num_steps =111
+    #num_steps=81
+    # num_steps = 81
+    # num_steps = 61
+    #num_steps = 31
+    # num_steps = 21
 
     # For now we only support square scans so pass scan_range twice
     image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -148,9 +148,7 @@ def do_SPaCE_annulus(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
 if __name__ == "__main__":
 
     # In debug mode, don't bother sending email notifications about exceptions
-    debug_mode = True
-    
-    
+    debug_mode = False
     
 
     # %% Shared parameters
@@ -160,15 +158,15 @@ if __name__ == "__main__":
     # apd_indices = [0,1]
 
     nd_yellow = "nd_1.0"
-    green_power = 10
-    red_power = 60
+    green_power = 9
+    red_power = 80
     sample_name = "johnson"
     green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
     nv_sig_search = {
-        "coords": [247.367, 247.484, 5.0], #******
+        "coords": [250.422+4, 250.982-4, 5],
         "name": "{}-search".format(sample_name),
         "disable_opt": False,
         "ramp_voltages": False,
@@ -189,11 +187,13 @@ if __name__ == "__main__":
     
      
     nv_sig_1 = {
-        "coords":[246.801, 247.150, 5.0],
-        "name": "{}-nv0_2021_12_10".format(sample_name,),
+        "coords":[250.662, 251.083, 5],
+        "name": "{}-nv0_2021_12_22".format(sample_name,),
+        #"coords":[254.928, 246.916, 5],
+       # "name": "{}-nv0_2021_12_27".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate":80,
+        "expected_count_rate":35,
         
         
         "spin_laser": green_laser,
@@ -224,7 +224,7 @@ if __name__ == "__main__":
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
         "charge_readout_laser_power": 0.15,
-        "charge_readout_dur": 50e6,
+        "charge_readout_dur": 75e6,
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
@@ -234,7 +234,6 @@ if __name__ == "__main__":
         "rabi_HIGH": 215,
         "uwave_power_HIGH": 14.5,
     }  # 14.5 max
-    
     
       
     
@@ -247,52 +246,52 @@ if __name__ == "__main__":
             
         
         # Operations that don't need an NV
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
-        #tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+        #tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+       # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
 
 
-        do_optimize(nv_sig, apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        #do_optimize(nv_sig, apd_indices)
+        #do_image_sample(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)
         # do_stationary_count(nv_sig, apd_indices)
         
-        offset_x = 0.477-0.035+0.045
-        offset_y = 0.071+0.055
+        offset_x =-1-0.188+0.03+0.05
+        offset_y = -1+0.580-0.135+0.090
         offset_z = 0
         offset_list = [offset_x, offset_y, offset_z]
     
+    
+             
         # 1st airy ring power
-        t_list = [5e4] 
-
+        t_list = [5e6]  #20e6 #could also try 10e6
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
-            #positive and negative X line scans
-            # do_SPaCE(nv_sig, nv_sig, 15, 201, None, 
-            #            [[-0.35+offset_x, offset_y,offset_z ], [-0.55+offset_x, offset_y,offset_z]], 
-            #          None, offset_list, 2)
-            # do_SPaCE(nv_sig, nv_sig, 15, 201, None, 
-            #            [[0.275+offset_x, offset_y,offset_z ], [0.475+offset_x, offset_y,offset_z]], 
-            #            None, offset_list, 2)
             
-            #large line scan
-            # do_SPaCE(nv_sig, nv_sig, 15, 251, None, 
-            #           [[offset_x-0.5,offset_y,offset_z ], [offset_x+2.0, offset_y,offset_z]], 
-            #          None, offset_list, 2)
+            #do_SPaCE_annulus(nv_sig, nv_sig, 1, 111,111, 
+            #            None,  [2.2,2.2, 0], [offset_x, offset_y, offset_z], ring_radii = [0.8, 1.1])
+            #positive and negative X line scans
+            
+            
+            do_SPaCE(nv_sig, nv_sig, 75,201 , None, 
+                [[0.830+offset_x, offset_y,offset_z ], [1.030+offset_x, offset_y,offset_z]], None, offset_list, 2)
+            
+            do_SPaCE(nv_sig, nv_sig, 75,201 , None, 
+                     [[-0.830+offset_x, offset_y,offset_z ], [-1.03+offset_x, offset_y,offset_z]], None, offset_list, 2)
+            
             
             # 2D scans
-            # img_range_2D = [1.8, 1.8, 0 ]
-            img_range_2D = [2, 2, 0 ]
-            do_SPaCE(nv_sig, nv_sig, 1, 31,31, #1.0 range, 101 steps
-                      None,  img_range_2D,offset_list)
+            img_range_2D = [2.2, 2.2, 0]
+            do_SPaCE(nv_sig, nv_sig, 2, 111, 111,
+                         None,  img_range_2D,offset_list)
             
             
         # well resolved 2D annulus scan for 5 ms
-        # nv_sig['CPG_laser_dur'] = 2.5e5
+        #nv_sig['CPG_laser_dur'] = 1e5
         
         # 
-        # do_SPaCE_annulus(nv_sig, nv_sig, 1, 81, 81, 
-        #                 None,  [2.0,2.0,0], [offset_x, offset_y, offset_z], ring_radii = [0.65, 0.95])
+        #do_SPaCE_annulus(nv_sig, nv_sig, 1, 51, 51, 
+        #                None,  [1.2,1.2,0], [offset_x, offset_y, offset_z], ring_radii = [0.35, 0.55])
 
 
     except Exception as exc:

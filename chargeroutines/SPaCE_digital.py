@@ -97,6 +97,7 @@ def combine_1D(file_list, folder):
     flag_array_n = numpy.rot90(flag_array_n, k=3).tolist()
 
     img_range_1D = data['img_range_1D']
+    offset_2D= data['offset_2D']
     direction_title = data['direction_title']
     num_steps_a= data['num_steps_a']
     num_steps_b= data['num_steps_b']
@@ -115,6 +116,7 @@ def combine_1D(file_list, folder):
 
     rawData = {'timestamp': timestamp,
             'img_range_1D': img_range_1D,
+            'offset_2D':offset_2D,
             'direction_title': direction_title,
             'num_steps_a': num_steps_a,
             'num_steps_b': num_steps_b,
@@ -165,7 +167,7 @@ def combine_2D(file_list, folder):
     flag_array_d =[]
     flag_array_n=[]
     ind_list = []
-    
+    print(len(file_list))
     for file in file_list:
         data = tool_belt.get_raw_data(file, folder)
         readout_counts_array_rot = numpy.rot90(data['readout_counts_array'])
@@ -178,12 +180,16 @@ def combine_2D(file_list, folder):
         flag_array_n = flag_array_n + flag_array_n_rot.tolist()
         # readout_image_array =numpy.array( data['readout_image_array'])
         # readout_image_array_tot = readout_image_array + readout_image_array
+        nv_sig = data['nv_sig']
+        dur_check=nv_sig['CPG_laser_dur']
+        print(dur_check/10**6)
     
     readout_counts_array = numpy.rot90(readout_counts_array, k=3).tolist()
     flag_array_d = numpy.rot90(flag_array_d, k=3).tolist()
     flag_array_n = numpy.rot90(flag_array_n, k=3).tolist()
 
     img_range_1D = data['img_range_1D']
+    img_range_2D = data['img_range_2D']
     direction_title = data['direction_title']
     num_steps_a= data['num_steps_a']
     num_steps_b= data['num_steps_b']
@@ -211,6 +217,7 @@ def combine_2D(file_list, folder):
 
     rawData = {'timestamp': timestamp,
             'img_range_1D': img_range_1D,
+            'img_range_2D': img_range_2D,
             'direction_title': direction_title,
             'num_steps_a': num_steps_a,
             'num_steps_b': num_steps_b,
@@ -334,8 +341,8 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
                                 opti_params[1],opti_params[2],cov_arr[2][2],opti_params[3])
                 ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
                         verticalalignment='top', bbox=props)
-            print(opti_params[2])
-            print(cov_arr[2][2])
+            print('fwhm =', opti_params[2]*2.355)
+            print('+/- ', cov_arr[2][2]*2.355)
         except Exception:
             text = 'Peak could not be fit'
             ax.text(0.3, 0.1, text, transform=ax.transAxes, fontsize=12,
@@ -538,7 +545,7 @@ def plot_2D_space(file, path, true_position = False):
             r += 1
 
         readout_image_array = numpy.flipud(readout_image_array)
-        title = 'SPaCE - {} ms depletion pulse'.format(CPG_laser_dur)
+        title = 'SPaCE - {} ms depletion pulse'.format(CPG_laser_dur/10**6)
 
 
 
@@ -1099,6 +1106,8 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         #rad_dist = numpy.sqrt((x_voltages - offset_2D[0]-start_coords[0])**2 +( y_voltages - offset_2D[1]-start_coords[1])**2)
 
         rad_dist = (x_voltages - offset_2D[0]-start_coords[0]) 
+        #rad_dist = (y_voltages - offset_2D[1]-start_coords[1])
+        
         # This bit of code is used if the 1D scan is symmetric across the NV, then we need negative and positive values of r
         # neg_ints = int(numpy.floor(len(rad_dist)/2))
         # rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
@@ -1433,20 +1442,18 @@ if __name__ == '__main__':
 
     file_path = 'pc_rabi/branch_CFMIII/SPaCE_digital/2021_12'
 
-    file_name='2021_12_13-01_54_20-johnson-nv0_2021_12_10'
-    plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = True,
-                    do_save = True ,scale=1000)
+    file_name='2021_12_29-06_33_29-johnson-nv0_2021_12_22'
+    # plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = True,
+    #                 do_save = True ,scale=1000)
 
-    file_list = ['2021_11_20-07_02_51-johnson-nv1_2021_11_17',
-                 '2021_11_21-00_36_00-johnson-nv1_2021_11_17',
-                 '2021_11_22-03_33_25-johnson-nv1_2021_11_17']#20 ms
+    file_list = [
+        '2021_12_29-06_33_29-johnson-nv0_2021_12_22',
+        '2021_12_30-07_57_49-johnson-nv0_2021_12_22'
+                 ]#5 ms
 
-    file_list = ['2021_11_20-09_56_16-johnson-nv1_2021_11_17',
-                  '2021_11_20-15_26_26-johnson-nv1_2021_11_17',
-                  '2021_11_22-08_54_18-johnson-nv1_2021_11_17']#22.5 ms
      
     
-    # combine_1D(file_list, file_path)
+    combine_1D(file_list, file_path)
 
 
     do_plot_comps = False
@@ -1621,14 +1628,15 @@ if __name__ == '__main__':
 
 
     #================ specific for 2D scans ================#
-    folder = 'pc_rabi/branch_CFMIII/SPaCE_digital/2021_11'
+    path = 'pc_rabi/branch_CFMIII/SPaCE_digital/2021_12'
     file_list = [
-        '2021_11_29-20_43_55-johnson-nv1_2021_11_17',
-        '2021_11_28-03_15_49-johnson-nv1_2021_11_17'
+        '2021_12_28-07_04_21-johnson-nv0_2021_12_22',
+        '2021_12_28-21_20_07-johnson-nv0_2021_12_22',
+        '2021_12_29-03_42_29-johnson-nv0_2021_12_22'
         ]
+    # combine_2D(file_list, path)
 
-    # combine_2D(file_list, folder)
-
+    # plot_2D_space(file, path)
     ############# Create csv filefor 2D image ##############
     # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))
 

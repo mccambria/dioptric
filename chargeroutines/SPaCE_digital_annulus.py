@@ -1115,7 +1115,6 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
     readout_counts_array = numpy.empty([num_samples, num_runs])
     flag_array_d = numpy.empty([num_samples, num_runs])
     flag_array_n = numpy.empty([num_samples, num_runs])
-
     for n in range(num_runs):
         print('Run {}'.format(n))
         # shuffle the voltages that we're stepping thru
@@ -1127,7 +1126,6 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         for i in ind_list:
             coords_voltages_shuffle.append(coords_voltages[i])
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
-
         #========================== Run the data collection====================#
         ret_vals = data_collection(nv_sig,opti_nv_sig,  coords_voltages_shuffle_list, n,  opti_interval)
 
