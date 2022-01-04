@@ -193,7 +193,7 @@ if __name__ == "__main__":
        # "name": "{}-nv0_2021_12_27".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate":35,
+        "expected_count_rate":30,
         
         
         "spin_laser": green_laser,
@@ -224,7 +224,7 @@ if __name__ == "__main__":
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
         "charge_readout_laser_power": 0.15,
-        "charge_readout_dur": 75e6,
+        "charge_readout_dur": 100e6,
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
@@ -264,27 +264,30 @@ if __name__ == "__main__":
     
              
         # 1st airy ring power
-        t_list = [5e6]  #20e6 #could also try 10e6
+        t_list = [10e6]  #20e6 #could also try 10e6
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
             
-            #do_SPaCE_annulus(nv_sig, nv_sig, 1, 111,111, 
-            #            None,  [2.2,2.2, 0], [offset_x, offset_y, offset_z], ring_radii = [0.8, 1.1])
+            # do_SPaCE_annulus(nv_sig, nv_sig, 1, 111,111, 
+            #             None,  [2.2,2.2, 0], [offset_x, offset_y, offset_z], ring_radii = [0.8, 1.0])
             #positive and negative X line scans
             
             
-            do_SPaCE(nv_sig, nv_sig, 75,201 , None, 
+            do_SPaCE(nv_sig, nv_sig,100,201 , None, 
                 [[0.830+offset_x, offset_y,offset_z ], [1.030+offset_x, offset_y,offset_z]], None, offset_list, 2)
             
-            do_SPaCE(nv_sig, nv_sig, 75,201 , None, 
-                     [[-0.830+offset_x, offset_y,offset_z ], [-1.03+offset_x, offset_y,offset_z]], None, offset_list, 2)
+            do_SPaCE(nv_sig, nv_sig, 100,201 , None, 
+                      [[-0.830+offset_x, offset_y,offset_z ], [-1.03+offset_x, offset_y,offset_z]], None, offset_list, 2)
             
             
-            # 2D scans
+            # # 2D scans
             img_range_2D = [2.2, 2.2, 0]
-            do_SPaCE(nv_sig, nv_sig, 2, 111, 111,
-                         None,  img_range_2D,offset_list)
+            do_SPaCE(nv_sig, nv_sig, 2, 111, 111, #10 nm steps
+                          None,  img_range_2D,offset_list)
             
+            # img_range_2D = [1.2,0, 2]
+            # do_SPaCE(nv_sig, nv_sig, 2, 61, 81, 
+            #             None,  img_range_2D,offset_list)
             
         # well resolved 2D annulus scan for 5 ms
         #nv_sig['CPG_laser_dur'] = 1e5

@@ -1440,16 +1440,16 @@ if __name__ == '__main__':
 
     #================ specific for 1D scans ================#
 
-    file_path = 'pc_rabi/branch_CFMIII/SPaCE_digital/2021_12'
+    file_path = 'pc_rabi/branch_CFMIII/SPaCE_digital/2022_01'
 
-    file_name='2021_12_29-06_33_29-johnson-nv0_2021_12_22'
+    file_name='2022_01_02-09_28_57-johnson-nv0_2021_12_22'
     # plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = True,
-    #                 do_save = True ,scale=1000)
+    #                  do_save = True ,scale=1000)
 
     file_list = [
-        '2021_12_29-06_33_29-johnson-nv0_2021_12_22',
-        '2021_12_30-07_57_49-johnson-nv0_2021_12_22'
-                 ]#5 ms
+        '2022_01_02-09_28_57-johnson-nv0_2021_12_22',
+        '2022_01_03-23_52_47-johnson-nv0_2021_12_22'
+                 ]#10 ms
 
      
     
@@ -1628,11 +1628,10 @@ if __name__ == '__main__':
 
 
     #================ specific for 2D scans ================#
-    path = 'pc_rabi/branch_CFMIII/SPaCE_digital/2021_12'
+    path = 'pc_rabi/branch_CFMIII/SPaCE_digital/2022_01'
     file_list = [
-        '2021_12_28-07_04_21-johnson-nv0_2021_12_22',
-        '2021_12_28-21_20_07-johnson-nv0_2021_12_22',
-        '2021_12_29-03_42_29-johnson-nv0_2021_12_22'
+        '2022_01_03-03_14_51-johnson-nv0_2021_12_22',
+        '2022_01_04-06_59_02-johnson-nv0_2021_12_22'
         ]
     # combine_2D(file_list, path)
 
