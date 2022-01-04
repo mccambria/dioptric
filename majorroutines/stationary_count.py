@@ -16,7 +16,7 @@ import numpy
 import matplotlib.pyplot as plt
 import time
 import labrad
-import majorroutines.optimize as optimize
+import majorroutines.optimize_digital as optimize
 
 
 # %% Functions

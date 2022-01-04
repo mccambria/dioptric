@@ -142,28 +142,28 @@ def on_click_image(event):
     except TypeError:
         # Ignore TypeError if you click in the figure but out of the image
         pass
-    
-    
+
+
 # %% Main
-    
+
 
 def main(nv_sig, x_range, y_range, num_steps, apd_indices,
-         save_data=True, plot_data=True, 
+         save_data=True, plot_data=True,
          um_scaled=False, nv_minus_initialization=False):
 
     with labrad.connect() as cxn:
         img_array, x_voltages, y_voltages = main_with_cxn(cxn, nv_sig, x_range,
-                      y_range, num_steps, apd_indices, save_data, plot_data, 
+                      y_range, num_steps, apd_indices, save_data, plot_data,
                       um_scaled, nv_minus_initialization)
 
     return img_array, x_voltages, y_voltages
 
 def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
-                  apd_indices, save_data=True, plot_data=True, 
+                  apd_indices, save_data=True, plot_data=True,
                   um_scaled=False, nv_minus_initialization=False):
 
     # %% Some initial setup
-    
+
     tool_belt.reset_cfm(cxn)
 
     drift = tool_belt.get_drift()
@@ -177,20 +177,20 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
     # print(laser_power)
-    
+
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
 
     xy_server = tool_belt.get_xy_server(cxn)
-    
+
     # Get a couple registry entries
-    # See if this setup has finely specified delay times, else just get the 
+    # See if this setup has finely specified delay times, else just get the
     # one-size-fits-all value.
     dir_path = ['', 'Config', 'Positioning']
     cxn.registry.cd(*dir_path)
     _, keys = cxn.registry.dir()
     if 'xy_small_response_delay' in keys:
-        xy_delay = tool_belt.get_registry_entry(cxn, 
+        xy_delay = tool_belt.get_registry_entry(cxn,
                                         'xy_small_response_delay', dir_path)
     else:
         xy_delay = tool_belt.get_registry_entry(cxn, 'xy_delay', dir_path)
@@ -198,25 +198,25 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     xy_scale = tool_belt.get_registry_entry(cxn, 'xy_nm_per_unit', dir_path)
     if xy_scale == -1:
         um_scaled = False
-    else: 
+    else:
         xy_scale *= 1000
 
     total_num_samples = num_steps**2
 
     # %% Load the PulseStreamer
-    
+
     readout = nv_sig['imaging_readout_dur']
-    
+
     readout_sec = readout / 10**9
     readout_us = readout / 10**3
-    
+
     if nv_minus_initialization:
         laser_key = "nv-_prep_laser"
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         init = nv_sig['{}_dur'.format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        seq_args = [init, readout, apd_indices[0], init_laser, init_power, 
+        seq_args = [init, readout, apd_indices[0], init_laser, init_power,
                     readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',
@@ -231,13 +231,14 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     # %% Initialize at the starting point
 
-    tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
-    
+    # tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+
     # %% Set up the xy_server
 
     x_voltages, y_voltages = xy_server.load_sweep_scan_xy(x_center, y_center,
                                        x_range, y_range, num_steps, period)
 
+    # return
     x_num_steps = len(x_voltages)
     x_low = x_voltages[0]
     x_high = x_voltages[x_num_steps-1]
@@ -373,25 +374,25 @@ if __name__ == '__main__':
     # x_high = x_voltages[-1]
     # y_low = y_voltages[0]
     # y_high = y_voltages[-1]
-    
-    
+
+
     x_low = -x_range/2
     x_high = x_range/2
     y_low = -y_range/2
     y_high = y_range/2
-    
+
     pixel_size = x_voltages[1] - x_voltages[0]
     half_pixel_size = pixel_size / 2
     img_extent = [x_low - half_pixel_size,x_high + half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
-    
+
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
-    
-    
+
+
     tool_belt.create_image_figure(img_array, numpy.array(img_extent)*35, clickHandler=on_click_image,
-                        title=None, color_bar_label='Counts', 
+                        title=None, color_bar_label='Counts',
                         min_value=None, um_scaled=True)
-    
-    
-    # tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path, 
+
+
+    # tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path,
     #                               csv_name)
