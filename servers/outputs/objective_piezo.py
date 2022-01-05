@@ -91,6 +91,7 @@ class ObjectivePiezo(LabradServer):
         # 1 post-compensation volt
         # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
         self.z_hysteresis_a = 1 - self.z_hysteresis_b
+        logging.debug(config[1])
         logging.debug("Init complete")
 
     def compensate_hysteresis_z(self, position):

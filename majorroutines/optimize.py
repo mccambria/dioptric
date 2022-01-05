@@ -125,6 +125,12 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
     total_num_samples = 2
     x_center, y_center, z_center = coords
 
+    if nv_sig["ramp_voltages"] == True:
+        tool_belt.set_xyz_ramp(cxn, [x_center, y_center, z_center])
+    else:
+        tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
+    
+    
     config_positioning = config["Positioning"]
     if "xy_small_response_delay" in config_positioning:
         delay = config["Positioning"]["xy_small_response_delay"]
@@ -159,6 +165,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
 
     # xy
     if axis_ind in [0, 1]:
+
+        xy_server = tool_belt.get_xy_server(cxn)
 
         config_positioning = config["Positioning"]
         scan_range = config_positioning["xy_optimize_range"]
