@@ -60,27 +60,29 @@ def do_image_sample(nv_sig, apd_indices):
     #
     # scan_range = 0.75
     # num_steps = 150
-
-    #    scan_range = 5.0
+    
+    # 35 um / V
+    
+    # scan_range = 5.0
     # scan_range = 3.0
     # scan_range = 1.5
-    # scan_range = 1.0
+    # scan_range =1
     # scan_range = 0.8
-    # scan_range = 0.5
-    #scan_range = 0.3
-    # scan_range = 0.25
+    #scan_range = 0.5
+    # scan_range = 0.35
+    scan_range = 0.25
     # scan_range = 0.15
-    scan_range = 0.1
-    # scan_range = 0.04
+     #scan_range = 0.1
+    #scan_range = 0.05
     # scan_range = 0.025
     #
     # num_steps = 400
     # num_steps = 300
     # num_steps = 200
-    #num_steps = 150
+    # num_steps = 175
     # num_steps = 135
-    # num_steps = 120
-    # num_steps = 90
+    #num_steps =120
+    #num_steps = 90
     num_steps = 60
     # num_steps = 31
     #num_steps = 15
@@ -91,7 +93,7 @@ def do_image_sample(nv_sig, apd_indices):
 
 def do_image_sample_xz(nv_sig, apd_indices):
 
-    scan_range_x = 0.025
+    scan_range_x = 0.05
 
     scan_range_z = 1
 
@@ -556,13 +558,13 @@ if __name__ == "__main__":
     nd_yellow = "nd_1.0"
     green_power = 10
     red_power = 120
-    sample_name = "ayrton12"
+    sample_name = "burnell"
     green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
     nv_sig_search = {
-        "coords": [-0.076, 0.104, 5.0],
+        "coords": [0.263, -0.041, 5],
         "name": "{}-search".format(sample_name),
         "disable_opt": False,
         "ramp_voltages": False,
@@ -583,11 +585,11 @@ if __name__ == "__main__":
     
     
     nv_sig = {
-        "coords": [-0.094, 0.081, 4.711+0.29],
-        "name": "{}-nv1_2022_01_05".format(sample_name,),
+        "coords": [0.324, -0.112, 5],
+        "name": "{}-nv2_2022_01_11".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": True,
-        "expected_count_rate": 120,
+        "expected_count_rate": None,
         
         # "coords": [-0.063, -0.145, 5.0],
         # "name": "{}-nv0_2021_11_08".format(sample_name,),
@@ -647,12 +649,14 @@ if __name__ == "__main__":
     try:
 
         tool_belt.init_safe_stop()
-
-        do_optimize(nv_sig, apd_indices)
-        # cxn = labrad.connect()
-        # tool_belt.set_xyz_ramp(cxn, [-0.094, 0.081, 4.711])
+        # do_optimize(nv_sig, apd_indices)
+        for dz in [-0.5, -0.25, 0.25, 0.5]:
+            nv_sig_copy = copy.deepcopy(nv_sig)
+            coords = nv_sig["coords"]
+            new_coords = numpy.array(coords) +[0, 0, dz]
+            print(new_coords)
+            do_image_sample(nv_sig_copy, apd_indices)
         # do_stationary_count(nv_sig, apd_indices)
-        do_image_sample(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
         
@@ -767,7 +771,8 @@ if __name__ == "__main__":
         # Operations that don't need an NV
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
-        # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
+        # tool_belt.set_xyz(labrad.connect(), [0, 0, 5])
+        # tool_belt.set_xyz(labrad.connect(), [-0.169, -0.006, 5.086])
 
     except Exception as exc:
         # Intercept the exception so we can email it out and re-raise it

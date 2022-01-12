@@ -19,7 +19,7 @@ Created on Wed Apr 24 17:33:26 2019
 
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize_digital as optimize
+import majorroutines.optimize as optimize
 import numpy
 import matplotlib.pyplot as plt
 import time
