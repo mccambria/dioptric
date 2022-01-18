@@ -112,6 +112,8 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         seq_args = [init, readout, apd_indices[0], init_laser, init_power, 
                     readout_laser, readout_power]
+        # print(seq_args)
+        # return
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',
                                                   seq_args_string)
@@ -174,12 +176,21 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
         if tool_belt.safe_stop():
             break
+        
+        # Read the samples and update the image
+        new_samples = cxn.apd_tagger.read_counter_separate_gates()
 
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_simple()
+        # new_samples = cxn.apd_tagger.read_counter_simple()
 #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
+            
+            signal = [sum(el[0::2]) for el in new_samples]
+            background = [sum(el[1::2]) for el in new_samples]
+            new_samples = numpy.array(signal) - numpy.array(background)
+            new_samples = new_samples.tolist()
+            # new_samples = signal
             
             update_line_plot(new_samples, num_read_so_far, *args)
             num_read_so_far += num_new_samples

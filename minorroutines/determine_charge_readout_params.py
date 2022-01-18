@@ -77,7 +77,7 @@ def calc_separation(
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
 
     # readout_dur_linspace = np.arange(10e6, max_readout_dur, 10e6)
-    readout_dur_linspace = np.arange(10e6, 100e6, 1e6)
+    readout_dur_linspace = np.arange(5e6, 20e6, 1e6)
     # Round to nearest ms
     readout_dur_linspace = [
         int(1e6 * round(val / 1e6)) for val in readout_dur_linspace
@@ -300,11 +300,11 @@ def determine_readout_dur_power(
     nv_sig,
     opti_nv_sig,
     apd_indices,
+    num_reps = 500,
     max_readout_dur=1e9,
     readout_powers=None,
     plot_readout_durs=None,
 ):
-    num_reps = 5000
 
     if readout_powers is None:
         readout_powers = [0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6]
@@ -367,7 +367,7 @@ if __name__ == "__main__":
     path_from_nvdata = (
         "pc_hahn/branch_master/determine_charge_readout_params/2021_12/"
     )
-    file_name = "2021_12_16-19_32_45-wu-nv3_2021_12_03"
+    file_name = "2021_12_27-10_46_16-wu-nv6_2021_12_25"
     data = tool_belt.get_raw_data(file_name, path_from_nvdata)
     nv_sig = data["nv_sig"]
     nv0 = data["nv0"]
@@ -376,7 +376,7 @@ if __name__ == "__main__":
     max_readout_dur = nv_sig["charge_readout_dur"]
 
     opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
-    # opti_readout_dur = 55e6
+    # opti_readout_dur = 15e6
     # do_save = True
     do_save = False
     plot_histogram(
@@ -395,7 +395,7 @@ if __name__ == "__main__":
     # for dur in readout_durs:
     #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
 
-    plt.show(block=True)
+    # plt.show(block=True)
     sys.exit()
 
     ########################
@@ -404,51 +404,46 @@ if __name__ == "__main__":
     apd_indices = [1]
     # apd_indices = [0,1]
 
-    nd = "nd_0"
-    # nd = "nd_0.5"
-    # nd = 'nd_1.0'
-    # nd = 'nd_2.0'
-
     sample_name = "wu"
 
     green_laser = "laserglow_532"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
-
-    nv_sig = { 'coords': [0.003, -0.005, 9], 'name': '{}-nv3_2021_12_03'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 28,
-
+    
+    nv_sig = { 'coords': [0.027, -0.020, 3], 'name': '{}-nv6_2021_12_25'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 32,
+            
             'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
             # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e3,
             'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
-
+            
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
             # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
-
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 170,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1e3,
-
-            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 45, 'spin_shelf_laser_power': 1.0,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E5, 'nv-_prep_laser_filter': 'nd_0.5',
+            
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 200,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 500,
+            
+            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
             # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
             # "charge_readout_laser": yellow_laser, "charge_readout_dur": 700e6, "charge_readout_laser_power": 0.71,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 31e6, "charge_readout_laser_power": 0.96,
-
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 24e6, "charge_readout_laser_power": 1.0,
+            
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.7995, 'rabi_LOW': 133.1, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9417, 'rabi_HIGH': 182.8, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.8025, 'rabi_LOW': 160, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9433, 'rabi_HIGH': 181.0, 'uwave_power_HIGH': 16.5}
 
     # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
     #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
     #                 6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
     #                 2*10**7, 3*10**7, 4*10**7, 5*10**7]
     # readout_durs = numpy.linspace(10e6, 50e6, 5)
-    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9]
-    readout_durs = [5e6, 20e6, 40e6, 70e6, 100e6]
-    # readout_durs = numpy.linspace(100e6, 1e9, 10)
+    readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9]
+    # readout_durs = [5e6, 20e6, 40e6, 70e6, 100e6]
+    # readout_durs = [5e6, 10e6, 20e6, 40e6]
     # readout_durs = numpy.linspace(700e6, 1e9, 7)
     # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
     # readout_durs = [2e9]
@@ -456,16 +451,21 @@ if __name__ == "__main__":
     max_readout_dur = max(readout_durs)
 
     # readout_powers = np.linspace(0.6, 1.0, 9)
-    # readout_powers = np.linspace(0.71, 0.75, 5)
     # readout_powers = np.linspace(0.8, 1.0, 6)
+    # readout_powers = np.linspace(0.71, 0.75, 5)
     # readout_powers = np.linspace(0.2, 1.0, 5)
-    readout_powers = [1.0]
+    readout_powers = [0.9]
+    
+    # num_reps = 2000
+    # num_reps = 1000
+    num_reps = 500
 
     try:
         determine_readout_dur_power(
             nv_sig,
             nv_sig,
             apd_indices,
+            num_reps,
             max_readout_dur=max_readout_dur,
             readout_powers=readout_powers,
             plot_readout_durs=readout_durs,
