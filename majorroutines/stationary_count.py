@@ -202,6 +202,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
     # Replace x/0=inf with 0
     try:
         average = numpy.mean(samples[0:write_pos[0]]) / (10**3 * readout_sec)
+        print('average: {}'.format(average))
     except RuntimeWarning as e:
         print(e)
         inf_mask = numpy.isinf(average)
@@ -210,6 +211,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     try:
         st_dev = numpy.std(samples[0:write_pos[0]]) / (10**3 * readout_sec)
+        print('st_dev: {}'.format(st_dev))
     except RuntimeWarning as e:
         print(e)
         inf_mask = numpy.isinf(st_dev)

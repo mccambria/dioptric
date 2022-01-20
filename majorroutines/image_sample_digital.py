@@ -232,7 +232,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         
         # Either include this in loop so it plots data as it takes it (takes about 2x as long)
         # or put it ourside loop so it plots after data is complete
-    if plot_data: ###########################################################
+        if plot_data: ###########################################################
             img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
             update_image_figure(fig, img_array_kcps)
         

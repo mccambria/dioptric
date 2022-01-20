@@ -359,8 +359,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    # path = 'pc_rabi/branch_master/image_sample/2021_10'
-    file_name = '2021_11_11-16_01_03-wu-nv1_2021_11_11'
+    path = 'pc_rabi/branch_master/image_sample/2022_01'
+    file_name = '2022_01_12-10_34_08-burnell-nv2_2022_01_11'
 
     data = tool_belt.get_raw_data(file_name)
     nv_sig = data['nv_sig']

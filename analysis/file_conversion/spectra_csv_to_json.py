@@ -25,7 +25,6 @@ def convert_single_file(folder, file):
     for line in range(2, len(data)):
         wavelength_list.append(float(data[line][0]))
         counts_list.append(int(data[line][1]))
-
     json_dict = {'wavelengths': wavelength_list,
                  'wavelengths-units': 'nm',
                  'counts': counts_list

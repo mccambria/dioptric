@@ -611,7 +611,6 @@ def main_with_cxn(
     if save_data and not opti_unnecessary:
 
         timestamp = tool_belt.get_time_stamp()
-
         rawData = {
             "timestamp": timestamp,
             "nv_sig": nv_sig,

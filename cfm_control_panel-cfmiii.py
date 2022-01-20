@@ -62,11 +62,11 @@ def do_image_sample(nv_sig, apd_indices):
     #num_steps = 150
     # num_steps = 135
     # num_steps = 120
-    num_steps =111
+    # num_steps =111
     #num_steps=81
     # num_steps = 81
     # num_steps = 61
-    #num_steps = 31
+    num_steps = 31
     # num_steps = 21
 
     # For now we only support square scans so pass scan_range twice
@@ -246,13 +246,13 @@ if __name__ == "__main__":
             
         
         # Operations that don't need an NV
-        #tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
 
 
         #do_optimize(nv_sig, apd_indices)
-        #do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)
         # do_stationary_count(nv_sig, apd_indices)
         
@@ -273,17 +273,17 @@ if __name__ == "__main__":
             #positive and negative X line scans
             
             
-            do_SPaCE(nv_sig, nv_sig,100,201 , None, 
-                [[0.830+offset_x, offset_y,offset_z ], [1.030+offset_x, offset_y,offset_z]], None, offset_list, 2)
+            # do_SPaCE(nv_sig, nv_sig,100,201 , None, 
+            #     [[0.830+offset_x, offset_y,offset_z ], [1.030+offset_x, offset_y,offset_z]], None, offset_list, 2)
             
-            do_SPaCE(nv_sig, nv_sig, 100,201 , None, 
-                      [[-0.830+offset_x, offset_y,offset_z ], [-1.03+offset_x, offset_y,offset_z]], None, offset_list, 2)
+            # do_SPaCE(nv_sig, nv_sig, 100,201 , None, 
+            #           [[-0.830+offset_x, offset_y,offset_z ], [-1.03+offset_x, offset_y,offset_z]], None, offset_list, 2)
             
             
             # # 2D scans
             img_range_2D = [2.2, 2.2, 0]
-            do_SPaCE(nv_sig, nv_sig, 2, 111, 111, #10 nm steps
-                          None,  img_range_2D,offset_list)
+            # do_SPaCE(nv_sig, nv_sig, 2, 111, 111, #10 nm steps
+            #               None,  img_range_2D,offset_list)
             
             # img_range_2D = [1.2,0, 2]
             # do_SPaCE(nv_sig, nv_sig, 2, 61, 81, 
