@@ -15,6 +15,10 @@ import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
 import utils.common as common
 import json
+from mpl_toolkits.axes_grid1.anchored_artists import (
+    AnchoredSizeBar as scale_bar,
+)
+from colorutils import Color
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import matplotlib.image as mpimg
@@ -81,13 +85,17 @@ def relaxation_high_func(t, gamma, omega, infid):
     return first_term + second_term + third_term
 
 
-def get_ref_range(data):
+def get_ref_range(ref_files, path_from_nvdata):
 
-    sig_counts = numpy.array(data["sig_counts"])
-    ref_counts = numpy.array(data["ref_counts"])
-    avg_ref = numpy.average(ref_counts[::])
-    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-    return [avg_sig_counts[0] / avg_ref, avg_sig_counts[-1] / avg_ref]
+    ref_range = []
+    for el in ref_files:
+        data = tool_belt.get_raw_data(el, path_from_nvdata)
+        sig_counts = numpy.array(data["sig_counts"])
+        ref_counts = numpy.array(data["ref_counts"])
+        avg_ref = numpy.average(ref_counts[::])
+        avg_sig_counts = numpy.average(sig_counts[::], axis=0)
+        ref_range.append(avg_sig_counts[0] / avg_ref)
+    return ref_range
 
 
 def exp_eq(t, rate, amp):
@@ -98,150 +106,42 @@ def exp_eq_offset(t, rate, amp, offset):
     return amp * numpy.exp(-rate * t) + offset
 
 
-def subtraction_plot(ax, analysis_file_path):
-    """
-    This is adapted from Aedan's function of the same name in
-    analysis/Paper Figures\Magnetically Forbidden Rate/supplemental_figures.py
-    """
-
-    with open(analysis_file_path) as file:
-        data = json.load(file)
-
-        zero_relaxation_counts = data["zero_relaxation_counts"]
-        zero_relaxation_ste = numpy.array(data["zero_relaxation_ste"])
-        zero_zero_time = data["zero_zero_time"]
-
-        plus_relaxation_counts = data["plus_relaxation_counts"]
-        plus_relaxation_ste = numpy.array(data["plus_relaxation_ste"])
-        plus_plus_time = data["plus_plus_time"]
-
-        omega_opti_params = data["omega_opti_params"]
-        gamma_opti_params = data["gamma_opti_params"]
-        manual_offset_gamma = data["manual_offset_gamma"]
-
-    zero_zero_time = numpy.array(zero_zero_time)
-    try:
-        times_15 = numpy.where(zero_zero_time > 15.0)[0][0]
-    except:
-        times_15 = None
-    color = "#FF9933"
-    facecolor = "#FFCC33"
-    ax.scatter(
-        zero_zero_time[:times_15],
-        zero_relaxation_counts[:times_15],
-        label=r"$F_{\Omega}$",
-        zorder=5,
-        marker="^",
-        s=ms ** 2,
-        color=color,
-        facecolor=facecolor,
-    )
-    zero_time_linspace = numpy.linspace(0, 15.0, num=1000)
-    ax.plot(
-        zero_time_linspace,
-        exp_eq(zero_time_linspace, *omega_opti_params),
-        color=color,
-        linewidth=lw,
-    )
-
-    omega_patch = mlines.Line2D(
-        [],
-        [],
-        label=r"$F_{\Omega}$",
-        linewidth=lw,
-        marker="^",
-        markersize=ms,
-        color=color,
-        markerfacecolor=facecolor,
-    )
-
-    plus_plus_time = numpy.array(plus_plus_time)
-    try:
-        times_15 = numpy.where(plus_plus_time > 15.0)[0][0]
-    except:
-        times_15 = None
-    x_clip = numpy.array(plus_plus_time[:times_15])
-    y_clip = numpy.array(plus_relaxation_counts[:times_15])
-    # mask = numpy.array([el.is_integer() for el in x_clip])
-    # ax.scatter(x_clip[mask], y_clip[mask])
-    color = "#993399"
-    facecolor = "#CC99CC"
-    ax.scatter(
-        x_clip,
-        y_clip,
-        label=r"$F_{\gamma}$",
-        zorder=5,
-        marker="o",
-        s=ms ** 2,
-        color=color,
-        facecolor=facecolor,
-    )
-    plus_time_linspace = numpy.linspace(0, 15.0, num=1000)
-    gamma_rate = gamma_opti_params[0]
-    gamma_opti_params[0] = gamma_rate
-    gamma_opti_params_offset = gamma_opti_params + [manual_offset_gamma]
-    ax.plot(
-        plus_time_linspace,
-        exp_eq_offset(plus_time_linspace, *gamma_opti_params_offset),
-        color=color,
-        linewidth=lw,
-    )
-
-    # ax.tick_params(which = 'both', length=8, width=2, colors='k',
-    #             direction='in',grid_alpha=0.7)
-    ax.set_xlabel(r"Wait time $\tau$ (ms)")
-    ax.set_ylabel("Subtraction curve (arb. units)")
-    ax.set_xlim(-0.5, 15.5)
-    ax.set_yscale("log")
-
-    gamma_patch = mlines.Line2D(
-        [],
-        [],
-        label=r"$F_{\gamma}$",
-        linewidth=lw,
-        marker="o",
-        markersize=ms,
-        color=color,
-        markerfacecolor=facecolor,
-    )
-    # ax.legend(handles=[omega_patch, gamma_patch], handlelength=lw)
-    ax.legend(handleheight=1.6, handlelength=0.6)
-
-    trans = ax.transAxes
-    # trans = ax.get_figure().transFigure  # 0.030, 0.46
-    ax.text(-0.15, 1.05, "(c)", transform=trans, color="black", fontsize=18)
-
-
 # %% Main
 
 
-def main(data_sets):
+def main(data_sets, image_files):
 
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
-    fig = plt.figure(figsize=(6.75, 7.5))
-    gs = gridspec.GridSpec(2, 2, width_ratios=[2, 3])
+    fig = plt.figure(figsize=(6.5, 7))
+    grid_columns = 16
+    half_grid_columns = grid_columns // 2
+    gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1, 1))
+
+    first_row_sep_ind = 7
 
     # %% Level structure
 
     # Add a new axes, make it invisible, steal its rect
-    ax = fig.add_subplot(gs[0, 0])
+    ax = fig.add_subplot(gs[0, 0:first_row_sep_ind])
     ax.set_axis_off()
     ax.text(
-        -0.43, 1.05, "(a)", transform=ax.transAxes, color="black", fontsize=18
+        0,  # -0.43,
+        0.95,
+        "(a)",
+        transform=ax.transAxes,
+        color="black",
+        fontsize=18,
     )
 
-    ax = plt.Axes(fig, [-0.03, 0.51, 0.5, 0.43])
-    ax.set_axis_off()
-    fig.add_axes(ax)
-    # print(gs)
-    # fig.add_axes(gs[0, 0])
-    # ax = fig.add_subplot(gs[0, 0])
+    if False:
 
-    # ax = axes_pack[0]
-    # ax.set_axis_off()
-    file = "/run/media/mccambria/Barracuda/acer2-2019-2020/lab/bulk_dq_relaxation/figures_revision2/main1/level_structure.png"
-    img = mpimg.imread(file)
-    img_plot = ax.imshow(img)
+        ax = plt.Axes(fig, [0.0, 0.2, 0.5, 0.43])
+        ax.set_axis_off()
+        fig.add_axes(ax)
+
+        level_structure_file = "/run/media/mccambria/Barracuda/acer2-2019-2020/lab/bulk_dq_relaxation/figures_revision2/main1/level_structure.png"
+        img = mpimg.imread(level_structure_file)
+        _ = ax.imshow(img)
 
     # l, b, w, h = ax.get_position().bounds
     # ax.set_position([l, b -1.0, w, h])
@@ -250,11 +150,29 @@ def main(data_sets):
 
     # %% Relaxation out of plots
 
-    ax = fig.add_subplot(gs[0, 1])
+    temps = [el["temp"] for el in data_sets]
+
+    min_temp = min(temps)
+    max_temp = max(temps)
+    temp_range = max_temp - min_temp
+    normalized_temps = [(val - min_temp) / temp_range for val in temps]
+    cmap = matplotlib.cm.get_cmap("coolwarm")
+    # Trim the alpha value and convert from 0:1 to 0:255
+    colors_rgb = [
+        [255 * el for el in cmap(val)[0:3]] for val in normalized_temps
+    ]
+    colors_Color = [Color(tuple(el)) for el in colors_rgb]
+    colors_hex = [val.hex for val in colors_Color]
+    colors_hsv = [val.hsv for val in colors_Color]
+    facecolors_hsv = [(el[0], 0.3 * el[1], 1.2 * el[2]) for el in colors_hsv]
+    facecolors_Color = [Color(hsv=el) for el in facecolors_hsv]
+    facecolors_hex = [val.hex for val in facecolors_Color]
+
+    ax = fig.add_subplot(gs[0, first_row_sep_ind:])
     # ax = axes_pack[1]
 
     ax.set_xlabel(r"Wait time $\tau$ (ms)")
-    ax.set_ylabel("Fluorescence (arb. units)")
+    ax.set_ylabel("Normalized fluorescence")
     ax.set_xticks([0, 5, 10, 15])
 
     times = [0.0, 15.0]
@@ -267,8 +185,10 @@ def main(data_sets):
         raw_decay = tool_belt.get_raw_data(
             data_set["decay_file"], path_from_nvdata
         )
-        # ref_range = get_ref_range(data_set["zero_ref_file"], data_set["unity_ref_file"])
-        ref_range = [0.7, 1.0]
+        ref_files = [data_set["zero_ref_file"], data_set["unity_ref_file"]]
+        # ref_range = get_ref_range(ref_files, path_from_nvdata)
+        # MCC remove this after single NV data
+        ref_range = [0.65, 0.99]
 
         signal_decay, ste_decay, times_decay = process_raw_data(
             raw_decay, ref_range
@@ -278,8 +198,8 @@ def main(data_sets):
             smooth_t, data_set["gamma"], data_set["Omega"], 0.0
         )
 
-        color = "#0D83C5"
-        facecolor = "#56B4E9"
+        color = colors_hex[ind]
+        facecolor = facecolors_hex[ind]
         label = "Relaxation \nout of {}".format(r"$\ket{0}$")
         patch = mlines.Line2D(
             [],
@@ -299,7 +219,7 @@ def main(data_sets):
         ax.scatter(
             times_decay[:times_15],
             signal_decay[:times_15],
-            label=data_set["temp"],
+            label="{} K".format(data_set["temp"]),
             zorder=5,
             marker="o",
             color=color,
@@ -307,16 +227,119 @@ def main(data_sets):
             s=ms ** 2,
         )
 
-    ax.text(
-        -0.25, 1.05, "(b)", transform=ax.transAxes, color="black", fontsize=18
-    )
+    ax.legend()
+    # ax.text(0, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18)
+
+    # l, b, w, h = ax.get_position().bounds
+    # ax.set_position([l - 0.01, b, w, h])
 
     # %% Sample plots
 
+    centers = [[30, 30], [100, 90], [50, 50]]
+    fig_labels = [r"(c)", r"(d)"]
+    sample_labels = ["Sample A", "Sample B", "Sample C"]
+
+    for ind in range(len(image_files)):
+
+        ax = fig.add_subplot(
+            gs[1, half_grid_columns * ind : half_grid_columns * (ind + 1)]
+        )
+        # ax.set_axis_off()
+        name = image_files[ind]
+
+        # Load the data from the file
+        data = tool_belt.get_raw_data(name)
+
+        # Build the image array from the data
+        # Not sure why we're doing it this way...
+        img_array = []
+        try:
+            file_img_array = data["img_array"]
+        except:
+            file_img_array = data["imgArray"]
+        for line in file_img_array:
+            img_array.append(line)
+
+        # Get the readout in s
+        readout = float(data["readout"]) / 10 ** 9
+
+        try:
+            xScanRange = data["x_range"]
+            yScanRange = data["y_range"]
+        except:
+            xScanRange = data["xScanRange"]
+            yScanRange = data["yScanRange"]
+
+        kcps_array = (numpy.array(img_array) / 1000) / readout
+
+        # Scaling
+        scale = 15  # 35  # galvo scaling in microns / volt, MCC correct?
+        num_steps = kcps_array.shape[0]
+        v_resolution = xScanRange / num_steps  # resolution in volts / pixel
+        resolution = v_resolution * scale  # resolution in microns / pixel
+        px_per_micron = 1 / resolution
+
+        # Plot 5 um out from center in any direction
+        center = centers[ind]
+        clip_range = 2 * px_per_micron
+        x_clip = [center[0] - clip_range, center[0] + clip_range]
+        x_clip = [int(el) for el in x_clip]
+        y_clip = [center[1] - clip_range, center[1] + clip_range]
+        y_clip = [int(el) for el in y_clip]
+        # print((x_clip[1] - x_clip[0]) * v_resolution)
+        print(x_clip)
+        print(y_clip)
+        clip_array = kcps_array[x_clip[0] : x_clip[1], y_clip[0] : y_clip[1]]
+        img = ax.imshow(clip_array, cmap="inferno", interpolation="none")
+        ax.set_axis_off()
+        # plt.axis("off")
+
+        # Scale bar
+        # trans = ax.transData
+        # bar_text = r"2 $\upmu$m "  # Insufficient left padding...
+        # bar = scale_bar(
+        #     trans,
+        #     1 * px_per_micron,
+        #     bar_text,
+        #     "upper right",
+        #     size_vertical=int(num_steps / 100),
+        #     pad=0.25,
+        #     borderpad=0.5,
+        #     sep=4.0,
+        #     # frameon=False, color='white',
+        # )
+        # ax.add_artist(bar)
+
+        # Labels
+        fig_label = fig_labels[ind]
+        ax.text(
+            0.035,
+            0.88,
+            fig_label,
+            transform=ax.transAxes,
+            color="white",
+            fontsize=20,
+        )
+        sample_label = sample_labels[ind]
+        ax.text(
+            0.035,
+            0.07,
+            sample_label,
+            transform=ax.transAxes,
+            color="white",
+            fontsize=18,
+        )
+        # cbar = plt.colorbar(img)
+
     # %% Wrap up
 
-    fig.tight_layout(pad=0.5)
+    shift = 0.103
+    gs.tight_layout(fig, pad=0.3, w_pad=-2.50)
+    # gs.tight_layout(fig, pad=0.4, h_pad=0.5, w_pad=0.5, rect=[0, 0, 1, 1])
+    # fig.tight_layout(pad=0.5)
     # fig.tight_layout()
+    # plt.margins(0, 0)
+    # fig.subplots_adjust(hspace=0.5, wspace=0.5)
 
 
 # %% Run
@@ -352,8 +375,14 @@ if __name__ == "__main__":
         "gamma": 71.51,
     }
 
-    data_sets = [data_a, data_b]
+    decay_data_sets = [data_a, data_b]
 
-    main(data_sets)
+    # 60 x 60, 0.2 x 0.2
+    sample_image_files = [
+        "2022_01_01-22_45_57-wu-nv6_2021_12_25",  # Sample A, Wu
+        "2021_05_19-11_44_47-hopper-nv1_2021_03_16",  # Sample B, Hopper
+    ]
+
+    main(decay_data_sets, sample_image_files)
 
     plt.show(block=True)
