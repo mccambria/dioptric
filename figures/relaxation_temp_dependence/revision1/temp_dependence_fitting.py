@@ -71,7 +71,7 @@ qutrit_max_face_color = "#e5e667"
 qutrit_max_edge_color = "#bcbd22"
 
 figsize = [6.4, 4.8]  # default
-figsize = [0.7 * el for el in figsize]
+# figsize = [0.7 * el for el in figsize]
 
 sample_column_title = "Sample"
 skip_column_title = "Skip"
@@ -540,6 +540,7 @@ def main(
     rate_range=None,
     xscale="linear",
     yscale="linear",
+    dosave=False,
 ):
 
     # %% Setup
@@ -811,8 +812,8 @@ def main(
             label = samples[ind]
             if label == "PRResearch":
                 label = "[1]"
-            else:
-                label = "New results"
+            # else:
+            #     label = "New results"
             patch = mlines.Line2D(
                 [],
                 [],
@@ -824,7 +825,8 @@ def main(
                 label=label,
             )
             sample_patches.append(patch)
-        x_loc = 0.16
+        x_loc = 0.14
+        # x_loc = 0.16
         # x_loc = 0.22
         ax.legend(
             handles=sample_patches,
@@ -839,6 +841,18 @@ def main(
     if plot_type == "T2_max":
         ax.legend()
 
+    timestamp = tool_belt.get_time_stamp()
+    datestamp = timestamp.split("-")[0]
+    file_name = "{}-{}-{}".format(datestamp, plot_type, yscale)
+    nvdata_dir = common.get_nvdata_dir()
+    file_path = str(
+        nvdata_dir
+        / "paper_materials"
+        / "relaxation_temp_dependence"
+        / file_name
+    )
+    tool_belt.save_figure(fig, file_path)
+
 
 # %% Run the file
 
@@ -848,18 +862,18 @@ if __name__ == "__main__":
     tool_belt.init_matplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    # plot_type = "rates"
+    plot_type = "rates"
     # plot_type = "ratios"
     # plot_type = 'ratio_fits'
     # plot_type = 'residuals'
-    plot_type = "T2_max"
+    # plot_type = "T2_max"
 
     rates_to_plot = "both"
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    # temp_range = [0, 500]
-    temp_range = [80, 500]
+    temp_range = [0, 500]
+    # temp_range = [80, 500]
     xscale = "linear"
     # temp_range = [1, 500]
     # xscale = "log"
@@ -885,8 +899,8 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    # plot_types = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]  # Rates
-    plot_types = [[[-1, 6], "linear"], [[1e-3, 10], "log"]]  # T2_max
+    plot_types = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]  # Rates
+    # plot_types = [[[-1, 6], "linear"], [[1e-3, 10], "log"]]  # T2_max
     for el in plot_types:
         y_range, yscale = el
         main(
@@ -898,6 +912,7 @@ if __name__ == "__main__":
             y_range,
             xscale,
             yscale,
+            dosave=False,
         )
 
     # # process_to_plot = 'Walker'

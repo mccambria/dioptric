@@ -442,7 +442,10 @@ def process_laser_seq(
                     processed_train.append((dur, LOW))
                     continue
                 if dur < 75:
-                    raise ValueError("Feedthrough lasers do not support pulses shorter than 100 ns.")
+                    raise ValueError(
+                        "Feedthrough lasers do not support pulses shorter than"
+                        " 100 ns."
+                    )
                 processed_train.append((20, HIGH))
                 processed_train.append((dur - 20, LOW))
         # Digital, no feedthrough, do nothing
@@ -1198,7 +1201,7 @@ def get_time_stamp():
     Get a formatted timestamp for file names and metadata.
 
     Returns:
-        string: <year>-<month>-<day>_<hour>-<minute>-<second>
+        string: <year>_<month>_<day>-<hour>_<minute>_<second>
     """
 
     timestamp = str(datetime.datetime.now())

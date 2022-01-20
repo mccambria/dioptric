@@ -38,11 +38,11 @@ from utils.tool_belt import States
 # %% Functions
 
 
-def unpack_interleave(data, num_runs=None):
+def unpack_interleave(data, start_run=0, stop_run=None):
     """
     Save the interleaved data into separate files and plots for each
-    experiment. If num_runs is not None, then only process the first
-    specified number of runs.
+    experiment. Processes the data between start_run: stop_run. If stop_run is
+    None, processes all fully completed runs.
     """
 
     sig_counts_master_list = data["sig_counts_master_list"]
@@ -53,8 +53,9 @@ def unpack_interleave(data, num_runs=None):
     tau_master_list = data["tau_master_list"]
     nv_sig = data["nv_sig"]
     gate_time = nv_sig["spin_readout_dur"]
-    if num_runs is None:
-        num_runs = data["run_ind"] + 1
+    if stop_run is None:
+        stop_run = data["run_ind"] + 1
+    num_runs = stop_run - start_run
     sig_counts_master_list = data["sig_counts_master_list"]
     avg_sig_counts_master_list = []
     avg_ref_counts_master_list = []
@@ -67,8 +68,8 @@ def unpack_interleave(data, num_runs=None):
         ref_counts = ref_counts_master_list[exp_ind]
 
         # Clip according to the number of completed runs
-        sig_counts = sig_counts[0:num_runs][:]
-        ref_counts = ref_counts[0:num_runs][:]
+        sig_counts = sig_counts[start_run:stop_run][:]
+        ref_counts = ref_counts[start_run:stop_run][:]
 
         avg_sig_counts = numpy.average(sig_counts, axis=0)
         avg_ref_counts = numpy.average(ref_counts, axis=0)
@@ -738,8 +739,8 @@ def main_with_cxn(
 if __name__ == "__main__":
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
-    folder = "wu-nv3_2021_12_03-295K-2"
+    folder = "wu-nv6_2021_12_25-150K"
     file_name = "incremental"
     data = tool_belt.get_raw_data(file_name, path + folder)
 
-    unpack_interleave(data, None)
+    unpack_interleave(data)

@@ -343,7 +343,7 @@ def get_data_lists(folder_name):
         except Exception:
             print("Skipping {}".format(str(file)))
             continue
-    splitting_MHz = 232
+
     omega_exp_list = [
         zero_zero_counts,
         zero_zero_ste,
@@ -742,22 +742,22 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
 if __name__ == "__main__":
 
-    temp = 250
+    temp = 150
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print('good times in ms')
-    print('Omega: {}'.format(4000/(3*est_omega)))
-    print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
-    # print('Omega: {}'.format(est_omega))
-    # print('gamma: {}'.format(est_gamma))
-    sys.exit()
+    # est_omega = omega_calc(temp)
+    # est_gamma = gamma_calc(temp)
+    # print('good times in ms')
+    # print('Omega: {}'.format(4000/(3*est_omega)))
+    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
+    # # print('Omega: {}'.format(est_omega))
+    # # print('gamma: {}'.format(est_gamma))
+    # sys.exit()
 
     plt.ion()
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
     folders = [
-        "wu-nv3_2021_12_03-{}K-3".format(temp),
+        "wu-nv6_2021_12_25-{}K".format(temp),
     ]
 
     for folder in folders:
