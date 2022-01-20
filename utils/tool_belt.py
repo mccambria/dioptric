@@ -104,106 +104,115 @@ def set_xyz(cxn, coords):
     time.sleep(0.002)
 
 
-def set_xyz_step(cxn, coords):
-    xy_dtype = eval(
-        get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
-    )
-    z_dtype = eval(
-        get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
-    )
+def set_xyz_ramp(cxn, coords):
+    xy_dtype = get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
+    z_dtype = get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
     # Get the min step size
-    step_size_xy = eval(
-        get_registry_entry(
-            cxn, "xy_incremental_step_size", ["", "Config", "Positioning"]
-        )
-    )
-    step_size_z = eval(
-        get_registry_entry(
-            cxn, "z_incremental_step_size", ["", "Config", "Positioning"]
-        )
-    )
+    step_size_xy = get_registry_entry(
+            cxn, "xy_incremental_step_size", ["", "Config", "Positioning"])
+    step_size_z = get_registry_entry(
+            cxn, "z_incremental_step_size", ["", "Config", "Positioning"])
     # Get the delay between movements
     try:
-        xy_delay = eval(
-            get_registry_entry(cxn, "xy_delay", ["", "Config", "Positioning"])
-        )
+        xy_delay = get_registry_entry(cxn, "xy_delay", ["", "Config", "Positioning"])
+
     except Exception:
-        xy_delay = eval(
-            get_registry_entry(
+        xy_delay = get_registry_entry(
                 cxn,
-                "xy_small_response_delay",  # AG Eventually pahse out large angle response
+                "xy_large_response_delay",  # AG Eventually pahse out large angle response
                 ["", "Config", "Positioning"],
             )
-        )
 
-    z_delay = eval(
-        get_registry_entry(cxn, "z_delay", ["", "Config", "Positioning"])
-    )
+    z_delay = get_registry_entry(cxn, "z_delay", ["", "Config", "Positioning"])
+
     # Take whichever one is longer
     if xy_delay > z_delay:
-        movement_delay = xy_delay
+        total_movement_delay = xy_delay
     else:
-        movement_delay = z_delay
-
+        total_movement_delay = z_delay
+        
     xyz_server = get_xyz_server(cxn)
 
     # if the movement type is int, just skip this and move to the desired position
     if xy_dtype is int or z_dtype is int:
         set_xyz(cxn, coords)
         return
-
+    
     # Get current and final position
     current_x, current_y = xyz_server.read_xy()
     current_z = xyz_server.read_z()
     final_x, final_y, final_z = coords
-
-    num_steps_x = numpy.ceil(abs(final_x - current_x) / step_size_xy)
-    num_steps_y = numpy.ceil(abs(final_y - current_y) / step_size_xy)
-    num_steps_z = numpy.ceil(abs(final_z - current_z) / step_size_z)
-
-    max_steps = max([num_steps_x, num_steps_y, num_steps_z])
-    x_points = [current_x]
-    y_points = [current_y]
-    z_points = [current_z]
-
-    # set up the voltages to step thru. Once x, y, or z reach their final
-    # value, just pass the final position for the remaining steps
-    for n in range(max_steps):
-        if n > num_steps_x - 1:
-            x_points.append(final_x)
-        else:
-            move_x = (n + 1) * step_size_xy
-            incr_x_val = move_x + current_x
-            x_points.append(incr_x_val)
-
-        if n > num_steps_y - 1:
-            y_points.append(final_y)
-        else:
-            move_y = (n + 1) * step_size_xy
-            incr_y_val = move_y + current_y
-            y_points.append(incr_y_val)
-
-        if n > num_steps_z - 1:
-            z_points.append(final_z)
-        else:
-            move_z = (n + 1) * step_size_z
-            incr_z_val = move_z + current_z
-            z_points.append(incr_z_val)
-
-    # Run a simple clock pulse repeatedly to move through votlages
-    file_name = "simple_clock.py"
-    seq_args = [movement_delay]
-    seq_args_string = encode_seq_args(seq_args)
-    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-    period = ret_vals[0]
-
-    xyz_server.load_arb_scan_xyz(x_points, x_points, z_points, int(period))
-    cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-    cxn.pulse_streamer.stream_start(max_steps)
+    
+    dx = final_x - current_x
+    dy = final_y - current_y
+    dz = final_z - current_z
+    # print('dx: {}'.format(dx))
+    # print('dy: {}'.format(dy))
+    
+    #If we are moving a distance smaller than the step size,
+     #just set the coords, don't try to run a sequence
+     
+    if abs(dx) <= step_size_xy and \
+        abs(dy) <= step_size_xy and \
+        abs(dz) <= step_size_z:
+            # print('just setting coords without ramp')
+            set_xyz(cxn, coords)
+      
+    else:          
+        # Determine num of steps to get to final destination based on step size
+        num_steps_x = numpy.ceil(abs(dx) / step_size_xy)
+        num_steps_y = numpy.ceil(abs(dy) / step_size_xy)
+        num_steps_z = numpy.ceil(abs(dz) / step_size_z)
+        
+        # Determine max steps for this move
+        max_steps = int(max([num_steps_x, num_steps_y, num_steps_z]))
+        
+        # The delay between steps will be the total delay divided by the num of incr steps
+        movement_delay = int(total_movement_delay/max_steps)
+        
+        x_points = [current_x]
+        y_points = [current_y]
+        z_points = [current_z]
+    
+        # set up the voltages to step thru. Once x, y, or z reach their final
+        # value, just pass the final position for the remaining steps
+        for n in range(max_steps):
+            if n > num_steps_x - 1:
+                x_points.append(final_x)
+            else:
+                move_x = (n + 1) * step_size_xy  * dx / abs(dx)
+                incr_x_val = move_x + current_x
+                x_points.append(incr_x_val)
+    
+            if n > num_steps_y - 1:
+                y_points.append(final_y)
+            else:
+                move_y = (n + 1) * step_size_xy * dy / abs(dy)
+                incr_y_val = move_y + current_y
+                y_points.append(incr_y_val)
+    
+            if n > num_steps_z - 1:
+                z_points.append(final_z)
+            else:
+                move_z = (n + 1) * step_size_z * dz / abs(dz)
+                incr_z_val = move_z + current_z
+                z_points.append(incr_z_val)
+        # Run a simple clock pulse repeatedly to move through votlages
+        file_name = "simple_clock.py"
+        seq_args = [movement_delay]
+        seq_args_string = encode_seq_args(seq_args)
+        ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+        period = ret_vals[0]
+        # print(x_points)
+    
+        xyz_server.load_arb_scan_xyz(x_points, y_points, z_points, int(period))
+        cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+        cxn.pulse_streamer.stream_start(max_steps)
 
     # Force some delay before proceeding to account
-    # for the effective write time
-    time.sleep(0.002)
+    # for the effective write time, as well as settling time for movement
+    time.sleep(total_movement_delay/1e9)
+    
 
 
 def set_xyz_center(cxn):
@@ -561,6 +570,7 @@ def create_image_figure(
     min_value=None,
     um_scaled=False,
     aspect_ratio=None,
+    color_map = 'inferno'
 ):
     """
     Creates a figure containing a single grayscale image and a colorbar.
@@ -596,7 +606,7 @@ def create_image_figure(
     # Tell the axes to show a grayscale image
     img = ax.imshow(
         imgArray,
-        cmap="inferno",
+        cmap=color_map,
         extent=tuple(imgExtent),
         vmin=min_value,
         aspect=aspect_ratio,

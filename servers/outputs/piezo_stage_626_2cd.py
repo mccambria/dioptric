@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the Thorlabs GVS212 galvanometer. Controlled by the DAQ.
+Output server for the PI PIHera P-625.2CD objective piezo. 
 
-Created on Mon Apr  8 19:50:12 2019
+Created on Wed Nov  3 15:58:30 2021
 
-@author: mccambria
+@author: agardill
 
 ### BEGIN NODE INFO
 [info]
-name = galvo
+name = piezo_stage_626_2cd
 version = 1.0
 description =
 
@@ -18,23 +18,25 @@ timeout = 20
 
 [shutdown]
 message = 987654321
-timeout = 5
+timeout = 
 ### END NODE INFO
 """
+
 
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
+from pipython import GCSDevice
 import nidaqmx
-from nidaqmx.constants import AcquisitionType
-import nidaqmx.stream_writers as stream_writers
-import numpy
 import logging
+import numpy
+import nidaqmx.stream_writers as stream_writers
 import socket
+from pathlib import Path
 
 
-class Galvo(LabradServer):
-    name = "galvo"
+class PiezoStage(LabradServer):
+    name = "piezo_stage_626_2cd"
     pc_name = socket.gethostname()
 
     def initServer(self):
@@ -53,30 +55,99 @@ class Galvo(LabradServer):
 
     def sub_init_server_xy(self):
         """Sub-routine to be called by xyz server"""
+        self.x_last_position = None
+        self.x_current_direction = None
+        self.x_last_turning_position = None
+        self.y_last_position = None
+        self.y_current_direction = None
+        self.y_last_turning_position = None
         config = ensureDeferred(self.get_config_xy())
         config.addCallback(self.on_get_config_xy)
 
     async def get_config_xy(self):
         p = self.client.registry.packet()
+        p.cd(["", "Config", "DeviceIDs"]) # change this in registry
+        p.get("piezo_stage_626_2cd_model")
+        p.get("piezo_stage_626_2cd_serial")
+        p.cd(["", "Config", "Wiring", "Piezo_stage_E727"])
+        p.get("piezo_stage_channel_x")
+        p.get("piezo_stage_channel_y")
+        p.cd(["", "Config", "Positioning"])
+        p.get("piezo_stage_voltage_range_factor")
+        p.get("daq_voltage_range_factor")
+        p.get("piezo_stage_scaling_offset")
+        p.get("piezo_stage_scaling_gain")
         p.cd(["", "Config", "Wiring", "Daq"])
-        p.get("ao_galvo_x")
-        p.get("ao_galvo_y")
+        p.get("ao_piezo_stage_626_2cd_x")
+        p.get("ao_piezo_stage_626_2cd_y")
         p.get("di_clock")
+        # p.cd(["", "Config", "Positioning"])
+        # p.get("x_hysteresis_linearity")
+        # p.get("y_hysteresis_linearity")
         result = await p.send()
         return result["get"]
 
     def on_get_config_xy(self, config):
-        self.daq_ao_galvo_x = config[0]
-        self.daq_ao_galvo_y = config[1]
-        self.daq_di_clock = config[2]
-        # logging.debug(self.daq_di_clock)
-        logging.debug("Init complete")
+        # Load the generic device
+        gcs_dll_path = str(Path.home())
+        gcs_dll_path += "\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0"
+        gcs_dll_path += "\\servers\\outputs\\GCSTranslator\\PI_GCS2_DLL_x64.dll" 
+        
+        self.piezo = GCSDevice(devname=config[0], gcsdll=gcs_dll_path)
+        # Connect the specific device with the serial number
+        self.piezo.ConnectUSB(config[1])        
+        
+        # Just one axis for this device
+        self.axis_0 = self.piezo.axes[0] 
+        self.axis_1 = self.piezo.axes[1]
+        
+        self.piezo_stage_channel_x = config[2]
+        self.piezo_stage_channel_y = config[3]
+        
+        self.piezo_stage_voltage_range_factor = config[4]
+        self.daq_voltage_range_factor = config[5]
+        
+        self.piezo_stage_scaling_offset = config[6]
+        self.piezo_stage_scaling_gain = config[7]
+        # The command SPA allows us to rewrite volatile memory parameters.
+        # The inputs are {item ID, Parameter ID, PArameter Value}
+        
+        # First, we need to make sure the input range on the piezo stage is accepting +/-5 volts
 
-    def stopServer(self):
-        self.close_task_internal()
-
-    def load_stream_writer_xy(self, c, task_name, voltages, period, 
-                              continuous=False):
+        if self.piezo_stage_voltage_range_factor == 5.0:
+            psvrf_value = 1
+        elif self.piezo_stage_voltage_range_factor  == 10.0:
+            psvrf_value = 2
+        else:
+            logging.debug("Piezo stage voltage range factor must be either 5.0 or 10.0")
+            raise ValueError("Piezo stage voltage range factor must be either 5.0 or 10.0")
+        self.piezo.SPA(self.piezo_stage_channel_x, 0x02000100, psvrf_value)
+        self.piezo.SPA(self.piezo_stage_channel_y, 0x02000100, psvrf_value)
+        logging.debug("Piezo stage voltage range factor set to: {}".format(config[4]))
+        
+        
+        # NExt, we need to set the right scaling for the input voltage to what the controller sends the piezo stage.
+        # This is all defined in the E727 manual. The values below are for a stage
+        # that travels between 0 and 500 um, and the input signal's range matching that of the controller's range (both 5 or 10 V)
+        self.piezo.SPA(self.piezo_stage_channel_x, 0x02000200, self.piezo_stage_scaling_offset) #offset
+        self.piezo.SPA(self.piezo_stage_channel_x, 0x02000300, self.piezo_stage_scaling_gain) #gain
+        self.piezo.SPA(self.piezo_stage_channel_y, 0x02000200, self.piezo_stage_scaling_offset) #offset
+        self.piezo.SPA(self.piezo_stage_channel_y, 0x02000300, self.piezo_stage_scaling_gain) #gain
+        logging.debug("Piezo stage scaling OFFSET set to: {}".format(self.piezo_stage_scaling_offset))
+        logging.debug("Piezo stage scaling GAIN set to: {}".format(config[7]))
+        
+        # Finally, internally connect the controller's X/Y axis to the incomming signal on channels 4/5
+        self.piezo.SPA(self.axis_0, 0x06000500, self.piezo_stage_channel_x)  # Axis 0 will be controlled by channel 4
+        self.piezo.SPA(self.axis_1, 0x06000500, self.piezo_stage_channel_y)  # Axis 0 will be controlled by channel 5
+        logging.debug("Piezo axis {} connected to channel {}".format(self.axis_0, self.piezo_stage_channel_x))
+        logging.debug("Piezo axis {} connected to channel {}".format(self.axis_1, self.piezo_stage_channel_y))
+        
+        self.daq_ao_piezo_stage_x = config[8]
+        self.daq_ao_piezo_stage_y = config[9]
+        self.daq_di_clock = config[10]
+        logging.debug("Init Complete")
+# %%
+    def load_stream_writer_xy(self, c, task_name, voltages, period):
 
         # Close the existing task if there is one
         if self.task is not None:
@@ -91,14 +162,31 @@ class Galvo(LabradServer):
         # Create a new task
         task = nidaqmx.Task(task_name)
         self.task = task
+        
+        
 
         # Set up the output channels
-        task.ao_channels.add_ao_voltage_chan(
-            self.daq_ao_galvo_x, min_val=-10.0, max_val=10.0
+        # task.ao_channels.add_ao_voltage_chan(
+        #     self.daq_ao_piezo_stage_x, min_val=-self.daq_voltage_range_factor, 
+        #                                 max_val=self.daq_voltage_range_factor
+        # )
+        # task.ao_channels.add_ao_voltage_chan(
+        #     self.daq_ao_piezo_stage_y, min_val=-self.daq_voltage_range_factor, 
+        #                                 max_val=self.daq_voltage_range_factor
+        # )
+        
+        channel_0 =task.ao_channels.add_ao_voltage_chan(
+            self.daq_ao_piezo_stage_x, min_val=-self.daq_voltage_range_factor, 
+                                        max_val=self.daq_voltage_range_factor
         )
-        task.ao_channels.add_ao_voltage_chan(
-            self.daq_ao_galvo_y, min_val=-10.0, max_val=10.0
+        channel_1 =task.ao_channels.add_ao_voltage_chan(
+            self.daq_ao_piezo_stage_y, min_val=-self.daq_voltage_range_factor, 
+                                        max_val=self.daq_voltage_range_factor
         )
+        
+        # Set the daq reference value to either 5 or 10 V
+        channel_0.ao_dac_ref_val = self.daq_voltage_range_factor
+        channel_1.ao_dac_ref_val = self.daq_voltage_range_factor
 
         # Set up the output stream
         output_stream = nidaqmx.task.OutStream(task)
@@ -108,17 +196,11 @@ class Galvo(LabradServer):
         # The frequency specified is just the max expected rate in this case.
         # We'll stop once we've run all the samples.
         freq = float(1 / (period * (10 ** -9)))  # freq in seconds as a float
-        if continuous:
-            task.timing.cfg_samp_clk_timing(
-                freq, source=self.daq_di_clock, 
-                samps_per_chan=num_stream_voltages,
-                sample_mode=AcquisitionType.CONTINUOUS,
-            )
-        else:
-            task.timing.cfg_samp_clk_timing(
-                freq, source=self.daq_di_clock, 
-                samps_per_chan=num_stream_voltages
-            )
+  
+        task.timing.cfg_samp_clk_timing(
+            freq, source=self.daq_di_clock, 
+            samps_per_chan=num_stream_voltages
+        )
 
         writer.write_many_sample(stream_voltages)
 
@@ -134,52 +216,52 @@ class Galvo(LabradServer):
             self.task = None
         return 0
 
-    @setting(0, xVoltage="v[]", yVoltage="v[]")
+    @setting(32,  xVoltage="v[]", yVoltage="v[]")
     def write_xy(self, c, xVoltage, yVoltage):
-        """Write the specified voltages to the galvo.
-
-        Params
-            xVoltage: float
-                Voltage to write to the x channel
-            yVoltage: float
-                Voltage to write to the y channel
-        """
+        """Write the specified x and y voltages to the piezo stage"""
 
         # Close the stream task if it exists
         # This can happen if we quit out early
         if self.task is not None:
             self.close_task_internal()
 
+
         with nidaqmx.Task() as task:
             # Set up the output channels
-            task.ao_channels.add_ao_voltage_chan(
-                self.daq_ao_galvo_x, min_val=-10.0, max_val=10.0
+            channel_0 = task.ao_channels.add_ao_voltage_chan(
+                self.daq_ao_piezo_stage_x, min_val=-self.daq_voltage_range_factor,
+                                        max_val=self.daq_voltage_range_factor
             )
-            task.ao_channels.add_ao_voltage_chan(
-                self.daq_ao_galvo_y, min_val=-10.0, max_val=10.0
+        
+            channel_1 = task.ao_channels.add_ao_voltage_chan(
+                self.daq_ao_piezo_stage_y, min_val=-self.daq_voltage_range_factor, 
+                                        max_val=self.daq_voltage_range_factor
             )
+            
+            channel_0.ao_dac_ref_val = self.daq_voltage_range_factor
+            channel_1.ao_dac_ref_val = self.daq_voltage_range_factor
+            
             task.write([xVoltage, yVoltage])
 
-    @setting(1, returns="*v[]")
+    @setting(31, returns="*v[]")
     def read_xy(self, c):
-        """Return the current voltages on the x and y channels.
-
-        Returns
-            list(float)
-                Current voltages on the x and y channels
-
-        """
+        """Return the current voltages on the piezo's DAQ channels"""
         with nidaqmx.Task() as task:
             # Set up the internal channels - to do: actual parsing...
-            if self.daq_ao_galvo_x == "dev1/AO0":
+            if self.daq_ao_piezo_stage_x == "dev1/AO0":
                 chan_name = "dev1/_ao0_vs_aognd"
-            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=-10.0, max_val=10.0)
-            if self.daq_ao_galvo_y == "dev1/AO1":
+            task.ai_channels.add_ai_voltage_chan(chan_name, 
+                                     min_val=-self.daq_voltage_range_factor, 
+                                     max_val=self.daq_voltage_range_factor)
+            if self.daq_ao_piezo_stage_y == "dev1/AO1":
                 chan_name = "dev1/_ao1_vs_aognd"
-            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=-10.0, max_val=10.0)
+            task.ai_channels.add_ai_voltage_chan(chan_name, 
+                                     min_val=-self.daq_voltage_range_factor, 
+                                     max_val=self.daq_voltage_range_factor)
             voltages = task.read()
 
         return voltages[0], voltages[1]
+
 
     @setting(
         2,
@@ -240,7 +322,7 @@ class Galvo(LabradServer):
         y_low = y_center - half_y_range
         y_high = y_center + half_y_range
 
-        # Apply scale and offset to get the voltages we'll apply to the galvo
+        # Apply scale and offset to get the voltages we'll apply to the stage
         # Note that the polar/azimuthal angles, not the actual x/y positions
         # are linear in these voltages. For a small range, however, we don't
         # really care.
@@ -267,7 +349,8 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(c, "Galvo-load_sweep_scan_xy", voltages, period)
+        # logging.debug(voltages)
+        self.load_stream_writer_xy(c, "Piezo_stage-load_sweep_scan_xy", voltages, period)
 
         return x_voltages_1d, y_voltages_1d
 
@@ -319,7 +402,7 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(c, "Galvo-load_cross_scan_xy", voltages, period)
+        self.load_stream_writer_xy(c, "Piezo_stage-load_cross_scan_xy", voltages, period)
 
         return x_voltages_1d, y_voltages_1d
 
@@ -359,7 +442,7 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(c, "Galvo-load_circle_scan_xy", voltages, 
+        self.load_stream_writer_xy(c, "Piezo_stage-load_circle_scan_xy", voltages, 
                                    period, True)
 
         return x_voltages, y_voltages
@@ -404,7 +487,7 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(c, "Galvo-load_scan_x", voltages, period)
+        self.load_stream_writer_xy(c, "Piezo_stage-load_scan_x", voltages, period)
 
         return x_voltages
 
@@ -448,7 +531,7 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_voltages, y_voltages))
 
-        self.load_stream_writer_xy(c, "Galvo-load_scan_y", voltages, period)
+        self.load_stream_writer_xy(c, "Piezo_stage-load_scan_y", voltages, period)
 
         return y_voltages
 
@@ -471,12 +554,13 @@ class Galvo(LabradServer):
 
         voltages = numpy.vstack((x_points, y_points))
 
-        self.load_stream_writer_xy(c, "Galvo-load_arb_scan_xy", voltages, period)
+        self.load_stream_writer_xy(c, "Piezo_stage-load_arb_scan_xy", voltages, period)
 
         return
 
 
-__server__ = Galvo()
+
+__server__ = PiezoStage()
 
 if __name__ == "__main__":
     from labrad import util

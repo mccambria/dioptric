@@ -34,22 +34,23 @@ def get_seq(pulse_streamer, config, args):
     # Unpack the durations
     initialization_time, pulse_time, readout_time = durations
     
-    movement_delay = args[3]
+    incr_movement_delay = args[3]
+    settling_time = args[4]
                 
-    aom_ao_589_pwr = args[4]
+    aom_ao_589_pwr = args[5]
 
     # Get the APD index
-    apd_index = args[5]
+    apd_index = args[6]
 
-    init_color = args[6]
-    pulse_color = args[7]
-    read_color = args[8]
+    init_color = args[7]
+    pulse_color = args[8]
+    read_color = args[9]
     
-    movement_incr = args[9]
+    movement_incr = args[10]
     
    # compare objective peizo delay (make this more general)
     # galvo_move_time = config['Positioning']['xy_large_response_delay']
-    movement_delay = numpy.int64(movement_delay)
+    incr_movement_delay = numpy.int64(incr_movement_delay)
     
     # Get what we need out of the wiring dictionary
     pulser_wiring = config['Wiring']['PulseStreamer']
@@ -71,11 +72,11 @@ def get_seq(pulse_streamer, config, args):
     
 #    We're going to readout the entire sequence, including the clock pulse
     period = total_laser_delay + initialization_time + pulse_time + readout_time \
-        + 2 * (movement_delay + 100) * movement_incr + 100
+        + 2 * ((incr_movement_delay + 100) * movement_incr + settling_time) + 100
     
     # %% Define the sequence
 
-    movement_delay_train = [((movement_delay + 100) * movement_incr, LOW)]
+    movement_delay_train = [((incr_movement_delay + 100) * movement_incr + settling_time, LOW)]
 
     seq = Sequence()
     
@@ -94,11 +95,11 @@ def get_seq(pulse_streamer, config, args):
     # the tagger misses some of the gate open/close clicks
     train = [(total_laser_delay + initialization_time+ 100, LOW)]
     for i in range(movement_incr):
-        train.extend([(100, HIGH), (movement_delay, LOW)])
-    train.extend([(pulse_time, LOW)])
+        train.extend([(100, HIGH), (incr_movement_delay, LOW)])
+    train.extend([(settling_time + pulse_time, LOW)])
     for i in range(movement_incr):
-        train.extend([(100, HIGH), (movement_delay, LOW)])
-    train.extend([(readout_time, LOW), (100, HIGH), (100, LOW)]) 
+        train.extend([(100, HIGH), (incr_movement_delay, LOW)])
+    train.extend([(settling_time + readout_time, LOW), (100, HIGH), (100, LOW)]) 
     seq.setDigital(pulser_do_clock, train)
     
 #    train = [(period, HIGH)]
@@ -195,7 +196,7 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
-    # seq_args = [1000.0, 100000.0, 100000.0, 0.15, 0, 638, 532, 589]
-    seq_args = [1000.0, 1000000.0, 50000000.0, 2000000.0, 0.1, 0, 515, 638, 589, 1]
+    # seq_args = [1000.0, 100000.0, 100000.0, 1e5, 1e6, 0.15, 0, 638, 532, 589, 2]
+    seq_args = [10000.0, 100000.0, 50000000.0, 4761904, 100000000, 0.15, 0, 515, 638, 589, 21]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
