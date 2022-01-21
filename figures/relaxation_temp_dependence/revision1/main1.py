@@ -113,11 +113,11 @@ def main(data_sets, image_files):
 
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
     fig = plt.figure(figsize=(6.5, 7))
-    grid_columns = 16
+    grid_columns = 20
     half_grid_columns = grid_columns // 2
     gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1, 1))
 
-    first_row_sep_ind = 7
+    first_row_sep_ind = 9
 
     # %% Level structure
 
@@ -228,14 +228,15 @@ def main(data_sets, image_files):
         )
 
     ax.legend()
-    # ax.text(0, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18)
+    fig.text(
+        -0.18, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
+    )
 
     # l, b, w, h = ax.get_position().bounds
     # ax.set_position([l - 0.01, b, w, h])
 
     # %% Sample plots
 
-    centers = [[30, 30], [100, 90], [50, 50]]
     fig_labels = [r"(c)", r"(d)"]
     sample_labels = ["Sample A", "Sample B", "Sample C"]
 
@@ -273,42 +274,45 @@ def main(data_sets, image_files):
         kcps_array = (numpy.array(img_array) / 1000) / readout
 
         # Scaling
-        scale = 15  # 35  # galvo scaling in microns / volt, MCC correct?
+        scale = 35  # 35  # galvo scaling in microns / volt, MCC correct?
         num_steps = kcps_array.shape[0]
         v_resolution = xScanRange / num_steps  # resolution in volts / pixel
         resolution = v_resolution * scale  # resolution in microns / pixel
         px_per_micron = 1 / resolution
 
         # Plot 5 um out from center in any direction
-        center = centers[ind]
-        clip_range = 2 * px_per_micron
+        center = [num_steps // 2, num_steps // 2]
+        clip_range = 5 * px_per_micron
         x_clip = [center[0] - clip_range, center[0] + clip_range]
         x_clip = [int(el) for el in x_clip]
         y_clip = [center[1] - clip_range, center[1] + clip_range]
         y_clip = [int(el) for el in y_clip]
+        neg_test = [val < 0 for val in x_clip + y_clip]
+        if True in neg_test:
+            raise ValueError("Negative value encountered in image coordinates")
         # print((x_clip[1] - x_clip[0]) * v_resolution)
-        print(x_clip)
-        print(y_clip)
         clip_array = kcps_array[x_clip[0] : x_clip[1], y_clip[0] : y_clip[1]]
+        print(numpy.array(kcps_array).shape)
+        print(numpy.array(clip_array).shape)
         img = ax.imshow(clip_array, cmap="inferno", interpolation="none")
         ax.set_axis_off()
         # plt.axis("off")
 
         # Scale bar
-        # trans = ax.transData
-        # bar_text = r"2 $\upmu$m "  # Insufficient left padding...
-        # bar = scale_bar(
-        #     trans,
-        #     1 * px_per_micron,
-        #     bar_text,
-        #     "upper right",
-        #     size_vertical=int(num_steps / 100),
-        #     pad=0.25,
-        #     borderpad=0.5,
-        #     sep=4.0,
-        #     # frameon=False, color='white',
-        # )
-        # ax.add_artist(bar)
+        trans = ax.transData
+        bar_text = r"2 $\upmu$m "  # Insufficient left padding...
+        bar = scale_bar(
+            trans,
+            2 * px_per_micron,
+            bar_text,
+            "upper right",
+            size_vertical=int(num_steps / 100),
+            pad=0.25,
+            borderpad=0.5,
+            sep=4.0,
+            # frameon=False, color='white',
+        )
+        ax.add_artist(bar)
 
         # Labels
         fig_label = fig_labels[ind]
@@ -379,7 +383,7 @@ if __name__ == "__main__":
 
     # 60 x 60, 0.2 x 0.2
     sample_image_files = [
-        "2022_01_01-22_45_57-wu-nv6_2021_12_25",  # Sample A, Wu
+        "2022_01_20-22_48_34-wu-nv6_2021_12_25",  # Sample A, Wu
         "2021_05_19-11_44_47-hopper-nv1_2021_03_16",  # Sample B, Hopper
     ]
 
