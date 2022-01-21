@@ -23,6 +23,10 @@ import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import matplotlib.image as mpimg
 import matplotlib.gridspec as gridspec
+from figures.relaxation_temp_dependence.revision1.temp_dependence_fitting import (
+    omega_calc,
+    gamma_calc,
+)
 
 ms = 7
 lw = 1.75
@@ -106,6 +110,15 @@ def exp_eq_offset(t, rate, amp, offset):
     return amp * numpy.exp(-rate * t) + offset
 
 
+def zero_to_one_threshold(val):
+    if val < 0:
+        return 0
+    elif val > 1:
+        return 1
+    else:
+        return val
+
+
 # %% Main
 
 
@@ -113,11 +126,11 @@ def main(data_sets, image_files):
 
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
     fig = plt.figure(figsize=(6.5, 7))
-    grid_columns = 20
+    grid_columns = 30
     half_grid_columns = grid_columns // 2
     gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1, 1))
 
-    first_row_sep_ind = 9
+    first_row_sep_ind = 14
 
     # %% Level structure
 
@@ -133,9 +146,9 @@ def main(data_sets, image_files):
         fontsize=18,
     )
 
-    if False:
+    if True:
 
-        ax = plt.Axes(fig, [0.0, 0.2, 0.5, 0.43])
+        ax = plt.Axes(fig, [-0.06, 0.5, 0.5, 0.43])
         ax.set_axis_off()
         fig.add_axes(ax)
 
@@ -152,19 +165,30 @@ def main(data_sets, image_files):
 
     temps = [el["temp"] for el in data_sets]
 
-    min_temp = min(temps)
-    max_temp = max(temps)
-    temp_range = max_temp - min_temp
-    normalized_temps = [(val - min_temp) / temp_range for val in temps]
-    cmap = matplotlib.cm.get_cmap("coolwarm")
+    continuous_colormap = False
+    if continuous_colormap:
+        min_temp = min(temps)
+        max_temp = max(temps)
+        temp_range = max_temp - min_temp
+        normalized_temps = [(val - min_temp) / temp_range for val in temps]
+        # adjusted_temps = [normalized_temps[0], ]
+        cmap = matplotlib.cm.get_cmap("coolwarm")
+        colors_cmap = [cmap(val) for val in normalized_temps]
+    else:
+        cmap = matplotlib.cm.get_cmap("Set1").colors
+        colors_cmap = [cmap[6], cmap[0], cmap[2], cmap[1]]
+
     # Trim the alpha value and convert from 0:1 to 0:255
-    colors_rgb = [
-        [255 * el for el in cmap(val)[0:3]] for val in normalized_temps
-    ]
+    colors_rgb = [[255 * val for val in el[0:3]] for el in colors_cmap]
     colors_Color = [Color(tuple(el)) for el in colors_rgb]
     colors_hex = [val.hex for val in colors_Color]
     colors_hsv = [val.hsv for val in colors_Color]
     facecolors_hsv = [(el[0], 0.3 * el[1], 1.2 * el[2]) for el in colors_hsv]
+    # Threshold to make sure these are valid colors
+    facecolors_hsv = [
+        (el[0], zero_to_one_threshold(el[1]), zero_to_one_threshold(el[2]))
+        for el in facecolors_hsv
+    ]
     facecolors_Color = [Color(hsv=el) for el in facecolors_hsv]
     facecolors_hex = [val.hex for val in facecolors_Color]
 
@@ -172,34 +196,57 @@ def main(data_sets, image_files):
     # ax = axes_pack[1]
 
     ax.set_xlabel(r"Wait time $\tau$ (ms)")
-    ax.set_ylabel("Normalized fluorescence")
-    ax.set_xticks([0, 5, 10, 15])
+    # ax.set_ylabel("Normalized fluorescence")
+    ax.set_ylabel(r"$\ket{+1}$ population")
 
-    times = [0.0, 15.0]
+    min_time = 0.0
+    max_time = 25.0
+    times = [min_time, max_time]
+    xtick_step = 5
+    ax.set_xticks(numpy.arange(min_time, max_time + xtick_step, xtick_step))
 
     # Plot decay curves
     for ind in range(len(data_sets)):
 
         data_set = data_sets[ind]
-        path_from_nvdata = data_set["path_from_nvdata"]
-        raw_decay = tool_belt.get_raw_data(
-            data_set["decay_file"], path_from_nvdata
-        )
-        ref_files = [data_set["zero_ref_file"], data_set["unity_ref_file"]]
-        # ref_range = get_ref_range(ref_files, path_from_nvdata)
-        # MCC remove this after single NV data
-        ref_range = [0.65, 0.99]
-
-        signal_decay, ste_decay, times_decay = process_raw_data(
-            raw_decay, ref_range
-        )
-        smooth_t = numpy.linspace(times[0], times[-1], 1000)
-        fit_decay = relaxation_high_func(
-            smooth_t, data_set["gamma"], data_set["Omega"], 0.0
-        )
-
         color = colors_hex[ind]
         facecolor = facecolors_hex[ind]
+        temp = data_set["temp"]
+        path_from_nvdata = data_set["path_from_nvdata"]
+        if path_from_nvdata is not None:
+            raw_decay = tool_belt.get_raw_data(
+                data_set["decay_file"], path_from_nvdata
+            )
+            ref_files = [data_set["zero_ref_file"], data_set["unity_ref_file"]]
+            # ref_range = get_ref_range(ref_files, path_from_nvdata)
+            # MCC remove this after single NV data
+            ref_range = [0.65, 0.99]
+
+            signal_decay, ste_decay, times_decay = process_raw_data(
+                raw_decay, ref_range
+            )
+            try:
+                times_clip = numpy.where(times_decay > max_time)[0][0]
+            except:
+                times_clip = None
+            ax.scatter(
+                times_decay[:times_clip],
+                signal_decay[:times_clip],
+                label="{} K".format(temp),
+                zorder=5,
+                marker="o",
+                color=color,
+                facecolor=facecolor,
+                s=ms ** 2,
+            )
+
+        smooth_t = numpy.linspace(times[0], times[-1], 1000)
+        # gamma = data_set["Omega"]
+        # Omega = data_set["Omega"]
+        # MCC make sure these values are up to date
+        gamma = gamma_calc(temp)
+        Omega = omega_calc(temp)
+        fit_decay = relaxation_high_func(smooth_t, gamma, Omega, 0.0)
         label = "Relaxation \nout of {}".format(r"$\ket{0}$")
         patch = mlines.Line2D(
             [],
@@ -212,24 +259,10 @@ def main(data_sets, image_files):
             markersize=ms,
         )
         ax.plot(smooth_t, fit_decay, color=color, linewidth=lw)
-        try:
-            times_15 = numpy.where(times_decay > 15.0)[0][0]
-        except:
-            times_15 = None
-        ax.scatter(
-            times_decay[:times_15],
-            signal_decay[:times_15],
-            label="{} K".format(data_set["temp"]),
-            zorder=5,
-            marker="o",
-            color=color,
-            facecolor=facecolor,
-            s=ms ** 2,
-        )
 
     ax.legend()
     fig.text(
-        -0.18, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
+        -0.19, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
     )
 
     # l, b, w, h = ax.get_position().bounds
@@ -280,9 +313,9 @@ def main(data_sets, image_files):
         resolution = v_resolution * scale  # resolution in microns / pixel
         px_per_micron = 1 / resolution
 
-        # Plot 5 um out from center in any direction
+        # Plot several um out from center in any direction
         center = [num_steps // 2, num_steps // 2]
-        clip_range = 5 * px_per_micron
+        clip_range = 7 * px_per_micron
         x_clip = [center[0] - clip_range, center[0] + clip_range]
         x_clip = [int(el) for el in x_clip]
         y_clip = [center[1] - clip_range, center[1] + clip_range]
@@ -292,8 +325,8 @@ def main(data_sets, image_files):
             raise ValueError("Negative value encountered in image coordinates")
         # print((x_clip[1] - x_clip[0]) * v_resolution)
         clip_array = kcps_array[x_clip[0] : x_clip[1], y_clip[0] : y_clip[1]]
-        print(numpy.array(kcps_array).shape)
-        print(numpy.array(clip_array).shape)
+        # print(numpy.array(kcps_array).shape)
+        # print(numpy.array(clip_array).shape)
         img = ax.imshow(clip_array, cmap="inferno", interpolation="none")
         ax.set_axis_off()
         # plt.axis("off")
@@ -355,33 +388,47 @@ if __name__ == "__main__":
     # plt.rcParams.update({'font.size': 18})  # Increase font size
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    # nvdata_dir = common.get_nvdata_dir()
+    # +1 decay curves
+    decay_data_sets = [
+        {
+            "temp": 300,
+            "path_from_nvdata": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/hopper-nv1_2021_03_16-300K/",
+            "decay_file": "2021_05_11-21_11_55-hopper-nv1_2021_03_16",  # high to high
+            "unity_ref_file": "2021_05_11-21_11_47-hopper-nv1_2021_03_16",  # zero to zero
+            "zero_ref_file": "2021_05_11-21_11_53-hopper-nv1_2021_03_16",  # zero to high
+            "Omega": 59.87,
+            "gamma": 131.57,
+        },
+        {
+            "temp": 250,
+            "path_from_nvdata": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/hopper-nv1_2021_03_16-250K/",
+            "decay_file": "2021_05_12-18_41_17-hopper-nv1_2021_03_16",  # high to high
+            "unity_ref_file": "2021_05_12-18_41_10-hopper-nv1_2021_03_16",  # zero to zero
+            "zero_ref_file": "2021_05_12-18_41_12-hopper-nv1_2021_03_16",  # zero to high
+            "Omega": 28.53,
+            "gamma": 71.51,
+        },
+        {
+            "temp": 200,
+            "path_from_nvdata": None,
+            "decay_file": None,
+            "unity_ref_file": None,
+            "zero_ref_file": None,
+            "Omega": None,
+            "gamma": None,
+        },
+        {
+            "temp": 150,
+            "path_from_nvdata": None,
+            "decay_file": None,
+            "unity_ref_file": None,
+            "zero_ref_file": None,
+            "Omega": None,
+            "gamma": None,
+        },
+    ]
 
-    # Data set a: room temp (300 K)
-    data_a = {
-        "temp": 300,
-        "path_from_nvdata": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/hopper-nv1_2021_03_16-300K/",
-        "decay_file": "2021_05_11-21_11_55-hopper-nv1_2021_03_16",  # high to high
-        "unity_ref_file": "2021_05_11-21_11_47-hopper-nv1_2021_03_16",  # zero to zero
-        "zero_ref_file": "2021_05_11-21_11_53-hopper-nv1_2021_03_16",  # zero to high
-        "Omega": 59.87,
-        "gamma": 131.57,
-    }
-
-    # Data set b: 250 K data
-    data_b = {
-        "temp": 250,
-        "path_from_nvdata": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/hopper-nv1_2021_03_16-250K/",
-        "decay_file": "2021_05_12-18_41_17-hopper-nv1_2021_03_16",  # high to high
-        "unity_ref_file": "2021_05_12-18_41_10-hopper-nv1_2021_03_16",  # zero to zero
-        "zero_ref_file": "2021_05_12-18_41_12-hopper-nv1_2021_03_16",  # zero to high
-        "Omega": 28.53,
-        "gamma": 71.51,
-    }
-
-    decay_data_sets = [data_a, data_b]
-
-    # 60 x 60, 0.2 x 0.2
+    # 90 x 90, 0.5 x 0.5
     sample_image_files = [
         "2022_01_20-22_48_34-wu-nv6_2021_12_25",  # Sample A, Wu
         "2021_05_19-11_44_47-hopper-nv1_2021_03_16",  # Sample B, Hopper
