@@ -24,7 +24,7 @@ import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import matplotlib.image as mpimg
 import matplotlib.gridspec as gridspec
-from figures.relaxation_temp_dependence.temp_dependence_fitting import (
+from figures.relaxation_temp_dependence.revision1.temp_dependence_fitting import (
     omega_calc,
     gamma_calc,
 )
@@ -135,7 +135,7 @@ def main(data_sets, image_files):
     nvdata_dir = common.get_nvdata_dir()
 
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
-    fig = plt.figure(figsize=(6.5, 7.5))
+    fig = plt.figure(figsize=(6.5, 7))
     grid_columns = 30
     half_grid_columns = grid_columns // 2
     gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1, 1))
@@ -148,7 +148,7 @@ def main(data_sets, image_files):
     ax = fig.add_subplot(gs[0, 0:first_row_sep_ind])
     ax.set_axis_off()
     ax.text(
-        0,
+        0,  # -0.43,
         0.95,
         "(a)",
         transform=ax.transAxes,
@@ -163,10 +163,15 @@ def main(data_sets, image_files):
         fig.add_axes(ax)
         level_structure_file = (
             nvdata_dir
-            / "paper_materials/relaxation_temp_dependence/figures/level_structure.png"
+            / "paper_materials/relaxation_temp_dependence/figures/revision1/level_structure.png"
         )
         img = mpimg.imread(level_structure_file)
         _ = ax.imshow(img)
+
+    # l, b, w, h = ax.get_position().bounds
+    # ax.set_position([l, b -1.0, w, h])
+    # ax.set_axis_off()
+    # ax.axis('off')
 
     # %% Relaxation out of plots
 
@@ -279,30 +284,108 @@ def main(data_sets, image_files):
         -0.19, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
     )
 
-    # %% Experimental layout
+    # l, b, w, h = ax.get_position().bounds
+    # ax.set_position([l - 0.01, b, w, h])
 
-    # Add a new axes, make it invisible, steal its rect
-    ax = fig.add_subplot(gs[1, :])
-    ax.set_axis_off()
-    fig.text(
-        0,
-        0.95,
-        "(c)",
-        transform=ax.transAxes,
-        color="black",
-        fontsize=18,
-    )
+    # %% Sample plots
 
-    draft_version = True
-    if draft_version:
-        ax.set_axis_off()
-        fig.add_axes(ax)
-        level_structure_file = (
-            nvdata_dir
-            / "paper_materials/relaxation_temp_dependence/figures/experimental_layout_simplified.png"
+    fig_labels = [r"(c)", r"(d)"]
+    sample_labels = ["Sample A", "Sample B", "Sample C"]
+
+    for ind in range(len(image_files)):
+
+        ax = fig.add_subplot(
+            gs[1, half_grid_columns * ind : half_grid_columns * (ind + 1)]
         )
-        img = mpimg.imread(level_structure_file)
-        _ = ax.imshow(img)
+        # ax.set_axis_off()
+        name = image_files[ind]
+
+        # Load the data from the file
+        data = tool_belt.get_raw_data(name)
+
+        # Build the image array from the data
+        # Not sure why we're doing it this way...
+        img_array = []
+        try:
+            file_img_array = data["img_array"]
+        except:
+            file_img_array = data["imgArray"]
+        for line in file_img_array:
+            img_array.append(line)
+
+        # Get the readout in s
+        readout = float(data["readout"]) / 10 ** 9
+
+        try:
+            xScanRange = data["x_range"]
+            yScanRange = data["y_range"]
+        except:
+            xScanRange = data["xScanRange"]
+            yScanRange = data["yScanRange"]
+
+        kcps_array = (numpy.array(img_array) / 1000) / readout
+
+        # Scaling
+        scale = 35  # 35  # galvo scaling in microns / volt, MCC correct?
+        num_steps = kcps_array.shape[0]
+        v_resolution = xScanRange / num_steps  # resolution in volts / pixel
+        resolution = v_resolution * scale  # resolution in microns / pixel
+        px_per_micron = 1 / resolution
+
+        # Plot several um out from center in any direction
+        center = [num_steps // 2, num_steps // 2]
+        clip_range = 7 * px_per_micron
+        x_clip = [center[0] - clip_range, center[0] + clip_range]
+        x_clip = [int(el) for el in x_clip]
+        y_clip = [center[1] - clip_range, center[1] + clip_range]
+        y_clip = [int(el) for el in y_clip]
+        neg_test = [val < 0 for val in x_clip + y_clip]
+        if True in neg_test:
+            raise ValueError("Negative value encountered in image coordinates")
+        # print((x_clip[1] - x_clip[0]) * v_resolution)
+        clip_array = kcps_array[x_clip[0] : x_clip[1], y_clip[0] : y_clip[1]]
+        # print(numpy.array(kcps_array).shape)
+        # print(numpy.array(clip_array).shape)
+        img = ax.imshow(clip_array, cmap="inferno", interpolation="none")
+        ax.set_axis_off()
+        # plt.axis("off")
+
+        # Scale bar
+        trans = ax.transData
+        bar_text = r"2 $\upmu$m "  # Insufficient left padding...
+        bar = scale_bar(
+            trans,
+            2 * px_per_micron,
+            bar_text,
+            "upper right",
+            size_vertical=int(num_steps / 100),
+            pad=0.25,
+            borderpad=0.5,
+            sep=4.0,
+            # frameon=False, color='white',
+        )
+        ax.add_artist(bar)
+
+        # Labels
+        fig_label = fig_labels[ind]
+        ax.text(
+            0.035,
+            0.88,
+            fig_label,
+            transform=ax.transAxes,
+            color="white",
+            fontsize=20,
+        )
+        sample_label = sample_labels[ind]
+        ax.text(
+            0.035,
+            0.07,
+            sample_label,
+            transform=ax.transAxes,
+            color="white",
+            fontsize=18,
+        )
+        # cbar = plt.colorbar(img)
 
     # %% Wrap up
 
