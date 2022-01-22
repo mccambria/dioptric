@@ -146,15 +146,15 @@ def main(data_sets, image_files):
         fontsize=18,
     )
 
-    if True:
-
+    try:
         ax = plt.Axes(fig, [-0.06, 0.5, 0.5, 0.43])
         ax.set_axis_off()
         fig.add_axes(ax)
-
         level_structure_file = "/run/media/mccambria/Barracuda/acer2-2019-2020/lab/bulk_dq_relaxation/figures_revision2/main1/level_structure.png"
         img = mpimg.imread(level_structure_file)
         _ = ax.imshow(img)
+    except Exception as exc:
+        print(exc)
 
     # l, b, w, h = ax.get_position().bounds
     # ax.set_position([l, b -1.0, w, h])
@@ -175,8 +175,9 @@ def main(data_sets, image_files):
         cmap = matplotlib.cm.get_cmap("coolwarm")
         colors_cmap = [cmap(val) for val in normalized_temps]
     else:
-        cmap = matplotlib.cm.get_cmap("Set1").colors
-        colors_cmap = [cmap[6], cmap[0], cmap[2], cmap[1]]
+        set1 = matplotlib.cm.get_cmap("Set1").colors
+        set2 = matplotlib.cm.get_cmap("Dark2").colors
+        colors_cmap = [set1[6], set1[0], set2[5], set1[2], set1[1]]
 
     # Trim the alpha value and convert from 0:1 to 0:255
     colors_rgb = [[255 * val for val in el[0:3]] for el in colors_cmap]
@@ -200,7 +201,7 @@ def main(data_sets, image_files):
     ax.set_ylabel(r"$\ket{+1}$ population")
 
     min_time = 0.0
-    max_time = 25.0
+    max_time = 15.0
     times = [min_time, max_time]
     xtick_step = 5
     ax.set_xticks(numpy.arange(min_time, max_time + xtick_step, xtick_step))
@@ -391,6 +392,24 @@ if __name__ == "__main__":
     # +1 decay curves
     decay_data_sets = [
         {
+            "temp": 400,
+            "path_from_nvdata": None,
+            "decay_file": None,
+            "unity_ref_file": None,
+            "zero_ref_file": None,
+            "Omega": None,
+            "gamma": None,
+        },
+        {
+            "temp": 350,
+            "path_from_nvdata": None,
+            "decay_file": None,
+            "unity_ref_file": None,
+            "zero_ref_file": None,
+            "Omega": None,
+            "gamma": None,
+        },
+        {
             "temp": 300,
             "path_from_nvdata": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/hopper-nv1_2021_03_16-300K/",
             "decay_file": "2021_05_11-21_11_55-hopper-nv1_2021_03_16",  # high to high
@@ -410,15 +429,6 @@ if __name__ == "__main__":
         },
         {
             "temp": 200,
-            "path_from_nvdata": None,
-            "decay_file": None,
-            "unity_ref_file": None,
-            "zero_ref_file": None,
-            "Omega": None,
-            "gamma": None,
-        },
-        {
-            "temp": 150,
             "path_from_nvdata": None,
             "decay_file": None,
             "unity_ref_file": None,
