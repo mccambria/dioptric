@@ -70,7 +70,7 @@ qubit_max_edge_color = "#1f77b4"
 qutrit_max_face_color = "#e5e667"
 qutrit_max_edge_color = "#bcbd22"
 
-figsize = [6.4, 4.8]  # default
+figsize = [6.5, 5.0]  # default
 # figsize = [0.7 * el for el in figsize]
 
 sample_column_title = "Sample"
