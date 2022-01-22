@@ -228,20 +228,26 @@ def main(data_sets, image_files):
             signal_decay, ste_decay, times_decay = process_raw_data(
                 raw_decay, ref_range
             )
+            # Clip anything beyond 15 ms
             try:
                 times_clip = numpy.where(times_decay > max_time)[0][0]
             except:
                 times_clip = None
-            ax.scatter(
-                times_decay[:times_clip],
-                signal_decay[:times_clip],
-                label="{} K".format(temp),
-                zorder=5,
-                marker="o",
-                color=color,
-                facecolor=facecolor,
-                s=ms ** 2,
-            )
+            times_decay = times_decay[:times_clip]
+            signal_decay = signal_decay[:times_clip]
+        else:
+            times_decay = [0]
+            signal_decay = [1.0]
+        ax.scatter(
+            times_decay,
+            signal_decay,
+            label="{} K".format(temp),
+            zorder=5,
+            marker="o",
+            color=color,
+            facecolor=facecolor,
+            s=ms ** 2,
+        )
 
         smooth_t = numpy.linspace(times[0], times[-1], 1000)
         # gamma = data_set["Omega"]
