@@ -13,6 +13,7 @@ import numpy
 import matplotlib
 import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
+import majorroutines.rabi as rabi
 import utils.common as common
 import json
 from mpl_toolkits.axes_grid1.anchored_artists import (
@@ -70,6 +71,10 @@ def process_raw_data(data, ref_range):
 
 def relaxation_zero_func(t, gamma, omega, infid):
 
+    # Times are in ms, but rates are in s^-1
+    gamma /= 1000
+    omega /= 1000
+
     return (1 / 3) + (2 / 3) * numpy.exp(-3 * omega * t)
 
 
@@ -89,16 +94,19 @@ def relaxation_high_func(t, gamma, omega, infid):
     return first_term + second_term + third_term
 
 
-def get_ref_range(ref_files, path_from_nvdata):
+def get_ref_range(rabi_file):
 
-    ref_range = []
-    for el in ref_files:
-        data = tool_belt.get_raw_data(el, path_from_nvdata)
-        sig_counts = numpy.array(data["sig_counts"])
-        ref_counts = numpy.array(data["ref_counts"])
-        avg_ref = numpy.average(ref_counts[::])
-        avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-        ref_range.append(avg_sig_counts[0] / avg_ref)
+    # Take the low reference range to be the value after 1 perfect pi pulse as calculated from the fit.
+    # Assume the pi pulses are nice enough for the high reference range to be 1 with no infidelity.
+    data = tool_belt.get_raw_data(rabi_file)
+    norm_avg_sig = data["norm_avg_sig"]
+    uwave_time_range = data["uwave_time_range"]
+    num_steps = data["num_steps"]
+    fit_func, popt = rabi.fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    rabi_period = 1 / popt[1]
+    pi_pulse = rabi_period / 2
+    ref_range = [fit_func(pi_pulse, *popt), 1.0]
+    # print(ref_range)
     return ref_range
 
 
@@ -148,15 +156,17 @@ def main(data_sets, image_files):
         fontsize=18,
     )
 
-    try:
-        ax = plt.Axes(fig, [-0.06, 0.5, 0.5, 0.43])
+    draft_version = True
+    if draft_version:
+        ax = plt.Axes(fig, [-0.05, 0.5, 0.5, 0.43])
         ax.set_axis_off()
         fig.add_axes(ax)
-        level_structure_file = "/run/media/mccambria/Barracuda/acer2-2019-2020/lab/bulk_dq_relaxation/figures_revision2/main1/level_structure.png"
+        level_structure_file = (
+            nvdata_dir
+            / "paper_materials/relaxation_temp_dependence/figures/revision1/level_structure.png"
+        )
         img = mpimg.imread(level_structure_file)
         _ = ax.imshow(img)
-    except Exception as exc:
-        print(exc)
 
     # l, b, w, h = ax.get_position().bounds
     # ax.set_position([l, b -1.0, w, h])
@@ -215,15 +225,13 @@ def main(data_sets, image_files):
         color = colors_hex[ind]
         facecolor = facecolors_hex[ind]
         temp = data_set["temp"]
-        path_from_nvdata = data_set["path_from_nvdata"]
-        if path_from_nvdata is not None:
-            raw_decay = tool_belt.get_raw_data(
-                data_set["decay_file"], path_from_nvdata
-            )
-            ref_files = [data_set["zero_ref_file"], data_set["unity_ref_file"]]
-            # ref_range = get_ref_range(ref_files, path_from_nvdata)
+        if not data_set["skip"]:
+            raw_decay = tool_belt.get_raw_data(data_set["decay_file"])
+            ref_range = get_ref_range(data_set["rabi_file"])
+            # print(ref_range)
             # MCC remove this after single NV data
-            ref_range = [0.65, 0.99]
+            # ref_range = [0.65, 0.99]
+            # ref_range = [0.5, 0.99]
 
             signal_decay, ste_decay, times_decay = process_raw_data(
                 raw_decay, ref_range
@@ -403,16 +411,15 @@ if __name__ == "__main__":
     decay_data_sets = [
         {
             "temp": 400,
-            "path_from_nvdata": None,
+            "skip": True,
             "decay_file": None,
-            "unity_ref_file": None,
-            "zero_ref_file": None,
+            "rabi_file": None,
             "Omega": None,
             "gamma": None,
         },
         {
             "temp": 350,
-            "path_from_nvdata": None,
+            "skip": True,
             "decay_file": None,
             "unity_ref_file": None,
             "zero_ref_file": None,
@@ -421,28 +428,25 @@ if __name__ == "__main__":
         },
         {
             "temp": 300,
-            "path_from_nvdata": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/hopper-nv1_2021_03_16-300K/",
-            "decay_file": "2021_05_11-21_11_55-hopper-nv1_2021_03_16",  # -1 to -1
-            "unity_ref_file": "2021_05_11-21_11_47-hopper-nv1_2021_03_16",  # 0 to 0
-            "zero_ref_file": "2021_05_11-21_11_53-hopper-nv1_2021_03_16",  # 0 to -1
+            "skip": True,
+            "decay_file": None,
+            "rabi_file": None,
             "Omega": 59.87,
             "gamma": 131.57,
         },
         {
             "temp": 250,
-            "path_from_nvdata": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/hopper-nv1_2021_03_16-250K/",
-            "decay_file": "2021_05_12-18_41_17-hopper-nv1_2021_03_16",
-            "unity_ref_file": "2021_05_12-18_41_10-hopper-nv1_2021_03_16",
-            "zero_ref_file": "2021_05_12-18_41_12-hopper-nv1_2021_03_16",
+            "skip": True,
+            "decay_file": None,
+            "rabi_file": None,
             "Omega": 28.53,
             "gamma": 71.51,
         },
         {
             "temp": 200,
-            "path_from_nvdata": None,
-            "decay_file": None,
-            "unity_ref_file": None,
-            "zero_ref_file": None,
+            "skip": False,
+            "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
+            "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
             "Omega": None,
             "gamma": None,
         },

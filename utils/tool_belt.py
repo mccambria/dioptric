@@ -105,23 +105,29 @@ def set_xyz(cxn, coords):
 
 
 def set_xyz_ramp(cxn, coords):
-    xy_dtype = get_registry_entry(cxn, "xy_dtype", ["", "Config", "Positioning"])
+    xy_dtype = get_registry_entry(
+        cxn, "xy_dtype", ["", "Config", "Positioning"]
+    )
     z_dtype = get_registry_entry(cxn, "z_dtype", ["", "Config", "Positioning"])
     # Get the min step size
     step_size_xy = get_registry_entry(
-            cxn, "xy_incremental_step_size", ["", "Config", "Positioning"])
+        cxn, "xy_incremental_step_size", ["", "Config", "Positioning"]
+    )
     step_size_z = get_registry_entry(
-            cxn, "z_incremental_step_size", ["", "Config", "Positioning"])
+        cxn, "z_incremental_step_size", ["", "Config", "Positioning"]
+    )
     # Get the delay between movements
     try:
-        xy_delay = get_registry_entry(cxn, "xy_delay", ["", "Config", "Positioning"])
+        xy_delay = get_registry_entry(
+            cxn, "xy_delay", ["", "Config", "Positioning"]
+        )
 
     except Exception:
         xy_delay = get_registry_entry(
-                cxn,
-                "xy_large_response_delay",  # AG Eventually pahse out large angle response
-                ["", "Config", "Positioning"],
-            )
+            cxn,
+            "xy_large_response_delay",  # AG Eventually pahse out large angle response
+            ["", "Config", "Positioning"],
+        )
 
     z_delay = get_registry_entry(cxn, "z_delay", ["", "Config", "Positioning"])
 
@@ -130,67 +136,69 @@ def set_xyz_ramp(cxn, coords):
         total_movement_delay = xy_delay
     else:
         total_movement_delay = z_delay
-        
+
     xyz_server = get_xyz_server(cxn)
 
     # if the movement type is int, just skip this and move to the desired position
     if xy_dtype is int or z_dtype is int:
         set_xyz(cxn, coords)
         return
-    
+
     # Get current and final position
     current_x, current_y = xyz_server.read_xy()
     current_z = xyz_server.read_z()
     final_x, final_y, final_z = coords
-    
+
     dx = final_x - current_x
     dy = final_y - current_y
     dz = final_z - current_z
     # print('dx: {}'.format(dx))
     # print('dy: {}'.format(dy))
-    
-    #If we are moving a distance smaller than the step size,
-     #just set the coords, don't try to run a sequence
-     
-    if abs(dx) <= step_size_xy and \
-        abs(dy) <= step_size_xy and \
-        abs(dz) <= step_size_z:
-            # print('just setting coords without ramp')
-            set_xyz(cxn, coords)
-      
-    else:          
+
+    # If we are moving a distance smaller than the step size,
+    # just set the coords, don't try to run a sequence
+
+    if (
+        abs(dx) <= step_size_xy
+        and abs(dy) <= step_size_xy
+        and abs(dz) <= step_size_z
+    ):
+        # print('just setting coords without ramp')
+        set_xyz(cxn, coords)
+
+    else:
         # Determine num of steps to get to final destination based on step size
         num_steps_x = numpy.ceil(abs(dx) / step_size_xy)
         num_steps_y = numpy.ceil(abs(dy) / step_size_xy)
         num_steps_z = numpy.ceil(abs(dz) / step_size_z)
-        
+
         # Determine max steps for this move
         max_steps = int(max([num_steps_x, num_steps_y, num_steps_z]))
-        
+
         # The delay between steps will be the total delay divided by the num of incr steps
-        movement_delay = int(total_movement_delay/max_steps)
-        
+        movement_delay = int(total_movement_delay / max_steps)
+
         x_points = [current_x]
         y_points = [current_y]
         z_points = [current_z]
-    
+
         # set up the voltages to step thru. Once x, y, or z reach their final
         # value, just pass the final position for the remaining steps
         for n in range(max_steps):
             if n > num_steps_x - 1:
                 x_points.append(final_x)
             else:
-                move_x = (n + 1) * step_size_xy  * dx / abs(dx)
+                move_x = (n + 1) * step_size_xy * dx / abs(dx)
                 incr_x_val = move_x + current_x
                 x_points.append(incr_x_val)
-    
+
             if n > num_steps_y - 1:
                 y_points.append(final_y)
             else:
                 move_y = (n + 1) * step_size_xy * dy / abs(dy)
                 incr_y_val = move_y + current_y
                 y_points.append(incr_y_val)
-    
+
             if n > num_steps_z - 1:
                 z_points.append(final_z)
             else:
@@ -204,15 +212,14 @@ def set_xyz_ramp(cxn, coords):
         ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         period = ret_vals[0]
         # print(x_points)
-    
+
         xyz_server.load_arb_scan_xyz(x_points, y_points, z_points, int(period))
         cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         cxn.pulse_streamer.stream_start(max_steps)
 
     # Force some delay before proceeding to account
     # for the effective write time, as well as settling time for movement
-    time.sleep(total_movement_delay/1e9)
-    
+    time.sleep(total_movement_delay / 1e9)
 
 
 def set_xyz_center(cxn):
@@ -547,10 +554,9 @@ def init_matplotlib(font_size=11.25):
     plt.ion()
 
     # Default latex packages
-    plt.rcParams["text.latex.preamble"] = (
-        r"\usepackage{physics} \usepackage{sfmath} \usepackage{upgreek}"
-        r" \usepackage{helvet}"
-    )
+    plt.rcParams[
+        "text.latex.preamble"
+    ] = r"\usepackage{physics} \usepackage{sfmath} \usepackage{upgreek}"
 
     plt.rcParams["font.size"] = font_size
 
@@ -570,7 +576,7 @@ def create_image_figure(
     min_value=None,
     um_scaled=False,
     aspect_ratio=None,
-    color_map = 'inferno'
+    color_map="inferno",
 ):
     """
     Creates a figure containing a single grayscale image and a colorbar.
