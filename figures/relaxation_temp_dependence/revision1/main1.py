@@ -270,6 +270,8 @@ def main(data_sets, image_files):
         ax.plot(smooth_t, fit_decay, color=color, linewidth=lw)
 
     ax.legend()
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[::-1], labels[::-1])
     fig.text(
         -0.19, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
     )
