@@ -124,6 +124,8 @@ def zero_to_one_threshold(val):
 
 def main(data_sets, image_files):
 
+    nvdata_dir = common.get_nvdata_dir()
+
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
     fig = plt.figure(figsize=(6.5, 7))
     grid_columns = 30
@@ -198,7 +200,7 @@ def main(data_sets, image_files):
 
     ax.set_xlabel(r"Wait time $\tau$ (ms)")
     # ax.set_ylabel("Normalized fluorescence")
-    ax.set_ylabel(r"$\ket{+1}$ population")
+    ax.set_ylabel(r"$\ket{-1}$ population")
 
     min_time = 0.0
     max_time = 15.0
@@ -389,7 +391,7 @@ if __name__ == "__main__":
     # plt.rcParams.update({'font.size': 18})  # Increase font size
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    # +1 decay curves
+    # -1 decay curves
     decay_data_sets = [
         {
             "temp": 400,
@@ -412,18 +414,18 @@ if __name__ == "__main__":
         {
             "temp": 300,
             "path_from_nvdata": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/hopper-nv1_2021_03_16-300K/",
-            "decay_file": "2021_05_11-21_11_55-hopper-nv1_2021_03_16",  # high to high
-            "unity_ref_file": "2021_05_11-21_11_47-hopper-nv1_2021_03_16",  # zero to zero
-            "zero_ref_file": "2021_05_11-21_11_53-hopper-nv1_2021_03_16",  # zero to high
+            "decay_file": "2021_05_11-21_11_55-hopper-nv1_2021_03_16",  # -1 to -1
+            "unity_ref_file": "2021_05_11-21_11_47-hopper-nv1_2021_03_16",  # 0 to 0
+            "zero_ref_file": "2021_05_11-21_11_53-hopper-nv1_2021_03_16",  # 0 to -1
             "Omega": 59.87,
             "gamma": 131.57,
         },
         {
             "temp": 250,
             "path_from_nvdata": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/hopper-nv1_2021_03_16-250K/",
-            "decay_file": "2021_05_12-18_41_17-hopper-nv1_2021_03_16",  # high to high
-            "unity_ref_file": "2021_05_12-18_41_10-hopper-nv1_2021_03_16",  # zero to zero
-            "zero_ref_file": "2021_05_12-18_41_12-hopper-nv1_2021_03_16",  # zero to high
+            "decay_file": "2021_05_12-18_41_17-hopper-nv1_2021_03_16",
+            "unity_ref_file": "2021_05_12-18_41_10-hopper-nv1_2021_03_16",
+            "zero_ref_file": "2021_05_12-18_41_12-hopper-nv1_2021_03_16",
             "Omega": 28.53,
             "gamma": 71.51,
         },
