@@ -22,7 +22,6 @@ timeout =
 ### END NODE INFO
 """
 
-
 from labrad.server import LabradServer
 from labrad.server import setting
 from twisted.internet.defer import ensureDeferred
@@ -70,8 +69,6 @@ class ObjectivePiezo(LabradServer):
         p.get("ao_objective_piezo")
         p.get("di_clock")
         p.cd(["", "Config", "Positioning"])
-        # p.get("z_hysteresis_a")
-        # p.get("z_hysteresis_b")
         p.get("z_hysteresis_linearity")
         result = await p.send()
         return result["get"]
@@ -89,13 +86,12 @@ class ObjectivePiezo(LabradServer):
         self.piezo.SPA(self.axis, 0x06000500, 2)  # External control mode
         self.daq_ao_objective_piezo = config[2]
         self.daq_di_clock = config[3]
-        # self.z_hysteresis_a = config[4]
-        # self.z_hysteresis_b = config[5]
         self.z_hysteresis_b = config[4]
         # Define a such that 1 nominal volt corresponds to
         # 1 post-compensation volt
         # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
         self.z_hysteresis_a = 1 - self.z_hysteresis_b
+        logging.debug(config[1])
         logging.debug("Init complete")
 
     def compensate_hysteresis_z(self, position):

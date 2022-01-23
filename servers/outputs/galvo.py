@@ -88,7 +88,6 @@ class Galvo(LabradServer):
         stream_voltages = voltages[:, 1:num_voltages]
         stream_voltages = numpy.ascontiguousarray(stream_voltages)
         num_stream_voltages = num_voltages - 1
-
         # Create a new task
         task = nidaqmx.Task(task_name)
         self.task = task
