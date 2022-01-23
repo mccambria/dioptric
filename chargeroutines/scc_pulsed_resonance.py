@@ -355,8 +355,8 @@ if __name__ == '__main__':
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
     
-    nv_sig = { 'coords': [0.027, -0.015, 47], 'name': '{}-nv6_2021_12_25'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 33,
+    nv_sig = { 'coords': [-0.013, 0.000, 0], 'name': '{}-nv6_2021_12_25'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 27,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
@@ -368,18 +368,18 @@ if __name__ == '__main__':
             # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
             
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 200,
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 300,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 500,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
             # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 700e6, "charge_readout_laser_power": 0.71,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 17e6, "charge_readout_laser_power": 1.0,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 1e9, "charge_readout_laser_power": 0.95,
+            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 17e6, "charge_readout_laser_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8025, 'rabi_LOW': 160, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9433, 'rabi_HIGH': 181.0, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.8070, 'rabi_LOW': 177.5, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9487, 'rabi_HIGH': 224.3, 'uwave_power_HIGH': 16.5}
     
     opti_nv_sig = nv_sig
     
@@ -390,9 +390,10 @@ if __name__ == '__main__':
     freq_range = 0.040
     # num_steps = 21
     num_steps = 1
-    num_reps = 400
+    # num_reps = 400
+    num_reps = 40
     # num_runs = 80
-    num_runs = 10#*4
+    num_runs = 10
     
     do_plot = False
     

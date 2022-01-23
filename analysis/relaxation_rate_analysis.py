@@ -742,7 +742,7 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
 if __name__ == "__main__":
 
-    temp = 250
+    temp = 150
 
     est_omega = omega_calc(temp)
     est_gamma = gamma_calc(temp)
@@ -757,7 +757,7 @@ if __name__ == "__main__":
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
     folders = [
-        "wu-nv3_2021_12_03-{}K-3".format(temp),
+        "wu-nv3_2021_12_03-{}K".format(temp),
     ]
 
     for folder in folders:
@@ -765,4 +765,4 @@ if __name__ == "__main__":
             path, folder, omega=None, omega_ste=None, doPlot=True, offset=False
         )
 
-    plt.show(block=True)
+    # plt.show(block=True)
