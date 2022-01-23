@@ -262,17 +262,6 @@ def main(
         gamma = gamma_calc(temp)
         Omega = omega_calc(temp)
         fit_decay = relaxation_high_func(smooth_t, gamma, Omega, 0.0)
-        label = "Relaxation \nout of {}".format(r"$\ket{0}$")
-        patch = mlines.Line2D(
-            [],
-            [],
-            label=label,
-            linewidth=lw,
-            marker="o",
-            color=color,
-            markerfacecolor=facecolor,
-            markersize=ms,
-        )
         ax.plot(smooth_t, fit_decay, color=color, linewidth=lw)
 
     ax.legend()
@@ -372,8 +361,12 @@ if __name__ == "__main__":
         {
             "temp": 200,
             "skip": False,
-            "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
-            "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
+            # 1e5 polarization
+            # "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
+            # 1e6 polarization
+            "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
+            "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             "Omega": None,
             "gamma": None,
         },
