@@ -78,7 +78,19 @@ def relaxation_zero_func(t, gamma, omega, infid):
     return (1 / 3) + (2 / 3) * numpy.exp(-3 * omega * t)
 
 
-def relaxation_high_func(t, gamma, omega, infid):
+def relaxation_high_func(t, gamma, omega):
+
+    # Times are in ms, but rates are in s^-1
+    gamma /= 1000
+    omega /= 1000
+
+    first_term = 1 / 3
+    second_term = (1 / 2) * numpy.exp(-(2 * gamma + omega) * t)
+    third_term = (-1 / 2) * (-1 / 3) * numpy.exp(-3 * omega * t)
+    return first_term + second_term + third_term
+
+
+def relaxation_high_func_infid(t, gamma, omega, infid):
 
     # Times are in ms, but rates are in s^-1
     gamma /= 1000
@@ -261,7 +273,7 @@ def main(
         # MCC make sure these values are up to date
         gamma = gamma_calc(temp)
         Omega = omega_calc(temp)
-        fit_decay = relaxation_high_func(smooth_t, gamma, Omega, 0.0)
+        fit_decay = relaxation_high_func(smooth_t, gamma, Omega)
         ax.plot(smooth_t, fit_decay, color=color, linewidth=lw)
 
     ax.legend()
