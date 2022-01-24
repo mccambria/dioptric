@@ -490,6 +490,40 @@ def process_laser_seq(
 
         pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
         seq.setAnalog(pulser_laser_mod, processed_train)
+        
+        
+def set_delays_to_zero(config):
+    """
+    Pass this a config dictionary and it'll set all the delays to zero.
+    Useful for testing sequences without having to worry about delays.
+    """
+    
+    for key in config:
+        # Check if any entries are delays and set them to 0
+        if key.endswith("delay"):
+            config[key] = 0
+            return
+        # Check if we're at a sublevel - if so, recursively set its delay to 0
+        val = config[key]
+        if type(val) is dict:
+            set_delays_to_zero(val)
+            
+            
+def set_feedthroughs_to_false(config):
+    """
+    Pass this a config dictionary and it'll set all the feedthrough arguments
+    to False
+    """
+    
+    for key in config:
+        # Check if any entries are feedthroughs and set them to False
+        if key == "feedthrough":
+            config[key] = "False"
+            return
+        # Check if we're at a sublevel - if so, run it recursively
+        val = config[key]
+        if type(val) is dict:
+            set_feedthroughs_to_false(val)
 
 
 # %% Pulse Streamer utils
