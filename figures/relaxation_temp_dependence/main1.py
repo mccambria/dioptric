@@ -45,6 +45,12 @@ def process_raw_data(data, ref_range):
     ref_counts = numpy.array(data["ref_counts"])
     time_range = numpy.array(data["relaxation_time_range"])
 
+    # _, ax = plt.subplots()
+    # counts_flatten = sig_counts[:, -3]
+    # # counts_flatten = ref_counts.flatten()
+    # bins = numpy.arange(0, max(counts_flatten) + 1, 1)
+    # ax.hist(counts_flatten, bins, density=True)
+
     # Calculate time arrays in ms
     min_time, max_time = time_range / 10 ** 6
     times = numpy.linspace(min_time, max_time, num=num_steps)
@@ -54,6 +60,7 @@ def process_raw_data(data, ref_range):
     ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof=1) / numpy.sqrt(
         num_runs
     )
+    # print(ste_sig_counts)
 
     # Assume reference is constant and can be approximated to one value
     avg_ref = numpy.average(ref_counts[::])
@@ -65,6 +72,7 @@ def process_raw_data(data, ref_range):
     # Normalize to the reference range
     diff = ref_range[1] - ref_range[0]
     norm_avg_sig = (norm_avg_sig - ref_range[0]) / diff
+    norm_avg_sig_ste /= diff
 
     return norm_avg_sig, norm_avg_sig_ste, times
 
@@ -142,10 +150,7 @@ def zero_to_one_threshold(val):
 # %% Main
 
 
-def main(
-    data_sets,
-    dosave=False,
-):
+def main(data_sets, dosave=False, draft_version=True):
 
     nvdata_dir = common.get_nvdata_dir()
 
@@ -241,7 +246,7 @@ def main(
             # print(ref_range)
             # MCC remove this after single NV data
             # ref_range = [0.65, 0.99]
-            # ref_range = [0.5, 0.99]
+            ref_range = [0.45, 0.99]
 
             signal_decay, ste_decay, times_decay = process_raw_data(
                 raw_decay, ref_range
@@ -256,23 +261,37 @@ def main(
         else:
             times_decay = [0]
             signal_decay = [1.0]
-        ax.scatter(
+            ste_decay = [0]
+        # ax.scatter(
+        #     times_decay,
+        #     signal_decay,
+        #     label="{} K".format(temp),
+        #     zorder=5,
+        #     marker="o",
+        #     color=color,
+        #     facecolor=facecolor,
+        #     s=ms ** 2,
+        # )
+        ax.errorbar(
             times_decay,
             signal_decay,
+            yerr=ste_decay,
             label="{} K".format(temp),
             zorder=5,
             marker="o",
             color=color,
-            facecolor=facecolor,
-            s=ms ** 2,
+            markerfacecolor=facecolor,
+            ms=ms,
+            linestyle="",
         )
 
         smooth_t = numpy.linspace(times[0], times[-1], 1000)
-        # gamma = data_set["Omega"]
-        # Omega = data_set["Omega"]
-        # MCC make sure these values are up to date
-        gamma = gamma_calc(temp)
-        Omega = omega_calc(temp)
+        gamma = data_set["gamma"]
+        Omega = data_set["Omega"]
+        if (gamma is None) and (Omega is None):
+            # MCC make sure these values are up to date
+            gamma = gamma_calc(temp)
+            Omega = omega_calc(temp)
         fit_decay = relaxation_high_func(smooth_t, gamma, Omega)
         ax.plot(smooth_t, fit_decay, color=color, linewidth=lw)
 
@@ -297,7 +316,6 @@ def main(
         fontsize=18,
     )
 
-    draft_version = True
     if draft_version:
         ax.set_axis_off()
         fig.add_axes(ax)
@@ -359,16 +377,20 @@ if __name__ == "__main__":
             "skip": True,
             "decay_file": None,
             "rabi_file": None,
-            "Omega": 59.87,
-            "gamma": 131.57,
+            "Omega": None,
+            "gamma": None,
+            # "Omega": 59.87,
+            # "gamma": 131.57,
         },
         {
             "temp": 250,
             "skip": True,
             "decay_file": None,
             "rabi_file": None,
-            "Omega": 28.53,
-            "gamma": 71.51,
+            "Omega": None,
+            "gamma": None,
+            # "Omega": 28.53,
+            # "gamma": 71.51,
         },
         {
             "temp": 200,
@@ -381,9 +403,11 @@ if __name__ == "__main__":
             "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             "Omega": None,
             "gamma": None,
+            # "Omega": 11,
+            # "gamma": 150,
         },
     ]
 
-    main(decay_data_sets, dosave=False)
+    main(decay_data_sets, dosave=False, draft_version=True)
 
     plt.show(block=True)
