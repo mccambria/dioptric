@@ -29,11 +29,13 @@ def get_seq(pulse_streamer, config, args):
 
     # Get the APD indices
     apd_index = args[6]
-    laser_name = args[7]
-    laser_power = args[8]
+    
     # Specify the initial and readout states
-    init_state_value = args[9]
-    read_state_value = args[10]
+    init_state_value = args[7]
+    read_state_value = args[8]
+    
+    laser_name = args[9]
+    laser_power = args[10]
     
     
     # time of illumination during which signal readout occurs
