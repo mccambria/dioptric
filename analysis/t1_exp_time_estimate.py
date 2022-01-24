@@ -91,13 +91,13 @@ num_runs = 25
 num_reps = 3000
 num_steps = 12
 min_tau = 20e3
-max_tau = int(15e6)
+max_tau = 15e6
 t1_exp_array = numpy.array([
         [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
         ], dtype=object)
 
 contrast = 0.7  # arb
-exp_count_rate = 28  # kcps
+exp_count_rate = 22  # kcps
 readout_window = 350  # ns
 overhead = 1e6  # ns, sum of polarization time, readout time, etc
 

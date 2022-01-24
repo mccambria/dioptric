@@ -485,7 +485,6 @@ def main_with_cxn(
     total_exp_time = sum(exp_time_list)
     total_exp_time_h = total_exp_time / 60  # h
 
-    # Ask to continue and timeout if no response in 2 seconds?
     print(
         " \nExpected run time for entire experiment: {:.1f} hours. ".format(
             total_exp_time_h
@@ -693,7 +692,7 @@ def main_with_cxn(
     # %% Save the data
 
     # At this point incr_data is all the data so just unpack it
-    unpack_interleave(incr_data, num_runs)
+    unpack_interleave(incr_data)
 
     endFunctionTime = time.time()
 

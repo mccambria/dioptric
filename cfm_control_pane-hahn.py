@@ -376,8 +376,8 @@ def paper_figure1_data(nv_sig, apd_indices):
     min_tau = 20e3
     max_tau = int(15e6)
     t1_exp_array = numpy.array([
-            # [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
-            [[States.ZERO, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
+            [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
+            # [[States.ZERO, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
             ], dtype=object)
 
     t1_dq_main.main(nv_sig, apd_indices, t1_exp_array, num_runs)
@@ -529,7 +529,7 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.023, -0.011, -1], 'name': '{}-nv6_2021_12_25'.format(sample_name),
+    nv_sig = { 'coords': [0.023, -0.011, 0], 'name': '{}-nv6_2021_12_25'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
