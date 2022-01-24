@@ -9,7 +9,7 @@ Created on Tue Nov 26 16:00:15 2019
 # %% Imports
 
 
-import numpy
+import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
@@ -36,54 +36,57 @@ lw = 1.75
 # %% Functions
 
 
-def process_raw_data(data, ref_range):
+def process_raw_data(data, ref_range=None):
     """Pull the relaxation signal and ste out of the raw data."""
 
     num_runs = data["num_runs"]
     num_steps = data["num_steps"]
-    sig_counts = numpy.array(data["sig_counts"])
-    ref_counts = numpy.array(data["ref_counts"])
-    time_range = numpy.array(data["relaxation_time_range"])
+    sig_counts = np.array(data["sig_counts"])
+    ref_counts = np.array(data["ref_counts"])
+    time_range = np.array(data["relaxation_time_range"])
 
     # _, ax = plt.subplots()
     # counts_flatten = sig_counts[:, -3]
     # # counts_flatten = ref_counts.flatten()
-    # bins = numpy.arange(0, max(counts_flatten) + 1, 1)
+    # bins = np.arange(0, max(counts_flatten) + 1, 1)
     # ax.hist(counts_flatten, bins, density=True)
 
     # Calculate time arrays in ms
     min_time, max_time = time_range / 10 ** 6
-    times = numpy.linspace(min_time, max_time, num=num_steps)
+    times = np.linspace(min_time, max_time, num=num_steps)
 
     # Calculate the average signal counts over the runs, and ste
-    avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof=1) / numpy.sqrt(
-        num_runs
-    )
+    start_run = None
+    stop_run = None
+    avg_sig_counts = np.average(sig_counts[start_run:stop_run, :], axis=0)
+    std_sig_counts = np.std(sig_counts[start_run:stop_run, :], axis=0, ddof=1)
+    # std_sig_counts = np.sqrt(avg_sig_counts)
+    ste_sig_counts = std_sig_counts / np.sqrt(num_runs)
     # print(ste_sig_counts)
 
     # Assume reference is constant and can be approximated to one value
-    avg_ref = numpy.average(ref_counts[::])
+    avg_ref = np.average(ref_counts[start_run:stop_run, :])
 
     # Divide signal by reference to get normalized counts and st error
     norm_avg_sig = avg_sig_counts / avg_ref
     norm_avg_sig_ste = ste_sig_counts / avg_ref
 
     # Normalize to the reference range
-    diff = ref_range[1] - ref_range[0]
-    norm_avg_sig = (norm_avg_sig - ref_range[0]) / diff
-    norm_avg_sig_ste /= diff
+    if ref_range is not None:
+        diff = ref_range[1] - ref_range[0]
+        norm_avg_sig = (norm_avg_sig - ref_range[0]) / diff
+        norm_avg_sig_ste /= diff
 
     return norm_avg_sig, norm_avg_sig_ste, times
 
 
-def relaxation_zero_func(t, gamma, omega, infid):
+def relaxation_zero_func(t, gamma, omega):
 
     # Times are in ms, but rates are in s^-1
     gamma /= 1000
     omega /= 1000
 
-    return (1 / 3) + (2 / 3) * numpy.exp(-3 * omega * t)
+    return (1 / 3) + (2 / 3) * np.exp(-3 * omega * t)
 
 
 def relaxation_high_func(t, gamma, omega):
@@ -93,24 +96,8 @@ def relaxation_high_func(t, gamma, omega):
     omega /= 1000
 
     first_term = 1 / 3
-    second_term = (1 / 2) * numpy.exp(-(2 * gamma + omega) * t)
-    third_term = (-1 / 2) * (-1 / 3) * numpy.exp(-3 * omega * t)
-    return first_term + second_term + third_term
-
-
-def relaxation_high_func_infid(t, gamma, omega, infid):
-
-    # Times are in ms, but rates are in s^-1
-    gamma /= 1000
-    omega /= 1000
-
-    first_term = (1 / 3) + (1 / 2) * ((1 - infid) ** 2) * numpy.exp(
-        -(2 * gamma + omega) * t
-    )
-    second_term = (
-        (-1 / 2) * (infid - (1 / 3)) * numpy.exp(-3 * omega * t) * (1 - infid)
-    )
-    third_term = (infid - (1 / 3)) * numpy.exp(-3 * omega * t) * infid
+    second_term = (1 / 2) * np.exp(-(2 * gamma + omega) * t)
+    third_term = (-1 / 2) * (-1 / 3) * np.exp(-3 * omega * t)
     return first_term + second_term + third_term
 
 
@@ -131,11 +118,11 @@ def get_ref_range(rabi_file):
 
 
 def exp_eq(t, rate, amp):
-    return amp * numpy.exp(-rate * t)
+    return amp * np.exp(-rate * t)
 
 
 def exp_eq_offset(t, rate, amp, offset):
-    return amp * numpy.exp(-rate * t) + offset
+    return amp * np.exp(-rate * t) + offset
 
 
 def zero_to_one_threshold(val):
@@ -231,7 +218,7 @@ def main(data_sets, dosave=False, draft_version=True):
     max_time = 15.0
     times = [min_time, max_time]
     xtick_step = 5
-    ax.set_xticks(numpy.arange(min_time, max_time + xtick_step, xtick_step))
+    ax.set_xticks(np.arange(min_time, max_time + xtick_step, xtick_step))
 
     # Plot decay curves
     for ind in range(len(data_sets)):
@@ -245,15 +232,16 @@ def main(data_sets, dosave=False, draft_version=True):
             ref_range = get_ref_range(data_set["rabi_file"])
             # print(ref_range)
             # MCC remove this after single NV data
-            # ref_range = [0.65, 0.99]
-            ref_range = [0.45, 0.99]
+            ref_range = [0.68, 1.0]
+            # ref_range = [0.68, 0.90]
+            # ref_range = None
 
             signal_decay, ste_decay, times_decay = process_raw_data(
                 raw_decay, ref_range
             )
             # Clip anything beyond 15 ms
             try:
-                times_clip = numpy.where(times_decay > max_time)[0][0]
+                times_clip = np.where(times_decay > max_time)[0][0]
             except:
                 times_clip = None
             times_decay = times_decay[:times_clip]
@@ -285,14 +273,16 @@ def main(data_sets, dosave=False, draft_version=True):
             linestyle="",
         )
 
-        smooth_t = numpy.linspace(times[0], times[-1], 1000)
+        smooth_t = np.linspace(times[0], times[-1], 1000)
         gamma = data_set["gamma"]
         Omega = data_set["Omega"]
         if (gamma is None) and (Omega is None):
             # MCC make sure these values are up to date
             gamma = gamma_calc(temp)
             Omega = omega_calc(temp)
-        fit_decay = relaxation_high_func(smooth_t, gamma, Omega)
+        print(temp, gamma, Omega)
+        # fit_decay = relaxation_high_func(smooth_t, gamma, Omega)
+        fit_decay = relaxation_zero_func(smooth_t, gamma, Omega)
         ax.plot(smooth_t, fit_decay, color=color, linewidth=lw)
 
     ax.legend()
@@ -399,12 +389,18 @@ if __name__ == "__main__":
             # "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
             # 1e6 polarization
-            "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
+            # "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # -1,-1 off resonance
+            # "decay_file": "2022_01_24-11_55_03-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # 0,0
+            "decay_file": "2022_01_24-16_25_23-wu-nv6_2021_12_25",
             "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             "Omega": None,
             "gamma": None,
             # "Omega": 11,
-            # "gamma": 150,
+            # "gamma": 40,
         },
     ]
 
