@@ -91,13 +91,18 @@ def relaxation_zero_func(t, gamma, omega):
 
 def relaxation_high_func(t, gamma, omega):
 
+    # t = np.copy(times)
+    # t += 13
+
     # Times are in ms, but rates are in s^-1
     gamma /= 1000
     omega /= 1000
 
     first_term = 1 / 3
     second_term = (1 / 2) * np.exp(-(2 * gamma + omega) * t)
+    # second_term = (2 / 3) * np.exp(-(2 * gamma + omega) * t)
     third_term = (-1 / 2) * (-1 / 3) * np.exp(-3 * omega * t)
+    # third_term = 0
     return first_term + second_term + third_term
 
 
@@ -132,6 +137,24 @@ def zero_to_one_threshold(val):
         return 1
     else:
         return val
+
+
+def test(file_a, file_b):
+
+    fig, ax = plt.subplots()
+
+    data_a = tool_belt.get_raw_data(file_a)
+    norm_avg_sig_a, norm_avg_sig_ste_a, times = process_raw_data(
+        data_a, ref_range=None
+    )
+    data_b = tool_belt.get_raw_data(file_b)
+    norm_avg_sig_b, norm_avg_sig_ste_b, times = process_raw_data(
+        data_b, ref_range=None
+    )
+
+    diff_err = np.sqrt(norm_avg_sig_ste_a ** 2 + norm_avg_sig_ste_b ** 2)
+    ax.errorbar(times, norm_avg_sig_b - norm_avg_sig_a, diff_err)
+    # ax.errorbar(times, norm_avg_sig_b, norm_avg_sig_ste_b)
 
 
 # %% Main
@@ -232,8 +255,8 @@ def main(data_sets, dosave=False, draft_version=True):
             ref_range = get_ref_range(data_set["rabi_file"])
             # print(ref_range)
             # MCC remove this after single NV data
-            ref_range = [0.68, 1.0]
-            # ref_range = [0.68, 0.90]
+            # ref_range = [0.68, 1.0]
+            ref_range = [0.68, 0.91]
             # ref_range = None
 
             signal_decay, ste_decay, times_decay = process_raw_data(
@@ -281,8 +304,8 @@ def main(data_sets, dosave=False, draft_version=True):
             gamma = gamma_calc(temp)
             Omega = omega_calc(temp)
         print(temp, gamma, Omega)
-        # fit_decay = relaxation_high_func(smooth_t, gamma, Omega)
-        fit_decay = relaxation_zero_func(smooth_t, gamma, Omega)
+        fit_decay = relaxation_high_func(smooth_t, gamma, Omega)
+        # fit_decay = relaxation_zero_func(smooth_t, gamma, Omega)
         ax.plot(smooth_t, fit_decay, color=color, linewidth=lw)
 
     ax.legend()
@@ -389,21 +412,34 @@ if __name__ == "__main__":
             # "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
             # 1e6 polarization
-            # "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
-            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
+            "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             # -1,-1 off resonance
             # "decay_file": "2022_01_24-11_55_03-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             # 0,0
-            "decay_file": "2022_01_24-16_25_23-wu-nv6_2021_12_25",
-            "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # "decay_file": "2022_01_24-16_25_23-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             "Omega": None,
             "gamma": None,
-            # "Omega": 11,
-            # "gamma": 40,
+            # "Omega": 15,
+            # "gamma": 150,
         },
     ]
 
     main(decay_data_sets, dosave=False, draft_version=True)
 
+    file_a = "2022_01_24-11_55_03-wu-nv6_2021_12_25"
+    file_b = "2022_01_24-16_25_23-wu-nv6_2021_12_25"
+    file_a = "2022_01_23-11_56_17-wu-nv6_2021_12_25"
+    file_b = "2022_01_23-14_51_37-wu-nv6_2021_12_25"
+    # test(file_a, file_b)
+
     plt.show(block=True)
+
+    # 5-10 point contrast drop within couple ms
+    # dynamics seem to resume normally afterward
+    # microwaves introduce 5-10 point heating effect with no discernible
+    #   time dependence
+    # can be subtracted out
+    #   is it background or relative
