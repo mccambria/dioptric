@@ -408,6 +408,7 @@ if __name__ == "__main__":
         {
             "temp": 200,
             "skip": False,
+            #
             # 1e5 polarization
             # "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
@@ -423,6 +424,7 @@ if __name__ == "__main__":
             # 1e5 polarization, start at 200 us
             "decay_file": "2022_01_25-06_44_38-wu-nv6_2021_12_25",
             "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            #
             "Omega": None,
             "gamma": None,
             # "Omega": 15,
