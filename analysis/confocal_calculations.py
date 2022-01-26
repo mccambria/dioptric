@@ -463,8 +463,10 @@ if __name__ == "__main__":
     # plot_psf()
     # calc_overlap_sweep()
     calc_nv_field_at_fiber(
-        collection_telescope_1_f=12.86e-3,  # 13.86e-3,
-        collection_telescope_2_f=50e-3,
+        collection_telescope_1_f=60e-3,  # 13.86e-3,
+        collection_telescope_2_f=250e-3,
+        # collection_focal_length=4.5e-3,
+        # collection_to_fiber_distance=4.5e-3,
         do_plot=True,
     )
 

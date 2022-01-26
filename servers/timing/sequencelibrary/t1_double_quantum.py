@@ -29,11 +29,13 @@ def get_seq(pulse_streamer, config, args):
 
     # Get the APD indices
     apd_index = args[6]
-    laser_name = args[7]
-    laser_power = args[8]
+    
     # Specify the initial and readout states
-    init_state_value = args[9]
-    read_state_value = args[10]
+    init_state_value = args[7]
+    read_state_value = args[8]
+    
+    laser_name = args[9]
+    laser_power = args[10]
     
     
     # time of illumination during which signal readout occurs
@@ -203,7 +205,9 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
+    tool_belt.set_delays_to_zero(config)
+    tool_belt.set_feedthroughs_to_false(config)
     
-    seq_args = [100, 1000, 100, 50, 50, 1000, 0, 'cobolt_515', None, 1, 1]
+    seq_args = [100, 1000, 100, 50, 50, 1000, 0, 1, 1, 'laserglow_532', None]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

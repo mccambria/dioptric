@@ -119,13 +119,12 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
 
     # Some initial values
     laser_name = nv_sig["imaging_laser"]
-    power_key = "imaging_laser_power"
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, "imaging_laser")
     readout = nv_sig["imaging_readout_dur"]
     total_num_samples = 2
     x_center, y_center, z_center = coords
 
-    if nv_sig["ramp_voltages"] == True:
+    if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
         tool_belt.set_xyz_ramp(cxn, [x_center, y_center, z_center])
     else:
         tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
@@ -199,7 +198,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
         half_scan_range = scan_range / 2
         z_low = z_center - half_scan_range
         start_coords = [coords[0], coords[1], z_low]
-        if nv_sig["ramp_voltages"] == True:
+        if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
             tool_belt.set_xyz_ramp(cxn, start_coords)
         else:
             tool_belt.set_xyz(cxn, start_coords)
@@ -374,7 +373,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
      """
 
     if coords is not None:
-        if nv_sig["ramp_voltages"] == True:
+        if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
             tool_belt.set_xyz_ramp(cxn, coords)
         else:
             tool_belt.set_xyz(cxn, coords)
