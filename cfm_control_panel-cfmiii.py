@@ -53,21 +53,28 @@ def do_image_sample(nv_sig, apd_indices):
     #scan_range = 0.04*scale
     #scan_range = 0.025*scale
    # scan_range = 0.01*scale
-    scan_range = 2.2
+    scan_range = 6
+    # scan_range = 2
     # scan_range = 1
     #
     # num_steps = 400
     # num_steps = 300
-    # num_steps = 200
+    # num_steps = 240
     #num_steps = 150
     # num_steps = 135
     # num_steps = 120
     # num_steps =111
     #num_steps=81
-    # num_steps = 81
-    # num_steps = 61
-    num_steps = 31
+    # num_steps = 51
+    num_steps = 61
+    # num_steps = 31
     # num_steps = 21
+    # num_steps = 11
+    
+    
+    # scan_range = 14
+    # num_steps = 175
+    
 
     # For now we only support square scans so pass scan_range twice
     image_sample_digital.main(nv_sig, scan_range, scan_range, num_steps, apd_indices)
@@ -158,19 +165,19 @@ if __name__ == "__main__":
     # apd_indices = [0,1]
 
     nd_yellow = "nd_1.0"
-    green_power = 9
-    red_power = 80
+    green_power = 10
+    red_power = 120
     sample_name = "johnson"
     green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
     nv_sig_search = {
-        "coords": [250.422+4, 250.982-4, 5],
+        "coords": [235.935, 246.763, 5],
         "name": "{}-search".format(sample_name),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate": None,
+        "expected_count_rate": 20,
         "imaging_laser": green_laser,
         "imaging_laser_power": green_power,
         "imaging_readout_dur": 1e7,
@@ -187,14 +194,12 @@ if __name__ == "__main__":
     
      
     nv_sig_1 = {
-        "coords":[250.662, 251.083, 5],
-        "name": "{}-nv0_2021_12_22".format(sample_name,),
-        #"coords":[254.928, 246.916, 5],
-       # "name": "{}-nv0_2021_12_27".format(sample_name,),
+        "coords": [235.935, 246.763, 5],
+        "name": "{}-nv5_2022_01_24".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate":30,
-        
+        "expected_count_rate":20, #35
+        "quarter_wave_plate_angle": 45,
         
         "spin_laser": green_laser,
         "spin_laser_power": green_power,
@@ -224,7 +229,7 @@ if __name__ == "__main__":
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
         "charge_readout_laser_power": 0.15,
-        "charge_readout_dur": 100e6,
+        "charge_readout_dur": 50e6,
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
@@ -247,7 +252,7 @@ if __name__ == "__main__":
         
         # Operations that don't need an NV
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
-       # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
+        # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
 
 
@@ -255,21 +260,24 @@ if __name__ == "__main__":
         do_image_sample(nv_sig, apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)
         # do_stationary_count(nv_sig, apd_indices)
-        
-        offset_x =-1-0.188+0.03+0.05
-        offset_y = -1+0.580-0.135+0.090
+        # 
+        offset_x =0.01
+        offset_y = -0.19
         offset_z = 0
         offset_list = [offset_x, offset_y, offset_z]
     
     
              
         # 1st airy ring power
-        t_list = [10e6]  #20e6 #could also try 10e6
+        t_list = [4e5]  #6e5
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
             
-            # do_SPaCE_annulus(nv_sig, nv_sig, 1, 111,111, 
-            #             None,  [2.2,2.2, 0], [offset_x, offset_y, offset_z], ring_radii = [0.8, 1.0])
+            # do_SPaCE_annulus(nv_sig, nv_sig, 3, 71,71,
+            #            None,  [1.2,1.2, 0], [offset_x, offset_y, offset_z], ring_radii = [0.35, 0.6])
+            
+            #do_SPaCE_annulus(nv_sig, nv_sig, 1, 41,41,  #41, 41,
+            #            None,  [2.4,2.4, 0], [offset_x, offset_y, offset_z], ring_radii = [0.8, 1.2])
             #positive and negative X line scans
             
             
@@ -281,9 +289,9 @@ if __name__ == "__main__":
             
             
             # # 2D scans
-            img_range_2D = [2.2, 2.2, 0]
-            # do_SPaCE(nv_sig, nv_sig, 2, 111, 111, #10 nm steps
-            #               None,  img_range_2D,offset_list)
+            # img_range_2D = [1.2, 1.2, 0]
+            # do_SPaCE(nv_sig, nv_sig, 5, 81, 81,
+            #                None,  img_range_2D,offset_list)
             
             # img_range_2D = [1.2,0, 2]
             # do_SPaCE(nv_sig, nv_sig, 2, 61, 81, 

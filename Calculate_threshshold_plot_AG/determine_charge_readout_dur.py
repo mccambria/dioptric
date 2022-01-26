@@ -247,24 +247,24 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
             print('data collected!')
             # return
             print('{} ms readout, {}, {} V'.format(t/10**6, nd_filter, p))
-            # threshold, fidelity, mu_1, mu_2, fig = calculate_threshold_plot(t/10**6, nv0, nvm, nd_filter, p)
+            threshold, fidelity, mu_1, mu_2, fig = calculate_threshold_plot(t/10**6, nv0, nvm, nd_filter, p)
 
-            # raw_data = {'timestamp': timestamp,
-            #         'nv_sig': nv_sig_copy,
-            #         'nv_sig-units': tool_belt.get_nv_sig_units(),
-            #         'num_runs':num_reps,
-            #         'nv0': nv0.tolist(),
-            #         'nv0_list-units': 'counts',
-            #         'nvm': nvm.tolist(),
-            #         'nvmt-units': 'counts',
-            #         'mu_1': mu_1,
-            #         'mu_2': mu_2,
-            #         'fidelity': fidelity,
-            #         'threshold': threshold
-            #         }
+            raw_data = {'timestamp': timestamp,
+                    'nv_sig': nv_sig_copy,
+                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'num_runs':num_reps,
+                    'nv0': nv0.tolist(),
+                    'nv0_list-units': 'counts',
+                    'nvm': nvm.tolist(),
+                    'nvmt-units': 'counts',
+                    'mu_1': mu_1,
+                    'mu_2': mu_2,
+                    'fidelity': fidelity,
+                    'threshold': threshold
+                    }
 
-            # tool_belt.save_raw_data(raw_data, file_path)
-            # tool_belt.save_figure(fig, file_path)
+            tool_belt.save_raw_data(raw_data, file_path)
+            tool_belt.save_figure(fig, file_path)
 
 
         nv0_master.append(nv0_power)
@@ -409,7 +409,7 @@ if __name__ == '__main__':
     green_laser = "cobolt_515"
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
-    green_power= 8
+    green_power= 10
 
 
     opti_nv_sig = {
@@ -425,11 +425,11 @@ if __name__ == '__main__':
     }  # 14.5 max
 
     nv_sig = {
-        "coords":[250.422, 250.982, 5],
-        "name": "{}-nv0_2021_12_22".format(sample_name,),
+        "coords": [235.935, 246.763, 5],
+        "name": "{}-nv5_2022_01_24".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate":35,
+        "expected_count_rate":20, #35
             'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,
@@ -442,8 +442,8 @@ if __name__ == '__main__':
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
-        determine_readout_dur(nv_sig, nv_sig, readout_times = [75e6,100e6],
-                              readout_yellow_powers = [0.15,0.17],
+        determine_readout_dur(nv_sig, nv_sig, [0], readout_times = [50e6],
+                              readout_yellow_powers = [0.15],
                           nd_filter = 'nd_1.0')
     finally:
         # Reset our hardware - this should be done in each routine, but
