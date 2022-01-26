@@ -508,9 +508,7 @@ if __name__ == "__main__":
 
     plt.show(block=True)
 
-    # 5-10 point contrast drop within couple ms
-    # dynamics seem to resume normally afterward
-    # microwaves introduce 5-10 point heating effect with no discernible
-    #   time dependence
-    # can be subtracted out
-    #   is it background or relative
+    # I do observe a 0.5 count drop in background with a consistent
+    # timescale even in the dark sitting on the NV. The effect isn't
+    # large enough to entirely wxplain what I'm seeing. But it just
+    # seems impossible that it's a coincidence.
