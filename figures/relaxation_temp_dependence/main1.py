@@ -201,20 +201,24 @@ def zero_to_one_threshold(val):
 
 def test(file_a, file_b=None):
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
 
     data_a = tool_belt.get_raw_data(file_a)
     norm_avg_sig_a, norm_avg_sig_ste_a, times = process_raw_data(
         data_a, ref_range=None
     )
-    data_b = tool_belt.get_raw_data(file_b)
-    norm_avg_sig_b, norm_avg_sig_ste_b, times = process_raw_data(
-        data_b, ref_range=None
-    )
+    if file_b is not None:
+        data_b = tool_belt.get_raw_data(file_b)
+        norm_avg_sig_b, norm_avg_sig_ste_b, times = process_raw_data(
+            data_b, ref_range=None
+        )
 
     # diff_err = np.sqrt(norm_avg_sig_ste_a ** 2 + norm_avg_sig_ste_b ** 2)
     # ax.errorbar(times, norm_avg_sig_b - norm_avg_sig_a, diff_err)
     ax.errorbar(times, norm_avg_sig_a, norm_avg_sig_ste_a)
+
+    ax.set_xlabel(r"Wait time $\tau$ (ms)")
+    ax.set_ylabel("Normalized fluorescence")
 
 
 # %% Main
@@ -473,14 +477,14 @@ if __name__ == "__main__":
             "skip": False,
             #
             # 1e5 polarization
-            "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
-            "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
+            # "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
             # 1e6 polarization
             # "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             # -1,-1 off resonance
-            # "decay_file": "2022_01_24-11_55_03-wu-nv6_2021_12_25",
-            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            "decay_file": "2022_01_24-11_55_03-wu-nv6_2021_12_25",
+            "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             # 0,0
             # "decay_file": "2022_01_24-16_25_23-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
@@ -503,7 +507,7 @@ if __name__ == "__main__":
     file_b = "2022_01_23-14_51_37-wu-nv6_2021_12_25"
     # test(file_a, file_b)
 
-    file_a = "2022_01_24-16_25_23-wu-nv6_2021_12_25"
+    file_a = "2022_01_23-06_45_24-wu-nv6_2021_12_25"
     # test(file_a)
 
     plt.show(block=True)
