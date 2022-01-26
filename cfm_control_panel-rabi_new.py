@@ -70,10 +70,10 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.8
     #scan_range = 0.5
     # scan_range = 0.35
-    scan_range = 0.25
-    # scan_range = 0.15
-     #scan_range = 0.1
-    #scan_range = 0.05
+    # scan_range = 0.25
+    scan_range = 0.15
+    #scan_range = 0.1
+    # scan_range = 0.05
     # scan_range = 0.025
     #
     # num_steps = 400
@@ -82,8 +82,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 175
     # num_steps = 135
     #num_steps =120
-    #num_steps = 90
-    num_steps = 60
+    num_steps = 90
+    # num_steps = 60
     # num_steps = 31
     #num_steps = 15
 
@@ -93,11 +93,11 @@ def do_image_sample(nv_sig, apd_indices):
 
 def do_image_sample_xz(nv_sig, apd_indices):
 
-    scan_range_x = 0.05
+    scan_range_x = 0.2
 
-    scan_range_z = 1
+    scan_range_z = 2
 
-    num_steps = 61
+    num_steps = 90
 
     image_sample_xz.main(
         nv_sig,
@@ -168,7 +168,7 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 def do_resonance(nv_sig, opti_nv_sig,apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 101
-    num_runs = 5
+    num_runs = 10
     uwave_power = -10.0
 
     resonance.main(
@@ -558,13 +558,13 @@ if __name__ == "__main__":
     nd_yellow = "nd_1.0"
     green_power = 10
     red_power = 120
-    sample_name = "burnell"
+    sample_name = "lovelace"
     green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
     nv_sig_search = {
-        "coords": [0.263, -0.041, 5],
+        "coords": [-0.068, 0.019,  5.869],
         "name": "{}-search".format(sample_name),
         "disable_opt": False,
         "ramp_voltages": False,
@@ -585,11 +585,11 @@ if __name__ == "__main__":
     
     
     nv_sig = {
-        "coords": [0.324, -0.112, 5],
+        "coords": [0.167, 0.008,5.222],
         "name": "{}-nv2_2022_01_11".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": True,
-        "expected_count_rate": None,
+        "expected_count_rate": 50,
         
         # "coords": [-0.063, -0.145, 5.0],
         # "name": "{}-nv0_2021_11_08".format(sample_name,),
@@ -629,7 +629,7 @@ if __name__ == "__main__":
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
-        "resonance_LOW":2.9250,"rabi_LOW": 182.3,
+        "resonance_LOW":2.8068,"rabi_LOW": 123.0,
         "uwave_power_LOW": 15.5,  # 15.5 max
         "resonance_HIGH": 2.9496,
         "rabi_HIGH": 215,
@@ -641,7 +641,7 @@ if __name__ == "__main__":
     
       
     
-    nv_sig = nv_sig
+    nv_sig = nv_sig_search
     
     
     # %% Functions to run
@@ -649,13 +649,15 @@ if __name__ == "__main__":
     try:
 
         tool_belt.init_safe_stop()
-        # do_optimize(nv_sig, apd_indices)
-        for dz in [-0.5, -0.25, 0.25, 0.5]:
-            nv_sig_copy = copy.deepcopy(nv_sig)
-            coords = nv_sig["coords"]
-            new_coords = numpy.array(coords) +[0, 0, dz]
-            print(new_coords)
-            do_image_sample(nv_sig_copy, apd_indices)
+        # for dz in [-0.5, -0.25, 0.25, 0.5]:
+        #     nv_sig_copy = copy.deepcopy(nv_sig)
+        #     coords = nv_sig["coords"]
+        #     new_coords = numpy.array(coords) +[0, 0, dz]
+        #     print(new_coords)
+        #     do_image_sample(nv_sig_copy, apd_indices)
+        
+        do_optimize(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
@@ -670,7 +672,7 @@ if __name__ == "__main__":
         # do_rabi(nv_sig, opti_nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 300])
         
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.875, 0.2)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
+        #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
         # do_spin_echo(nv_sig, apd_indices)
         

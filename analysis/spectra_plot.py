@@ -14,6 +14,7 @@ different)
 import utils.tool_belt as tool_belt
 from scipy.optimize import curve_fit
 import numpy
+import time
 import matplotlib.pyplot as plt
 import analysis.file_conversion.spectra_csv_to_json as spectra_csv_to_json
 
@@ -114,27 +115,23 @@ def wavelength_range_calc(wavelength_range, wavelength_list):
     return plot_strt, plot_end
 
 #%%
-def read_csv(file, folder):
+def read_file(file, folder):
     folder_path = directory + '/' + folder
-    file_path = directory + '/' + folder + '/' + file + '.csv'
+    file_path = directory + '/' + folder + '/' + file + '.txt'
     
-    wavelength_list = []
-    counts_list = []
-    # try:
-    #     #see if there is a .txt file already
-    #     f = open(file_path, 'r')
-    # except Exception:
-    #     # if not, convert .csv file to .txt file
-    spectra_csv_to_json.convert_single_file(folder_path, file)
-    f = open(file_path, 'r')
+    try:
+        #see if there is a .txt file already
+        data = tool_belt.get_raw_data(file, folder)
+    except Exception:
+        # if not, convert .csv file to .txt file
+        spectra_csv_to_json.convert_single_file(folder_path, file)
+        time.sleep(1)    
+        data = tool_belt.get_raw_data(file, folder)
         
-    f_lines = f.readlines()
-    for line in f_lines:
-        wavelength, counts = line.split()
-        wavelength_list.append(float(wavelength))
-        counts_list.append(float(counts))
+    wavelengths = numpy.array(data['wavelengths'])
+    counts = numpy.array(data['counts'])
         
-    return numpy.array(wavelength_list), numpy.array(counts_list)
+    return wavelengths, counts
     
 
 # %%
@@ -158,10 +155,10 @@ if __name__ == '__main__':
     
     
     folder = 'horiba_spectrometer/2022_01'
-    file = '2022_01_05-spot1_1'
-    wavelengths, counts = read_csv(file, folder)
+    file = '2022_01_11-tmd_monolayer_1'
+    wavelengths, counts = read_file(file, folder)
 
-    plot_title = 'Quantum dot, collecting from spot 1, 1/10/2022'
+    plot_title = 'WSe2 TMD, collecting from monolayer, 1/11/2022'
     plot_spectra(file, wavelengths, counts, plot_title)
 
     
