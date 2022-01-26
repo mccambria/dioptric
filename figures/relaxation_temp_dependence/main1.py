@@ -19,6 +19,7 @@ import json
 from mpl_toolkits.axes_grid1.anchored_artists import (
     AnchoredSizeBar as scale_bar,
 )
+from scipy.optimize import curve_fit
 from colorutils import Color
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
@@ -39,6 +40,11 @@ lw = 1.75
 def process_raw_data(data, ref_range=None):
     """Pull the relaxation signal and ste out of the raw data."""
 
+    start_run = None
+    stop_run = None
+    start_time_ind = None
+    end_time_ind = None
+
     num_runs = data["num_runs"]
     num_steps = data["num_steps"]
     sig_counts = np.array(data["sig_counts"])
@@ -56,10 +62,12 @@ def process_raw_data(data, ref_range=None):
     times = np.linspace(min_time, max_time, num=num_steps)
 
     # Calculate the average signal counts over the runs, and ste
-    start_run = None
-    stop_run = None
     avg_sig_counts = np.average(sig_counts[start_run:stop_run, :], axis=0)
-    std_sig_counts = np.std(sig_counts[start_run:stop_run, :], axis=0, ddof=1)
+    std_sig_counts = np.std(
+        sig_counts[start_run:stop_run, :],
+        axis=0,
+        ddof=1,
+    )
     # std_sig_counts = np.sqrt(avg_sig_counts)
     ste_sig_counts = std_sig_counts / np.sqrt(num_runs)
     # print(ste_sig_counts)
@@ -71,13 +79,17 @@ def process_raw_data(data, ref_range=None):
     norm_avg_sig = avg_sig_counts / avg_ref
     norm_avg_sig_ste = ste_sig_counts / avg_ref
 
-    # Normalize to the reference range
+    # Normalize to population the reference range
     if ref_range is not None:
         diff = ref_range[1] - ref_range[0]
         norm_avg_sig = (norm_avg_sig - ref_range[0]) / diff
         norm_avg_sig_ste /= diff
 
-    return norm_avg_sig, norm_avg_sig_ste, times
+    return (
+        norm_avg_sig[start_time_ind:end_time_ind],
+        norm_avg_sig_ste[start_time_ind:end_time_ind],
+        times[start_time_ind:end_time_ind],
+    )
 
 
 def relaxation_zero_func(t, gamma, omega):
@@ -106,14 +118,62 @@ def relaxation_high_func(t, gamma, omega):
     return first_term + second_term + third_term
 
 
-def get_ref_range(rabi_file):
+def relaxation_func_open_ended(
+    t, relaxation_func, gamma, omega, low_point, high_point
+):
 
+    # Curve between 0 and 1
+    norm_curve = relaxation_func(t, gamma, omega)
+    diff = high_point - low_point
+    open_ended_curve = (norm_curve * diff) + low_point
+    return open_ended_curve
+
+
+def get_norm_relaxation_func(decay_data):
+
+    # Default to relaxation out of +1
+    if decay_data is None:
+        return relaxation_high_func
+
+    init_state = decay_data["init_state"]
+    read_state = decay_data["read_state"]
+    if (init_state == "ZERO") and (read_state == "ZERO"):
+        fit_func = relaxation_zero_func
+    elif init_state == read_state:
+        fit_func = relaxation_high_func
+    else:
+        raise NotImplementedError()
+    return fit_func
+
+
+def get_ref_range_fit(decay_data, gamma, omega):
+
+    signal_decay, ste_decay, times_decay = process_raw_data(decay_data)
+
+    # Take the reference range to be the values extrapolated from the fit to the decay data
+    fit_func = get_norm_relaxation_func(decay_data)
+    lambda_fit = lambda t, low_point, high_point: relaxation_func_open_ended(
+        t, fit_func, gamma, omega, low_point, high_point
+    )
+    init_params = [0.68, 0.92]
+    popt, _ = curve_fit(
+        lambda_fit,
+        times_decay,
+        signal_decay,
+        p0=init_params,
+        sigma=ste_decay,
+        absolute_sigma=True,
+    )
+    ref_range = [popt[0], popt[1]]
+    return ref_range
+
+
+def get_ref_range(rabi_data):
     # Take the low reference range to be the value after 1 perfect pi pulse as calculated from the fit.
     # Assume the pi pulses are nice enough for the high reference range to be 1 with no infidelity.
-    data = tool_belt.get_raw_data(rabi_file)
-    norm_avg_sig = data["norm_avg_sig"]
-    uwave_time_range = data["uwave_time_range"]
-    num_steps = data["num_steps"]
+    norm_avg_sig = rabi_data["norm_avg_sig"]
+    uwave_time_range = rabi_data["uwave_time_range"]
+    num_steps = rabi_data["num_steps"]
     fit_func, popt = rabi.fit_data(uwave_time_range, num_steps, norm_avg_sig)
     rabi_period = 1 / popt[1]
     pi_pulse = rabi_period / 2
@@ -139,7 +199,7 @@ def zero_to_one_threshold(val):
         return val
 
 
-def test(file_a, file_b):
+def test(file_a, file_b=None):
 
     fig, ax = plt.subplots()
 
@@ -152,9 +212,9 @@ def test(file_a, file_b):
         data_b, ref_range=None
     )
 
-    diff_err = np.sqrt(norm_avg_sig_ste_a ** 2 + norm_avg_sig_ste_b ** 2)
-    ax.errorbar(times, norm_avg_sig_b - norm_avg_sig_a, diff_err)
-    # ax.errorbar(times, norm_avg_sig_b, norm_avg_sig_ste_b)
+    # diff_err = np.sqrt(norm_avg_sig_ste_a ** 2 + norm_avg_sig_ste_b ** 2)
+    # ax.errorbar(times, norm_avg_sig_b - norm_avg_sig_a, diff_err)
+    ax.errorbar(times, norm_avg_sig_a, norm_avg_sig_ste_a)
 
 
 # %% Main
@@ -239,8 +299,8 @@ def main(data_sets, dosave=False, draft_version=True):
 
     min_time = 0.0
     max_time = 15.0
-    times = [min_time, max_time]
     xtick_step = 5
+    times = [min_time, max_time]
     ax.set_xticks(np.arange(min_time, max_time + xtick_step, xtick_step))
 
     # Plot decay curves
@@ -250,17 +310,25 @@ def main(data_sets, dosave=False, draft_version=True):
         color = colors_hex[ind]
         facecolor = facecolors_hex[ind]
         temp = data_set["temp"]
+        gamma = data_set["gamma"]
+        Omega = data_set["Omega"]
+        if (gamma is None) and (Omega is None):
+            # MCC make sure these values are up to date
+            gamma = gamma_calc(temp)
+            Omega = omega_calc(temp)
         if not data_set["skip"]:
-            raw_decay = tool_belt.get_raw_data(data_set["decay_file"])
-            ref_range = get_ref_range(data_set["rabi_file"])
-            # print(ref_range)
+            decay_data = tool_belt.get_raw_data(data_set["decay_file"])
+            ref_range = get_ref_range_fit(decay_data, gamma, Omega)
+            fit_func = get_norm_relaxation_func(decay_data)
+
+            print(ref_range)
             # MCC remove this after single NV data
             # ref_range = [0.68, 1.0]
-            ref_range = [0.68, 0.91]
+            # ref_range = [0.68, 0.92]
             # ref_range = None
 
             signal_decay, ste_decay, times_decay = process_raw_data(
-                raw_decay, ref_range
+                decay_data, ref_range
             )
             # Clip anything beyond 15 ms
             try:
@@ -273,6 +341,8 @@ def main(data_sets, dosave=False, draft_version=True):
             times_decay = [0]
             signal_decay = [1.0]
             ste_decay = [0]
+            ref_range = [0.75, 0.93]
+            fit_func = get_norm_relaxation_func(None)
         # ax.scatter(
         #     times_decay,
         #     signal_decay,
@@ -297,15 +367,8 @@ def main(data_sets, dosave=False, draft_version=True):
         )
 
         smooth_t = np.linspace(times[0], times[-1], 1000)
-        gamma = data_set["gamma"]
-        Omega = data_set["Omega"]
-        if (gamma is None) and (Omega is None):
-            # MCC make sure these values are up to date
-            gamma = gamma_calc(temp)
-            Omega = omega_calc(temp)
         print(temp, gamma, Omega)
-        fit_decay = relaxation_high_func(smooth_t, gamma, Omega)
-        # fit_decay = relaxation_zero_func(smooth_t, gamma, Omega)
+        fit_decay = fit_func(smooth_t, gamma, Omega)
         ax.plot(smooth_t, fit_decay, color=color, linewidth=lw)
 
     ax.legend()
@@ -439,6 +502,9 @@ if __name__ == "__main__":
     file_a = "2022_01_23-11_56_17-wu-nv6_2021_12_25"
     file_b = "2022_01_23-14_51_37-wu-nv6_2021_12_25"
     # test(file_a, file_b)
+
+    file_a = "2022_01_24-16_25_23-wu-nv6_2021_12_25"
+    # test(file_a)
 
     plt.show(block=True)
 
