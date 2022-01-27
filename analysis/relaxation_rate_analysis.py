@@ -37,10 +37,6 @@ import sys
 import utils.tool_belt as tool_belt
 import utils.common as common
 from utils.tool_belt import States
-from figures.relaxation_temp_dependence.revision1.temp_dependence_fitting import (
-    omega_calc,
-    gamma_calc,
-)
 
 # %% Constants
 
@@ -757,12 +753,18 @@ if __name__ == "__main__":
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
     folders = [
-        "wu-nv6_2021_12_25-{}K".format(temp),
+        # "wu-nv6_2021_12_25-{}K".format(temp),
+        "main1_test",
     ]
 
     for folder in folders:
         gamma, ste = main(
-            path, folder, omega=None, omega_ste=None, doPlot=True, offset=False
+            path,
+            folder,
+            omega=0.0113,
+            omega_ste=0.0,
+            doPlot=True,
+            offset=False,
         )
 
     plt.show(block=True)
