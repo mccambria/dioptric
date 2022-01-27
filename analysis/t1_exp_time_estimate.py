@@ -87,17 +87,17 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window, overhead):
 #         ], dtype=object)
 
 # Figure 1 data
-num_runs = 50
-num_reps = 20000
+num_runs = 200
+num_reps = 3000
 num_steps = 12
-min_tau = 1e3
-max_tau = 200e3
+min_tau = 500e3
+max_tau = 15e6
 t1_exp_array = numpy.array([
         [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
         ], dtype=object)
 
-contrast = 0.6  # arb
-exp_count_rate = 3  # kcps
+contrast = 0.3  # arb
+exp_count_rate = 22  # kcps
 readout_window = 350  # ns
 overhead = 1e5  # ns, sum of polarization time, readout time, etc
 

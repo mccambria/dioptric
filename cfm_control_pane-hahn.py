@@ -370,16 +370,11 @@ def do_t1_interleave_knill(nv_sig, apd_indices):
 def paper_figure1_data(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    # num_runs = 400
-    # num_reps = 3000
-    # num_steps = 12
-    # min_tau = int(200e3)
-    # max_tau = int(12e6)
-    num_runs = 50
+    num_runs = 200
     num_reps = 3000
     num_steps = 12
-    min_tau = 1e3
-    max_tau = 200e3
+    min_tau = 500e3
+    max_tau = 15e6
     t1_exp_array = numpy.array([
             [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
             # [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
