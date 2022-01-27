@@ -149,11 +149,13 @@ def get_seq(pulse_streamer, config, args):
     # Pulse the laser with the AOM for polarization and readout
     train = [(rf_low_delay + polarization_time, HIGH),
              (pre_uwave_exp_wait_time + uwave_experiment_shrt + post_uwave_exp_wait_time, LOW),
-             (signal_time, HIGH),
+             (1000, LOW),
+             (signal_time-1000, HIGH),
              (sig_to_ref_wait_time, LOW),
              (reference_time, HIGH),
              (pre_uwave_exp_wait_time + uwave_experiment_long + post_uwave_exp_wait_time, LOW),
-             (signal_time, HIGH),
+             (1000, LOW),
+             (signal_time-1000, HIGH),
              (sig_to_ref_wait_time, LOW),
              (reference_time + aom_delay_time, HIGH)]
     tool_belt.process_laser_seq(pulse_streamer, seq, config, 
