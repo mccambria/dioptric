@@ -60,6 +60,7 @@ def process_raw_data(data, ref_range=None):
     # Calculate time arrays in ms
     min_time, max_time = time_range / 10 ** 6
     times = np.linspace(min_time, max_time, num=num_steps)
+    # times[0] = 0.5
 
     # Calculate the average signal counts over the runs, and ste
     avg_sig_counts = np.average(sig_counts[start_run:stop_run, :], axis=0)
@@ -84,6 +85,8 @@ def process_raw_data(data, ref_range=None):
         diff = ref_range[1] - ref_range[0]
         norm_avg_sig = (norm_avg_sig - ref_range[0]) / diff
         norm_avg_sig_ste /= diff
+
+    # norm_avg_sig[0] = 0.98
 
     return (
         norm_avg_sig[start_time_ind:end_time_ind],
@@ -480,11 +483,11 @@ if __name__ == "__main__":
             # "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
             # 1e6 polarization
-            # "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
-            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
-            # -1,-1 off resonance
-            "decay_file": "2022_01_24-11_55_03-wu-nv6_2021_12_25",
+            "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
             "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # -1,-1 off resonance
+            # "decay_file": "2022_01_24-11_55_03-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             # 0,0
             # "decay_file": "2022_01_24-16_25_23-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
