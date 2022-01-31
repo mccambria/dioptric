@@ -377,7 +377,7 @@ def paper_figure1_data(nv_sig, apd_indices):
     max_tau = 15e6
     t1_exp_array = numpy.array([
             [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
-            # [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
+            [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
             # [[States.ZERO, States.ZERO], [min_tau, max_tau], num_steps, num_reps, num_runs],
             ], dtype=object)
 
@@ -530,7 +530,7 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.014, -0.024, 1], 'name': '{}-nv6_2021_12_25'.format(sample_name),
+    nv_sig = { 'coords': [-0.013, 0.023, 3], 'name': '{}-nv6_2021_12_25'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 30,
     # nv_sig = { 'coords': [0.003, -0.012, 0.0], 'name': '{}-nv6_2021_12_25'.format(sample_name),
     #         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 30,
@@ -556,9 +556,9 @@ if __name__ == '__main__':
             # "charge_readout_laser": yellow_laser, "charge_readout_dur": 17e6, "charge_readout_laser_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8054, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
+            'resonance_LOW': 2.8047, 'rabi_LOW': 172.9, 'uwave_power_LOW': 16.5,
             # 'resonance_LOW': 2.8451, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9468, 'rabi_HIGH': 223.3, 'uwave_power_HIGH': 16.5}
+            'resonance_HIGH': 2.9461, 'rabi_HIGH': 218.4, 'uwave_power_HIGH': 16.5}
     
     # nv_sig = { 'coords': [0.0, 0.0, 49], 'name': '{}-search'.format(sample_name),
     #         'disable_opt': True, 'expected_count_rate': None,
@@ -573,7 +573,7 @@ if __name__ == '__main__':
         # tool_belt.init_safe_stop()
         
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0, 0)
+        #     cxn.cryo_piezos.write_xy(-2, +1)
         
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
