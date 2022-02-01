@@ -483,8 +483,8 @@ if __name__ == "__main__":
             # "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
             # 1e6 polarization
-            "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
-            "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             # -1,-1 off resonance
             # "decay_file": "2022_01_24-11_55_03-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
@@ -494,6 +494,12 @@ if __name__ == "__main__":
             # 1e5 polarization, start at 200 us
             # "decay_file": "2022_01_25-06_44_38-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # 1e5 polarization, start at 500 us, chiller interruption
+            # "decay_file": "2022_01_27-09_03_53-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # Final
+            "decay_file": "2022_01_30-22_26_56-wu-nv6_2021_12_25",
+            "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             #
             "Omega": None,
             "gamma": None,
