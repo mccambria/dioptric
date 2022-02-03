@@ -331,7 +331,7 @@ def main(data_sets, dosave=False, draft_version=True):
             print(ref_range)
             # MCC remove this after single NV data
             # ref_range = [0.68, 1.0]
-            # ref_range = [0.65, 0.93]
+            # ref_range = [0.63, 0.93]
             # ref_range = None
 
             signal_decay, ste_decay, times_decay = process_raw_data(
@@ -467,8 +467,8 @@ if __name__ == "__main__":
         },
         {
             "temp": 250,
-            "skip": True,
-            "decay_file": None,
+            "skip": False,
+            "decay_file": "2022_02_01-17_28_02-wu-nv6_2021_12_25",
             "rabi_file": None,
             "Omega": None,
             "gamma": None,
@@ -494,8 +494,11 @@ if __name__ == "__main__":
             # 1e5 polarization, start at 200 us
             # "decay_file": "2022_01_25-06_44_38-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
-            # 1e5 polarization, start at 500 us
-            "decay_file": "2022_01_27-09_03_53-wu-nv6_2021_12_25",
+            # 1e5 polarization, start at 500 us, chiller interruption
+            # "decay_file": "2022_01_27-09_03_53-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # Final
+            "decay_file": "2022_01_30-22_26_56-wu-nv6_2021_12_25",
             "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             #
             "Omega": None,
