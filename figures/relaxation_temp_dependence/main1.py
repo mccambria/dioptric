@@ -60,6 +60,7 @@ def process_raw_data(data, ref_range=None):
     # Calculate time arrays in ms
     min_time, max_time = time_range / 10 ** 6
     times = np.linspace(min_time, max_time, num=num_steps)
+    # times[0] = 0.5
 
     # Calculate the average signal counts over the runs, and ste
     avg_sig_counts = np.average(sig_counts[start_run:stop_run, :], axis=0)
@@ -84,6 +85,8 @@ def process_raw_data(data, ref_range=None):
         diff = ref_range[1] - ref_range[0]
         norm_avg_sig = (norm_avg_sig - ref_range[0]) / diff
         norm_avg_sig_ste /= diff
+
+    # norm_avg_sig[0] = 0.98
 
     return (
         norm_avg_sig[start_time_ind:end_time_ind],
@@ -201,20 +204,24 @@ def zero_to_one_threshold(val):
 
 def test(file_a, file_b=None):
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
 
     data_a = tool_belt.get_raw_data(file_a)
     norm_avg_sig_a, norm_avg_sig_ste_a, times = process_raw_data(
         data_a, ref_range=None
     )
-    data_b = tool_belt.get_raw_data(file_b)
-    norm_avg_sig_b, norm_avg_sig_ste_b, times = process_raw_data(
-        data_b, ref_range=None
-    )
+    if file_b is not None:
+        data_b = tool_belt.get_raw_data(file_b)
+        norm_avg_sig_b, norm_avg_sig_ste_b, times = process_raw_data(
+            data_b, ref_range=None
+        )
 
     # diff_err = np.sqrt(norm_avg_sig_ste_a ** 2 + norm_avg_sig_ste_b ** 2)
     # ax.errorbar(times, norm_avg_sig_b - norm_avg_sig_a, diff_err)
     ax.errorbar(times, norm_avg_sig_a, norm_avg_sig_ste_a)
+
+    ax.set_xlabel(r"Wait time $\tau$ (ms)")
+    ax.set_ylabel("Normalized fluorescence")
 
 
 # %% Main
@@ -324,7 +331,7 @@ def main(data_sets, dosave=False, draft_version=True):
             print(ref_range)
             # MCC remove this after single NV data
             # ref_range = [0.68, 1.0]
-            # ref_range = [0.68, 0.92]
+            # ref_range = [0.63, 0.93]
             # ref_range = None
 
             signal_decay, ste_decay, times_decay = process_raw_data(
@@ -356,7 +363,7 @@ def main(data_sets, dosave=False, draft_version=True):
         ax.errorbar(
             times_decay,
             signal_decay,
-            yerr=ste_decay,
+            yerr=np.array(ste_decay),
             label="{} K".format(temp),
             zorder=5,
             marker="o",
@@ -377,6 +384,9 @@ def main(data_sets, dosave=False, draft_version=True):
     fig.text(
         -0.19, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
     )
+    x_buffer = 0.02 * max_time
+    ax.set_xlim([-x_buffer, max_time + x_buffer])
+    ax.set_ylim([0.25, 1.06])
 
     # %% Experimental layout
 
@@ -450,8 +460,8 @@ if __name__ == "__main__":
         },
         {
             "temp": 300,
-            "skip": True,
-            "decay_file": None,
+            "skip": False,
+            "decay_file": "2022_02_03-17_18_28-wu-nv6_2021_12_25",
             "rabi_file": None,
             "Omega": None,
             "gamma": None,
@@ -460,8 +470,8 @@ if __name__ == "__main__":
         },
         {
             "temp": 250,
-            "skip": True,
-            "decay_file": None,
+            "skip": False,
+            "decay_file": "2022_02_01-17_28_02-wu-nv6_2021_12_25",
             "rabi_file": None,
             "Omega": None,
             "gamma": None,
@@ -473,8 +483,8 @@ if __name__ == "__main__":
             "skip": False,
             #
             # 1e5 polarization
-            "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
-            "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
+            # "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
             # 1e6 polarization
             # "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
@@ -487,6 +497,12 @@ if __name__ == "__main__":
             # 1e5 polarization, start at 200 us
             # "decay_file": "2022_01_25-06_44_38-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # 1e5 polarization, start at 500 us, chiller interruption
+            # "decay_file": "2022_01_27-09_03_53-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # Final
+            "decay_file": "2022_01_30-22_26_56-wu-nv6_2021_12_25",
+            "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             #
             "Omega": None,
             "gamma": None,
@@ -503,7 +519,7 @@ if __name__ == "__main__":
     file_b = "2022_01_23-14_51_37-wu-nv6_2021_12_25"
     # test(file_a, file_b)
 
-    file_a = "2022_01_24-16_25_23-wu-nv6_2021_12_25"
+    file_a = "2022_01_23-06_45_24-wu-nv6_2021_12_25"
     # test(file_a)
 
     plt.show(block=True)
