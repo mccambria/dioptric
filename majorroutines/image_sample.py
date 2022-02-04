@@ -323,7 +323,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Save the data
 
     timestamp = tool_belt.get_time_stamp()
-
+    print(nv_sig['coords'])
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
