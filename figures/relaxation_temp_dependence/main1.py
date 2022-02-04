@@ -363,7 +363,7 @@ def main(data_sets, dosave=False, draft_version=True):
         ax.errorbar(
             times_decay,
             signal_decay,
-            yerr=ste_decay,
+            yerr=np.array(ste_decay),
             label="{} K".format(temp),
             zorder=5,
             marker="o",
@@ -384,6 +384,9 @@ def main(data_sets, dosave=False, draft_version=True):
     fig.text(
         -0.19, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
     )
+    x_buffer = 0.02 * max_time
+    ax.set_xlim([-x_buffer, max_time + x_buffer])
+    ax.set_ylim([0.25, 1.06])
 
     # %% Experimental layout
 
@@ -457,8 +460,8 @@ if __name__ == "__main__":
         },
         {
             "temp": 300,
-            "skip": True,
-            "decay_file": None,
+            "skip": False,
+            "decay_file": "2022_02_03-17_18_28-wu-nv6_2021_12_25",
             "rabi_file": None,
             "Omega": None,
             "gamma": None,
