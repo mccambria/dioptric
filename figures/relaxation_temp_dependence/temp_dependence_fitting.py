@@ -309,36 +309,37 @@ def fit_simultaneous(data_points):
 
     # T5 fixed + constant
     # init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
-    # omega_fit_func = lambda temp, beta: orbach_T5_free_const(
-    #     temp, beta[1], beta[3], beta[0], beta[4]
-    # )
-    # gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
-    #     temp, beta[2], beta[3], beta[0], beta[5]
-    # )
-    # beta_desc = (
-    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
-    #     " (s^-1), activation (meV), Omega constant (K^-1 s^-1), gamma constant"
-    #     " (K^-1 s^-1)]"
-    # )
+    init_params = (1.38e-11, 1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
+    omega_fit_func = lambda temp, beta: orbach_T5_free_const(
+        temp, beta[2], beta[4], beta[0], beta[5]
+    )
+    gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
+        temp, beta[3], beta[4], beta[1], beta[6]
+    )
+    beta_desc = (
+        "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+        " (s^-1), activation (meV), Omega constant (K^-1 s^-1), gamma constant"
+        " (K^-1 s^-1)]"
+    )
 
     # Double Orbach
     # init_params = (500, 1500, 72, 2000, 2000, 400, 0.01, 0.07)
-    # # init_params = (500, 1500, 72, 2000, 2000, 0.01, 0.07)
+    # init_params = (500, 1500, 72, 2000, 200, 0.01, 0.07)
     # omega_fit_func = lambda temp, beta: double_orbach(
     #     temp,
     #     beta[0],
     #     beta[2],
     #     beta[3],
-    #     beta[5],
-    #     beta[6],  # 400, beta[5]
+    #     beta[-3],
+    #     beta[-2],  # 400, beta[5]
     # )
     # gamma_fit_func = lambda temp, beta: double_orbach(
     #     temp,
     #     beta[1],
     #     beta[2],
-    #     beta[4],
-    #     beta[5],
-    #     beta[7],  # 400, beta[6]
+    #     beta[3],
+    #     beta[-3],
+    #     beta[-1],  # 400, beta[6]
     # )
     # beta_desc = (
     #     "Omega Orbach 1 coeff (s^-1), gamma Orbach 1 coeff (s^-1), Orbach 1"
@@ -348,30 +349,30 @@ def fit_simultaneous(data_points):
     # )
 
     # Double Orbach fixed
-    orbach1_delta = 60
-    orbach2_delta = 155
-    init_params = (500, 1500, 2000, 0.01, 0.07)
-    omega_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[0],
-        orbach1_delta,
-        beta[2],
-        orbach2_delta,
-        beta[-2],
-    )
-    gamma_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[1],
-        orbach1_delta,
-        beta[2],
-        orbach2_delta,
-        beta[-1],
-    )
-    beta_desc = (
-        "Omega Orbach 1 coeff (s^-1), gamma Orbach 1 coeff (s^-1), Omega"
-        " Orbach 2 coeff (s^-1), gamma Orbach 2 coeff (s^-1), Omega constant"
-        " (K^-1 s^-1), gamma constant (K^-1 s^-1)]"
-    )
+    # orbach1_delta = 60
+    # orbach2_delta = 155
+    # init_params = (500, 1500, 2000, 0.01, 0.07)
+    # omega_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     orbach1_delta,
+    #     beta[2],
+    #     orbach2_delta,
+    #     beta[-2],
+    # )
+    # gamma_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     orbach1_delta,
+    #     beta[2],
+    #     orbach2_delta,
+    #     beta[-1],
+    # )
+    # beta_desc = (
+    #     "Omega Orbach 1 coeff (s^-1), gamma Orbach 1 coeff (s^-1), Omega"
+    #     " Orbach 2 coeff (s^-1), gamma Orbach 2 coeff (s^-1), Omega constant"
+    #     " (K^-1 s^-1), gamma constant (K^-1 s^-1)]"
+    # )
 
     # T5 fixed
     # init_params = (1.38e-11, 510, 2000, 72.0)
@@ -620,6 +621,8 @@ def main(
 
     # omega_lambda = lambda temp: orbach_free(temp, 5.4603e02, 71)
     # gamma_lambda = lambda temp: orbach_free(temp, 1.5312e03, 71)
+    # omega_lambda = lambda temp: orbach_free(temp, 1e8, 400)
+    # gamma_lambda = omega_lambda
     omega_lambda = lambda temp: omega_fit_func(temp, popt)
     gamma_lambda = lambda temp: gamma_fit_func(temp, popt)
     print("Parameter description: {}".format(beta_desc))
@@ -936,7 +939,7 @@ if __name__ == "__main__":
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [0, 600]
+    temp_range = [0, 500]
     # temp_range = [80, 500]
     xscale = "linear"
     # temp_range = [1, 500]
