@@ -366,11 +366,9 @@ if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
     path_from_nvdata = (
-        "pc_hahn/branch_master/determine_charge_readout_params/2022_01/"
+        "pc_hahn/branch_master/determine_charge_readout_params/2022_02/"
     )
-    file_name = "2022_01_04-20_02_17-wu-nv6_2021_12_25"
-    # file_name = "2022_01_04-20_19_29-wu-nv6_2021_12_25"
-    # file_name = "2022_01_04-20_36_40-wu-nv6_2021_12_25"
+    file_name = "2022_02_05-12_24_12-wu-nv6_2021_12_25"
     data = tool_belt.get_raw_data(file_name, path_from_nvdata)
     nv_sig = data["nv_sig"]
     nv0 = data["nv0"]
@@ -378,8 +376,8 @@ if __name__ == "__main__":
     readout_power = nv_sig["charge_readout_laser_power"]
     max_readout_dur = nv_sig["charge_readout_dur"]
 
-    # opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
-    opti_readout_dur = 100e6
+    opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
+    # opti_readout_dur = 100e6
     # do_save = True
     do_save = False
     plot_histogram(
