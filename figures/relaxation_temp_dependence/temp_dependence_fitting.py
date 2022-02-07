@@ -373,30 +373,30 @@ def fit_simultaneous(data_points):
     #     " Orbach 2 coeff (s^-1), gamma Orbach 2 coeff (s^-1), Omega constant"
     #     " (K^-1 s^-1), gamma constant (K^-1 s^-1)]"
     # )
-    init_params = (500, 1500, 72, 2000, 2000, 400, 0.01, 0.07)
-    # init_params = (500, 1500, 72, 2000, 2000, 0.01, 0.07)
-    omega_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[0],
-        beta[2],
-        beta[3],
-        beta[5],
-        beta[6],  # 400, beta[5]
-    )
-    gamma_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[1],
-        beta[2],
-        beta[4],
-        beta[5],
-        beta[7],  # 400, beta[6]
-    )
-    beta_desc = (
-        "Omega Orbach 1 coeff (s^-1), gamma Orbach 1 coeff (s^-1), Orbach 1"
-        " Delta (meV), Omega Orbach 2 coeff (s^-1), gamma Orbach 2 coeff"
-        " (s^-1), Orbach 2 Delta (meV), Omega constant (K^-1 s^-1), gamma"
-        " constant (K^-1 s^-1)]"
-    )
+    # init_params = (500, 1500, 72, 2000, 2000, 400, 0.01, 0.07)
+    # # init_params = (500, 1500, 72, 2000, 2000, 0.01, 0.07)
+    # omega_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     beta[5],
+    #     beta[6],  # 400, beta[5]
+    # )
+    # gamma_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[4],
+    #     beta[5],
+    #     beta[7],  # 400, beta[6]
+    # )
+    # beta_desc = (
+    #     "Omega Orbach 1 coeff (s^-1), gamma Orbach 1 coeff (s^-1), Orbach 1"
+    #     " Delta (meV), Omega Orbach 2 coeff (s^-1), gamma Orbach 2 coeff"
+    #     " (s^-1), Orbach 2 Delta (meV), Omega constant (K^-1 s^-1), gamma"
+    #     " constant (K^-1 s^-1)]"
+    # )
 
     # Double Orbach fixed
     # orbach1_delta = 60
@@ -989,7 +989,7 @@ if __name__ == "__main__":
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [0, 500]
+    temp_range = [0, 550]
     # temp_range = [80, 500]
     xscale = "linear"
     # temp_range = [1, 500]
@@ -1001,7 +1001,7 @@ if __name__ == "__main__":
     path = home / "paper_materials/relaxation_temp_dependence"
 
     if plot_type == "rates":
-        y_params = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]
+        y_params = [[[-10, 800], "linear"], [[5e-3, 1000], "log"]]
     elif plot_type == "T2_max":
         y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
     elif plot_type == "ratios":
