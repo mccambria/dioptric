@@ -211,7 +211,7 @@ def set_xyz_ramp(cxn, coords):
         seq_args_string = encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         period = ret_vals[0]
-        # print(x_points)
+        # print(z_points)
 
         xyz_server.load_arb_scan_xyz(x_points, y_points, z_points, int(period))
         cxn.pulse_streamer.stream_load(file_name, seq_args_string)

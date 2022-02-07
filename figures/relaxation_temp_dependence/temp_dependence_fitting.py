@@ -309,22 +309,24 @@ def fit_simultaneous(data_points):
 
     # T5 fixed + constant
     # init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
-    init_params = (1.38e-11, 1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
-    omega_fit_func = lambda temp, beta: orbach_T5_free_const(
-        temp, beta[2], beta[4], beta[0], beta[5]
-    )
-    gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
-        temp, beta[3], beta[4], beta[1], beta[6]
-    )
-    beta_desc = (
-        "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
-        " (s^-1), activation (meV), Omega constant (K^-1 s^-1), gamma constant"
-        " (K^-1 s^-1)]"
-    )
+    # omega_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[1], beta[3], beta[0], beta[4]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[2], beta[3], beta[0], beta[5]
+    # )
+    # beta_desc = [
+    #     "T5_coeff (K^-5 s^-1)",
+    #     "omega_exp_coeff (s^-1)",
+    #     "gamma_exp_coeff (s^-1)",
+    #     "activation (meV)",
+    #     "Omega constant (K^-1 s^-1)",
+    #     "gamma constant (K^-1 s^-1)",
+    # ]
 
     # Double Orbach
     # init_params = (500, 1500, 72, 2000, 2000, 400, 0.01, 0.07)
-    # init_params = (500, 1500, 72, 2000, 200, 0.01, 0.07)
+    # # init_params = (500, 1500, 72, 2000, 2000, 0.01, 0.07)
     # omega_fit_func = lambda temp, beta: double_orbach(
     #     temp,
     #     beta[0],
@@ -337,75 +339,58 @@ def fit_simultaneous(data_points):
     #     temp,
     #     beta[1],
     #     beta[2],
-    #     beta[3],
-    #     beta[-3],
-    #     beta[-1],  # 400, beta[6]
-    # )
-    # beta_desc = (
-    #     "Omega Orbach 1 coeff (s^-1), gamma Orbach 1 coeff (s^-1), Orbach 1"
-    #     " Delta (meV), Omega Orbach 2 coeff (s^-1), gamma Orbach 2 coeff"
-    #     " (s^-1), Orbach 2 Delta (meV), Omega constant (K^-1 s^-1), gamma"
-    #     " constant (K^-1 s^-1)]"
-    # )
-
-    # Double Orbach fixed
-    # orbach1_delta = 60
-    # orbach2_delta = 155
-    # init_params = (500, 1500, 2000, 0.01, 0.07)
-    # omega_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[0],
-    #     orbach1_delta,
-    #     beta[2],
-    #     orbach2_delta,
-    #     beta[-2],
-    # )
-    # gamma_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[1],
-    #     orbach1_delta,
-    #     beta[2],
-    #     orbach2_delta,
-    #     beta[-1],
-    # )
-    # beta_desc = (
-    #     "Omega Orbach 1 coeff (s^-1), gamma Orbach 1 coeff (s^-1), Omega"
-    #     " Orbach 2 coeff (s^-1), gamma Orbach 2 coeff (s^-1), Omega constant"
-    #     " (K^-1 s^-1), gamma constant (K^-1 s^-1)]"
-    # )
-    # init_params = (500, 1500, 72, 2000, 2000, 400, 0.01, 0.07)
-    # # init_params = (500, 1500, 72, 2000, 2000, 0.01, 0.07)
-    # omega_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[0],
-    #     beta[2],
-    #     beta[3],
-    #     beta[5],
-    #     beta[6],  # 400, beta[5]
-    # )
-    # gamma_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[1],
-    #     beta[2],
     #     beta[4],
     #     beta[5],
     #     beta[7],  # 400, beta[6]
     # )
-    # beta_desc = (
-    #     "Omega Orbach 1 coeff (s^-1), gamma Orbach 1 coeff (s^-1), Orbach 1"
-    #     " Delta (meV), Omega Orbach 2 coeff (s^-1), gamma Orbach 2 coeff"
-    #     " (s^-1), Orbach 2 Delta (meV), Omega constant (K^-1 s^-1), gamma"
-    #     " constant (K^-1 s^-1)]"
-    # )
+    # beta_desc = [
+    #     "Omega Orbach 1 coeff (s^-1)",
+    #     "gamma Orbach 1 coeff (s^-1)",
+    #     "Orbach 1 Delta (meV)",
+    #     "Omega Orbach 2 coeff (s^-1)",
+    #     "gamma Orbach 2 coeff (s^-1)",
+    #     "Orbach 2 Delta (meV)",
+    #     "Omega constant (K^-1 s^-1)",
+    #     "gamma constant (K^-1 s^-1)",
+    # ]
+
+    # Double Orbach fixed
+    init_params = (500, 1500, 72, 2000, 400, 0.01, 0.07)
+    omega_fit_func = lambda temp, beta: double_orbach(
+        temp,
+        beta[0],
+        beta[2],
+        beta[3],
+        beta[4],
+        beta[5],
+    )
+    gamma_fit_func = lambda temp, beta: double_orbach(
+        temp,
+        beta[1],
+        beta[2],
+        beta[3],
+        beta[4],
+        beta[6],
+    )
+    beta_desc = [
+        "Omega Orbach 1 coeff (s^-1)",
+        "gamma Orbach 1 coeff (s^-1)",
+        "Orbach 1 Delta (meV)",
+        "Orbach 2 coeff (s^-1)",
+        "Orbach 2 Delta (meV)",
+        "Omega constant (K^-1 s^-1)",
+        "gamma constant (K^-1 s^-1)",
+    ]
 
     # Double Orbach fixed
     # orbach1_delta = 60
-    # orbach2_delta = 155
-    # init_params = (500, 1500, 2000, 0.01, 0.07)
+    # orbach2_delta = 400
+    # init_params = (500, 1500, 2000, 60, 0.01, 0.07)
     # omega_fit_func = lambda temp, beta: double_orbach(
     #     temp,
     #     beta[0],
-    #     orbach1_delta,
+    #     beta[3],
+    #     # orbach1_delta,
     #     beta[2],
     #     orbach2_delta,
     #     beta[-2],
@@ -413,7 +398,8 @@ def fit_simultaneous(data_points):
     # gamma_fit_func = lambda temp, beta: double_orbach(
     #     temp,
     #     beta[1],
-    #     orbach1_delta,
+    #     beta[3],
+    #     # orbach1_delta,
     #     beta[2],
     #     orbach2_delta,
     #     beta[-1],
@@ -675,9 +661,12 @@ def main(
     # gamma_lambda = omega_lambda
     omega_lambda = lambda temp: omega_fit_func(temp, popt)
     gamma_lambda = lambda temp: gamma_fit_func(temp, popt)
-    print("Parameter description: {}".format(beta_desc))
-    print("popt: {}".format(tool_belt.round_sig_figs(popt, 5)))
-    print("psd: {}".format(tool_belt.round_sig_figs(numpy.sqrt(pvar), 2)))
+    print("parameter description: popt, psd")
+    for ind in range(len(popt)):
+        desc = beta_desc[ind]
+        val = tool_belt.round_sig_figs(popt[ind], 5)
+        err = tool_belt.round_sig_figs(numpy.sqrt(pvar[ind]), 2)
+        print("{}: {}, {}".format(desc, val, err))
     if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
         ax.plot(
             temp_linspace,
@@ -996,7 +985,7 @@ if __name__ == "__main__":
     # xscale = "log"
 
     file_name = "compiled_data"
-    # file_name = 'compiled_data-test'
+    # file_name = "spin_phonon_temp_dependence"
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
