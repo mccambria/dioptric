@@ -332,8 +332,8 @@ def fit_simultaneous(data_points):
     #     beta[0],
     #     beta[2],
     #     beta[3],
-    #     beta[5],
-    #     beta[6],  # 400, beta[5]
+    #     beta[-3],
+    #     beta[-2],  # 400, beta[5]
     # )
     # gamma_fit_func = lambda temp, beta: double_orbach(
     #     temp,
@@ -657,6 +657,8 @@ def main(
 
     # omega_lambda = lambda temp: orbach_free(temp, 5.4603e02, 71)
     # gamma_lambda = lambda temp: orbach_free(temp, 1.5312e03, 71)
+    # omega_lambda = lambda temp: orbach_free(temp, 1e8, 400)
+    # gamma_lambda = omega_lambda
     omega_lambda = lambda temp: omega_fit_func(temp, popt)
     gamma_lambda = lambda temp: gamma_fit_func(temp, popt)
     print("parameter description: popt, psd")
