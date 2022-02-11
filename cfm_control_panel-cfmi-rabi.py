@@ -64,15 +64,15 @@ def do_image_sample(nv_sig, apd_indices):
     # 35 um / V
     
     # scan_range = 5.0
-    # scan_range = 3.0
+    # scan_range = 2.0
     # scan_range = 1.5
     # scan_range =1
     # scan_range = 0.8
-    #scan_range = 0.5
+    # scan_range = 0.5
     # scan_range = 0.35
     # scan_range = 0.25
     scan_range = 0.15
-    #scan_range = 0.1
+    # scan_range = 0.1
     # scan_range = 0.05
     # scan_range = 0.025
     #
@@ -82,8 +82,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 175
     # num_steps = 135
     #num_steps =120
-    num_steps = 90
-    # num_steps = 60
+    # num_steps = 90
+    num_steps = 60
     # num_steps = 31
     #num_steps = 15
 
@@ -93,11 +93,11 @@ def do_image_sample(nv_sig, apd_indices):
 
 def do_image_sample_xz(nv_sig, apd_indices):
 
-    scan_range_x = 0.2
+    scan_range_x = 0.1
 
-    scan_range_z = 2
+    scan_range_z = 0.5
 
-    num_steps = 90
+    num_steps = 40
 
     image_sample_xz.main(
         nv_sig,
@@ -327,7 +327,7 @@ def do_lifetime(nv_sig, apd_indices, filter, voltage, reference=False):
     #    num_reps = 100 #MM
     num_reps = 500  # SM
     num_bins = 101
-    num_runs = 10
+    num_runs = 5
     readout_time_range = [0, 1.0 * 10 ** 6]  # ns
     polarization_time = 60 * 10 ** 3  # ns
 
@@ -556,17 +556,17 @@ if __name__ == "__main__":
     # apd_indices = [0,1]
 
     nd_yellow = "nd_1.0"
-    green_power = 10
+    green_power = 2
     red_power = 120
-    sample_name = "lovelace"
+    sample_name = "TMD-gold"
     green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
     nv_sig_search = {
-        "coords": [-0.068, 0.019,  5.869],
+        "coords": [-0.111, -0.126,  5],
         "name": "{}-search".format(sample_name),
-        "disable_opt": False,
+        "disable_opt": True,
         "ramp_voltages": False,
         "expected_count_rate": None,
         "imaging_laser": green_laser,
@@ -585,11 +585,13 @@ if __name__ == "__main__":
     
     
     nv_sig = {
-        "coords": [0.167, 0.008,5.222],
-        "name": "{}-nv2_2022_01_11".format(sample_name,),
+        "coords": [ -0.357, -0.086,5.423], 
+        "name": "{}-emitter1after_2022_01_27".format(sample_name,),
+        # "coords": [-0.233, -0.242, 5.474],
+        # "name": "{}-emitter2_2022_01_27".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": True,
-        "expected_count_rate": 50,
+        "expected_count_rate": None,
         
         # "coords": [-0.063, -0.145, 5.0],
         # "name": "{}-nv0_2021_11_08".format(sample_name,),
@@ -629,7 +631,7 @@ if __name__ == "__main__":
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
-        "resonance_LOW":2.8068,"rabi_LOW": 123.0,
+        "resonance_LOW":2.9423,"rabi_LOW": 123.0,
         "uwave_power_LOW": 15.5,  # 15.5 max
         "resonance_HIGH": 2.9496,
         "rabi_HIGH": 215,
@@ -641,7 +643,7 @@ if __name__ == "__main__":
     
       
     
-    nv_sig = nv_sig_search
+    nv_sig = nv_sig
     
     
     # %% Functions to run
@@ -649,15 +651,16 @@ if __name__ == "__main__":
     try:
 
         tool_belt.init_safe_stop()
-        # for dz in [-0.5, -0.25, 0.25, 0.5]:
+        # for dz in [0.1, 0.2]:
         #     nv_sig_copy = copy.deepcopy(nv_sig)
         #     coords = nv_sig["coords"]
         #     new_coords = numpy.array(coords) +[0, 0, dz]
         #     print(new_coords)
+        #     nv_sig_copy['coords'] = new_coords
         #     do_image_sample(nv_sig_copy, apd_indices)
         
-        do_optimize(nv_sig, apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
+        #do_image_sample(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
@@ -675,77 +678,6 @@ if __name__ == "__main__":
         #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
         # do_spin_echo(nv_sig, apd_indices)
-        
-        offset_x = 0
-        offset_y = 0
-        offset_z = 0
-        offset_list = [offset_x, offset_y, offset_z]
-        num_steps_x = 51
-        num_steps_y = 51
-        num_steps_z = 101
-    
-        for t in [1e3]:
-            # nv_sig['CPG_laser_dur'] = t
-            img_range_2D = [0.04,0.04, 0 ]
-            # do_SPaCE(nv_sig, nv_sig, 1, num_steps_x, num_steps_y, 
-            #             None,  img_range_2D, offset_list)
-            # img_range_2D = [0.05,0, 4/16 ]
-            #do_SPaCE(nv_sig, nv_sig, 3, num_steps_x, num_steps_z, 
-            #          None,  img_range_2D, [offset_x, offset_y, +6/16])
-            #do_SPaCE(nv_sig, nv_sig, 3, num_steps_x, num_steps_z, 
-            #            None,  img_range_2D, [offset_x, offset_y, -6/16])
-            # img_range_2D = [0,0.05, 4/16 ]
-            # do_SPaCE(nv_sig, nv_sig, 5, num_steps_y, num_steps_z, 
-            #           None,  img_range_2D, offset_list)
-            
-            
-        # 1st airy ring power
-        t_list = [750e3] #1e3, 1e4, 1e5
-
-        for t in t_list:
-            nv_sig['CPG_laser_dur'] = t
-            num_steps = 301
-            num_runs = 25
-            ## +x
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[-0.275/50, -0.25/50,0 ], [-0.575/50, -0.25/50,0 ]],  None, offset_list)
-            # #-x
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[0.15/50, -0.25/50,0 ], [0.45/50, -0.25/50,0 ]],  None, offset_list)
-            # #-y
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[-0.055/50, -0.475/50,0 ], [-0.055/50, -0.775/50,0 ]],  None, offset_list)
-            # #+y
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps, None, 
-            #         [[-0.055/50, 0.05/50,0 ], [-0.055/50, 0.35/50,0 ]],  None, offset_list)
-            
-          
-          
-            
-         
-        # do_scc_resonance(nv_sig, opti_nv_sig, apd_indices)
-        #do_scc_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 315)
-        
-        z = nv_sig['coords'][2]
-        A = [-0.001, -0.008, z]
-        B = [-0.007, -0.008, z]
-        
-        depletion_point = [A, B]
-        # depletion_point = [ B]
-        
-        depletion_times = [10e3, 7.5e3]
-        for i in range(1): #do the measurement 4 times over
-        #for t in [8,10]:
-            for p in range(len(depletion_point)):   
-                nv_sig['depletion_coords'] = depletion_point[p]
-                nv_sig['CPG_laser_dur'] = depletion_times[p]
-        
-                # do_super_resolution_resonance(nv_sig, opti_nv_sig, apd_indices)
-                # do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 5 )
-                # do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 40 )
-                # do_super_resolution_spin_echo(nv_sig, opti_nv_sig, apd_indices, 0, 315 )
-                
-                # do_super_resolution_ramsey(nv_sig, opti_nv_sig, apd_indices, 0, 2)
         
         #drift = tool_belt.get_drift()
         #tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
@@ -774,8 +706,19 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_xyz(labrad.connect(), [0, 0, 5])
-        # tool_belt.set_xyz(labrad.connect(), [-0.169, -0.006, 5.086])
-
+        # tool_belt.set_xyz(labrad.connect(), [-0.064, -0.068,5.463]) #emitter 1 -0.125, -0.030
+        # tool_belt.set_xyz(labrad.connect(), [-0.233, -0.242, 5.474]) #emitter 2
+        # tool_belt.set_xyz(labrad.connect(), [-0.125, -0.030,5.463]) #tmd      
+        # tool_belt.set_xyz(labrad.connect(), [-0.254, -0.282,5.456]) #emitter 1 Au 
+        # tool_belt.set_xyz(labrad.connect(), [-0.233, -0.233  ,5.456]) #emitter 2 Au 
+        # tool_belt.set_xyz(labrad.connect(), [-0.115, -0.317  ,5.456]) #emitter 3 Au
+        # tool_belt.set_xyz(labrad.connect(), [-0.178, -0.131,5.503]) #emitter 4 Au 
+        # tool_belt.set_xyz(labrad.connect(), [-0.395, -0.139,5.503]) #emitter 5 Au
+        # tool_belt.set_xyz(labrad.connect(), [-0.247, 0.331,5.503]) #emitter 6 Au -0.247, 0.331
+        # tool_belt.set_xyz(labrad.connect(), [-0.224, -0.109,5.503]) #ML Au 
+        # tool_belt.set_xyz(labrad.connect(), [-0.216, -0.115,5.417]) #ML Au after
+#-0.243, -0.304,5.423
+#ML -0.216, -0.115,5.417
     except Exception as exc:
         # Intercept the exception so we can email it out and re-raise it
         if not debug_mode:

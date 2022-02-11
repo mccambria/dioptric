@@ -143,6 +143,12 @@ def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
     )
 
 
+def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
+    return (
+        const + (coeff1 * bose(delta1, temp)) + (coeff2 * bose(delta2, temp))
+    )
+
+
 def orbach_T5_free_linear(
     temp, coeff_orbach, activation, coeff_T5, coeff_linear
 ):
@@ -302,18 +308,107 @@ def fit_simultaneous(data_points):
     # )
 
     # T5 fixed + constant
-    init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
-    omega_fit_func = lambda temp, beta: orbach_T5_free_const(
-        temp, beta[1], beta[3], beta[0], beta[4]
+    # init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[1], beta[3], beta[0], beta[4]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[2], beta[3], beta[0], beta[5]
+    # )
+    # beta_desc = [
+    #     "T5_coeff (K^-5 s^-1)",
+    #     "omega_exp_coeff (s^-1)",
+    #     "gamma_exp_coeff (s^-1)",
+    #     "activation (meV)",
+    #     "Omega constant (K^-1 s^-1)",
+    #     "gamma constant (K^-1 s^-1)",
+    # ]
+
+    # Double Orbach
+    # init_params = (500, 1500, 72, 2000, 2000, 400, 0.01, 0.07)
+    # # init_params = (500, 1500, 72, 2000, 2000, 0.01, 0.07)
+    # omega_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     beta[-3],
+    #     beta[-2],  # 400, beta[5]
+    # )
+    # gamma_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[4],
+    #     beta[5],
+    #     beta[7],  # 400, beta[6]
+    # )
+    # beta_desc = [
+    #     "Omega Orbach 1 coeff (s^-1)",
+    #     "gamma Orbach 1 coeff (s^-1)",
+    #     "Orbach 1 Delta (meV)",
+    #     "Omega Orbach 2 coeff (s^-1)",
+    #     "gamma Orbach 2 coeff (s^-1)",
+    #     "Orbach 2 Delta (meV)",
+    #     "Omega constant (K^-1 s^-1)",
+    #     "gamma constant (K^-1 s^-1)",
+    # ]
+
+    # Double Orbach fixed
+    init_params = (500, 1500, 72, 2000, 400, 0.01, 0.07)
+    omega_fit_func = lambda temp, beta: double_orbach(
+        temp,
+        beta[0],
+        beta[2],
+        beta[3],
+        beta[4],
+        beta[5],
     )
-    gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
-        temp, beta[2], beta[3], beta[0], beta[5]
+    gamma_fit_func = lambda temp, beta: double_orbach(
+        temp,
+        beta[1],
+        beta[2],
+        beta[3],
+        beta[4],
+        beta[6],
     )
-    beta_desc = (
-        "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
-        " (s^-1), activation (meV), Omega constant (K^-1 s^-1), gamma constant"
-        " (K^-1 s^-1)]"
-    )
+    beta_desc = [
+        "Omega Orbach 1 coeff (s^-1)",
+        "gamma Orbach 1 coeff (s^-1)",
+        "Orbach 1 Delta (meV)",
+        "Orbach 2 coeff (s^-1)",
+        "Orbach 2 Delta (meV)",
+        "Omega constant (K^-1 s^-1)",
+        "gamma constant (K^-1 s^-1)",
+    ]
+
+    # Double Orbach fixed
+    # orbach1_delta = 60
+    # orbach2_delta = 400
+    # init_params = (500, 1500, 2000, 60, 0.01, 0.07)
+    # omega_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[3],
+    #     # orbach1_delta,
+    #     beta[2],
+    #     orbach2_delta,
+    #     beta[-2],
+    # )
+    # gamma_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[3],
+    #     # orbach1_delta,
+    #     beta[2],
+    #     orbach2_delta,
+    #     beta[-1],
+    # )
+    # beta_desc = (
+    #     "Omega Orbach 1 coeff (s^-1), gamma Orbach 1 coeff (s^-1), Omega"
+    #     " Orbach 2 coeff (s^-1), gamma Orbach 2 coeff (s^-1), Omega constant"
+    #     " (K^-1 s^-1), gamma constant (K^-1 s^-1)]"
+    # )
 
     # T5 fixed
     # init_params = (1.38e-11, 510, 2000, 72.0)
@@ -560,11 +655,18 @@ def main(
         data_points
     )
 
+    # omega_lambda = lambda temp: orbach_free(temp, 5.4603e02, 71)
+    # gamma_lambda = lambda temp: orbach_free(temp, 1.5312e03, 71)
+    # omega_lambda = lambda temp: orbach_free(temp, 1e8, 400)
+    # gamma_lambda = omega_lambda
     omega_lambda = lambda temp: omega_fit_func(temp, popt)
     gamma_lambda = lambda temp: gamma_fit_func(temp, popt)
-    print("Parameter description: {}".format(beta_desc))
-    print("popt: {}".format(tool_belt.round_sig_figs(popt, 5)))
-    print("psd: {}".format(tool_belt.round_sig_figs(numpy.sqrt(pvar), 2)))
+    print("parameter description: popt, psd")
+    for ind in range(len(popt)):
+        desc = beta_desc[ind]
+        val = tool_belt.round_sig_figs(popt[ind], 5)
+        err = tool_belt.round_sig_figs(numpy.sqrt(pvar[ind]), 2)
+        print("{}: {}, {}".format(desc, val, err))
     if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
         ax.plot(
             temp_linspace,
@@ -866,35 +968,35 @@ if __name__ == "__main__":
     tool_belt.init_matplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    # plot_type = "rates"
-    plot_type = "T2_max"
+    plot_type = "rates"
+    # plot_type = "T2_max"
     # plot_type = "ratios"
-    # plot_type = 'ratio_fits'
+    # plot_type = "ratio_fits"
     # plot_type = 'residuals'
 
     rates_to_plot = "both"
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [0, 500]
+    temp_range = [0, 550]
     # temp_range = [80, 500]
     xscale = "linear"
     # temp_range = [1, 500]
     # xscale = "log"
 
     file_name = "compiled_data"
-    # file_name = 'compiled_data-test'
+    # file_name = "spin_phonon_temp_dependence"
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
     if plot_type == "rates":
-        y_params = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]
+        y_params = [[[-10, 800], "linear"], [[5e-3, 1000], "log"]]
     elif plot_type == "T2_max":
         y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
     elif plot_type == "ratios":
-        pass
+        y_params = [[[0, 5], "linear"]]
     elif plot_type == "ratio_fits":
-        pass
+        y_params = [[[0, 5], "linear"]]
     elif plot_type == "residuals":
         pass
     # y_params = [y_params[1]]

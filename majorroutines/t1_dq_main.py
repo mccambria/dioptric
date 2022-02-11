@@ -7,7 +7,7 @@ This version streamlines those options into a single file where the options
 are passed into the main function. (Interleaving, running each experiment
 once then moving onto the next experiment as opposed to completing all the runs
 for one experiment then movning onto the next experiment, is not optional since
-not interleaving can introduce systematics probably related to charge 
+not interleaving can introduce systematics probably related to charge
 dynamics.)
 
 Pass into the function an experiment array, and it will run each experiment
@@ -56,7 +56,7 @@ def unpack_interleave(data, start_run=0, stop_run=None):
     if stop_run is None:
         # Assume incremental
         if "run_ind" in data:
-            stop_run = data["run_ind"] + 1
+            stop_run = data["run_ind"]
         else:
             stop_run = data["num_runs"]
     num_runs = stop_run - start_run
@@ -741,9 +741,18 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    file_name = "2022_01_30-04_17_27-wu-nv6_2021_12_25"
-    data = tool_belt.get_raw_data(file_name)
+    path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
+    folder = "main1-200k"
+    file_name = "incremental"
+    data = tool_belt.get_raw_data(file_name, path + folder)
 
+    # file_name = "2022_01_23-06_45_27-wu-nv6_2021_12_25"
+    # # path = "pc_hahn/branch_master/t1_dq_main/2022_01/incremental/"
+    # # file_name = "2022_01_23-17_05_07-wu-nv6_2021_12_25"
+    # data = tool_belt.get_raw_data(file_name)
+
+    # start = 75
+    # unpack_interleave(data, start, start + 24)
     unpack_interleave(data)
 
     # plt.show(block=True)

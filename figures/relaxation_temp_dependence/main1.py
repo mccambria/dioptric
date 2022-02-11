@@ -331,7 +331,7 @@ def main(data_sets, dosave=False, draft_version=True):
             print(ref_range)
             # MCC remove this after single NV data
             # ref_range = [0.68, 1.0]
-            # ref_range = [0.68, 0.92]
+            # ref_range = [0.63, 0.93]
             # ref_range = None
 
             signal_decay, ste_decay, times_decay = process_raw_data(
@@ -363,7 +363,7 @@ def main(data_sets, dosave=False, draft_version=True):
         ax.errorbar(
             times_decay,
             signal_decay,
-            yerr=ste_decay,
+            yerr=np.array(ste_decay),
             label="{} K".format(temp),
             zorder=5,
             marker="o",
@@ -384,6 +384,9 @@ def main(data_sets, dosave=False, draft_version=True):
     fig.text(
         -0.19, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
     )
+    x_buffer = 0.02 * max_time
+    ax.set_xlim([-x_buffer, max_time + x_buffer])
+    ax.set_ylim([0.25, 1.06])
 
     # %% Experimental layout
 
@@ -457,8 +460,8 @@ if __name__ == "__main__":
         },
         {
             "temp": 300,
-            "skip": True,
-            "decay_file": None,
+            "skip": False,
+            "decay_file": "2022_02_03-17_18_28-wu-nv6_2021_12_25",
             "rabi_file": None,
             "Omega": None,
             "gamma": None,
@@ -467,8 +470,8 @@ if __name__ == "__main__":
         },
         {
             "temp": 250,
-            "skip": True,
-            "decay_file": None,
+            "skip": False,
+            "decay_file": "2022_02_01-17_28_02-wu-nv6_2021_12_25",
             "rabi_file": None,
             "Omega": None,
             "gamma": None,
@@ -483,8 +486,8 @@ if __name__ == "__main__":
             # "decay_file": "2022_01_21-23_25_57-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_21-16_46_16-wu-nv6_2021_12_25",
             # 1e6 polarization
-            "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
-            "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # "decay_file": "2022_01_23-06_45_24-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             # -1,-1 off resonance
             # "decay_file": "2022_01_24-11_55_03-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
@@ -494,6 +497,12 @@ if __name__ == "__main__":
             # 1e5 polarization, start at 200 us
             # "decay_file": "2022_01_25-06_44_38-wu-nv6_2021_12_25",
             # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # 1e5 polarization, start at 500 us, chiller interruption
+            # "decay_file": "2022_01_27-09_03_53-wu-nv6_2021_12_25",
+            # "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
+            # Final
+            "decay_file": "2022_01_30-22_26_56-wu-nv6_2021_12_25",
+            "rabi_file": "2022_01_22-19_23_40-wu-nv6_2021_12_25",
             #
             "Omega": None,
             "gamma": None,

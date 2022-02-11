@@ -425,11 +425,11 @@ if __name__ == '__main__':
     }  # 14.5 max
 
     nv_sig = {
-        "coords": [235.935, 246.763, 5],
-        "name": "{}-nv5_2022_01_24".format(sample_name,),
+        "coords": [251.214, 249.435, 5],
+        "name": "{}-nv0_2022_02_04".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate":20, #35
+        "expected_count_rate":29 , #35
             'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,
@@ -443,7 +443,7 @@ if __name__ == '__main__':
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
         determine_readout_dur(nv_sig, nv_sig, [0], readout_times = [50e6],
-                              readout_yellow_powers = [0.15],
+                              readout_yellow_powers = [0.25],
                           nd_filter = 'nd_1.0')
     finally:
         # Reset our hardware - this should be done in each routine, but
