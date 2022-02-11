@@ -149,6 +149,9 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
 
+    # print(seq_args_string)
+    # return
+    
     drift_list = []
 
     # %% Get the starting time of the function
@@ -188,7 +191,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         
         ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
         
-        period = ret_vals[0]
+        period = numpy.int64(ret_vals[0])
         
         period_s = period/10**9
         period_s_total = (period_s*num_reps*num_steps + 1)
@@ -355,13 +358,16 @@ if __name__ == '__main__':
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
     
-    nv_sig = { 'coords': [-0.013, 0.000, 0], 'name': '{}-nv6_2021_12_25'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 27,
+    nv_sig = { 'coords': [0.010, -0.009, -1], 'name': '{}-nv6_2021_12_25'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 24,
+    # nv_sig = { 'coords': [0.003, -0.012, 0.0], 'name': '{}-nv6_2021_12_25'.format(sample_name),
+    #         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 30,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
             # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e3,
-            'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E4, 'spin_readout_dur': 350,
             # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
             
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
@@ -374,12 +380,13 @@ if __name__ == '__main__':
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
             # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 1e9, "charge_readout_laser_power": 0.95,
-            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 17e6, "charge_readout_laser_power": 1.0,
+            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1000e6, "charge_readout_laser_power": 1.0,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 1840e6, "charge_readout_laser_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8070, 'rabi_LOW': 177.5, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9487, 'rabi_HIGH': 224.3, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.8079, 'rabi_LOW': 164.1, 'uwave_power_LOW': 16.5,
+            # 'resonance_LOW': 2.8451, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9486, 'rabi_HIGH': 206.6, 'uwave_power_HIGH': 16.5}
     
     opti_nv_sig = nv_sig
     
@@ -393,7 +400,7 @@ if __name__ == '__main__':
     # num_reps = 400
     num_reps = 40
     # num_runs = 80
-    num_runs = 10
+    num_runs = 20
     
     do_plot = False
     

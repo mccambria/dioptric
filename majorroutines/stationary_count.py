@@ -16,7 +16,12 @@ import numpy
 import matplotlib.pyplot as plt
 import time
 import labrad
-import majorroutines.optimize_digital as optimize
+
+# Hmm, we need to figure out a better way to handle optimizing with different 
+# setups. Having two nearly identical versions of the same file just ain't 
+# gonna cut it.
+# import majorroutines.optimize_digital as optimize  
+import majorroutines.optimize as optimize
 
 
 # %% Functions

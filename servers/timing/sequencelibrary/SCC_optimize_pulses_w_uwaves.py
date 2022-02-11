@@ -223,7 +223,7 @@ def get_seq(pulse_streamer, config, args):
     final_digital = [pulser_do_clock]
     final = OutputState(final_digital, 0.0, 0.0)
 
-    return seq, final, [period]
+    return seq, final, [str(period)]
 
 
 if __name__ == "__main__":

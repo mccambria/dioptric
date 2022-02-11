@@ -144,20 +144,27 @@ def get_data_lists(folder_name):
                 min_relaxation_time, max_relaxation_time, num=num_steps
             )
 
-            # Calculate the average signal counts over the runs, and st. error
-            #            print(sig_counts)
-            avg_sig_counts = numpy.average(sig_counts[:num_runs], axis=0)
-            ste_sig_counts = numpy.std(
-                sig_counts[:num_runs], axis=0, ddof=1
-            ) / numpy.sqrt(num_runs)
-
+            # Calculate the average signal counts over the runs, and ste
+            
             # Assume reference is constant and can be approximated to one value
-            avg_ref = numpy.average(ref_counts[:num_runs])
-
-            # Divide signal by reference to get normalized counts and st error
-            norm_avg_sig = avg_sig_counts / avg_ref
-            norm_avg_sig_ste = ste_sig_counts / avg_ref
-
+            single_ref = False 
+            if single_ref:
+                avg_sig_counts = numpy.average(sig_counts[:num_runs], axis=0)
+                ste_sig_counts = numpy.std(
+                    sig_counts[:num_runs], axis=0, ddof=1
+                ) / numpy.sqrt(num_runs)
+    
+                avg_ref = numpy.average(ref_counts[:num_runs])
+    
+                # Divide signal by reference to get normalized counts and st error
+                norm_avg_sig = avg_sig_counts / avg_ref
+                norm_avg_sig_ste = ste_sig_counts / avg_ref
+                
+            else:
+                norm_sig = sig_counts[:num_runs] / ref_counts[:num_runs]
+                norm_avg_sig = numpy.average(norm_sig, axis=0)
+                norm_avg_sig_ste = numpy.std(norm_sig, axis=0, ddof=1) / numpy.sqrt(num_runs)
+                
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
             if (
@@ -336,7 +343,8 @@ def get_data_lists(folder_name):
                     abs(uwave_freq_init - uwave_freq_read) * 10 ** 3
                 )
 
-        except Exception:
+        except Exception as exc:
+            # print(exc)
             print("Skipping {}".format(str(file)))
             continue
 
@@ -738,7 +746,7 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
 if __name__ == "__main__":
 
-    temp = 150
+    temp = 5.5
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)
@@ -753,18 +761,18 @@ if __name__ == "__main__":
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
     folders = [
-        # "wu-nv6_2021_12_25-{}K".format(temp),
-        "main1_test",
+        "wu-nv6_2021_12_25-{}K".format(temp),
+        # "main1_test",
     ]
 
     for folder in folders:
         gamma, ste = main(
             path,
             folder,
-            omega=0.0113,
-            omega_ste=0.0,
+            omega=None,
+            omega_ste=None,
             doPlot=True,
             offset=False,
         )
 
-    plt.show(block=True)
+    # plt.show(block=True)

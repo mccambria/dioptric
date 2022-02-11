@@ -7,7 +7,7 @@ This version streamlines those options into a single file where the options
 are passed into the main function. (Interleaving, running each experiment
 once then moving onto the next experiment as opposed to completing all the runs
 for one experiment then movning onto the next experiment, is not optional since
-not interleaving can introduce systematics probably related to charge 
+not interleaving can introduce systematics probably related to charge
 dynamics.)
 
 Pass into the function an experiment array, and it will run each experiment
@@ -755,4 +755,4 @@ if __name__ == "__main__":
     # unpack_interleave(data, start, start + 24)
     unpack_interleave(data)
 
-    plt.show(block=True)
+    # plt.show(block=True)

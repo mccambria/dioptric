@@ -359,7 +359,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_rabi/branch_master/image_sample/2022_01'
     file_name = '2022_01_12-10_34_08-burnell-nv2_2022_01_11'
 
     data = tool_belt.get_raw_data(file_name)
