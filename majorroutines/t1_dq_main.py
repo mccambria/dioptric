@@ -187,7 +187,7 @@ def unpack_interleave(data, start_run=0, stop_run=None):
         }
 
         # Save each figure
-        dosave = False
+        dosave = True
         if dosave:
             file_path = tool_belt.get_file_path(
                 __file__, timestamp, nv_sig["name"]
@@ -741,17 +741,9 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    # path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
-    # folder = "wu-nv6_2021_12_25-150K"
-    # file_name = "incremental"
-    # data = tool_belt.get_raw_data(file_name, path + folder)
-
-    file_name = "2022_01_23-06_45_27-wu-nv6_2021_12_25"
-    # path = "pc_hahn/branch_master/t1_dq_main/2022_01/incremental/"
-    # file_name = "2022_01_23-17_05_07-wu-nv6_2021_12_25"
+    file_name = "2022_01_30-04_17_27-wu-nv6_2021_12_25"
     data = tool_belt.get_raw_data(file_name)
 
-    start = 75
-    unpack_interleave(data, start, start + 24)
+    unpack_interleave(data)
 
-    plt.show(block=True)
+    # plt.show(block=True)
