@@ -173,6 +173,8 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 
     tool_belt.init_safe_stop()
     
+    charge_initialization = (nv_minus_initialization or nv_zero_initialization)
+    # print(charge_initialization)
 
     while True:
         
@@ -183,19 +185,19 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
             break
         
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_separate_gates()
+        if charge_initialization:
+            new_samples = cxn.apd_tagger.read_counter_modulo_gates(2)
+        else:
+            new_samples = cxn.apd_tagger.read_counter_simple()
 
         # Read the samples and update the image
-        # new_samples = cxn.apd_tagger.read_counter_simple()
 #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
             
-            signal = [sum(el[0::2]) for el in new_samples]
-            background = [sum(el[1::2]) for el in new_samples]
-            new_samples = numpy.array(signal) - numpy.array(background)
-            new_samples = new_samples.tolist()
-            # new_samples = signal
+            # If we did charge initialization, subtract out the background
+            if charge_initialization:
+                new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
             
             update_line_plot(new_samples, num_read_so_far, *args)
             num_read_so_far += num_new_samples

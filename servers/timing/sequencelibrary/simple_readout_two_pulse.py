@@ -87,7 +87,8 @@ def get_seq(pulse_streamer, config, args):
 
 
         train_read_laser = [(galvo_move_time + init_pulse_aom_delay_time + init_pulse_time + intra_pulse_delay, LOW),
-                 (readout_time, HIGH), (100 ,LOW )]
+                            (readout_time, HIGH), 
+                            (100 ,LOW )]
         tool_belt.process_laser_seq(pulse_streamer, seq, config,
                                 readout_laser_key, read_laser_power, train_read_laser)
 

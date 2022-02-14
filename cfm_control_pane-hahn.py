@@ -16,6 +16,7 @@ Created on Sun Nov 25 14:00:28 2018
 
 import labrad
 import numpy
+import numpy as np
 import time
 import copy
 import utils.tool_belt as tool_belt
@@ -37,6 +38,7 @@ import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import majorroutines.lifetime as lifetime
 import majorroutines.lifetime_v2 as lifetime_v2
+import chargeroutines.determine_charge_readout_params as determine_charge_readout_params
 # import majorroutines.set_drift_from_reference_image as set_drift_from_reference_image
 import chargeroutines.scc_pulsed_resonance as scc_pulsed_resonance
 import debug.test_major_routines as test_major_routines
@@ -97,17 +99,6 @@ def do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=False):
 def do_optimize(nv_sig, apd_indices):
 
     optimize.main(nv_sig, apd_indices,
-              set_to_opti_coords=False, save_data=True, plot_data=True)
-
-
-def do_optimize_list(nv_sig_list, apd_indices):
-
-    optimize.optimize_list(nv_sig_list, apd_indices)
-    
-    
-def do_opti_z(nv_sig_list, apd_indices):
-    
-    optimize.opti_z(nv_sig_list, apd_indices,
               set_to_opti_coords=False, save_data=True, plot_data=True)
 
 
@@ -178,7 +169,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     freq_range = 0.040
     num_steps = 51
     num_reps = 5000
-    num_runs = 20
+    num_runs = 40
     
     # Zoom
     # freq_range = 0.035
@@ -194,18 +185,69 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     nv_sig["resonance_{}".format(state.name)] = res
 
 
-def do_scc_resonance(nv_sig, apd_indices, state=States.LOW):
-    freq_center = nv_sig['resonance_{}'.format(state.name)]
-    uwave_power = nv_sig['uwave_power_{}'.format(state.name)]
-    uwave_pulse_dur = nv_sig['rabi_{}'.format(state.name)]/2
+def do_scc_pulsed_resonance(nv_sig, apd_indices, state=States.LOW):
+
+    opti_nv_sig = nv_sig
+    state = "LOW"
+    freq_center = nv_sig['resonance_{}'.format(state)]
+    uwave_power = nv_sig['uwave_power_{}'.format(state)]
+    uwave_pulse_dur =  tool_belt.get_pi_pulse_dur(nv_sig['rabi_{}'.format(state)])
+    freq_range = 0.040
+    # num_steps = 21
+    num_steps = 1
+    num_reps = int(5e3)
+    # num_runs = 80
+    num_runs = 5
     
-    freq_range = 0.05
-    num_steps = 51
-    num_reps = int(10)  # int(10**3)
-    num_runs = 30
+    # for red_dur in numpy.linspace(75, 300, 10):
+    #     nv_sig['nv0_ionization_dur'] = red_dur
+    #     scc_pulsed_resonance.main(nv_sig, opti_nv_sig, apd_indices, 
+    #                               freq_center, freq_range,
+    #                               num_steps, num_reps, num_runs, 
+    #                               uwave_power, uwave_pulse_dur)
     
-    scc_pulsed_resonance.main(nv_sig, nv_sig, apd_indices, freq_center, freq_range,
-         num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur, state)
+    scc_pulsed_resonance.main(nv_sig, opti_nv_sig, apd_indices, 
+                              freq_center, freq_range,
+                              num_steps, num_reps, num_runs,
+                              uwave_power, uwave_pulse_dur)
+
+
+def do_determine_charge_readout_params(nv_sig, apd_indices):
+
+    # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
+    #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
+    #                 6*10**6, 7*10**6, 8*10**6, 9*10**6, 1*10**7,
+    #                 2*10**7, 3*10**7, 4*10**7, 5*10**7]
+    # readout_durs = numpy.linspace(10e6, 50e6, 5)
+    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9, 2e9]
+    # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 1e9]
+    readout_durs = [5e6, 10e6, 20e6, 40e6, 100e6]
+    # readout_durs = numpy.linspace(700e6, 1e9, 7)
+    # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
+    # readout_durs = [2e9]
+    readout_durs = [int(el) for el in readout_durs]
+    max_readout_dur = max(readout_durs)
+    
+    # readout_powers = np.linspace(0.6, 1.0, 9)
+    # readout_powers = np.arange(0.6, 1.05, 0.05)
+    # readout_powers = np.arange(0.68, 1.04, 0.04)
+    # readout_powers = np.linspace(0.9, 1.0, 3)
+    readout_powers = [0.75, 1.0]
+    readout_powers = [round(val, 3) for val in readout_powers]
+    
+    # num_reps = 2000
+    # num_reps = 1000
+    num_reps = 500
+    
+    determine_charge_readout_params.determine_readout_dur_power(
+        nv_sig,
+        nv_sig,
+        apd_indices,
+        num_reps,
+        max_readout_dur=max_readout_dur,
+        readout_powers=readout_powers,
+        plot_readout_durs=readout_durs,
+    )
 
 
 def do_optimize_magnet_angle(nv_sig, apd_indices):
@@ -238,7 +280,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
     num_reps = 5000
-    num_runs = 20
+    num_runs = 40
 
     period = rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -258,114 +300,6 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
     #     discrete_rabi.main(nv_sig, apd_indices,
     #                         state, max_num_pi_pulses, num_reps, num_runs, iq_delay)
 
-
-def do_t1_battery(nv_sig, apd_indices):
-
-    # T1 experiment parameters, formatted:
-    # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
-    
-    num_runs = 250
-    num_reps = 500
-    num_steps = 12
-    min_tau = 20e3
-    max_tau_omega = 29e6
-    max_tau_gamma = 18e6
-    # max_tau_omega = 1e6
-    # max_tau_gamma = max_tau_omega
-    t1_exp_array = numpy.array([
-            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
-            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
-            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
-            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
-            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            ], dtype=object)
-
-    # Loop through the experiments
-    for exp_ind in range(len(t1_exp_array)):
-
-        init_read_states = t1_exp_array[exp_ind, 0]
-        relaxation_time_range = t1_exp_array[exp_ind, 1]
-        num_steps = t1_exp_array[exp_ind, 2]
-        num_reps = t1_exp_array[exp_ind, 3]
-        num_runs = t1_exp_array[exp_ind, 4]
-
-        t1_double_quantum.main(nv_sig, apd_indices, relaxation_time_range,
-                           num_steps, num_reps, num_runs, init_read_states)
-
-
-def do_t1_dq_knill_battery(nv_sig, apd_indices):
-
-    # T1 experiment parameters, formatted:
-    # [[init state, read state], relaxation_time_range, num_steps, num_reps, num_runs]
-    num_runs = 150
-    num_reps = 1e3
-    num_steps = 2
-    min_tau = 20e3
-    # max_tau_omega = 29e6
-    # max_tau_gamma = 18e6
-    max_tau_omega = 1e6
-    max_tau_gamma = max_tau_omega
-    t1_exp_array = numpy.array([
-            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
-            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
-            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
-            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
-            # [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            # [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            # [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            # [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            # [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            # [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            # [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            # [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            ], dtype=object)
-
-    # Loop through the experiments
-    for exp_ind in range(len(t1_exp_array)):
-
-        init_read_states = t1_exp_array[exp_ind, 0]
-        relaxation_time_range = t1_exp_array[exp_ind, 1]
-        num_steps = t1_exp_array[exp_ind, 2]
-        num_reps = t1_exp_array[exp_ind, 3]
-        num_runs = t1_exp_array[exp_ind, 4]
-
-        t1_dq_knill.main(nv_sig, apd_indices, relaxation_time_range,
-                         num_steps, num_reps, num_runs, init_read_states)
-
-
-def do_t1_interleave_knill(nv_sig, apd_indices):
-    # T1 experiment parameters, formatted:
-    # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 500
-    num_reps = 20
-    num_steps = 4
-    min_tau = 20e3
-    max_tau_omega = int(10e9)
-    max_tau_gamma = int(10e9)
-    t1_exp_array = numpy.array([
-            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
-            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
-            [[States.ZERO, States.HIGH], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
-            [[States.ZERO, States.ZERO], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
-            # [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            # [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            # [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            # [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-            [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-            ], dtype=object)
-
-    t1_interleave_knill.main(nv_sig, apd_indices, t1_exp_array, num_runs)
-    
     
 def paper_figure1_data(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
@@ -414,19 +348,6 @@ def do_t1_dq_scc(nv_sig, apd_indices):
                     scc_readout=True)
     
     
-def do_lifetime(nv_sig, apd_indices, filter, voltage, reference = False):
-    
-#    num_reps = 100 #MM 
-    num_reps = 500 #SM
-    num_bins = 101 
-    num_runs = 10
-    readout_time_range = [0, 1.0 * 10**6] #ns
-    polarization_time = 60 * 10**3 #ns
-    
-    lifetime_v2.main(nv_sig, apd_indices, readout_time_range,
-         num_reps, num_runs, num_bins, filter, voltage, polarization_time, reference)
-    
-    
 def do_ramsey(nv_sig, apd_indices):
 
     detuning = 2.5  # MHz
@@ -443,7 +364,7 @@ def do_spin_echo(nv_sig, apd_indices):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    max_time = 140  # us
+    max_time = 150  # us
     num_steps = max_time  # 1 point per us
     precession_time_range = [1e3, max_time * 10**3]
     num_reps = 3000
@@ -469,40 +390,6 @@ def do_spin_echo_battery(nv_sig, apd_indices):
     do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
     angle = do_spin_echo(nv_sig, apd_indices)
     return angle
-    
-    
-def do_optimize_magnet_angle_fine(nv_sig, apd_indices):
-
-    for magnet_angle in numpy.linspace(45, 65, 6):
-        nv_sig["magnet_angle"] = magnet_angle
-        angle = do_spin_echo_battery(nv_sig, apd_indices)
-        if angle < 5:
-            break
-
-
-def do_sample_nvs(nv_sig_list, apd_indices):
-
-    # g2 parameters
-    run_time = 60 * 5
-    diff_window = 150
-
-    # PESR parameters
-    num_steps = 101
-    num_reps = 10**5
-    num_runs = 5
-    uwave_power = 9.0
-    uwave_pulse_dur = 100
-
-    g2 = g2_measurement.main_with_cxn
-    pesr = pulsed_resonance.main_with_cxn
-
-    with labrad.connect() as cxn:
-        for nv_sig in nv_sig_list:
-            g2_zero = g2(cxn, nv_sig, run_time, diff_window,
-                         apd_indices[0], apd_indices[1])
-            if g2_zero < 0.5:
-                pesr(cxn, nv_sig, apd_indices, 2.87, 0.1, num_steps,
-                     num_reps, num_runs, uwave_power, uwave_pulse_dur)
 
 
 def do_test_major_routines(nv_sig, apd_indices):
@@ -532,40 +419,12 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    # nv_sig = { 'coords': [0.0, -0.012, 0], 'name': '{}-nv6_2021_12_25'.format(sample_name),
-    #         'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 24,
+    nv_sig = { 'coords': [-0.006, 0.000, -5], 'name': '{}-nv1_2022_02_10'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 14.5,
             
-    #         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1E8,
-    #         # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-    #         # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
-    #         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-    #         'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E4, 'spin_readout_dur': 350,
-    #         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
-            
-    #         'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
-    #         # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
-    #         'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
-            
-    #         'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 300,
-    #         'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 500,
-            
-    #         'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
-    #         # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
-    #         "initialize_laser": green_laser, "initialize_dur": 1e4,
-    #         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1000e6, "charge_readout_laser_power": 1.0,
-    #         "charge_readout_laser": yellow_laser, "charge_readout_dur": 1840e6, "charge_readout_laser_power": 1.0,
-            
-    #         'collection_filter': None, 'magnet_angle': None,
-    #         'resonance_LOW': 2.8079, 'rabi_LOW': 164.1, 'uwave_power_LOW': 16.5,
-    #         # 'resonance_LOW': 2.8451, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
-    #         'resonance_HIGH': 2.9486, 'rabi_HIGH': 206.6, 'uwave_power_HIGH': 16.5}
-    
-    nv_sig = { 'coords': [-0.018, -0.010, 0], 'name': '{}-nv1_2022_02_10'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 15,
-            
-            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
             # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
-            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e7,
+            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e7,
             # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
             # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
@@ -575,42 +434,28 @@ if __name__ == '__main__':
             
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
             # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
+            # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E4, 'nv-_prep_laser_filter': 'nd_0.5',
             
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 300,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 500,
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 75,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 100,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
             # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1000e6, "charge_readout_laser_power": 1.0,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 1840e6, "charge_readout_laser_power": 1.0,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
+            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1840e6, "charge_readout_laser_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8073, 'rabi_LOW': 173.2, 'uwave_power_LOW': 16.5,
-            # 'resonance_LOW': 2.8451, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9489, 'rabi_HIGH': 234.6, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.8067, 'rabi_LOW': 188.0, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9488, 'rabi_HIGH': 236.6, 'uwave_power_HIGH': 16.5}
     
-    # nv_sig = { 'coords': [-0.020, -0.021, 0], 'name': '{}-search'.format(sample_name),
-    #         'disable_opt': True, 'expected_count_rate': None,
-    #         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-    #         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
-    #         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e7,
-    #         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
-    #         'collection_filter': None, 'magnet_angle': None,}
-     
-    # nv_sig = { 'coords': [0.0, 0.0, 1], 'name': '{}-search'.format(sample_name),
-    #         'disable_opt': True, 'expected_count_rate': None,
-    #         'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-    #         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e7,
-    #         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
-    #         'collection_filter': None, 'magnet_angle': None,}
     
     # %% Functions to run
 
     try:
     
-        tool_belt.init_safe_stop()
+        # tool_belt.init_safe_stop()
         
         # Increasing x moves the image down, decreasing y moves the image right
         # with labrad.connect() as cxn:
@@ -631,7 +476,7 @@ if __name__ == '__main__':
         #     # do_image_sample_zoom(nv_sig, apd_indices)
         #     do_image_sample(nv_sig, apd_indices)
          
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -661,6 +506,10 @@ if __name__ == '__main__':
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
+        # SCC characterization
+        do_determine_charge_readout_params(nv_sig, apd_indices)
+        # do_scc_pulsed_resonance(nv_sig, apd_indices)
+        
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
@@ -674,8 +523,8 @@ if __name__ == '__main__':
         # paper_figure1_data(nv_sig, apd_indices)
         # do_t1_dq_scc(nv_sig, apd_indices)
         
-    except Exception as exc:
-        print(exc)
+    # except Exception as exc:
+    #     print(exc)
         
     finally:
         

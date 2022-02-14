@@ -90,7 +90,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     # %% Initial calculations and setup
 
     tool_belt.reset_cfm(cxn)
-    file_name = 'SCC_optimize_pulses_w_uwaves.py'
+    seq_file = 'SCC_optimize_pulses_w_uwaves.py'
 
     # Calculate the frequencies we need to set
     half_freq_range = freq_range / 2
@@ -164,7 +164,6 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     tool_belt.init_safe_stop()
     
     start_time = time.time()
-    start_function_time = start_time
     
     
     for run_ind in range(num_runs):
@@ -179,6 +178,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         drift = tool_belt.get_drift()
         drift_list.append(drift)
         adjusted_nv_coords = numpy.array(nv_coords) + drift
+        last_opti_time = time.time()
         
         tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
         tool_belt.set_filter(cxn, nv_sig, "nv0_ionization_laser")
@@ -189,7 +189,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         # own sequences)
         sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
         
-        ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+        ret_vals = cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
         
         period = numpy.int64(ret_vals[0])
         
@@ -212,20 +212,19 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             freq_ind = freq_ind_list[step_ind]
             # print(freqs[freq_ind])
             
-            time_current = time.time()
-            if time_current - start_time > opti_interval * 60:
+            current_time = time.time()
+            if current_time - last_opti_time > opti_interval * 60:
                 optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
                 drift = tool_belt.get_drift()
                 drift_list.append(drift)
                 adjusted_nv_coords = numpy.array(nv_coords) + drift
-                
-                start_time = time_current
+                last_opti_time = current_time
                 
             tool_belt.set_xyz(cxn, adjusted_nv_coords)
             
             tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
             tool_belt.set_filter(cxn, nv_sig, "nv0_ionization_laser")
-            tool_belt.set_filter(cxn, nv_sig, "nv-_ionization_laser")
+            tool_belt.set_filter(cxn, nv_sig, "nv-_reionization_laser")
             
             # print(freqs[freq_ind])
             sig_gen_cxn.set_freq(freqs[freq_ind])
@@ -235,7 +234,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             # Start the tagger stream
             cxn.apd_tagger.start_tag_stream(apd_indices)
             
-            cxn.pulse_streamer.stream_immediate(file_name, num_reps, seq_args_string)
+            cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
         
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
             sample_counts = new_counts[0]
@@ -282,7 +281,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
 
     # %% Process and plot the data
     end_function_time = time.time()
-    time_elapsed = end_function_time - start_function_time
+    time_elapsed = end_function_time - start_time
     # print(time_elapsed)
     
     if do_plot:
@@ -358,35 +357,35 @@ if __name__ == '__main__':
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
     
-    nv_sig = { 'coords': [0.010, -0.009, -1], 'name': '{}-nv6_2021_12_25'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 24,
-    # nv_sig = { 'coords': [0.003, -0.012, 0.0], 'name': '{}-nv6_2021_12_25'.format(sample_name),
-    #         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 30,
+    nv_sig = { 'coords': [-0.018, -0.009, -4], 'name': '{}-nv1_2022_02_10'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 13.5,
             
-            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
+            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
+            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e7,
+            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e3,
+            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
             # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
             'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E4, 'spin_readout_dur': 350,
             # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
             
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
-            # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
+            # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E4, 'nv-_reionization_laser_filter': 'nd_0.5',
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
             
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 300,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 500,
+            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 200,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 100,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
             # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1000e6, "charge_readout_laser_power": 1.0,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 1840e6, "charge_readout_laser_power": 1.0,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 11e6, "charge_readout_laser_power": 1.0,
+            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1840e6, "charge_readout_laser_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8079, 'rabi_LOW': 164.1, 'uwave_power_LOW': 16.5,
-            # 'resonance_LOW': 2.8451, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9486, 'rabi_HIGH': 206.6, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.8073, 'rabi_LOW': 173.2, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9489, 'rabi_HIGH': 234.6, 'uwave_power_HIGH': 16.5}
     
     opti_nv_sig = nv_sig
     
@@ -397,14 +396,19 @@ if __name__ == '__main__':
     freq_range = 0.040
     # num_steps = 21
     num_steps = 1
-    # num_reps = 400
-    num_reps = 40
+    num_reps = int(5e3)
     # num_runs = 80
-    num_runs = 20
+    num_runs = 5
     
     do_plot = False
     
     try:
+        
+        
+        for red_dur in numpy.linspace(75, 300, 10):
+            nv_sig['nv0_ionization_dur'] = red_dur
+            main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
+                  num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
         
         # for red_dur in numpy.linspace(75, 200, 6):
         #     nv_sig['nv0_ionization_dur'] = red_dur
@@ -414,7 +418,6 @@ if __name__ == '__main__':
         #             nv_sig['spin_shelf_laser_power'] = pwr
         #             main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
         #                   num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-        # sys.exit()
             
         # for red_dur in numpy.linspace(100, 250, 4):
         #     for shelf_dur in numpy.linspace(0, 50, 3):
@@ -423,10 +426,9 @@ if __name__ == '__main__':
         #         nv_sig['spin_shelf_dur'] = shelf_dur
         #         main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
         #               num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
-        # sys.exit()
             
-        main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
-              num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
+        # main(nv_sig, opti_nv_sig, apd_indices, freq_center, freq_range,
+        #       num_steps, num_reps, num_runs, uwave_power, uwave_pulse_dur)
         
         if do_plot:
             file_low = '2021_09_28-13_32_45-johnson-dnv7_2021_09_23'
