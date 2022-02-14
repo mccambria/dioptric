@@ -37,16 +37,17 @@ def get_seq(pulse_streamer, config, args):
     readout_time = numpy.int64(readout_time)
     init_time = numpy.int64(init_time)
     init_readout_buffer = 4e3
-    # init_readout_buffer = 1000
+    # init_readout_buffer = 500
     readout_init_buffer = 500
     
     # period = numpy.int64(common_delay + init_time + readout_time + 300)
 
 #    tool_belt.check_laser_power(laser_name, laser_power)
 
-    chop_factor = 1
-    # chop_factor = 10
-    # chop_factor = int(1e4)
+    # chop_factor = 1
+    chop_factor = 10  # For yellow 1e8 readouts
+    # chop_factor = int(1e4)  # For green 1e7 readouts
+    # chop_factor = int(1e5)  # For green 1e8 readouts
     readout_time /= chop_factor
 
     # Define the sequence

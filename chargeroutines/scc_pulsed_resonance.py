@@ -164,7 +164,6 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
     tool_belt.init_safe_stop()
     
     start_time = time.time()
-    start_function_time = start_time
     
     
     for run_ind in range(num_runs):
@@ -179,6 +178,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
         drift = tool_belt.get_drift()
         drift_list.append(drift)
         adjusted_nv_coords = numpy.array(nv_coords) + drift
+        last_opti_time = time.time()
         
         tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
         tool_belt.set_filter(cxn, nv_sig, "nv0_ionization_laser")
@@ -212,14 +212,13 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
             freq_ind = freq_ind_list[step_ind]
             # print(freqs[freq_ind])
             
-            time_current = time.time()
-            if time_current - start_time > opti_interval * 60:
+            current_time = time.time()
+            if current_time - last_opti_time > opti_interval * 60:
                 optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
                 drift = tool_belt.get_drift()
                 drift_list.append(drift)
                 adjusted_nv_coords = numpy.array(nv_coords) + drift
-                
-                start_time = time_current
+                last_opti_time = current_time
                 
             tool_belt.set_xyz(cxn, adjusted_nv_coords)
             
@@ -282,7 +281,7 @@ def main_with_cxn(cxn, nv_sig, opti_nv_sig,apd_indices, freq_center, freq_range,
 
     # %% Process and plot the data
     end_function_time = time.time()
-    time_elapsed = end_function_time - start_function_time
+    time_elapsed = end_function_time - start_time
     # print(time_elapsed)
     
     if do_plot:
