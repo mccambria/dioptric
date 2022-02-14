@@ -16,6 +16,7 @@ Created on Sun Nov 25 14:00:28 2018
 
 import labrad
 import numpy
+import numpy as np
 import time
 import copy
 import utils.tool_belt as tool_belt
@@ -168,7 +169,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     freq_range = 0.040
     num_steps = 51
     num_reps = 5000
-    num_runs = 20
+    num_runs = 40
     
     # Zoom
     # freq_range = 0.035
@@ -228,10 +229,11 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
     max_readout_dur = max(readout_durs)
     
     # readout_powers = np.linspace(0.6, 1.0, 9)
-    # readout_powers = np.arange(0.75, 1.05, 0.05)
+    # readout_powers = np.arange(0.6, 1.05, 0.05)
     # readout_powers = np.arange(0.68, 1.04, 0.04)
     # readout_powers = np.linspace(0.9, 1.0, 3)
-    readout_powers = [1.0]
+    readout_powers = [0.75, 1.0]
+    readout_powers = [round(val, 3) for val in readout_powers]
     
     # num_reps = 2000
     # num_reps = 1000
@@ -278,7 +280,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
     num_reps = 5000
-    num_runs = 20
+    num_runs = 40
 
     period = rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -362,7 +364,7 @@ def do_spin_echo(nv_sig, apd_indices):
 
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it's more like 100 us at 300 K
-    max_time = 140  # us
+    max_time = 150  # us
     num_steps = max_time  # 1 point per us
     precession_time_range = [1e3, max_time * 10**3]
     num_reps = 3000
@@ -445,8 +447,8 @@ if __name__ == '__main__':
             # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1840e6, "charge_readout_laser_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8073, 'rabi_LOW': 173.2, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9489, 'rabi_HIGH': 234.6, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.8067, 'rabi_LOW': 188.0, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9488, 'rabi_HIGH': 236.6, 'uwave_power_HIGH': 16.5}
     
     
     # %% Functions to run
@@ -505,8 +507,8 @@ if __name__ == '__main__':
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
         # SCC characterization
-        # do_determine_charge_readout_params(nv_sig, apd_indices)
-        do_scc_pulsed_resonance(nv_sig, apd_indices)
+        do_determine_charge_readout_params(nv_sig, apd_indices)
+        # do_scc_pulsed_resonance(nv_sig, apd_indices)
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
