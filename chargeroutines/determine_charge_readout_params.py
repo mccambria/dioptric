@@ -373,7 +373,7 @@ if __name__ == "__main__":
     # if False:
     if True:
         tool_belt.init_matplotlib()
-        file_name = "2022_02_13-23_14_53-wu-nv1_2022_02_10"
+        file_name = "2022_02_14-08_52_01-wu-nv1_2022_02_10"
         data = tool_belt.get_raw_data(file_name)
         nv_sig = data["nv_sig"]
         nv0 = data["nv0"]
@@ -403,7 +403,7 @@ if __name__ == "__main__":
         # for dur in readout_durs:
         #     plot_histogram(nv_sig, nv0, nvm, dur, readout_power)
 
-        # plt.show(block=True)
+        plt.show(block=True)
         sys.exit()
 
     ########################
