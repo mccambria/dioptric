@@ -145,26 +145,28 @@ def get_data_lists(folder_name):
             )
 
             # Calculate the average signal counts over the runs, and ste
-            
+
             # Assume reference is constant and can be approximated to one value
-            single_ref = False 
+            single_ref = False
             if single_ref:
                 avg_sig_counts = numpy.average(sig_counts[:num_runs], axis=0)
                 ste_sig_counts = numpy.std(
                     sig_counts[:num_runs], axis=0, ddof=1
                 ) / numpy.sqrt(num_runs)
-    
+
                 avg_ref = numpy.average(ref_counts[:num_runs])
-    
+
                 # Divide signal by reference to get normalized counts and st error
                 norm_avg_sig = avg_sig_counts / avg_ref
                 norm_avg_sig_ste = ste_sig_counts / avg_ref
-                
+
             else:
                 norm_sig = sig_counts[:num_runs] / ref_counts[:num_runs]
                 norm_avg_sig = numpy.average(norm_sig, axis=0)
-                norm_avg_sig_ste = numpy.std(norm_sig, axis=0, ddof=1) / numpy.sqrt(num_runs)
-                
+                norm_avg_sig_ste = numpy.std(
+                    norm_sig, axis=0, ddof=1
+                ) / numpy.sqrt(num_runs)
+
             # Check to see which data set the file is for, and append the data
             # to the corresponding array
             if (
@@ -750,12 +752,14 @@ if __name__ == "__main__":
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)
-    # print('good times in ms')
-    # print('Omega: {}'.format(4000/(3*est_omega)))
-    # print('gamma: {}'.format(4000/(2*est_gamma + est_omega)))
-    # # print('Omega: {}'.format(est_omega))
-    # # print('gamma: {}'.format(est_gamma))
-    # sys.exit()
+    est_omega = 0.01 / 3
+    est_gamma = 2 * est_omega
+    print("good times in ms")
+    print("Omega: {}".format(4000 / (3 * est_omega)))
+    print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
+    # print('Omega: {}'.format(est_omega))
+    # print('gamma: {}'.format(est_gamma))
+    sys.exit()
 
     plt.ion()
 

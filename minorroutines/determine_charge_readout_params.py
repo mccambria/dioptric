@@ -76,9 +76,11 @@ def calc_separation(
 
 def determine_opti_readout_dur(nv0, nvm, max_readout_dur):
 
-    readout_dur_linspace = np.arange(10e6, max_readout_dur, 10e6)
-    # readout_dur_linspace = np.arange(10e6, 250e6, 10e6)
-    # readout_dur_linspace = np.arange(5e6, 20e6, 1e6)
+    if max_readout_dur <= 100e6:
+        readout_dur_linspace = np.arange(1e6, max_readout_dur, 1e6)
+    else:
+        readout_dur_linspace = np.arange(10e6, max_readout_dur, 10e6)
+    
     # Round to nearest ms
     readout_dur_linspace = [
         int(1e6 * round(val / 1e6)) for val in readout_dur_linspace
@@ -366,19 +368,24 @@ if __name__ == "__main__":
 
     ############ Replots ############
 
-    if False:
-    # if True:
+    # if False:
+    if True:
         tool_belt.init_matplotlib()
-        file_name = "2022_02_11-00_11_55-wu-nv1_2022_02_10"
-        data = tool_belt.get_raw_data(file_name)
+        path_from_nvdata = (
+            "pc_hahn/branch_master/determine_charge_readout_params/2022_02"
+        )
+        file_name = "2022_02_14-03_32_40-wu-nv1_2022_02_10"
+        data = tool_belt.get_raw_data(file_name, path_from_nvdata)
         nv_sig = data["nv_sig"]
         nv0 = data["nv0"]
         nvm = data["nvm"]
         readout_power = nv_sig["charge_readout_laser_power"]
         max_readout_dur = nv_sig["charge_readout_dur"]
 
-        opti_readout_dur = determine_opti_readout_dur(nv0, nvm, max_readout_dur)
-        # opti_readout_dur = 100e6
+        opti_readout_dur = determine_opti_readout_dur(
+            nv0, nvm, max_readout_dur
+        )
+        # opti_readout_dur = 11e6
         # do_save = True
         do_save = False
         plot_histogram(
@@ -467,36 +474,57 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
-    nv_sig = { 'coords': [-0.018, -0.010, 0], 'name': '{}-nv1_2022_02_10'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 15,
-
-            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
-            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
-            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e7,
-            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
-            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-            # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
-            # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-            'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E4, 'spin_readout_dur': 350,
-            # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
-
-            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
-            # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
-
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 100,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 100,
-
-            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
-            # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
-            "initialize_laser": green_laser, "initialize_dur": 1e4,
-            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1000e6, "charge_readout_laser_power": 1.0,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 1840e6, "charge_readout_laser_power": 1.0,
-
-            'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8073, 'rabi_LOW': 173.2, 'uwave_power_LOW': 16.5,
-            # 'resonance_LOW': 2.8451, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9489, 'rabi_HIGH': 234.6, 'uwave_power_HIGH': 16.5}
+    nv_sig = {
+        "coords": [-0.018, -0.010, 0],
+        "name": "{}-nv1_2022_02_10".format(sample_name),
+        "disable_opt": False,
+        "disable_z_opt": False,
+        "expected_count_rate": 15,
+        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
+        "imaging_laser": green_laser,
+        "imaging_laser_filter": "nd_0.5",
+        "imaging_readout_dur": 1e7,
+        # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
+        # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+        # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
+        # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+        "spin_laser": green_laser,
+        "spin_laser_filter": "nd_0.5",
+        "spin_pol_dur": 1e4,
+        "spin_readout_dur": 350,
+        # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
+        "nv-_reionization_laser": green_laser,
+        "nv-_reionization_dur": 1e6,
+        "nv-_reionization_laser_filter": "nd_1.0",
+        # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
+        "nv-_prep_laser": green_laser,
+        "nv-_prep_laser_dur": 1e6,
+        "nv-_prep_laser_filter": "nd_1.0",
+        "nv0_ionization_laser": red_laser,
+        "nv0_ionization_dur": 100,
+        "nv0_prep_laser": red_laser,
+        "nv0_prep_laser_dur": 100,
+        "spin_shelf_laser": yellow_laser,
+        "spin_shelf_dur": 0,
+        "spin_shelf_laser_power": 1.0,
+        # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
+        "initialize_laser": green_laser,
+        "initialize_dur": 1e4,
+        # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1000e6, "charge_readout_laser_power": 1.0,
+        "charge_readout_laser": yellow_laser,
+        "charge_readout_dur": 1840e6,
+        "charge_readout_laser_power": 1.0,
+        "collection_filter": None,
+        "magnet_angle": None,
+        "resonance_LOW": 2.8073,
+        "rabi_LOW": 173.2,
+        "uwave_power_LOW": 16.5,
+        # 'resonance_LOW': 2.8451, 'rabi_LOW': 176.4, 'uwave_power_LOW': 16.5,
+        "resonance_HIGH": 2.9489,
+        "rabi_HIGH": 234.6,
+        "uwave_power_HIGH": 16.5,
+    }
 
     # readout_durs = [10*10**3, 50*10**3, 100*10**3, 500*10**3,
     #                 1*10**6, 2*10**6, 3*10**6, 4*10**6, 5*10**6,
