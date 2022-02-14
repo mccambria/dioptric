@@ -984,8 +984,8 @@ if __name__ == "__main__":
     # temp_range = [1, 500]
     # xscale = "log"
 
-    file_name = "compiled_data"
-    # file_name = "spin_phonon_temp_dependence"
+    # file_name = "compiled_data"
+    file_name = "spin_phonon_temp_dependence"
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
