@@ -12,7 +12,7 @@ Created on Fri Jun 26 17:40:09 2020
 
 
 import matplotlib
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import matplotlib.patches as patches
@@ -98,7 +98,14 @@ bad_zfs_temps = 300.1  # Below this consider zfs temps inaccurate
 
 
 def bose(energy, temp):
-    return 1 / (numpy.exp(energy / (Boltzmann * temp)) - 1)
+    # For very low temps we can get divide by zero and overflow warnings.
+    # Fortunately, numpy is smart enough to know what we mean when this
+    # happens, so let's let numpy figure it out and suppress the warnings.
+    old_settings = np.seterr(divide="ignore", over="ignore")
+    val = 1 / (np.exp(energy / (Boltzmann * temp)) - 1)
+    # Return error handling to default state for other functions
+    np.seterr(**old_settings)
+    return val
 
 
 def orbach(temp):
@@ -110,7 +117,7 @@ def orbach(temp):
     """
     # return A_2 * bose(quasi, temp) * (bose(quasi, temp) + 1)
     return A_2 * bose(quasi, temp)
-    # return A_2 / (numpy.exp(quasi / (Boltzmann * temp)))
+    # return A_2 / (np.exp(quasi / (Boltzmann * temp)))
 
 
 def orbach_free(temp, coeff, activation):
@@ -215,7 +222,7 @@ def get_temp_error(point):
     if temp_bounds is None:
         return 1.0
     else:
-        return numpy.average([temp - temp_bounds[0], temp_bounds[1] - temp])
+        return np.average([temp - temp_bounds[0], temp_bounds[1] - temp])
 
 
 def simultaneous_test_lambda(
@@ -236,7 +243,7 @@ def simultaneous_test_lambda(
         else:
             ret_vals.append(gamma_rate_lambda(temp_val, beta))
 
-    return numpy.array(ret_vals)
+    return np.array(ret_vals)
 
 
 def fit_simultaneous(data_points):
@@ -308,21 +315,21 @@ def fit_simultaneous(data_points):
     # )
 
     # T5 fixed + constant
-    init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
-    omega_fit_func = lambda temp, beta: orbach_T5_free_const(
-        temp, beta[1], beta[3], beta[0], beta[4]
-    )
-    gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
-        temp, beta[2], beta[3], beta[0], beta[5]
-    )
-    beta_desc = [
-        "T5_coeff (K^-5 s^-1)",
-        "omega_exp_coeff (s^-1)",
-        "gamma_exp_coeff (s^-1)",
-        "activation (meV)",
-        "Omega constant (K^-1 s^-1)",
-        "gamma constant (K^-1 s^-1)",
-    ]
+    # init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[1], beta[3], beta[0], beta[4]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[2], beta[3], beta[0], beta[5]
+    # )
+    # beta_desc = [
+    #     "T5_coeff (K^-5 s^-1)",
+    #     "omega_exp_coeff (s^-1)",
+    #     "gamma_exp_coeff (s^-1)",
+    #     "activation (meV)",
+    #     "Omega constant (K^-1 s^-1)",
+    #     "gamma constant (K^-1 s^-1)",
+    # ]
 
     # Double Orbach
     # init_params = (500, 1500, 72, 2000, 2000, 400, 0.01, 0.07)
@@ -355,32 +362,32 @@ def fit_simultaneous(data_points):
     # ]
 
     # Double Orbach fixed
-    # init_params = (500, 1500, 72, 2000, 400, 0.01, 0.07)
-    # omega_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[0],
-    #     beta[2],
-    #     beta[3],
-    #     beta[4],
-    #     beta[5],
-    # )
-    # gamma_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[1],
-    #     beta[2],
-    #     beta[3],
-    #     beta[4],
-    #     beta[6],
-    # )
-    # beta_desc = [
-    #     "Omega Orbach 1 coeff (s^-1)",
-    #     "gamma Orbach 1 coeff (s^-1)",
-    #     "Orbach 1 Delta (meV)",
-    #     "Orbach 2 coeff (s^-1)",
-    #     "Orbach 2 Delta (meV)",
-    #     "Omega constant (K^-1 s^-1)",
-    #     "gamma constant (K^-1 s^-1)",
-    # ]
+    init_params = (450, 1200, 65, 11000, 160, 0.01, 0.07)
+    omega_fit_func = lambda temp, beta: double_orbach(
+        temp,
+        beta[0],
+        beta[2],
+        beta[3],
+        beta[4],
+        beta[5],
+    )
+    gamma_fit_func = lambda temp, beta: double_orbach(
+        temp,
+        beta[1],
+        beta[2],
+        beta[3],
+        beta[4],
+        beta[6],
+    )
+    beta_desc = [
+        "Omega Orbach 1 coeff (s^-1)",
+        "gamma Orbach 1 coeff (s^-1)",
+        "Orbach 1 Delta (meV)",
+        "Orbach 2 coeff (s^-1)",
+        "Orbach 2 Delta (meV)",
+        "Omega constant (K^-1 s^-1)",
+        "gamma constant (K^-1 s^-1)",
+    ]
 
     # Double Orbach fixed
     # orbach1_delta = 60
@@ -452,40 +459,63 @@ def fit_simultaneous(data_points):
     )
     data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
     model = Model(fit_func)
-    odr = ODR(data, model, beta0=numpy.array(init_params))
+    odr = ODR(data, model, beta0=np.array(init_params))
     odr.set_job(fit_type=0)
     output = odr.run()
     popt = output.beta
     pcov = output.cov_beta
     pvar = output.sd_beta ** 2
     red_chi_square = output.res_var
-    print(
-        "Reduced chi squared: {}".format(
-            tool_belt.round_sig_figs(red_chi_square, 3)
-        )
-    )
+    red_chi_square_report = tool_belt.round_sig_figs(red_chi_square, 3)
+    print("Reduced chi squared: {}".format(red_chi_square_report))
     ssr = output.sum_square
-    print(
-        "Sum of squared residuals: {}".format(tool_belt.round_sig_figs(ssr, 3))
-    )
+    ssr_report = tool_belt.round_sig_figs(ssr, 3)
+    print("Sum of squared residuals: {}".format(ssr_report))
+    print("redChi2={}, SSR={}".format(red_chi_square_report, ssr_report))
 
-    return popt, numpy.diag(pcov), beta_desc, omega_fit_func, gamma_fit_func
+    return popt, np.diag(pcov), beta_desc, omega_fit_func, gamma_fit_func
 
 
-def gen_fake_data_point(temp, omega, gamma):
+def gen_fake_data_point(temp, omega, gamma, sample_normal=False):
 
-    fake_point = {
+    fake_point = {}
+
+    error_level = 0.05
+    omega_err = error_level * omega
+    gamma_err = error_level * gamma
+
+    # Generate the rates according to whether we want to simulate the
+    # effects of the error bars or use precise values
+    sample_normal = True
+    if sample_normal:
+        omega_sample = np.random.normal(omega, omega_err)
+        gamma_sample = np.random.normal(gamma, gamma_err)
+        omega_sample = tool_belt.round_sig_figs(omega_sample, 3)
+        gamma_sample = tool_belt.round_sig_figs(gamma_sample, 3)
+        # print("{}, {}".format(omega_sample, gamma_sample))
+        fake_point = {
+            omega_column_title: omega_sample,
+            gamma_column_title: gamma_sample,
+        }
+    else:
+        fake_point = {
+            omega_column_title: omega,
+            gamma_column_title: gamma,
+        }
+
+    # Generate the common properties
+    common = {
         "marker": "D",
         sample_column_title: "FAKE",
         nominal_temp_column_title: temp,
         temp_column_title: temp,
         temp_lb_column_title: temp - 3,
         temp_ub_column_title: temp + 3,
-        omega_column_title: omega,
-        omega_err_column_title: 0.1 * omega,
-        gamma_column_title: gamma,
-        gamma_err_column_title: 0.1 * gamma,
+        omega_err_column_title: omega_err,
+        gamma_err_column_title: gamma_err,
     }
+    fake_point.update(common)
+
     return fake_point
 
 
@@ -546,9 +576,42 @@ def get_data_points(path, file_name):
                 data_points.append(point)
             # data_points.append(point)
 
-    # Send the PRR data point to the back of the pack
+    # The first shall be last
     data_points.append(data_points.pop(0))
-    data_points.append(gen_fake_data_point())
+
+    # Generate fake data for high temp tests
+
+    # Genned from Orbach + T5
+    # data_points.append(gen_fake_data_point(487.5, 382, 603))
+    # data_points.append(gen_fake_data_point(500.0, 423, 656))
+    # data_points.append(gen_fake_data_point(512.5, 469, 713))
+    # data_points.append(gen_fake_data_point(525.0, 518, 775))
+    # data_points.append(gen_fake_data_point(537.5, 572, 841))
+    # data_points.append(gen_fake_data_point(550.0, 630, 911))
+    # Genned from double Orbach
+    # data_points.append(gen_fake_data_point(487.5, 354, 557))
+    # data_points.append(gen_fake_data_point(500.0, 383, 596))
+    # data_points.append(gen_fake_data_point(512.5, 413, 637))
+    # data_points.append(gen_fake_data_point(525.0, 445, 680))
+    # data_points.append(gen_fake_data_point(537.5, 478, 723))
+    # data_points.append(gen_fake_data_point(550.0, 511, 767))
+
+    # Pre-sampled normal distribution
+    # Genned from Orbach + T5
+    # data_points.append(gen_fake_data_point(487.5, 443.0, 631.0))
+    # data_points.append(gen_fake_data_point(500.0, 356.0, 628.0))
+    # data_points.append(gen_fake_data_point(512.5, 446.0, 704.0))
+    # data_points.append(gen_fake_data_point(525.0, 519.0, 686.0))
+    # data_points.append(gen_fake_data_point(537.5, 527.0, 768.0))
+    # data_points.append(gen_fake_data_point(550.0, 654.0, 939.0))
+    # Genned from double Orbach
+    # data_points.append(gen_fake_data_point(487.5, 331.0, 556.0))
+    # data_points.append(gen_fake_data_point(500.0, 413.0, 586.0))
+    # data_points.append(gen_fake_data_point(512.5, 382.0, 704.0))
+    # data_points.append(gen_fake_data_point(525.0, 508.0, 728.0))
+    # data_points.append(gen_fake_data_point(537.5, 474.0, 791.0))
+    # data_points.append(gen_fake_data_point(550.0, 515.0, 843.0))
+
     return data_points
 
 
@@ -565,10 +628,10 @@ def plot_scalings(
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
-    # temp_linspace = numpy.linspace(5, 600, 1000)
-    temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
-    # temp_linspace = numpy.linspace(5, 300, 1000)
-    # temp_linspace = numpy.linspace(5, 5000, 1000)
+    # temp_linspace = np.linspace(5, 600, 1000)
+    temp_linspace = np.linspace(min_temp, max_temp, 1000)
+    # temp_linspace = np.linspace(5, 300, 1000)
+    # temp_linspace = np.linspace(5, 5000, 1000)
     fig, ax = plt.subplots(figsize=figsize)
     fig.set_tight_layout(True)
     # ax.set_title('Relaxation rates')
@@ -630,7 +693,7 @@ def plot_T2_max(
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
-    temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
+    temp_linspace = np.linspace(min_temp, max_temp, 1000)
     fig, ax = plt.subplots(figsize=figsize)
     fig.set_tight_layout(True)
 
@@ -640,6 +703,64 @@ def plot_T2_max(
     ax.set_ylabel(r"$T_{2,\text{max}}$ (s)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
+
+
+def normalized_residuals_histogram(rates_to_plot):
+
+    data_points = get_data_points(path, file_name)
+    # Fit to Omega and gamma simultaneously
+    popt, _, _, omega_fit_func, gamma_fit_func = fit_simultaneous(data_points)
+    omega_lambda = lambda temp: omega_fit_func(temp, popt)
+    gamma_lambda = lambda temp: gamma_fit_func(temp, popt)
+
+    fig, ax = plt.subplots(figsize=figsize)
+    if rates_to_plot == "Omega":
+        title_suffix = "Omega only"
+    if rates_to_plot == "gamma":
+        title_suffix = "gamma only"
+    if rates_to_plot == "both":
+        title_suffix = "both Omega and gamma"
+    ax.set_title(r"Normalized residuals histogram: {}".format(title_suffix))
+    ax.set_xlabel(r"Normalized residual")
+    ax.set_ylabel(r"Frequency")
+    x_range = [-3, +3]
+    ax.set_xlim(*x_range)
+    ax.set_ylim(0, 0.5)
+
+    normalized_residuals = []
+
+    for point in data_points:
+        temp = get_temp(point)
+        if rates_to_plot in ["Omega", "both"]:
+            rate = point[omega_column_title]
+            rate_err = point[omega_err_column_title]
+            norm_res = (rate - omega_lambda(temp)) / rate_err
+            normalized_residuals.append(norm_res)
+        if rates_to_plot in ["gamma", "both"]:
+            rate = point[gamma_column_title]
+            rate_err = point[gamma_err_column_title]
+            norm_res = (rate - gamma_lambda(temp)) / rate_err
+            normalized_residuals.append(norm_res)
+
+    bin_width = 0.5
+    bin_edges = np.arange(x_range[0], x_range[1] + bin_width, bin_width)
+    # hist, bin_edges = np.histogram(
+    #     normalized_residuals, bins=bin_edges, density=True
+    # )
+    # bin_centers = [
+    #     (bin_edges[ind] + bin_edges[ind + 1]) / 2
+    #     for ind in range(0, len(bin_edges) - 1)
+    # ]
+    ax.hist(normalized_residuals, bins=bin_edges, density=True)
+
+    inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
+    norm_gaussian = lambda norm_res: inv_root_2_pi * np.exp(
+        -(norm_res ** 2) / 2
+    )
+    norm_res_linspace = np.linspace(*x_range, 1000)
+    ax.plot(norm_res_linspace, norm_gaussian(norm_res_linspace))
+
+    fig.tight_layout(pad=0.3)
 
 
 # %% Main
@@ -664,7 +785,7 @@ def main(
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
-    temp_linspace = numpy.linspace(min_temp, max_temp, 1000)
+    temp_linspace = np.linspace(min_temp, max_temp, 1000)
     fig, ax = plt.subplots(figsize=figsize)
     # ax.plot([1, 3, 2, 4, 3, 5])
     # return
@@ -680,15 +801,19 @@ def main(
     # gamma_lambda = omega_lambda
     omega_lambda = lambda temp: omega_fit_func(temp, popt)
     gamma_lambda = lambda temp: gamma_fit_func(temp, popt)
-    print("Omega(525): {}".format(omega_lambda(525)))
-    print("Omega(550): {}".format(omega_lambda(550)))
-    print("gamma(525): {}".format(gamma_lambda(525)))
-    print("gamma(550): {}".format(gamma_lambda(550)))
+
+    # for temp in np.arange(487.5, 555, 12.5):
+    #     boilerplate = "data_points.append(gen_fake_data_point({}, {}, {}))"
+    #     temp = round(temp, 1)
+    #     omega = round(omega_lambda(temp))
+    #     gamma = round(gamma_lambda(temp))
+    #     print(boilerplate.format(temp, omega, gamma))
+
     print("parameter description: popt, psd")
     for ind in range(len(popt)):
         desc = beta_desc[ind]
         val = tool_belt.round_sig_figs(popt[ind], 5)
-        err = tool_belt.round_sig_figs(numpy.sqrt(pvar[ind]), 2)
+        err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
         print("{}: {}, {}".format(desc, val, err))
     if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
         ax.plot(
@@ -714,9 +839,7 @@ def main(
     # print(gamma_lambda(50))
 
     # Plot ratio
-    ratio_lambda = lambda temp: gamma_lambda(temp_linspace) / omega_lambda(
-        temp_linspace
-    )
+    ratio_lambda = lambda temp: gamma_lambda(temp) / omega_lambda(temp)
     if plot_type in ["ratios", "ratio_fits"]:
         ax.plot(
             temp_linspace,
@@ -732,7 +855,7 @@ def main(
         )
         T2_max_qubit_err = lambda T2max, omega_err, gamma_err: (
             (T2max ** 2) / 2
-        ) * numpy.sqrt((3 * omega_err) ** 2 + gamma_err ** 2)
+        ) * np.sqrt((3 * omega_err) ** 2 + gamma_err ** 2)
         ax.plot(
             temp_linspace,
             T2_max_qubit_temp(temp_linspace),
@@ -744,7 +867,7 @@ def main(
         T2_max_qutrit = lambda omega, gamma: 1 / (omega + gamma)
         T2_max_qutrit_err = lambda T2max, omega_err, gamma_err: (
             T2max ** 2
-        ) * numpy.sqrt(omega_err ** 2 + gamma_err ** 2)
+        ) * np.sqrt(omega_err ** 2 + gamma_err ** 2)
         T2_max_qutrit_temp = lambda temp: T2_max_qutrit(
             omega_lambda(temp), gamma_lambda(temp)
         )
@@ -769,6 +892,8 @@ def main(
         ax.set_ylabel(r"Ratio of fits")
     elif plot_type == "residuals":
         ax.set_ylabel(r"Residuals (s$^{-1}$)")
+    elif plot_type == "normalized_residuals":
+        ax.set_ylabel(r"Normalized residuals")
     elif plot_type == "T2_max":
         ax.set_ylabel(r"$T_{2,\text{max}}$ (s)")
     ax.set_xscale(xscale)
@@ -795,18 +920,24 @@ def main(
         temp = get_temp(point)
         temp_error = get_temp_error(point)
 
-        if plot_type in ["rates", "residuals"]:
+        if plot_type in ["rates", "residuals", "normalized_residuals"]:
             # Omega
             rate = point[omega_column_title]
+            rate_err = point[omega_err_column_title]
             if (rate is not None) and (rates_to_plot in ["both", "Omega"]):
                 if plot_type == "rates":
                     val = rate
+                    val_err = rate_err
                 elif plot_type == "residuals":
                     val = rate - omega_lambda(temp)
+                    val_err = rate_err
+                elif plot_type == "normalized_residuals":
+                    val = (rate - omega_lambda(temp)) / rate_err
+                    val_err = 0
                 ax.errorbar(
                     temp,
                     val,
-                    yerr=point[omega_err_column_title],
+                    yerr=val_err,
                     xerr=temp_error,
                     label=r"$\Omega$",
                     marker=marker,
@@ -819,15 +950,21 @@ def main(
                 )
             # gamma
             rate = point[gamma_column_title]
+            rate_err = point[gamma_err_column_title]
             if (rate is not None) and (rates_to_plot in ["both", "gamma"]):
                 if plot_type == "rates":
                     val = rate
+                    val_err = rate_err
                 elif plot_type == "residuals":
                     val = rate - gamma_lambda(temp)
+                    val_err = rate_err
+                elif plot_type == "normalized_residuals":
+                    val = (rate - gamma_lambda(temp)) / rate_err
+                    val_err = 0
                 ax.errorbar(
                     temp,
                     val,
-                    yerr=point[gamma_err_column_title],
+                    yerr=val_err,
                     xerr=temp_error,
                     label=r"$\gamma$",
                     marker=marker,
@@ -846,7 +983,7 @@ def main(
             gamma_err = point[gamma_err_column_title]
             if (omega_val is not None) and (gamma_val is not None):
                 ratio = gamma_val / omega_val
-                ratio_err = ratio * numpy.sqrt(
+                ratio_err = ratio * np.sqrt(
                     (omega_err / omega_val) ** 2 + (gamma_err / gamma_val) ** 2
                 )
                 ax.errorbar(
@@ -905,7 +1042,7 @@ def main(
 
     leg1 = None
 
-    if plot_type in ["rates", "residuals"]:
+    if plot_type in ["rates", "residuals", "normalized_residuals"]:
         omega_patch = patches.Patch(
             label=r"$\Omega$",
             facecolor=omega_face_color,
@@ -932,7 +1069,7 @@ def main(
         leg1 = ax.legend(handles=[ratio_patch], loc="upper left")
 
     # Samples
-    if plot_type in ["rates", "ratios", "residuals"]:
+    if plot_type in ["rates", "ratios", "residuals", "normalized_residuals"]:
         sample_patches = []
         for ind in range(len(samples)):
             label = samples[ind]
@@ -991,18 +1128,19 @@ if __name__ == "__main__":
     tool_belt.init_matplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    plot_type = "rates"
+    # plot_type = "rates"
     # plot_type = "T2_max"
     # plot_type = "ratios"
     # plot_type = "ratio_fits"
     # plot_type = 'residuals'
+    plot_type = "normalized_residuals"
 
     rates_to_plot = "both"
     # rates_to_plot = 'Omega'
     # rates_to_plot = 'gamma'
 
-    temp_range = [0, 600]
-    # temp_range = [80, 500]
+    # temp_range = [0, 600]
+    temp_range = [0, 500]
     xscale = "linear"
     # temp_range = [1, 500]
     # xscale = "log"
@@ -1012,30 +1150,37 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    if plot_type == "rates":
-        y_params = [[[-10, 1000], "linear"], [[5e-3, 1200], "log"]]
-    elif plot_type == "T2_max":
-        y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
-    elif plot_type == "ratios":
-        y_params = [[[0, 5], "linear"]]
-    elif plot_type == "ratio_fits":
-        y_params = [[[0, 5], "linear"]]
-    elif plot_type == "residuals":
-        pass
+    # if plot_type == "rates":
+    #     # y_params = [[[-10, 1000], "linear"]]
+    #     y_params = [[[-10, 1000], "linear"], [[5e-3, 1200], "log"]]
+    # elif plot_type == "T2_max":
+    #     y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
+    # elif plot_type == "ratios":
+    #     y_params = [[[0, 5], "linear"]]
+    # elif plot_type == "ratio_fits":
+    #     y_params = [[[0, 5], "linear"]]
+    # elif plot_type == "residuals":
+    #     pass
+    # elif plot_type == "normalized_residuals":
+    #     y_params = [[[-3, 3], "linear"]]
+    #     # rates_to_plot = "Omega"
+    #     rates_to_plot = "gamma"
     # y_params = [y_params[1]]
-    for el in y_params:
-        y_range, yscale = el
-        main(
-            file_name,
-            path,
-            plot_type,
-            rates_to_plot,
-            temp_range,
-            y_range,
-            xscale,
-            yscale,
-            dosave=False,
-        )
+    # for el in y_params:
+    #     y_range, yscale = el
+    #     main(
+    #         file_name,
+    #         path,
+    #         plot_type,
+    #         rates_to_plot,
+    #         temp_range,
+    #         y_range,
+    #         xscale,
+    #         yscale,
+    #         dosave=False,
+    #     )
+    #     print()
+    normalized_residuals_histogram(rates_to_plot)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'

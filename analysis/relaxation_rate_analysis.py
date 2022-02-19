@@ -752,20 +752,20 @@ if __name__ == "__main__":
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)
-    est_omega = 0.01 / 3
-    est_gamma = 2 * est_omega
-    print("good times in ms")
-    print("Omega: {}".format(4000 / (3 * est_omega)))
-    print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
+    # est_omega = 0.01 / 3
+    # est_gamma = 2 * est_omega
+    # print("good times in ms")
+    # print("Omega: {}".format(4000 / (3 * est_omega)))
+    # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
     # print('Omega: {}'.format(est_omega))
     # print('gamma: {}'.format(est_gamma))
-    sys.exit()
+    # sys.exit()
 
     plt.ion()
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
     folders = [
-        "wu-nv6_2021_12_25-{}K".format(temp),
+        "wu-nv1_2022_02_10-{}K".format(temp),
         # "main1_test",
     ]
 
@@ -779,4 +779,4 @@ if __name__ == "__main__":
             offset=False,
         )
 
-    # plt.show(block=True)
+    plt.show(block=True)
