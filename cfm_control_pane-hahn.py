@@ -195,7 +195,7 @@ def do_scc_pulsed_resonance(nv_sig, apd_indices, state=States.LOW):
     freq_range = 0.040
     # num_steps = 21
     num_steps = 1
-    num_reps = int(5e3)
+    num_reps = int(1e3)
     # num_runs = 80
     num_runs = 5
     
@@ -321,12 +321,12 @@ def paper_figure1_data(nv_sig, apd_indices):
 def do_t1_dq_scc(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 5
-    num_reps = 200
-    num_steps = 4
+    num_runs = 400
+    num_reps = 20
+    num_steps = 6
     min_tau = 500e3
-    max_tau_omega = int(10e9)
-    max_tau_gamma = int(5e9)
+    max_tau_omega = int(12e9)
+    max_tau_gamma = int(2e9)
     # max_tau_omega = int(5.3e9)
     # max_tau_gamma = int(3e9)
     t1_exp_array = numpy.array([
@@ -419,7 +419,7 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [-0.006, 0.000, -5], 'name': '{}-nv1_2022_02_10'.format(sample_name),
+    nv_sig = { 'coords': [-0.014, -0.001, 3], 'name': '{}-nv1_2022_02_10'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 14.5,
             
             # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -434,8 +434,8 @@ if __name__ == '__main__':
             
             'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
             # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
-            # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E4, 'nv-_prep_laser_filter': 'nd_0.5',
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
+            # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E4, 'nv-_prep_laser_filter': 'nd_0.5',
             
             'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 75,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 100,
@@ -443,7 +443,7 @@ if __name__ == '__main__':
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
             # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 0.75,
             # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1840e6, "charge_readout_laser_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': None,
@@ -455,7 +455,7 @@ if __name__ == '__main__':
 
     try:
     
-        # tool_belt.init_safe_stop()
+        tool_belt.init_safe_stop()
         
         # Increasing x moves the image down, decreasing y moves the image right
         # with labrad.connect() as cxn:
@@ -466,7 +466,7 @@ if __name__ == '__main__':
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         
-        # for pos in numpy.arange(-50, 150, 5):
+        # for pos in numpy.arange(700, 900, 5):
         # # for pos in [4,5,6]: 
         #     if tool_belt.safe_stop():
         #         break
@@ -507,7 +507,7 @@ if __name__ == '__main__':
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
         # SCC characterization
-        do_determine_charge_readout_params(nv_sig, apd_indices)
+        # do_determine_charge_readout_params(nv_sig, apd_indices)
         # do_scc_pulsed_resonance(nv_sig, apd_indices)
         
         # Automatic T1 setup
@@ -521,10 +521,10 @@ if __name__ == '__main__':
         # nv_sig["spin_pol_dur"] = 1e6
         # # do_t1_interleave_knill(nv_sig, apd_indices)
         # paper_figure1_data(nv_sig, apd_indices)
-        # do_t1_dq_scc(nv_sig, apd_indices)
+        do_t1_dq_scc(nv_sig, apd_indices)
         
-    # except Exception as exc:
-    #     print(exc)
+    except Exception:
+        tool_belt.send_exception_email()
         
     finally:
         

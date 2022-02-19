@@ -583,11 +583,12 @@ def main_with_cxn(
         if opti_succeeded or opti_unnecessary:
             prepare_microscope(cxn, nv_sig, opti_coords)
         else:
-            msg = ("Optimization failed. Resetting to coordinates "
-                   "about which we attempted to optimize.")
+            msg = ("Optimization failed.")
             # Just crash
             raise RuntimeError(msg)
             # Let the user know something went wrong
+            # msg = ("Optimization failed. Resetting to coordinates "
+            #        "about which we attempted to optimize.")
             # print(
             #     "Optimization failed. Resetting to coordinates "
             #     "about which we attempted to optimize."
