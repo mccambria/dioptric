@@ -70,6 +70,8 @@ class CryoPiezos(LabradServer):
         ip_address = reg_vals[0]
         cryo_piezos_voltage = reg_vals[1]
         self.z_bias_adjust = reg_vals[2]
+        if self.z_bias_adjust >= 0.5:
+            raise ValueError("abs(bias adjust) must be < 0.5")
         # Connect via telnet
         try:
             self.piezos = Telnet(ip_address, 7230)

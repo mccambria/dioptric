@@ -22,6 +22,7 @@ import pandas as pd
 import utils.tool_belt as tool_belt
 import utils.common as common
 from scipy.odr import ODR, Model, RealData
+import sys
 
 
 # %% Constants
@@ -1124,6 +1125,9 @@ def main(
 
 
 if __name__ == "__main__":
+
+    # print(bose(165, 295))
+    # sys.exit()
 
     tool_belt.init_matplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
