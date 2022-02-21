@@ -154,8 +154,8 @@ def do_pulsed_resonance(nv_sig, apd_indices,
                         freq_center=2.87, freq_range=0.2):
 
     num_steps = 51
-    num_reps = 5000
-    num_runs = 20
+    num_reps = 2e4
+    num_runs = 10
     uwave_power = 16.5
     uwave_pulse_dur = 100
 
@@ -168,8 +168,8 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
 
     freq_range = 0.040
     num_steps = 51
-    num_reps = 5000
-    num_runs = 40
+    num_reps = 2e4
+    num_runs = 20
     
     # Zoom
     # freq_range = 0.035
@@ -233,6 +233,7 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
     # readout_powers = np.arange(0.68, 1.04, 0.04)
     # readout_powers = np.linspace(0.9, 1.0, 3)
     readout_powers = [0.75, 1.0]
+    # readout_powers = [0.80]
     readout_powers = [round(val, 3) for val in readout_powers]
     
     # num_reps = 2000
@@ -279,8 +280,8 @@ def do_optimize_magnet_angle(nv_sig, apd_indices):
 def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
  
     num_steps = 51
-    num_reps = 5000
-    num_runs = 40
+    num_reps = 2e4
+    num_runs = 20
 
     period = rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -419,12 +420,13 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [-0.014, -0.001, 3], 'name': '{}-nv1_2022_02_10'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 14.5,
+    nv_sig = { 'coords': [0.010, 0.001, 0], 'name': '{}-nv1_2022_02_10'.format(sample_name),
+    # nv_sig = { 'coords': [0.004, -0.055, 38], 'name': '{}-nv1_2022_02_10'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 24,
             
-            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
+            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
             # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
-            'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e7,
+            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e7,
             # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
             # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
@@ -443,30 +445,31 @@ if __name__ == '__main__':
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
             # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 0.75,
-            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 1840e6, "charge_readout_laser_power": 1.0,
+            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 0.75,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 70e6, "charge_readout_laser_power": 0.75,
+            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
             
-            'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8067, 'rabi_LOW': 188.0, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9488, 'rabi_HIGH': 236.6, 'uwave_power_HIGH': 16.5}
+            'collection_filter': None, 'magnet_angle': None,   
+            'resonance_LOW': 2.8070, 'rabi_LOW': 191.4, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9483, 'rabi_HIGH': 243.6, 'uwave_power_HIGH': 16.5}
     
     
     # %% Functions to run
 
     try:
     
-        tool_belt.init_safe_stop()
+        # tool_belt.init_safe_stop()
         
         # Increasing x moves the image down, decreasing y moves the image right
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(-2, -1)
+        #     cxn.cryo_piezos.write_xy(0, -3)
         
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         
-        # for pos in numpy.arange(700, 900, 5):
+        # for pos in numpy.arange(10, 40, 5):
         # # for pos in [4,5,6]: 
         #     if tool_belt.safe_stop():
         #         break
@@ -507,8 +510,8 @@ if __name__ == '__main__':
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
         # SCC characterization
-        # do_determine_charge_readout_params(nv_sig, apd_indices)
-        # do_scc_pulsed_resonance(nv_sig, apd_indices)
+        do_determine_charge_readout_params(nv_sig, apd_indices)
+        do_scc_pulsed_resonance(nv_sig, apd_indices)
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
