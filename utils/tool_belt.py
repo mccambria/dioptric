@@ -741,6 +741,8 @@ def create_line_plot_figure(vals, xVals=None):
 
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
+    fig.set_tight_layout(True)
+    ax.grid(axis = 'y')
 
     if xVals is not None:
         ax.plot(xVals, vals)
