@@ -1,0 +1,147 @@
+# -*- coding: utf-8 -*-
+"""
+T1 measurement routine, with experiments interleaved.
+
+We've made a variety of T1 routines, each with different options or variations.
+This version streamlines those options into a single file where the options
+are passed into the main function. (Interleaving, running each experiment
+once then moving onto the next experiment as opposed to completing all the runs
+for one experiment then movning onto the next experiment, is not optional since
+not interleaving can introduce systematics probably related to charge
+dynamics.)
+
+Pass into the function an experiment array, and it will run each experiment
+one run at a time. That way, in post processing, we can split the data up by
+num_run and see smaller time scales if the values are changing.
+
+The num_runs of each experiment MUST BE THE SAME.
+
+Created on December 16, 2021
+
+@author: mccambria
+"""
+
+# %% Imports
+
+
+from sqlite3 import paramstyle
+import utils.tool_belt as tool_belt
+import utils.common as common
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import minimize, brute
+from numpy import pi
+from matplotlib.patches import Circle
+
+
+# %% Constants
+
+num_circle_samples = 1000  #  int(1e6)
+phi_linspace = np.linspace(0, 2 * pi, num_circle_samples)
+
+
+# %% Functions
+
+
+def cost(params, image, debug):
+    """
+    Faux-integrate the pixel values around the circle. Then muliply by -1 so that
+    lower values are better and we can use scipy.optimize.minimize.
+    By faux-integrate I mean average the values under a 1000 point, linearly spaced
+    sampling of the circle.
+    """
+
+    circle_center_x, circle_center_y, circle_radius = params
+
+    circle_samples_x = circle_center_x + circle_radius * np.cos(phi_linspace)
+    circle_samples_y = circle_center_y + circle_radius * np.sin(phi_linspace)
+    circle_samples_x_round = [round(el) for el in circle_samples_x]
+    circle_samples_y_round = [round(el) for el in circle_samples_y]
+    circle_samples = zip(circle_samples_x_round, circle_samples_y_round)
+
+    # if debug:
+    #     circle_samples_list = [el for el in circle_samples]
+    #     print(circle_samples_list)
+    #     circle_samples = zip(circle_samples_x_round, circle_samples_y_round)
+
+    integrand = 0
+    image_domain = image.shape
+    # We'll use this to keep track of how much of the circle is actually
+    # in the domain of the image
+    num_valid_samples = 0
+    for sample in circle_samples:
+        sample_x = sample[0]
+        sample_y = sample[1]
+        if (sample_x < 0) or (sample_x >= image_domain[0]):
+            continue
+        if (sample_y < 0) or (sample_y >= image_domain[1]):
+            continue
+        num_valid_samples += 1
+        integrand += image[sample_x, sample_y]
+
+    # Ignore points that don't have enough valid samples
+    if num_valid_samples < num_circle_samples // 2:
+        cost = 0
+    else:
+        cost = integrand / num_valid_samples
+    return -1 * cost
+
+
+# %% Main
+
+
+def main(image_file_name):
+
+    # Get the image as a 2D ndarray
+    image_file_dict = tool_belt.get_raw_data(image_file_name)
+    image = np.array(image_file_dict["readout_image_array"])
+    image_domain = image.shape
+
+    buffer = 20
+    bounds = (
+        (buffer, image_domain[0] - buffer),
+        (buffer, image_domain[1] - buffer),
+        (20, image_domain[0] // 3),
+    )
+
+    # Minimize the cost function
+    # x0 = (45, 41, 20)
+    # x0 = (37, 42, 25)
+    # res = minimize(cost, x0=x0, args=(image, False), bounds=bounds)
+    # opti_circle = res.x
+
+    # opti_circle = brute(cost, bounds, Ns=20, args=(image, False))
+
+    opti_circle = (42, 40, 29)
+
+    print(opti_circle)
+    # print(cost(x0, image))
+    print(cost(opti_circle, image, True))
+
+    # Plot the image
+    fig, ax = plt.subplots()
+    fig.set_tight_layout(True)
+    img = ax.imshow(image, cmap="inferno")
+    _ = plt.colorbar(img)
+
+    # Plot the circles
+    circle_patch = Circle(
+        (opti_circle[0], opti_circle[1]), opti_circle[2], fill=False, color="w"
+    )
+    ax.add_patch(circle_patch)
+
+
+# %% Run the file
+
+
+if __name__ == "__main__":
+
+    tool_belt.init_matplotlib()
+
+    # Fig. 3
+    image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
+    # Fig. 4
+    # image_file_name = "2021_10_17-19_02_22-johnson-dnv5_2021_09_23"
+    main(image_file_name)
+
+    plt.show(block=True)

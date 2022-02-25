@@ -748,7 +748,7 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
 if __name__ == "__main__":
 
-    temp = 5.5
+    temp = 50
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)
@@ -765,7 +765,8 @@ if __name__ == "__main__":
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
     folders = [
-        "wu-nv1_2022_02_10-{}K".format(temp),
+        # "wu-nv1_2022_02_10-{}K".format(temp),
+        "wu-nv1_2022_02_10-5.5K-combined".format(temp),
         # "main1_test",
     ]
 
