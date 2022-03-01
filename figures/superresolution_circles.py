@@ -53,7 +53,7 @@ def cost4(
     # Ignore circles outside a reasonable range
     min_center_val = 4 * noise_floor
     if image[round(circle_center_x), round(circle_center_y)] > min_center_val:
-        return 0
+        return 10
 
     half_width = 3
     inner_radius = circle_radius - half_width
@@ -85,12 +85,12 @@ def cost4(
         outer_val = image[outer_sample_x, outer_sample_y]
         inner_err = two_point_cost(mid_val, inner_val)
         outer_err = two_point_cost(mid_val, outer_val)
-        integrand += np.sqrt(inner_err ** 2 + outer_err ** 2)
+        integrand += inner_err ** 2 + outer_err ** 2
         num_valid_samples += 1
 
     # if debug:
     #     print(integrand)
-    cost = integrand / num_valid_samples
+    cost = np.sqrt(integrand / num_valid_samples)
     return cost
 
 
@@ -116,9 +116,9 @@ def main(image_file_name, circle_a, circle_b, brute_range):
 
     # If do_minimize is True we'll run the minimization routine and
     # plot the circles returned by that. Otherwise we'll just plot
-    # the passed circles.
+    # the passed circles.{exp(-(x-0.0)/(0.0+0.1))} for 0<x<1
     do_minimize = True
-    # do_minimize = False
+    # do_minimize = Fals{exp(-(x-0.0)/(0.0+0.1))} for 0<x<1e
 
     # Get the image as a 2D ndarray
     image_file_dict = tool_belt.get_raw_data(image_file_name)
@@ -149,6 +149,19 @@ def main(image_file_name, circle_a, circle_b, brute_range):
 
     # %% Circle finding
 
+    # Define the two point cost function (see note) ahead of time so that
+    # it doesn't have to be generated each time we calculate the full cost
+    two_point_cost = lambda a, b: np.exp(-(a - b) / (b + noise_floor))
+    # two_point_cost = lambda a, b: np.exp(-(a - b) / (b + noise_floor))
+    args = (
+        image,
+        two_point_cost,
+        noise_floor,
+        image_domain_x,
+        image_domain_y,
+        False,
+    )
+
     if do_minimize:
 
         # Define the bounds of the optimization
@@ -161,18 +174,6 @@ def main(image_file_name, circle_a, circle_b, brute_range):
         bounds_b[1] = (mid_x, bounds_b[1][1])
         bounds_a = tuple(bounds_a)
         bounds_b = tuple(bounds_b)
-
-        # Define the two point cost function (see note) ahead of time so that
-        # it doesn't have to be generated each time we calculate the full cost
-        two_point_cost = lambda a, b: np.exp(-(a - b) / (b + noise_floor))
-        args = (
-            image,
-            two_point_cost,
-            noise_floor,
-            image_domain_x,
-            image_domain_y,
-            False,
-        )
 
         plot_circles = []
 
@@ -199,16 +200,18 @@ def main(image_file_name, circle_a, circle_b, brute_range):
     for circle in plot_circles:
 
         # Debug tweak
-        # opti_circle[2] -= 3
+        # circle[2] -= 3
 
         # Report what we found
-        print(circle)
-        print(cost_func(circle, image, True))
+        rounded_circle = [round(el, 2) for el in circle]
+        rounded_cost = round(cost_func(circle, *args), 2)
+        print("{} & {} & {} & {}".format(*rounded_circle, rounded_cost))
+        # print("{}, {}, {}, {}".format(*rounded_circle, rounded_cost)
 
         # Plot the circle
         circle_patch = Circle(
-            (opti_circle[1], opti_circle[0]),
-            opti_circle[2],
+            (circle[1], circle[0]),
+            circle[2],
             fill=False,
             color="w",
         )
@@ -229,7 +232,7 @@ if __name__ == "__main__":
         if circle == 3:
             image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
             # Best circles by hand
-            circle_a = [41.5, 36.5, 27.75]
+            circle_a = [41.5, 37, 27.5]
             circle_b = [40, 44, 27.75]
             brute_range = 3
 
@@ -246,3 +249,5 @@ if __name__ == "__main__":
     plt.show(block=True)
 
 # endregion
+
+# %%
