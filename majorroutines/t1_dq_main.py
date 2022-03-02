@@ -84,12 +84,12 @@ def collate_incremental(path, folder):
             coll_params_master_list = params_master_list
             coll_tau_master_list = tau_master_list
             coll_nv_sig = nv_sig
-        if (
-            (coll_params_master_list != params_master_list)
-            or (coll_tau_master_list != tau_master_list)
-            or (coll_nv_sig["name"] != nv_sig["name"])
-        ):
-            raise RuntimeError("Inconsistent experiments being collated.")
+        # if (
+        #     (coll_params_master_list != params_master_list)
+        #     or (coll_tau_master_list != tau_master_list)
+        #     or (coll_nv_sig["name"] != nv_sig["name"])
+        # ):
+        #     raise RuntimeError("Inconsistent experiments being collated.")
 
         # Add what needs to be added to the collated data
         num_exps = len(coll_params_master_list)
@@ -98,17 +98,29 @@ def collate_incremental(path, folder):
             coll_ref_counts_master_list = [[] for ind in range(num_exps)]
             coll_tau_ind_save_list = [[] for ind in range(num_exps)]
             coll_opti_coords_master_list = [[] for ind in range(num_exps)]
+            prev_exps_final_ind = 0
+        else:
+            new_sig_counts_master_list = [[] for ind in range(num_exps)]
+            new_ref_counts_master_list = [[] for ind in range(num_exps)]
+            new_tau_ind_save_list = [[] for ind in range(num_exps)]
+            new_opti_coords_master_list = [[] for ind in range(num_exps)]
+            coll_sig_counts_master_list.extend(new_sig_counts_master_list)
+            coll_ref_counts_master_list.extend(new_ref_counts_master_list)
+            coll_tau_ind_save_list.extend(new_tau_ind_save_list)
+            coll_opti_coords_master_list.extend(new_opti_coords_master_list)
+            prev_exps_final_ind = len(coll_params_master_list)
         for ind in range(num_exps):
-            coll_sig_counts_master_list[ind].extend(
+            coll_ind = ind + prev_exps_final_ind
+            coll_sig_counts_master_list[coll_ind].extend(
                 sig_counts_master_list[ind][:num_runs]
             )
-            coll_ref_counts_master_list[ind].extend(
+            coll_ref_counts_master_list[coll_ind].extend(
                 ref_counts_master_list[ind][:num_runs]
             )
-            coll_tau_ind_save_list[ind].extend(
+            coll_tau_ind_save_list[coll_ind].extend(
                 tau_ind_save_list[ind][:num_runs]
             )
-            coll_opti_coords_master_list[ind].extend(
+            coll_opti_coords_master_list[coll_ind].extend(
                 opti_coords_master_list[ind][:num_runs]
             )
         first_file = False
@@ -120,7 +132,8 @@ def collate_incremental(path, folder):
     coll_data["opti_coords_master_list"] = coll_opti_coords_master_list
     coll_data["tau_master_list"] = coll_tau_master_list
     coll_data["nv_sig"] = coll_nv_sig
-    coll_data["num_runs"] = total_num_runs
+    # coll_data["num_runs"] = total_num_runs
+    coll_data["num_runs"] = 150
 
     coll_incs_file_name = "collated_incremental"
     full_path_to_coll_incs = full_path_to_folder / coll_incs_file_name
