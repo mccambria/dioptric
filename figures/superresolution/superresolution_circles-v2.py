@@ -18,7 +18,6 @@ import numpy as np
 from scipy.optimize import minimize, brute
 from numpy import pi
 from matplotlib.patches import Circle
-import cv2 as cv
 
 
 # %% Constants
@@ -37,6 +36,7 @@ def cost4(
     image,
     two_point_cost,
     noise_floor,
+    sigma,
     image_domain_x,
     image_domain_y,
     debug,
@@ -55,9 +55,8 @@ def cost4(
     if image[round(circle_center_x), round(circle_center_y)] > min_center_val:
         return 10
 
-    half_width = 3
-    inner_radius = circle_radius - half_width
-    outer_radius = circle_radius + half_width
+    inner_radius = circle_radius - sigma
+    outer_radius = circle_radius + sigma
     integrand = 0
     num_valid_samples = 0
 
@@ -86,6 +85,14 @@ def cost4(
         inner_err = two_point_cost(mid_val, inner_val)
         outer_err = two_point_cost(mid_val, outer_val)
         integrand += inner_err ** 2 + outer_err ** 2
+        # integrand += (inner_err * outer_err) ** 2
+
+        # contrast = lambda a, b: (a - b) / (b + noise_floor)
+        # inner_contrast = contrast(mid_val, inner_val)
+        # outer_contrast = contrast(mid_val, outer_val)
+        # err = 1 / (1 + np.exp(inner_contrast * outer_contrast))
+        # integrand += err ** 2
+
         num_valid_samples += 1
 
     # if debug:
@@ -108,7 +115,7 @@ def cost4(
 # %% Main
 
 
-def main(image_file_name, circle_a, circle_b, brute_range):
+def main(image_file_name, circle_a, circle_b, sigma, brute_range):
 
     # %% Setup
 
@@ -151,12 +158,14 @@ def main(image_file_name, circle_a, circle_b, brute_range):
 
     # Define the two point cost function (see note) ahead of time so that
     # it doesn't have to be generated each time we calculate the full cost
-    two_point_cost = lambda a, b: np.exp(-(a - b) / (b + noise_floor))
+    two_point_cost = lambda a, b: 1 / (1 + np.exp((a - b) / (b + noise_floor)))
+    # two_point_cost = lambda a, b: np.exp(-(a - b) / (b + noise_floor))
     # two_point_cost = lambda a, b: np.exp(-(a - b) / (b + noise_floor))
     args = (
         image,
         two_point_cost,
         noise_floor,
+        sigma,
         image_domain_x,
         image_domain_y,
         False,
@@ -234,6 +243,7 @@ if __name__ == "__main__":
             # Best circles by hand
             circle_a = [41.5, 37, 27.5]
             circle_b = [40, 44, 27.75]
+            sigma = 5
             brute_range = 3
 
         # Fig. 4
@@ -242,12 +252,11 @@ if __name__ == "__main__":
             # Best circles by hand
             circle_a = [50, 46, 26]
             circle_b = [51.7, 56.5, 27.3]
+            sigma = 5
             brute_range = 3
 
-        main(image_file_name, circle_a, circle_b, brute_range)
+        main(image_file_name, circle_a, circle_b, sigma, brute_range)
 
     plt.show(block=True)
 
 # endregion
-
-# %%

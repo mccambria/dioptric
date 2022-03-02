@@ -380,7 +380,7 @@ def main(image_file_name, circle_a, circle_b, brute_range):
 
     # %% Setup
 
-    cost_func = cost4
+    cost_func = cost0
     optimize = True
     # optimize = False
 
@@ -390,14 +390,22 @@ def main(image_file_name, circle_a, circle_b, brute_range):
 
     # %% Processing
 
+    # Convert to 8 bit
+    eight_bit_image = np.copy(image)
+    eight_bit_image -= eight_bit_image.min()
+    eight_bit_image *= 256 / eight_bit_image.max()
+    eight_bit_image = eight_bit_image.astype(np.uint8)
+
     # Blur
     gaussian_size = 7
-    blur_image = cv.GaussianBlur(image, (gaussian_size, gaussian_size), 0)
+    blur_image = cv.GaussianBlur(
+        eight_bit_image, (gaussian_size, gaussian_size), 0
+    )
+    blur_image = cv.GaussianBlur(blur_image, (gaussian_size, gaussian_size), 0)
+    blur_image = cv.GaussianBlur(blur_image, (gaussian_size, gaussian_size), 0)
 
-    # Convert to 8 bit
-    # blur_image -= blur_image.min()
-    # blur_image *= 256 / blur_image.max()
-    # blur_image = blur_image.astype(np.uint8)
+    gradient_image = cv.Laplacian(blur_image, cv.CV_64F, ksize=gaussian_size)
+    # gradient_image = cv.Laplacian(gradient_image, cv.CV_64F, ksize=5)
 
     # Threshold
     # thresh_image = np.array(image > 0.7, dtype=int)
@@ -411,19 +419,17 @@ def main(image_file_name, circle_a, circle_b, brute_range):
     # )
 
     # Set which image to optimize on
-    opti_image = image
+    # opti_image = image
     # opti_image = thresh_image
     # opti_image = blur_image
+    opti_image = gradient_image
 
     # Plot the image
     fig, ax = plt.subplots()
     fig.set_tight_layout(True)
-    # img = ax.imshow(image, cmap="inferno")
-    # img = ax.imshow(thresh_image, cmap="inferno")
-    # img = ax.imshow(blur_image, cmap="inferno")
     img = ax.imshow(opti_image, cmap="inferno")
     _ = plt.colorbar(img)
-    # return
+    return
 
     # %% Circle finding + plotting
 
@@ -516,25 +522,24 @@ if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
 
-    circle = 3
-    # circle = 4
+    for circle in [3, 4]:
 
-    # Fig. 3
-    if circle == 3:
-        image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
-        # Best circles by hand
-        circle_a = [41.5, 36.5, 27.75]
-        circle_b = [40, 44, 27.75]
-        brute_range = 3
+        # Fig. 3
+        if circle == 3:
+            image_file_name = "2021_09_30-13_18_47-johnson-dnv7_2021_09_23"
+            # Best circles by hand
+            circle_a = [41.5, 37, 27.5]
+            circle_b = [40, 44, 27.75]
+            brute_range = 3
 
-    # Fig. 4
-    elif circle == 4:
-        image_file_name = "2021_10_17-19_02_22-johnson-dnv5_2021_09_23"
-        # Best circles by hand
-        circle_a = [50, 46, 26]
-        circle_b = [51.7, 56.5, 27.3]
-        brute_range = 3
+        # Fig. 4
+        elif circle == 4:
+            image_file_name = "2021_10_17-19_02_22-johnson-dnv5_2021_09_23"
+            # Best circles by hand
+            circle_a = [50, 46, 26]
+            circle_b = [51.7, 56.5, 27.3]
+            brute_range = 3
 
-    main(image_file_name, circle_a, circle_b, brute_range)
+        main(image_file_name, circle_a, circle_b, brute_range)
 
     plt.show(block=True)
