@@ -69,14 +69,16 @@ def cost0(params, image, debug):
         if (sample_y < 0) or (sample_y >= image_domain[1]):
             continue
         num_valid_samples += 1
-        integrand += image[sample_x, sample_y] ** 2
+        # integrand += image[sample_x, sample_y] ** 2
+        integrand += image[sample_x, sample_y]
 
     # Ignore points that don't have enough valid samples
     # if num_valid_samples < num_circle_samples // 2:
     #     cost = 0
     # else:
     #     cost = integrand / num_valid_samples
-    cost = np.sqrt(integrand / num_valid_samples)
+    # cost = np.sqrt(integrand / num_valid_samples)
+    cost = integrand / num_valid_samples
     return cost
 
 
@@ -89,7 +91,7 @@ def sigmoid_quotient(laplacian, gradient):
     gradient_not_zeros = np.logical_not(gradient_zeros)
     masked_gradient = (gradient * gradient_not_zeros) + gradient_zeros
     quotient = laplacian / masked_gradient
-    sigmoid = 1 / (1 + np.exp(-0.5 * quotient))
+    sigmoid = 1 / (1 + np.exp(-1 * quotient))
     laplacian_positive = np.sign(laplacian) == 1
     sigmoid = (sigmoid * gradient_not_zeros) + (
         laplacian_positive * gradient_zeros
@@ -137,8 +139,10 @@ def main(image_file_name, circle_a, circle_b, brute_range):
     sobel_y = cv.Sobel(gradient_root, cv.CV_64F, 0, 1, ksize=gaussian_size)
     gradient_image = np.sqrt(sobel_x ** 2 + sobel_y ** 2)
 
-    # gradient_image = gradient_image * (laplacian_image < 50)
-    gradient_image = sigmoid_quotient(laplacian_image, gradient_image)
+    sigmoid_image = sigmoid_quotient(laplacian_image, gradient_image)
+    # sigmoid_image = cv.GaussianBlur(
+    #     sigmoid_image, (gaussian_size, gaussian_size), 0
+    # )
 
     # Threshold
     # thresh_image = np.array(image > 0.7, dtype=int)
@@ -155,13 +159,19 @@ def main(image_file_name, circle_a, circle_b, brute_range):
     # opti_image = image
     # opti_image = thresh_image
     # opti_image = blur_image
-    opti_image = gradient_image
+    # opti_image = gradient_image
+    opti_image = sigmoid_image
 
     # Plot the image
     fig, ax = plt.subplots()
     fig.set_tight_layout(True)
-    # img = ax.imshow(image, cmap="inferno")
-    img = ax.imshow(opti_image, cmap="inferno")
+    img = ax.imshow(image, cmap="inferno")
+    # img = ax.imshow(thresh_image, cmap="inferno")
+    # img = ax.imshow(blur_image, cmap="inferno")
+    # img = ax.imshow(laplacian_image, cmap="inferno")
+    # img = ax.imshow(gradient_image, cmap="inferno")
+    # img = ax.imshow(sigmoid_image, cmap="inferno")
+    # img = ax.imshow(opti_image, cmap="inferno")
     _ = plt.colorbar(img)
     # return
 
