@@ -103,6 +103,7 @@ def bose(energy, temp):
     # Fortunately, numpy is smart enough to know what we mean when this
     # happens, so let's let numpy figure it out and suppress the warnings.
     old_settings = np.seterr(divide="ignore", over="ignore")
+    # print(energy / (Boltzmann * temp))
     val = 1 / (np.exp(energy / (Boltzmann * temp)) - 1)
     # Return error handling to default state for other functions
     np.seterr(**old_settings)
@@ -1126,18 +1127,18 @@ def main(
 
 if __name__ == "__main__":
 
-    # print(bose(165, 295))
+    # print(bose(65, 295))
     # sys.exit()
 
     tool_belt.init_matplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    # plot_type = "rates"
+    plot_type = "rates"
     # plot_type = "T2_max"
     # plot_type = "ratios"
     # plot_type = "ratio_fits"
     # plot_type = 'residuals'
-    plot_type = "normalized_residuals"
+    # plot_type = "normalized_residuals"
 
     rates_to_plot = "both"
     # rates_to_plot = 'Omega'
@@ -1154,37 +1155,37 @@ if __name__ == "__main__":
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
 
-    # if plot_type == "rates":
-    #     # y_params = [[[-10, 1000], "linear"]]
-    #     y_params = [[[-10, 1000], "linear"], [[5e-3, 1200], "log"]]
-    # elif plot_type == "T2_max":
-    #     y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
-    # elif plot_type == "ratios":
-    #     y_params = [[[0, 5], "linear"]]
-    # elif plot_type == "ratio_fits":
-    #     y_params = [[[0, 5], "linear"]]
-    # elif plot_type == "residuals":
-    #     pass
-    # elif plot_type == "normalized_residuals":
-    #     y_params = [[[-3, 3], "linear"]]
-    #     # rates_to_plot = "Omega"
-    #     rates_to_plot = "gamma"
+    if plot_type == "rates":
+        # y_params = [[[-10, 1000], "linear"]]
+        y_params = [[[-10, 1000], "linear"], [[5e-3, 1200], "log"]]
+    elif plot_type == "T2_max":
+        y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
+    elif plot_type == "ratios":
+        y_params = [[[0, 5], "linear"]]
+    elif plot_type == "ratio_fits":
+        y_params = [[[0, 5], "linear"]]
+    elif plot_type == "residuals":
+        pass
+    elif plot_type == "normalized_residuals":
+        y_params = [[[-3, 3], "linear"]]
+        # rates_to_plot = "Omega"
+        rates_to_plot = "gamma"
     # y_params = [y_params[1]]
-    # for el in y_params:
-    #     y_range, yscale = el
-    #     main(
-    #         file_name,
-    #         path,
-    #         plot_type,
-    #         rates_to_plot,
-    #         temp_range,
-    #         y_range,
-    #         xscale,
-    #         yscale,
-    #         dosave=False,
-    #     )
-    #     print()
-    normalized_residuals_histogram(rates_to_plot)
+    for el in y_params:
+        y_range, yscale = el
+        main(
+            file_name,
+            path,
+            plot_type,
+            rates_to_plot,
+            temp_range,
+            y_range,
+            xscale,
+            yscale,
+            dosave=False,
+        )
+        print()
+    # normalized_residuals_histogram(rates_to_plot)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
