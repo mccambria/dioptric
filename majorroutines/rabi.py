@@ -203,6 +203,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                           num=num_steps, dtype=numpy.int32)
 
     # Analyze the sequence
+    num_reps = int(num_reps)
     file_name = os.path.basename(__file__)
     seq_args = [taus[0], polarization_time,
                 readout, max_uwave_time, apd_indices[0], 

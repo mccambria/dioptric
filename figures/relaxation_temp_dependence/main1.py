@@ -461,7 +461,8 @@ if __name__ == "__main__":
         {
             "temp": 300,
             "skip": False,
-            "decay_file": "2022_02_03-17_18_28-wu-nv6_2021_12_25",
+            # "decay_file": "2022_02_03-17_18_28-wu-nv6_2021_12_25",
+            "decay_file": "2022_03_04-12_05_15-wu-nv1_2022_02_10",
             "rabi_file": None,
             "Omega": None,
             "gamma": None,
@@ -522,9 +523,4 @@ if __name__ == "__main__":
     file_a = "2022_01_23-06_45_24-wu-nv6_2021_12_25"
     # test(file_a)
 
-    plt.show(block=True)
-
-    # I do observe a 0.5 count drop in background with a consistent
-    # timescale even in the dark sitting on the NV. The effect isn't
-    # large enough to entirely wxplain what I'm seeing. But it just
-    # seems impossible that it's a coincidence.
+    # plt.show(block=True)

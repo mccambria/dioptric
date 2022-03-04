@@ -233,7 +233,7 @@ def do_determine_charge_readout_params(nv_sig, apd_indices):
     # readout_powers = np.arange(0.68, 1.04, 0.04)
     # readout_powers = np.linspace(0.9, 1.0, 3)
     readout_powers = [0.75, 1.0]
-    # readout_powers = [0.80]
+    # readout_powers = [0.75]
     readout_powers = [round(val, 3) for val in readout_powers]
     
     # num_reps = 2000
@@ -305,11 +305,11 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 def paper_figure1_data(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 200
+    num_runs = 800  # 200
     num_reps = 3000
     num_steps = 12
-    min_tau = 500e3
-    max_tau = 15e6
+    min_tau = int(500e3)
+    max_tau = int(15e6)
     t1_exp_array = numpy.array([
             [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
             [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
@@ -327,7 +327,7 @@ def do_t1_dq_scc(nv_sig, apd_indices):
     num_steps = 6
     min_tau = 500e3
     max_tau_omega = int(12e9)
-    max_tau_gamma = int(2e9)
+    max_tau_gamma = int(5e9)
     # max_tau_omega = int(5.3e9)
     # max_tau_gamma = int(3e9)
     t1_exp_array = numpy.array([
@@ -420,9 +420,8 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.010, 0.001, 0], 'name': '{}-nv1_2022_02_10'.format(sample_name),
-    # nv_sig = { 'coords': [0.004, -0.055, 38], 'name': '{}-nv1_2022_02_10'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 24,
+    nv_sig = { 'coords': [0.016, 0.005, 34], 'name': '{}-nv1_2022_02_10'.format(sample_name),
+            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 33,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
             # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
@@ -430,7 +429,7 @@ if __name__ == '__main__':
             # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
             # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
             # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
-            # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+            # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E6, 'spin_readout_dur': 350,
             'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E4, 'spin_readout_dur': 350,
             # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
             
@@ -440,18 +439,17 @@ if __name__ == '__main__':
             # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E4, 'nv-_prep_laser_filter': 'nd_0.5',
             
             'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 75,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 100,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 75,
             
             'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
             # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
             "initialize_laser": green_laser, "initialize_dur": 1e4,
-            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 0.75,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 70e6, "charge_readout_laser_power": 0.75,
+            "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 0.75,
             # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
             
             'collection_filter': None, 'magnet_angle': None,   
-            'resonance_LOW': 2.8070, 'rabi_LOW': 191.4, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9483, 'rabi_HIGH': 243.6, 'uwave_power_HIGH': 16.5}
+            'resonance_LOW': 2.7998, 'rabi_LOW': 150, 'uwave_power_LOW': 16.5,
+            'resonance_HIGH': 2.9408, 'rabi_HIGH': 190, 'uwave_power_HIGH': 16.5}
     
     
     # %% Functions to run
@@ -460,9 +458,9 @@ if __name__ == '__main__':
     
         # tool_belt.init_safe_stop()
         
-        # Increasing x moves the image down, decreasing y moves the image right
+        # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0, -3)
+        #     cxn.cryo_piezos.write_xy(4, 1)
         
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
@@ -510,24 +508,25 @@ if __name__ == '__main__':
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         
         # SCC characterization
-        do_determine_charge_readout_params(nv_sig, apd_indices)
-        do_scc_pulsed_resonance(nv_sig, apd_indices)
+        # do_determine_charge_readout_params(nv_sig, apd_indices)
+        # do_scc_pulsed_resonance(nv_sig, apd_indices)
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        # nv_sig["spin_pol_dur"] = 1e6
+        nv_sig["spin_pol_dur"] = 1e6
         # # do_t1_interleave_knill(nv_sig, apd_indices)
-        # paper_figure1_data(nv_sig, apd_indices)
-        do_t1_dq_scc(nv_sig, apd_indices)
+        paper_figure1_data(nv_sig, apd_indices)
+        # do_t1_dq_scc(nv_sig, apd_indices)
         
-    except Exception:
+    except Exception as exc:
         tool_belt.send_exception_email()
+        raise exc
         
     finally:
         
