@@ -92,7 +92,7 @@ def collate_incremental(path, folder):
         #     raise RuntimeError("Inconsistent experiments being collated.")
 
         # Add what needs to be added to the collated data
-        num_exps = len(coll_params_master_list)
+        num_exps = len(params_master_list)
         if first_file:
             coll_sig_counts_master_list = [[] for ind in range(num_exps)]
             coll_ref_counts_master_list = [[] for ind in range(num_exps)]
@@ -108,7 +108,10 @@ def collate_incremental(path, folder):
             coll_ref_counts_master_list.extend(new_ref_counts_master_list)
             coll_tau_ind_save_list.extend(new_tau_ind_save_list)
             coll_opti_coords_master_list.extend(new_opti_coords_master_list)
+
             prev_exps_final_ind = len(coll_params_master_list)
+            coll_params_master_list.extend(params_master_list)
+            coll_tau_master_list.extend(tau_master_list)
         for ind in range(num_exps):
             coll_ind = ind + prev_exps_final_ind
             coll_sig_counts_master_list[coll_ind].extend(
