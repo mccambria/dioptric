@@ -30,24 +30,6 @@ phi_linspace = np.linspace(0, 2 * pi, num_circle_samples, endpoint=False)
 cos_phi_linspace = np.cos(phi_linspace)
 sin_phi_linspace = np.sin(phi_linspace)
 
-x_restrict_phi_linspace = np.array(
-    [val for val in phi_linspace if (pi / 4 <= np.mod(val, pi) <= 3 * pi / 4)]
-)
-num_x_restrict_samples = len(x_restrict_phi_linspace)
-x_restrict_cos_phi_linspace = np.cos(x_restrict_phi_linspace)
-x_restrict_sin_phi_linspace = np.sin(x_restrict_phi_linspace)
-
-y_restrict_phi_linspace = np.array(
-    [
-        val
-        for val in phi_linspace
-        if not (pi / 4 <= np.mod(val, pi) <= 3 * pi / 4)
-    ]
-)
-num_y_restrict_samples = len(y_restrict_phi_linspace)
-y_restrict_cos_phi_linspace = np.cos(y_restrict_phi_linspace)
-y_restrict_sin_phi_linspace = np.sin(y_restrict_phi_linspace)
-
 # endregion
 
 # region Functions
@@ -64,30 +46,40 @@ def cost0(params, image, x_lim, y_lim, x_restrict, y_restrict, debug):
     circle_center_x, circle_center_y, circle_radius = params
 
     if not x_restrict and not y_restrict:
-        applied_cos_phi_linspace = cos_phi_linspace
-        applied_sin_phi_linspace = sin_phi_linspace
+        weights = np.ones(num_circle_samples)
     elif x_restrict and not y_restrict:
-        applied_cos_phi_linspace = x_restrict_cos_phi_linspace
-        applied_sin_phi_linspace = x_restrict_sin_phi_linspace
+        weights = np.abs(sin_phi_linspace)
     elif not x_restrict and y_restrict:
-        applied_cos_phi_linspace = y_restrict_cos_phi_linspace
-        applied_sin_phi_linspace = y_restrict_sin_phi_linspace
+        weights = np.abs(cos_phi_linspace)
     else:
         raise RuntimeError("You really blew it this time...")
 
     circle_samples_x = (
-        circle_center_x + circle_radius * applied_cos_phi_linspace
+        circle_center_x + circle_radius * cos_phi_linspace
     )
     circle_samples_y = (
-        circle_center_y + circle_radius * applied_sin_phi_linspace
+        circle_center_y + circle_radius * sin_phi_linspace
     )
     circle_samples_x_round = [round(el) for el in circle_samples_x]
     circle_samples_y_round = [round(el) for el in circle_samples_y]
     circle_samples = zip(circle_samples_x_round, circle_samples_y_round)
 
     check_valid = lambda el: (0 <= el[1] < x_lim) and (0 <= el[0] < y_lim)
-    integrand_vals = [image[el] for el in circle_samples if check_valid(el)]
-    cost = np.sum(integrand_vals) / len(integrand_vals)
+    # integrand = [(image[el] * weights[el], weights[el]) for el in circle_samples if check_valid(el)]
+    ind = 0
+    integrand = []
+    for el in circle_samples:
+        ind += 1
+        if ind == 1000:
+            break
+        if not check_valid(el):
+            continue
+        image_val = image[el]
+        weights_val = weights[ind]
+        integrand.append((image_val * weights_val, weights_val,))
+    
+    integral, norm = np.sum(integrand, axis=0)
+    cost = integral / norm
 
     return cost
 
@@ -416,12 +408,12 @@ def main(
 
 if __name__ == "__main__":
 
-    # Fig 3
-    calc_distance(36.85, 43.87, 41.74, 39.05, 1.4, 0.9, 1.3, 1.6)
-    # Fig 4
-    calc_distance(45.79, 56.32, 50.98, 51.2, 1.3, 1.1, 1.4, 1.7)
+    # # Fig 3
+    # calc_distance(36.85, 43.87, 41.74, 39.05, 1.4, 0.9, 1.3, 1.6)
+    # # Fig 4
+    # calc_distance(45.79, 56.32, 50.98, 51.2, 1.3, 1.1, 1.4, 1.7)
 
-    sys.exit()
+    # sys.exit()
 
     tool_belt.init_matplotlib()
 
@@ -438,7 +430,6 @@ if __name__ == "__main__":
             # circle_b = [40, 44, 27.75]
             # Recursive brute results, 1000 point circle
             circle_a = [41.74, 36.85, 27.73]  # 0.31941
-            # circle_a = [39.74, 36.85, 27.73]  # Misaligned intentionally
             # errs_a = [1.3, 1.4, 1.2]
             circle_b = [39.05, 43.87, 27.59]  # 0.36108
             # errs_b = [1.6, 0.9, 1.0]
@@ -458,12 +449,12 @@ if __name__ == "__main__":
         # main(image_file_name, circle_a, circle_b, fast_recursive=True)
         calc_errors(image_file_name, circle_a, circle_b)
 
-    plt.show(block=True)
+    # plt.show(block=True)
 
 # endregion
 
 
- 0.0004375 V, for Fig 4 each pixel is 0.0005 V. And the conversion is 34.8 um/V
+ # 0.0004375 V, for Fig 4 each pixel is 0.0005 V. And the conversion is 34.8 um/V
  
- Fig 3: 15.225 nm / pixel
- Fig 4: 17.4 nm / pixel
+ # Fig 3: 15.225 nm / pixel
+ # Fig 4: 17.4 nm / pixel
