@@ -29,13 +29,18 @@ num_circle_samples = 1000
 phi_linspace = np.linspace(0, 2 * pi, num_circle_samples, endpoint=False)
 cos_phi_linspace = np.cos(phi_linspace)
 sin_phi_linspace = np.sin(phi_linspace)
+abs_sec_phi_linspace = abs(1 / cos_phi_linspace)
+abs_csc_phi_linspace = abs(1 / sin_phi_linspace)
+# sec_thresh = abs(1 / np.cos(np.pi / 4))
+sec_thresh = abs(1 / np.cos(0.3 * np.pi))
+# sec_thresh = 2
 
 # endregion
 
 # region Functions
 
 
-def cost0(params, image, x_lim, y_lim, debug):
+def cost0(params, image, x_lim, y_lim, x_restrict, y_restrict, debug):
     """
     Faux-integrate the pixel values around the circle. Then muliply by -1 so that
     lower values are better and we can use scipy.optimize.minimize.
@@ -45,6 +50,16 @@ def cost0(params, image, x_lim, y_lim, debug):
 
     circle_center_x, circle_center_y, circle_radius = params
 
+    if not x_restrict and not y_restrict:
+        weights = np.ones(num_circle_samples)
+    elif x_restrict and not y_restrict:
+        weights = abs_csc_phi_linspace
+    elif not x_restrict and y_restrict:
+        weights = abs_sec_phi_linspace
+    else:
+        raise RuntimeError("You really blew it this time...")
+    # weights = np.ones(num_circle_samples)
+
     circle_samples_x = circle_center_x + circle_radius * cos_phi_linspace
     circle_samples_y = circle_center_y + circle_radius * sin_phi_linspace
     circle_samples_x_round = [round(el) for el in circle_samples_x]
@@ -52,9 +67,27 @@ def cost0(params, image, x_lim, y_lim, debug):
     circle_samples = zip(circle_samples_x_round, circle_samples_y_round)
 
     check_valid = lambda el: (0 <= el[1] < x_lim) and (0 <= el[0] < y_lim)
-    integrand = [image[el] for el in circle_samples if check_valid(el)]
+    # integrand = [(image[el] * weights[el], weights[el]) for el in circle_samples if check_valid(el)]
+    ind = 0
+    integrand = []
+    for el in circle_samples:
+        ind += 1
+        if ind == 1000:
+            break
+        weights_val = weights[ind]
+        if not (check_valid(el) and (weights_val < sec_thresh)):
+            continue
+        # weights_val = 1
+        image_val = image[el]
+        integrand.append(
+            (
+                image_val * weights_val,
+                weights_val,
+            )
+        )
 
-    cost = np.sum(integrand) / len(integrand)
+    integral, norm = np.sum(integrand, axis=0)
+    cost = integral / norm
 
     return cost
 
@@ -99,10 +132,26 @@ def calc_errors(image_file_name, circle_a, circle_b):
     for circle in [circle_a, circle_b]:
 
         print(circle)
-        args = [sigmoid_image, image_len_x, image_len_y, False]
-        opti_cost = cost_func(circle, *args)
+        args = [sigmoid_image, image_len_x, image_len_y, False, False, False]
 
         for param_ind in range(3):
+
+            # Y
+            if param_ind == 0:
+                x_restrict = False
+                y_restrict = True
+            # X
+            if param_ind == 1:
+                x_restrict = True
+                y_restrict = False
+            # R
+            if param_ind == 2:
+                x_restrict = False
+                y_restrict = False
+
+            args[3] = x_restrict
+            args[4] = y_restrict
+            opti_cost = cost_func(circle, *args)
 
             ax = axes_pack[param_ind]
             sweep_center = circle[param_ind]
@@ -122,11 +171,7 @@ def calc_errors(image_file_name, circle_a, circle_b):
 
             left_width = None
             right_width = None
-            if param_ind == 2:
-                target_max_ratio = 0.5
-            else:
-                target_max_ratio = 1 - (1 / pi)
-            half_max = target_max_ratio * (0.5 - opti_cost)
+            half_max = (0.5 - opti_cost) / 2
             half_ind = num_points // 2
             for delta in range(half_ind):
                 test_ind = half_ind - delta
@@ -235,7 +280,7 @@ def main(
 
     # region Circle finding
 
-    args = [opti_image, image_len_x, image_len_y, False]
+    args = [opti_image, image_len_x, image_len_y, False, False, False]
     plot_circles = []
 
     if minimize_type == "manual":
@@ -384,12 +429,12 @@ def main(
 
 if __name__ == "__main__":
 
-    # Fig 3
-    calc_distance(3, 36.85, 43.87, 41.74, 39.05, 1.4, 0.9, 1.5, 1.3)
-    # Fig 4
-    calc_distance(4, 45.79, 56.32, 50.98, 51.2, 1.0, 1.1, 1.4, 1.4)
+    # # Fig 3
+    # calc_distance(3, 36.85, 43.87, 41.74, 39.05, 1.4, 0.9, 1.4, 1.5)
+    # # Fig 4
+    # calc_distance(4, 45.79, 56.32, 50.98, 51.2, 1.1, 1.1, 2.1, 1.8)
 
-    sys.exit()
+    # sys.exit()
 
     tool_belt.init_matplotlib()
 
