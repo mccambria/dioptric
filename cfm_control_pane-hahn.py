@@ -513,14 +513,14 @@ if __name__ == '__main__':
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # # # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # # # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        nv_sig["spin_pol_dur"] = 1e6
-        # # do_t1_interleave_knill(nv_sig, apd_indices)
+        # nv_sig["spin_pol_dur"] = 1e6
+        # # # do_t1_interleave_knill(nv_sig, apd_indices)
         paper_figure1_data(nv_sig, apd_indices)
         # do_t1_dq_scc(nv_sig, apd_indices)
         
