@@ -420,7 +420,7 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 'coords': [0.016, 0.005, 34], 'name': '{}-nv1_2022_02_10'.format(sample_name),
+    nv_sig = { 'coords': [0.022, 0.006, 34], 'name': '{}-nv1_2022_02_10'.format(sample_name),
             'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 33,
             
             'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -478,7 +478,7 @@ if __name__ == '__main__':
         #     do_image_sample(nv_sig, apd_indices)
          
         # do_image_sample(nv_sig, apd_indices)
-        do_image_sample_zoom(nv_sig, apd_indices)
+        # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_optimize(nv_sig, apd_indices)
@@ -519,9 +519,9 @@ if __name__ == '__main__':
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # # # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # # # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        # nv_sig["spin_pol_dur"] = 1e6
-        # # # do_t1_interleave_knill(nv_sig, apd_indices)
-        # paper_figure1_data(nv_sig, apd_indices)
+        nv_sig["spin_pol_dur"] = 1e6
+        # # do_t1_interleave_knill(nv_sig, apd_indices)
+        paper_figure1_data(nv_sig, apd_indices)
         # do_t1_dq_scc(nv_sig, apd_indices)
         
     except Exception as exc:
