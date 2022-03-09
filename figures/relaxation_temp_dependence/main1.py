@@ -363,7 +363,7 @@ def main(data_sets, dosave=False, draft_version=True):
         ax.errorbar(
             times_decay,
             signal_decay,
-            yerr=np.array(ste_decay) / 2,
+            yerr=np.array(ste_decay) ,
             label="{} K".format(temp),
             zorder=5,
             marker="o",
