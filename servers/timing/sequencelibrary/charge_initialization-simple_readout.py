@@ -45,8 +45,8 @@ def get_seq(pulse_streamer, config, args):
 #    tool_belt.check_laser_power(laser_name, laser_power)
 
     # chop_factor = 1
-    chop_factor = 10  # For yellow 1e8 readouts
-    # chop_factor = int(1e4)  # For green 1e7 readouts
+    # chop_factor = 10  # For yellow 1e8 readouts
+    chop_factor = int(1e4)  # For green 1e7 readouts
     # chop_factor = int(1e5)  # For green 1e8 readouts
     readout_time /= chop_factor
 
