@@ -98,11 +98,10 @@ def get_data_path(data_file_name):
         res = cursor.fetchone()
         return res[1]
     except Exception as exc:
-        print(
+        raise RuntimeError(
             "Failed to find file using search index. Try re-compiling the"
             " index by running gen_search_index."
         )
-        return None
 
 
 if __name__ == "__main__":
