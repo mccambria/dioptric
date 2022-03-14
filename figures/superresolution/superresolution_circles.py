@@ -389,7 +389,7 @@ if __name__ == "__main__":
     # Fig 4
     calc_distance(4, 45.79, 56.32, 50.98, 51.2, 1.0, 1.1, 1.4, 1.4)
 
-    sys.exit()
+    # sys.exit()
 
     tool_belt.init_matplotlib()
 
@@ -423,9 +423,15 @@ if __name__ == "__main__":
             circle_b = [51.2, 56.32, 27.29]  # 0.35952
             # errs_b = [1.8, 1.1, 1.2]
 
-        # main(image_file_name, circle_a, circle_b, fast_recursive=True)
-        calc_errors(image_file_name, circle_a, circle_b)
+        main(image_file_name, circle_a, circle_b, fast_recursive=True)
+        # calc_errors(image_file_name, circle_a, circle_b)
 
     plt.show(block=True)
 
 # endregion
+
+
+#  0.0004375 V, for Fig 4 each pixel is 0.0005 V. And the conversion is 34.8 um/V
+
+#  Fig 3: 15.225 nm / pixel
+#  Fig 4: 17.4 nm / pixel
