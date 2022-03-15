@@ -404,7 +404,7 @@ if __name__ == "__main__":
     # sys.exit()
 
     ########################
-    #Hahn
+    #+++++++++++++++++++++++++++++ Hahn
     # # apd_indices = [0]
     # apd_indices = [1]
     # # apd_indices = [0,1]
@@ -462,7 +462,7 @@ if __name__ == "__main__":
     #     "uwave_power_HIGH": 16.5,
     # }
 
-    #Rabi
+    #+++++++++++++++++++++++++++++ Rabi
     apd_indices = [0]
     sample_name = 'johnson'
 
@@ -472,11 +472,11 @@ if __name__ == "__main__":
     green_power= 10
 
     nv_sig = {
-        "coords": [250.285, 251.564, 5],
+        "coords": [250.593, 252.529, 5],
         "name": "{}-nv1_2022_02_04".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate":29 , #35
+        "expected_count_rate":25 , 
             'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,
@@ -494,7 +494,8 @@ if __name__ == "__main__":
     #                 2*10**7, 3*10**7, 4*10**7, 5*10**7]
     # readout_durs = numpy.linspace(10e6, 50e6, 5)
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9]
-    readout_durs = [5e6, 20e6, 40e6, 70e6, 100e6]
+    readout_durs = [40e6, 50e6, 70e6, 100e6]
+    # readout_durs = [5e6, 20e6, 40e6, 50e6, 70e6, 100e6]
     # readout_durs = [5e6, 10e6, 20e6, 40e6]
     # readout_durs = numpy.linspace(700e6, 1e9, 7)
     # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
@@ -506,7 +507,7 @@ if __name__ == "__main__":
     # readout_powers = np.linspace(0.8, 1.0, 6)
     # readout_powers = np.linspace(0.71, 0.75, 5)
     # readout_powers = np.linspace(0.2, 1.0, 5)
-    readout_powers = [0.25]
+    readout_powers = [0.1, 0.15, 0.2, 0.25]
 
     # num_reps = 2000
     # num_reps = 1000

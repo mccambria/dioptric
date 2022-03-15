@@ -323,7 +323,6 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Save the data
 
     timestamp = tool_belt.get_time_stamp()
-    print(nv_sig['coords'])
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
@@ -359,8 +358,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_rabi/branch_master/image_sample/2022_01'
-    file_name = '2022_01_12-10_34_08-burnell-nv2_2022_01_11'
+    file_name = '2022_03_15-12_29_37-cannon_sc-nv_2022_03_15'
+    scale = 83
 
     data = tool_belt.get_raw_data(file_name)
     nv_sig = data['nv_sig']
@@ -370,6 +369,7 @@ if __name__ == '__main__':
     y_range= data['y_range']
     x_voltages = data['x_voltages']
     y_voltages = data['y_voltages']
+    
     # x_low = x_voltages[0]
     # x_high = x_voltages[-1]
     # y_low = y_voltages[0]
@@ -389,7 +389,7 @@ if __name__ == '__main__':
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
 
 
-    tool_belt.create_image_figure(img_array, numpy.array(img_extent)*35, clickHandler=on_click_image,
+    tool_belt.create_image_figure(img_array, numpy.array(img_extent)*scale, clickHandler=on_click_image,
                         title=None, color_bar_label='Counts',
                         min_value=None, um_scaled=True)
 
