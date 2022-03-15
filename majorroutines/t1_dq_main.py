@@ -7,7 +7,7 @@ This version streamlines those options into a single file where the options
 are passed into the main function. (Interleaving, running each experiment
 once then moving onto the next experiment as opposed to completing all the runs
 for one experiment then movning onto the next experiment, is not optional since
-not interleaving can introduce systematics probably related to charge 
+not interleaving can introduce systematics probably related to charge
 dynamics.)
 
 Pass into the function an experiment array, and it will run each experiment
@@ -25,6 +25,7 @@ Created on December 16, 2021
 
 
 import utils.tool_belt as tool_belt
+import utils.common as common
 import majorroutines.optimize as optimize
 import numpy
 import os
@@ -36,6 +37,99 @@ from utils.tool_belt import States
 
 
 # %% Functions
+
+
+def collate_incremental(path, folder):
+
+    nvdata_dir = common.get_nvdata_dir()
+    path_from_nvdata = "{}/{}/incremental".format(path, folder)
+    full_path_to_folder = nvdata_dir / path_from_nvdata
+
+    coll_data = {}
+    first_file = True
+    coll_sig_counts_master_list = None
+    coll_ref_counts_master_list = None
+    coll_tau_ind_save_list = None
+    coll_opti_coords_master_list = None
+    coll_params_master_list = None
+    coll_tau_master_list = None
+    coll_nv_sig = None
+    total_num_runs = 0
+
+    for filename_with_ext in os.listdir(full_path_to_folder):
+        filename = os.path.splitext(filename_with_ext)[0]
+        # Skip over the collated incremental file if we already built one
+        if filename.endswith("collated_incremental"):
+            continue
+        full_path_to_file = full_path_to_folder / filename_with_ext
+        if not os.path.isfile(full_path_to_file):
+            continue
+        data = tool_belt.get_raw_data(filename, path_from_nvdata, nvdata_dir)
+
+        sig_counts_master_list = data["sig_counts_master_list"]
+        ref_counts_master_list = data["ref_counts_master_list"]
+        params_master_list = data["params_master_list"]
+        tau_ind_save_list = data["tau_ind_save_list"]
+        opti_coords_master_list = data["opti_coords_master_list"]
+        tau_master_list = data["tau_master_list"]
+        nv_sig = data["nv_sig"]
+        if "run_ind" in data:
+            num_runs = data["run_ind"]
+        else:
+            num_runs = data["num_runs"]
+        total_num_runs += num_runs
+        
+        
+        # Make sure everything that should match up does
+        if first_file:
+            coll_params_master_list = params_master_list
+            common_params = [el[:4] for el in params_master_list]
+            coll_tau_master_list = tau_master_list
+            coll_nv_sig = nv_sig
+        test_common_params = [el[:4] for el in params_master_list]
+        if (
+            (common_params != test_common_params)
+            or (coll_tau_master_list != tau_master_list)
+            or (coll_nv_sig["name"] != nv_sig["name"])
+        ):
+            raise RuntimeError("Inconsistent experiments being collated.")
+
+        # Add what needs to be added to the collated data
+        num_exps = len(params_master_list)
+        if first_file:
+            coll_sig_counts_master_list = [[] for ind in range(num_exps)]
+            coll_ref_counts_master_list = [[] for ind in range(num_exps)]
+            coll_tau_ind_save_list = [[] for ind in range(num_exps)]
+            coll_opti_coords_master_list = [[] for ind in range(num_exps)]
+            
+        for ind in range(num_exps):
+            coll_sig_counts_master_list[ind].extend(
+                sig_counts_master_list[ind][:num_runs]
+            )
+            coll_ref_counts_master_list[ind].extend(
+                ref_counts_master_list[ind][:num_runs]
+            )
+            coll_tau_ind_save_list[ind].extend(
+                tau_ind_save_list[ind][:num_runs]
+            )
+            coll_opti_coords_master_list[ind].extend(
+                opti_coords_master_list[ind][:num_runs]
+            )
+        first_file = False
+
+    coll_data["sig_counts_master_list"] = coll_sig_counts_master_list
+    coll_data["ref_counts_master_list"] = coll_ref_counts_master_list
+    coll_data["params_master_list"] = coll_params_master_list
+    coll_data["tau_ind_save_list"] = coll_tau_ind_save_list
+    coll_data["opti_coords_master_list"] = coll_opti_coords_master_list
+    coll_data["tau_master_list"] = coll_tau_master_list
+    coll_data["nv_sig"] = coll_nv_sig
+    coll_data["num_runs"] = total_num_runs
+    # coll_data["num_runs"] = 150
+
+    coll_incs_file_name = "collated_incremental"
+    full_path_to_coll_incs = full_path_to_folder / coll_incs_file_name
+    tool_belt.save_raw_data(coll_data, str(full_path_to_coll_incs))
 
 
 def unpack_interleave(data, start_run=0, stop_run=None):
@@ -60,7 +154,6 @@ def unpack_interleave(data, start_run=0, stop_run=None):
         else:
             stop_run = data["num_runs"]
     num_runs = stop_run - start_run
-    sig_counts_master_list = data["sig_counts_master_list"]
     avg_sig_counts_master_list = []
     avg_ref_counts_master_list = []
     norm_sig_counts_master_list = []
@@ -741,18 +834,17 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
-    folder = "main1-200k"
-    file_name = "incremental"
-    data = tool_belt.get_raw_data(file_name, path + folder)
-
-    # file_name = "2022_01_23-06_45_27-wu-nv6_2021_12_25"
-    # # path = "pc_hahn/branch_master/t1_dq_main/2022_01/incremental/"
-    # # file_name = "2022_01_23-17_05_07-wu-nv6_2021_12_25"
-    # data = tool_belt.get_raw_data(file_name)
+    path = "pc_hahn/branch_master/t1_dq_main/data_collections"
+    # folder = "wu-nv1_2022_02_10-50K"
+    folder = "main1-300K"
+    collate_incremental(path, folder)
+    full_path_to_incremental = "{}/{}/incremental".format(path, folder)
+    data = tool_belt.get_raw_data(
+        "collated_incremental", full_path_to_incremental
+    )
 
     # start = 75
     # unpack_interleave(data, start, start + 24)
     unpack_interleave(data)
 
-    plt.show(block=True)
+    # plt.show(block=True)

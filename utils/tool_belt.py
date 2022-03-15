@@ -14,6 +14,7 @@ Created on Fri Nov 23 14:57:08 2018
 # %% Imports
 
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import threading
 import os
@@ -490,14 +491,14 @@ def process_laser_seq(
 
         pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
         seq.setAnalog(pulser_laser_mod, processed_train)
-        
-        
+
+
 def set_delays_to_zero(config):
     """
     Pass this a config dictionary and it'll set all the delays to zero.
     Useful for testing sequences without having to worry about delays.
     """
-    
+
     for key in config:
         # Check if any entries are delays and set them to 0
         if key.endswith("delay"):
@@ -507,14 +508,14 @@ def set_delays_to_zero(config):
         val = config[key]
         if type(val) is dict:
             set_delays_to_zero(val)
-            
-            
+
+
 def set_feedthroughs_to_false(config):
     """
     Pass this a config dictionary and it'll set all the feedthrough arguments
     to False
     """
-    
+
     for key in config:
         # Check if any entries are feedthroughs and set them to False
         if key == "feedthrough":
@@ -588,9 +589,10 @@ def init_matplotlib(font_size=11.25):
     plt.ion()
 
     # Default latex packages
-    plt.rcParams[
-        "text.latex.preamble"
-    ] = r"\usepackage{physics} \usepackage{sfmath} \usepackage{upgreek}"
+    preamble = r"\usepackage{physics} \usepackage{sfmath} \usepackage{upgreek}"
+    plt.rcParams["text.latex.preamble"] = preamble
+
+    # plt.rcParams["savefig.format"] = "svg"
 
     plt.rcParams["font.size"] = font_size
 
@@ -741,6 +743,8 @@ def create_line_plot_figure(vals, xVals=None):
 
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
+    fig.set_tight_layout(True)
+    ax.grid(axis="y")
 
     if xVals is not None:
         ax.plot(xVals, vals)

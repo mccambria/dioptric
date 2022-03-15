@@ -583,12 +583,17 @@ def main_with_cxn(
         if opti_succeeded or opti_unnecessary:
             prepare_microscope(cxn, nv_sig, opti_coords)
         else:
+            msg = ("Optimization failed.")
+            # Just crash
+            raise RuntimeError(msg)
             # Let the user know something went wrong
-            print(
-                "Optimization failed. Resetting to coordinates "
-                "about which we attempted to optimize."
-            )
-            prepare_microscope(cxn, nv_sig, adjusted_coords)
+            # msg = ("Optimization failed. Resetting to coordinates "
+            #        "about which we attempted to optimize.")
+            # print(
+            #     "Optimization failed. Resetting to coordinates "
+            #     "about which we attempted to optimize."
+            # )
+            # prepare_microscope(cxn, nv_sig, adjusted_coords)
     else:
         if opti_succeeded or opti_unnecessary:
             print("Optimized coordinates: ")
@@ -608,7 +613,12 @@ def main_with_cxn(
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates
     if save_data and not opti_unnecessary:
-
+        
+        if len(scan_vals_by_axis) < 3:
+            z_scan_vals = None
+        else:
+            z_scan_vals = scan_vals_by_axis[2].tolist()
+            
         timestamp = tool_belt.get_time_stamp()
         rawData = {
             "timestamp": timestamp,
@@ -617,12 +627,12 @@ def main_with_cxn(
             "opti_coords": opti_coords,
             "x_scan_vals": scan_vals_by_axis[0].tolist(),
             "y_scan_vals": scan_vals_by_axis[1].tolist(),
-            "z_scan_vals": scan_vals_by_axis[2].tolist(),
+            "z_scan_vals": z_scan_vals,
             "x_counts": counts_by_axis[0].tolist(),
             "x_counts-units": "number",
             "y_counts": counts_by_axis[1].tolist(),
             "y_counts-units": "number",
-            "z_counts": counts_by_axis[2].tolist(),
+            "z_counts": z_scan_vals,
             "z_counts-units": "number",
         }
 

@@ -228,13 +228,7 @@ def get_temp_error(point):
 
 
 def simultaneous_test_lambda(
-    temps,
-    beta,
-    omega_hopper_fit_func,
-    omega_wu_fit_func,
-    gamma_hopper_fit_func,
-    gamma_wu_fit_func,
-    sample_break,
+    temps, beta, omega_rate_lambda, gamma_rate_lambda
 ):
     """
     Lambda variation of simultaneous_test
@@ -244,17 +238,12 @@ def simultaneous_test_lambda(
     num_vals = len(temps)
     for ind in range(num_vals):
         temp_val = temps[ind]
-        if ind < sample_break:
-            sample = "hopper"
-        else:
-            sample = "wu"
-        # Omegas are even indexed, gammas are odd indexed
+        # Omegas are even indexed
         if ind % 2 == 0:
-            rate = "omega"
+            ret_vals.append(omega_rate_lambda(temp_val, beta))
+        # gammas are odd indexed
         else:
-            rate = "gamma"
-        fit_func = eval("{}_{}_fit_func".format(rate, sample))
-        ret_vals.append(fit_func(temp_val, beta))
+            ret_vals.append(gamma_rate_lambda(temp_val, beta))
 
     return np.array(ret_vals)
 
@@ -268,36 +257,115 @@ def fit_simultaneous(data_points):
     temp_errors = []
     combined_rates = []
     combined_errs = []
-    sample_breaks = []
-    for sample in ["Hopper", "Wu"]:
-        for point in data_points:
-            # Crash if we're trying to work with incomplete data
-            if (point[omega_column_title] is None) or (
-                point[gamma_column_title] is None
-            ):
-                crash = 1 / 0
-            if point[sample_column_title] != sample:
-                continue
-            temp = get_temp(point)
-            temps.append(temp)
-            temp_bounds = get_temp_bounds(point)
-            temp_error = get_temp_error(point)
-            temp_errors.append(temp_error)
-            combined_rates.append(point[omega_column_title])
-            combined_errs.append(point[omega_err_column_title])
-            temps.append(temp)
-            temp_errors.append(temp_error)
-            combined_rates.append(point[gamma_column_title])
-            combined_errs.append(point[gamma_err_column_title])
-        sample_breaks.append(len(combined_rates))
+    for point in data_points:
+        # Crash if we're trying to work with incomplete data
+        if (point[omega_column_title] is None) or (
+            point[gamma_column_title] is None
+        ):
+            crash = 1 / 0
+        temp = get_temp(point)
+        temps.append(temp)
+        temp_bounds = get_temp_bounds(point)
+        temp_error = get_temp_error(point)
+        temp_errors.append(temp_error)
+        combined_rates.append(point[omega_column_title])
+        combined_errs.append(point[omega_err_column_title])
+        temps.append(temp)
+        temp_errors.append(temp_error)
+        combined_rates.append(point[gamma_column_title])
+        combined_errs.append(point[gamma_err_column_title])
 
     fit_func = simultaneous_test_lambda
 
     # region DECLARE FIT FUNCTIONS HERE
 
+    # Just exp
+    # init_params = (510, 1.38e-11, 2000, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[0], beta[3], beta[1]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_free(temp, beta[2], beta[3])
+    # beta_desc = (
+    #     "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV)]"
+    # )
+
+    # T5 free
+    # init_params = (510, 1.38e-11, 2000, 1.38e-11, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[0], beta[4], beta[1]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[2], beta[4], beta[3]
+    # )
+    # beta_desc = (
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV)]"
+    # )
+
+    # T5 fixed + linear
+    # init_params = (1.38e-11, 510, 2000, 72.0, 0.07, 0.035)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free_linear(
+    #     temp, beta[1], beta[3], beta[0], beta[4]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free_linear(
+    #     temp, beta[2], beta[3], beta[0], beta[5]
+    # )
+    # beta_desc = (
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV), linear_coeff (K^-1 s^-1)]"
+    # )
+
+    # T5 fixed + constant
+    # init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.07)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[1], beta[3], beta[0], beta[4]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[2], beta[3], beta[0], beta[5]
+    # )
+    # beta_desc = [
+    #     "T5_coeff (K^-5 s^-1)",
+    #     "omega_exp_coeff (s^-1)",
+    #     "gamma_exp_coeff (s^-1)",
+    #     "activation (meV)",
+    #     "Omega constant (K^-1 s^-1)",
+    #     "gamma constant (K^-1 s^-1)",
+    # ]
+
+    # Double Orbach
+    # init_params = (500, 1500, 72, 2000, 2000, 400, 0.01, 0.07)
+    # # init_params = (500, 1500, 72, 2000, 2000, 0.01, 0.07)
+    # omega_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     beta[-3],
+    #     beta[-2],  # 400, beta[5]
+    # )
+    # gamma_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[4],
+    #     beta[5],
+    #     beta[7],  # 400, beta[6]
+    # )
+    # beta_desc = [
+    #     "Omega Orbach 1 coeff (s^-1)",
+    #     "gamma Orbach 1 coeff (s^-1)",
+    #     "Orbach 1 Delta (meV)",
+    #     "Omega Orbach 2 coeff (s^-1)",
+    #     "gamma Orbach 2 coeff (s^-1)",
+    #     "Orbach 2 Delta (meV)",
+    #     "Omega constant (K^-1 s^-1)",
+    #     "gamma constant (K^-1 s^-1)",
+    # ]
+
     # Double Orbach fixed
-    init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
-    omega_hopper_fit_func = lambda temp, beta: double_orbach(
+    init_params = (450, 1200, 65, 11000, 160, 0.01, 0.07)
+    omega_fit_func = lambda temp, beta: double_orbach(
         temp,
         beta[0],
         beta[2],
@@ -305,29 +373,13 @@ def fit_simultaneous(data_points):
         beta[4],
         beta[5],
     )
-    omega_wu_fit_func = lambda temp, beta: double_orbach(
+    gamma_fit_func = lambda temp, beta: double_orbach(
         temp,
-        beta[0],
+        beta[1],
         beta[2],
         beta[3],
         beta[4],
         beta[6],
-    )
-    gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[1],
-        beta[2],
-        beta[3],
-        beta[4],
-        beta[7],
-    )
-    gamma_wu_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[1],
-        beta[2],
-        beta[3],
-        beta[4],
-        beta[8],
     )
     beta_desc = [
         "Omega Orbach 1 coeff (s^-1)",
@@ -335,22 +387,77 @@ def fit_simultaneous(data_points):
         "Orbach 1 Delta (meV)",
         "Orbach 2 coeff (s^-1)",
         "Orbach 2 Delta (meV)",
-        "Omega Hopper constant (s^-1)",
-        "Omega Wu constant (s^-1)",
-        "gamma Hopper constant (s^-1)",
-        "gamma Wu constant (s^-1)",
+        "Omega constant (s^-1)",
+        "gamma constant (s^-1)",
     ]
+
+    # Double Orbach fixed
+    # orbach1_delta = 60
+    # orbach2_delta = 400
+    # init_params = (500, 1500, 2000, 60, 0.01, 0.07)
+    # omega_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[3],
+    #     # orbach1_delta,
+    #     beta[2],
+    #     orbach2_delta,
+    #     beta[-2],
+    # )
+    # gamma_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[3],
+    #     # orbach1_delta,
+    #     beta[2],
+    #     orbach2_delta,
+    #     beta[-1],
+    # )
+    # beta_desc = (
+    #     "Omega Orbach 1 coeff (s^-1), gamma Orbach 1 coeff (s^-1), Omega"
+    #     " Orbach 2 coeff (s^-1), gamma Orbach 2 coeff (s^-1), Omega constant"
+    #     " (K^-1 s^-1), gamma constant (K^-1 s^-1)]"
+    # )
+
+    # T5 fixed
+    # init_params = (1.38e-11, 510, 2000, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[1], beta[3], beta[0]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[2], beta[3], beta[0]
+    # )
+    # beta_desc = (
+    #     "[T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff"
+    #     " (s^-1), activation (meV)]"
+    # )
+
+    # T7
+    # init_params = (510, 1.38e-11, 2000, 1.38e-15, 72.0)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[0], beta[4], beta[1]
+    # )
+    # gamma_fit_func = lambda temp, beta: orbach_T7_free(
+    #     temp, beta[2], beta[4], beta[3]
+    # )
+    # beta_desc = (
+    #     "[omega_exp_coeff (s^-1), omega_T5_coeff (K^-5 s^-1), gamma_exp_coeff"
+    #     " (s^-1), gamma_T7_coeff (K^-7 s^-1), activation (meV)]"
+    # )
+
+    # Ariel
+    # init_params = (2000,)
+    # ariel_params = (653, 73, 6.87e-12)
+    # omega_fit_func = lambda temp, beta: orbach_T5_free(temp, *ariel_params)
+    # gamma_fit_func = lambda temp, beta: orbach_T5_free(
+    #     temp, beta[0], *ariel_params[1:]
+    # )
+    # beta_desc = "[gamma_exp_coeff]"
 
     # endregion
 
     fit_func = lambda beta, temp: simultaneous_test_lambda(
-        temp,
-        beta,
-        omega_hopper_fit_func,
-        omega_wu_fit_func,
-        gamma_hopper_fit_func,
-        gamma_wu_fit_func,
-        sample_breaks[0],
+        temp, beta, omega_fit_func, gamma_fit_func
     )
     data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
     model = Model(fit_func)
@@ -368,15 +475,50 @@ def fit_simultaneous(data_points):
     print("Sum of squared residuals: {}".format(ssr_report))
     print("redChi2={}, SSR={}".format(red_chi_square_report, ssr_report))
 
-    return (
-        popt,
-        np.diag(pcov),
-        beta_desc,
-        omega_hopper_fit_func,
-        omega_wu_fit_func,
-        gamma_hopper_fit_func,
-        gamma_wu_fit_func,
-    )
+    return popt, np.diag(pcov), beta_desc, omega_fit_func, gamma_fit_func
+
+
+def gen_fake_data_point(temp, omega, gamma, sample_normal=False):
+
+    fake_point = {}
+
+    error_level = 0.05
+    omega_err = error_level * omega
+    gamma_err = error_level * gamma
+
+    # Generate the rates according to whether we want to simulate the
+    # effects of the error bars or use precise values
+    sample_normal = True
+    if sample_normal:
+        omega_sample = np.random.normal(omega, omega_err)
+        gamma_sample = np.random.normal(gamma, gamma_err)
+        omega_sample = tool_belt.round_sig_figs(omega_sample, 3)
+        gamma_sample = tool_belt.round_sig_figs(gamma_sample, 3)
+        # print("{}, {}".format(omega_sample, gamma_sample))
+        fake_point = {
+            omega_column_title: omega_sample,
+            gamma_column_title: gamma_sample,
+        }
+    else:
+        fake_point = {
+            omega_column_title: omega,
+            gamma_column_title: gamma,
+        }
+
+    # Generate the common properties
+    common = {
+        "marker": "D",
+        sample_column_title: "FAKE",
+        nominal_temp_column_title: temp,
+        temp_column_title: temp,
+        temp_lb_column_title: temp - 3,
+        temp_ub_column_title: temp + 3,
+        omega_err_column_title: omega_err,
+        gamma_err_column_title: gamma_err,
+    }
+    fake_point.update(common)
+
+    return fake_point
 
 
 def get_data_points(path, file_name):
@@ -415,12 +557,12 @@ def get_data_points(path, file_name):
             # of the csv
             if sample == "":
                 continue
+            if sample != "Hopper":
+                continue
             if sample not in samples:
                 sample_markers[sample] = markers[marker_ind]
                 marker_ind += 1
                 samples.append(sample)
-            if sample not in ["Wu", "Hopper"]:
-                continue
             point["marker"] = sample_markers[sample]
             point[sample_column_title] = sample
             for ind in range(len(columns)):
@@ -440,6 +582,39 @@ def get_data_points(path, file_name):
 
     # The first shall be last
     data_points.append(data_points.pop(0))
+
+    # Generate fake data for high temp tests
+
+    # Genned from Orbach + T5
+    # data_points.append(gen_fake_data_point(487.5, 382, 603))
+    # data_points.append(gen_fake_data_point(500.0, 423, 656))
+    # data_points.append(gen_fake_data_point(512.5, 469, 713))
+    # data_points.append(gen_fake_data_point(525.0, 518, 775))
+    # data_points.append(gen_fake_data_point(537.5, 572, 841))
+    # data_points.append(gen_fake_data_point(550.0, 630, 911))
+    # Genned from double Orbach
+    # data_points.append(gen_fake_data_point(487.5, 354, 557))
+    # data_points.append(gen_fake_data_point(500.0, 383, 596))
+    # data_points.append(gen_fake_data_point(512.5, 413, 637))
+    # data_points.append(gen_fake_data_point(525.0, 445, 680))
+    # data_points.append(gen_fake_data_point(537.5, 478, 723))
+    # data_points.append(gen_fake_data_point(550.0, 511, 767))
+
+    # Pre-sampled normal distribution
+    # Genned from Orbach + T5
+    # data_points.append(gen_fake_data_point(487.5, 443.0, 631.0))
+    # data_points.append(gen_fake_data_point(500.0, 356.0, 628.0))
+    # data_points.append(gen_fake_data_point(512.5, 446.0, 704.0))
+    # data_points.append(gen_fake_data_point(525.0, 519.0, 686.0))
+    # data_points.append(gen_fake_data_point(537.5, 527.0, 768.0))
+    # data_points.append(gen_fake_data_point(550.0, 654.0, 939.0))
+    # Genned from double Orbach
+    # data_points.append(gen_fake_data_point(487.5, 331.0, 556.0))
+    # data_points.append(gen_fake_data_point(500.0, 413.0, 586.0))
+    # data_points.append(gen_fake_data_point(512.5, 382.0, 704.0))
+    # data_points.append(gen_fake_data_point(525.0, 508.0, 728.0))
+    # data_points.append(gen_fake_data_point(537.5, 474.0, 791.0))
+    # data_points.append(gen_fake_data_point(550.0, 515.0, 843.0))
 
     return data_points
 
@@ -620,24 +795,16 @@ def main(
     # return
 
     # Fit to Omega and gamma simultaneously
-    (
-        popt,
-        pvar,
-        beta_desc,
-        omega_hopper_fit_func,
-        omega_wu_fit_func,
-        gamma_hopper_fit_func,
-        gamma_wu_fit_func,
-    ) = fit_simultaneous(data_points)
+    popt, pvar, beta_desc, omega_fit_func, gamma_fit_func = fit_simultaneous(
+        data_points
+    )
 
     # omega_lambda = lambda temp: orbach_free(temp, 5.4603e02, 71)
     # gamma_lambda = lambda temp: orbach_free(temp, 1.5312e03, 71)
     # omega_lambda = lambda temp: orbach_free(temp, 1e8, 400)
     # gamma_lambda = omega_lambda
-    omega_hopper_lambda = lambda temp: omega_hopper_fit_func(temp, popt)
-    omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
-    gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
-    gamma_wu_lambda = lambda temp: gamma_wu_fit_func(temp, popt)
+    omega_lambda = lambda temp: omega_fit_func(temp, popt)
+    gamma_lambda = lambda temp: gamma_fit_func(temp, popt)
 
     # for temp in np.arange(487.5, 555, 12.5):
     #     boilerplate = "data_points.append(gen_fake_data_point({}, {}, {}))"
@@ -653,85 +820,69 @@ def main(
         err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
         print("{}: {}, {}".format(desc, val, err))
     if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
-        for fit_func in [omega_hopper_lambda, omega_wu_lambda]:
-            ax.plot(
-                temp_linspace,
-                fit_func(temp_linspace),
-                label=r"$\Omega$ fit",
-                color=omega_edge_color,
-                linewidth=line_width,
-            )
+        ax.plot(
+            temp_linspace,
+            omega_lambda(temp_linspace),
+            label=r"$\Omega$ fit",
+            color=omega_edge_color,
+            linewidth=line_width,
+        )
         # Plot Jarmola 2012 Eq. 1 for S3
         # ax.plot(temp_linspace, omega_calc(temp_linspace),
         #         label=r'$\Omega$ fit', color=omega_edge_color)
 
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
-        for fit_func in [gamma_hopper_lambda, gamma_wu_lambda]:
-            ax.plot(
-                temp_linspace,
-                fit_func(temp_linspace),
-                label=r"$\gamma$ fit",
-                color=gamma_edge_color,
-                linewidth=line_width,
-            )
+        ax.plot(
+            temp_linspace,
+            gamma_lambda(temp_linspace),
+            label=r"$\gamma$ fit",
+            color=gamma_edge_color,
+            linewidth=line_width,
+        )
     # print(omega_lambda(50))
     # print(gamma_lambda(50))
 
     # Plot ratio
-    ratio_hopper_lambda = lambda temp: gamma_hopper_lambda(
-        temp
-    ) / omega_hopper_lambda(temp)
-    ratio_wu_lambda = lambda temp: gamma_wu_lambda(temp) / omega_wu_lambda(
-        temp
-    )
+    ratio_lambda = lambda temp: gamma_lambda(temp) / omega_lambda(temp)
     if plot_type in ["ratios", "ratio_fits"]:
-        for func in [ratio_hopper_lambda, ratio_wu_lambda]:
-            ax.plot(
-                temp_linspace,
-                func(temp_linspace),
-                label=r"$\gamma/\Omega$",
-                color=gamma_edge_color,
-                linewidth=line_width,
-            )
+        ax.plot(
+            temp_linspace,
+            ratio_lambda(temp_linspace),
+            label=r"$\gamma/\Omega$",
+            color=gamma_edge_color,
+            linewidth=line_width,
+        )
     if plot_type == "T2_max":
         T2_max_qubit = lambda omega, gamma: 2 / (3 * omega + gamma)
-        T2_max_qubit_hopper_temp = lambda temp: T2_max_qubit(
-            omega_hopper_lambda(temp), gamma_hopper_lambda(temp)
-        )
-        T2_max_qubit_wu_temp = lambda temp: T2_max_qubit(
-            omega_wu_lambda(temp), gamma_wu_lambda(temp)
+        T2_max_qubit_temp = lambda temp: T2_max_qubit(
+            omega_lambda(temp), gamma_lambda(temp)
         )
         T2_max_qubit_err = lambda T2max, omega_err, gamma_err: (
             (T2max ** 2) / 2
         ) * np.sqrt((3 * omega_err) ** 2 + gamma_err ** 2)
-        for func in [T2_max_qubit_hopper_temp, T2_max_qubit_wu_temp]:
-            ax.plot(
-                temp_linspace,
-                func(temp_linspace),
-                label=r"Superposition of $\ket{0}$, $\ket{\pm 1}$",
-                # label=r"Qubit T2 max",
-                color=qubit_max_edge_color,
-                linewidth=line_width,
-            )
+        ax.plot(
+            temp_linspace,
+            T2_max_qubit_temp(temp_linspace),
+            label=r"Superposition of $\ket{0}$, $\ket{\pm 1}$",
+            # label=r"Qubit T2 max",
+            color=qubit_max_edge_color,
+            linewidth=line_width,
+        )
         T2_max_qutrit = lambda omega, gamma: 1 / (omega + gamma)
         T2_max_qutrit_err = lambda T2max, omega_err, gamma_err: (
             T2max ** 2
         ) * np.sqrt(omega_err ** 2 + gamma_err ** 2)
-        T2_max_qutrit_hopper_temp = lambda temp: T2_max_qutrit(
-            omega_hopper_lambda(temp), gamma_hopper_lambda(temp)
+        T2_max_qutrit_temp = lambda temp: T2_max_qutrit(
+            omega_lambda(temp), gamma_lambda(temp)
         )
-        T2_max_qutrit_wu_temp = lambda temp: T2_max_qutrit(
-            omega_wu_lambda(temp), gamma_wu_lambda(temp)
+        ax.plot(
+            temp_linspace,
+            T2_max_qutrit_temp(temp_linspace),
+            label=r"Superposition of $\ket{-1}$, $\ket{+1}$",
+            # label=r"Qutrit T2 max",
+            color=qutrit_max_edge_color,
+            linewidth=line_width,
         )
-        for func in [T2_max_qutrit_hopper_temp, T2_max_qutrit_wu_temp]:
-            ax.plot(
-                temp_linspace,
-                func(temp_linspace),
-                label=r"Superposition of $\ket{-1}$, $\ket{+1}$",
-                # label=r"Qutrit T2 max",
-                color=qutrit_max_edge_color,
-                linewidth=line_width,
-            )
 
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
     # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
@@ -763,7 +914,6 @@ def main(
     for point in data_points:
 
         sample = point[sample_column_title]
-        sample_lower = sample.lower()
         marker = point["marker"]
 
         if sample not in samples:
@@ -778,7 +928,6 @@ def main(
             # Omega
             rate = point[omega_column_title]
             rate_err = point[omega_err_column_title]
-            omega_lambda = eval("omega_{}_lambda".format(sample_lower))
             if (rate is not None) and (rates_to_plot in ["both", "Omega"]):
                 if plot_type == "rates":
                     val = rate
@@ -806,7 +955,6 @@ def main(
             # gamma
             rate = point[gamma_column_title]
             rate_err = point[gamma_err_column_title]
-            gamma_lambda = eval("gamma_{}_lambda".format(sample_lower))
             if (rate is not None) and (rates_to_plot in ["both", "gamma"]):
                 if plot_type == "rates":
                     val = rate
