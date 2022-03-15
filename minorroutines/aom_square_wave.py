@@ -116,7 +116,7 @@ if __name__ == '__main__':
     # laser_powers = [1.0]
     # laser_names = ['laserglow_589', 'cobolt_638', 'laserglow_532']
     # filter_name = 'nd_0.5'
-    pos = [0.0, 0.0, 5.0]
+    pos = [0.0, 0.0, 5]
     laser_powers = None
 
     with labrad.connect() as cxn:

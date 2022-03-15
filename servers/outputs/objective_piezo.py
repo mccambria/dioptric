@@ -44,7 +44,7 @@ class ObjectivePiezo(LabradServer):
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
@@ -91,8 +91,9 @@ class ObjectivePiezo(LabradServer):
         # 1 post-compensation volt
         # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
         self.z_hysteresis_a = 1 - self.z_hysteresis_b
-        logging.debug(config[1])
-        logging.debug("Init complete")
+        logging.info(self.z_hysteresis_a)
+        logging.info(self.z_hysteresis_b)
+        logging.info("Init complete")
 
     def compensate_hysteresis_z(self, position):
         """
@@ -114,6 +115,9 @@ class ObjectivePiezo(LabradServer):
         float or ndarray(float)
             Compensated voltage to set
         """
+        
+        if self.z_hysteresis_b == 1:
+            return position
 
         single_value = False
         if type(position) not in [numpy.ndarray, list]:
