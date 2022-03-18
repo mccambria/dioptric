@@ -37,6 +37,10 @@ import sys
 import utils.tool_belt as tool_belt
 import utils.common as common
 from utils.tool_belt import States
+from figures.relaxation_temp_dependence.temp_dependence_fitting import (
+    omega_calc,
+    gamma_calc,
+)
 
 # %% Constants
 
@@ -748,18 +752,18 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
 if __name__ == "__main__":
 
-    temp = 50
+    temp = 350
 
-    # est_omega = omega_calc(temp)
-    # est_gamma = gamma_calc(temp)
-    # est_omega = 0.01 / 3
-    # est_gamma = 2 * est_omega
-    # print("good times in ms")
+    est_omega = omega_calc(temp)
+    est_gamma = gamma_calc(temp)
+    print("good times in ms")
     # print("Omega: {}".format(4000 / (3 * est_omega)))
     # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
+    print("Omega: {}".format(1000 * 1 / (est_omega)))
+    print("gamma: {}".format(1000 * (3/2) / (est_gamma + est_omega)))
     # print('Omega: {}'.format(est_omega))
     # print('gamma: {}'.format(est_gamma))
-    # sys.exit()
+    sys.exit()
 
     plt.ion()
 
