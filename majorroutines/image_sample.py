@@ -288,7 +288,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     timeout_inst = time.time() + timeout_duration
 
     num_read_so_far = 0
-    
+
     charge_initialization = nv_minus_initialization
 
     tool_belt.init_safe_stop()
@@ -306,11 +306,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             new_samples = cxn.apd_tagger.read_counter_modulo_gates(2)
         else:
             new_samples = cxn.apd_tagger.read_counter_simple()
-            
+
 #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
-            
+
             # If we did charge initialization, subtract out the background
             if charge_initialization:
                 new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
@@ -369,7 +369,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    file_name = '2022_01_12-10_34_08-burnell-nv2_2022_01_11'
+    file_name = '2022_03_15-12_29_37-cannon_sc-nv_2022_03_15'
+    scale = 83
 
     data = tool_belt.get_raw_data(file_name)
     nv_sig = data['nv_sig']
@@ -379,6 +380,7 @@ if __name__ == '__main__':
     y_range= data['y_range']
     x_voltages = data['x_voltages']
     y_voltages = data['y_voltages']
+
     # x_low = x_voltages[0]
     # x_high = x_voltages[-1]
     # y_low = y_voltages[0]
@@ -398,7 +400,7 @@ if __name__ == '__main__':
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
 
 
-    tool_belt.create_image_figure(img_array, numpy.array(img_extent)*35, clickHandler=on_click_image,
+    tool_belt.create_image_figure(img_array, numpy.array(img_extent)*scale, clickHandler=on_click_image,
                         title=None, color_bar_label='Counts',
                         min_value=None, um_scaled=True)
 

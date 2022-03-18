@@ -564,7 +564,7 @@ def main_with_cxn(
 
         # If the threshold is not set, we succeed based only on optimize
         else:
-            print("Count rate at optimized coordinates: {:.0f}".format(opti_count_rate))
+            print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
             print("Optimization succeeded! (No expected count rate passed.)")
             opti_succeeded = True
 

@@ -17,10 +17,10 @@ import matplotlib.pyplot as plt
 import time
 import labrad
 
-# Hmm, we need to figure out a better way to handle optimizing with different 
-# setups. Having two nearly identical versions of the same file just ain't 
+# Hmm, we need to figure out a better way to handle optimizing with different
+# setups. Having two nearly identical versions of the same file just ain't
 # gonna cut it.
-# import majorroutines.optimize_digital as optimize  
+# import majorroutines.optimize_digital as optimize
 import majorroutines.optimize as optimize
 
 
@@ -34,21 +34,21 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 
     num_samples = numpy.count_nonzero(~numpy.isnan(samples))
     num_new_samples = len(new_samples)
-    
-    # If we're going to overflow, just shift everything over and drop the 
+
+    # If we're going to overflow, just shift everything over and drop the
     # earliest samples
     overflow = (num_samples + num_new_samples) - total_num_samples
     if overflow > 0:
         num_nans = max(total_num_samples - num_samples, 0)
-        samples[::] = numpy.append(samples[num_new_samples-num_nans: 
-                                           total_num_samples-num_nans], 
+        samples[::] = numpy.append(samples[num_new_samples-num_nans:
+                                           total_num_samples-num_nans],
                                    new_samples)
     else:
         cur_write_pos = write_pos[0]
         new_write_pos = cur_write_pos + num_new_samples
         samples[cur_write_pos: new_write_pos] = new_samples
         write_pos[0] = new_write_pos
-        
+
 
     # Update the figure in k counts per sec
     tool_belt.update_line_plot_figure(fig, (samples / (10**3 * readout_sec)))
@@ -57,20 +57,20 @@ def update_line_plot(new_samples, num_read_so_far, *args):
 # %% Main
 
 
-def main(nv_sig, run_time, apd_indices, disable_opt=None, 
+def main(nv_sig, run_time, apd_indices, disable_opt=None,
          nv_minus_initialization=False, nv_zero_initialization=False):
 
     with labrad.connect() as cxn:
-        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt, 
+        average, st_dev = main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt,
                                         nv_minus_initialization, nv_zero_initialization)
 
     return average, st_dev
 
-def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None, 
+def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
                   nv_minus_initialization=False, nv_zero_initialization=False):
 
     # %% Some initial setup
-    
+
     if disable_opt is not None:
         nv_sig["disable_opt"] = disable_opt
 
@@ -88,7 +88,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
     for i in range(3):
         adj_coords.append(coords[i] + drift[i])
     tool_belt.set_xyz(cxn, adj_coords)
-    
+
     # %% Set up the imaging laser
 
     laser_key = 'imaging_laser'
@@ -104,7 +104,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         init = nv_sig['{}_dur'.format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        seq_args = [init, readout, apd_indices[0], init_laser, init_power, 
+        seq_args = [init, readout, apd_indices[0], init_laser, init_power,
                     readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load('charge_initialization-simple_readout.py',
@@ -115,7 +115,7 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
         init = nv_sig['{}_dur'.format(laser_key)]
         init_laser = nv_sig[laser_key]
         init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        seq_args = [init, readout, apd_indices[0], init_laser, init_power, 
+        seq_args = [init, readout, apd_indices[0], init_laser, init_power,
                     readout_laser, readout_power]
         # print(seq_args)
         # return
@@ -172,18 +172,18 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
     num_read_so_far = 0
 
     tool_belt.init_safe_stop()
-    
+
     charge_initialization = (nv_minus_initialization or nv_zero_initialization)
     # print(charge_initialization)
 
     while True:
-        
+
         # if time.time() > timeout_inst:
         #     break
 
         if tool_belt.safe_stop():
             break
-        
+
         # Read the samples and update the image
         if charge_initialization:
             new_samples = cxn.apd_tagger.read_counter_modulo_gates(2)
@@ -194,16 +194,16 @@ def main_with_cxn(cxn, nv_sig, run_time, apd_indices, disable_opt=None,
 #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
-            
+
             # If we did charge initialization, subtract out the background
             if charge_initialization:
                 new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
-            
+
             update_line_plot(new_samples, num_read_so_far, *args)
             num_read_so_far += num_new_samples
-            
+
     # %% Clean up and report the data
-    
+
     tool_belt.reset_cfm(cxn)
 
     # Replace x/0=inf with 0
