@@ -279,7 +279,7 @@ def fit_data(data):
     # amplitude = 0.07
     # offset = 0.90
     # decay_time = 2000.0
-    revival_time = 36600
+    revival_time = 28000
     dominant_freqs = [1 / revival_time]
 
     # %% Fit
@@ -548,6 +548,8 @@ def main_with_cxn(
     tau_index_master_list = [[] for i in range(num_runs)]
 
     # %% Analyze the sequence
+    
+    num_reps = int(num_reps)
 
     seq_args = [
         min_precession_time,
@@ -855,7 +857,7 @@ if __name__ == "__main__":
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
     
-    file_name = "2021_12_13-09_10_48-wu-nv3_2021_12_03"
+    file_name = "2022_03_14-23_45_45-wu-nv6_2022_03_14"
     data = tool_belt.get_raw_data(file_name)
     ret_vals = plot_resonances_vs_theta_B(data)
 
