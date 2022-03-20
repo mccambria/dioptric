@@ -111,6 +111,7 @@ def get_data_lists(folder_name):
     for file in file_list:
         data = tool_belt.get_raw_data(file[:-4], folder_name)
         try:
+            # if True:
 
             init_state_name = data["init_state"]
             read_state_name = data["read_state"]
@@ -250,7 +251,7 @@ def get_data_lists(folder_name):
                         )
 
                         zero_plus_time = numpy.concatenate(
-                            time_array, zero_plus_time
+                            (time_array, zero_plus_time)
                         )
 
             # if (init_state_name == high_state_name) and \
@@ -346,7 +347,7 @@ def get_data_lists(folder_name):
                 )
 
         except Exception as exc:
-            # print(exc)
+            print(exc)
             print("Skipping {}".format(str(file)))
             continue
 
@@ -748,7 +749,7 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
 if __name__ == "__main__":
 
-    temp = 50
+    temp = 350
 
     # est_omega = omega_calc(temp)
     # est_gamma = gamma_calc(temp)
