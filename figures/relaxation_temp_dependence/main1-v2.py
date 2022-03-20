@@ -237,7 +237,7 @@ def main(data_sets, dosave=False, draft_version=True):
     half_grid_columns = grid_columns // 2
     gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1, 1))
 
-    first_row_sep_ind = 15
+    first_row_sep_ind = 14
 
     # %% Level structure
 
@@ -254,7 +254,6 @@ def main(data_sets, dosave=False, draft_version=True):
     )
 
     draft_version = True
-    # draft_version = False
     if draft_version:
         ax = plt.Axes(fig, [-0.05, 0.5, 0.5, 0.43])
         ax.set_axis_off()
@@ -300,19 +299,14 @@ def main(data_sets, dosave=False, draft_version=True):
 
     ax = fig.add_subplot(gs[0, first_row_sep_ind:])
     # ax = axes_pack[1]
-    l, b, w, h = ax.get_position().bounds
-    shift = 0.02
-    ax.set_position([l + shift, b, w - shift, h])
 
     ax.set_xlabel(r"Wait time $\tau$ (ms)")
-    # ax.set_ylabel(r"Normalized $\ket{-1}$ fluorescence")
-    ax.set_ylabel(r"Normalized $\ket{-1}$ population")
+    # ax.set_ylabel("Normalized fluorescence")
+    ax.set_ylabel(r"$\ket{-1}$ population")
 
     min_time = 0.0
-    # max_time = 15.0
-    # xtick_step = 5
-    max_time = 12.5
-    xtick_step = 4
+    max_time = 15.0
+    xtick_step = 5
     times = [min_time, max_time]
     ax.set_xticks(np.arange(min_time, max_time + xtick_step, xtick_step))
 
@@ -356,47 +350,43 @@ def main(data_sets, dosave=False, draft_version=True):
             ste_decay = [0]
             ref_range = [0.75, 0.93]
             fit_func = get_norm_relaxation_func(None)
-        adj_decay = np.array(signal_decay) - (1 / 3)
-        adj_decay = (3 / 2) * (np.array(signal_decay) - (1 / 3))
-        ax.scatter(
-            times_decay,
-            adj_decay,
-            label="{} K".format(temp),
-            zorder=5,
-            marker="o",
-            color=color,
-            facecolor=facecolor,
-            s=ms ** 2,
-        )
-        # ax.errorbar(
+        # ax.scatter(
         #     times_decay,
-        #     adj_decay,
-        #     yerr=np.array(ste_decay),
+        #     signal_decay,
         #     label="{} K".format(temp),
         #     zorder=5,
         #     marker="o",
         #     color=color,
-        #     markerfacecolor=facecolor,
-        #     ms=ms,
-        #     linestyle="",
+        #     facecolor=facecolor,
+        #     s=ms ** 2,
         # )
+        ax.errorbar(
+            times_decay,
+            signal_decay,
+            yerr=np.array(ste_decay),
+            label="{} K".format(temp),
+            zorder=5,
+            marker="o",
+            color=color,
+            markerfacecolor=facecolor,
+            ms=ms,
+            linestyle="",
+        )
 
-        smooth_t = np.linspace(times[0], 1.1 * times[-1], 1000)
+        smooth_t = np.linspace(times[0], times[-1], 1000)
         print(temp, gamma, Omega)
-        fit_decay = (3 / 2) * (fit_func(smooth_t, gamma, Omega) - (1 / 3))
+        fit_decay = fit_func(smooth_t, gamma, Omega)
         ax.plot(smooth_t, fit_decay, color=color, linewidth=lw)
 
-    ax.legend(handlelength=5)
+    ax.legend()
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[::-1], labels[::-1])
     fig.text(
-        -0.21, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
+        -0.19, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
     )
     x_buffer = 0.02 * max_time
     ax.set_xlim([-x_buffer, max_time + x_buffer])
-    # ax.set_ylim([0.3, 1.06])
-    ax.set_ylim([0.009, 1.1])
-    ax.set_yscale("log")
+    ax.set_ylim([0.3, 1.06])
 
     # %% Experimental layout
 
@@ -426,7 +416,6 @@ def main(data_sets, dosave=False, draft_version=True):
 
     shift = 0.103
     gs.tight_layout(fig, pad=0.3, w_pad=-2.50)
-    # gs.tight_layout(fig, pad=0.3, w_pad=0)
     # gs.tight_layout(fig, pad=0.4, h_pad=0.5, w_pad=0.5, rect=[0, 0, 1, 1])
     # fig.tight_layout(pad=0.5)
     # fig.tight_layout()
