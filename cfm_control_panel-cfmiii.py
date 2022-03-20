@@ -56,8 +56,8 @@ def do_image_sample(nv_sig, apd_indices):
     #scan_range = 20
     # scan_range = 6
     # scan_range = 4
-    # scan_range = 2
-    scan_range = 1.2
+    scan_range = 2
+    # scan_range = 1.2
     # scan_range = 1
     #
     # num_steps = 400
@@ -197,11 +197,11 @@ if __name__ == "__main__":
     
      
     nv_sig_1 = {
-        "coords": [250.285, 251.564, 5],
-        "name": "{}-nv1_2022_02_04".format(sample_name,),
+        "coords": [250.593, 252.529, 5],
+        "name": "{}-nv2_2022_02_04".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": False,
-        "expected_count_rate":29 , #35
+        "expected_count_rate":25 , 
         "half_wave_plate_angle": "no",
         
         "spin_laser": green_laser,
@@ -231,7 +231,7 @@ if __name__ == "__main__":
         "CPG_laser_dur": 50e3,
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.25,
+        "charge_readout_laser_power": 0.2,
         "charge_readout_dur": 50e6,
         
         "collection_filter": "630_lp",
@@ -270,7 +270,7 @@ if __name__ == "__main__":
         # tool_belt.set_xyz(labrad.connect(), [0.0, 0.0 , 5.0])
 
 
-        do_optimize(nv_sig, apd_indices)
+        # do_optimize(nv_sig, apd_indices)
         # do_image_sample(nv_sig  , apd_indices)
         # do_g2_measurement(nv_sig, 0, 1)
         # do_stationary_count(nv_sig, apd_indices)
@@ -285,19 +285,19 @@ if __name__ == "__main__":
             # do_optimize(nv_sig_copy, apd_indices)
             #do_image_sample(nv_sig_copy, apd_indices)
 
-        offset_x =0.080
-        offset_y =-0.045
-        offset_z = 0
+        offset_x =0.080-0.05
+        offset_y =-0.045-0.01-0.05
+        offset_z = 1/1.8
         offset_list = [offset_x, offset_y, offset_z]
     
     
              
         # 1st airy ring power
-        t_list = [1e5]  #4e5
+        t_list = [1e4]  #4e5
         for t in t_list:
             nv_sig['CPG_laser_dur'] = t
             
-            # do_SPaCE_annulus(nv_sig, nv_sig, 1,41,41,
+            # do_SPaCE_annulus(nv_sig, nv_sig, 1,31,31,
             #                 None,  [1.2,1.2, 0], [offset_x, offset_y, offset_z], ring_radii = [0.3, 0.6])
             
             #do_SPaCE_annulus(nv_sig, nv_sig, 1, 81,81,  #41, 41,
@@ -315,17 +315,17 @@ if __name__ == "__main__":
             # # 2D scans
             #nv_sig['CPG_laser_dur'] = 4e5
             img_range_2D = [1.2, 1.2, 0]
-            # do_SPaCE(nv_sig, nv_sig, 1, 31, 31,
-            #                     None,  img_range_2D,offset_list)
+            do_SPaCE(nv_sig, nv_sig, 1, 31, 31,
+                                None,  img_range_2D,offset_list)
             
             # nv_sig['CPG_laser_dur'] = 4e6
             img_range_2D = [2.4, 2.4, 0]
             # do_SPaCE(nv_sig, nv_sig, 1, 21, 21,
             #                 None,  img_range_2D,offset_list)
             
-            # img_range_2D = [1.2,0, 2]
-            # do_SPaCE(nv_sig, nv_sig, 2, 61, 81, 
-            #             None,  img_range_2D,offset_list)
+            img_range_2D = [1.2,0, 2]
+            #do_SPaCE(nv_sig, nv_sig, 1, 61, 81, 
+             #            None,  img_range_2D,offset_list)
             
         # well resolved 2D annulus scan for 5 ms
         #nv_sig['CPG_laser_dur'] = 1e5

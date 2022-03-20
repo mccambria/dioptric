@@ -564,7 +564,7 @@ def main_with_cxn(
 
         # If the threshold is not set, we succeed based only on optimize
         else:
-            print("Count rate at optimized coordinates: {:.0f}".format(opti_count_rate))
+            print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
             print("Optimization succeeded! (No expected count rate passed.)")
             opti_succeeded = True
 
@@ -613,7 +613,12 @@ def main_with_cxn(
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates
     if save_data and not opti_unnecessary:
-
+        
+        if len(scan_vals_by_axis) < 3:
+            z_scan_vals = None
+        else:
+            z_scan_vals = scan_vals_by_axis[2].tolist()
+            
         timestamp = tool_belt.get_time_stamp()
         rawData = {
             "timestamp": timestamp,
@@ -622,12 +627,12 @@ def main_with_cxn(
             "opti_coords": opti_coords,
             "x_scan_vals": scan_vals_by_axis[0].tolist(),
             "y_scan_vals": scan_vals_by_axis[1].tolist(),
-            "z_scan_vals": scan_vals_by_axis[2].tolist(),
+            "z_scan_vals": z_scan_vals,
             "x_counts": counts_by_axis[0].tolist(),
             "x_counts-units": "number",
             "y_counts": counts_by_axis[1].tolist(),
             "y_counts-units": "number",
-            "z_counts": counts_by_axis[2].tolist(),
+            "z_counts": z_scan_vals,
             "z_counts-units": "number",
         }
 
