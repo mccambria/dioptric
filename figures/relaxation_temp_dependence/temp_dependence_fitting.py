@@ -156,6 +156,9 @@ def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
     return (
         const + (coeff1 * bose(delta1, temp)) + (coeff2 * bose(delta2, temp))
     )
+    # n1 = bose(delta1, temp)
+    # n2 = bose(delta2, temp)
+    # return const + (coeff1 * n1 * (n1 + 1)) + (coeff2 * n2 * (n2 + 1))
 
 
 def orbach_T5_free_linear(
@@ -295,7 +298,7 @@ def fit_simultaneous(data_points):
 
     # region DECLARE FIT FUNCTIONS HERE
 
-    # Double Orbach fixed
+    # Double Orbach
     init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
     omega_hopper_fit_func = lambda temp, beta: double_orbach(
         temp,
@@ -340,6 +343,52 @@ def fit_simultaneous(data_points):
         "gamma Hopper constant (s^-1)",
         "gamma Wu constant (s^-1)",
     ]
+
+    # Double Orbach, second Orbach fixed to 165 meV
+    # init_params = (450, 1200, 65, 11000, 0.01, 0.01, 0.07, 0.15)
+    # delta_2 = 165
+    # omega_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     delta_2,
+    #     beta[4],
+    # )
+    # omega_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     delta_2,
+    #     beta[5],
+    # )
+    # gamma_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[3],
+    #     delta_2,
+    #     beta[6],
+    # )
+    # gamma_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[3],
+    #     delta_2,
+    #     beta[7],
+    # )
+    # beta_desc = [
+    #     "Omega Orbach 1 coeff (s^-1)",
+    #     "gamma Orbach 1 coeff (s^-1)",
+    #     "Orbach 1 Delta (meV)",
+    #     "Orbach 2 coeff (s^-1)",
+    #     "Omega Hopper constant (s^-1)",
+    #     "Omega Wu constant (s^-1)",
+    #     "gamma Hopper constant (s^-1)",
+    #     "gamma Wu constant (s^-1)",
+    # ]
 
     # endregion
 
@@ -652,11 +701,18 @@ def main(
         val = tool_belt.round_sig_figs(popt[ind], 5)
         err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
         print("{}: {}, {}".format(desc, val, err))
+    samples_to_plot = ["hopper", "wu"]
+    # samples_to_plot = ["hopper"]
+    # samples_to_plot = ["wu"]
+    linestyles = {"hopper": "dotted", "wu": "dashed"}
     if (plot_type == "rates") and (rates_to_plot in ["both", "Omega"]):
-        for fit_func in [omega_hopper_lambda, omega_wu_lambda]:
+        for sample in samples_to_plot:
+            fit_func = eval("omega_{}_lambda".format(sample))
+            ls = linestyles[sample]
             ax.plot(
                 temp_linspace,
                 fit_func(temp_linspace),
+                linestyle=ls,
                 label=r"$\Omega$ fit",
                 color=omega_edge_color,
                 linewidth=line_width,
@@ -666,10 +722,13 @@ def main(
         #         label=r'$\Omega$ fit', color=omega_edge_color)
 
     if (plot_type == "rates") and (rates_to_plot in ["both", "gamma"]):
-        for fit_func in [gamma_hopper_lambda, gamma_wu_lambda]:
+        for sample in samples_to_plot:
+            fit_func = eval("gamma_{}_lambda".format(sample))
+            ls = linestyles[sample]
             ax.plot(
                 temp_linspace,
                 fit_func(temp_linspace),
+                linestyle=ls,
                 label=r"$\gamma$ fit",
                 color=gamma_edge_color,
                 linewidth=line_width,
@@ -770,6 +829,8 @@ def main(
             samples.append(sample)
         if marker not in markers:
             markers.append(marker)
+        if sample.lower() not in samples_to_plot:
+            continue
 
         temp = get_temp(point)
         temp_error = get_temp_error(point)
@@ -928,20 +989,21 @@ def main(
     if plot_type in ["rates", "ratios", "residuals", "normalized_residuals"]:
         sample_patches = []
         for ind in range(len(samples)):
-            label = samples[ind]
-            if label == "PRResearch":
-                label = "[1]"
+            sample = samples[ind]
+            if sample == "PRResearch":
+                sample = "[1]"
             # else:
             #     label = "New results"
+            ls = linestyles[sample.lower()]
             patch = mlines.Line2D(
                 [],
                 [],
                 color="black",
                 marker=markers[ind],
-                linestyle="None",
+                linestyle=linestyles[sample.lower()],
                 markersize=marker_size,
                 markeredgewidth=marker_edge_width,
-                label=label,
+                label=sample,
             )
             sample_patches.append(patch)
         x_loc = 0.14
