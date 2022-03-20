@@ -835,8 +835,8 @@ def main_with_cxn(
 if __name__ == "__main__":
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections"
-    # folder = "wu-nv1_2022_02_10-50K"
-    folder = "main1-300K"
+    folder = "wu-nv1_2022_03_16-350K"
+    # folder = "main1-300K"
     collate_incremental(path, folder)
     full_path_to_incremental = "{}/{}/incremental".format(path, folder)
     data = tool_belt.get_raw_data(

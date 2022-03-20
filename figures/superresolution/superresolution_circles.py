@@ -69,6 +69,8 @@ def sigmoid_quotient(laplacian, gradient):
     masked_gradient = (gradient * gradient_not_zeros) + gradient_zeros
     quotient = laplacian / masked_gradient
     sigmoid = 1 / (1 + np.exp(-1 * quotient))
+    # sigmoid = 1 / (1 + np.exp(-5 * quotient - 0.0))
+    # sigmoid = quotient
     laplacian_positive = np.sign(laplacian) == 1
     sigmoid = (sigmoid * gradient_not_zeros) + (
         laplacian_positive * gradient_zeros
@@ -155,10 +157,18 @@ def process_image(image):
     laplacian_image = cv.Laplacian(
         gradient_root, cv.CV_64F, ksize=gaussian_size
     )
+    # offset = np.average(np.abs(laplacian_image))
+    # print(offset)
+    # offset = np.sqrt(np.average(laplacian_image ** 2))
+    # # # print(offset)
+    # laplacian_image += offset
+    # laplacian_image -= np.min(laplacian_image)
 
     sobel_x = cv.Sobel(gradient_root, cv.CV_64F, 1, 0, ksize=gaussian_size)
     sobel_y = cv.Sobel(gradient_root, cv.CV_64F, 0, 1, ksize=gaussian_size)
     gradient_image = np.sqrt(sobel_x ** 2 + sobel_y ** 2)
+    # gradient_image += 100
+    # gradient_image = gradient_image**2
 
     sigmoid_image = sigmoid_quotient(laplacian_image, gradient_image)
     # sigmoid_image = cv.GaussianBlur(
@@ -221,15 +231,14 @@ def main(
     blur_image, laplacian_image, gradient_image, sigmoid_image = ret_vals
 
     opti_image = sigmoid_image
-    plot_image = image
-    # plot_image = sigmoid_image
+    plot_image = sigmoid_image
 
     # Plot the image
     fig, ax = plt.subplots()
     fig.set_tight_layout(True)
     img = ax.imshow(plot_image, cmap="inferno")
     _ = plt.colorbar(img)
-    # return
+    return
 
     # endregion
 
