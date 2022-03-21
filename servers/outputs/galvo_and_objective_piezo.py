@@ -85,7 +85,7 @@ class GalvoAndObjectivePiezo(Galvo, ObjectivePiezo):
             self.daq_ao_galvo_y, min_val=-10.0, max_val=10.0
         )
         task.ao_channels.add_ao_voltage_chan(
-            self.daq_ao_objective_piezo, min_val=3.0, max_val=7.0
+            self.daq_ao_objective_piezo, min_val=1.0, max_val=9.0
         )
 
         # Set up the output stream
