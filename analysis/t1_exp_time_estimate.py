@@ -62,43 +62,58 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window, overhead):
 
 # %%
 
-# total 32k reps for 0.2 charge sep, 0.05 contrast
-num_runs = 200
-num_reps = 20
-num_steps = 6
-min_tau = 500e3
-max_tau_omega = int(10e9)
-max_tau_gamma = int(5e9)
-# max_tau_omega = int(5.3e9)
-# max_tau_gamma = int(3e9)
-t1_exp_array = numpy.array([
-        [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
-        [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
-        # [[States.ZERO, States.HIGH], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
-        # [[States.ZERO, States.ZERO], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
-        # [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-        # [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-        # [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-        # [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-        [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-        [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
-        # [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-        # [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
-        ], dtype=object)
-
-# Figure 1 data
-# num_runs = 200
-# num_reps = 3000
+# num_runs = 500
+# num_reps = 2000
 # num_steps = 12
 # min_tau = 500e3
-# max_tau = 15e6
+# max_tau_omega = int(9.5e6)
+# max_tau_gamma = int(5e6)
+# # max_tau_omega = int(5.3e9)
+# # max_tau_gamma = int(3e9)
 # t1_exp_array = numpy.array([
-#         [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
+#         [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
+#         [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
+#         [[States.ZERO, States.HIGH], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
+#         [[States.ZERO, States.ZERO], [min_tau, max_tau_omega//3], num_steps, num_reps, num_runs],
+#         # [[States.HIGH, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+#         # [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+#         # [[States.HIGH, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+#         # [[States.HIGH, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+#         [[States.LOW, States.HIGH], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+#         [[States.LOW, States.LOW], [min_tau, max_tau_gamma], num_steps, num_reps, num_runs],
+#         [[States.LOW, States.HIGH], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
+#         [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
 #         ], dtype=object)
 
-contrast = 0.11  # arb
-exp_count_rate = 0.124  # kcps
-readout_window = 1e8  # ns
-overhead = 1e8  # ns, sum of polarization time, readout time, etc
+
+# Figure 1 data
+# num_runs = 400  # 200
+# num_reps = 3000
+# num_steps = 12
+# min_tau = int(500e3)
+# max_tau = int(15e6)
+# t1_exp_array = numpy.array([
+#         [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
+#         [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
+#         # [[States.ZERO, States.ZERO], [min_tau, max_tau], num_steps, num_reps, num_runs],
+#         ], dtype=object)
+num_runs = 400  # 200
+num_reps = 3000
+num_steps = 12
+min_tau = int(500e3)
+max_tau = int(15e6)
+tau_linspace = numpy.linspace(min_tau, max_tau, num_steps)
+num_steps = num_steps - 2
+max_tau = tau_linspace[-3]
+t1_exp_array = numpy.array([
+        [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
+        # [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
+        # [[States.ZERO, States.ZERO], [min_tau, max_tau], num_steps, num_reps, num_runs],
+        ], dtype=object)
+
+contrast = 0.20  # arb
+exp_count_rate = 18  # kcps
+readout_window = 350  # ns
+overhead = 1e6  # ns, sum of polarization time, readout time, etc
 
 t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window, overhead)

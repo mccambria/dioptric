@@ -37,6 +37,10 @@ import sys
 import utils.tool_belt as tool_belt
 import utils.common as common
 from utils.tool_belt import States
+from figures.relaxation_temp_dependence.temp_dependence_fitting import (
+    omega_calc,
+    gamma_calc,
+)
 
 # %% Constants
 
@@ -111,6 +115,7 @@ def get_data_lists(folder_name):
     for file in file_list:
         data = tool_belt.get_raw_data(file[:-4], folder_name)
         try:
+            # if True:
 
             init_state_name = data["init_state"]
             read_state_name = data["read_state"]
@@ -250,7 +255,7 @@ def get_data_lists(folder_name):
                         )
 
                         zero_plus_time = numpy.concatenate(
-                            time_array, zero_plus_time
+                            (time_array, zero_plus_time)
                         )
 
             # if (init_state_name == high_state_name) and \
@@ -346,7 +351,7 @@ def get_data_lists(folder_name):
                 )
 
         except Exception as exc:
-            # print(exc)
+            print(exc)
             print("Skipping {}".format(str(file)))
             continue
 
@@ -748,24 +753,24 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
 if __name__ == "__main__":
 
-    temp = 50
+    temp = 350
 
-    # est_omega = omega_calc(temp)
-    # est_gamma = gamma_calc(temp)
-    # est_omega = 0.01 / 3
-    # est_gamma = 2 * est_omega
-    # print("good times in ms")
+    est_omega = omega_calc(temp)
+    est_gamma = gamma_calc(temp)
+    print("good times in ms")
     # print("Omega: {}".format(4000 / (3 * est_omega)))
     # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
+    print("Omega: {}".format(1000 * 1 / (est_omega)))
+    print("gamma: {}".format(1000 * (3/2) / (est_gamma + est_omega)))
     # print('Omega: {}'.format(est_omega))
     # print('gamma: {}'.format(est_gamma))
-    # sys.exit()
+    sys.exit()
 
     plt.ion()
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
     folders = [
-        "wu-nv1_2022_02_10-{}K".format(temp),
+        "wu-nv1_2022_03_16-{}K".format(temp),
         # "main1_test",
     ]
 

@@ -78,6 +78,7 @@ class ObjectivePiezo(LabradServer):
         gcs_dll_path = str(Path.home())
         gcs_dll_path += "\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0"
         gcs_dll_path += "\\servers\\outputs\\GCSTranslator\\PI_GCS2_DLL_x64.dll"
+        logging.info(gcs_dll_path)
         self.piezo = GCSDevice(devname=config[0], gcsdll=gcs_dll_path)
         # Connect the specific device with the serial number
         self.piezo.ConnectUSB(config[1])
@@ -94,6 +95,9 @@ class ObjectivePiezo(LabradServer):
         logging.info(self.z_hysteresis_a)
         logging.info(self.z_hysteresis_b)
         logging.info("Init complete")
+        
+    def stopServer(self):
+        self.piezo.CloseConnection()
 
     def compensate_hysteresis_z(self, position):
         """
