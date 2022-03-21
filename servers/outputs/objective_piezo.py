@@ -95,6 +95,9 @@ class ObjectivePiezo(LabradServer):
         logging.info(self.z_hysteresis_a)
         logging.info(self.z_hysteresis_b)
         logging.info("Init complete")
+        
+    def stopServer(self):
+        self.piezo.CloseConnection()
 
     def compensate_hysteresis_z(self, position):
         """
