@@ -187,14 +187,40 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
 def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
                           readout_times=None, readout_yellow_powers=None,
                           nd_filter='nd_0.5'):
+    '''
+    
+
+    Parameters
+    ----------
+    nv_sig : TYPE
+        parameters of NV we intend to measure on.
+    opti_nv_sig : TYPE
+        parameters of a single NV to optimize on. Can be same as nv_sig.
+    apd_indices : TYPE
+        apds to read counts from.
+    readout_times : TYPE, optional
+        Yellow readout durations to measure. Each one is individually measured. The default is None.
+    readout_yellow_powers : TYPE, optional
+        The powers of the yellow power (typically a voltage between 0 to 1.0 for the AOM of the yellow laser). The default is None.
+    nd_filter : TYPE, optional
+        Usually, the yellow laser has an ND filter slider in it's path, which can be set here. The default is 'nd_0.5'.
+
+    Returns
+    -------
+    None.
+
+    '''
     num_reps = 500
 
+    # standard readout times to test are 50, 100, 250 ms.
     if readout_times is None:
         readout_times = [50*10**6, 100*10**6, 250*10**6]
+    # standard readout powers to test are below.
     if readout_yellow_powers is None:
         readout_yellow_powers = [0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6]
 
-    # first index will be power, second will be time, third wil be individual points
+    # Set us lists to save data in. These will be 3D lists:
+    # first index will be power, second will be time, third will be individual points
     nv0_master = []
     nvm_master =[]
 
@@ -411,7 +437,7 @@ if __name__ == '__main__':
     red_laser = 'cobolt_638'
     green_power= 10
 
-
+    # include an nv_sig to use for optimizing
     opti_nv_sig = {
         "coords": [-0.20177, 0.12953,  4.09457485],
         "name": "{}-nv0_2021_10_08".format(sample_name,),

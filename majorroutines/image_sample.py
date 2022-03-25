@@ -370,7 +370,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    file_name = '2022_02_25-17_27_54-cannon_sc-nv_2022_02_25'
+    file_name = '2022_03_21-16_55_06-cannon_sc-nv_2022_03_21'
     scale = -1#83
 
     data = tool_belt.get_raw_data(file_name)
