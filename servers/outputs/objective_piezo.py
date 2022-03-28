@@ -200,7 +200,7 @@ class ObjectivePiezo(LabradServer):
 
         # Set up the output channels
         task.ao_channels.add_ao_voltage_chan(
-            self.daq_ao_objective_piezo, min_val=3.0, max_val=7.0
+            self.daq_ao_objective_piezo, min_val=1.0, max_val=9.0
         )
 
         # Set up the output stream
@@ -244,7 +244,7 @@ class ObjectivePiezo(LabradServer):
         with nidaqmx.Task() as task:
             # Set up the output channels
             task.ao_channels.add_ao_voltage_chan(
-                self.daq_ao_objective_piezo, min_val=3.0, max_val=7.0
+                self.daq_ao_objective_piezo, min_val=1.0, max_val=9.0
             )
             task.write(compensated_voltage)
 
@@ -255,7 +255,7 @@ class ObjectivePiezo(LabradServer):
             # Set up the internal channels - to do: actual parsing...
             if self.daq_ao_objective_piezo == "dev1/AO2":
                 chan_name = "dev1/_ao2_vs_aognd"
-            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=3.0, max_val=7.0)
+            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=1.0, max_val=9.0)
             voltage = task.read()
         return voltage
 
