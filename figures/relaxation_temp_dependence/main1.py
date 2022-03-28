@@ -535,4 +535,4 @@ if __name__ == "__main__":
     file_a = "2022_01_23-06_45_24-wu-nv6_2021_12_25"
     # test(file_a)
 
-    plt.show(block=True)
+    # plt.show(block=True)

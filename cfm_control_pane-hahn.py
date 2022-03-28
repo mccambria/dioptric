@@ -309,14 +309,17 @@ def do_discrete_rabi(nv_sig, apd_indices, state, max_num_pi_pulses=4):
 def paper_figure1_data(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 400  # 200
-    num_reps = 3000
+    num_runs = 800
+    num_reps = 2000
     num_steps = 12
     min_tau = int(500e3)
     max_tau = int(15e6)
+    tau_linspace = numpy.linspace(min_tau, max_tau, num_steps)
+    num_steps = num_steps - 2
+    max_tau = tau_linspace[-3]
     t1_exp_array = numpy.array([
             [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
-            [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
+            # [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
             # [[States.ZERO, States.ZERO], [min_tau, max_tau], num_steps, num_reps, num_runs],
             ], dtype=object)
 
@@ -356,12 +359,12 @@ def do_t1_dq_scc(nv_sig, apd_indices):
 def do_t1_dq(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 500
-    num_reps = 2000
+    num_runs = 1000
+    num_reps = 2500
     num_steps = 12
-    min_tau = 500e3
-    max_tau_omega = int(9.5e6)
-    max_tau_gamma = int(5e6)
+    min_tau = 10e3
+    max_tau_omega = int(3.0e6)
+    max_tau_gamma = int(1.7e6)
     # max_tau_omega = int(5.3e9)
     # max_tau_gamma = int(3e9)
     t1_exp_array = numpy.array([
@@ -454,8 +457,8 @@ if __name__ == '__main__':
     red_laser = "cobolt_638"
     
     nv_sig = { 
-        'coords': [-0.321, -0.185, 6.5], 'name': '{}-nv1_2022_03_16'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 17,
+        'coords': [-0.111, 0.028, 4.55], 'name': '{}-nv1_2022_03_16'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 22,
         
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
@@ -482,8 +485,8 @@ if __name__ == '__main__':
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
         
         'collection_filter': None, 'magnet_angle': None,   
-        'resonance_LOW': 2.7959, 'rabi_LOW': 224.2, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9364, 'rabi_HIGH': 290.3, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.7846, 'rabi_LOW': 208.3, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9256, 'rabi_HIGH': 243.0, 'uwave_power_HIGH': 16.5,
         }
             
     # nv_sig = {
@@ -518,24 +521,24 @@ if __name__ == '__main__':
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(1, -2)
-        # 
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
-        drift = tool_belt.get_drift()
-        tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
+        
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
+        # drift = tool_belt.get_drift()
+        # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         
-        # for pos in numpy.arange(10, 40, 5):
+        # for pos in numpy.arange(4.2, 5.2, 0.2):
         # # for pos in [4,5,6]: 
         #     if tool_belt.safe_stop():
         #         break
-        #     nv_sig["coords"][2] = int(pos)
+        #     nv_sig["coords"][2] = pos
         #     # with labrad.connect() as cxn:
         #     #     cxn.cryo_piezos.write_xy(pos, 0)
         #     # do_image_sample_zoom(nv_sig, apd_indices)
         #     do_image_sample(nv_sig, apd_indices)
-         
-        do_image_sample(nv_sig, apd_indices)
-        # do_image_sample_zoom(nv_sig, apd_indices)
+         # 
+        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_optimize(nv_sig, apd_indices)
@@ -582,9 +585,9 @@ if __name__ == '__main__':
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-        # # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+        # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # nv_sig["spin_pol_dur"] = 1e6
-        # # # # do_t1_interleave_knill(nv_sig, apd_indices)
+        # # # # # do_t1_interleave_knill(nv_sig, apd_indices)
         # # paper_figure1_data(nv_sig, apd_indices)
         # do_t1_dq(nv_sig, apd_indices)
         
