@@ -51,11 +51,11 @@ import time
 
 def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
     
-    # scan_range = 0.5
-    # num_steps = 90
+    scan_range = 0.5
+    num_steps = 90
     
-    scan_range = 0.2
-    num_steps = 60
+    # scan_range = 0.2
+    # num_steps = 60
     
     # scan_range = 1.0
     # num_steps = 120
@@ -457,7 +457,7 @@ if __name__ == '__main__':
     red_laser = "cobolt_638"
     
     nv_sig = { 
-        'coords': [-0.111, 0.028, 4.55], 'name': '{}-nv1_2022_03_16'.format(sample_name),
+        'coords': [0.058, 0.008, 5.00], 'name': '{}-nv1_2022_03_16'.format(sample_name),
         'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 22,
         
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -522,7 +522,7 @@ if __name__ == '__main__':
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(1, -2)
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
@@ -538,7 +538,7 @@ if __name__ == '__main__':
         #     do_image_sample(nv_sig, apd_indices)
          # 
         # do_image_sample(nv_sig, apd_indices)
-        do_image_sample_zoom(nv_sig, apd_indices)
+        # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_optimize(nv_sig, apd_indices)
@@ -580,10 +580,10 @@ if __name__ == '__main__':
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # nv_sig["spin_pol_dur"] = 1e6
