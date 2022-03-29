@@ -61,7 +61,13 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.75
     # num_steps = 150
     
-    # 35 um / V
+    # scan_range = 2.5
+    # num_steps = 160
+    # scan_range =1
+    # num_steps = 90
+    # scan_range = 0.05
+    num_steps = 60
+    # 80 um / V
     # 
     # scan_range = 5.0
     # scan_range = 3
@@ -74,8 +80,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.2
     # scan_range = 0.15
     # scan_range = 0.1
-    # scan_range = 0.05
-    scan_range = 0.025
+    scan_range = 0.05
+    # scan_range = 0.025
     #
     # num_steps = 400
     # num_steps = 300
@@ -84,7 +90,7 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 135
     # num_steps =120
     # num_steps = 90
-    num_steps = 60
+    # num_steps = 60
     # num_steps = 31
     # num_steps = 15
     
@@ -103,10 +109,9 @@ def do_image_sample(nv_sig, apd_indices):
 
 def do_image_sample_xz(nv_sig, apd_indices):
 
-    scan_range_x = 0.04#0.2
+    scan_range_x = 0.05
 # z code range 3 to 7 if centered at 5
-    scan_range_z = 1.0
-
+    scan_range_z = 2
     num_steps = 90
 
     image_sample_xz.main(
@@ -178,7 +183,7 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 def do_resonance(nv_sig, opti_nv_sig,apd_indices, freq_center=2.87, freq_range=0.2):
 
     num_steps = 101
-    num_runs = 10
+    num_runs = 15
     uwave_power = -10.0
 
     resonance.main(
@@ -224,9 +229,9 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
 
     num_steps =101
     num_reps = 1e4
-    num_runs = 15
+    num_runs = 5
     uwave_power = 14.5
-    uwave_pulse_dur = int(100/2)
+    uwave_pulse_dur = int(70/2)
 
     pulsed_resonance.main(
         nv_sig,
@@ -315,7 +320,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = int(1e4)
-    num_runs = 15
+    num_runs = 5
 
     period = rabi.main(
         nv_sig,
@@ -596,11 +601,11 @@ if __name__ == "__main__":
     
     
     nv_sig = {        
-        
-        "coords": [-0.764, -0.125,4.39+0.35],#[.821, -0.129 ,4.38800668(NV 0.852, -0.100 ,4.458)
+        "coords":[0.060, 0.230,  4.732], #0.717, -0.680
+        # "coords":[0.603, -0.870, 4.6],# -0.183, -0.310, 3.80 -0.183, -0.310, 4.51)/0.607, -0.876, 3.89
         #(xz 2.545,4.706, y = -.8)[0.893, -0.680,
-        "name": "{}-nv_2022_03_15".format(sample_name,),
-        "disable_opt":False,
+        "name": "{}-nv4_2022_03_18".format(sample_name,),
+        "disable_opt":True,
         "ramp_voltages": True,
         "expected_count_rate":None,
         
@@ -642,10 +647,10 @@ if __name__ == "__main__":
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
-        "resonance_LOW":2.84,"rabi_LOW": 66.1,
+        "resonance_LOW":2.87,"rabi_LOW": 293.9,
         "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.915,
-        "rabi_HIGH": 141.5,
+        "resonance_HIGH": 2.932,
+        "rabi_HIGH": 59.6,
         "uwave_power_HIGH": 14.5,
     }  # 14.5 max
     
@@ -662,7 +667,10 @@ if __name__ == "__main__":
     try:
 
         tool_belt.init_safe_stop()
-        # for dz in [0,0.1, 0.23,0.26,0.2,0.23,0.26, 0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.93,0.96,1.0,1.03,1.06,1.1,1.13,1.16,1.2]:
+        # for dz in [0, 0.05, 0.1, 0.15, 0.2,0.25, 0.3, 0.35, 0.75, 0.4, 0.425, 0.45, 0.5,0.55, 0.6, 0.65, 0.7, 0.75, 0.8]:
+        #     #[0,0.1, 0.2, 0.22,0.24, 0.26, 0.28, 0.3,0.32, 0.34,0.36,0.38, 0.4,0.5]:
+        #     #,0.94,0.96,0.98, 1,1.02,1.04  ]:
+        #       # [0, 0.05,0.1, 0.13, 0.16,0.2, 0.23,0.26, 0.3, 0.35,0.4]:#
         #     nv_sig_copy = copy.deepcopy(nv_sig)
         #     coords = nv_sig["coords"]
         #     new_coords= list(numpy.array(coords)+ numpy.array([0, 0, dz]))
@@ -674,28 +682,30 @@ if __name__ == "__main__":
         
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_drift([0.0, 0.0, 0.0])  
-        # # 
+        # tool_belt.set_xyz(labrad.connect(), [-0.764, -0.125,4.39])  
+        # 
         # do_optimize(nv_sig, apd_indices)
-        do_image_sample(nv_sig, apd_indices)
-        # do_st1ationary_count(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
+        # do_stationary_count(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
-        
+        # 
         # do_g2_measurement(nv_sig, 0, 1)
         # 
-        #do_optimize_magnet_angle(nv_sig, apd_indices)
+        # do_optimize_magnet_angle(nv_sig, apd_indices)
         # do_resonance(nv_sig, nv_sig, apd_indices,  2.875, 0.2)
-        # do_resonance_state(nv_sig,opti_nv_sig, apd_indices, States.LOW)
+        # do_resonance(nv_sig, nv_sig, apd_indices,  2.875, 0.1)
+        # do_resonance_state(nv_sig,nv_sig, apd_indices, States.LOW)
         
-        # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 150])
+        do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
         # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 200])
         
         # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.875, 0.2)
-        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
+        # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
         # do_spin_echo(nv_sig, apd_indices)
         
-        #drift = tool_belt.get_drift()
+        # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         # do_g2_measurement(nv_sig, 0, 1) 
@@ -728,7 +738,7 @@ if __name__ == "__main__":
         # tool_belt.set_xyz(labrad.connect(), [-0.040, -0.163,5.154]) #hbn 2 layer
         # tool_belt.set_xyz(labrad.connect(), [0.113, -0.120,5.154]) #hbn 3 layer
         # tool_belt.set_xyz(labrad.connect(), [0.235, -0.226,5.154]) #off hbn
-        # tool_belt.set_xyz(labrad.connect(), [0.893, -0.680,5.427])
+        # tool_belt.set_xyz(labrad.connect(), [0,0,0])
 #-0.243, -0.304,5.423
 #ML -0.216, -0.115,5.417
     except Exception as exc:

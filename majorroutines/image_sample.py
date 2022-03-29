@@ -337,6 +337,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'drift': drift,
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,
@@ -369,8 +370,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    file_name = '2022_03_15-12_29_37-cannon_sc-nv_2022_03_15'
-    scale = 83
+    file_name = '2022_02_25-17_27_54-cannon_sc-nv_2022_02_25'
+    scale = -1#83
 
     data = tool_belt.get_raw_data(file_name)
     nv_sig = data['nv_sig']
