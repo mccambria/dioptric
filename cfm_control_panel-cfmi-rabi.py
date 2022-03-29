@@ -84,7 +84,7 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.1
     # scan_range = 0.05
     # scan_range = 0.025
-    #
+    
     # num_steps = 400
     # num_steps = 300
     # num_steps = 200
@@ -111,9 +111,9 @@ def do_image_sample(nv_sig, apd_indices):
 
 def do_image_sample_xz(nv_sig, apd_indices):
 
-    scan_range_x = .02
+    scan_range_x = .2
 # z code range 3 to 7 if centered at 5
-    scan_range_z = 4
+    scan_range_z =4
     num_steps = 60
 
     image_sample_xz.main(
@@ -208,7 +208,7 @@ def do_resonance_state(nv_sig, opti_nv_sig, apd_indices, state):
 
     freq_range = 0.1
     num_steps = 51
-    num_runs = 20
+    num_runs = 10
 
     # Zoom
     # freq_range = 0.060
@@ -261,7 +261,7 @@ def do_pulsed_resonance_state(nv_sig, opti_nv_sig,apd_indices, state):
     # freq_range = 0.120
     num_steps = 51
     num_reps = int(0.5e4)
-    num_runs = 10
+    num_runs = 5
 
     composite = False
 
@@ -573,9 +573,9 @@ if __name__ == "__main__":
     apd_indices = [0,1]
 
     nd_yellow = "nd_1.0"
-    green_power =5
+    green_power =10
     red_power = 120
-    sample_name = "cannon_sc"
+    sample_name = "cannon"
     green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
@@ -602,9 +602,9 @@ if __name__ == "__main__":
 
     
     
-    nv_sig = {    
-        "coords":[-0.054, -0.597,5.557], 
-        "name": "{}-nv0_2022_03_25".format(sample_name,),
+    nv_sig = { 
+          "coords":[-0.121, 0.691,  6.241], 
+        "name": "{}-nv0_2022_03_28".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
         "expected_count_rate":None,
@@ -633,7 +633,7 @@ if __name__ == "__main__":
         "initialize_dur": 1e4,
         "CPG_laser": red_laser,
         'CPG_laser_power': red_power,
-        "CPG_laser_dur": 1e5,
+        # "CPG_laser_dur": 1e5,
         "charge_readout_laser": yellow_laser,
         "charge_readout_laser_filter": nd_yellow,
         "charge_readout_laser_power": 0.15,
@@ -641,7 +641,7 @@ if __name__ == "__main__":
         
         "collection_filter": "630_lp",
         "magnet_angle": None,
-        "resonance_LOW":2.87,"rabi_LOW": 330.1,
+        "resonance_LOW":2.87,"rabi_LOW": 150,
         "uwave_power_LOW": 15.5,  # 15.5 max
         "resonance_HIGH": 2.932,
         "rabi_HIGH": 59.6,
@@ -661,14 +661,14 @@ if __name__ == "__main__":
     try:
 
         tool_belt.init_safe_stop()
-        # for dz in [0.5,0.4, 0.3, 0.2, 0.1,0, -0.1,-0.2,-0.3, -0.4, -0.5]: #0, 0,-0.2,-0.3, -0.4, -0.5
-        #     nv_sig_copy = copy.deepcopy(nv_sig)
-        #     coords = nv_sig["coords"]
-        #     new_coords= list(numpy.array(coords)+ numpy.array([0, 0, dz]))
-        #     # new_coords = numpy.array(coords) +[0, 0, dz]
-        #     # print(new_coords)
-        #     nv_sig_copy['coords'] = new_coords
-        #     do_image_sample(nv_sig_copy, apd_indices)
+        # for dz in [0, 0.15,0.3, 0.45, 0.6, 0.75,0.9, 1.05, 1.2, 1.5, 1.7, 1.85, 2, 2.15, 2.3, 2.45]: #0.5,0.4, 0.3, 0.2, 0.1,0, -0.1,-0.2,-0.3, -0.4, -0.5
+            # nv_sig_copy = copy.deepcopy(nv_sig)
+            # coords = nv_sig["coords"]
+            # new_coords= list(numpy.array(coords)+ numpy.array([0, 0, dz]))
+            # # new_coords = numpy.array(coords) +[0, 0, dz]
+            # # print(new_coords)
+            # nv_sig_copy['coords'] = new_coords
+            # do_image_sample(nv_sig_copy, apd_indices)
         # # 
         
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
@@ -679,11 +679,11 @@ if __name__ == "__main__":
         #     coords = nv_sig["coords"]
         #     new_coords= list(numpy.array(coords)+ numpy.array([dx, 0, 0]))
         #     nv_sig_copy['coords'] = new_coords
-        #     do_image_sample(nv_sig_copy, apd_indices)
+            # do_image_sample(nv_sig_copy, apd_indices)
         # do_optimize(nv_sig,apd_indices)
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices)
-        do_image_sample_xz(nv_sig, apd_indices)
+        # do_image_sample_xz(nv_sig, apd_indices)
         # do_image_charge_states(nv_sig, apd_indices)
         # 
         # do_g2_measurement(nv_sig, 0, 1)
