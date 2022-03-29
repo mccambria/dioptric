@@ -141,6 +141,27 @@ def get_data_lists(folder_name):
             sig_counts = numpy.array(data["sig_counts"])
             ref_counts = numpy.array(data["ref_counts"])
 
+            # For low counts/run, combine runs to avoid div by zero in normalization, at least
+            combine_runs = 1
+            if combine_runs > 1:
+                sig_counts_buffer = []
+                ref_counts_buffer = []
+                combine_num_runs = num_runs // combine_runs
+                clip_num_runs = combine_num_runs * combine_runs
+                for ind in range(clip_num_runs):
+                    if ind % combine_runs != 0:
+                        continue
+                    sig_val = 0
+                    ref_val = 0
+                    for sub_ind in range(combine_runs):
+                        sig_val += sig_counts[ind + sub_ind]
+                        ref_val += ref_counts[ind + sub_ind]
+                    sig_counts_buffer.append(sig_val)
+                    ref_counts_buffer.append(ref_val)
+                num_runs = combine_num_runs
+                sig_counts = numpy.array(sig_counts_buffer)
+                ref_counts = numpy.array(ref_counts_buffer)
+
             # Calculate time arrays in us
             min_relaxation_time, max_relaxation_time = (
                 relaxation_time_range / 10 ** 6
@@ -150,6 +171,8 @@ def get_data_lists(folder_name):
             )
 
             # Calculate the average signal counts over the runs, and ste
+            # if 0 in ref_counts:
+            #     crash = 1 / 0
 
             # Assume reference is constant and can be approximated to one value
             single_ref = False
@@ -755,16 +778,16 @@ if __name__ == "__main__":
 
     temp = 350
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print("good times in ms")
-    # print("Omega: {}".format(4000 / (3 * est_omega)))
-    # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
-    print("Omega: {}".format(1000 * 1 / (est_omega)))
-    print("gamma: {}".format(1000 * (3/2) / (est_gamma + est_omega)))
-    # print('Omega: {}'.format(est_omega))
-    # print('gamma: {}'.format(est_gamma))
-    sys.exit()
+    # est_omega = omega_calc(temp)
+    # est_gamma = gamma_calc(temp)
+    # print("good times in ms")
+    # # print("Omega: {}".format(4000 / (3 * est_omega)))
+    # # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
+    # print("Omega: {}".format(1000 * 1 / (est_omega)))
+    # print("gamma: {}".format(1000 * (3/2) / (est_gamma + est_omega)))
+    # # print('Omega: {}'.format(est_omega))
+    # # print('gamma: {}'.format(est_gamma))
+    # sys.exit()
 
     plt.ion()
 
