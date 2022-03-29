@@ -20,7 +20,7 @@ import utils.tool_belt as tool_belt
 from majorroutines.spin_echo import zfs_cost_func
 from scipy.optimize import minimize_scalar
 import time
-from figures.relaxation_temp_dependence.revision1.temp_dependence_fitting import (
+from figures.relaxation_temp_dependence.temp_dependence_fitting import (
     get_data_points,
     nominal_temp_column_title,
     low_res_file_column_title,
@@ -250,14 +250,14 @@ def main(zfs, zfs_err):
 
 if __name__ == "__main__":
 
-    # files = [
-    #     "2021_10_01-16_01_47-hopper-search",
-    #     "2021_10_01-16_11_08-hopper-search",
-    # ]
+    files = [
+        "2022_03_21-17_38_36-wu-nv1_2022_03_16",
+        "2022_03_21-17_58_08-wu-nv1_2022_03_16",
+    ]
 
-    # main_files(files)
+    main_files(files)
 
-    process_temp_dep_res_files()
+    # process_temp_dep_res_files()
 
     #    print(zfs_from_temp(280))
 
