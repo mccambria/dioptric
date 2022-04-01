@@ -77,9 +77,13 @@ def collate_incremental(path, folder):
             num_runs = data["run_ind"]
         else:
             num_runs = data["num_runs"]
-        total_num_runs += num_runs
-        
-        
+        # Just skip data sets that ran for less than 5 runs
+        if num_runs < 5:
+            continue
+        # Throw out the last run where we presumably crashed out
+        accepted_num_runs = num_runs - 1
+        total_num_runs += accepted_num_runs
+
         # Make sure everything that should match up does
         if first_file:
             coll_params_master_list = params_master_list
@@ -101,19 +105,19 @@ def collate_incremental(path, folder):
             coll_ref_counts_master_list = [[] for ind in range(num_exps)]
             coll_tau_ind_save_list = [[] for ind in range(num_exps)]
             coll_opti_coords_master_list = [[] for ind in range(num_exps)]
-            
+
         for ind in range(num_exps):
             coll_sig_counts_master_list[ind].extend(
-                sig_counts_master_list[ind][:num_runs]
+                sig_counts_master_list[ind][:accepted_num_runs]
             )
             coll_ref_counts_master_list[ind].extend(
-                ref_counts_master_list[ind][:num_runs]
+                ref_counts_master_list[ind][:accepted_num_runs]
             )
             coll_tau_ind_save_list[ind].extend(
-                tau_ind_save_list[ind][:num_runs]
+                tau_ind_save_list[ind][:accepted_num_runs]
             )
             coll_opti_coords_master_list[ind].extend(
-                opti_coords_master_list[ind][:num_runs]
+                opti_coords_master_list[ind][:accepted_num_runs]
             )
         first_file = False
 

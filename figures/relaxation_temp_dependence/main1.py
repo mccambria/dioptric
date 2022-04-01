@@ -64,21 +64,36 @@ def process_raw_data(data, ref_range=None):
 
     # Calculate the average signal counts over the runs, and ste
     avg_sig_counts = np.average(sig_counts[start_run:stop_run, :], axis=0)
+    avg_ref_counts = np.average(ref_counts[start_run:stop_run, :], axis=0)
     std_sig_counts = np.std(
         sig_counts[start_run:stop_run, :],
         axis=0,
         ddof=1,
     )
+    std_ref_counts = np.std(
+        ref_counts[start_run:stop_run, :],
+        axis=0,
+        ddof=1,
+    )
     # std_sig_counts = np.sqrt(avg_sig_counts)
     ste_sig_counts = std_sig_counts / np.sqrt(num_runs)
+    ste_ref_counts = std_ref_counts / np.sqrt(num_runs)
     # print(ste_sig_counts)
 
-    # Assume reference is constant and can be approximated to one value
-    avg_ref = np.average(ref_counts[start_run:stop_run, :])
-
-    # Divide signal by reference to get normalized counts and st error
-    norm_avg_sig = avg_sig_counts / avg_ref
-    norm_avg_sig_ste = ste_sig_counts / avg_ref
+    single_ref = False
+    if single_ref:
+        # Assume reference is constant and can be approximated to one value
+        avg_ref = np.average(ref_counts[start_run:stop_run, :])
+        # Divide signal by reference to get normalized counts and st error
+        norm_avg_sig = avg_sig_counts / avg_ref
+        norm_avg_sig_ste = ste_sig_counts / avg_ref
+    else:
+        # Divide signal by reference to get normalized counts and st error
+        norm_avg_sig = avg_sig_counts / avg_ref_counts
+        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
+            (ste_sig_counts / avg_sig_counts) ** 2
+            + (ste_ref_counts / avg_ref_counts) ** 2
+        )
 
     # Normalize to population the reference range
     if ref_range is not None:
@@ -158,7 +173,7 @@ def get_ref_range_fit(decay_data, gamma, omega):
     lambda_fit = lambda t, low_point, high_point: relaxation_func_open_ended(
         t, fit_func, gamma, omega, low_point, high_point
     )
-    init_params = [0.68, 0.92]
+    init_params = [0.65, 0.90]
     popt, _ = curve_fit(
         lambda_fit,
         times_decay,
@@ -311,7 +326,8 @@ def main(data_sets, dosave=False, draft_version=True):
     min_time = 0.0
     # max_time = 15.0
     # xtick_step = 5
-    max_time = 12.5
+    # max_time = 12.5
+    max_time = 9
     xtick_step = 4
     times = [min_time, max_time]
     ax.set_xticks(np.arange(min_time, max_time + xtick_step, xtick_step))
@@ -350,36 +366,42 @@ def main(data_sets, dosave=False, draft_version=True):
                 times_clip = None
             times_decay = times_decay[:times_clip]
             signal_decay = signal_decay[:times_clip]
+            ste_decay = ste_decay[:times_clip]
         else:
             times_decay = [0]
             signal_decay = [1.0]
             ste_decay = [0]
             ref_range = [0.75, 0.93]
             fit_func = get_norm_relaxation_func(None)
-        adj_decay = np.array(signal_decay) - (1 / 3)
+        # adj_decay = np.array(signal_decay) - (1 / 3)
         adj_decay = (3 / 2) * (np.array(signal_decay) - (1 / 3))
-        ax.scatter(
-            times_decay,
-            adj_decay,
-            label="{} K".format(temp),
-            zorder=5,
-            marker="o",
-            color=color,
-            facecolor=facecolor,
-            s=ms ** 2,
-        )
-        # ax.errorbar(
-        #     times_decay,
-        #     adj_decay,
-        #     yerr=np.array(ste_decay),
-        #     label="{} K".format(temp),
-        #     zorder=5,
-        #     marker="o",
-        #     color=color,
-        #     markerfacecolor=facecolor,
-        #     ms=ms,
-        #     linestyle="",
-        # )
+        plot_errors = False
+        if plot_errors:
+            ax.errorbar(
+                times_decay,
+                adj_decay,
+                yerr=np.array(ste_decay),
+                label="{} K".format(temp),
+                zorder=5,
+                marker="o",
+                color=color,
+                markerfacecolor=facecolor,
+                ms=ms,
+                linestyle="",
+            )
+        else:
+            ax.scatter(
+                times_decay,
+                adj_decay,
+                label="{} K".format(temp),
+                zorder=5,
+                marker="o",
+                color=color,
+                facecolor=facecolor,
+                s=ms ** 2,
+            )
+        # if temp == 350:
+        #     test = 1
 
         smooth_t = np.linspace(times[0], 1.1 * times[-1], 1000)
         print(temp, gamma, Omega)
@@ -395,7 +417,8 @@ def main(data_sets, dosave=False, draft_version=True):
     x_buffer = 0.02 * max_time
     ax.set_xlim([-x_buffer, max_time + x_buffer])
     # ax.set_ylim([0.3, 1.06])
-    ax.set_ylim([0.009, 1.1])
+    # ax.set_ylim([0.009, 1.1])
+    ax.set_ylim([0.05, 1.1])
     ax.set_yscale("log")
 
     # %% Experimental layout
@@ -462,8 +485,8 @@ if __name__ == "__main__":
         },
         {
             "temp": 350,
-            "skip": True,
-            "decay_file": None,
+            "skip": False,
+            "decay_file": "2022_03_22-16_17_48-wu-nv1_2022_03_16",
             "unity_ref_file": None,
             "zero_ref_file": None,
             "Omega": None,
