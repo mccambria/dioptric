@@ -753,20 +753,20 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
 if __name__ == "__main__":
 
-    temp = 450
+    temp = 400
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print("good times in ms")
-    # print("Omega: {}".format(4000 / (3 * est_omega)))
-    # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
-    print("Omega: {}".format(1000 * 1 / (est_omega)))
-    print("gamma: {}".format(1000 * (3/2) / (est_gamma + est_omega)))
-    # print('Omega: {}'.format(est_omega))
-    # print('gamma: {}'.format(est_gamma))
-    sys.exit()
+    # est_omega = omega_calc(temp)
+    # est_gamma = gamma_calc(temp)
+    # print("good times in ms")
+    # # print("Omega: {}".format(4000 / (3 * est_omega)))
+    # # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
+    # print("Omega: {}".format(1000 * 1 / (est_omega)))
+    # print("gamma: {}".format(1000 * (3/2) / (est_gamma + est_omega)))
+    # # print('Omega: {}'.format(est_omega))
+    # # print('gamma: {}'.format(est_gamma))
+    # sys.exit()
 
-    plt.ion()
+    # plt.ion()
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
     folders = [
@@ -784,4 +784,4 @@ if __name__ == "__main__":
             offset=False,
         )
 
-    plt.show(block=True)
+    # plt.show(block=True)

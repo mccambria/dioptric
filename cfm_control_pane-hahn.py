@@ -51,11 +51,11 @@ import time
 
 def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
     
-    scan_range = 0.5
-    num_steps = 90
+    # scan_range = 0.5
+    # num_steps = 90
     
-    # scan_range = 0.2
-    # num_steps = 60
+    scan_range = 0.2
+    num_steps = 60
     
     # scan_range = 1.0
     # num_steps = 120
@@ -363,8 +363,8 @@ def do_t1_dq(nv_sig, apd_indices):
     num_reps = 2500
     num_steps = 12
     min_tau = 10e3
-    max_tau_omega = int(3.0e6)
-    max_tau_gamma = int(1.7e6)
+    max_tau_omega = int(5.5e6)
+    max_tau_gamma = int(3.0e6)
     # max_tau_omega = int(5.3e9)
     # max_tau_gamma = int(3e9)
     t1_exp_array = numpy.array([
@@ -457,7 +457,7 @@ if __name__ == '__main__':
     red_laser = "cobolt_638"
     
     nv_sig = { 
-        'coords': [0.058, 0.008, 5.00], 'name': '{}-nv1_2022_03_16'.format(sample_name),
+        'coords': [-0.087, 0.090, 4.78], 'name': '{}-nv1_2022_03_16'.format(sample_name),
         'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 22,
         
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -485,8 +485,8 @@ if __name__ == '__main__':
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
         
         'collection_filter': None, 'magnet_angle': None,   
-        'resonance_LOW': 2.7846, 'rabi_LOW': 208.3, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9256, 'rabi_HIGH': 243.0, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.7903, 'rabi_LOW': 243.5, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9315, 'rabi_HIGH': 309.7, 'uwave_power_HIGH': 16.5,
         }
             
     # nv_sig = {
@@ -536,7 +536,7 @@ if __name__ == '__main__':
         #     #     cxn.cryo_piezos.write_xy(pos, 0)
         #     # do_image_sample_zoom(nv_sig, apd_indices)
         #     do_image_sample(nv_sig, apd_indices)
-         # 
+        
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
@@ -580,16 +580,16 @@ if __name__ == '__main__':
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
-        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        # nv_sig["spin_pol_dur"] = 1e6
-        # # # # # do_t1_interleave_knill(nv_sig, apd_indices)
-        # # paper_figure1_data(nv_sig, apd_indices)
-        # do_t1_dq(nv_sig, apd_indices)
+        nv_sig["spin_pol_dur"] = 1e6
+        # # # # do_t1_interleave_knill(nv_sig, apd_indices)
+        # paper_figure1_data(nv_sig, apd_indices)
+        do_t1_dq(nv_sig, apd_indices)
         
     except Exception as exc:
         tool_belt.send_exception_email()
