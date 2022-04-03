@@ -66,8 +66,8 @@ num_runs = 1000
 num_reps = 2500
 num_steps = 12
 min_tau = 10e3
-max_tau_omega = int(3.0e6)
-max_tau_gamma = int(1.7e6)
+max_tau_omega = int(5.5e6)
+max_tau_gamma = int(3.0e6)
 # max_tau_omega = int(5.3e9)
 # max_tau_gamma = int(3e9)
 t1_exp_array = numpy.array([
@@ -111,8 +111,8 @@ t1_exp_array = numpy.array([
 #         # [[States.ZERO, States.ZERO], [min_tau, max_tau], num_steps, num_reps, num_runs],
 #         ], dtype=object)
 
-contrast = 0.18  # arb
-exp_count_rate = 28  # kcps
+contrast = 0.22  # arb
+exp_count_rate = 22  # kcps
 readout_window = 350  # ns
 overhead = 1e6  # ns, sum of polarization time, readout time, etc
 
