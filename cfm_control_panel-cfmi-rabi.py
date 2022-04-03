@@ -575,7 +575,7 @@ if __name__ == "__main__":
     nd_yellow = "nd_1.0"
     green_power =10
     red_power = 120
-    sample_name = "cannon"
+    sample_name = "rubin"
     green_laser = "cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
@@ -603,7 +603,7 @@ if __name__ == "__main__":
     
     
     nv_sig = { 
-          "coords":[-0.121, 0.691,  6.241], 
+          "coords":[0,0,5.433], 
         "name": "{}-nv0_2022_03_28".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
