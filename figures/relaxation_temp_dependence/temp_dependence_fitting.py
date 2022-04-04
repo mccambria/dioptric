@@ -153,12 +153,12 @@ def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
 
 
 def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
-    return (
-        const + (coeff1 * bose(delta1, temp)) + (coeff2 * bose(delta2, temp))
-    )
-    # n1 = bose(delta1, temp)
-    # n2 = bose(delta2, temp)
-    # return const + (coeff1 * n1 * (n1 + 1)) + (coeff2 * n2 * (n2 + 1))
+    # return (
+    #     const + (coeff1 * bose(delta1, temp)) + (coeff2 * bose(delta2, temp))
+    # )
+    n1 = bose(delta1, temp)
+    n2 = bose(delta2, temp)
+    return const + (coeff1 * n1 * (n1 + 1)) + (coeff2 * n2 * (n2 + 1))
 
 
 def orbach_T5_free_linear(
