@@ -401,8 +401,8 @@ def process_laser_seq(
     sequence. For example, the Cobolt lasers expect 3.5 V for digital
     modulation, but the Pulse Streamer only supplies 2.6 V.
     """
-
     pulser_wiring = config["Wiring"]["PulseStreamer"]
+    print(config)
     mod_type = config["Optics"][laser_name]["mod_type"]
     mod_type = eval(mod_type)
     feedthrough = config["Optics"][laser_name]["feedthrough"]
