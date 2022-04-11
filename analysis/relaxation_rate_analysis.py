@@ -142,7 +142,7 @@ def get_data_lists(folder_name):
             ref_counts = numpy.array(data["ref_counts"])
 
             # For low counts/run, combine runs to avoid div by zero in normalization, at least
-            combine_runs = 1
+            combine_runs = 2
             if combine_runs > 1:
                 sig_counts_buffer = []
                 ref_counts_buffer = []
