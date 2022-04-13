@@ -351,7 +351,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     # %% Average the counts over the iterations
 
     avg_sig_counts = numpy.average(sig_counts, axis=0)
+    st_err_sig_counts = numpy.ste(sig_counts, axis=0)
     avg_ref_counts = numpy.average(ref_counts, axis=0)
+    st_err_ref_counts = numpy.ste(ref_counts, axis=0)
 
     # %% Calculate the Rabi data, signal / reference over different Tau
 
@@ -368,6 +370,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     ax = axes_pack[0]
     ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
     ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
+    
+    ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
+    ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
     # ax.plot(tauArray, countsBackground, 'o-')
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
@@ -377,7 +382,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     ax.plot(taus , norm_avg_sig, 'b-')
     ax.set_title('Normalized Signal With Varying Microwave Duration')
     ax.set_xlabel('Microwave duration (ns)')
-    ax.set_ylabel('Contrast (arb. units)')
+    ax.set_ylabel('Normalized signal')
 
     raw_fig.canvas.draw()
     raw_fig.set_tight_layout(True)
@@ -444,18 +449,60 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
 
 if __name__ == '__main__':
 
-    path = 'pc_hahn/branch_cryo-setup/rabi/2021_03'
-    file = '2021_03_06-16_07_29-johnson-nv14_2021_02_26'
-    data = tool_belt.get_raw_data(path, file)
+    path = 'pc_rabi/branch_master/rabi/2021_09'
+    file = '2021_09_20-16_49_16-johnson-nv1_2021_09_07'
+    data = tool_belt.get_raw_data(file, path)
 
-    norm_avg_sig = data['norm_avg_sig']
+    # norm_avg_sig = data['norm_avg_sig']
+    # uwave_time_range = data['uwave_time_range']
+    # num_steps = data['num_steps']
+    # uwave_freq = data['uwave_freq']
+    
+    # fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
+    # if (fit_func is not None) and (popt is not None):
+    #     create_fit_figure(uwave_time_range, uwave_freq, num_steps,
+    #                       norm_avg_sig, fit_func, popt)
+        
+    sig_counts = data['sig_counts']
+    ref_counts = data['ref_counts']
     uwave_time_range = data['uwave_time_range']
     num_steps = data['num_steps']
+    num_runs = data['num_runs']
     uwave_freq = data['uwave_freq']
+    
+    min_uwave_time = uwave_time_range[0]
+    max_uwave_time = uwave_time_range[1]
+    taus = numpy.linspace(min_uwave_time, max_uwave_time,
+                          num=num_steps, dtype=numpy.int32)
+        
+    print(numpy.size(sig_counts))
+    avg_sig_counts = numpy.average(sig_counts, axis=0)
+    st_err_sig_counts = numpy.std(sig_counts, axis=0)/numpy.sqrt(num_runs)
+    avg_ref_counts = numpy.average(ref_counts, axis=0)
+    st_err_ref_counts = numpy.std(ref_counts, axis=0)/numpy.sqrt(num_runs)
+    
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    
+    sig_perc_err = st_err_sig_counts / avg_sig_counts
+    ref_perc_err = st_err_ref_counts / avg_ref_counts
+    st_err_norm_avg_sig = norm_avg_sig * numpy.sqrt((sig_perc_err)**2 + (ref_perc_err)**2)
+    
 
-    fit_func, popt = fit_data(uwave_time_range, num_steps, norm_avg_sig)
-    if (fit_func is not None) and (popt is not None):
-        create_fit_figure(uwave_time_range, uwave_freq, num_steps,
-                          norm_avg_sig, fit_func, popt)
+    raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
+    ax = axes_pack[0]
+    ax.errorbar(taus, avg_sig_counts, yerr = st_err_sig_counts, fmt = 'r-', label = 'signal')
+    ax.errorbar(taus, avg_ref_counts, yerr = st_err_ref_counts,fmt = 'g-', label = 'refernece')
+    ax.legend()
+    
+    ax.set_xlabel('Microwave duration (ns)')
+    ax.set_ylabel('Counts')
+    
+    
+    ax = axes_pack[1]
+    ax.errorbar(taus , norm_avg_sig,yerr=st_err_norm_avg_sig,  fmt = 'b-')
+    ax.set_title('Normalized Signal With Varying Microwave Duration')
+    ax.set_xlabel('Microwave duration (ns)')
+    ax.set_ylabel('Normalized signal')
+    
     # simulate([0,250], 2.8268, 2.8288, 0.43, measured_rabi_period=197)
