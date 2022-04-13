@@ -19,7 +19,7 @@ import photonstatistics as model
 import labrad
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize_digital as optimize
+import majorroutines.optimize as optimize
 
 #%% import your data in the data_file
 import NV_data as data
@@ -432,7 +432,7 @@ if __name__ == '__main__':
     # load the data here
     sample_name = 'johnson'
 
-    green_laser = "cobolt_515"
+    green_laser = "integrated_520"
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
     green_power= 10
@@ -451,11 +451,11 @@ if __name__ == '__main__':
     }  # 14.5 max
 
     nv_sig = {
-        "coords": [250.593, 252.529, 5],
-        "name": "{}-nv1_2022_02_04".format(sample_name,),
-        "disable_opt": False,
-        "ramp_voltages": False,
-        "expected_count_rate":25 , 
+          "coords":[-0.178, 0.124,6.898], 
+        "name": "{}-nv2_2022_04_08".format(sample_name,),
+        "disable_opt":False,
+        "ramp_voltages": True,
+        "expected_count_rate":10,
             'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
             'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,
@@ -468,8 +468,8 @@ if __name__ == '__main__':
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
-        determine_readout_dur(nv_sig, nv_sig, [0], readout_times = [50e6],
-                              readout_yellow_powers = [0.2],
+        determine_readout_dur(nv_sig, nv_sig, [0], readout_times = [100e6],
+                              readout_yellow_powers = [0.15],
                           nd_filter = 'nd_1.0')
     finally:
         # Reset our hardware - this should be done in each routine, but

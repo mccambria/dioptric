@@ -875,7 +875,7 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
     z_scale = tool_belt.get_registry_entry_no_cxn('z_nm_per_unit', ['', 'Config', 'Positioning'])
     scale_list = [xy_scale/1e3, xy_scale/1e3, z_scale/1e3] 
         
-    opti_interval = 4 # min
+    opti_interval = 2 # min
     
     if not num_steps_b:
         num_steps_b = num_steps_a

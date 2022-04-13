@@ -142,6 +142,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, freq_center, freq_range,
 
             # Read the counts using parity to distinguish signal vs ref
             new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
+            print(new_counts)
             sample_counts = new_counts[0]
             ref_gate_counts = sample_counts[0::2]
             ref_counts[run_ind, freq_ind]  = sum(ref_gate_counts)

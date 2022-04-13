@@ -22,10 +22,10 @@ timeout = 5
 ### END NODE INFO
 """
 
-from servers.outputs.cobolt_515 import Cobolt515
+from cobolt_base import CoboltBase
 
 
-class Integrated520(Cobolt515):
+class Integrated520(CoboltBase):
     name = 'integrated_520'
         
 __server__ = Integrated520()

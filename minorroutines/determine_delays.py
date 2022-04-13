@@ -56,7 +56,7 @@ def measure_delay(
     sig_counts[:] = numpy.nan
     ref_counts = numpy.copy(sig_counts)
 
-    # optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     if 'charge_readout_laser_filter' in nv_sig:
         tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
 
@@ -73,20 +73,23 @@ def measure_delay(
     cxn.apd_tagger.start_tag_stream(apd_indices)
 
     tool_belt.init_safe_stop()
-
+    
+    n= 0
     for tau_ind in tau_ind_list:
-
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
-
+        
         tau = taus[tau_ind]
+        print('Index #{}/{}: {} ns'.format(n, num_steps-1,tau))
+        n+=1
+        # print(tau)
         if seq_file == "aom_delay.py":
-            readout = nv_sig["imaging_readout_dur"]
+            readout = 1e4# nv_sig["imaging_readout_dur"]
             # readout = 1500
             seq_args = [
                 tau,
-                1e4, #max_tau,
+                max_tau, 
                 readout,
                 apd_indices[0],
                 laser_name,
@@ -156,6 +159,7 @@ def measure_delay(
     raw_data = {
         "timestamp": timestamp,
         "sequence": seq_file,
+        "laser_name": laser_name,
         "sig_gen": sig_gen,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
@@ -273,71 +277,74 @@ def uwave_delay(
 if __name__ == "__main__":
 
     # Rabi parameters
-    # sample_name = "johnson"
-    # green_power = 7
-    # nd = "nd_0.5"
-    # green_laser = 'cobolt_515'
-    # # green_laser = "laserglow_532"
-    # nv_sig = {
-    #     "coords": [-0.02331254,  0.01495828,  4.09457485],
-    #     "name": "{}-nv0_2021_10_08".format(sample_name,),
-    #     "disable_opt": False,
-    #     "expected_count_rate": 50,
+    sample_name = "johnson"
+    green_power = 7
+    nd = "nd_0.5"
+    green_laser = 'integrated_520'
+    # green_laser = "laserglow_532"
+    
+    nv_sig = { 
+          "coords":[-0.143, 0.011, 5.7], 
+        "name": "{}-nv0_2022_04_07".format(sample_name,),
+        "disable_opt":False,
+        "ramp_voltages": True,
+        "expected_count_rate":11,
+        
+        "spin_laser": green_laser,
+        "spin_laser_power": green_power,
+        "spin_pol_dur": 1e5,
+        "spin_readout_laser_power": green_power,
+        "spin_readout_dur": 350,
+        
+        "imaging_laser":green_laser,
+        "imaging_laser_power": green_power,
+        "imaging_readout_dur": 1e7,
+        
 
-    #     "spin_laser": green_laser,
-    #     "spin_laser_power": green_power,
-    #     "spin_pol_dur": 1e5,
-    #     "spin_readout_laser_power": green_power,
-    #     "spin_readout_dur": 350,
-
-    #     "imaging_laser":green_laser,
-    #     "imaging_laser_power": green_power,
-    #     "imaging_readout_dur": 1e7,
-    #     "charge_readout_laser": 'nd_0',
-
-    #     "collection_filter": "630_lp",
-    #     "magnet_angle": 114,
-    #     "resonance_LOW": 2.7881,
-    #     "rabi_LOW": 136.0,
-    #     "uwave_power_LOW": 14.5,  # 15.5 max
-    #     "resonance_HIGH": 2.8691,
-    #     "rabi_HIGH": 150,
-    #     "uwave_power_HIGH": 14.5,
-    #     }
-    # apd_indices = [0]
+        
+        "collection_filter": "630_lp",
+        "magnet_angle": None,
+        "resonance_LOW":2.87,"rabi_LOW": 150,
+        "uwave_power_LOW": 15.5,  # 15.5 max
+        "resonance_HIGH": 2.932,
+        "rabi_HIGH": 59.6,
+        "uwave_power_HIGH": 14.5,
+    }  # 14.5 max
+    apd_indices = [0]
 
     # Hahn parameters
-    apd_indices = [1]
-    sample_name = 'wu'
-    green_laser = "laserglow_532"
-    yellow_laser = "laserglow_589"
-    red_laser = "cobolt_638"
+    # apd_indices = [1]
+    # sample_name = 'johnson'
+    # green_laser = "integrated_520"
+    # yellow_laser = "laserglow_589"
+    # red_laser = "cobolt_638"
 
-    nv_sig = { 'coords': [0.028, 0.017, -1], 'name': '{}-nv3_2021_12_03'.format(sample_name),
-            'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 28,
+    # nv_sig = { 'coords': [-0.156, 0.030, 5.7], 'name': '{}-nv0_2022_04_06'.format(sample_name),
+    #         'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 13,
 
-            # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
-            # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
-            'imaging_laser': red_laser, 'imaging_readout_dur': 1e4,
-            'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
-            # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
+    #         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1E7,
+    #         # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
+    #         'imaging_laser': green_laser, 'imaging_readout_dur': 1e4,
+    #         'spin_laser': green_laser, 'spin_laser_filter': 'nd_0.5', 'spin_pol_dur': 1E5, 'spin_readout_dur': 350,
+    #         # 'spin_laser': green_laser, 'spin_laser_filter': 'nd_0', 'spin_pol_dur': 1E4, 'spin_readout_dur': 300,
 
-            'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
-            # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
+    #         'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E6, 'nv-_reionization_laser_filter': 'nd_1.0',
+    #         # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
+    #         'nv-_prep_laser': green_laser, 'nv-_prep_laser_dur': 1E6, 'nv-_prep_laser_filter': 'nd_1.0',
 
-            'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 200,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1e3,
+    #         'nv0_ionization_laser': red_laser, 'nv0_ionization_dur': 200,
+    #         'nv0_prep_laser': red_laser, 'nv0_prep_laser_dur': 1e3,
 
-            'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
-            # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
-            "initialize_laser": green_laser, "initialize_dur": 1e4,
-            # "charge_readout_laser": yellow_laser, "charge_readout_dur": 700e6, "charge_readout_laser_power": 0.71,
-            "charge_readout_laser": yellow_laser, "charge_readout_dur": 32e6, "charge_readout_laser_power": 1.0,
+    #         'spin_shelf_laser': yellow_laser, 'spin_shelf_dur': 0, 'spin_shelf_laser_power': 1.0,
+    #         # 'spin_shelf_laser': green_laser, 'spin_shelf_dur': 50,
+    #         "initialize_laser": green_laser, "initialize_dur": 1e4,
+    #         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 700e6, "charge_readout_laser_power": 0.71,
+    #         "charge_readout_laser": yellow_laser, "charge_readout_dur": 32e6, "charge_readout_laser_power": 1.0,
 
-            'collection_filter': None, 'magnet_angle': None,
-            'resonance_LOW': 2.8000, 'rabi_LOW': 133.6, 'uwave_power_LOW': 16.5,
-            'resonance_HIGH': 2.9416, 'rabi_HIGH': 181.0, 'uwave_power_HIGH': 16.5}
+            
+    #         "collection_filter": "630_lp", 'magnet_angle': None,
+    #         'resonance_LOW': 2.8000, 'rabi_LOW': 133.6, 'uwave_power_LOW': 16.5,
+    #         'resonance_HIGH': 2.9416, 'rabi_HIGH': 181.0, 'uwave_power_HIGH': 16.5}
 
 
     try:
@@ -350,10 +357,14 @@ if __name__ == "__main__":
         # num_reps = int(1e5)
         # laser_name = 'laserglow_589'
         # delay_range = [800, 1700]
-        num_reps = int(1e4)
-        laser_name = 'cobolt_638'
-        delay_range = [0, 1000]
-        laser_power = 1.0
+        num_reps = int(1e5)
+        laser_name = 'integrated_520'
+        laser_power = None
+        # laser_name = 'cobolt_638'
+        # laser_power = None
+        # laser_name = 'laserglow_589'
+        # laser_power = 0.6
+        delay_range = [0,1e3]
         with labrad.connect() as cxn:
             aom_delay(cxn, nv_sig, apd_indices,
                       delay_range, num_steps, num_reps, laser_name, laser_power)
