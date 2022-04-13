@@ -156,6 +156,7 @@ def get_seq(pulse_streamer, config, args):
 
     # Microsecond buffer at the end of each experiment where everything is off
     end_buffer = 1000
+    # end_buffer = 0
 
     # The period is independent of the particular tau, but it must be long
     # enough to accomodate the longest tau
@@ -431,13 +432,16 @@ def get_seq(pulse_streamer, config, args):
 if __name__ == "__main__":
 
     config = tool_belt.get_config_dict()
-    optics = config["Optics"]
-    for key in optics:
-        if "delay" in optics[key]:
-            config["Optics"][key]["delay"] = 0
-    args = [2000, None, None, 67, 91, 4000, 1, 1, 3, None, None, 
-            'laserglow_532', None, 1000.0, 'cobolt_638', None, 200, 
-            'laserglow_589', 1.0, 0, 'laserglow_589', 1.0, 1000.0]
+    tool_belt.set_delays_to_zero(config)
+    tool_belt.set_feedthroughs_to_false(config)
+    config["CommonDurations"]["scc_ion_readout_buffer"] = 1000
+    
+    args = [100, None, None, 50, 50, 1000, 0, 1, 1, None, None, 
+            'laserglow_532', None, 1000.0, 'cobolt_638', None, 0, 
+            'laserglow_589', 1.0, 0, 'laserglow_589', 1.0, 100.0]
+    # args = [2000, None, None, 67, 91, 4000, 1, 1, 3, None, None, 
+    #         'laserglow_532', None, 1000.0, 'cobolt_638', None, 200, 
+    #         'laserglow_589', 1.0, 0, 'laserglow_589', 1.0, 1000.0]
 
     seq, final, ret_vals = get_seq(None, config, args)
     seq.plot()

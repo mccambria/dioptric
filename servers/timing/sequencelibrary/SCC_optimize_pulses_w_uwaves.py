@@ -44,7 +44,9 @@ def get_seq(pulse_streamer, config, args):
     uwave_tau_max = numpy.int64(uwave_tau_max)
 
     # Get the wait time between pulses
-    wait_time = config["CommonDurations"]["uwave_buffer"]
+    uwave_buffer = config["CommonDurations"]["uwave_buffer"]
+    scc_ion_readout_buffer = config['CommonDurations']['scc_ion_readout_buffer']
+    sig_ref_buffer = 1000
 
     # delays
     green_delay_time = config["Optics"][green_laser_name]["delay"]
@@ -65,19 +67,29 @@ def get_seq(pulse_streamer, config, args):
     # over each tau, so have some waittime after the readout to accoutn for this
     # +++ Artifact from rabi experiments, in determine SCC durations, this is 0
     post_wait_time = uwave_tau_max - pi_pulse
-    # Test period
+    
     period = (
-        common_delay
-        + (
-            reion_time
-            + ion_time
-            + shelf_time
-            + pi_pulse
-            + readout_time
-            + post_wait_time
-            + 4 * wait_time
-        )
-        * 2
+        common_delay + 
+        reion_time + 
+        uwave_buffer + 
+        pi_pulse + 
+        uwave_buffer + 
+        shelf_time + 
+        ion_time + 
+        scc_ion_readout_buffer + 
+        readout_time + 
+        post_wait_time + 
+        sig_ref_buffer + 
+        reion_time + 
+        uwave_buffer + 
+        pi_pulse + 
+        uwave_buffer + 
+        shelf_time + 
+        ion_time + 
+        scc_ion_readout_buffer + 
+        readout_time + 
+        post_wait_time + 
+        sig_ref_buffer
     )
 
     # Get what we need out of the wiring dictionary
@@ -102,73 +114,94 @@ def get_seq(pulse_streamer, config, args):
 
     seq = Sequence()
 
-    # collect photons for certain timewindow tR in APD
+    # APD readout
     train = [
-        (
-            common_delay
-            + reion_time
-            + pi_pulse
-            + shelf_time
-            + ion_time
-            + 3 * wait_time,
-            LOW,
-        ),
+        (common_delay, LOW),
+        # Signal
+        (reion_time, LOW),
+        (uwave_buffer, LOW),
+        (pi_pulse, LOW),
+        (uwave_buffer, LOW),
+        (shelf_time, LOW),
+        (ion_time, LOW),
+        (scc_ion_readout_buffer, LOW),
         (readout_time, HIGH),
-        (
-            post_wait_time
-            + reion_time
-            + pi_pulse
-            + shelf_time
-            + ion_time
-            + 4 * wait_time,
-            LOW,
-        ),
+        (post_wait_time, LOW),
+        (sig_ref_buffer, LOW),
+        # Reference
+        (reion_time, LOW),
+        (uwave_buffer, LOW),
+        (pi_pulse, LOW),
+        (uwave_buffer, LOW),
+        (shelf_time, LOW),
+        (ion_time, LOW),
+        (scc_ion_readout_buffer, LOW),
         (readout_time, HIGH),
-        (post_wait_time + wait_time, LOW),
+        (post_wait_time, LOW),
+        (sig_ref_buffer, LOW),
     ]
     seq.setDigital(pulser_do_apd_gate, train)
 
-    # reionization pulse (green)
-    # MCC
+    # Reionization pulse (green)
     delay = common_delay - green_delay_time
-    train = [(delay, LOW), (reion_time, HIGH),
-              (4*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time, LOW),
-              (reion_time, HIGH),
-              (4*wait_time + post_wait_time + pi_pulse + shelf_time + ion_time + readout_time + green_delay_time, LOW)]
-    # train = [(delay, LOW),
-    #           (reion_time, HIGH),
-    #           (wait_time + pi_pulse + wait_time, LOW),
-    #           (shelf_time, HIGH),
-    #           (ion_time, LOW),
-    #           (wait_time, LOW),
-    #           (readout_time, LOW),
-    #           (post_wait_time + wait_time, LOW),
-    #           (reion_time, HIGH),
-    #           (wait_time + pi_pulse + wait_time, LOW),
-    #           (shelf_time, HIGH),
-    #           (ion_time, LOW),
-    #           (wait_time, LOW),
-    #           (readout_time, LOW),
-    #           (post_wait_time + wait_time + green_delay_time, LOW)]
-    tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                green_laser_name, None, train)
+    train = [
+        (delay, LOW),
+        # Signal
+        (reion_time, HIGH),
+        (uwave_buffer, LOW),
+        (pi_pulse, LOW),
+        (uwave_buffer, LOW),
+        (shelf_time, LOW),
+        (ion_time, LOW),
+        (scc_ion_readout_buffer, LOW),
+        (readout_time, LOW),
+        (post_wait_time, LOW),
+        (sig_ref_buffer, LOW),
+        # Reference
+        (reion_time, HIGH),
+        (uwave_buffer, LOW),
+        (pi_pulse, LOW),
+        (uwave_buffer, LOW),
+        (shelf_time, LOW),
+        (ion_time, LOW),
+        (scc_ion_readout_buffer, LOW),
+        (readout_time, LOW),
+        (post_wait_time, LOW),
+        (sig_ref_buffer, LOW),
+        (green_delay_time, LOW)
+    ]
+    tool_belt.process_laser_seq(
+        pulse_streamer, seq, config, green_laser_name, None, train
+    )
 
-    # ionization pulse (red)
+    # Ionization pulse (red)
+    dummy_high = HIGH
     delay = common_delay - red_delay_time
     train = [
-        (delay + 2 * wait_time + reion_time + pi_pulse + shelf_time, LOW),
-        (ion_time, HIGH),
-        (
-            4 * wait_time
-            + post_wait_time
-            + readout_time
-            + reion_time
-            + pi_pulse
-            + shelf_time,
-            LOW,
-        ),
-        (ion_time, HIGH),
-        (2 * wait_time + post_wait_time + readout_time + red_delay_time, LOW),
+        (delay, LOW),
+        # Signal
+        (reion_time, LOW),
+        (uwave_buffer, LOW),
+        (pi_pulse, LOW),
+        (uwave_buffer, LOW),
+        (shelf_time, LOW),
+        (ion_time, dummy_high),
+        (scc_ion_readout_buffer, LOW),
+        (readout_time, LOW),
+        (post_wait_time, LOW),
+        (sig_ref_buffer, LOW),
+        # Reference
+        (reion_time, LOW),
+        (uwave_buffer, LOW),
+        (pi_pulse, LOW),
+        (uwave_buffer, LOW),
+        (shelf_time, LOW),
+        (ion_time, dummy_high),
+        (scc_ion_readout_buffer, LOW),
+        (readout_time, LOW),
+        (post_wait_time, LOW),
+        (sig_ref_buffer, LOW),
+        (red_delay_time, LOW)
     ]
     tool_belt.process_laser_seq(
         pulse_streamer, seq, config, red_laser_name, None, train
@@ -177,41 +210,64 @@ def get_seq(pulse_streamer, config, args):
     # uwave pulses
     delay = common_delay - rf_delay_time
     train = [
-        (delay + reion_time + wait_time, LOW),
-        (pi_pulse, HIGH),
-        (
-            7 * wait_time
-            + 2 * shelf_time
-            + pi_pulse
-            + reion_time
-            + 2 * post_wait_time
-            + 2 * readout_time
-            + 2 * ion_time
-            + rf_delay_time,
-            LOW,
-        ),
+        (delay, LOW),
+        # Signal
+        (reion_time, LOW),
+        (uwave_buffer, LOW),
+        (pi_pulse, dummy_high),
+        (uwave_buffer, LOW),
+        (shelf_time, LOW),
+        (ion_time, LOW),
+        (scc_ion_readout_buffer, LOW),
+        (readout_time, LOW),
+        (post_wait_time, LOW),
+        (sig_ref_buffer, LOW),
+        # Reference
+        (reion_time, LOW),
+        (uwave_buffer, LOW),
+        (pi_pulse, LOW),
+        (uwave_buffer, LOW),
+        (shelf_time, LOW),
+        (ion_time, LOW),
+        (scc_ion_readout_buffer, LOW),
+        (readout_time, LOW),
+        (post_wait_time, LOW),
+        (sig_ref_buffer, LOW),
+        (rf_delay_time, LOW)
     ]
     seq.setDigital(pulser_do_sig_gen_gate, train)
 
-    # readout with 589
+    # Readout with yellow
     # Dummy values for digital modulation
-    # shelf_power = 0.0  # MCC
     if not analog_yellow:
         shelf_power = HIGH
         readout_power = HIGH
     delay = common_delay - yellow_delay_time
     train = [
-        (delay + reion_time + 2 * wait_time + pi_pulse, LOW),
+        (delay, LOW),
+        # Signal
+        (reion_time, LOW),
+        (uwave_buffer, LOW),
+        (pi_pulse, LOW),
+        (uwave_buffer, LOW),
         (shelf_time, shelf_power),
         (ion_time, LOW),
-        (wait_time, LOW),
+        (scc_ion_readout_buffer, LOW),
         (readout_time, readout_power),
-        (post_wait_time + 3 * wait_time + reion_time + pi_pulse, LOW),
+        (post_wait_time, LOW),
+        (sig_ref_buffer, LOW),
+        # Reference
+        (reion_time, LOW),
+        (uwave_buffer, LOW),
+        (pi_pulse, LOW),
+        (uwave_buffer, LOW),
         (shelf_time, shelf_power),
         (ion_time, LOW),
-        (wait_time, LOW),
+        (scc_ion_readout_buffer, LOW),
         (readout_time, readout_power),
-        (post_wait_time + wait_time + yellow_delay_time, LOW),
+        (post_wait_time, LOW),
+        (sig_ref_buffer, LOW),
+        (yellow_delay_time, LOW)
     ]
     if analog_yellow:
         seq.setAnalog(pulser_ao_589_aom, train)
@@ -223,26 +279,16 @@ def get_seq(pulse_streamer, config, args):
     final_digital = [pulser_do_clock]
     final = OutputState(final_digital, 0.0, 0.0)
 
-    return seq, final, [period]
+    return seq, final, [str(period)]
 
 
 if __name__ == "__main__":
     config = tool_belt.get_config_dict()
     config["Optics"]["cobolt_638"]["feedthrough"] = "False"
-    seq_args = [
-        1500.0,
-        1000.0,
-        100,
-        68,
-        0,
-        68,
-        "laserglow_532",
-        "laserglow_589",
-        "cobolt_638",
-        "signal_generator_sg394",
-        1,
-        0.68,
-        1.0,
-    ]
+    config['CommonDurations']['scc_ion_readout_buffer'] = 2000
+    tool_belt.set_delays_to_zero(config)
+    seq_args = [11000.0, 1000.0, 100, 87, 0, 87, 
+                'laserglow_532', 'laserglow_589', 'cobolt_638', 
+                'signal_generator_sg394', 1, 1.0, 1.0]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

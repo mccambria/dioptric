@@ -232,7 +232,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         
         # Either include this in loop so it plots data as it takes it (takes about 2x as long)
         # or put it ourside loop so it plots after data is complete
-    if plot_data: ###########################################################
+        if plot_data: ###########################################################
             img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
             update_image_figure(fig, img_array_kcps)
         
@@ -319,8 +319,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    path = 'pc_rabi/branch_CFMIII/image_sample_digital/2021_12'
-    file_name = '2021_12_21-10_24_48-johnson-nv0_2021_12_2021'
+    path = 'pc_rabi/branch_master/image_sample_digital/2022_02'
+    file_name = '2022_02_04-11_48_38-johnson-search'
 
     data = tool_belt.get_raw_data( file_name, path)
     nv_sig = data['nv_sig']
@@ -330,17 +330,23 @@ if __name__ == '__main__':
     y_range= data['y_range']
     x_voltages = data['x_positions_1d']
     y_voltages = data['y_positions_1d']
-    
-    
-    x_low = -x_range/2
-    x_high = x_range/2
-    y_low = -y_range/2
-    y_high = y_range/2
-    
     pixel_size = x_voltages[1] - x_voltages[0]
     half_pixel_size = pixel_size / 2
-    img_extent = [x_low - half_pixel_size,x_high + half_pixel_size,
+    
+    x_low = x_voltages[0]
+    x_high = x_voltages[-1]
+    y_low = y_voltages[0]
+    y_high = y_voltages[-1]
+    img_extent = [x_high + half_pixel_size,x_low - half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
+    
+    
+    # x_low = -x_range/2
+    # x_high = x_range/2
+    # y_low = -y_range/2
+    # y_high = y_range/2
+    # img_extent = [x_low - half_pixel_size,x_high + half_pixel_size,
+    #               y_low - half_pixel_size, y_high + half_pixel_size]
     
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
     

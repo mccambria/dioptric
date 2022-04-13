@@ -289,6 +289,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
     num_read_so_far = 0
 
+    charge_initialization = nv_minus_initialization
+
     tool_belt.init_safe_stop()
 
     while num_read_so_far < total_num_samples:
@@ -300,10 +302,18 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
             break
 
         # Read the samples and update the image
-        new_samples = cxn.apd_tagger.read_counter_simple()
+        if charge_initialization:
+            new_samples = cxn.apd_tagger.read_counter_modulo_gates(2)
+        else:
+            new_samples = cxn.apd_tagger.read_counter_simple()
+
 #        print(new_samples)
         num_new_samples = len(new_samples)
         if num_new_samples > 0:
+
+            # If we did charge initialization, subtract out the background
+            if charge_initialization:
+                new_samples = [max(int(el[0]) - int(el[1]), 0) for el in new_samples]
 
             populate_img_array(new_samples, img_array, img_write_pos)
             # This is a horribly inefficient way of getting kcps, but it
@@ -323,10 +333,11 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     # %% Save the data
 
     timestamp = tool_belt.get_time_stamp()
-
+    # print(nv_sig['coords'])
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'drift': drift,
                'x_range': x_range,
                'x_range-units': 'V',
                'y_range': y_range,
@@ -359,8 +370,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    # path = 'pc_rabi/branch_master/image_sample/2021_10'
-    file_name = '2021_11_11-16_01_03-wu-nv1_2021_11_11'
+    file_name = '2022_03_27-17_45_01-cannon_sc-nv0_2022_03_25'
+    scale = -1#83
 
     data = tool_belt.get_raw_data(file_name)
     nv_sig = data['nv_sig']
@@ -370,6 +381,7 @@ if __name__ == '__main__':
     y_range= data['y_range']
     x_voltages = data['x_voltages']
     y_voltages = data['y_voltages']
+
     # x_low = x_voltages[0]
     # x_high = x_voltages[-1]
     # y_low = y_voltages[0]
@@ -389,7 +401,7 @@ if __name__ == '__main__':
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
 
 
-    tool_belt.create_image_figure(img_array, numpy.array(img_extent)*35, clickHandler=on_click_image,
+    tool_belt.create_image_figure(img_array, numpy.array(img_extent)*scale, clickHandler=on_click_image,
                         title=None, color_bar_label='Counts',
                         min_value=None, um_scaled=True)
 

@@ -23,7 +23,7 @@ def expected_st_dev_norm(ref_counts, expected_contrast):
 
     return error
 
-def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
+def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window, overhead):
     total_exp_time_list = []
 
     for line in exp_array:
@@ -33,12 +33,12 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
         num_steps = line[2]
         num_reps = line[3]
         num_runs = line[4]
-        extra_seq_time = 20 * 10**-6
         optimize_time = 5
+        overhead_s = overhead * 10**-9
 
         exp = [init.name, read.name]
-        sequence_time = (relaxation_time_s + extra_seq_time) * num_reps
-        exp_time_s = (sequence_time * num_steps / 2 + optimize_time) * num_runs # seconds
+        sequence_time = (relaxation_time_s + 2 * overhead_s) * num_reps
+        exp_time_s = (sequence_time * num_steps + optimize_time) * num_runs # seconds
         exp_time_m = exp_time_s / 60
         exp_time_h = exp_time_m / 60
 
@@ -62,12 +62,14 @@ def t1_exp_times(exp_array, contrast, exp_count_rate, readout_window):
 
 # %%
 
-num_runs = 300
-num_reps = 50
+num_runs = 2000
+num_reps = 3500
 num_steps = 12
-min_tau = 20e3
-max_tau_omega = int(46e6)
-max_tau_gamma = int(25e6)
+min_tau = 10e3
+max_tau_omega = int(2.7e6)
+max_tau_gamma = int(1.6e6)
+# max_tau_omega = int(5.3e9)
+# max_tau_gamma = int(3e9)
 t1_exp_array = numpy.array([
         [[States.ZERO, States.HIGH], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
         [[States.ZERO, States.ZERO], [min_tau, max_tau_omega], num_steps, num_reps, num_runs],
@@ -83,8 +85,35 @@ t1_exp_array = numpy.array([
         [[States.LOW, States.LOW], [min_tau, max_tau_gamma//3], num_steps, num_reps, num_runs],
         ], dtype=object)
 
-contrast = 0.10  # arb
-exp_count_rate = 1000  # kcps
-readout_window = 350  # ns
 
-t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window)
+# Figure 1 data
+# num_runs = 400  # 200
+# num_reps = 3000
+# num_steps = 12
+# min_tau = int(500e3)
+# max_tau = int(15e6)
+# t1_exp_array = numpy.array([
+#         [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
+#         [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
+#         # [[States.ZERO, States.ZERO], [min_tau, max_tau], num_steps, num_reps, num_runs],
+#         ], dtype=object)
+# num_runs = 600  # 200
+# num_reps = 2000
+# num_steps = 12
+# min_tau = int(500e3)
+# max_tau = int(15e6)
+# tau_linspace = numpy.linspace(min_tau, max_tau, num_steps)
+# num_steps = num_steps - 2
+# max_tau = tau_linspace[-3]
+# t1_exp_array = numpy.array([
+#         [[States.LOW, States.LOW], [min_tau, max_tau], num_steps, num_reps, num_runs],
+#         # [[States.LOW, States.HIGH], [min_tau, max_tau], num_steps, num_reps, num_runs],
+#         # [[States.ZERO, States.ZERO], [min_tau, max_tau], num_steps, num_reps, num_runs],
+#         ], dtype=object)
+
+contrast = 0.15  # arb
+exp_count_rate = 20  # kcps
+readout_window = 350  # ns
+overhead = 1e6  # ns, sum of polarization time, readout time, etc
+
+t1_exp_times(t1_exp_array, contrast, exp_count_rate, readout_window, overhead)

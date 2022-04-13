@@ -171,8 +171,11 @@ def main_with_cxn(cxn, nv_sig, x_range, z_range, num_steps,
     coords = nv_sig['coords']
     adjusted_coords = (numpy.array(coords) + numpy.array(drift)).tolist()
     x_center, y_center, z_center = adjusted_coords
-    optimize.prepare_microscope(cxn, nv_sig, adjusted_coords)
-
+    
+    adjusted_coords_begin = (numpy.array(adjusted_coords) + [0,0,-z_range/2]).tolist()
+    # print(adjusted_coords_begin)
+    # return
+    optimize.prepare_microscope(cxn, nv_sig, adjusted_coords_begin)
     laser_name = nv_sig[laser_key]
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -314,6 +317,7 @@ def main_with_cxn(cxn, nv_sig, x_range, z_range, num_steps,
     rawData = {'timestamp': timestamp,
                'nv_sig': nv_sig,
                'nv_sig-units': tool_belt.get_nv_sig_units(),
+               'drift': drift,
                'x_range': x_range,
                'x_range-units': 'V',
                'z_range': z_range,

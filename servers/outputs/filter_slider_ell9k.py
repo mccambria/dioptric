@@ -74,6 +74,7 @@ class FilterSliderEll9k(LabradServer):
     @setting(0, pos='i')
     def set_filter(self, c, pos):
         cmd = self.move_commands[pos]
+        # self.slider.write(cmd)
         incomplete = True
         while incomplete:
             self.slider.write(cmd)

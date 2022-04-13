@@ -47,7 +47,7 @@ class PiezoStageDigital(LabradServer):
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO, #INFO
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
@@ -150,7 +150,7 @@ class PiezoStageDigital(LabradServer):
         # self.daq_ao_piezo_stage_x = config[8]
         # self.daq_ao_piezo_stage_y = config[9]
         # self.daq_di_clock = config[10]
-        # logging.debug("Init Complete")
+        logging.info("Init Complete") #info
 # %%
     # def load_stream_writer_xy(self, c, task_name, voltages, period):
 
@@ -196,10 +196,10 @@ class PiezoStageDigital(LabradServer):
     def write_xy(self, c, xPosition, yPosition):
         """Write the specified x and y voltages to the piezo stage"""
         if xPosition > 500 or yPosition > 500:
-            logging.debug("Piezo stage position must not exceed 500 um")
+            logging.info("Piezo stage position must not exceed 500 um")
             raise ValueError("Piezo stage position must not exceed 500 um")
         if xPosition < 0 or yPosition < 0:
-            logging.debug("Piezo stage position must be above 0 um")
+            logging.info("Piezo stage position must be above 0 um")
             raise ValueError("Piezo stage position must be above 0 um")
             
         # manually send voltage task to controller
@@ -218,7 +218,7 @@ class PiezoStageDigital(LabradServer):
             y_diff = abs(actual_y_pos - yPosition)
             time_check = time.time()
             if time_check - time_start_check > self.timeout:
-                logging.debug("Target position not reached!")
+                logging.info("Target position not reached!")
                 flag = 1
                 break 
             
@@ -228,10 +228,10 @@ class PiezoStageDigital(LabradServer):
     def write_x(self, c, xPosition):
         """Write the specified x  voltage to the piezo stage"""
         if xPosition > 500 :
-            logging.debug("Piezo stage position must not exceed 500 um")
+            logging.info("Piezo stage position must not exceed 500 um")
             raise ValueError("Piezo stage position must not exceed 500 um")
         if xPosition < 0:
-            logging.debug("Piezo stage position must be above 0 um")
+            logging.info("Piezo stage position must be above 0 um")
             raise ValueError("Piezo stage position must be above 0 um")
             
         # manually send voltage task to controller
@@ -247,7 +247,7 @@ class PiezoStageDigital(LabradServer):
             x_diff = abs(actual_x_pos - xPosition)
             time_check = time.time()
             if time_check - time_start_check > self.timeout:
-                logging.debug("Target position not reached!")
+                logging.info("Target position not reached!")
                 flag = 1
                 break 
             
@@ -257,10 +257,10 @@ class PiezoStageDigital(LabradServer):
     def write_y(self, c, yPosition):
         """Write the specified  y voltage to the piezo stage"""
         if yPosition > 500:
-            logging.debug("Piezo stage position must not exceed 500 um")
+            logging.info("Piezo stage position must not exceed 500 um")
             raise ValueError("Piezo stage position must not exceed 500 um")
         if yPosition < 0:
-            logging.debug("Piezo stage position must be above 0 um")
+            logging.info("Piezo stage position must be above 0 um")
             raise ValueError("Piezo stage position must be above 0 um")
             
         # manually send voltage task to controller
@@ -276,7 +276,7 @@ class PiezoStageDigital(LabradServer):
             y_diff = abs(actual_y_pos - yPosition)
             time_check = time.time()
             if time_check - time_start_check > self.timeout:
-                logging.debug("Target position not reached!")
+                logging.info("Target position not reached!")
                 flag = 1
                 break 
             
@@ -313,7 +313,7 @@ class PiezoStageDigital(LabradServer):
         ordered_dict = self.piezo.qSVO(self.axis_1)
         servo_mode_y = ordered_dict["{}".format(self.axis_1)]
         
-        logging.debug(servo_mode_x, servo_mode_y)
+        logging.info(servo_mode_x, servo_mode_y)
         return servo_mode_x, servo_mode_y
 
     @setting(

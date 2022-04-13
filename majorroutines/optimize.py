@@ -119,13 +119,12 @@ def stationary_count_lite(cxn, nv_sig, coords, config, apd_indices):
 
     # Some initial values
     laser_name = nv_sig["imaging_laser"]
-    power_key = "imaging_laser_power"
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, "imaging_laser")
     readout = nv_sig["imaging_readout_dur"]
     total_num_samples = 2
     x_center, y_center, z_center = coords
 
-    if nv_sig["ramp_voltages"] == True:
+    if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
         tool_belt.set_xyz_ramp(cxn, [x_center, y_center, z_center])
     else:
         tool_belt.set_xyz(cxn, [x_center, y_center, z_center])
@@ -199,7 +198,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
         half_scan_range = scan_range / 2
         z_low = z_center - half_scan_range
         start_coords = [coords[0], coords[1], z_low]
-        if nv_sig["ramp_voltages"] == True:
+        if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
             tool_belt.set_xyz_ramp(cxn, start_coords)
         else:
             tool_belt.set_xyz(cxn, start_coords)
@@ -374,7 +373,7 @@ def prepare_microscope(cxn, nv_sig, coords=None):
      """
 
     if coords is not None:
-        if nv_sig["ramp_voltages"] == True:
+        if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
             tool_belt.set_xyz_ramp(cxn, coords)
         else:
             tool_belt.set_xyz(cxn, coords)
@@ -565,7 +564,7 @@ def main_with_cxn(
 
         # If the threshold is not set, we succeed based only on optimize
         else:
-            print("Count rate at optimized coordinates: {:.0f}".format(opti_count_rate))
+            print("Count rate at optimized coordinates: {:.1f}".format(opti_count_rate))
             print("Optimization succeeded! (No expected count rate passed.)")
             opti_succeeded = True
 
@@ -584,12 +583,17 @@ def main_with_cxn(
         if opti_succeeded or opti_unnecessary:
             prepare_microscope(cxn, nv_sig, opti_coords)
         else:
+            msg = ("Optimization failed.")
+            # Just crash
+            raise RuntimeError(msg)
             # Let the user know something went wrong
-            print(
-                "Optimization failed. Resetting to coordinates "
-                "about which we attempted to optimize."
-            )
-            prepare_microscope(cxn, nv_sig, adjusted_coords)
+            # msg = ("Optimization failed. Resetting to coordinates "
+            #        "about which we attempted to optimize.")
+            # print(
+            #     "Optimization failed. Resetting to coordinates "
+            #     "about which we attempted to optimize."
+            # )
+            # prepare_microscope(cxn, nv_sig, adjusted_coords)
     else:
         if opti_succeeded or opti_unnecessary:
             print("Optimized coordinates: ")
@@ -609,9 +613,13 @@ def main_with_cxn(
     # Don't bother saving the data if we're just using this to find the
     # optimized coordinates
     if save_data and not opti_unnecessary:
-
+        
+        if len(scan_vals_by_axis) < 3:
+            z_scan_vals = None
+        else:
+            z_scan_vals = scan_vals_by_axis[2].tolist()
+            
         timestamp = tool_belt.get_time_stamp()
-
         rawData = {
             "timestamp": timestamp,
             "nv_sig": nv_sig,
@@ -619,12 +627,12 @@ def main_with_cxn(
             "opti_coords": opti_coords,
             "x_scan_vals": scan_vals_by_axis[0].tolist(),
             "y_scan_vals": scan_vals_by_axis[1].tolist(),
-            "z_scan_vals": scan_vals_by_axis[2].tolist(),
+            "z_scan_vals": z_scan_vals,
             "x_counts": counts_by_axis[0].tolist(),
             "x_counts-units": "number",
             "y_counts": counts_by_axis[1].tolist(),
             "y_counts-units": "number",
-            "z_counts": counts_by_axis[2].tolist(),
+            "z_counts": z_scan_vals,
             "z_counts-units": "number",
         }
 

@@ -61,7 +61,7 @@ def get_seq(pulse_streamer, config, args):
     # pulser_ao_589_aom = pulser_wiring['ao_laserglow_589_am']
     # pulser_do_638_aom = pulser_wiring['do_cobolt_638_dm']
     
-    green_laser_delay = config['Optics']['cobolt_515']['delay']
+    green_laser_delay = config['Optics']['integrated_520']['delay']
     yellow_laser_delay = config['Optics']['laserglow_589']['delay']
     red_laser_delay = config['Optics']['cobolt_638']['delay']
     
@@ -114,7 +114,7 @@ def get_seq(pulse_streamer, config, args):
     # add the initialization pulse segment
     init_train_on = [(initialization_time, HIGH)]
     init_train_off = [(initialization_time, LOW)]
-    if init_color == 515 :
+    if init_color == 520 :
         train_532.extend(init_train_on)
         train_589.extend(init_train_off)
         train_638.extend(init_train_off)
@@ -135,7 +135,7 @@ def get_seq(pulse_streamer, config, args):
     # add the pulse pulse segment
     pulse_train_on = [(pulse_time, HIGH)]
     pulse_train_off = [(pulse_time, LOW)]
-    if pulse_color == 515:
+    if pulse_color == 520:
         train_532.extend(pulse_train_on)
         train_589.extend(pulse_train_off)
         train_638.extend(pulse_train_off)
@@ -156,7 +156,7 @@ def get_seq(pulse_streamer, config, args):
     # add the readout pulse segment
     read_train_on = [(readout_time, HIGH)]
     read_train_off = [(readout_time, LOW)]
-    if read_color == 515:
+    if read_color == 520:
         train_532.extend(read_train_on)
         train_589.extend(read_train_off)
         train_638.extend(read_train_off)
@@ -183,7 +183,7 @@ def get_seq(pulse_streamer, config, args):
     
     # fix this so it isn't hard coded in
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                            'cobolt_515', None, train_532)
+                            'integrated_520', None, train_532)
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                             'laserglow_589', aom_ao_589_pwr, train_589)
     tool_belt.process_laser_seq(pulse_streamer, seq, config,

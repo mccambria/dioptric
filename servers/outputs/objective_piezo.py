@@ -44,7 +44,7 @@ class ObjectivePiezo(LabradServer):
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s %(levelname)-8s %(message)s",
             datefmt="%y-%m-%d_%H-%M-%S",
             filename=filename,
@@ -78,6 +78,7 @@ class ObjectivePiezo(LabradServer):
         gcs_dll_path = str(Path.home())
         gcs_dll_path += "\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0"
         gcs_dll_path += "\\servers\\outputs\\GCSTranslator\\PI_GCS2_DLL_x64.dll"
+        logging.info(gcs_dll_path)
         self.piezo = GCSDevice(devname=config[0], gcsdll=gcs_dll_path)
         # Connect the specific device with the serial number
         self.piezo.ConnectUSB(config[1])
@@ -91,8 +92,12 @@ class ObjectivePiezo(LabradServer):
         # 1 post-compensation volt
         # p(v) = a * v**2 + b * v ==> 1 = a + b ==> a = 1 - b
         self.z_hysteresis_a = 1 - self.z_hysteresis_b
-        logging.debug(config[1])
-        logging.debug("Init complete")
+        logging.info(self.z_hysteresis_a)
+        logging.info(self.z_hysteresis_b)
+        logging.info("Init complete")
+        
+    def stopServer(self):
+        self.piezo.CloseConnection()
 
     def compensate_hysteresis_z(self, position):
         """
@@ -114,6 +119,9 @@ class ObjectivePiezo(LabradServer):
         float or ndarray(float)
             Compensated voltage to set
         """
+        
+        if self.z_hysteresis_b == 1:
+            return position
 
         single_value = False
         if type(position) not in [numpy.ndarray, list]:
@@ -192,7 +200,7 @@ class ObjectivePiezo(LabradServer):
 
         # Set up the output channels
         task.ao_channels.add_ao_voltage_chan(
-            self.daq_ao_objective_piezo, min_val=3.0, max_val=7.0
+            self.daq_ao_objective_piezo, min_val=1.0, max_val=9.0
         )
 
         # Set up the output stream
@@ -236,7 +244,7 @@ class ObjectivePiezo(LabradServer):
         with nidaqmx.Task() as task:
             # Set up the output channels
             task.ao_channels.add_ao_voltage_chan(
-                self.daq_ao_objective_piezo, min_val=3.0, max_val=7.0
+                self.daq_ao_objective_piezo, min_val=1.0, max_val=9.0
             )
             task.write(compensated_voltage)
 
@@ -247,7 +255,7 @@ class ObjectivePiezo(LabradServer):
             # Set up the internal channels - to do: actual parsing...
             if self.daq_ao_objective_piezo == "dev1/AO2":
                 chan_name = "dev1/_ao2_vs_aognd"
-            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=3.0, max_val=7.0)
+            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=1.0, max_val=9.0)
             voltage = task.read()
         return voltage
 
