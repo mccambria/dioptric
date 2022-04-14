@@ -776,7 +776,7 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
 if __name__ == "__main__":
 
-    temp = 475
+    temp = 485
 
     est_omega = omega_calc(temp)
     est_gamma = gamma_calc(temp)
@@ -784,7 +784,7 @@ if __name__ == "__main__":
     # print("Omega: {}".format(4000 / (3 * est_omega)))
     # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
     print("Omega: {}".format(1000 * 1 / (est_omega)))
-    print("gamma: {}".format(1000 * (3/2) / (est_gamma + est_omega)))
+    print("gamma: {}".format(1000 * (3 / 2) / (est_gamma + est_omega)))
     # print('Omega: {}'.format(est_omega))
     # print('gamma: {}'.format(est_gamma))
     sys.exit()
