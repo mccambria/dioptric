@@ -77,6 +77,7 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
     start_coords = nv_sig['coords']
 
     counts = data['readout_counts_avg']
+    # print(counts)
     coords_voltages = data['coords_voltages']
     x_voltages = numpy.array([el[0] for el in coords_voltages])
     y_voltages = numpy.array([el[1] for el in coords_voltages])
@@ -99,6 +100,7 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
     # voltages = numpy.array(voltages)
     # rad_dist = (voltages - start_coords[coord_ind])*35000
     opti_params = []
+    cov_arr =[]
     
     fit_func = tool_belt.gaussian
 
@@ -1204,18 +1206,18 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_CFMIII/SPaCE/2021_11'
+    path = 'pc_rabi/branch_master/SPaCE/2022_04'
 
 
 
 
     #================ specific for 1D scans ================#
 
-    file_path = 'pc_rabi/branch_CFMIII/SPaCE/2021_11'
+    file_path = 'pc_rabi/branch_master/SPaCE/2022_04/incremental'
     
-    file_name = '2021_11_09-12_11_52-johnson-nv1_2021_11_08'
-    # plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = True,
-    #               do_save = False)
+    file_name = '2022_04_13-13_12_10-sandia-siv_R10_a130_r4_c1'
+    plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
+                  do_save = False,  scale = 83000)
     
     
     do_plot_comps = True
@@ -1341,20 +1343,20 @@ if __name__ == '__main__':
             width_list_cfm1_old.append(opti_params[2])
             width_list_err_cfm1_old.append(cov_arr[2][2])
             
-        fig, ax = plt.subplots()
-        ax.errorbar(dur_list_ramp, width_list_ramp, yerr= width_list_err_ramp, 
-                    fmt='bo', label ='optimize w ramping') # 'new confocal microscope')
-        ax.errorbar(dur_list_no_ramp, width_list_no_ramp,yerr=width_list_err_no_ramp, 
-                    fmt='ro', label = 'optimize w/out ramping')
+        # fig, ax = plt.subplots()
+        # ax.errorbar(dur_list_ramp, width_list_ramp, yerr= width_list_err_ramp, 
+        #             fmt='bo', label ='optimize w ramping') # 'new confocal microscope')
+        # ax.errorbar(dur_list_no_ramp, width_list_no_ramp,yerr=width_list_err_no_ramp, 
+        #             fmt='ro', label = 'optimize w/out ramping')
         # ax.errorbar(dur_list_cfm1, width_list_cfm1, yerr =width_list_err_cfm1, 
         #             fmt= 'go', label = 'previous confocal microscope (nanodiamonds)')
         # ax.errorbar(dur_list_cfm1_old, width_list_cfm1_old, yerr =width_list_err_cfm1_old, 
         #             fmt= 'ko', label = 'previous confocal microscope (bulk diamond)')
-        ax.set_xlabel('Depletion pulse duration (us)')
-        ax.set_ylabel('Gaussian sigma, nm')
-        ax.legend()
-        ax.set_xscale('log')
-        ax.set_yscale('log')
+        # ax.set_xlabel('Depletion pulse duration (us)')
+        # ax.set_ylabel('Gaussian sigma, nm')
+        # ax.legend()
+        # ax.set_xscale('log')
+        # ax.set_yscale('log')
         
 
     #================ specific for 2D scans ================#

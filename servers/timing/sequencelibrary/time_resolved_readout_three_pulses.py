@@ -2,8 +2,12 @@
 """
 Created on Tue Apr  9 21:24:36 2019
 
-A similar sequence file to simple_readout_two_pulses, but this file can vary the 
+A similar sequence file to simple_readout_three_pulses, but this file can vary the 
 readout duration of the apd independently from the readout laser duration.
+
+I intend to use this with varying the analog modulated voltage to one of the 
+lasers between pulses, so I will need to manually write the sequences, rather 
+than use the tool_belt.process_laser_seq
 
 Assumes that readout is on pulse two
 
@@ -23,8 +27,10 @@ def get_seq(pulse_streamer, config, args):
 
     # Unpack the args
     # assumes readout_time >= readout_laser_time
-    init_pulse_time, readout_time, readout_laser_time, init_laser_key, readout_laser_key,\
-      init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
+    init_pulse_time, test_pulse_time, readout_time, readout_laser_time, \
+        init_laser_key, test_laser_key, readout_laser_key,\
+      init_laser_power, test_laser_power, read_laser_power, \
+          readout_on_pulse_ind, apd_index  = args
 
     # Get what we need out of the wiring dictionary
     pulser_wiring = config['Wiring']['PulseStreamer']
@@ -32,22 +38,29 @@ def get_seq(pulse_streamer, config, args):
     pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
 
     init_pulse_aom_delay_time = config['Optics'][init_laser_key]['delay']
+    test_pulse_aom_delay_time = config['Optics'][test_laser_key]['delay']
     read_pulse_aom_delay_time = config['Optics'][readout_laser_key]['delay']
 
     # Convert the 32 bit ints into 64 bit ints
     init_pulse_time = numpy.int64(init_pulse_time)
+    test_pulse_time = numpy.int64(test_pulse_time)
+    readout_laser_time = numpy.int64(readout_laser_time)
     readout_time = numpy.int64(readout_time)
 
     # intra_pulse_delay = config['CommonDurations']['cw_meas_buffer']
     intra_pulse_delay = config['CommonDurations']['scc_ion_readout_buffer']
 
-    if init_laser_key == readout_laser_key:
+    if init_laser_key == readout_laser_key and init_laser_key == readout_laser_key:
         total_delay = init_pulse_aom_delay_time
-    else:
+    elif init_laser_key == readout_laser_key and init_laser_key != test_laser_key:
+        total_delay = init_pulse_aom_delay_time + test_pulse_aom_delay_time
+    elif init_laser_key == test_laser_key and init_laser_key != readout_laser_key:
         total_delay = init_pulse_aom_delay_time + read_pulse_aom_delay_time
+    else:
+        total_delay = init_pulse_aom_delay_time + test_pulse_aom_delay_time + read_pulse_aom_delay_time
 
-    period = total_delay + init_pulse_time + readout_time +\
-                                        intra_pulse_delay + 300
+    period = total_delay + init_pulse_time + test_pulse_time + readout_time +\
+                                        2*intra_pulse_delay + 300
                                         
     # calc the time that the apd will be reading before and after the laser turns on. 
     dead_time = int((readout_time - readout_laser_time)/2)
