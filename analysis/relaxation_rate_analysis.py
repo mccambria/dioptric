@@ -807,4 +807,4 @@ if __name__ == "__main__":
             offset=False,
         )
 
-    # plt.show(block=True)
+    plt.show(block=True)
