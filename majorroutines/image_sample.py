@@ -226,6 +226,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         ret_vals = cxn.pulse_streamer.stream_load('simple_readout.py',
                                                   seq_args_string)
+    # print(seq_args)
     period = ret_vals[0]
 
 
@@ -370,39 +371,46 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    file_name = '2022_03_27-17_45_01-cannon_sc-nv0_2022_03_25'
-    scale = -1#83
+    file_name = '2022_04_11-13_08_14-sandia-search'
+    scale = 83
 
     data = tool_belt.get_raw_data(file_name)
     nv_sig = data['nv_sig']
     timestamp = data['timestamp']
-    img_array = data['img_array']
+    img_array = numpy.array(data['img_array'])
     x_range= data['x_range']
     y_range= data['y_range']
     x_voltages = data['x_voltages']
     y_voltages = data['y_voltages']
+    readout = nv_sig['imaging_readout_dur']
 
-    # x_low = x_voltages[0]
-    # x_high = x_voltages[-1]
-    # y_low = y_voltages[0]
-    # y_high = y_voltages[-1]
+    readout_sec = readout / 10**9
 
 
-    x_low = -x_range/2
-    x_high = x_range/2
-    y_low = -y_range/2
-    y_high = y_range/2
+    x_low = x_voltages[0]
+    x_high = x_voltages[-1]
+    y_low = y_voltages[0]
+    y_high = y_voltages[-1]
+
+
+    # x_low = -x_range/2
+    # x_high = x_range/2
+    # y_low = -y_range/2
+    # y_high = y_range/2
 
     pixel_size = x_voltages[1] - x_voltages[0]
     half_pixel_size = pixel_size / 2
     img_extent = [x_low - half_pixel_size,x_high + half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
 
+    #convert to kcps
+    img_array = (img_array[:] / 1000) / readout_sec
+    
     # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
 
 
     tool_belt.create_image_figure(img_array, numpy.array(img_extent)*scale, clickHandler=on_click_image,
-                        title=None, color_bar_label='Counts',
+                        title=None, color_bar_label='kcps',
                         min_value=None, um_scaled=True)
 
 

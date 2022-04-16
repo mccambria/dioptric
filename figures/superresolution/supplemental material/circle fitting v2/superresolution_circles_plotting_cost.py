@@ -12,6 +12,7 @@ Created on February 25, 2022
 
 import utils.tool_belt as tool_belt
 import utils.common as common
+import copy
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize, brute
@@ -214,7 +215,8 @@ def main(
     # region Setup
 
     cost_func = cost0
-    minimize_type = "manual"
+    # minimize_type = "manual"
+    minimize_type = "plotting"
     # minimize_type = "auto"
     # minimize_type = "recursive"
     # minimize_type = "none"
@@ -251,7 +253,7 @@ def main(
 
         x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
         y_linspace = np.linspace(0, image_len_x, image_len_y, endpoint=False)
-        rad_linspace = np.linspace(20, 35, 16)
+        rad_linspace = np.linspace(25, 30, 10)
 
         left_best_circle = None
         left_best_cost = 1
@@ -265,7 +267,6 @@ def main(
                 for r in rad_linspace:
                     circle = [y, x, r]
                     cost = cost_func(circle, *args)
-                    print(cost)
                     if x < half_x:
                         if cost < left_best_cost:
                             left_best_circle = circle
@@ -277,13 +278,70 @@ def main(
 
         brute_circles = [left_best_circle, right_best_circle]
         for circle in brute_circles:
-            print(circle)
+            # print(circle)
             bounds = [(val - 1, val + 1) for val in circle]
             res = minimize(
                 cost_func, circle, bounds=bounds, args=args, method="L-BFGS-B"
             )
             opti_circle = res.x
             plot_circles.append(opti_circle)
+
+    elif minimize_type == "plotting":
+
+        num_points = 100
+        half_len_x = image_len_x // 2
+        half_len_y = image_len_x // 2
+        x_linspace = np.linspace(half_len_x - 15, half_len_x + 15, num_points)
+        y_linspace = np.linspace(half_len_y - 15, half_len_y + 15, num_points)
+        reconstruction = []
+
+        # x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
+        # y_linspace = np.linspace(0, image_len_y, image_len_y, endpoint=False)
+        rad_linspace = np.linspace(20, 35, 16)
+
+        # image_copy = copy.deepcopy(image)
+        # image_copy[:] = np.nan
+        # image_copy_log = np.copy(image_copy)
+
+        half_x = image_len_x / 2
+
+        # Manual brute force optimization for left/right halves
+        for x in x_linspace:
+            reconstruction.append([])
+            for y in y_linspace:
+
+                # set the r value
+                if x < half_x:
+                    r = circle_a[2]
+                else:
+                    r = circle_b[2]
+
+                # circle = [y, x, r]
+                # cost_value = 0.5 - cost_func(circle, *args)
+
+                # just recording min cost value over r
+                cost_vals = []
+                for r in rad_linspace:
+                    circle = [y, x, r]
+                    cost = cost_func(circle, *args)
+                    cost_vals.append(cost)
+                cost_value = 0.5 - min(cost_vals)
+
+                # print(cost_value)
+                # image_copy[int(y)][int(x)] = cost_value
+                # image_copy_log[int(y)][int(x)] = np.log(cost_value)
+                reconstruction[-1].append(cost_value)
+
+        fig2, ax = plt.subplots()
+        fig2.set_tight_layout(True)
+        # img = ax.imshow(image_copy, cmap="YlGnBu_r")
+        img = ax.imshow(reconstruction, cmap="inferno")
+        _ = plt.colorbar(img)
+
+        # figlog, ax = plt.subplots()
+        # figlog.set_tight_layout(True)
+        # img = ax.imshow(image_copy_log, cmap="inferno")
+        # _ = plt.colorbar(img)
 
     elif minimize_type == "auto":
 
@@ -404,9 +462,9 @@ if __name__ == "__main__":
 
     # tool_belt.init_matplotlib()
 
-    circles = [3]
+    # circles = [3]
     # circles = [4]
-    # circles = [3, 4]
+    circles = [3, 4]
     for circle in circles:
 
         # Fig. 3

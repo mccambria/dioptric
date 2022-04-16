@@ -51,11 +51,11 @@ import time
 
 def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
     
-    scan_range = 0.5
-    num_steps = 90
+    # scan_range = 0.5
+    # num_steps = 90
     
-    # scan_range = 0.2
-    # num_steps = 60
+    scan_range = 0.2
+    num_steps = 60
     
     # scan_range = 1.0
     # num_steps = 120
@@ -359,12 +359,12 @@ def do_t1_dq_scc(nv_sig, apd_indices):
 def do_t1_dq(nv_sig, apd_indices):
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
-    num_runs = 1000
-    num_reps = 2500
+    num_runs = 2000
+    num_reps = 3500
     num_steps = 12
     min_tau = 10e3
-    max_tau_omega = int(5.5e6)
-    max_tau_gamma = int(3.0e6)
+    max_tau_omega = int(2.7e6)
+    max_tau_gamma = int(1.6e6)
     # max_tau_omega = int(5.3e9)
     # max_tau_gamma = int(3e9)
     t1_exp_array = numpy.array([
@@ -457,8 +457,8 @@ if __name__ == '__main__':
     red_laser = "cobolt_638"
     
     nv_sig = { 
-        'coords': [0.035, -0.083, 4.92], 'name': '{}-nv1_2022_03_16'.format(sample_name),
-        'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 22,
+        'coords': [-0.007, 0.019, 4.06], 'name': '{}-nv1_2022_03_16'.format(sample_name),
+        'disable_opt': False, "disable_z_opt": False, 'expected_count_rate': 19,
         
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
@@ -485,9 +485,10 @@ if __name__ == '__main__':
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
         
         'collection_filter': None, 'magnet_angle': None,   
-        'resonance_LOW': 2.7903, 'rabi_LOW': 243.5, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9315, 'rabi_HIGH': 309.7, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.7801, 'rabi_LOW': 213.7, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9213, 'rabi_HIGH': 226.5, 'uwave_power_HIGH': 16.5,
         }
+    
             
     # nv_sig = {
     #     'coords': [0.0, 0.0, 4.8], 'name': '{}-search'.format(sample_name),
@@ -522,7 +523,7 @@ if __name__ == '__main__':
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(1, -2)
         
-        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy

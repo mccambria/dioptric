@@ -19,7 +19,7 @@ import photonstatistics as model
 import labrad
 
 import utils.tool_belt as tool_belt
-import majorroutines.optimize_digital as optimize
+import majorroutines.optimize as optimize
 
 #%% import your data in the data_file
 import NV_data as data
@@ -210,7 +210,7 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
     None.
 
     '''
-    num_reps = 500
+    num_reps = int(1e4)#500
 
     # standard readout times to test are 50, 100, 250 ms.
     if readout_times is None:
@@ -259,6 +259,8 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
             max_m = max(nvm)
             occur_0, x_vals_0 = numpy.histogram(nv0, numpy.linspace(0,max_0, max_0+1))
             occur_m, x_vals_m = numpy.histogram(nvm, numpy.linspace(0,max_m, max_m+1))
+            print(occur_0)
+            print(occur_m)
             ax.plot(x_vals_0[:-1],occur_0,  'r-o', label = 'Initial red pulse' )
             ax.plot(x_vals_m[:-1],occur_m,  'g-o', label = 'Initial green pulse' )
             ax.set_xlabel('Counts')
@@ -271,7 +273,7 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
             tool_belt.save_figure(fig_hist, file_path + '_histogram')
 
             print('data collected!')
-            # return
+            return
             print('{} ms readout, {}, {} V'.format(t/10**6, nd_filter, p))
             threshold, fidelity, mu_1, mu_2, fig = calculate_threshold_plot(t/10**6, nv0, nvm, nd_filter, p)
 
@@ -432,7 +434,7 @@ if __name__ == '__main__':
     # load the data here
     sample_name = 'johnson'
 
-    green_laser = "cobolt_515"
+    green_laser = "integrated_520"
     yellow_laser = 'laserglow_589'
     red_laser = 'cobolt_638'
     green_power= 10
@@ -451,26 +453,32 @@ if __name__ == '__main__':
     }  # 14.5 max
 
     nv_sig = {
-        "coords": [250.593, 252.529, 5],
-        "name": "{}-nv1_2022_02_04".format(sample_name,),
-        "disable_opt": False,
-        "ramp_voltages": False,
-        "expected_count_rate":25 , 
-            'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,
+        "coords":[-0.137, 0.406,6.836], 
+        "name": "{}-siv_R10_a130_r4_c1".format(sample_name,),
+        "disable_opt":False,
+        "ramp_voltages": True,
+        "expected_count_rate":None,
+        
+        "imaging_laser":yellow_laser,
+        "imaging_laser_power": 0.45,
+        "imaging_laser_filter": "nd_0",
+        "imaging_readout_dur": 1e7,
+        
+            # 'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E6,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E6,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None,
             'charge_readout_laser_power': None, 'charge_readout_dur':None,
-            'collection_filter': '630_lp', 'magnet_angle': None,
+            'collection_filter': '715_lp', 'magnet_angle': None,
             'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
 
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
-        determine_readout_dur(nv_sig, nv_sig, [0], readout_times = [50e6],
-                              readout_yellow_powers = [0.2],
-                          nd_filter = 'nd_1.0')
+        determine_readout_dur(nv_sig, nv_sig, [0], readout_times = [1e4],
+                              readout_yellow_powers = [0.1],
+                          nd_filter = 'nd_1.5')
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here
