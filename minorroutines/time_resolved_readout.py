@@ -62,10 +62,11 @@ def process_raw_buffer(new_tags, new_channels,
     
     # Loop over the number of closes we have since there are guaranteed to
     # be opens
-    num_closed_samples = len(gate_close_click_inds)
+    
+    num_closed_samples = min(len(gate_close_click_inds),len(gate_open_click_inds))
 #    print()
-#    print('Num open gate clicks: ' + str(len(gate_open_click_inds)))
-#    print('Num close gate clicks: ' + str(len(gate_close_click_inds)))
+    # print('Num open gate clicks: ' + str(len(gate_open_click_inds)))
+    # print('Num close gate clicks: ' + str(len(gate_close_click_inds)))
     for list_ind in range(num_closed_samples):
         
         gate_open_click_ind = gate_open_click_inds[list_ind]
@@ -91,21 +92,15 @@ def process_raw_buffer(new_tags, new_channels,
 # %% Main
 
 
-def main(nv_sig, apd_indices, illumination_time, init_pulse_duration,
-                  init_color_ind, illum_color_ind,
-                  num_reps, num_runs, num_bins, plot = True):
+def main(nv_sig, apd_indices,   num_reps, num_runs, num_bins, plot = True):
 
     with labrad.connect() as cxn:
-        bin_centers, binned_samples, illum_optical_power_mW = main_with_cxn(cxn, 
-                  nv_sig, apd_indices, illumination_time, init_pulse_duration,
-                  init_color_ind, illum_color_ind,
-                  num_reps, num_runs, num_bins, plot)
+        bin_centers, binned_samples = main_with_cxn(cxn, 
+                  nv_sig, apd_indices, num_reps, num_runs, num_bins, plot)
 
-    return bin_centers, binned_samples, illum_optical_power_mW
+    return bin_centers, binned_samples
 
-def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_duration,
-                  init_color_ind, illum_color_ind,
-                  num_reps, num_runs, num_bins, plot):
+def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
     
     if len(apd_indices) > 1:
         msg = 'Currently lifetime only supports single APDs!!'
@@ -114,82 +109,45 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
     tool_belt.reset_cfm(cxn)
     
 
-
-    # %% Define the times to be used in the sequence
-    
-    aom_ao_589_pwr = nv_sig['am_589_power']
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    
-    # We want to observe the illumination pulsee turn on/off. So we make thee
-    # readout longer than the illuination time. Below I set these readout
-    # times based on the lengths of the illumination time, so that the extra 
-    # time will be resolvable.
-    if  illumination_time < 1000:
-        readout_time = illumination_time + 50
-    elif illumination_time < 600*10**3:
-        readout_time = illumination_time + 500
-    elif illumination_time > 4*10**6:
-        readout_time = illumination_time + 500000
-    else:
-        readout_time = illumination_time + 50000
-        
-#    readout_time = int(illumination_time + 500) # illumination time ~ 500 us
-#    readout_time = int(illumination_time + 50000) # illuminaion time ~ 1 ms
-#    readout_time = int(illumination_time + 500000) # illuminaion time ~ 10 ms
-
-#    wait_time = shared_params['post_polarization_wait_dur']
-    wait_time = 3*10**3
     
     # %% Read the optical power forinit and illum pulse light. 
     # Aslo set the init pusle and illum pulse delays
     
+    init_laser = 'initialize_laser'
+    readout_laser = 'charge_readout_laser'
+    init_laser_key = nv_sig[init_laser]
+    readout_laser_key = nv_sig[readout_laser]
     
-    if init_color_ind == 532:
-        init_optical_power_pd = tool_belt.opt_power_via_photodiode(532)
-        init_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(532, init_optical_power_pd)
-        init_pulse_delay = shared_params['515_laser_delay']
-    elif init_color_ind == 589:
-        init_optical_power_pd = tool_belt.opt_power_via_photodiode(589,
-           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter'])        
-        init_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(589, init_optical_power_pd)
-        init_pulse_delay = shared_params['589_aom_delay']
-    elif init_color_ind == 638:
-        init_optical_power_pd = tool_belt.opt_power_via_photodiode(638)        
-        init_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(638, init_optical_power_pd)
-        init_pulse_delay = shared_params['638_DM_laser_delay']
-     
-    if illum_color_ind == 532:
-        illum_optical_power_pd = tool_belt.opt_power_via_photodiode(532)
-        illum_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(532, illum_optical_power_pd)  
-        illum_pulse_delay = shared_params['515_laser_delay']
-    if illum_color_ind == 589:       
-        illum_optical_power_pd = tool_belt.opt_power_via_photodiode(589,
-           AO_power_settings = aom_ao_589_pwr, nd_filter = nv_sig['nd_filter']) 
-        illum_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(589, illum_optical_power_pd)    
-        illum_pulse_delay = shared_params['589_aom_delay']
-    elif illum_color_ind == 638:
-        illum_optical_power_pd = tool_belt.opt_power_via_photodiode(638)    
-        illum_optical_power_mW = \
-            tool_belt.calc_optical_power_mW(638, illum_optical_power_pd)
-        illum_pulse_delay = shared_params['638_DM_laser_delay']
+    # Initial Calculation and setup
+    tool_belt.set_filter(cxn, nv_sig, init_laser)
+    
+    tool_belt.set_filter(cxn, nv_sig, readout_laser)
+    
+    
+    init_laser_power = tool_belt.set_laser_power(
+        cxn, nv_sig, init_laser
+    )
+    readout_laser_power = tool_belt.set_laser_power(
+        cxn, nv_sig, readout_laser
+    )
 
-    # %% Analyze the sequence
-
-    # pulls the file of the sequence from serves/timing/sequencelibrary
-    file_name = os.path.basename(__file__)
-    seq_args = [readout_time, illumination_time, init_pulse_duration, wait_time, 
-                init_pulse_delay, illum_pulse_delay, 
-                aom_ao_589_pwr, apd_indices[0],
-                init_color_ind, illum_color_ind]
-#    seq_args = [int(el) for el in seq_args]
+    # Estimate the lenth of the sequance            
+    file_name = 'time_resolved_readout.py'
+    
+    #### Load the measuremnt 
+    readout_on_pulse_ind = 2
+    init_laser_duration = nv_sig["{}_dur".format(init_laser)]
+    readout_laser_duration = nv_sig["{}_dur".format(readout_laser)]
+    readout_apd_duration = readout_laser_duration*2
+    
+    seq_args = [init_laser_duration, readout_apd_duration, readout_laser_duration,
+                init_laser_key, readout_laser_key,
+                init_laser_power, readout_laser_power, 
+                readout_on_pulse_ind, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
+
 
     # %% Report the expected run time
 
@@ -197,7 +155,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
     expected_run_time = num_reps * num_runs * seq_time_s  # s
     expected_run_time_m = expected_run_time / 60 # m
     print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
-#    return
+    # return
 
     # %% Bit more setup
 
@@ -205,8 +163,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
     startFunctionTime = time.time()
     start_timestamp = tool_belt.get_time_stamp()
     
-    opti_coords_list = []
+    # opti_coords_list = []
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
 
+    # return
     # %% Collect the data
     
     processed_tags = []
@@ -220,15 +180,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
 
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
-            break
-
-        # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices, 532, disable=True)
-        opti_coords_list.append(opti_coords)
-        color_filter = nv_sig['color_filter']
-        cxn.filter_slider_ell9k_color.set_filter(color_filter)  
-        time.sleep(0.1)
-        
+            break        
         
         # Expose the stream
         cxn.apd_tagger.start_tag_stream(apd_indices, apd_indices, False)
@@ -239,13 +191,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
         gate_open_channel = channel_mapping[1]
         gate_close_channel = channel_mapping[2]
             
-        # Stream the sequence
-        seq_args = [readout_time, illumination_time, init_pulse_duration, wait_time, 
-                init_pulse_delay, illum_pulse_delay, 
-                aom_ao_589_pwr, apd_indices[0],
-                init_color_ind, illum_color_ind]
-#        print(seq_args)
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
         cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
                                             seq_args_string)
         # Initialize state
@@ -259,26 +204,30 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
             if tool_belt.safe_stop():
                 break
             
-#            dur_start = time.time()
-#            new_tags, new_channels = cxn.apd_tagger.read_tag_stream()
-            ret_vals_string = cxn.apd_tagger.read_tag_stream()
-            new_tags,new_channels = tool_belt.decode_time_tags(ret_vals_string)
-            if new_tags == []:
-                continue
+            # Read the stream and convert from strings to int64s
+            ret_vals = cxn.apd_tagger.read_tag_stream()
+            buffer_timetags, buffer_channels = ret_vals
+            buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
+            current_tags.extend(buffer_timetags.tolist())
+            current_channels.extend(buffer_channels.tolist())
+            
+            # if new_tags == []:
+            #     continue
 #            print()
 #            print(time.time()-dur_start)
             
             # MCC test
-            if len(new_tags) > 750000:
-                print()
-                print('Received {} tags out of 10^6 max'.format(len(new_tags)))
-                print('Turn down the reps and turn up the runs so that the Time Tagger can catch up!')
+            # if len(new_tags) > 750000:
+            #     print()
+            #     print('Received {} tags out of 10^6 max'.format(len(new_tags)))
+            #     print('Turn down the reps and turn up the runs so that the Time Tagger can catch up!')
             
 #            dur_start = time.time()
                 
-            ret_vals = process_raw_buffer(new_tags, new_channels,
+            ret_vals = process_raw_buffer(buffer_timetags, buffer_channels,
                                    current_tags, current_channels,
                                    gate_open_channel, gate_close_channel)
+        
             new_processed_tags, num_new_processed_reps = ret_vals
 #            print(time.time()-dur_start)
             
@@ -294,25 +243,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
         raw_data = {'start_timestamp': start_timestamp,
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'init_color_ind': init_color_ind,
-                    'init_optical_power_pd': init_optical_power_pd,
-                    'init_optical_power_pd-units': 'V',
-                    'init_optical_power_mW': init_optical_power_mW,
-                    'init_optical_power_mW-units': 'mW',
-                    'illum_color_ind': illum_color_ind,
-                    'illum_optical_power_pd': illum_optical_power_pd,
-                    'illum_optical_power_pd-units': 'V',
-                    'illum_optical_power_mW': illum_optical_power_mW,
-                    'illum_optical_power_mW-units': 'mW',
-                    'illumination_time': illumination_time,
-                    'illumination_time-units': 'ns',
-                    'init_pulse_duration': init_pulse_duration,
-                    'init_pulse_duration-units': 'ns',
+                    'init_laser_duration': init_laser_duration,
+                    'readout_laser_duration': readout_laser_duration,
+                    'readout_apd_duration': readout_apd_duration,
                     'num_reps': num_reps,
                     'num_runs': num_runs,
                     'run_ind': run_ind,
-                    'opti_coords_list': opti_coords_list,
-                    'opti_coords_list-units': 'V',
                     'processed_tags': processed_tags,
                     'processed_tags-units': 'ps',
                     }
@@ -330,7 +266,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
 
     # %% Bin the data
     
-    readout_time_ps = 1000*readout_time
+    readout_time_ps = 1000*readout_apd_duration
     
 #    start_readout_time_ps = 1000*start_readout_time
 #    end_readout_time_ps = 1000*end_readout_time
@@ -339,9 +275,9 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
 #    print(binned_samples)
     
     # Compute the centers of the bins
-    bin_size = readout_time / num_bins
+    bin_size = readout_apd_duration / num_bins
     bin_center_offset = bin_size / 2
-    bin_centers = numpy.linspace(0, readout_time, num_bins) + bin_center_offset
+    bin_centers = numpy.linspace(0, readout_apd_duration, num_bins) + bin_center_offset
 #    print(bin_centers)
 
     # %% Plot
@@ -349,15 +285,20 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
         fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         
+        
+    
+        init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                          ['Config', 'Optics', nv_sig[init_laser]])
+        readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                          ['Config', 'Optics', nv_sig[readout_laser]])
+    
         ax.plot(bin_centers, binned_samples, 'r-')
         ax.set_title('Lifetime')
         ax.set_xlabel('Readout time (ns)')
         ax.set_ylabel('Counts')
-        ax.set_title('{} initial pulse, {} readout'.format(init_color_ind, illum_color_ind))
+        ax.set_title('{} initial pulse, {} readout'.format(init_color, readout_color))
            
-        params_text = '\n'.join(('Init pulse time: {} us'.format(init_pulse_duration/10**3),
-                          'Init power: ' + '%.3f'%(init_optical_power_mW)+ 'mW',
-                          'Illum power: ' + '%.3f'%(illum_optical_power_mW)+ 'mW',
+        params_text = '\n'.join(('Init pulse time: {} us'.format(init_laser_duration/10**3),
                           'bin size: ' + '%.1f'%(bin_size) + 'ns'))
     
         ax.text(0.55, 0.85, params_text, transform=ax.transAxes, fontsize=12,
@@ -377,25 +318,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
                 'time_elapsed': time_elapsed,
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'init_color_ind': init_color_ind,
-                'init_optical_power_pd': init_optical_power_pd,
-                'init_optical_power_pd-units': 'V',
-                'init_optical_power_mW': init_optical_power_mW,
-                'init_optical_power_mW-units': 'mW',
-                'illum_color_ind': illum_color_ind,
-                'illum_optical_power_pd': illum_optical_power_pd,
-                'illum_optical_power_pd-units': 'V',
-                'illum_optical_power_mW': illum_optical_power_mW,
-                'illum_optical_power_mW-units': 'mW',
-                'readout_time': readout_time,
-                'readout_time-units': 'ns',
-                'init_pulse_duration': init_pulse_duration,
-                'init_pulse_duration-units': 'ns',
+                'init_laser_duration': init_laser_duration,
+                'readout_laser_duration': readout_laser_duration,
+                'readout_apd_duration': readout_apd_duration,
                 'num_bins': num_bins,
                 'num_reps': num_reps,
                 'num_runs': num_runs,
-                'opti_coords_list': opti_coords_list,
-                'opti_coords_list-units': 'V',
                 'binned_samples': binned_samples.tolist(),
                 'bin_centers': bin_centers.tolist(),
                 'processed_tags': processed_tags,
@@ -407,7 +335,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, illumination_time, init_pulse_durati
         tool_belt.save_figure(fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
     
-    return bin_centers, binned_samples, illum_optical_power_mW
+    return bin_centers, binned_samples
 
 # %%
 ##
