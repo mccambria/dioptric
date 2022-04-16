@@ -778,33 +778,37 @@ if __name__ == "__main__":
 
     temp = 485
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print("good times in ms")
-    # print("Omega: {}".format(4000 / (3 * est_omega)))
-    # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
-    print("Omega: {}".format(1000 * 1 / (est_omega)))
-    print("gamma: {}".format(1000 * (3 / 2) / (est_gamma + est_omega)))
-    # print('Omega: {}'.format(est_omega))
-    # print('gamma: {}'.format(est_gamma))
-    sys.exit()
+    mode = "prediction"
+    mode = "analysis"
 
-    # plt.ion()
+    if mode == "prediction":
+        est_omega = omega_calc(temp)
+        est_gamma = gamma_calc(temp)
+        print("good times in ms")
+        # print("Omega: {}".format(4000 / (3 * est_omega)))
+        # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
+        print("Omega: {}".format(1000 * 1 / (est_omega)))
+        print("gamma: {}".format(1000 * (3 / 2) / (est_gamma + est_omega)))
+        # print('Omega: {}'.format(est_omega))
+        # print('gamma: {}'.format(est_gamma))
 
-    path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
-    folders = [
-        "wu-nv1_2022_03_16-{}K".format(temp),
-        # "main1_test",
-    ]
+    if mode == "analysis":
+        plt.ion()
 
-    for folder in folders:
-        gamma, ste = main(
-            path,
-            folder,
-            omega=None,
-            omega_ste=None,
-            doPlot=True,
-            offset=False,
-        )
+        path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
+        folders = [
+            "wu-nv1_2022_03_16-{}K".format(temp),
+            # "main1_test",
+        ]
 
-    # plt.show(block=True)
+        for folder in folders:
+            gamma, ste = main(
+                path,
+                folder,
+                omega=None,
+                omega_ste=None,
+                doPlot=True,
+                offset=False,
+            )
+
+        # plt.show(block=True)
