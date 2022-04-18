@@ -402,7 +402,7 @@ def process_laser_seq(
     modulation, but the Pulse Streamer only supplies 2.6 V.
     """
     pulser_wiring = config["Wiring"]["PulseStreamer"]
-    print(config)
+    # print(config)
     mod_type = config["Optics"][laser_name]["mod_type"]
     mod_type = eval(mod_type)
     feedthrough = config["Optics"][laser_name]["feedthrough"]
@@ -481,9 +481,12 @@ def process_laser_seq(
             dur = el[0]
             val = el[1]
             if type(laser_power) == list:
-                power_dict = {LOW: 0.0, HIGH: laser_power[high_count]}
-                if val == HIGH:
-                    high_count += 1
+                if val == 0:
+                    power_dict = {LOW: 0.0}
+                else:
+                    power_dict = {HIGH: laser_power[high_count]}
+                    if val == HIGH:
+                        high_count += 1
             # If a list wasn't passed, just use the single value for laser_power
             elif type(laser_power) != list:
                 power_dict = {LOW: 0.0, HIGH: laser_power}

@@ -83,8 +83,8 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.2
     # scan_range = 0.15
     # scan_range = 0.1
-    scan_range = 0.05
-    # scan_range = 0.025
+    # scan_range = 0.05
+    scan_range = 0.025
     # scan_range = 0.01
     
     # num_steps = 400
@@ -427,17 +427,38 @@ def do_time_resolved_readout(nv_sig, apd_indices):
     # and the imaging key for the second
     
     num_reps = 1000 
-    num_bins = 201
-    num_runs = 50
-    
+    num_bins = 2001
+    num_runs = 10
+    disp = 0.0001#.05
 
     time_resolved_readout.main(
         nv_sig, 
+        disp,
         apd_indices, 
         num_reps, 
         num_runs, 
         num_bins
     )
+    
+def do_time_resolved_readout_three_pulses(nv_sig, apd_indices):
+
+    # nv_sig uses the initialization key for the first pulse
+    # and the imaging key for the second
+    
+    num_reps = 1000 
+    num_bins = 201
+    num_runs = 10
+    
+
+    time_resolved_readout.main_three_pulses(
+        nv_sig, 
+        apd_indices, 
+        num_reps, 
+        num_runs, 
+        num_bins
+    )   
+    
+    
 
 
 def do_SPaCE(nv_sig, opti_nv_sig, num_runs, num_steps_a, num_steps_b,
@@ -640,9 +661,10 @@ if __name__ == "__main__":
     
     
     nv_sig = { 
-          "coords":[-0.137, 0.406,6.836], 
-        "name": "{}-siv_R10_a130_r4_c1".format(sample_name,),
-        "disable_opt":False,
+            "coords":[-0.140, 0.514,7.05], 
+            # "coords": [-0.141+0.05, 0.514, 7.05], #off siv
+        "name": "{}-siv_R10_a130_r1_c1".format(sample_name,),
+        "disable_opt":True,
         "ramp_voltages": True,
         "expected_count_rate":None,
         
@@ -674,22 +696,31 @@ if __name__ == "__main__":
         'spin_shelf_laser': yellow_laser, 'spin_shelf_laser_filter': nd_yellow, 
         'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,
             
-        # "initialize_laser": green_laser, 
-        # "initialize_laser_power": green_power,
-        # "initialize_laser_dur": 1e6,
         
         # "initialize_laser": red_laser, 
-        # "initialize_laser_power": red_power,
-        # "initialize_laser_dur":  1e6,
+        # "initialize_laser_power": 0.66,
+        # "initialize_laser_dur":  1e5,
+        # "test_laser": green_laser, 
+        # "test_laser_power": None,
+        # "test_laser_dur":  1e6,
         
-        "CPG_laser": red_laser,
-        'CPG_laser_power': red_power,
-        "CPG_laser_dur": 1e5,
         
-        # "charge_readout_laser": yellow_laser,
-        # "charge_readout_laser_filter": "nd_1.0",
-        # "charge_readout_laser_power": 0.1,
-        # "charge_readout_laser_dur": 1e4,
+        "initialize_laser": green_laser, 
+        "initialize_laser_power": green_power,
+        "initialize_laser_dur": 1e5,
+        # "test_laser": red_laser, 
+        # "test_laser_power": 0.66,
+        # "test_laser_dur":  1e6,
+        
+        
+        
+        # "charge_readout_laser": green_laser,
+        # "charge_readout_laser_power": None, #6mW
+        # "charge_readout_laser_dur": 1e5, 
+        
+        "charge_readout_laser": red_laser,
+        "charge_readout_laser_power": 0.66,#0.561,
+        "charge_readout_laser_dur": 1e5,
         
         # "charge_readout_laser": yellow_laser,
         # "charge_readout_laser_filter": "nd_0",
@@ -700,10 +731,10 @@ if __name__ == "__main__":
         # "charge_readout_laser_power": 20, #6mW
         # "charge_readout_laser_dur": 1e5,
         
-        "charge_readout_laser": green_laser,
-        "charge_readout_laser_power": None, #6mW
-        "charge_readout_laser_dur": 0.5e4,
         
+        # "charge_readout_laser": red_laser,
+        # "charge_readout_laser_power": 0.565,
+        # "charge_readout_laser_dur": 1e4,
         
         "collection_filter": "715_lp",
         "magnet_angle": None,
@@ -739,16 +770,16 @@ if __name__ == "__main__":
         # 
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_drift([0.0, 0.0, 0.0])  
-        # tool_belt.set_xyz(labrad.connect(), [-0.764, -0.125,4.39])  
+        # tool_belt.set_xyz(labrad.connect(), [-0.141+0.05, 0.514, 7.05])  
         # for dx in [-0.2, -0.4, -0.6, -0.8, -1]:
         #     nv_sig_copy = copy.deepcopy(nv_sig)
         #     coords = nv_sig["coords"]
         #     new_coords= list(numpy.array(coords)+ numpy.array([dx, 0, 0]))
         #     nv_sig_copy['coords'] = new_coords
             # do_image_sample(nv_sig_copy, apd_indices)
-        do_optimize(nv_sig,apd_indices)
-        # do_time_resolved_readout(nv_sig, apd_indices)
-        
+        # do_optimize(nv_sig,apd_indices)
+        do_time_resolved_readout(nv_sig, apd_indices)
+        # do_time_resolved_readout_three_pulses(nv_sig, apd_indices)
 
         # do_image_sample(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices)

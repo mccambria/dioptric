@@ -284,7 +284,7 @@ if __name__ == "__main__":
     yellow_laser = "laserglow_589"
     
     nv_sig = { 
-          "coords":[-0.137, 0.406,6.836], 
+          "coords":[-0.137, 0.406,7.05], 
         "name": "{}-siv_R10_a130_r4_c1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
@@ -365,7 +365,7 @@ if __name__ == "__main__":
         # laser_power = None
         # laser_name = 'laserglow_589'
         # laser_power = 0.6
-        delay_range = [0,0.5e3]
+        delay_range = [0,2e3]
         with labrad.connect() as cxn:
             aom_delay(cxn, nv_sig, apd_indices,
                       delay_range, num_steps, num_reps, laser_name, laser_power)
