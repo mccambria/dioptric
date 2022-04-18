@@ -20,6 +20,8 @@ from numpy import pi
 from matplotlib.patches import Circle
 import cv2 as cv
 import sys
+import multiprocessing
+from functools import partial
 
 # endregion
 
@@ -224,7 +226,7 @@ def main(
     # Get the image as a 2D ndarray
     image_file_dict = tool_belt.get_raw_data(image_file_name)
     image = np.array(image_file_dict["readout_image_array"])
-    
+
     image_domain = image.shape
     image_len_x = image_domain[1]
     image_len_y = image_domain[0]
@@ -233,7 +235,7 @@ def main(
     blur_image, laplacian_image, gradient_image, sigmoid_image = ret_vals
 
     opti_image = sigmoid_image
-    plot_image = image
+    plot_image = sigmoid_image
 
     # Plot the image
     fig, ax = plt.subplots()
@@ -247,13 +249,15 @@ def main(
     # region Circle finding
 
     args = [opti_image, image_len_x, image_len_y, False]
+    # Partial function with everything but the circle parameters filled in
+    cost_func_partial = partial(cost_func, image=args[0], x_lim=args[1], y_lim=args[2], debug=args[2])
     plot_circles = []
 
     if minimize_type == "manual":
 
         x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
         y_linspace = np.linspace(0, image_len_x, image_len_y, endpoint=False)
-        rad_linspace = np.linspace(20, 35, 16)
+        rad_linspace = np.linspace(25, 30, 10)
 
         left_best_circle = None
         left_best_cost = 1
@@ -285,58 +289,75 @@ def main(
             )
             opti_circle = res.x
             plot_circles.append(opti_circle)
-            
-    elif minimize_type == 'plotting':
-        x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
-        y_linspace = np.linspace(0, image_len_x, image_len_y, endpoint=False)
-        rad_linspace = np.linspace(20, 35, 16)
-        
-        image_copy = copy.deepcopy(image)
-        image_copy[:] = np.nan
-        image_copy_log = np.copy(image_copy)
-        
-        left_best_circle = None
-        left_best_cost = 1
-        right_best_circle = None
-        right_best_cost = 1
+
+    elif minimize_type == "plotting":
+
+        num_points = 100
+        half_len_x = image_len_x // 2
+        half_len_y = image_len_x // 2
+        x_linspace = np.linspace(half_len_x - 15, half_len_x + 15, num_points)
+        y_linspace = np.linspace(half_len_y - 15, half_len_y + 15, num_points)
+        reconstruction = []
+
+        # x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
+        # y_linspace = np.linspace(0, image_len_y, image_len_y, endpoint=False)
+        rad_linspace = np.linspace(26, 28, 21)
+        r = np.average([circle_a[2], circle_b[2]])
+
+        # image_copy = copy.deepcopy(image)
+        # image_copy[:] = np.nan
+        # image_copy_log = np.copy(image_copy)
+
         half_x = image_len_x / 2
 
         # Manual brute force optimization for left/right halves
-        for x in x_linspace:
-            for y in y_linspace:
-                
+        for y in y_linspace:
+            reconstruction.append([])
+            for x in x_linspace:
+
                 # set the r value
-                if x < half_x:
-                    r = circle_a[2]
-                else:
-                    r = circle_b[2]
-                    
-                circle = [y, x, r]
-                cost_value = 0.5 - cost_func(circle, *args)
-                
-                # just recording min cost value over r
-                # cost_vals = []
-                # for r in rad_linspace:
-                #     circle = [y, x, r]
-                #     cost = cost_func(circle, *args)
-                #     cost_vals.append(cost)
-                # cost_value = 0.5-min(cost_vals)
-                
-                
+                # if x < half_x:
+                #     r = circle_a[2]
+                # else:
+                #     r = circle_b[2]
+
+                # Cost at a fixed r
+                # circle = [y, x, r]
+                # cost_value = 0.5 - cost_func(circle, *args)
+
+                # just recording min cost value over rad_linspace
+                # test_circles = [[y, x, r] for r in rad_linspace]
+                # with multiprocessing.Pool() as pool:
+                #     cost_vals = pool.map(cost_func_partial, test_circles)
+                # Slow singlethreaded version
+                cost_func_lambda = lambda r: cost_func([y, x, r], *args)
+                cost_vals = [cost_func_lambda(r) for r in rad_linspace]
+                cost_value = 0.5 - min(cost_vals)
+
                 # print(cost_value)
-                image_copy[int(y)][int(x)] = cost_value
+                # image_copy[int(y)][int(x)] = cost_value
                 # image_copy_log[int(y)][int(x)] = np.log(cost_value)
-                
+                reconstruction[-1].append(cost_value)
+
         fig2, ax = plt.subplots()
         fig2.set_tight_layout(True)
-        img = ax.imshow(image_copy, cmap="YlGnBu_r")
+        # img = ax.imshow(image_copy, cmap="YlGnBu_r")
+        extent = [
+            min(x_linspace),
+            max(x_linspace),
+            max(y_linspace),
+            min(y_linspace),
+        ]
+        img = ax.imshow(reconstruction, cmap="inferno", extent=extent)
         _ = plt.colorbar(img)
-        
+
         # figlog, ax = plt.subplots()
         # figlog.set_tight_layout(True)
         # img = ax.imshow(image_copy_log, cmap="inferno")
         # _ = plt.colorbar(img)
-        
+
+        plot_circles = [circle_a, circle_b]
+
     elif minimize_type == "auto":
 
         # Define the bounds of the optimization
@@ -439,6 +460,15 @@ def main(
         )
         ax.add_patch(circle_patch)
 
+        # Plot the center
+        circle_patch = Circle(
+            (circle[1], circle[0]),
+            1,
+            fill=False,
+            color="w",
+        )
+        ax.add_patch(circle_patch)
+
     # endregion
     return
 
@@ -489,7 +519,7 @@ if __name__ == "__main__":
         main(image_file_name, circle_a, circle_b, fast_recursive=True)
         # calc_errors(image_file_name, circle_a, circle_b)
 
-    # plt.show(block=True)
+    plt.show(block=True)
 
 # endregion
 
