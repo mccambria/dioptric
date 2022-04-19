@@ -596,8 +596,8 @@ if __name__ == '__main__':
     
     #--- red init
     # 17 mW red readout
-    sig_file = '2022_04_18-12_53_51-sandia-siv_R10_a130_r1_c1'
-    ref_file = '2022_04_18-12_54_02-sandia-siv_R10_a130_r1_c1'
+    sig_file = '2022_04_18-14_14_33-sandia-siv_R10_a130_r1_c1'
+    ref_file = '2022_04_18-14_22_36-sandia-siv_R10_a130_r1_c1'
     # 17 mW green readout
     # sig_file = '2022_04_15-15_10_18-sandia-siv_R10_a130_r1_c1'
     # ref_file = '2022_04_15-15_15_38-sandia-siv_R10_a130_r1_c1'
@@ -621,8 +621,8 @@ if __name__ == '__main__':
     
     #--- green init
     # 17 mW red readout
-    sig_file = '2022_04_15-15_10_46-sandia-siv_R10_a130_r1_c1'
-    ref_file = '2022_04_15-15_16_07-sandia-siv_R10_a130_r1_c1'
+    sig_file = '2022_04_18-14_36_40-sandia-siv_R10_a130_r1_c1'
+    ref_file = '2022_04_18-14_44_15-sandia-siv_R10_a130_r1_c1'
     # 17 mW green readout
     # sig_file = '2022_04_18-12_57_01-sandia-siv_R10_a130_r1_c1'
     # ref_file = '2022_04_18-12_57_14-sandia-siv_R10_a130_r1_c1'
