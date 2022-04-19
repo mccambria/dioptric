@@ -698,12 +698,12 @@ if __name__ == "__main__":
         'spin_shelf_laser_power': 0.4, 'spin_shelf_dur':0,
             
         
-        "initialize_laser": red_laser, 
-        "initialize_laser_power": 0.66,
-        "initialize_laser_dur":  1e5,
-        "test_laser": green_laser, 
-        "test_laser_power": None,
-        "test_laser_dur":  1e5,
+        # "initialize_laser": red_laser, 
+        # "initialize_laser_power": 0.66,
+        # "initialize_laser_dur":  1e5,
+        # "test_laser": green_laser, 
+        # "test_laser_power": None,
+        # "test_laser_dur":  1e5,
         
         
         # "initialize_laser": green_laser, 
@@ -714,28 +714,21 @@ if __name__ == "__main__":
         # "test_laser_dur":  1e6,
         
         
+        # "charge_readout_laser": red_laser,
+        # "charge_readout_laser_power": 0.66,#0.561,
+        # "charge_readout_laser_dur": 100000,
         
-        # "charge_readout_laser": green_laser,
-        # "charge_readout_laser_power": None, #6mW
-        # "charge_readout_laser_dur": 1e5, 
         
+        "initialize_laser": red_laser, 
+        "initialize_laser_power": 0.66,
+        "initialize_laser_dur":  1e5,
+        "CPG_laser": green_laser, 
+        "CPG_laser_power": None,
+        "CPG_laser_dur":  1e5,
         "charge_readout_laser": red_laser,
         "charge_readout_laser_power": 0.66,#0.561,
-        "charge_readout_laser_dur": 100000,
+        "charge_readout_laser_dur": 2.5e3,
         
-        # "charge_readout_laser": yellow_laser,
-        # "charge_readout_laser_filter": "nd_0",
-        # "charge_readout_laser_power": 0.45,
-        # "charge_readout_laser_dur": 1e4,
-        
-        # "charge_readout_laser": red_laser,
-        # "charge_readout_laser_power": 20, #6mW
-        # "charge_readout_laser_dur": 1e5,
-        
-        
-        # "charge_readout_laser": red_laser,
-        # "charge_readout_laser_power": 0.565,
-        # "charge_readout_laser_dur": 1e4,
         
         "collection_filter": "715_lp",
         "magnet_angle": None,
@@ -790,7 +783,7 @@ if __name__ == "__main__":
 
         # subtracting time resolved readings
     
-        do_time_resolved = True
+        do_time_resolved = False
         if do_time_resolved:
             nv_sig['initialize_laser'] = red_laser
             nv_sig['initialize_power'] = 0.66
@@ -876,16 +869,14 @@ if __name__ == "__main__":
         # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
         # do_spin_echo(nv_sig, apd_indices)
         
-        num_runs = int(1e2)
+        num_runs = 94#int(1e4)
         num_steps_a = 51
         num_steps_b = num_steps_a
         img_range_1D = [[0,0,0],[0.05,0,0]]
         img_range_2D = None#[0.03, 0.03, 0]
         offset = [0.2/80,0.4/80,0]
-        for t in [1e6]:
-            nv_sig['CPG_laser_dur'] = t
-            # do_SPaCE(nv_sig, nv_sig, num_runs, num_steps_a, num_steps_b,
-            #         img_range_1D, img_range_2D, offset, charge_state_threshold = None)
+        do_SPaCE(nv_sig, nv_sig, num_runs, num_steps_a, num_steps_b,
+                img_range_1D, img_range_2D, offset, charge_state_threshold = None)
         # do_image_sample(nv_sig, apd_indices)
         
         

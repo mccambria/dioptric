@@ -597,17 +597,17 @@ def populate_img_array(valsToAdd, imgArray, run_num):
                 imgArray[yPos, xPos, run_num] = val
     return
 # %%
-def data_collection(nv_sig, opti_nv_sig,  coords_list,run_num, opti_interval = 4):
+def data_collection(nv_sig, opti_nv_sig,  coords_list,run_num, start_time, opti_interval = 4):
     with labrad.connect() as cxn:
         ret_vals = data_collection_with_cxn(cxn, nv_sig, opti_nv_sig, coords_list,
-                                                     run_num,  opti_interval)
+                                                     run_num,  start_time, opti_interval)
 
-    readout_counts_array, drift_list = ret_vals
+    readout_counts_array, drift_list, start_time = ret_vals
 
-    return readout_counts_array,  drift_list
+    return readout_counts_array,  drift_list, start_time
 
 def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
-                                       opti_interval = 4):
+                                       start_time, opti_interval = 4):
     '''
     Runs a measurement where an initial pulse is pulsed on the start coords,
     then a pulse is set on the first point in the coords list, then the
@@ -664,8 +664,8 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
                       ['Config', 'Optics', nv_sig['charge_readout_laser']])
     pulse_time = nv_sig['CPG_laser_dur']
-    initialization_time = nv_sig['initialize_dur']
-    charge_readout_time = nv_sig['charge_readout_dur']
+    initialization_time = nv_sig['initialize_laser_dur']
+    charge_readout_time = nv_sig['charge_readout_laser_dur']
     charge_readout_laser_power = nv_sig['charge_readout_laser_power']
     readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
                       ['Config', 'Optics', nv_sig['charge_readout_laser']])
@@ -807,8 +807,11 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     else:
         # the whole sequence will tkae less time than the intervals between 
         # optimize so just run it all at once
-        optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
-        drift_list.append(tool_belt.get_drift())
+        current_time = time.time()
+        if current_time - start_time > 4*60:
+            optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            drift_list.append(tool_belt.get_drift())
+            start_time = current_time
         
         drift = numpy.array(tool_belt.get_drift())
 
@@ -829,7 +832,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         readout_counts_list.append(readout_counts)
         
 
-    return list(numpy.concatenate(readout_counts_list).flat), drift_list
+    return list(numpy.concatenate(readout_counts_list).flat), drift_list, start_time
 
 # %%
 def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None, 
@@ -1011,6 +1014,7 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
     num_samples = len(coords_voltages)
     readout_counts_array = numpy.empty([num_samples, num_runs])
     
+    start_time = time.time()
     for n in range(num_runs):
         print('Run {}'.format(n))
         # shuffle the voltages that we're stepping thru
@@ -1024,9 +1028,9 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
         #========================== Run the data collection====================#
-        ret_vals = data_collection(nv_sig,opti_nv_sig,  coords_voltages_shuffle_list, n,  opti_interval)
+        ret_vals = data_collection(nv_sig,opti_nv_sig,  coords_voltages_shuffle_list, n, start_time,  opti_interval)
 
-        readout_counts_list_shfl, drift = ret_vals
+        readout_counts_list_shfl, drift, start_time  = ret_vals
         drift_list_master.append(drift)
         readout_counts_list_shfl = numpy.array(readout_counts_list_shfl)
         # unshuffle the raw data

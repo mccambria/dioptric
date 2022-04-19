@@ -302,7 +302,7 @@ def main(
         # x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
         # y_linspace = np.linspace(0, image_len_y, image_len_y, endpoint=False)
         rad_linspace = np.linspace(26, 28, 21)
-        r = np.average([circle_a[2], circle_b[2]])
+        # r = np.average([circle_a[2], circle_b[2]])
 
         # image_copy = copy.deepcopy(image)
         # image_copy[:] = np.nan
