@@ -27,6 +27,7 @@ import time
 import matplotlib.pyplot as plt
 #from scipy.optimize import curve_fit
 import json
+import copy
 import labrad
 
 
@@ -95,10 +96,10 @@ def process_raw_buffer(new_tags, new_channels,
 def main(nv_sig, apd_indices,   num_reps, num_runs, num_bins, plot = True):
 
     with labrad.connect() as cxn:
-        bin_centers, binned_samples = main_with_cxn(cxn, 
+        bin_centers, binned_samples_sig = main_with_cxn(cxn, 
                   nv_sig, apd_indices, num_reps, num_runs, num_bins, plot)
 
-    return bin_centers, binned_samples
+    return  bin_centers, binned_samples_sig
 
 def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
     
@@ -144,6 +145,251 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
                 init_laser_key, readout_laser_key,
                 init_laser_power, readout_laser_power, 
                 readout_on_pulse_ind, apd_indices[0]]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
+    seq_time = ret_vals[0]
+
+
+    # %% Report the expected run time
+
+    seq_time_s = seq_time / (10**9)  # s
+    expected_run_time = num_reps * num_runs * seq_time_s  # s
+    expected_run_time_m = expected_run_time / 60 # m
+    print(' \nExpected run time: {:.1f} minutes. '.format(expected_run_time_m))
+    # return
+
+    # %% Bit more setup
+
+    # Record the start time
+    startFunctionTime = time.time()       
+    run_start_time = startFunctionTime
+    start_timestamp = tool_belt.get_time_stamp()
+    
+    # %% Collect data on point of interest
+    
+    # opti_coords_list = []
+    optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+
+    
+    processed_tags_signal = []
+
+    # Start 'Press enter to stop...'
+    tool_belt.init_safe_stop()
+
+    for run_ind in range(num_runs):
+        
+        print(' \nRun index: {}'.format(run_ind))
+        current_time = time.time()
+        if current_time - run_start_time > 4*60:
+            optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            run_start_time = current_time
+
+        # Break out of the while if the user says stop
+        if tool_belt.safe_stop():
+            break        
+        
+        # Expose the stream
+        cxn.apd_tagger.start_tag_stream(apd_indices, apd_indices, False)
+    
+        # Find the gate channel
+        # The order of channel_mapping is APD, APD gate open, APD gate close
+        channel_mapping = cxn.apd_tagger.get_channel_mapping()
+        gate_open_channel = channel_mapping[1]
+        gate_close_channel = channel_mapping[2]
+            
+        cxn.pulse_streamer.stream_immediate(file_name, int(num_reps),
+                                            seq_args_string)
+        # Initialize state
+        current_tags = []
+        current_channels = []
+        num_processed_reps = 0
+
+        # print('sig')
+        while num_processed_reps < num_reps:
+            
+            # Break out of the while if the user says stop
+            if tool_belt.safe_stop():
+                break
+            
+            # Read the stream and convert from strings to int64s
+            ret_vals = cxn.apd_tagger.read_tag_stream()
+            buffer_timetags, buffer_channels = ret_vals
+            buffer_timetags = numpy.array(buffer_timetags, dtype=numpy.int64)
+            current_tags.extend(buffer_timetags.tolist())
+            current_channels.extend(buffer_channels.tolist())
+                
+            ret_vals = process_raw_buffer(buffer_timetags, buffer_channels,
+                                   current_tags, current_channels,
+                                   gate_open_channel, gate_close_channel)
+        
+            new_processed_tags, num_new_processed_reps = ret_vals
+            # print(new_processed_tags)
+                
+            
+            num_processed_reps += num_new_processed_reps
+            
+            processed_tags_signal.extend(new_processed_tags)
+            
+        #  Save the data we have incrementally for long measurements
+        processed_tags_signal = [int(el) for el in processed_tags_signal]
+        raw_data = {'start_timestamp': start_timestamp,
+                    'nv_sig': nv_sig,
+                    'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'init_laser_duration': init_laser_duration,
+                    'readout_laser_duration': readout_laser_duration,
+                    'readout_apd_duration': readout_apd_duration,
+                    'num_reps': num_reps,
+                    'num_runs': num_runs,
+                    'run_ind': run_ind,
+                    'processed_tags': processed_tags_signal,
+                    'processed_tags-units': 'ps',
+                    }
+
+        cxn.apd_tagger.stop_tag_stream()
+
+        # This will continuously be the same file path so we will overwrite
+        # the existing file with the latest version
+        file_path = tool_belt.get_file_path(__file__, start_timestamp,
+                                            nv_sig['name'], 'incremental')
+        tool_belt.save_raw_data(raw_data, file_path)
+        
+
+    # %% Hardware clean up
+
+    tool_belt.reset_cfm(cxn)
+
+    # %% Bin the data
+    
+    readout_time_ps = 1000*readout_apd_duration
+    
+    binned_samples_sig, bin_edges_sig = numpy.histogram(processed_tags_signal, num_bins,
+                                (0, readout_time_ps))
+    
+    # Compute the centers of the bins
+    bin_size = readout_apd_duration / num_bins
+    bin_center_offset = bin_size / 2
+    bin_centers = numpy.linspace(0, readout_apd_duration, num_bins) + bin_center_offset
+#    print(bin_centers)
+
+    # %% Plot
+    if plot:
+        fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        
+        init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                          ['Config', 'Optics', nv_sig[init_laser]])
+        readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                          ['Config', 'Optics', nv_sig[readout_laser]])
+    
+        ax.plot(bin_centers, binned_samples_sig, 'r-')
+        ax.set_title('Lifetime')
+        ax.set_xlabel('Readout time (ns)')
+        ax.set_ylabel('Counts')
+        ax.set_title('{} initial pulse, {} readout'.format(init_color, readout_color))
+           
+        params_text = '\n'.join(('Init pulse time: {} us'.format(init_laser_duration/10**3),
+                          'bin size: ' + '%.1f'%(bin_size) + 'ns'))
+    
+        ax.text(0.55, 0.85, params_text, transform=ax.transAxes, fontsize=12,
+                verticalalignment='top', bbox=props)
+          
+            
+        fig.canvas.draw()
+        fig.set_tight_layout(True)
+        fig.canvas.flush_events()
+
+    # %% Save the data
+
+    endFunctionTime = time.time()
+    time_elapsed = endFunctionTime - startFunctionTime
+    timestamp = tool_belt.get_time_stamp()
+    
+    raw_data = {'timestamp': timestamp,
+                'time_elapsed': time_elapsed,
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'init_laser_duration': init_laser_duration,
+                'readout_laser_duration': readout_laser_duration,
+                'readout_apd_duration': readout_apd_duration,
+                'num_bins': num_bins,
+                'num_reps': num_reps,
+                'num_runs': num_runs,
+                'binned_samples': binned_samples_sig.tolist(),
+                'bin_centers': bin_centers.tolist(),
+                'processed_tags_signal': processed_tags_signal,
+                'processed_tags-units': 'ps',
+                }
+    
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    if plot:
+        tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(raw_data, file_path)
+    
+    return bin_centers, binned_samples_sig
+
+
+# %% Main for three pulses
+
+
+def main_three_pulses(nv_sig, apd_indices,   num_reps, num_runs, num_bins, plot = True):
+
+    with labrad.connect() as cxn:
+        bin_centers, binned_samples = main_three_pulses_with_cxn(cxn, 
+                  nv_sig, apd_indices, num_reps, num_runs, num_bins, plot)
+
+    return bin_centers, binned_samples
+
+def main_three_pulses_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
+    
+    if len(apd_indices) > 1:
+        msg = 'Currently lifetime only supports single APDs!!'
+        raise NotImplementedError(msg)
+    
+    tool_belt.reset_cfm(cxn)
+    
+
+    
+    # %% Read the optical power forinit and illum pulse light. 
+    # Aslo set the init pusle and illum pulse delays
+    
+    init_laser = 'initialize_laser'
+    test_laser = 'test_laser'
+    readout_laser = 'charge_readout_laser'
+    init_laser_key = nv_sig[init_laser]
+    test_laser_key = nv_sig[test_laser]
+    readout_laser_key = nv_sig[readout_laser]
+    
+    # Initial Calculation and setup
+    tool_belt.set_filter(cxn, nv_sig, init_laser)
+    tool_belt.set_filter(cxn, nv_sig, test_laser)
+    tool_belt.set_filter(cxn, nv_sig, readout_laser)
+    
+    
+    init_laser_power = tool_belt.set_laser_power(
+        cxn, nv_sig, init_laser
+    )
+    test_laser_power = tool_belt.set_laser_power(
+        cxn, nv_sig, test_laser
+    )
+    readout_laser_power = tool_belt.set_laser_power(
+        cxn, nv_sig, readout_laser
+    )
+
+    # Estimate the lenth of the sequance            
+    file_name = 'time_resolved_readout_three_pulses.py'
+    
+    #### Load the measuremnt 
+    init_laser_duration = nv_sig["{}_dur".format(init_laser)]
+    test_laser_duration = nv_sig["{}_dur".format(test_laser)]
+    readout_laser_duration = nv_sig["{}_dur".format(readout_laser)]
+    readout_apd_duration = readout_laser_duration*2
+    
+    seq_args = [init_laser_duration, test_laser_duration, 
+                                readout_apd_duration, readout_laser_duration,
+                init_laser_key, test_laser_key, readout_laser_key,
+                init_laser_power, test_laser_power, readout_laser_power, 
+                apd_indices[0]]
+    # print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -244,6 +490,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
                     'nv_sig': nv_sig,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
                     'init_laser_duration': init_laser_duration,
+                    'test_laser_duration': test_laser_duration,
                     'readout_laser_duration': readout_laser_duration,
                     'readout_apd_duration': readout_apd_duration,
                     'num_reps': num_reps,
@@ -289,6 +536,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
     
         init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
                           ['Config', 'Optics', nv_sig[init_laser]])
+        test_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                          ['Config', 'Optics', nv_sig[test_laser]])
         readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
                           ['Config', 'Optics', nv_sig[readout_laser]])
     
@@ -296,9 +545,10 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
         ax.set_title('Lifetime')
         ax.set_xlabel('Readout time (ns)')
         ax.set_ylabel('Counts')
-        ax.set_title('{} initial pulse, {} readout'.format(init_color, readout_color))
+        ax.set_title('{} initial pulse, {} test pulse, {} readout'.format(init_color,test_color, readout_color))
            
         params_text = '\n'.join(('Init pulse time: {} us'.format(init_laser_duration/10**3),
+                                 'Test pulse time: {} us'.format(test_laser_duration/10**3),
                           'bin size: ' + '%.1f'%(bin_size) + 'ns'))
     
         ax.text(0.55, 0.85, params_text, transform=ax.transAxes, fontsize=12,
@@ -319,6 +569,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
                 'nv_sig': nv_sig,
                 'nv_sig-units': tool_belt.get_nv_sig_units(),
                 'init_laser_duration': init_laser_duration,
+                'test_laser_duration': test_laser_duration,
                 'readout_laser_duration': readout_laser_duration,
                 'readout_apd_duration': readout_apd_duration,
                 'num_bins': num_bins,
@@ -337,63 +588,75 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
     
     return bin_centers, binned_samples
 
-# %%
-##
-#def integrate_under_curve(open_file_name):
-#
-#    directory = 'E:/Shared Drives/Kolkowitz Lab Group/nvdata/time_resolved_readout/branch_Spin_to_charge/2020_03/R-Y-vary_yellow_power/'
-#
-#    # Open the specified file
-#    with open(directory + open_file_name) as json_file:
-#
-#        # Load the data from the file
-#        data = json.load(json_file)
-#        counts_array = numpy.array(data["binned_samples"])
-##        readout_time = data["readout_time"]
-##        num_bins = data["num_bins"]
-#        illum_optical_power_mW = data['illum_optical_power_mW']
-#        bin_centers = data['bin_centers']
-#        
-##    bin_size = readout_time / num_bins
-##    bin_center_offset = bin_size / 2
-##    bin_centers = numpy.linspace(0, readout_time, num_bins) + bin_center_offset
-#
-#    integrated_counts = numpy.trapz(counts_array, bin_centers)
-#    
-#    return integrated_counts, illum_optical_power_mW
-    
-    
-# %%
 
+# %% Run the files
+
+if __name__ == '__main__':
+    file_path = 'pc_rabi/branch_master/time_resolved_readout/2022_04'
     
-#    folder = 'time_resolved_readout'
-#    sub_folder = 'branch_Spin_to_charge/2020_03/R-Y-vary_yellow_power'
-#    
-#    file_list = tool_belt.get_file_list(folder, 'txt', sub_folder)
-#    count_second_list = []
-#    power_list = []
-#
-##    for file in file_list:
-##        try:
-##            count_second, power = integrate_under_curve(file)
-##            count_second_list.append(count_second)
-##            power_list.append(power)
-##        except Exception:
-##            continue
-##    print(count_second_list)
-##    print(power_list)
-#    
-#    
-#    G_Y_counts = [23087637.63763764, 87113713.71371372, 207461436.4364364, 352807257.2572572, 488446871.87187195, 609473823.8238239, 711014489.4894896, 800907707.7077079, 888199949.94995, 939677727.7277279, 982788263.2632635, 1023652827.8278279, 1031481406.4064065]
-#    R_Y_counts = [6548098.098098099, 24815465.46546546, 66190990.990991, 145861911.9119119, 257067742.74274278, 374258383.3833834, 493877627.6276276, 598611286.2862862, 671990615.6156156, 751055155.1551552, 802539089.0890892, 841369044.0440441, 861570470.4704705]
-#    powers = [-0.011956253797609902, 0.008394938665521117, 0.04655342488791242, 0.10379115508684919, 0.18010813029947312, 0.2767763015473715, 0.3772603247901645, 0.4535773065972609, 0.5311662399831372, 0.5833161798815681, 0.6418258695666592, 0.6659929156202796, 0.6825282630258871]
-#    
-#    difference = numpy.array(G_Y_counts) - numpy.array(R_Y_counts)
-#    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-#
-#    ax.plot(powers, difference)
-##    ax.plot(powers, G_Y_counts, 'g', label = 'Green/Yellow')
-##    ax.plot(powers, R_Y_counts, 'r', label = 'Red/Yellow')
-#    ax.set_xlabel('589 power (mW)')
-##    ax.set_ylabel('Area under time_resolved_readout curves (count*ns)')
-#    ax.set_ylabel('Subtracted area under time_resolved_readout curves (counts*ns)')
+    #--- red init
+    # 17 mW red readout
+    sig_file = '2022_04_18-14_14_33-sandia-siv_R10_a130_r1_c1'
+    ref_file = '2022_04_18-14_22_36-sandia-siv_R10_a130_r1_c1'
+    # 17 mW green readout
+    # sig_file = '2022_04_15-15_10_18-sandia-siv_R10_a130_r1_c1'
+    # ref_file = '2022_04_15-15_15_38-sandia-siv_R10_a130_r1_c1'
+    
+    data = tool_belt.get_raw_data(sig_file, file_path)
+    nv_sig = data['nv_sig']
+    try:
+        binned_samples_sig = numpy.array(data['binned_samples'])
+    except Exception:
+        binned_samples_sig = numpy.array(data['binned_samples_sig'])
+    bin_centers = data['bin_centers']
+    
+    data = tool_belt.get_raw_data(ref_file, file_path)
+    try:
+        binned_samples_ref = numpy.array(data['binned_samples'])
+    except Exception:
+        binned_samples_ref = numpy.array(data['binned_samples_sig'])
+    bin_centers = data['bin_centers']
+    
+    binned_samples_sub_red = binned_samples_sig - binned_samples_ref
+    
+    #--- green init
+    # 17 mW red readout
+    sig_file = '2022_04_18-14_36_40-sandia-siv_R10_a130_r1_c1'
+    ref_file = '2022_04_18-14_44_15-sandia-siv_R10_a130_r1_c1'
+    # 17 mW green readout
+    # sig_file = '2022_04_18-12_57_01-sandia-siv_R10_a130_r1_c1'
+    # ref_file = '2022_04_18-12_57_14-sandia-siv_R10_a130_r1_c1'
+    
+    data = tool_belt.get_raw_data(sig_file, file_path)
+    nv_sig = data['nv_sig']
+    try:
+        binned_samples_sig = numpy.array(data['binned_samples'])
+    except Exception:
+        binned_samples_sig = numpy.array(data['binned_samples_sig'])
+    bin_centers = data['bin_centers']
+    
+    data = tool_belt.get_raw_data(ref_file, file_path)
+    try:
+        binned_samples_ref = numpy.array(data['binned_samples'])
+    except Exception:
+        binned_samples_ref = numpy.array(data['binned_samples_sig'])
+    bin_centers = data['bin_centers']
+    
+    binned_samples_sub_green = binned_samples_sig - binned_samples_ref
+    
+    #---
+    binned_samples_sub = binned_samples_sub_red - binned_samples_sub_green
+    
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    
+    init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                      ['Config', 'Optics', nv_sig['initialize_laser']])
+    readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                      ['Config', 'Optics', nv_sig['charge_readout_laser']])
+    
+    ax.plot(bin_centers, binned_samples_sub, 'b-')
+    ax.set_title('Subtracted lifetime')
+    ax.set_xlabel('Readout time (ns)')
+    ax.set_ylabel('Counts')
+    ax.set_title('{} initial pulse, {} readout'.format(init_color, readout_color))
