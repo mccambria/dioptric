@@ -291,13 +291,18 @@ def main(
             plot_circles.append(opti_circle)
 
     elif minimize_type == "plotting":
-
+        half_range = 18 #for circle 3
+        # half_range = 20 #for circle 4
         num_points = 100
         half_len_x = image_len_x // 2
         half_len_y = image_len_x // 2
-        x_linspace = np.linspace(half_len_x - 15, half_len_x + 15, num_points)
-        y_linspace = np.linspace(half_len_y - 15, half_len_y + 15, num_points)
+        x_linspace = np.linspace(half_len_x - half_range, half_len_x + half_range, num_points)
+        y_linspace = np.linspace(half_len_y - half_range, half_len_y + half_range, num_points)
         reconstruction = []
+        print(image_len_x)
+        print(x_linspace)
+        
+        # return
 
         # x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
         # y_linspace = np.linspace(0, image_len_y, image_len_y, endpoint=False)
@@ -332,7 +337,8 @@ def main(
                 # Slow singlethreaded version
                 cost_func_lambda = lambda r: cost_func([y, x, r], *args)
                 cost_vals = [cost_func_lambda(r) for r in rad_linspace]
-                cost_value = 0.5 - min(cost_vals)
+                # cost_value = 0.5 - min(cost_vals)
+                cost_value = min(cost_vals)
 
                 # print(cost_value)
                 # image_copy[int(y)][int(x)] = cost_value
@@ -348,7 +354,7 @@ def main(
             max(y_linspace),
             min(y_linspace),
         ]
-        img = ax.imshow(reconstruction, cmap="inferno", extent=extent)
+        img = ax.imshow(reconstruction, cmap="inferno_r", extent=extent)
         _ = plt.colorbar(img)
 
         # figlog, ax = plt.subplots()
@@ -486,9 +492,9 @@ if __name__ == "__main__":
 
     # tool_belt.init_matplotlib()
 
-    # circles = [3]
+    circles = [3]
     # circles = [4]
-    circles = [3, 4]
+    # circles = [3, 4]
     for circle in circles:
 
         # Fig. 3
