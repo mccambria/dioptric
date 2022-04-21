@@ -250,7 +250,9 @@ def main(
 
     args = [opti_image, image_len_x, image_len_y, False]
     # Partial function with everything but the circle parameters filled in
-    cost_func_partial = partial(cost_func, image=args[0], x_lim=args[1], y_lim=args[2], debug=args[2])
+    cost_func_partial = partial(
+        cost_func, image=args[0], x_lim=args[1], y_lim=args[2], debug=args[2]
+    )
     plot_circles = []
 
     if minimize_type == "manual":
@@ -307,7 +309,7 @@ def main(
         # x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
         # y_linspace = np.linspace(0, image_len_y, image_len_y, endpoint=False)
         rad_linspace = np.linspace(26, 28, 21)
-        r = np.average([circle_a[2], circle_b[2]])
+        # r = np.average([circle_a[2], circle_b[2]])
 
         # image_copy = copy.deepcopy(image)
         # image_copy[:] = np.nan

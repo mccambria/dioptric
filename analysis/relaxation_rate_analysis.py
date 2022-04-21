@@ -797,7 +797,8 @@ if __name__ == "__main__":
 
         path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
         folders = [
-            "wu-nv1_2022_03_16-{}K".format(temp),
+            # "wu-nv1_2022_03_16-{}K".format(temp),
+            "wu-nv6_2022_04_14-{}K".format(temp),
             # "main1_test",
         ]
 

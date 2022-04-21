@@ -65,13 +65,13 @@ def get_seq(pulse_streamer, config, args):
 
     if init_laser_key == readout_laser_key:
         laser_key = readout_laser_key
-        laser_power = read_laser_power
+        laser_powers = [init_laser_power, read_laser_power]
 
         train = [(init_pulse_time, HIGH),
                  (intra_pulse_delay + dead_time, LOW),
                  (readout_laser_time, HIGH), (dead_time + 100 ,LOW )]
         tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                laser_key, laser_power, train)
+                                laser_key, laser_powers, train)
 
     else:
         train_init_laser = [(read_pulse_aom_delay_time, LOW),
@@ -95,7 +95,7 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()      
-    args = [100000, 200000, 100000, 'integrated_520', 'laserglow_589', None, 0.8, 2, 0]
+    args = [100000, 200000, 100000, 'cobolt_638', 'cobolt_638', 0.6, 0.2, 2, 0]
     # args = [1000.0, 100000000, 'cobolt_515', 'laserglow_589', None, 0.15, 0]
     seq = get_seq(None, config, args)[0]
     seq.plot()
