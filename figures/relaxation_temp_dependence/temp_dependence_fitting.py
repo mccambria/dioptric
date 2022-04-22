@@ -892,6 +892,9 @@ def main(
                     lw=line_width,
                     markeredgewidth=marker_edge_width,
                 )
+            print(omega_lambda(475))
+            print(gamma_lambda(475))
+            return
 
         elif plot_type == "ratios":
             omega_val = point[omega_column_title]
