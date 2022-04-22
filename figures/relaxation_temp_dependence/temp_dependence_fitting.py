@@ -299,50 +299,50 @@ def fit_simultaneous(data_points):
     # region DECLARE FIT FUNCTIONS HERE
 
     # Double Orbach
-    init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
-    omega_hopper_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[0],
-        beta[2],
-        beta[3],
-        beta[4],
-        beta[5],
-    )
-    omega_wu_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[0],
-        beta[2],
-        beta[3],
-        beta[4],
-        beta[6],
-    )
-    gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[1],
-        beta[2],
-        beta[3],
-        beta[4],
-        beta[7],
-    )
-    gamma_wu_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[1],
-        beta[2],
-        beta[3],
-        beta[4],
-        beta[8],
-    )
-    beta_desc = [
-        "Omega Orbach 1 coeff (s^-1)",
-        "gamma Orbach 1 coeff (s^-1)",
-        "Orbach 1 Delta (meV)",
-        "Orbach 2 coeff (s^-1)",
-        "Orbach 2 Delta (meV)",
-        "Omega Hopper constant (s^-1)",
-        "Omega Wu constant (s^-1)",
-        "gamma Hopper constant (s^-1)",
-        "gamma Wu constant (s^-1)",
-    ]
+    # init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
+    # omega_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     beta[4],
+    #     beta[5],
+    # )
+    # omega_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     beta[4],
+    #     beta[6],
+    # )
+    # gamma_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[3],
+    #     beta[4],
+    #     beta[7],
+    # )
+    # gamma_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[3],
+    #     beta[4],
+    #     beta[8],
+    # )
+    # beta_desc = [
+    #     "Omega Orbach 1 coeff (s^-1)",
+    #     "gamma Orbach 1 coeff (s^-1)",
+    #     "Orbach 1 Delta (meV)",
+    #     "Orbach 2 coeff (s^-1)",
+    #     "Orbach 2 Delta (meV)",
+    #     "Omega Hopper constant (s^-1)",
+    #     "Omega Wu constant (s^-1)",
+    #     "gamma Hopper constant (s^-1)",
+    #     "gamma Wu constant (s^-1)",
+    # ]
 
     # Double Orbach, second Orbach fixed to 165 meV
     # init_params = (450, 1200, 65, 11000, 0.01, 0.01, 0.07, 0.15)
@@ -892,9 +892,9 @@ def main(
                     lw=line_width,
                     markeredgewidth=marker_edge_width,
                 )
-            print(omega_lambda(475))
-            print(gamma_lambda(475))
-            return
+            # print(omega_lambda(475))
+            # print(gamma_lambda(475))
+            # return
 
         elif plot_type == "ratios":
             omega_val = point[omega_column_title]
