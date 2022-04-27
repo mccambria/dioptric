@@ -839,7 +839,7 @@ def main_with_cxn(
 if __name__ == "__main__":
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections"
-    folder = "wu-nv6_2022_04_14-485K"
+    folder = "wu-nv6_2022_04_14-485K-2"
     # folder = "main1-300K"
     collate_incremental(path, folder)
     full_path_to_incremental = "{}/{}/incremental".format(path, folder)
