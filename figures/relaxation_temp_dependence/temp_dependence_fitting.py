@@ -156,7 +156,7 @@ def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
 
 
 def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
-    full_scaling = True
+    full_scaling = False
     if full_scaling:
         n1 = bose(delta1, temp)
         n2 = bose(delta2, temp)
@@ -170,7 +170,7 @@ def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
 
 
 def triple_orbach(temp, coeff1, delta1, coeff2, delta2, coeff3, delta3, const):
-    full_scaling = True
+    full_scaling = False
     if full_scaling:
         n1 = bose(delta1, temp)
         n2 = bose(delta2, temp)
@@ -231,6 +231,8 @@ def presentation_round(val, err):
 
 
 def presentation_round_latex(val, err):
+    if val <= 0 or err > val:
+        return ""
     rounded_val, rounded_err, power_of_10 = presentation_round(val, err)
     err_mag = math.floor(math.log10(rounded_err))
     val_mag = math.floor(math.log10(rounded_val))
@@ -370,29 +372,29 @@ def fit_simultaneous(data_points):
     # region DECLARE FIT FUNCTIONS HERE
 
     # T5 fixed + constant
-    # init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.01, 0.07, 0.15)
-    # omega_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
-    #     temp, beta[1], beta[3], beta[0], beta[4]
-    # )
-    # omega_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
-    #     temp, beta[1], beta[3], beta[0], beta[5]
-    # )
-    # gamma_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
-    #     temp, beta[2], beta[3], beta[0], beta[6]
-    # )
-    # gamma_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
-    #     temp, beta[2], beta[3], beta[0], beta[7]
-    # )
-    # beta_desc = [
-    #     "T5 coeff (K^-5 s^-1)",
-    #     "Omega Orbach coeff (s^-1)",
-    #     "gamma Orbach coeff (s^-1)",
-    #     "Orbach Delta (meV)",
-    #     "Omega Hopper constant (s^-1)",
-    #     "Omega Wu constant (s^-1)",
-    #     "gamma Hopper constant (s^-1)",
-    #     "gamma Wu constant (s^-1)",
-    # ]
+    init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.01, 0.07, 0.15)
+    omega_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
+        temp, beta[1], beta[3], beta[0], beta[4]
+    )
+    omega_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
+        temp, beta[1], beta[3], beta[0], beta[5]
+    )
+    gamma_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
+        temp, beta[2], beta[3], beta[0], beta[6]
+    )
+    gamma_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
+        temp, beta[2], beta[3], beta[0], beta[7]
+    )
+    beta_desc = [
+        "T5 coeff (K^-5 s^-1)",
+        "Omega Orbach coeff (s^-1)",
+        "gamma Orbach coeff (s^-1)",
+        "Orbach Delta (meV)",
+        "Omega Hopper constant (s^-1)",
+        "Omega Wu constant (s^-1)",
+        "gamma Hopper constant (s^-1)",
+        "gamma Wu constant (s^-1)",
+    ]
 
     # Double Orbach
     # init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
@@ -497,64 +499,64 @@ def fit_simultaneous(data_points):
     # ]
 
     # Triple Orbach, fixed energies
-    Delta_1 = 65
-    Delta_2 = 95
-    Delta_3 = 150
-    init_params = (450, 1200, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
-    omega_hopper_fit_func = lambda temp, beta: triple_orbach(
-        temp,
-        beta[0],
-        Delta_1,
-        beta[2],
-        Delta_2,
-        beta[3],
-        Delta_3,
-        beta[4],
-    )
-    omega_wu_fit_func = lambda temp, beta: triple_orbach(
-        temp,
-        beta[0],
-        Delta_1,
-        beta[2],
-        Delta_2,
-        beta[3],
-        Delta_3,
-        beta[5],
-    )
-    gamma_hopper_fit_func = lambda temp, beta: triple_orbach(
-        temp,
-        beta[1],
-        Delta_1,
-        beta[2],
-        Delta_2,
-        beta[3],
-        Delta_3,
-        beta[6],
-    )
-    gamma_wu_fit_func = lambda temp, beta: triple_orbach(
-        temp,
-        beta[1],
-        Delta_1,
-        beta[2],
-        Delta_2,
-        beta[3],
-        Delta_3,
-        beta[7],
-    )
-    beta_desc = [
-        "Omega Orbach 1 coeff (s^-1)",
-        "gamma Orbach 1 coeff (s^-1)",
-        "Orbach 2 coeff (s^-1)",
-        "Orbach 3 coeff (s^-1)",
-        "Omega Hopper constant (s^-1)",
-        "Omega Wu constant (s^-1)",
-        "gamma Hopper constant (s^-1)",
-        "gamma Wu constant (s^-1)",
-    ]
+    # Delta_1 = 70
+    # Delta_2 = 90
+    # Delta_3 = 150
+    # init_params = (450, 1200, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
+    # omega_hopper_fit_func = lambda temp, beta: triple_orbach(
+    #     temp,
+    #     beta[0],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[3],
+    #     Delta_3,
+    #     beta[4],
+    # )
+    # omega_wu_fit_func = lambda temp, beta: triple_orbach(
+    #     temp,
+    #     beta[0],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[3],
+    #     Delta_3,
+    #     beta[5],
+    # )
+    # gamma_hopper_fit_func = lambda temp, beta: triple_orbach(
+    #     temp,
+    #     beta[1],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[3],
+    #     Delta_3,
+    #     beta[6],
+    # )
+    # gamma_wu_fit_func = lambda temp, beta: triple_orbach(
+    #     temp,
+    #     beta[1],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[3],
+    #     Delta_3,
+    #     beta[7],
+    # )
+    # beta_desc = [
+    #     "Omega Orbach 1 coeff (s^-1)",
+    #     "gamma Orbach 1 coeff (s^-1)",
+    #     "Orbach 2 coeff (s^-1)",
+    #     "Orbach 3 coeff (s^-1)",
+    #     "Omega Hopper constant (s^-1)",
+    #     "Omega Wu constant (s^-1)",
+    #     "gamma Hopper constant (s^-1)",
+    #     "gamma Wu constant (s^-1)",
+    # ]
 
     # Double Orbach, fixed energies
     # init_params = (450, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
-    # Delta_1 = 83
+    # Delta_1 = 70
     # Delta_2 = 150
     # omega_hopper_fit_func = lambda temp, beta: double_orbach(
     #     temp,
@@ -598,51 +600,51 @@ def fit_simultaneous(data_points):
     #     "gamma Wu constant (s^-1)",
     # ]
 
-    # Double Orbach, second Orbach fixed to 165 meV
-    # init_params = (450, 1200, 65, 11000, 0.01, 0.01, 0.07, 0.15)
-    # delta_2 = 165
-    # omega_hopper_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[0],
-    #     beta[2],
-    #     beta[3],
-    #     delta_2,
-    #     beta[4],
-    # )
-    # omega_wu_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[0],
-    #     beta[2],
-    #     beta[3],
-    #     delta_2,
-    #     beta[5],
-    # )
-    # gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[1],
-    #     beta[2],
-    #     beta[3],
-    #     delta_2,
-    #     beta[6],
-    # )
-    # gamma_wu_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[1],
-    #     beta[2],
-    #     beta[3],
-    #     delta_2,
-    #     beta[7],
-    # )
-    # beta_desc = [
-    #     "Omega Orbach 1 coeff (s^-1)",
-    #     "gamma Orbach 1 coeff (s^-1)",
-    #     "Orbach 1 Delta (meV)",
-    #     "Orbach 2 coeff (s^-1)",
-    #     "Omega Hopper constant (s^-1)",
-    #     "Omega Wu constant (s^-1)",
-    #     "gamma Hopper constant (s^-1)",
-    #     "gamma Wu constant (s^-1)",
-    # ]
+    # Double Orbach, second Orbach fixed
+    init_params = (450, 1200, 65, 11000, 0.01, 0.01, 0.07, 0.15)
+    delta_2 = 150
+    omega_hopper_fit_func = lambda temp, beta: double_orbach(
+        temp,
+        beta[0],
+        beta[2],
+        beta[3],
+        delta_2,
+        beta[4],
+    )
+    omega_wu_fit_func = lambda temp, beta: double_orbach(
+        temp,
+        beta[0],
+        beta[2],
+        beta[3],
+        delta_2,
+        beta[5],
+    )
+    gamma_hopper_fit_func = lambda temp, beta: double_orbach(
+        temp,
+        beta[1],
+        beta[2],
+        beta[3],
+        delta_2,
+        beta[6],
+    )
+    gamma_wu_fit_func = lambda temp, beta: double_orbach(
+        temp,
+        beta[1],
+        beta[2],
+        beta[3],
+        delta_2,
+        beta[7],
+    )
+    beta_desc = [
+        "Omega Orbach 1 coeff (s^-1)",
+        "gamma Orbach 1 coeff (s^-1)",
+        "Orbach 1 Delta (meV)",
+        "Orbach 2 coeff (s^-1)",
+        "Omega Hopper constant (s^-1)",
+        "Omega Wu constant (s^-1)",
+        "gamma Hopper constant (s^-1)",
+        "gamma Wu constant (s^-1)",
+    ]
 
     # endregion
 
@@ -919,7 +921,7 @@ def normalized_residuals_histogram(rates_to_plot):
     fig.tight_layout(pad=0.3)
 
 
-def plot_orbach_scalings():
+def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
 
     min_temp = temp_range[0]
     max_temp = temp_range[1]
@@ -927,10 +929,10 @@ def plot_orbach_scalings():
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
     fig, ax = plt.subplots(figsize=figsize)
 
-    normalized = False
-    Delta_1 = 65
-    Delta_2 = 95
-    Delta_3 = 160
+    normalized = True
+    Delta_1 = 70
+    Delta_2 = 90
+    Delta_3 = 150
     orbach_1 = lambda temp: bose(Delta_1, temp)
     orbach_2 = lambda temp: bose(Delta_2, temp)
     orbach_3 = lambda temp: bose(Delta_3, temp)
@@ -971,6 +973,8 @@ def plot_orbach_scalings():
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
     ax.set_xlabel(r"T (K)")
+    if y_range is not None:
+        ax.set_ylim(y_range[0], y_range[1])
     if normalized:
         ax.set_ylabel(r"Normalized Orbach scaling")
     else:
@@ -1408,7 +1412,7 @@ if __name__ == "__main__":
     # print(presentation_round_latex(145.88999, 0.002))
     # print(presentation_round_latex(15.88999, 0.00167))
     # print(presentation_round_latex(0.0288999, 0.0000167))
-    sys.exit()
+    # sys.exit()
 
     tool_belt.init_matplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
@@ -1434,9 +1438,9 @@ if __name__ == "__main__":
 
     file_name = "compiled_data"
     # file_name = "spin_phonon_temp_dependence"
-    # home = common.get_nvdata_dir()
-    # path = home / "paper_materials/relaxation_temp_dependence"
-    path = Path.home() / "lab/experimental_update-2022_04_26/"
+    home = common.get_nvdata_dir()
+    path = home / "paper_materials/relaxation_temp_dependence"
+    # path = Path.home() / "lab/experimental_update-2022_04_26/"
 
     if plot_type == "rates":
         # y_params = [[[-10, 1000], "linear"]]
@@ -1454,8 +1458,11 @@ if __name__ == "__main__":
         # rates_to_plot = "Omega"
         rates_to_plot = "gamma"
     # y_params = [y_params[1]]
+    # y_params = [[None, "linear"], [[0.001, 20], "log"]]
     for el in y_params:
         y_range, yscale = el
+        # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
+        # continue
         main(
             file_name,
             path,
