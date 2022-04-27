@@ -226,8 +226,35 @@ def presentation_round(val, err):
     power_of_10 = math.floor(math.log10(val))
     mag = 10 ** power_of_10
     rounded_err = tool_belt.round_sig_figs(err, err_sig_figs) / mag
-    rounded_val = round(val / mag, 1)
+    rounded_val = round(val / mag, (power_of_10 - err_mag) + err_sig_figs - 1)
     return [rounded_val, rounded_err, power_of_10]
+
+
+def presentation_round_latex(val, err):
+    rounded_val, rounded_err, power_of_10 = presentation_round(val, err)
+    err_mag = math.floor(math.log10(rounded_err))
+    val_mag = math.floor(math.log10(rounded_val))
+
+    # Turn 0.0000016 into 0.16
+    # The round is to deal with floating point leftovers eg 9 = 9.00000002
+    shifted_rounded_err = round(rounded_err / 10 ** (err_mag + 1), 5)
+    # - 1 to remove the "0." part
+    err_last_decimal_mag = len(str(shifted_rounded_err)) - 2
+    pad_val_to = -err_mag + err_last_decimal_mag
+
+    if err_mag > val_mag:
+        return 1 / 0
+    elif err_mag == val_mag:
+        print_err = rounded_err
+    else:
+        print_err = int(str(shifted_rounded_err).replace(".", ""))
+
+    str_val = str(rounded_val)
+    decimal_pos = str_val.find(".")
+    num_padding_zeros = pad_val_to - len(str_val[decimal_pos:])
+    padded_val = str(rounded_val) + "0" * num_padding_zeros
+    # return "{}({})e{}".format(padded_val, print_err, power_of_10)
+    return r"\num{{{}({})e{}}}".format(padded_val, print_err, power_of_10)
 
 
 def omega_calc(temp):
@@ -1012,6 +1039,7 @@ def main(
         val = tool_belt.round_sig_figs(popt[ind], 5)
         err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
         print("{}: {}, {}".format(desc, val, err))
+        print(presentation_round_latex(val, err))
     samples_to_plot = ["hopper", "wu"]
     # samples_to_plot = ["hopper"]
     # samples_to_plot = ["wu"]
@@ -1373,8 +1401,13 @@ if __name__ == "__main__":
 
     # print(bose(65, 450))
     # print(bose(65, 450) * (bose(65, 450) + 1))
-    print(presentation_round(145.88, 26.55))
-    print(presentation_round(145.88, 16.55))
+    # print(presentation_round_latex(145.88, 26.55))
+    # print(presentation_round_latex(145.88, 16.55))
+    # print(presentation_round_latex(145.88, 1.2))
+    # print(presentation_round_latex(145.88, 6.55))
+    # print(presentation_round_latex(145.88999, 0.002))
+    # print(presentation_round_latex(15.88999, 0.00167))
+    # print(presentation_round_latex(0.0288999, 0.0000167))
     sys.exit()
 
     tool_belt.init_matplotlib()
