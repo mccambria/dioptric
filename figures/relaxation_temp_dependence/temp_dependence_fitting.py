@@ -80,6 +80,7 @@ figsize = [6.5, 5.0]  # default
 sample_column_title = "Sample"
 skip_column_title = "Skip"
 nominal_temp_column_title = "Nominal temp (K)"
+reported_temp_column_title = "Reported temp (K)"
 # temp_model = "Barson"
 temp_model = "comp"
 temp_column_title = "ZFS temp, {} (K)".format(temp_model)
@@ -95,7 +96,7 @@ omega_err_column_title = "Omega err (s^-1)"
 gamma_column_title = "gamma (s^-1)"
 gamma_err_column_title = "gamma err (s^-1)"
 
-bad_zfs_temps = 300.1  # Below this consider zfs temps inaccurate
+bad_zfs_temps = 300  # Below this consider zfs temps inaccurate
 
 
 # %% Processes and sum functions
@@ -148,11 +149,16 @@ def orbach_T5_free(temp, coeff_orbach, activation, coeff_T5):
 
 
 def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
-    return (
-        const
-        + (coeff_orbach * bose(activation, temp))
-        + (coeff_T5 * temp ** 5)
-    )
+    full_scaling = True
+    if full_scaling:
+        n1 = bose(activation, temp)
+        return const + (coeff_orbach * n1 * (n1 + 1)) + (coeff_T5 * temp ** 5)
+    else:
+        return (
+            const
+            + (coeff_orbach * bose(activation, temp))
+            + (coeff_T5 * temp ** 5)
+        )
 
 
 def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
@@ -166,6 +172,21 @@ def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
             const
             + (coeff1 * bose(delta1, temp))
             + (coeff2 * bose(delta2, temp))
+        )
+
+
+def double_orbach_ratio(
+    temp, orbach_coeff, gamma_to_omega_ratio, delta1, delta2, const
+):
+    full_scaling = True
+    coeff = orbach_coeff * gamma_to_omega_ratio
+    if full_scaling:
+        n1 = bose(delta1, temp)
+        n2 = bose(delta2, temp)
+        return const + (coeff * n1 * (n1 + 1)) + (coeff * n2 * (n2 + 1))
+    else:
+        return (
+            const + (coeff * bose(delta1, temp)) + (coeff * bose(delta2, temp))
         )
 
 
@@ -448,21 +469,24 @@ def gamma_calc(temp):
 
 
 def get_temp(point):
-    nominal_temp = point[nominal_temp_column_title]
-    if nominal_temp <= bad_zfs_temps:
-        temp = nominal_temp
-    else:
-        temp = point[temp_column_title]
-        if temp == "":
-            temp = point[nominal_temp_column_title]
-    return temp
+    # Return whatever is in the excel sheet, which has its own logic
+    reported_temp = point[reported_temp_column_title]
+    return reported_temp
+    # nominal_temp = point[nominal_temp_column_title]
+    # if nominal_temp <= bad_zfs_temps:
+    #     temp = nominal_temp
+    # else:
+    #     temp = point[temp_column_title]
+    #     if temp == "":
+    #         temp = point[nominal_temp_column_title]
+    # return temp
 
 
 def get_temp_bounds(point):
     if temp_lb_column_title == nominal_temp_column_title:
         return None
     nominal_temp = point[nominal_temp_column_title]
-    if nominal_temp <= bad_zfs_temps:
+    if nominal_temp < bad_zfs_temps:
         return [nominal_temp - 3, nominal_temp + 3]
     else:
         lower_bound = point[temp_lb_column_title]
@@ -733,54 +757,54 @@ def fit_simultaneous(data_points):
     # ]
 
     # Double Orbach, fixed energies
-    init_params = (450, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
-    Delta_1 = 70
-    Delta_2 = 150
-    omega_hopper_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[0],
-        Delta_1,
-        beta[2],
-        Delta_2,
-        beta[3],
-    )
-    omega_wu_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[0],
-        Delta_1,
-        beta[2],
-        Delta_2,
-        beta[4],
-    )
-    gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[1],
-        Delta_1,
-        beta[2],
-        Delta_2,
-        beta[5],
-    )
-    gamma_wu_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[1],
-        Delta_1,
-        beta[2],
-        Delta_2,
-        beta[6],
-    )
-    beta_desc = [
-        "Omega Orbach 1 coeff (s^-1)",
-        "gamma Orbach 1 coeff (s^-1)",
-        "Orbach 2 coeff (s^-1)",
-        "Omega Hopper constant (s^-1)",
-        "Omega Wu constant (s^-1)",
-        "gamma Hopper constant (s^-1)",
-        "gamma Wu constant (s^-1)",
-    ]
+    # init_params = (450, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
+    # Delta_1 = 70
+    # Delta_2 = 150
+    # omega_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[3],
+    # )
+    # omega_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[4],
+    # )
+    # gamma_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[5],
+    # )
+    # gamma_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     Delta_1,
+    #     beta[2],
+    #     Delta_2,
+    #     beta[6],
+    # )
+    # beta_desc = [
+    #     "Omega Orbach 1 coeff (s^-1)",
+    #     "gamma Orbach 1 coeff (s^-1)",
+    #     "Orbach 2 coeff (s^-1)",
+    #     "Omega Hopper constant (s^-1)",
+    #     "Omega Wu constant (s^-1)",
+    #     "gamma Hopper constant (s^-1)",
+    #     "gamma Wu constant (s^-1)",
+    # ]
 
     # Double Orbach, second Orbach fixed
     # init_params = (450, 1200, 65, 11000, 0.01, 0.01, 0.07, 0.15)
-    # delta_2 = 150
+    # delta_2 = 165
     # omega_hopper_fit_func = lambda temp, beta: double_orbach(
     #     temp,
     #     beta[0],
@@ -823,6 +847,51 @@ def fit_simultaneous(data_points):
     #     "gamma Hopper constant (s^-1)",
     #     "gamma Wu constant (s^-1)",
     # ]
+
+    # Double Orbach, fixed Orbach ratios
+    init_params = (800, 2, 65, 160, 0.01, 0.01, 0.07, 0.15)
+    omega_hopper_fit_func = lambda temp, beta: double_orbach_ratio(
+        temp,
+        beta[0],
+        1,
+        beta[2],
+        beta[3],
+        beta[4],
+    )
+    omega_wu_fit_func = lambda temp, beta: double_orbach_ratio(
+        temp,
+        beta[0],
+        1,
+        beta[2],
+        beta[3],
+        beta[5],
+    )
+    gamma_hopper_fit_func = lambda temp, beta: double_orbach_ratio(
+        temp,
+        beta[0],
+        beta[1],
+        beta[2],
+        beta[3],
+        beta[6],
+    )
+    gamma_wu_fit_func = lambda temp, beta: double_orbach_ratio(
+        temp,
+        beta[0],
+        beta[1],
+        beta[2],
+        beta[3],
+        beta[7],
+    )
+    beta_desc = [
+        "Omega Orbach 1 coeff (s^-1)",
+        "gamma: Omega Orbach coeff ratio",
+        "Orbach 1 Delta (meV)",
+        "Orbach 2 Delta (meV)",
+        "Omega Hopper constant (s^-1)",
+        "Omega Wu constant (s^-1)",
+        "gamma Hopper constant (s^-1)",
+        "gamma Wu constant (s^-1)",
+    ]
 
     # endregion
 
@@ -902,8 +971,8 @@ def get_data_points(path, file_name, temp_range=None, marker_type="sample"):
             # Unpopulated first column means this is a padding row
             if sample == "":
                 continue
-            elif sample not in ["Wu", "Hopper"]:
-                continue
+            # elif sample not in ["Wu", "Hopper"]:
+            #     continue
 
             if sample == "Hopper":
                 nv_name = sample.lower()
@@ -923,12 +992,13 @@ def get_data_points(path, file_name, temp_range=None, marker_type="sample"):
                         val = raw_val
                 point[column] = val
 
-            if not point[skip_column_title]:
-                data_points.append(point)
+            data_points.append(point)
+            # if not point[skip_column_title]:
+            #     data_points.append(point)
 
             # Set up markers if the temp is in the plotting range
             temp = get_temp(point)
-            if not (temp_range[0] < temp < temp_range[1]):
+            if (temp_range is None) or not (temp_range[0] < temp < temp_range[1]):
                 continue
             if nv_name not in nv_names:
                 if marker_type == "nv":
@@ -946,7 +1016,7 @@ def get_data_points(path, file_name, temp_range=None, marker_type="sample"):
                 point["marker"] = markers[sample]
 
     # The first shall be last
-    data_points.append(data_points.pop(0))
+    # data_points.append(data_points.pop(0))
 
     return data_points
 
