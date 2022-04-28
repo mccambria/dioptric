@@ -156,7 +156,7 @@ def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
 
 
 def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
-    full_scaling = False
+    full_scaling = True
     if full_scaling:
         n1 = bose(delta1, temp)
         n2 = bose(delta2, temp)
@@ -170,7 +170,7 @@ def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
 
 
 def triple_orbach(temp, coeff1, delta1, coeff2, delta2, coeff3, delta3, const):
-    full_scaling = False
+    full_scaling = True
     if full_scaling:
         n1 = bose(delta1, temp)
         n2 = bose(delta2, temp)
@@ -213,6 +213,184 @@ def T5_free(temp, coeff_T5):
 
 
 # %% Other functions
+
+
+def get_past_results(res):
+
+    if res == "redman":
+        res_list = [
+            476.4177416661098,
+            1233.3692525166146,
+            451.11715421405614,
+            1097.7054740581846,
+            427.14250537007416,
+            910.991175349638,
+            401.70168043525575,
+            773.8627950439235,
+            372.6536407580296,
+            627.4380470122003,
+            348.06445892052716,
+            496.9998701928061,
+            320.67189366418336,
+            342.3047734786328,
+            295.4432631793261,
+            247.00887097166634,
+            249.08174616160218,
+            128.62095826700775,
+            198.8186984331038,
+            48.32930238571747,
+            168.76315171076862,
+            24.58602161557303,
+            139.3829999492335,
+            10.140815340617547,
+            119.91885637433246,
+            4.086354429261438,
+            99.71082373901912,
+            1.465520516930376,
+        ]
+    elif res == "takahashi":
+        res_list = [
+            39.708076869092565,
+            0.2493223051639581,
+            60.18108720206314,
+            0.37926901907322497,
+            79.61728330307751,
+            0.9861140020907845,
+            99.71082373901912,
+            1.465520516930376,
+            149.1639405437168,
+            6.072965440947692,
+            200.11702947793873,
+            28.942661247167475,
+            301.43114785530264,
+            131.6537392087162,
+        ]
+    elif res == r"jarmola\_s2":
+        res_list = [
+            5.052927989240913,
+            19.026207406437706,
+            9.986632403181524,
+            20.4040603404655,
+            20.00811570715186,
+            21.377627935433164,
+            29.90545574361996,
+            20.4040603404655,
+            39.81280330854725,
+            21.377627935433164,
+            60.32233775511956,
+            19.934031568734756,
+            79.75794398477714,
+            19.47483039908755,
+            120.85851898425719,
+            21.881695573048844,
+            198.86531379873264,
+            71.82494525483934,
+            252.5578517930507,
+            191.15097529077795,
+            295.50030798309376,
+            342.3047734786328,
+            325.09776992170424,
+            393.6785028384848,
+            350.4582003215088,
+            532.9919475799622,
+            388.22259119422284,
+            688.74217883767,
+            407.2346885164248,
+            849.4734262896834,
+            479.68759119360243,
+            1292.218732318354,
+        ]
+    elif res == r"jarmola\_s3":
+        res_list = [
+            6.427375637623035,
+            0.007386199822079366,
+            9.937587857375618,
+            0.004969998701928071,
+            19.916720690963206,
+            0.0093247163010515,
+            39.91505366735992,
+            0.0163136299694379,
+            49.63491901713573,
+            0.014861572940077342,
+            69.84021996713274,
+            0.0676019952476119,
+            78.96668063167132,
+            0.09368281219580879,
+            94.35441700897722,
+            0.4361904103306001,
+            119.05215177843596,
+            1.9384267426027304,
+            160.81553767084844,
+            9.678988180373436,
+            202.87342606577826,
+            31.77051768482748,
+            297.39307938738887,
+            166.206411641365,
+            324.9857097772839,
+            219.83926488622868,
+            350.3373985191751,
+            297.6351441631313,
+            375.0871532725971,
+            375.74982364374284,
+            401.58536640626534,
+            474.3657889100621,
+            424.1313933316525,
+            585.0681784874581,
+            451.01762892382345,
+            756.0360599248723,
+            479.5883763012125,
+            910.991175349638,
+        ]
+    elif res == r"jarmola\_s8":
+        res_list = [
+            9.950478138502218,
+            0.04443992111457811,
+            19.80060613286093,
+            0.047658201793835606,
+            29.800477508344034,
+            0.053548207704057896,
+            39.67414115937397,
+            0.05878016072274918,
+            49.680800221318,
+            0.07082758421520119,
+            59.72553858233379,
+            0.10046719832671451,
+            79.56130794778521,
+            0.30042273359919514,
+            119.89239992311232,
+            2.8144446531124894,
+            160.83993406671632,
+            12.507369836566506,
+            200.15014817692008,
+            38.28211745620105,
+            252.45338834977025,
+            95.00200990674503,
+            293.3848300819487,
+            182.4456878822947,
+            322.81046691031594,
+            258.794752234262,
+            352.7565006568838,
+            334.4194266628009,
+            429.97927603430963,
+            657.3758799840733,
+            479.60160376778975,
+            954.458577073744,
+            375.1233628312281,
+            442.33264045108064,
+            398.8864136467382,
+            532.9919475799622,
+        ]
+
+    temps = []
+    vals = []
+    num_pairs = len(res_list) // 2
+    for ind in range(num_pairs):
+        temps.append(res_list[ind * 2])
+        raw_val = res_list[(ind * 2) + 1]
+        omega = raw_val / 3
+        vals.append(omega)
+
+    return temps, vals
 
 
 def presentation_round(val, err):
@@ -372,29 +550,29 @@ def fit_simultaneous(data_points):
     # region DECLARE FIT FUNCTIONS HERE
 
     # T5 fixed + constant
-    init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.01, 0.07, 0.15)
-    omega_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
-        temp, beta[1], beta[3], beta[0], beta[4]
-    )
-    omega_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
-        temp, beta[1], beta[3], beta[0], beta[5]
-    )
-    gamma_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
-        temp, beta[2], beta[3], beta[0], beta[6]
-    )
-    gamma_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
-        temp, beta[2], beta[3], beta[0], beta[7]
-    )
-    beta_desc = [
-        "T5 coeff (K^-5 s^-1)",
-        "Omega Orbach coeff (s^-1)",
-        "gamma Orbach coeff (s^-1)",
-        "Orbach Delta (meV)",
-        "Omega Hopper constant (s^-1)",
-        "Omega Wu constant (s^-1)",
-        "gamma Hopper constant (s^-1)",
-        "gamma Wu constant (s^-1)",
-    ]
+    # init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.01, 0.07, 0.15)
+    # omega_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[1], beta[3], beta[0], beta[4]
+    # )
+    # omega_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[1], beta[3], beta[0], beta[5]
+    # )
+    # gamma_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[2], beta[3], beta[0], beta[6]
+    # )
+    # gamma_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
+    #     temp, beta[2], beta[3], beta[0], beta[7]
+    # )
+    # beta_desc = [
+    #     "T5 coeff (K^-5 s^-1)",
+    #     "Omega Orbach coeff (s^-1)",
+    #     "gamma Orbach coeff (s^-1)",
+    #     "Orbach Delta (meV)",
+    #     "Omega Hopper constant (s^-1)",
+    #     "Omega Wu constant (s^-1)",
+    #     "gamma Hopper constant (s^-1)",
+    #     "gamma Wu constant (s^-1)",
+    # ]
 
     # Double Orbach
     # init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
@@ -555,96 +733,96 @@ def fit_simultaneous(data_points):
     # ]
 
     # Double Orbach, fixed energies
-    # init_params = (450, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
-    # Delta_1 = 70
-    # Delta_2 = 150
-    # omega_hopper_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[0],
-    #     Delta_1,
-    #     beta[2],
-    #     Delta_2,
-    #     beta[3],
-    # )
-    # omega_wu_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[0],
-    #     Delta_1,
-    #     beta[2],
-    #     Delta_2,
-    #     beta[4],
-    # )
-    # gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[1],
-    #     Delta_1,
-    #     beta[2],
-    #     Delta_2,
-    #     beta[5],
-    # )
-    # gamma_wu_fit_func = lambda temp, beta: double_orbach(
-    #     temp,
-    #     beta[1],
-    #     Delta_1,
-    #     beta[2],
-    #     Delta_2,
-    #     beta[6],
-    # )
-    # beta_desc = [
-    #     "Omega Orbach 1 coeff (s^-1)",
-    #     "gamma Orbach 1 coeff (s^-1)",
-    #     "Orbach 2 coeff (s^-1)",
-    #     "Omega Hopper constant (s^-1)",
-    #     "Omega Wu constant (s^-1)",
-    #     "gamma Hopper constant (s^-1)",
-    #     "gamma Wu constant (s^-1)",
-    # ]
-
-    # Double Orbach, second Orbach fixed
-    init_params = (450, 1200, 65, 11000, 0.01, 0.01, 0.07, 0.15)
-    delta_2 = 150
+    init_params = (450, 1200, 11000, 0.01, 0.01, 0.07, 0.15)
+    Delta_1 = 70
+    Delta_2 = 150
     omega_hopper_fit_func = lambda temp, beta: double_orbach(
         temp,
         beta[0],
+        Delta_1,
         beta[2],
+        Delta_2,
         beta[3],
-        delta_2,
-        beta[4],
     )
     omega_wu_fit_func = lambda temp, beta: double_orbach(
         temp,
         beta[0],
+        Delta_1,
         beta[2],
-        beta[3],
-        delta_2,
-        beta[5],
+        Delta_2,
+        beta[4],
     )
     gamma_hopper_fit_func = lambda temp, beta: double_orbach(
         temp,
         beta[1],
+        Delta_1,
         beta[2],
-        beta[3],
-        delta_2,
-        beta[6],
+        Delta_2,
+        beta[5],
     )
     gamma_wu_fit_func = lambda temp, beta: double_orbach(
         temp,
         beta[1],
+        Delta_1,
         beta[2],
-        beta[3],
-        delta_2,
-        beta[7],
+        Delta_2,
+        beta[6],
     )
     beta_desc = [
         "Omega Orbach 1 coeff (s^-1)",
         "gamma Orbach 1 coeff (s^-1)",
-        "Orbach 1 Delta (meV)",
         "Orbach 2 coeff (s^-1)",
         "Omega Hopper constant (s^-1)",
         "Omega Wu constant (s^-1)",
         "gamma Hopper constant (s^-1)",
         "gamma Wu constant (s^-1)",
     ]
+
+    # Double Orbach, second Orbach fixed
+    # init_params = (450, 1200, 65, 11000, 0.01, 0.01, 0.07, 0.15)
+    # delta_2 = 150
+    # omega_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     delta_2,
+    #     beta[4],
+    # )
+    # omega_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     delta_2,
+    #     beta[5],
+    # )
+    # gamma_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[3],
+    #     delta_2,
+    #     beta[6],
+    # )
+    # gamma_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[3],
+    #     delta_2,
+    #     beta[7],
+    # )
+    # beta_desc = [
+    #     "Omega Orbach 1 coeff (s^-1)",
+    #     "gamma Orbach 1 coeff (s^-1)",
+    #     "Orbach 1 Delta (meV)",
+    #     "Orbach 2 coeff (s^-1)",
+    #     "Omega Hopper constant (s^-1)",
+    #     "Omega Wu constant (s^-1)",
+    #     "gamma Hopper constant (s^-1)",
+    #     "gamma Wu constant (s^-1)",
+    # ]
 
     # endregion
 
@@ -1307,6 +1485,66 @@ def main(
         #             lw=line_width,
         #         )
 
+    # Legend x location
+    x_loc = 0.14
+    # x_loc = 0.16
+    # x_loc = 0.22
+
+    # %% Plot past data
+    leg0 = None
+    plot_past_data = False
+    if plot_past_data:
+        past_results = [
+            "redman",
+            "takahashi",
+            r"jarmola\_s2",
+            r"jarmola\_s3",
+            r"jarmola\_s8",
+        ]
+        past_result_markers_list = ["^", "X", "D", "H", "P"]
+        past_result_patches = []
+        for ind in range(len(past_results)):
+            res = past_results[ind]
+            marker = past_result_markers_list[ind]
+            temps, vals = get_past_results(res)
+            ax.plot(
+                temps,
+                vals,
+                label=res,
+                marker=marker,
+                linestyle="None",
+                ms=marker_size,
+                markeredgewidth=marker_edge_width,
+                color="0.0",  # Black
+                markerfacecolor="0.5",  # Dark gray
+                zorder=500,
+            )
+            patch = mlines.Line2D(
+                [],
+                [],
+                color="0.0",
+                markerfacecolor="0.5",  # Dark gray
+                marker=marker,
+                linestyle="None",
+                markersize=marker_size,
+                markeredgewidth=marker_edge_width,
+                label=res,
+            )
+            past_result_patches.append(patch)
+        if yscale == "linear":
+            loc = "upper left"
+            pos = (0, 0.82)
+        elif yscale == "log":
+            loc = "lower right"
+            pos = None
+        leg0 = ax.legend(
+            handles=past_result_patches,
+            loc=loc,
+            title="Past results",
+            bbox_to_anchor=pos,
+            ncol=2,
+        )
+
     # %% Legend
 
     leg1 = None
@@ -1365,9 +1603,6 @@ def main(
                 label=label,
             )
             nv_patches.append(patch)
-        x_loc = 0.14
-        # x_loc = 0.16
-        # x_loc = 0.22
         ax.legend(
             handles=nv_patches,
             loc="upper left",
@@ -1376,6 +1611,8 @@ def main(
             bbox_to_anchor=(x_loc, 1.0),
         )
 
+    if leg0 is not None:
+        ax.add_artist(leg0)
     if leg1 is not None:
         ax.add_artist(leg1)
 
@@ -1425,7 +1662,7 @@ if __name__ == "__main__":
     # plot_type = "normalized_residuals"
 
     rates_to_plot = "both"
-    # rates_to_plot = 'Omega'
+    # rates_to_plot = "Omega"
     # rates_to_plot = 'gamma'
 
     # temp_range = [0, 600]

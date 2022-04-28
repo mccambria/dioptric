@@ -34,6 +34,9 @@ from random import shuffle
 import matplotlib.pyplot as plt
 import labrad
 from utils.tool_belt import States
+import shutil
+import analysis.relaxation_rate_analysis as relaxation_rate_analysis
+from pathlib import Path
 
 
 # %% Functions
@@ -161,6 +164,9 @@ def unpack_interleave(data, start_run=0, stop_run=None):
     avg_sig_counts_master_list = []
     avg_ref_counts_master_list = []
     norm_sig_counts_master_list = []
+
+    # List of the generated file names
+    file_names = []
 
     # %% Average the counts over the iterations, for each experiment
     num_exp = len(params_master_list)
@@ -291,8 +297,13 @@ def unpack_interleave(data, start_run=0, stop_run=None):
             )
             tool_belt.save_raw_data(individual_raw_data, file_path)
             tool_belt.save_figure(individual_fig, file_path)
+
+            file_names.append(Path(file_path).name)
+
             # Sleep for 1.1 seconds so the files don't save over each other
             time.sleep(1.1)
+
+    return file_names
 
 
 # %% Main
@@ -839,7 +850,7 @@ def main_with_cxn(
 if __name__ == "__main__":
 
     path = "pc_hahn/branch_master/t1_dq_main/data_collections"
-    folder = "wu-nv6_2022_04_14-485K-2"
+    folder = "wu-nv6_2022_04_14-450K"
     # folder = "main1-300K"
     collate_incremental(path, folder)
     full_path_to_incremental = "{}/{}/incremental".format(path, folder)
@@ -848,7 +859,15 @@ if __name__ == "__main__":
     )
 
     # start = 75
-    # unpack_interleave(data, start, start + 24)
-    unpack_interleave(data)
+    # file_names = unpack_interleave(data, start, start + 24)
+    file_names = unpack_interleave(data)
+
+    save_folder_path = common.get_nvdata_dir() / path / folder
+    for el in file_names:
+        path_to_file = tool_belt.get_raw_data_path(el)
+        shutil.copy(str(path_to_file), str(save_folder_path))
+        shutil.copy(
+            str(path_to_file.with_suffix(".svg")), str(save_folder_path)
+        )
 
     # plt.show(block=True)
