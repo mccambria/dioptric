@@ -253,14 +253,14 @@ def main(zfs, zfs_err):
 
 if __name__ == "__main__":
 
-    # files = [
-    #     "2022_04_15-19_10_45-wu-nv6_2022_04_14",
-    #     "2022_04_15-19_31_03-wu-nv6_2022_04_14",
-    # ]
+    files = [
+        "2022_04_25-13_49_18-wu-nv6_2022_04_14",
+        "2022_04_25-14_09_11-wu-nv6_2022_04_14",
+    ]
 
-    # main_files(files)
+    main_files(files)
 
-    process_temp_dep_res_files()
+    # process_temp_dep_res_files()
 
     #    print(zfs_from_temp(280))
 
