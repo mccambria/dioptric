@@ -29,77 +29,13 @@ from figures.relaxation_temp_dependence.temp_dependence_fitting import (
     omega_calc,
     gamma_calc,
 )
+from analysis import relaxation_rate_analysis
 
 ms = 7
 lw = 1.75
 
 
 # %% Functions
-
-
-def get_data_decay(folder):
-    """Return the data to plot."""
-
-    start_run = None
-    stop_run = None
-    start_time_ind = None
-    end_time_ind = None
-
-    num_runs = data["num_runs"]
-    num_steps = data["num_steps"]
-    sig_counts = np.array(data["sig_counts"])
-    ref_counts = np.array(data["ref_counts"])
-    time_range = np.array(data["relaxation_time_range"])
-
-    # _, ax = plt.subplots()
-    # counts_flatten = sig_counts[:, -3]
-    # # counts_flatten = ref_counts.flatten()
-    # bins = np.arange(0, max(counts_flatten) + 1, 1)
-    # ax.hist(counts_flatten, bins, density=True)
-
-    # Calculate time arrays in ms
-    min_time, max_time = time_range / 10 ** 6
-    times = np.linspace(min_time, max_time, num=num_steps)
-    # times[0] = 0.5
-
-    # Calculate the average signal counts over the runs, and ste
-    avg_sig_counts = np.average(sig_counts[start_run:stop_run, :], axis=0)
-    avg_ref_counts = np.average(ref_counts[start_run:stop_run, :], axis=0)
-    std_sig_counts = np.std(
-        sig_counts[start_run:stop_run, :],
-        axis=0,
-        ddof=1,
-    )
-    std_ref_counts = np.std(
-        ref_counts[start_run:stop_run, :],
-        axis=0,
-        ddof=1,
-    )
-    # std_sig_counts = np.sqrt(avg_sig_counts)
-    ste_sig_counts = std_sig_counts / np.sqrt(num_runs)
-    ste_ref_counts = std_ref_counts / np.sqrt(num_runs)
-    # print(ste_sig_counts)
-
-    single_ref = False
-    if single_ref:
-        # Assume reference is constant and can be approximated to one value
-        avg_ref = np.average(ref_counts[start_run:stop_run, :])
-        # Divide signal by reference to get normalized counts and st error
-        norm_avg_sig = avg_sig_counts / avg_ref
-        norm_avg_sig_ste = ste_sig_counts / avg_ref
-    else:
-        # Divide signal by reference to get normalized counts and st error
-        norm_avg_sig = avg_sig_counts / avg_ref_counts
-        norm_avg_sig_ste = norm_avg_sig * np.sqrt(
-            (ste_sig_counts / avg_sig_counts) ** 2
-            + (ste_ref_counts / avg_ref_counts) ** 2
-        )
-
-    return (
-        norm_avg_sig[start_time_ind:end_time_ind],
-        norm_avg_sig_ste[start_time_ind:end_time_ind],
-        times[start_time_ind:end_time_ind],
-    )
 
 
 def zero_to_one_threshold(val):
@@ -192,14 +128,14 @@ def main(data_sets, dosave=False, draft_version=True):
     ax.set_position([l + shift, b, w - shift, h])
 
     ax.set_xlabel(r"Wait time $\tau$ (ms)")
-    ax.set_ylabel(r"P_{+1,+1}(\tau) - P_{+1,-1}(\tau)")
+    ax.set_ylabel(r"$P_{+1,+1}(\tau) - P_{+1,-1}(\tau)$")
 
     min_time = 0.0
-    max_time = 15.0
-    xtick_step = 5
-    # max_time = 12.5
+    # max_time = 15.0
+    # xtick_step = 5
+    max_time = 12.5
     # max_time = 9
-    # xtick_step = 4
+    xtick_step = 4
     times = [min_time, max_time]
     ax.set_xticks(np.arange(min_time, max_time + xtick_step, xtick_step))
 
@@ -219,14 +155,17 @@ def main(data_sets, dosave=False, draft_version=True):
             gamma = gamma_calc(temp)
             Omega = omega_calc(temp)
             smooth_t = np.linspace(times[0], 1.1 * times[-1], 1000)
-            fit_decay = np.exp(-(2 * gamma + Omega) * smooth_t)
+            fit_decay = np.exp(-(1 / 1000) * (2 * gamma + Omega) * smooth_t)
             ax.plot(smooth_t, fit_decay, color=color, linewidth=lw)
 
         if data_set["skip"]:
             continue
 
+        path = data_set["path"]
         folder = data_set["folder"]
-        data_decay, ste_decay, times_decay = get_data_decay(folder)
+        data_decay, ste_decay, times_decay = relaxation_rate_analysis.main(
+            path, folder, return_gamma_data=True
+        )
 
         # Clip anything beyond the max time
         try:
@@ -234,7 +173,7 @@ def main(data_sets, dosave=False, draft_version=True):
         except:
             times_clip = None
         times_decay = times_decay[:times_clip]
-        signal_decay = signal_decay[:times_clip]
+        data_decay = data_decay[:times_clip]
         ste_decay = ste_decay[:times_clip]
 
         plot_errors = False
@@ -271,10 +210,9 @@ def main(data_sets, dosave=False, draft_version=True):
     )
     x_buffer = 0.02 * max_time
     ax.set_xlim([-x_buffer, max_time + x_buffer])
-    # ax.set_ylim([0.3, 1.06])
-    # ax.set_ylim([0.009, 1.1])
-    ax.set_ylim([0.05, 1.1])
-    ax.set_yscale("log")
+    ax.set_ylim([-0.05, 1.05])
+    # ax.set_ylim([0.05, 1.1])
+    # ax.set_yscale("log")
 
     # %% Experimental layout
 
@@ -330,37 +268,58 @@ if __name__ == "__main__":
 
     decay_data_sets = [
         {
-            "temp": 380.168,
+            "temp": 415.555,
             "skip": False,
-            "folder": "pc_hahn/branch_master/t1_interleave_knill/data_collections/hopper-search-400K",
+            "path": "pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/",
+            "folder": "hopper-search-425K",
             "Omega": None,
             "gamma": None,
         },
-        {
-            "temp": 337.584,
-            "skip": False,
-            "folder": "pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/hopper-search-350K",
-            "Omega": None,
-            "gamma": None,
-        },
+        # {
+        #     "temp": 401.590,
+        #     "skip": False,
+        #     "path": "pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/",
+        #     "folder": "hopper-search-412.5K",
+        #     "Omega": None,
+        #     "gamma": None,
+        # },
+        # {
+        #     "temp": 380.168,
+        #     "skip": False,
+        #     "path": "pc_hahn/branch_master/t1_interleave_knill/data_collections/",
+        #     "folder": "hopper-search-400K",
+        #     "Omega": None,
+        #     "gamma": None,
+        # },
+        # {
+        #     "temp": 337.584,
+        #     "skip": False,
+        #     "path": "pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/",
+        #     "folder": "hopper-search-350K",
+        #     "Omega": None,
+        #     "gamma": None,
+        # },
         {
             "temp": 295,
             "skip": False,
-            "folder": "pc_hahn/branch_cryo-setup/t1_interleave_knill/hopper-nv1_2021_03_16-300K",
+            "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
+            "folder": "hopper-nv1_2021_03_16-300K",
             "Omega": None,
             "gamma": None,
         },
         {
             "temp": 250,
             "skip": False,
-            "folder": "pc_hahn/branch_cryo-setup/t1_interleave_knill/hopper-nv1_2021_03_16-250K",
+            "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
+            "folder": "hopper-nv1_2021_03_16-250K",
             "Omega": None,
             "gamma": None,
         },
         {
             "temp": 200,
             "skip": False,
-            "folder": "pc_hahn/branch_cryo-setup/t1_interleave_knill/hopper-nv1_2021_03_16-200K-gamma_minus_1",
+            "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
+            "folder": "hopper-nv1_2021_03_16-200K-gamma_minus_1",
             "Omega": None,
             "gamma": None,
         },

@@ -175,7 +175,7 @@ def get_data_lists(folder_name):
             #     crash = 1 / 0
 
             # Assume reference is constant and can be approximated to one value
-            single_ref = False
+            single_ref = True
             if single_ref:
                 avg_sig_counts = numpy.average(sig_counts[:num_runs], axis=0)
                 ste_sig_counts = numpy.std(
@@ -398,7 +398,15 @@ def get_data_lists(folder_name):
 # %% Main
 
 
-def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
+def main(
+    path,
+    folder,
+    omega=None,
+    omega_ste=None,
+    doPlot=False,
+    offset=True,
+    return_gamma_data=False,
+):
 
     slow = True
 
@@ -625,6 +633,13 @@ def main(path, folder, omega=None, omega_ste=None, doPlot=False, offset=True):
 
         # MCC
         print(gamma_opti_params)
+
+        if return_gamma_data:
+            amplitude = gamma_opti_params[1]
+            data_decay = plus_relaxation_counts / amplitude
+            ste_decay = plus_relaxation_ste / amplitude
+            times_decay = plus_plus_time
+            return data_decay, ste_decay, times_decay
 
     except Exception as e:
         gamma_fit_failed = True
