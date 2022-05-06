@@ -250,7 +250,9 @@ def main(
 
     args = [opti_image, image_len_x, image_len_y, False]
     # Partial function with everything but the circle parameters filled in
-    cost_func_partial = partial(cost_func, image=args[0], x_lim=args[1], y_lim=args[2], debug=args[2])
+    cost_func_partial = partial(
+        cost_func, image=args[0], x_lim=args[1], y_lim=args[2], debug=args[2]
+    )
     plot_circles = []
 
     if minimize_type == "manual":
@@ -291,13 +293,18 @@ def main(
             plot_circles.append(opti_circle)
 
     elif minimize_type == "plotting":
-
+        half_range = 18 #for circle 3
+        # half_range = 20 #for circle 4
         num_points = 100
         half_len_x = image_len_x // 2
         half_len_y = image_len_x // 2
-        x_linspace = np.linspace(half_len_x - 15, half_len_x + 15, num_points)
-        y_linspace = np.linspace(half_len_y - 15, half_len_y + 15, num_points)
+        x_linspace = np.linspace(half_len_x - half_range, half_len_x + half_range, num_points)
+        y_linspace = np.linspace(half_len_y - half_range, half_len_y + half_range, num_points)
         reconstruction = []
+        print(image_len_x)
+        print(x_linspace)
+        
+        # return
 
         # x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
         # y_linspace = np.linspace(0, image_len_y, image_len_y, endpoint=False)
@@ -487,9 +494,9 @@ if __name__ == "__main__":
 
     # tool_belt.init_matplotlib()
 
-    # circles = [3]
+    circles = [3]
     # circles = [4]
-    circles = [3, 4]
+    # circles = [3, 4]
     for circle in circles:
 
         # Fig. 3

@@ -25,6 +25,7 @@ from figures.relaxation_temp_dependence.temp_dependence_fitting import (
     nominal_temp_column_title,
     low_res_file_column_title,
     high_res_file_column_title,
+    bad_zfs_temps,
 )
 import matplotlib.pyplot as plt
 from utils import common
@@ -68,12 +69,12 @@ def process_temp_dep_res_files():
     for ind in range(len(resonances)):
         nominal_temp = nominal_temps[ind]
         res_pair = resonances[ind]
-        print("Nominal temp: {}".format(nominal_temp))
+        # print("Nominal temp: {}".format(nominal_temp))
         try:
             main_files(res_pair)
         except Exception as exc:
             print(exc)
-        print()
+        # print()
 
 
 def sub_room_zfs_from_temp(temp):
@@ -105,7 +106,7 @@ def zfs_from_temp(temp):
     if type(temp) in [list, numpy.ndarray]:
         ret_vals = []
         for val in temp:
-            if val < 300:
+            if val < bad_zfs_temps:
                 zfs = sub_room_zfs_from_temp(val)
             else:
                 zfs = super_room_zfs_from_temp(val)
@@ -113,7 +114,7 @@ def zfs_from_temp(temp):
         ret_vals = numpy.array(ret_vals)
         return ret_vals
     else:
-        if temp < 300:
+        if temp < bad_zfs_temps:
             return sub_room_zfs_from_temp(temp)
         else:
             return super_room_zfs_from_temp(temp)
@@ -240,9 +241,11 @@ def main(zfs, zfs_err):
         results = root_scalar(zfs_diff, x0=x0, x1=x1)
         temp_lower = results.root
 
-    print("T: [{}\t{}\t{}]".format(temp_lower, temp_mid, temp_higher))
-    temp_error = numpy.average([temp_mid - temp_lower, temp_higher - temp_mid])
-    print("T: [{}\t{}]".format(temp_mid, temp_error))
+    print("{}\t{}\t{}".format(temp_lower, temp_mid, temp_higher))
+
+    # print("T: [{}\t{}\t{}]".format(temp_lower, temp_mid, temp_higher))
+    # temp_error = numpy.average([temp_mid - temp_lower, temp_higher - temp_mid])
+    # print("T: [{}\t{}]".format(temp_mid, temp_error))
 
 
 # %% Run the file
@@ -251,8 +254,8 @@ def main(zfs, zfs_err):
 if __name__ == "__main__":
 
     files = [
-        "2022_04_04-13_33_15-wu-nv1_2022_03_16",
-        "2022_04_04-13_53_00-wu-nv1_2022_03_16",
+        "2022_04_25-13_49_18-wu-nv6_2022_04_14",
+        "2022_04_25-14_09_11-wu-nv6_2022_04_14",
     ]
 
     main_files(files)

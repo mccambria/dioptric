@@ -1227,6 +1227,22 @@ def get_raw_data(
     nvdata_dir (ie nvdata_dir / pc_folder / routine / year_month / file.txt)
     """
 
+    file_path = get_raw_data_path(file_name, path_from_nvdata, nvdata_dir)
+
+    with file_path.open() as f:
+        res = json.load(f)
+        return res
+
+
+def get_raw_data_path(
+    file_name,
+    path_from_nvdata=None,
+    nvdata_dir=None,
+):
+    """
+    Same as get_raw_data, but just returns the path to the file
+    """
+
     if nvdata_dir is None:
         nvdata_dir = common.get_nvdata_dir()
 
@@ -1237,9 +1253,7 @@ def get_raw_data(
     file_name_ext = "{}.txt".format(file_name)
     file_path = data_dir / file_name_ext
 
-    with file_path.open() as f:
-        res = json.load(f)
-        return res
+    return file_path
 
 
 # %%  Save utils
