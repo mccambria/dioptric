@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import time
 import json
 import labrad
-
+from utils.tool_belt import Mod_types
 
 # %% Functions
 
@@ -140,16 +140,31 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window,
 
     wiring = tool_belt.get_pulse_streamer_wiring(cxn)
     imaging_laser = nv_sig['imaging_laser']
-    imaging_laser_key = 'do_{}_dm'.format(imaging_laser)
-    cxn.pulse_streamer.constant([wiring[imaging_laser_key]])
-
+    
+    mod_type = tool_belt.get_registry_entry_no_cxn('mod_type',
+                      ['Config', 'Optics', imaging_laser])
+    mod_type = eval(mod_type)
+    if mod_type is Mod_types.DIGITAL:
+        imaging_laser_key = 'do_{}_dm'.format(imaging_laser)
+        cxn.pulse_streamer.constant([wiring[imaging_laser_key]])
+    elif mod_type is Mod_types.ANALOG:
+        imaging_laser_key = 'ao_{}_am'.format(imaging_laser)
+        imaging_laser_power = nv_sig['imaging_laser_power']
+        analog_out = tool_belt.get_registry_entry_no_cxn(imaging_laser_key,
+                      ['Config', 'Wiring', 'PulseStreamer'])
+        if analog_out == 0:
+            cxn.pulse_streamer.constant([],imaging_laser_power)
+        elif analog_out == 1:
+            cxn.pulse_streamer.constant([],0,imaging_laser_power)
+            
     num_tags = 0
     collection_index = 0
 
     diff_window_ps = diff_window * 1000
     differences = []  # Create a list to hold the differences
     differences_append = differences.append  # Skip unnecessary lookup
-    num_bins = int(2 * diff_window) + 1  # 1 ns bins in ps
+    # num_bins = int(2*1 * diff_window) + 1  # 1 ns bins in ps
+    num_bins = int(2*3 * diff_window) + 1  # 0.125ns 0.5 ns bins in ps
 
     # Expose the stream
     cxn.apd_tagger.start_tag_stream(apd_indices, [], False)

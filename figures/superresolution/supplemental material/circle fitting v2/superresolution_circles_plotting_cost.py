@@ -332,7 +332,8 @@ def main(
                 # Slow singlethreaded version
                 cost_func_lambda = lambda r: cost_func([y, x, r], *args)
                 cost_vals = [cost_func_lambda(r) for r in rad_linspace]
-                cost_value = 0.5 - min(cost_vals)
+                # cost_value = 0.5 - min(cost_vals)
+                cost_value = min(cost_vals)
 
                 # print(cost_value)
                 # image_copy[int(y)][int(x)] = cost_value
@@ -348,7 +349,7 @@ def main(
             max(y_linspace),
             min(y_linspace),
         ]
-        img = ax.imshow(reconstruction, cmap="inferno", extent=extent)
+        img = ax.imshow(reconstruction, cmap="inferno_r", extent=extent)
         _ = plt.colorbar(img)
 
         # figlog, ax = plt.subplots()
@@ -463,8 +464,8 @@ def main(
         # Plot the center
         circle_patch = Circle(
             (circle[1], circle[0]),
-            1,
-            fill=False,
+            0.5,
+            fill="w",
             color="w",
         )
         ax.add_patch(circle_patch)

@@ -185,7 +185,7 @@ def get_seq(pulse_streamer, config, args):
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                             'integrated_520', None, train_532)
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                            'laserglow_589', [aom_ao_589_pwr], train_589)
+                            'laserglow_589', aom_ao_589_pwr, train_589)
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                             'cobolt_638', [aom_ao_589_pwr, aom_ao_589_pwr], train_638)
         

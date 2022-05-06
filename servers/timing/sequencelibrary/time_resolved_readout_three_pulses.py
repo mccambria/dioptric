@@ -230,6 +230,6 @@ if __name__ == '__main__':
     # args = [100000,100000, 200000, 100000,
     #         'integrated_520', 'cobolt_638', 'cobolt_638',
     #         None,0.8, 0.1,   0]
-    args = [1000000.0, 1000000.0, 20000.0, 10000.0, 'integrated_520', 'cobolt_638', 'cobolt_638', None, 0.66, 0.56, 0]
+    args = [200000.0, 1000000.0, 75000.0, 'cobolt_638', 'integrated_520', 'cobolt_638', 0.69, None, 0.61, 1]
     seq = get_seq(None, config, args)[0]
     seq.plot()
