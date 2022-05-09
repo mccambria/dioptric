@@ -1710,7 +1710,7 @@ def main(
 
 if __name__ == "__main__":
 
-    # print(bose(65, 450))
+    print(bose(0.01241, 150))
     # print(bose(65, 450) * (bose(65, 450) + 1))
     # print(presentation_round_latex(145.88, 26.55))
     # print(presentation_round_latex(145.88, 16.55))
@@ -1719,7 +1719,7 @@ if __name__ == "__main__":
     # print(presentation_round_latex(145.88999, 0.002))
     # print(presentation_round_latex(15.88999, 0.00167))
     # print(presentation_round_latex(0.0288999, 0.0000167))
-    # sys.exit()
+    sys.exit()
 
     tool_belt.init_matplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
