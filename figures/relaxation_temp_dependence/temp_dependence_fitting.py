@@ -597,50 +597,50 @@ def fit_simultaneous(data_points):
     # ]
 
     # Double Orbach
-    init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
-    omega_hopper_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[0],
-        beta[2],
-        beta[3],
-        beta[4],
-        beta[5],
-    )
-    omega_wu_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[0],
-        beta[2],
-        beta[3],
-        beta[4],
-        beta[6],
-    )
-    gamma_hopper_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[1],
-        beta[2],
-        beta[3],
-        beta[4],
-        beta[7],
-    )
-    gamma_wu_fit_func = lambda temp, beta: double_orbach(
-        temp,
-        beta[1],
-        beta[2],
-        beta[3],
-        beta[4],
-        beta[8],
-    )
-    beta_desc = [
-        "Omega Orbach 1 coeff (s^-1)",
-        "gamma Orbach 1 coeff (s^-1)",
-        "Orbach 1 Delta (meV)",
-        "Orbach 2 coeff (s^-1)",
-        "Orbach 2 Delta (meV)",
-        "Omega Hopper constant (s^-1)",
-        "Omega Wu constant (s^-1)",
-        "gamma Hopper constant (s^-1)",
-        "gamma Wu constant (s^-1)",
-    ]
+    # init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
+    # omega_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     beta[4],
+    #     beta[5],
+    # )
+    # omega_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[0],
+    #     beta[2],
+    #     beta[3],
+    #     beta[4],
+    #     beta[6],
+    # )
+    # gamma_hopper_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[3],
+    #     beta[4],
+    #     beta[7],
+    # )
+    # gamma_wu_fit_func = lambda temp, beta: double_orbach(
+    #     temp,
+    #     beta[1],
+    #     beta[2],
+    #     beta[3],
+    #     beta[4],
+    #     beta[8],
+    # )
+    # beta_desc = [
+    #     "Omega Orbach 1 coeff (s^-1)",
+    #     "gamma Orbach 1 coeff (s^-1)",
+    #     "Orbach 1 Delta (meV)",
+    #     "Orbach 2 coeff (s^-1)",
+    #     "Orbach 2 Delta (meV)",
+    #     "Omega Hopper constant (s^-1)",
+    #     "Omega Wu constant (s^-1)",
+    #     "gamma Hopper constant (s^-1)",
+    #     "gamma Wu constant (s^-1)",
+    # ]
 
     # Triple Orbach
     # init_params = (450, 1200, 65, 1200, 95, 11000, 150, 0.01, 0.01, 0.07, 0.15)
@@ -929,7 +929,13 @@ def fit_simultaneous(data_points):
     )
 
 
-def get_data_points(path, file_name, temp_range=None, marker_type="sample"):
+def get_data_points(
+    path,
+    file_name,
+    temp_range=None,
+    marker_type="sample",
+    override_skips=False,
+):
 
     file_path = path / "{}.xlsx".format(file_name)
     csv_file_path = path / "{}.csv".format(file_name)
@@ -967,10 +973,11 @@ def get_data_points(path, file_name, temp_range=None, marker_type="sample"):
 
             # Skip checks
             # Unpopulated first column means this is a padding row
-            if sample == "":
-                continue
-            elif sample not in ["Wu", "Hopper"]:
-                continue
+            if not override_skips:
+                if sample == "":
+                    continue
+                elif sample not in ["Wu", "Hopper"]:
+                    continue
 
             if sample == "Hopper":
                 nv_name = sample.lower()
@@ -990,8 +997,8 @@ def get_data_points(path, file_name, temp_range=None, marker_type="sample"):
                         val = raw_val
                 point[column] = val
 
-            data_points.append(point)
-            if not point[skip_column_title]:
+            # data_points.append(point)
+            if override_skips or not point[skip_column_title]:
                 data_points.append(point)
 
             # Set up markers if the temp is in the plotting range
@@ -1016,7 +1023,7 @@ def get_data_points(path, file_name, temp_range=None, marker_type="sample"):
                 point["marker"] = markers[sample]
 
     # The first shall be last
-    data_points.append(data_points.pop(0))
+    # data_points.append(data_points.pop(0))
 
     return data_points
 
@@ -1744,6 +1751,7 @@ if __name__ == "__main__":
     # xscale = "log"
 
     file_name = "compiled_data"
+    # file_name = "compiled_data-single_ref"
     # file_name = "spin_phonon_temp_dependence"
     home = common.get_nvdata_dir()
     path = home / "paper_materials/relaxation_temp_dependence"
