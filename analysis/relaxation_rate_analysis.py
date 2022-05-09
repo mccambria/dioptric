@@ -40,6 +40,7 @@ from utils.tool_belt import States
 from figures.relaxation_temp_dependence.temp_dependence_fitting import (
     omega_calc,
     gamma_calc,
+    get_data_points,
 )
 
 # %% Constants
@@ -83,7 +84,7 @@ def get_folder_list(keyword):
 
 # This function sorts the data from one folder of an experiment and passes it
 # into main
-def get_data_lists(folder_name):
+def get_data_lists(folder_name, simple_print=False):
     # Get the file list from this folder
     file_list = tool_belt.get_file_list(folder_name, ".txt")
 
@@ -142,7 +143,7 @@ def get_data_lists(folder_name):
             ref_counts = numpy.array(data["ref_counts"])
 
             # For low counts/run, combine runs to avoid div by zero in normalization, at least
-            combine_runs = 2
+            combine_runs = 1
             if combine_runs > 1:
                 sig_counts_buffer = []
                 ref_counts_buffer = []
@@ -374,8 +375,9 @@ def get_data_lists(folder_name):
                 )
 
         except Exception as exc:
-            print(exc)
-            print("Skipping {}".format(str(file)))
+            if not simple_print:
+                print(exc)
+                print("Skipping {}".format(str(file)))
             continue
 
     omega_exp_list = [
@@ -406,6 +408,7 @@ def main(
     doPlot=False,
     offset=True,
     return_gamma_data=False,
+    simple_print=True,
 ):
 
     slow = True
@@ -413,7 +416,7 @@ def main(
     path_folder = path + folder
     # Get the file list from the folder
     omega_exp_list, gamma_exp_list, num_runs, splitting_MHz = get_data_lists(
-        path_folder
+        path_folder, simple_print=simple_print
     )
 
     # %% Fit the data
@@ -479,7 +482,8 @@ def main(
                 #     cov_arr = numpy.array([[0,0],[0,0]])
 
             # MCC
-            print(omega_opti_params)
+            if not simple_print:
+                print(omega_opti_params)
 
         except Exception:
 
@@ -504,11 +508,12 @@ def main(
             omega = omega_opti_params[0] / 3.0
             omega_ste = numpy.sqrt(cov_arr[0, 0]) / 3.0
 
-            print(
-                "Omega: {} +/- {} s^-1".format(
-                    "%.3f" % (omega * 1000), "%.3f" % (omega_ste * 1000)
+            if not simple_print:
+                print(
+                    "Omega: {} +/- {} s^-1".format(
+                        "%.3f" % (omega * 1000), "%.3f" % (omega_ste * 1000)
+                    )
                 )
-            )
             # Plotting the data
             if doPlot:
                 zero_time_linspace = numpy.linspace(
@@ -555,6 +560,10 @@ def main(
                     verticalalignment="top",
                     bbox=props,
                 )
+
+    if omega_fit_failed:
+        print("Omega fit failed")
+        return
 
     if ax is not None:
         ax.set_title("Omega")
@@ -632,7 +641,8 @@ def main(
             #     cov_arr = numpy.array([[0,0],[0,0]])
 
         # MCC
-        print(gamma_opti_params)
+        if not simple_print:
+            print(gamma_opti_params)
 
         if return_gamma_data:
             amplitude = gamma_opti_params[1]
@@ -643,7 +653,8 @@ def main(
 
     except Exception as e:
         gamma_fit_failed = True
-        print(e)
+        if not simple_print:
+            print(e)
 
         if doPlot:
             ax = axes_pack[1]
@@ -668,12 +679,12 @@ def main(
         # gamma = 0.070
         # gamma_opti_params[0] = (2 * gamma) + omega
         # gamma_opti_params[1] = 0.20
-
-        print(
-            "gamma: {} +/- {} s^-1".format(
-                "%.3f" % (gamma * 1000), "%.3f" % (gamma_ste * 1000)
+        if not simple_print:
+            print(
+                "gamma: {} +/- {} s^-1".format(
+                    "%.3f" % (gamma * 1000), "%.3f" % (gamma_ste * 1000)
+                )
             )
-        )
 
         # Plotting
         if doPlot:
@@ -724,11 +735,10 @@ def main(
                 bbox=props,
             )
 
-    ax.set_title("gamma")
-    # ax.set_title('(+1,+1) - (+1,-1)')
-    # ax.set_title('(-1,-1) - (-1,+1)')
-
     if doPlot:
+        ax.set_title("gamma")
+        # ax.set_title('(+1,+1) - (+1,-1)')
+        # ax.set_title('(-1,-1) - (-1,+1)')
         fig.canvas.draw()
         fig.canvas.flush_events()
 
@@ -771,20 +781,24 @@ def main(
         tool_belt.save_raw_data(raw_data, file_path)
         tool_belt.save_figure(fig, file_path)
 
-        # String to paste into excel
-        try:
-            print(
-                "{}\t{}\t{}\t{}".format(
-                    "%.3f" % (omega * 1000),
-                    "%.3f" % (omega_ste * 1000),
-                    "%.3f" % (gamma * 1000),
-                    "%.3f" % (gamma_ste * 1000),
-                )
-            )
-        except Exception as exc:
-            print(exc)
+    if gamma_fit_failed:
+        print("gamma fit failed")
+        return
 
-        return gamma, gamma_ste
+    # String to paste into excel
+    try:
+        print(
+            "{}\t{}\t{}\t{}".format(
+                "%.3f" % (omega * 1000),
+                "%.3f" % (omega_ste * 1000),
+                "%.3f" % (gamma * 1000),
+                "%.3f" % (gamma_ste * 1000),
+            )
+        )
+    except Exception as exc:
+        print(exc)
+
+    return gamma, gamma_ste
 
 
 # %% Run the file
@@ -793,8 +807,9 @@ if __name__ == "__main__":
 
     temp = 450
 
-    mode = "prediction"
+    # mode = "prediction"
     mode = "analysis"
+    # mode = "batch_analysis"
 
     if mode == "prediction":
         est_omega = omega_calc(temp)
@@ -807,24 +822,52 @@ if __name__ == "__main__":
         # print('Omega: {}'.format(est_omega))
         # print('gamma: {}'.format(est_gamma))
 
-    if mode == "analysis":
+    elif mode == "analysis":
+
         plt.ion()
 
         path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
-        folders = [
-            # "wu-nv1_2022_03_16-{}K".format(temp),
-            "wu-nv6_2022_04_14-{}K".format(temp),
-            # "main1_test",
-        ]
+        folder = "wu-nv6_2022_04_14-400K"
 
-        for folder in folders:
-            gamma, ste = main(
-                path,
+        main(
+            path,
+            folder,
+            omega=None,
+            omega_ste=None,
+            doPlot=True,
+            offset=False,
+            simple_print=True,
+        )
+
+        plt.show(block=True)
+
+    elif mode == "batch_analysis":
+
+        # file_name = "compiled_data"
+        file_name = "compiled_data-single_ref"
+        home = common.get_nvdata_dir()
+        path = home / "paper_materials/relaxation_temp_dependence"
+        data_points = get_data_points(path, file_name, override_skips=True)
+
+        for point in data_points:
+            full_data_path = point["Path"]
+            if full_data_path == "":
+                print("None")
+                continue
+            full_data_path_split = full_data_path.split("/")
+            # if full_data_path_split[0] != "pc_rabi":
+            #     continue
+            data_path = "/".join(full_data_path_split[0:-2]) + "/"
+            folder = full_data_path_split[-2]
+            # print(data_path)
+            # print(folder)
+
+            main(
+                data_path,
                 folder,
                 omega=None,
                 omega_ste=None,
-                doPlot=True,
+                doPlot=False,
                 offset=False,
+                simple_print=True,
             )
-
-        # plt.show(block=True)
