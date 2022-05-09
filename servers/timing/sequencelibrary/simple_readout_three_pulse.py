@@ -70,7 +70,8 @@ def get_seq(pulse_streamer, config, args):
     seq.setDigital(pulser_do_daq_gate, train)
     
     if prep_laser_key == test_laser_key and prep_laser_key == readout_laser_key:
-    
+        laser_powers = [prep_laser_power, test_laser_power, read_laser_power]
+        
         train = [(galvo_move_time, LOW),
                  (prep_time, HIGH),
                  (intra_pulse_delay, LOW),
@@ -79,10 +80,9 @@ def get_seq(pulse_streamer, config, args):
                  (readout_time, HIGH), 
                  (100, LOW)]
         tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                readout_laser_key, read_laser_power, train)
+                                readout_laser_key, laser_powers, train)
     
     elif prep_laser_key == readout_laser_key and prep_laser_key != test_laser_key:
-        
         
         train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
                  (prep_time, HIGH),

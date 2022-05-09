@@ -324,9 +324,9 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
             nv_sig_copy['charge_readout_dur'] = t
             nv_sig_copy['charge_readout_laser_power'] = p
             
-            if num_pulses == 2:
+            if num_pulses == 3:
                 nv0, nvm = measure_3(nv_sig_copy, opti_nv_sig, apd_indices, num_reps)
-            elif num_pulses == 3:
+            elif num_pulses == 2:
                 nv0, nvm = measure(nv_sig_copy, opti_nv_sig, apd_indices, num_reps)
             nv0_power.append(nv0)
             nvm_power.append(nvm)
@@ -575,9 +575,9 @@ if __name__ == '__main__':
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
         
-        for n in [2,3]:
-            determine_readout_dur(nv_sig, nv_sig, [1], readout_times = [1e3, 5e3, 1e4, 5e4, 1e5],
-                                  readout_yellow_powers = [0.6, 0.62, 0.64, 0.66],
+        for n in [3]:
+            determine_readout_dur(nv_sig, nv_sig, [1], readout_times = [5e4],
+                                  readout_yellow_powers = [0.64],
                               nd_filter = None,
                               num_pulses = n)
         

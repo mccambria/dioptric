@@ -658,18 +658,21 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     num_samples = len(coords_list)
     start_coords = nv_sig['coords']
 
-    init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-                      ['Config', 'Optics', nv_sig['initialize_laser']])
-    pulse_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-                      ['Config', 'Optics', nv_sig['CPG_laser']])
-    readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-                      ['Config', 'Optics', nv_sig['charge_readout_laser']])
+    # init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+    #                   ['Config', 'Optics', nv_sig['initialize_laser']])
+    # pulse_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+    #                   ['Config', 'Optics', nv_sig['CPG_laser']])
+    # readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+    #                   ['Config', 'Optics', nv_sig['charge_readout_laser']])
+    
     pulse_time = nv_sig['CPG_laser_dur']
     initialization_time = nv_sig['initialize_laser_dur']
     charge_readout_time = nv_sig['charge_readout_laser_dur']
-    charge_readout_laser_power = nv_sig['charge_readout_laser_power']
-    readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-                      ['Config', 'Optics', nv_sig['charge_readout_laser']])
+    
+    init_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "initialize_laser")
+    pulse_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "CPG_laser")
+    read_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "charge_readout_laser")
+    
 
     # Set the charge readout (assumed to be yellow here) to the correct filter
     if 'charge_readout_laser_filter' in nv_sig:
@@ -720,10 +723,12 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
 
     # define the sequence paramters
     file_name = 'SPaCE_w_movement_steps.py'
+        
     seq_args = [initialization_time, pulse_time, charge_readout_time,
-        movement_delay, total_movement_delay,  charge_readout_laser_power,
-        apd_indices[0],
-        init_color, pulse_color, readout_color, movement_incr]
+                nv_sig['initialize_laser'], nv_sig['CPG_laser'], nv_sig['charge_readout_laser'],
+                init_laser_power, pulse_laser_power, read_laser_power,
+                movement_delay, total_movement_delay,  movement_incr, 
+                apd_indices[0],]
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
