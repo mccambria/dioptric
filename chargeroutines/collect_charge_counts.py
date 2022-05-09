@@ -154,7 +154,7 @@ def nv_compare_charge_counts(cxn, nv_sig,  num_reps= 1000, save_data = True):
 
 # %%
 def vary_init_pulse_dur(nv_sig,  num_reps, apd_indices, duration_list):
-    apd_indices = [0]
+
     readout_laser = 'charge_readout_laser'
     init_laser = 'initialization_laser'
     
@@ -176,8 +176,14 @@ def vary_init_pulse_dur(nv_sig,  num_reps, apd_indices, duration_list):
         counts = main(nv_sig, init_laser, readout_laser, apd_indices, num_reps)
         sig_list[tau_ind] = counts
         
+        
+        nv_sig['initialization_laser'] = red_laser
+        nv_sig['initialization_laser_power'] = 0.66
+        # nv_sig['initialization_laser_dur'] = 1e5
+        
         print('measuring reference...')
-        counts = main(nv_sig, readout_laser, readout_laser, apd_indices, num_reps)
+        # counts = main(nv_sig, readout_laser, readout_laser, apd_indices, num_reps)
+        counts = main(nv_sig, init_laser, readout_laser, apd_indices, num_reps)
         ref_list[tau_ind] = counts
     
     avg_sig_list = numpy.average(sig_list, axis = 1)
@@ -237,7 +243,7 @@ def vary_init_pulse_dur(nv_sig,  num_reps, apd_indices, duration_list):
 # %% Run the files
 
 if __name__ == '__main__':
-    apd_indicies = [0]
+    apd_indicies = [1]
     
     nd_yellow = "nd_1.5"
     green_power =10
@@ -247,49 +253,27 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    nv_sig = { 
-        "coords":[-0.137, 0.406,6.836], 
-        "name": "{}-siv_R10_a130_r4_c1".format(sample_name,),
+    nv_sig = {    
+        "coords":[-0.851, -0.343, 6.17],# a6_R10c10
+        "name": "{}-siv_R21_a6_r10_c10".format(sample_name,),#_r10_c10
         "disable_opt":False,
         "ramp_voltages": True,
-        "expected_count_rate":None,
+        "expected_count_rate":80,
         
 
-        # "imaging_laser":green_laser,
-        # "imaging_laser_power": green_power,
-        "imaging_laser":yellow_laser,
-        "imaging_laser_power": 0.45,
-        "imaging_laser_filter": "nd_0",
+        "imaging_laser": red_laser,
+        "imaging_laser_power": 0.595, # 6 mW
         "imaging_readout_dur": 1e7,
         
         "initialization_laser": green_laser,
         "initialization_laser_power": green_power,
-        "initialization_laser_dur": 1e4,
-
-
-        # "initialization_laser": red_laser,
-        # "initialization_laser_power": red_power,
-        # "initialization_laser_dur": 1e4,
+        "initialization_laser_dur": 1e5,
         
 
-        # "initialization_laser": yellow_laser,
-        # "initialization_laser_filter": nd_yellow,
-        # "initialization_laser_power": 0.1,
-        # "initialization_laser_dur": 1e4,
         
-        
-        # "charge_readout_laser": green_laser,
-        # "charge_readout_laser_power": green_power,
-        # "charge_readout_laser_dur": 1e5,
-        
-        # "charge_readout_laser": red_laser,
-        # "charge_readout_laser_power": red_laser,
-        # "charge_readout_laser_dur": 1e7,
-        
-        "charge_readout_laser": yellow_laser,
-        "charge_readout_laser_filter": nd_yellow,
-        "charge_readout_laser_power": 0.1,
-        "charge_readout_laser_dur": 1e4,
+        "charge_readout_laser": red_laser,
+        "charge_readout_laser_power": 0.69,
+        "charge_readout_laser_dur": 500,
         
         "collection_filter": "715_lp",
         "magnet_angle": None,

@@ -5,6 +5,7 @@ Created on Thu Nov 19 12:33:57 2020
 A routine to take one NV to readout the charge state, after pulsing a laser
 at a distance from this readout NV.
 
+Note for Aedan - make the base function the same, but make different parent functions for running 1D and 2D...otherwise it is too confusing
 
 @author: agardill
 """
@@ -597,17 +598,17 @@ def populate_img_array(valsToAdd, imgArray, run_num):
                 imgArray[yPos, xPos, run_num] = val
     return
 # %%
-def data_collection(nv_sig, opti_nv_sig,  coords_list,run_num, start_time, opti_interval = 4):
+def data_collection(nv_sig, opti_nv_sig,  coords_list,run_num, start_time, apd_indices, opti_interval = 4):
     with labrad.connect() as cxn:
         ret_vals = data_collection_with_cxn(cxn, nv_sig, opti_nv_sig, coords_list,
-                                                     run_num,  start_time, opti_interval)
+                                                     run_num,  start_time,apd_indices,  opti_interval)
 
     readout_counts_array, drift_list, start_time = ret_vals
 
     return readout_counts_array,  drift_list, start_time
 
 def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
-                                       start_time, opti_interval = 4):
+                                       start_time, apd_indices, opti_interval = 4):
     '''
     Runs a measurement where an initial pulse is pulsed on the start coords,
     then a pulse is set on the first point in the coords list, then the
@@ -648,7 +649,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     # xyz_server = tool_belt.get_xyz_server(cxn)
 
     # Define paramters
-    apd_indices = [0]
+    # apd_index = apd_indices[0]
     drift_list = []
     # Readout array will be a list in this case. This will be a list with
     # dimensions [num_samples].
@@ -808,7 +809,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         # the whole sequence will tkae less time than the intervals between 
         # optimize so just run it all at once
         current_time = time.time()
-        if current_time - start_time > 4*60:
+        if current_time - start_time > 3*60:
             optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
             drift_list.append(tool_belt.get_drift())
             start_time = current_time
@@ -835,7 +836,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     return list(numpy.concatenate(readout_counts_list).flat), drift_list, start_time
 
 # %%
-def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None, 
+def main(nv_sig, opti_nv_sig,apd_indices,  num_runs,  num_steps_a, num_steps_b = None, 
          charge_state_threshold = None, img_range_1D =None, img_range_2D=None, 
          offset_2D = [0,0,0] ):
     '''
@@ -923,7 +924,8 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         # neg_ints = int(numpy.floor(len(rad_dist)/2))
         # rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
         
-
+        fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
+        
     elif img_range_2D != None:
         measurement_type = '2D'
         for v in range(len(img_range_2D)):
@@ -1028,7 +1030,7 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
         coords_voltages_shuffle_list = [list(el) for el in coords_voltages_shuffle]
 
         #========================== Run the data collection====================#
-        ret_vals = data_collection(nv_sig,opti_nv_sig,  coords_voltages_shuffle_list, n, start_time,  opti_interval)
+        ret_vals = data_collection(nv_sig,opti_nv_sig,  coords_voltages_shuffle_list, n, start_time, apd_indices,  opti_interval)
 
         readout_counts_list_shfl, drift, start_time  = ret_vals
         drift_list_master.append(drift)
@@ -1096,7 +1098,25 @@ def main(nv_sig, opti_nv_sig, num_runs,  num_steps_a, num_steps_b = None,
             raw_data['readout_counts_array_charge-units'] = 'counts'
         
         file_path = tool_belt.get_file_path(__file__, start_timestamp, nv_sig['name'], 'incremental')
+        
+        if measurement_type == '1D':
 
+            ax_1D.cla()
+            ax_1D.plot(rad_dist*scale,readout_counts_avg, label = nv_sig['name'])
+            ax_1D.set_xlabel('r (um)')
+            ax_1D.set_ylabel('Average counts')
+            ax_1D.set_title('SPaCE {}- {} nm init pulse \n{} nm {} ms CPG pulse'.\
+                                        format(direction_title, init_color,
+                                               pulse_color, pulse_time/10**6,))
+            fig_1D.canvas.draw()
+            fig_1D.set_tight_layout(True)
+            fig_1D.canvas.flush_events()
+
+
+            # This will continuously be the same file path so we will overwrite
+            # the existing file with the latest version
+            tool_belt.save_figure(fig_1D, file_path)
+            
         if measurement_type == '2D':
             # create image array from list of  readout counts
             split_counts = numpy.split(readout_counts_avg, num_steps_b)

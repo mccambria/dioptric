@@ -146,6 +146,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
                 init_laser_power, readout_laser_power, 
                 readout_on_pulse_ind, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    # print(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
     seq_time = ret_vals[0]
 
@@ -281,7 +282,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps, num_runs, num_bins, plot):
         readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
                           ['Config', 'Optics', nv_sig[readout_laser]])
     
-        ax.plot(bin_centers, binned_samples_sig, 'r-')
+        ax.plot(bin_centers, binned_samples_sig, 'k-')
         ax.set_title('Lifetime')
         ax.set_xlabel('Readout time (ns)')
         ax.set_ylabel('Counts')
