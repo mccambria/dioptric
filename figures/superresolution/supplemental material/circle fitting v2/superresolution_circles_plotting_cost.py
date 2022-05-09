@@ -471,8 +471,8 @@ def main(
         # Plot the center
         circle_patch = Circle(
             (circle[1], circle[0]),
-            1,
-            fill=False,
+            0.5,
+            fill="w",
             color="w",
         )
         ax.add_patch(circle_patch)
