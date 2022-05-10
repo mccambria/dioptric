@@ -1753,6 +1753,9 @@ def figure_2(file_name, path):
 
     # Plot the residuals
 
+    axes_b[0][0].set_title("Double Orbach")
+    axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
+
     axes_b[0][0].get_xaxis().set_visible(False)
     axes_b[1][0].get_xaxis().set_visible(False)
     axes_b[0][1].get_yaxis().set_visible(False)
@@ -1766,8 +1769,24 @@ def figure_2(file_name, path):
     for rate_ind in range(2):
         rate = rates[rate_ind]
         for fit_mode_ind in range(2):
+
             fit_mode = fit_modes[fit_mode_ind]
             ax = axes_b[rate_ind][fit_mode_ind]
+
+            ax_xlim = [-10, 500]
+            ax.set_xlim(ax_xlim[0], ax_xlim[1])
+            ax.plot(ax_xlim, [0, 0], color="silver", zorder=-10)
+
+            # axins.set_ylim(-3.25, 3.25)
+            # axins.set_yticks(np.linspace(-3, 3, 7))
+
+            ax_ylim = 2.5
+            ax.set_ylim(-ax_ylim, ax_ylim)
+            ylim_floor = math.floor(ax_ylim)
+            num_yticks = (ylim_floor * 2) + 1
+            yticks = np.linspace(-ylim_floor, ylim_floor, num_yticks)
+            ax.set_yticks(yticks)
+
             figure_2_residuals(ax, rate, data_points, fit_mode)
 
     fig.tight_layout(pad=0.3)
@@ -2000,6 +2019,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
 
     samples_to_plot = ["hopper", "wu"]
     linestyles = {"hopper": "dotted", "wu": "dashed"}
+    # linestyles = {"hopper": "dotted", "wu": "solid"}
 
     for ax in [ax_a, axins_a]:
 
@@ -2031,6 +2051,9 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
         #     print(presentation_round_latex(val, err))
 
         # Plot the rate fits
+        line_color = omega_edge_color
+        if fit_mode == "T5":
+            line_color = "#fcd4ac"
         for sample in samples_to_plot:
             fit_func = eval("omega_{}_lambda".format(sample))
             ls = linestyles[sample]
@@ -2039,9 +2062,12 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
                 fit_func(temp_linspace),
                 linestyle=ls,
                 label=r"$\Omega$ fit",
-                color=omega_edge_color,
+                color=line_color,
                 linewidth=line_width,
             )
+        line_color = gamma_edge_color
+        if fit_mode == "T5":
+            line_color = "#e09de0"
         for sample in samples_to_plot:
             fit_func = eval("gamma_{}_lambda".format(sample))
             ls = linestyles[sample]
@@ -2050,7 +2076,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
                 fit_func(temp_linspace),
                 linestyle=ls,
                 label=r"$\gamma$ fit",
-                color=gamma_edge_color,
+                color=line_color,
                 linewidth=line_width,
             )
 
@@ -2087,20 +2113,6 @@ def figure_2_residuals(ax, plot_rate, data_points, fit_mode):
     omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
     gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
     gamma_wu_lambda = lambda temp: gamma_wu_fit_func(temp, popt)
-
-    ax_xlim = [-10, 500]
-    ax.set_xlim(ax_xlim[0], ax_xlim[1])
-    ax.plot(ax_xlim, [0, 0], color="silver", zorder=-10)
-
-    # axins.set_ylim(-3.25, 3.25)
-    # axins.set_yticks(np.linspace(-3, 3, 7))
-
-    ax_ylim = 2.5
-    ax.set_ylim(-ax_ylim, ax_ylim)
-    ylim_floor = math.floor(ax_ylim)
-    num_yticks = (ylim_floor * 2) + 1
-    yticks = np.linspace(-ylim_floor, ylim_floor, num_yticks)
-    ax.set_yticks(yticks)
 
     samples = []
     nv_names = []
