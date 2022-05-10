@@ -536,7 +536,7 @@ def simultaneous_test_lambda(
     return np.array(ret_vals)
 
 
-def fit_simultaneous(data_points):
+def fit_simultaneous(data_points, fit_mode=None):
 
     # To fit to Omega and gamma simultaneously, set up a combined list of the
     # rates. Parity determines which rate is where. Even is Omega, odd is
@@ -1251,6 +1251,32 @@ def figure_2(
     dosave=False,
 ):
 
+    data_points = get_data_points(path, file_name, temp_range)
+    fig, ax = plt.subplots(figsize=figsize)
+
+    for fit_mode in ["double_orbach", "T5"]:
+        figure_2_sub(ax, data_points, fit_mode)
+
+    if dosave:
+        timestamp = tool_belt.get_time_stamp()
+        datestamp = timestamp.split("-")[0]
+        file_name = "{}-{}-{}".format(datestamp, plot_type, yscale)
+        nvdata_dir = common.get_nvdata_dir()
+        file_path = str(
+            nvdata_dir
+            / "paper_materials"
+            / "relaxation_temp_dependence"
+            / file_name
+        )
+        tool_belt.save_figure(fig, file_path)
+
+
+def figure_2_sub(
+    ax,
+    data_points,
+    fit_mode,
+):
+
     # %% Setup
 
     temp_range = [0, 480]
@@ -1258,13 +1284,11 @@ def figure_2(
     linestyles = {"hopper": "dotted", "wu": "dashed"}
     marker_type = "sample"
     # marker_type = "nv"
-    data_points = get_data_points(path, file_name, temp_range)
 
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
     temp_linspace = np.linspace(min_temp, max_temp, 1000)
-    fig, ax = plt.subplots(figsize=figsize)
     ax.set_xlim(min_temp, max_temp)
 
     # Fit to Omega and gamma simultaneously
@@ -1276,7 +1300,7 @@ def figure_2(
         omega_wu_fit_func,
         gamma_hopper_fit_func,
         gamma_wu_fit_func,
-    ) = fit_simultaneous(data_points)
+    ) = fit_simultaneous(data_points, fit_mode)
     omega_hopper_lambda = lambda temp: omega_hopper_fit_func(temp, popt)
     omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
     gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
@@ -1549,19 +1573,6 @@ def figure_2(
     if leg1 is not None:
         ax.add_artist(leg1)
     fig.tight_layout(pad=0.3)
-
-    if dosave:
-        timestamp = tool_belt.get_time_stamp()
-        datestamp = timestamp.split("-")[0]
-        file_name = "{}-{}-{}".format(datestamp, plot_type, yscale)
-        nvdata_dir = common.get_nvdata_dir()
-        file_path = str(
-            nvdata_dir
-            / "paper_materials"
-            / "relaxation_temp_dependence"
-            / file_name
-        )
-        tool_belt.save_figure(fig, file_path)
 
 
 # %% Main
