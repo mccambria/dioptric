@@ -27,6 +27,7 @@ import sys
 from pathlib import Path
 import math
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.gridspec import GridSpec
 
 
 # %% Constants
@@ -1009,7 +1010,7 @@ def get_data_points(
 
             # Set up markers if the temp is in the plotting range
             temp = get_temp(point)
-            if (temp_range is None) or not (
+            if (temp_range is not None) and not (
                 temp_range[0] < temp < temp_range[1]
             ):
                 continue
@@ -1671,28 +1672,55 @@ def figure_2_v1_sub(
 
 def figure_2(file_name, path):
 
-    data_points = get_data_points(path, file_name)  #, temp_range)
+    data_points = get_data_points(path, file_name)  # , temp_range)
     fit_modes = ["double_orbach", "T5"]
     rates = ["gamma", "Omega"]
-    double_figsize = (figsize[0], 2 * figsize[1])
-    fig, axes_pack = plt.subplots(2, 1, figsize=double_figsize)
-    ax_a = axes_pack[0]
-    ax_b = axes_pack[1]
     labels = ["(a)", "(b)"]
+
+    double_figsize = (figsize[0], 2 * figsize[1])
+    # fig, axes_pack = plt.subplots(2, 1, figsize=double_figsize)
+    # ax_a = axes_pack[0]
+    # ax_b = axes_pack[1]
+
+    fig = plt.figure(figsize=double_figsize)
+    gs_a = fig.add_gridspec(
+        nrows=1,
+        ncols=1,
+        left=0.1,
+        right=0.98,
+        bottom=0.6,
+        top=0.98,
+    )
+    gs_b = fig.add_gridspec(
+        nrows=2,
+        ncols=2,
+        left=0.1,
+        right=0.98,
+        bottom=0,
+        top=0.5,
+        wspace=0,
+        hspace=0,
+    )
+    ax_a = fig.add_subplot(gs_a[:, :])
+    axes_b = [[None, None], [None, None]]
+    axes_b[0][0] = fig.add_subplot(gs_b[0, 0])
+    axes_b[0][1] = fig.add_subplot(gs_b[0, 1])
+    axes_b[1][0] = fig.add_subplot(gs_b[1, 0])
+    axes_b[1][1] = fig.add_subplot(gs_b[1, 1])
 
     # Generic setup
 
-    for ind in range(2):
-        ax = axes_pack[ind]
-        label = labels[ind]
-        fig.text(
-            -0.11,
-            0.93,
-            label,
-            transform=ax.transAxes,
-            color="black",
-            fontsize=18,
-        )
+    # for ind in range(2):
+    #     ax = axes_pack[ind]
+    #     label = labels[ind]
+    #     fig.text(
+    #         -0.11,
+    #         0.93,
+    #         label,
+    #         transform=ax.transAxes,
+    #         color="black",
+    #         fontsize=18,
+    #     )
 
     inset_bottom = 0.13
     inset_height = 0.5
@@ -1724,17 +1752,23 @@ def figure_2(file_name, path):
         figure_2_fits(ax_a, axins_a, data_points, fit_mode)
 
     # Plot the residuals
-    
-    for ax in axes:
-        
-    
+
+    axes_b[0][0].get_xaxis().set_visible(False)
+    axes_b[1][0].get_xaxis().set_visible(False)
+    axes_b[0][1].get_yaxis().set_visible(False)
+    axes_b[1][1].get_yaxis().set_visible(False)
+
+    axes_b[0][0].set_ylabel(r"$\gamma$ residual")
+    axes_b[1][0].set_ylabel(r"$\Omega$ residual")
+    axes_b[0][1].set_xlabel(r"$T$ (K)")
+    axes_b[1][1].set_xlabel(r"$T$ (K)")
+
     for rate_ind in range(2):
         rate = rates[rate_ind]
         for fit_mode_ind in range(2):
             fit_mode = fit_modes[fit_mode_ind]
-            ax = axes[rate_ind, fit_mode_ind]
-            figure_2_residuals(ax, rate, fit_mode)
-        
+            ax = axes_b[rate_ind][fit_mode_ind]
+            figure_2_residuals(ax, rate, data_points, fit_mode)
 
     fig.tight_layout(pad=0.3)
 
@@ -1777,10 +1811,8 @@ def figure_2_raw_data(ax, axins, data_points):
         temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
         ax.set_xlim(min_temp, max_temp)
 
-        data_points = get_data_points(path, file_name, temp_range)
-
         # Plot setup
-        ax.set_xlabel(r"T (K)")
+        ax.set_xlabel(r"$T$ (K)")
         ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
         ax.set_yscale(yscale)
         if rate_range is not None:
@@ -2023,22 +2055,38 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
             )
 
 
-def figure_2_residuals(ax, rate, data_points, fit_mode):
-    
+def figure_2_residuals(ax, plot_rate, data_points, fit_mode):
+
+    plot_rate = plot_rate.lower()
     samples_to_plot = ["hopper", "wu"]
-    temp_range = [-5, 480]
-    min_temp = temp_range[0]
-    max_temp = temp_range[1]
-    ax.set_xlim(min_temp, max_temp)
-    
-    if rate == "gamma":
-        # title = r"$\gamma$ Normalized residual"
-        title = r"$\gamma$ residual"
-    if rate == "omega":
-        # title = r"$\Omega$ Normalized residual"
-        title = r"$\Omega$ residual"
-    ax.set_ylabel(title)
-    ax.set_xlabel(r"T(K)")
+    # temp_range = [-5, 480]
+    # min_temp = temp_range[0]
+    # max_temp = temp_range[1]
+    # ax.set_xlim(min_temp, max_temp)
+
+    # if rate == "gamma":
+    #     # title = r"$\gamma$ Normalized residual"
+    #     title = r"$\gamma$ residual"
+    # if rate == "omega":
+    #     # title = r"$\Omega$ Normalized residual"
+    #     title = r"$\Omega$ residual"
+    # ax.set_ylabel(title)
+    # ax.set_xlabel(r"T(K)")
+
+    # Fit to Omega and gamma simultaneously
+    (
+        popt,
+        pvar,
+        beta_desc,
+        omega_hopper_fit_func,
+        omega_wu_fit_func,
+        gamma_hopper_fit_func,
+        gamma_wu_fit_func,
+    ) = fit_simultaneous(data_points, fit_mode)
+    omega_hopper_lambda = lambda temp: omega_hopper_fit_func(temp, popt)
+    omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
+    gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
+    gamma_wu_lambda = lambda temp: gamma_wu_fit_func(temp, popt)
 
     ax_xlim = [-10, 500]
     ax.set_xlim(ax_xlim[0], ax_xlim[1])
@@ -2081,18 +2129,20 @@ def figure_2_residuals(ax, rate, data_points, fit_mode):
         temp = get_temp(point)
         temp_error = get_temp_error(point)
 
-        rate = point[omega_column_title]
-        rate_err = point[omega_err_column_title]
-        rate_lambda = eval("{}_{}_lambda".format(rate, sample_lower))
+        column_title = eval("{}_column_title".format(plot_rate))
+        err_column_title = eval("{}_err_column_title".format(plot_rate))
+        rate = point[column_title]
+        rate_err = point[err_column_title]
+        rate_lambda = eval("{}_{}_lambda".format(plot_rate, sample_lower))
         val = (rate - rate_lambda(temp)) / rate_err
         if abs(val) > max_norm_err:
             max_norm_err = abs(val)
-        edgecolor = eval("{}_edge_color".format(rate))
-        facecolor = eval("{}_face_color".format(rate))
+        edgecolor = eval("{}_edge_color".format(plot_rate))
+        facecolor = eval("{}_face_color".format(plot_rate))
         ax.scatter(
             temp,
             val,
-            label=r"$\Omega$",
+            # label=r"$\Omega$",
             marker=marker,
             edgecolor=edgecolor,
             facecolor=facecolor,
@@ -2102,6 +2152,7 @@ def figure_2_residuals(ax, rate, data_points, fit_mode):
         )
 
     # print(max_norm_err)
+
 
 # %% Main
 
