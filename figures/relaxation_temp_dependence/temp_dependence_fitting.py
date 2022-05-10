@@ -572,12 +572,12 @@ def fit_simultaneous(data_points, fit_mode=None):
 
     # region DECLARE FIT FUNCTIONS HERE
 
-    mode = "T5"
+    # mode = "T5"
     mode = "double_orbach"
-    mode = "other"
+    # mode = "other"
 
     # T5 fixed + constant
-    if mode in ["T5", "other"]:
+    if mode == "T5":
         init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.01, 0.07, 0.15)
         omega_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
             temp, beta[1], beta[3], beta[0], beta[4]
@@ -603,7 +603,7 @@ def fit_simultaneous(data_points, fit_mode=None):
         ]
 
     # Double Orbach
-    if mode in ["double_orbach", "other"]:
+    elif mode == "double_orbach":
         init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
         omega_hopper_fit_func = lambda temp, beta: double_orbach(
             temp,
@@ -1279,17 +1279,24 @@ def figure_2_sub(
 
     # %% Setup
 
-    temp_range = [0, 480]
+    # temp_range = [0, 480]
+    temp_range = [-5, 480]
     samples_to_plot = ["hopper", "wu"]
     linestyles = {"hopper": "dotted", "wu": "dashed"}
     marker_type = "sample"
+    include_sample_legend = True
+
     # marker_type = "nv"
 
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
-    temp_linspace = np.linspace(min_temp, max_temp, 1000)
+    linspace_min_temp = min_temp if min_temp > 0 else 0
+    temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
+    fig, ax = plt.subplots(figsize=figsize)
     ax.set_xlim(min_temp, max_temp)
+
+    data_points = get_data_points(path, file_name, temp_range)
 
     # Fit to Omega and gamma simultaneously
     (
@@ -1317,7 +1324,7 @@ def figure_2_sub(
     ax.set_xlabel(r"T (K)")
     ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
     ax.set_yscale("log")
-    rate_range = None
+    rate_range = [0.0036, 1100]
     if rate_range is not None:
         ax.set_ylim(rate_range[0], rate_range[1])
 
@@ -1426,56 +1433,112 @@ def figure_2_sub(
         lw=marker_edge_width,
     )
     leg1 = ax.legend(
-        handles=[omega_patch, gamma_patch], loc="upper left", title="Rates"
+        handles=[gamma_patch, omega_patch], loc="upper left", title="Rate"
     )
+    # leg1 = ax.legend(
+    #     handles=[omega_patch, gamma_patch], loc="upper left", frameon=False
+    # )
 
     # Sample legend
-    x_loc = 0.14
-    # x_loc = 0.16
-    # x_loc = 0.22
-    nv_patches = []
-    for ind in range(len(markers_list)):
-        nv_name = nv_names[ind].replace("_", "\_")
-        sample = nv_name.split("-")[0]
-        if sample == "prresearch":
-            nv_name = "[1]"
-        # else:
-        #     label = "New results"
-        ls = linestyles[sample]
-        if marker_type == "nv":
-            label = nv_name
-            title = "sample-nv"
-        elif marker_type == "sample":
-            label = sample[0].upper() + sample[1:]
-            title = "Sample"
-        patch = mlines.Line2D(
-            [],
-            [],
-            color="black",
-            marker=markers_list[ind],
-            linestyle=linestyles[sample],
-            markersize=marker_size,
-            markeredgewidth=marker_edge_width,
-            label=label,
-        )
-        nv_patches.append(patch)
-    ax.legend(
-        handles=nv_patches,
-        loc="upper left",
-        title=title,
-        # title="Samples",
-        bbox_to_anchor=(x_loc, 1.0),
-    )
+    if include_sample_legend:
+        include_fit_lines = False
+        if include_fit_lines:
+            x_loc = 0.14
+            # x_loc = 0.16
+            # x_loc = 0.22
+            nv_patches = []
+            for ind in range(len(markers_list)):
+                nv_name = nv_names[ind].replace("_", "\_")
+                sample = nv_name.split("-")[0]
+                if sample == "prresearch":
+                    nv_name = "[1]"
+                # else:
+                #     label = "New results"
+                ls = linestyles[sample]
+                if marker_type == "nv":
+                    label = nv_name
+                    title = "sample-nv"
+                elif marker_type == "sample":
+                    label = sample[0].upper() + sample[1:]
+                    title = "Sample"
+                patch = mlines.Line2D(
+                    [],
+                    [],
+                    color="black",
+                    marker=markers_list[ind],
+                    linestyle=linestyles[sample],
+                    markersize=marker_size,
+                    markeredgewidth=marker_edge_width,
+                    label=label,
+                )
+                nv_patches.append(patch)
+            ax.legend(
+                handles=nv_patches,
+                loc="upper left",
+                title=title,
+                # title="Samples",
+                bbox_to_anchor=(x_loc, 1.0),
+            )
+        else:
+            x_loc = 0.14
+            # x_loc = 0.16
+            # x_loc = 0.22
+            nv_patches = []
+            for ind in range(len(markers_list)):
+                nv_name = nv_names[ind].replace("_", "\_")
+                sample = nv_name.split("-")[0]
+                if sample == "prresearch":
+                    nv_name = "[1]"
+                # else:
+                #     label = "New results"
+                ls = linestyles[sample]
+                if marker_type == "nv":
+                    label = nv_name
+                    title = "sample-nv"
+                elif marker_type == "sample":
+                    # label = sample[0].upper() + sample[1:]
+                    if sample == "hopper":
+                        label = "A"
+                    elif sample == "wu":
+                        label = "B"
+                    title = "Sample"
+                patch = mlines.Line2D(
+                    [],
+                    [],
+                    color="black",
+                    marker=markers_list[ind],
+                    linestyle="None",
+                    markersize=marker_size,
+                    markeredgewidth=marker_edge_width,
+                    label=label,
+                )
+                nv_patches.append(patch)
+            ax.legend(
+                handles=nv_patches,
+                loc="upper left",
+                title=title,
+                # title="Samples",
+                bbox_to_anchor=(x_loc, 1.0),
+            )
 
     # Inset plot of normalized residuals
+
+    inset_bottom = 0.13
+    inset_height = 0.28
+    # inset_left = 0.6
+    inset_left = 0.65
+    inset_width = 1 - inset_left
 
     axins_gamma = inset_axes(
         ax,
         width="100%",
         height="100%",
-        # borderpad=1.5,
-        # bbox_to_anchor=(0.9, 0.8, 0.5, 0.5),
-        bbox_to_anchor=(0.6, 0.53, 0.4, 0.4),
+        bbox_to_anchor=(
+            inset_left,
+            inset_bottom + inset_height,
+            inset_width,
+            inset_height,
+        ),
         bbox_transform=ax.transAxes,
         loc=1,
     )
@@ -1483,21 +1546,30 @@ def figure_2_sub(
         ax,
         width="100%",
         height="100%",
-        bbox_to_anchor=(0.6, 0.13, 0.4, 0.4),
+        bbox_to_anchor=(inset_left, inset_bottom, inset_width, inset_height),
         bbox_transform=ax.transAxes,
         loc=1,
     )
 
     for rate in ["gamma", "omega"]:
         if rate == "gamma":
-            title = r"$\gamma$ Normalized residual"
+            # title = r"$\gamma$ Normalized residual"
+            title = r"$\gamma$ residual"
         if rate == "omega":
-            title = r"$\Omega$ Normalized residual"
+            # title = r"$\Omega$ Normalized residual"
+            title = r"$\Omega$ residual"
         axins = eval("axins_{}".format(rate))
         axins.set_ylabel(title)
         axins.set_xlabel(r"T(K)")
         axins.set_xlim(min_temp, max_temp)
-        axins.set_ylim(-3.25, 3.25)
+
+        axins.set_xlim(-10, 500)
+
+        # axins.set_ylim(-3.25, 3.25)
+        # axins.set_yticks(np.linspace(-3, 3, 7))
+
+        axins.set_ylim(-2.5, 2.5)
+        axins.set_yticks(np.linspace(-2, 2, 5))
 
     samples = []
     nv_names = []
@@ -1570,7 +1642,7 @@ def figure_2_sub(
 
     # Final steps
 
-    if leg1 is not None:
+    if include_sample_legend:
         ax.add_artist(leg1)
     fig.tight_layout(pad=0.3)
 
@@ -2054,7 +2126,7 @@ def main(
 
 if __name__ == "__main__":
 
-    # print(bose(65, 450))
+    # print(bose(0.01241, 150))
     # print(bose(65, 450) * (bose(65, 450) + 1))
     # print(presentation_round_latex(145.88, 26.55))
     # print(presentation_round_latex(145.88, 16.55))
