@@ -1683,44 +1683,60 @@ def figure_2(file_name, path):
     # ax_b = axes_pack[1]
 
     fig = plt.figure(figsize=double_figsize)
+    gs_sep = 0.08
+    gs_a_bottom = 0.55
     gs_a = fig.add_gridspec(
         nrows=1,
         ncols=1,
         left=0.1,
-        right=0.98,
-        bottom=0.6,
-        top=0.98,
+        right=0.99,
+        bottom=gs_a_bottom,
+        top=0.99,
     )
     gs_b = fig.add_gridspec(
         nrows=2,
-        ncols=2,
-        left=0.1,
-        right=0.98,
-        bottom=0,
-        top=0.5,
+        # ncols=2,
+        ncols=4,
+        left=0.08,
+        right=0.99,
+        bottom=0.05,
+        top=gs_a_bottom - gs_sep,
         wspace=0,
         hspace=0,
+        # width_ratios=[1, 0.2, 0.2, 1],
+        width_ratios=[1, 0.2, 1, 0.2],
     )
     ax_a = fig.add_subplot(gs_a[:, :])
-    axes_b = [[None, None], [None, None]]
-    axes_b[0][0] = fig.add_subplot(gs_b[0, 0])
-    axes_b[0][1] = fig.add_subplot(gs_b[0, 1])
-    axes_b[1][0] = fig.add_subplot(gs_b[1, 0])
-    axes_b[1][1] = fig.add_subplot(gs_b[1, 1])
+    scatter_axes_b = [[None, None], [None, None]]
+    scatter_axes_b[0][0] = fig.add_subplot(gs_b[0, 0])
+    scatter_axes_b[0][1] = fig.add_subplot(gs_b[0, 2])
+    scatter_axes_b[1][0] = fig.add_subplot(gs_b[1, 0])
+    scatter_axes_b[1][1] = fig.add_subplot(gs_b[1, 2])
+
+    hist_axes_b = [[None, None], [None, None]]
+    hist_axes_b[0][0] = fig.add_subplot(gs_b[0, 1])
+    hist_axes_b[0][1] = fig.add_subplot(gs_b[0, 3])
+    hist_axes_b[1][0] = fig.add_subplot(gs_b[1, 1])
+    hist_axes_b[1][1] = fig.add_subplot(gs_b[1, 3])
 
     # Generic setup
 
-    # for ind in range(2):
-    #     ax = axes_pack[ind]
-    #     label = labels[ind]
-    #     fig.text(
-    #         -0.11,
-    #         0.93,
-    #         label,
-    #         transform=ax.transAxes,
-    #         color="black",
-    #         fontsize=18,
-    #     )
+    fig.text(
+        -0.11,
+        0.95,
+        "(a)",
+        transform=ax_a.transAxes,
+        color="black",
+        fontsize=18,
+    )
+    fig.text(
+        -0.11,
+        -0.16,
+        "(b)",
+        transform=ax_a.transAxes,
+        color="black",
+        fontsize=18,
+    )
 
     inset_bottom = 0.13
     inset_height = 0.5
@@ -1753,41 +1769,48 @@ def figure_2(file_name, path):
 
     # Plot the residuals
 
-    axes_b[0][0].set_title("Double Orbach")
-    axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
+    scatter_axes_b[0][0].set_title("Double Orbach")
+    scatter_axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
 
-    axes_b[0][0].get_xaxis().set_visible(False)
-    axes_b[1][0].get_xaxis().set_visible(False)
-    axes_b[0][1].get_yaxis().set_visible(False)
-    axes_b[1][1].get_yaxis().set_visible(False)
+    scatter_axes_b[0][0].get_xaxis().set_visible(False)
+    scatter_axes_b[0][1].get_xaxis().set_visible(False)
+    scatter_axes_b[0][1].get_yaxis().set_visible(False)
+    scatter_axes_b[1][1].get_yaxis().set_visible(False)
 
-    axes_b[0][0].set_ylabel(r"$\gamma$ residual")
-    axes_b[1][0].set_ylabel(r"$\Omega$ residual")
-    axes_b[0][1].set_xlabel(r"$T$ (K)")
-    axes_b[1][1].set_xlabel(r"$T$ (K)")
+    scatter_axes_b[0][0].set_ylabel(r"$\gamma$ residual")
+    scatter_axes_b[1][0].set_ylabel(r"$\Omega$ residual")
+    scatter_axes_b[1][0].set_xlabel(r"$T$ (K)")
+    scatter_axes_b[1][1].set_xlabel(r"$T$ (K)")
 
     for rate_ind in range(2):
         rate = rates[rate_ind]
         for fit_mode_ind in range(2):
 
-            fit_mode = fit_modes[fit_mode_ind]
-            ax = axes_b[rate_ind][fit_mode_ind]
+            scatter_ax = scatter_axes_b[rate_ind][fit_mode_ind]
+            hist_ax = hist_axes_b[rate_ind][fit_mode_ind]
+            hist_ax.get_xaxis().set_visible(False)
+            hist_ax.get_yaxis().set_visible(False)
 
-            ax_xlim = [-10, 500]
-            ax.set_xlim(ax_xlim[0], ax_xlim[1])
-            ax.plot(ax_xlim, [0, 0], color="silver", zorder=-10)
+            fit_mode = fit_modes[fit_mode_ind]
+
+            xlim = [-10, 490]
+            scatter_ax.set_xlim(xlim[0], xlim[1])
+            scatter_ax.plot(xlim, [0, 0], color="silver", zorder=-10)
 
             # axins.set_ylim(-3.25, 3.25)
             # axins.set_yticks(np.linspace(-3, 3, 7))
 
             ax_ylim = 2.5
-            ax.set_ylim(-ax_ylim, ax_ylim)
+            scatter_ax.set_ylim(-ax_ylim, ax_ylim)
+            hist_ax.set_ylim(-ax_ylim, ax_ylim)
             ylim_floor = math.floor(ax_ylim)
             num_yticks = (ylim_floor * 2) + 1
             yticks = np.linspace(-ylim_floor, ylim_floor, num_yticks)
-            ax.set_yticks(yticks)
+            scatter_ax.set_yticks(yticks)
 
-            figure_2_residuals(ax, rate, data_points, fit_mode)
+            figure_2_residuals(
+                scatter_ax, hist_ax, rate, data_points, fit_mode
+            )
 
     fig.tight_layout(pad=0.3)
 
@@ -1797,22 +1820,20 @@ def figure_2_raw_data(ax, axins, data_points):
     # %% Setup
 
     axes = [ax, axins]
-    # temp_ranges = [[-5, 480], [140, 245]]
-    # temp_ranges = [[-5, 480], [120, 220]]
-    temp_ranges = [[-5, 480], [170, 245]]
-    # temp_ranges = [[-5, 480], [170, 217]]
-    # rate_ranges = [[0.0036, 1100], [0, 65]]
-    # yscales = ["log", "linear"]
-    rate_ranges = [[0.0036, 1100], [5, 30]]
-    # rate_ranges = [[0.0036, 1100], [0.6, 80]]
+    # temp_ranges = [[-5, 480], [120, 205]]
+    # rate_ranges = [[0.0036, 1100], [0.8, 40]]
+    temp_ranges = [[-5, 480], [145, 215]]
+    rate_ranges = [[0.0036, 1100], [2, 50]]
+    ytickss = [None, [3, 10, 30]]
     yscales = ["log", "log"]
     no_legends = [False, True]
-    mss = [marker_size, marker_size - 1]
+    mss = [marker_size, marker_size - 2]
 
     for ind in range(2):
         ax = axes[ind]
         temp_range = temp_ranges[ind]
         rate_range = rate_ranges[ind]
+        yticks = ytickss[ind]
         yscale = yscales[ind]
         no_legend = no_legends[ind]
         samples_to_plot = ["hopper", "wu"]
@@ -1836,6 +1857,10 @@ def figure_2_raw_data(ax, axins, data_points):
         ax.set_yscale(yscale)
         if rate_range is not None:
             ax.set_ylim(rate_range[0], rate_range[1])
+        if yticks is not None:
+            ax.set_yticks(yticks)
+            labels = [str(el) for el in yticks]
+            ax.set_yticklabels(labels)
 
         # %% Plot the points
 
@@ -2021,6 +2046,10 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
     linestyles = {"hopper": "dotted", "wu": "dashed"}
     # linestyles = {"hopper": "dotted", "wu": "solid"}
 
+    zorder = 0
+    if fit_mode == "T5":
+        zorder = -1
+
     for ax in [ax_a, axins_a]:
 
         min_temp, max_temp = ax.get_xlim()
@@ -2064,6 +2093,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
                 label=r"$\Omega$ fit",
                 color=line_color,
                 linewidth=line_width,
+                zorder=zorder,
             )
         line_color = gamma_edge_color
         if fit_mode == "T5":
@@ -2078,10 +2108,11 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
                 label=r"$\gamma$ fit",
                 color=line_color,
                 linewidth=line_width,
+                zorder=zorder,
             )
 
 
-def figure_2_residuals(ax, plot_rate, data_points, fit_mode):
+def figure_2_residuals(scatter_ax, hist_ax, plot_rate, data_points, fit_mode):
 
     plot_rate = plot_rate.lower()
     samples_to_plot = ["hopper", "wu"]
@@ -2119,6 +2150,9 @@ def figure_2_residuals(ax, plot_rate, data_points, fit_mode):
     markers_list = []
     max_norm_err = 0
     ms = (marker_size - 2) ** 2
+    err_list = []
+    edgecolor = eval("{}_edge_color".format(plot_rate))
+    facecolor = eval("{}_face_color".format(plot_rate))
 
     for point in data_points:
 
@@ -2147,11 +2181,10 @@ def figure_2_residuals(ax, plot_rate, data_points, fit_mode):
         rate_err = point[err_column_title]
         rate_lambda = eval("{}_{}_lambda".format(plot_rate, sample_lower))
         val = (rate - rate_lambda(temp)) / rate_err
+        err_list.append(val)
         if abs(val) > max_norm_err:
             max_norm_err = abs(val)
-        edgecolor = eval("{}_edge_color".format(plot_rate))
-        facecolor = eval("{}_face_color".format(plot_rate))
-        ax.scatter(
+        scatter_ax.scatter(
             temp,
             val,
             # label=r"$\Omega$",
@@ -2162,6 +2195,29 @@ def figure_2_residuals(ax, plot_rate, data_points, fit_mode):
             s=ms,
             linewidth=marker_edge_width,
         )
+
+    bins = np.linspace(-2.5, 2.5, 8)
+    hist_ax.hist(
+        err_list,
+        bins,
+        orientation="horizontal",
+        edgecolor=edgecolor,
+        color=facecolor,
+        linewidth=marker_edge_width,
+        density=True,
+    )
+    hist_ax.set_xlim([0, 0.5])
+    hist_xlim = hist_ax.get_xlim()
+    hist_ylim = hist_ax.get_ylim()
+    # if fit_mode == "double_orbach":
+    # if fit_mode == "T5":
+    #     hist_ax.set_xlim(hist_xlim[::-1])
+    inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
+    normal_density = lambda x: inv_root_2_pi * np.exp(-(x ** 2) / 2)
+    err_linspace = np.linspace(hist_ylim[0], hist_ylim[1], 1000)
+    hist_ax.plot(
+        normal_density(err_linspace), err_linspace, color=edgecolor, zorder=1
+    )
 
     # print(max_norm_err)
 
