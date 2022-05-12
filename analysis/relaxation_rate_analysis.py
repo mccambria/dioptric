@@ -807,25 +807,6 @@ if __name__ == "__main__":
 
     temp = 295
 
-    est_omega = omega_calc(temp)
-    est_gamma = gamma_calc(temp)
-    print("good times in ms")
-    # print("Omega: {}".format(4000 / (3 * est_omega)))
-    # print("gamma: {}".format(4000 / (2 * est_gamma + est_omega)))
-    print("Omega: {}".format(1000 * 1 / (est_omega)))
-    print("gamma: {}".format(1000 * (3/2) / (est_gamma + est_omega)))
-    # print('Omega: {}'.format(est_omega))
-    # print('gamma: {}'.format(est_gamma))
-    sys.exit()
-
-    # plt.ion()
-
-    path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
-    folders = [
-        "wu-nv1_2022_03_16-{}K".format(temp),
-        # "main1_test",
-    ]
-
     # mode = "prediction"
     mode = "analysis"
     # mode = "batch_analysis"
