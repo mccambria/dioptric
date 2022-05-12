@@ -21,6 +21,7 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import labrad
 from utils.tool_belt import States
+from random import shuffle
 
 
 # %% Figure functions
@@ -520,6 +521,10 @@ def main_with_cxn(
     start_timestamp = tool_belt.get_time_stamp()
 
     # %% Collect the data
+    
+    # Create a list of indices to step through the freqs. This will be shuffled
+    freq_index_master_list = [[] for i in range(num_runs)]
+    freq_ind_list = list(range(0, num_steps))
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
@@ -563,14 +568,16 @@ def main_with_cxn(
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
 
-        # Take a sample and increment the frequency
-        for step_ind in range(num_steps):
+        # Take a sample and step through the shuffled frequencies
+        shuffle(freq_ind_list)
+        for freq_ind in freq_ind_list:
 
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
 
-            sig_gen_cxn.set_freq(freqs[step_ind])
+            freq_index_master_list[run_ind].append(freq_ind)
+            sig_gen_cxn.set_freq(freqs[freq_ind])
             sig_gen_cxn.uwave_on()
 
             # It takes 400 us from receipt of the command to
@@ -588,11 +595,11 @@ def main_with_cxn(
 
             # signal counts are even - get every second element starting from 0
             sig_gate_counts = sample_counts[0::2]
-            sig_counts[run_ind, step_ind] = sum(sig_gate_counts)
+            sig_counts[run_ind, freq_ind] = sum(sig_gate_counts)
 
             # ref counts are odd - sample_counts every second element starting from 1
             ref_gate_counts = sample_counts[1::2]
-            ref_counts[run_ind, step_ind] = sum(ref_gate_counts)
+            ref_counts[run_ind, freq_ind] = sum(ref_gate_counts)
 
         cxn.apd_tagger.stop_tag_stream()
 
@@ -615,6 +622,7 @@ def main_with_cxn(
             "uwave_power-units": "dBm",
             "readout": readout,
             "readout-units": "ns",
+            'freq_index_master_list': freq_index_master_list,
             "opti_coords_list": opti_coords_list,
             "opti_coords_list-units": "V",
             "sig_counts": sig_counts.astype(int).tolist(),
@@ -707,6 +715,9 @@ def main_with_cxn(
         "uwave_power-units": "dBm",
         "readout": readout,
         "readout-units": "ns",
+        'freq_index_master_list': freq_index_master_list,
+        "opti_coords_list": opti_coords_list,
+        "opti_coords_list-units": "V",
         "sig_counts": sig_counts.astype(int).tolist(),
         "sig_counts-units": "counts",
         "ref_counts": ref_counts.astype(int).tolist(),

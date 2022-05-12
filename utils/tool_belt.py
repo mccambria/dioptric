@@ -1582,7 +1582,10 @@ def save_image_data_csv(
 # %% Email utils
 
 
-def send_exception_email():
+def send_exception_email(
+    email_from="kolkowitznvlab@gmail.com",
+    email_to="kolkowitznvlab@gmail.com",
+):
     # format_exc extracts the stack and error message from
     # the exception currently being handled.
     now = time.localtime()
@@ -1595,7 +1598,7 @@ def send_exception_email():
     content = (
         f"An unhandled exception occurred on {date} at {timex}.\n{exc_info}"
     )
-    send_email(content)
+    send_email(content, email_from=email_from, email_to=email_to)
 
 
 def send_email(

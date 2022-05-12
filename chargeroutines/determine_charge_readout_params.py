@@ -373,7 +373,8 @@ if __name__ == "__main__":
     # if False:
     if True:
         tool_belt.init_matplotlib()
-        file_name = "2022_02_21-11_27_06-wu-nv1_2022_02_10"
+        # file_name = "2022_02_14-03_32_40-wu-nv1_2022_02_10"
+        file_name = "2022_04_14-16_31_30-wu-nv3_2022_04_14"
         data = tool_belt.get_raw_data(file_name)
         nv_sig = data["nv_sig"]
         nv0 = data["nv0"]
@@ -381,10 +382,10 @@ if __name__ == "__main__":
         readout_power = nv_sig["charge_readout_laser_power"]
         max_readout_dur = nv_sig["charge_readout_dur"]
 
-        # opti_readout_dur = determine_opti_readout_dur(
-        #     nv0, nvm, max_readout_dur
-        # )
-        opti_readout_dur = 100e6
+        opti_readout_dur = determine_opti_readout_dur(
+            nv0, nvm, max_readout_dur
+        )
+        opti_readout_dur = 80e6
         # do_save = True
         do_save = False
         plot_histogram(
