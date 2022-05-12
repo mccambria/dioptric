@@ -40,11 +40,18 @@ def get_seq(pulse_streamer, config, args):
     
     intra_pulse_delay = config['CommonDurations']['cw_meas_buffer']
     
-    if prep_laser_key == test_laser_key:
+    if prep_laser_key == test_laser_key and prep_laser_key == readout_laser_key:
+        total_delay = prep_aom_delay_time
+    elif prep_laser_key == readout_laser_key and prep_laser_key != test_laser_key:
+        total_delay = prep_aom_delay_time + test_aom_delay_time
+    elif prep_laser_key != readout_laser_key and prep_laser_key == test_laser_key:
+        total_delay = prep_aom_delay_time + read_aom_delay_time
+    elif prep_laser_key != readout_laser_key and readout_laser_key == test_laser_key:
         total_delay = prep_aom_delay_time + read_aom_delay_time
     else:
-        total_delay = prep_aom_delay_time + read_aom_delay_time + test_aom_delay_time
-    
+        total_delay = prep_aom_delay_time + test_aom_delay_time + readout_laser_key
+
+
     period = galvo_move_time + total_delay + prep_time + test_time + readout_time +\
                                         intra_pulse_delay*2 + 300
         
@@ -62,35 +69,116 @@ def get_seq(pulse_streamer, config, args):
              (readout_time, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
     
+    if prep_laser_key == test_laser_key and prep_laser_key == readout_laser_key:
     
-    train = [(galvo_move_time + total_delay - read_aom_delay_time + prep_time + intra_pulse_delay + \
-              test_time + intra_pulse_delay, LOW), (readout_time, HIGH), 
-             (100, LOW)]
-    tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                            readout_laser_key, read_laser_power, train)
-        
-    if prep_laser_key == test_laser_key:
-        laser_key = prep_laser_key
-        laser_power = prep_laser_power
-        
-        train = [(galvo_move_time + total_delay - prep_aom_delay_time, LOW), (prep_time, HIGH), 
+        train = [(galvo_move_time, LOW),
+                 (prep_time, HIGH),
+                 (intra_pulse_delay, LOW),
+                 (test_time, HIGH),
                  (intra_pulse_delay, LOW), 
-                 (test_time, HIGH), (intra_pulse_delay + readout_time  +100, LOW)]
+                 (readout_time, HIGH), 
+                 (100, LOW)]
         tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                laser_key, laser_power, train)
+                                readout_laser_key, read_laser_power, train)
+    
+    elif prep_laser_key == readout_laser_key and prep_laser_key != test_laser_key:
+        
+        
+        train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
+                 (prep_time, HIGH),
+                 (intra_pulse_delay, LOW),
+                 (test_time, LOW),
+                 (intra_pulse_delay, LOW), 
+                 (readout_time, HIGH), 
+                 (100, LOW)]
+        tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                readout_laser_key, [prep_laser_power, read_laser_power], train)
+        
+        train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
+                 (prep_time, LOW),
+                 (intra_pulse_delay, LOW),
+                 (test_time, HIGH),
+                 (intra_pulse_delay, LOW), 
+                 (readout_time, LOW), 
+                 (100, LOW)]
+        tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                test_laser_key, [test_laser_power], train)
+        
+        
+    elif prep_laser_key != readout_laser_key and prep_laser_key == test_laser_key:
+        train = [(total_delay -test_aom_delay_time + galvo_move_time, LOW),
+                 (prep_time, HIGH),
+                 (intra_pulse_delay, LOW),
+                 (test_time, HIGH),
+                 (intra_pulse_delay, LOW), 
+                 (readout_time, LOW), 
+                 (100, LOW)]
+        tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                prep_laser_key, [prep_laser_power, test_laser_power], train)
+        
+        train = [(total_delay -read_aom_delay_time + galvo_move_time, LOW),
+                 (prep_time, LOW),
+                 (intra_pulse_delay, LOW),
+                 (test_time, LOW),
+                 (intra_pulse_delay, LOW), 
+                 (readout_time, HIGH), 
+                 (100, LOW)]
+        tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                readout_laser_key, [read_laser_power], train)
+        
+                
+    elif prep_laser_key != readout_laser_key and readout_laser_key == test_laser_key:
+        train = [(total_delay -test_aom_delay_time + galvo_move_time, LOW),
+                 (prep_time, LOW),
+                 (intra_pulse_delay, LOW),
+                 (test_time, HIGH),
+                 (intra_pulse_delay, LOW), 
+                 (readout_time, HIGH), 
+                 (100, LOW)]
+        tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                readout_laser_key, [test_laser_power, read_laser_power], train)
+        
+        train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
+                 (prep_time, HIGH),
+                 (intra_pulse_delay, LOW),
+                 (test_time, LOW),
+                 (intra_pulse_delay, LOW), 
+                 (readout_time, LOW), 
+                 (100, LOW)]
+        tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                prep_laser_key, [prep_laser_power], train)
     
     else:
-        train_prep = [(galvo_move_time + total_delay - prep_aom_delay_time, LOW), 
-                            (prep_time, HIGH), 
-                            (100  + 2*intra_pulse_delay + test_time + readout_time,LOW )]
+        train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
+                 (prep_time, HIGH),
+                 (intra_pulse_delay, LOW),
+                 (test_time, LOW),
+                 (intra_pulse_delay, LOW), 
+                 (readout_time, LOW), 
+                 (100, LOW)]
         tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                prep_laser_key, prep_laser_power, train_prep)
+                                prep_laser_key, [prep_laser_power], train)
         
-        
-        train_test = [(galvo_move_time + total_delay - test_aom_delay_time + prep_time + intra_pulse_delay, LOW), 
-                 (test_time, HIGH), (intra_pulse_delay + readout_time + 100, LOW)]
+        train = [(total_delay -test_aom_delay_time + galvo_move_time, LOW),
+                 (prep_time, LOW),
+                 (intra_pulse_delay, LOW),
+                 (test_time, HIGH),
+                 (intra_pulse_delay, LOW), 
+                 (readout_time, LOW), 
+                 (100, LOW)]
         tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                test_laser_key, test_laser_power, train_test)
+                                test_laser_key, [test_laser_power], train)
+        
+        train = [(total_delay -read_aom_delay_time + galvo_move_time, LOW),
+                 (prep_time, LOW),
+                 (intra_pulse_delay, LOW),
+                 (test_time, LOW),
+                 (intra_pulse_delay, LOW), 
+                 (readout_time, HIGH), 
+                 (100, LOW)]
+        tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                readout_laser_key, [read_laser_power], train)
+
         
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -100,7 +188,7 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    args = [10000, 10000, 5000, 'cobolt_515', 'cobolt_515', 'laserglow_589',  None, None, 0.8, 0]
+    args = [200000.0, 1000000.0, 75000.0, 'cobolt_638', 'integrated_520', 'cobolt_638', 0.69, 0.66, 0.61, 1]
     # args = [1000.0, 100000000, 'cobolt_515', 'laserglow_589', None, 0.15, 0]
     seq = get_seq(None, config, args)[0]
     seq.plot()

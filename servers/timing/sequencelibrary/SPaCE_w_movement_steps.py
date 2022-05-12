@@ -187,7 +187,7 @@ def get_seq(pulse_streamer, config, args):
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                             'laserglow_589', aom_ao_589_pwr, train_589)
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                            'cobolt_638', None, train_638)
+                            'cobolt_638', [aom_ao_589_pwr, aom_ao_589_pwr], train_638)
         
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -197,6 +197,6 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
     # seq_args = [1000.0, 100000.0, 100000.0, 1e5, 1e6, 0.15, 0, 638, 532, 589, 2]
-    seq_args = [10000.0, 100000.0, 50000000.0, 4761904, 100000000, 0.15, 0, 515, 638, 589, 21]
+    seq_args = [100000.0, 100000.0, 2500.0, 80000, 2000000, 0.66, 0, 638, 520, 638, 25]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

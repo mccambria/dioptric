@@ -370,8 +370,8 @@ if __name__ == "__main__":
 
     ############ Replots ############
 
-    # if False:
-    if True:
+    if False:
+    # if True:
         tool_belt.init_matplotlib()
         # file_name = "2022_02_14-03_32_40-wu-nv1_2022_02_10"
         file_name = "2022_04_14-16_31_30-wu-nv3_2022_04_14"
@@ -410,24 +410,24 @@ if __name__ == "__main__":
     ########################
 
     # Rabi
-    apd_indices = [0]
+    apd_indices = [1]
     sample_name = "johnson"
 
-    green_laser = "cobolt_515"
+    green_laser = "integrated_520"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
     nv_sig = {
-        "coords": [-0.015, -0.009, 0],
-        "name": "{}-nv1_2022_02_10".format(sample_name),
+        "coords": [-0.748, -0.180, 6.17],
+        "name": "{}-nv1".format(sample_name),
         "disable_opt": False,
         "disable_z_opt": False,
-        "expected_count_rate": 15,
+        "expected_count_rate": 32,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
         "imaging_laser": green_laser,
         "imaging_laser_filter": "nd_0.5",
-        "imaging_readout_dur": 4e7,
+        "imaging_readout_dur": 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0.5", 'imaging_readout_dur': 1e8,
         # 'imaging_laser': yellow_laser, 'imaging_laser_power': 1.0, 'imaging_readout_dur': 1e8,
         # 'imaging_laser': red_laser, 'imaging_readout_dur': 1e7,
@@ -443,11 +443,12 @@ if __name__ == "__main__":
         # 'nv-_reionization_laser': green_laser, 'nv-_reionization_dur': 1E5, 'nv-_reionization_laser_filter': 'nd_0.5',
         "nv-_prep_laser": green_laser,
         "nv-_prep_laser_dur": 1e6,
-        "nv-_prep_laser_filter": "nd_1.0",
+        "nv-_prep_laser_filter": None,# "nd_1.0",
         "nv0_ionization_laser": red_laser,
         "nv0_ionization_dur": 100,
         "nv0_prep_laser": red_laser,
-        "nv0_prep_laser_dur": 100,
+        "nv0_prep_laser-power": 0.69,
+        "nv0_prep_laser_dur": 1E6,
         "spin_shelf_laser": yellow_laser,
         "spin_shelf_dur": 0,
         "spin_shelf_laser_power": 1.0,
@@ -458,7 +459,7 @@ if __name__ == "__main__":
         "charge_readout_laser": yellow_laser,
         "charge_readout_dur": 1840e6,
         "charge_readout_laser_power": 1.0,
-        "collection_filter": None,
+        "collection_filter": "715_sp+630_lp",
         "magnet_angle": None,
         "resonance_LOW": 2.8073,
         "rabi_LOW": 173.2,
@@ -476,7 +477,7 @@ if __name__ == "__main__":
     # readout_durs = numpy.linspace(10e6, 50e6, 5)
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 700e6, 1e9, 2e9]
     # readout_durs = [10e6, 25e6, 50e6, 100e6, 200e6, 400e6, 1e9]
-    readout_durs = [5e6, 10e6, 20e6, 40e6, 100e6]
+    readout_durs = [5e6, 10e6, 20e6]
     # readout_durs = numpy.linspace(700e6, 1e9, 7)
     # readout_durs = [50e6, 100e6, 200e6, 400e6, 1e9]
     # readout_durs = [2e9]
@@ -487,7 +488,7 @@ if __name__ == "__main__":
     # readout_powers = np.arange(0.75, 1.05, 0.05)
     # readout_powers = np.arange(0.68, 1.04, 0.04)
     # readout_powers = np.linspace(0.9, 1.0, 3)
-    readout_powers = [1.0]
+    readout_powers = [0.2, 0.3, 0.4, 0.5]
 
     # num_reps = 2000
     # num_reps = 1000

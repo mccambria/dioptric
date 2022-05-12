@@ -15,61 +15,52 @@ USE 515 DM, not AM
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
 import numpy
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import labrad
 #import majorroutines.image_sample as image_sample
 import copy
 import scipy.stats as stats
+from random import shuffle
 # %%
-# Apply a gren or red pulse, then measure the counts under yellow illumination. 
-# Repeat num_reps number of times and returns the list of counts after red illumination, then green illumination
-def main(nv_sig, apd_indices, num_reps):
+# Apply a first pulse (typically green or red) followed by a readout pulse (typically under yellow)
+# Repeat num_reps number of times and returns the sum of the counts
+def main(nv_sig, init_laser, readout_laser, apd_indices, num_reps):
 
     with labrad.connect() as cxn:
-        sig_counts, ref_counts = main_with_cxn(cxn, nv_sig, apd_indices, num_reps)
+        counts = main_with_cxn(cxn, nv_sig, init_laser, readout_laser,
+                                               apd_indices, num_reps)
         
-    return sig_counts, ref_counts
-def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
+    return counts
+def main_with_cxn(cxn, nv_sig, init_laser, readout_laser, apd_indices, num_reps):
 
-    tool_belt.reset_cfm_wout_uwaves(cxn)
-
-# Initial Calculation and setup
+    tool_belt.reset_cfm(cxn)
+    num_reps= int(num_reps)
     
-    aom_ao_589_pwr = nv_sig['am_589_power']
+    init_laser_key = nv_sig[init_laser]
+    readout_laser_key = nv_sig[readout_laser]
     
-    nd_filter = nv_sig['nd_filter']
-    readout_pulse_time = nv_sig['pulsed_SCC_readout_dur']
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
+    # Initial Calculation and setup
+    tool_belt.set_filter(cxn, nv_sig, init_laser)
     
-    reionization_time = nv_sig['pulsed_reionization_dur']
-    ionization_time = nv_sig['pulsed_ionization_dur']
-        
-
+    tool_belt.set_filter(cxn, nv_sig, readout_laser)
     
     
-    #delay of aoms and laser
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    aom_589_delay = shared_params['589_aom_delay']
-    laser_515_delay = shared_params['515_DM_laser_delay']
-    laser_638_delay = shared_params['638_DM_laser_delay']
-    galvo_delay = shared_params['large_angle_galvo_delay']
-    
-    
-
-    # Set up our data lists
-    opti_coords_list = []
-    
-    # Optimize
-    opti_coords = optimize.main_xy_with_cxn(cxn, nv_sig, apd_indices, 532, disable=False)
-    opti_coords_list.append(opti_coords)
+    init_laser_power = tool_belt.set_laser_power(
+        cxn, nv_sig, init_laser
+    )
+    readout_laser_power = tool_belt.set_laser_power(
+        cxn, nv_sig, readout_laser
+    )
 
     # Estimate the lenth of the sequance            
     seq_file = 'simple_readout_two_pulse.py'
-
-        
-    #### Load the measuremnt with green laser
-    seq_args = [galvo_delay, laser_515_delay, aom_589_delay, reionization_time,
-                readout_pulse_time, aom_ao_589_pwr, apd_indices[0], 532, 589]
+    
+    #### Load the measuremnt 
+    readout_on_pulse_ind = 2
+    seq_args = [nv_sig["{}_dur".format(init_laser)], nv_sig["{}_dur".format(readout_laser)],
+                init_laser_key, readout_laser_key,
+                init_laser_power, readout_laser_power, 
+                readout_on_pulse_ind, apd_indices[0]]
 #    print(seq_args)
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
@@ -81,159 +72,66 @@ def main_with_cxn(cxn, nv_sig, apd_indices, num_reps):
     # Run the sequence
     cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
 
-    nvm = cxn.apd_tagger.read_counter_simple(num_reps)
+    counts = cxn.apd_tagger.read_counter_simple(num_reps)
+    # print(counts)
     
-    # Load the measuremnt with red laser first
-    seq_args = [galvo_delay, laser_638_delay, aom_589_delay, ionization_time,
-                readout_pulse_time, aom_ao_589_pwr, apd_indices[0], 638, 589]
-#    print(seq_args)
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
-
-    # Load the APD
-    cxn.apd_tagger.start_tag_stream(apd_indices)
-    # Clear the buffer
-    cxn.apd_tagger.clear_buffer()
-    # Run the sequence
-    cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
-
-    nv0 = cxn.apd_tagger.read_counter_simple(num_reps)
-
-    
-    return nv0, nvm
+    return counts
 # %%
-def collect_charge_counts(nv_sig, num_reps, save_data = True):
-    with labrad.connect() as cxn:
-         ret_vals=collect_charge_counts_with_cxn(cxn, nv_sig, num_reps, save_data)
-         nv0_avg, nv0_ste, nvm_avg, nvm_ste = ret_vals
-         
-    return nv0_avg, nv0_ste, nvm_avg, nvm_ste
-def collect_charge_counts_with_cxn(cxn, nv_sig, num_reps, save_data = True):
-    num_reps = 1000
-    num_runs = 10
-    
+
+def nv_compare_charge_counts(cxn, nv_sig,  num_reps= 1000, save_data = True):    
     apd_indices = [0]
-    seq_file = 'simple_readout_two_pulse.py'
     
-    #delay of aoms and laser, parameters, etc
-    shared_params = tool_belt.get_shared_parameters_dict(cxn)
-    aom_589_delay = shared_params['589_aom_delay']
-    laser_515_delay = shared_params['515_laser_delay']
-    laser_638_delay = shared_params['638_DM_laser_delay']
-    galvo_delay = shared_params['large_angle_galvo_delay']
+    readout_laser = nv_sig['charge_readout_laser']
+    
+    #green init pulse
+    init_laser = nv_sig['nv-_prep_laser']
+    
+    
+    optimize.main(nv_sig, apd_indices)
+    nvm_counts = main(nv_sig, init_laser, readout_laser, apd_indices, num_reps)
+    
+    #red init pulse
+    init_laser = nv_sig['nv0_prep_laser']
+    
+    
+    optimize.main(nv_sig, apd_indices)
+    nv0_counts = main(nv_sig, init_laser, readout_laser, apd_indices, num_reps)
+    
 
-    aom_ao_589_pwr = nv_sig['am_589_power']
-    
-    nd_filter = nv_sig['nd_filter']
-    readout_pulse_time = nv_sig['pulsed_SCC_readout_dur']
-    cxn.filter_slider_ell9k.set_filter(nd_filter)
-    
-    reionization_time = nv_sig['pulsed_reionization_dur']
-    ionization_time = nv_sig['pulsed_ionization_dur']
-    
-    # some lists to measure the 
-    nv0 = []
-    
-    nvm = []
-    
-#    opti_coords_list=[]
-    
-    # Move the galvo
-    drift = tool_belt.get_drift()
-    coords = nv_sig['coords']
-    coords_drift = numpy.array(coords) + numpy.array(drift)
-    # move the galvo to the NV
-    tool_belt.set_xyz(cxn, coords_drift)
-
-
-    # Measure the NV0 counts
-    seq_args = [galvo_delay, laser_638_delay, aom_589_delay, ionization_time,
-                readout_pulse_time, aom_ao_589_pwr, apd_indices[0], 638, 589]
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
-    
-    # Optimize
-#    opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_index, 532, disable=True)
-#    opti_coords_list.append(opti_coords)
-    for i in range(num_runs):
-        print(i)
-        
-        # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
-        # Clear the buffer
-        cxn.apd_tagger.clear_buffer()
-        # Run the sequence
-        cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
-    
-        new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-        print(new_counts)
-        sample_counts = new_counts[0]
-    
-        # signal counts are even - get every second element starting from 0
-        counts = sample_counts[0::1]
-        cxn.apd_tagger.stop_tag_stream()
-            
-        nv0.append(counts)
-        
-        # Measure the NV- counts
-        seq_args = [galvo_delay, laser_515_delay, aom_589_delay, reionization_time,
-                    readout_pulse_time, aom_ao_589_pwr, apd_indices[0], 532, 589]
-        seq_args_string = tool_belt.encode_seq_args(seq_args)
-    
-        # Load the APD
-        cxn.apd_tagger.start_tag_stream(apd_indices)
-        # Clear the buffer
-        cxn.apd_tagger.clear_buffer()
-        # Run the sequence
-        cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
-    
-        new_counts = cxn.apd_tagger.read_counter_separate_gates(1)
-        sample_counts = new_counts[0]
-    
-        # signal counts are even - get every second element starting from 0
-        counts = sample_counts[0::1]
-        
-        nvm.append(counts)
-        
-        cxn.apd_tagger.stop_tag_stream()
-        
-    print(nv0)
-    print(nvm)
-    nv0_avg = numpy.average(nv0)
-    nv0_ste = stats.sem(nv0) 
-    nvm_avg = numpy.average(nvm)
-    nvm_ste = stats.sem(nvm) 
+    nv0_avg = numpy.average(nv0_counts)
+    nv0_ste = stats.sem(nv0_counts) 
+    nvm_avg = numpy.average(nvm_counts)
+    nvm_ste = stats.sem(nvm_counts) 
     
     
     if save_data:
-        # measure laser powers:
-        green_optical_power_pd, green_optical_power_mW, \
-                red_optical_power_pd, red_optical_power_mW, \
-                yellow_optical_power_pd, yellow_optical_power_mW = \
-                tool_belt.measure_g_r_y_power(
-                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
+        # # measure laser powers:
+        # green_optical_power_pd, green_optical_power_mW, \
+        #         red_optical_power_pd, red_optical_power_mW, \
+        #         yellow_optical_power_pd, yellow_optical_power_mW = \
+        #         tool_belt.measure_g_r_y_power(
+        #                           nv_sig['am_589_power'], nv_sig['nd_filter'])
     
 
         timestamp = tool_belt.get_time_stamp()
         raw_data = {'timestamp': timestamp,
                 'nv_sig': nv_sig,
-                'nv_sig-units': tool_belt.get_nv_sig_units(),
-                'green_optical_power_pd': green_optical_power_pd,
-                'green_optical_power_pd-units': 'V',
-                'green_optical_power_mW': green_optical_power_mW,
-                'green_optical_power_mW-units': 'mW',
-                'red_optical_power_pd': red_optical_power_pd,
-                'red_optical_power_pd-units': 'V',
-                'red_optical_power_mW': red_optical_power_mW,
-                'red_optical_power_mW-units': 'mW',
-                'yellow_optical_power_pd': yellow_optical_power_pd,
-                'yellow_optical_power_pd-units': 'V',
-                'yellow_optical_power_mW': yellow_optical_power_mW,
-                'yellow_optical_power_mW-units': 'mW',
+                # 'green_optical_power_pd': green_optical_power_pd,
+                # 'green_optical_power_pd-units': 'V',
+                # 'green_optical_power_mW': green_optical_power_mW,
+                # 'green_optical_power_mW-units': 'mW',
+                # 'red_optical_power_pd': red_optical_power_pd,
+                # 'red_optical_power_pd-units': 'V',
+                # 'red_optical_power_mW': red_optical_power_mW,
+                # 'red_optical_power_mW-units': 'mW',
+                # 'yellow_optical_power_pd': yellow_optical_power_pd,
+                # 'yellow_optical_power_pd-units': 'V',
+                # 'yellow_optical_power_mW': yellow_optical_power_mW,
+                # 'yellow_optical_power_mW-units': 'mW',
                 'num_runs':num_reps,
-#                'opti_coords_list': opti_coords_list,
-                'nv0': nv0,
+                'nv0': nv0_counts,
                 'nv0-units': 'counts',
-                'nvm': nvm,
+                'nvm': nvm_counts,
                 'nvm-units': 'counts',
                 'nv0_avg': nv0_avg,
                 'nv0_avg-units': 'counts',
@@ -247,7 +145,7 @@ def collect_charge_counts_with_cxn(cxn, nv_sig, num_reps, save_data = True):
         
     
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_raw_data(raw_data, file_path + '-single_nv')
+    tool_belt.save_raw_data(raw_data, file_path)
     
     print(str(nv0_avg) + ' +/-' + str(nv0_ste))
     print(str(nvm_avg) + ' +/-' + str(nvm_ste))
@@ -255,319 +153,149 @@ def collect_charge_counts_with_cxn(cxn, nv_sig, num_reps, save_data = True):
     return nv0_avg, nv0_ste, nvm_avg, nvm_ste
 
 # %%
-def collect_charge_counts_yellow_pwr(coords, parameters_sig, nd_filter, aom_power_list, num_reps, apd_indices ):
-    with labrad.connect() as cxn:
-        tool_belt.reset_cfm(cxn)
+def vary_init_pulse_dur(nv_sig,  num_reps, apd_indices, duration_list):
+
+    readout_laser = 'charge_readout_laser'
+    init_laser = 'initialization_laser'
     
-    nv0_list = []
-    nvm_list = []
-    nv0_avg_list = []
-    nv0_ste_list = []
-    nvm_avg_list = []
-    nvm_ste_list = []
-    yellow_power_list = []
-    print(nd_filter)
+    optimize.main(nv_sig, apd_indices)
     
-    for power in aom_power_list:
-        print(power)
-        nv_sig = copy.deepcopy(parameters_sig)
-        nv_sig['coords'] = coords
-        nv_sig['am_589_power'] = power
-        nv_sig['nd_filter'] = nd_filter
-#        time.sleep(0.002)
-        
-        ret_vals = main(nv_sig,  apd_indices,num_reps)
-        nv0_counts, nvm_counts = ret_vals
-        nv0_counts = [int(el) for el in nv0_counts]
-        nvm_counts = [int(el) for el in nvm_counts]
-        
-        nv0_list.append(nv0_counts)
-        nvm_list.append(nvm_counts)
-        
-        nv0_avg = numpy.average(nv0_counts)
-        nv0_ste = stats.sem(nv0_counts)
-        nv0_avg_list.append(nv0_avg)
-        nv0_ste_list.append(nv0_ste)
-        
-        nvm_avg = numpy.average(nvm_counts)
-        nvm_ste = stats.sem(nvm_counts)
-        nvm_avg_list.append(nvm_avg)
-        nvm_ste_list.append(nvm_ste)    
+    num_steps = len(duration_list)
+    sig_list = numpy.zeros((num_steps,int(num_reps)))
+    ref_list = numpy.zeros((num_steps,int(num_reps)))
+    tau_ind_list = list(range(0, num_steps)) 
+    tau_index_master_list = []      
+    shuffle(tau_ind_list)
+
+    for tau_ind in tau_ind_list:
+        tau_index_master_list.append(tau_ind)
     
-        # measure laser powers:
-        green_optical_power_pd, green_optical_power_mW, \
-                red_optical_power_pd, red_optical_power_mW, \
-                yellow_optical_power_pd, yellow_optical_power_mW = \
-                tool_belt.measure_g_r_y_power(
-                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
-        yellow_power_list.append(yellow_optical_power_mW)
+        print('init pulse: {} ns'.format(duration_list[tau_ind]))
+        print('measuring with init pulse...')
+        nv_sig["{}_dur".format(init_laser)] = duration_list[tau_ind]
+        counts = main(nv_sig, init_laser, readout_laser, apd_indices, num_reps)
+        sig_list[tau_ind] = counts
         
+        
+        nv_sig['initialization_laser'] = red_laser
+        nv_sig['initialization_laser_power'] = 0.66
+        # nv_sig['initialization_laser_dur'] = 1e5
+        
+        print('measuring reference...')
+        # counts = main(nv_sig, readout_laser, readout_laser, apd_indices, num_reps)
+        counts = main(nv_sig, init_laser, readout_laser, apd_indices, num_reps)
+        ref_list[tau_ind] = counts
+    
+    avg_sig_list = numpy.average(sig_list, axis = 1)
+    avg_ref_list = numpy.average(ref_list, axis = 1)
+    
+    avg_norm_list = avg_sig_list/avg_ref_list
+    
+    init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                      ['Config', 'Optics', nv_sig[init_laser]])
+    readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+                      ['Config', 'Optics', nv_sig[readout_laser]])
+    readout_dur = nv_sig["{}_dur".format(readout_laser)]
+    
+    fig, axes = plt.subplots(1,2, figsize=(12, 6))
+    ax=axes[0]
+    ax.plot(numpy.array(duration_list)*1e-6, avg_sig_list, 'bo', 
+            label='init {} nm pulse'.format(init_color))
+    ax.plot(numpy.array(duration_list)*1e-6, avg_ref_list, 'ko',
+            label='init pulse same as readout')
+    ax.set_xlabel('initial pulse duration (ms)')
+    ax.set_ylabel('Counts')
+    ax.set_title('initial {} pulse, with {} ms {} nm readout'.format(init_color, 
+                                                                     readout_dur*1e-6, readout_color))
+    ax.legend()
+    
+    ax=axes[1]
+    ax.plot(numpy.array(duration_list)*1e-6, avg_norm_list, 'bo')
+    ax.set_xlabel('initial pulse duration (ms)')
+    ax.set_ylabel('Normalized signal')
+    fig.set_tight_layout(True)
     
     timestamp = tool_belt.get_time_stamp()
+
     raw_data = {'timestamp': timestamp,
-            'parameters_sig': parameters_sig,
-            'parameters_sig-units': tool_belt.get_nv_sig_units(),
-            'coords': coords,
-            'nd_filter': nd_filter,
-            'aom_power_list': aom_power_list,
-            'aom_power_list-units': 'V',
-            'yellow_power_list': yellow_power_list,
-            'yellow_power_list-units': 'mW',
-            'green_optical_power_pd': green_optical_power_pd,
-            'green_optical_power_pd-units': 'V',
-            'green_optical_power_mW': green_optical_power_mW,
-            'green_optical_power_mW-units': 'mW',
-            'red_optical_power_pd': red_optical_power_pd,
-            'red_optical_power_pd-units': 'V',
-            'red_optical_power_mW': red_optical_power_mW,
-            'red_optical_power_mW-units': 'mW',
-            'yellow_optical_power_pd': yellow_optical_power_pd,
-            'yellow_optical_power_pd-units': 'V',
-            'yellow_optical_power_mW': yellow_optical_power_mW,
-            'yellow_optical_power_mW-units': 'mW',
-            'num_runs':num_reps,
-            'nv0_list': nv0_list,
-            'nv0_list-units': 'counts',
-            'nvm_list': nvm_list,
-            'nvm_list-units': 'counts',                
-            'nv0_avg_list': nv0_avg_list,
-            'nv0_avg_list-units': 'counts',
-            'nv0_ste_list': nv0_ste_list,
-            'nv0_ste_list-units': 'counts',
-            'nvm_avg_list': nvm_avg_list,
-            'nvm_avg_list-units': 'counts',
-            'nvm_ste_list': nvm_ste_list,
-            'nvm_ste_list-units': 'counts'
-            }
-            
-#    print(nv0_avg_list)
-#    print(nvm_avg_list)
-    file_path = tool_belt.get_file_path(__file__, timestamp, parameters_sig['name'])
-    tool_belt.save_raw_data(raw_data, file_path)
-    
-    return
-
-
-# %%
-def collect_charge_counts_yellow_time(coords, parameters_sig, readout_time_list, num_reps, apd_indices ):
-    with labrad.connect() as cxn:
-        tool_belt.reset_cfm_wout_uwaves(cxn)
-    
-    nv0_list = []
-    nvm_list = []
-    nv0_avg_list = []
-    nv0_ste_list = []
-    nvm_avg_list = []
-    nvm_ste_list = []
-#    yellow_power_list = []
-    
-    for readout_time in readout_time_list:
-        print(str(readout_time/10**6) + ' ms')
-        nv_sig = copy.deepcopy(parameters_sig)
-        nv_sig['coords'] = coords
-        nv_sig['pulsed_SCC_readout_dur'] = readout_time
-#        time.sleep(0.002)
-        
-        ret_vals = main(nv_sig,  apd_indices,num_reps)
-        nv0_counts, nvm_counts = ret_vals
-        nv0_counts = [int(el) for el in nv0_counts]
-        nvm_counts = [int(el) for el in nvm_counts]
-        
-        nv0_list.append(nv0_counts)
-        nvm_list.append(nvm_counts)
-        
-        nv0_avg = numpy.average(nv0_counts)
-        nv0_ste = stats.sem(nv0_counts)
-        nv0_avg_list.append(nv0_avg)
-        nv0_ste_list.append(nv0_ste)
-        
-        nvm_avg = numpy.average(nvm_counts)
-        nvm_ste = stats.sem(nvm_counts)
-        nvm_avg_list.append(nvm_avg)
-        nvm_ste_list.append(nvm_ste)    
-    
-        # measure laser powers:
-        green_optical_power_pd, green_optical_power_mW, \
-                red_optical_power_pd, red_optical_power_mW, \
-                yellow_optical_power_pd, yellow_optical_power_mW = \
-                tool_belt.measure_g_r_y_power(
-                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
-        
-    
-    timestamp = tool_belt.get_time_stamp()
-    raw_data = {'timestamp': timestamp,
-            'parameters_sig': parameters_sig,
-            'parameters_sig-units': tool_belt.get_nv_sig_units(),
-            'coords': coords,
-            'readout_time_list': readout_time_list,
-            'readout_time_list-units': 'ns',
-            'green_optical_power_pd': green_optical_power_pd,
-            'green_optical_power_pd-units': 'V',
-            'green_optical_power_mW': green_optical_power_mW,
-            'green_optical_power_mW-units': 'mW',
-            'red_optical_power_pd': red_optical_power_pd,
-            'red_optical_power_pd-units': 'V',
-            'red_optical_power_mW': red_optical_power_mW,
-            'red_optical_power_mW-units': 'mW',
-            'yellow_optical_power_pd': yellow_optical_power_pd,
-            'yellow_optical_power_pd-units': 'V',
-            'yellow_optical_power_mW': yellow_optical_power_mW,
-            'yellow_optical_power_mW-units': 'mW',
-            'num_runs':num_reps,
-            'nv0_list': nv0_list,
-            'nv0_list-units': 'counts',
-            'nvm_list': nvm_list,
-            'nvm_list-units': 'counts',                
-            'nv0_avg_list': nv0_avg_list,
-            'nv0_avg_list-units': 'counts',
-            'nv0_ste_list': nv0_ste_list,
-            'nv0_ste_list-units': 'counts',
-            'nvm_avg_list': nvm_avg_list,
-            'nvm_avg_list-units': 'counts',
-            'nvm_ste_list': nvm_ste_list,
-            'nvm_ste_list-units': 'counts'
-            }
-            
-#    print(nv0_avg_list)
-#    print(nvm_avg_list)
-    file_path = tool_belt.get_file_path(__file__, timestamp, parameters_sig['name'])
-    tool_belt.save_raw_data(raw_data, file_path)
-    
-    return
-
-# %%
-def collect_charge_counts_list(coords_list, parameters_sig, num_reps, apd_indices):
-    with labrad.connect() as cxn:
-        tool_belt.reset_cfm_wout_uwaves(cxn)
-    
-    nv0_list = []
-    nvm_list = []
-    nv0_avg_list = []
-    nv0_ste_list = []
-    nvm_avg_list = []
-    nvm_ste_list = []
-    
-    
-    for coords in coords_list:
-        print(coords)
-        nv_sig = copy.deepcopy(parameters_sig)
-        nv_sig['coords'] = coords
-#        time.sleep(0.002)
-        
-        ret_vals = main(nv_sig,  apd_indices,num_reps)
-        nv0_counts, nvm_counts = ret_vals
-        nv0_counts = [int(el) for el in nv0_counts]
-        nvm_counts = [int(el) for el in nvm_counts]
-        
-        nv0_list.append(nv0_counts)
-        nvm_list.append(nvm_counts)
-        
-        nv0_avg = numpy.average(nv0_counts)
-        nv0_ste = stats.sem(nv0_counts)
-        nv0_avg_list.append(nv0_avg)
-        nv0_ste_list.append(nv0_ste)
-        
-        nvm_avg = numpy.average(nvm_counts)
-        nvm_ste = stats.sem(nvm_counts)
-        nvm_avg_list.append(nvm_avg)
-        nvm_ste_list.append(nvm_ste)    
-    
-        # measure laser powers:
-        green_optical_power_pd, green_optical_power_mW, \
-                red_optical_power_pd, red_optical_power_mW, \
-                yellow_optical_power_pd, yellow_optical_power_mW = \
-                tool_belt.measure_g_r_y_power(
-                                  nv_sig['am_589_power'], nv_sig['nd_filter'])
-    
-
-        timestamp = tool_belt.get_time_stamp()
-        raw_data = {'timestamp': timestamp,
-                'parameters_sig': parameters_sig,
-                'parameters_sig-units': tool_belt.get_nv_sig_units(),
-                'coords_list': coords_list,
-                'green_optical_power_pd': green_optical_power_pd,
-                'green_optical_power_pd-units': 'V',
-                'green_optical_power_mW': green_optical_power_mW,
-                'green_optical_power_mW-units': 'mW',
-                'red_optical_power_pd': red_optical_power_pd,
-                'red_optical_power_pd-units': 'V',
-                'red_optical_power_mW': red_optical_power_mW,
-                'red_optical_power_mW-units': 'mW',
-                'yellow_optical_power_pd': yellow_optical_power_pd,
-                'yellow_optical_power_pd-units': 'V',
-                'yellow_optical_power_mW': yellow_optical_power_mW,
-                'yellow_optical_power_mW-units': 'mW',
-                'num_runs':num_reps,
-                'nv0_list': nv0_list,
-                'nv0_list-units': 'counts',
-                'nvm_list': nvm_list,
-                'nvm_list-units': 'counts',                
-                'nv0_avg_list': nv0_avg_list,
-                'nv0_avg_list-units': 'counts',
-                'nv0_ste_list': nv0_ste_list,
-                'nv0_ste_list-units': 'counts',
-                'nvm_avg_list': nvm_avg_list,
-                'nvm_avg_list-units': 'counts',
-                'nvm_ste_list': nvm_ste_list,
-                'nvm_ste_list-units': 'counts'
+                'nv_sig': nv_sig,
+                'nv_sig-units': tool_belt.get_nv_sig_units(),
+                'init_color': init_color,
+                'readout_color': readout_color,
+                'num_reps': num_reps,
+                'duration_list':duration_list,
+                'avg_sig_list': avg_sig_list.tolist(),
+                'sig_list': sig_list.astype(int).tolist(),
+                'avg_ref_list': avg_ref_list.tolist(),
+                'ref_list': ref_list.astype(int).tolist(),
                 }
-        
-#    print(nv0_avg_list)
-#    print(nvm_avg_list)
+
     file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
-    tool_belt.save_raw_data(raw_data, file_path + '-nv_list')
+    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(raw_data, file_path)
+       
     
     return
+
+
+
 
 # %% Run the files
 
 if __name__ == '__main__':
-    apd_indicies = [0]
+    apd_indicies = [1]
     
-    expected_count_list = [40, 45, 65, 64, 55, 32,  40, 45 ] # 4/13/21 ###
-    nv_coords_list = [
-[-0.037, 0.119, 5.14],
-[-0.090, 0.066, 5.04],
-[-0.110, 0.042, 5.13],
-[0.051, -0.115, 5.08],
-[-0.110, 0.042, 5.06],
+    nd_yellow = "nd_1.5"
+    green_power =10
+    red_power = 120
+    sample_name = "sandia"
+    green_laser = "integrated_520"#"cobolt_515"
+    yellow_laser = "laserglow_589"
+    red_laser = "cobolt_638"
+    
+    nv_sig = {    
+        "coords":[-0.851, -0.343, 6.17],# a6_R10c10
+        "name": "{}-siv_R21_a6_r10_c10".format(sample_name,),#_r10_c10
+        "disable_opt":False,
+        "ramp_voltages": True,
+        "expected_count_rate":80,
+        
 
-[0.063, 0.269, 5.09], 
-[0.243, 0.184, 5.12],
-[0.086, 0.220, 5.03],
-]
+        "imaging_laser": red_laser,
+        "imaging_laser_power": 0.595, # 6 mW
+        "imaging_readout_dur": 1e7,
+        
+        "initialization_laser": green_laser,
+        "initialization_laser_power": green_power,
+        "initialization_laser_dur": 1e5,
+        
 
+        
+        "charge_readout_laser": red_laser,
+        "charge_readout_laser_power": 0.69,
+        "charge_readout_laser_dur": 500,
+        
+        "collection_filter": "715_lp",
+        "magnet_angle": None,
+    }  
     
-    base_nv_sig  = { 'coords':None,
-            'name': 'goeppert-mayer-nv5_2021_04_15',
-            'expected_count_rate': 35,'nd_filter': 'nd_1.0',
-            'color_filter': '635-715 bp', 
-#            'color_filter': '715 lp',
-            'pulsed_readout_dur': 300,
-            'pulsed_SCC_readout_dur': 30*10**7,  'am_589_power': 0.15,
-            'pulsed_initial_ion_dur': 25*10**3,
-            'pulsed_shelf_dur': 200, 
-            'am_589_shelf_power': 0.35,
-            'pulsed_ionization_dur': 10**3, 'cobalt_638_power': 130, 
-            'pulsed_reionization_dur': 100*10**3, 'cobalt_532_power':10,
-            'ao_515_pwr': 0.65,
-            'magnet_angle': 0,
-            "resonance_LOW": 2.7,"rabi_LOW": 146.2, "uwave_power_LOW": 9.0,
-            "resonance_HIGH": 2.9774,"rabi_HIGH": 95.2,"uwave_power_HIGH": 10.0}
+    try:
+        
+        duration_list= [ 50, 1e2,  1e3,  1e4,   1e5,  1e6, 1e7]
+        # duration_list= [ 5e5, 6e6]
+        vary_init_pulse_dur(nv_sig, 1e4, apd_indicies, duration_list)
+        
+    except Exception as exc:
+        print(exc)
     
-    list_ = [ nv_coords_list[5]]
-#    collect_charge_counts_list(nv_coords_list, base_nv_sig, 200, apd_indicies)
-    for t in [100*10**6]:
-        nv_sig = copy.deepcopy(base_nv_sig)
-        nv_sig['pulsed_SCC_readout_dur'] = t
-        collect_charge_counts_list(list_, nv_sig, 200, apd_indicies)
+
+    finally:
+        # Reset our hardware - this should be done in each routine, but
+        # let's double check here
+        tool_belt.reset_cfm()
+        # Kill safe stop
+        if tool_belt.check_safe_stop_alive():
+            print("\n\nRoutine complete. Press enter to exit.")
+            tool_belt.poll_safe_stop()
+            
        
-#    readout_time_list = [15*10**7, 20*10**7, 25*10**7]
-#    for i in [2, 4, 10, 18, 19]:
-#        for p in [0.2,0.3,0.4,0.5,0.6]:
-#            coords = nv_coords_list[i]
-#            base_nv_sig['expected_count_rate'] = expected_count_list[i]
-#            base_nv_sig['name'] = 'goeppert-mayer-nv{}_2021_03_17'.format(i)
-#            base_nv_sig['nd_filter'] = 'nd_1.5'
-#            base_nv_sig['am_589_power'] = p
-#    collect_charge_counts_yellow_time(nv_coords_list[5], base_nv_sig, readout_time_list, 200, apd_indicies )

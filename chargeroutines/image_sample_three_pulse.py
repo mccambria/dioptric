@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Scan the galvos over the designated area, collecting counts at each point.
-Generate an image of the sample.
+Scan the galvos over the designated area, where we shine three laser pulses
 
-Created on Tue Apr  9 15:18:53 2019
+Created on Fri Nay  6 15:18:53 2022
 
-@author: mccambria
+@author: gardill
 """
+
 
 
 import numpy

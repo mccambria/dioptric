@@ -402,7 +402,7 @@ def process_laser_seq(
     modulation, but the Pulse Streamer only supplies 2.6 V.
     """
     pulser_wiring = config["Wiring"]["PulseStreamer"]
-    print(config)
+    # print(config)
     mod_type = config["Optics"][laser_name]["mod_type"]
     mod_type = eval(mod_type)
     feedthrough = config["Optics"][laser_name]["feedthrough"]
@@ -481,9 +481,12 @@ def process_laser_seq(
             dur = el[0]
             val = el[1]
             if type(laser_power) == list:
-                power_dict = {LOW: 0.0, HIGH: laser_power[high_count]}
-                if val == HIGH:
-                    high_count += 1
+                if val == 0:
+                    power_dict = {LOW: 0.0}
+                else:
+                    power_dict = {HIGH: laser_power[high_count]}
+                    if val == HIGH:
+                        high_count += 1
             # If a list wasn't passed, just use the single value for laser_power
             elif type(laser_power) != list:
                 power_dict = {LOW: 0.0, HIGH: laser_power}
@@ -1224,6 +1227,22 @@ def get_raw_data(
     nvdata_dir (ie nvdata_dir / pc_folder / routine / year_month / file.txt)
     """
 
+    file_path = get_raw_data_path(file_name, path_from_nvdata, nvdata_dir)
+
+    with file_path.open() as f:
+        res = json.load(f)
+        return res
+
+
+def get_raw_data_path(
+    file_name,
+    path_from_nvdata=None,
+    nvdata_dir=None,
+):
+    """
+    Same as get_raw_data, but just returns the path to the file
+    """
+
     if nvdata_dir is None:
         nvdata_dir = common.get_nvdata_dir()
 
@@ -1234,9 +1253,7 @@ def get_raw_data(
     file_name_ext = "{}.txt".format(file_name)
     file_path = data_dir / file_name_ext
 
-    with file_path.open() as f:
-        res = json.load(f)
-        return res
+    return file_path
 
 
 # %%  Save utils

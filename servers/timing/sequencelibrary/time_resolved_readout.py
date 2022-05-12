@@ -1,133 +1,101 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Mar  24 08:34:08 2020
+Created on Tue Apr  9 21:24:36 2019
 
-For SCC, it's useful to observe the photon counts under constant illumination. 
+A similar sequence file to simple_readout_two_pulses, but this file can vary the 
+readout duration of the apd independently from the readout laser duration.
 
-This file is the sequence to count the photons while yellow/red light is
-illuminating (after being reionized with green) or while green light it
-iluminating (after being ionized with red)
+Assumes that readout is on pulse two
 
-@author: Aedan
+@author: mccambria
 """
 
 from pulsestreamer import Sequence
 from pulsestreamer import OutputState
+import utils.tool_belt as tool_belt
 import numpy
-#import utils.tool_belt as tool_belt
-#from utils.tool_belt import States
 
 LOW = 0
 HIGH = 1
 
-def get_seq(pulser_wiring, args):
 
-    # %% Parse wiring and args
+def get_seq(pulse_streamer, config, args):
 
-    # The first 3 args are ns durations and we need them as int64s
-    durations = []
-    for ind in range(6):
-        durations.append(numpy.int64(args[ind]))
-
-    # Unpack the durations
-    readout, illum_pulse_duration, init_pulse_duration, wait_time, \
-                init_pulse_delay, illum_pulse_delay = durations
-                
-    aom_ao_589_pwr = args[6]
-
-    # Get the APD index
-    apd_index = args[7]
-    
-    init_color_ind = args[8]
-    illum_color_ind = args[9]
+    # Unpack the args
+    # assumes readout_time >= readout_laser_time
+    init_pulse_time, readout_time, readout_laser_time, init_laser_key, readout_laser_key,\
+      init_laser_power, read_laser_power, readout_on_pulse_ind, apd_index  = args
 
     # Get what we need out of the wiring dictionary
-    pulser_do_apd_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
-    pulser_do_clock = pulser_wiring['do_sample_clock']
-    pulser_do_532_aom = pulser_wiring['do_532_aom']
-    pulser_ao_589_aom = pulser_wiring['ao_589_aom']
-    pulser_do_638_aom = pulser_wiring['do_638_laser']
-    
-    # Allow any combination of first pusle and second pulse
-    
-    if init_color_ind == 532:
-        init_pulse_channel = pulser_do_532_aom
-        init_high = HIGH
-    elif init_color_ind == 589:
-        init_pulse_channel = pulser_ao_589_aom
-        init_high = aom_ao_589_pwr
-    elif init_color_ind == 638:
-        init_pulse_channel = pulser_do_638_aom
-        init_high = HIGH
-        
-    if illum_color_ind == 532:
-        illum_pulse_channel = pulser_do_532_aom
-        illum_high = HIGH
-    elif illum_color_ind == 589:
-        illum_pulse_channel = pulser_ao_589_aom
-        illum_high = aom_ao_589_pwr
-    elif illum_color_ind == 638:
-        illum_pulse_channel = pulser_do_638_aom
-        illum_high = HIGH
+    pulser_wiring = config['Wiring']['PulseStreamer']
+    pulser_do_daq_clock = pulser_wiring['do_sample_clock']
+    pulser_do_daq_gate = pulser_wiring['do_apd_{}_gate'.format(apd_index)]
 
-    # %% Calclate total period. This is fixed for each tau index
-    
-    total_laser_delay = init_pulse_delay + illum_pulse_delay
-    
-    # Pad some extra time before and after illumination to readout. Readout
-    # time should be longer than illumination time
-    extra_illum_time = int((readout - illum_pulse_duration) / 2)
-    
-#    readout = 2000 + illum_pulse_duration
-    period = total_laser_delay + init_pulse_duration + readout + wait_time
-    
-    # %% Define the sequence
+    init_pulse_aom_delay_time = config['Optics'][init_laser_key]['delay']
+    read_pulse_aom_delay_time = config['Optics'][readout_laser_key]['delay']
 
+    # Convert the 32 bit ints into 64 bit ints
+    init_pulse_time = numpy.int64(init_pulse_time)
+    readout_time = numpy.int64(readout_time)
+
+    # intra_pulse_delay = config['CommonDurations']['cw_meas_buffer']
+    intra_pulse_delay = config['CommonDurations']['scc_ion_readout_buffer']
+
+    if init_laser_key == readout_laser_key:
+        total_delay = init_pulse_aom_delay_time
+    else:
+        total_delay = init_pulse_aom_delay_time + read_pulse_aom_delay_time
+
+    period = total_delay + init_pulse_time + readout_time +\
+                                        intra_pulse_delay + 300
+                                        
+    # calc the time that the apd will be reading before and after the laser turns on. 
+    dead_time = int((readout_time - readout_laser_time)/2)
+
+    #%% Define the sequence
     seq = Sequence()
-    
-    # APD 
 
-    train = [(total_laser_delay + init_pulse_duration + wait_time, LOW),
-             (readout, HIGH), (100, LOW)] 
-    seq.setDigital(pulser_do_apd_gate, train)
+    # Clock
+    train = [(total_delay + init_pulse_time + intra_pulse_delay + readout_time + 100, LOW), (100, HIGH), (100, LOW)]
+    seq.setDigital(pulser_do_daq_clock, train)
 
-    # initial pulse sequence.
-    train = [(illum_pulse_delay, LOW), (init_pulse_duration, init_high),
-             (wait_time + readout + init_pulse_delay, LOW)]
-    if init_color_ind == 589:
-        seq.setAnalog(pulser_ao_589_aom, train)
+    # APD gate
+    train = [(total_delay + init_pulse_time + intra_pulse_delay, LOW), (readout_time, HIGH), (300, LOW)]
+    seq.setDigital(pulser_do_daq_gate, train)
+
+    if init_laser_key == readout_laser_key:
+        laser_key = readout_laser_key
+        laser_powers = [init_laser_power, read_laser_power]
+
+        train = [(init_pulse_time, HIGH),
+                 (intra_pulse_delay + dead_time, LOW),
+                 (readout_laser_time, HIGH), (dead_time + 100 ,LOW )]
+        tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                laser_key, laser_powers, train)
+
     else:
-        seq.setDigital(init_pulse_channel, train) 
+        train_init_laser = [(read_pulse_aom_delay_time, LOW),
+                            (init_pulse_time, HIGH),
+                            (100  + intra_pulse_delay + dead_time + readout_laser_time + dead_time,LOW )]
+        tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                init_laser_key, init_laser_power, train_init_laser)
 
-    # illumination pulse sequence.
-    train = [(init_pulse_delay + init_pulse_duration + wait_time + extra_illum_time, LOW),
-             (illum_pulse_duration, illum_high), 
-             (extra_illum_time + illum_pulse_delay, LOW)]
-    if illum_color_ind == 589:
-        seq.setAnalog(pulser_ao_589_aom, train)
-    else:
-        seq.setDigital(illum_pulse_channel, train)
-        
-    # If we're using red/yellow, we'll want to start in NV- each time. The
-    # quickest way to implement this is to stick on a green pulse at the end
-#    if init_color_ind == 638 and illum_color_ind == 589:
-#        train = [(period + 1000, LOW), (3000, 1), (100, LOW)]
-#        seq.setDigital(pulser_do_532_aom, train)
-        
-    final_digital = [pulser_do_clock]
+
+        train_read_laser = [(init_pulse_aom_delay_time + init_pulse_time + intra_pulse_delay + dead_time, LOW),
+                            (readout_laser_time, HIGH), 
+                            (dead_time + 100 ,LOW )]
+        tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                readout_laser_key, read_laser_power, train_read_laser)
+
+    final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
+
     return seq, final, [period]
 
+
 if __name__ == '__main__':
-    wiring = {'ao_638_laser': 0,
-              'ao_589_aom':1,
-              'do_sample_clock': 0,
-              'do_apd_0_gate': 4,
-              'do_532_aom': 1,
-              'do_638_laser': 7
-              }
-
-    seq_args = [10500, 10000, 5, 300, 0, 0, 0.7, 0, 532 , 589]
-
-    seq, final, ret_vals = get_seq(wiring, seq_args)
+    config = tool_belt.get_config_dict()      
+    args = [100000, 200000, 100000, 'cobolt_638', 'cobolt_638', 0.6, 0.2, 2, 0]
+    # args = [1000.0, 100000000, 'cobolt_515', 'laserglow_589', None, 0.15, 0]
+    seq = get_seq(None, config, args)[0]
     seq.plot()

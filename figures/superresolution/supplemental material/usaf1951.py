@@ -342,11 +342,11 @@ def plot_1D_cut_for_vertical_lines(file_name, folder, cfm):
 folder= 'pc_rabi/branch_master/image_sample/2022_01'
 file_name ='2022_01_11-15_44_46-USAF51-search'
 # do_plot_confocal_figure(file_name, folder, max_val = 12.6)
-# plot_1D_cut_for_horizontal_lines(file_name, folder)
+plot_1D_cut_for_horizontal_lines(file_name, folder)
 
 file_name ='2022_01_11-15_50_14-USAF51-search'
 # do_plot_confocal_figure(file_name, folder, max_val = 12.6)
-# plot_1D_cut_for_vertical_lines(file_name, folder, "B") 
+plot_1D_cut_for_vertical_lines(file_name, folder, "B") 
 
 file_name ='2022_01_11-15_44_46-USAF51-search'
 
@@ -358,7 +358,7 @@ file_name ='2022_01_20-17_14_14-usaf1951'
 
 file_name ='2022_01_20-18_21_41-usaf1951'
 # do_plot_confocal_figure(file_name, folder, max_val = 51.5)
-plot_1D_cut_for_horizontal_lines(file_name, folder)
+# plot_1D_cut_for_horizontal_lines(file_name, folder)
 
 
 # do_plot_confocal_figure(file_name, folder)

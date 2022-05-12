@@ -145,13 +145,13 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
 
 
     ################## Load the measuremnt with green laser ##################
-
+      
     seq_args = [reionization_time, readout_pulse_time, nv_sig["nv-_prep_laser"],
                 nv_sig["charge_readout_laser"], nvm_laser_power,
                 readout_laser_power, 2, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
-    # print(seq_args)
+    print(seq_args)
 
     # Load the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -168,7 +168,91 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
                 readout_laser_power, 2,apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
-    # print(seq_args)
+    print(seq_args)
+
+    # Load the APD
+    cxn.apd_tagger.start_tag_stream(apd_indices)
+    # Clear the buffer
+    cxn.apd_tagger.clear_buffer()
+    # Run the sequence
+    cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
+
+    nv0 = cxn.apd_tagger.read_counter_simple(num_reps)
+
+
+    tool_belt.reset_cfm(cxn)
+
+    return nv0, nvm
+
+# %%
+# Apply an initialization pulse, then pulse either green or red pulse, 
+# finally measure the counts under yellow illumination.
+# Repeat num_reps number of times and returns the list of counts after red illumination, then green illumination
+
+def measure_3(nv_sig, opti_nv_sig, apd_indices, num_reps):
+
+    with labrad.connect() as cxn:
+        sig_counts, ref_counts = measure_3_with_cxn(cxn, nv_sig,opti_nv_sig,  apd_indices, num_reps)
+
+    return sig_counts, ref_counts
+def measure_3_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
+
+    tool_belt.reset_cfm(cxn)
+
+    # Optimize
+    opti_coords_list = []
+    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+    opti_coords_list.append(opti_coords)
+
+    # Initial Calculation and setup
+
+    tool_belt.set_filter(cxn, nv_sig, 'charge_readout_laser')
+    tool_belt.set_filter(cxn, nv_sig, 'initialization_laser')
+    tool_belt.set_filter(cxn, nv_sig, 'nv-_prep_laser')
+
+    readout_laser_power = tool_belt.set_laser_power(cxn, nv_sig, 'charge_readout_laser')
+    init_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "initialization_laser")
+    nvm_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "nv-_prep_laser")
+    nv0_laser_power = tool_belt.set_laser_power(cxn,nv_sig,"nv0_prep_laser")
+
+
+    readout_pulse_time = nv_sig['charge_readout_dur']
+
+    initialization_time = nv_sig['initialization_laser_dur']
+    reionization_time = nv_sig['nv-_prep_laser_dur']
+    ionization_time = nv_sig['nv0_prep_laser_dur']
+
+    # Pulse sequence to do a single pulse followed by readout
+    seq_file = 'simple_readout_three_pulse.py'
+
+
+    ################## Load the measuremnt with green laser ##################
+      
+    seq_args = [initialization_time, reionization_time, readout_pulse_time, 
+                 nv_sig["initialization_laser"], nv_sig["nv-_prep_laser"], nv_sig["charge_readout_laser"], 
+                 init_laser_power, nvm_laser_power, readout_laser_power, apd_indices[0]]
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+    print(seq_args)
+
+    # Load the APD
+    cxn.apd_tagger.start_tag_stream(apd_indices)
+    # Clear the buffer
+    cxn.apd_tagger.clear_buffer()
+    # Run the sequence
+    cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
+
+    nvm = cxn.apd_tagger.read_counter_simple(num_reps)
+
+    ################## Load the measuremnt with red laser ##################
+    
+    seq_args = [initialization_time, ionization_time, readout_pulse_time, 
+                 nv_sig["initialization_laser"], nv_sig["nv0_prep_laser"], nv_sig["charge_readout_laser"], 
+                 init_laser_power, nv0_laser_power, readout_laser_power, apd_indices[0]]
+
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+    print(seq_args)
 
     # Load the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -186,7 +270,7 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
 
 def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
                           readout_times=None, readout_yellow_powers=None,
-                          nd_filter='nd_0.5'):
+                          nd_filter='nd_0.5', num_pulses = 2):
     '''
     
 
@@ -210,7 +294,7 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
     None.
 
     '''
-    num_reps = 500
+    num_reps = int(1e4)
 
     # standard readout times to test are 50, 100, 250 ms.
     if readout_times is None:
@@ -239,14 +323,18 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
                 nv_sig_copy['charge_readout_laser_filter'] = nd_filter
             nv_sig_copy['charge_readout_dur'] = t
             nv_sig_copy['charge_readout_laser_power'] = p
-
-            nv0, nvm = measure(nv_sig_copy, opti_nv_sig, apd_indices, num_reps)
+            
+            if num_pulses == 2:
+                nv0, nvm = measure_3(nv_sig_copy, opti_nv_sig, apd_indices, num_reps)
+            elif num_pulses == 3:
+                nv0, nvm = measure(nv_sig_copy, opti_nv_sig, apd_indices, num_reps)
             nv0_power.append(nv0)
             nvm_power.append(nvm)
             timestamp = tool_belt.get_time_stamp()
             raw_data = {'timestamp': timestamp,
                     'nv_sig': nv_sig_copy,
                     'nv_sig-units': tool_belt.get_nv_sig_units(),
+                    'num_pulses': num_pulses,
                     'num_runs':num_reps,
                     'nv0': nv0.tolist(),
                     'nv0_list-units': 'counts',
@@ -259,8 +347,10 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
             max_m = max(nvm)
             occur_0, x_vals_0 = numpy.histogram(nv0, numpy.linspace(0,max_0, max_0+1))
             occur_m, x_vals_m = numpy.histogram(nvm, numpy.linspace(0,max_m, max_m+1))
-            ax.plot(x_vals_0[:-1],occur_0,  'r-o', label = 'Initial red pulse' )
-            ax.plot(x_vals_m[:-1],occur_m,  'g-o', label = 'Initial green pulse' )
+            # print(occur_0)
+            # print(occur_m)
+            ax.plot(x_vals_0[:-1],occur_0,  'r-o', label = 'Test red pulse' )
+            ax.plot(x_vals_m[:-1],occur_m,  'g-o', label = 'Test green pulse' )
             ax.set_xlabel('Counts')
             ax.set_ylabel('Occur.')
             ax.set_title('{} ms readout, {}, {} V'.format(t/10**6, nd_filter, p))
@@ -272,25 +362,25 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
 
             print('data collected!')
             # return
-            print('{} ms readout, {}, {} V'.format(t/10**6, nd_filter, p))
-            threshold, fidelity, mu_1, mu_2, fig = calculate_threshold_plot(t/10**6, nv0, nvm, nd_filter, p)
+            # print('{} ms readout, {}, {} V'.format(t/10**6, nd_filter, p))
+            # threshold, fidelity, mu_1, mu_2, fig = calculate_threshold_plot(t/10**6, nv0, nvm, nd_filter, p)
 
-            raw_data = {'timestamp': timestamp,
-                    'nv_sig': nv_sig_copy,
-                    'nv_sig-units': tool_belt.get_nv_sig_units(),
-                    'num_runs':num_reps,
-                    'nv0': nv0.tolist(),
-                    'nv0_list-units': 'counts',
-                    'nvm': nvm.tolist(),
-                    'nvmt-units': 'counts',
-                    'mu_1': mu_1,
-                    'mu_2': mu_2,
-                    'fidelity': fidelity,
-                    'threshold': threshold
-                    }
+            # raw_data = {'timestamp': timestamp,
+            #         'nv_sig': nv_sig_copy,
+            #         'nv_sig-units': tool_belt.get_nv_sig_units(),
+            #         'num_runs':num_reps,
+            #         'nv0': nv0.tolist(),
+            #         'nv0_list-units': 'counts',
+            #         'nvm': nvm.tolist(),
+            #         'nvmt-units': 'counts',
+            #         'mu_1': mu_1,
+            #         'mu_2': mu_2,
+            #         'fidelity': fidelity,
+            #         'threshold': threshold
+            #         }
 
-            tool_belt.save_raw_data(raw_data, file_path)
-            tool_belt.save_figure(fig, file_path)
+            # tool_belt.save_raw_data(raw_data, file_path)
+            # tool_belt.save_figure(fig, file_path)
 
 
         nv0_master.append(nv0_power)
@@ -300,7 +390,7 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
 
 def sweep_readout_dur(nv_sig, readout_times = None, readout_yellow_power = 0.4,
                           nd_filter = 'nd_0.5'):
-    num_reps = 250
+    num_reps = 500
     apd_indices =[0]
 
     if not readout_times:
@@ -378,9 +468,9 @@ def sweep_readout_dur(nv_sig, readout_times = None, readout_yellow_power = 0.4,
     fig, axes = plt.subplots(1,2, figsize = (17, 8.5))
     ax = axes[0]
     ax.plot(readout_times / 10**3, nvm_counts_avg, 'ro',
-           label = 'Initial green pulse')
+           label = 'Test green pulse')
     ax.plot(readout_times / 10**3, nv0_counts_avg, 'ko',
-           label = 'Initial red pulse')
+           label = 'Test red pulse')
     ax.set_xlabel('Test pulse length (us)')
     ax.set_ylabel('Counts (single shot measurement)')
     ax.set_title(title)
@@ -430,7 +520,7 @@ def sweep_readout_dur(nv_sig, readout_times = None, readout_yellow_power = 0.4,
 #%%
 if __name__ == '__main__':
     # load the data here
-    sample_name = 'johnson'
+    sample_name = 'sandia'
 
     green_laser = "integrated_520"
     yellow_laser = 'laserglow_589'
@@ -451,26 +541,46 @@ if __name__ == '__main__':
     }  # 14.5 max
 
     nv_sig = {
-          "coords":[-0.178, 0.124,6.898], 
-        "name": "{}-nv2_2022_04_08".format(sample_name,),
+        "coords":[-0.858, -0.349, 6.17], 
+        "name": "{}-R21_a6_c10_r10".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
-        "expected_count_rate":10,
-            'imaging_laser': green_laser, 'imaging_laser_power': green_power, 'imaging_readout_dur': 1E7,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E3,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_value': 120, 'nv0_prep_laser_dur': 1E3,
-            'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None,
+        "expected_count_rate":None,
+        
+        # "imaging_laser":green_laser,
+        # "imaging_laser_power": None,
+        # "imaging_readout_dur": 1e7,
+        
+            'imaging_laser': red_laser, 'imaging_laser_power': 0.595, 'imaging_readout_dur': 1E7,
+           
+            'initialization_laser': red_laser, 'initialization_laser_power': 0.69, 'initialization_laser_dur': 2e5,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E6,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 0.66, 'nv0_prep_laser_dur': 1E6,
+            'charge_readout_laser': red_laser, 'charge_readout_laser_filter': None,
             'charge_readout_laser_power': None, 'charge_readout_dur':None,
-            'collection_filter': '630_lp', 'magnet_angle': None,
+            'collection_filter': "715_lp", 'magnet_angle': None,
             'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
+    
+            # 'initialization_laser': red_laser, 'initialization_laser_power': 0.69, 'initialization_laser_dur': 0,
+            # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 0,
+            # 'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 0.66, 'nv0_prep_laser_dur': 0,
+            # 'charge_readout_laser': red_laser, 'charge_readout_laser_filter': None,
+            # 'charge_readout_laser_power': None, 'charge_readout_dur':None,
+            # 'collection_filter': "715_lp", 'magnet_angle': None,
+            # 'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
+            # 'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
 
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
-        determine_readout_dur(nv_sig, nv_sig, [0], readout_times = [100e6],
-                              readout_yellow_powers = [0.15],
-                          nd_filter = 'nd_1.0')
+        
+        for n in [2,3]:
+            determine_readout_dur(nv_sig, nv_sig, [1], readout_times = [1e3, 5e3, 1e4, 5e4, 1e5],
+                                  readout_yellow_powers = [0.6, 0.62, 0.64, 0.66],
+                              nd_filter = None,
+                              num_pulses = n)
+        
     finally:
         # Reset our hardware - this should be done in each routine, but
         # let's double check here

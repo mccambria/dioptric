@@ -12,6 +12,7 @@ Created on February 25, 2022
 
 import utils.tool_belt as tool_belt
 import utils.common as common
+import copy
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize, brute
@@ -19,6 +20,8 @@ from numpy import pi
 from matplotlib.patches import Circle
 import cv2 as cv
 import sys
+import multiprocessing
+from functools import partial
 
 # endregion
 
@@ -214,7 +217,8 @@ def main(
     # region Setup
 
     cost_func = cost0
-    minimize_type = "manual"
+    # minimize_type = "manual"
+    minimize_type = "plotting"
     # minimize_type = "auto"
     # minimize_type = "recursive"
     # minimize_type = "none"
@@ -245,13 +249,17 @@ def main(
     # region Circle finding
 
     args = [opti_image, image_len_x, image_len_y, False]
+    # Partial function with everything but the circle parameters filled in
+    cost_func_partial = partial(
+        cost_func, image=args[0], x_lim=args[1], y_lim=args[2], debug=args[2]
+    )
     plot_circles = []
 
     if minimize_type == "manual":
 
         x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
         y_linspace = np.linspace(0, image_len_x, image_len_y, endpoint=False)
-        rad_linspace = np.linspace(20, 35, 16)
+        rad_linspace = np.linspace(25, 30, 10)
 
         left_best_circle = None
         left_best_cost = 1
@@ -265,7 +273,6 @@ def main(
                 for r in rad_linspace:
                     circle = [y, x, r]
                     cost = cost_func(circle, *args)
-                    print(cost)
                     if x < half_x:
                         if cost < left_best_cost:
                             left_best_circle = circle
@@ -277,13 +284,87 @@ def main(
 
         brute_circles = [left_best_circle, right_best_circle]
         for circle in brute_circles:
-            print(circle)
+            # print(circle)
             bounds = [(val - 1, val + 1) for val in circle]
             res = minimize(
                 cost_func, circle, bounds=bounds, args=args, method="L-BFGS-B"
             )
             opti_circle = res.x
             plot_circles.append(opti_circle)
+
+    elif minimize_type == "plotting":
+        half_range = 18 #for circle 3
+        # half_range = 20 #for circle 4
+        num_points = 100
+        half_len_x = image_len_x // 2
+        half_len_y = image_len_x // 2
+        x_linspace = np.linspace(half_len_x - half_range, half_len_x + half_range, num_points)
+        y_linspace = np.linspace(half_len_y - half_range, half_len_y + half_range, num_points)
+        reconstruction = []
+        print(image_len_x)
+        print(x_linspace)
+        
+        # return
+
+        # x_linspace = np.linspace(0, image_len_x, image_len_x, endpoint=False)
+        # y_linspace = np.linspace(0, image_len_y, image_len_y, endpoint=False)
+        rad_linspace = np.linspace(26, 28, 21)
+        # r = np.average([circle_a[2], circle_b[2]])
+
+        # image_copy = copy.deepcopy(image)
+        # image_copy[:] = np.nan
+        # image_copy_log = np.copy(image_copy)
+
+        half_x = image_len_x / 2
+
+        # Manual brute force optimization for left/right halves
+        for y in y_linspace:
+            reconstruction.append([])
+            for x in x_linspace:
+
+                # set the r value
+                # if x < half_x:
+                #     r = circle_a[2]
+                # else:
+                #     r = circle_b[2]
+
+                # Cost at a fixed r
+                # circle = [y, x, r]
+                # cost_value = 0.5 - cost_func(circle, *args)
+
+                # just recording min cost value over rad_linspace
+                # test_circles = [[y, x, r] for r in rad_linspace]
+                # with multiprocessing.Pool() as pool:
+                #     cost_vals = pool.map(cost_func_partial, test_circles)
+                # Slow singlethreaded version
+                cost_func_lambda = lambda r: cost_func([y, x, r], *args)
+                cost_vals = [cost_func_lambda(r) for r in rad_linspace]
+                # cost_value = 0.5 - min(cost_vals)
+                cost_value = min(cost_vals)
+
+                # print(cost_value)
+                # image_copy[int(y)][int(x)] = cost_value
+                # image_copy_log[int(y)][int(x)] = np.log(cost_value)
+                reconstruction[-1].append(cost_value)
+
+        fig2, ax = plt.subplots()
+        fig2.set_tight_layout(True)
+        # img = ax.imshow(image_copy, cmap="YlGnBu_r")
+        extent = [
+            min(x_linspace),
+            max(x_linspace),
+            max(y_linspace),
+            min(y_linspace),
+        ]
+        img = ax.imshow(reconstruction, cmap="inferno_r", extent=extent)
+        _ = plt.colorbar(img)
+
+        # figlog, ax = plt.subplots()
+        # figlog.set_tight_layout(True)
+        # img = ax.imshow(image_copy_log, cmap="inferno")
+        # _ = plt.colorbar(img)
+
+        plot_circles = [circle_a, circle_b]
 
     elif minimize_type == "auto":
 
@@ -383,6 +464,15 @@ def main(
             (circle[1], circle[0]),
             circle[2],
             fill=False,
+            color="w",
+        )
+        ax.add_patch(circle_patch)
+
+        # Plot the center
+        circle_patch = Circle(
+            (circle[1], circle[0]),
+            0.5,
+            fill="w",
             color="w",
         )
         ax.add_patch(circle_patch)
