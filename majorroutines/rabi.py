@@ -353,9 +353,7 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     # %% Average the counts over the iterations
 
     avg_sig_counts = numpy.average(sig_counts, axis=0)
-    st_err_sig_counts = numpy.ste(sig_counts, axis=0)
     avg_ref_counts = numpy.average(ref_counts, axis=0)
-    st_err_ref_counts = numpy.ste(ref_counts, axis=0)
 
     # %% Calculate the Rabi data, signal / reference over different Tau
 
@@ -373,8 +371,6 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
     ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
     ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
     
-    ax.plot(taus, avg_sig_counts, 'r-', label = 'signal')
-    ax.plot(taus, avg_ref_counts, 'g-', label = 'refernece')
     # ax.plot(tauArray, countsBackground, 'o-')
     ax.set_xlabel('rf time (ns)')
     ax.set_ylabel('Counts')
