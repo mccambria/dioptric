@@ -240,9 +240,12 @@ def main(data_sets, dosave=False, draft_version=True):
     if draft_version:
         ax.set_axis_off()
         fig.add_axes(ax)
+        layout_file = "experimental_layout_simplified.png"
         level_structure_file = (
             nvdata_dir
-            / "paper_materials/relaxation_temp_dependence/figures/experimental_layout_simplified.png"
+            / "paper_materials/relaxation_temp_dependence/figures/{}".format(
+                layout_file
+            )
         )
         img = mpimg.imread(level_structure_file)
         _ = ax.imshow(img)
