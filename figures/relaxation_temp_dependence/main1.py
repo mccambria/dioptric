@@ -92,6 +92,7 @@ def main(data_sets, dosave=False, draft_version=True):
     # %% Gamma subtraction curve plots
 
     temps = [round(el["temp"]) for el in data_sets]
+    len_data_sets = len(data_sets)
 
     continuous_colormap = False
     if continuous_colormap:
@@ -105,7 +106,12 @@ def main(data_sets, dosave=False, draft_version=True):
     else:
         set1 = matplotlib.cm.get_cmap("Set1").colors
         set2 = matplotlib.cm.get_cmap("Dark2").colors
-        colors_cmap = [set1[6], set1[0], set2[5], set1[2], set1[1]]
+        if len_data_sets == 5:
+            colors_cmap = [set1[6], set1[0], set2[5], set1[2], set1[1]]
+        elif len_data_sets:
+            colors_cmap = [set1[0], set2[5], set1[2], set1[1]]
+        elif len_data_sets == 3:
+            colors_cmap = [set1[0], set2[5], set1[1]]
 
     # Trim the alpha value and convert from 0:1 to 0:255
     colors_rgb = [[255 * val for val in el[0:3]] for el in colors_cmap]
@@ -131,11 +137,14 @@ def main(data_sets, dosave=False, draft_version=True):
     ax.set_ylabel(r"$P_{+1,+1}(\tau) - P_{+1,-1}(\tau)$")
 
     min_time = 0.0
-    # max_time = 15.0
-    # xtick_step = 5
-    max_time = 12.5
+    max_time = 18
+    # max_time = 15.5
+    # max_time = 11.5
+    # max_time = 12.5
     # max_time = 9
-    xtick_step = 4
+    xtick_step = 5
+    # xtick_step = 4
+    # xtick_step = 2
     times = [min_time, max_time]
     ax.set_xticks(np.arange(min_time, max_time + xtick_step, xtick_step))
 
@@ -231,9 +240,12 @@ def main(data_sets, dosave=False, draft_version=True):
     if draft_version:
         ax.set_axis_off()
         fig.add_axes(ax)
+        layout_file = "experimental_layout_simplified.png"
         level_structure_file = (
             nvdata_dir
-            / "paper_materials/relaxation_temp_dependence/figures/experimental_layout_simplified.png"
+            / "paper_materials/relaxation_temp_dependence/figures/{}".format(
+                layout_file
+            )
         )
         img = mpimg.imread(level_structure_file)
         _ = ax.imshow(img)
@@ -267,22 +279,22 @@ if __name__ == "__main__":
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
     decay_data_sets = [
-        {
-            "temp": 415.555,
-            "skip": False,
-            "path": "pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/",
-            "folder": "hopper-search-425K",
-            "Omega": None,
-            "gamma": None,
-        },
         # {
-        #     "temp": 401.590,
+        #     "temp": 415.555,
         #     "skip": False,
         #     "path": "pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/",
-        #     "folder": "hopper-search-412.5K",
+        #     "folder": "hopper-search-425K",
         #     "Omega": None,
         #     "gamma": None,
         # },
+        {
+            "temp": 401.590,
+            "skip": False,
+            "path": "pc_hahn/branch_time-tagger-speedup/t1_interleave_knill/data_collections/",
+            "folder": "hopper-search-412.5K",
+            "Omega": None,
+            "gamma": None,
+        },
         # {
         #     "temp": 380.168,
         #     "skip": False,
@@ -303,23 +315,57 @@ if __name__ == "__main__":
             "temp": 295,
             "skip": False,
             "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
-            "folder": "hopper-nv1_2021_03_16-300K",
+            "folder": "hopper-nv1_2021_03_16-300K856/",
             "Omega": None,
             "gamma": None,
         },
+        # {
+        #     "temp": 250,
+        #     "skip": False,
+        #     "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
+        #     "folder": "hopper-nv1_2021_03_16-250K",
+        #     "Omega": None,
+        #     "gamma": None,
+        # },
+        # {
+        #     "temp": 262.5,
+        #     "skip": False,
+        #     "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
+        #     "folder": "hopper-nv1_2021_03_16-262.5K",
+        #     "Omega": None,
+        #     "gamma": None,
+        # },
         {
-            "temp": 250,
+            "temp": 237.5,
             "skip": False,
             "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
-            "folder": "hopper-nv1_2021_03_16-250K",
+            "folder": "hopper-nv1_2021_03_16-237.5K",
             "Omega": None,
             "gamma": None,
         },
+        # {
+        #     "temp": 225,
+        #     "skip": False,
+        #     "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
+        #     "folder": "hopper-nv1_2021_03_16-225K",
+        #     "Omega": None,
+        #     "gamma": None,
+        # },
+        # {
+        #     "temp": 200,
+        #     "skip": False,
+        #     "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
+        #     "folder": "hopper-nv1_2021_03_16-200K-gamma_minus_1",
+        #     "Omega": None,
+        #     "gamma": None,
+        # },
         {
-            "temp": 200,
+            "temp": 187.5,
             "skip": False,
-            "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
-            "folder": "hopper-nv1_2021_03_16-200K-gamma_minus_1",
+            "path": (
+                "pc_hahn/branch_master/t1_interleave_knill/data_collections/"
+            ),
+            "folder": "hopper-search-187.5K",
             "Omega": None,
             "gamma": None,
         },

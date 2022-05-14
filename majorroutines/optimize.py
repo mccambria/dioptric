@@ -156,6 +156,14 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
     num_steps = 61  # 31
     coords = nv_sig["coords"]
     x_center, y_center, z_center = coords
+    # Optionally bias the optimization sweeps to avoid nearby features
+    if "opti_offset" in nv_sig:
+        adj_coords = numpy.array(coords)
+        opti_offset = numpy.array(nv_sig["opti_offset"])
+        adj_coords += opti_offset
+        sweep_x_center, sweep_y_center, sweep_z_center = adj_coords
+    else:
+        sweep_x_center, sweep_y_center, sweep_z_center = coords
     readout = nv_sig["imaging_readout_dur"]
     laser_key = "imaging_laser"
 
@@ -184,7 +192,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
         elif axis_ind == 1:
             scan_func = xy_server.load_scan_y
 
-        scan_vals = scan_func(x_center, y_center, scan_range, num_steps, period)
+        scan_vals = scan_func(sweep_x_center, sweep_y_center, scan_range, num_steps, period)
         auto_scan = True
 
     # z
@@ -196,8 +204,8 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
 
         # Move to first point in scan
         half_scan_range = scan_range / 2
-        z_low = z_center - half_scan_range
-        start_coords = [coords[0], coords[1], z_low]
+        z_low = sweep_z_center - half_scan_range
+        start_coords = [x_center, y_center, z_low]
         if "ramp_voltages" in nv_sig and nv_sig["ramp_voltages"]:
             tool_belt.set_xyz_ramp(cxn, start_coords)
         else:
@@ -212,7 +220,7 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
         period = ret_vals[0]
 
         if hasattr(z_server, "load_scan_z"):
-            scan_vals = z_server.load_scan_z(z_center, scan_range, num_steps, period)
+            scan_vals = z_server.load_scan_z(sweep_z_center, scan_range, num_steps, period)
             auto_scan = True
         else:
             manual_write_func = z_server.write_z
@@ -223,13 +231,12 @@ def optimize_on_axis(cxn, nv_sig, axis_ind, config, apd_indices, fig=None):
             # integer steps (ie steps of 1)
             # if ('z_drift_adjust' in shared_params) and (scan_dtype is int):
             #     z_drift_adjust = shared_params['z_drift_adjust']
-            #     adj_z_center = round(z_center + 0.5*z_drift_adjust*scan_range)
+            #     sweep_z_center = round(z_center + 0.5*z_drift_adjust*scan_range)
             # else:
-            #     adj_z_center = z_center
-            adj_z_center = z_center
+            #     sweep_z_center = z_center
 
             scan_vals = tool_belt.get_scan_vals(
-                adj_z_center, scan_range, num_steps, scan_dtype
+                sweep_z_center, scan_range, num_steps, scan_dtype
             )
             auto_scan = False
     if auto_scan:
@@ -465,7 +472,7 @@ def main_with_cxn(
 
     # %% Try to optimize
 
-    num_attempts = 10
+    num_attempts = 20
 
     for ind in range(num_attempts):
 
