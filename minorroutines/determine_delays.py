@@ -282,9 +282,10 @@ if __name__ == "__main__":
     nd = "nd_0"
     green_laser = 'integrated_520'
     yellow_laser = "laserglow_589"
+    red_laser = "cobolt_638"
     
     nv_sig = { 
-          "coords":[-0.137, 0.406,7.05], 
+        "coords":[-0.863, -0.371, 6.17],# a6_R10c10 
         "name": "{}-siv_R10_a130_r4_c1".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
@@ -296,9 +297,8 @@ if __name__ == "__main__":
         "spin_readout_laser_power": green_power,
         "spin_readout_dur": 350,
         
-        "imaging_laser": yellow_laser,
-        "imaging_laser_power": 0.45,
-        "imaging_laser_filter": nd,
+        "imaging_laser": red_laser,
+        "imaging_laser_power": 0.595, # 6 mW
         "imaging_readout_dur": 1e7,
         
 
@@ -311,7 +311,7 @@ if __name__ == "__main__":
         "rabi_HIGH": 59.6,
         "uwave_power_HIGH": 14.5,
     }  # 14.5 max
-    apd_indices = [0]
+    apd_indices = [1]
 
     # Hahn parameters
     # apd_indices = [1]
@@ -360,12 +360,12 @@ if __name__ == "__main__":
         # delay_range = [800, 1700]
         num_reps = int(1e4)
         # laser_name = 'integrated_520'
-        laser_power = 0.8
+        laser_power = 0.65
         laser_name = 'cobolt_638'
         # laser_power = None
         # laser_name = 'laserglow_589'
         # laser_power = 0.6
-        delay_range = [0,2e3]
+        delay_range = [0,3e3]
         with labrad.connect() as cxn:
             aom_delay(cxn, nv_sig, apd_indices,
                       delay_range, num_steps, num_reps, laser_name, laser_power)

@@ -161,6 +161,11 @@ def measure_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
     cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
 
     nvm = cxn.apd_tagger.read_counter_simple(num_reps)
+    
+    
+    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+    opti_coords_list.append(opti_coords)
+    
 
     ################## Load the measuremnt with red laser ##################
     seq_args = [ionization_time, readout_pulse_time, nv_sig["nv0_prep_laser"],
@@ -229,10 +234,11 @@ def measure_3_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
     ################## Load the measuremnt with green laser ##################
       
     seq_args = [initialization_time, reionization_time, readout_pulse_time, 
-                 nv_sig["initialization_laser"], nv_sig["nv-_prep_laser"], nv_sig["charge_readout_laser"], 
-                 init_laser_power, nvm_laser_power, readout_laser_power, apd_indices[0]]
+                  nv_sig["initialization_laser"], nv_sig["nv-_prep_laser"], nv_sig["charge_readout_laser"], 
+                  init_laser_power, nvm_laser_power, readout_laser_power, apd_indices[0]]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
+    
     print(seq_args)
 
     # Load the APD
@@ -243,12 +249,16 @@ def measure_3_with_cxn(cxn, nv_sig, opti_nv_sig, apd_indices, num_reps):
     cxn.pulse_streamer.stream_immediate(seq_file, num_reps, seq_args_string)
 
     nvm = cxn.apd_tagger.read_counter_simple(num_reps)
+    
+    
+    opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+    opti_coords_list.append(opti_coords)
 
-    ################## Load the measuremnt with red laser ##################
+    ################## Load the measuremnt with no test laser ##################
     
     seq_args = [initialization_time, ionization_time, readout_pulse_time, 
-                 nv_sig["initialization_laser"], nv_sig["nv0_prep_laser"], nv_sig["charge_readout_laser"], 
-                 init_laser_power, nv0_laser_power, readout_laser_power, apd_indices[0]]
+                  nv_sig["initialization_laser"], None, nv_sig["charge_readout_laser"], 
+                  init_laser_power, nv0_laser_power, readout_laser_power, apd_indices[0]]
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
@@ -294,7 +304,8 @@ def determine_readout_dur(nv_sig, opti_nv_sig, apd_indices,
     None.
 
     '''
-    num_reps = int(1e4)
+    num_reps = 500
+    # num_reps = int(2e4)
 
     # standard readout times to test are 50, 100, 250 ms.
     if readout_times is None:
@@ -539,46 +550,57 @@ if __name__ == '__main__':
         "collection_filter": "630_lp",
         "magnet_angle": None,
     }  # 14.5 max
-
+    red_power = 0.75
     nv_sig = {
-        "coords":[-0.858, -0.349, 6.17], 
-        "name": "{}-R21_a6_c10_r10".format(sample_name,),
+        "coords":[-0.744, 0.189, 6.617],
+        "name": "{}-NV-R21_a3_r10_c6".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
-        "expected_count_rate":None,
+        "expected_count_rate":28,
         
-        # "imaging_laser":green_laser,
-        # "imaging_laser_power": None,
-        # "imaging_readout_dur": 1e7,
+        "imaging_laser":green_laser,
+        "imaging_laser_power": None,
+        "imaging_readout_dur": 1e7,
         
-            'imaging_laser': red_laser, 'imaging_laser_power': 0.595, 'imaging_readout_dur': 1E7,
+            # 'imaging_laser': red_laser, 'imaging_laser_power': 0.595, 'imaging_readout_dur': 1E7,
            
-            'initialization_laser': red_laser, 'initialization_laser_power': 0.69, 'initialization_laser_dur': 2e5,
-            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E6,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 0.66, 'nv0_prep_laser_dur': 1E6,
-            'charge_readout_laser': red_laser, 'charge_readout_laser_filter': None,
-            'charge_readout_laser_power': None, 'charge_readout_dur':None,
-            'collection_filter': "715_lp", 'magnet_angle': None,
-            'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
-    
-            # 'initialization_laser': red_laser, 'initialization_laser_power': 0.69, 'initialization_laser_dur': 0,
-            # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 0,
-            # 'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 0.66, 'nv0_prep_laser_dur': 0,
+            # 'initialization_laser': red_laser, 'initialization_laser_power': 0.67, 'initialization_laser_dur':1e5,
+            # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E5,
+            # 'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 0.67, 'nv0_prep_laser_dur': 1e5,
             # 'charge_readout_laser': red_laser, 'charge_readout_laser_filter': None,
             # 'charge_readout_laser_power': None, 'charge_readout_dur':None,
             # 'collection_filter': "715_lp", 'magnet_angle': None,
             # 'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
             # 'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
+    
+            # 'initialization_laser': green_laser, 'initialization_laser_power': green_power, 'initialization_laser_dur': 2e5,
+            # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E6,
+            # 'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': red_power, 'nv0_prep_laser_dur': 1E6,
+            # 'charge_readout_laser': green_laser, 'charge_readout_laser_filter': None,
+            # 'charge_readout_laser_power': None, 'charge_readout_dur':None,
+            # 'collection_filter': "715_lp", 'magnet_angle': None,
+            # 'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
+            # 'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
+    
+    
+            'initialization_laser': red_laser, 'initialization_laser_power': 0.69, 'initialization_laser_dur': 1e4,
+            'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1e4,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 0.69, 'nv0_prep_laser_dur': 1e4,
+            'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None,
+            'charge_readout_laser_power': None, 'charge_readout_dur':None,
+            'collection_filter': "715_sp+630_lp", 'magnet_angle': None,
+            'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
+            'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
 
     try:
         # sweep_readout_dur(nv_sig, readout_yellow_power = 0.1,
         #                   nd_filter = 'nd_0.5')
         
-        for n in [3]:
-            determine_readout_dur(nv_sig, nv_sig, [1], readout_times = [5e4],
-                                  readout_yellow_powers = [0.64],
-                              nd_filter = None,
+        for n in [2]:
+            determine_readout_dur(nv_sig, nv_sig, [1], readout_times = [50e6],
+                                    readout_yellow_powers = [0.15],
+                                   # readout_yellow_powers = [0.56],
+                              nd_filter = 'nd_1.0',
                               num_pulses = n)
         
     finally:

@@ -76,7 +76,7 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 5.0
     # scan_range = 2.5
     # scan_range = 1.7
-    scan_range =4
+    # scan_range =4
     # scan_range = 3
     # scan_range = 0.5
     # scan_range = 0.4
@@ -84,9 +84,9 @@ def do_image_sample(nv_sig, apd_indices):
     # scan_range = 0.2
     # scan_range = 0.15
     # scan_range = 0.1
-    # scan_range = 0.04
+    # scan_range = 0.05
     # scan_range = 0.025
-    # scan_range = 0.01
+    scan_range = 0.03
     
     # num_steps = 400
     # num_steps = 300
@@ -94,10 +94,10 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 160
     # num_steps = 135
     # num_steps =120
-    num_steps = 90
-    # num_steps = 60
+    # num_steps = 90
+    num_steps = 61
     # num_steps = 31
-    # num_steps = 15
+    # num_steps = 21
     
     #individual line pairs:
     # scan_range = 0.16
@@ -148,7 +148,7 @@ def do_optimize(nv_sig, apd_indices):
         apd_indices,
         set_to_opti_coords=False,
         save_data=True,
-        plot_data=True,
+        plot_data=False,
     )
 
 
@@ -662,11 +662,13 @@ if __name__ == "__main__":
     
     
     nv_sig = {  
-        # "coords":[-0.699, -0.178, 6.17],#a6  , center    
-        # "coords": [-0.149, -0.169, 6.17], #region 21 center
-        "coords":[-0.858, -0.349, 6.17],# a6_R10c10
-        # "coords":[-0.761, -0.170, 6.17], #a_R10_c10_r10 dim spot
-        "name": "{}-R21_a6_r10_c10".format(sample_name,),#_r10_c10
+        # "coords":[-0.744, 0.189, 6.617],
+        # "name": "{}-NV-R21_a3_r10_c6".format(sample_name,),
+        # "coords":[-0.752, 0.178, 6.617],
+        "coords":[-0.752, 0.178, 6.617],
+        "name": "{}-R21_a3_r10_c6".format(sample_name,),
+        # "coords":[-0.863, -0.371, 6.617],
+        # "name": "{}-R21_a6_r10_c10".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
         "expected_count_rate":None,
@@ -682,13 +684,13 @@ if __name__ == "__main__":
         # "imaging_laser_filter": nd_yellow,
         # "imaging_readout_dur": 1e7,
         
-        "imaging_laser": red_laser,
-        "imaging_laser_power": 0.6, # 6 mW
-        "imaging_readout_dur": 1e7,
-        
-        # "imaging_laser":green_laser,
-        # "imaging_laser_power": None,
+        # "imaging_laser": red_laser,
+        # "imaging_laser_power": 0.595, # 6 mW
         # "imaging_readout_dur": 1e7,
+        
+        "imaging_laser":green_laser,
+        "imaging_laser_power": None,
+        "imaging_readout_dur": 1e7,
         
         # "imaging_laser": red_laser,
         # "imaging_laser_power": 0.62,
@@ -735,32 +737,44 @@ if __name__ == "__main__":
         
         
         "initialize_laser": red_laser, 
-        "initialize_laser_power": 0.69,
-        "initialize_laser_dur":  1e6,
+        "initialize_laser_power": 0.67,
+        "initialize_laser_dur":  1e5,
         "CPG_laser": green_laser, 
         "CPG_laser_power": None,
-        "CPG_laser_dur":  1e6,
+        "CPG_laser_dur":  1e5,
         
-        # "initialize_laser": green_laser, # NExt experiment
+        # "initialize_laser": red_laser, 
+        # "initialize_laser_power": 0.67,
+        # "initialize_laser_dur":  1e5,
+        # "CPG_laser": red_laser, 
+        # "CPG_laser_power":0.67,
+        # "CPG_laser_dur":  1e5,
+        
+        
+        # "initialize_laser": green_laser, 
         # "initialize_laser_power": None,
-        # "initialize_laser_dur":  1e6,
-        # "CPG_laser": red_laser, 
-        # "CPG_laser_power": 0.69,
-        # "CPG_laser_dur":  1e6,
+        # "initialize_laser_dur":  1e5,
+        # "CPG_laser": green_laser, 
+        # "CPG_laser_power":None,
+        # "CPG_laser_dur":  1e5,
         
-        
-        # "initialize_laser": red_laser, # NExt experiment
-        # "initialize_laser_power": 0.69,
-        # "initialize_laser_dur":  1e6,
+        # "initialize_laser": green_laser, 
+        # "initialize_laser_power": None,
+        # "initialize_laser_dur":  1e5,
         # "CPG_laser": red_laser, 
-        # "CPG_laser_power": 0.69,
-        # "CPG_laser_dur":  1e4,
+        # "CPG_laser_power":0.67,
+        # "CPG_laser_dur":  1e5,       
+        
         
         
         "charge_readout_laser": red_laser,
-        "charge_readout_laser_power": 0.6,#0.561,
-        "charge_readout_laser_dur": 50000,
+        "charge_readout_laser_power": 0.54,
+        "charge_readout_laser_dur": 1e6,
         
+        # "charge_readout_laser": yellow_laser,
+        # "charge_readout_laser_power": 0.15,
+        # "charge_readout_laser_filter": "nd_1.0",
+        # "charge_readout_laser_dur": 50e6,
         
         "collection_filter": "715_lp",
         # "collection_filter": "715_sp+630_lp",
@@ -798,15 +812,10 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_drift([0.0, 0.0, 0.0])  
         # tool_belt.set_xyz(labrad.connect(), [-0.141+0.05, 0.514, 7.05])  
-        # for dx in [-0.2, -0.4, -0.6, -0.8, -1]:
-        #     nv_sig_copy = copy.deepcopy(nv_sig)
-        #     coords = nv_sig["coords"]
-        #     new_coords= list(numpy.array(coords)+ numpy.array([dx, 0, 0]))
-        #     nv_sig_copy['coords'] = new_coords
-            # do_image_sample(nv_sig_copy, apd_indices)
+
             
         # do_optimize(nv_sig,apd_indices)
-        do_image_sample(nv_sig, apd_indices)
+        # do_image_sample(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_xz(nv_sig, apd_indices)
@@ -824,107 +833,34 @@ if __name__ == "__main__":
        
         # do_time_resolved_readout_three_pulses(nv_sig, apd_indices)
 # 
-        num_runs =3# int(1e2)
-        num_steps_a = 51
+        num_runs =200
+        
+        num_steps_a = 82
         num_steps_b = num_steps_a
-        img_range_1D = None#[[0,0,0],[0.075,0,0]]
-        img_range_2D = [0.5, 0.5, 0]
+        img_range_1D = [[0,0,0],[0.015,0.015,0]] #on NV at 0.352 um, and another at 1.056 um
+        # img_range_1D = [[0,0,0],[-0.015,0.015,0]] #interesting?
+        #img_range_1D = [[0,0,0],[-0.02,-0.02,0]] 
+        # img_range_1D = [[0,0,0],[0.015,-0.015,0]] 
+        img_range_2D = None#[0.02, 0.02, 0]
         offset = [0,0,0]
-        # do_SPaCE(nv_sig, nv_sig,apd_indices, num_runs, num_steps_a, num_steps_b,
-        #         img_range_1D, img_range_2D, offset, charge_state_threshold = None)
-        # do_image_sample(nv_sig, apd_indices)
         
+        for t in [1e5, 1e6, 1e7]:
+            for p in [0.52, 0.53, 0.54, 0.55]:
+                 nv_sig_copy = copy.deepcopy(nv_sig)
+                 nv_sig_copy['charge_readout_laser_power'] = p
+                 nv_sig_copy['charge_readout_laser_dur'] = t
+                 do_optimize(nv_sig_copy,apd_indices)
+                 do_SPaCE(nv_sig_copy, nv_sig_copy, apd_indices, num_runs, num_steps_a, num_steps_b,
+                         img_range_1D, img_range_2D, offset, charge_state_threshold = None)
         
-        # subtracting time resolved readings
-    # 
-        # do_time_resolved = False
+       # for a in [[[0,0,0],[0.015,0.015,0]] ,
+        #          [[0,0,0],[-0.015,0.015,0]],
+        #          [[0,0,0],[-0.015,-0.015,0]] ,
+         #         [[0,0,0],[0.015,-0.015,0]] ]:
+        #do_optimize(nv_sig,apd_indices)
+        #do_SPaCE(nv_sig, nv_sig, apd_indices, num_runs, num_steps_a, num_steps_b,
+         #           img_range_1D, img_range_2D, offset, charge_state_threshold = None)
         
-        # if do_time_resolved:
-        #     # nv_sig['initialize_laser'] = red_laser
-        #     # nv_sig['initialize_laser_power'] = 0.66
-        #     nv_sig['test_laser'] = red_laser
-        #     nv_sig['test_laser_power'] = 0.66
-            
-        #     bin_centers, binned_samples_sig =  do_time_resolved_readout_three_pulses(nv_sig, apd_indices)
-        #     nv_sig_ref = copy.deepcopy(nv_sig)
-        #     coords_past = nv_sig_ref['coords']
-        #     coord_new = [coords_past[0]-0.05, coords_past[1], coords_past[2]]
-        #     nv_sig_ref['coords'] = coord_new
-        #     nv_sig_ref['disable_opt'] = True
-        #     bin_centers, binned_samples_ref =  do_time_resolved_readout_three_pulses(nv_sig_ref, apd_indices)
-            
-        #     binned_samples_sub_red = binned_samples_sig - binned_samples_ref
-            
-        #     fig_r, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-        #     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            
-        #     init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-        #                       ['Config', 'Optics', nv_sig['initialize_laser']])
-        #     test_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-        #                       ['Config', 'Optics', nv_sig['test_laser']])
-        #     readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-        #                       ['Config', 'Optics', nv_sig['charge_readout_laser']])
-        
-        #     ax.plot(bin_centers, binned_samples_sub_red, 'r-')
-        #     ax.set_xlabel('Readout time (ns)')
-        #     ax.set_ylabel('Counts')
-        #     ax.set_title('{} initial pulse, {} test, {} readout, backround subtracted'.format(init_color,  
-        #                                                                       test_color,
-        #                                                                       readout_color))
-            
-        #     time.sleep(1)
-        #     timestamp =tool_belt.get_time_stamp()
-        #     file_path = tool_belt.get_file_path('time_resolved_readout', timestamp, nv_sig['name'])
-        #     tool_belt.save_figure(fig_r, file_path)
-            
-        #     # ---
-        #     nv_sig['test_laser'] = green_laser
-        #     nv_sig['test_laser_power'] = None
-            
-        #     bin_centers, binned_samples_sig =  do_time_resolved_readout_three_pulses(nv_sig, apd_indices)
-        #     nv_sig_ref = copy.deepcopy(nv_sig)
-        #     coords_past = nv_sig_ref['coords']
-        #     coord_new = [coords_past[0]-0.05, coords_past[1], coords_past[2]]
-        #     nv_sig_ref['coords'] = coord_new
-        #     nv_sig_ref['disable_opt'] = True
-        #     bin_centers, binned_samples_ref =  do_time_resolved_readout_three_pulses(nv_sig_ref, apd_indices)
-            
-        #     binned_samples_sub_green = binned_samples_sig - binned_samples_ref
-            
-        #     fig_g, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-        #     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            
-        #     init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-        #                       ['Config', 'Optics', nv_sig['initialize_laser']])
-        #     test_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-        #                       ['Config', 'Optics', nv_sig['test_laser']])
-        #     readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-        #                       ['Config', 'Optics', nv_sig['charge_readout_laser']])
-        
-        #     ax.plot(bin_centers, binned_samples_sub_green, 'g-')
-        #     ax.set_xlabel('Readout time (ns)')
-        #     ax.set_ylabel('Counts')
-        #     ax.set_title('{} initial pulse, {} test,  {} readout, backround subtracted'.format(init_color,
-        #                                                                               test_color,
-        #                                                                               readout_color))
-        #     time.sleep(1)                                                  
-        #     timestamp =tool_belt.get_time_stamp()
-        #     file_path = tool_belt.get_file_path('time_resolved_readout', timestamp, nv_sig['name'])
-        #     tool_belt.save_figure(fig_g, file_path)
-            
-            
-        #     binned_samples_sub = binned_samples_sub_red - binned_samples_sub_green
-        #     # binned_samples_sub =  binned_samples_sub_green - binned_samples_sub_red
-        #     fig_s, ax = plt.subplots(1, 1, figsize=(10, 8.5))
-        #     ax.plot(bin_centers, binned_samples_sub, 'b-')
-        #     ax.set_xlabel('Readout time (ns)')
-        #     ax.set_ylabel('Counts')
-        #     ax.set_title('Subtracted measurement, {} readout'.format(readout_color))
-        #     time.sleep(1)
-        #     timestamp =tool_belt.get_time_stamp()
-        #     file_path = tool_belt.get_file_path('time_resolved_readout', timestamp, nv_sig['name'])
-        #     tool_belt.save_figure(fig_s, file_path)
-
 
         
         # 

@@ -372,7 +372,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    file_name = '2022_05_05-16_38_57-sandia-R21'
+    file_name = '2022_05_13-13_39_00-sandia-R21_a3_r10_c6'
     scale = 83
 
     data = tool_belt.get_raw_data(file_name)

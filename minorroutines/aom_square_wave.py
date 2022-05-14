@@ -71,7 +71,8 @@ def main(cxn, laser_name, laser_power=None):
     """Run a laser on on a square wave."""
     
     seq_file = 'square_wave.py'
-    period = int(10000)
+    # period = int(10000)
+    period = int(10e9)
     # period = int(500)
     # period = int(0.25e6)
     # period = int(10000)
@@ -88,6 +89,25 @@ def main(cxn, laser_name, laser_power=None):
     cxn.pulse_streamer.constant()
     tool_belt.laser_off(cxn, laser_name)
 
+
+def arb_duty_cycle(cxn, laser_name, laser_power=None):
+    """Run a laser on on a square wave."""
+    
+    seq_file = 'square_wave_arb_duty_cycle.py'
+    period_1 = 1e4
+    wait_1 = 1e5
+    period_2 = 1e5
+    wait_2 = 1e4
+    seq_args = [wait_1,period_1 ,wait_2,period_2 ,laser_name, laser_power]
+    
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
+
+    input('Press enter to stop...')
+
+    cxn.pulse_streamer.constant()
+    tool_belt.laser_off(cxn, laser_name)
+    
 
 # %% Run the file
 
@@ -132,7 +152,8 @@ if __name__ == '__main__':
         # tool_belt.set_filter(cxn, optics_name=laser_names, filter_name="nd_0.5")
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
         # constant(cxn, laser_names, laser_powers)
-        main(cxn, laser_names[0])
+        # main(cxn, laser_names[0])
+        arb_duty_cycle(cxn, laser_names[0])
     
         
     
