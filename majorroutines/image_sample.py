@@ -372,8 +372,8 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    file_name = '2022_05_13-13_39_00-sandia-R21_a3_r10_c6'
-    scale = 83
+    file_name = '2022_05_13-15_05_13-sandia-R21_a3_r10_c6'
+    scale = 1#83
 
     data = tool_belt.get_raw_data(file_name)
     nv_sig = data['nv_sig']
@@ -401,7 +401,9 @@ if __name__ == '__main__':
 
     pixel_size = x_voltages[1] - x_voltages[0]
     half_pixel_size = pixel_size / 2
-    img_extent = [x_low - half_pixel_size,x_high + half_pixel_size,
+    # img_extent = [x_low - half_pixel_size,x_high + half_pixel_size,
+    #               y_low - half_pixel_size, y_high + half_pixel_size]
+    img_extent = [x_high - half_pixel_size,x_low + half_pixel_size,
                   y_low - half_pixel_size, y_high + half_pixel_size]
 
     #convert to kcps

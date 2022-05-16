@@ -552,11 +552,11 @@ if __name__ == '__main__':
     }  # 14.5 max
     red_power = 0.75
     nv_sig = {
-        "coords":[-0.744, 0.189, 6.617],
+        "coords":[-0.732, 0.198, 6.617],
         "name": "{}-NV-R21_a3_r10_c6".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
-        "expected_count_rate":28,
+        "expected_count_rate":15,
         
         "imaging_laser":green_laser,
         "imaging_laser_power": None,

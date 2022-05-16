@@ -44,7 +44,7 @@ def get_seq(pulse_streamer, config, args):
     
    # compare objective peizo delay (make this more general)
     galvo_move_time = config['Positioning']['xy_large_response_delay']
-    galvo_move_time = numpy.int64(galvo_move_time)
+    galvo_move_time = numpy.int64(galvo_move_time*2)
     
     # Get what we need out of the wiring dictionary
     pulser_wiring = config['Wiring']['PulseStreamer']
@@ -185,7 +185,7 @@ def get_seq(pulse_streamer, config, args):
     
     # fix this so it isn't hard coded in
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                            'cobolt_520', green_powers, train_532)
+                            'integrated_520', green_powers, train_532)
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
                             'laserglow_589', yellow_powers, train_589)
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
@@ -199,6 +199,6 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
     # seq_args = [1000.0, 100000.0, 100000.0, 0.15, 0, 638, 532, 589]
-    seq_args = [1000.0, 200000.0, 1500000.0, 0.1, None, 0.2, 0, 638, 520, 589]
+    seq_args = [100000.0, 200000.0, 1500000.0, 1, None, 0.5, 0, 638, 520, 638]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
