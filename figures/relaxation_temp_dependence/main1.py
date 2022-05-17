@@ -315,7 +315,7 @@ if __name__ == "__main__":
             "temp": 295,
             "skip": False,
             "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
-            "folder": "hopper-nv1_2021_03_16-300K856/",
+            "folder": "hopper-nv1_2021_03_16-300K",
             "Omega": None,
             "gamma": None,
         },
