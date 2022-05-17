@@ -427,9 +427,6 @@ def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift,
                 move_x = (n+1)*step_size_x * dx / abs(dx)
                 incr_x_val = coords_list_drift[i][0] - move_x
                 x_points.append(incr_x_val)
-                # move_x = (n+1)*step_size_x * dx / abs(dx)
-                # incr_x_val = move_x + start_x_value
-                # x_points.append(incr_x_val)
             if n > num_steps_y-1:
                 y_points.append(start_y_value)
                 # y_points.append(coords_list_drift[i][1])
@@ -437,9 +434,6 @@ def build_voltages_from_list_xyz(start_coords_drift, coords_list_drift,
                 move_y = (n+1)*step_size_y * dy / abs(dy)
                 incr_y_val = coords_list_drift[i][1] - move_y
                 y_points.append(incr_y_val)
-                # move_y = (n+1)*step_size_y * dy / abs(dy)
-                # incr_y_val = move_y + start_y_value
-                # y_points.append(incr_y_val)
                 
             if n > num_steps_z-1:
                 z_points.append(start_z_value)
@@ -505,14 +499,14 @@ def build_voltages_image(start_coords, img_range_2D,axes, num_steps_a,num_steps_
 
     return target_a_values, target_b_values, a_voltages_1d, b_voltages_1d
 
-def collect_counts(cxn, movement_incr, num_samples, seq_args_string, apd_indices):
+def collect_counts(cxn, movement_incr, num_samples,num_reps, seq_args_string, apd_indices):
         
     #  Set up the APD
     cxn.apd_tagger.start_tag_stream(apd_indices)
     # prepare and run the sequence
     file_name = 'SPaCE_w_movement_steps.py'
     cxn.pulse_streamer.stream_load(file_name, seq_args_string)
-    cxn.pulse_streamer.stream_start(num_samples)
+    cxn.pulse_streamer.stream_start(num_reps)
         
     total_samples_list = []
     num_read_so_far = 0
@@ -531,13 +525,9 @@ def collect_counts(cxn, movement_incr, num_samples, seq_args_string, apd_indices
                 total_samples_list.append(int(el))
             num_read_so_far += num_new_samples
 
-    # The last of the triplet of readout windows is the counts we are interested in
-    # readout_counts = total_samples_list[2::3]
-    # print(total_samples_list)
     rep_samples = 2 * movement_incr + 1
-    # print(total_samples_list)
-    # readout_counts = total_samples_list[rep_samples-3::rep_samples] #init pulse
-    # readout_counts = total_samples_list[3::rep_samples] #depletion pulse
+    # readout_counts = total_samples_list[0::rep_samples] #init pulse
+    # readout_counts = total_samples_list[int(numpy.floor(rep_samples/2))::rep_samples] #depletion pulse
     readout_counts = total_samples_list[rep_samples-1::rep_samples] #readout pulse
     readout_counts_list = [int(el) for el in readout_counts]
     
@@ -658,18 +648,21 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     num_samples = len(coords_list)
     start_coords = nv_sig['coords']
 
-    init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-                      ['Config', 'Optics', nv_sig['initialize_laser']])
-    pulse_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-                      ['Config', 'Optics', nv_sig['CPG_laser']])
-    readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-                      ['Config', 'Optics', nv_sig['charge_readout_laser']])
+    # init_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+    #                   ['Config', 'Optics', nv_sig['initialize_laser']])
+    # pulse_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+    #                   ['Config', 'Optics', nv_sig['CPG_laser']])
+    # readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
+    #                   ['Config', 'Optics', nv_sig['charge_readout_laser']])
+    
     pulse_time = nv_sig['CPG_laser_dur']
     initialization_time = nv_sig['initialize_laser_dur']
     charge_readout_time = nv_sig['charge_readout_laser_dur']
-    charge_readout_laser_power = nv_sig['charge_readout_laser_power']
-    readout_color = tool_belt.get_registry_entry_no_cxn('wavelength',
-                      ['Config', 'Optics', nv_sig['charge_readout_laser']])
+    
+    init_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "initialize_laser")
+    pulse_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "CPG_laser")
+    read_laser_power = tool_belt.set_laser_power(cxn, nv_sig, "charge_readout_laser")
+    
 
     # Set the charge readout (assumed to be yellow here) to the correct filter
     if 'charge_readout_laser_filter' in nv_sig:
@@ -705,6 +698,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
     max_displacement = max(displacement_list)
     #divide maximum displacement by 1 mV to determine num incr steps
     movement_incr = int(numpy.ceil(max_displacement/min(step_size_list)))
+    # return
     
     # The delay between incremental steps should add up to the total delay for the movement
     # with the piezo stage, that should be 100 ms
@@ -720,10 +714,12 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
 
     # define the sequence paramters
     file_name = 'SPaCE_w_movement_steps.py'
+        
     seq_args = [initialization_time, pulse_time, charge_readout_time,
-        movement_delay, total_movement_delay,  charge_readout_laser_power,
-        apd_indices[0],
-        init_color, pulse_color, readout_color, movement_incr]
+                nv_sig['initialize_laser'], nv_sig['CPG_laser'], nv_sig['charge_readout_laser'],
+                init_laser_power, pulse_laser_power, read_laser_power,
+                movement_delay, total_movement_delay,  movement_incr, 
+                apd_indices[0],]
     # print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
@@ -771,7 +767,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
             # We'll be lookign for three samples each repetition with how I have
             # the sequence set up
             total_num_samples = (2*movement_incr + 1)*redux_num_samples
-            readout_counts = collect_counts(cxn, movement_incr, total_num_samples, seq_args_string, apd_indices)   
+            readout_counts = collect_counts(cxn, movement_incr, total_num_samples,redux_num_samples, seq_args_string, apd_indices)   
             
             readout_counts_list.append(readout_counts)
             i += 1
@@ -802,7 +798,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
             # We'll be lookign for three samples each repetition with how I have
             # the sequence set up
             total_num_samples = (2*movement_incr + 1)*remain_num_samples
-            readout_counts = collect_counts(cxn,movement_incr,  total_num_samples, seq_args_string, apd_indices)    
+            readout_counts = collect_counts(cxn,movement_incr,  total_num_samples,remain_num_samples, seq_args_string, apd_indices)    
             
             readout_counts_list.append(readout_counts)
     else:
@@ -822,6 +818,12 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         # Build the list to step through the coords on readout NV and targets
         x_voltages, y_voltages, z_voltages = build_voltages_from_list_xyz(start_coords_drift, 
                                                   coords_list_drift, movement_incr,  step_size_list)
+        # print(movement_incr)
+        # print(start_coords_drift)
+        # print(x_voltages)
+        # print(y_voltages)
+        # print(z_voltages)
+        # return
         # Load the galvo
         xyz_server = tool_belt.get_xyz_server(cxn)
         xyz_server.load_arb_scan_xyz(x_voltages, y_voltages, z_voltages, int(period))
@@ -829,7 +831,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
         # We'll be lookign for three samples each repetition with how I have
         # the sequence set up
         total_num_samples = (2*movement_incr + 1)*num_samples
-        readout_counts = collect_counts(cxn,movement_incr,  total_num_samples, seq_args_string, apd_indices)   
+        readout_counts = collect_counts(cxn,movement_incr,  total_num_samples,num_samples, seq_args_string, apd_indices)   
         readout_counts_list.append(readout_counts)
         
 
@@ -924,7 +926,7 @@ def main(nv_sig, opti_nv_sig,apd_indices,  num_runs,  num_steps_a, num_steps_b =
         # neg_ints = int(numpy.floor(len(rad_dist)/2))
         # rad_dist[0:neg_ints] = rad_dist[0:neg_ints]*-1
         
-        fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
+        fig_1D, ax_1D = plt.subplots(1, 1, figsize=(8, 8))
         
     elif img_range_2D != None:
         measurement_type = '2D'
@@ -1197,7 +1199,8 @@ def main(nv_sig, opti_nv_sig,apd_indices,  num_runs,  num_steps_a, num_steps_b =
             raw_data['readout_counts_array_charge-units'] = 'counts'
                 
     if measurement_type == '1D':
-        fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
+        # fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
+        ax_1D.cla()
         ax_1D.plot(rad_dist*scale,readout_counts_avg, label = nv_sig['name'])
         ax_1D.set_xlabel('r (um)')
         ax_1D.set_ylabel('Average counts')

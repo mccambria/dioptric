@@ -31,18 +31,20 @@ def get_seq(pulse_streamer, config, args):
     # Unpack the durations
     initialization_time, pulse_time, readout_time = durations
                 
-    aom_ao_589_pwr = args[3]
+    init_power = args[3]
+    test_power = args[4]
+    read_power = args[5]
 
     # Get the APD index
-    apd_index = args[4]
+    apd_index = args[6]
 
-    init_color = args[5]
-    pulse_color = args[6]
-    read_color = args[7]
+    init_color = args[7]
+    pulse_color = args[8]
+    read_color = args[9]
     
    # compare objective peizo delay (make this more general)
     galvo_move_time = config['Positioning']['xy_large_response_delay']
-    galvo_move_time = numpy.int64(galvo_move_time)
+    galvo_move_time = numpy.int64(galvo_move_time*2)
     
     # Get what we need out of the wiring dictionary
     pulser_wiring = config['Wiring']['PulseStreamer']
@@ -53,7 +55,7 @@ def get_seq(pulse_streamer, config, args):
     # pulser_ao_589_aom = pulser_wiring['ao_laserglow_589_am']
     # pulser_do_638_aom = pulser_wiring['do_cobolt_638_dm']
     
-    green_laser_delay = config['Optics']['cobolt_515']['delay']
+    green_laser_delay = config['Optics']['integrated_520']['delay']
     yellow_laser_delay = config['Optics']['laserglow_589']['delay']
     red_laser_delay = config['Optics']['cobolt_638']['delay']
     
@@ -93,6 +95,10 @@ def get_seq(pulse_streamer, config, args):
 #    seq.setDigital(pulser_do_532_aom, train)
     
     # start each laser sequence
+    green_powers = []
+    yellow_powers = []
+    red_powers = []
+    
     train_532 = [(total_laser_delay - green_laser_delay , LOW)]
     train_589 = [(total_laser_delay - yellow_laser_delay, LOW)]
     train_638 = [(total_laser_delay - red_laser_delay, LOW)]
@@ -102,16 +108,19 @@ def get_seq(pulse_streamer, config, args):
     # add the initialization pulse segment
     init_train_on = [(initialization_time, HIGH)]
     init_train_off = [(initialization_time, LOW)]
-    if init_color == 515 :
+    if init_color == 520 :
+        green_powers.append(init_power)
         train_532.extend(init_train_on)
         train_589.extend(init_train_off)
         train_638.extend(init_train_off)
     if init_color == 589:
+        yellow_powers.append(init_power)
         # init_train_on = [(initialization_time, aom_ao_589_pwr)]
         train_532.extend(init_train_off)
         train_589.extend(init_train_on)
         train_638.extend(init_train_off)
     if init_color == 638:
+        red_powers.append(init_power)
         train_532.extend(init_train_off)
         train_589.extend(init_train_off)
         train_638.extend(init_train_on)
@@ -123,16 +132,19 @@ def get_seq(pulse_streamer, config, args):
     # add the pulse pulse segment
     pulse_train_on = [(pulse_time, HIGH)]
     pulse_train_off = [(pulse_time, LOW)]
-    if pulse_color == 515:
+    if pulse_color == 520:
+        green_powers.append(test_power)
         train_532.extend(pulse_train_on)
         train_589.extend(pulse_train_off)
         train_638.extend(pulse_train_off)
     if pulse_color == 589:
+        yellow_powers.append(test_power)
         # pulse_train_on = [(pulse_time, aom_ao_589_pwr)]
         train_532.extend(pulse_train_off)
         train_589.extend(pulse_train_on)
         train_638.extend(pulse_train_off)
     if pulse_color == 638:
+        red_powers.append(test_power)
         train_532.extend(pulse_train_off)
         train_589.extend(pulse_train_off)
         train_638.extend(pulse_train_on)
@@ -144,16 +156,19 @@ def get_seq(pulse_streamer, config, args):
     # add the readout pulse segment
     read_train_on = [(readout_time, HIGH)]
     read_train_off = [(readout_time, LOW)]
-    if read_color == 515:
+    if read_color == 520:
+        green_powers.append(read_power)
         train_532.extend(read_train_on)
         train_589.extend(read_train_off)
         train_638.extend(read_train_off)
     if read_color == 589:
+        yellow_powers.append(read_power)
         # read_train_on = [(readout_time, aom_ao_589_pwr)]
         train_532.extend(read_train_off)
         train_589.extend(read_train_on)
         train_638.extend(read_train_off)
     if read_color == 638:
+        red_powers.append(read_power)
         train_532.extend(pulse_train_off)
         train_589.extend(pulse_train_off)
         train_638.extend(read_train_on)
@@ -170,11 +185,11 @@ def get_seq(pulse_streamer, config, args):
     
     # fix this so it isn't hard coded in
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                            'cobolt_515', None, train_532)
+                            'integrated_520', green_powers, train_532)
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                            'laserglow_589', aom_ao_589_pwr, train_589)
+                            'laserglow_589', yellow_powers, train_589)
     tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                            'cobolt_638', None, train_638)
+                            'cobolt_638', red_powers, train_638)
         
     final_digital = []
     final = OutputState(final_digital, 0.0, 0.0)
@@ -184,6 +199,6 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
     # seq_args = [1000.0, 100000.0, 100000.0, 0.15, 0, 638, 532, 589]
-    seq_args = [1000.0, 200000.0, 1500000.0, 0.1, 0, 638, 515, 589]
+    seq_args = [100000.0, 200000.0, 1500000.0, 1, None, 0.5, 0, 638, 520, 638]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

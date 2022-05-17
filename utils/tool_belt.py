@@ -493,6 +493,7 @@ def process_laser_seq(
             processed_train.append((dur, power_dict[val]))
 
         pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
+        # print(processed_train)
         seq.setAnalog(pulser_laser_mod, processed_train)
 
 

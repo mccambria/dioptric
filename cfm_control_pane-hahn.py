@@ -488,8 +488,8 @@ if __name__ == '__main__':
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
         
         'collection_filter': None, 'magnet_angle': None,   
-        'resonance_LOW': 2.8002, 'rabi_LOW': 176.2, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9410, 'rabi_HIGH': 222.8, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.8002, 'rabi_LOW': 171.0, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9410, 'rabi_HIGH': 215.6, 'uwave_power_HIGH': 16.5,
         }
     
             
@@ -595,8 +595,8 @@ if __name__ == '__main__':
         
         # Automatic T1 setup
         # do_stationary_count(nv_sig, apd_indices)
-        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
         do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)

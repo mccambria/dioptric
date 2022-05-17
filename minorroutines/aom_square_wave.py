@@ -32,7 +32,7 @@ HIGH = 1
 
 
 def constant(cxn, laser_names, laser_powers=None):
-    
+
     # seq_file = 'square_wave.py'
     # period = int(1000)
     # # period = int(0.25e6)
@@ -43,9 +43,9 @@ def constant(cxn, laser_names, laser_powers=None):
     # cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
 
     # tool_belt.laser_off(cxn, laser_name)
-    
+
     num_lasers = len(laser_names)
-    
+
     if laser_powers is None:
         laser_powers = [None] * num_lasers
 
@@ -53,7 +53,7 @@ def constant(cxn, laser_names, laser_powers=None):
         laser_name = laser_names[ind]
         laser_power = laser_powers[ind]
         tool_belt.laser_on(cxn, laser_name, laser_power)
-        
+
     # cxn.pulse_streamer.constant([3], 1.0)
     # cxn.pulse_streamer.constant([], 1.0)
 
@@ -69,17 +69,37 @@ def constant(cxn, laser_names, laser_powers=None):
 
 def main(cxn, laser_name, laser_power=None):
     """Run a laser on on a square wave."""
-    
+
     seq_file = 'square_wave.py'
-    period = int(10000)
+    # period = int(10000)
+    period = int(10e9)
     # period = int(500)
     # period = int(0.25e6)
     # period = int(10000)
     seq_args = [period, laser_name, laser_power]
-    
+
     # seq_file = 'SCC_optimize_pulses_w_uwaves.py'
     # seq_args = [58000.0, 1000.0, 125, 68, 150, 68, 'laserglow_532', 'laserglow_589', 'cobolt_638', 'signal_generator_sg394', 1, 0.68, 0.9]
-    
+
+    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
+
+    input('Press enter to stop...')
+
+    cxn.pulse_streamer.constant()
+    tool_belt.laser_off(cxn, laser_name)
+
+
+def arb_duty_cycle(cxn, laser_name, laser_power=None):
+    """Run a laser on on a square wave."""
+
+    seq_file = 'square_wave_arb_duty_cycle.py'
+    period_1 = 1e4
+    wait_1 = 1e5
+    period_2 = 1e5
+    wait_2 = 1e4
+    seq_args = [wait_1,period_1 ,wait_2,period_2 ,laser_name, laser_power]
+
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
 
@@ -100,8 +120,8 @@ if __name__ == '__main__':
     # Set up your parameters to be passed to main here
 
     # Rabi
-    
-    
+
+
     # laser_name = 'cobolt_515'
     # laser_name = 'cobolt_638'
     # filter_name = 'nd_0.5'
@@ -131,15 +151,16 @@ if __name__ == '__main__':
         # tool_belt.set_filter(cxn, optics_name=laser_name, filter_name=filter_name)
         # tool_belt.set_filter(cxn, optics_name=laser_names, filter_name="nd_0.5")
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
-        constant(cxn, laser_names, laser_powers)
+        # constant(cxn, laser_names, laser_powers)
         # main(cxn, laser_names[0])
-    
-        
-    
+        arb_duty_cycle(cxn, laser_names[0])
+
+
+
         # cxn.pulse_streamer.constant([3], 1.0)
         # cxn.pulse_streamer.constant([], 1.0)
         # # cxn.pulse_streamer.constant([3])
-    
+
         # input('Press enter to stop...')
-        
+
         # cxn.pulse_streamer.constant()
