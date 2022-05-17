@@ -30,8 +30,11 @@ def get_seq(pulse_streamer, config, args):
     
     galvo_move_time = config['Positioning']['xy_small_response_delay']
     prep_aom_delay_time = config['Optics'][prep_laser_key]['delay']
-    test_aom_delay_time = config['Optics'][test_laser_key]['delay']
     read_aom_delay_time = config['Optics'][readout_laser_key]['delay']
+    if test_laser_key == None:
+        test_aom_delay_time = 0
+    else:
+        test_aom_delay_time = config['Optics'][test_laser_key]['delay']
     
     # Convert the 32 bit ints into 64 bit ints
     prep_time = numpy.int64(prep_time)
@@ -49,7 +52,7 @@ def get_seq(pulse_streamer, config, args):
     elif prep_laser_key != readout_laser_key and readout_laser_key == test_laser_key:
         total_delay = prep_aom_delay_time + read_aom_delay_time
     else:
-        total_delay = prep_aom_delay_time + test_aom_delay_time + readout_laser_key
+        total_delay = prep_aom_delay_time + test_aom_delay_time + read_aom_delay_time
 
 
     period = galvo_move_time + total_delay + prep_time + test_time + readout_time +\
@@ -69,115 +72,153 @@ def get_seq(pulse_streamer, config, args):
              (readout_time, HIGH), (300, LOW)]
     seq.setDigital(pulser_do_daq_gate, train)
     
-    if prep_laser_key == test_laser_key and prep_laser_key == readout_laser_key:
-    
-        train = [(galvo_move_time, LOW),
-                 (prep_time, HIGH),
-                 (intra_pulse_delay, LOW),
-                 (test_time, HIGH),
-                 (intra_pulse_delay, LOW), 
-                 (readout_time, HIGH), 
-                 (100, LOW)]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                readout_laser_key, read_laser_power, train)
-    
-    elif prep_laser_key == readout_laser_key and prep_laser_key != test_laser_key:
+    # Handle the case where we don't want to pulse a laser for the test, just wait that time
+    if test_laser_key == None:
+        if prep_laser_key == readout_laser_key:
+            laser_powers = [prep_laser_power, read_laser_power]
+            
+            train = [(galvo_move_time, LOW),
+                     (prep_time, HIGH),
+                     (intra_pulse_delay, LOW),
+                     (test_time, LOW),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, HIGH), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    readout_laser_key, laser_powers, train)
+            
+        elif prep_laser_key != readout_laser_key:
+            train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, HIGH),
+                     (intra_pulse_delay, LOW),
+                     (test_time, LOW),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, LOW), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                        prep_laser_key, [prep_laser_power], train)
         
-        
-        train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
-                 (prep_time, HIGH),
-                 (intra_pulse_delay, LOW),
-                 (test_time, LOW),
-                 (intra_pulse_delay, LOW), 
-                 (readout_time, HIGH), 
-                 (100, LOW)]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                readout_laser_key, [prep_laser_power, read_laser_power], train)
-        
-        train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
-                 (prep_time, LOW),
-                 (intra_pulse_delay, LOW),
-                 (test_time, HIGH),
-                 (intra_pulse_delay, LOW), 
-                 (readout_time, LOW), 
-                 (100, LOW)]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                test_laser_key, [test_laser_power], train)
-        
-        
-    elif prep_laser_key != readout_laser_key and prep_laser_key == test_laser_key:
-        train = [(total_delay -test_aom_delay_time + galvo_move_time, LOW),
-                 (prep_time, HIGH),
-                 (intra_pulse_delay, LOW),
-                 (test_time, HIGH),
-                 (intra_pulse_delay, LOW), 
-                 (readout_time, LOW), 
-                 (100, LOW)]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                prep_laser_key, [prep_laser_power, test_laser_power], train)
-        
-        train = [(total_delay -read_aom_delay_time + galvo_move_time, LOW),
-                 (prep_time, LOW),
-                 (intra_pulse_delay, LOW),
-                 (test_time, LOW),
-                 (intra_pulse_delay, LOW), 
-                 (readout_time, HIGH), 
-                 (100, LOW)]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                readout_laser_key, [read_laser_power], train)
-        
-                
-    elif prep_laser_key != readout_laser_key and readout_laser_key == test_laser_key:
-        train = [(total_delay -test_aom_delay_time + galvo_move_time, LOW),
-                 (prep_time, LOW),
-                 (intra_pulse_delay, LOW),
-                 (test_time, HIGH),
-                 (intra_pulse_delay, LOW), 
-                 (readout_time, HIGH), 
-                 (100, LOW)]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                readout_laser_key, [test_laser_power, read_laser_power], train)
-        
-        train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
-                 (prep_time, HIGH),
-                 (intra_pulse_delay, LOW),
-                 (test_time, LOW),
-                 (intra_pulse_delay, LOW), 
-                 (readout_time, LOW), 
-                 (100, LOW)]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                prep_laser_key, [prep_laser_power], train)
-    
+            train = [(total_delay -read_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, LOW),
+                     (intra_pulse_delay, LOW),
+                     (test_time, LOW),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, HIGH), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    readout_laser_key, [read_laser_power], train)
+          
+    # Otherwise, we have the normal possibilities of combining three lasers
     else:
-        train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
-                 (prep_time, HIGH),
-                 (intra_pulse_delay, LOW),
-                 (test_time, LOW),
-                 (intra_pulse_delay, LOW), 
-                 (readout_time, LOW), 
-                 (100, LOW)]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                prep_laser_key, [prep_laser_power], train)
+        if prep_laser_key == test_laser_key and prep_laser_key == readout_laser_key:
+            laser_powers = [prep_laser_power, test_laser_power, read_laser_power]
+            
+            train = [(galvo_move_time, LOW),
+                     (prep_time, HIGH),
+                     (intra_pulse_delay, LOW),
+                      (test_time, HIGH), 
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, HIGH), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    readout_laser_key, laser_powers, train)
         
-        train = [(total_delay -test_aom_delay_time + galvo_move_time, LOW),
-                 (prep_time, LOW),
-                 (intra_pulse_delay, LOW),
-                 (test_time, HIGH),
-                 (intra_pulse_delay, LOW), 
-                 (readout_time, LOW), 
-                 (100, LOW)]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                test_laser_key, [test_laser_power], train)
+        elif prep_laser_key == readout_laser_key and prep_laser_key != test_laser_key:
+            
+            train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, HIGH),
+                     (intra_pulse_delay, LOW),
+                     (test_time, LOW),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, HIGH), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    readout_laser_key, [prep_laser_power, read_laser_power], train)
+            
+            train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, LOW),
+                     (intra_pulse_delay, LOW),
+                     (test_time, HIGH),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, LOW), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    test_laser_key, [test_laser_power], train)
+            
+            
+        elif prep_laser_key != readout_laser_key and prep_laser_key == test_laser_key:
+            train = [(total_delay -test_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, HIGH),
+                     (intra_pulse_delay, LOW),
+                     (test_time, HIGH),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, LOW), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    prep_laser_key, [prep_laser_power, test_laser_power], train)
+            
+            train = [(total_delay -read_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, LOW),
+                     (intra_pulse_delay, LOW),
+                     (test_time, LOW),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, HIGH), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    readout_laser_key, [read_laser_power], train)
+            
+                    
+        elif prep_laser_key != readout_laser_key and readout_laser_key == test_laser_key:
+            train = [(total_delay -test_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, LOW),
+                     (intra_pulse_delay, LOW),
+                     (test_time, HIGH),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, HIGH), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    readout_laser_key, [test_laser_power, read_laser_power], train)
+            
+            train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, HIGH),
+                     (intra_pulse_delay, LOW),
+                     (test_time, LOW),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, LOW), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    prep_laser_key, [prep_laser_power], train)
         
-        train = [(total_delay -read_aom_delay_time + galvo_move_time, LOW),
-                 (prep_time, LOW),
-                 (intra_pulse_delay, LOW),
-                 (test_time, LOW),
-                 (intra_pulse_delay, LOW), 
-                 (readout_time, HIGH), 
-                 (100, LOW)]
-        tool_belt.process_laser_seq(pulse_streamer, seq, config,
-                                readout_laser_key, [read_laser_power], train)
+        else:
+            train = [(total_delay -prep_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, HIGH),
+                     (intra_pulse_delay, LOW),
+                     (test_time, LOW),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, LOW), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    prep_laser_key, [prep_laser_power], train)
+            
+            train = [(total_delay -test_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, LOW),
+                     (intra_pulse_delay, LOW),
+                     (test_time, HIGH),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, LOW), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    test_laser_key, [test_laser_power], train)
+            
+            train = [(total_delay -read_aom_delay_time + galvo_move_time, LOW),
+                     (prep_time, LOW),
+                     (intra_pulse_delay, LOW),
+                     (test_time, LOW),
+                     (intra_pulse_delay, LOW), 
+                     (readout_time, HIGH), 
+                     (100, LOW)]
+            tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                    readout_laser_key, [read_laser_power], train)
 
         
     final_digital = []
@@ -188,7 +229,7 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    args = [200000.0, 1000000.0, 75000.0, 'cobolt_638', 'integrated_520', 'cobolt_638', 0.69, 0.66, 0.61, 1]
-    # args = [1000.0, 100000000, 'cobolt_515', 'laserglow_589', None, 0.15, 0]
+    # args = [200000.0, 1000000.0, 50000.0, 'cobolt_638', 'integrated_520', 'cobolt_638', 0.67, None, 0.55, 1]
+    args = [200000.0, 1000000.0, 50000.0, 'cobolt_638', None, 'cobolt_638', 0.67, 0.67, 0.55, 1]
     seq = get_seq(None, config, args)[0]
     seq.plot()
