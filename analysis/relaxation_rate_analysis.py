@@ -828,6 +828,7 @@ if __name__ == "__main__":
 
         path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
         folder = "wu-nv6_2022_04_14-295K"
+        # folder = "wu-nv1_2022_03_16-295K"
 
         main(
             path,
@@ -839,7 +840,7 @@ if __name__ == "__main__":
             simple_print=True,
         )
 
-        plt.show(block=True)
+        # plt.show(block=True)
 
     elif mode == "batch_analysis":
 
