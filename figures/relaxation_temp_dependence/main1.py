@@ -55,10 +55,11 @@ def main(data_sets, dosave=False, draft_version=True):
     nvdata_dir = common.get_nvdata_dir()
 
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
-    fig = plt.figure(figsize=(6.5, 7.5))
+    # fig = plt.figure(figsize=(6.5, 7.5))
+    fig = plt.figure(figsize=(6.5, 7.2))
     grid_columns = 30
     half_grid_columns = grid_columns // 2
-    gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1, 1))
+    gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1.1, 1))
 
     first_row_sep_ind = 15
 
@@ -134,7 +135,8 @@ def main(data_sets, dosave=False, draft_version=True):
     ax.set_position([l + shift, b, w - shift, h])
 
     ax.set_xlabel(r"Wait time $\tau$ (ms)")
-    ax.set_ylabel(r"$P_{+1,+1}(\tau) - P_{+1,-1}(\tau)$")
+    # ax.set_ylabel(r"$P_{+1,+1}(\tau) - P_{+1,-1}(\tau)$")
+    ax.set_ylabel(r"$\ket{-1}$, $\ket{+1}$ population difference")
 
     min_time = 0.0
     max_time = 18
@@ -229,7 +231,8 @@ def main(data_sets, dosave=False, draft_version=True):
     ax = fig.add_subplot(gs[1, :])
     ax.set_axis_off()
     fig.text(
-        0,
+        # 0,
+        -0.004,
         0.95,
         "(c)",
         transform=ax.transAxes,
@@ -262,9 +265,12 @@ def main(data_sets, dosave=False, draft_version=True):
     # fig.subplots_adjust(hspace=0.5, wspace=0.5)
 
     if dosave:
+        ext = "png"
         file_path = str(
             nvdata_dir
-            / "paper_materials/relaxation_temp_dependence/figures/main1.eps"
+            / "paper_materials/relaxation_temp_dependence/figures/main1.{}".format(
+                ext
+            )
         )
         fig.savefig(file_path, dpi=500)
 
@@ -371,6 +377,8 @@ if __name__ == "__main__":
         },
     ]
 
-    main(decay_data_sets, dosave=False, draft_version=True)
+    dosave = True
+    # dosave = False
+    main(decay_data_sets, dosave=dosave, draft_version=True)
 
     plt.show(block=True)
