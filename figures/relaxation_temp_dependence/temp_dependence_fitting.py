@@ -161,6 +161,25 @@ def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
         )
 
 
+def orbach_variable_exp_const(
+    temp, coeff_orbach, activation, coeff_power, exp, const
+):
+    full_scaling = True
+    if full_scaling:
+        n1 = bose(activation, temp)
+        return (
+            const
+            + (coeff_orbach * n1 * (n1 + 1))
+            + (coeff_power * temp ** exp)
+        )
+    else:
+        return (
+            const
+            + (coeff_orbach * bose(activation, temp))
+            + (coeff_power * temp ** exp)
+        )
+
+
 def double_orbach(temp, coeff1, delta1, coeff2, delta2, const):
     full_scaling = True
     if full_scaling:
@@ -572,12 +591,90 @@ def fit_simultaneous(data_points, fit_mode=None):
     # region DECLARE FIT FUNCTIONS HERE
 
     if fit_mode is None:
+        # fit_mode = "variable_exp"
+        # fit_mode = "T5_fixed_coeffs"
         # fit_mode = "T5"
         fit_mode = "double_orbach"
         # fit_mode = "other"
 
+    # Varible exponent
+    if fit_mode == "variable_exp":
+        init_params = (
+            1.38e-11,
+            1.38e-11,
+            5,
+            510,
+            2000,
+            72.0,
+            0.01,
+            0.01,
+            0.07,
+            0.15,
+        )
+        omega_hopper_fit_func = lambda temp, beta: orbach_variable_exp_const(
+            temp, beta[3], beta[5], beta[0], beta[2], beta[6]
+        )
+        omega_wu_fit_func = lambda temp, beta: orbach_variable_exp_const(
+            temp, beta[3], beta[5], beta[0], beta[2], beta[7]
+        )
+        gamma_hopper_fit_func = lambda temp, beta: orbach_variable_exp_const(
+            temp, beta[4], beta[5], beta[1], beta[2], beta[8]
+        )
+        gamma_wu_fit_func = lambda temp, beta: orbach_variable_exp_const(
+            temp, beta[4], beta[5], beta[1], beta[2], beta[9]
+        )
+        beta_desc = [
+            "Omega exp coeff (K^-exp s^-1)",
+            "gamma exp coeff (K^-exp s^-1)",
+            "Power law exp",
+            "Omega Orbach coeff (s^-1)",
+            "gamma Orbach coeff (s^-1)",
+            "Orbach Delta (meV)",
+            "Omega Hopper constant (s^-1)",
+            "Omega Wu constant (s^-1)",
+            "gamma Hopper constant (s^-1)",
+            "gamma Wu constant (s^-1)",
+        ]
+
+    # T5 free coeffs + constant
+    elif fit_mode == "T5":
+        init_params = (
+            1.38e-11,
+            1.38e-11,
+            510,
+            2000,
+            72.0,
+            0.01,
+            0.01,
+            0.07,
+            0.15,
+        )
+        omega_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
+            temp, beta[2], beta[4], beta[0], beta[5]
+        )
+        omega_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
+            temp, beta[2], beta[4], beta[0], beta[6]
+        )
+        gamma_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
+            temp, beta[3], beta[4], beta[1], beta[7]
+        )
+        gamma_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
+            temp, beta[3], beta[4], beta[1], beta[8]
+        )
+        beta_desc = [
+            "Omega T5 coeff (K^-5 s^-1)",
+            "gamma T5 coeff (K^-5 s^-1)",
+            "gamma Omega Orbach coeff (s^-1)",
+            "gamma Orbach coeff (s^-1)",
+            "Orbach Delta (meV)",
+            "Omega Hopper constant (s^-1)",
+            "Omega Wu constant (s^-1)",
+            "gamma Hopper constant (s^-1)",
+            "gamma Wu constant (s^-1)",
+        ]
+
     # T5 fixed + constant
-    if fit_mode == "T5":
+    elif fit_mode == "T5_fixed_coeffs":
         init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.01, 0.07, 0.15)
         omega_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
             temp, beta[1], beta[3], beta[0], beta[4]
@@ -604,6 +701,65 @@ def fit_simultaneous(data_points, fit_mode=None):
 
     # Double Orbach
     elif fit_mode == "double_orbach":
+        init_params = (
+            450,
+            1200,
+            65,
+            11000,
+            11000,
+            160,
+            0.01,
+            0.01,
+            0.07,
+            0.15,
+        )
+        omega_hopper_fit_func = lambda temp, beta: double_orbach(
+            temp,
+            beta[0],
+            beta[2],
+            beta[3],
+            beta[5],
+            beta[6],
+        )
+        omega_wu_fit_func = lambda temp, beta: double_orbach(
+            temp,
+            beta[0],
+            beta[2],
+            beta[3],
+            beta[5],
+            beta[7],
+        )
+        gamma_hopper_fit_func = lambda temp, beta: double_orbach(
+            temp,
+            beta[1],
+            beta[2],
+            beta[4],
+            beta[5],
+            beta[8],
+        )
+        gamma_wu_fit_func = lambda temp, beta: double_orbach(
+            temp,
+            beta[1],
+            beta[2],
+            beta[4],
+            beta[5],
+            beta[9],
+        )
+        beta_desc = [
+            "Omega Orbach 1 coeff (s^-1)",
+            "gamma Orbach 1 coeff (s^-1)",
+            "Orbach 1 Delta (meV)",
+            "Orbach 2 coeff (s^-1)",
+            "Omega Orbach 2 Delta (meV)",
+            "gamma Orbach 2 Delta (meV)",
+            "Omega Hopper constant (s^-1)",
+            "Omega Wu constant (s^-1)",
+            "gamma Hopper constant (s^-1)",
+            "gamma Wu constant (s^-1)",
+        ]
+
+    # Double Orbach, fixed high Orbach coeffs
+    elif fit_mode == "double_orbach_fixed":
         init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
         omega_hopper_fit_func = lambda temp, beta: double_orbach(
             temp,
@@ -1245,9 +1401,12 @@ def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
     return
 
 
-def figure_2(file_name, path):
+def figure_2(file_name, path, dosave=False):
 
     data_points = get_data_points(path, file_name)  # , temp_range)
+    # fit_modes = ["double_orbach_fixed", "T5"]
+    # fit_modes = ["double_orbach", "variable_exp"]
+    # fit_modes = ["double_orbach", "T5_fixed_coeffs"]
     fit_modes = ["double_orbach", "T5"]
     rates = ["gamma", "Omega"]
     labels = ["(a)", "(b)"]
@@ -1344,8 +1503,12 @@ def figure_2(file_name, path):
 
     # Plot the residuals
 
-    scatter_axes_b[0][0].set_title("Double Orbach")
-    scatter_axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
+    # scatter_axes_b[0][0].set_title("Double Orbach")
+    # scatter_axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
+    scatter_axes_b[0][0].set_title(
+        r"$C + A_{1} O(\Delta_{1}, T) + A_{2} O(\Delta_{2}, T)$"
+    )
+    scatter_axes_b[0][1].set_title(r"$C + A_{1} O(\Delta, T) + A_{2} T^{5}$")
 
     scatter_axes_b[0][0].get_xaxis().set_visible(False)
     scatter_axes_b[0][1].get_xaxis().set_visible(False)
@@ -1390,6 +1553,17 @@ def figure_2(file_name, path):
 
     fig.tight_layout(pad=0.3)
 
+    if dosave:
+        nvdata_dir = common.get_nvdata_dir()
+        ext = "png"
+        file_path = str(
+            nvdata_dir
+            / "paper_materials/relaxation_temp_dependence/figures/main2.{}".format(
+                ext
+            )
+        )
+        fig.savefig(file_path, dpi=500)
+
 
 def figure_2_raw_data(ax, axins, data_points):
 
@@ -1424,7 +1598,7 @@ def figure_2_raw_data(ax, axins, data_points):
         ms = mss[ind]
 
         # Sample-dependent vs phonon-limited line
-        ax.axvline(x=120, color="silver", zorder=-10)
+        ax.axvline(x=125, color="silver", zorder=-10)
 
         # marker_type = "nv"
 
@@ -1578,7 +1752,7 @@ def figure_2_raw_data(ax, axins, data_points):
                     bbox_to_anchor=(x_loc, 1.0),
                 )
             else:
-                x_loc = 0.14
+                x_loc = 0.13
                 # x_loc = 0.16
                 # x_loc = 0.22
                 nv_patches = []
@@ -1629,8 +1803,8 @@ def figure_2_raw_data(ax, axins, data_points):
             "fontsize": 13,
             "ha": "right",
         }
-        x_loc = 0.241
-        y_loc = 0.76
+        x_loc = 0.253
+        y_loc = 0.765
         linespacing = 0.05
         ax.text(x_loc, y_loc, r"Sample-", **args)
         ax.text(x_loc, y_loc - linespacing, r"dependent", **args)
@@ -1645,7 +1819,7 @@ def figure_2_raw_data(ax, axins, data_points):
         args["fontsize"] = prev
 
         args["ha"] = "left"
-        x_loc = 0.275
+        x_loc += 0.03
         ax.text(x_loc, y_loc, r"Phonon-", **args)
         ax.text(x_loc, y_loc - linespacing, r"limited", **args)
         prev = args["fontsize"]
@@ -1669,7 +1843,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
     # linestyles = {"hopper": "dotted", "wu": "solid"}
 
     zorder = 0
-    if fit_mode == "T5":
+    if fit_mode != "double_orbach":
         zorder = -1
 
     for ax in [ax_a, axins_a]:
@@ -1693,17 +1867,17 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
         omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
         gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
         gamma_wu_lambda = lambda temp: gamma_wu_fit_func(temp, popt)
-        # print("parameter description: popt, psd")
-        # for ind in range(len(popt)):
-        #     desc = beta_desc[ind]
-        #     val = tool_belt.round_sig_figs(popt[ind], 5)
-        #     err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
-        #     print("{}: {}, {}".format(desc, val, err))
-        #     print(presentation_round_latex(val, err))
+        print("parameter description: popt, psd")
+        for ind in range(len(popt)):
+            desc = beta_desc[ind]
+            val = tool_belt.round_sig_figs(popt[ind], 5)
+            err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
+            print("{}: {}, {}".format(desc, val, err))
+            print(presentation_round_latex(val, err))
 
         # Plot the rate fits
         line_color = omega_edge_color
-        if fit_mode == "T5":
+        if fit_mode != "double_orbach":
             line_color = "#fcd4ac"
         for sample in samples_to_plot:
             fit_func = eval("omega_{}_lambda".format(sample))
@@ -1718,7 +1892,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
                 zorder=zorder,
             )
         line_color = gamma_edge_color
-        if fit_mode == "T5":
+        if fit_mode != "double_orbach":
             line_color = "#e09de0"
         for sample in samples_to_plot:
             fit_func = eval("gamma_{}_lambda".format(sample))
@@ -1828,7 +2002,7 @@ def figure_2_residuals(scatter_ax, hist_ax, plot_rate, data_points, fit_mode):
         linewidth=marker_edge_width,
         density=True,
     )
-    hist_ax.set_xlim([0, 0.5])
+    hist_ax.set_xlim([0, 0.6])
     hist_xlim = hist_ax.get_xlim()
     hist_ylim = hist_ax.get_ylim()
     # if fit_mode == "double_orbach":
@@ -1840,6 +2014,7 @@ def figure_2_residuals(scatter_ax, hist_ax, plot_rate, data_points, fit_mode):
     hist_ax.plot(
         normal_density(err_linspace), err_linspace, color=edgecolor, zorder=1
     )
+    hist_ax.axis("off")
 
     # print(max_norm_err)
 
@@ -1880,7 +2055,7 @@ def main(
         omega_wu_fit_func,
         gamma_hopper_fit_func,
         gamma_wu_fit_func,
-    ) = fit_simultaneous(data_points)
+    ) = fit_simultaneous(data_points, "double_orbach")
 
     # omega_lambda = lambda temp: orbach_free(temp, 5.4603e02, 71)
     # gamma_lambda = lambda temp: orbach_free(temp, 1.5312e03, 71)
@@ -1967,7 +2142,8 @@ def main(
         T2_max_qubit_err = lambda T2max, omega_err, gamma_err: (
             (T2max ** 2) / 2
         ) * np.sqrt((3 * omega_err) ** 2 + gamma_err ** 2)
-        for func in [T2_max_qubit_hopper_temp, T2_max_qubit_wu_temp]:
+        for func in [T2_max_qubit_wu_temp]:
+            # for func in [T2_max_qubit_hopper_temp, T2_max_qubit_wu_temp]:
             ax.plot(
                 temp_linspace,
                 func(temp_linspace),
@@ -1986,7 +2162,8 @@ def main(
         T2_max_qutrit_wu_temp = lambda temp: T2_max_qutrit(
             omega_wu_lambda(temp), gamma_wu_lambda(temp)
         )
-        for func in [T2_max_qutrit_hopper_temp, T2_max_qutrit_wu_temp]:
+        for func in [T2_max_qutrit_wu_temp]:
+            # for func in [T2_max_qutrit_hopper_temp, T2_max_qutrit_wu_temp]:
             ax.plot(
                 temp_linspace,
                 func(temp_linspace),
@@ -1995,6 +2172,8 @@ def main(
                 color=qutrit_max_edge_color,
                 linewidth=line_width,
             )
+            
+        ax.axvline(x=125, color="silver", zorder=-10)
 
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
     # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
@@ -2305,17 +2484,27 @@ def main(
     fig.tight_layout(pad=0.3)
 
     if dosave:
-        timestamp = tool_belt.get_time_stamp()
-        datestamp = timestamp.split("-")[0]
-        file_name = "{}-{}-{}".format(datestamp, plot_type, yscale)
         nvdata_dir = common.get_nvdata_dir()
-        file_path = str(
-            nvdata_dir
-            / "paper_materials"
-            / "relaxation_temp_dependence"
-            / file_name
-        )
-        tool_belt.save_figure(fig, file_path)
+        if plot_type == "T2_max":
+            ext = "png"
+            file_path = str(
+                nvdata_dir
+                / "paper_materials/relaxation_temp_dependence/figures/main3.{}".format(
+                    ext
+                )
+            )
+            fig.savefig(file_path, dpi=500)
+        else:
+            timestamp = tool_belt.get_time_stamp()
+            datestamp = timestamp.split("-")[0]
+            file_name = "{}-{}-{}".format(datestamp, plot_type, yscale)
+            file_path = str(
+                nvdata_dir
+                / "paper_materials"
+                / "relaxation_temp_dependence"
+                / file_name
+            )
+            tool_belt.save_figure(fig, file_path)
 
 
 # %% Run the file
@@ -2337,8 +2526,8 @@ if __name__ == "__main__":
     tool_belt.init_matplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    plot_type = "rates"
-    # plot_type = "T2_max"
+    # plot_type = "rates"
+    plot_type = "T2_max"
     # plot_type = "ratios"
     # plot_type = "ratio_fits"
     # plot_type = 'residuals'
@@ -2367,7 +2556,8 @@ if __name__ == "__main__":
         # y_params = [[[-10, 1000], "linear"]]
         y_params = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]
     elif plot_type == "T2_max":
-        y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
+        # y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
+        y_params = [[[1e-3, 10], "log"]]
     elif plot_type == "ratios":
         y_params = [[[0, 5], "linear"]]
     elif plot_type == "ratio_fits":
@@ -2380,25 +2570,25 @@ if __name__ == "__main__":
         rates_to_plot = "gamma"
     # y_params = [y_params[1]]
     # y_params = [[None, "linear"], [[0.001, 20], "log"]]
-    # for el in y_params:
-    #     y_range, yscale = el
-    #     # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
-    #     # continue
-    #     main(
-    #         file_name,
-    #         path,
-    #         plot_type,
-    #         rates_to_plot,
-    #         temp_range,
-    #         y_range,
-    #         xscale,
-    #         yscale,
-    #         dosave=False,
-    #     )
+    for el in y_params:
+        y_range, yscale = el
+        # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
+        # continue
+        # main(
+        #     file_name,
+        #     path,
+        #     plot_type,
+        #     rates_to_plot,
+        #     temp_range,
+        #     y_range,
+        #     xscale,
+        #     yscale,
+        #     dosave=True,
+        # )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    figure_2(file_name, path)
+    figure_2(file_name, path, dosave=False)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'

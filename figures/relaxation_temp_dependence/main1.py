@@ -232,7 +232,7 @@ def main(data_sets, dosave=False, draft_version=True):
     ax.set_axis_off()
     fig.text(
         # 0,
-        -0.004,
+        -0.003,
         0.95,
         "(c)",
         transform=ax.transAxes,
