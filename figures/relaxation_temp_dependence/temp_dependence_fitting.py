@@ -2172,7 +2172,7 @@ def main(
                 color=qutrit_max_edge_color,
                 linewidth=line_width,
             )
-            
+
         ax.axvline(x=125, color="silver", zorder=-10)
 
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
