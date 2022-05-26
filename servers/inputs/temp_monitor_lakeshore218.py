@@ -38,7 +38,7 @@ import serial
 class TempMonitorLakeshore218(LabradServer):
     name = "temp_monitor_lakeshore218"
     pc_name = socket.gethostname()
-    term = "\r\n"
+    term = "\r\n"  # Serial termination
 
     def initServer(self):
         filename = (
@@ -62,10 +62,10 @@ class TempMonitorLakeshore218(LabradServer):
         return result["get"]
 
     def on_get_config(self, config):
-        # Get the slider
+        # Get the COM address
         try:
             self.monitor = serial.Serial(config, 9600, serial.SEVENBITS, 
-                            serial.PARITY_ODD, serial.STOPBITS_ONE, timeout=2)
+                         serial.PARITY_ODD, serial.STOPBITS_ONE, timeout=2)
         except Exception as e:
             logging.debug(e)
             del self.monitor
@@ -82,6 +82,15 @@ class TempMonitorLakeshore218(LabradServer):
     def read(self):
         ret_val = self.monitor.readline()
         return ret_val
+    
+    
+    @setting(5, channel="i", returns='v[]')
+    def measure(self, c, channel):
+        cmd = "KRDG? {}".format(channel)
+        self.write(cmd)
+        ret_val = self.read()
+        reading = float(ret_val)
+        print(reading)
     
         
     @setting(6)
@@ -174,5 +183,6 @@ if __name__ == "__main__":
         # cmd = "INCRV? 2"
         monitor.write("{}{}".format(cmd, term).encode())
         ret_val = monitor.readline()
-        print(ret_val)
+        reading = float(ret_val)
+        print(reading)
     
