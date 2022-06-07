@@ -2588,7 +2588,7 @@ if __name__ == "__main__":
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    figure_2(file_name, path, dosave=False)
+    # figure_2(file_name, path, dosave=False)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
