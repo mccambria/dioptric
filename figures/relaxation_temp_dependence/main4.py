@@ -1,148 +1,109 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Nov 26 16:00:15 2019
-
-@author: matth
-"""
-
-
-# %% Imports
-
-
-import numpy
+import errno
 import matplotlib
+import numpy as np
 import matplotlib.pyplot as plt
-import utils.tool_belt as tool_belt
-import json
-import matplotlib.patches as mpatches
+import csv
+import matplotlib.patches as patches
 import matplotlib.lines as mlines
-import matplotlib.image as mpimg
-import matplotlib.gridspec as gridspec
+from scipy.optimize import curve_fit
+import pandas as pd
+import utils.tool_belt as tool_belt
+import utils.common as common
+from scipy.odr import ODR, Model, RealData
+import sys
+from pathlib import Path
+import math
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    
-ms = 7
-lw = 1.75
-    
-# d_parallel = 0.35
-# d_perp = 17
-d_parallel = 0.35
-d_perp = 17
+from matplotlib.gridspec import GridSpec
+import temp_dependence_fitting
+import csv
 
 
-# %% Functions
+def round_base_2(val):
+    power = round(np.log2(val))
+    rounded_val = 2 ** power
+    return rounded_val
 
 
-def intersection():
-    
-    meas_ratio = 1.973556424
-    meas_err = 0.111886693
-    
-    factor = ((d_parallel - 2*d_perp)**2 + d_parallel**2) / 8
-    d_perp_prime = numpy.sqrt(factor * meas_ratio)
-    err = d_perp_prime * (1/2) * meas_err / meas_ratio
-    
-    print('d_perp_prime = {} +/- {}'.format(d_perp_prime, err))
+def bar_gill_replot(file_name, path):
+
+    data_points = []
+    with open(path / file_name, newline="") as f:
+        raw_data = csv.reader(f)
+        prev_point_ind = -1
+        new_point = None
+        header = True
+        for row in raw_data:
+            if header:
+                header = False
+                continue
+            point_ind = int(row[3])
+            if point_ind != prev_point_ind:
+                prev_point_ind = point_ind
+                if new_point is not None:
+                    data_points.append(new_point)
+                new_point = {
+                    "temp": float(row[0]),
+                    "num_pulses": round_base_2(float(row[1])),
+                }
+            row_type = row[4].strip()
+            val = float(row[2])
+            new_point[row_type] = val
+
+    for point in data_points:
+        T2 = point["main"]
+        if ("ste_above" in point) and ("ste_below" in point):
+            avg_ste = (
+                (point["ste_above"] - T2) + (T2 - point["ste_below"])
+            ) / 2
+            point["ste"] = avg_ste
+        elif "ste_above" in point:
+            point["ste"] = point["ste_above"] - T2
+        elif "ste_below" in point:
+            point["ste"] = T2 - point["ste_below"]
+        else:
+            point["ste"] = None
+
+    fig, ax = plt.subplots(figsize = [6.5, 5.0])
+    for point in data_points:
+        ax.errorbar(point["num_pulses"], point["main"], point["ste"])
+
+    ax.set_yscale("log")
+    ax.set_xscale("log")
+    fig.tight_layout()
 
 
-def ratio(d_perp_prime):
-    
-    return (8 * d_perp_prime**2) / ((d_parallel - 2*d_perp)**2 + d_parallel**2)
+if __name__ == "__main__":
 
+    tool_belt.init_matplotlib()
+    matplotlib.rcParams["axes.linewidth"] = 1.0
 
-def plot_ratio(ax, linspace_x):
-    
-    ax.plot(linspace_x, ratio(linspace_x), linewidth=lw, color='#0072B2')
-    
-    ax.set_xlabel(r"$d_{\perp}'$ (Hz cm/V)")
-    ax.set_ylabel(r'$\gamma/\Omega$')
-    ax.set_xticks([0,5,10,15, 20])
-    
-    lin_color = '#EF2424'
-    fill_color = '#FBBFBF'  #'#FB9898'
-    meas_ratio = 1.973556424
-    meas_err = 0.111886693
-    ax.plot(linspace_x, [meas_ratio]*1000, c=lin_color, linewidth=lw)
-    ax.fill_between(linspace_x, meas_ratio - meas_err, meas_ratio + meas_err,
-                    color=fill_color)
-    
-    
-            
+    file_name = "compiled_data"
+    home = common.get_nvdata_dir()
+    path = home / "paper_materials/relaxation_temp_dependence"
 
-# %% Main
+    plot_type = "T2_max"
+    y_range = [1e-3, 10]
+    yscale = "log"
+    temp_range = [0, 480]
+    xscale = "linear"
+    rates_to_plot = "both"
 
+    # temp_dependence_fitting.main(
+    #     file_name,
+    #     path,
+    #     plot_type,
+    #     rates_to_plot,
+    #     temp_range,
+    #     y_range,
+    #     xscale,
+    #     yscale,
+    #     dosave=False,
+    # )
 
-def main():
+    file_name = "bar_gill_2012-2a.csv"
+    home = common.get_nvdata_dir()
+    path = home / "paper_materials/relaxation_temp_dependence/ripped_T2_plots"
+    bar_gill_replot(file_name, path)
 
-    # plt.rcParams.update({'font.size': 18})  # Increase font size
-    # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
-    fig = plt.figure(figsize=(6.75,6.75/2))
-    gs = gridspec.GridSpec(1, 3)
-    
-    # source = 't1_double_quantum/paper_data/bulk_dq/'
-    # path = source + folder
-    
-    # %% Level structure
-    
-    if False:
-        # Add a new axes, make it invisible, steal its rect
-        ax = fig.add_subplot(gs[0, 0])
-        ax.set_axis_off()
-        ax.text(-0.295, 1.05, '(a)', transform=ax.transAxes,
-                color='black', fontsize=16)
-        
-        ax = plt.Axes(fig, [0.0, 0.51, 0.5, 0.43])
-        ax.set_axis_off()
-        fig.add_axes(ax)
-        file = 'C:/Users/matth/Desktop/lab/bulk_dq_relaxation/figures_revision2/main1/level_structure.png'
-        img = mpimg.imread(file)
-        img_plot = ax.imshow(img)
-
-    # %% d perp prime plot
-    
-    ax = fig.add_subplot(gs[0, 2])
-    linspace_x = numpy.linspace(0, 20, 1000)
-    plot_ratio(ax, linspace_x)
-    ax.text(-0.35, 0.94, '(c)', transform=ax.transAxes,
-            color='black', fontsize=16)
-    
-    # %% Dummy labels
-    
-    # fig.text(0.0, 0.94, '(a)', transform=fig.transFigure,
-    #         color='black', fontsize=16)
-    # fig.text(0.32, 0.94, '(b)', transform=fig.transFigure,
-    #         color='black', fontsize=16)
-    
-    # %% Inset zoom
-    
-    # ax = inset_axes(ax, width="100%", height="100%",
-    #                 bbox_to_anchor=(0.770, 0.18, 0.23, 0.40),
-    #                 bbox_transform=ax.transAxes)
-    # linspace_x = numpy.linspace(15, 20, 1000)
-    # plot_ratio(ax, linspace_x)
-    
-    # %% Wrap up
-    
-    fig.tight_layout(pad=0.2)
-    # fig.tight_layout()
-    
-
-# %% Run
-
-
-if __name__ == '__main__':
-    
-    plt.rcParams['text.latex.preamble'] = [
-        r'\usepackage{physics}',
-        r'\usepackage{sfmath}',
-        r'\usepackage{upgreek}',
-        r'\usepackage{helvet}',
-       ]  
-    plt.rcParams.update({'font.size': 13})
-    plt.rcParams.update({'font.family': 'sans-serif'})
-    plt.rcParams.update({'font.sans-serif': ['Helvetica']})
-    plt.rc('text', usetex=True)
-
-    main()
-    # print(ratio(17))
-    # intersection()
-
+    plt.show(block=True)
