@@ -14,7 +14,7 @@ Created on Fri Nov 23 14:57:08 2018
 # %% Imports
 
 
-import matplotlib as mpl
+import matplotlib
 import matplotlib.pyplot as plt
 import threading
 import os
@@ -593,18 +593,59 @@ def init_matplotlib(font_size=11.25):
     plt.ion()
 
     # Default latex packages
-    preamble = r"\usepackage{physics} \usepackage{sfmath} \usepackage{upgreek}"
+    preamble = r"\usepackage{physics} \usepackage{upgreek}"
+    preamble += r"\usepackage{roboto}"
+    preamble += r"\usepackage{lmodern}"
+    # preamble += r"\usepackage[helvet]{sfmath}"
     plt.rcParams["text.latex.preamble"] = preamble
 
     # plt.rcParams["savefig.format"] = "svg"
 
     plt.rcParams["font.size"] = font_size
+    # plt.rcParams["font.size"] = 17
+    # plt.rcParams["font.size"] = 15
 
     # Use Google's free alternative to Helvetica
     plt.rcParams["font.family"] = "sans-serif"
     plt.rcParams["font.sans-serif"] = "Roboto"
 
     plt.rc("text", usetex=True)
+
+
+def non_math_ticks(ax):
+    """Loop through the x and y ticks and take the tick labels out of math mode so they match the main font"""
+
+    # fmt = matplotlib.ticker.StrMethodFormatter("{x}")
+    # ax.xaxis.set_major_formatter(fmt)
+    # ax.yaxis.set_major_formatter(fmt)
+    # return
+
+    plt.show()
+
+    values = ax.get_xticks()
+    labels = ax.get_xticklabels()
+    adj_labels = non_math_ticks_sub(labels)
+    ax.set_xticks(values)
+    ax.set_xticklabels(adj_labels)
+
+    values = ax.get_yticks()
+    labels = ax.get_yticklabels()
+    adj_labels = non_math_ticks_sub(labels)
+    ax.set_yticks(values)
+    ax.set_yticklabels(adj_labels)
+
+
+def non_math_ticks_sub(labels):
+    adj_labels = []
+    for el in labels:
+        text = el.get_text()
+        open_brace = text.find("{")
+        close_brace = text.find("}")
+        text = text[open_brace + 1 : close_brace]
+        # el.set_text(text)
+        # adj_labels.append(el)
+        adj_labels.append(text)
+    return adj_labels
 
 
 def create_image_figure(
