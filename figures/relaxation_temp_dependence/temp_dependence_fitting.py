@@ -2062,7 +2062,8 @@ def main(
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
-    temp_linspace = np.linspace(min_temp, max_temp, 1000)
+    linspace_min_temp = max(0, min_temp)
+    temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
     fig, ax = plt.subplots(figsize=figsize)
 
     # Fit to Omega and gamma simultaneously
