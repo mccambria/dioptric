@@ -19,8 +19,8 @@ import temp_dependence_fitting
 import csv
 
 marker_size = 7
-# line_width = 1.5
-line_width = 2.5
+line_width = 1.5
+# line_width = 2.5
 marker_edge_width = line_width
 
 
@@ -104,13 +104,56 @@ def main(
     dosave=False,
 ):
 
-    measured_vals = [580, 152, 39.8, 17.3, 5.92, 3.34]
-    measured_vals = [val / 1000 for val in measured_vals]
-    measured_errs = [210, 52, 7.7, 4.3, 1.23, 0.41]
-    measured_errs = [val / 1000 for val in measured_errs]
-    temps = [77, 120, 160, 190, 240, 300]
-    authors = []
-    authors.extend(["Bar Gill"] * 6)
+    data_points = [
+        #
+        {"val": 580 / 1e3, "err": 210 / 1e3, "temp": 77, "author": "Bar Gill"},
+        {"val": 152 / 1e3, "err": 52 / 1e3, "temp": 120, "author": "Bar Gill"},
+        {
+            "val": 39.8 / 1e3,
+            "err": 7.7 / 1e3,
+            "temp": 160,
+            "author": "Bar Gill",
+        },
+        {
+            "val": 17.3 / 1e3,
+            "err": 4.3 / 1e3,
+            "temp": 190,
+            "author": "Bar Gill",
+        },
+        {
+            "val": 5.92 / 1e3,
+            "err": 1.23 / 1e3,
+            "temp": 240,
+            "author": "Bar Gill",
+        },
+        {
+            "val": 3.34 / 1e3,
+            "err": 0.41 / 1e3,
+            "temp": 300,
+            "author": "Bar Gill",
+        },
+        #
+        {"val": 183.83 / 1e6, "err": 13.0 / 1e6, "temp": 77, "author": "Lin"},
+        {"val": 158.15 / 1e6, "err": 10.9 / 1e6, "temp": 120, "author": "Lin"},
+        {"val": 125.50 / 1e6, "err": 7.61 / 1e6, "temp": 160, "author": "Lin"},
+        {"val": 80.480 / 1e6, "err": 6.02 / 1e6, "temp": 190, "author": "Lin"},
+        {"val": 59.239 / 1e6, "err": 5.07 / 1e6, "temp": 240, "author": "Lin"},
+        {"val": 38.315 / 1e6, "err": 4.12 / 1e6, "temp": 300, "author": "Lin"},
+        {"val": 30.389 / 1e6, "err": 3.80 / 1e6, "temp": 300, "author": "Lin"},
+        # Record, T1 exceeds expected value from one-phonon calculations
+        {"val": 1.58, "err": 0.07, "temp": 3.7, "author": "Abobeih"},
+        # Also report gamma and Omega at room temps
+        {"val": 2.193 / 1e3, "err": None, "temp": 300, "author": "Pham"},
+        #
+        {"val": 3.3 / 1e3, "err": None, "temp": 300, "author": "Herbschleb"},
+        # Isotopically purified, just spin echo
+        {
+            "val": 1.82 / 1e3,
+            "err": 0.16 / 1000,
+            "temp": 300,
+            "author": "Balasubramanian",
+        },
+    ]
 
     fig, ax = temp_dependence_fitting.main(
         file_name,
@@ -124,9 +167,13 @@ def main(
         dosave=False,
     )
 
-    colors = {
-        "Bar Gill": "blue",
-    }
+    # colors = {
+    #     "Bar Gill": "green",
+    #     "Lin": "red",
+    #     "Abobeih": "purple",
+    #     "Balasubramanian": "orange",
+    #     "Pham": "blue",
+    # }
     # markers = [
     #     "o",
     #     "^",
@@ -135,17 +182,23 @@ def main(
     #     "D",
     #     "H",
     # ]
-    markers = {"Bar Gill": "o"}
+    markers = {
+        "Bar Gill": "o",
+        "Lin": "H",
+        "Abobeih": "^",
+        "Balasubramanian": "v",
+        "Pham": "s",
+        "Herbschleb": "D",
+    }
 
     ms = marker_size ** 2
-    num_points = len(measured_vals)
     used_authors = []
-    for ind in range(num_points):
-        temp = temps[ind]
-        val = measured_vals[ind]
-        err = measured_errs[ind]
-        author = authors[ind]
-        color = colors[author]
+    for point in data_points:
+        temp = point["temp"]
+        val = point["val"]
+        err = point["err"]
+        author = point["author"]
+        # color = colors[author]
         marker = markers[author]
         label = None
         if author not in used_authors:
@@ -155,7 +208,9 @@ def main(
             temp,
             val,
             err,
-            color=color,
+            # color=color,
+            color="black",
+            markerfacecolor="gray",
             label=label,
             marker=marker,
             ms=marker_size,
@@ -164,7 +219,13 @@ def main(
             linestyle="None",
         )
 
-    ax.legend()
+    # Legend without errorbars
+    handles, labels = ax.get_legend_handles_labels()
+    errorbar_type = matplotlib.container.ErrorbarContainer
+    handles = [h[0] if isinstance(h, errorbar_type) else h for h in handles]
+    ax.legend(handles, labels)
+
+    # ax.legend()
 
 
 if __name__ == "__main__":
@@ -179,7 +240,7 @@ if __name__ == "__main__":
     plot_type = "T2_max"
     y_range = [1e-3, 10]
     yscale = "log"
-    temp_range = [0, 480]
+    temp_range = [-5, 480]
     xscale = "linear"
     rates_to_plot = "both"
 
