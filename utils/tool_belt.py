@@ -596,7 +596,8 @@ def init_matplotlib(font_size=11.25):
     preamble = r"\usepackage{physics} \usepackage{upgreek}"
     preamble += r"\usepackage{roboto}"
     preamble += r"\usepackage{lmodern}"
-    # preamble += r"\usepackage[helvet]{sfmath}"
+    preamble += r"\usepackage[helvet]{sfmath}"
+    # preamble += r"\usepackage{cmbright}"
     plt.rcParams["text.latex.preamble"] = preamble
 
     # plt.rcParams["savefig.format"] = "svg"

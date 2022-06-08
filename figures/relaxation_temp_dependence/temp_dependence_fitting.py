@@ -62,8 +62,8 @@ quasi = 76.0  # meV, empirical fit
 # marker_size = 7
 # line_width = 3
 marker_size = 7
-# line_width = 1.5
-line_width = 2.5
+line_width = 1.5
+# line_width = 2.5
 marker_edge_width = line_width
 
 gamma_face_color = "#CC99CC"
@@ -2526,6 +2526,8 @@ def main(
                 / file_name
             )
             tool_belt.save_figure(fig, file_path)
+
+    return fig, ax
 
 
 # %% Run the file
