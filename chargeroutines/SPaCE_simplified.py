@@ -10,17 +10,13 @@ the starting coordinates and one other coordinate.
 
 # import labrad
 import scipy.stats
-import scipy.special
 import numpy
-import math
 import copy
-import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-import random
-import photonstatistics as model
 import scipy.stats as stats
 import labrad
+import time
+from random import shuffle
 
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
@@ -66,12 +62,13 @@ def collect_counts(cxn, num_reps, num_samples, seq_args_string,apd_indices):
     num_read_so_far = 0
 
     while num_read_so_far < num_samples:
-
+        # print(num_read_so_far)
         if tool_belt.safe_stop():
             break
 
         # Read the samples and update the image
         new_samples = cxn.apd_tagger.read_counter_simple()
+        # print(new_samples)
         num_new_samples = len(new_samples)
 
         if num_new_samples > 0:
@@ -80,6 +77,7 @@ def collect_counts(cxn, num_reps, num_samples, seq_args_string,apd_indices):
             num_read_so_far += num_new_samples
 
     # print(total_samples_list)
+    # print(len(total_samples_list))
     # readout_counts = total_samples_list[0::3] #init pulse
     # readout_counts = total_samples_list[1::3] #depletion pulse
     readout_counts = total_samples_list[2::3] #readout pulse
@@ -89,17 +87,43 @@ def collect_counts(cxn, num_reps, num_samples, seq_args_string,apd_indices):
             
     return readout_counts_list
 
+# %% plot
+def do_plot(times, source_counts, source_counts_ste,probe_counts,  probe_counts_ste):
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    ax = axes[0]
+    ax.errorbar(times/10**9, source_counts,
+                yerr = source_counts_ste, marker = 'o',  ls = 'none',color = 'red', label = 'source')
+    ax.errorbar(times/10**9, probe_counts,
+                yerr = probe_counts_ste, marker = 'o',  ls = 'none', color = 'blue', label = 'probe')
+    ax.set_xlabel('Pulse duration (s)')
+    ax.set_ylabel('Average counts')
+    ax.legend()
+    
+    ax = axes[1]
+    norm_counts =  source_counts/probe_counts
+    norm_counts_err = norm_counts* numpy.sqrt((source_counts_ste/source_counts)**2 +  
+                                               (probe_counts_ste/probe_counts)**2)
+    ax.errorbar(times/10**9, norm_counts,
+                yerr = norm_counts_err, marker = 'o',  ls = 'none', color = 'black', label = 'normalized')
+    
+    ax.set_xlabel('Pulse duration (s)')
+    ax.set_ylabel('Normalized counts')
+    ax.legend()
+    
+    return fig
+
+
 # %%
 # Apply a gren or red pulse, then measure the counts under yellow illumination.
 # Repeat num_reps number of times and returns the list of counts after red illumination, then green illumination
 # Use with DM on red and green
-def measure(nv_sig, pulse_coords, apd_indices, num_reps):
+def measure(nv_sig, pulse_coords, apd_indices, num_reps, do_plot = True, do_save = True):
 
     with labrad.connect() as cxn:
-        sig_counts, ref_counts = measure_with_cxn(cxn, nv_sig, pulse_coords, apd_indices, num_reps)
-
-    return sig_counts, ref_counts
-def measure_with_cxn(cxn, nv_sig,pulse_coords, apd_indices, num_reps):
+        ret_vals = measure_with_cxn(cxn, nv_sig, pulse_coords, apd_indices, num_reps, do_plot, do_save)
+        avg_start_counts, ste_start_counts, avg_target_counts, ste_target_counts = ret_vals
+    return avg_start_counts, ste_start_counts, avg_target_counts, ste_target_counts
+def measure_with_cxn(cxn, nv_sig,pulse_coords, apd_indices, num_reps, do_plot = True, do_save = True):
 
     tool_belt.reset_cfm(cxn)
 
@@ -138,7 +162,8 @@ def measure_with_cxn(cxn, nv_sig,pulse_coords, apd_indices, num_reps):
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals=cxn.pulse_streamer.stream_load(seq_file, seq_args_string)
     period = ret_vals[0]
-    print(seq_args)       
+    # print(seq_args)  
+    # return     
     
     tool_belt.init_safe_stop()
     
@@ -152,6 +177,7 @@ def measure_with_cxn(cxn, nv_sig,pulse_coords, apd_indices, num_reps):
     # Build the list to step through the coords on readout NV and targets
     x_voltages, y_voltages = build_voltages_from_list(start_coords_drift, 
                                               [start_coords_drift, pulse_coords_drift], num_reps)
+    # pront()
     # print(y_voltages)
     # return
     # Load the galvo
@@ -160,8 +186,8 @@ def measure_with_cxn(cxn, nv_sig,pulse_coords, apd_indices, num_reps):
 
     # We'll be lookign for three samples each repetition with how I have
     # the sequence set up
-    total_num_samples = 3*num_reps
-    readout_counts = collect_counts(cxn, num_reps, total_num_samples, seq_args_string,apd_indices)   
+    total_num_samples = 3*2*num_reps
+    readout_counts = collect_counts(cxn, num_reps*2, total_num_samples, seq_args_string,apd_indices)   
     start_counts = readout_counts[0::2]
     target_counts = readout_counts[1::2]
     
@@ -175,37 +201,88 @@ def measure_with_cxn(cxn, nv_sig,pulse_coords, apd_indices, num_reps):
     pulse_r = numpy.sqrt((dx)**2 + dy**2)
     # print(pulse_r)
     
-    fig_1D, ax_1D = plt.subplots(1, 1, figsize=(6, 6))
-    ax_1D.errorbar([0, pulse_r], 
-               [avg_start_counts, avg_target_counts],
-               yerr = [ste_start_counts,ste_target_counts ], marker = 'o',  ls = 'none')
-    ax_1D.set_xlabel('r (V)')
-    ax_1D.set_ylabel('Average counts')
-    ax_1D.set_title('{} nm {} ms init pulse \n{} nm {} ms CPG pulse\n{} nm {} ms {} V readout pulse'.\
-                    format(init_color, initialization_time*1e-6,
-                           pulse_color, pulse_time/10**6,
-                           readout_color, charge_readout_time/10**6, charge_readout_laser_power))
+    if do_plot:
+        fig_1D, ax_1D = plt.subplots(1, 1, figsize=(6, 6))
+        ax_1D.errorbar([0, pulse_r], 
+                   [avg_start_counts, avg_target_counts],
+                   yerr = [ste_start_counts,ste_target_counts ], marker = 'o',  ls = 'none')
+        ax_1D.set_xlabel('r (V)')
+        ax_1D.set_ylabel('Average counts')
+        ax_1D.set_title('{} nm {} ms init pulse \n{} nm {} ms CPG pulse\n{} nm {} ms {} V readout pulse'.\
+                        format(init_color, initialization_time*1e-6,
+                               pulse_color, pulse_time/10**6,
+                               readout_color, charge_readout_time/10**6, charge_readout_laser_power))
     
+    if do_save:
+        timestamp = tool_belt.get_time_stamp()
+        raw_data = {'timestamp': timestamp,
+                'nv_sig': nv_sig,
+                'pulse_coords': pulse_coords,
+                'num_reps':num_reps,
+                'avg_start_counts': avg_start_counts.tolist(),
+                'avg_start_counts-units': 'counts',
+                'avg_target_counts': avg_target_counts.tolist(),
+                'avg_target_counts-units': 'counts',
+                'start_counts': start_counts,
+                'start_counts-units': 'counts',
+                'target_counts': target_counts,
+                'target_counts-units': 'counts',
+                }
+    
+        file_path = tool_belt.get_file_path('SPaCE.py', timestamp, nv_sig['name'])
+        tool_belt.save_raw_data(raw_data, file_path)
+        if do_plot:
+            tool_belt.save_figure(fig_1D, file_path)
+            
+    return avg_start_counts, ste_start_counts, avg_target_counts, ste_target_counts
+
+def main(nv_sig, source_coords, num_reps, apd_indices, 
+         times=numpy.linspace(0,0.5e9,11)): 
+    num_steps = len(times)       
+    source_counts =numpy.zeros(num_steps)
+    source_counts[:] = numpy.nan
+    source_counts_ste = numpy.copy(source_counts)
+    probe_counts = numpy.copy(source_counts)
+    probe_counts_ste = numpy.copy(source_counts)
+    
+    t_ind_list = list(range(0, num_steps))
+    shuffle(t_ind_list)
+    
+    for t_ind in t_ind_list:
+        pulse_dur = times[t_ind]
+        print('CPG pulse dur: {} s'.format(pulse_dur*1e-9))
+        
+        nv_sig_copy = copy.deepcopy(nv_sig)
+        nv_sig_copy['CPG_laser_dur'] = pulse_dur
+        ret_vals = measure(nv_sig_copy, source_coords, apd_indices, num_reps,
+                           do_plot = False, do_save = False)
+        avg_start_counts, ste_start_counts, avg_target_counts, ste_target_counts = ret_vals
+        
+        source_counts[t_ind] = avg_target_counts
+        source_counts_ste[t_ind] = ste_target_counts
+        probe_counts[t_ind] = avg_start_counts
+        probe_counts_ste[t_ind] = ste_start_counts
+
+    fig = do_plot(times, source_counts, source_counts_ste,probe_counts,  probe_counts_ste)
+    
+    time.sleep(1)
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
-            'pulse_coords': pulse_coords,
+            'source_coords': source_coords,
             'num_reps':num_reps,
-            'avg_start_counts': avg_start_counts.tolist(),
-            'avg_start_counts-units': 'counts',
-            'avg_target_counts': avg_target_counts.tolist(),
-            'avg_target_counts-units': 'counts',
-            'start_counts': start_counts,
-            'start_counts-units': 'counts',
-            'target_counts': target_counts,
-            'target_counts-units': 'counts',
+            'times': times.tolist(),
+            'source_counts': source_counts.tolist(),
+            'source_counts_ste': source_counts_ste.tolist(),
+            'probe_counts': probe_counts.tolist(),
+            'probe_counts_ste': probe_counts_ste.tolist(),
             }
 
     file_path = tool_belt.get_file_path('SPaCE.py', timestamp, nv_sig['name'])
     tool_belt.save_raw_data(raw_data, file_path)
-    tool_belt.save_figure(fig_1D, file_path)
-    return start_counts, target_counts
-
+    tool_belt.save_figure(fig, file_path)
+    return
+    
 #%%
 if __name__ == '__main__':
     # load the data here
@@ -219,11 +296,11 @@ if __name__ == '__main__':
             
     
     nv_sig = {  
-        "coords":[-0.732, 0.198, 6.617],
-        "name": "{}-NV-R21_a3_r10_c6".format(sample_name,),
-        "disable_opt":False,
+        "coords":[0.521, -0.325, 6.617],
+        "name": "{}-NV1_R1_a4".format(sample_name,),
+        "disable_opt": False,
         "ramp_voltages": True,
-        "expected_count_rate":15,
+        "expected_count_rate":13,
         
         "imaging_laser":green_laser,
         "imaging_laser_power": None,
@@ -244,24 +321,25 @@ if __name__ == '__main__':
        #  "CPG_laser_dur": 1e5,
         
         
-       "initialize_laser": green_laser, 
-        "initialize_laser_power": None,
-         "initialize_laser_dur":  1e4,
+        "initialize_laser": green_laser, 
+         "initialize_laser_power": None,
+          "initialize_laser_dur":  1e4,
         "CPG_laser": green_laser, 
-        "CPG_laser_power":None,
-         "CPG_laser_dur":  1e8,
+         "CPG_laser_power":None,
+          "CPG_laser_dur":  1e8,
         
-       # "initialize_laser": green_laser, 
-       #   "initialize_laser_power": None,
-       #   "initialize_laser_dur":  1e7,
-       #   "CPG_laser": red_laser, 
-       #   "CPG_laser_power":0.67,
-       #   "CPG_laser_dur":  1e6,       
+        # "initialize_laser": green_laser, 
+        #    "initialize_laser_power": None,
+        #    "initialize_laser_dur":  1e4,
+        #    "CPG_laser": red_laser, 
+        #    "CPG_laser_power":0.56,
+        #    "CPG_laser_dur":  1e6,       
         
         "charge_readout_laser": yellow_laser,
         'charge_readout_laser_filter': 'nd_1.0',
         "charge_readout_laser_power": 0.15,
         "charge_readout_laser_dur":50e6,
+        
         
         # "collection_filter": "715_lp",
         "collection_filter": "715_sp+630_lp",
@@ -275,20 +353,28 @@ if __name__ == '__main__':
     
     
     try:
-        #for SiV spot r10 c6
-        # pulse_coords = [-0.739, 0.191, 6.617] # closer NV
-        # pulse_coords = [-0.732, 0.198, 6.617] #farther away
-        # pulse_coords = [-0.752, 0.199, 6.617] #no NV
-        
-        # pulse_coords = [-0.720, 0.208, 6.617] #nothing
-        pulse_coords = [-0.743, 0.187, 6.617] # siv
+        #Set the coords of the NV to apply the CPG pusle to (probe NV)
+        source_coords = [0.562, -0.350, 6.617] # on nv 
+        # source_coords = [0.567, -0.328, 6.617] # off nv 
         
         num_reps = int(1e2)
-        for t in [1e5,]:
-        # for t in [0.52, 0.53, 0.54, 0.55]:
-            nv_sig_copy = copy.deepcopy(nv_sig)
-            # nv_sig_copy['charge_readout_laser_power'] = t
-            measure(nv_sig_copy, pulse_coords, apd_indices, num_reps)
+        
+        #set the pulse durations that well sweep over
+        pulse_durs=numpy.linspace(0,0.7e9,4)
+        # main(nv_sig, source_coords, num_reps, apd_indices, times=pulse_durs)
+        
+        
+        # replot
+        file = '2022_05_24-13_13_51-sandia-R21-a8'
+        folder = 'pc_rabi/branch_master/SPaCE/2022_05'
+        data = tool_belt.get_raw_data(file, folder)
+        times = numpy.array(data['times'])
+        source_counts = numpy.array(data['source_counts'])
+        source_counts_ste = numpy.array(data['source_counts_ste'])
+        probe_counts = numpy.array(data['probe_counts'])
+        probe_counts_ste = numpy.array(data['probe_counts_ste'])
+            
+        do_plot(times, source_counts, source_counts_ste,probe_counts,  probe_counts_ste)
     
     finally:
         # Reset our hardware - this should be done in each routine, but

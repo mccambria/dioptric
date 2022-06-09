@@ -897,6 +897,27 @@ def get_pi_on_2_pulse_dur(rabi_period):
     return round(rabi_period / 4)
 
 
+def lorentzian(x, x0, A, L, offset):
+    
+    """
+    Calculates the value of a lorentzian for the given input and parameters
+
+    Params:
+        x: float
+            Input value
+        params: tuple
+            The parameters that define the lorentzian
+            0: x0, mean postiion in x
+            1: A, amplitude of curve
+            2: L, related to width of curve
+            3: offset, constant y value offset
+    """
+    x_center = x - x0
+    return offset + A * 0.5*L / (x_center**2 + (0.5*L)**2)
+
+
+
+
 def gaussian(x, *params):
     """
     Calculates the value of a gaussian for the given input and parameters

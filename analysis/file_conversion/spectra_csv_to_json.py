@@ -23,6 +23,7 @@ def convert_single_file(folder, file):
 
 
     for line in range(2, len(data)):
+        print(line)
         wavelength_list.append(float(data[line][0]))
         counts_list.append(int(data[line][1]))
     json_dict = {'wavelengths': wavelength_list,
@@ -58,7 +59,7 @@ def convert_folder_items(folder_name):
 
         for line in range(2, len(data)):
             wavelength_list.append(float(data[line][0]))
-            counts_list.append(int(data[line][1]))
+            counts_list.append(float(data[line][1]))
 
         json_dict = {'wavelengths': wavelength_list,
                      'wavelengths-units': 'nm',
@@ -71,7 +72,7 @@ def convert_folder_items(folder_name):
 
 if __name__ == '__main__':
 
-    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/horiba_spectrometer/2021_05'
+    top_folder_name = 'E:/Shared drives/Kolkowitz Lab Group/nvdata/horiba_spectrometer/2022_05'
 
     convert_folder_items(top_folder_name)
 

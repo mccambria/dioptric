@@ -372,7 +372,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    file_name = '2022_05_13-15_05_13-sandia-R21_a3_r10_c6'
+    file_name = '2022_06_08-11_56_37-sandia-R21_a8_SiV1readout'
     scale = 1#83
 
     data = tool_belt.get_raw_data(file_name)
@@ -414,7 +414,7 @@ if __name__ == '__main__':
 
     tool_belt.create_image_figure(img_array, numpy.array(img_extent)*scale, clickHandler=on_click_image,
                         title=None, color_bar_label='kcps',
-                        min_value=None, um_scaled=True)
+                        min_value=None, um_scaled=False)
 
 
     # tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path,
