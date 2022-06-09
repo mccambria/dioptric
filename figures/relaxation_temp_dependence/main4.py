@@ -104,56 +104,54 @@ def main(
     dosave=False,
 ):
 
+    # fmt: off
     data_points = [
         #
-        {"val": 580 / 1e3, "err": 210 / 1e3, "temp": 77, "author": "Bar Gill"},
-        {"val": 152 / 1e3, "err": 52 / 1e3, "temp": 120, "author": "Bar Gill"},
-        {
-            "val": 39.8 / 1e3,
-            "err": 7.7 / 1e3,
-            "temp": 160,
-            "author": "Bar Gill",
-        },
-        {
-            "val": 17.3 / 1e3,
-            "err": 4.3 / 1e3,
-            "temp": 190,
-            "author": "Bar Gill",
-        },
-        {
-            "val": 5.92 / 1e3,
-            "err": 1.23 / 1e3,
-            "temp": 240,
-            "author": "Bar Gill",
-        },
-        {
-            "val": 3.34 / 1e3,
-            "err": 0.41 / 1e3,
-            "temp": 300,
-            "author": "Bar Gill",
-        },
         #
-        {"val": 183.83 / 1e6, "err": 13.0 / 1e6, "temp": 77, "author": "Lin"},
-        {"val": 158.15 / 1e6, "err": 10.9 / 1e6, "temp": 120, "author": "Lin"},
-        {"val": 125.50 / 1e6, "err": 7.61 / 1e6, "temp": 160, "author": "Lin"},
-        {"val": 80.480 / 1e6, "err": 6.02 / 1e6, "temp": 190, "author": "Lin"},
-        {"val": 59.239 / 1e6, "err": 5.07 / 1e6, "temp": 240, "author": "Lin"},
-        {"val": 38.315 / 1e6, "err": 4.12 / 1e6, "temp": 300, "author": "Lin"},
-        {"val": 30.389 / 1e6, "err": 3.80 / 1e6, "temp": 300, "author": "Lin"},
+        {"val": 580e-3, "err": 210e-3, "temp": 77, "author": "Bar Gill"},
+        {"val": 152e-3, "err": 52e-3, "temp": 120, "author": "Bar Gill"},
+        {"val": 39.8e-3, "err": 7.7e-3, "temp": 160, "author": "Bar Gill"},
+        {"val": 17.3e-3, "err": 4.3e-3, "temp": 190, "author": "Bar Gill"},
+        {"val": 5.92e-3, "err": 1.23e-3, "temp": 240, "author": "Bar Gill"},
+        {"val": 3.34e-3, "err": 0.41e-3, "temp": 300, "author": "Bar Gill"},
+        #
+        # Spin echo
+        {"val": 183.83e-6, "err": 13.0e-6, "temp": 300, "author": "Lin"},
+        {"val": 158.15e-6, "err": 10.9e-6, "temp": 350, "author": "Lin"},
+        {"val": 125.50e-6, "err": 7.61e-6, "temp": 400, "author": "Lin"},
+        {"val": 80.480e-6, "err": 6.02e-6, "temp": 450, "author": "Lin"},
+        {"val": 59.239e-6, "err": 5.07e-6, "temp": 500, "author": "Lin"},
+        {"val": 38.315e-6, "err": 4.12e-6, "temp": 550, "author": "Lin"},
+        {"val": 30.389e-6, "err": 3.80e-6, "temp": 600, "author": "Lin"},
+        #
         # Record, T1 exceeds expected value from one-phonon calculations
         {"val": 1.58, "err": 0.07, "temp": 3.7, "author": "Abobeih"},
-        # Also report gamma and Omega at room temps
-        {"val": 2.193 / 1e3, "err": None, "temp": 300, "author": "Pham"},
         #
-        {"val": 3.3 / 1e3, "err": None, "temp": 300, "author": "Herbschleb"},
+        # 
+        {"val": 2.193e-3, "err": None, "temp": 300, "author": "Pham"},
+        #
+        # Also report gamma and Omega at room temps
+        {"val": 3.3e-3, "err": None, "temp": 300, "author": "Herbschleb"},
+        #
         # Isotopically purified, just spin echo
-        {
-            "val": 1.82 / 1e3,
-            "err": 0.16 / 1000,
-            "temp": 300,
-            "author": "Balasubramanian",
-        },
+        {"val": 1.82e-3, "err": 0.16e-3, "temp": 300, "author": "Balasubramanian"},
+        #
+        # Original DD?
+        {"val": 88e-6, "err": None, "temp": 300, "author": "de Lange"},
+        #
+        # 
+        {"val": 1.6e-3, "err": None, "temp": 300, "author": "Ryan"},
+        #
+        # 
+        {"val": 2.44e-3, "err": 0.44e-3, "temp": 300, "author": "Naydenov"},
     ]
+    # fmt: on
+
+    # Sekiguchi Dynamical Decoupling of a Geometric Qubit
+    # Optimizing a dynamical decoupling protocol for solid-state electronic spin ensembles in diamon
+    # Robust Quantum-Network Memory Using Decoherence-Protected Subspaces of Nuclear Spins
+    # Randomization of Pulse Phases for Unambiguous and Robust Quantum Sensing, Why not try T2 limits?
+    # Robust quantum control for the manipulation of solid-state spins, Likewise
 
     fig, ax = temp_dependence_fitting.main(
         file_name,
@@ -186,9 +184,12 @@ def main(
         "Bar Gill": "o",
         "Lin": "H",
         "Abobeih": "^",
-        "Balasubramanian": "v",
         "Pham": "s",
         "Herbschleb": "D",
+        "Balasubramanian": "v",
+        "de Lange": "v",
+        "Ryan": "v",
+        "Naydenov": "v",
     }
 
     ms = marker_size ** 2
