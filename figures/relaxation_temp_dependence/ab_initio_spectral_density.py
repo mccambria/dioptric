@@ -66,7 +66,8 @@ def smear(plot_linspace, smearing_range, freqs, couplings):
             weight = gaussian_lambda(freq)
             smeared_coupling += weight * coupling
             norm += weight
-        smeared_couplings.append(smeared_coupling / norm)
+        # smeared_couplings.append(smeared_coupling / norm)
+        smeared_couplings.append(smeared_coupling)
     return smeared_couplings
 
 
@@ -80,6 +81,7 @@ def main(
 ):
 
     file_name = "2022_05_23-512_atom-spin_phonon.dat"
+    file_name = "2022_05_25-512_atom-spin_phonon.dat"
     nvdata_dir = common.get_nvdata_dir()
     data_file = (
         nvdata_dir / "paper_materials/relaxation_temp_dependence" / file_name
@@ -98,26 +100,47 @@ def main(
         plot_linspace, smearing_range, freqs, couplings_2
     )
 
-    figsize = [6.5, 5.0]
+    figsize = [7.0, 5.5]
     fig, ax = plt.subplots(figsize=figsize)
 
-    # ax.plot(plot_linspace, smear_couplings_0)
-    # ax.plot(plot_linspace, smear_couplings_1)
-    # ax.plot(plot_linspace, smear_couplings_2)
-    gaussian_lambda = lambda freq: gaussian(freq, 150, 5)
-    ax.plot(plot_linspace, gaussian_lambda(plot_linspace))
+    line_width = 2.5
+    ax.plot(
+        plot_linspace, smear_couplings_0, label=r"\(S_{z}^{2}\)", lw=line_width
+    )
+    ax.plot(
+        plot_linspace,
+        smear_couplings_1,
+        label=r"\(S_{z}S_{+}\)",
+        lw=line_width,
+    )
+    ax.plot(
+        plot_linspace, smear_couplings_2, label=r"\(S_{+}^{2}\)", lw=line_width
+    )
+    # gaussian_lambda = lambda freq: gaussian(freq, 150, 5)
+    # ax.plot(plot_linspace, gaussian_lambda(plot_linspace))
 
+    ax.set_title(r"\textit{Ab initio} spin-phonon couplings")
+    ax.set_xlabel("Frequency (meV)")
+    ax.set_ylabel(r"Spectral density (MHz\(^{\text{2}}\)/meV)")
+
+    ax.legend(loc="upper left")
+    # fig.tight_layout(pad=0.3)
     fig.tight_layout(pad=0.3)
+    # tool_belt.non_math_ticks(ax)
+    ax.set_xlim([-10, 210])
+    ax.set_ylim([0, 130])
 
     if dosave:
-        ext = "png"
+        # ext = "png"
+        ext = "svg"
         file_path = str(
             nvdata_dir
             / "paper_materials/relaxation_temp_dependence/figures/main3.{}".format(
                 ext
             )
         )
-        fig.savefig(file_path, dpi=500)
+        # fig.savefig(file_path, dpi=500)
+        fig.savefig(file_path)
 
 
 # endregion
@@ -126,7 +149,9 @@ def main(
 
 if __name__ == "__main__":
 
-    main()
+    tool_belt.init_matplotlib()
+
+    main(dosave=False)
 
     plt.show(block=True)
 

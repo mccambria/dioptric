@@ -63,6 +63,7 @@ quasi = 76.0  # meV, empirical fit
 # line_width = 3
 marker_size = 7
 line_width = 1.5
+# line_width = 2.5
 marker_edge_width = line_width
 
 gamma_face_color = "#CC99CC"
@@ -1235,7 +1236,7 @@ def plot_scalings(
             label="Orbach",
         )
 
-    ax.set_xlabel(r"T (K)")
+    ax.set_xlabel(r"Temperature $T$ (K)")
     ax.set_ylabel(r"Relaxation rate (arb. units)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
@@ -1275,7 +1276,7 @@ def plot_T2_max(
 
     ax.plot(temp_linspace, T2_max(temp_linspace))
 
-    ax.set_xlabel(r"T (K)")
+    ax.set_xlabel(r"Temperature $T$ (K)")
     ax.set_ylabel(r"$T_{2,\text{max}}$ (s)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
@@ -1390,7 +1391,7 @@ def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
-    ax.set_xlabel(r"T (K)")
+    ax.set_xlabel(r"Temperature $T$ (K)")
     if y_range is not None:
         ax.set_ylim(y_range[0], y_range[1])
     if normalized:
@@ -1505,10 +1506,12 @@ def figure_2(file_name, path, dosave=False):
 
     # scatter_axes_b[0][0].set_title("Double Orbach")
     # scatter_axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
-    scatter_axes_b[0][0].set_title(
-        r"$C + A_{1} O(\Delta_{1}, T) + A_{2} O(\Delta_{2}, T)$"
-    )
-    scatter_axes_b[0][1].set_title(r"$C + A_{1} O(\Delta, T) + A_{2} T^{5}$")
+    scatter_axes_b[0][0].set_title("Proposed model")
+    scatter_axes_b[0][1].set_title("Standard model")
+    # scatter_axes_b[0][0].set_title(
+    #     r"$C + A_{1} O(\Delta_{1}, T) + A_{2} O(\Delta_{2}, T)$"
+    # )
+    # scatter_axes_b[0][1].set_title(r"$C + A_{1} O(\Delta, T) + A_{2} T^{5}$")
 
     scatter_axes_b[0][0].get_xaxis().set_visible(False)
     scatter_axes_b[0][1].get_xaxis().set_visible(False)
@@ -1534,7 +1537,9 @@ def figure_2(file_name, path, dosave=False):
 
             xlim = [-10, 490]
             scatter_ax.set_xlim(xlim[0], xlim[1])
-            scatter_ax.plot(xlim, [0, 0], color="silver", zorder=-10)
+            scatter_ax.plot(
+                xlim, [0, 0], color="silver", zorder=-10, lw=line_width
+            )
 
             # axins.set_ylim(-3.25, 3.25)
             # axins.set_yticks(np.linspace(-3, 3, 7))
@@ -1551,18 +1556,32 @@ def figure_2(file_name, path, dosave=False):
                 scatter_ax, hist_ax, rate, data_points, fit_mode
             )
 
+    # fig.tight_layout(pad=0.3)
+    # tool_belt.non_math_ticks(ax_a)
+    # for el in scatter_axes_b:
+    #     for sub_el in el:
+    #         tool_belt.non_math_ticks(sub_el)
+    # for el in hist_axes_b:
+    #     for sub_el in el:
+    #         tool_belt.non_math_ticks(sub_el)
+
+    # fontProperties = {'family':'sans-serif'}
+    # ax_a.set_xticklabels(ax_a.get_xticks(), fontProperties)
+    # ax_a.set_yticklabels(ax_a.get_yticks(), fontProperties)
     fig.tight_layout(pad=0.3)
 
     if dosave:
         nvdata_dir = common.get_nvdata_dir()
-        ext = "png"
+        # ext = "png"
+        ext = "svg"
         file_path = str(
             nvdata_dir
             / "paper_materials/relaxation_temp_dependence/figures/main2.{}".format(
                 ext
             )
         )
-        fig.savefig(file_path, dpi=500)
+        # fig.savefig(file_path, dpi=500)
+        fig.savefig(file_path)
 
 
 def figure_2_raw_data(ax, axins, data_points):
@@ -1576,7 +1595,7 @@ def figure_2_raw_data(ax, axins, data_points):
     # yscales = ["log", "log"]
     # ytickss = [None, [3, 10, 30]]
 
-    temp_ranges = [[-5, 480], [-5, 480]]
+    temp_ranges = [[-5, 480], [-5, 485]]
     rate_ranges = [[0.0036, 1100], [-20, 700]]
     yscales = ["log", "linear"]
     ytickss = [None, None]
@@ -1598,7 +1617,7 @@ def figure_2_raw_data(ax, axins, data_points):
         ms = mss[ind]
 
         # Sample-dependent vs phonon-limited line
-        ax.axvline(x=125, color="silver", zorder=-10)
+        ax.axvline(x=125, color="silver", zorder=-10, lw=line_width)
 
         # marker_type = "nv"
 
@@ -1612,7 +1631,7 @@ def figure_2_raw_data(ax, axins, data_points):
         # Plot setup
         x_label = r"Temperature $T$ (K)"
         ax.set_xlabel(x_label)
-        ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
+        ax.set_ylabel(r"Relaxation rates (s$^{\text{-1}}$)")
         ax.set_yscale(yscale)
         if rate_range is not None:
             ax.set_ylim(rate_range[0], rate_range[1])
@@ -1800,16 +1819,16 @@ def figure_2_raw_data(ax, axins, data_points):
         args = {
             "transform": ax.transAxes,
             "color": "black",
-            "fontsize": 13,
+            "fontsize": 11.25,
             "ha": "right",
         }
         x_loc = 0.253
         y_loc = 0.765
-        linespacing = 0.05
+        linespacing = 0.04
         ax.text(x_loc, y_loc, r"Sample-", **args)
         ax.text(x_loc, y_loc - linespacing, r"dependent", **args)
         prev = args["fontsize"]
-        args["fontsize"] = 20
+        args["fontsize"] = 16
         ax.text(
             x_loc,
             y_loc - 2.25 * linespacing,
@@ -1823,7 +1842,7 @@ def figure_2_raw_data(ax, axins, data_points):
         ax.text(x_loc, y_loc, r"Phonon-", **args)
         ax.text(x_loc, y_loc - linespacing, r"limited", **args)
         prev = args["fontsize"]
-        args["fontsize"] = 20
+        args["fontsize"] = 16
         ax.text(
             x_loc,
             y_loc - 2.25 * linespacing,
@@ -2043,7 +2062,8 @@ def main(
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
-    temp_linspace = np.linspace(min_temp, max_temp, 1000)
+    linspace_min_temp = max(0, min_temp)
+    temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
     fig, ax = plt.subplots(figsize=figsize)
 
     # Fit to Omega and gamma simultaneously
@@ -2178,7 +2198,7 @@ def main(
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
     # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
 
-    ax.set_xlabel(r"T (K)")
+    ax.set_xlabel(r"Temperature $T$ (K)")
     if plot_type == "rates":
         ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
     elif plot_type == "ratios":
@@ -2486,14 +2506,16 @@ def main(
     if dosave:
         nvdata_dir = common.get_nvdata_dir()
         if plot_type == "T2_max":
-            ext = "png"
+            # ext = "png"
+            ext = "svg"
             file_path = str(
                 nvdata_dir
-                / "paper_materials/relaxation_temp_dependence/figures/main3.{}".format(
+                / "paper_materials/relaxation_temp_dependence/figures/main4.{}".format(
                     ext
                 )
             )
-            fig.savefig(file_path, dpi=500)
+            # fig.savefig(file_path, dpi=500)
+            fig.savefig(file_path)
         else:
             timestamp = tool_belt.get_time_stamp()
             datestamp = timestamp.split("-")[0]
@@ -2505,6 +2527,8 @@ def main(
                 / file_name
             )
             tool_belt.save_figure(fig, file_path)
+
+    return fig, ax
 
 
 # %% Run the file
@@ -2574,21 +2598,21 @@ if __name__ == "__main__":
         y_range, yscale = el
         # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
         # continue
-        # main(
-        #     file_name,
-        #     path,
-        #     plot_type,
-        #     rates_to_plot,
-        #     temp_range,
-        #     y_range,
-        #     xscale,
-        #     yscale,
-        #     dosave=True,
-        # )
+        main(
+            file_name,
+            path,
+            plot_type,
+            rates_to_plot,
+            temp_range,
+            y_range,
+            xscale,
+            yscale,
+            dosave=True,
+        )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    figure_2(file_name, path, dosave=False)
+    # figure_2(file_name, path, dosave=False)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
