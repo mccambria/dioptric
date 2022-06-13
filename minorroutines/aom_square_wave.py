@@ -128,10 +128,10 @@ if __name__ == '__main__':
     # pos = [-0.025, -0.009, 4.89]
 
     # Hahn
-    laser_names = ['cobolt_638']
+    # laser_names = ['cobolt_638']
     # laser_names = ['integrated_520']
     # laser_names = ['laserglow_589']
-    # laser_names = ['laserglow_532']
+    laser_names = ['laserglow_532']
     # laser_names = ['cobolt_638', 'laserglow_532']
     # laser_names = ['laserglow_532', 'laserglow_589']
     # laser_powers = [None, 1.0]
@@ -153,11 +153,11 @@ if __name__ == '__main__':
         # tool_belt.set_filter(cxn, optics_name='collection', filter_name='630_lp')
         # constant(cxn, laser_names, laser_powers)
         # main(cxn, laser_names[0])
-        arb_duty_cycle(cxn, laser_names[0])
+        # arb_duty_cycle(cxn, laser_names[0])
 
 
 
-        # cxn.pulse_streamer.constant([3], 1.0)
+        cxn.pulse_streamer.constant([])
         # cxn.pulse_streamer.constant([], 1.0)
         # # cxn.pulse_streamer.constant([3])
 

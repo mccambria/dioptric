@@ -536,7 +536,7 @@ if __name__ == '__main__':
         # with labrad.connect() as cxn:
         #     cxn.cryo_piezos.write_xy(1, -2)
         
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
+        tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
@@ -601,10 +601,10 @@ if __name__ == '__main__':
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-        nv_sig["spin_pol_dur"] = 1e6
+        # nv_sig["spin_pol_dur"] = 1e6
         # # # # # do_t1_interleave_knill(nv_sig, apd_indices)
         # # paper_figure1_data(nv_sig, apd_indices)
-        do_t1_dq(nv_sig, apd_indices)
+        # do_t1_dq(nv_sig, apd_indices)
         
     except Exception as exc:
         tool_belt.send_exception_email(email_to="cambria@wisc.edu")
