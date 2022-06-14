@@ -177,7 +177,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
     tool_belt.set_filter(cxn, nv_sig, laser_key)
     time.sleep(2)
     readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-    # print(laser_power)
+    # print(readout_power)
 
     if x_range != y_range:
         raise RuntimeError('x and y resolutions must match for now.')
@@ -372,7 +372,7 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 if __name__ == '__main__':
 
 
-    file_name = '2022_06_08-11_56_37-sandia-R21_a8_SiV1readout'
+    file_name = '2022_06_10-13_43_01-sandia-R2_195x'
     scale = 1#83
 
     data = tool_belt.get_raw_data(file_name)

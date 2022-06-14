@@ -94,10 +94,10 @@ def arb_duty_cycle(cxn, laser_name, laser_power=None):
     """Run a laser on on a square wave."""
 
     seq_file = 'square_wave_arb_duty_cycle.py'
-    period_1 = 1e4
-    wait_1 = 1e5
-    period_2 = 1e5
-    wait_2 = 1e4
+    period_1 = 1e8
+    wait_1 = 1e8
+    period_2 = 5e8
+    wait_2 = 1e8
     seq_args = [wait_1,period_1 ,wait_2,period_2 ,laser_name, laser_power]
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)

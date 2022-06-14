@@ -88,14 +88,14 @@ def collect_counts(cxn, num_reps, num_samples, seq_args_string,apd_indices):
     return readout_counts_list
 
 # %% plot
-def do_plot(times, source_counts, source_counts_ste,probe_counts,  probe_counts_ste):
+def do_plot(x_values, source_counts, source_counts_ste,probe_counts,  probe_counts_ste, x_axis_title):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     ax = axes[0]
-    ax.errorbar(times/10**9, source_counts,
+    ax.errorbar(x_values, source_counts,
                 yerr = source_counts_ste, marker = 'o',  ls = 'none',color = 'red', label = 'source')
-    ax.errorbar(times/10**9, probe_counts,
+    ax.errorbar(x_values, probe_counts,
                 yerr = probe_counts_ste, marker = 'o',  ls = 'none', color = 'blue', label = 'probe')
-    ax.set_xlabel('Pulse duration (s)')
+    ax.set_xlabel(x_axis_title)
     ax.set_ylabel('Average counts')
     ax.legend()
     
@@ -103,10 +103,10 @@ def do_plot(times, source_counts, source_counts_ste,probe_counts,  probe_counts_
     norm_counts =  source_counts/probe_counts
     norm_counts_err = norm_counts* numpy.sqrt((source_counts_ste/source_counts)**2 +  
                                                (probe_counts_ste/probe_counts)**2)
-    ax.errorbar(times/10**9, norm_counts,
+    ax.errorbar(x_values, norm_counts,
                 yerr = norm_counts_err, marker = 'o',  ls = 'none', color = 'black', label = 'normalized')
     
-    ax.set_xlabel('Pulse duration (s)')
+    ax.set_xlabel(x_axis_title)
     ax.set_ylabel('Normalized counts')
     ax.legend()
     
@@ -171,6 +171,9 @@ def measure_with_cxn(cxn, nv_sig,pulse_coords, apd_indices, num_reps, do_plot = 
     optimize.main_with_cxn(cxn, nv_sig, apd_indices)
     drift = numpy.array(tool_belt.get_drift())
 
+    #Edit for optimizing with difference color than readout:
+    # drift[2] = drift[2] - 0.05
+    
     # get the readout coords with drift
     start_coords_drift = start_coords + drift
     pulse_coords_drift = numpy.array(pulse_coords) + drift
@@ -237,41 +240,80 @@ def measure_with_cxn(cxn, nv_sig,pulse_coords, apd_indices, num_reps, do_plot = 
     return avg_start_counts, ste_start_counts, avg_target_counts, ste_target_counts
 
 def main(nv_sig, source_coords, num_reps, apd_indices, 
-         times=numpy.linspace(0,0.5e9,11)): 
-    num_steps = len(times)       
-    source_counts =numpy.zeros(num_steps)
-    source_counts[:] = numpy.nan
-    source_counts_ste = numpy.copy(source_counts)
-    probe_counts = numpy.copy(source_counts)
-    probe_counts_ste = numpy.copy(source_counts)
-    
-    t_ind_list = list(range(0, num_steps))
-    shuffle(t_ind_list)
-    
-    for t_ind in t_ind_list:
-        pulse_dur = times[t_ind]
-        print('CPG pulse dur: {} s'.format(pulse_dur*1e-9))
-        
-        nv_sig_copy = copy.deepcopy(nv_sig)
-        nv_sig_copy['CPG_laser_dur'] = pulse_dur
-        ret_vals = measure(nv_sig_copy, source_coords, apd_indices, num_reps,
-                           do_plot = False, do_save = False)
-        avg_start_counts, ste_start_counts, avg_target_counts, ste_target_counts = ret_vals
-        
-        source_counts[t_ind] = avg_target_counts
-        source_counts_ste[t_ind] = ste_target_counts
-        probe_counts[t_ind] = avg_start_counts
-        probe_counts_ste[t_ind] = ste_start_counts
+         times=None, powers = None): 
 
-    fig = do_plot(times, source_counts, source_counts_ste,probe_counts,  probe_counts_ste)
     
+    if times is not None:
+        num_steps = len(times)       
+        source_counts =numpy.zeros(num_steps)
+        source_counts[:] = numpy.nan
+        source_counts_ste = numpy.copy(source_counts)
+        probe_counts = numpy.copy(source_counts)
+        probe_counts_ste = numpy.copy(source_counts)
+        
+        t_ind_list = list(range(0, num_steps))
+        shuffle(t_ind_list)
+        
+        x_axis_title = 'Pulse duration (s)'
+        x_values = times/10**9
+        
+        for t_ind in t_ind_list:
+            pulse_dur = times[t_ind]
+            print('CPG pulse dur: {} s'.format(pulse_dur*1e-9))
+            
+            nv_sig_copy = copy.deepcopy(nv_sig)
+            nv_sig_copy['CPG_laser_dur'] = pulse_dur
+            ret_vals = measure(nv_sig_copy, source_coords, apd_indices, num_reps,
+                               do_plot = False, do_save = False)
+            avg_start_counts, ste_start_counts, avg_target_counts, ste_target_counts = ret_vals
+            
+            source_counts[t_ind] = avg_target_counts
+            source_counts_ste[t_ind] = ste_target_counts
+            probe_counts[t_ind] = avg_start_counts
+            probe_counts_ste[t_ind] = ste_start_counts
+    
+        fig = do_plot(x_values, source_counts, source_counts_ste,probe_counts,  probe_counts_ste, x_axis_title)
+   
+        times = time.tolist()
+    elif powers is not None:        
+        num_steps = len(powers)       
+        source_counts =numpy.zeros(num_steps)
+        source_counts[:] = numpy.nan
+        source_counts_ste = numpy.copy(source_counts)
+        probe_counts = numpy.copy(source_counts)
+        probe_counts_ste = numpy.copy(source_counts)
+        
+        p_ind_list = list(range(0, num_steps))
+        shuffle(p_ind_list)
+        x_values = powers
+        
+        x_axis_title = 'Pulse power setting (V)'
+        for p_ind in p_ind_list:
+            pulse_power = powers[p_ind]
+            print('CPG pulse power: {} V'.format(pulse_power))
+            
+            nv_sig_copy = copy.deepcopy(nv_sig)
+            nv_sig_copy['CPG_laser_power'] = pulse_power
+            ret_vals = measure(nv_sig_copy, source_coords, apd_indices, num_reps,
+                               do_plot = False, do_save = False)
+            avg_start_counts, ste_start_counts, avg_target_counts, ste_target_counts = ret_vals
+            
+            source_counts[p_ind] = avg_target_counts
+            source_counts_ste[p_ind] = ste_target_counts
+            probe_counts[p_ind] = avg_start_counts
+            probe_counts_ste[p_ind] = ste_start_counts
+    
+        fig = do_plot(x_values, source_counts, source_counts_ste,probe_counts,  probe_counts_ste, x_axis_title)
+        
+        powers = powers.tolist()
     time.sleep(1)
     timestamp = tool_belt.get_time_stamp()
     raw_data = {'timestamp': timestamp,
             'nv_sig': nv_sig,
             'source_coords': source_coords,
             'num_reps':num_reps,
-            'times': times.tolist(),
+            'times': times,
+            'powers': powers,
             'source_counts': source_counts.tolist(),
             'source_counts_ste': source_counts_ste.tolist(),
             'probe_counts': probe_counts.tolist(),
