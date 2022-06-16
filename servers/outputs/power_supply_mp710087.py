@@ -75,6 +75,7 @@ class PowerSupplyMp710087(LabradServer):
         # This may just be superstition though...
         time.sleep(0.1)
         idn = self.power_supply.query("*IDN?")
+        # logging.info(idn)
         time.sleep(0.1)
         logging.info("Init complete")
 
