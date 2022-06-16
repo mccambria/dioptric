@@ -88,7 +88,8 @@ def main(
     )
 
     freqs, couplings_0, couplings_1, couplings_2 = parse_data_file(data_file)
-    plot_linspace = np.linspace(0, 200, 100)
+    num_points = 1000  # 100
+    plot_linspace = np.linspace(0, 200, num_points)
     smearing_range = 5
     smear_couplings_0 = smear(
         plot_linspace, smearing_range, freqs, couplings_0
@@ -103,23 +104,30 @@ def main(
     figsize = [7.0, 5.5]
     fig, ax = plt.subplots(figsize=figsize)
 
-    line_width = 2.5
+    # line_width = 2.5
+    line_width = 1.5
     ax.plot(
-        plot_linspace, smear_couplings_0, label=r"\(S_{z}^{2}\)", lw=line_width
+        plot_linspace,
+        smear_couplings_0,
+        label=r"\(\mathit{S_{z}}\mathrm{^{2}}\)",
+        lw=line_width,
     )
     ax.plot(
         plot_linspace,
         smear_couplings_1,
-        label=r"\(S_{z}S_{+}\)",
+        label=r"\(\mathit{S_{z}S}\mathrm{_{+}}\)",
         lw=line_width,
     )
     ax.plot(
-        plot_linspace, smear_couplings_2, label=r"\(S_{+}^{2}\)", lw=line_width
+        plot_linspace,
+        smear_couplings_2,
+        label=r"\(\mathit{S}\mathrm{_{+}^{2}}\)",
+        lw=line_width,
     )
     # gaussian_lambda = lambda freq: gaussian(freq, 150, 5)
     # ax.plot(plot_linspace, gaussian_lambda(plot_linspace))
 
-    ax.set_title(r"\textit{Ab initio} spin-phonon couplings")
+    # ax.set_title(r"\textit{Ab initio} spin-phonon couplings")
     ax.set_xlabel("Frequency (meV)")
     ax.set_ylabel(r"Spectral density (MHz\(^{\text{2}}\)/meV)")
 
