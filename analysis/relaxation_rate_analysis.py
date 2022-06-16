@@ -807,8 +807,8 @@ if __name__ == "__main__":
 
     temp = 295
 
-    # mode = "prediction"
-    mode = "analysis"
+    mode = "prediction"
+    # mode = "analysis"
     # mode = "batch_analysis"
 
     if mode == "prediction":
