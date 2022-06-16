@@ -136,7 +136,7 @@ def main(data_sets, dosave=False, draft_version=True):
 
     ax.set_xlabel(r"Wait time $\tau$ (ms)")
     # ax.set_ylabel(r"$P_{+1,+1}(\tau) - P_{+1,-1}(\tau)$")
-    ax.set_ylabel(r"$\ket{-1}$, $\ket{+1}$ population difference")
+    ax.set_ylabel(r"$\mathrm{\ket{-1}}$, $\mathrm{\ket{+1}}$ population difference")
 
     min_time = 0.0
     max_time = 18
@@ -342,7 +342,7 @@ if __name__ == "__main__":
         #     "gamma": None,
         # },
         {
-            "temp": 237.5,
+            "temp": 234,  # 237.5 nominal
             "skip": False,
             "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
             "folder": "hopper-nv1_2021_03_16-237.5K",
@@ -366,7 +366,7 @@ if __name__ == "__main__":
         #     "gamma": None,
         # },
         {
-            "temp": 187.5,
+            "temp": 185,  # 187.5 nominal
             "skip": False,
             "path": (
                 "pc_hahn/branch_master/t1_interleave_knill/data_collections/"

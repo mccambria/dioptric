@@ -113,37 +113,37 @@ def main(
         {"val": 39.8e-3, "err": 7.7e-3, "temp": 160, "author": "Bar Gill"},
         {"val": 17.3e-3, "err": 4.3e-3, "temp": 190, "author": "Bar Gill"},
         {"val": 5.92e-3, "err": 1.23e-3, "temp": 240, "author": "Bar Gill"},
-        {"val": 3.34e-3, "err": 0.41e-3, "temp": 300, "author": "Bar Gill"},
+        # {"val": 3.34e-3, "err": 0.41e-3, "temp": 300, "author": "Bar Gill"},
         #
         # Spin echo
-        {"val": 183.83e-6, "err": 13.0e-6, "temp": 300, "author": "Lin"},
-        {"val": 158.15e-6, "err": 10.9e-6, "temp": 350, "author": "Lin"},
-        {"val": 125.50e-6, "err": 7.61e-6, "temp": 400, "author": "Lin"},
-        {"val": 80.480e-6, "err": 6.02e-6, "temp": 450, "author": "Lin"},
-        {"val": 59.239e-6, "err": 5.07e-6, "temp": 500, "author": "Lin"},
-        {"val": 38.315e-6, "err": 4.12e-6, "temp": 550, "author": "Lin"},
-        {"val": 30.389e-6, "err": 3.80e-6, "temp": 600, "author": "Lin"},
+        # {"val": 183.83e-6, "err": 13.0e-6, "temp": 300, "author": "Lin"},
+        # {"val": 158.15e-6, "err": 10.9e-6, "temp": 350, "author": "Lin"},
+        # {"val": 125.50e-6, "err": 7.61e-6, "temp": 400, "author": "Lin"},
+        # {"val": 80.480e-6, "err": 6.02e-6, "temp": 450, "author": "Lin"},
+        # {"val": 59.239e-6, "err": 5.07e-6, "temp": 500, "author": "Lin"},
+        # {"val": 38.315e-6, "err": 4.12e-6, "temp": 550, "author": "Lin"},
+        # {"val": 30.389e-6, "err": 3.80e-6, "temp": 600, "author": "Lin"},
         #
         # Record, T1 exceeds expected value from one-phonon calculations
         {"val": 1.58, "err": 0.07, "temp": 3.7, "author": "Abobeih"},
         #
         # 
-        {"val": 2.193e-3, "err": None, "temp": 300, "author": "Pham"},
+        # {"val": 2.193e-3, "err": None, "temp": 300, "author": "Pham"},
         #
         # Also report gamma and Omega at room temps
         {"val": 3.3e-3, "err": None, "temp": 300, "author": "Herbschleb"},
         #
         # Isotopically purified, just spin echo
-        {"val": 1.82e-3, "err": 0.16e-3, "temp": 300, "author": "Balasubramanian"},
+        # {"val": 1.82e-3, "err": 0.16e-3, "temp": 300, "author": "Balasubramanian"},
         #
         # Original DD?
-        {"val": 88e-6, "err": None, "temp": 300, "author": "de Lange"},
+        # {"val": 88e-6, "err": None, "temp": 300, "author": "de Lange"},
         #
         # 
-        {"val": 1.6e-3, "err": None, "temp": 300, "author": "Ryan"},
+        # {"val": 1.6e-3, "err": None, "temp": 300, "author": "Ryan"},
         #
         # 
-        {"val": 2.44e-3, "err": 0.44e-3, "temp": 300, "author": "Naydenov"},
+        # {"val": 2.44e-3, "err": 0.44e-3, "temp": 300, "author": "Naydenov"},
     ]
     # fmt: on
 
@@ -153,7 +153,7 @@ def main(
     # Randomization of Pulse Phases for Unambiguous and Robust Quantum Sensing, Why not try T2 limits?
     # Robust quantum control for the manipulation of solid-state spins, Likewise
 
-    fig, ax = temp_dependence_fitting.main(
+    fig, ax, leg1 = temp_dependence_fitting.main(
         file_name,
         path,
         plot_type,
@@ -187,9 +187,9 @@ def main(
         "Pham": "s",
         "Herbschleb": "D",
         "Balasubramanian": "v",
-        "de Lange": "v",
-        "Ryan": "v",
-        "Naydenov": "v",
+        "de Lange": "P",
+        "Ryan": "p",
+        "Naydenov": "d",
     }
 
     ms = marker_size ** 2
@@ -223,8 +223,18 @@ def main(
     # Legend without errorbars
     handles, labels = ax.get_legend_handles_labels()
     errorbar_type = matplotlib.container.ErrorbarContainer
-    handles = [h[0] if isinstance(h, errorbar_type) else h for h in handles]
-    ax.legend(handles, labels)
+    # handles = [h[0] if isinstance(h, errorbar_type) else h for h in handles]
+    handles = [h[0] for h in handles if isinstance(h, errorbar_type)]
+    labels = labels[2:]
+    ax.legend(
+        handles,
+        labels,
+        title="Prior results",
+        loc="upper right",
+        bbox_to_anchor=(1.0, 0.82),
+    )
+    # Add back in original legend
+    ax.add_artist(leg1)
 
     # ax.legend()
 
@@ -240,6 +250,7 @@ if __name__ == "__main__":
 
     plot_type = "T2_max"
     y_range = [1e-3, 10]
+    # y_range = [1e-5, 10]
     yscale = "log"
     temp_range = [-5, 480]
     xscale = "linear"

@@ -82,6 +82,7 @@ figsize = [6.5, 5.0]  # default
 
 sample_column_title = "Sample"
 skip_column_title = "Skip"
+no_x_errs = True
 
 nominal_temp_column_title = "Nominal temp (K)"
 reported_temp_column_title = "Reported temp (K)"
@@ -97,7 +98,7 @@ omega_err_column_title = "Omega err (s^-1)"
 gamma_column_title = "gamma (s^-1)"
 gamma_err_column_title = "gamma err (s^-1)"
 
-bad_zfs_temps = 300  # Below this consider zfs temps inaccurate
+# bad_zfs_temps = 300  # Below this consider zfs temps inaccurate
 
 
 # %% Processes and sum functions
@@ -506,7 +507,8 @@ def get_temp_bounds(point):
     if temp_lb_column_title == nominal_temp_column_title:
         return None
     nominal_temp = point[nominal_temp_column_title]
-    if nominal_temp < bad_zfs_temps:
+    # if nominal_temp < bad_zfs_temps:
+    if nominal_temp < 295:
         return [nominal_temp - 3, nominal_temp + 3]
     else:
         lower_bound = point[temp_lb_column_title]
@@ -1066,7 +1068,8 @@ def fit_simultaneous(data_points, fit_mode=None):
         gamma_wu_fit_func,
         sample_breaks[0],
     )
-    data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
+    # data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
+    data = data = RealData(temps, combined_rates, sy=combined_errs)
     model = Model(fit_func)
     odr = ODR(data, model, beta0=np.array(init_params))
     odr.set_job(fit_type=0)
@@ -1236,7 +1239,7 @@ def plot_scalings(
             label="Orbach",
         )
 
-    ax.set_xlabel(r"Temperature $T$ (K)")
+    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     ax.set_ylabel(r"Relaxation rate (arb. units)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
@@ -1276,8 +1279,8 @@ def plot_T2_max(
 
     ax.plot(temp_linspace, T2_max(temp_linspace))
 
-    ax.set_xlabel(r"Temperature $T$ (K)")
-    ax.set_ylabel(r"$T_{2,\text{max}}$ (s)")
+    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+    ax.set_ylabel(r"$\mathit{T}_{\mathrm{2,max}}$ (s)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
 
@@ -1391,7 +1394,7 @@ def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
-    ax.set_xlabel(r"Temperature $T$ (K)")
+    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     if y_range is not None:
         ax.set_ylim(y_range[0], y_range[1])
     if normalized:
@@ -1507,7 +1510,7 @@ def figure_2(file_name, path, dosave=False):
     # scatter_axes_b[0][0].set_title("Double Orbach")
     # scatter_axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
     scatter_axes_b[0][0].set_title("Proposed model")
-    scatter_axes_b[0][1].set_title("Standard model")
+    scatter_axes_b[0][1].set_title("Prior model")
     # scatter_axes_b[0][0].set_title(
     #     r"$C + A_{1} O(\Delta_{1}, T) + A_{2} O(\Delta_{2}, T)$"
     # )
@@ -1518,9 +1521,9 @@ def figure_2(file_name, path, dosave=False):
     scatter_axes_b[0][1].get_yaxis().set_visible(False)
     scatter_axes_b[1][1].get_yaxis().set_visible(False)
 
-    scatter_axes_b[0][0].set_ylabel(r"$\gamma$ residual")
-    scatter_axes_b[1][0].set_ylabel(r"$\Omega$ residual")
-    x_label = r"Temperature $T$ (K)"
+    scatter_axes_b[0][0].set_ylabel(r"$\mathit{\gamma}$ residual")
+    scatter_axes_b[1][0].set_ylabel(r"$\mathrm{\Omega}$ residual")
+    x_label = r"Temperature $\mathit{T}$ (K)"
     scatter_axes_b[1][0].set_xlabel(x_label)
     scatter_axes_b[1][1].set_xlabel(x_label)
 
@@ -1629,7 +1632,7 @@ def figure_2_raw_data(ax, axins, data_points):
         ax.set_xlim(min_temp, max_temp)
 
         # Plot setup
-        x_label = r"Temperature $T$ (K)"
+        x_label = r"Temperature $\mathit{T}$ (K)"
         ax.set_xlabel(x_label)
         ax.set_ylabel(r"Relaxation rates (s$^{\text{-1}}$)")
         ax.set_yscale(yscale)
@@ -1665,7 +1668,10 @@ def figure_2_raw_data(ax, axins, data_points):
                 continue
 
             temp = get_temp(point)
-            temp_error = get_temp_error(point)
+            if no_x_errs:
+                temp_error = None
+            else:
+                temp_error = get_temp_error(point)
 
             # Omega
             rate = point[omega_column_title]
@@ -1677,7 +1683,7 @@ def figure_2_raw_data(ax, axins, data_points):
                 val,
                 yerr=val_err,
                 xerr=temp_error,
-                label=r"$\Omega$",
+                label=r"$\mathrm{\Omega}$",
                 marker=marker,
                 color=omega_edge_color,
                 markerfacecolor=omega_face_color,
@@ -1697,7 +1703,7 @@ def figure_2_raw_data(ax, axins, data_points):
                 val,
                 yerr=val_err,
                 xerr=temp_error,
-                label=r"$\gamma$",
+                label=r"$\mathit{\gamma}$",
                 marker=marker,
                 color=gamma_edge_color,
                 markerfacecolor=gamma_face_color,
@@ -1710,13 +1716,13 @@ def figure_2_raw_data(ax, axins, data_points):
         # Rate legend
         if not no_legend:
             omega_patch = patches.Patch(
-                label=r"$\Omega$",
+                label=r"$\mathrm{\Omega}$",
                 facecolor=omega_face_color,
                 edgecolor=omega_edge_color,
                 lw=marker_edge_width,
             )
             gamma_patch = patches.Patch(
-                label=r"$\gamma$",
+                label=r"$\mathit{\gamma}$",
                 facecolor=gamma_face_color,
                 edgecolor=gamma_edge_color,
                 lw=marker_edge_width,
@@ -1905,7 +1911,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
                 temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
-                label=r"$\Omega$ fit",
+                label=r"$\mathrm{\Omega}$ fit",
                 color=line_color,
                 linewidth=line_width,
                 zorder=zorder,
@@ -1920,7 +1926,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
                 temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
-                label=r"$\gamma$ fit",
+                label=r"$\mathit{\gamma}$ fit",
                 color=line_color,
                 linewidth=line_width,
                 zorder=zorder,
@@ -2112,7 +2118,7 @@ def main(
                 temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
-                label=r"$\Omega$ fit",
+                label=r"$\mathrm{\Omega}$ fit",
                 color=omega_edge_color,
                 linewidth=line_width,
             )
@@ -2128,7 +2134,7 @@ def main(
                 temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
-                label=r"$\gamma$ fit",
+                label=r"$\mathit{\gamma}$ fit",
                 color=gamma_edge_color,
                 linewidth=line_width,
             )
@@ -2147,7 +2153,7 @@ def main(
             ax.plot(
                 temp_linspace,
                 func(temp_linspace),
-                label=r"$\gamma/\Omega$",
+                label=r"$\mathit{\gamma}/\mathrm{\Omega}",
                 color=gamma_edge_color,
                 linewidth=line_width,
             )
@@ -2167,7 +2173,7 @@ def main(
             ax.plot(
                 temp_linspace,
                 func(temp_linspace),
-                label=r"Superposition of $\ket{0}$, $\ket{\pm 1}$",
+                label=r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$",
                 # label=r"Qubit T2 max",
                 color=qubit_max_edge_color,
                 linewidth=line_width,
@@ -2187,7 +2193,7 @@ def main(
             ax.plot(
                 temp_linspace,
                 func(temp_linspace),
-                label=r"Superposition of $\ket{-1}$, $\ket{+1}$",
+                label=r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$",
                 # label=r"Qutrit T2 max",
                 color=qutrit_max_edge_color,
                 linewidth=line_width,
@@ -2198,7 +2204,7 @@ def main(
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
     # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
 
-    ax.set_xlabel(r"Temperature $T$ (K)")
+    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     if plot_type == "rates":
         ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
     elif plot_type == "ratios":
@@ -2210,7 +2216,7 @@ def main(
     elif plot_type == "normalized_residuals":
         ax.set_ylabel(r"Normalized residuals")
     elif plot_type == "T2_max":
-        ax.set_ylabel(r"$T_{2,\text{max}}$ (s)")
+        ax.set_ylabel(r"$\mathit{T}_{\mathrm{2,max}}$ (s)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
@@ -2242,7 +2248,10 @@ def main(
             continue
 
         temp = get_temp(point)
-        temp_error = get_temp_error(point)
+        if no_x_errs:
+            temp_error = None
+        else:
+            temp_error = get_temp_error(point)
 
         if plot_type in ["rates", "residuals", "normalized_residuals"]:
             # Omega
@@ -2264,7 +2273,7 @@ def main(
                     val,
                     yerr=val_err,
                     xerr=temp_error,
-                    label=r"$\Omega$",
+                    label=r"$\mathrm{\Omega}$",
                     marker=marker,
                     color=omega_edge_color,
                     markerfacecolor=omega_face_color,
@@ -2292,7 +2301,7 @@ def main(
                     val,
                     yerr=val_err,
                     xerr=temp_error,
-                    label=r"$\gamma$",
+                    label=r"$\mathit{\gamma}$",
                     marker=marker,
                     color=gamma_edge_color,
                     markerfacecolor=gamma_face_color,
@@ -2320,7 +2329,7 @@ def main(
                     ratio,
                     yerr=ratio_err,
                     xerr=temp_error,
-                    label=r"$\gamma/\Omega$",
+                    label=r"$\mathit{\gamma}/\mathrm{\Omega}$",
                     marker=marker,
                     color=ratio_edge_color,
                     markerfacecolor=ratio_face_color,
@@ -2433,13 +2442,13 @@ def main(
 
     if plot_type in ["rates", "residuals", "normalized_residuals"]:
         omega_patch = patches.Patch(
-            label=r"$\Omega$",
+            label=r"$\mathrm{\Omega}$",
             facecolor=omega_face_color,
             edgecolor=omega_edge_color,
             lw=marker_edge_width,
         )
         gamma_patch = patches.Patch(
-            label=r"$\gamma$",
+            label=r"$\mathit{\gamma}$",
             facecolor=gamma_face_color,
             edgecolor=gamma_edge_color,
             lw=marker_edge_width,
@@ -2450,7 +2459,7 @@ def main(
 
     elif plot_type == "ratios":
         ratio_patch = patches.Patch(
-            label=r"$\gamma/\Omega$",
+            label=r"$\mathit{\gamma}/\mathrm{\Omega}$",
             facecolor=ratio_face_color,
             edgecolor=ratio_edge_color,
             lw=marker_edge_width,
@@ -2499,7 +2508,7 @@ def main(
         ax.add_artist(leg1)
 
     if plot_type == "T2_max":
-        ax.legend()
+        leg1 = ax.legend(title="Qubit subspace")
 
     fig.tight_layout(pad=0.3)
 
@@ -2528,7 +2537,7 @@ def main(
             )
             tool_belt.save_figure(fig, file_path)
 
-    return fig, ax
+    return fig, ax, leg1
 
 
 # %% Run the file
@@ -2598,21 +2607,21 @@ if __name__ == "__main__":
         y_range, yscale = el
         # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
         # continue
-        main(
-            file_name,
-            path,
-            plot_type,
-            rates_to_plot,
-            temp_range,
-            y_range,
-            xscale,
-            yscale,
-            dosave=True,
-        )
+        # main(
+        #     file_name,
+        #     path,
+        #     plot_type,
+        #     rates_to_plot,
+        #     temp_range,
+        #     y_range,
+        #     xscale,
+        #     yscale,
+        #     dosave=True,
+        # )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    # figure_2(file_name, path, dosave=False)
+    figure_2(file_name, path, dosave=False)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
