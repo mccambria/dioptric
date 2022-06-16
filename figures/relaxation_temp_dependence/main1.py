@@ -55,8 +55,8 @@ def main(data_sets, dosave=False, draft_version=True):
     nvdata_dir = common.get_nvdata_dir()
 
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
-    # fig = plt.figure(figsize=(6.5, 7.5))
-    fig = plt.figure(figsize=(4.5, 5.0))
+    fig = plt.figure(figsize=(6.5, 7.5))
+    # fig = plt.figure(figsize=(4.5, 5.0))
     grid_columns = 30
     half_grid_columns = grid_columns // 2
     gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1.1, 1))
@@ -136,10 +136,12 @@ def main(data_sets, dosave=False, draft_version=True):
 
     ax.set_xlabel(r"Wait time $\tau$ (ms)")
     # ax.set_ylabel(r"$P_{+1,+1}(\tau) - P_{+1,-1}(\tau)$")
-    ax.set_ylabel(r"$\mathrm{\ket{-1}}$, $\mathrm{\ket{+1}}$ population difference")
+    ax.set_ylabel(
+        r"$\mathrm{\ket{-1}}$, $\mathrm{\ket{+1}}$ population difference"
+    )
 
     min_time = 0.0
-    max_time = 18
+    max_time = 17.5
     # max_time = 15.5
     # max_time = 11.5
     # max_time = 12.5
@@ -193,7 +195,7 @@ def main(data_sets, dosave=False, draft_version=True):
                 times_decay,
                 data_decay,
                 yerr=np.array(ste_decay),
-                label="{} K".format(temp),
+                label=r"${}$ K".format(temp),
                 zorder=5,
                 marker="o",
                 color=color,
@@ -205,7 +207,7 @@ def main(data_sets, dosave=False, draft_version=True):
             ax.scatter(
                 times_decay,
                 data_decay,
-                label="{} K".format(temp),
+                label=r"${}$ K".format(temp),
                 zorder=5,
                 marker="o",
                 color=color,
@@ -213,15 +215,16 @@ def main(data_sets, dosave=False, draft_version=True):
                 s=ms ** 2,
             )
 
-    ax.legend(handlelength=5)
+    # ax.legend(handlelength=5)
+    ax.legend()
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[::-1], labels[::-1])
+    ax.legend(handles[::-1], labels[::-1], handlelength=1)
     fig.text(
-        -0.21, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
+        -0.23, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
     )
-    x_buffer = 0.02 * max_time
+    x_buffer = 0.03 * max_time
     ax.set_xlim([-x_buffer, max_time + x_buffer])
-    ax.set_ylim([-0.05, 1.05])
+    ax.set_ylim([-0.05, 1.08])
     # ax.set_ylim([0.05, 1.1])
     # ax.set_yscale("log")
 

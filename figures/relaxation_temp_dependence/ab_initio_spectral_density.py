@@ -101,7 +101,7 @@ def main(
         plot_linspace, smearing_range, freqs, couplings_2
     )
 
-    figsize = [6.0, 5.0]
+    figsize = [6.5, 5.0]
     fig, ax = plt.subplots(figsize=figsize)
 
     # line_width = 2.5
