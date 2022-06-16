@@ -56,7 +56,7 @@ def main(data_sets, dosave=False, draft_version=True):
 
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
     # fig = plt.figure(figsize=(6.5, 7.5))
-    fig = plt.figure(figsize=(6.5, 7.2))
+    fig = plt.figure(figsize=(4.5, 5.0))
     grid_columns = 30
     half_grid_columns = grid_columns // 2
     gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1.1, 1))
@@ -282,7 +282,7 @@ if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
     # plt.rcParams.update({'font.size': 18})  # Increase font size
-    matplotlib.rcParams["axes.linewidth"] = 1.0
+    matplotlib.rcParams["axes.linewidth"] = 1.5
 
     decay_data_sets = [
         # {

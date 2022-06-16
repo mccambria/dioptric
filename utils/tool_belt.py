@@ -586,7 +586,7 @@ def get_tagger_wiring(cxn):
 # %% Matplotlib plotting utils
 
 
-def init_matplotlib(font_size=11.25):
+def init_matplotlib(font_size=15):
     """Runs the default initialization/configuration for matplotlib"""
 
     # Interactive mode so plots update as soon as the event loop runs
