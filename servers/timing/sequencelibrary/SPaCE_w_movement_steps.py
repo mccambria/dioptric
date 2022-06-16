@@ -137,16 +137,17 @@ def get_seq(pulse_streamer, config, args):
                                 pulse_laser_key, pulse_laser_power, train)
     
     elif init_laser_key != readout_laser_key and init_laser_key == pulse_laser_key:
-    
         train = [(total_delay - init_aom_delay_time, LOW),
                  (init_time, HIGH)]
         train.extend(movement_delay_train)
         train.extend([(pulse_time, HIGH)])
+        # train.extend([(pulse_time, LOW)])
         train.extend(movement_delay_train)
         train.extend([(readout_time, LOW)])
         train.extend([(500, LOW)])
         
         tool_belt.process_laser_seq(pulse_streamer, seq, config,
+                                # init_laser_key, [init_laser_power], train)
                                 init_laser_key, [init_laser_power, pulse_laser_power], train)
         
         train = [(total_delay - read_aom_delay_time, LOW),
@@ -234,6 +235,6 @@ if __name__ == '__main__':
     #             'cobolt_638', 'cobolt_638','cobolt_638',
     #             0.66, 0.5, 1.0, 
     #             80000, 2000000,  3, 0]
-    seq_args = [1000, 1000000.0, 50000000.0, 'integrated_520', 'cobolt_638', 'laserglow_589', None, None, 0.1, 1000000, 2000000, 2, 1]
+    seq_args = [10000.0, 100000, 10000.0, 'integrated_520', 'integrated_520', 'cobolt_638', None, None, 0.565, 48780, 2000000, 41, 1]
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()

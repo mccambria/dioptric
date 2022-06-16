@@ -83,8 +83,8 @@ def do_image_sample(nv_sig, apd_indices):
    # scan_range = 0.4
     #scan_range = 0.25
     # scan_range = 0.2
-    scan_range = 0.15
-    # scan_range = 0.1
+    # scan_range = 0.15
+    scan_range = 0.1
     # scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
@@ -95,8 +95,8 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 160
     # num_steps = 135
    # num_steps =120
-    # num_steps = 90
-    num_steps = 60
+    num_steps = 90
+    # num_steps = 60
     # num_steps = 31
     # num_steps = 21
     
@@ -714,15 +714,18 @@ if __name__ == "__main__":
     
     nv_sig = { 
             # "coords":[-0.136, -0.059,5.718], #Siv1 
-        # "coords":[-0.139, -0.101,5.718], #NV1
-        "coords":[-0.135, -0.023,5.718], #SiV3
+        #"coords":[-0.169, -0.090,5.718], #NV1
+        "coords":[-0.159, -0.012,5.718], #SiV3
+        # "coords":[-0.242, -0.123,5.718], #NV2
         "name": "{}-R2_a6-siv3".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": True,
-        "expected_count_rate":2.8,
+        "expected_count_rate":1,
         
-        # "imaging_laser":red_laser,
-        # "imaging_laser_power": 0.58,
+        
+        # "imaging_laser":yellow_laser,
+        # "imaging_laser_power": 1.0,
+        # "imaging_laser_filter": "nd_0",
         # "imaging_readout_dur": 1e7,
         
         "imaging_laser":green_laser,
@@ -738,22 +741,22 @@ if __name__ == "__main__":
         #   "CPG_laser_dur": int(1e9),
         "CPG_laser": green_laser, 
           "CPG_laser_power":4500,
-          "CPG_laser_dur": int(1e9),
+          "CPG_laser_dur": int(0.3e9),
         
           
         
-        "charge_readout_laser": red_laser,
-        "charge_readout_laser_power": 0.563, 
-        "charge_readout_laser_dur": 1e7,
+        # "charge_readout_laser": red_laser,
+        # "charge_readout_laser_power": 0.565, 
+        # "charge_readout_laser_dur": 1e6,
         
-        # "charge_readout_laser": yellow_laser,
-        # "charge_readout_laser_power": 0.3, #0.15 for NV
-        # "charge_readout_laser_filter": "nd_0",
-        # "charge_readout_laser_dur": 1e7, #50e6 for NV
+        "charge_readout_laser": yellow_laser,
+        "charge_readout_laser_power": 0.35, #0.15 for NV
+        "charge_readout_laser_filter": "nd_0",
+        "charge_readout_laser_dur": 5e6, #50e6 for NV
         
         # "collection_filter": "715_lp",#see only SiV (some NV signal)
-        # "collection_filter": "740_bp",#SiV emission only (no NV signal)
-        "collection_filter": "715_sp+630_lp", # NV band only
+        "collection_filter": "740_bp",#SiV emission only (no NV signal)
+        # "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": None,
         "resonance_LOW":2.87,"rabi_LOW": 150,
         "uwave_power_LOW": 15.5,  # 15.5 max
@@ -791,8 +794,8 @@ if __name__ == "__main__":
 
        
 # 
-        # do_optimize(nv_sig,apd_indices)
         do_image_sample(nv_sig, apd_indices)
+        do_optimize(nv_sig,apd_indices)
         
         # do_stationary_count(nv_sig, apd_indices)
 
@@ -833,24 +836,24 @@ if __name__ == "__main__":
         # do_time_resolved_readout_three_pulses(nv_sig, apd_indices)
 # 
 
-        offset = [0,0,0]
+        offset = [-1.5/83,0.3/830,0] #0.004 in X?
         # 1 D        
-        num_runs =100
-        num_steps_a =101
+        num_runs =50
+        num_steps_a =5
         num_steps_b = num_steps_a
         img_range_1D =[[0,0,0],[0,-0.08,0]]
         # img_range_1D =[[0,-0.018,0],[0,-0.048,0]]
-        # do_SPaCE(nv_sig, nv_sig, apd_indices, num_runs, num_steps_a, num_steps_b,
-        #             img_range_1D, None, offset, charge_state_threshold = None)
+        do_SPaCE(nv_sig, nv_sig, apd_indices, num_runs, num_steps_a, num_steps_b,
+                    img_range_1D, None, offset, charge_state_threshold = None)
         
             
-        for p in [0.563]:
-            for t in [1e6]:
+        for p in [0.563, 0.565, 0.567, 0.569]:
+            for t in [1e5,1e6, 10e6]:
                 nv_sig_copy = copy.deepcopy(nv_sig)
                 nv_sig_copy["charge_readout_laser_dur"] = t
                 nv_sig_copy["charge_readout_laser_power"] = p
                 
-                num_runs =100
+                num_runs =1000
                 num_steps_a = 2
                 num_steps_b = num_steps_a
                 img_range_1D =[[0,0,0],[0,-0.0337,0]]
@@ -858,12 +861,12 @@ if __name__ == "__main__":
                 #             img_range_1D, None, offset, charge_state_threshold = None)
         
         # 2 D       
-        # num_runs =10
-        # num_steps_a = 21
-        # num_steps_b = num_steps_a
-        # img_range_2D =[0.012, 0.012, 0]
+        num_runs =10
+        num_steps_a = 41
+        num_steps_b = num_steps_a
+        img_range_2D =[0.08, 0.08, 0]
         # do_SPaCE(nv_sig, nv_sig, apd_indices, num_runs, num_steps_a, num_steps_b,
-        #           None, img_range_2D, offset, charge_state_threshold = None)
+        #            None, img_range_2D, offset, charge_state_threshold = None)
         
         
 

@@ -325,6 +325,9 @@ def main(nv_sig, source_coords, num_reps, apd_indices,
     tool_belt.save_figure(fig, file_path)
     return
     
+def main_time_resolved_readout(nv_sig, source_coords, num_reps, apd_indices): 
+    
+    
 #%%
 if __name__ == '__main__':
     # load the data here

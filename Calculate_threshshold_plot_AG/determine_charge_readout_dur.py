@@ -552,19 +552,19 @@ if __name__ == '__main__':
     }  # 14.5 max
     red_power = 0.75
     nv_sig = {
-        "coords":[-0.139, -0.101,5.718], #NV1
+        "coords":[-0.242, -0.123,5.718], #NV2
         "name": "{}-R2-a6".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
-        "expected_count_rate":16,
+        "expected_count_rate":24,
         
         "imaging_laser":green_laser,
         "imaging_laser_power": None,
         "imaging_readout_dur": 1e7,
         
-            'initialization_laser': red_laser, 'initialization_laser_power': 10, 'initialization_laser_dur': 1e4,
+            'initialization_laser': red_laser, 'initialization_laser_power': 0.58, 'initialization_laser_dur': 1e4,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1e4,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 10, 'nv0_prep_laser_dur': 1e4,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 0.58, 'nv0_prep_laser_dur': 1e4,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None,
             'charge_readout_laser_power': None, 'charge_readout_dur':None,
             'collection_filter': "715_sp+630_lp", 'magnet_angle': None,
@@ -577,7 +577,7 @@ if __name__ == '__main__':
         
         for n in [2]:
             determine_readout_dur(nv_sig, nv_sig, [1], readout_times = [50e6],
-                                    readout_yellow_powers = [ 0.2, 0.25],
+                                    readout_yellow_powers = [ 0.2],
                                    # readout_yellow_powers = [0.56],
                               nd_filter = 'nd_1.0',
                               num_pulses = n)
