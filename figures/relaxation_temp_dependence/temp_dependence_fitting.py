@@ -1417,26 +1417,27 @@ def figure_2(file_name, path, dosave=False):
     labels = ["(a)", "(b)"]
 
     # figsize = (figsize[0], 2 * figsize[1])
-    adj_figsize = (figsize[0], (2 * figsize[1]) + 1.0)
+    # adj_figsize = (figsize[0], (2 * figsize[1]) + 1.0)
+    adj_figsize = (2 * figsize[0], figsize[1])
     fig = plt.figure(figsize=adj_figsize)
     gs_sep = 0.09
     gs_a_bottom = 0.55
     gs_a = fig.add_gridspec(
         nrows=1,
         ncols=1,
-        left=0.14,
-        right=0.99,
-        bottom=gs_a_bottom,
+        left=0.07,
+        right=0.49,
+        bottom=0.13,
         top=0.99,
     )
     gs_b = fig.add_gridspec(
         nrows=2,
         # ncols=2,
         ncols=4,
-        left=0.113,
-        right=0.99,
-        bottom=0.055,
-        top=gs_a_bottom - gs_sep,
+        left=0.555,
+        right=1.0,
+        bottom=0.13,
+        top=0.99,
         wspace=0,
         hspace=0,
         # width_ratios=[1, 0.2, 0.2, 1],
@@ -1458,7 +1459,7 @@ def figure_2(file_name, path, dosave=False):
     # Generic setup
 
     fig.text(
-        -0.15,
+        -0.16,
         0.96,
         "(a)",
         transform=ax_a.transAxes,
@@ -1466,15 +1467,15 @@ def figure_2(file_name, path, dosave=False):
         fontsize=18,
     )
     fig.text(
-        -0.15,
-        -0.18,
+        1.025,
+        0.96,
         "(b)",
         transform=ax_a.transAxes,
         color="black",
         fontsize=18,
     )
 
-    inset_bottom = 0.10
+    inset_bottom = 0.105
     inset_height = 0.47
     # inset_left = 0.6
     inset_left = 0.46
