@@ -1437,7 +1437,7 @@ def figure_2(file_name, path, dosave=False):
         left=0.555,
         right=1.0,
         bottom=0.13,
-        top=0.99,
+        top=0.94,
         wspace=0,
         hspace=0,
         # width_ratios=[1, 0.2, 0.2, 1],
@@ -1467,7 +1467,7 @@ def figure_2(file_name, path, dosave=False):
         fontsize=18,
     )
     fig.text(
-        1.025,
+        1.02,
         0.96,
         "(b)",
         transform=ax_a.transAxes,
