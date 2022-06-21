@@ -108,12 +108,12 @@ def main(
     data_points = [
         #
         #
-        {"val": 580e-3, "err": 210e-3, "temp": 77, "author": "Bar Gill"},
-        {"val": 152e-3, "err": 52e-3, "temp": 120, "author": "Bar Gill"},
-        {"val": 39.8e-3, "err": 7.7e-3, "temp": 160, "author": "Bar Gill"},
-        {"val": 17.3e-3, "err": 4.3e-3, "temp": 190, "author": "Bar Gill"},
-        {"val": 5.92e-3, "err": 1.23e-3, "temp": 240, "author": "Bar Gill"},
-        # {"val": 3.34e-3, "err": 0.41e-3, "temp": 300, "author": "Bar Gill"},
+        {"val": 580e-3, "err": 210e-3, "temp": 77, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 152e-3, "err": 52e-3, "temp": 120, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 39.8e-3, "err": 7.7e-3, "temp": 160, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 17.3e-3, "err": 4.3e-3, "temp": 190, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 5.92e-3, "err": 1.23e-3, "temp": 240, "author": "Bar-Gill", "label": "[6]"},
+        # {"val": 3.34e-3, "err": 0.41e-3, "temp": 300, "author": "Bar-Gill 2013"},
         #
         # Spin echo
         # {"val": 183.83e-6, "err": 13.0e-6, "temp": 300, "author": "Lin"},
@@ -124,14 +124,14 @@ def main(
         # {"val": 38.315e-6, "err": 4.12e-6, "temp": 550, "author": "Lin"},
         # {"val": 30.389e-6, "err": 3.80e-6, "temp": 600, "author": "Lin"},
         #
+        # Also report gamma and Omega at room temps
+        {"val": 3.3e-3, "err": None, "temp": 300, "author": "Herbschleb", "label": "[7]"},
+        #
         # Record, T1 exceeds expected value from one-phonon calculations
-        {"val": 1.58, "err": 0.07, "temp": 3.7, "author": "Abobeih"},
+        {"val": 1.58, "err": 0.07, "temp": 3.7, "author": "Abobeih", "label": "[8]"},
         #
         # 
         # {"val": 2.193e-3, "err": None, "temp": 300, "author": "Pham"},
-        #
-        # Also report gamma and Omega at room temps
-        {"val": 3.3e-3, "err": None, "temp": 300, "author": "Herbschleb"},
         #
         # Isotopically purified, just spin echo
         # {"val": 1.82e-3, "err": 0.16e-3, "temp": 300, "author": "Balasubramanian"},
@@ -166,12 +166,12 @@ def main(
     )
 
     # colors = {
-    #     "Bar Gill": "green",
+    #     "Bar-Gill 2013": "green",
     #     "Lin": "red",
-    #     "Abobeih": "purple",
+    #     "Abobeih 2018": "purple",
     #     "Balasubramanian": "orange",
     #     "Pham": "blue",
-    # }
+    # }Gill
     # markers = [
     #     "o",
     #     "^",
@@ -181,7 +181,7 @@ def main(
     #     "H",
     # ]
     markers = {
-        "Bar Gill": "o",
+        "Bar-Gill": "o",
         "Lin": "H",
         "Abobeih": "^",
         "Pham": "s",
@@ -197,14 +197,15 @@ def main(
     for point in data_points:
         temp = point["temp"]
         val = point["val"]
-        err = point["err"]
+        # err = point["err"]
+        err = None
         author = point["author"]
         # color = colors[author]
         marker = markers[author]
         label = None
         if author not in used_authors:
             used_authors.append(author)
-            label = author
+            label = point["label"]
         ax.errorbar(
             temp,
             val,
@@ -231,7 +232,8 @@ def main(
         labels,
         title="Prior results",
         loc="upper right",
-        bbox_to_anchor=(1.0, 0.82),
+        # bbox_to_anchor=(1.0, 0.82),
+        handlelength=1,
     )
     # Add back in original legend
     ax.add_artist(leg1)
@@ -249,8 +251,8 @@ if __name__ == "__main__":
     path = home / "paper_materials/relaxation_temp_dependence"
 
     plot_type = "T2_max"
-    y_range = [1e-3, 10]
-    # y_range = [1e-5, 10]
+    # y_range = [1e-3, 10]
+    y_range = [7e-4, 30]
     yscale = "log"
     temp_range = [-5, 480]
     xscale = "linear"

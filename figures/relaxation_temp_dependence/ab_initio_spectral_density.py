@@ -28,6 +28,9 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 from numpy import pi
 
+# line_width = 2.5
+line_width = 1.5
+
 # endregion
 
 # region Functions
@@ -80,7 +83,6 @@ def main(
     dosave=False,
 ):
 
-    file_name = "2022_05_23-512_atom-spin_phonon.dat"
     file_name = "2022_05_25-512_atom-spin_phonon.dat"
     nvdata_dir = common.get_nvdata_dir()
     data_file = (
@@ -88,7 +90,8 @@ def main(
     )
 
     freqs, couplings_0, couplings_1, couplings_2 = parse_data_file(data_file)
-    num_points = 1000  # 100
+    # num_points = 100
+    num_points = 1000
     plot_linspace = np.linspace(0, 200, num_points)
     smearing_range = 5
     smear_couplings_0 = smear(
@@ -104,24 +107,22 @@ def main(
     figsize = [6.5, 5.0]
     fig, ax = plt.subplots(figsize=figsize)
 
-    # line_width = 2.5
-    line_width = 1.5
     ax.plot(
         plot_linspace,
         smear_couplings_0,
-        label=r"\(\mathit{S_{z}}\mathrm{^{2}}\)",
+        label=r"\(\mathit{S_{z}^{\mathrm{2}}}\)",
         lw=line_width,
     )
     ax.plot(
         plot_linspace,
         smear_couplings_1,
-        label=r"\(\mathit{S_{z}S}\mathrm{_{+}}\)",
+        label=r"\(\mathit{S_{z}S_{\mathrm{+}}}\)",
         lw=line_width,
     )
     ax.plot(
         plot_linspace,
         smear_couplings_2,
-        label=r"\(\mathit{S}\mathrm{_{+}^{2}}\)",
+        label=r"\(\mathit{S\mathrm{_{+}^{2}}}\)",
         lw=line_width,
     )
     # gaussian_lambda = lambda freq: gaussian(freq, 150, 5)

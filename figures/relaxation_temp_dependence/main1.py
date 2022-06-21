@@ -32,7 +32,7 @@ from figures.relaxation_temp_dependence.temp_dependence_fitting import (
 from analysis import relaxation_rate_analysis
 
 ms = 7
-lw = 1.75
+lw = 1.5
 
 
 # %% Functions
@@ -141,7 +141,7 @@ def main(data_sets, dosave=False, draft_version=True):
     )
 
     min_time = 0.0
-    max_time = 17.5
+    max_time = 20
     # max_time = 15.5
     # max_time = 11.5
     # max_time = 12.5
@@ -218,9 +218,9 @@ def main(data_sets, dosave=False, draft_version=True):
     # ax.legend(handlelength=5)
     ax.legend()
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[::-1], labels[::-1], handlelength=1)
+    ax.legend(handles[::-1], labels[::-1], handlelength=0.5)
     fig.text(
-        -0.23, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
+        -0.26, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
     )
     x_buffer = 0.03 * max_time
     ax.set_xlim([-x_buffer, max_time + x_buffer])
