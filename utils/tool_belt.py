@@ -586,29 +586,38 @@ def get_tagger_wiring(cxn):
 # %% Matplotlib plotting utils
 
 
-def init_matplotlib(font_size=11.25):
+def init_matplotlib(font_size=17):
     """Runs the default initialization/configuration for matplotlib"""
 
     # Interactive mode so plots update as soon as the event loop runs
     plt.ion()
 
-    # Default latex packages
-    preamble = r"\usepackage{physics} \usepackage{upgreek}"
-    preamble += r"\usepackage{roboto}"
+    ####### Latex setup #######
+
+    preamble = r""
+    preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
+    preamble += r"\usepackage{physics} \usepackage{upgreek}"
+
+    # Fonts
+    # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
+    preamble += r"\usepackage{helvet}"
+    # Latin mdoern is default math font but let's be safe
     preamble += r"\usepackage{lmodern}"
-    preamble += r"\usepackage[helvet]{sfmath}"
-    # preamble += r"\usepackage{cmbright}"
+
+    # Sans serif math font, looks better for axis numbers.
+    # Preserves \mathrm and \mathit commands so you can still use serif
+    # Latin modern font for actually variables, equations, or whatever.
+    preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
+
     plt.rcParams["text.latex.preamble"] = preamble
+
+    ###########################
 
     # plt.rcParams["savefig.format"] = "svg"
 
     plt.rcParams["font.size"] = font_size
     # plt.rcParams["font.size"] = 17
     # plt.rcParams["font.size"] = 15
-
-    # Use Google's free alternative to Helvetica
-    plt.rcParams["font.family"] = "sans-serif"
-    plt.rcParams["font.sans-serif"] = "Roboto"
 
     plt.rc("text", usetex=True)
 
