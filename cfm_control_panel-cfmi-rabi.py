@@ -76,15 +76,15 @@ def do_image_sample(nv_sig, apd_indices):
     # 
     # scan_range = 5.0
     # scan_range = 3
-    #scan_range = 1.7
+    # scan_range = 1
     # scan_range =4 
-    # scan_range = 2.5
-    #scan_range = 0.5
-   # scan_range = 0.4
-    #scan_range = 0.25
+    # scan_range = 2
+    # scan_range = 0.5
+    # scan_range = 0.35
+    # scan_range = 0.25
     # scan_range = 0.2
-    # scan_range = 0.15
-    scan_range = 0.1
+    scan_range = 0.15
+    # scan_range = 0.1
     # scan_range = 0.05
     # scan_range = 0.025
     # scan_range = 0.012
@@ -94,9 +94,9 @@ def do_image_sample(nv_sig, apd_indices):
     # num_steps = 200
     # num_steps = 160
     # num_steps = 135
-   # num_steps =120
-    num_steps = 90
-    # num_steps = 60
+    # num_steps =120
+    # num_steps = 90
+    num_steps = 60
     # num_steps = 31
     # num_steps = 21
     
@@ -162,9 +162,9 @@ def do_subtract_filter_image(nv_sig, apd_indices):
     
 def do_image_sample_xz(nv_sig, apd_indices):
 
-    scan_range_x = .1
+    scan_range_x = .25
 # z code range 3 to 7 if centered at 5
-    scan_range_z =1
+    scan_range_z =2
     num_steps = 60
 
     image_sample_xz.main(
@@ -225,8 +225,8 @@ def do_stationary_count(nv_sig, apd_indices):
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
-    run_time = 2*60  # s
-    diff_window =25 # ns
+    run_time = 10*60  # s
+    diff_window =75 # ns
 
     # g2_measurement.main(
     g2_SCC_branch.main(
@@ -542,6 +542,24 @@ def do_SPaCE_simplified(nv_sig, source_coords, apd_indices):
     
     SPaCE_simplified.main(nv_sig, source_coords, num_reps, apd_indices, 
          pulse_durs, pulse_powers)
+    
+def do_SPaCE_simplified_time_resolved_readout(nv_sig, source_coords, apd_indices):
+        
+    num_reps =int(1000)
+    num_runs = 10
+    num_bins = 52
+    bin_centers, binned_samples_sig = SPaCE_simplified.main_time_resolved_readout(nv_sig, source_coords, 
+                                                num_reps, num_runs,num_bins,apd_indices)
+    return bin_centers, binned_samples_sig
+
+def do_SPaCE_simplified_scan_init(nv_sig, source_coords_list, init_scan_range,
+                                  init_scan_steps, num_runs, apd_indices):
+    
+    
+
+    SPaCE_simplified.main_scan_init(nv_sig, source_coords_list, init_scan_range, init_scan_steps, 
+                   num_runs,  apd_indices)
+
 
 def do_scc_resonance(nv_sig, opti_nv_sig, apd_indices, state=States.LOW):
     freq_center = nv_sig['resonance_{}'.format(state.name)]
@@ -683,59 +701,40 @@ if __name__ == "__main__":
     nd_yellow = "nd_0"
     green_power =10
     red_power = 10
-    sample_name = "sandia"
+    sample_name = "rubin"
     green_laser = "integrated_520"#"cobolt_515"
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
 
-    nv_sig_search = {
-        "coords":[-0.042, -0.358,6.836],  
-        "name": "{}-search".format(sample_name),
-        "disable_opt": True,
-        "ramp_voltages": False,
-        "expected_count_rate": 26,
-        "correction_collar": 0.17,
-        
-        "imaging_laser":green_laser,
-        "imaging_laser_power": green_power,
-        "imaging_readout_dur": 1e7,
-        
-        "collection_filter": "715_lp",
-        "magnet_angle": None,
-        "resonance_LOW": 2.8012,
-        "rabi_LOW": 141.5,
-        "uwave_power_LOW": 15.5,  # 15.5 max
-        "resonance_HIGH": 2.9445,
-        "rabi_HIGH": 191.9,
-        "uwave_power_HIGH": 13,
-    }  # 14.5 max
-
     
     
     nv_sig = { 
-            # "coords":[-0.136, -0.059,5.718], #Siv1 
-        #"coords":[-0.169, -0.090,5.718], #NV1
-        "coords":[-0.159, -0.012,5.718], #SiV3
-        # "coords":[-0.242, -0.123,5.718], #NV2
-        "name": "{}-R2_a6-siv3".format(sample_name,),
+            "coords":[-0.070, 0.018,6.813], #7.619 6.332
+        "name": "{}".format(sample_name,),
         "disable_opt": False,
         "ramp_voltages": True,
-        "expected_count_rate":1,
+        "expected_count_rate":None,
+        "correction_collar": 0.11,
+        
         
         
         # "imaging_laser":yellow_laser,
         # "imaging_laser_power": 1.0,
         # "imaging_laser_filter": "nd_0",
+        #   "imaging_readout_dur": 1e7,
+        
+        # "imaging_laser":red_laser,
+        # "imaging_laser_power": 0.58,
         # "imaging_readout_dur": 1e7,
         
-        "imaging_laser":green_laser,
-        "imaging_laser_power": 3000,
-        "imaging_readout_dur": 1e7,
+          "imaging_laser":green_laser,
+        "imaging_laser_power": 2500,
+          "imaging_readout_dur": 1e7,
         
-#laser for charge mesurements
+        #laser for charge mesurements
         "initialize_laser": green_laser, 
           "initialize_laser_power": 4500,
-          "initialize_laser_dur":  1e4,
+          "initialize_laser_dur":  1e6,
         # "CPG_laser": red_laser, 
         #   "CPG_laser_power":0.57,
         #   "CPG_laser_dur": int(1e9),
@@ -745,18 +744,18 @@ if __name__ == "__main__":
         
           
         
-        # "charge_readout_laser": red_laser,
-        # "charge_readout_laser_power": 0.565, 
-        # "charge_readout_laser_dur": 1e6,
+        #"charge_readout_laser": red_laser,
+        #"charge_readout_laser_power": 0.565, 
+        #"charge_readout_laser_dur": 5e5,
         
         "charge_readout_laser": yellow_laser,
-        "charge_readout_laser_power": 0.35, #0.15 for NV
-        "charge_readout_laser_filter": "nd_0",
-        "charge_readout_laser_dur": 5e6, #50e6 for NV
+         "charge_readout_laser_power": 0.2, #0.15 for NV
+         "charge_readout_laser_filter": "nd_1.0",
+         "charge_readout_laser_dur": 50e6, #50e6 for NV
         
         # "collection_filter": "715_lp",#see only SiV (some NV signal)
-        "collection_filter": "740_bp",#SiV emission only (no NV signal)
-        # "collection_filter": "715_sp+630_lp", # NV band only
+        # "collection_filter": "740_bp",#SiV emission only (no NV signal)
+        "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": None,
         "resonance_LOW":2.87,"rabi_LOW": 150,
         "uwave_power_LOW": 15.5,  # 15.5 max
@@ -790,12 +789,13 @@ if __name__ == "__main__":
         # 
         # tool_belt.set_drift([0.0, 0.0, tool_belt.get_drift()[2]])  # Keep z
         # tool_belt.set_drift([0.0, 0.0, 0.0])  
-        #tool_belt.set_xyz(labrad.connect(), [0,0,5])  
+        # tool_belt.set_xyz(labrad.connect(), [0,0,5])  
 
        
-# 
-        do_image_sample(nv_sig, apd_indices)
+
         do_optimize(nv_sig,apd_indices)
+        
+        do_image_sample(nv_sig, apd_indices)
         
         # do_stationary_count(nv_sig, apd_indices)
 
@@ -807,19 +807,40 @@ if __name__ == "__main__":
         # do_subtract_filter_image(nv_sig, apd_indices)
         # nv_sig["collection_filter"] = "740_bp"
         # do_image_sample(nv_sig, apd_indices)
+        # do_g2_measurement(nv_sig, 0, 1)
         
         
         
         
         
         
+        # source_coords = [-0.159, -0.012,5.718] #probe
+        # ret_vals = do_SPaCE_simplified_time_resolved_readout(nv_sig, 
+        #                                           source_coords, apd_indices)
+        # bin_centers, binned_samples_probe = ret_vals
         
+        # source_coords = [-0.159, -0.062,5.718] #source
+        # ret_vals = do_SPaCE_simplified_time_resolved_readout(nv_sig, 
+        #                                           source_coords, apd_indices)
+        # bin_centers, binned_samples_source = ret_vals
+    
+        # binned_sample_sub = binned_samples_source - binned_samples_probe
+        # fig, ax = plt.subplots(1, 1, figsize=(10, 8.5))
+        # ax.plot(bin_centers, binned_sample_sub, 'k-')
+        # ax.set_title('Lifetime')
+        # ax.set_xlabel('Readout time (ns)')
+        # ax.set_ylabel('Counts')
+    
+        nv_coords= numpy.array(nv_sig['coords'])
+        source_coords_list = [
+            nv_coords,
+            nv_coords+[0,0.05,0],]
+        init_scan_range = 0.04
+        init_scan_steps = 21
+        num_runs = 10
+        #do_SPaCE_simplified_scan_init(nv_sig, source_coords_list, init_scan_range,
+         #                         init_scan_steps, num_runs, apd_indices)
         
-        #source_coords = [-0.130, -0.058,5.718] #Siv1
-        source_coords = [-0.139, -0.101,5.718] #NV1
-       # source_coords = [-0.100, -0.078,5.718] #NV2
-        #source_coords = [-0.091, -0.094,5.718] #nothing
-        # do_SPaCE_simplified(nv_sig, source_coords, apd_indices)
         
         for p in [60]:
             for t in [50e6]:
@@ -831,42 +852,43 @@ if __name__ == "__main__":
         
         
         # 
-        # do_g2_measurement(nv_sig, 0, 1)
        
         # do_time_resolved_readout_three_pulses(nv_sig, apd_indices)
 # 
 
-        offset = [-1.5/83,0.3/830,0] #0.004 in X?
+        offset = [0,0,0] #0.004 in X?
         # 1 D        
-        num_runs =50
-        num_steps_a =5
+        num_runs =10
+        num_steps_a =2
         num_steps_b = num_steps_a
-        img_range_1D =[[0,0,0],[0,-0.08,0]]
+        img_range_1D =[[0,0,0],[0.05 ,0,0]]
         # img_range_1D =[[0,-0.018,0],[0,-0.048,0]]
-        do_SPaCE(nv_sig, nv_sig, apd_indices, num_runs, num_steps_a, num_steps_b,
-                    img_range_1D, None, offset, charge_state_threshold = None)
+        #do_SPaCE(nv_sig, nv_sig, apd_indices, num_runs, num_steps_a, num_steps_b,
+        #          img_range_1D, None, offset, charge_state_threshold = None)
         
             
-        for p in [0.563, 0.565, 0.567, 0.569]:
-            for t in [1e5,1e6, 10e6]:
+        for p in [0.6]:
+            for t in [ 10000000.0,]:
+                # do_optimize(nv_sig,apd_indices)
+                
                 nv_sig_copy = copy.deepcopy(nv_sig)
                 nv_sig_copy["charge_readout_laser_dur"] = t
                 nv_sig_copy["charge_readout_laser_power"] = p
                 
-                num_runs =1000
+                num_runs =100
                 num_steps_a = 2
                 num_steps_b = num_steps_a
-                img_range_1D =[[0,0,0],[0,-0.0337,0]]
+                img_range_1D =[[0,0,0],[0.007,0.069,0]]
                 # do_SPaCE(nv_sig_copy, nv_sig_copy, apd_indices, num_runs, num_steps_a, num_steps_b,
-                #             img_range_1D, None, offset, charge_state_threshold = None)
+                #            img_range_1D, None, offset, charge_state_threshold = None)
         
         # 2 D       
-        num_runs =10
+        num_runs =50
         num_steps_a = 41
         num_steps_b = num_steps_a
         img_range_2D =[0.08, 0.08, 0]
         # do_SPaCE(nv_sig, nv_sig, apd_indices, num_runs, num_steps_a, num_steps_b,
-        #            None, img_range_2D, offset, charge_state_threshold = None)
+        #             None, img_range_2D, offset, charge_state_threshold = None)
         
         
 

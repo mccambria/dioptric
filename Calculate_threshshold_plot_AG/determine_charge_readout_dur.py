@@ -552,11 +552,11 @@ if __name__ == '__main__':
     }  # 14.5 max
     red_power = 0.75
     nv_sig = {
-        "coords":[-0.242, -0.123,5.718], #NV2
+        "coords":[-0.225, -0.029,5.718], #NV2
         "name": "{}-R2-a6".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
-        "expected_count_rate":24,
+        "expected_count_rate":None,
         
         "imaging_laser":green_laser,
         "imaging_laser_power": None,
@@ -577,7 +577,7 @@ if __name__ == '__main__':
         
         for n in [2]:
             determine_readout_dur(nv_sig, nv_sig, [1], readout_times = [50e6],
-                                    readout_yellow_powers = [ 0.2],
+                                    readout_yellow_powers = [ 0.15],
                                    # readout_yellow_powers = [0.56],
                               nd_filter = 'nd_1.0',
                               num_pulses = n)

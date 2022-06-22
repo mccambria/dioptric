@@ -143,7 +143,89 @@ def on_click_image(event):
         # Ignore TypeError if you click in the figure but out of the image
         pass
 
+def replot_for_presentation(file_name, scale_um_to_V, centered_at_0 = False):
+    '''
+    Replot measurements based on the scaling of um to V. Useful for preparing
+    presentation figures. 
+    The coordinates can be centered at (0,0), or use the voltage values
 
+    '''
+    scale = scale_um_to_V
+
+    data = tool_belt.get_raw_data(file_name)
+    nv_sig = data['nv_sig']
+    # timestamp = data['timestamp']
+    img_array = numpy.array(data['img_array'])
+    x_range= data['x_range']
+    y_range= data['y_range']
+    x_voltages = data['x_voltages']
+    y_voltages = data['y_voltages']
+    readout = nv_sig['imaging_readout_dur']
+
+    readout_sec = readout / 10**9
+
+    pixel_size = x_voltages[1] - x_voltages[0]
+    half_pixel_size = pixel_size / 2
+    
+    if centered_at_0:
+        x_low = -x_range/2
+        x_high = x_range/2
+        y_low = -y_range/2
+        y_high = y_range/2
+        
+        img_extent = [x_low - half_pixel_size, x_high + half_pixel_size,
+                      y_low - half_pixel_size, y_high + half_pixel_size]
+
+        
+    else:
+        x_low = x_voltages[0]
+        x_high = x_voltages[-1]
+        y_low = y_voltages[0]
+        y_high = y_voltages[-1]
+        
+        img_extent = [x_high - half_pixel_size,x_low + half_pixel_size,
+                  y_low - half_pixel_size, y_high + half_pixel_size]
+
+    #convert to kcps
+    img_array = (img_array[:] / 1000) / readout_sec
+    
+    tool_belt.create_image_figure(img_array, numpy.array(img_extent)*scale, clickHandler=on_click_image,
+                        title=None, color_bar_label='kcps',
+                        min_value=None, um_scaled=True)
+    
+    
+def replot_for_analysis(file_name):
+    '''
+    Replot data just as it appears in measurements
+    '''
+    data = tool_belt.get_raw_data(file_name)
+    nv_sig = data['nv_sig']
+    img_array = numpy.array(data['img_array'])
+    x_voltages = data['x_voltages']
+    y_voltages = data['y_voltages']
+    readout = nv_sig['imaging_readout_dur']
+
+    readout_sec = readout / 10**9
+
+
+    x_low = x_voltages[0]
+    x_high = x_voltages[-1]
+    y_low = y_voltages[0]
+    y_high = y_voltages[-1]
+
+
+    pixel_size = x_voltages[1] - x_voltages[0]
+    half_pixel_size = pixel_size / 2
+    img_extent = [x_high - half_pixel_size,x_low + half_pixel_size,
+                  y_low - half_pixel_size, y_high + half_pixel_size]
+
+    #convert to kcps
+    img_array = (img_array[:] / 1000) / readout_sec
+    
+    tool_belt.create_image_figure(img_array, numpy.array(img_extent), clickHandler=on_click_image,
+                        title=None, color_bar_label='kcps',
+                        min_value=None, um_scaled=False)
+    
 # %% Main
 
 
@@ -371,51 +453,10 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
 if __name__ == '__main__':
 
+    file_name = '2022_05_16-18_38_18-sandia-R1_a9'
+    scale = 83
 
-    file_name = '2022_06_10-13_43_01-sandia-R2_195x'
-    scale = 1#83
-
-    data = tool_belt.get_raw_data(file_name)
-    nv_sig = data['nv_sig']
-    timestamp = data['timestamp']
-    img_array = numpy.array(data['img_array'])
-    x_range= data['x_range']
-    y_range= data['y_range']
-    x_voltages = data['x_voltages']
-    y_voltages = data['y_voltages']
-    readout = nv_sig['imaging_readout_dur']
-
-    readout_sec = readout / 10**9
-
-
-    x_low = x_voltages[0]
-    x_high = x_voltages[-1]
-    y_low = y_voltages[0]
-    y_high = y_voltages[-1]
-
-
-    # x_low = -x_range/2
-    # x_high = x_range/2
-    # y_low = -y_range/2
-    # y_high = y_range/2
-
-    pixel_size = x_voltages[1] - x_voltages[0]
-    half_pixel_size = pixel_size / 2
-    # img_extent = [x_low - half_pixel_size,x_high + half_pixel_size,
-    #               y_low - half_pixel_size, y_high + half_pixel_size]
-    img_extent = [x_high - half_pixel_size,x_low + half_pixel_size,
-                  y_low - half_pixel_size, y_high + half_pixel_size]
-
-    #convert to kcps
-    img_array = (img_array[:] / 1000) / readout_sec
+    replot_for_presentation(file_name, scale)
     
-    # csv_name = '{}_{}'.format(timestamp, nv_sig['name'])
-
-
-    tool_belt.create_image_figure(img_array, numpy.array(img_extent)*scale, clickHandler=on_click_image,
-                        title=None, color_bar_label='kcps',
-                        min_value=None, um_scaled=False)
-
-
-    # tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages,  path,
-    #                               csv_name)
+    # replot_for_analysis(file_name)
+    

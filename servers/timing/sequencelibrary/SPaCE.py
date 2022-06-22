@@ -75,9 +75,10 @@ def get_seq(pulse_streamer, config, args):
     # APD 
 #    train = [(period - readout_time - 100, LOW), (readout_time, HIGH), (100, LOW)]
 #    train = [(readout_time, HIGH), (100, LOW)]
+    readout_50th = int(readout_time/50)*0 #time resolved readout. Now not doing anything with *0
     train = [(total_laser_delay, LOW), (initialization_time, LOW),
              (100 + galvo_move_time, LOW), (pulse_time, LOW ),
-             (100 + galvo_move_time, LOW), (readout_time, HIGH),
+             (100 + galvo_move_time - readout_50th, LOW), (readout_time + 2*readout_50th, HIGH),
              (100, LOW)]
     seq.setDigital(pulser_do_apd_gate, train)
     
@@ -200,7 +201,7 @@ if __name__ == '__main__':
     config = tool_belt.get_config_dict()
 
     # seq_args = [1000.0, 100000.0, 100000.0, 0.15, 0, 638, 532, 589]
-    seq_args = [10000.0, 350000000.0, 50000000.0, None, 0.56, 0.15, 1, 520, 638, 589]
+    seq_args = [10000.0, 3500000.0, 5000000.0, None, 0.56, 0.15, 1, 520, 638, 589]
     
     seq = get_seq(None, config, seq_args)[0]
     seq.plot()
