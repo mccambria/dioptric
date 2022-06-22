@@ -1,148 +1,278 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Nov 26 16:00:15 2019
-
-@author: matth
-"""
-
-
-# %% Imports
-
-
-import numpy
+import errno
 import matplotlib
+import numpy as np
 import matplotlib.pyplot as plt
-import utils.tool_belt as tool_belt
-import json
-import matplotlib.patches as mpatches
+import csv
+import matplotlib.patches as patches
 import matplotlib.lines as mlines
-import matplotlib.image as mpimg
-import matplotlib.gridspec as gridspec
+from scipy.optimize import curve_fit
+import pandas as pd
+import utils.tool_belt as tool_belt
+import utils.common as common
+from scipy.odr import ODR, Model, RealData
+import sys
+from pathlib import Path
+import math
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    
-ms = 7
-lw = 1.75
-    
-# d_parallel = 0.35
-# d_perp = 17
-d_parallel = 0.35
-d_perp = 17
+from matplotlib.gridspec import GridSpec
+import temp_dependence_fitting
+import csv
+
+marker_size = 7
+line_width = 1.5
+# line_width = 2.5
+marker_edge_width = line_width
 
 
-# %% Functions
+def round_base_2(val):
+    power = round(np.log2(val))
+    rounded_val = 2 ** power
+    return rounded_val
 
 
-def intersection():
-    
-    meas_ratio = 1.973556424
-    meas_err = 0.111886693
-    
-    factor = ((d_parallel - 2*d_perp)**2 + d_parallel**2) / 8
-    d_perp_prime = numpy.sqrt(factor * meas_ratio)
-    err = d_perp_prime * (1/2) * meas_err / meas_ratio
-    
-    print('d_perp_prime = {} +/- {}'.format(d_perp_prime, err))
+def bar_gill_replot(file_name, path):
+
+    data_points = []
+    with open(path / file_name, newline="") as f:
+        raw_data = csv.reader(f)
+        prev_point_ind = -1
+        new_point = None
+        header = True
+        for row in raw_data:
+            if header:
+                header = False
+                continue
+            point_ind = int(row[3])
+            if point_ind != prev_point_ind:
+                prev_point_ind = point_ind
+                if new_point is not None:
+                    data_points.append(new_point)
+                new_point = {
+                    "temp": int(row[0]),
+                    "num_pulses": round_base_2(float(row[1])),
+                }
+            row_type = row[4].strip()
+            val = float(row[2])
+            new_point[row_type] = val
+
+    for point in data_points:
+        T2 = point["main"]
+        if ("ste_above" in point) and ("ste_below" in point):
+            avg_ste = (
+                (point["ste_above"] - T2) + (T2 - point["ste_below"])
+            ) / 2
+            point["ste"] = avg_ste
+        elif "ste_above" in point:
+            point["ste"] = point["ste_above"] - T2
+        elif "ste_below" in point:
+            point["ste"] = T2 - point["ste_below"]
+        else:
+            point["ste"] = None
+
+    colors = {
+        300: "blue",
+        240: "green",
+        190: "purple",
+        160: "cyan",
+        120: "red",
+        77: "yellow",
+    }
+    fig, ax = plt.subplots(figsize=[6.5, 5.0])
+    for point in data_points:
+        ax.errorbar(
+            point["num_pulses"],
+            point["main"],
+            point["ste"],
+            color=colors[point["temp"]],
+            marker="o",
+        )
+
+    ax.set_yscale("log")
+    ax.set_xscale("log")
+    fig.tight_layout()
 
 
-def ratio(d_perp_prime):
-    
-    return (8 * d_perp_prime**2) / ((d_parallel - 2*d_perp)**2 + d_parallel**2)
+def main(
+    file_name,
+    path,
+    plot_type,
+    rates_to_plot,
+    temp_range,
+    y_range,
+    xscale,
+    yscale,
+    dosave=False,
+):
+
+    # fmt: off
+    data_points = [
+        #
+        #
+        {"val": 580e-3, "err": 210e-3, "temp": 77, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 152e-3, "err": 52e-3, "temp": 120, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 39.8e-3, "err": 7.7e-3, "temp": 160, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 17.3e-3, "err": 4.3e-3, "temp": 190, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 5.92e-3, "err": 1.23e-3, "temp": 240, "author": "Bar-Gill", "label": "[6]"},
+        # {"val": 3.34e-3, "err": 0.41e-3, "temp": 300, "author": "Bar-Gill 2013"},
+        #
+        # Spin echo
+        # {"val": 183.83e-6, "err": 13.0e-6, "temp": 300, "author": "Lin"},
+        # {"val": 158.15e-6, "err": 10.9e-6, "temp": 350, "author": "Lin"},
+        # {"val": 125.50e-6, "err": 7.61e-6, "temp": 400, "author": "Lin"},
+        # {"val": 80.480e-6, "err": 6.02e-6, "temp": 450, "author": "Lin"},
+        # {"val": 59.239e-6, "err": 5.07e-6, "temp": 500, "author": "Lin"},
+        # {"val": 38.315e-6, "err": 4.12e-6, "temp": 550, "author": "Lin"},
+        # {"val": 30.389e-6, "err": 3.80e-6, "temp": 600, "author": "Lin"},
+        #
+        # Also report gamma and Omega at room temps
+        {"val": 3.3e-3, "err": None, "temp": 300, "author": "Herbschleb", "label": "[7]"},
+        #
+        # Record, T1 exceeds expected value from one-phonon calculations
+        {"val": 1.58, "err": 0.07, "temp": 3.7, "author": "Abobeih", "label": "[8]"},
+        #
+        # 
+        # {"val": 2.193e-3, "err": None, "temp": 300, "author": "Pham"},
+        #
+        # Isotopically purified, just spin echo
+        # {"val": 1.82e-3, "err": 0.16e-3, "temp": 300, "author": "Balasubramanian"},
+        #
+        # Original DD?
+        # {"val": 88e-6, "err": None, "temp": 300, "author": "de Lange"},
+        #
+        # 
+        # {"val": 1.6e-3, "err": None, "temp": 300, "author": "Ryan"},
+        #
+        # 
+        # {"val": 2.44e-3, "err": 0.44e-3, "temp": 300, "author": "Naydenov"},
+    ]
+    # fmt: on
+
+    # Sekiguchi Dynamical Decoupling of a Geometric Qubit
+    # Optimizing a dynamical decoupling protocol for solid-state electronic spin ensembles in diamon
+    # Robust Quantum-Network Memory Using Decoherence-Protected Subspaces of Nuclear Spins
+    # Randomization of Pulse Phases for Unambiguous and Robust Quantum Sensing, Why not try T2 limits?
+    # Robust quantum control for the manipulation of solid-state spins, Likewise
+
+    fig, ax, leg1 = temp_dependence_fitting.main(
+        file_name,
+        path,
+        plot_type,
+        rates_to_plot,
+        temp_range,
+        y_range,
+        xscale,
+        yscale,
+        dosave=False,
+    )
+
+    # colors = {
+    #     "Bar-Gill 2013": "green",
+    #     "Lin": "red",
+    #     "Abobeih 2018": "purple",
+    #     "Balasubramanian": "orange",
+    #     "Pham": "blue",
+    # }Gill
+    # markers = [
+    #     "o",
+    #     "^",
+    #     "s",
+    #     "X",
+    #     "D",
+    #     "H",
+    # ]
+    markers = {
+        "Bar-Gill": "o",
+        "Lin": "H",
+        "Abobeih": "^",
+        "Pham": "s",
+        "Herbschleb": "D",
+        "Balasubramanian": "v",
+        "de Lange": "P",
+        "Ryan": "p",
+        "Naydenov": "d",
+    }
+
+    ms = marker_size ** 2
+    used_authors = []
+    for point in data_points:
+        temp = point["temp"]
+        val = point["val"]
+        # err = point["err"]
+        err = None
+        author = point["author"]
+        # color = colors[author]
+        marker = markers[author]
+        label = None
+        if author not in used_authors:
+            used_authors.append(author)
+            label = point["label"]
+        ax.errorbar(
+            temp,
+            val,
+            err,
+            # color=color,
+            color="black",
+            markerfacecolor="gray",
+            label=label,
+            marker=marker,
+            ms=marker_size,
+            lw=line_width,
+            markeredgewidth=marker_edge_width,
+            linestyle="None",
+        )
+
+    # Legend without errorbars
+    handles, labels = ax.get_legend_handles_labels()
+    errorbar_type = matplotlib.container.ErrorbarContainer
+    # handles = [h[0] if isinstance(h, errorbar_type) else h for h in handles]
+    handles = [h[0] for h in handles if isinstance(h, errorbar_type)]
+    labels = labels[2:]
+    ax.legend(
+        handles,
+        labels,
+        title="Prior results",
+        loc="upper right",
+        # bbox_to_anchor=(1.0, 0.82),
+        handlelength=1,
+    )
+    # Add back in original legend
+    ax.add_artist(leg1)
+
+    # ax.legend()
 
 
-def plot_ratio(ax, linspace_x):
-    
-    ax.plot(linspace_x, ratio(linspace_x), linewidth=lw, color='#0072B2')
-    
-    ax.set_xlabel(r"$d_{\perp}'$ (Hz cm/V)")
-    ax.set_ylabel(r'$\gamma/\Omega$')
-    ax.set_xticks([0,5,10,15, 20])
-    
-    lin_color = '#EF2424'
-    fill_color = '#FBBFBF'  #'#FB9898'
-    meas_ratio = 1.973556424
-    meas_err = 0.111886693
-    ax.plot(linspace_x, [meas_ratio]*1000, c=lin_color, linewidth=lw)
-    ax.fill_between(linspace_x, meas_ratio - meas_err, meas_ratio + meas_err,
-                    color=fill_color)
-    
-    
-            
+if __name__ == "__main__":
 
-# %% Main
+    tool_belt.init_matplotlib()
+    # matplotlib.rcParams["axes.linewidth"] = 1.0
 
+    file_name = "compiled_data"
+    home = common.get_nvdata_dir()
+    path = home / "paper_materials/relaxation_temp_dependence"
 
-def main():
+    plot_type = "T2_max"
+    # y_range = [1e-3, 10]
+    y_range = [7e-4, 30]
+    yscale = "log"
+    temp_range = [-5, 480]
+    xscale = "linear"
+    rates_to_plot = "both"
 
-    # plt.rcParams.update({'font.size': 18})  # Increase font size
-    # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
-    fig = plt.figure(figsize=(6.75,6.75/2))
-    gs = gridspec.GridSpec(1, 3)
-    
-    # source = 't1_double_quantum/paper_data/bulk_dq/'
-    # path = source + folder
-    
-    # %% Level structure
-    
-    if False:
-        # Add a new axes, make it invisible, steal its rect
-        ax = fig.add_subplot(gs[0, 0])
-        ax.set_axis_off()
-        ax.text(-0.295, 1.05, '(a)', transform=ax.transAxes,
-                color='black', fontsize=16)
-        
-        ax = plt.Axes(fig, [0.0, 0.51, 0.5, 0.43])
-        ax.set_axis_off()
-        fig.add_axes(ax)
-        file = 'C:/Users/matth/Desktop/lab/bulk_dq_relaxation/figures_revision2/main1/level_structure.png'
-        img = mpimg.imread(file)
-        img_plot = ax.imshow(img)
+    main(
+        file_name,
+        path,
+        plot_type,
+        rates_to_plot,
+        temp_range,
+        y_range,
+        xscale,
+        yscale,
+        dosave=False,
+    )
 
-    # %% d perp prime plot
-    
-    ax = fig.add_subplot(gs[0, 2])
-    linspace_x = numpy.linspace(0, 20, 1000)
-    plot_ratio(ax, linspace_x)
-    ax.text(-0.35, 0.94, '(c)', transform=ax.transAxes,
-            color='black', fontsize=16)
-    
-    # %% Dummy labels
-    
-    # fig.text(0.0, 0.94, '(a)', transform=fig.transFigure,
-    #         color='black', fontsize=16)
-    # fig.text(0.32, 0.94, '(b)', transform=fig.transFigure,
-    #         color='black', fontsize=16)
-    
-    # %% Inset zoom
-    
-    # ax = inset_axes(ax, width="100%", height="100%",
-    #                 bbox_to_anchor=(0.770, 0.18, 0.23, 0.40),
-    #                 bbox_transform=ax.transAxes)
-    # linspace_x = numpy.linspace(15, 20, 1000)
-    # plot_ratio(ax, linspace_x)
-    
-    # %% Wrap up
-    
-    fig.tight_layout(pad=0.2)
-    # fig.tight_layout()
-    
+    # file_name = "bar_gill_2012-2a.csv"
+    # home = common.get_nvdata_dir()
+    # path = home / "paper_materials/relaxation_temp_dependence/ripped_T2_plots"
+    # bar_gill_replot(file_name, path)
 
-# %% Run
-
-
-if __name__ == '__main__':
-    
-    plt.rcParams['text.latex.preamble'] = [
-        r'\usepackage{physics}',
-        r'\usepackage{sfmath}',
-        r'\usepackage{upgreek}',
-        r'\usepackage{helvet}',
-       ]  
-    plt.rcParams.update({'font.size': 13})
-    plt.rcParams.update({'font.family': 'sans-serif'})
-    plt.rcParams.update({'font.sans-serif': ['Helvetica']})
-    plt.rc('text', usetex=True)
-
-    main()
-    # print(ratio(17))
-    # intersection()
-
+    plt.show(block=True)

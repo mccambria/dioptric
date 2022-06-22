@@ -806,6 +806,7 @@ def main(
 if __name__ == "__main__":
 
     temp = 295
+    folder = "hopper-nv1_2022_06_15-{}K-5mW".format(temp)
 
     # mode = "prediction"
     mode = "analysis"
@@ -826,8 +827,7 @@ if __name__ == "__main__":
 
         plt.ion()
 
-        path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
-        folder = "wu-nv6_2022_04_14-295K"
+        path = "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
 
         main(
             path,
@@ -839,7 +839,7 @@ if __name__ == "__main__":
             simple_print=True,
         )
 
-        plt.show(block=True)
+        # plt.show(block=True)
 
     elif mode == "batch_analysis":
 

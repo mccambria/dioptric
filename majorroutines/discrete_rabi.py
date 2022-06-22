@@ -163,6 +163,8 @@ def main_with_cxn(cxn, nv_sig, apd_indices, state,
     start_timestamp = tool_belt.get_time_stamp()
 
     # %% Initial calculations and setup
+    
+    num_reps = int(num_reps)
 
     uwave_freq = nv_sig['resonance_{}'.format(state.name)]
     uwave_power = nv_sig['uwave_power_{}'.format(state.name)]

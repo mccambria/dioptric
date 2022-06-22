@@ -28,6 +28,8 @@ from pathlib import Path
 import math
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
+import copy
+from utils.tool_belt import presentation_round, presentation_round_latex
 
 
 # %% Constants
@@ -63,6 +65,7 @@ quasi = 76.0  # meV, empirical fit
 # line_width = 3
 marker_size = 7
 line_width = 1.5
+# line_width = 2.5
 marker_edge_width = line_width
 
 gamma_face_color = "#CC99CC"
@@ -81,6 +84,7 @@ figsize = [6.5, 5.0]  # default
 
 sample_column_title = "Sample"
 skip_column_title = "Skip"
+no_x_errs = True
 
 nominal_temp_column_title = "Nominal temp (K)"
 reported_temp_column_title = "Reported temp (K)"
@@ -96,7 +100,7 @@ omega_err_column_title = "Omega err (s^-1)"
 gamma_column_title = "gamma (s^-1)"
 gamma_err_column_title = "gamma err (s^-1)"
 
-bad_zfs_temps = 300  # Below this consider zfs temps inaccurate
+# bad_zfs_temps = 300  # Below this consider zfs temps inaccurate
 
 
 # %% Processes and sum functions
@@ -158,6 +162,25 @@ def orbach_T5_free_const(temp, coeff_orbach, activation, coeff_T5, const):
             const
             + (coeff_orbach * bose(activation, temp))
             + (coeff_T5 * temp ** 5)
+        )
+
+
+def orbach_variable_exp_const(
+    temp, coeff_orbach, activation, coeff_power, exp, const
+):
+    full_scaling = True
+    if full_scaling:
+        n1 = bose(activation, temp)
+        return (
+            const
+            + (coeff_orbach * n1 * (n1 + 1))
+            + (coeff_power * temp ** exp)
+        )
+    else:
+        return (
+            const
+            + (coeff_orbach * bose(activation, temp))
+            + (coeff_power * temp ** exp)
         )
 
 
@@ -414,50 +437,6 @@ def get_past_results(res):
     return temps, vals
 
 
-def presentation_round(val, err):
-    err_mag = math.floor(math.log10(err))
-    sci_err = err / (10 ** err_mag)
-    first_err_digit = int(str(sci_err)[0])
-    if first_err_digit == 1:
-        err_sig_figs = 2
-    else:
-        err_sig_figs = 1
-    power_of_10 = math.floor(math.log10(val))
-    mag = 10 ** power_of_10
-    rounded_err = tool_belt.round_sig_figs(err, err_sig_figs) / mag
-    rounded_val = round(val / mag, (power_of_10 - err_mag) + err_sig_figs - 1)
-    return [rounded_val, rounded_err, power_of_10]
-
-
-def presentation_round_latex(val, err):
-    if val <= 0 or err > val:
-        return ""
-    rounded_val, rounded_err, power_of_10 = presentation_round(val, err)
-    err_mag = math.floor(math.log10(rounded_err))
-    val_mag = math.floor(math.log10(rounded_val))
-
-    # Turn 0.0000016 into 0.16
-    # The round is to deal with floating point leftovers eg 9 = 9.00000002
-    shifted_rounded_err = round(rounded_err / 10 ** (err_mag + 1), 5)
-    # - 1 to remove the "0." part
-    err_last_decimal_mag = len(str(shifted_rounded_err)) - 2
-    pad_val_to = -err_mag + err_last_decimal_mag
-
-    if err_mag > val_mag:
-        return 1 / 0
-    elif err_mag == val_mag:
-        print_err = rounded_err
-    else:
-        print_err = int(str(shifted_rounded_err).replace(".", ""))
-
-    str_val = str(rounded_val)
-    decimal_pos = str_val.find(".")
-    num_padding_zeros = pad_val_to - len(str_val[decimal_pos:])
-    padded_val = str(rounded_val) + "0" * num_padding_zeros
-    # return "{}({})e{}".format(padded_val, print_err, power_of_10)
-    return r"\num{{{}({})e{}}}".format(padded_val, print_err, power_of_10)
-
-
 def omega_calc(temp):
     popt = [421.88, 69.205, 1.1124e-11]
     return orbach_T5_free(temp, *popt)
@@ -486,7 +465,8 @@ def get_temp_bounds(point):
     if temp_lb_column_title == nominal_temp_column_title:
         return None
     nominal_temp = point[nominal_temp_column_title]
-    if nominal_temp < bad_zfs_temps:
+    # if nominal_temp < bad_zfs_temps:
+    if nominal_temp < 295:
         return [nominal_temp - 3, nominal_temp + 3]
     else:
         lower_bound = point[temp_lb_column_title]
@@ -572,12 +552,90 @@ def fit_simultaneous(data_points, fit_mode=None):
     # region DECLARE FIT FUNCTIONS HERE
 
     if fit_mode is None:
+        # fit_mode = "variable_exp"
+        # fit_mode = "T5_fixed_coeffs"
         # fit_mode = "T5"
         fit_mode = "double_orbach"
         # fit_mode = "other"
 
+    # Varible exponent
+    if fit_mode == "variable_exp":
+        init_params = (
+            1.38e-11,
+            1.38e-11,
+            5,
+            510,
+            2000,
+            72.0,
+            0.01,
+            0.01,
+            0.07,
+            0.15,
+        )
+        omega_hopper_fit_func = lambda temp, beta: orbach_variable_exp_const(
+            temp, beta[3], beta[5], beta[0], beta[2], beta[6]
+        )
+        omega_wu_fit_func = lambda temp, beta: orbach_variable_exp_const(
+            temp, beta[3], beta[5], beta[0], beta[2], beta[7]
+        )
+        gamma_hopper_fit_func = lambda temp, beta: orbach_variable_exp_const(
+            temp, beta[4], beta[5], beta[1], beta[2], beta[8]
+        )
+        gamma_wu_fit_func = lambda temp, beta: orbach_variable_exp_const(
+            temp, beta[4], beta[5], beta[1], beta[2], beta[9]
+        )
+        beta_desc = [
+            "Omega exp coeff (K^-exp s^-1)",
+            "gamma exp coeff (K^-exp s^-1)",
+            "Power law exp",
+            "Omega Orbach coeff (s^-1)",
+            "gamma Orbach coeff (s^-1)",
+            "Orbach Delta (meV)",
+            "Omega Hopper constant (s^-1)",
+            "Omega Wu constant (s^-1)",
+            "gamma Hopper constant (s^-1)",
+            "gamma Wu constant (s^-1)",
+        ]
+
+    # T5 free coeffs + constant
+    elif fit_mode == "T5":
+        init_params = (
+            1.38e-11,
+            1.38e-11,
+            510,
+            2000,
+            72.0,
+            0.01,
+            0.01,
+            0.07,
+            0.15,
+        )
+        omega_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
+            temp, beta[2], beta[4], beta[0], beta[5]
+        )
+        omega_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
+            temp, beta[2], beta[4], beta[0], beta[6]
+        )
+        gamma_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
+            temp, beta[3], beta[4], beta[1], beta[7]
+        )
+        gamma_wu_fit_func = lambda temp, beta: orbach_T5_free_const(
+            temp, beta[3], beta[4], beta[1], beta[8]
+        )
+        beta_desc = [
+            "Omega T5 coeff (K^-5 s^-1)",
+            "gamma T5 coeff (K^-5 s^-1)",
+            "gamma Omega Orbach coeff (s^-1)",
+            "gamma Orbach coeff (s^-1)",
+            "Orbach Delta (meV)",
+            "Omega Hopper constant (s^-1)",
+            "Omega Wu constant (s^-1)",
+            "gamma Hopper constant (s^-1)",
+            "gamma Wu constant (s^-1)",
+        ]
+
     # T5 fixed + constant
-    if fit_mode == "T5":
+    elif fit_mode == "T5_fixed_coeffs":
         init_params = (1.38e-11, 510, 2000, 72.0, 0.01, 0.01, 0.07, 0.15)
         omega_hopper_fit_func = lambda temp, beta: orbach_T5_free_const(
             temp, beta[1], beta[3], beta[0], beta[4]
@@ -604,6 +662,65 @@ def fit_simultaneous(data_points, fit_mode=None):
 
     # Double Orbach
     elif fit_mode == "double_orbach":
+        init_params = (
+            450,
+            1200,
+            65,
+            11000,
+            11000,
+            160,
+            0.01,
+            0.01,
+            0.07,
+            0.15,
+        )
+        omega_hopper_fit_func = lambda temp, beta: double_orbach(
+            temp,
+            beta[0],
+            beta[2],
+            beta[3],
+            beta[5],
+            beta[6],
+        )
+        omega_wu_fit_func = lambda temp, beta: double_orbach(
+            temp,
+            beta[0],
+            beta[2],
+            beta[3],
+            beta[5],
+            beta[7],
+        )
+        gamma_hopper_fit_func = lambda temp, beta: double_orbach(
+            temp,
+            beta[1],
+            beta[2],
+            beta[4],
+            beta[5],
+            beta[8],
+        )
+        gamma_wu_fit_func = lambda temp, beta: double_orbach(
+            temp,
+            beta[1],
+            beta[2],
+            beta[4],
+            beta[5],
+            beta[9],
+        )
+        beta_desc = [
+            "Omega Orbach 1 coeff (s^-1)",
+            "gamma Orbach 1 coeff (s^-1)",
+            "Orbach 1 Delta (meV)",
+            "Orbach 2 coeff (s^-1)",
+            "Omega Orbach 2 Delta (meV)",
+            "gamma Orbach 2 Delta (meV)",
+            "Omega Hopper constant (s^-1)",
+            "Omega Wu constant (s^-1)",
+            "gamma Hopper constant (s^-1)",
+            "gamma Wu constant (s^-1)",
+        ]
+
+    # Double Orbach, fixed high Orbach coeffs
+    elif fit_mode == "double_orbach_fixed":
         init_params = (450, 1200, 65, 11000, 160, 0.01, 0.01, 0.07, 0.15)
         omega_hopper_fit_func = lambda temp, beta: double_orbach(
             temp,
@@ -909,7 +1026,8 @@ def fit_simultaneous(data_points, fit_mode=None):
         gamma_wu_fit_func,
         sample_breaks[0],
     )
-    data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
+    # data = data = RealData(temps, combined_rates, temp_errors, combined_errs)
+    data = data = RealData(temps, combined_rates, sy=combined_errs)
     model = Model(fit_func)
     odr = ODR(data, model, beta0=np.array(init_params))
     odr.set_job(fit_type=0)
@@ -954,8 +1072,8 @@ def get_data_points(
     marker_ind = 0
     markers_list = [
         "o",
-        "s",
         "^",
+        "s",
         "X",
         "D",
         "H",
@@ -1079,7 +1197,7 @@ def plot_scalings(
             label="Orbach",
         )
 
-    ax.set_xlabel(r"T (K)")
+    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     ax.set_ylabel(r"Relaxation rate (arb. units)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
@@ -1119,8 +1237,8 @@ def plot_T2_max(
 
     ax.plot(temp_linspace, T2_max(temp_linspace))
 
-    ax.set_xlabel(r"T (K)")
-    ax.set_ylabel(r"$T_{2,\text{max}}$ (s)")
+    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+    ax.set_ylabel(r"$\mathit{T}_{\mathrm{2,max}}$ (s)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
 
@@ -1178,7 +1296,7 @@ def normalized_residuals_histogram(rates_to_plot):
         -(norm_res ** 2) / 2
     )
     norm_res_linspace = np.linspace(*x_range, 1000)
-    ax.plot(norm_res_linspace, norm_gaussian(norm_res_linspace))
+    ax.plot(norm_res_linspace, norm_gaussian(norm_res_linspace), lw=line_width)
 
     fig.tight_layout(pad=0.3)
 
@@ -1234,7 +1352,7 @@ def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
-    ax.set_xlabel(r"T (K)")
+    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     if y_range is not None:
         ax.set_ylim(y_range[0], y_range[1])
     if normalized:
@@ -1245,466 +1363,42 @@ def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
     return
 
 
-def figure_2_v1(
-    file_name,
-    path,
-    dosave=False,
-):
-
-    data_points = get_data_points(path, file_name, temp_range)
-    double_figsize = (figsize[0], 2 * figsize[1])
-    fig, axes_pack = plt.subplots(2, 1, figsize=double_figsize)
-    fit_modes = ["double_orbach", "T5"]
-    labels = ["(a)", "(b)"]
-
-    for ind in range(2):
-        no_legend = not (ind == 0)
-        ax = axes_pack[ind]
-        fit_mode = fit_modes[ind]
-        figure_2_sub(ax, data_points, fit_mode, no_legend=no_legend)
-        label = labels[ind]
-        fig.text(
-            -0.11,
-            0.93,
-            label,
-            transform=ax.transAxes,
-            color="black",
-            fontsize=18,
-        )
-
-    fig.tight_layout(pad=0.3)
-
-    if dosave:
-        timestamp = tool_belt.get_time_stamp()
-        datestamp = timestamp.split("-")[0]
-        file_name = "{}-{}-{}".format(datestamp, plot_type, yscale)
-        nvdata_dir = common.get_nvdata_dir()
-        file_path = str(
-            nvdata_dir
-            / "paper_materials"
-            / "relaxation_temp_dependence"
-            / file_name
-        )
-        tool_belt.save_figure(fig, file_path)
-
-
-def figure_2_v1_sub(
-    ax,
-    data_points,
-    fit_mode,
-    no_legend=False,
-):
-
-    # %% Setup
-
-    # temp_range = [0, 480]
-    temp_range = [-5, 480]
-    samples_to_plot = ["hopper", "wu"]
-    linestyles = {"hopper": "dotted", "wu": "dashed"}
-    marker_type = "sample"
-    if no_legend:
-        include_sample_legend = False
-    else:
-        include_sample_legend = True
-
-    # marker_type = "nv"
-
-    min_temp = temp_range[0]
-    max_temp = temp_range[1]
-
-    linspace_min_temp = min_temp if min_temp > 0 else 0
-    temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
-    ax.set_xlim(min_temp, max_temp)
-
-    data_points = get_data_points(path, file_name, temp_range)
-
-    # Fit to Omega and gamma simultaneously
-    (
-        popt,
-        pvar,
-        beta_desc,
-        omega_hopper_fit_func,
-        omega_wu_fit_func,
-        gamma_hopper_fit_func,
-        gamma_wu_fit_func,
-    ) = fit_simultaneous(data_points, fit_mode)
-    omega_hopper_lambda = lambda temp: omega_hopper_fit_func(temp, popt)
-    omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
-    gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
-    gamma_wu_lambda = lambda temp: gamma_wu_fit_func(temp, popt)
-    print("parameter description: popt, psd")
-    for ind in range(len(popt)):
-        desc = beta_desc[ind]
-        val = tool_belt.round_sig_figs(popt[ind], 5)
-        err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
-        print("{}: {}, {}".format(desc, val, err))
-        print(presentation_round_latex(val, err))
-
-    # Plot setup
-    ax.set_xlabel(r"T (K)")
-    ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
-    ax.set_yscale("log")
-    rate_range = [0.0036, 1100]
-    if rate_range is not None:
-        ax.set_ylim(rate_range[0], rate_range[1])
-
-    # Plot the rate fits
-    for sample in samples_to_plot:
-        fit_func = eval("omega_{}_lambda".format(sample))
-        ls = linestyles[sample]
-        ax.plot(
-            temp_linspace,
-            fit_func(temp_linspace),
-            linestyle=ls,
-            label=r"$\Omega$ fit",
-            color=omega_edge_color,
-            linewidth=line_width,
-        )
-    for sample in samples_to_plot:
-        fit_func = eval("gamma_{}_lambda".format(sample))
-        ls = linestyles[sample]
-        ax.plot(
-            temp_linspace,
-            fit_func(temp_linspace),
-            linestyle=ls,
-            label=r"$\gamma$ fit",
-            color=gamma_edge_color,
-            linewidth=line_width,
-        )
-
-    # %% Plot the points
-
-    samples = []
-    nv_names = []
-    markers_list = []
-
-    for point in data_points:
-
-        if "marker" not in point:
-            continue
-        sample = point[sample_column_title]
-        nv_name = point["nv_name"]
-        sample_lower = sample.lower()
-        marker = point["marker"]
-
-        if nv_name not in nv_names:
-            nv_names.append(nv_name)
-        if sample not in samples:
-            samples.append(sample)
-        if marker not in markers_list:
-            markers_list.append(marker)
-        if sample.lower() not in samples_to_plot:
-            continue
-
-        temp = get_temp(point)
-        temp_error = get_temp_error(point)
-
-        # Omega
-        rate = point[omega_column_title]
-        rate_err = point[omega_err_column_title]
-        val = rate
-        val_err = rate_err
-        ax.errorbar(
-            temp,
-            val,
-            yerr=val_err,
-            xerr=temp_error,
-            label=r"$\Omega$",
-            marker=marker,
-            color=omega_edge_color,
-            markerfacecolor=omega_face_color,
-            linestyle="None",
-            ms=marker_size,
-            lw=line_width,
-            markeredgewidth=marker_edge_width,
-        )
-
-        # gamma
-        rate = point[gamma_column_title]
-        rate_err = point[gamma_err_column_title]
-        val = rate
-        val_err = rate_err
-        ax.errorbar(
-            temp,
-            val,
-            yerr=val_err,
-            xerr=temp_error,
-            label=r"$\gamma$",
-            marker=marker,
-            color=gamma_edge_color,
-            markerfacecolor=gamma_face_color,
-            linestyle="None",
-            ms=marker_size,
-            lw=line_width,
-            markeredgewidth=marker_edge_width,
-        )
-
-    # Rate legend
-    if not no_legend:
-        omega_patch = patches.Patch(
-            label=r"$\Omega$",
-            facecolor=omega_face_color,
-            edgecolor=omega_edge_color,
-            lw=marker_edge_width,
-        )
-        gamma_patch = patches.Patch(
-            label=r"$\gamma$",
-            facecolor=gamma_face_color,
-            edgecolor=gamma_edge_color,
-            lw=marker_edge_width,
-        )
-        leg1 = ax.legend(
-            handles=[gamma_patch, omega_patch], loc="upper left", title="Rate"
-        )
-        # leg1 = ax.legend(
-        #     handles=[omega_patch, gamma_patch], loc="upper left", frameon=False
-        # )
-
-    # Sample legend
-    if include_sample_legend:
-        include_fit_lines = False
-        if include_fit_lines:
-            x_loc = 0.14
-            # x_loc = 0.16
-            # x_loc = 0.22
-            nv_patches = []
-            for ind in range(len(markers_list)):
-                nv_name = nv_names[ind].replace("_", "\_")
-                sample = nv_name.split("-")[0]
-                if sample == "prresearch":
-                    nv_name = "[1]"
-                # else:
-                #     label = "New results"
-                ls = linestyles[sample]
-                if marker_type == "nv":
-                    label = nv_name
-                    title = "sample-nv"
-                elif marker_type == "sample":
-                    label = sample[0].upper() + sample[1:]
-                    title = "Sample"
-                patch = mlines.Line2D(
-                    [],
-                    [],
-                    color="black",
-                    marker=markers_list[ind],
-                    linestyle=linestyles[sample],
-                    markersize=marker_size,
-                    markeredgewidth=marker_edge_width,
-                    label=label,
-                )
-                nv_patches.append(patch)
-            ax.legend(
-                handles=nv_patches,
-                loc="upper left",
-                title=title,
-                # title="Samples",
-                bbox_to_anchor=(x_loc, 1.0),
-            )
-        else:
-            x_loc = 0.14
-            # x_loc = 0.16
-            # x_loc = 0.22
-            nv_patches = []
-            for ind in range(len(markers_list)):
-                nv_name = nv_names[ind].replace("_", "\_")
-                sample = nv_name.split("-")[0]
-                if sample == "prresearch":
-                    nv_name = "[1]"
-                # else:
-                #     label = "New results"
-                ls = linestyles[sample]
-                if marker_type == "nv":
-                    label = nv_name
-                    title = "sample-nv"
-                elif marker_type == "sample":
-                    # label = sample[0].upper() + sample[1:]
-                    if sample == "hopper":
-                        label = "A"
-                    elif sample == "wu":
-                        label = "B"
-                    title = "Sample"
-                patch = mlines.Line2D(
-                    [],
-                    [],
-                    color="black",
-                    marker=markers_list[ind],
-                    linestyle="None",
-                    markersize=marker_size,
-                    markeredgewidth=marker_edge_width,
-                    label=label,
-                )
-                nv_patches.append(patch)
-            ax.legend(
-                handles=nv_patches,
-                loc="upper left",
-                title=title,
-                # title="Samples",
-                bbox_to_anchor=(x_loc, 1.0),
-            )
-
-    # Inset plot of normalized residuals
-
-    inset_bottom = 0.13
-    inset_height = 0.28
-    # inset_left = 0.6
-    inset_left = 0.65
-    inset_width = 1 - inset_left
-
-    axins_gamma = inset_axes(
-        ax,
-        width="100%",
-        height="100%",
-        bbox_to_anchor=(
-            inset_left,
-            inset_bottom + inset_height,
-            inset_width,
-            inset_height,
-        ),
-        bbox_transform=ax.transAxes,
-        loc=1,
-    )
-    axins_omega = inset_axes(
-        ax,
-        width="100%",
-        height="100%",
-        bbox_to_anchor=(inset_left, inset_bottom, inset_width, inset_height),
-        bbox_transform=ax.transAxes,
-        loc=1,
-    )
-
-    for rate in ["gamma", "omega"]:
-        if rate == "gamma":
-            # title = r"$\gamma$ Normalized residual"
-            title = r"$\gamma$ residual"
-        if rate == "omega":
-            # title = r"$\Omega$ Normalized residual"
-            title = r"$\Omega$ residual"
-        axins = eval("axins_{}".format(rate))
-        axins.set_ylabel(title)
-        axins.set_xlabel(r"T(K)")
-        axins.set_xlim(min_temp, max_temp)
-
-        axins_xlim = [-10, 500]
-        axins.set_xlim(axins_xlim[0], axins_xlim[1])
-        axins.plot(axins_xlim, [0, 0], color="silver", zorder=-10)
-
-        # axins.set_ylim(-3.25, 3.25)
-        # axins.set_yticks(np.linspace(-3, 3, 7))
-
-        axins_ylim = 2.5
-        axins.set_ylim(-axins_ylim, axins_ylim)
-        ylim_floor = math.floor(axins_ylim)
-        num_yticks = (ylim_floor * 2) + 1
-        yticks = np.linspace(-ylim_floor, ylim_floor, num_yticks)
-        axins.set_yticks(yticks)
-
-    samples = []
-    nv_names = []
-    markers_list = []
-    max_norm_err = 0
-    axins_marker_size = (marker_size - 2) ** 2
-
-    for point in data_points:
-
-        if "marker" not in point:
-            continue
-        sample = point[sample_column_title]
-        nv_name = point["nv_name"]
-        sample_lower = sample.lower()
-        marker = point["marker"]
-
-        if nv_name not in nv_names:
-            nv_names.append(nv_name)
-        if sample not in samples:
-            samples.append(sample)
-        if marker not in markers_list:
-            markers_list.append(marker)
-        if sample.lower() not in samples_to_plot:
-            continue
-
-        temp = get_temp(point)
-        temp_error = get_temp_error(point)
-
-        # Omega
-        rate = point[omega_column_title]
-        rate_err = point[omega_err_column_title]
-        omega_lambda = eval("omega_{}_lambda".format(sample_lower))
-        val = (rate - omega_lambda(temp)) / rate_err
-        if abs(val) > max_norm_err:
-            max_norm_err = abs(val)
-        axins_omega.scatter(
-            temp,
-            val,
-            label=r"$\Omega$",
-            marker=marker,
-            edgecolor=omega_edge_color,
-            facecolor=omega_face_color,
-            linestyle="None",
-            s=axins_marker_size,
-            linewidth=marker_edge_width,
-        )
-
-        # gamma
-        rate = point[gamma_column_title]
-        rate_err = point[gamma_err_column_title]
-        gamma_lambda = eval("gamma_{}_lambda".format(sample_lower))
-        val = (rate - gamma_lambda(temp)) / rate_err
-        if abs(val) > max_norm_err:
-            max_norm_err = abs(val)
-        axins_gamma.scatter(
-            temp,
-            val,
-            label=r"$\gamma$",
-            marker=marker,
-            edgecolor=gamma_edge_color,
-            facecolor=gamma_face_color,
-            s=axins_marker_size,
-            linewidth=marker_edge_width,
-        )
-
-    print(max_norm_err)
-
-    # Final steps
-
-    if include_sample_legend:
-        ax.add_artist(leg1)
-
-
-def figure_2(file_name, path):
+def figure_2(file_name, path, dosave=False):
 
     data_points = get_data_points(path, file_name)  # , temp_range)
+    # fit_modes = ["double_orbach_fixed", "T5"]
+    # fit_modes = ["double_orbach", "variable_exp"]
+    # fit_modes = ["double_orbach", "T5_fixed_coeffs"]
     fit_modes = ["double_orbach", "T5"]
     rates = ["gamma", "Omega"]
     labels = ["(a)", "(b)"]
 
-    double_figsize = (figsize[0], 2 * figsize[1])
-    # fig, axes_pack = plt.subplots(2, 1, figsize=double_figsize)
-    # ax_a = axes_pack[0]
-    # ax_b = axes_pack[1]
-
-    fig = plt.figure(figsize=double_figsize)
-    gs_sep = 0.08
+    # figsize = (figsize[0], 2 * figsize[1])
+    # adj_figsize = (figsize[0], (2 * figsize[1]) + 1.0)
+    adj_figsize = (2 * figsize[0], figsize[1])
+    fig = plt.figure(figsize=adj_figsize)
+    gs_sep = 0.09
     gs_a_bottom = 0.55
     gs_a = fig.add_gridspec(
         nrows=1,
         ncols=1,
-        left=0.1,
-        right=0.99,
-        bottom=gs_a_bottom,
+        left=0.07,
+        right=0.49,
+        bottom=0.13,
         top=0.99,
     )
     gs_b = fig.add_gridspec(
         nrows=2,
         # ncols=2,
         ncols=4,
-        left=0.08,
-        right=0.99,
-        bottom=0.05,
-        top=gs_a_bottom - gs_sep,
+        left=0.555,
+        right=1.0,
+        bottom=0.13,
+        top=0.94,
         wspace=0,
         hspace=0,
         # width_ratios=[1, 0.2, 0.2, 1],
-        width_ratios=[1, 0.2, 1, 0.2],
+        width_ratios=[1, 0.16, 1, 0.16],
     )
     ax_a = fig.add_subplot(gs_a[:, :])
     scatter_axes_b = [[None, None], [None, None]]
@@ -1722,27 +1416,28 @@ def figure_2(file_name, path):
     # Generic setup
 
     fig.text(
-        -0.11,
-        0.95,
+        -0.16,
+        0.96,
         "(a)",
         transform=ax_a.transAxes,
         color="black",
         fontsize=18,
     )
     fig.text(
-        -0.11,
-        -0.16,
+        1.02,
+        0.96,
         "(b)",
         transform=ax_a.transAxes,
         color="black",
         fontsize=18,
     )
 
-    inset_bottom = 0.13
-    inset_height = 0.5
+    inset_bottom = 0.105
+    inset_height = 0.47
     # inset_left = 0.6
-    inset_left = 0.5
-    inset_width = 1 - inset_left
+    inset_left = 0.46
+    # inset_width = 1 - inset_left
+    inset_width = 0.55
 
     axins_a = inset_axes(
         ax_a,
@@ -1769,18 +1464,25 @@ def figure_2(file_name, path):
 
     # Plot the residuals
 
-    scatter_axes_b[0][0].set_title("Double Orbach")
-    scatter_axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
+    # scatter_axes_b[0][0].set_title("Double Orbach")
+    # scatter_axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
+    scatter_axes_b[0][0].set_title("Proposed model")
+    scatter_axes_b[0][1].set_title("Prior model")
+    # scatter_axes_b[0][0].set_title(
+    #     r"$C + A_{1} O(\Delta_{1}, T) + A_{2} O(\Delta_{2}, T)$"
+    # )
+    # scatter_axes_b[0][1].set_title(r"$C + A_{1} O(\Delta, T) + A_{2} T^{5}$")
 
     scatter_axes_b[0][0].get_xaxis().set_visible(False)
     scatter_axes_b[0][1].get_xaxis().set_visible(False)
     scatter_axes_b[0][1].get_yaxis().set_visible(False)
     scatter_axes_b[1][1].get_yaxis().set_visible(False)
 
-    scatter_axes_b[0][0].set_ylabel(r"$\gamma$ residual")
-    scatter_axes_b[1][0].set_ylabel(r"$\Omega$ residual")
-    scatter_axes_b[1][0].set_xlabel(r"$T$ (K)")
-    scatter_axes_b[1][1].set_xlabel(r"$T$ (K)")
+    scatter_axes_b[0][0].set_ylabel(r"$\mathit{\gamma}$ residual")
+    scatter_axes_b[1][0].set_ylabel(r"$\mathrm{\Omega}$ residual")
+    x_label = r"Temperature $\mathit{T}$ (K)"
+    scatter_axes_b[1][0].set_xlabel(x_label)
+    scatter_axes_b[1][1].set_xlabel(x_label)
 
     for rate_ind in range(2):
         rate = rates[rate_ind]
@@ -1795,7 +1497,9 @@ def figure_2(file_name, path):
 
             xlim = [-10, 490]
             scatter_ax.set_xlim(xlim[0], xlim[1])
-            scatter_ax.plot(xlim, [0, 0], color="silver", zorder=-10)
+            scatter_ax.plot(
+                xlim, [0, 0], color="silver", zorder=-10, lw=line_width
+            )
 
             # axins.set_ylim(-3.25, 3.25)
             # axins.set_yticks(np.linspace(-3, 3, 7))
@@ -1812,7 +1516,32 @@ def figure_2(file_name, path):
                 scatter_ax, hist_ax, rate, data_points, fit_mode
             )
 
+    # fig.tight_layout(pad=0.3)
+    # tool_belt.non_math_ticks(ax_a)
+    # for el in scatter_axes_b:
+    #     for sub_el in el:
+    #         tool_belt.non_math_ticks(sub_el)
+    # for el in hist_axes_b:
+    #     for sub_el in el:
+    #         tool_belt.non_math_ticks(sub_el)
+
+    # fontProperties = {'family':'sans-serif'}
+    # ax_a.set_xticklabels(ax_a.get_xticks(), fontProperties)
+    # ax_a.set_yticklabels(ax_a.get_yticks(), fontProperties)
     fig.tight_layout(pad=0.3)
+
+    if dosave:
+        nvdata_dir = common.get_nvdata_dir()
+        # ext = "png"
+        ext = "svg"
+        file_path = str(
+            nvdata_dir
+            / "paper_materials/relaxation_temp_dependence/figures/main2.{}".format(
+                ext
+            )
+        )
+        # fig.savefig(file_path, dpi=500)
+        fig.savefig(file_path)
 
 
 def figure_2_raw_data(ax, axins, data_points):
@@ -1820,14 +1549,28 @@ def figure_2_raw_data(ax, axins, data_points):
     # %% Setup
 
     axes = [ax, axins]
-    # temp_ranges = [[-5, 480], [120, 205]]
-    # rate_ranges = [[0.0036, 1100], [0.8, 40]]
-    temp_ranges = [[-5, 480], [145, 215]]
-    rate_ranges = [[0.0036, 1100], [2, 50]]
-    ytickss = [None, [3, 10, 30]]
-    yscales = ["log", "log"]
+
+    # temp_ranges = [[-5, 480], [145, 215]]
+    # rate_ranges = [[0.0036, 1100], [2, 50]]
+    # yscales = ["log", "log"]
+    # ytickss = [None, [3, 10, 30]]
+
+    temp_ranges = [[-5, 480], [-5, 487]]
+    rate_ranges = [[0.004, 750], [-25, 670]]
+    yscales = ["log", "linear"]
+    ytickss = [None, None]
+
     no_legends = [False, True]
-    mss = [marker_size, marker_size - 2]
+    mss = [marker_size, marker_size - 1]
+    lws = [line_width, line_width - 0.25]
+    xlabels = [
+        r"Temperature $\mathit{T}$ (K)",
+        None,
+    ]
+    ylabels = [
+        r"Relaxation rates (s$^{\text{-1}}$)",
+        None,
+    ]
 
     for ind in range(2):
         ax = axes[ind]
@@ -1841,6 +1584,12 @@ def figure_2_raw_data(ax, axins, data_points):
         marker_type = "sample"
         include_sample_legend = not no_legend
         ms = mss[ind]
+        lw = lws[ind]
+        xlabel = xlabels[ind]
+        ylabel = ylabels[ind]
+
+        # Sample-dependent vs phonon-limited line
+        ax.axvline(x=125, color="silver", zorder=-10, lw=lw)
 
         # marker_type = "nv"
 
@@ -1852,8 +1601,8 @@ def figure_2_raw_data(ax, axins, data_points):
         ax.set_xlim(min_temp, max_temp)
 
         # Plot setup
-        ax.set_xlabel(r"$T$ (K)")
-        ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
         ax.set_yscale(yscale)
         if rate_range is not None:
             ax.set_ylim(rate_range[0], rate_range[1])
@@ -1887,7 +1636,10 @@ def figure_2_raw_data(ax, axins, data_points):
                 continue
 
             temp = get_temp(point)
-            temp_error = get_temp_error(point)
+            if no_x_errs:
+                temp_error = None
+            else:
+                temp_error = get_temp_error(point)
 
             # Omega
             rate = point[omega_column_title]
@@ -1899,7 +1651,7 @@ def figure_2_raw_data(ax, axins, data_points):
                 val,
                 yerr=val_err,
                 xerr=temp_error,
-                label=r"$\Omega$",
+                label=r"$\mathrm{\Omega}$",
                 marker=marker,
                 color=omega_edge_color,
                 markerfacecolor=omega_face_color,
@@ -1919,7 +1671,7 @@ def figure_2_raw_data(ax, axins, data_points):
                 val,
                 yerr=val_err,
                 xerr=temp_error,
-                label=r"$\gamma$",
+                label=r"$\mathit{\gamma}$",
                 marker=marker,
                 color=gamma_edge_color,
                 markerfacecolor=gamma_face_color,
@@ -1932,13 +1684,13 @@ def figure_2_raw_data(ax, axins, data_points):
         # Rate legend
         if not no_legend:
             omega_patch = patches.Patch(
-                label=r"$\Omega$",
+                label=r"$\mathrm{\Omega}$",
                 facecolor=omega_face_color,
                 edgecolor=omega_edge_color,
                 lw=marker_edge_width,
             )
             gamma_patch = patches.Patch(
-                label=r"$\gamma$",
+                label=r"$\mathit{\gamma}$",
                 facecolor=gamma_face_color,
                 edgecolor=gamma_edge_color,
                 lw=marker_edge_width,
@@ -1947,6 +1699,7 @@ def figure_2_raw_data(ax, axins, data_points):
                 handles=[gamma_patch, omega_patch],
                 loc="upper left",
                 title="Rate",
+                handlelength=1.5,
             )
             # leg1 = ax.legend(
             #     handles=[omega_patch, gamma_patch], loc="upper left", frameon=False
@@ -1955,10 +1708,9 @@ def figure_2_raw_data(ax, axins, data_points):
         # Sample legend
         if include_sample_legend:
             include_fit_lines = False
+            x_loc = 0.18
+            handlelength = 1
             if include_fit_lines:
-                x_loc = 0.14
-                # x_loc = 0.16
-                # x_loc = 0.22
                 nv_patches = []
                 for ind in range(len(markers_list)):
                     nv_name = nv_names[ind].replace("_", "\_")
@@ -1991,11 +1743,10 @@ def figure_2_raw_data(ax, axins, data_points):
                     title=title,
                     # title="Samples",
                     bbox_to_anchor=(x_loc, 1.0),
+                    framealpha=1.0,
+                    handlelength=handlelength,
                 )
             else:
-                x_loc = 0.14
-                # x_loc = 0.16
-                # x_loc = 0.22
                 nv_patches = []
                 for ind in range(len(markers_list)):
                     nv_name = nv_names[ind].replace("_", "\_")
@@ -2032,9 +1783,52 @@ def figure_2_raw_data(ax, axins, data_points):
                     title=title,
                     # title="Samples",
                     bbox_to_anchor=(x_loc, 1.0),
+                    framealpha=1.0,
+                    handlelength=handlelength,
                 )
 
         # Final steps
+
+        # Sample-dependent vs phonon-limited line
+        include_sample_dep_line_label = False
+        if include_sample_dep_line_label:
+            text_font_size = 11.25
+            arrow_font_size = 16
+            ax = axes[0]
+            args = {
+                "transform": ax.transAxes,
+                "color": "black",
+                "fontsize": text_font_size,
+                "ha": "right",
+            }
+            x_loc = 0.253
+            y_loc = 0.765
+            linespacing = 0.04
+            ax.text(x_loc, y_loc, r"Sample-", **args)
+            ax.text(x_loc, y_loc - linespacing, r"dependent", **args)
+            prev = args["fontsize"]
+            args["fontsize"] = arrow_font_size
+            ax.text(
+                x_loc,
+                y_loc - 2.25 * linespacing,
+                r"$\boldsymbol{\leftarrow}$",
+                **args
+            )
+            args["fontsize"] = prev
+
+            args["ha"] = "left"
+            x_loc += 0.03
+            ax.text(x_loc, y_loc, r"Phonon-", **args)
+            ax.text(x_loc, y_loc - linespacing, r"limited", **args)
+            prev = args["fontsize"]
+            args["fontsize"] = arrow_font_size
+            ax.text(
+                x_loc,
+                y_loc - 2.25 * linespacing,
+                r"$\boldsymbol{\rightarrow}$",
+                **args
+            )
+            args["fontsize"] = prev
 
         if include_sample_legend:
             ax.add_artist(leg1)
@@ -2047,7 +1841,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
     # linestyles = {"hopper": "dotted", "wu": "solid"}
 
     zorder = 0
-    if fit_mode == "T5":
+    if fit_mode != "double_orbach":
         zorder = -1
 
     for ax in [ax_a, axins_a]:
@@ -2071,17 +1865,17 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
         omega_wu_lambda = lambda temp: omega_wu_fit_func(temp, popt)
         gamma_hopper_lambda = lambda temp: gamma_hopper_fit_func(temp, popt)
         gamma_wu_lambda = lambda temp: gamma_wu_fit_func(temp, popt)
-        # print("parameter description: popt, psd")
-        # for ind in range(len(popt)):
-        #     desc = beta_desc[ind]
-        #     val = tool_belt.round_sig_figs(popt[ind], 5)
-        #     err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
-        #     print("{}: {}, {}".format(desc, val, err))
-        #     print(presentation_round_latex(val, err))
+        print("parameter description: popt, psd")
+        for ind in range(len(popt)):
+            desc = beta_desc[ind]
+            val = tool_belt.round_sig_figs(popt[ind], 5)
+            err = tool_belt.round_sig_figs(np.sqrt(pvar[ind]), 2)
+            print("{}: {}, {}".format(desc, val, err))
+            print(presentation_round_latex(val, err))
 
         # Plot the rate fits
         line_color = omega_edge_color
-        if fit_mode == "T5":
+        if fit_mode != "double_orbach":
             line_color = "#fcd4ac"
         for sample in samples_to_plot:
             fit_func = eval("omega_{}_lambda".format(sample))
@@ -2090,13 +1884,13 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
                 temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
-                label=r"$\Omega$ fit",
+                label=r"$\mathrm{\Omega}$ fit",
                 color=line_color,
                 linewidth=line_width,
                 zorder=zorder,
             )
         line_color = gamma_edge_color
-        if fit_mode == "T5":
+        if fit_mode != "double_orbach":
             line_color = "#e09de0"
         for sample in samples_to_plot:
             fit_func = eval("gamma_{}_lambda".format(sample))
@@ -2105,7 +1899,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
                 temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
-                label=r"$\gamma$ fit",
+                label=r"$\mathit{\gamma}$ fit",
                 color=line_color,
                 linewidth=line_width,
                 zorder=zorder,
@@ -2149,7 +1943,8 @@ def figure_2_residuals(scatter_ax, hist_ax, plot_rate, data_points, fit_mode):
     nv_names = []
     markers_list = []
     max_norm_err = 0
-    ms = (marker_size - 2) ** 2
+    ms = (marker_size - 1) ** 2
+    lw = line_width - 0.25
     err_list = []
     edgecolor = eval("{}_edge_color".format(plot_rate))
     facecolor = eval("{}_face_color".format(plot_rate))
@@ -2193,7 +1988,7 @@ def figure_2_residuals(scatter_ax, hist_ax, plot_rate, data_points, fit_mode):
             facecolor=facecolor,
             linestyle="None",
             s=ms,
-            linewidth=marker_edge_width,
+            linewidth=lw,
         )
 
     bins = np.linspace(-2.5, 2.5, 8)
@@ -2218,6 +2013,7 @@ def figure_2_residuals(scatter_ax, hist_ax, plot_rate, data_points, fit_mode):
     hist_ax.plot(
         normal_density(err_linspace), err_linspace, color=edgecolor, zorder=1
     )
+    hist_ax.axis("off")
 
     # print(max_norm_err)
 
@@ -2246,7 +2042,8 @@ def main(
     min_temp = temp_range[0]
     max_temp = temp_range[1]
 
-    temp_linspace = np.linspace(min_temp, max_temp, 1000)
+    linspace_min_temp = max(0, min_temp)
+    temp_linspace = np.linspace(linspace_min_temp, max_temp, 1000)
     fig, ax = plt.subplots(figsize=figsize)
 
     # Fit to Omega and gamma simultaneously
@@ -2258,7 +2055,7 @@ def main(
         omega_wu_fit_func,
         gamma_hopper_fit_func,
         gamma_wu_fit_func,
-    ) = fit_simultaneous(data_points)
+    ) = fit_simultaneous(data_points, "double_orbach")
 
     # omega_lambda = lambda temp: orbach_free(temp, 5.4603e02, 71)
     # gamma_lambda = lambda temp: orbach_free(temp, 1.5312e03, 71)
@@ -2295,7 +2092,7 @@ def main(
                 temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
-                label=r"$\Omega$ fit",
+                label=r"$\mathrm{\Omega}$ fit",
                 color=omega_edge_color,
                 linewidth=line_width,
             )
@@ -2311,7 +2108,7 @@ def main(
                 temp_linspace,
                 fit_func(temp_linspace),
                 linestyle=ls,
-                label=r"$\gamma$ fit",
+                label=r"$\mathit{\gamma}$ fit",
                 color=gamma_edge_color,
                 linewidth=line_width,
             )
@@ -2330,7 +2127,7 @@ def main(
             ax.plot(
                 temp_linspace,
                 func(temp_linspace),
-                label=r"$\gamma/\Omega$",
+                label=r"$\mathit{\gamma}/\mathrm{\Omega}",
                 color=gamma_edge_color,
                 linewidth=line_width,
             )
@@ -2345,14 +2142,25 @@ def main(
         T2_max_qubit_err = lambda T2max, omega_err, gamma_err: (
             (T2max ** 2) / 2
         ) * np.sqrt((3 * omega_err) ** 2 + gamma_err ** 2)
-        for func in [T2_max_qubit_hopper_temp, T2_max_qubit_wu_temp]:
+
+        # linestyles = {"hopper": "dotted", "wu": "dashed"}
+        for func, linestyle, label in [
+            (
+                T2_max_qubit_hopper_temp,
+                "dotted",
+                r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$",
+            ),
+            (T2_max_qubit_wu_temp, "dashed", None),
+        ]:
+            # for func in [T2_max_qubit_hopper_temp, T2_max_qubit_wu_temp]:
             ax.plot(
                 temp_linspace,
                 func(temp_linspace),
-                label=r"Superposition of $\ket{0}$, $\ket{\pm 1}$",
+                label=label,
                 # label=r"Qubit T2 max",
                 color=qubit_max_edge_color,
                 linewidth=line_width,
+                ls=linestyle,
             )
         T2_max_qutrit = lambda omega, gamma: 1 / (omega + gamma)
         T2_max_qutrit_err = lambda T2max, omega_err, gamma_err: (
@@ -2364,20 +2172,31 @@ def main(
         T2_max_qutrit_wu_temp = lambda temp: T2_max_qutrit(
             omega_wu_lambda(temp), gamma_wu_lambda(temp)
         )
-        for func in [T2_max_qutrit_hopper_temp, T2_max_qutrit_wu_temp]:
+        for func, linestyle, label in [
+            (
+                T2_max_qutrit_hopper_temp,
+                "dotted",
+                r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$",
+            ),
+            (T2_max_qutrit_wu_temp, "dashed", None),
+        ]:
+            # for func in [T2_max_qutrit_hopper_temp, T2_max_qutrit_wu_temp]:
             ax.plot(
                 temp_linspace,
                 func(temp_linspace),
-                label=r"Superposition of $\ket{-1}$, $\ket{+1}$",
+                label=label,
                 # label=r"Qutrit T2 max",
                 color=qutrit_max_edge_color,
                 linewidth=line_width,
+                ls=linestyle,
             )
+
+        ax.axvline(x=125, color="silver", zorder=-10)
 
     # ax.plot(temp_linspace, orbach(temp_linspace) * 0.7, label='Orbach')
     # ax.plot(temp_linspace, raman(temp_linspace)/3, label='Raman')
 
-    ax.set_xlabel(r"T (K)")
+    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
     if plot_type == "rates":
         ax.set_ylabel(r"Relaxation rates (s$^{-1}$)")
     elif plot_type == "ratios":
@@ -2389,7 +2208,7 @@ def main(
     elif plot_type == "normalized_residuals":
         ax.set_ylabel(r"Normalized residuals")
     elif plot_type == "T2_max":
-        ax.set_ylabel(r"$T_{2,\text{max}}$ (s)")
+        ax.set_ylabel(r"$\mathit{T}_{\mathrm{2,max}}$ (s)")
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(min_temp, max_temp)
@@ -2421,7 +2240,10 @@ def main(
             continue
 
         temp = get_temp(point)
-        temp_error = get_temp_error(point)
+        if no_x_errs:
+            temp_error = None
+        else:
+            temp_error = get_temp_error(point)
 
         if plot_type in ["rates", "residuals", "normalized_residuals"]:
             # Omega
@@ -2443,7 +2265,7 @@ def main(
                     val,
                     yerr=val_err,
                     xerr=temp_error,
-                    label=r"$\Omega$",
+                    label=r"$\mathrm{\Omega}$",
                     marker=marker,
                     color=omega_edge_color,
                     markerfacecolor=omega_face_color,
@@ -2471,7 +2293,7 @@ def main(
                     val,
                     yerr=val_err,
                     xerr=temp_error,
-                    label=r"$\gamma$",
+                    label=r"$\mathit{\gamma}$",
                     marker=marker,
                     color=gamma_edge_color,
                     markerfacecolor=gamma_face_color,
@@ -2499,7 +2321,7 @@ def main(
                     ratio,
                     yerr=ratio_err,
                     xerr=temp_error,
-                    label=r"$\gamma/\Omega$",
+                    label=r"$\mathit{\gamma}/\mathrm{\Omega}$",
                     marker=marker,
                     color=ratio_edge_color,
                     markerfacecolor=ratio_face_color,
@@ -2612,13 +2434,13 @@ def main(
 
     if plot_type in ["rates", "residuals", "normalized_residuals"]:
         omega_patch = patches.Patch(
-            label=r"$\Omega$",
+            label=r"$\mathrm{\Omega}$",
             facecolor=omega_face_color,
             edgecolor=omega_edge_color,
             lw=marker_edge_width,
         )
         gamma_patch = patches.Patch(
-            label=r"$\gamma$",
+            label=r"$\mathit{\gamma}$",
             facecolor=gamma_face_color,
             edgecolor=gamma_edge_color,
             lw=marker_edge_width,
@@ -2629,7 +2451,7 @@ def main(
 
     elif plot_type == "ratios":
         ratio_patch = patches.Patch(
-            label=r"$\gamma/\Omega$",
+            label=r"$\mathit{\gamma}/\mathrm{\Omega}$",
             facecolor=ratio_face_color,
             edgecolor=ratio_edge_color,
             lw=marker_edge_width,
@@ -2678,22 +2500,52 @@ def main(
         ax.add_artist(leg1)
 
     if plot_type == "T2_max":
-        ax.legend()
+        handles, labels = ax.get_legend_handles_labels()
+        mod_handles = []
+        for el in handles:
+            mod_handle = mlines.Line2D(
+                [],
+                [],
+                color=el.get_color(),
+                linewidth=line_width,
+                linestyle="solid",
+            )
+            mod_handles.append(mod_handle)
+        leg1 = ax.legend(
+            mod_handles,
+            labels,
+            title="Subspace",
+            bbox_to_anchor=(0.743, 1.0),
+        )
 
     fig.tight_layout(pad=0.3)
 
     if dosave:
-        timestamp = tool_belt.get_time_stamp()
-        datestamp = timestamp.split("-")[0]
-        file_name = "{}-{}-{}".format(datestamp, plot_type, yscale)
         nvdata_dir = common.get_nvdata_dir()
-        file_path = str(
-            nvdata_dir
-            / "paper_materials"
-            / "relaxation_temp_dependence"
-            / file_name
-        )
-        tool_belt.save_figure(fig, file_path)
+        if plot_type == "T2_max":
+            # ext = "png"
+            ext = "svg"
+            file_path = str(
+                nvdata_dir
+                / "paper_materials/relaxation_temp_dependence/figures/main4.{}".format(
+                    ext
+                )
+            )
+            # fig.savefig(file_path, dpi=500)
+            fig.savefig(file_path)
+        else:
+            timestamp = tool_belt.get_time_stamp()
+            datestamp = timestamp.split("-")[0]
+            file_name = "{}-{}-{}".format(datestamp, plot_type, yscale)
+            file_path = str(
+                nvdata_dir
+                / "paper_materials"
+                / "relaxation_temp_dependence"
+                / file_name
+            )
+            tool_belt.save_figure(fig, file_path)
+
+    return fig, ax, leg1
 
 
 # %% Run the file
@@ -2715,8 +2567,8 @@ if __name__ == "__main__":
     tool_belt.init_matplotlib()
     matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    plot_type = "rates"
-    # plot_type = "T2_max"
+    # plot_type = "rates"
+    plot_type = "T2_max"
     # plot_type = "ratios"
     # plot_type = "ratio_fits"
     # plot_type = 'residuals'
@@ -2745,7 +2597,8 @@ if __name__ == "__main__":
         # y_params = [[[-10, 1000], "linear"]]
         y_params = [[[-10, 600], "linear"], [[5e-3, 1000], "log"]]
     elif plot_type == "T2_max":
-        y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
+        # y_params = [[[-1, 6], "linear"], [[1e-3, 50], "log"]]
+        y_params = [[[5e-4, 50], "log"]]
     elif plot_type == "ratios":
         y_params = [[[0, 5], "linear"]]
     elif plot_type == "ratio_fits":
@@ -2758,25 +2611,25 @@ if __name__ == "__main__":
         rates_to_plot = "gamma"
     # y_params = [y_params[1]]
     # y_params = [[None, "linear"], [[0.001, 20], "log"]]
-    # for el in y_params:
-    #     y_range, yscale = el
-    #     # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
-    #     # continue
-    #     main(
-    #         file_name,
-    #         path,
-    #         plot_type,
-    #         rates_to_plot,
-    #         temp_range,
-    #         y_range,
-    #         xscale,
-    #         yscale,
-    #         dosave=False,
-    #     )
+    for el in y_params:
+        y_range, yscale = el
+        # plot_orbach_scalings(temp_range, xscale, yscale, y_range)
+        # continue
+        # main(
+        #     file_name,
+        #     path,
+        #     plot_type,
+        #     rates_to_plot,
+        #     temp_range,
+        #     y_range,
+        #     xscale,
+        #     yscale,
+        #     dosave=True,
+        # )
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    figure_2(file_name, path)
+    figure_2(file_name, path, dosave=False)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
@@ -2790,6 +2643,9 @@ if __name__ == "__main__":
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
     plt.show(block=True)
+    
+    # print(bose(65,295))
+    # print(bose(165,295))
 
     # Parameter description: [T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff (s^-1), activation (meV)]
 
