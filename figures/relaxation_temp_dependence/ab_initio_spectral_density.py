@@ -27,6 +27,7 @@ import math
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 from numpy import pi
+import utils.kplotlib as kpl
 
 # line_width = 2.5
 line_width = 1.5
@@ -138,6 +139,18 @@ def main(
     # tool_belt.non_math_ticks(ax)
     ax.set_xlim([-10, 210])
     ax.set_ylim([0, 130])
+
+    # Vertical lines at experimentally extracted values
+    # ax.axvline(x=68.2, color="silver", zorder=-10, lw=line_width)
+    # ax.axvline(x=167, color="silver", zorder=-10, lw=line_width)
+
+    # Vertical lines at experimentally extracted values plus confidence interval
+    gray = kpl.kpl_colors["dark_gray"]
+    lightened_gray = kpl.kpl_colors["light_gray"]
+    ax.axvline(x=68.2, color=gray, zorder=-10, lw=line_width)
+    ax.axvspan(68.2 - 1.7, 68.2 + 1.7, color=lightened_gray, zorder=-11)
+    ax.axvline(x=167, color=gray, zorder=-10, lw=line_width)
+    ax.axvspan(167 - 12, 167 + 12, color=lightened_gray, zorder=-11)
 
     if dosave:
         # ext = "png"

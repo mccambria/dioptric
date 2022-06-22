@@ -15,12 +15,12 @@ import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
 import majorroutines.rabi as rabi
 import utils.common as common
+from utils.kplotlib import color_mpl_to_color_hex, lighten_color_hex
 import json
 from mpl_toolkits.axes_grid1.anchored_artists import (
     AnchoredSizeBar as scale_bar,
 )
 from scipy.optimize import curve_fit
-from colorutils import Color
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import matplotlib.image as mpimg
@@ -36,15 +36,6 @@ lw = 1.5
 
 
 # %% Functions
-
-
-def zero_to_one_threshold(val):
-    if val < 0:
-        return 0
-    elif val > 1:
-        return 1
-    else:
-        return val
 
 
 # %% Main
@@ -114,19 +105,8 @@ def main(data_sets, dosave=False, draft_version=True):
         elif len_data_sets == 3:
             colors_cmap = [set1[0], set2[5], set1[1]]
 
-    # Trim the alpha value and convert from 0:1 to 0:255
-    colors_rgb = [[255 * val for val in el[0:3]] for el in colors_cmap]
-    colors_Color = [Color(tuple(el)) for el in colors_rgb]
-    colors_hex = [val.hex for val in colors_Color]
-    colors_hsv = [val.hsv for val in colors_Color]
-    facecolors_hsv = [(el[0], 0.3 * el[1], 1.2 * el[2]) for el in colors_hsv]
-    # Threshold to make sure these are valid colors
-    facecolors_hsv = [
-        (el[0], zero_to_one_threshold(el[1]), zero_to_one_threshold(el[2]))
-        for el in facecolors_hsv
-    ]
-    facecolors_Color = [Color(hsv=el) for el in facecolors_hsv]
-    facecolors_hex = [val.hex for val in facecolors_Color]
+    colors_hex = [color_mpl_to_color_hex(el) for el in colors_cmap]
+    facecolors_hex = [lighten_color_hex(el) for el in colors_hex]
 
     ax = fig.add_subplot(gs[0, first_row_sep_ind:])
     # ax = axes_pack[1]
