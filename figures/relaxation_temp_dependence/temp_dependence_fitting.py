@@ -29,6 +29,7 @@ import math
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 import copy
+from utils.tool_belt import presentation_round, presentation_round_latex
 
 
 # %% Constants
@@ -434,50 +435,6 @@ def get_past_results(res):
         vals.append(omega)
 
     return temps, vals
-
-
-def presentation_round(val, err):
-    err_mag = math.floor(math.log10(err))
-    sci_err = err / (10 ** err_mag)
-    first_err_digit = int(str(sci_err)[0])
-    if first_err_digit == 1:
-        err_sig_figs = 2
-    else:
-        err_sig_figs = 1
-    power_of_10 = math.floor(math.log10(val))
-    mag = 10 ** power_of_10
-    rounded_err = tool_belt.round_sig_figs(err, err_sig_figs) / mag
-    rounded_val = round(val / mag, (power_of_10 - err_mag) + err_sig_figs - 1)
-    return [rounded_val, rounded_err, power_of_10]
-
-
-def presentation_round_latex(val, err):
-    if val <= 0 or err > val:
-        return ""
-    rounded_val, rounded_err, power_of_10 = presentation_round(val, err)
-    err_mag = math.floor(math.log10(rounded_err))
-    val_mag = math.floor(math.log10(rounded_val))
-
-    # Turn 0.0000016 into 0.16
-    # The round is to deal with floating point leftovers eg 9 = 9.00000002
-    shifted_rounded_err = round(rounded_err / 10 ** (err_mag + 1), 5)
-    # - 1 to remove the "0." part
-    err_last_decimal_mag = len(str(shifted_rounded_err)) - 2
-    pad_val_to = -err_mag + err_last_decimal_mag
-
-    if err_mag > val_mag:
-        return 1 / 0
-    elif err_mag == val_mag:
-        print_err = rounded_err
-    else:
-        print_err = int(str(shifted_rounded_err).replace(".", ""))
-
-    str_val = str(rounded_val)
-    decimal_pos = str_val.find(".")
-    num_padding_zeros = pad_val_to - len(str_val[decimal_pos:])
-    padded_val = str(rounded_val) + "0" * num_padding_zeros
-    # return "{}({})e{}".format(padded_val, print_err, power_of_10)
-    return r"\num{{{}({})e{}}}".format(padded_val, print_err, power_of_10)
 
 
 def omega_calc(temp):
@@ -2686,6 +2643,9 @@ if __name__ == "__main__":
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
     plt.show(block=True)
+    
+    # print(bose(65,295))
+    # print(bose(165,295))
 
     # Parameter description: [T5_coeff (K^-5 s^-1), omega_exp_coeff (s^-1), gamma_exp_coeff (s^-1), activation (meV)]
 

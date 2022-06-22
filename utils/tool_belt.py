@@ -20,7 +20,7 @@ import threading
 import os
 import csv
 import datetime
-import numpy
+import numpy as np
 from numpy import exp
 import json
 import time
@@ -169,9 +169,9 @@ def set_xyz_ramp(cxn, coords):
 
     else:
         # Determine num of steps to get to final destination based on step size
-        num_steps_x = numpy.ceil(abs(dx) / step_size_xy)
-        num_steps_y = numpy.ceil(abs(dy) / step_size_xy)
-        num_steps_z = numpy.ceil(abs(dz) / step_size_z)
+        num_steps_x = np.ceil(abs(dx) / step_size_xy)
+        num_steps_y = np.ceil(abs(dy) / step_size_xy)
+        num_steps_z = np.ceil(abs(dz) / step_size_z)
 
         # Determine max steps for this move
         max_steps = int(max([num_steps_x, num_steps_y, num_steps_z]))
@@ -535,10 +535,10 @@ def set_feedthroughs_to_false(config):
 
 
 def encode_seq_args(seq_args):
-    # Recast numpy ints to Python ints so json knows what to do
+    # Recast np ints to Python ints so json knows what to do
     for ind in range(len(seq_args)):
         el = seq_args[ind]
-        if type(el) is numpy.int32:
+        if type(el) is np.int32:
             seq_args[ind] = int(el)
     return json.dumps(seq_args)
 
@@ -673,8 +673,8 @@ def create_image_figure(
     Creates a figure containing a single grayscale image and a colorbar.
 
     Params:
-        imgArray: numpy.ndarray
-            Rectangular numpy array containing the image data.
+        imgArray: np.ndarray
+            Rectangular np array containing the image data.
             Just zeros if you're going to be writing the image live.
         imgExtent: list(float)
             The extent of the image in the form [left, right, bottom, top]
@@ -749,7 +749,7 @@ def update_image_figure(fig, imgArray):
     Params:
         fig: matplotlib.figure.Figure
             The figure containing the image to update
-        imgArray: numpy.ndarray
+        imgArray: np.ndarray
             The new image data
     """
 
@@ -765,10 +765,10 @@ def update_image_figure(fig, imgArray):
     # Check if we should clip or autoscale
     clipAtThousand = False
     if clipAtThousand:
-        if numpy.all(numpy.isnan(imgArray)):
+        if np.all(np.isnan(imgArray)):
             imgMax = 0  # No data yet
         else:
-            imgMax = numpy.nanmax(imgArray)
+            imgMax = np.nanmax(imgArray)
         if imgMax > 1000:
             img.set_clim(None, 1000)
         else:
@@ -786,10 +786,10 @@ def create_line_plot_figure(vals, xVals=None):
     Creates a figure containing a single line plot
 
     Params:
-        vals: numpy.ndarray
-            1D numpy array containing the values to plot
-        xVals: numpy.ndarray
-            1D numpy array with the x values to plot against
+        vals: np.ndarray
+            1D np array containing the values to plot
+        xVals: np.ndarray
+            1D np array with the x values to plot against
             Default is just the index of the value in vals
 
     Returns:
@@ -821,10 +821,10 @@ def create_line_plots_figure(vals, xVals=None):
     Creates a figure containing a single line plot
 
     Params:
-        vals: tuple(numpy.ndarray)
-            1D numpy array containing the values to plot
-        xVals: numpy.ndarray
-            1D numpy array with the x values to plot against
+        vals: tuple(np.ndarray)
+            1D np array containing the values to plot
+        xVals: np.ndarray
+            1D np array with the x values to plot against
             Default is just the index of the value in vals
 
     Returns:
@@ -853,8 +853,8 @@ def update_line_plot_figure(fig, vals):
     Updates a figure created by create_line_plot_figure
 
     Params:
-        vals: numpy.ndarray
-            1D numpy array containing the values to plot
+        vals: np.ndarray
+            1D np array containing the values to plot
     """
 
     # Get the line - Assume it's the first line in the first axes
@@ -887,8 +887,8 @@ def radial_distrbution_data(
     y_coord = center_coords[1]
 
     # subtract the center coords from the x and y voltages so that we are working from the "origin"
-    x_voltages = numpy.array(x_voltages) - x_coord
-    y_voltages = numpy.array(y_voltages) - y_coord
+    x_voltages = np.array(x_voltages) - x_coord
+    y_voltages = np.array(y_voltages) - y_coord
 
     half_x_range = img_range / 2
     # x_high = x_coord + half_x_range
@@ -901,14 +901,14 @@ def radial_distrbution_data(
     # List to hold the values of each pixel within the ring
     counts_r = []
     # New 2D array to put the radial values of each pixel
-    r_array = numpy.empty((num_steps, num_steps))
+    r_array = np.empty((num_steps, num_steps))
 
     # Calculate the radial distance from each point to center
     for i in range(num_steps):
         x_pos = x_voltages[i]
         for j in range(num_steps):
             y_pos = y_voltages[j]
-            r = numpy.sqrt(x_pos ** 2 + y_pos ** 2)
+            r = np.sqrt(x_pos ** 2 + y_pos ** 2)
             r_array[i][j] = r
 
     # define bounds on each ring radial values, which will be one pixel in size
@@ -925,14 +925,14 @@ def radial_distrbution_data(
                 if radius >= low_r and radius < high_r:
                     ring_counts.append(img_array[i][j])
         # average the counts of all counts in a ring
-        counts_r.append(numpy.average(ring_counts))
+        counts_r.append(np.average(ring_counts))
         # advance the radial bounds
         low_r = high_r
         high_r = round(high_r + pixel_size, 10)
 
     # define the radial values as center values of pixels along x, convert to um
     # we need to subtract the center value from the x voltages
-    radii = numpy.array(x_voltages[int(num_steps / 2) :]) * 35
+    radii = np.array(x_voltages[int(num_steps / 2) :]) * 35
 
     return radii, counts_r
 
@@ -966,45 +966,45 @@ def gaussian(x, *params):
     coeff, mean, stdev, offset = params
     var = stdev ** 2  # variance
     centDist = x - mean  # distance from the center
-    return offset + coeff ** 2 * numpy.exp(-(centDist ** 2) / (2 * var))
+    return offset + coeff ** 2 * np.exp(-(centDist ** 2) / (2 * var))
 
 
 def sinexp(t, offset, amp, freq, decay):
-    two_pi = 2 * numpy.pi
-    half_pi = numpy.pi / 2
-    return offset + (amp * numpy.sin((two_pi * freq * t) + half_pi)) * exp(
+    two_pi = 2 * np.pi
+    half_pi = np.pi / 2
+    return offset + (amp * np.sin((two_pi * freq * t) + half_pi)) * exp(
         -(decay ** 2) * t
     )
 
 
 # This cosexp includes a phase that will be 0 in the ideal case.
 # def cosexp(t, offset, amp, freq, phase, decay):
-#    two_pi = 2*numpy.pi
-#    return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t) + phase))
+#    two_pi = 2*np.pi
+#    return offset + (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t) + phase))
 
 
 def cosexp(t, offset, amp, freq, decay):
-    two_pi = 2 * numpy.pi
+    two_pi = 2 * np.pi
     return offset + (
-        numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t))
+        np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t))
     )
 
 
 def cosexp_1_at_0(t, offset, freq, decay):
-    two_pi = 2 * numpy.pi
+    two_pi = 2 * np.pi
     amp = 1 - offset
     return offset + (
-        numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t))
+        np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t))
     )
 
 
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
-    two_pi = 2 * numpy.pi
+    two_pi = 2 * np.pi
 
-    return offset + numpy.exp(-t / abs(decay)) * (
-        amp_1 * numpy.cos(two_pi * freq_1 * t)
-        + amp_2 * numpy.cos(two_pi * freq_2 * t)
-        + amp_3 * numpy.cos(two_pi * freq_3 * t)
+    return offset + np.exp(-t / abs(decay)) * (
+        amp_1 * np.cos(two_pi * freq_1 * t)
+        + amp_2 * np.cos(two_pi * freq_2 * t)
+        + amp_3 * np.cos(two_pi * freq_3 * t)
     )
 
 
@@ -1019,11 +1019,11 @@ def calc_snr(sig_count, ref_count):
         snr = list
     """
 
-    sig_count_avg = numpy.average(sig_count)
-    ref_count_avg = numpy.average(ref_count)
+    sig_count_avg = np.average(sig_count)
+    ref_count_avg = np.average(ref_count)
     dif = sig_count_avg - ref_count_avg
     sum_ = sig_count_avg + ref_count_avg
-    noise = numpy.sqrt(sig_count_avg)
+    noise = np.sqrt(sig_count_avg)
     snr = dif / noise
 
     return snr
@@ -1037,9 +1037,9 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
     half_scan_range = scan_range / 2
     low = center - half_scan_range
     high = center + half_scan_range
-    scan_vals = numpy.linspace(low, high, num_steps, dtype=dtype)
+    scan_vals = np.linspace(low, high, num_steps, dtype=dtype)
     # Deduplicate - may be necessary for ints and low scan ranges
-    scan_vals = numpy.unique(scan_vals)
+    scan_vals = np.unique(scan_vals)
     return scan_vals
 
 
@@ -1585,8 +1585,8 @@ def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
     # Note that the polar/azimuthal angles, not the actual x/y positions
     # are linear in these voltages. For a small range, however, we don't
     # really care.
-    x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
-    y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
+    x_voltages_1d = np.linspace(x_low, x_high, num_steps)
+    y_voltages_1d = np.linspace(y_low, y_high, num_steps)
 
     ######### Works for any x_range, y_range #########
 
@@ -1595,18 +1595,18 @@ def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
     # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
 
     # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
-    x_inter = numpy.concatenate((x_voltages_1d, numpy.flipud(x_voltages_1d)))
+    x_inter = np.concatenate((x_voltages_1d, np.flipud(x_voltages_1d)))
     # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
     if y_num_steps % 2 == 0:  # Even x size
-        x_voltages = numpy.tile(x_inter, int(y_num_steps / 2))
+        x_voltages = np.tile(x_inter, int(y_num_steps / 2))
     else:  # Odd x size
-        x_voltages = numpy.tile(x_inter, int(numpy.floor(y_num_steps / 2)))
-        x_voltages = numpy.concatenate((x_voltages, x_voltages_1d))
+        x_voltages = np.tile(x_inter, int(np.floor(y_num_steps / 2)))
+        x_voltages = np.concatenate((x_voltages, x_voltages_1d))
 
     # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
-    y_voltages = numpy.repeat(y_voltages_1d, x_num_steps)
+    y_voltages = np.repeat(y_voltages_1d, x_num_steps)
 
-    voltages = numpy.vstack((x_voltages, y_voltages))
+    voltages = np.vstack((x_voltages, y_voltages))
 
     return x_voltages, y_voltages
 
@@ -1725,7 +1725,7 @@ def opt_power_via_photodiode(
             optical_power_list.append(cxn.photodiode.read_optical_power())
             time.sleep(0.01)
 
-    optical_power = numpy.average(optical_power_list)
+    optical_power = np.average(optical_power_list)
     time.sleep(0.1)
     cxn.pulse_streamer.constant([], 0.0, 0.0)
     return optical_power
@@ -1775,12 +1775,56 @@ def round_sig_figs(val, num_sig_figs):
     )
     if type(val) is list:
         return [func(el, num_sig_figs) for el in val]
-    elif type(val) is numpy.ndarray:
+    elif type(val) is np.ndarray:
         val_list = val.tolist()
         rounded_val_list = [func(el, num_sig_figs) for el in val_list]
-        return numpy.array(rounded_val_list)
+        return np.array(rounded_val_list)
     else:
         return func(val, num_sig_figs)
+
+
+def presentation_round(val, err):
+    err_mag = math.floor(math.log10(err))
+    sci_err = err / (10 ** err_mag)
+    first_err_digit = int(str(sci_err)[0])
+    if first_err_digit == 1:
+        err_sig_figs = 2
+    else:
+        err_sig_figs = 1
+    power_of_10 = math.floor(math.log10(abs(val)))
+    mag = 10 ** power_of_10
+    rounded_err = round_sig_figs(err, err_sig_figs) / mag
+    rounded_val = round(val / mag, (power_of_10 - err_mag) + err_sig_figs - 1)
+    return [rounded_val, rounded_err, power_of_10]
+
+
+def presentation_round_latex(val, err):
+    # if val <= 0 or err > val:
+    #     return ""
+    rounded_val, rounded_err, power_of_10 = presentation_round(val, err)
+    err_mag = math.floor(math.log10(rounded_err))
+    val_mag = math.floor(math.log10(abs(rounded_val)))
+
+    # Turn 0.0000016 into 0.16
+    # The round is to deal with floating point leftovers eg 9 = 9.00000002
+    shifted_rounded_err = round(rounded_err / 10 ** (err_mag + 1), 5)
+    # - 1 to remove the "0." part
+    err_last_decimal_mag = len(str(shifted_rounded_err)) - 2
+    pad_val_to = -err_mag + err_last_decimal_mag
+
+    if err_mag > val_mag:
+        return 1 / 0
+    elif err_mag == val_mag:
+        print_err = rounded_err
+    else:
+        print_err = int(str(shifted_rounded_err).replace(".", ""))
+
+    str_val = str(rounded_val)
+    decimal_pos = str_val.find(".")
+    num_padding_zeros = pad_val_to - len(str_val[decimal_pos:])
+    padded_val = str(rounded_val) + "0" * num_padding_zeros
+    # return "{}({})e{}".format(padded_val, print_err, power_of_10)
+    return r"\num{{{}({})e{}}}".format(padded_val, print_err, power_of_10)
 
 
 # %% Safe stop (TM mccambria)
