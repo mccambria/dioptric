@@ -33,5 +33,5 @@ if __name__ == '__main__':
         power_supply.output_off()
         
         # power_supply.output_on()
-        # power_supply.set_voltage(0.5)  # 0.3 5.6 mW nominal, 3.8 before objective
+        # power_supply.set_voltage(1.1)  # 0.3 5.6 mW nominal, 3.8 before objective
         
