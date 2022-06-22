@@ -156,7 +156,7 @@ def do_pulsed_resonance(nv_sig, apd_indices,
     num_steps = 51
     # num_reps = 1e5
     num_reps = 4e3
-    num_runs = 2
+    num_runs = 4
     uwave_power = 16.5
     uwave_pulse_dur = 120
 
@@ -175,6 +175,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # num_runs = 20
     num_reps = 4e3
     num_runs = 16
+    # num_runs = 2
     
     # Zoom
     # freq_range = 0.035
@@ -293,6 +294,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
     # num_runs = 10
     num_reps = 4e3
     num_runs = 16
+    # num_runs = 2
 
     period = rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -465,25 +467,25 @@ def do_spin_echo_battery(nv_sig, apd_indices):
 
 def do_nir_battery(nv_sig, apd_indices):
     
-    # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-    # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-    # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-    # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-    # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-    # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-    # do_spin_echo(nv_sig, apd_indices)
+    do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+    do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+    do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+    do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+    do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+    do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+    do_spin_echo(nv_sig, apd_indices)
     
     with labrad.connect() as cxn:
         power_supply = cxn.power_supply_mp710087
         power_supply.output_on()
-        power_supply.set_voltage(0.3)  # 5.6 mW nominal, 5.0 before objective
+        power_supply.set_voltage(1.1)
         
-    # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-    # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-    # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-    # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-    # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-    # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+    do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+    do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+    do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+    do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+    do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+    do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
     nv_sig["spin_pol_dur"] = 1e6
     do_t1_dq_knill(nv_sig, apd_indices)
     
@@ -519,10 +521,9 @@ if __name__ == '__main__':
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
-    # moved 2nd NV from 0.136, 0.102 to 0.017, -0.005
     nv_sig = { 
-        'coords': [0.0, 0.0, 2], 'name': '{}-nv1_2022_06_15'.format(sample_name),
-        'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1600,
+        'coords': [0.0, 0.0, 21], 'name': '{}-search'.format(sample_name),
+        'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1100,
         
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
@@ -550,8 +551,8 @@ if __name__ == '__main__':
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
         
         'collection_filter': None, 'magnet_angle': None,   
-        'resonance_LOW': 2.8066, 'rabi_LOW': 216, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9349, 'rabi_HIGH': 302, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.804, 'rabi_LOW': 190, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.936, 'rabi_HIGH': 260, 'uwave_power_HIGH': 16.5,
         }
     
     
@@ -563,34 +564,23 @@ if __name__ == '__main__':
         
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(-35, 40)
+        #     cxn.cryo_piezos.write_xy(60, 155)
         
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         
-        # for pos in numpy.arange(4.2, 5.2, 0.2):
-        # for pos in [4,5,6]: 
-        # while True:
+        # for pos in numpy.arange(-60, -120, -5):
+        # # for pos in [3,6,9,12]: 
+        # # while True:
         #     if tool_belt.safe_stop():
         #         break
-        #     # nv_sig["coords"][2] = pos
-        #     # with labrad.connect() as cxn:
-        #     #     cxn.cryo_piezos.write_xy(pos, 0)
-        #     do_image_sample_zoom(nv_sig, apd_indices)
-        #     # do_image_sample(nv_sig, apd_indices)
-        # 
-        
-        
-        # with labrad.connect() as cxn:
-        #     power_supply = cxn.power_supply_mp710087
-        #     power_supply.output_on()
-        #     power_supply.set_voltage(0.3)  # 5.6 mW nominal, 5.0 before objective
-        # do_image_sample(nv_sig, apd_indices)
-        # with labrad.connect() as cxn:
-        #     power_supply = cxn.power_supply_mp710087
-        #     power_supply.output_off()
+        #     # nv_sig["coords"][2] = int(pos)
+        #     with labrad.connect() as cxn:
+        #         cxn.cryo_piezos.write_xy(80, int(pos))
+        #     # do_image_sample_zoom(nv_sig, apd_indices)
+        #     do_image_sample(nv_sig, apd_indices)
         
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
@@ -606,11 +596,11 @@ if __name__ == '__main__':
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # # do_scc_resonance(nv_sig, apd_indices, States.LOW)
-        # # do_scc_resonance(nv_sig, apd_indices, States.HIGH)
-        # # do_optimize_magnet_angle(nv_sig, apd_indices)
-        # # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
-        # # do_spin_echo_battery(nv_sig, apd_indices)
+        # # # do_scc_resonance(nv_sig, apd_indices, States.LOW)
+        # # # do_scc_resonance(nv_sig, apd_indices, States.HIGH)
+        # # # do_optimize_magnet_angle(nv_sig, apd_indices)
+        # # # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
+        # # # do_spin_echo_battery(nv_sig, apd_indices)
         # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
         # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
