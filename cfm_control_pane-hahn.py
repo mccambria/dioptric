@@ -522,8 +522,8 @@ if __name__ == '__main__':
     red_laser = "cobolt_638"
     
     nv_sig = { 
-        'coords': [0.0, 0.0, 21], 'name': '{}-search'.format(sample_name),
-        'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1100,
+        'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
+        'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1500,
         
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
