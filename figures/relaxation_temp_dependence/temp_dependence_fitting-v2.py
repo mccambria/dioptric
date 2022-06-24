@@ -74,12 +74,10 @@ omega_face_color = "#FFCC33"
 omega_edge_color = "#FF9933"
 ratio_face_color = "#FB9898"
 ratio_edge_color = "#EF2424"
-# qubit_max_face_color = "#81bfeb"
-# qubit_max_edge_color = "#1f77b4"
-# qutrit_max_face_color = "#e5e667"
-# qutrit_max_edge_color = "#bcbd22"
-qutrit_color = "#bcbd22"
-qubit_color = "#1f77b4"
+qubit_max_face_color = "#81bfeb"
+qubit_max_edge_color = "#1f77b4"
+qutrit_max_face_color = "#e5e667"
+qutrit_max_edge_color = "#bcbd22"
 
 figsize = [6.5, 5.0]  # default
 # figsize = [0.7 * el for el in figsize]
@@ -1378,23 +1376,22 @@ def figure_2(file_name, path, dosave=False):
     # figsize = (figsize[0], 2 * figsize[1])
     # adj_figsize = (figsize[0], (2 * figsize[1]) + 1.0)
     adj_figsize = (2 * figsize[0], figsize[1])
-    fig_a, ax_a = plt.subplots(figsize=figsize)
-    fig_b = plt.figure(figsize=figsize)
-    # gs_sep = 0.09
-    # gs_a_bottom = 0.55
-    # gs_a = fig.add_gridspec(
-    #     nrows=1,
-    #     ncols=1,
-    #     left=0.07,
-    #     right=0.49,
-    #     bottom=0.13,
-    #     top=0.99,
-    # )
-    gs_b = fig_b.add_gridspec(
+    fig = plt.figure(figsize=adj_figsize)
+    gs_sep = 0.09
+    gs_a_bottom = 0.55
+    gs_a = fig.add_gridspec(
+        nrows=1,
+        ncols=1,
+        left=0.07,
+        right=0.49,
+        bottom=0.13,
+        top=0.99,
+    )
+    gs_b = fig.add_gridspec(
         nrows=2,
         # ncols=2,
         ncols=4,
-        left=0.11,
+        left=0.555,
         right=1.0,
         bottom=0.13,
         top=0.94,
@@ -1403,37 +1400,37 @@ def figure_2(file_name, path, dosave=False):
         # width_ratios=[1, 0.2, 0.2, 1],
         width_ratios=[1, 0.16, 1, 0.16],
     )
-    # ax_a = fig.add_subplot(gs_a[:, :])
+    ax_a = fig.add_subplot(gs_a[:, :])
     scatter_axes_b = [[None, None], [None, None]]
-    scatter_axes_b[0][0] = fig_b.add_subplot(gs_b[0, 0])
-    scatter_axes_b[0][1] = fig_b.add_subplot(gs_b[0, 2])
-    scatter_axes_b[1][0] = fig_b.add_subplot(gs_b[1, 0])
-    scatter_axes_b[1][1] = fig_b.add_subplot(gs_b[1, 2])
+    scatter_axes_b[0][0] = fig.add_subplot(gs_b[0, 0])
+    scatter_axes_b[0][1] = fig.add_subplot(gs_b[0, 2])
+    scatter_axes_b[1][0] = fig.add_subplot(gs_b[1, 0])
+    scatter_axes_b[1][1] = fig.add_subplot(gs_b[1, 2])
 
     hist_axes_b = [[None, None], [None, None]]
-    hist_axes_b[0][0] = fig_b.add_subplot(gs_b[0, 1])
-    hist_axes_b[0][1] = fig_b.add_subplot(gs_b[0, 3])
-    hist_axes_b[1][0] = fig_b.add_subplot(gs_b[1, 1])
-    hist_axes_b[1][1] = fig_b.add_subplot(gs_b[1, 3])
+    hist_axes_b[0][0] = fig.add_subplot(gs_b[0, 1])
+    hist_axes_b[0][1] = fig.add_subplot(gs_b[0, 3])
+    hist_axes_b[1][0] = fig.add_subplot(gs_b[1, 1])
+    hist_axes_b[1][1] = fig.add_subplot(gs_b[1, 3])
 
     # Generic setup
 
-    # fig.text(
-    #     -0.16,
-    #     0.96,
-    #     "(a)",
-    #     transform=ax_a.transAxes,
-    #     color="black",
-    #     fontsize=18,
-    # )
-    # fig.text(
-    #     1.02,
-    #     0.96,
-    #     "(b)",
-    #     transform=ax_a.transAxes,
-    #     color="black",
-    #     fontsize=18,
-    # )
+    fig.text(
+        -0.16,
+        0.96,
+        "(a)",
+        transform=ax_a.transAxes,
+        color="black",
+        fontsize=18,
+    )
+    fig.text(
+        1.02,
+        0.96,
+        "(b)",
+        transform=ax_a.transAxes,
+        color="black",
+        fontsize=18,
+    )
 
     inset_bottom = 0.105
     inset_height = 0.47
@@ -1531,8 +1528,20 @@ def figure_2(file_name, path, dosave=False):
     # fontProperties = {'family':'sans-serif'}
     # ax_a.set_xticklabels(ax_a.get_xticks(), fontProperties)
     # ax_a.set_yticklabels(ax_a.get_yticks(), fontProperties)
-    fig_a.tight_layout(pad=0.3)
-    fig_b.tight_layout(pad=0.3)
+    fig.tight_layout(pad=0.3)
+
+    if dosave:
+        nvdata_dir = common.get_nvdata_dir()
+        # ext = "png"
+        ext = "svg"
+        file_path = str(
+            nvdata_dir
+            / "paper_materials/relaxation_temp_dependence/figures/main2.{}".format(
+                ext
+            )
+        )
+        # fig.savefig(file_path, dpi=500)
+        fig.savefig(file_path)
 
 
 def figure_2_raw_data(ax, axins, data_points):
@@ -2138,15 +2147,10 @@ def main(
         for func, linestyle, label in [
             (
                 T2_max_qubit_hopper_temp,
-                "solid",
+                "dotted",
                 r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$",
             ),
-            # (
-            #     T2_max_qubit_hopper_temp,
-            #     "dotted",
-            #     r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$",
-            # ),
-            # (T2_max_qubit_wu_temp, "dashed", None),
+            (T2_max_qubit_wu_temp, "dashed", None),
         ]:
             # for func in [T2_max_qubit_hopper_temp, T2_max_qubit_wu_temp]:
             ax.plot(
@@ -2154,7 +2158,7 @@ def main(
                 func(temp_linspace),
                 label=label,
                 # label=r"Qubit T2 max",
-                color=qubit_color,
+                color=qubit_max_edge_color,
                 linewidth=line_width,
                 ls=linestyle,
             )
@@ -2171,15 +2175,10 @@ def main(
         for func, linestyle, label in [
             (
                 T2_max_qutrit_hopper_temp,
-                "solid",
+                "dotted",
                 r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$",
             ),
-            # (
-            #     T2_max_qutrit_hopper_temp,
-            #     "dotted",
-            #     r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$",
-            # ),
-            # (T2_max_qutrit_wu_temp, "dashed", None),
+            (T2_max_qutrit_wu_temp, "dashed", None),
         ]:
             # for func in [T2_max_qutrit_hopper_temp, T2_max_qutrit_wu_temp]:
             ax.plot(
@@ -2187,7 +2186,7 @@ def main(
                 func(temp_linspace),
                 label=label,
                 # label=r"Qutrit T2 max",
-                color=qutrit_color,
+                color=qutrit_max_edge_color,
                 linewidth=line_width,
                 ls=linestyle,
             )
@@ -2644,7 +2643,7 @@ if __name__ == "__main__":
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
     plt.show(block=True)
-
+    
     # print(bose(65,295))
     # print(bose(165,295))
 

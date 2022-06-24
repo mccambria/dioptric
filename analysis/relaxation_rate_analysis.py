@@ -806,9 +806,10 @@ def main(
 if __name__ == "__main__":
 
     temp = 295
+    folder = "hopper-nv1_2022_06_15-{}K-10mW".format(temp)
 
-    mode = "prediction"
-    # mode = "analysis"
+    # mode = "prediction"
+    mode = "analysis"
     # mode = "batch_analysis"
 
     if mode == "prediction":
@@ -826,9 +827,7 @@ if __name__ == "__main__":
 
         plt.ion()
 
-        path = "pc_hahn/branch_master/t1_dq_main/data_collections/"
-        folder = "wu-nv6_2022_04_14-295K"
-        # folder = "wu-nv1_2022_03_16-295K"
+        path = "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
 
         main(
             path,
