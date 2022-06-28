@@ -467,13 +467,13 @@ def do_spin_echo_battery(nv_sig, apd_indices):
 
 def do_nir_battery(nv_sig, apd_indices):
     
-    do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-    do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-    do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-    do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-    do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-    do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-    do_spin_echo(nv_sig, apd_indices)
+    # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+    # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+    # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+    # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+    # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+    # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+    # do_spin_echo(nv_sig, apd_indices)
     
     with labrad.connect() as cxn:
         power_supply = cxn.power_supply_mp710087
@@ -522,7 +522,7 @@ if __name__ == '__main__':
     red_laser = "cobolt_638"
     
     nv_sig = { 
-        'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
+        'coords': [0.0, 0.0, -5], 'name': '{}-search'.format(sample_name),
         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1500,
         
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -560,7 +560,7 @@ if __name__ == '__main__':
 
     try:
     
-        # tool_belt.init_safe_stop()
+        tool_belt.init_safe_stop()
         
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:

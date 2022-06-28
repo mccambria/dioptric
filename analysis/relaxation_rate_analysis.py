@@ -806,7 +806,7 @@ def main(
 if __name__ == "__main__":
 
     temp = 295
-    folder = "hopper-nv1_2022_06_15-{}K-10mW".format(temp)
+    folder = "hopper-nv1_2022_06_15-{}K-10mW-z_adjusted".format(temp)
 
     # mode = "prediction"
     mode = "analysis"

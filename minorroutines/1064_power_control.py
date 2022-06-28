@@ -33,5 +33,5 @@ if __name__ == '__main__':
         power_supply.output_off()
         
         # power_supply.output_on()
-        # power_supply.set_voltage(0.8) 
+        # power_supply.set_voltage(1.0)  
         
