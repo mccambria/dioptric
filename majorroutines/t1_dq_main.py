@@ -852,7 +852,7 @@ if __name__ == "__main__":
     path = (
         "pc_hahn/branch_master/t1_dq_main/data_collections-optically_enhanced/"
     )
-    folder = "hopper-nv1_2022_06_15-295K-10mW-z_adjusted-expanded-2"
+    folder = "hopper-nv1_2022_06_15-295K-10mW-z_adjusted"
     collate_incremental(path, folder)
     full_path_to_incremental = "{}/{}/incremental".format(path, folder)
     data = tool_belt.get_raw_data(
