@@ -107,9 +107,12 @@ def main(
     dosave=False,
 ):
 
-    bar_gill_label = "[10]"
-    herbschleb_label = "[11]"
-    abobeih_label = "[12]"
+    # bar_gill_label = "[10]"
+    # herbschleb_label = "[11]"
+    # abobeih_label = "[30]"
+    bar_gill_label = "[3]"
+    herbschleb_label = "[4]"
+    abobeih_label = "[5]"
     # fmt: off
     data_points = [
         #

@@ -2136,17 +2136,17 @@ def main(
 
         # linestyles = {"hopper": "dotted", "wu": "dashed"}
         for func, linestyle, label in [
-            (
-                T2_max_qubit_hopper_temp,
-                "solid",
-                r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$",
-            ),
             # (
             #     T2_max_qubit_hopper_temp,
-            #     "dotted",
+            #     "solid",
             #     r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$",
             # ),
-            # (T2_max_qubit_wu_temp, "dashed", None),
+            (
+                T2_max_qubit_hopper_temp,
+                "dotted",
+                r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$",
+            ),
+            (T2_max_qubit_wu_temp, "dashed", None),
         ]:
             # for func in [T2_max_qubit_hopper_temp, T2_max_qubit_wu_temp]:
             ax.plot(
@@ -2169,17 +2169,17 @@ def main(
             omega_wu_lambda(temp), gamma_wu_lambda(temp)
         )
         for func, linestyle, label in [
-            (
-                T2_max_qutrit_hopper_temp,
-                "solid",
-                r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$",
-            ),
             # (
             #     T2_max_qutrit_hopper_temp,
-            #     "dotted",
+            #     "solid",
             #     r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$",
             # ),
-            # (T2_max_qutrit_wu_temp, "dashed", None),
+            (
+                T2_max_qutrit_hopper_temp,
+                "dotted",
+                r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$",
+            ),
+            (T2_max_qutrit_wu_temp, "dashed", None),
         ]:
             # for func in [T2_max_qutrit_hopper_temp, T2_max_qutrit_wu_temp]:
             ax.plot(

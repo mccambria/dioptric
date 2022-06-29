@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-This file contains standardized functions intended to simplify the creation of plots for publications in a consistent style.
+This file contains standardized functions intended to simplify the 
+creation of plots for publications in a consistent style.
 
 Created on June 22nd, 2022
 
@@ -35,6 +36,16 @@ import keyring
 import math
 import utils.common as common
 from colorutils import Color
+
+# endregion
+
+# region Constants
+# These standard values are intended for single-column figures
+
+marker_size = 7
+line_width = 1.5
+marker_edge_width = line_width
+figsize=[6.5, 5.0]
 
 # endregion
 

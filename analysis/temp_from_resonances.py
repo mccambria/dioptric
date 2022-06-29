@@ -12,7 +12,7 @@ Created on Fri Mar  5 12:42:32 2021
 # %% Imports
 
 
-import numpy
+import numpy as np
 from numpy.core.shape_base import block
 from scipy.optimize import root_scalar
 from majorroutines.pulsed_resonance import return_res_with_error
@@ -23,12 +23,16 @@ import time
 from figures.relaxation_temp_dependence.temp_dependence_fitting import (
     get_data_points,
     nominal_temp_column_title,
+    reported_temp_column_title,
     low_res_file_column_title,
     high_res_file_column_title,
-    bad_zfs_temps,
 )
 import matplotlib.pyplot as plt
 from utils import common
+from utils import kplotlib as kpl
+from scipy.optimize import curve_fit
+
+bad_zfs_temps = 295
 
 
 # %% Functions
@@ -85,6 +89,26 @@ def sub_room_zfs_from_temp(temp):
     return ret_val
 
 
+def sub_room_zfs_from_temp_free(
+    # temp, coeff_1, coeff_2, coeff_3, coeff_4, coeff_5, coeff_6
+    temp,
+    coeff_0,
+    # coeff_1,
+    coeff_2,
+    # coeff_3,
+    coeff_4,
+    # coeff_5,
+    coeff_6,
+):
+    # coeffs = [coeff_1, coeff_2, coeff_3, coeff_4, coeff_5, coeff_6]
+    coeffs = [coeff_0, coeff_2, coeff_4, coeff_6]
+    ret_val = 0
+    for ind in range(len(coeffs)):
+        exp = ind * 2
+        ret_val += coeffs[ind] * (temp ** exp)
+    return ret_val
+
+
 def super_room_zfs_from_temp(temp):
     coeffs = [2.8697, 9.7e-5, -3.7e-7, 1.7e-10]
     coeff_errs = [0.0009, 0.6e-5, 0.1e-7, 0.1e-10]
@@ -103,7 +127,7 @@ def zfs_from_temp(temp):
     600 K' above 300 K
     """
     # Branch depending on if temp is single- or multi-valued
-    if type(temp) in [list, numpy.ndarray]:
+    if type(temp) in [list, np.ndarray]:
         ret_vals = []
         for val in temp:
             if val < bad_zfs_temps:
@@ -111,7 +135,7 @@ def zfs_from_temp(temp):
             else:
                 zfs = super_room_zfs_from_temp(val)
             ret_vals.append(zfs)
-        ret_vals = numpy.array(ret_vals)
+        ret_vals = np.array(ret_vals)
         return ret_vals
     else:
         if temp < bad_zfs_temps:
@@ -132,10 +156,10 @@ def zfs_from_temp_barson(temp):
     Theta2 = 880  # K
     Theta3 = 2137.5  # K
     dV_over_V_partial = lambda X, Theta, T: (X * Theta) / (
-        numpy.exp(Theta / T) - 1
+        np.exp(Theta / T) - 1
     )
     dV_over_V = (
-        lambda T: numpy.exp(
+        lambda T: np.exp(
             3
             * (
                 dV_over_V_partial(X1, Theta1, T)
@@ -157,14 +181,126 @@ def zfs_from_temp_barson(temp):
         / 1000
     )
     # D_of_T = lambda T: -D_of_T_sub(1) + D_of_T_sub(T)
-    if type(temp) in [list, numpy.ndarray]:
+    if type(temp) in [list, np.ndarray]:
         ret_vals = []
         for val in temp:
             ret_vals.append(D_of_T(val))
-        ret_vals = numpy.array(ret_vals)
+        ret_vals = np.array(ret_vals)
         return ret_vals
     else:
         return D_of_T(temp)
+
+
+def experimental_zfs_versus_t(path, file_name):
+
+    min_temp = 0
+    # max_temp = 295
+    max_temp = 500
+
+    csv_file_path = path / "{}.csv".format(file_name)
+
+    data_points = get_data_points(path, file_name)
+
+    zfs_list = []
+    zfs_err_list = []
+    temp_list = []
+    for el in data_points:
+        if el[low_res_file_column_title] == "":
+            continue
+        reported_temp = el[reported_temp_column_title]
+        if not (min_temp <= reported_temp <= max_temp):
+            continue
+        temp_list.append(reported_temp)
+        low_res_file = el[low_res_file_column_title]
+        high_res_file = el[high_res_file_column_title]
+
+        resonances = []
+        res_errs = []
+        for f in [low_res_file, high_res_file]:
+            data = tool_belt.get_raw_data(f)
+            res, res_err = return_res_with_error(data)
+            resonances.append(res)
+            res_errs.append(res_err)
+
+        zfs = (resonances[0] + resonances[1]) / 2
+        zfs_err = np.sqrt(res_errs[0] ** 2 + res_errs[1] ** 2) / 2
+
+        zfs_list.append(zfs)
+        zfs_err_list.append(zfs_err)
+
+    color = kpl.kpl_colors["red"]
+    facecolor = kpl.lighten_color_hex(color)
+
+    fig, ax = plt.subplots(figsize=kpl.figsize)
+    ax.errorbar(
+        temp_list,
+        zfs_list,
+        zfs_err_list,
+        linestyle="None",
+        marker="o",
+        ms=kpl.marker_size,
+        color=color,
+        markerfacecolor=facecolor,
+        lw=kpl.line_width,
+        markeredgewidth=kpl.line_width,
+    )
+
+    temp_linspace = np.linspace(min_temp, max_temp, 1000)
+    ax.plot(
+        temp_linspace,
+        sub_room_zfs_from_temp(temp_linspace),
+        lw=kpl.line_width,
+        # color=kpl.kpl_colors["blue"],
+        label="Chen",
+    )
+    ax.plot(
+        temp_linspace,
+        super_room_zfs_from_temp(temp_linspace),
+        lw=kpl.line_width,
+        # color=kpl.kpl_colors["blue"],
+        label="Toyli",
+    )
+
+    ax.set_xlabel(r"Temperature $\mathit{T}$ (K)")
+    ax.set_ylabel("Zero field splitting (GHz)")
+
+    guess_params = [
+        2.87771,
+        # -4.625e-6,
+        1.067e-7,
+        # -9.325e-10,
+        1.739e-12,
+        # -1.838e-15,
+        -1.838e-17,
+    ]
+    popt, pcov = curve_fit(
+        sub_room_zfs_from_temp_free,
+        temp_list,
+        zfs_list,
+        p0=guess_params,
+        sigma=zfs_err_list,
+        absolute_sigma=True,
+    )
+    cambria_lambda = lambda temp: sub_room_zfs_from_temp_free(temp, *popt)
+    ax.plot(
+        temp_linspace,
+        cambria_lambda(temp_linspace),
+        lw=kpl.line_width,
+        # color=kpl.kpl_colors["blue"],
+        label="Cambria",
+    )
+
+    ssr = 0
+    for temp, zfs, zfs_err in zip(temp_list, zfs_list, zfs_err_list):
+        calc_zfs = cambria_lambda(temp)
+        ssr += ((zfs - calc_zfs) / zfs_err) ** 2
+    print(ssr)
+
+    ax.legend()
+
+    # ax.set_yticks([2.85, 2.855, 2.86, 2.865, 2.87])
+    fig.tight_layout(pad=0.3)
+    fig.tight_layout(pad=0.3)
 
 
 # %% Main
@@ -188,7 +324,7 @@ def main_files(files, mag_B=None, theta_B_deg=None):
 def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
 
     if mag_B is not None:
-        theta_B = theta_B_deg * (numpy.pi / 180)
+        theta_B = theta_B_deg * (np.pi / 180)
         args = (mag_B, theta_B, *resonances)
         result = minimize_scalar(
             zfs_cost_func, bounds=(2.83, 2.88), args=args, method="bounded"
@@ -197,7 +333,7 @@ def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
         zfs_err = 0
     else:
         zfs = (resonances[0] + resonances[1]) / 2
-        zfs_err = numpy.sqrt(res_errs[0] ** 2 + res_errs[1] ** 2) / 2
+        zfs_err = np.sqrt(res_errs[0] ** 2 + res_errs[1] ** 2) / 2
 
     main(zfs, zfs_err)
 
@@ -219,7 +355,7 @@ def main(zfs, zfs_err):
         results = root_scalar(zfs_diff, x0=x0, x1=x1)
         temp_mid = results.root
         # print(zfs_diff(results.root))
-    # x_vals = numpy.linspace(0, 2, 100)
+    # x_vals = np.linspace(0, 2, 100)
     # plt.plot(x_vals, zfs_diff(x_vals))
     # print(zfs)
     # plt.show(block=True)
@@ -244,7 +380,7 @@ def main(zfs, zfs_err):
     print("{}\t{}\t{}".format(temp_lower, temp_mid, temp_higher))
 
     # print("T: [{}\t{}\t{}]".format(temp_lower, temp_mid, temp_higher))
-    # temp_error = numpy.average([temp_mid - temp_lower, temp_higher - temp_mid])
+    # temp_error = np.average([temp_mid - temp_lower, temp_higher - temp_mid])
     # print("T: [{}\t{}]".format(temp_mid, temp_error))
 
 
@@ -253,12 +389,12 @@ def main(zfs, zfs_err):
 
 if __name__ == "__main__":
 
-    files = [
-        "2022_05_12-14_25_56-wu-nv1_2022_03_16",
-        "2022_05_12-14_45_03-wu-nv1_2022_03_16",
-    ]
+    # files = [
+    #     "2022_05_12-14_25_56-wu-nv1_2022_03_16",
+    #     "2022_05_12-14_45_03-wu-nv1_2022_03_16",
+    # ]
 
-    main_files(files)
+    # main_files(files)
 
     # process_temp_dep_res_files()
 
@@ -270,7 +406,7 @@ if __name__ == "__main__":
 
     # plt.ion()
 
-    # temps = numpy.linspace(10, 700, 1000)
+    # temps = np.linspace(10, 700, 1000)
     # plt.plot(temps, zfs_from_temp_barson(temps))
     # plt.plot(temps, zfs_from_temp(temps))
     # # fig, ax = plt.subplots()
@@ -278,4 +414,12 @@ if __name__ == "__main__":
     # # ax.plot(temps, super_room_zfs_from_temp(temps), label='super')
     # # ax.legend()
 
-    # plt.show(block=True)
+    tool_belt.init_matplotlib()
+
+    home = common.get_nvdata_dir()
+    path = home / "paper_materials/relaxation_temp_dependence"
+    file_name = "compiled_data"
+
+    experimental_zfs_versus_t(path, file_name)
+
+    plt.show(block=True)

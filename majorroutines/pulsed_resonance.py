@@ -274,9 +274,11 @@ def fit_resonance(
 
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
-    fit_func, guess_params = get_guess_params(
-        freq_range, freq_center, num_steps, norm_avg_sig, ref_counts
-    )
+    # fit_func, guess_params = get_guess_params(
+    #     freq_range, freq_center, num_steps, norm_avg_sig, ref_counts
+    # )
+    fit_func = single_gaussian_dip
+    guess_params = [0.2, 0.004, freq_center]
 
     try:
         if norm_avg_sig_ste is not None:
@@ -521,7 +523,7 @@ def main_with_cxn(
     start_timestamp = tool_belt.get_time_stamp()
 
     # %% Collect the data
-    
+
     # Create a list of indices to step through the freqs. This will be shuffled
     freq_index_master_list = [[] for i in range(num_runs)]
     freq_ind_list = list(range(0, num_steps))
@@ -622,7 +624,7 @@ def main_with_cxn(
             "uwave_power-units": "dBm",
             "readout": readout,
             "readout-units": "ns",
-            'freq_index_master_list': freq_index_master_list,
+            "freq_index_master_list": freq_index_master_list,
             "opti_coords_list": opti_coords_list,
             "opti_coords_list-units": "V",
             "sig_counts": sig_counts.astype(int).tolist(),
@@ -715,7 +717,7 @@ def main_with_cxn(
         "uwave_power-units": "dBm",
         "readout": readout,
         "readout-units": "ns",
-        'freq_index_master_list': freq_index_master_list,
+        "freq_index_master_list": freq_index_master_list,
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
         "sig_counts": sig_counts.astype(int).tolist(),
