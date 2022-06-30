@@ -338,7 +338,7 @@ def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
     main(zfs, zfs_err)
 
 
-def main(zfs, zfs_err):
+def main(zfs, zfs_err=None):
 
     # func_to_invert = zfs_from_temp_barson
     func_to_invert = zfs_from_temp
@@ -360,24 +360,29 @@ def main(zfs, zfs_err):
     # print(zfs)
     # plt.show(block=True)
 
-    zfs_lower = zfs - zfs_err
-    zfs_diff = lambda temp: func_to_invert(temp) - zfs_lower
-    if zfs_diff(next_to_zero) < 0:
-        temp_higher = 0
-    else:
-        results = root_scalar(zfs_diff, x0=x0, x1=x1)
-        temp_higher = results.root
+    if zfs_err is not None:
+        zfs_lower = zfs - zfs_err
+        zfs_diff = lambda temp: func_to_invert(temp) - zfs_lower
+        if zfs_diff(next_to_zero) < 0:
+            temp_higher = 0
+        else:
+            results = root_scalar(zfs_diff, x0=x0, x1=x1)
+            temp_higher = results.root
 
-    zfs_higher = zfs + zfs_err
-    zfs_diff = lambda temp: func_to_invert(temp) - zfs_higher
-    # print(zfs_diff(50))
-    if zfs_diff(next_to_zero) < 0:
-        temp_lower = 0
-    else:
-        results = root_scalar(zfs_diff, x0=x0, x1=x1)
-        temp_lower = results.root
+        zfs_higher = zfs + zfs_err
+        zfs_diff = lambda temp: func_to_invert(temp) - zfs_higher
+        # print(zfs_diff(50))
+        if zfs_diff(next_to_zero) < 0:
+            temp_lower = 0
+        else:
+            results = root_scalar(zfs_diff, x0=x0, x1=x1)
+            temp_lower = results.root
 
-    print("{}\t{}\t{}".format(temp_lower, temp_mid, temp_higher))
+        print("{}\t{}\t{}".format(temp_lower, temp_mid, temp_higher))
+    else:
+        print(temp_mid)
+
+    return temp_mid
 
     # print("T: [{}\t{}\t{}]".format(temp_lower, temp_mid, temp_higher))
     # temp_error = np.average([temp_mid - temp_lower, temp_higher - temp_mid])
