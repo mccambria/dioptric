@@ -29,10 +29,10 @@ import majorroutines.optimize_magnet_angle as optimize_magnet_angle
 import majorroutines.rabi as rabi
 import majorroutines.discrete_rabi as discrete_rabi
 import majorroutines.g2_measurement as g2_measurement
-import majorroutines.t1_double_quantum as t1_double_quantum
-import majorroutines.t1_dq_knill as t1_dq_knill
-import majorroutines.t1_interleave as t1_interleave
-import majorroutines.t1_interleave_knill as t1_interleave_knill
+# import majorroutines.t1_double_quantum as t1_double_quantum
+# import majorroutines.t1_dq_knill as t1_dq_knill
+# import majorroutines.t1_interleave as t1_interleave
+# import majorroutines.t1_interleave_knill as t1_interleave_knill
 import majorroutines.t1_dq_main as t1_dq_main
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
@@ -174,8 +174,8 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # num_reps = 5e4
     # num_runs = 20
     num_reps = 4e3
-    num_runs = 16
-    # num_runs = 2
+    # num_runs = 16
+    num_runs = 2
     
     # Zoom
     # freq_range = 0.035
@@ -293,8 +293,8 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
     # # num_runs = 5
     # num_runs = 10
     num_reps = 4e3
-    num_runs = 16
-    # num_runs = 2
+    # num_runs = 16
+    num_runs = 2
 
     period = rabi.main(nv_sig, apd_indices, uwave_time_range,
               state, num_steps, num_reps, num_runs)
@@ -473,7 +473,7 @@ def do_nir_battery(nv_sig, apd_indices):
     # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
     # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
     # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-    # do_spin_echo(nv_sig, apd_indices)
+    do_spin_echo(nv_sig, apd_indices)
     
     with labrad.connect() as cxn:
         power_supply = cxn.power_supply_mp710087
@@ -522,7 +522,7 @@ if __name__ == '__main__':
     red_laser = "cobolt_638"
     
     nv_sig = { 
-        'coords': [0.0, 0.0, -5], 'name': '{}-search'.format(sample_name),
+        'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
         'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1500,
         
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
@@ -551,8 +551,8 @@ if __name__ == '__main__':
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
         
         'collection_filter': None, 'magnet_angle': None,   
-        'resonance_LOW': 2.804, 'rabi_LOW': 190, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.936, 'rabi_HIGH': 260, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.8122, 'rabi_LOW': 190, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9428, 'rabi_HIGH': 260, 'uwave_power_HIGH': 16.5,
         }
     
     
@@ -564,7 +564,7 @@ if __name__ == '__main__':
         
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(60, 155)
+        #     cxn.cryo_piezos.write_xy(0, -30)
         
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset 
         # drift = tool_belt.get_drift()
@@ -601,8 +601,8 @@ if __name__ == '__main__':
         # # # do_optimize_magnet_angle(nv_sig, apd_indices)
         # # # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # # # do_spin_echo_battery(nv_sig, apd_indices)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
@@ -611,7 +611,7 @@ if __name__ == '__main__':
         # do_t1_interleave_knill(nv_sig, apd_indices)
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
-        do_nir_battery(nv_sig, apd_indices)
+        # do_nir_battery(nv_sig, apd_indices)
         
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
