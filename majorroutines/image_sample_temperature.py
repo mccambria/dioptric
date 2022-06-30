@@ -29,10 +29,10 @@ def process_resonances(ref_resonances, signal_resonances):
     signal_zfss = [[el[1] - el[0] for el in row] for row in signal_resonances]
 
     ref_temps = [
-        [temp_from_resonances(zfs) for zfs in row] for row in ref_zfss
+        [temp_from_resonances.main(zfs) for zfs in row] for row in ref_zfss
     ]
     signal_temps = [
-        [temp_from_resonances(zfs) for zfs in row] for row in signal_zfss
+        [temp_from_resonances.main(zfs) for zfs in row] for row in signal_zfss
     ]
 
     ref_zfss = np.array(ref_zfss)
@@ -56,6 +56,11 @@ def main(
     y_range,
     num_steps,
     apd_indices,
+    nir_laser_voltage,
+    esr_freq_range,
+    esr_num_steps,
+    esr_num_reps,
+    esr_num_runs,
 ):
 
     with labrad.connect() as cxn:
@@ -66,6 +71,11 @@ def main(
             y_range,
             num_steps,
             apd_indices,
+            nir_laser_voltage,
+            esr_freq_range,
+            esr_num_steps,
+            esr_num_reps,
+            esr_num_runs,
         )
 
     return img_array, x_voltages, y_voltages
@@ -78,6 +88,11 @@ def main_with_cxn(
     y_range,
     num_steps,
     apd_indices,
+    nir_laser_voltage,
+    esr_freq_range,
+    esr_num_steps,
+    esr_num_reps,
+    esr_num_runs,
 ):
 
     # Some initial setup
@@ -89,40 +104,26 @@ def main_with_cxn(
     adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
     x_center, y_center, z_center = adjusted_coords
 
-    signal_resonances = [
-        [
-            None,
-        ]
-        * num_steps
-    ] * num_steps
-    ref_resonances = [
-        [
-            None,
-        ]
-        * num_steps
-    ] * num_steps
+    ref_resonances = [[None,] * num_steps for ind in range(num_steps)]
+    signal_resonances = [[None,] * num_steps for ind in range(num_steps)]
 
-    freq_range = 0.040
-    num_steps = 51
-    num_reps = 4e3
-    num_runs = 4
     pesr_low_lambda = lambda adj_nv_sig: pulsed_resonance.state(
         adj_nv_sig,
         apd_indices,
         States.LOW,
-        freq_range,
-        num_steps,
-        num_reps,
-        num_runs,
+        esr_freq_range,
+        esr_num_steps,
+        esr_num_reps,
+        esr_num_runs,
     )
     pesr_high_lambda = lambda adj_nv_sig: pulsed_resonance.state(
         adj_nv_sig,
         apd_indices,
         States.HIGH,
-        freq_range,
-        num_steps,
-        num_reps,
-        num_runs,
+        esr_freq_range,
+        esr_num_steps,
+        esr_num_reps,
+        esr_num_runs,
     )
 
     cxn_power_supply = cxn.power_supply_mp710087
@@ -155,20 +156,24 @@ def main_with_cxn(
 
             cxn_power_supply.output_off()
 
-            time.sleep(11)
+            time.sleep(10)
 
             res_low, _ = pesr_low_lambda(adjusted_nv_sig)
             res_high, _ = pesr_high_lambda(adjusted_nv_sig)
             ref_resonances[y_ind][adj_x_ind] = (res_low, res_high)
 
             cxn_power_supply.output_on()
-            cxn_power_supply.set_voltage(1.3)
+            cxn_power_supply.set_voltage(nir_laser_voltage)
 
             time.sleep(10)
 
             res_low, _ = pesr_low_lambda(adjusted_nv_sig)
             res_high, _ = pesr_high_lambda(adjusted_nv_sig)
             signal_resonances[y_ind][adj_x_ind] = (res_low, res_high)
+            
+        parity *= -1
+
+    cxn_power_supply.output_off()
 
     # Processing
 

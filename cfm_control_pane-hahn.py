@@ -104,14 +104,28 @@ def do_image_sample_zoom(nv_sig, apd_indices):
 
 
 def do_image_sample_temperature(nv_sig, apd_indices):
+    
     scan_range = 0.05
-    num_steps = 30
+    num_steps = 3
+    
+    nir_laser_voltage = 1.3
+    
+    esr_freq_range = 0.040
+    esr_num_steps = 51
+    esr_num_reps = 4e3
+    esr_num_runs = 4
+    
     image_sample_temperature.main(
         nv_sig,
         scan_range,
         scan_range,
         num_steps,
         apd_indices,
+        nir_laser_voltage,
+        esr_freq_range,
+        esr_num_steps,
+        esr_num_reps,
+        esr_num_runs,
     )
 
 
@@ -807,8 +821,8 @@ if __name__ == "__main__":
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
 
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.8122, 'rabi_LOW': 190, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9428, 'rabi_HIGH': 260, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.8122, 'rabi_LOW': 300, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9428, 'rabi_HIGH': 370, 'uwave_power_HIGH': 16.5,
         }
 
 
@@ -816,7 +830,7 @@ if __name__ == "__main__":
 
     try:
 
-        tool_belt.init_safe_stop()
+        # tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
@@ -858,8 +872,8 @@ if __name__ == "__main__":
         # # # do_optimize_magnet_angle(nv_sig, apd_indices)
         # # # do_optimize_magnet_angle_fine(nv_sig, apd_indices)
         # # # do_spin_echo_battery(nv_sig, apd_indices)
-        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
         # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
         # do_spin_echo(nv_sig, apd_indices)
