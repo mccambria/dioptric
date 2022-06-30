@@ -21,6 +21,7 @@ import matplotlib.lines as mlines
 from scipy.optimize import curve_fit
 import pandas as pd
 import utils.tool_belt as tool_belt
+import utils.kplotlib as kpl
 import utils.common as common
 from scipy.odr import ODR, Model, RealData
 import sys
@@ -269,22 +270,22 @@ def get_past_results(res):
     gamma_rates = None
 
     # fmt: off
-    if res == "redman":
+    if res == "Redman":
         omega_temps = [476.4177416661098, 451.11715421405614, 427.14250537007416, 401.70168043525575, 372.6536407580296, 348.06445892052716, 320.67189366418336, 295.4432631793261, 249.08174616160218, 198.8186984331038, 168.76315171076862, 139.3829999492335, 119.91885637433246, 99.71082373901912,]
         omega_rates = [411.12308417220487,365.9018246860615,303.663725116546,257.9542650146412,209.14601567073342,165.66662339760202,114.10159115954427,82.33629032388878,42.87365275566925,16.10976746190582,8.195340538524343,3.380271780205849,1.362118143087146,0.488506838976792,]
-    elif res == "takahashi":
+    elif res == "Takahashi":
         omega_temps = [39.708076869092565, 60.18108720206314, 79.61728330307751, 99.71082373901912, 149.1639405437168, 200.11702947793873, 301.43114785530264, ]
         omega_rates = [0.08310743505465269, 0.12642300635774165, 0.3287046673635948, 0.488506838976792, 2.0243218136492307, 9.647553749055826, 43.88457973623873, ]
-    elif res == r"jarmola\_s2":
+    elif res == r"Jarmola, S2":
         omega_temps = [5.052927989240913, 9.986632403181524, 20.00811570715186, 29.90545574361996, 39.81280330854725, 60.32233775511956, 79.75794398477714, 120.85851898425719, 198.86531379873264, 252.5578517930507, 295.50030798309376, 325.09776992170424, 350.4582003215088, 388.22259119422284, 407.2346885164248, 479.68759119360243, ]
         omega_rates = [6.342069135479235, 6.801353446821833, 7.125875978477722, 6.801353446821833, 7.125875978477722, 6.644677189578252, 6.491610133029184, 7.293898524349615, 23.94164841827978, 63.71699176359265, 114.10159115954427, 131.22616761282828, 177.66398252665408, 229.58072627922334, 283.1578087632278, 430.7395774394513, ]
-    elif res == r"jarmola\_s3":
+    elif res == r"Jarmola, S3":
         omega_temps = [6.427375637623035, 9.937587857375618, 19.916720690963206, 39.91505366735992, 49.63491901713573, 69.84021996713274, 78.96668063167132, 94.35441700897722, 119.05215177843596, 160.81553767084844, 202.87342606577826, 297.39307938738887, 324.9857097772839, 350.3373985191751, 375.0871532725971, 401.58536640626534, 424.1313933316525, 451.01762892382345, 479.5883763012125, ]
         omega_rates = [0.0024620666073597885, 0.0016566662339760237, 0.0031082387670171665, 0.0054378766564793, 0.004953857646692448, 0.022533998415870633, 0.031227604065269598, 0.14539680344353337, 0.6461422475342434, 3.226329393457812, 10.59017256160916, 55.402137213788336, 73.27975496207623, 99.21171472104378, 125.24994121458094, 158.12192963668738, 195.02272616248604, 252.01201997495744, 303.663725116546, ]
-    elif res == r"jarmola\_s8":
+    elif res == r"Jarmola, S8":
         omega_temps = [9.950478138502218, 19.80060613286093, 29.800477508344034, 39.67414115937397, 49.680800221318, 59.72553858233379, 79.56130794778521, 119.89239992311232, 160.83993406671632, 200.15014817692008, 252.45338834977025, 293.3848300819487, 322.81046691031594, 352.7565006568838, 429.97927603430963, 479.60160376778975, 375.1233628312281, 398.8864136467382, ]
         omega_rates = [0.014813307038192704, 0.015886067264611867, 0.0178494025680193, 0.019593386907583058, 0.023609194738400396, 0.033489066108904834, 0.10014091119973172, 0.9381482177041631, 4.169123278855502, 12.760705818733683, 31.667336635581677, 60.81522929409823, 86.26491741142065, 111.47314222093364, 219.12529332802444, 318.15285902458135, 147.44421348369355, 177.66398252665408, ]
-    elif res == r"liu":
+    elif res == r"Liu":
         omega_temps = [300, 325, 350, 375, 400, 425, 450, 500, 550, 600]
         omega_rates = [0.09401709401709413, 0.14102564102564097, 0.170940170940171, 0.20512820512820507, 0.2435897435897436, 0.30341880341880345, 0.3547008547008548, 0.5256410256410258, 0.777777777777778, 1.153846153846154, ]
         omega_rates = [1000*el for el in omega_rates]
@@ -1265,45 +1266,55 @@ def figure_2_supp_comparison(file_name, path, dosave=False):
     figure_2_raw_data(ax_a, ax_b, data_points)
 
     past_results = [
-        "redman",
-        "takahashi",
-        r"jarmola\_s2",
-        r"jarmola\_s3",
-        r"jarmola\_s8",
-        r"liu",
+        "Liu",
+        "Redman",
+        "Takahashi",
+        "Jarmola, S2",
+        "Jarmola, S3",
+        "Jarmola, S8",
     ]
-    for res in past_results:
+    markers = ["^", "D", "p", "H", "X", "d"]
+    colors = ["red", "pink", "brown", "yellow", "purple", "orange"]
+    colors = [kpl.kpl_colors[el] for el in colors]
+    for res, marker, color in zip(past_results, markers, colors):
+
         (
             omega_temps,
             omega_rates,
             gamma_temps,
             gamma_rates,
         ) = get_past_results(res)
+
+        face_color = kpl.lighten_color_hex(color)
+        z_order = 10 if res == "Liu" else None
+
         ax_a.plot(
             omega_temps,
             omega_rates,
-            label=r"$\mathrm{\Omega}$",
-            marker="D",
-            color=omega_edge_color,
-            markerfacecolor=omega_face_color,
+            marker=marker,
+            color=color,
+            markerfacecolor=face_color,
             linestyle="None",
             ms=marker_size,
             lw=line_width,
             markeredgewidth=marker_edge_width,
+            label=res,
+            zorder=z_order,
         )
         # gamma
         if gamma_temps is not None:
             ax_b.plot(
                 gamma_temps,
                 gamma_rates,
-                label=r"$\mathit{\gamma}$",
-                marker="D",
-                color=gamma_edge_color,
-                markerfacecolor=gamma_face_color,
+                marker=marker,
+                color=color,
+                markerfacecolor=face_color,
                 linestyle="None",
                 ms=marker_size,
                 lw=line_width,
                 markeredgewidth=marker_edge_width,
+                label=res,
+                zorder=z_order,
             )
 
     # fig.tight_layout(pad=0.3)
@@ -1318,6 +1329,8 @@ def figure_2_supp_comparison(file_name, path, dosave=False):
     # fontProperties = {'family':'sans-serif'}
     # ax_a.set_xticklabels(ax_a.get_xticks(), fontProperties)
     # ax_a.set_yticklabels(ax_a.get_yticks(), fontProperties)
+    ax_a.legend()
+    ax_b.legend()
     fig.tight_layout(pad=0.3)
 
 
@@ -1339,8 +1352,10 @@ def figure_2_raw_data(ax_a, ax_b, data_points):
     # ytickss = [None, [3, 10, 30]]
 
     temp_ranges = [[-10, 620], [-10, 620]]
-    rate_ranges = [[0.001, 2000], [0.001, 2000]]
+    rate_ranges = [[0.001, 1500], [0.001, 1500]]
     yscales = ["log", "log"]
+    rate_ranges = [[-30, 1240], [-20, 820]]
+    yscales = ["linear", "linear"]
     ytickss = [None, None]
 
     no_legends = [False, True]
@@ -1351,8 +1366,8 @@ def figure_2_raw_data(ax_a, ax_b, data_points):
         r"Temperature $\mathit{T}$ (K)",
     ]
     ylabels = [
-        r"\(\Omega\) (s$^{\text{-1}}$)",
-        r"\(\gamma\) (s$^{\text{-1}}$)",
+        r"\(\mathrm{\Omega}\) (s$^{\text{-1}}$)",
+        r"\(\mathit{\gamma}\) (s$^{\text{-1}}$)",
     ]
 
     # for ind in range(len(axes)):
@@ -1401,6 +1416,9 @@ def figure_2_raw_data(ax_a, ax_b, data_points):
         nv_names = []
         markers_list = []
 
+    markers = {"hopper": "o", "wu": "v"}
+    colors = {"hopper": kpl.kpl_colors["green"], "wu": kpl.kpl_colors["blue"]}
+
     for point in data_points:
 
         if "marker" not in point:
@@ -1408,12 +1426,18 @@ def figure_2_raw_data(ax_a, ax_b, data_points):
         sample = point[sample_column_title]
         nv_name = point["nv_name"]
         sample_lower = sample.lower()
-        marker = point["marker"]
+        # marker = point["marker"]
+        marker = markers[sample_lower]
+        color = colors[sample_lower]
+        face_color = kpl.lighten_color_hex(color)
 
+        label = None
+        labels = {"Hopper": "A", "Wu": "B"}
         if nv_name not in nv_names:
             nv_names.append(nv_name)
         if sample not in samples:
             samples.append(sample)
+            label = f"Sample {labels[sample]}"
         if marker not in markers_list:
             markers_list.append(marker)
         if sample.lower() not in samples_to_plot:
@@ -1431,19 +1455,19 @@ def figure_2_raw_data(ax_a, ax_b, data_points):
         val = rate
         val_err = rate_err
         val_err = None
-        ax_a.errorbar(
+        ax_a.plot(
             temp,
             val,
-            yerr=val_err,
-            xerr=temp_error,
-            label=r"$\mathrm{\Omega}$",
+            # yerr=val_err,
+            # xerr=temp_error,
             marker=marker,
-            color=omega_edge_color,
-            markerfacecolor=omega_face_color,
+            color=color,
+            markerfacecolor=face_color,
             linestyle="None",
             ms=marker_size,
             lw=line_width,
             markeredgewidth=marker_edge_width,
+            label=label,
         )
 
         # gamma
@@ -1451,19 +1475,19 @@ def figure_2_raw_data(ax_a, ax_b, data_points):
         rate_err = point[gamma_err_column_title]
         val = rate
         val_err = rate_err
-        ax_b.errorbar(
+        ax_b.plot(
             temp,
             val,
-            yerr=val_err,
-            xerr=temp_error,
-            label=r"$\mathit{\gamma}$",
+            # yerr=val_err,
+            # xerr=temp_error,
             marker=marker,
-            color=gamma_edge_color,
-            markerfacecolor=gamma_face_color,
+            color=color,
+            markerfacecolor=face_color,
             linestyle="None",
             ms=marker_size,
             lw=line_width,
             markeredgewidth=marker_edge_width,
+            label=label,
         )
 
         # Rate legend
