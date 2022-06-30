@@ -688,9 +688,13 @@ def create_image_figure(
     if um_scaled:
         axes_label = r"$\mu$m"
     else:
-        axes_label = get_registry_entry_no_cxn(
-            "xy_units", ["", "Config", "Positioning"]
-        )
+        try:
+            axes_label = get_registry_entry_no_cxn(
+                "xy_units", ["", "Config", "Positioning"]
+            )
+        except Exception as exc:
+            print(exc)
+            axes_label = None
 
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
