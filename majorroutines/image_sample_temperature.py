@@ -244,7 +244,7 @@ def main_with_cxn(
     fig = tool_belt.create_image_figure(
         diff_temps,
         img_extent,
-        color_bar_label=r"\(\mathrm{\Delta}\mathit{T}\) (K)",
+        color_bar_label=r"$\mathrm{\Delta}\mathit{T}$ (K)",
     )
 
     # Clean up
