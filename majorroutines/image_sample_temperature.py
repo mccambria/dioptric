@@ -180,7 +180,7 @@ def main_with_cxn(
 
     parity = +1  # Determines x scan direction
 
-    path_from_nv_data = "pc_hahn/branch_master/pulsed_resonance/2022_06/image_sample_temperature-2022_06_30-crashed"
+    # path_from_nv_data = "pc_hahn/branch_master/pulsed_resonance/2022_06/image_sample_temperature-2022_06_30-crashed"
 
     for y_ind in range(y_num_steps):
         y_voltage = y_voltages_1d[y_ind]

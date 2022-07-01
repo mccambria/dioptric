@@ -105,7 +105,7 @@ def do_image_sample_zoom(nv_sig, apd_indices):
 
 def do_image_sample_temperature(nv_sig, apd_indices):
     
-    scan_range = 0.05
+    scan_range = 0.10
     num_steps = 3
     
     nir_laser_voltage = 1.3
@@ -113,7 +113,7 @@ def do_image_sample_temperature(nv_sig, apd_indices):
     esr_freq_range = 0.040
     esr_num_steps = 51
     esr_num_reps = 4e3
-    esr_num_runs = 4
+    esr_num_runs = 16
     
     image_sample_temperature.main(
         nv_sig,
