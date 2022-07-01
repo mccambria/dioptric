@@ -2468,15 +2468,24 @@ def main(
 
 if __name__ == "__main__":
 
-    # print(bose(0.01241, 150))
-    # print(bose(65, 450) * (bose(65, 450) + 1))
-    # print(presentation_round_latex(145.88, 26.55))
-    # print(presentation_round_latex(145.88, 16.55))
-    # print(presentation_round_latex(145.88, 1.2))
-    # print(presentation_round_latex(145.88, 6.55))
-    # print(presentation_round_latex(145.88999, 0.002))
-    # print(presentation_round_latex(15.88999, 0.00167))
-    # print(presentation_round_latex(0.0288999, 0.0000167))
+    # temp = 300
+    # delta1 = 68.2
+    # delta2 = 167
+    # A_1 = 580
+    # A_2 = 9000
+    # n1 = bose(delta1, temp)
+    # n2 = bose(delta2, temp)
+    # print(A_1 * n1 * (n1 + 1))
+    # print(A_2 * n2 * (n2 + 1))
+    # # print(bose(0.01241, 150))
+    # # print(bose(65, 450) * (bose(65, 450) + 1))
+    # # print(presentation_round_latex(145.88, 26.55))
+    # # print(presentation_round_latex(145.88, 16.55))
+    # # print(presentation_round_latex(145.88, 1.2))
+    # # print(presentation_round_latex(145.88, 6.55))
+    # # print(presentation_round_latex(145.88999, 0.002))
+    # # print(presentation_round_latex(15.88999, 0.00167))
+    # # print(presentation_round_latex(0.0288999, 0.0000167))
     # sys.exit()
 
     tool_belt.init_matplotlib()
