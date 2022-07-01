@@ -104,14 +104,28 @@ def do_image_sample_zoom(nv_sig, apd_indices):
 
 
 def do_image_sample_temperature(nv_sig, apd_indices):
+    
     scan_range = 0.05
-    num_steps = 30
+    num_steps = 3
+    
+    nir_laser_voltage = 1.3
+    
+    esr_freq_range = 0.040
+    esr_num_steps = 51
+    esr_num_reps = 4e3
+    esr_num_runs = 4
+    
     image_sample_temperature.main(
         nv_sig,
         scan_range,
         scan_range,
         num_steps,
         apd_indices,
+        nir_laser_voltage,
+        esr_freq_range,
+        esr_num_steps,
+        esr_num_reps,
+        esr_num_runs,
     )
 
 
@@ -230,8 +244,8 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # num_reps = 5e4
     # num_runs = 20
     num_reps = 4e3
-    num_runs = 16
-    # num_runs = 2
+    # num_runs = 16
+    num_runs = 2
 
     # Zoom
     # freq_range = 0.035
@@ -376,8 +390,8 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
     # # num_runs = 5
     # num_runs = 10
     num_reps = 4e3
-    num_runs = 16
-    # num_runs = 2
+    # num_runs = 16
+    num_runs = 2
 
     period = rabi.main(
         nv_sig,
@@ -765,11 +779,9 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     nv_sig = {
-        "coords": [0.0, 0.0, -5],
-        "name": "{}-search".format(sample_name),
-        "disable_opt": True,
-        "disable_z_opt": False,
-        "expected_count_rate": 1500,
+        'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
+        'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1500,
+
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
         "imaging_laser": green_laser,
@@ -807,25 +819,22 @@ if __name__ == "__main__":
         "charge_readout_dur": 100e6,
         "charge_readout_laser_power": 0.75,
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
-        "collection_filter": None,
-        "magnet_angle": None,
-        "resonance_LOW": 2.804,
-        "rabi_LOW": 190,
-        "uwave_power_LOW": 16.5,
-        "resonance_HIGH": 2.936,
-        "rabi_HIGH": 260,
-        "uwave_power_HIGH": 16.5,
-    }
+
+        'collection_filter': None, 'magnet_angle': None,
+        'resonance_LOW': 2.8122, 'rabi_LOW': 300, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9428, 'rabi_HIGH': 370, 'uwave_power_HIGH': 16.5,
+        }
+
 
     # %% Functions to run
 
     try:
 
-        tool_belt.init_safe_stop()
+        # tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(60, 155)
+        #     cxn.cryo_piezos.write_xy(0, -30)
 
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
