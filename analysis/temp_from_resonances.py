@@ -394,12 +394,12 @@ def main(zfs, zfs_err=None):
 
 if __name__ == "__main__":
 
-    # files = [
-    #     "2022_05_12-14_25_56-wu-nv1_2022_03_16",
-    #     "2022_05_12-14_45_03-wu-nv1_2022_03_16",
-    # ]
+    files = [
+        "2022_06_30-23_27_50-hopper-search",
+        "2022_06_30-23_42_51-hopper-search",
+    ]
 
-    # main_files(files)
+    main_files(files)
 
     # process_temp_dep_res_files()
 
@@ -419,12 +419,12 @@ if __name__ == "__main__":
     # # ax.plot(temps, super_room_zfs_from_temp(temps), label='super')
     # # ax.legend()
 
-    tool_belt.init_matplotlib()
+    # tool_belt.init_matplotlib()
 
-    home = common.get_nvdata_dir()
-    path = home / "paper_materials/relaxation_temp_dependence"
-    file_name = "compiled_data"
+    # home = common.get_nvdata_dir()
+    # path = home / "paper_materials/relaxation_temp_dependence"
+    # file_name = "compiled_data"
 
-    experimental_zfs_versus_t(path, file_name)
+    # experimental_zfs_versus_t(path, file_name)
 
-    plt.show(block=True)
+    # plt.show(block=True)
