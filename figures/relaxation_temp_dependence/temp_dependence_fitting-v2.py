@@ -74,12 +74,10 @@ omega_face_color = "#FFCC33"
 omega_edge_color = "#FF9933"
 ratio_face_color = "#FB9898"
 ratio_edge_color = "#EF2424"
-# qubit_max_face_color = "#81bfeb"
-# qubit_max_edge_color = "#1f77b4"
-# qutrit_max_face_color = "#e5e667"
-# qutrit_max_edge_color = "#bcbd22"
-qutrit_color = "#bcbd22"
-qubit_color = "#1f77b4"
+qubit_max_face_color = "#81bfeb"
+qubit_max_edge_color = "#1f77b4"
+qutrit_max_face_color = "#e5e667"
+qutrit_max_edge_color = "#bcbd22"
 
 figsize = [6.5, 5.0]  # default
 # figsize = [0.7 * el for el in figsize]
@@ -263,37 +261,180 @@ def T5_free(temp, coeff_T5):
 
 def get_past_results(res):
 
-    omega_temps = None
-    omega_rates = None
-    gamma_temps = None
-    gamma_rates = None
-
-    # fmt: off
     if res == "redman":
-        omega_temps = [476.4177416661098, 451.11715421405614, 427.14250537007416, 401.70168043525575, 372.6536407580296, 348.06445892052716, 320.67189366418336, 295.4432631793261, 249.08174616160218, 198.8186984331038, 168.76315171076862, 139.3829999492335, 119.91885637433246, 99.71082373901912,]
-        omega_rates = [411.12308417220487,365.9018246860615,303.663725116546,257.9542650146412,209.14601567073342,165.66662339760202,114.10159115954427,82.33629032388878,42.87365275566925,16.10976746190582,8.195340538524343,3.380271780205849,1.362118143087146,0.488506838976792,]
+        res_list = [
+            476.4177416661098,
+            1233.3692525166146,
+            451.11715421405614,
+            1097.7054740581846,
+            427.14250537007416,
+            910.991175349638,
+            401.70168043525575,
+            773.8627950439235,
+            372.6536407580296,
+            627.4380470122003,
+            348.06445892052716,
+            496.9998701928061,
+            320.67189366418336,
+            342.3047734786328,
+            295.4432631793261,
+            247.00887097166634,
+            249.08174616160218,
+            128.62095826700775,
+            198.8186984331038,
+            48.32930238571747,
+            168.76315171076862,
+            24.58602161557303,
+            139.3829999492335,
+            10.140815340617547,
+            119.91885637433246,
+            4.086354429261438,
+            99.71082373901912,
+            1.465520516930376,
+        ]
     elif res == "takahashi":
-        omega_temps = [39.708076869092565, 60.18108720206314, 79.61728330307751, 99.71082373901912, 149.1639405437168, 200.11702947793873, 301.43114785530264, ]
-        omega_rates = [0.08310743505465269, 0.12642300635774165, 0.3287046673635948, 0.488506838976792, 2.0243218136492307, 9.647553749055826, 43.88457973623873, ]
+        res_list = [
+            39.708076869092565,
+            0.2493223051639581,
+            60.18108720206314,
+            0.37926901907322497,
+            79.61728330307751,
+            0.9861140020907845,
+            99.71082373901912,
+            1.465520516930376,
+            149.1639405437168,
+            6.072965440947692,
+            200.11702947793873,
+            28.942661247167475,
+            301.43114785530264,
+            131.6537392087162,
+        ]
     elif res == r"jarmola\_s2":
-        omega_temps = [5.052927989240913, 9.986632403181524, 20.00811570715186, 29.90545574361996, 39.81280330854725, 60.32233775511956, 79.75794398477714, 120.85851898425719, 198.86531379873264, 252.5578517930507, 295.50030798309376, 325.09776992170424, 350.4582003215088, 388.22259119422284, 407.2346885164248, 479.68759119360243, ]
-        omega_rates = [6.342069135479235, 6.801353446821833, 7.125875978477722, 6.801353446821833, 7.125875978477722, 6.644677189578252, 6.491610133029184, 7.293898524349615, 23.94164841827978, 63.71699176359265, 114.10159115954427, 131.22616761282828, 177.66398252665408, 229.58072627922334, 283.1578087632278, 430.7395774394513, ]
+        res_list = [
+            5.052927989240913,
+            19.026207406437706,
+            9.986632403181524,
+            20.4040603404655,
+            20.00811570715186,
+            21.377627935433164,
+            29.90545574361996,
+            20.4040603404655,
+            39.81280330854725,
+            21.377627935433164,
+            60.32233775511956,
+            19.934031568734756,
+            79.75794398477714,
+            19.47483039908755,
+            120.85851898425719,
+            21.881695573048844,
+            198.86531379873264,
+            71.82494525483934,
+            252.5578517930507,
+            191.15097529077795,
+            295.50030798309376,
+            342.3047734786328,
+            325.09776992170424,
+            393.6785028384848,
+            350.4582003215088,
+            532.9919475799622,
+            388.22259119422284,
+            688.74217883767,
+            407.2346885164248,
+            849.4734262896834,
+            479.68759119360243,
+            1292.218732318354,
+        ]
     elif res == r"jarmola\_s3":
-        omega_temps = [6.427375637623035, 9.937587857375618, 19.916720690963206, 39.91505366735992, 49.63491901713573, 69.84021996713274, 78.96668063167132, 94.35441700897722, 119.05215177843596, 160.81553767084844, 202.87342606577826, 297.39307938738887, 324.9857097772839, 350.3373985191751, 375.0871532725971, 401.58536640626534, 424.1313933316525, 451.01762892382345, 479.5883763012125, ]
-        omega_rates = [0.0024620666073597885, 0.0016566662339760237, 0.0031082387670171665, 0.0054378766564793, 0.004953857646692448, 0.022533998415870633, 0.031227604065269598, 0.14539680344353337, 0.6461422475342434, 3.226329393457812, 10.59017256160916, 55.402137213788336, 73.27975496207623, 99.21171472104378, 125.24994121458094, 158.12192963668738, 195.02272616248604, 252.01201997495744, 303.663725116546, ]
+        res_list = [
+            6.427375637623035,
+            0.007386199822079366,
+            9.937587857375618,
+            0.004969998701928071,
+            19.916720690963206,
+            0.0093247163010515,
+            39.91505366735992,
+            0.0163136299694379,
+            49.63491901713573,
+            0.014861572940077342,
+            69.84021996713274,
+            0.0676019952476119,
+            78.96668063167132,
+            0.09368281219580879,
+            94.35441700897722,
+            0.4361904103306001,
+            119.05215177843596,
+            1.9384267426027304,
+            160.81553767084844,
+            9.678988180373436,
+            202.87342606577826,
+            31.77051768482748,
+            297.39307938738887,
+            166.206411641365,
+            324.9857097772839,
+            219.83926488622868,
+            350.3373985191751,
+            297.6351441631313,
+            375.0871532725971,
+            375.74982364374284,
+            401.58536640626534,
+            474.3657889100621,
+            424.1313933316525,
+            585.0681784874581,
+            451.01762892382345,
+            756.0360599248723,
+            479.5883763012125,
+            910.991175349638,
+        ]
     elif res == r"jarmola\_s8":
-        omega_temps = [9.950478138502218, 19.80060613286093, 29.800477508344034, 39.67414115937397, 49.680800221318, 59.72553858233379, 79.56130794778521, 119.89239992311232, 160.83993406671632, 200.15014817692008, 252.45338834977025, 293.3848300819487, 322.81046691031594, 352.7565006568838, 429.97927603430963, 479.60160376778975, 375.1233628312281, 398.8864136467382, ]
-        omega_rates = [0.014813307038192704, 0.015886067264611867, 0.0178494025680193, 0.019593386907583058, 0.023609194738400396, 0.033489066108904834, 0.10014091119973172, 0.9381482177041631, 4.169123278855502, 12.760705818733683, 31.667336635581677, 60.81522929409823, 86.26491741142065, 111.47314222093364, 219.12529332802444, 318.15285902458135, 147.44421348369355, 177.66398252665408, ]
-    elif res == r"liu":
-        omega_temps = [300, 325, 350, 375, 400, 425, 450, 500, 550, 600]
-        omega_rates = [0.09401709401709413, 0.14102564102564097, 0.170940170940171, 0.20512820512820507, 0.2435897435897436, 0.30341880341880345, 0.3547008547008548, 0.5256410256410258, 0.777777777777778, 1.153846153846154, ]
-        omega_rates = [1000*el for el in omega_rates]
-        gamma_temps = [300, 350, 400, 450, 500, 550, 600]
-        gamma_rates = [0.19264214046822736, 0.24882943143812708, 0.33177257525083614, 0.38795986622073575, 0.4655518394648829, 0.6555183946488294, 0.7785953177257525, ]
-        gamma_rates = [1000*el for el in gamma_rates]
-    # fmt: on
+        res_list = [
+            9.950478138502218,
+            0.04443992111457811,
+            19.80060613286093,
+            0.047658201793835606,
+            29.800477508344034,
+            0.053548207704057896,
+            39.67414115937397,
+            0.05878016072274918,
+            49.680800221318,
+            0.07082758421520119,
+            59.72553858233379,
+            0.10046719832671451,
+            79.56130794778521,
+            0.30042273359919514,
+            119.89239992311232,
+            2.8144446531124894,
+            160.83993406671632,
+            12.507369836566506,
+            200.15014817692008,
+            38.28211745620105,
+            252.45338834977025,
+            95.00200990674503,
+            293.3848300819487,
+            182.4456878822947,
+            322.81046691031594,
+            258.794752234262,
+            352.7565006568838,
+            334.4194266628009,
+            429.97927603430963,
+            657.3758799840733,
+            479.60160376778975,
+            954.458577073744,
+            375.1233628312281,
+            442.33264045108064,
+            398.8864136467382,
+            532.9919475799622,
+        ]
 
-    return omega_temps, omega_rates, gamma_temps, gamma_rates
+    temps = []
+    vals = []
+    num_pairs = len(res_list) // 2
+    for ind in range(num_pairs):
+        temps.append(res_list[ind * 2])
+        raw_val = res_list[(ind * 2) + 1]
+        omega = raw_val / 3
+        vals.append(omega)
+
+    return temps, vals
 
 
 def omega_calc(temp):
@@ -1222,7 +1363,7 @@ def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
     return
 
 
-def figure_2(file_name, path, dosave=False, supp_comparison=False):
+def figure_2(file_name, path, dosave=False):
 
     data_points = get_data_points(path, file_name)  # , temp_range)
     # fit_modes = ["double_orbach_fixed", "T5"]
@@ -1235,87 +1376,82 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
     # figsize = (figsize[0], 2 * figsize[1])
     # adj_figsize = (figsize[0], (2 * figsize[1]) + 1.0)
     adj_figsize = (2 * figsize[0], figsize[1])
-    fig_a, ax_a = plt.subplots(figsize=figsize)
-    if not supp_comparison:
-        fig_b = plt.figure(figsize=figsize)
-    # gs_sep = 0.09
-    # gs_a_bottom = 0.55
-    # gs_a = fig.add_gridspec(
-    #     nrows=1,
-    #     ncols=1,
-    #     left=0.07,
-    #     right=0.49,
-    #     bottom=0.13,
-    #     top=0.99,
-    # )
-    if not supp_comparison:
-        gs_b = fig_b.add_gridspec(
-            nrows=2,
-            # ncols=2,
-            ncols=4,
-            left=0.11,
-            right=1.0,
-            bottom=0.13,
-            top=0.94,
-            wspace=0,
-            hspace=0,
-            # width_ratios=[1, 0.2, 0.2, 1],
-            width_ratios=[1, 0.16, 1, 0.16],
-        )
-        # ax_a = fig.add_subplot(gs_a[:, :])
-        scatter_axes_b = [[None, None], [None, None]]
-        scatter_axes_b[0][0] = fig_b.add_subplot(gs_b[0, 0])
-        scatter_axes_b[0][1] = fig_b.add_subplot(gs_b[0, 2])
-        scatter_axes_b[1][0] = fig_b.add_subplot(gs_b[1, 0])
-        scatter_axes_b[1][1] = fig_b.add_subplot(gs_b[1, 2])
+    fig = plt.figure(figsize=adj_figsize)
+    gs_sep = 0.09
+    gs_a_bottom = 0.55
+    gs_a = fig.add_gridspec(
+        nrows=1,
+        ncols=1,
+        left=0.07,
+        right=0.49,
+        bottom=0.13,
+        top=0.99,
+    )
+    gs_b = fig.add_gridspec(
+        nrows=2,
+        # ncols=2,
+        ncols=4,
+        left=0.555,
+        right=1.0,
+        bottom=0.13,
+        top=0.94,
+        wspace=0,
+        hspace=0,
+        # width_ratios=[1, 0.2, 0.2, 1],
+        width_ratios=[1, 0.16, 1, 0.16],
+    )
+    ax_a = fig.add_subplot(gs_a[:, :])
+    scatter_axes_b = [[None, None], [None, None]]
+    scatter_axes_b[0][0] = fig.add_subplot(gs_b[0, 0])
+    scatter_axes_b[0][1] = fig.add_subplot(gs_b[0, 2])
+    scatter_axes_b[1][0] = fig.add_subplot(gs_b[1, 0])
+    scatter_axes_b[1][1] = fig.add_subplot(gs_b[1, 2])
 
-        hist_axes_b = [[None, None], [None, None]]
-        hist_axes_b[0][0] = fig_b.add_subplot(gs_b[0, 1])
-        hist_axes_b[0][1] = fig_b.add_subplot(gs_b[0, 3])
-        hist_axes_b[1][0] = fig_b.add_subplot(gs_b[1, 1])
-        hist_axes_b[1][1] = fig_b.add_subplot(gs_b[1, 3])
+    hist_axes_b = [[None, None], [None, None]]
+    hist_axes_b[0][0] = fig.add_subplot(gs_b[0, 1])
+    hist_axes_b[0][1] = fig.add_subplot(gs_b[0, 3])
+    hist_axes_b[1][0] = fig.add_subplot(gs_b[1, 1])
+    hist_axes_b[1][1] = fig.add_subplot(gs_b[1, 3])
 
     # Generic setup
 
-    # fig.text(
-    #     -0.16,
-    #     0.96,
-    #     "(a)",
-    #     transform=ax_a.transAxes,
-    #     color="black",
-    #     fontsize=18,
-    # )
-    # fig.text(
-    #     1.02,
-    #     0.96,
-    #     "(b)",
-    #     transform=ax_a.transAxes,
-    #     color="black",
-    #     fontsize=18,
-    # )
+    fig.text(
+        -0.16,
+        0.96,
+        "(a)",
+        transform=ax_a.transAxes,
+        color="black",
+        fontsize=18,
+    )
+    fig.text(
+        1.02,
+        0.96,
+        "(b)",
+        transform=ax_a.transAxes,
+        color="black",
+        fontsize=18,
+    )
 
-    axins_a = None
-    if not supp_comparison:
-        inset_bottom = 0.105
-        inset_height = 0.47
-        # inset_left = 0.6
-        inset_left = 0.46
-        # inset_width = 1 - inset_left
-        inset_width = 0.55
+    inset_bottom = 0.105
+    inset_height = 0.47
+    # inset_left = 0.6
+    inset_left = 0.46
+    # inset_width = 1 - inset_left
+    inset_width = 0.55
 
-        axins_a = inset_axes(
-            ax_a,
-            width="100%",
-            height="100%",
-            bbox_to_anchor=(
-                inset_left,
-                inset_bottom,
-                inset_width,
-                inset_height,
-            ),
-            bbox_transform=ax_a.transAxes,
-            loc=1,
-        )
+    axins_a = inset_axes(
+        ax_a,
+        width="100%",
+        height="100%",
+        bbox_to_anchor=(
+            inset_left,
+            inset_bottom,
+            inset_width,
+            inset_height,
+        ),
+        bbox_transform=ax_a.transAxes,
+        loc=1,
+    )
 
     # Plot the experimental data
 
@@ -1328,101 +1464,57 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
 
     # Plot the residuals
 
-    if not supp_comparison:
-        # scatter_axes_b[0][0].set_title("Double Orbach")
-        # scatter_axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
-        scatter_axes_b[0][0].set_title("Proposed model")
-        scatter_axes_b[0][1].set_title("Prior model")
-        # scatter_axes_b[0][0].set_title(
-        #     r"$C + A_{1} O(\Delta_{1}, T) + A_{2} O(\Delta_{2}, T)$"
-        # )
-        # scatter_axes_b[0][1].set_title(r"$C + A_{1} O(\Delta, T) + A_{2} T^{5}$")
+    # scatter_axes_b[0][0].set_title("Double Orbach")
+    # scatter_axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
+    scatter_axes_b[0][0].set_title("Proposed model")
+    scatter_axes_b[0][1].set_title("Prior model")
+    # scatter_axes_b[0][0].set_title(
+    #     r"$C + A_{1} O(\Delta_{1}, T) + A_{2} O(\Delta_{2}, T)$"
+    # )
+    # scatter_axes_b[0][1].set_title(r"$C + A_{1} O(\Delta, T) + A_{2} T^{5}$")
 
-        scatter_axes_b[0][0].get_xaxis().set_visible(False)
-        scatter_axes_b[0][1].get_xaxis().set_visible(False)
-        scatter_axes_b[0][1].get_yaxis().set_visible(False)
-        scatter_axes_b[1][1].get_yaxis().set_visible(False)
+    scatter_axes_b[0][0].get_xaxis().set_visible(False)
+    scatter_axes_b[0][1].get_xaxis().set_visible(False)
+    scatter_axes_b[0][1].get_yaxis().set_visible(False)
+    scatter_axes_b[1][1].get_yaxis().set_visible(False)
 
-        scatter_axes_b[0][0].set_ylabel(r"$\mathit{\gamma}$ residual")
-        scatter_axes_b[1][0].set_ylabel(r"$\mathrm{\Omega}$ residual")
-        x_label = r"Temperature $\mathit{T}$ (K)"
-        scatter_axes_b[1][0].set_xlabel(x_label)
-        scatter_axes_b[1][1].set_xlabel(x_label)
+    scatter_axes_b[0][0].set_ylabel(r"$\mathit{\gamma}$ residual")
+    scatter_axes_b[1][0].set_ylabel(r"$\mathrm{\Omega}$ residual")
+    x_label = r"Temperature $\mathit{T}$ (K)"
+    scatter_axes_b[1][0].set_xlabel(x_label)
+    scatter_axes_b[1][1].set_xlabel(x_label)
 
-        for rate_ind in range(2):
-            rate = rates[rate_ind]
-            for fit_mode_ind in range(2):
+    for rate_ind in range(2):
+        rate = rates[rate_ind]
+        for fit_mode_ind in range(2):
 
-                scatter_ax = scatter_axes_b[rate_ind][fit_mode_ind]
-                hist_ax = hist_axes_b[rate_ind][fit_mode_ind]
-                hist_ax.get_xaxis().set_visible(False)
-                hist_ax.get_yaxis().set_visible(False)
+            scatter_ax = scatter_axes_b[rate_ind][fit_mode_ind]
+            hist_ax = hist_axes_b[rate_ind][fit_mode_ind]
+            hist_ax.get_xaxis().set_visible(False)
+            hist_ax.get_yaxis().set_visible(False)
 
-                fit_mode = fit_modes[fit_mode_ind]
+            fit_mode = fit_modes[fit_mode_ind]
 
-                xlim = [-10, 490]
-                scatter_ax.set_xlim(xlim[0], xlim[1])
-                scatter_ax.plot(
-                    xlim, [0, 0], color="silver", zorder=-10, lw=line_width
-                )
-
-                # axins.set_ylim(-3.25, 3.25)
-                # axins.set_yticks(np.linspace(-3, 3, 7))
-
-                ax_ylim = 2.5
-                scatter_ax.set_ylim(-ax_ylim, ax_ylim)
-                hist_ax.set_ylim(-ax_ylim, ax_ylim)
-                ylim_floor = math.floor(ax_ylim)
-                num_yticks = (ylim_floor * 2) + 1
-                yticks = np.linspace(-ylim_floor, ylim_floor, num_yticks)
-                scatter_ax.set_yticks(yticks)
-
-                figure_2_residuals(
-                    scatter_ax, hist_ax, rate, data_points, fit_mode
-                )
-
-    if supp_comparison:
-        past_results = [
-            "redman",
-            "takahashi",
-            r"jarmola\_s2",
-            r"jarmola\_s3",
-            r"jarmola\_s8",
-            r"liu",
-        ]
-        for res in past_results:
-            (
-                omega_temps,
-                omega_rates,
-                gamma_temps,
-                gamma_rates,
-            ) = get_past_results(res)
-            ax_a.plot(
-                omega_temps,
-                omega_rates,
-                label=r"$\mathrm{\Omega}$",
-                marker="D",
-                color=omega_edge_color,
-                markerfacecolor=omega_face_color,
-                linestyle="None",
-                ms=marker_size,
-                lw=line_width,
-                markeredgewidth=marker_edge_width,
+            xlim = [-10, 490]
+            scatter_ax.set_xlim(xlim[0], xlim[1])
+            scatter_ax.plot(
+                xlim, [0, 0], color="silver", zorder=-10, lw=line_width
             )
-            # gamma
-            if gamma_temps is not None:
-                ax_a.plot(
-                    gamma_temps,
-                    gamma_rates,
-                    label=r"$\mathit{\gamma}$",
-                    marker="D",
-                    color=gamma_edge_color,
-                    markerfacecolor=gamma_face_color,
-                    linestyle="None",
-                    ms=marker_size,
-                    lw=line_width,
-                    markeredgewidth=marker_edge_width,
-                )
+
+            # axins.set_ylim(-3.25, 3.25)
+            # axins.set_yticks(np.linspace(-3, 3, 7))
+
+            ax_ylim = 2.5
+            scatter_ax.set_ylim(-ax_ylim, ax_ylim)
+            hist_ax.set_ylim(-ax_ylim, ax_ylim)
+            ylim_floor = math.floor(ax_ylim)
+            num_yticks = (ylim_floor * 2) + 1
+            yticks = np.linspace(-ylim_floor, ylim_floor, num_yticks)
+            scatter_ax.set_yticks(yticks)
+
+            figure_2_residuals(
+                scatter_ax, hist_ax, rate, data_points, fit_mode
+            )
 
     # fig.tight_layout(pad=0.3)
     # tool_belt.non_math_ticks(ax_a)
@@ -1436,19 +1528,27 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
     # fontProperties = {'family':'sans-serif'}
     # ax_a.set_xticklabels(ax_a.get_xticks(), fontProperties)
     # ax_a.set_yticklabels(ax_a.get_yticks(), fontProperties)
-    fig_a.tight_layout(pad=0.3)
-    if not supp_comparison:
-        fig_b.tight_layout(pad=0.3)
+    fig.tight_layout(pad=0.3)
+
+    if dosave:
+        nvdata_dir = common.get_nvdata_dir()
+        # ext = "png"
+        ext = "svg"
+        file_path = str(
+            nvdata_dir
+            / "paper_materials/relaxation_temp_dependence/figures/main2.{}".format(
+                ext
+            )
+        )
+        # fig.savefig(file_path, dpi=500)
+        fig.savefig(file_path)
 
 
 def figure_2_raw_data(ax, axins, data_points):
 
     # %% Setup
 
-    if axins is None:
-        axes = [ax]
-    else:
-        axes = [ax, axins]
+    axes = [ax, axins]
 
     # temp_ranges = [[-5, 480], [145, 215]]
     # rate_ranges = [[0.0036, 1100], [2, 50]]
@@ -1472,7 +1572,7 @@ def figure_2_raw_data(ax, axins, data_points):
         None,
     ]
 
-    for ind in range(len(axes)):
+    for ind in range(2):
         ax = axes[ind]
         temp_range = temp_ranges[ind]
         rate_range = rate_ranges[ind]
@@ -1744,12 +1844,7 @@ def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
     if fit_mode != "double_orbach":
         zorder = -1
 
-    if axins_a is None:
-        axes = [ax_a]
-    else:
-        axes = [ax_a, axins_a]
-
-    for ax in axes:
+    for ax in [ax_a, axins_a]:
 
         min_temp, max_temp = ax.get_xlim()
 
@@ -2050,11 +2145,6 @@ def main(
 
         # linestyles = {"hopper": "dotted", "wu": "dashed"}
         for func, linestyle, label in [
-            # (
-            #     T2_max_qubit_hopper_temp,
-            #     "solid",
-            #     r"$\mathrm{\{\ket{0}, \ket{\pm 1}\}}$",
-            # ),
             (
                 T2_max_qubit_hopper_temp,
                 "dotted",
@@ -2068,7 +2158,7 @@ def main(
                 func(temp_linspace),
                 label=label,
                 # label=r"Qubit T2 max",
-                color=qubit_color,
+                color=qubit_max_edge_color,
                 linewidth=line_width,
                 ls=linestyle,
             )
@@ -2083,11 +2173,6 @@ def main(
             omega_wu_lambda(temp), gamma_wu_lambda(temp)
         )
         for func, linestyle, label in [
-            # (
-            #     T2_max_qutrit_hopper_temp,
-            #     "solid",
-            #     r"$\mathrm{\{\ket{-1}, \ket{+1}\}}$",
-            # ),
             (
                 T2_max_qutrit_hopper_temp,
                 "dotted",
@@ -2101,7 +2186,7 @@ def main(
                 func(temp_linspace),
                 label=label,
                 # label=r"Qutrit T2 max",
-                color=qutrit_color,
+                color=qutrit_max_edge_color,
                 linewidth=line_width,
                 ls=linestyle,
             )
@@ -2468,24 +2553,15 @@ def main(
 
 if __name__ == "__main__":
 
-    # temp = 300
-    # delta1 = 68.2
-    # delta2 = 167
-    # A_1 = 580
-    # A_2 = 9000
-    # n1 = bose(delta1, temp)
-    # n2 = bose(delta2, temp)
-    # print(A_1 * n1 * (n1 + 1))
-    # print(A_2 * n2 * (n2 + 1))
-    # # print(bose(0.01241, 150))
-    # # print(bose(65, 450) * (bose(65, 450) + 1))
-    # # print(presentation_round_latex(145.88, 26.55))
-    # # print(presentation_round_latex(145.88, 16.55))
-    # # print(presentation_round_latex(145.88, 1.2))
-    # # print(presentation_round_latex(145.88, 6.55))
-    # # print(presentation_round_latex(145.88999, 0.002))
-    # # print(presentation_round_latex(15.88999, 0.00167))
-    # # print(presentation_round_latex(0.0288999, 0.0000167))
+    # print(bose(0.01241, 150))
+    # print(bose(65, 450) * (bose(65, 450) + 1))
+    # print(presentation_round_latex(145.88, 26.55))
+    # print(presentation_round_latex(145.88, 16.55))
+    # print(presentation_round_latex(145.88, 1.2))
+    # print(presentation_round_latex(145.88, 6.55))
+    # print(presentation_round_latex(145.88999, 0.002))
+    # print(presentation_round_latex(15.88999, 0.00167))
+    # print(presentation_round_latex(0.0288999, 0.0000167))
     # sys.exit()
 
     tool_belt.init_matplotlib()
@@ -2553,9 +2629,7 @@ if __name__ == "__main__":
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    supp_comparison = True
-    # supp_comparison = False
-    figure_2(file_name, path, dosave=False, supp_comparison=supp_comparison)
+    figure_2(file_name, path, dosave=False)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
@@ -2569,7 +2643,7 @@ if __name__ == "__main__":
     # plot_T2_max(omega_popt, gamma_popt, temp_range, 'log', 'log')
 
     plt.show(block=True)
-
+    
     # print(bose(65,295))
     # print(bose(165,295))
 

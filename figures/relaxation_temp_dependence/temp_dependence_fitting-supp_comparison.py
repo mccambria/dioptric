@@ -21,6 +21,7 @@ import matplotlib.lines as mlines
 from scipy.optimize import curve_fit
 import pandas as pd
 import utils.tool_belt as tool_belt
+import utils.kplotlib as kpl
 import utils.common as common
 from scipy.odr import ODR, Model, RealData
 import sys
@@ -269,22 +270,22 @@ def get_past_results(res):
     gamma_rates = None
 
     # fmt: off
-    if res == "redman":
+    if res == "Redman":
         omega_temps = [476.4177416661098, 451.11715421405614, 427.14250537007416, 401.70168043525575, 372.6536407580296, 348.06445892052716, 320.67189366418336, 295.4432631793261, 249.08174616160218, 198.8186984331038, 168.76315171076862, 139.3829999492335, 119.91885637433246, 99.71082373901912,]
         omega_rates = [411.12308417220487,365.9018246860615,303.663725116546,257.9542650146412,209.14601567073342,165.66662339760202,114.10159115954427,82.33629032388878,42.87365275566925,16.10976746190582,8.195340538524343,3.380271780205849,1.362118143087146,0.488506838976792,]
-    elif res == "takahashi":
+    elif res == "Takahashi":
         omega_temps = [39.708076869092565, 60.18108720206314, 79.61728330307751, 99.71082373901912, 149.1639405437168, 200.11702947793873, 301.43114785530264, ]
         omega_rates = [0.08310743505465269, 0.12642300635774165, 0.3287046673635948, 0.488506838976792, 2.0243218136492307, 9.647553749055826, 43.88457973623873, ]
-    elif res == r"jarmola\_s2":
+    elif res == r"Jarmola, S2":
         omega_temps = [5.052927989240913, 9.986632403181524, 20.00811570715186, 29.90545574361996, 39.81280330854725, 60.32233775511956, 79.75794398477714, 120.85851898425719, 198.86531379873264, 252.5578517930507, 295.50030798309376, 325.09776992170424, 350.4582003215088, 388.22259119422284, 407.2346885164248, 479.68759119360243, ]
         omega_rates = [6.342069135479235, 6.801353446821833, 7.125875978477722, 6.801353446821833, 7.125875978477722, 6.644677189578252, 6.491610133029184, 7.293898524349615, 23.94164841827978, 63.71699176359265, 114.10159115954427, 131.22616761282828, 177.66398252665408, 229.58072627922334, 283.1578087632278, 430.7395774394513, ]
-    elif res == r"jarmola\_s3":
+    elif res == r"Jarmola, S3":
         omega_temps = [6.427375637623035, 9.937587857375618, 19.916720690963206, 39.91505366735992, 49.63491901713573, 69.84021996713274, 78.96668063167132, 94.35441700897722, 119.05215177843596, 160.81553767084844, 202.87342606577826, 297.39307938738887, 324.9857097772839, 350.3373985191751, 375.0871532725971, 401.58536640626534, 424.1313933316525, 451.01762892382345, 479.5883763012125, ]
         omega_rates = [0.0024620666073597885, 0.0016566662339760237, 0.0031082387670171665, 0.0054378766564793, 0.004953857646692448, 0.022533998415870633, 0.031227604065269598, 0.14539680344353337, 0.6461422475342434, 3.226329393457812, 10.59017256160916, 55.402137213788336, 73.27975496207623, 99.21171472104378, 125.24994121458094, 158.12192963668738, 195.02272616248604, 252.01201997495744, 303.663725116546, ]
-    elif res == r"jarmola\_s8":
+    elif res == r"Jarmola, S8":
         omega_temps = [9.950478138502218, 19.80060613286093, 29.800477508344034, 39.67414115937397, 49.680800221318, 59.72553858233379, 79.56130794778521, 119.89239992311232, 160.83993406671632, 200.15014817692008, 252.45338834977025, 293.3848300819487, 322.81046691031594, 352.7565006568838, 429.97927603430963, 479.60160376778975, 375.1233628312281, 398.8864136467382, ]
         omega_rates = [0.014813307038192704, 0.015886067264611867, 0.0178494025680193, 0.019593386907583058, 0.023609194738400396, 0.033489066108904834, 0.10014091119973172, 0.9381482177041631, 4.169123278855502, 12.760705818733683, 31.667336635581677, 60.81522929409823, 86.26491741142065, 111.47314222093364, 219.12529332802444, 318.15285902458135, 147.44421348369355, 177.66398252665408, ]
-    elif res == r"liu":
+    elif res == r"Liu":
         omega_temps = [300, 325, 350, 375, 400, 425, 450, 500, 550, 600]
         omega_rates = [0.09401709401709413, 0.14102564102564097, 0.170940170940171, 0.20512820512820507, 0.2435897435897436, 0.30341880341880345, 0.3547008547008548, 0.5256410256410258, 0.777777777777778, 1.153846153846154, ]
         omega_rates = [1000*el for el in omega_rates]
@@ -1222,7 +1223,7 @@ def plot_orbach_scalings(temp_range, xscale, yscale, y_range):
     return
 
 
-def figure_2(file_name, path, dosave=False, supp_comparison=False):
+def figure_2_supp_comparison(file_name, path, dosave=False):
 
     data_points = get_data_points(path, file_name)  # , temp_range)
     # fit_modes = ["double_orbach_fixed", "T5"]
@@ -1232,70 +1233,13 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
     rates = ["gamma", "Omega"]
     labels = ["(a)", "(b)"]
 
-    # figsize = (figsize[0], 2 * figsize[1])
-    # adj_figsize = (figsize[0], (2 * figsize[1]) + 1.0)
     adj_figsize = (2 * figsize[0], figsize[1])
-    fig_a, ax_a = plt.subplots(figsize=figsize)
-    if not supp_comparison:
-        fig_b = plt.figure(figsize=figsize)
-    # gs_sep = 0.09
-    # gs_a_bottom = 0.55
-    # gs_a = fig.add_gridspec(
-    #     nrows=1,
-    #     ncols=1,
-    #     left=0.07,
-    #     right=0.49,
-    #     bottom=0.13,
-    #     top=0.99,
-    # )
-    if not supp_comparison:
-        gs_b = fig_b.add_gridspec(
-            nrows=2,
-            # ncols=2,
-            ncols=4,
-            left=0.11,
-            right=1.0,
-            bottom=0.13,
-            top=0.94,
-            wspace=0,
-            hspace=0,
-            # width_ratios=[1, 0.2, 0.2, 1],
-            width_ratios=[1, 0.16, 1, 0.16],
-        )
-        # ax_a = fig.add_subplot(gs_a[:, :])
-        scatter_axes_b = [[None, None], [None, None]]
-        scatter_axes_b[0][0] = fig_b.add_subplot(gs_b[0, 0])
-        scatter_axes_b[0][1] = fig_b.add_subplot(gs_b[0, 2])
-        scatter_axes_b[1][0] = fig_b.add_subplot(gs_b[1, 0])
-        scatter_axes_b[1][1] = fig_b.add_subplot(gs_b[1, 2])
-
-        hist_axes_b = [[None, None], [None, None]]
-        hist_axes_b[0][0] = fig_b.add_subplot(gs_b[0, 1])
-        hist_axes_b[0][1] = fig_b.add_subplot(gs_b[0, 3])
-        hist_axes_b[1][0] = fig_b.add_subplot(gs_b[1, 1])
-        hist_axes_b[1][1] = fig_b.add_subplot(gs_b[1, 3])
-
-    # Generic setup
-
-    # fig.text(
-    #     -0.16,
-    #     0.96,
-    #     "(a)",
-    #     transform=ax_a.transAxes,
-    #     color="black",
-    #     fontsize=18,
-    # )
-    # fig.text(
-    #     1.02,
-    #     0.96,
-    #     "(b)",
-    #     transform=ax_a.transAxes,
-    #     color="black",
-    #     fontsize=18,
-    # )
+    fig, axes_pack = plt.subplots(1, 2, figsize=adj_figsize)
+    ax_a, ax_b = axes_pack
 
     axins_a = None
-    if not supp_comparison:
+    linear_inset = False
+    if linear_inset:
         inset_bottom = 0.105
         inset_height = 0.47
         # inset_left = 0.6
@@ -1319,110 +1263,59 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
 
     # Plot the experimental data
 
-    figure_2_raw_data(ax_a, axins_a, data_points)
+    figure_2_raw_data(ax_a, ax_b, data_points)
 
-    # Plot the fits in (a)
+    past_results = [
+        "Liu",
+        "Redman",
+        "Takahashi",
+        "Jarmola, S2",
+        "Jarmola, S3",
+        "Jarmola, S8",
+    ]
+    markers = ["^", "D", "p", "H", "X", "d"]
+    colors = ["red", "pink", "brown", "yellow", "purple", "orange"]
+    colors = [kpl.kpl_colors[el] for el in colors]
+    for res, marker, color in zip(past_results, markers, colors):
 
-    for fit_mode in fit_modes:
-        figure_2_fits(ax_a, axins_a, data_points, fit_mode)
+        (
+            omega_temps,
+            omega_rates,
+            gamma_temps,
+            gamma_rates,
+        ) = get_past_results(res)
 
-    # Plot the residuals
+        face_color = kpl.lighten_color_hex(color)
+        z_order = 10 if res == "Liu" else None
 
-    if not supp_comparison:
-        # scatter_axes_b[0][0].set_title("Double Orbach")
-        # scatter_axes_b[0][1].set_title(r"Orbach $+ T^{5}$")
-        scatter_axes_b[0][0].set_title("Proposed model")
-        scatter_axes_b[0][1].set_title("Prior model")
-        # scatter_axes_b[0][0].set_title(
-        #     r"$C + A_{1} O(\Delta_{1}, T) + A_{2} O(\Delta_{2}, T)$"
-        # )
-        # scatter_axes_b[0][1].set_title(r"$C + A_{1} O(\Delta, T) + A_{2} T^{5}$")
-
-        scatter_axes_b[0][0].get_xaxis().set_visible(False)
-        scatter_axes_b[0][1].get_xaxis().set_visible(False)
-        scatter_axes_b[0][1].get_yaxis().set_visible(False)
-        scatter_axes_b[1][1].get_yaxis().set_visible(False)
-
-        scatter_axes_b[0][0].set_ylabel(r"$\mathit{\gamma}$ residual")
-        scatter_axes_b[1][0].set_ylabel(r"$\mathrm{\Omega}$ residual")
-        x_label = r"Temperature $\mathit{T}$ (K)"
-        scatter_axes_b[1][0].set_xlabel(x_label)
-        scatter_axes_b[1][1].set_xlabel(x_label)
-
-        for rate_ind in range(2):
-            rate = rates[rate_ind]
-            for fit_mode_ind in range(2):
-
-                scatter_ax = scatter_axes_b[rate_ind][fit_mode_ind]
-                hist_ax = hist_axes_b[rate_ind][fit_mode_ind]
-                hist_ax.get_xaxis().set_visible(False)
-                hist_ax.get_yaxis().set_visible(False)
-
-                fit_mode = fit_modes[fit_mode_ind]
-
-                xlim = [-10, 490]
-                scatter_ax.set_xlim(xlim[0], xlim[1])
-                scatter_ax.plot(
-                    xlim, [0, 0], color="silver", zorder=-10, lw=line_width
-                )
-
-                # axins.set_ylim(-3.25, 3.25)
-                # axins.set_yticks(np.linspace(-3, 3, 7))
-
-                ax_ylim = 2.5
-                scatter_ax.set_ylim(-ax_ylim, ax_ylim)
-                hist_ax.set_ylim(-ax_ylim, ax_ylim)
-                ylim_floor = math.floor(ax_ylim)
-                num_yticks = (ylim_floor * 2) + 1
-                yticks = np.linspace(-ylim_floor, ylim_floor, num_yticks)
-                scatter_ax.set_yticks(yticks)
-
-                figure_2_residuals(
-                    scatter_ax, hist_ax, rate, data_points, fit_mode
-                )
-
-    if supp_comparison:
-        past_results = [
-            "redman",
-            "takahashi",
-            r"jarmola\_s2",
-            r"jarmola\_s3",
-            r"jarmola\_s8",
-            r"liu",
-        ]
-        for res in past_results:
-            (
-                omega_temps,
-                omega_rates,
+        ax_a.plot(
+            omega_temps,
+            omega_rates,
+            marker=marker,
+            color=color,
+            markerfacecolor=face_color,
+            linestyle="None",
+            ms=marker_size,
+            lw=line_width,
+            markeredgewidth=marker_edge_width,
+            label=res,
+            zorder=z_order,
+        )
+        # gamma
+        if gamma_temps is not None:
+            ax_b.plot(
                 gamma_temps,
                 gamma_rates,
-            ) = get_past_results(res)
-            ax_a.plot(
-                omega_temps,
-                omega_rates,
-                label=r"$\mathrm{\Omega}$",
-                marker="D",
-                color=omega_edge_color,
-                markerfacecolor=omega_face_color,
+                marker=marker,
+                color=color,
+                markerfacecolor=face_color,
                 linestyle="None",
                 ms=marker_size,
                 lw=line_width,
                 markeredgewidth=marker_edge_width,
+                label=res,
+                zorder=z_order,
             )
-            # gamma
-            if gamma_temps is not None:
-                ax_a.plot(
-                    gamma_temps,
-                    gamma_rates,
-                    label=r"$\mathit{\gamma}$",
-                    marker="D",
-                    color=gamma_edge_color,
-                    markerfacecolor=gamma_face_color,
-                    linestyle="None",
-                    ms=marker_size,
-                    lw=line_width,
-                    markeredgewidth=marker_edge_width,
-                )
 
     # fig.tight_layout(pad=0.3)
     # tool_belt.non_math_ticks(ax_a)
@@ -1436,28 +1329,33 @@ def figure_2(file_name, path, dosave=False, supp_comparison=False):
     # fontProperties = {'family':'sans-serif'}
     # ax_a.set_xticklabels(ax_a.get_xticks(), fontProperties)
     # ax_a.set_yticklabels(ax_a.get_yticks(), fontProperties)
-    fig_a.tight_layout(pad=0.3)
-    if not supp_comparison:
-        fig_b.tight_layout(pad=0.3)
+    ax_a.legend()
+    ax_b.legend()
+    fig.tight_layout(pad=0.3)
 
 
-def figure_2_raw_data(ax, axins, data_points):
+# def figure_2_raw_data(ax_a, ax_b, axins_a, axins_b, data_points):
+def figure_2_raw_data(ax_a, ax_b, data_points):
 
     # %% Setup
 
-    if axins is None:
-        axes = [ax]
-    else:
-        axes = [ax, axins]
+    # if axins is None:
+    #     axes = [ax]
+    # else:
+    #     axes = [ax, axins]
+
+    axes = [ax_a, ax_b]
 
     # temp_ranges = [[-5, 480], [145, 215]]
     # rate_ranges = [[0.0036, 1100], [2, 50]]
     # yscales = ["log", "log"]
     # ytickss = [None, [3, 10, 30]]
 
-    temp_ranges = [[-5, 480], [-5, 487]]
-    rate_ranges = [[0.004, 750], [-25, 670]]
-    yscales = ["log", "linear"]
+    temp_ranges = [[-10, 620], [-10, 620]]
+    rate_ranges = [[0.001, 1500], [0.001, 1500]]
+    yscales = ["log", "log"]
+    rate_ranges = [[-30, 1240], [-20, 820]]
+    yscales = ["linear", "linear"]
     ytickss = [None, None]
 
     no_legends = [False, True]
@@ -1465,13 +1363,14 @@ def figure_2_raw_data(ax, axins, data_points):
     lws = [line_width, line_width - 0.25]
     xlabels = [
         r"Temperature $\mathit{T}$ (K)",
-        None,
+        r"Temperature $\mathit{T}$ (K)",
     ]
     ylabels = [
-        r"Relaxation rates (s$^{\text{-1}}$)",
-        None,
+        r"\(\mathrm{\Omega}\) (s$^{\text{-1}}$)",
+        r"\(\mathit{\gamma}\) (s$^{\text{-1}}$)",
     ]
 
+    # for ind in range(len(axes)):
     for ind in range(len(axes)):
         ax = axes[ind]
         temp_range = temp_ranges[ind]
@@ -1489,7 +1388,7 @@ def figure_2_raw_data(ax, axins, data_points):
         ylabel = ylabels[ind]
 
         # Sample-dependent vs phonon-limited line
-        ax.axvline(x=125, color="silver", zorder=-10, lw=lw)
+        # ax.axvline(x=125, color="silver", zorder=-10, lw=lw)
 
         # marker_type = "nv"
 
@@ -1517,221 +1416,233 @@ def figure_2_raw_data(ax, axins, data_points):
         nv_names = []
         markers_list = []
 
-        for point in data_points:
+    markers = {"hopper": "o", "wu": "v"}
+    colors = {"hopper": kpl.kpl_colors["green"], "wu": kpl.kpl_colors["blue"]}
 
-            if "marker" not in point:
-                continue
-            sample = point[sample_column_title]
-            nv_name = point["nv_name"]
-            sample_lower = sample.lower()
-            marker = point["marker"]
+    for point in data_points:
 
-            if nv_name not in nv_names:
-                nv_names.append(nv_name)
-            if sample not in samples:
-                samples.append(sample)
-            if marker not in markers_list:
-                markers_list.append(marker)
-            if sample.lower() not in samples_to_plot:
-                continue
+        if "marker" not in point:
+            continue
+        sample = point[sample_column_title]
+        nv_name = point["nv_name"]
+        sample_lower = sample.lower()
+        # marker = point["marker"]
+        marker = markers[sample_lower]
+        color = colors[sample_lower]
+        face_color = kpl.lighten_color_hex(color)
 
-            temp = get_temp(point)
-            if no_x_errs:
-                temp_error = None
-            else:
-                temp_error = get_temp_error(point)
+        label = None
+        labels = {"Hopper": "A", "Wu": "B"}
+        if nv_name not in nv_names:
+            nv_names.append(nv_name)
+        if sample not in samples:
+            samples.append(sample)
+            label = f"Sample {labels[sample]}"
+        if marker not in markers_list:
+            markers_list.append(marker)
+        if sample.lower() not in samples_to_plot:
+            continue
 
-            # Omega
-            rate = point[omega_column_title]
-            rate_err = point[omega_err_column_title]
-            val = rate
-            val_err = rate_err
-            ax.errorbar(
-                temp,
-                val,
-                yerr=val_err,
-                xerr=temp_error,
-                label=r"$\mathrm{\Omega}$",
-                marker=marker,
-                color=omega_edge_color,
-                markerfacecolor=omega_face_color,
-                linestyle="None",
-                ms=ms,
-                lw=line_width,
-                markeredgewidth=marker_edge_width,
-            )
+        temp = get_temp(point)
+        if no_x_errs:
+            temp_error = None
+        else:
+            temp_error = get_temp_error(point)
 
-            # gamma
-            rate = point[gamma_column_title]
-            rate_err = point[gamma_err_column_title]
-            val = rate
-            val_err = rate_err
-            ax.errorbar(
-                temp,
-                val,
-                yerr=val_err,
-                xerr=temp_error,
-                label=r"$\mathit{\gamma}$",
-                marker=marker,
-                color=gamma_edge_color,
-                markerfacecolor=gamma_face_color,
-                linestyle="None",
-                ms=ms,
-                lw=line_width,
-                markeredgewidth=marker_edge_width,
-            )
+        # Omega
+        rate = point[omega_column_title]
+        rate_err = point[omega_err_column_title]
+        val = rate
+        val_err = rate_err
+        val_err = None
+        ax_a.plot(
+            temp,
+            val,
+            # yerr=val_err,
+            # xerr=temp_error,
+            marker=marker,
+            color=color,
+            markerfacecolor=face_color,
+            linestyle="None",
+            ms=marker_size,
+            lw=line_width,
+            markeredgewidth=marker_edge_width,
+            label=label,
+        )
+
+        # gamma
+        rate = point[gamma_column_title]
+        rate_err = point[gamma_err_column_title]
+        val = rate
+        val_err = rate_err
+        ax_b.plot(
+            temp,
+            val,
+            # yerr=val_err,
+            # xerr=temp_error,
+            marker=marker,
+            color=color,
+            markerfacecolor=face_color,
+            linestyle="None",
+            ms=marker_size,
+            lw=line_width,
+            markeredgewidth=marker_edge_width,
+            label=label,
+        )
 
         # Rate legend
-        if not no_legend:
-            omega_patch = patches.Patch(
-                label=r"$\mathrm{\Omega}$",
-                facecolor=omega_face_color,
-                edgecolor=omega_edge_color,
-                lw=marker_edge_width,
-            )
-            gamma_patch = patches.Patch(
-                label=r"$\mathit{\gamma}$",
-                facecolor=gamma_face_color,
-                edgecolor=gamma_edge_color,
-                lw=marker_edge_width,
-            )
-            leg1 = ax.legend(
-                handles=[gamma_patch, omega_patch],
-                loc="upper left",
-                title="Rate",
-                handlelength=1.5,
-            )
-            # leg1 = ax.legend(
-            #     handles=[omega_patch, gamma_patch], loc="upper left", frameon=False
-            # )
+    # for ax in axes:
 
-        # Sample legend
-        if include_sample_legend:
-            include_fit_lines = False
-            x_loc = 0.18
-            handlelength = 1
-            if include_fit_lines:
-                nv_patches = []
-                for ind in range(len(markers_list)):
-                    nv_name = nv_names[ind].replace("_", "\_")
-                    sample = nv_name.split("-")[0]
-                    if sample == "prresearch":
-                        nv_name = "[1]"
-                    # else:
-                    #     label = "New results"
-                    ls = linestyles[sample]
-                    if marker_type == "nv":
-                        label = nv_name
-                        title = "sample-nv"
-                    elif marker_type == "sample":
-                        label = sample[0].upper() + sample[1:]
-                        title = "Sample"
-                    patch = mlines.Line2D(
-                        [],
-                        [],
-                        color="black",
-                        marker=markers_list[ind],
-                        linestyle=linestyles[sample],
-                        markersize=marker_size,
-                        markeredgewidth=marker_edge_width,
-                        label=label,
-                    )
-                    nv_patches.append(patch)
-                ax.legend(
-                    handles=nv_patches,
-                    loc="upper left",
-                    title=title,
-                    # title="Samples",
-                    bbox_to_anchor=(x_loc, 1.0),
-                    framealpha=1.0,
-                    handlelength=handlelength,
-                )
-            else:
-                nv_patches = []
-                for ind in range(len(markers_list)):
-                    nv_name = nv_names[ind].replace("_", "\_")
-                    sample = nv_name.split("-")[0]
-                    if sample == "prresearch":
-                        nv_name = "[1]"
-                    # else:
-                    #     label = "New results"
-                    ls = linestyles[sample]
-                    if marker_type == "nv":
-                        label = nv_name
-                        title = "sample-nv"
-                    elif marker_type == "sample":
-                        # label = sample[0].upper() + sample[1:]
-                        if sample == "hopper":
-                            label = "A"
-                        elif sample == "wu":
-                            label = "B"
-                        title = "Sample"
-                    patch = mlines.Line2D(
-                        [],
-                        [],
-                        color="black",
-                        marker=markers_list[ind],
-                        linestyle="None",
-                        markersize=marker_size,
-                        markeredgewidth=marker_edge_width,
-                        label=label,
-                    )
-                    nv_patches.append(patch)
-                ax.legend(
-                    handles=nv_patches,
-                    loc="upper left",
-                    title=title,
-                    # title="Samples",
-                    bbox_to_anchor=(x_loc, 1.0),
-                    framealpha=1.0,
-                    handlelength=handlelength,
-                )
+    #     if not no_legend:
+    #         omega_patch = patches.Patch(
+    #             label=r"$\mathrm{\Omega}$",
+    #             facecolor=omega_face_color,
+    #             edgecolor=omega_edge_color,
+    #             lw=marker_edge_width,
+    #         )
+    #         gamma_patch = patches.Patch(
+    #             label=r"$\mathit{\gamma}$",
+    #             facecolor=gamma_face_color,
+    #             edgecolor=gamma_edge_color,
+    #             lw=marker_edge_width,
+    #         )
+    #         leg1 = ax.legend(
+    #             handles=[gamma_patch, omega_patch],
+    #             loc="upper left",
+    #             title="Rate",
+    #             handlelength=1.5,
+    #         )
+    #         # leg1 = ax.legend(
+    #         #     handles=[omega_patch, gamma_patch], loc="upper left", frameon=False
+    #         # )
 
-        # Final steps
+    #     # Sample legend
+    #     if include_sample_legend:
+    #         include_fit_lines = False
+    #         x_loc = 0.18
+    #         handlelength = 1
+    #         if include_fit_lines:
+    #             nv_patches = []
+    #             for ind in range(len(markers_list)):
+    #                 nv_name = nv_names[ind].replace("_", "\_")
+    #                 sample = nv_name.split("-")[0]
+    #                 if sample == "prresearch":
+    #                     nv_name = "[1]"
+    #                 # else:
+    #                 #     label = "New results"
+    #                 ls = linestyles[sample]
+    #                 if marker_type == "nv":
+    #                     label = nv_name
+    #                     title = "sample-nv"
+    #                 elif marker_type == "sample":
+    #                     label = sample[0].upper() + sample[1:]
+    #                     title = "Sample"
+    #                 patch = mlines.Line2D(
+    #                     [],
+    #                     [],
+    #                     color="black",
+    #                     marker=markers_list[ind],
+    #                     linestyle=linestyles[sample],
+    #                     markersize=marker_size,
+    #                     markeredgewidth=marker_edge_width,
+    #                     label=label,
+    #                 )
+    #                 nv_patches.append(patch)
+    #             ax.legend(
+    #                 handles=nv_patches,
+    #                 loc="upper left",
+    #                 title=title,
+    #                 # title="Samples",
+    #                 bbox_to_anchor=(x_loc, 1.0),
+    #                 framealpha=1.0,
+    #                 handlelength=handlelength,
+    #             )
+    #         else:
+    #             nv_patches = []
+    #             for ind in range(len(markers_list)):
+    #                 nv_name = nv_names[ind].replace("_", "\_")
+    #                 sample = nv_name.split("-")[0]
+    #                 if sample == "prresearch":
+    #                     nv_name = "[1]"
+    #                 # else:
+    #                 #     label = "New results"
+    #                 ls = linestyles[sample]
+    #                 if marker_type == "nv":
+    #                     label = nv_name
+    #                     title = "sample-nv"
+    #                 elif marker_type == "sample":
+    #                     # label = sample[0].upper() + sample[1:]
+    #                     if sample == "hopper":
+    #                         label = "A"
+    #                     elif sample == "wu":
+    #                         label = "B"
+    #                     title = "Sample"
+    #                 patch = mlines.Line2D(
+    #                     [],
+    #                     [],
+    #                     color="black",
+    #                     marker=markers_list[ind],
+    #                     linestyle="None",
+    #                     markersize=marker_size,
+    #                     markeredgewidth=marker_edge_width,
+    #                     label=label,
+    #                 )
+    #                 nv_patches.append(patch)
+    #             ax.legend(
+    #                 handles=nv_patches,
+    #                 loc="upper left",
+    #                 title=title,
+    #                 # title="Samples",
+    #                 bbox_to_anchor=(x_loc, 1.0),
+    #                 framealpha=1.0,
+    #                 handlelength=handlelength,
+    #             )
 
-        # Sample-dependent vs phonon-limited line
-        include_sample_dep_line_label = False
-        if include_sample_dep_line_label:
-            text_font_size = 11.25
-            arrow_font_size = 16
-            ax = axes[0]
-            args = {
-                "transform": ax.transAxes,
-                "color": "black",
-                "fontsize": text_font_size,
-                "ha": "right",
-            }
-            x_loc = 0.253
-            y_loc = 0.765
-            linespacing = 0.04
-            ax.text(x_loc, y_loc, r"Sample-", **args)
-            ax.text(x_loc, y_loc - linespacing, r"dependent", **args)
-            prev = args["fontsize"]
-            args["fontsize"] = arrow_font_size
-            ax.text(
-                x_loc,
-                y_loc - 2.25 * linespacing,
-                r"$\boldsymbol{\leftarrow}$",
-                **args
-            )
-            args["fontsize"] = prev
+    #     # Final steps
 
-            args["ha"] = "left"
-            x_loc += 0.03
-            ax.text(x_loc, y_loc, r"Phonon-", **args)
-            ax.text(x_loc, y_loc - linespacing, r"limited", **args)
-            prev = args["fontsize"]
-            args["fontsize"] = arrow_font_size
-            ax.text(
-                x_loc,
-                y_loc - 2.25 * linespacing,
-                r"$\boldsymbol{\rightarrow}$",
-                **args
-            )
-            args["fontsize"] = prev
+    #     # Sample-dependent vs phonon-limited line
+    #     include_sample_dep_line_label = False
+    #     if include_sample_dep_line_label:
+    #         text_font_size = 11.25
+    #         arrow_font_size = 16
+    #         ax = axes[0]
+    #         args = {
+    #             "transform": ax.transAxes,
+    #             "color": "black",
+    #             "fontsize": text_font_size,
+    #             "ha": "right",
+    #         }
+    #         x_loc = 0.253
+    #         y_loc = 0.765
+    #         linespacing = 0.04
+    #         ax.text(x_loc, y_loc, r"Sample-", **args)
+    #         ax.text(x_loc, y_loc - linespacing, r"dependent", **args)
+    #         prev = args["fontsize"]
+    #         args["fontsize"] = arrow_font_size
+    #         ax.text(
+    #             x_loc,
+    #             y_loc - 2.25 * linespacing,
+    #             r"$\boldsymbol{\leftarrow}$",
+    #             **args
+    #         )
+    #         args["fontsize"] = prev
 
-        if include_sample_legend:
-            ax.add_artist(leg1)
+    #         args["ha"] = "left"
+    #         x_loc += 0.03
+    #         ax.text(x_loc, y_loc, r"Phonon-", **args)
+    #         ax.text(x_loc, y_loc - linespacing, r"limited", **args)
+    #         prev = args["fontsize"]
+    #         args["fontsize"] = arrow_font_size
+    #         ax.text(
+    #             x_loc,
+    #             y_loc - 2.25 * linespacing,
+    #             r"$\boldsymbol{\rightarrow}$",
+    #             **args
+    #         )
+    #         args["fontsize"] = prev
+
+    #     if include_sample_legend:
+    #         ax.add_artist(leg1)
 
 
 def figure_2_fits(ax_a, axins_a, data_points, fit_mode):
@@ -2468,24 +2379,15 @@ def main(
 
 if __name__ == "__main__":
 
-    # temp = 300
-    # delta1 = 68.2
-    # delta2 = 167
-    # A_1 = 580
-    # A_2 = 9000
-    # n1 = bose(delta1, temp)
-    # n2 = bose(delta2, temp)
-    # print(A_1 * n1 * (n1 + 1))
-    # print(A_2 * n2 * (n2 + 1))
-    # # print(bose(0.01241, 150))
-    # # print(bose(65, 450) * (bose(65, 450) + 1))
-    # # print(presentation_round_latex(145.88, 26.55))
-    # # print(presentation_round_latex(145.88, 16.55))
-    # # print(presentation_round_latex(145.88, 1.2))
-    # # print(presentation_round_latex(145.88, 6.55))
-    # # print(presentation_round_latex(145.88999, 0.002))
-    # # print(presentation_round_latex(15.88999, 0.00167))
-    # # print(presentation_round_latex(0.0288999, 0.0000167))
+    # print(bose(0.01241, 150))
+    # print(bose(65, 450) * (bose(65, 450) + 1))
+    # print(presentation_round_latex(145.88, 26.55))
+    # print(presentation_round_latex(145.88, 16.55))
+    # print(presentation_round_latex(145.88, 1.2))
+    # print(presentation_round_latex(145.88, 6.55))
+    # print(presentation_round_latex(145.88999, 0.002))
+    # print(presentation_round_latex(15.88999, 0.00167))
+    # print(presentation_round_latex(0.0288999, 0.0000167))
     # sys.exit()
 
     tool_belt.init_matplotlib()
@@ -2553,9 +2455,7 @@ if __name__ == "__main__":
     #     print()
     # normalized_residuals_histogram(rates_to_plot)
 
-    supp_comparison = True
-    # supp_comparison = False
-    figure_2(file_name, path, dosave=False, supp_comparison=supp_comparison)
+    figure_2_supp_comparison(file_name, path, dosave=False)
 
     # # process_to_plot = 'Walker'
     # # process_to_plot = 'Orbach'
