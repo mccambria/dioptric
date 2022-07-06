@@ -415,6 +415,7 @@ def state(
     num_runs,
     composite=False,
     opti_nv_sig=None,
+    ret_file_name=False,
 ):
 
     freq_center = nv_sig["resonance_{}".format(state.name)]
@@ -434,6 +435,7 @@ def state(
         state,
         composite,
         opti_nv_sig,
+        ret_file_name,
     )
 
     return resonance_list
@@ -456,6 +458,7 @@ def main(
     state=States.LOW,
     composite=False,
     opti_nv_sig=None,
+    ret_file_name=False,
 ):
 
     with labrad.connect() as cxn:
@@ -473,6 +476,7 @@ def main(
             state,
             composite,
             opti_nv_sig,
+            ret_file_name,
         )
     return resonance_list
 
@@ -491,6 +495,7 @@ def main_with_cxn(
     state=States.LOW,
     composite=False,
     opti_nv_sig=None,
+    ret_file_name=False,
 ):
 
     # %% Initial calculations and setup
@@ -764,11 +769,12 @@ def main_with_cxn(
         "norm_avg_sig_ste-units": "arb",
     }
 
-    name = nv_sig["name"]
-    filePath = tool_belt.get_file_path(__file__, timestamp, name)
+    nv_name = nv_sig["name"]
+    filePath = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    raw_file_name = filePath.stem()
     tool_belt.save_figure(fig, filePath)
     tool_belt.save_raw_data(rawData, filePath)
-    filePath = tool_belt.get_file_path(__file__, timestamp, name + "-fit")
+    filePath = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
 
@@ -777,18 +783,22 @@ def main_with_cxn(
     if fit_func == single_gaussian_dip:
         print("Single resonance at {:.4f} GHz".format(popt[2]))
         print("\n")
-        return popt[2], None
+        ret_vals = [popt[2], None]
     elif fit_func == double_gaussian_dip:
         print(
             "Resonances at {:.4f} GHz and {:.4f} GHz".format(popt[2], popt[5])
         )
         print("Splitting of {:d} MHz".format(int((popt[5] - popt[2]) * 1000)))
         print("\n")
-        return popt[2], popt[5]
+        ret_vals = [popt[2], popt[5]]
     else:
         print("No resonances found")
         print("\n")
-        return None, None
+        ret_vals = [None, None]
+    
+    if ret_file_name:
+        ret_vals.append(raw_file_name)
+    return ret_vals
 
 
 # %% Run the file
