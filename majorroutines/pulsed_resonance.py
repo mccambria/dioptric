@@ -13,9 +13,8 @@ Created on Thu Apr 11 15:39:23 2019
 
 import utils.tool_belt as tool_belt
 import majorroutines.optimize as optimize
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
 import time
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
@@ -28,14 +27,30 @@ from random import shuffle
 
 
 def create_fit_figure(
-    freq_range, freq_center, num_steps, norm_avg_sig, fit_func, popt
+    freq_range,
+    freq_center,
+    num_steps,
+    norm_avg_sig,
+    fit_func,
+    popt,
+    norm_avg_sig_ste=None,
 ):
 
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
     smooth_freqs = calculate_freqs(freq_range, freq_center, 1000)
 
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    ax.plot(freqs, norm_avg_sig, "b", label="data")
+    if norm_avg_sig_ste is not None:
+        ax.errorbar(
+            freqs,
+            norm_avg_sig,
+            yerr=norm_avg_sig_ste,
+            fmt="bo",
+            label="data",
+            ls="None",
+        )
+    else:
+        ax.plot(freqs, norm_avg_sig, fmt="b", label="data")
     ax.plot(smooth_freqs, fit_func(smooth_freqs, *popt), "r-", label="fit")
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Normalized fluorescence")
@@ -122,7 +137,7 @@ def return_res_with_error(data):
     else:
         res_ind = 2
     res = popt[res_ind]
-    res_err = numpy.sqrt(pcov[res_ind, res_ind])
+    res_err = np.sqrt(pcov[res_ind, res_ind])
     return res, res_err
 
 
@@ -130,11 +145,11 @@ def calculate_freqs(freq_range, freq_center, num_steps):
     half_freq_range = freq_range / 2
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
-    return numpy.linspace(freq_low, freq_high, num_steps)
+    return np.linspace(freq_low, freq_high, num_steps)
 
 
 def gaussian(freq, constrast, sigma, center):
-    return constrast * numpy.exp(-((freq - center) ** 2) / (2 * (sigma ** 2)))
+    return constrast * np.exp(-((freq - center) ** 2) / (2 * (sigma ** 2)))
 
 
 def double_gaussian_dip(
@@ -180,8 +195,8 @@ def get_guess_params(
         # ref_counts contains a list of lists. Each list is a single run.
         # Each point is a single freq in that run. We want to know the
         # noise we should expect to see on a point averaged over the runs.
-        ref_ste = numpy.std(ref_counts) / numpy.sqrt(len(ref_counts))
-        rel_ref_ste = ref_ste / numpy.average(ref_counts)
+        ref_ste = np.std(ref_counts) / np.sqrt(len(ref_counts))
+        rel_ref_ste = ref_ste / np.average(ref_counts)
         height = 5 * rel_ref_ste
         # print(height)
     else:
@@ -293,12 +308,12 @@ def fit_resonance(
             # popt = guess_params
             # if len(popt) == 6:
             #     zfs = (popt[2] + popt[5]) / 2
-            #     low_res_err = numpy.sqrt(pcov[2,2])
-            #     hig_res_err = numpy.sqrt(pcov[5,5])
-            #     zfs_err = numpy.sqrt(low_res_err**2 + hig_res_err**2) / 2
+            #     low_res_err = np.sqrt(pcov[2,2])
+            #     hig_res_err = np.sqrt(pcov[5,5])
+            #     zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
             # else:
             #     zfs = popt[2]
-            #     zfs_err = numpy.sqrt(pcov[2,2])
+            #     zfs_err = np.sqrt(pcov[2,2])
 
             # print(zfs)
             # print(zfs_err)
@@ -322,12 +337,12 @@ def simulate(res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur):
 
     smooth_freqs = calculate_freqs(freq_range, res_freq, 1000)
 
-    omega = numpy.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq ** 2)
+    omega = np.sqrt((smooth_freqs - res_freq) ** 2 + rabi_freq ** 2)
     amp = (rabi_freq / omega) ** 2
     angle = (
-        omega * 2 * numpy.pi * uwave_pulse_dur / 2
+        omega * 2 * np.pi * uwave_pulse_dur / 2
     )  # we use frequencies, so we have to convert by 2 pi here
-    prob = amp * (numpy.sin(angle)) ** 2
+    prob = amp * (np.sin(angle)) ** 2
 
     rel_counts = 1.0 + (contrast * prob)
 
@@ -341,22 +356,41 @@ def simulate(res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur):
 
 def process_counts(ref_counts, sig_counts, num_runs):
 
+    ##### Original Version #####
+
+    # # Find the averages across runs
+    # avg_ref_counts = np.average(ref_counts, axis=0)
+    # avg_sig_counts = np.average(sig_counts, axis=0)
+    # norm_avg_sig = avg_sig_counts / avg_ref_counts
+
+    # # Extract the error
+    # # Typically we don't do many runs (<10), so this isn't a large enough
+    # # sample to run stats on. Assume Poisson statistics instead.
+    # ste_ref_counts = np.sqrt(avg_ref_counts) / np.sqrt(num_runs)
+    # ste_sig_counts = np.sqrt(avg_sig_counts) / np.sqrt(num_runs)
+    # norm_avg_sig_ste = np.copy(norm_avg_sig)
+    # norm_avg_sig_ste *= np.sqrt(
+    #     (ste_sig_counts / avg_sig_counts) ** 2
+    #     + (ste_ref_counts / avg_ref_counts) ** 2
+    # )
+
+    ##### Simplified Version #####
+
     # Find the averages across runs
-    avg_ref_counts = numpy.average(ref_counts, axis=0)
-    avg_sig_counts = numpy.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / avg_ref_counts
+    single_avg_ref = np.average(ref_counts)
+    avg_ref_counts = np.average(ref_counts, axis=0)
+    avg_sig_counts = np.average(sig_counts, axis=0)
+    norm_avg_sig = avg_sig_counts / single_avg_ref
 
     # Extract the error
     # Typically we don't do many runs (<10), so this isn't a large enough
     # sample to run stats on. Assume Poisson statistics instead.
-    ste_ref_counts = numpy.sqrt(avg_ref_counts) / numpy.sqrt(num_runs)
-    ste_sig_counts = numpy.sqrt(avg_sig_counts) / numpy.sqrt(num_runs)
-    norm_avg_sig_ste = numpy.copy(norm_avg_sig)
-    norm_avg_sig_ste *= numpy.sqrt(
-        (ste_sig_counts / avg_sig_counts) ** 2
-        + (ste_ref_counts / avg_ref_counts) ** 2
-        + (ste_sig_counts / avg_sig_counts) ** 2
-    )
+    ste_ref_counts = np.sqrt(avg_ref_counts) / np.sqrt(num_runs)
+    ste_sig_counts = np.sqrt(avg_sig_counts) / np.sqrt(num_runs)
+    norm_avg_sig_ste = np.copy(ste_ref_counts)
+    norm_avg_sig_ste /= single_avg_ref
+
+    ##### Return #####
 
     return (
         avg_ref_counts,
@@ -467,16 +501,16 @@ def main_with_cxn(
     half_freq_range = freq_range / 2
     freq_low = freq_center - half_freq_range
     freq_high = freq_center + half_freq_range
-    freqs = numpy.linspace(freq_low, freq_high, num_steps)
+    freqs = np.linspace(freq_low, freq_high, num_steps)
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
     # useful for us here.
     # We define 2D arrays, with the horizontal dimension for the frequency and
     # the veritical dimension for the index of the run.
-    ref_counts = numpy.empty([num_runs, num_steps])
-    ref_counts[:] = numpy.nan
-    sig_counts = numpy.copy(ref_counts)
+    ref_counts = np.empty([num_runs, num_steps])
+    ref_counts[:] = np.nan
+    sig_counts = np.copy(ref_counts)
 
     laser_key = "spin_laser"
     laser_name = nv_sig[laser_key]
@@ -542,7 +576,7 @@ def main_with_cxn(
         if opti_nv_sig:
             opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
             drift = tool_belt.get_drift()
-            adj_coords = nv_sig["coords"] + numpy.array(drift)
+            adj_coords = nv_sig["coords"] + np.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
             opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
@@ -789,23 +823,45 @@ if __name__ == "__main__":
     #                                       norm_avg_sig, norm_avg_sig_ste)
 
     tool_belt.init_matplotlib()
-    matplotlib.rcParams["axes.linewidth"] = 1.0
+    # matplotlib.rcParams["axes.linewidth"] = 1.0
 
-    file = "2021_09_30-20_21_17-johnson-dnv5_2021_09_23"
+    file = "2022_06_30-23_27_50-hopper-search"
     data = tool_belt.get_raw_data(file)
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]
+    ref_counts = data["ref_counts"]
+    sig_counts = data["sig_counts"]
     num_runs = data["num_runs"]
-    norm_avg_sig = numpy.array(data["norm_avg_sig"])
-    ref_counts = numpy.array(data["ref_counts"])
+    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    (
+        avg_ref_counts,
+        avg_sig_counts,
+        norm_avg_sig,
+        ste_ref_counts,
+        ste_sig_counts,
+        norm_avg_sig_ste,
+    ) = ret_vals
 
     fit_func, popt, pcov = fit_resonance(
-        freq_range, freq_center, num_steps, norm_avg_sig, ref_counts
+        freq_range,
+        freq_center,
+        num_steps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
+        ref_counts,
     )
 
+    # popt[2] -= np.sqrt(pcov[2, 2])
+
     create_fit_figure(
-        freq_range, freq_center, num_steps, norm_avg_sig, fit_func, popt
+        freq_range,
+        freq_center,
+        num_steps,
+        norm_avg_sig,
+        fit_func,
+        popt,
+        norm_avg_sig_ste=norm_avg_sig_ste,
     )
 
     plt.show(block=True)
