@@ -47,11 +47,11 @@ import time
 
 def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
 
-    # scan_range = 0.5
-    # num_steps = 90
+    scan_range = 0.5
+    num_steps = 90
 
-    scan_range = 0.2
-    num_steps = 60
+    # scan_range = 0.2
+    # num_steps = 60
 
     # scan_range = 1.0
     # num_steps = 120
@@ -105,15 +105,16 @@ def do_image_sample_zoom(nv_sig, apd_indices):
 
 def do_image_sample_temperature(nv_sig, apd_indices):
     
-    scan_range = 0.10
-    num_steps = 3
+    scan_range = 0.5
+    # num_steps = 5
+    num_steps = 2
     
     nir_laser_voltage = 1.3
     
     esr_freq_range = 0.040
     esr_num_steps = 51
     esr_num_reps = 4e3
-    esr_num_runs = 16
+    esr_num_runs = 32
     
     image_sample_temperature.main(
         nv_sig,
@@ -852,11 +853,11 @@ if __name__ == "__main__":
         #     # do_image_sample_zoom(nv_sig, apd_indices)
         #     do_image_sample(nv_sig, apd_indices)
 
-        # do_image_sample(nv_sig, apd_indices)
+        do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
-        do_image_sample_temperature(nv_sig, apd_indices)
+        # do_image_sample_temperature(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)

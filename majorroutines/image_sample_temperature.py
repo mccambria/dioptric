@@ -55,8 +55,7 @@ def process_resonances(ref_resonances, signal_resonances):
 
 def main(
     nv_sig,
-    x_range,
-    y_range,
+    image_range,
     num_steps,
     apd_indices,
     nir_laser_voltage,
@@ -70,8 +69,7 @@ def main(
         img_array, x_voltages, y_voltages = main_with_cxn(
             cxn,
             nv_sig,
-            x_range,
-            y_range,
+            image_range,
             num_steps,
             apd_indices,
             nir_laser_voltage,
@@ -86,15 +84,14 @@ def main(
 
 # def main_with_cxn(
 #         files,
-#         x_range,
+#         image_range,
 #         y_range,
 #         num_steps,
 #     ):
 def main_with_cxn(
     cxn,
     nv_sig,
-    x_range,
-    y_range,
+    image_range,
     num_steps,
     apd_indices,
     nir_laser_voltage,
@@ -112,23 +109,21 @@ def main_with_cxn(
 
     drift = tool_belt.get_drift()
     coords = nv_sig["coords"]
-    adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
-    x_center, y_center, z_center = adjusted_coords
+    image_center_coords = (np.array(coords) + np.array(drift)).tolist()
+    x_center, y_center, z_center = image_center_coords
+    
+    gen_blank_square_list = lambda num_steps: [
+                            [
+                                None,
+                            ]
+                            * num_steps
+                            for ind in range(num_steps)
+                        ]
 
-    ref_resonances = [
-        [
-            None,
-        ]
-        * num_steps
-        for ind in range(num_steps)
-    ]
-    signal_resonances = [
-        [
-            None,
-        ]
-        * num_steps
-        for ind in range(num_steps)
-    ]
+    ref_resonances = gen_blank_square_list()
+    ref_files = gen_blank_square_list()
+    signal_resonances = gen_blank_square_list()
+    signal_files = gen_blank_square_list()
 
     pesr_low_lambda = lambda adj_nv_sig: pulsed_resonance.state(
         adj_nv_sig,
@@ -138,6 +133,7 @@ def main_with_cxn(
         esr_num_steps,
         esr_num_reps,
         esr_num_runs,
+        ret_file_name=True,
     )
     pesr_high_lambda = lambda adj_nv_sig: pulsed_resonance.state(
         adj_nv_sig,
@@ -147,6 +143,7 @@ def main_with_cxn(
         esr_num_steps,
         esr_num_reps,
         esr_num_runs,
+        ret_file_name=True,
     )
 
     cxn_power_supply = cxn.power_supply_mp710087
@@ -156,25 +153,8 @@ def main_with_cxn(
     # z_center = 0
 
     # Get the voltages for the raster
-    x_num_steps = num_steps
-    y_num_steps = num_steps
-    half_x_range = x_range / 2
-    half_y_range = y_range / 2
-    x_low = x_center - half_x_range
-    x_high = x_center + half_x_range
-    y_low = y_center - half_y_range
-    y_high = y_center + half_y_range
-    x_voltages_1d = np.linspace(x_low, x_high, num_steps)
-    y_voltages_1d = np.linspace(y_low, y_high, num_steps)
-
-    pixel_size = x_voltages_1d[1] - y_voltages_1d[0]
-    half_pixel_size = pixel_size / 2
-    img_extent = [
-        x_high + half_pixel_size,
-        x_low - half_pixel_size,
-        y_low - half_pixel_size,
-        y_high + half_pixel_size,
-    ]
+    x_voltages_1d, y_voltages_1d = tool_belt.calc_image_scan_vals(x_center, y_center, image_range, num_steps)
+    image_extent = tool_belt.calc_image_extent(x_center, y_center, image_range, num_steps)
 
     # Start rasterin'
 
@@ -182,10 +162,10 @@ def main_with_cxn(
 
     # path_from_nv_data = "pc_hahn/branch_master/pulsed_resonance/2022_06/image_sample_temperature-2022_06_30-crashed"
 
-    for y_ind in range(y_num_steps):
+    for y_ind in range(num_steps):
         y_voltage = y_voltages_1d[y_ind]
 
-        for x_ind in range(x_num_steps):
+        for x_ind in range(num_steps):
             adj_x_ind = x_ind if parity == +1 else -1 - x_ind
             x_voltage = x_voltages_1d[adj_x_ind]
 
@@ -196,18 +176,20 @@ def main_with_cxn(
 
             time.sleep(10)
 
-            res_low, _ = pesr_low_lambda(adjusted_nv_sig)
-            res_high, _ = pesr_high_lambda(adjusted_nv_sig)
+            res_low, _, file_name_low = pesr_low_lambda(adjusted_nv_sig)
+            res_high, _, file_name_high = pesr_high_lambda(adjusted_nv_sig)
             ref_resonances[y_ind][adj_x_ind] = (res_low, res_high)
+            ref_files[y_ind][adj_x_ind] = (file_name_low, file_name_high)
 
             cxn_power_supply.output_on()
             cxn_power_supply.set_voltage(nir_laser_voltage)
 
             time.sleep(10)
 
-            res_low, _ = pesr_low_lambda(adjusted_nv_sig)
-            res_high, _ = pesr_high_lambda(adjusted_nv_sig)
+            res_low, _, file_name_low = pesr_low_lambda(adjusted_nv_sig)
+            res_high, _, file_name_high = pesr_high_lambda(adjusted_nv_sig)
             signal_resonances[y_ind][adj_x_ind] = (res_low, res_high)
+            signal_files[y_ind][adj_x_ind] = (file_name_low, file_name_high)
 
             # f = files.pop(0)
             # f_name_with_ext = f.split("/")[-1]
@@ -243,7 +225,7 @@ def main_with_cxn(
 
     fig = tool_belt.create_image_figure(
         diff_temps,
-        img_extent,
+        image_extent,
         color_bar_label=r"$\mathrm{\Delta}\mathit{T}$ (K)",
     )
 
@@ -256,23 +238,26 @@ def main_with_cxn(
     # Save the data
 
     timestamp = tool_belt.get_time_stamp()
+    xy_units = tool_belt.get_registry_entry(
+        cxn, "xy_units", ["", "Config", "Positioning"]
+    )
     rawData = {
         "timestamp": timestamp,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
         "drift": drift,
-        "x_range": x_range,
-        "x_range-units": "V",
-        "y_range": y_range,
-        "y_range-units": "V",
+        "image_range": image_range,
+        "image_center_coords": image_center_coords,
+        "image_extent": image_extent,
         "num_steps": num_steps,
         "readout-units": "ns",
         "x_voltages": x_voltages_1d.tolist(),
-        "x_voltages-units": "V",
         "y_voltages": y_voltages_1d.tolist(),
-        "y_voltages-units": "V",
+        "xy_units": xy_units,
         "ref_resonances": ref_resonances,
+        "ref_files": ref_files,
         "signal_resonances": signal_resonances,
+        "signal_files": signal_files,
         "diff_temps": diff_temps.astype(float).tolist(),
         "diff_temps-units": "Kelvin",
     }
@@ -292,22 +277,44 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    home = common.get_nvdata_dir()
-    path = (
-        home
-        / "pc_hahn/branch_master/pulsed_resonance/2022_06/image_sample_temperature-2022_06_30-crashed/"
+    # home = common.get_nvdata_dir()
+    # path = (
+    #     home
+    #     / "pc_hahn/branch_master/pulsed_resonance/2022_06/image_sample_temperature-2022_06_30-crashed/"
+    # )
+
+    # # absolute path to search all text files inside a specific folder
+    # file_glob = str(path) + "/*.txt"
+    # files = glob.glob(file_glob)
+    # for f in files:
+    #     print(f)
+
+    # scan_range = 0.05
+    # num_steps = 3
+
+    # main_with_cxn(files, scan_range, scan_range, num_steps)
+    
+    file_name = ""
+    data = tool_belt.get_raw_data(file_name)
+    
+    ref_resonances = data["ref_resonances"]
+    signal_resonances = data["signal_resonances"]
+    nv_sig = data["nv_sig"]
+    coords = nv_sig["coords"]
+    drift = data["drift"]
+    adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
+    x_center, y_center, z_center = adjusted_coords
+    image_range = data["x_range"]
+    num_steps = data["num_steps"]
+    image_extent = tool_belt.calc_image_extent(x_center, y_center, image_range, num_steps)
+    
+    diff_temps = process_resonances(ref_resonances, signal_resonances)
+
+    fig = tool_belt.create_image_figure(
+        diff_temps,
+        image_extent,
+        color_bar_label=r"$\mathrm{\Delta}\mathit{T}$ (K)",
     )
-
-    # absolute path to search all text files inside a specific folder
-    file_glob = str(path) + "/*.txt"
-    files = glob.glob(file_glob)
-    for f in files:
-        print(f)
-
-    scan_range = 0.05
-    num_steps = 3
-
-    main_with_cxn(files, scan_range, scan_range, num_steps)
 
     plt.show(block=True)
 

@@ -740,6 +740,59 @@ def create_image_figure(
     return fig
 
 
+def calc_image_extent(x_center, y_center, scan_range, num_steps,
+                      pixel_size_adjustment=True):
+    """
+    Calculate the image extent to be fed to create_image_figure from the
+    center coordinates, scan range, and number of steps (the latter two
+    are assumed to be the same for x and y).
+    
+    If pixel_size_adjustment, adjust extent by half a pixel so pixel 
+    coordinates are centered on the pixel. Should only be used for plotting.
+    """
+
+    half_scan_range = scan_range / 2
+    x_low = x_center - half_scan_range
+    x_high = x_center + half_scan_range
+    y_low = y_center - half_scan_range
+    y_high = y_center + half_scan_range
+
+    if pixel_size_adjustment:
+        _, _, pixel_size = calc_image_scan_vals(x_center, y_center, 
+                                                scan_range, num_steps, 
+                                                ret_pixel_size=True)
+        half_pixel_size = pixel_size / 2
+        image_extent = [
+            x_low - half_pixel_size,
+            x_high + half_pixel_size,
+            y_low - half_pixel_size,
+            y_high + half_pixel_size,
+        ]
+    else:
+        image_extent = [x_low, x_high, y_low, y_high]
+    
+    return image_extent
+
+
+def calc_image_scan_vals(x_center, y_center, scan_range, num_steps, 
+                         ret_pixel_size=False):
+    """
+    Calculate the scan values in x, y for creating an image
+    """
+
+    x_low, x_high, y_low, y_high = calc_image_extent(x_center, y_center, 
+                                                 scan_range, num_steps,
+                                                 pixel_size_adjustment=False)
+    x_scan_vals, pixel_size = np.linspace(x_low, x_high, num_steps, 
+                                          retstep=True)
+    y_scan_vals = np.linspace(y_low, y_high, num_steps)
+
+    if ret_pixel_size:
+        return x_scan_vals, y_scan_vals, pixel_size
+    else:
+        return x_scan_vals, y_scan_vals
+
+
 def update_image_figure(fig, imgArray):
     """
     Update the image with the passed image array and redraw the figure.
@@ -1418,7 +1471,7 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
         time_stamp: string
             Formatted timestamp to include in the file name
         name: string
-            The file names consist of <timestamp>_<name>.<ext>
+            The full file name consists of <timestamp>_<name>.<ext>
             Ext is supplied by the save functions
         subfolder: string
             Subfolder to save to under file name
@@ -1447,8 +1500,10 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
 
     folderDir = get_folder_dir(source_name, subfolder_name)
     fileDir = os.path.abspath(os.path.join(folderDir, fileName))
-
-    return fileDir
+    
+    file_path_Path = Path(fileDir)
+    
+    return file_path_Path
 
 
 # def get_file_path(source_name, time_stamp='', name='', subfolder=None):
@@ -1497,8 +1552,7 @@ def save_figure(fig, file_path):
             extension
     """
 
-    file_path = str(file_path)
-    fig.savefig(file_path + ".svg", dpi=300)
+    fig.savefig(str(file_path.with_suffix(".svg")), dpi=300)
 
 
 def save_raw_data(rawData, filePath):
@@ -1514,7 +1568,7 @@ def save_raw_data(rawData, filePath):
             extension
     """
 
-    file_path_ext = PurePath(filePath + ".txt")
+    file_path_ext = filePath.with_suffix(".txt")
 
     # Add in a few things that should always be saved here. In particular,
     # sharedparameters so we have as snapshot of the configuration and
@@ -1535,6 +1589,8 @@ def save_raw_data(rawData, filePath):
 
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
+        
+    
 
 
 def get_nv_sig_units():
