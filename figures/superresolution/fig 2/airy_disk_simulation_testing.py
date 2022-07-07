@@ -19,7 +19,10 @@ wavelength = 638
 NA = 1.3  
 pi = numpy.pi
 # v = 50 / (30 * NA**2 * pi /wavelength**2)**2 # I should measure the actual value here
-v = 1.6e10 #nm^4 / (ms mW^2)
+# v = 1.6e10 #nm^4 / (ms mW^2)
+# v = 1.6e10 #nm^4 / (ms mW^2)
+# v = 1.6e13 #nm^4 / (ms mW^2) #hadn't converted us to ms?
+v = 5.8e12 #nm^4 / (ms mW^2) value from Fig 2 fit
 fwhm =2.355
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -32,18 +35,18 @@ def exp_func(t,g):
 def quad_func(I, v):
     return v*I**2
     
-def estimate_ion_rate():    # try to fit to data
+def estimate_ion_rate():    # try to fit to data (data from 7/27?, along x direction)
 
     n_1 = [0.9, 0.5, 0.2, 0.01] # near the first dip
-    t_1 = [1, 5, 10, 50]
+    t_1 = [1e-3, 5e-3, 10e-3, 50e-3] #us
     r_1 = 350 # nm 
     
     n_2 = [0.8, 0.2, 0.1] # first dip
-    t_2 = [1, 5, 10]
+    t_2 = [1e-3, 5e-3, 10e-3]
     r_2 = 401.476 # nm 5.14
     
     n_3 = [0.9, 0.8, 0.4,0.01] # second dip
-    t_3 = [10, 50, 100, 500]
+    t_3 = [10e-3, 50e-3, 100e-3, 500e-3]
     r_3 = 657.67 # nm 8.42
     
     P = 18.4
@@ -98,6 +101,7 @@ def estimate_ion_rate():    # try to fit to data
         text = 'NV- ionization rate scaling, v = {:.3f}\n'.format(opti_params[0]) + r'mW$^2$/(ms nm$^4$)'
         ax.text(0.2, 0.2, text, transform=ax.transAxes, fontsize=12,
                 verticalalignment='top', bbox=props)
+        print(opti_params[0])
     
 # %%
 
@@ -368,9 +372,12 @@ def simulation_2D(P, t,  img_range, num_steps, I_bkgd_perc = 0):
     fig.set_figheight(3)
     
     img = ax.imshow(img_array, cmap='inferno', 
-                    extent=tuple(img_extent))
+                    extent=tuple(img_extent),
+                    vmax = 1.0,
+                    vmin = 0)
     clb = plt.colorbar(img)
     clb.set_label("NV- pop", rotation=270)
+    
     
     ax.set_xlabel('x (nm)')
     ax.set_ylabel('y (nm)')
@@ -394,6 +401,7 @@ def exp_scaling(x, a, b, d):
     return a*numpy.exp(-x**b/d)
 
 def width_scaling_w_mods(t, C, e, a, R):
+    # return numpy.sqrt((-e*C + numpy.sqrt(e**2*C**2 + 4*C**2*a/t)) / (2*C**2)) + R**2
     return numpy.sqrt((-e*C + numpy.sqrt(e**2*C**2 + 4*C**2*a/t)) / (2*C**2)) + R**2
 
 def intensity_scaling(P):
@@ -408,7 +416,7 @@ def radial_scaling(r):
 def intensity_airy_func(r, P, I_bkgd_perc):
     I = intensity_scaling(P)
     x = radial_scaling(r)
-    return I * (2*j1(x) / x)**2  + I_bkgd_perc*I 
+    return I * (2*j1(x) / x)**2  + I_bkgd_perc*I
 
 
 def eta(r,v, P, t, I_bkgd_perc = 0):
@@ -425,7 +433,13 @@ if __name__ == '__main__':
     
     # fit_gaussian_peak(300, 70, 100, broadened_val = 0, I_bkgd_perc = 0.0, do_plot = True)
 
-    # simulation_2D(40, 1,  1500, 100, I_bkgd_perc = 0.005)
+    I = 0
+    simulation_2D(20, 0.001,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 0.01,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 0.1,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 1,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 10,  1500, 100, I_bkgd_perc = I)
+    simulation_2D(20, 100,  1500, 100, I_bkgd_perc = I)
     
     # estimate_ion_rate()
     # fig, ax = plt.subplots(1, 1)
@@ -434,8 +448,12 @@ if __name__ == '__main__':
     # t = 300
     # ax.plot(r, intensity_airy_func(r, P, 0))
 
-    fig, ax = plt.subplots()
-    x_lin = numpy.linspace(-300, 900, 601)
-    y_vals = intensity_airy_func(x_lin, 1, 0) 
-    ax.plot(x_lin, y_vals, '-')
-    ax.plot([0]*len(x_lin), x_lin, '-')
+    # I_bkgd_perc = 0.00
+    # fig, ax = plt.subplots()
+    # x_lin = numpy.linspace(-300, 900, 601)
+    # y_vals_light = intensity_airy_func(x_lin, 1, I_bkgd_perc) 
+    # y_vals_eta = eta(x_lin, 1e4, 1, 10, I_bkgd_perc)
+    # ax.plot(x_lin, y_vals_light, '-', color = 'purple')
+    # ax.plot(x_lin, y_vals_eta, 'r-')
+    # ax.plot(x_lin,[0]*len(x_lin) ,'k-')
+    # ax.plot(x_lin,[I_bkgd_perc]*len(x_lin) ,'k--')
