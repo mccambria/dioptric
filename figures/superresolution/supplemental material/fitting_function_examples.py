@@ -47,7 +47,7 @@ shape_list = ['o']*3
 # %%
 
 def width_scaling_w_mods(t, C, e, a, R):
-    return numpy.sqrt(2/C* (-e + numpy.sqrt(e**2+ 4*a/t)) + R**2)
+    return numpy.sqrt(4/C* (-e + numpy.sqrt(e**2+ a/t)) + R**2)
     
 def bessel_scnd_der(x):
     term_1 = 24*j1(x)**2
@@ -203,7 +203,7 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
           t_vals,widths_master_list,p0=init_fit)
     print('Opti params: ' + str(opti_params))
     ax.plot(lin_x_vals, inverse_quarter(lin_x_vals, opti_params)*fwhm, 
-            color = 'orange', linestyle =  (0,(2,2)) , linewidth = 1, label = r'$\Delta x$ (Eq. S10)')
+            color = 'orange', linestyle =  (0,(2,2)) , linewidth = 1, label = r'$\Delta x$')
     
     
     
@@ -221,7 +221,7 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
            bounds=(0, [1, numpy.inf])
           )
     ax.plot(lin_x_vals, fit_func(lin_x_vals, *opti_params)*wavelength/(2*numpy.pi*NA), 
-            color = 'blue',  linestyle = (0,(6,3))   , linewidth = 1, label = r"$\Delta x'$ (Eq. S17)")
+            color = 'blue',  linestyle = (0,(6,3))   , linewidth = 1, label = r"$\Delta x'$")
     
     
     #### modified inverse quarter####
@@ -247,7 +247,7 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
     # print(cov_arr)
     # print((opti_params[2])**2*wavelength/(2*numpy.pi*NA))
     ax.plot(lin_x_vals, fit_func(lin_x_vals, *opti_params)*wavelength/(2*numpy.pi*NA), 
-            color = 'red',  linestyle = 'solid' , linewidth = 1, label = r"$\Delta x''$ (Eq. S18)")
+            color = 'red',  linestyle = 'solid' , linewidth = 1, label = r"$\Delta x''$")
     
     
         

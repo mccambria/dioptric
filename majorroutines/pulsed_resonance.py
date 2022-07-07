@@ -21,6 +21,7 @@ from scipy.signal import find_peaks
 import labrad
 from utils.tool_belt import States
 from random import shuffle
+import sys
 
 
 # %% Figure functions
@@ -292,7 +293,7 @@ def fit_resonance(
     fit_func, guess_params = get_guess_params(
         freq_range, freq_center, num_steps, norm_avg_sig, ref_counts
     )
-    
+
     # fit_func = single_gaussian_dip
     # guess_params = [0.2, 0.004, freq_center]
 
@@ -365,37 +366,37 @@ def process_counts(ref_counts, sig_counts, num_runs):
 
     ##### Original Version #####
 
-    # # Find the averages across runs
-    # avg_ref_counts = np.average(ref_counts, axis=0)
-    # avg_sig_counts = np.average(sig_counts, axis=0)
-    # norm_avg_sig = avg_sig_counts / avg_ref_counts
-
-    # # Extract the error
-    # # Typically we don't do many runs (<10), so this isn't a large enough
-    # # sample to run stats on. Assume Poisson statistics instead.
-    # ste_ref_counts = np.sqrt(avg_ref_counts) / np.sqrt(num_runs)
-    # ste_sig_counts = np.sqrt(avg_sig_counts) / np.sqrt(num_runs)
-    # norm_avg_sig_ste = np.copy(norm_avg_sig)
-    # norm_avg_sig_ste *= np.sqrt(
-    #     (ste_sig_counts / avg_sig_counts) ** 2
-    #     + (ste_ref_counts / avg_ref_counts) ** 2
-    # )
-
-    ##### Simplified Version #####
-
     # Find the averages across runs
-    single_avg_ref = np.average(ref_counts)
     avg_ref_counts = np.average(ref_counts, axis=0)
     avg_sig_counts = np.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / single_avg_ref
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # Extract the error
     # Typically we don't do many runs (<10), so this isn't a large enough
     # sample to run stats on. Assume Poisson statistics instead.
     ste_ref_counts = np.sqrt(avg_ref_counts) / np.sqrt(num_runs)
     ste_sig_counts = np.sqrt(avg_sig_counts) / np.sqrt(num_runs)
-    norm_avg_sig_ste = np.copy(ste_ref_counts)
-    norm_avg_sig_ste /= single_avg_ref
+    norm_avg_sig_ste = np.copy(norm_avg_sig)
+    norm_avg_sig_ste *= np.sqrt(
+        (ste_sig_counts / avg_sig_counts) ** 2
+        + (ste_ref_counts / avg_ref_counts) ** 2
+    )
+
+    ##### Simplified Version #####
+
+    # # Find the averages across runs
+    # single_avg_ref = np.average(ref_counts)
+    # avg_ref_counts = np.average(ref_counts, axis=0)
+    # avg_sig_counts = np.average(sig_counts, axis=0)
+    # norm_avg_sig = avg_sig_counts / single_avg_ref
+
+    # # Extract the error
+    # # Typically we don't do many runs (<10), so this isn't a large enough
+    # # sample to run stats on. Assume Poisson statistics instead.
+    # ste_ref_counts = np.sqrt(avg_ref_counts) / np.sqrt(num_runs)
+    # ste_sig_counts = np.sqrt(avg_sig_counts) / np.sqrt(num_runs)
+    # norm_avg_sig_ste = np.copy(ste_ref_counts)
+    # norm_avg_sig_ste /= single_avg_ref
 
     ##### Return #####
 
@@ -804,7 +805,7 @@ def main_with_cxn(
         print("No resonances found")
         print("\n")
         ret_vals = [None, None]
-    
+
     if ret_file_name:
         ret_vals.append(raw_file_name)
     # print(ret_vals)
@@ -815,6 +816,9 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
+
+    print(__file__)
+    sys.exit()
 
     file = "2022_07_07-15_10_20-rubin"
 
@@ -843,7 +847,7 @@ if __name__ == "__main__":
         fit_func,
         popt,
     )
-    
+
 
     # tool_belt.init_matplotlib()
     # # matplotlib.rcParams["axes.linewidth"] = 1.0
