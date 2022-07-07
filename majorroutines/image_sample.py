@@ -453,9 +453,9 @@ def main_with_cxn(cxn, nv_sig, x_range, y_range, num_steps,
 
 if __name__ == '__main__':
 
-    file_name = '2022_05_16-18_38_18-sandia-R1_a9'
+    file_name = '2022_06_20-16_36_36-sandia-R21-a8'
     scale = 83
-
+    
     replot_for_presentation(file_name, scale)
     
     # replot_for_analysis(file_name)
