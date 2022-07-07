@@ -430,10 +430,12 @@ def main_with_cxn(cxn, nv_sig, apd_indices, uwave_time_range, state,
                 'norm_avg_sig': norm_avg_sig.astype(float).tolist(),
                 'norm_avg_sig-units': 'arb'}
 
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig['name'])
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     tool_belt.save_figure(raw_fig, file_path)
     if fit_fig is not None:
-        tool_belt.save_figure(fit_fig, file_path + '-fit')
+        file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+        tool_belt.save_figure(fit_fig, file_path_fit)
     tool_belt.save_raw_data(raw_data, file_path)
 
     if (fit_func is not None) and (popt is not None):
