@@ -120,10 +120,10 @@ def main_with_cxn(
                             for ind in range(num_steps)
                         ]
 
-    ref_resonances = gen_blank_square_list()
-    ref_files = gen_blank_square_list()
-    signal_resonances = gen_blank_square_list()
-    signal_files = gen_blank_square_list()
+    ref_resonances = gen_blank_square_list(num_steps)
+    ref_files = gen_blank_square_list(num_steps)
+    signal_resonances = gen_blank_square_list(num_steps)
+    signal_files = gen_blank_square_list(num_steps)
 
     pesr_low_lambda = lambda adj_nv_sig: pulsed_resonance.state(
         adj_nv_sig,

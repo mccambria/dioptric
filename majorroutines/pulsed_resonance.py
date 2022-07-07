@@ -22,6 +22,7 @@ from scipy.signal import find_peaks
 import labrad
 from utils.tool_belt import States
 from random import shuffle
+import sys
 
 
 # %% Figure functions
@@ -736,10 +737,10 @@ def main_with_cxn(
     }
 
     nv_name = nv_sig["name"]
-    filePath = tool_belt.get_file_path(__file__, timestamp, nv_name)
-    raw_file_name = filePath.stem()
-    tool_belt.save_figure(fig, filePath)
-    tool_belt.save_raw_data(rawData, filePath)
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    raw_file_name = file_path.stem
+    tool_belt.save_figure(fig, file_path)
+    tool_belt.save_raw_data(rawData, file_path)
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
@@ -771,6 +772,9 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
+    
+    print(__file__)
+    sys.exit()
 
     # folder = "pc_rabi/branch_master/pulsed_resonance/2021_09"
     # # file = '2021_09_15-13_30_13-johnson-dnv0_2021_09_09'
