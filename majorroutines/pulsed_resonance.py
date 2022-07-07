@@ -358,37 +358,37 @@ def process_counts(ref_counts, sig_counts, num_runs):
 
     ##### Original Version #####
 
-    # # Find the averages across runs
-    # avg_ref_counts = np.average(ref_counts, axis=0)
-    # avg_sig_counts = np.average(sig_counts, axis=0)
-    # norm_avg_sig = avg_sig_counts / avg_ref_counts
-
-    # # Extract the error
-    # # Typically we don't do many runs (<10), so this isn't a large enough
-    # # sample to run stats on. Assume Poisson statistics instead.
-    # ste_ref_counts = np.sqrt(avg_ref_counts) / np.sqrt(num_runs)
-    # ste_sig_counts = np.sqrt(avg_sig_counts) / np.sqrt(num_runs)
-    # norm_avg_sig_ste = np.copy(norm_avg_sig)
-    # norm_avg_sig_ste *= np.sqrt(
-    #     (ste_sig_counts / avg_sig_counts) ** 2
-    #     + (ste_ref_counts / avg_ref_counts) ** 2
-    # )
-
-    ##### Simplified Version #####
-
     # Find the averages across runs
-    single_avg_ref = np.average(ref_counts)
     avg_ref_counts = np.average(ref_counts, axis=0)
     avg_sig_counts = np.average(sig_counts, axis=0)
-    norm_avg_sig = avg_sig_counts / single_avg_ref
+    norm_avg_sig = avg_sig_counts / avg_ref_counts
 
     # Extract the error
     # Typically we don't do many runs (<10), so this isn't a large enough
     # sample to run stats on. Assume Poisson statistics instead.
     ste_ref_counts = np.sqrt(avg_ref_counts) / np.sqrt(num_runs)
     ste_sig_counts = np.sqrt(avg_sig_counts) / np.sqrt(num_runs)
-    norm_avg_sig_ste = np.copy(ste_ref_counts)
-    norm_avg_sig_ste /= single_avg_ref
+    norm_avg_sig_ste = np.copy(norm_avg_sig)
+    norm_avg_sig_ste *= np.sqrt(
+        (ste_sig_counts / avg_sig_counts) ** 2
+        + (ste_ref_counts / avg_ref_counts) ** 2
+    )
+
+    ##### Simplified Version #####
+
+    # # Find the averages across runs
+    # single_avg_ref = np.average(ref_counts)
+    # avg_ref_counts = np.average(ref_counts, axis=0)
+    # avg_sig_counts = np.average(sig_counts, axis=0)
+    # norm_avg_sig = avg_sig_counts / single_avg_ref
+
+    # # Extract the error
+    # # Typically we don't do many runs (<10), so this isn't a large enough
+    # # sample to run stats on. Assume Poisson statistics instead.
+    # ste_ref_counts = np.sqrt(avg_ref_counts) / np.sqrt(num_runs)
+    # ste_sig_counts = np.sqrt(avg_sig_counts) / np.sqrt(num_runs)
+    # norm_avg_sig_ste = np.copy(ste_ref_counts)
+    # norm_avg_sig_ste /= single_avg_ref
 
     ##### Return #####
 
@@ -795,7 +795,7 @@ def main_with_cxn(
         print("No resonances found")
         print("\n")
         ret_vals = [None, None]
-    
+
     if ret_file_name:
         ret_vals.append(raw_file_name)
     return ret_vals
@@ -864,7 +864,7 @@ if __name__ == "__main__":
 
     # popt[2] -= np.sqrt(pcov[2, 2])
 
-    create_fit_figure(
+    fig = create_fit_figure(
         freq_range,
         freq_center,
         num_steps,

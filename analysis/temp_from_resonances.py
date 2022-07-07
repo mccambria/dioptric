@@ -318,7 +318,7 @@ def main_files(files, mag_B=None, theta_B_deg=None):
         resonances.append(res)
         res_errs.append(res_err)
 
-    main_res(resonances, res_errs, mag_B, theta_B_deg)
+    return main_res(resonances, res_errs, mag_B, theta_B_deg)
 
 
 def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
@@ -335,7 +335,7 @@ def main_res(resonances, res_errs, mag_B=None, theta_B_deg=None):
         zfs = (resonances[0] + resonances[1]) / 2
         zfs_err = np.sqrt(res_errs[0] ** 2 + res_errs[1] ** 2) / 2
 
-    main(zfs, zfs_err)
+    return main(zfs, zfs_err)
 
 
 def main(zfs, zfs_err=None):
@@ -394,10 +394,23 @@ def main(zfs, zfs_err=None):
 
 if __name__ == "__main__":
 
+    # files = [
+    #     "2022_07_06-17_07_38-hopper-search",
+    #     "2022_07_06-17_36_45-hopper-search",
+    # ]
+    # files = [
+    #     "2022_07_06-18_06_22-hopper-search",
+    #     "2022_07_06-18_35_47-hopper-search",
+    # ]
+
     files = [
-        "2022_06_30-23_27_50-hopper-search",
-        "2022_06_30-23_42_51-hopper-search",
+        "2022_07_02-20_32_55-hopper-search",
+        "2022_07_02-21_02_41-hopper-search",
     ]
+    # files = [
+    #     "2022_07_02-21_32_49-hopper-search",
+    #     "2022_07_02-22_02_46-hopper-search",
+    # ]
 
     main_files(files)
 
