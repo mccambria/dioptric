@@ -726,6 +726,7 @@ def do_spin_echo_battery(nv_sig, apd_indices):
 
 def do_nir_battery(nv_sig, apd_indices):
 
+    do_image_sample(nv_sig, apd_indices)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
     # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
@@ -737,16 +738,17 @@ def do_nir_battery(nv_sig, apd_indices):
     with labrad.connect() as cxn:
         power_supply = cxn.power_supply_mp710087
         power_supply.output_on()
-        power_supply.set_voltage(1.1)
+        power_supply.set_voltage(1.3)
 
-    do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-    do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-    do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-    do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
-    do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
-    do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
-    nv_sig["spin_pol_dur"] = 1e6
-    do_t1_dq_knill(nv_sig, apd_indices)
+    do_image_sample(nv_sig, apd_indices)
+    # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+    # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+    # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+    # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+    # do_discrete_rabi(nv_sig, apd_indices, States.LOW, 4)
+    # do_discrete_rabi(nv_sig, apd_indices, States.HIGH, 4)
+    # nv_sig["spin_pol_dur"] = 1e6
+    # do_t1_dq_knill(nv_sig, apd_indices)
 
     with labrad.connect() as cxn:
         power_supply = cxn.power_supply_mp710087
@@ -856,7 +858,7 @@ if __name__ == "__main__":
         # do_image_sample_zoom(nv_sig, apd_indices)
         # do_image_sample(nv_sig, apd_indices, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, apd_indices, nv_minus_initialization=True)
-        do_image_sample_temperature(nv_sig, apd_indices)
+        # do_image_sample_temperature(nv_sig, apd_indices)
         # do_optimize(nv_sig, apd_indices)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True)
         # do_stationary_count(nv_sig, apd_indices, disable_opt=True, nv_minus_initialization=True)
@@ -882,7 +884,7 @@ if __name__ == "__main__":
         # do_t1_interleave_knill(nv_sig, apd_indices)
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
-        # do_nir_battery(nv_sig, apd_indices)
+        do_nir_battery(nv_sig, apd_indices)
 
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)

@@ -293,6 +293,6 @@ if __name__ == "__main__":
     )
     plot_diff_temps(diff_temps, image_extent)
 
-    plt.show(block=True)
+    # plt.show(block=True)
 
 # endregion
