@@ -71,18 +71,19 @@ def main(cxn, laser_name, laser_power=None):
     """Run a laser on on a square wave."""
 
     seq_file = 'square_wave.py'
-    # period = int(1e6)
-    period = int(350*2)
+    period = int(2e8)
+    # period = int(350*2)
     # period = int(500)
     # period = int(0.25e6)
     # period = int(10000)
     seq_args = [period, laser_name, laser_power]
-    print(seq_args)
+
 
     # seq_file = 'SCC_optimize_pulses_w_uwaves.py'
     # seq_args = [58000.0, 1000.0, 125, 68, 150, 68, 'laserglow_532', 'laserglow_589', 'cobolt_638', 'signal_generator_sg394', 1, 0.68, 0.9]
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
+    # cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
     cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
 
     input('Press enter to stop...')
@@ -95,14 +96,14 @@ def arb_duty_cycle(cxn, laser_name, laser_power=None):
     """Run a laser on on a square wave."""
 
     seq_file = 'square_wave_arb_duty_cycle.py'
-    period_1 = 1e8
-    wait_1 = 1e8
-    period_2 = 5e8
-    wait_2 = 1e8
+    period_1 = 350
+    wait_1 = 1e6
+    period_2 = 350
+    wait_2 = 1e6
     seq_args = [wait_1,period_1 ,wait_2,period_2 ,laser_name, laser_power]
 
     seq_args_string = tool_belt.encode_seq_args(seq_args)
-    cxn.pulse_streamer.stream_immediate(seq_file, -1, seq_args_string)
+    cxn.pulse_streamer.stream_immediate(seq_file, int(1e5), seq_args_string)
 
     input('Press enter to stop...')
 

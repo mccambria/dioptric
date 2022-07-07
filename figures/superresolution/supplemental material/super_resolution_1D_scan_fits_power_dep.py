@@ -54,7 +54,7 @@ def width_scaling_w_mods(P, C, e, a, R):
     # # return numpy.sqrt(term_2 / term_3) + R**2
     # return numpy.sqrt((numpy.sqrt(term_2 / term_3))**2 + R**2)
 
-    return numpy.sqrt(2/C* (-e + numpy.sqrt(e**2+ 4*a/P**2)) + R**2)
+    return numpy.sqrt(4/C* (-e + numpy.sqrt(e**2+ 1*a/P**2)) + R**2)
     
 def bessel_scnd_der(x):
     term_1 = 24*j1(x)**2

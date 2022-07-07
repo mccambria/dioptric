@@ -276,34 +276,37 @@ def uwave_delay(
 if __name__ == "__main__":
 
     # Rabi parameters
-    sample_name = "sandia"
-    green_power = 7
-    nd = "nd_0.5"
-    nd = "nd_0"
+    sample_name = "rubin"
+    green_power = 8000
+    nd_green = "nd_0.4"
     green_laser = 'integrated_520'
     yellow_laser = "laserglow_589"
     red_laser = "cobolt_638"
     
     nv_sig = { 
-        "coords":[-0.863, -0.371, 6.17],# a6_R10c10 
-        "name": "{}-siv_R10_a130_r4_c1".format(sample_name,),
+       "coords":[-0.886, -0.534, 5.890],
+        "name": "{}".format(sample_name,),
         "disable_opt":False,
-        "ramp_voltages": True,
-        "expected_count_rate":None,
+        "ramp_voltages": False,
+        "expected_count_rate":12,
+        "correction_collar": 0.12,
         
-        "spin_laser": green_laser,
-        "spin_laser_power": green_power,
-        "spin_pol_dur": 1e5,
-        "spin_readout_laser_power": green_power,
-        "spin_readout_dur": 350,
         
-        "imaging_laser": red_laser,
-        "imaging_laser_power": 0.595, # 6 mW
-        "imaging_readout_dur": 1e7,
+        
+          "spin_laser":green_laser,
+          "spin_laser_power": green_power,
+         "spin_laser_filter": nd_green,
+          "spin_readout_dur": 350,
+          "spin_pol_dur": 1000.0,
+        
+          "imaging_laser":green_laser,
+        "imaging_laser_power": green_power,
+         "imaging_laser_filter": nd_green,
+          "imaging_readout_dur": 1e7,
         
 
         
-        "collection_filter": "715_lp",
+        "collection_filter": "715_sp+630_lp", # NV band only
         "magnet_angle": None,
         "resonance_LOW":2.87,"rabi_LOW": 150,
         "uwave_power_LOW": 15.5,  # 15.5 max
@@ -358,14 +361,14 @@ if __name__ == "__main__":
         # num_reps = int(1e5)
         # laser_name = 'laserglow_589'
         # delay_range = [800, 1700]
-        num_reps = int(1e4)
-        # laser_name = 'integrated_520'
-        laser_power = 0.65
-        laser_name = 'cobolt_638'
-        # laser_power = None
+        num_reps = int(5e4)
+        laser_name = 'integrated_520'
+        # laser_power = 0.65
+        # laser_name = 'cobolt_638'
+        laser_power = None
         # laser_name = 'laserglow_589'
         # laser_power = 0.6
-        delay_range = [0,3e3]
+        delay_range = [0,1e3]
         with labrad.connect() as cxn:
             aom_delay(cxn, nv_sig, apd_indices,
                       delay_range, num_steps, num_reps, laser_name, laser_power)

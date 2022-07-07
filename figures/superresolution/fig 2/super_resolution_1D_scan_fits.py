@@ -55,7 +55,9 @@ def width_scaling_w_mods(t, C, e, a, R):
     
     
     # return numpy.sqrt((2*numpy.sqrt(term_2 / term_3))**2 + R**2)
-    return numpy.sqrt(2/C* (-e + numpy.sqrt(e**2+ 4*a/t)) + R**2)
+    
+    # return numpy.sqrt(2/C* (-e + numpy.sqrt(e**2+ 4*a/t)) + R**2) #previous
+    return numpy.sqrt(4/C* (-e + numpy.sqrt(e**2+ a/t)) + R**2) #current
     
 def bessel_scnd_der(x):
     term_1 = 24*j1(x)**2
@@ -285,7 +287,7 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
     #### modified inverse quarter####
     x0=7.0156 #Position of this Airy disk (n2), in dimensionless units
     C = bessel_scnd_der(x0) #Calculate a constant to use in fit
-    print(C)
+    print(C) 
     # print(t_vals)
     # Estimate the lower limit and convert to dimentionless units below
     R_guess = 10 #nm 

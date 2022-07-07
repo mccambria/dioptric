@@ -285,7 +285,7 @@ def do_pulsed_resonance(nv_sig, opti_nv_sig, apd_indices, freq_center=2.87, freq
     num_reps = 1e4
     num_runs = 10
     uwave_power = 14.5
-    uwave_pulse_dur = int(50/2)
+    uwave_pulse_dur = int(20)
 
     pulsed_resonance.main(
         nv_sig,
@@ -374,7 +374,7 @@ def do_rabi(nv_sig, opti_nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
 
     num_steps = 51
     num_reps = int(1e4)
-    num_runs = 10
+    num_runs = 1
 
     period = rabi.main(
         nv_sig,
@@ -442,12 +442,10 @@ def do_spin_echo(nv_sig, apd_indices):
     max_time = 100  # us
     num_steps = int(max_time + 1)  # 1 point per us
     precession_time_range = [0, max_time*10**3]
+
     
-    num_steps = 2
-    precession_time_range = [0, max_time*10**3]
-    
-    num_reps = 5e4
-    num_runs =1
+    num_reps = 1e4
+    num_runs = 5
 
     #    num_steps = 151
     #    precession_time_range = [0, 10*10**3]
@@ -699,7 +697,8 @@ if __name__ == "__main__":
     # apd_indices = [0,1]
 
     nd_yellow = "nd_0"
-    green_power =3500
+    green_power =8000
+    nd_green = 'nd_0.4'
     red_power = 120
     sample_name = "rubin"
     green_laser = "integrated_520"#"cobolt_515"
@@ -711,36 +710,38 @@ if __name__ == "__main__":
     nv_sig = { 
             "coords":[-0.886, -0.534, 5.890],
         "name": "{}".format(sample_name,),
-        "disable_opt":True,
+        "disable_opt":False,
         "ramp_voltages": False,
-        "expected_count_rate":15,
+        "expected_count_rate":12,
         "correction_collar": 0.12,
         
 
         
           "spin_laser":green_laser,
           "spin_laser_power": green_power,
+         "spin_laser_filter": nd_green,
           "spin_readout_dur": 350,
-          "spin_pol_dur": 100000.0,
+          "spin_pol_dur": 1000.0,
         
           "imaging_laser":green_laser,
         "imaging_laser_power": green_power,
+         "imaging_laser_filter": nd_green,
           "imaging_readout_dur": 1e7,
         
-        "initialize_laser": green_laser, 
-          "initialize_laser_power": green_power,
-          "initialize_laser_dur":  1e3,
-        "CPG_laser": green_laser, 
-          "CPG_laser_power":green_power,
-          "CPG_laser_dur": int(1e9),
+        # "initialize_laser": green_laser, 
+        #   "initialize_laser_power": green_power,
+        #   "initialize_laser_dur":  1e3,
+        # "CPG_laser": green_laser, 
+        #   "CPG_laser_power":green_power,
+        #   "CPG_laser_dur": int(1e9),
         
           
         
         
-        "charge_readout_laser": yellow_laser,
-         "charge_readout_laser_power": 0.2, #0.15 for NV
-         "charge_readout_laser_filter": "nd_1.0",
-         "charge_readout_laser_dur": 50e6, #50e6 for NV
+        # "charge_readout_laser": yellow_laser,
+        #  "charge_readout_laser_power": 0.2, #0.15 for NV
+        #  "charge_readout_laser_filter": "nd_1.0",
+        #  "charge_readout_laser_dur": 50e6, #50e6 for NV
         
         # "collection_filter": "715_lp",#see only SiV (some NV signal)
         # "collection_filter": "740_bp",#SiV emission only (no NV signal)
@@ -812,13 +813,13 @@ if __name__ == "__main__":
         # do_resonance_state(nv_sig,nv_sig, apd_indices, States.HIGH)
         
         # do_rabi(nv_sig, nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 200])
-        #do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 150])
+        # do_rabi(nv_sig, nv_sig,apd_indices, States.HIGH, uwave_time_range=[0, 150])
         
-        #do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.9198, 0.1) ###
+        # do_pulsed_resonance(nv_sig, nv_sig, apd_indices, 2.87, 0.3) ###
         # do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.LOW)
         #do_pulsed_resonance_state(nv_sig, nv_sig,apd_indices, States.HIGH)
         # do_ramsey(nv_sig, opti_nv_sig,apd_indices)
-        # do_spin_echo(nv_sig, apd_indices)
+        do_spin_echo(nv_sig, apd_indices)
         
 
   

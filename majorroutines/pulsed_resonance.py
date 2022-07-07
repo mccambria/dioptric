@@ -51,7 +51,7 @@ def create_fit_figure(
             ls="None",
         )
     else:
-        ax.plot(freqs, norm_avg_sig, fmt="b", label="data")
+        ax.plot(freqs, norm_avg_sig, "b", label="data")
     ax.plot(smooth_freqs, fit_func(smooth_freqs, *popt), "r-", label="fit")
     ax.set_xlabel("Frequency (GHz)")
     ax.set_ylabel("Normalized fluorescence")
@@ -290,44 +290,51 @@ def fit_resonance(
 
     freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
-    # fit_func, guess_params = get_guess_params(
-    #     freq_range, freq_center, num_steps, norm_avg_sig, ref_counts
-    # )
-    fit_func = single_gaussian_dip
-    guess_params = [0.2, 0.004, freq_center]
+    fit_func, guess_params = get_guess_params(
+        freq_range, freq_center, num_steps, norm_avg_sig, ref_counts
+    )
 
-    try:
-        if norm_avg_sig_ste is not None:
-            popt, pcov = curve_fit(
-                fit_func,
-                freqs,
-                norm_avg_sig,
-                p0=guess_params,
-                sigma=norm_avg_sig_ste,
-                absolute_sigma=True,
-            )
-            # popt = guess_params
-            # if len(popt) == 6:
-            #     zfs = (popt[2] + popt[5]) / 2
-            #     low_res_err = np.sqrt(pcov[2,2])
-            #     hig_res_err = np.sqrt(pcov[5,5])
-            #     zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
-            # else:
-            #     zfs = popt[2]
-            #     zfs_err = np.sqrt(pcov[2,2])
+    # fit_func = single_gaussian_dip
+    # guess_params = [0.2, 0.004, freq_center]
 
-            # print(zfs)
-            # print(zfs_err)
-            # temp_from_resonances.main(zfs, zfs_err)
+    # try:
+    if norm_avg_sig_ste is not None:
+        popt, pcov = curve_fit(
+            fit_func,
+            freqs,
+            norm_avg_sig,
+            p0=guess_params,
+            sigma=norm_avg_sig_ste,
+            absolute_sigma=True,
+        )
+        # popt = guess_params
+        # if len(popt) == 6:
+        #     zfs = (popt[2] + popt[5]) / 2
+        #     low_res_err = np.sqrt(pcov[2,2])
+        #     hig_res_err = np.sqrt(pcov[5,5])
+        #     zfs_err = np.sqrt(low_res_err**2 + hig_res_err**2) / 2
+        # else:
+        #     zfs = popt[2]
+        #     zfs_err = np.sqrt(pcov[2,2])
 
+        # print(zfs)
+        # print(zfs_err)
+        # temp_from_resonances.main(zfs, zfs_err)
+
+    else:
+        if fit_func == single_gaussian_dip:
+            fit_bounds = (0, np.infty)
         else:
-            popt, pcov = curve_fit(
-                fit_func, freqs, norm_avg_sig, p0=guess_params
-            )
-    except Exception as e:
-        print(e)
-        popt = guess_params
-        pcov = None
+            fit_bounds = (0, np.infty)
+        print(guess_params)
+        popt, pcov = curve_fit(
+            fit_func, freqs, norm_avg_sig, p0=guess_params,
+            bounds = fit_bounds
+        )
+    # except Exception as e:
+    #     print(e)
+    #     popt = guess_params
+    #     pcov = None
 
     return fit_func, popt, pcov
 
@@ -771,10 +778,12 @@ def main_with_cxn(
     }
 
     nv_name = nv_sig["name"]
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
-    raw_file_name = file_path.stem
-    tool_belt.save_figure(fig, file_path)
-    tool_belt.save_raw_data(rawData, file_path)
+    filePath = tool_belt.get_file_path(__file__, timestamp, nv_name)
+    # print(filePath)
+    if ret_file_name:
+        raw_file_name = filePath.stem()
+    tool_belt.save_figure(fig, filePath)
+    tool_belt.save_raw_data(rawData, filePath)
     filePath = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
     if fit_fig is not None:
         tool_belt.save_figure(fit_fig, filePath)
@@ -799,6 +808,7 @@ def main_with_cxn(
 
     if ret_file_name:
         ret_vals.append(raw_file_name)
+    # print(ret_vals)
     return ret_vals
 
 
@@ -806,79 +816,82 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    
+
     print(__file__)
     sys.exit()
 
-    # folder = "pc_rabi/branch_master/pulsed_resonance/2021_09"
-    # # file = '2021_09_15-13_30_13-johnson-dnv0_2021_09_09'
-    # file_list = ["2021_09_27-13_52_00-johnson-dnv7_2021_09_23"]
-    # label_list = ["Point A", "Point B", "Point C"]
+    file = "2022_07_07-15_10_20-rubin"
 
-    # fig, ax = plt.subplots(figsize=(8.5, 8.5))
-    # for f in range(len(file_list)):
-    #     file = file_list[f]
-    #     data = tool_belt.get_raw_data(file, folder)
-
-    #     freq_center = data["freq_center"]
-    #     freq_range = data["freq_range"]
-    #     num_steps = data["num_steps"]
-    #     num_runs = data["num_runs"]
-    #     norm_avg_sig = data["norm_avg_sig"]
-
-    #     freqs = calculate_freqs(freq_range, freq_center, num_steps)
-
-    #     ax.plot(freqs, norm_avg_sig, label=label_list[f])
-    #     ax.set_xlabel("Frequency (GHz)")
-    #     ax.set_ylabel("Contrast (arb. units)")
-    #     ax.legend(loc="lower right")
-
-    # fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
-    #                                       norm_avg_sig, norm_avg_sig_ste)
-
-    tool_belt.init_matplotlib()
-    # matplotlib.rcParams["axes.linewidth"] = 1.0
-
-    file = "2022_06_30-23_27_50-hopper-search"
     data = tool_belt.get_raw_data(file)
+
     freq_center = data["freq_center"]
     freq_range = data["freq_range"]
     num_steps = data["num_steps"]
-    ref_counts = data["ref_counts"]
-    sig_counts = data["sig_counts"]
     num_runs = data["num_runs"]
-    ret_vals = process_counts(ref_counts, sig_counts, num_runs)
-    (
-        avg_ref_counts,
-        avg_sig_counts,
-        norm_avg_sig,
-        ste_ref_counts,
-        ste_sig_counts,
-        norm_avg_sig_ste,
-    ) = ret_vals
+    norm_avg_sig = np.array(data["norm_avg_sig"])
 
-    fit_func, popt, pcov = fit_resonance(
-        freq_range,
-        freq_center,
-        num_steps,
-        norm_avg_sig,
-        norm_avg_sig_ste,
-        ref_counts,
-    )
+    freqs = calculate_freqs(freq_range, freq_center, num_steps)
 
-    # popt[2] -= np.sqrt(pcov[2, 2])
+    # ax.plot(freqs, norm_avg_sig, label=label_list[f])
+    # ax.set_xlabel("Frequency (GHz)")
+    # ax.set_ylabel("Contrast (arb. units)")
+    # ax.legend(loc="lower right")
 
-    fig = create_fit_figure(
+    fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
+                                          norm_avg_sig)
+    create_fit_figure(
         freq_range,
         freq_center,
         num_steps,
         norm_avg_sig,
         fit_func,
         popt,
-        norm_avg_sig_ste=norm_avg_sig_ste,
     )
 
-    plt.show(block=True)
+
+    # tool_belt.init_matplotlib()
+    # # matplotlib.rcParams["axes.linewidth"] = 1.0
+
+    # file = "2022_06_30-23_27_50-hopper-search"
+    # data = tool_belt.get_raw_data(file)
+    # freq_center = data["freq_center"]
+    # freq_range = data["freq_range"]
+    # num_steps = data["num_steps"]
+    # ref_counts = data["ref_counts"]
+    # sig_counts = data["sig_counts"]
+    # num_runs = data["num_runs"]
+    # ret_vals = process_counts(ref_counts, sig_counts, num_runs)
+    # (
+    #     avg_ref_counts,
+    #     avg_sig_counts,
+    #     norm_avg_sig,
+    #     ste_ref_counts,
+    #     ste_sig_counts,
+    #     norm_avg_sig_ste,
+    # ) = ret_vals
+
+    # fit_func, popt, pcov = fit_resonance(
+    #     freq_range,
+    #     freq_center,
+    #     num_steps,
+    #     norm_avg_sig,
+    #     norm_avg_sig_ste,
+    #     ref_counts,
+    # )
+
+    # # popt[2] -= np.sqrt(pcov[2, 2])
+
+    # create_fit_figure(
+    #     freq_range,
+    #     freq_center,
+    #     num_steps,
+    #     norm_avg_sig,
+    #     fit_func,
+    #     popt,
+    #     norm_avg_sig_ste=norm_avg_sig_ste,
+    # )
+
+    # plt.show(block=True)
 
     # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
     # simulate(2.8351, 0.035, 0.02, 170, 170/2)

@@ -150,6 +150,6 @@ def get_seq(pulse_streamer, config, args):
 
 if __name__ == '__main__':
     config = tool_belt.get_config_dict()
-    seq_args = [400, 10000.0, 350, 87, 44, 120000, 0, 1, 'laserglow_532', None]
+    seq_args = [0, 1000.0, 350, 23, 12, 100000, 1, 3, 'integrated_520', None]
     seq, final, ret_vals = get_seq(None, config, seq_args)
     seq.plot()
