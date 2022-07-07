@@ -552,40 +552,19 @@ if __name__ == '__main__':
     }  # 14.5 max
     red_power = 0.75
     nv_sig = {
-        "coords":[-0.732, 0.198, 6.617],
-        "name": "{}-NV-R21_a3_r10_c6".format(sample_name,),
+        "coords":[-0.225, -0.029,5.718], #NV2
+        "name": "{}-R2-a6".format(sample_name,),
         "disable_opt":False,
         "ramp_voltages": True,
-        "expected_count_rate":15,
+        "expected_count_rate":None,
         
         "imaging_laser":green_laser,
         "imaging_laser_power": None,
         "imaging_readout_dur": 1e7,
         
-            # 'imaging_laser': red_laser, 'imaging_laser_power': 0.595, 'imaging_readout_dur': 1E7,
-           
-            # 'initialization_laser': red_laser, 'initialization_laser_power': 0.67, 'initialization_laser_dur':1e5,
-            # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E5,
-            # 'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 0.67, 'nv0_prep_laser_dur': 1e5,
-            # 'charge_readout_laser': red_laser, 'charge_readout_laser_filter': None,
-            # 'charge_readout_laser_power': None, 'charge_readout_dur':None,
-            # 'collection_filter': "715_lp", 'magnet_angle': None,
-            # 'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            # 'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
-    
-            # 'initialization_laser': green_laser, 'initialization_laser_power': green_power, 'initialization_laser_dur': 2e5,
-            # 'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1E6,
-            # 'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': red_power, 'nv0_prep_laser_dur': 1E6,
-            # 'charge_readout_laser': green_laser, 'charge_readout_laser_filter': None,
-            # 'charge_readout_laser_power': None, 'charge_readout_dur':None,
-            # 'collection_filter': "715_lp", 'magnet_angle': None,
-            # 'resonance_LOW': 2.8012, 'rabi_LOW': 141.5, 'uwave_power_LOW': 15.5,  # 15.5 max
-            # 'resonance_HIGH': 2.9445, 'rabi_HIGH': 191.9, 'uwave_power_HIGH': 14.5}   # 14.5 max
-    
-    
-            'initialization_laser': red_laser, 'initialization_laser_power': 0.69, 'initialization_laser_dur': 1e4,
+            'initialization_laser': red_laser, 'initialization_laser_power': 0.58, 'initialization_laser_dur': 1e4,
             'nv-_prep_laser': green_laser, 'nv-_prep_laser_power': green_power, 'nv-_prep_laser_dur': 1e4,
-            'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 0.69, 'nv0_prep_laser_dur': 1e4,
+            'nv0_prep_laser': red_laser, 'nv0_prep_laser_power': 0.58, 'nv0_prep_laser_dur': 1e4,
             'charge_readout_laser': yellow_laser, 'charge_readout_laser_filter': None,
             'charge_readout_laser_power': None, 'charge_readout_dur':None,
             'collection_filter': "715_sp+630_lp", 'magnet_angle': None,
@@ -598,7 +577,7 @@ if __name__ == '__main__':
         
         for n in [2]:
             determine_readout_dur(nv_sig, nv_sig, [1], readout_times = [50e6],
-                                    readout_yellow_powers = [0.15],
+                                    readout_yellow_powers = [ 0.15],
                                    # readout_yellow_powers = [0.56],
                               nd_filter = 'nd_1.0',
                               num_pulses = n)

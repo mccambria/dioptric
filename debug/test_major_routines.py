@@ -17,7 +17,7 @@ import majorroutines.resonance as resonance
 import majorroutines.pulsed_resonance as pulsed_resonance 
 import majorroutines.rabi as rabi
 import majorroutines.g2_measurement as g2_measurement
-import majorroutines.t1_double_quantum as t1_double_quantum
+# import majorroutines.t1_double_quantum as t1_double_quantum
 import majorroutines.ramsey as ramsey
 import majorroutines.spin_echo as spin_echo
 import majorroutines.optimize_magnet_angle as optimize_magnet_angle

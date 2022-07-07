@@ -15,12 +15,12 @@ import matplotlib.pyplot as plt
 import utils.tool_belt as tool_belt
 import majorroutines.rabi as rabi
 import utils.common as common
+from utils.kplotlib import color_mpl_to_color_hex, lighten_color_hex
 import json
 from mpl_toolkits.axes_grid1.anchored_artists import (
     AnchoredSizeBar as scale_bar,
 )
 from scipy.optimize import curve_fit
-from colorutils import Color
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import matplotlib.image as mpimg
@@ -32,19 +32,10 @@ from figures.relaxation_temp_dependence.temp_dependence_fitting import (
 from analysis import relaxation_rate_analysis
 
 ms = 7
-lw = 1.75
+lw = 1.5
 
 
 # %% Functions
-
-
-def zero_to_one_threshold(val):
-    if val < 0:
-        return 0
-    elif val > 1:
-        return 1
-    else:
-        return val
 
 
 # %% Main
@@ -56,9 +47,10 @@ def main(data_sets, dosave=False, draft_version=True):
 
     # fig, axes_pack = plt.subplots(1,2, figsize=(10,5))
     fig = plt.figure(figsize=(6.5, 7.5))
+    # fig = plt.figure(figsize=(4.5, 5.0))
     grid_columns = 30
     half_grid_columns = grid_columns // 2
-    gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1, 1))
+    gs = gridspec.GridSpec(2, grid_columns, height_ratios=(1.1, 1))
 
     first_row_sep_ind = 15
 
@@ -113,19 +105,8 @@ def main(data_sets, dosave=False, draft_version=True):
         elif len_data_sets == 3:
             colors_cmap = [set1[0], set2[5], set1[1]]
 
-    # Trim the alpha value and convert from 0:1 to 0:255
-    colors_rgb = [[255 * val for val in el[0:3]] for el in colors_cmap]
-    colors_Color = [Color(tuple(el)) for el in colors_rgb]
-    colors_hex = [val.hex for val in colors_Color]
-    colors_hsv = [val.hsv for val in colors_Color]
-    facecolors_hsv = [(el[0], 0.3 * el[1], 1.2 * el[2]) for el in colors_hsv]
-    # Threshold to make sure these are valid colors
-    facecolors_hsv = [
-        (el[0], zero_to_one_threshold(el[1]), zero_to_one_threshold(el[2]))
-        for el in facecolors_hsv
-    ]
-    facecolors_Color = [Color(hsv=el) for el in facecolors_hsv]
-    facecolors_hex = [val.hex for val in facecolors_Color]
+    colors_hex = [color_mpl_to_color_hex(el) for el in colors_cmap]
+    facecolors_hex = [lighten_color_hex(el) for el in colors_hex]
 
     ax = fig.add_subplot(gs[0, first_row_sep_ind:])
     # ax = axes_pack[1]
@@ -134,10 +115,13 @@ def main(data_sets, dosave=False, draft_version=True):
     ax.set_position([l + shift, b, w - shift, h])
 
     ax.set_xlabel(r"Wait time $\tau$ (ms)")
-    ax.set_ylabel(r"$P_{+1,+1}(\tau) - P_{+1,-1}(\tau)$")
+    # ax.set_ylabel(r"$P_{+1,+1}(\tau) - P_{+1,-1}(\tau)$")
+    ax.set_ylabel(
+        r"$\mathrm{\ket{-1}}$, $\mathrm{\ket{+1}}$ population difference"
+    )
 
     min_time = 0.0
-    max_time = 18
+    max_time = 20
     # max_time = 15.5
     # max_time = 11.5
     # max_time = 12.5
@@ -191,7 +175,7 @@ def main(data_sets, dosave=False, draft_version=True):
                 times_decay,
                 data_decay,
                 yerr=np.array(ste_decay),
-                label="{} K".format(temp),
+                label=r"${}$ K".format(temp),
                 zorder=5,
                 marker="o",
                 color=color,
@@ -203,7 +187,7 @@ def main(data_sets, dosave=False, draft_version=True):
             ax.scatter(
                 times_decay,
                 data_decay,
-                label="{} K".format(temp),
+                label=r"${}$ K".format(temp),
                 zorder=5,
                 marker="o",
                 color=color,
@@ -211,15 +195,16 @@ def main(data_sets, dosave=False, draft_version=True):
                 s=ms ** 2,
             )
 
-    ax.legend(handlelength=5)
+    # ax.legend(handlelength=5)
+    ax.legend()
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[::-1], labels[::-1])
+    ax.legend(handles[::-1], labels[::-1], handlelength=0.5)
     fig.text(
-        -0.21, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
+        -0.26, 0.95, "(b)", transform=ax.transAxes, color="black", fontsize=18
     )
-    x_buffer = 0.02 * max_time
+    x_buffer = 0.03 * max_time
     ax.set_xlim([-x_buffer, max_time + x_buffer])
-    ax.set_ylim([-0.05, 1.05])
+    ax.set_ylim([-0.05, 1.08])
     # ax.set_ylim([0.05, 1.1])
     # ax.set_yscale("log")
 
@@ -229,7 +214,8 @@ def main(data_sets, dosave=False, draft_version=True):
     ax = fig.add_subplot(gs[1, :])
     ax.set_axis_off()
     fig.text(
-        0,
+        # 0,
+        -0.003,
         0.95,
         "(c)",
         transform=ax.transAxes,
@@ -262,9 +248,12 @@ def main(data_sets, dosave=False, draft_version=True):
     # fig.subplots_adjust(hspace=0.5, wspace=0.5)
 
     if dosave:
+        ext = "png"
         file_path = str(
             nvdata_dir
-            / "paper_materials/relaxation_temp_dependence/figures/main1.eps"
+            / "paper_materials/relaxation_temp_dependence/figures/main1.{}".format(
+                ext
+            )
         )
         fig.savefig(file_path, dpi=500)
 
@@ -276,7 +265,7 @@ if __name__ == "__main__":
 
     tool_belt.init_matplotlib()
     # plt.rcParams.update({'font.size': 18})  # Increase font size
-    matplotlib.rcParams["axes.linewidth"] = 1.0
+    matplotlib.rcParams["axes.linewidth"] = 1.5
 
     decay_data_sets = [
         # {
@@ -336,7 +325,7 @@ if __name__ == "__main__":
         #     "gamma": None,
         # },
         {
-            "temp": 237.5,
+            "temp": 234,  # 237.5 nominal
             "skip": False,
             "path": "pc_hahn/branch_cryo-setup/t1_interleave_knill/data_collections/",
             "folder": "hopper-nv1_2021_03_16-237.5K",
@@ -360,7 +349,7 @@ if __name__ == "__main__":
         #     "gamma": None,
         # },
         {
-            "temp": 187.5,
+            "temp": 185,  # 187.5 nominal
             "skip": False,
             "path": (
                 "pc_hahn/branch_master/t1_interleave_knill/data_collections/"
@@ -371,6 +360,8 @@ if __name__ == "__main__":
         },
     ]
 
-    main(decay_data_sets, dosave=False, draft_version=True)
+    dosave = True
+    # dosave = False
+    main(decay_data_sets, dosave=dosave, draft_version=True)
 
     plt.show(block=True)

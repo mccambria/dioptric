@@ -74,8 +74,20 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
     timestamp = data['timestamp']
     nv_sig = data['nv_sig']
     CPG_pulse_dur = nv_sig['CPG_laser_dur']
+    readout_pulse_dur = nv_sig['charge_readout_laser_dur']
+    readout_pulse_power = nv_sig['charge_readout_laser_power']
     # dir_1D = nv_sig['dir_1D']
     start_coords = nv_sig['coords']
+    
+    readout_counts_array = data['readout_counts_array']
+    readout_counts_array_rot = numpy.rot90(readout_counts_array)
+             
+    # Take the average and ste. 
+    # readout_counts_avg = numpy.average(readout_counts_array_rot[-40:], axis = 0)
+    # readout_counts_ste = stats.sem(readout_counts_array_rot[-40:], axis = 0)
+    readout_counts_avg = numpy.average(readout_counts_array_rot, axis = 0)
+    readout_counts_ste = stats.sem(readout_counts_array_rot, axis = 0)
+        
 
     counts = data['readout_counts_avg']
     # print(counts)
@@ -107,10 +119,14 @@ def plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
 
     if do_plot:
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-        ax.plot(rad_dist, counts, 'b.')
+        
+        ax.plot(rad_dist, counts, 'b')
+        # ax.errorbar(rad_dist, readout_counts_avg,
+        #         yerr = readout_counts_ste, marker = 'o',ls = 'none',color = 'blue')
         ax.set_xlabel('r (nm)')
         ax.set_ylabel('Average counts')
-        ax.set_title('{} us pulse'.format(CPG_pulse_dur/10**3))
+        ax.set_title('{} V, {} ms readout. with {} ms pulse'.format(readout_pulse_power,
+                                           readout_pulse_dur/10**6, CPG_pulse_dur/10**6))
 
     if do_fit:
         init_fit = [2, rad_dist[int(num_steps/2)], 15, 7]
@@ -1104,7 +1120,9 @@ def main(nv_sig, opti_nv_sig,apd_indices,  num_runs,  num_steps_a, num_steps_b =
         if measurement_type == '1D':
 
             ax_1D.cla()
-            ax_1D.plot(rad_dist*scale,readout_counts_avg, label = nv_sig['name'])
+            # ax_1D.plot(rad_dist*scale,readout_counts_avg, label = nv_sig['name'])
+            ax_1D.errorbar(rad_dist*scale, readout_counts_avg,
+                yerr = readout_counts_ste, marker = 'o',ls = 'none',color = 'blue')
             ax_1D.set_xlabel('r (um)')
             ax_1D.set_ylabel('Average counts')
             ax_1D.set_title('SPaCE {}- {} nm init pulse \n{} nm {} ms CPG pulse'.\
@@ -1201,7 +1219,9 @@ def main(nv_sig, opti_nv_sig,apd_indices,  num_runs,  num_steps_a, num_steps_b =
     if measurement_type == '1D':
         # fig_1D, ax_1D = plt.subplots(1, 1, figsize=(10, 10))
         ax_1D.cla()
-        ax_1D.plot(rad_dist*scale,readout_counts_avg, label = nv_sig['name'])
+        # ax_1D.plot(rad_dist*scale,readout_counts_avg, label = nv_sig['name'])
+        ax_1D.errorbar(rad_dist*scale, readout_counts_avg,
+                yerr = readout_counts_ste, marker = 'o',ls = 'none' ,color = 'blue')
         ax_1D.set_xlabel('r (um)')
         ax_1D.set_ylabel('Average counts')
         ax_1D.set_title('SPaCE {}- {} nm init pulse \n{} nm {} ms CPG pulse'.\
@@ -1233,223 +1253,57 @@ def main(nv_sig, opti_nv_sig,apd_indices,  num_runs,  num_steps_a, num_steps_b =
 
 if __name__ == '__main__':
 
-    path = 'pc_rabi/branch_master/SPaCE/2022_04'
-
-
-
-
     #================ specific for 1D scans ================#
 
-    file_path = 'pc_rabi/branch_master/SPaCE/2022_04/incremental'
+    file_path = 'pc_rabi/branch_master/SPaCE/2022_06'
     
-    file_name = '2022_04_13-13_12_10-sandia-siv_R10_a130_r4_c1'
-    plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
-                  do_save = False,  scale = 83000)
-    
-    
-    do_plot_comps = True
-    if do_plot_comps:
-        file_list_ramp = [
-            '2021_11_10-00_33_56-johnson-nv1_2021_11_08',
-            '2021_11_10-01_33_35-johnson-nv1_2021_11_08',
-            '2021_11_09-20_18_59-johnson-nv1_2021_11_08',
-            '2021_11_10-02_33_14-johnson-nv1_2021_11_08',
-            '2021_11_10-03_33_00-johnson-nv1_2021_11_08',
-            '2021_11_09-17_08_05-johnson-nv1_2021_11_08',
-            '2021_11_10-04_32_40-johnson-nv1_2021_11_08',
-            '2021_11_10-05_32_23-johnson-nv1_2021_11_08',
-            '2021_11_09-19_03_00-johnson-nv1_2021_11_08',
-            # '2021_11_10-06_32_10-johnson-nv1_2021_11_08', # 5 nm width, but I'm not sure I believe it...
-            # '2021_11_10-07_32_16-johnson-nv1_2021_11_08',
-            # '2021_11_10-08_32_16-johnson-nv1_2021_11_08'
-            ]
-        width_list_ramp = []
-        width_list_err_ramp = []
-        dur_list_ramp = []
-        for file in file_list_ramp:
-            _, _, opti_params, cov_arr = plot_1D_SpaCE(file, file_path, do_plot = False, do_fit = True,
-                  do_save = False)
-            data = tool_belt.get_raw_data(file, file_path)
-            nv_sig = data['nv_sig']
-            dur_list_ramp.append(nv_sig['CPG_laser_dur']/10**3)
-            width_list_ramp.append(opti_params[2])
-            width_list_err_ramp.append(cov_arr[2][2])
-            
-        
-        file_list_no_ramp = [
-            '2021_11_09-05_56_06-johnson-nv1_2021_11_08',
-            '2021_11_09-13_28_22-johnson-nv1_2021_11_08',
-            '2021_11_09-14_45_39-johnson-nv1_2021_11_08',
-            '2021_11_09-12_11_52-johnson-nv1_2021_11_08',
-            '2021_11_10-12_00_54-johnson-nv1_2021_11_08',
-            ]
-        width_list_no_ramp = []
-        width_list_err_no_ramp = []
-        dur_list_no_ramp  = []
-        for file in file_list_no_ramp:
-            _, _, opti_params, cov_arr = plot_1D_SpaCE(file, file_path, do_plot = False, do_fit = True,
-                  do_save = False)
-            data = tool_belt.get_raw_data(file, file_path)
-            nv_sig = data['nv_sig']
-            dur_list_no_ramp.append(nv_sig['CPG_laser_dur']/10**3)
-            width_list_no_ramp.append(opti_params[2])
-            width_list_err_no_ramp.append(cov_arr[2][2])
-        
-        
-        ######## Nanodiamonds 10/2021
-        file_path = 'pc_rabi/branch_master/SPaCE/2021_10'
-        file_list_cfm1 = [
-        # '2021_10_20-23_06_58-ayrton_101-nv0_2021_10_20', #1
-        '2021_10_20-23_55_35-ayrton_101-nv0_2021_10_20', #2.5
-        '2021_10_21-00_44_16-ayrton_101-nv0_2021_10_20', #5
-                   '2021_10_21-01_32_55-ayrton_101-nv0_2021_10_20', #7.5
-                  '2021_10_21-02_21_39-ayrton_101-nv0_2021_10_20', #10
-                   '2021_10_22-11_51_27-ayrton_101-nv0_2021_10_20', #15
-                   '2021_10_21-03_10_23-ayrton_101-nv0_2021_10_20', #25
-                   '2021_10_22-12_40_10-ayrton_101-nv0_2021_10_20', #35
-                   '2021_10_21-03_59_01-ayrton_101-nv0_2021_10_20', #50
-                    '2021_10_22-13_28_39-ayrton_101-nv0_2021_10_20', #60
-                   '2021_10_21-04_47_37-ayrton_101-nv0_2021_10_20', #70
-                   '2021_10_21-05_36_23-ayrton_101-nv0_2021_10_20', #100
-                   '2021_10_21-10_57_38-ayrton_101-nv0_2021_10_20', #150
-                   '2021_10_21-11_46_03-ayrton_101-nv0_2021_10_20', #200
-                   '2021_10_21-06_25_09-ayrton_101-nv0_2021_10_20', #250
-                  ]
-        width_list_cfm1 = []
-        width_list_err_cfm1 = []
-        dur_list_cfm1  = []
-        for file in file_list_cfm1:
-            _, _, opti_params, cov_arr = plot_1D_SpaCE(file, file_path, do_plot = False, do_fit = True,
-                  do_save = False, scale = 35000)
-            data = tool_belt.get_raw_data(file, file_path)
-            nv_sig = data['nv_sig']
-            dur_list_cfm1.append(nv_sig['CPG_laser_dur']/10**3)
-            width_list_cfm1.append(opti_params[2])
-            width_list_err_cfm1.append(cov_arr[2][2])
-        
-        
-        
-        ######## Nanodiamonds 10/2021
-        file_path = 'pc_rabi/branch_master/SPaCE/2021_08'
-        file_list_cfm1_old = [
-                '2021_08_04-21_03_52-johnson-nv2_2021_08_04',
-                '2021_08_04-21_29_32-johnson-nv2_2021_08_04',
-                '2021_08_04-21_55_15-johnson-nv2_2021_08_04',
-                '2021_08_04-22_20_56-johnson-nv2_2021_08_04',
-                '2021_08_04-22_46_41-johnson-nv2_2021_08_04',
-                '2021_08_04-23_12_20-johnson-nv2_2021_08_04',
-                '2021_08_04-23_38_01-johnson-nv2_2021_08_04',
-                '2021_08_05-00_03_43-johnson-nv2_2021_08_04',
-                '2021_08_05-00_29_24-johnson-nv2_2021_08_04',
-                '2021_08_05-17_59_06-johnson-nv2_2021_08_04',
-                '2021_08_05-00_55_06-johnson-nv2_2021_08_04',
-                '2021_08_05-01_20_49-johnson-nv2_2021_08_04',
-                '2021_08_05-01_46_33-johnson-nv2_2021_08_04',
-                '2021_08_05-02_12_17-johnson-nv2_2021_08_04',
-                '2021_08_05-02_38_00-johnson-nv2_2021_08_04',
-                '2021_08_05-03_03_43-johnson-nv2_2021_08_04',
-                '2021_08_05-03_29_28-johnson-nv2_2021_08_04',
-                '2021_08_05-03_55_11-johnson-nv2_2021_08_04',
-                '2021_08_05-09_01_01-johnson-nv2_2021_08_04',
-                '2021_08_05-09_26_52-johnson-nv2_2021_08_04',
-                '2021_08_05-09_52_38-johnson-nv2_2021_08_04',
-                '2021_08_05-10_45_26-johnson-nv2_2021_08_04',
-                '2021_08_05-11_43_11-johnson-nv2_2021_08_04',
-                '2021_08_05-12_12_58-johnson-nv2_2021_08_04',
-                '2021_08_05-15_54_52-johnson-nv2_2021_08_04'
-                  ]
-        width_list_cfm1_old = []
-        width_list_err_cfm1_old = []
-        dur_list_cfm1_old  = []
-        for file in file_list_cfm1_old:
-            _, _, opti_params, cov_arr = plot_1D_SpaCE(file, file_path, do_plot = False, do_fit = True,
-                  do_save = False, scale = 35000)
-            data = tool_belt.get_raw_data(file, file_path)
-            nv_sig = data['nv_sig']
-            dur_list_cfm1_old.append(nv_sig['CPG_laser_dur']/10**3)
-            width_list_cfm1_old.append(opti_params[2])
-            width_list_err_cfm1_old.append(cov_arr[2][2])
-            
-        # fig, ax = plt.subplots()
-        # ax.errorbar(dur_list_ramp, width_list_ramp, yerr= width_list_err_ramp, 
-        #             fmt='bo', label ='optimize w ramping') # 'new confocal microscope')
-        # ax.errorbar(dur_list_no_ramp, width_list_no_ramp,yerr=width_list_err_no_ramp, 
-        #             fmt='ro', label = 'optimize w/out ramping')
-        # ax.errorbar(dur_list_cfm1, width_list_cfm1, yerr =width_list_err_cfm1, 
-        #             fmt= 'go', label = 'previous confocal microscope (nanodiamonds)')
-        # ax.errorbar(dur_list_cfm1_old, width_list_cfm1_old, yerr =width_list_err_cfm1_old, 
-        #             fmt= 'ko', label = 'previous confocal microscope (bulk diamond)')
-        # ax.set_xlabel('Depletion pulse duration (us)')
-        # ax.set_ylabel('Gaussian sigma, nm')
-        # ax.legend()
-        # ax.set_xscale('log')
-        # ax.set_yscale('log')
-        
-
-    #================ specific for 2D scans ================#
-    file_list = [
-        '2021_11_08-18_13_14-johnson-nv0_2021_11_08'
-        ]
-
-    for f in range(len(file_list)):
-        file = file_list[f]
-        # plot_2D_space(file, path, true_position = False)
-        
-        
-    # file_1 = '2021_09_30-11_58_58-johnson-dnv7_2021_09_23'
-    # data_1 = tool_belt.get_raw_data(file_1, path)
-    # # try:
-    # nv_sig = data_1['nv_sig']
-    # CPG_laser_dur = nv_sig['CPG_laser_dur']
-    # readout_image_array_1 = numpy.array(data_1['readout_image_array'])
-    # num_steps_b = data_1['num_steps_b']    
-    # a_voltages_1d = data_1['a_voltages_1d']
-    # b_voltages_1d = data_1['b_voltages_1d']
-    # img_range_2D= data_1['img_range_2D']
-    # drift_list = data_1['drift_list_master']
-    # axes = [0,1]
+    file_name = '2022_06_15-16_23_19-sandia-R2_a6-siv3'
+    # plot_1D_SpaCE(file_name, file_path, do_plot = True, do_fit = False,
+    #               do_save = False,  scale = 83000)
     
     
-    # file_2 = 'incremental/2021_09_30-12_02_15-johnson-dnv7_2021_09_23'
-    # data_2 = tool_belt.get_raw_data(file_2, path)
-    # readout_counts_avg_2 = numpy.array(data_2['readout_counts_avg'])
-    # split_counts = numpy.split(readout_counts_avg_2, num_steps_b)
-    # readout_image_array = numpy.vstack(split_counts)
-    # r = 0
-    # for i in range(len(readout_image_array)):
-    #     if r % 2 == 0:
-    #         readout_image_array[i] = list(reversed(readout_image_array[i]))
-    #     r += 1
-    # readout_image_array_2 = numpy.flipud(readout_image_array)
-
-    # half_range_a = img_range_2D[axes[0]]/2
-    # half_range_b = img_range_2D[axes[1]]/2
-    # a_low = -half_range_a
-    # a_high = half_range_a
-    # b_low = -half_range_b
-    # b_high = half_range_b
-    # pixel_size_a = (a_voltages_1d[1] - a_voltages_1d[0])
-    # pixel_size_b = (b_voltages_1d[1] - b_voltages_1d[0])
-
-    # half_pixel_size_a = pixel_size_a / 2
-    # half_pixel_size_b = pixel_size_b / 2
+    ##
+    file_name_cpg = '2022_06_15-13_35_39-sandia-R2_a6-siv3'
+    file_name_no_cpg = '2022_06_15-16_23_19-sandia-R2_a6-siv3'
     
-    # img_extent = [(a_low - half_pixel_size_a)*35,
-    #               (a_high + half_pixel_size_a)*35, 
-                 
-    #              (b_low - half_pixel_size_b)*35, 
-    #              (b_high + half_pixel_size_b)*35 ]
-    # um_scaled = True
+    scale = 83
+    data = tool_belt.get_raw_data( file_name_cpg, file_path)
+    nv_sig = data['nv_sig']
+    CPG_pulse_dur = nv_sig['CPG_laser_dur']
+    readout_pulse_dur = nv_sig['charge_readout_laser_dur']
+    readout_pulse_power = nv_sig['charge_readout_laser_power']
 
-    # tool_belt.create_image_figure(readout_image_array_1 + readout_image_array_2,
-    #                       img_extent, clickHandler=on_click_image,
-    #                     title='', color_bar_label='Counts',
-    #                     min_value=None, um_scaled=um_scaled)
+    start_coords = nv_sig['coords']
+    
+    counts_cpg = numpy.array(data['readout_counts_avg'])
+    counts_ste_cpg = numpy.array(data['readout_counts_ste'])
+    
+    
+    data = tool_belt.get_raw_data( file_name_no_cpg, file_path)
+    counts_no_cpg = numpy.array(data['readout_counts_avg'])
+    counts_ste_no_cpg = numpy.array(data['readout_counts_ste'])
+    
+    # print(counts)
+    coords_voltages = data['coords_voltages']
+    x_voltages = numpy.array([el[0] for el in coords_voltages])
+    y_voltages = numpy.array([el[1] for el in coords_voltages])
+    try:
+        num_steps = data['num_steps_a']
+    except Exception:
+        num_steps = data['num_steps']
+
+    start_coords = nv_sig['coords']
+    
+    # calculate the radial distances from the readout NV to the target points
+    rad_dist = numpy.sqrt((x_voltages - start_coords[0])**2 +( y_voltages - start_coords[1])**2)*scale
         
-        
 
-    ############# Create csv filefor 2D image ##############
-    # csv_filename = '{}_{}-us'.format(timestamp,int( CPG_pulse_dur/10**3))
-
-    # tool_belt.save_image_data_csv(img_array, x_voltages, y_voltages, path,
-    #                               csv_filename)
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    
+    # ax.plot(rad_dist, counts_cpg - counts_no_cpg, 'b')
+    
+    ste = numpy.sqrt(counts_ste_cpg**2 + counts_ste_no_cpg**2 )
+    ax.errorbar(rad_dist, counts_cpg - counts_no_cpg,
+            yerr = ste, marker = 'o',ls = 'none',color = 'blue')
+    ax.set_xlabel('r (um)')
+    ax.set_ylabel('Average counts')

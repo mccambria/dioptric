@@ -14,13 +14,13 @@ Created on Fri Nov 23 14:57:08 2018
 # %% Imports
 
 
-import matplotlib as mpl
+import matplotlib
 import matplotlib.pyplot as plt
 import threading
 import os
 import csv
 import datetime
-import numpy
+import numpy as np
 from numpy import exp
 import json
 import time
@@ -169,9 +169,9 @@ def set_xyz_ramp(cxn, coords):
 
     else:
         # Determine num of steps to get to final destination based on step size
-        num_steps_x = numpy.ceil(abs(dx) / step_size_xy)
-        num_steps_y = numpy.ceil(abs(dy) / step_size_xy)
-        num_steps_z = numpy.ceil(abs(dz) / step_size_z)
+        num_steps_x = np.ceil(abs(dx) / step_size_xy)
+        num_steps_y = np.ceil(abs(dy) / step_size_xy)
+        num_steps_z = np.ceil(abs(dz) / step_size_z)
 
         # Determine max steps for this move
         max_steps = int(max([num_steps_x, num_steps_y, num_steps_z]))
@@ -535,10 +535,10 @@ def set_feedthroughs_to_false(config):
 
 
 def encode_seq_args(seq_args):
-    # Recast numpy ints to Python ints so json knows what to do
+    # Recast np ints to Python ints so json knows what to do
     for ind in range(len(seq_args)):
         el = seq_args[ind]
-        if type(el) is numpy.int32:
+        if type(el) is np.int32:
             seq_args[ind] = int(el)
     return json.dumps(seq_args)
 
@@ -586,25 +586,76 @@ def get_tagger_wiring(cxn):
 # %% Matplotlib plotting utils
 
 
-def init_matplotlib(font_size=11.25):
+def init_matplotlib(font_size=17):
     """Runs the default initialization/configuration for matplotlib"""
 
     # Interactive mode so plots update as soon as the event loop runs
     plt.ion()
 
-    # Default latex packages
-    preamble = r"\usepackage{physics} \usepackage{sfmath} \usepackage{upgreek}"
+    ####### Latex setup #######
+
+    preamble = r""
+    preamble += r"\newcommand\hmmax{0} \newcommand\bmmax{0}"
+    preamble += r"\usepackage{physics} \usepackage{upgreek}"
+
+    # Fonts
+    # preamble += r"\usepackage{roboto}"  # Google's free Helvetica
+    preamble += r"\usepackage{helvet}"
+    # Latin mdoern is default math font but let's be safe
+    preamble += r"\usepackage{lmodern}"
+
+    # Sans serif math font, looks better for axis numbers.
+    # Preserves \mathrm and \mathit commands so you can still use serif
+    # Latin modern font for actually variables, equations, or whatever.
+    preamble += r"\usepackage[mathrmOrig, mathitOrig, helvet]{sfmath}"
+
     plt.rcParams["text.latex.preamble"] = preamble
+
+    ###########################
 
     # plt.rcParams["savefig.format"] = "svg"
 
     plt.rcParams["font.size"] = font_size
-
-    # Use Google's free alternative to Helvetica
-    plt.rcParams["font.family"] = "sans-serif"
-    plt.rcParams["font.sans-serif"] = "Roboto"
+    # plt.rcParams["font.size"] = 17
+    # plt.rcParams["font.size"] = 15
 
     plt.rc("text", usetex=True)
+
+
+def non_math_ticks(ax):
+    """Loop through the x and y ticks and take the tick labels out of math mode so they match the main font"""
+
+    # fmt = matplotlib.ticker.StrMethodFormatter("{x}")
+    # ax.xaxis.set_major_formatter(fmt)
+    # ax.yaxis.set_major_formatter(fmt)
+    # return
+
+    plt.show()
+
+    values = ax.get_xticks()
+    labels = ax.get_xticklabels()
+    adj_labels = non_math_ticks_sub(labels)
+    ax.set_xticks(values)
+    ax.set_xticklabels(adj_labels)
+
+    values = ax.get_yticks()
+    labels = ax.get_yticklabels()
+    adj_labels = non_math_ticks_sub(labels)
+    ax.set_yticks(values)
+    ax.set_yticklabels(adj_labels)
+
+
+def non_math_ticks_sub(labels):
+    adj_labels = []
+    for el in labels:
+        text = el.get_text()
+        open_brace = text.find("{")
+        close_brace = text.find("}")
+        text = text[open_brace + 1 : close_brace]
+        # el.set_text(text)
+        # adj_labels.append(el)
+        adj_labels.append(text)
+    return adj_labels
 
 
 def create_image_figure(
@@ -622,8 +673,8 @@ def create_image_figure(
     Creates a figure containing a single grayscale image and a colorbar.
 
     Params:
-        imgArray: numpy.ndarray
-            Rectangular numpy array containing the image data.
+        imgArray: np.ndarray
+            Rectangular np array containing the image data.
             Just zeros if you're going to be writing the image live.
         imgExtent: list(float)
             The extent of the image in the form [left, right, bottom, top]
@@ -637,9 +688,13 @@ def create_image_figure(
     if um_scaled:
         axes_label = r"$\mu$m"
     else:
-        axes_label = get_registry_entry_no_cxn(
-            "xy_units", ["", "Config", "Positioning"]
-        )
+        try:
+            axes_label = get_registry_entry_no_cxn(
+                "xy_units", ["", "Config", "Positioning"]
+            )
+        except Exception as exc:
+            print(exc)
+            axes_label = None
 
     # Tell matplotlib to generate a figure with just one plot in it
     fig, ax = plt.subplots()
@@ -685,6 +740,59 @@ def create_image_figure(
     return fig
 
 
+def calc_image_extent(x_center, y_center, scan_range, num_steps,
+                      pixel_size_adjustment=True):
+    """
+    Calculate the image extent to be fed to create_image_figure from the
+    center coordinates, scan range, and number of steps (the latter two
+    are assumed to be the same for x and y).
+    
+    If pixel_size_adjustment, adjust extent by half a pixel so pixel 
+    coordinates are centered on the pixel. Should only be used for plotting.
+    """
+
+    half_scan_range = scan_range / 2
+    x_low = x_center - half_scan_range
+    x_high = x_center + half_scan_range
+    y_low = y_center - half_scan_range
+    y_high = y_center + half_scan_range
+
+    if pixel_size_adjustment:
+        _, _, pixel_size = calc_image_scan_vals(x_center, y_center, 
+                                                scan_range, num_steps, 
+                                                ret_pixel_size=True)
+        half_pixel_size = pixel_size / 2
+        image_extent = [
+            x_low - half_pixel_size,
+            x_high + half_pixel_size,
+            y_low - half_pixel_size,
+            y_high + half_pixel_size,
+        ]
+    else:
+        image_extent = [x_low, x_high, y_low, y_high]
+    
+    return image_extent
+
+
+def calc_image_scan_vals(x_center, y_center, scan_range, num_steps, 
+                         ret_pixel_size=False):
+    """
+    Calculate the scan values in x, y for creating an image
+    """
+
+    x_low, x_high, y_low, y_high = calc_image_extent(x_center, y_center, 
+                                                 scan_range, num_steps,
+                                                 pixel_size_adjustment=False)
+    x_scan_vals, pixel_size = np.linspace(x_low, x_high, num_steps, 
+                                          retstep=True)
+    y_scan_vals = np.linspace(y_low, y_high, num_steps)
+
+    if ret_pixel_size:
+        return x_scan_vals, y_scan_vals, pixel_size
+    else:
+        return x_scan_vals, y_scan_vals
+
+
 def update_image_figure(fig, imgArray):
     """
     Update the image with the passed image array and redraw the figure.
@@ -698,7 +806,7 @@ def update_image_figure(fig, imgArray):
     Params:
         fig: matplotlib.figure.Figure
             The figure containing the image to update
-        imgArray: numpy.ndarray
+        imgArray: np.ndarray
             The new image data
     """
 
@@ -714,10 +822,10 @@ def update_image_figure(fig, imgArray):
     # Check if we should clip or autoscale
     clipAtThousand = False
     if clipAtThousand:
-        if numpy.all(numpy.isnan(imgArray)):
+        if np.all(np.isnan(imgArray)):
             imgMax = 0  # No data yet
         else:
-            imgMax = numpy.nanmax(imgArray)
+            imgMax = np.nanmax(imgArray)
         if imgMax > 1000:
             img.set_clim(None, 1000)
         else:
@@ -735,10 +843,10 @@ def create_line_plot_figure(vals, xVals=None):
     Creates a figure containing a single line plot
 
     Params:
-        vals: numpy.ndarray
-            1D numpy array containing the values to plot
-        xVals: numpy.ndarray
-            1D numpy array with the x values to plot against
+        vals: np.ndarray
+            1D np array containing the values to plot
+        xVals: np.ndarray
+            1D np array with the x values to plot against
             Default is just the index of the value in vals
 
     Returns:
@@ -770,10 +878,10 @@ def create_line_plots_figure(vals, xVals=None):
     Creates a figure containing a single line plot
 
     Params:
-        vals: tuple(numpy.ndarray)
-            1D numpy array containing the values to plot
-        xVals: numpy.ndarray
-            1D numpy array with the x values to plot against
+        vals: tuple(np.ndarray)
+            1D np array containing the values to plot
+        xVals: np.ndarray
+            1D np array with the x values to plot against
             Default is just the index of the value in vals
 
     Returns:
@@ -802,8 +910,8 @@ def update_line_plot_figure(fig, vals):
     Updates a figure created by create_line_plot_figure
 
     Params:
-        vals: numpy.ndarray
-            1D numpy array containing the values to plot
+        vals: np.ndarray
+            1D np array containing the values to plot
     """
 
     # Get the line - Assume it's the first line in the first axes
@@ -836,8 +944,8 @@ def radial_distrbution_data(
     y_coord = center_coords[1]
 
     # subtract the center coords from the x and y voltages so that we are working from the "origin"
-    x_voltages = numpy.array(x_voltages) - x_coord
-    y_voltages = numpy.array(y_voltages) - y_coord
+    x_voltages = np.array(x_voltages) - x_coord
+    y_voltages = np.array(y_voltages) - y_coord
 
     half_x_range = img_range / 2
     # x_high = x_coord + half_x_range
@@ -850,14 +958,14 @@ def radial_distrbution_data(
     # List to hold the values of each pixel within the ring
     counts_r = []
     # New 2D array to put the radial values of each pixel
-    r_array = numpy.empty((num_steps, num_steps))
+    r_array = np.empty((num_steps, num_steps))
 
     # Calculate the radial distance from each point to center
     for i in range(num_steps):
         x_pos = x_voltages[i]
         for j in range(num_steps):
             y_pos = y_voltages[j]
-            r = numpy.sqrt(x_pos ** 2 + y_pos ** 2)
+            r = np.sqrt(x_pos ** 2 + y_pos ** 2)
             r_array[i][j] = r
 
     # define bounds on each ring radial values, which will be one pixel in size
@@ -874,14 +982,14 @@ def radial_distrbution_data(
                 if radius >= low_r and radius < high_r:
                     ring_counts.append(img_array[i][j])
         # average the counts of all counts in a ring
-        counts_r.append(numpy.average(ring_counts))
+        counts_r.append(np.average(ring_counts))
         # advance the radial bounds
         low_r = high_r
         high_r = round(high_r + pixel_size, 10)
 
     # define the radial values as center values of pixels along x, convert to um
     # we need to subtract the center value from the x voltages
-    radii = numpy.array(x_voltages[int(num_steps / 2) :]) * 35
+    radii = np.array(x_voltages[int(num_steps / 2) :]) * 35
 
     return radii, counts_r
 
@@ -895,6 +1003,27 @@ def get_pi_pulse_dur(rabi_period):
 
 def get_pi_on_2_pulse_dur(rabi_period):
     return round(rabi_period / 4)
+
+
+def lorentzian(x, x0, A, L, offset):
+    
+    """
+    Calculates the value of a lorentzian for the given input and parameters
+
+    Params:
+        x: float
+            Input value
+        params: tuple
+            The parameters that define the lorentzian
+            0: x0, mean postiion in x
+            1: A, amplitude of curve
+            2: L, related to width of curve
+            3: offset, constant y value offset
+    """
+    x_center = x - x0
+    return offset + A * 0.5*L / (x_center**2 + (0.5*L)**2)
+
+
 
 
 def gaussian(x, *params):
@@ -915,45 +1044,45 @@ def gaussian(x, *params):
     coeff, mean, stdev, offset = params
     var = stdev ** 2  # variance
     centDist = x - mean  # distance from the center
-    return offset + coeff ** 2 * numpy.exp(-(centDist ** 2) / (2 * var))
+    return offset + coeff ** 2 * np.exp(-(centDist ** 2) / (2 * var))
 
 
 def sinexp(t, offset, amp, freq, decay):
-    two_pi = 2 * numpy.pi
-    half_pi = numpy.pi / 2
-    return offset + (amp * numpy.sin((two_pi * freq * t) + half_pi)) * exp(
+    two_pi = 2 * np.pi
+    half_pi = np.pi / 2
+    return offset + (amp * np.sin((two_pi * freq * t) + half_pi)) * exp(
         -(decay ** 2) * t
     )
 
 
 # This cosexp includes a phase that will be 0 in the ideal case.
 # def cosexp(t, offset, amp, freq, phase, decay):
-#    two_pi = 2*numpy.pi
-#    return offset + (numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t) + phase))
+#    two_pi = 2*np.pi
+#    return offset + (np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t) + phase))
 
 
 def cosexp(t, offset, amp, freq, decay):
-    two_pi = 2 * numpy.pi
+    two_pi = 2 * np.pi
     return offset + (
-        numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t))
+        np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t))
     )
 
 
 def cosexp_1_at_0(t, offset, freq, decay):
-    two_pi = 2 * numpy.pi
+    two_pi = 2 * np.pi
     amp = 1 - offset
     return offset + (
-        numpy.exp(-t / abs(decay)) * abs(amp) * numpy.cos((two_pi * freq * t))
+        np.exp(-t / abs(decay)) * abs(amp) * np.cos((two_pi * freq * t))
     )
 
 
 def cosine_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3):
-    two_pi = 2 * numpy.pi
+    two_pi = 2 * np.pi
 
-    return offset + numpy.exp(-t / abs(decay)) * (
-        amp_1 * numpy.cos(two_pi * freq_1 * t)
-        + amp_2 * numpy.cos(two_pi * freq_2 * t)
-        + amp_3 * numpy.cos(two_pi * freq_3 * t)
+    return offset + np.exp(-t / abs(decay)) * (
+        amp_1 * np.cos(two_pi * freq_1 * t)
+        + amp_2 * np.cos(two_pi * freq_2 * t)
+        + amp_3 * np.cos(two_pi * freq_3 * t)
     )
 
 
@@ -968,11 +1097,11 @@ def calc_snr(sig_count, ref_count):
         snr = list
     """
 
-    sig_count_avg = numpy.average(sig_count)
-    ref_count_avg = numpy.average(ref_count)
+    sig_count_avg = np.average(sig_count)
+    ref_count_avg = np.average(ref_count)
     dif = sig_count_avg - ref_count_avg
     sum_ = sig_count_avg + ref_count_avg
-    noise = numpy.sqrt(sig_count_avg)
+    noise = np.sqrt(sig_count_avg)
     snr = dif / noise
 
     return snr
@@ -986,9 +1115,9 @@ def get_scan_vals(center, scan_range, num_steps, dtype=float):
     half_scan_range = scan_range / 2
     low = center - half_scan_range
     high = center + half_scan_range
-    scan_vals = numpy.linspace(low, high, num_steps, dtype=dtype)
+    scan_vals = np.linspace(low, high, num_steps, dtype=dtype)
     # Deduplicate - may be necessary for ints and low scan ranges
-    scan_vals = numpy.unique(scan_vals)
+    scan_vals = np.unique(scan_vals)
     return scan_vals
 
 
@@ -1342,7 +1471,7 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
         time_stamp: string
             Formatted timestamp to include in the file name
         name: string
-            The file names consist of <timestamp>_<name>.<ext>
+            The full file name consists of <timestamp>_<name>.<ext>
             Ext is supplied by the save functions
         subfolder: string
             Subfolder to save to under file name
@@ -1371,8 +1500,10 @@ def get_file_path(source_name, time_stamp="", name="", subfolder=None):
 
     folderDir = get_folder_dir(source_name, subfolder_name)
     fileDir = os.path.abspath(os.path.join(folderDir, fileName))
-
-    return fileDir
+    
+    file_path_Path = Path(fileDir)
+    
+    return file_path_Path
 
 
 # def get_file_path(source_name, time_stamp='', name='', subfolder=None):
@@ -1421,8 +1552,7 @@ def save_figure(fig, file_path):
             extension
     """
 
-    file_path = str(file_path)
-    fig.savefig(file_path + ".svg", dpi=300)
+    fig.savefig(str(file_path.with_suffix(".svg")), dpi=300)
 
 
 def save_raw_data(rawData, filePath):
@@ -1438,7 +1568,7 @@ def save_raw_data(rawData, filePath):
             extension
     """
 
-    file_path_ext = PurePath(filePath + ".txt")
+    file_path_ext = filePath.with_suffix(".txt")
 
     # Add in a few things that should always be saved here. In particular,
     # sharedparameters so we have as snapshot of the configuration and
@@ -1459,6 +1589,8 @@ def save_raw_data(rawData, filePath):
 
     if file_path_ext.match(search_index.search_index_glob):
         search_index.add_to_search_index(file_path_ext)
+        
+    
 
 
 def get_nv_sig_units():
@@ -1534,8 +1666,8 @@ def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
     # Note that the polar/azimuthal angles, not the actual x/y positions
     # are linear in these voltages. For a small range, however, we don't
     # really care.
-    x_voltages_1d = numpy.linspace(x_low, x_high, num_steps)
-    y_voltages_1d = numpy.linspace(y_low, y_high, num_steps)
+    x_voltages_1d = np.linspace(x_low, x_high, num_steps)
+    y_voltages_1d = np.linspace(y_low, y_high, num_steps)
 
     ######### Works for any x_range, y_range #########
 
@@ -1544,18 +1676,18 @@ def x_y_image_grid(x_center, y_center, x_range, y_range, num_steps):
     # The comments below shows what happens for [1, 2, 3], [4, 5, 6]
 
     # [1, 2, 3] => [1, 2, 3, 3, 2, 1]
-    x_inter = numpy.concatenate((x_voltages_1d, numpy.flipud(x_voltages_1d)))
+    x_inter = np.concatenate((x_voltages_1d, np.flipud(x_voltages_1d)))
     # [1, 2, 3, 3, 2, 1] => [1, 2, 3, 3, 2, 1, 1, 2, 3]
     if y_num_steps % 2 == 0:  # Even x size
-        x_voltages = numpy.tile(x_inter, int(y_num_steps / 2))
+        x_voltages = np.tile(x_inter, int(y_num_steps / 2))
     else:  # Odd x size
-        x_voltages = numpy.tile(x_inter, int(numpy.floor(y_num_steps / 2)))
-        x_voltages = numpy.concatenate((x_voltages, x_voltages_1d))
+        x_voltages = np.tile(x_inter, int(np.floor(y_num_steps / 2)))
+        x_voltages = np.concatenate((x_voltages, x_voltages_1d))
 
     # [4, 5, 6] => [4, 4, 4, 5, 5, 5, 6, 6, 6]
-    y_voltages = numpy.repeat(y_voltages_1d, x_num_steps)
+    y_voltages = np.repeat(y_voltages_1d, x_num_steps)
 
-    voltages = numpy.vstack((x_voltages, y_voltages))
+    voltages = np.vstack((x_voltages, y_voltages))
 
     return x_voltages, y_voltages
 
@@ -1674,7 +1806,7 @@ def opt_power_via_photodiode(
             optical_power_list.append(cxn.photodiode.read_optical_power())
             time.sleep(0.01)
 
-    optical_power = numpy.average(optical_power_list)
+    optical_power = np.average(optical_power_list)
     time.sleep(0.1)
     cxn.pulse_streamer.constant([], 0.0, 0.0)
     return optical_power
@@ -1724,12 +1856,56 @@ def round_sig_figs(val, num_sig_figs):
     )
     if type(val) is list:
         return [func(el, num_sig_figs) for el in val]
-    elif type(val) is numpy.ndarray:
+    elif type(val) is np.ndarray:
         val_list = val.tolist()
         rounded_val_list = [func(el, num_sig_figs) for el in val_list]
-        return numpy.array(rounded_val_list)
+        return np.array(rounded_val_list)
     else:
         return func(val, num_sig_figs)
+
+
+def presentation_round(val, err):
+    err_mag = math.floor(math.log10(err))
+    sci_err = err / (10 ** err_mag)
+    first_err_digit = int(str(sci_err)[0])
+    if first_err_digit == 1:
+        err_sig_figs = 2
+    else:
+        err_sig_figs = 1
+    power_of_10 = math.floor(math.log10(abs(val)))
+    mag = 10 ** power_of_10
+    rounded_err = round_sig_figs(err, err_sig_figs) / mag
+    rounded_val = round(val / mag, (power_of_10 - err_mag) + err_sig_figs - 1)
+    return [rounded_val, rounded_err, power_of_10]
+
+
+def presentation_round_latex(val, err):
+    # if val <= 0 or err > val:
+    #     return ""
+    rounded_val, rounded_err, power_of_10 = presentation_round(val, err)
+    err_mag = math.floor(math.log10(rounded_err))
+    val_mag = math.floor(math.log10(abs(rounded_val)))
+
+    # Turn 0.0000016 into 0.16
+    # The round is to deal with floating point leftovers eg 9 = 9.00000002
+    shifted_rounded_err = round(rounded_err / 10 ** (err_mag + 1), 5)
+    # - 1 to remove the "0." part
+    err_last_decimal_mag = len(str(shifted_rounded_err)) - 2
+    pad_val_to = -err_mag + err_last_decimal_mag
+
+    if err_mag > val_mag:
+        return 1 / 0
+    elif err_mag == val_mag:
+        print_err = rounded_err
+    else:
+        print_err = int(str(shifted_rounded_err).replace(".", ""))
+
+    str_val = str(rounded_val)
+    decimal_pos = str_val.find(".")
+    num_padding_zeros = pad_val_to - len(str_val[decimal_pos:])
+    padded_val = str(rounded_val) + "0" * num_padding_zeros
+    # return "{}({})e{}".format(padded_val, print_err, power_of_10)
+    return r"\num{{{}({})e{}}}".format(padded_val, print_err, power_of_10)
 
 
 # %% Safe stop (TM mccambria)
@@ -1889,6 +2065,12 @@ def set_drift(drift):
 
 def reset_drift():
     set_drift([0.0, 0.0, 0.0])
+    
+def adjust_coords_for_drift(coords, drift=None):
+    if drift is None:
+        drift = get_drift()
+    adjusted_coords = (np.array(coords) + np.array(drift)).tolist()
+    return adjusted_coords
 
 
 # %% Reset hardware

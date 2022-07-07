@@ -8,7 +8,6 @@ import matplotlib.lines as mlines
 from scipy.optimize import curve_fit
 import pandas as pd
 import utils.tool_belt as tool_belt
-from utils.kplotlib import color_mpl_to_color_hex, lighten_color_hex
 import utils.common as common
 from scipy.odr import ODR, Model, RealData
 import sys
@@ -17,9 +16,7 @@ import math
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 import temp_dependence_fitting
-from temp_dependence_fitting import qutrit_color, qubit_color
 import csv
-import utils.kplotlib as kpl
 
 marker_size = 7
 line_width = 1.5
@@ -107,21 +104,15 @@ def main(
     dosave=False,
 ):
 
-    # bar_gill_label = "[10]"
-    # herbschleb_label = "[11]"
-    # abobeih_label = "[30]"
-    bar_gill_label = "[3]"
-    herbschleb_label = "[4]"
-    abobeih_label = "[5]"
     # fmt: off
     data_points = [
         #
         #
-        {"val": 580e-3, "err": 210e-3, "temp": 77, "author": "Bar-Gill", "label": bar_gill_label},
-        {"val": 152e-3, "err": 52e-3, "temp": 120, "author": "Bar-Gill", "label": bar_gill_label},
-        {"val": 39.8e-3, "err": 7.7e-3, "temp": 160, "author": "Bar-Gill", "label": bar_gill_label},
-        {"val": 17.3e-3, "err": 4.3e-3, "temp": 190, "author": "Bar-Gill", "label": bar_gill_label},
-        {"val": 5.92e-3, "err": 1.23e-3, "temp": 240, "author": "Bar-Gill", "label": bar_gill_label},
+        {"val": 580e-3, "err": 210e-3, "temp": 77, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 152e-3, "err": 52e-3, "temp": 120, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 39.8e-3, "err": 7.7e-3, "temp": 160, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 17.3e-3, "err": 4.3e-3, "temp": 190, "author": "Bar-Gill", "label": "[6]"},
+        {"val": 5.92e-3, "err": 1.23e-3, "temp": 240, "author": "Bar-Gill", "label": "[6]"},
         # {"val": 3.34e-3, "err": 0.41e-3, "temp": 300, "author": "Bar-Gill 2013"},
         #
         # Spin echo
@@ -134,10 +125,10 @@ def main(
         # {"val": 30.389e-6, "err": 3.80e-6, "temp": 600, "author": "Lin"},
         #
         # Also report gamma and Omega at room temps
-        {"val": 3.3e-3, "err": None, "temp": 300, "author": "Herbschleb", "label": herbschleb_label},
+        {"val": 3.3e-3, "err": None, "temp": 300, "author": "Herbschleb", "label": "[7]"},
         #
         # Record, T1 exceeds expected value from one-phonon calculations
-        {"val": 1.58, "err": 0.07, "temp": 3.7, "author": "Abobeih", "label": abobeih_label},
+        {"val": 1.58, "err": 0.07, "temp": 3.7, "author": "Abobeih", "label": "[8]"},
         #
         # 
         # {"val": 2.193e-3, "err": None, "temp": 300, "author": "Pham"},
@@ -219,10 +210,9 @@ def main(
             temp,
             val,
             err,
-            # color="black",
-            # markerfacecolor="gray",
-            color=qubit_color,
-            markerfacecolor=kpl.lighten_color_hex(qubit_color),
+            # color=color,
+            color="black",
+            markerfacecolor="gray",
             label=label,
             marker=marker,
             ms=marker_size,
