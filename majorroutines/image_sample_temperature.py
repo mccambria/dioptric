@@ -111,14 +111,14 @@ def main_with_cxn(
     coords = nv_sig["coords"]
     image_center_coords = (np.array(coords) + np.array(drift)).tolist()
     x_center, y_center, z_center = image_center_coords
-    
+
     gen_blank_square_list = lambda num_steps: [
-                            [
-                                None,
-                            ]
-                            * num_steps
-                            for ind in range(num_steps)
-                        ]
+        [
+            None,
+        ]
+        * num_steps
+        for ind in range(num_steps)
+    ]
 
     ref_resonances = gen_blank_square_list()
     ref_files = gen_blank_square_list()
@@ -153,8 +153,12 @@ def main_with_cxn(
     # z_center = 0
 
     # Get the voltages for the raster
-    x_voltages_1d, y_voltages_1d = tool_belt.calc_image_scan_vals(x_center, y_center, image_range, num_steps)
-    image_extent = tool_belt.calc_image_extent(x_center, y_center, image_range, num_steps)
+    x_voltages_1d, y_voltages_1d = tool_belt.calc_image_scan_vals(
+        x_center, y_center, image_range, num_steps
+    )
+    image_extent = tool_belt.calc_image_extent(
+        x_center, y_center, image_range, num_steps
+    )
 
     # Start rasterin'
 
@@ -293,10 +297,10 @@ if __name__ == "__main__":
     # num_steps = 3
 
     # main_with_cxn(files, scan_range, scan_range, num_steps)
-    
-    file_name = ""
+
+    file_name = "2022_07_03-13_09_30-hopper-search"
     data = tool_belt.get_raw_data(file_name)
-    
+
     ref_resonances = data["ref_resonances"]
     signal_resonances = data["signal_resonances"]
     nv_sig = data["nv_sig"]
@@ -306,8 +310,10 @@ if __name__ == "__main__":
     x_center, y_center, z_center = adjusted_coords
     image_range = data["x_range"]
     num_steps = data["num_steps"]
-    image_extent = tool_belt.calc_image_extent(x_center, y_center, image_range, num_steps)
-    
+    image_extent = tool_belt.calc_image_extent(
+        x_center, y_center, image_range, num_steps
+    )
+
     diff_temps = process_resonances(ref_resonances, signal_resonances)
 
     fig = tool_belt.create_image_figure(
