@@ -30,8 +30,8 @@ if __name__ == '__main__':
         
         power_supply = cxn.power_supply_mp710087
         
-        # power_supply.output_off()
+        power_supply.output_off()
         
-        power_supply.output_on()
-        power_supply.set_voltage(1.3)  
+        # power_supply.output_on()
+        # power_supply.set_voltage(1.3)  
         

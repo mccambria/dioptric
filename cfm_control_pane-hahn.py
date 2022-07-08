@@ -739,6 +739,7 @@ def do_nir_battery(nv_sig, apd_indices):
         power_supply = cxn.power_supply_mp710087
         power_supply.output_on()
         power_supply.set_voltage(1.3)
+    time.sleep(1)
 
     do_image_sample(nv_sig, apd_indices)
     # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
@@ -753,6 +754,7 @@ def do_nir_battery(nv_sig, apd_indices):
     with labrad.connect() as cxn:
         power_supply = cxn.power_supply_mp710087
         power_supply.output_off()
+    time.sleep(1)
 
 
 def do_test_major_routines(nv_sig, apd_indices):
