@@ -567,8 +567,8 @@ def main_with_cxn(
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
-    #    print(seq_args)
-    #    return
+    # print(seq_args)
+    # return
     #    print(seq_time)
 
     # %% Let the user know how long this will take
@@ -812,7 +812,8 @@ def main_with_cxn(
         "norm_avg_sig-units": "arb",
     }
 
-    file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
+    nv_name = nv_sig["name"]
+    file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
     tool_belt.save_figure(raw_fig, file_path)
     tool_belt.save_raw_data(raw_data, file_path)
 
@@ -821,8 +822,10 @@ def main_with_cxn(
     ret_vals = plot_resonances_vs_theta_B(raw_data)
     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
 
-    tool_belt.save_figure(fit_fig, file_path + "-fit")
-    tool_belt.save_figure(angle_fig, file_path + "-angle")
+    file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
+    tool_belt.save_figure(fit_fig, file_path_fit)
+    file_path_angle = tool_belt.get_file_path(__file__, timestamp, nv_name + "-angle")
+    tool_belt.save_figure(fit_fig, file_path_angle)
 
     return theta_B_deg
 
