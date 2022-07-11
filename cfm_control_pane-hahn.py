@@ -47,11 +47,11 @@ import time
 
 def do_image_sample(nv_sig, apd_indices, nv_minus_initialization=False):
 
-    scan_range = 0.5
-    num_steps = 90
+    # scan_range = 0.5
+    # num_steps = 90
 
-    # scan_range = 0.2
-    # num_steps = 60
+    scan_range = 0.2
+    num_steps = 60
 
     # scan_range = 1.0
     # num_steps = 120
@@ -834,7 +834,7 @@ if __name__ == "__main__":
 
     try:
 
-        # tool_belt.init_safe_stop()
+        tool_belt.init_safe_stop()
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
@@ -846,15 +846,15 @@ if __name__ == "__main__":
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 
         # for pos in numpy.arange(-60, -120, -5):
-        # # for pos in [3,6,9,12]:
+        for pos in [-3,-6,-9,-12]:
         # # while True:
-        #     if tool_belt.safe_stop():
-        #         break
-        #     # nv_sig["coords"][2] = int(pos)
-        #     with labrad.connect() as cxn:
-        #         cxn.cryo_piezos.write_xy(80, int(pos))
-        #     # do_image_sample_zoom(nv_sig, apd_indices)
-        #     do_image_sample(nv_sig, apd_indices)
+            if tool_belt.safe_stop():
+                break
+            nv_sig["coords"][2] = int(pos)
+            # with labrad.connect() as cxn:
+            #     cxn.cryo_piezos.write_xy(80, int(pos))
+            # do_image_sample_zoom(nv_sig, apd_indices)
+            do_image_sample(nv_sig, apd_indices)
 
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
@@ -886,7 +886,7 @@ if __name__ == "__main__":
         # do_t1_interleave_knill(nv_sig, apd_indices)
         # for i in range(4):
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
-        do_nir_battery(nv_sig, apd_indices)
+        # do_nir_battery(nv_sig, apd_indices)
 
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
