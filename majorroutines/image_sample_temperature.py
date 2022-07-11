@@ -169,7 +169,6 @@ def main_with_cxn(
     cxn_power_supply = cxn.power_supply_mp710087
 
     # Get the voltages for the raster
-
     x_voltages_1d, y_voltages_1d = tool_belt.calc_image_scan_vals(
         x_center, y_center, image_range, num_steps
     )

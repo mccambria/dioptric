@@ -22,7 +22,7 @@ pi = numpy.pi
 # v = 1.6e10 #nm^4 / (ms mW^2)
 # v = 1.6e10 #nm^4 / (ms mW^2)
 # v = 1.6e13 #nm^4 / (ms mW^2) #hadn't converted us to ms?
-v = 5.8e12 #nm^4 / (ms mW^2) value from Fig 2 fit
+v = 2.3e12 #nm^4 / (ms mW^2) value from Fig 2 fit. Actually, this should be 2.3e12...
 fwhm =2.355
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -432,15 +432,18 @@ if __name__ == '__main__':
     # vary_duration_height(300, 20, [0.25, 100],broadened_val = 0,  I_bkgd_perc = 0.006) # -0.25
     
     # fit_gaussian_peak(300, 70, 100, broadened_val = 0, I_bkgd_perc = 0.0, do_plot = True)
-
-    I = 0
-    simulation_2D(20, 0.001,  1500, 100, I_bkgd_perc = I)
-    simulation_2D(20, 0.01,  1500, 100, I_bkgd_perc = I)
-    simulation_2D(20, 0.1,  1500, 100, I_bkgd_perc = I)
-    simulation_2D(20, 1,  1500, 100, I_bkgd_perc = I)
-    simulation_2D(20, 10,  1500, 100, I_bkgd_perc = I)
-    simulation_2D(20, 100,  1500, 100, I_bkgd_perc = I)
+    # i = intensity_scaling(20)
+    # print(i)
+    I = 0.00#22
+    # simulation_2D(20, 0.001,  1500, 100, I_bkgd_perc = I)
+    # simulation_2D(20, 0.01,  1500, 100, I_bkgd_perc = I)
+    # simulation_2D(20, 0.025,  1500, 100, I_bkgd_perc = I)
+    # simulation_2D(20, 0.05,  1500, 100, I_bkgd_perc = I)
+    # simulation_2D(20, 0.25,  1500, 100, I_bkgd_perc = I)
+    # simulation_2D(20, 2.5,  1500, 100, I_bkgd_perc = I)
     
+    plot_broadened_peak(550, 20, 2.5, broadened_val = 0, I_bkgd_perc = I, do_plot = True)
+        
     # estimate_ion_rate()
     # fig, ax = plt.subplots(1, 1)
     # r = numpy.linspace(-700 , 700, 701)
