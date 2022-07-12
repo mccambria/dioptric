@@ -245,7 +245,7 @@ def do_pulsed_resonance_state(nv_sig, apd_indices, state):
     # num_runs = 20
     num_reps = 4e3
     # num_runs = 16
-    num_runs = 2
+    num_runs = 4
 
     # Zoom
     # freq_range = 0.035
@@ -391,7 +391,7 @@ def do_rabi(nv_sig, apd_indices, state, uwave_time_range=[0, 200]):
     # num_runs = 10
     num_reps = 4e3
     # num_runs = 16
-    num_runs = 2
+    num_runs = 4
 
     period = rabi.main(
         nv_sig,
@@ -784,7 +784,7 @@ if __name__ == "__main__":
 
     nv_sig = {
         'coords': [0.0, 0.0, 0], 'name': '{}-search'.format(sample_name),
-        'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1500,
+        'disable_opt': True, "disable_z_opt": False, 'expected_count_rate': 1300,
 
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e7,
         # 'imaging_laser': green_laser, 'imaging_laser_filter': "nd_0", 'imaging_readout_dur': 1e8,
@@ -825,8 +825,8 @@ if __name__ == "__main__":
         # "charge_readout_laser": yellow_laser, "charge_readout_dur": 10e6, "charge_readout_laser_power": 1.0,
 
         'collection_filter': None, 'magnet_angle': None,
-        'resonance_LOW': 2.8122, 'rabi_LOW': 300, 'uwave_power_LOW': 16.5,
-        'resonance_HIGH': 2.9428, 'rabi_HIGH': 370, 'uwave_power_HIGH': 16.5,
+        'resonance_LOW': 2.8044, 'rabi_LOW': 252, 'uwave_power_LOW': 16.5,
+        'resonance_HIGH': 2.9359, 'rabi_HIGH': 370, 'uwave_power_HIGH': 16.5,
         }
 
 
@@ -838,23 +838,26 @@ if __name__ == "__main__":
 
         # Increasing x moves the image down, increasing y moves the image left
         # with labrad.connect() as cxn:
-        #     cxn.cryo_piezos.write_xy(0, -30)
+        #     cxn.cryo_piezos.write_xy(0, 0)
 
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
 
-        # for pos in numpy.arange(-60, -120, -5):
-        for pos in [-3,-6,-9,-12]:
-        # # while True:
-            if tool_belt.safe_stop():
-                break
-            nv_sig["coords"][2] = int(pos)
-            # with labrad.connect() as cxn:
-            #     cxn.cryo_piezos.write_xy(80, int(pos))
-            # do_image_sample_zoom(nv_sig, apd_indices)
-            do_image_sample(nv_sig, apd_indices)
+        # for x_pos in numpy.arange(-100, 100, 20):
+        #     for y_pos in numpy.arange(-100, 100, 20):
+        # for pos in numpy.arange(80, 120, 4):
+        # # # while True:
+        #     if tool_belt.safe_stop():
+        #         break
+        #     nv_sig["coords"][2] = int(pos)
+        #     # with labrad.connect() as cxn:
+        #     #     # cxn.cryo_piezos.write_xy(0, int(pos))
+        #     #     # cxn.cryo_piezos.write_xy(int(pos), 0)
+        #     #     cxn.cryo_piezos.write_xy(int(x_pos), int(y_pos))
+        #     # do_image_sample_zoom(nv_sig, apd_indices)
+        #     do_image_sample(nv_sig, apd_indices)
 
         # do_image_sample(nv_sig, apd_indices)
         # do_image_sample_zoom(nv_sig, apd_indices)
@@ -888,11 +891,12 @@ if __name__ == "__main__":
         #     do_t1_dq_knill_battery(nv_sig, apd_indices)
         # do_nir_battery(nv_sig, apd_indices)
 
+        do_four_point_esr()
         # do_pulsed_resonance(nv_sig, apd_indices, 2.87, 0.200)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
-        # do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
-        # do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
-        # do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.LOW)
+        do_pulsed_resonance_state(nv_sig, apd_indices, States.HIGH)
+        do_rabi(nv_sig, apd_indices, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig, apd_indices, States.HIGH, uwave_time_range=[0, 400])
         # do_spin_echo(nv_sig, apd_indices)
 
         # SCC characterization
