@@ -15,6 +15,7 @@ import utils.tool_belt as tool_belt
 import time
 import labrad
 from majorroutines import pulsed_resonance
+from majorroutines import four_point_esr
 from utils.tool_belt import States
 import copy
 import matplotlib.pyplot as plt
@@ -47,25 +48,6 @@ def process_resonances(ref_resonances, sig_resonances):
 
     return diff_temps
 
-
-def process_res_files(ref_files, sig_files):
-
-    ref_temps = [
-        [temp_from_resonances.main_files(pair) for pair in row]
-        for row in ref_files
-    ]
-    sig_temps = [
-        [temp_from_resonances.main_files(pair) for pair in row]
-        for row in sig_files
-    ]
-
-    ref_temps = np.array(ref_temps)
-    sig_temps = np.array(sig_temps)
-    diff_temps = sig_temps - ref_temps
-
-    return diff_temps
-
-
 def plot_diff_temps(diff_temps, image_extent):
 
     fig = tool_belt.create_image_figure(
@@ -87,8 +69,6 @@ def main(
     num_steps,
     apd_indices,
     nir_laser_voltage,
-    esr_freq_range,
-    esr_num_steps,
     esr_num_reps,
     esr_num_runs,
 ):
@@ -101,8 +81,6 @@ def main(
             num_steps,
             apd_indices,
             nir_laser_voltage,
-            esr_freq_range,
-            esr_num_steps,
             esr_num_reps,
             esr_num_runs,
         )
@@ -117,8 +95,6 @@ def main_with_cxn(
     num_steps,
     apd_indices,
     nir_laser_voltage,
-    esr_freq_range,
-    esr_num_steps,
     esr_num_reps,
     esr_num_runs,
 ):
@@ -142,28 +118,26 @@ def main_with_cxn(
         for ind in range(num_steps)
     ]
 
-    ref_files = gen_blank_square_list()
-    sig_files = gen_blank_square_list()
+    ref_resonances = gen_blank_square_list()
+    sig_resonances = gen_blank_square_list()
+    ref_res_errs = gen_blank_square_list()
+    sig_res_errs = gen_blank_square_list()
 
-    pesr_low_lambda = lambda adj_nv_sig: pulsed_resonance.state(
+    four_point_low_lambda = lambda adj_nv_sig: four_point_esr.state(
+        cxn,
         adj_nv_sig,
         apd_indices,
+        esr_num_reps,
+        esr_num_runs,
         States.LOW,
-        esr_freq_range,
-        esr_num_steps,
-        esr_num_reps,
-        esr_num_runs,
-        ret_file_name=True,
     )
-    pesr_high_lambda = lambda adj_nv_sig: pulsed_resonance.state(
+    four_point_high_lambda = lambda adj_nv_sig: four_point_esr.state(
+        cxn,
         adj_nv_sig,
         apd_indices,
-        States.HIGH,
-        esr_freq_range,
-        esr_num_steps,
         esr_num_reps,
         esr_num_runs,
-        ret_file_name=True,
+        States.HIGH,
     )
 
     cxn_power_supply = cxn.power_supply_mp710087
@@ -200,11 +174,15 @@ def main_with_cxn(
 
             time.sleep(10)
 
-            _, _, file_name_low = pesr_low_lambda(adjusted_nv_sig)
-            _, _, file_name_high = pesr_high_lambda(adjusted_nv_sig)
-            ref_files[image_y_ind][adj_x_ind] = (
-                file_name_low,
-                file_name_high,
+            low_res, low_res_err = four_point_low_lambda(adjusted_nv_sig)
+            high_res, high_res_err = four_point_high_lambda(adjusted_nv_sig)
+            ref_resonances[image_y_ind][adj_x_ind] = (
+                low_res,
+                high_res,
+            )
+            ref_res_errs[image_y_ind][adj_x_ind] = (
+                low_res_err,
+                high_res_err,
             )
 
             cxn_power_supply.output_on()
@@ -212,11 +190,15 @@ def main_with_cxn(
 
             time.sleep(10)
 
-            _, _, file_name_low = pesr_low_lambda(adjusted_nv_sig)
-            _, _, file_name_high = pesr_high_lambda(adjusted_nv_sig)
-            sig_files[image_y_ind][adj_x_ind] = (
-                file_name_low,
-                file_name_high,
+            low_res, low_res_err = four_point_low_lambda(adjusted_nv_sig)
+            high_res, high_res_err = four_point_high_lambda(adjusted_nv_sig)
+            ref_resonances[image_y_ind][adj_x_ind] = (
+                low_res,
+                high_res,
+            )
+            ref_res_errs[image_y_ind][adj_x_ind] = (
+                low_res_err,
+                high_res_err,
             )
 
         parity *= -1
@@ -225,7 +207,7 @@ def main_with_cxn(
 
     # Processing
 
-    diff_temps = process_res_files(ref_files, sig_files)
+    diff_temps = process_resonances(ref_resonances, sig_resonances)
     fig = plot_diff_temps(diff_temps, image_extent)
 
     # Clean up
@@ -253,8 +235,10 @@ def main_with_cxn(
         "x_voltages": x_voltages_1d.tolist(),
         "y_voltages": y_voltages_1d.tolist(),
         "xy_units": xy_units,
-        "ref_files": ref_files,
-        "sig_files": sig_files,
+        "ref_resonances": ref_resonances,
+        "ref_res_errs": ref_res_errs,
+        "sig_resonances": sig_resonances,
+        "sig_res_errs": sig_res_errs,
         "diff_temps": diff_temps.astype(float).tolist(),
         "diff_temps-units": "Kelvin",
     }
@@ -271,26 +255,6 @@ def main_with_cxn(
 # region Run the file
 
 if __name__ == "__main__":
-
-    file_name = "2022_07_03-13_09_30-hopper-search"
-    data = tool_belt.get_raw_data(file_name)
-
-    ref_files = data["ref_files"]
-    sig_files = data["sig_files"]
-    nv_sig = data["nv_sig"]
-    coords = nv_sig["coords"]
-    drift = data["drift"]
-    x_center, y_center, z_center = tool_belt.adjust_coords_for_drift(
-        coords, drift
-    )
-    image_range = data["image_range"]
-    num_steps = data["num_steps"]
-
-    diff_temps = process_res_files(ref_files, sig_files)
-    image_extent = tool_belt.calc_image_extent(
-        x_center, y_center, image_range, num_steps
-    )
-    plot_diff_temps(diff_temps, image_extent)
 
     # plt.show(block=True)
 
