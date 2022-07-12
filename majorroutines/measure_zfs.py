@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This routine uses a four-points PESR measurement based on Kucsko 2013
+This routine uses a four-point PESR measurement based on Kucsko 2013
 
 Created on Thu Apr 11 15:39:23 2019
 
@@ -327,8 +327,7 @@ def fit_resonance(
             fit_bounds = (0, np.infty)
         print(guess_params)
         popt, pcov = curve_fit(
-            fit_func, freqs, norm_avg_sig, p0=guess_params,
-            bounds = fit_bounds
+            fit_func, freqs, norm_avg_sig, p0=guess_params, bounds=fit_bounds
         )
     # except Exception as e:
     #     print(e)
@@ -492,17 +491,11 @@ def main_with_cxn(
     cxn,
     nv_sig,
     apd_indices,
-    freq_center,
-    freq_range,
-    num_steps,
     num_reps,
     num_runs,
-    uwave_power,
-    uwave_pulse_dur,
-    state=States.LOW,
-    composite=False,
+    detuning=0.005,
+    d_omega=0.002,
     opti_nv_sig=None,
-    ret_file_name=False,
 ):
 
     # %% Initial calculations and setup
@@ -510,10 +503,15 @@ def main_with_cxn(
     tool_belt.reset_cfm(cxn)
 
     # Calculate the frequencies we need to set
-    half_freq_range = freq_range / 2
-    freq_low = freq_center - half_freq_range
-    freq_high = freq_center + half_freq_range
-    freqs = np.linspace(freq_low, freq_high, num_steps)
+    low_res = nv_sig["resonance_LOW"]
+    high_res = nv_sig["resonance_HIGH"]
+    freq_1 = low_res - detuning - d_omega
+    freq_2 = low_res - detuning + d_omega
+    freq_3 = high_res + detuning - d_omega
+    freq_4 = high_res + detuning + d_omega
+    freqs = [freq_1, freq_2, freq_3, freq_4]
+    states = [States.LOW, States.LOW, States.HIGH, States.HIGH]
+    num_steps = 4
 
     # Set up our data structure, an array of NaNs that we'll fill
     # incrementally. NaNs are ignored by matplotlib, which is why they're
@@ -531,36 +529,18 @@ def main_with_cxn(
     polarization_time = nv_sig["spin_pol_dur"]
     readout = nv_sig["spin_readout_dur"]
     readout_sec = readout / (10 ** 9)
-    if composite:
-        uwave_pi_pulse = round(nv_sig["rabi_{}".format(state.name)] / 2)
-        uwave_pi_on_2_pulse = round(nv_sig["rabi_{}".format(state.name)] / 4)
-        seq_args = [
+    gen_seq_args_string = lambda state: tool_belt.encode_seq_args(
+        [
+            tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.value}"]),
             polarization_time,
             readout,
-            uwave_pi_pulse,
-            uwave_pi_on_2_pulse,
-            1,
-            1,
+            tool_belt.get_pi_pulse_dur(nv_sig[f"rabi_{state.value}"]),
             apd_indices[0],
             state.value,
             laser_name,
             laser_power,
         ]
-        seq_args = [int(el) for el in seq_args]
-    else:
-        seq_args = [
-            uwave_pulse_dur,
-            polarization_time,
-            readout,
-            uwave_pulse_dur,
-            apd_indices[0],
-            state.value,
-            laser_name,
-            laser_power,
-        ]
-    # print(seq_args)
-    # return
-    seq_args_string = tool_belt.encode_seq_args(seq_args)
+    )
 
     opti_coords_list = []
 
@@ -576,6 +556,9 @@ def main_with_cxn(
 
     # Start 'Press enter to stop...'
     tool_belt.init_safe_stop()
+    
+    sig_gen_low_cxn = tool_belt.get_signal_generator_cxn(cxn, States.LOW)
+    sig_gen_high_cxn = tool_belt.get_signal_generator_cxn(cxn, States.HIGH)
 
     for run_ind in range(num_runs):
         print("Run index: {}".format(run_ind))
@@ -597,21 +580,10 @@ def main_with_cxn(
         # Set up the microwaves and laser. Then load the pulse streamer
         # (must happen after optimize and iq_switch since run their
         # own sequences)
-        sig_gen_cxn = tool_belt.get_signal_generator_cxn(cxn, state)
-        sig_gen_cxn.set_amp(uwave_power)
-        if composite:
-            sig_gen_cxn.load_iq()
-            cxn.arbitrary_waveform_generator.load_knill()
+        sig_gen_low_cxn.set_amp(States.LOW.value)
+        sig_gen_high_cxn.set_amp(States.HIGH.value)
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        if composite:
-            ret_vals = cxn.pulse_streamer.stream_load(
-                "discrete_rabi2.py", seq_args_string
-            )
-        else:
-            ret_vals = cxn.pulse_streamer.stream_load(
-                "rabi.py", seq_args_string
-            )
 
         # Start the tagger stream
         cxn.apd_tagger.start_tag_stream(apd_indices)
@@ -623,8 +595,19 @@ def main_with_cxn(
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
+            
+            sig_gen_low_cxn.uwave_off()
+            sig_gen_high_cxn.uwave_off()
+
+            state = states[freq_ind]
+            seq_args_string = gen_seq_args_string(state)
+            ret_vals = cxn.pulse_streamer.stream_load(
+                "rabi.py", seq_args_string
+            )
 
             freq_index_master_list[run_ind].append(freq_ind)
+            
+            sig_gen_cxn = eval(f"sig_gen_{state.lower()}")
             sig_gen_cxn.set_freq(freqs[freq_ind])
             sig_gen_cxn.uwave_on()
 
@@ -657,17 +640,11 @@ def main_with_cxn(
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
-            "freq_center": freq_center,
-            "freq_center-units": "GHz",
-            "freq_range": freq_range,
-            "freq_range-units": "GHz",
-            "uwave_pulse_dur": uwave_pulse_dur,
-            "uwave_pulse_dur-units": "ns",
+            "freqs": freqs,
+            "freqs-units": "GHz",
             "state": state.name,
             "num_steps": num_steps,
             "run_ind": run_ind,
-            "uwave_power": uwave_power,
-            "uwave_power-units": "dBm",
             "readout": readout,
             "readout-units": "ns",
             "freq_index_master_list": freq_index_master_list,
@@ -816,81 +793,4 @@ def main_with_cxn(
 
 if __name__ == "__main__":
 
-    print(__file__)
-    sys.exit()
-
-    file = "2022_07_07-15_10_20-rubin"
-
-    data = tool_belt.get_raw_data(file)
-
-    freq_center = data["freq_center"]
-    freq_range = data["freq_range"]
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    norm_avg_sig = np.array(data["norm_avg_sig"])
-
-    freqs = calculate_freqs(freq_range, freq_center, num_steps)
-
-    # ax.plot(freqs, norm_avg_sig, label=label_list[f])
-    # ax.set_xlabel("Frequency (GHz)")
-    # ax.set_ylabel("Contrast (arb. units)")
-    # ax.legend(loc="lower right")
-
-    fit_func, popt, pcov = fit_resonance(freq_range, freq_center, num_steps,
-                                          norm_avg_sig)
-    create_fit_figure(
-        freq_range,
-        freq_center,
-        num_steps,
-        norm_avg_sig,
-        fit_func,
-        popt,
-    )
-
-
-    # tool_belt.init_matplotlib()
-    # # matplotlib.rcParams["axes.linewidth"] = 1.0
-
-    # file = "2022_06_30-23_27_50-hopper-search"
-    # data = tool_belt.get_raw_data(file)
-    # freq_center = data["freq_center"]
-    # freq_range = data["freq_range"]
-    # num_steps = data["num_steps"]
-    # ref_counts = data["ref_counts"]
-    # sig_counts = data["sig_counts"]
-    # num_runs = data["num_runs"]
-    # ret_vals = process_counts(ref_counts, sig_counts, num_runs)
-    # (
-    #     avg_ref_counts,
-    #     avg_sig_counts,
-    #     norm_avg_sig,
-    #     ste_ref_counts,
-    #     ste_sig_counts,
-    #     norm_avg_sig_ste,
-    # ) = ret_vals
-
-    # fit_func, popt, pcov = fit_resonance(
-    #     freq_range,
-    #     freq_center,
-    #     num_steps,
-    #     norm_avg_sig,
-    #     norm_avg_sig_ste,
-    #     ref_counts,
-    # )
-
-    # # popt[2] -= np.sqrt(pcov[2, 2])
-
-    # create_fit_figure(
-    #     freq_range,
-    #     freq_center,
-    #     num_steps,
-    #     norm_avg_sig,
-    #     fit_func,
-    #     popt,
-    #     norm_avg_sig_ste=norm_avg_sig_ste,
-    # )
-
-    # plt.show(block=True)
-
-    # res_freq, freq_range, contrast, rabi_period, uwave_pulse_dur
-    # simulate(2.8351, 0.035, 0.02, 170, 170/2)
+    pass
