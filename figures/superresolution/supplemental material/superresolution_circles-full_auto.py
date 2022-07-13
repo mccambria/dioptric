@@ -505,6 +505,8 @@ def main(
                 break
             excluded_centers.append(opti_circle[0:2])
             plot_circles.append(opti_circle)
+            if len(plot_circles) > 5:
+                break
 
     end = time.time()
     print(f"Elapsed time: {end-start}")
