@@ -412,12 +412,14 @@ if __name__ == "__main__":
     #     "2022_07_02-22_02_46-hopper-search",
     # ]
 
-    files = [
-        "2022_06_26-22_31_49-hopper-search",
-        "2022_06_26-22_47_13-hopper-search",
-    ]
+    # files = [
+    #     "2022_06_26-22_31_49-hopper-search",
+    #     "2022_06_26-22_47_13-hopper-search",
+    # ]
 
-    main_files(files)
+    # main_files(files)
+
+    main(2.87, zfs_err=0.00001)
 
     # process_temp_dep_res_files()
 

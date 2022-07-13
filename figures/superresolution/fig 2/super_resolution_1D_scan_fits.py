@@ -72,8 +72,8 @@ def inverse_quarter(x, a):
 def inverse_sqrt(x, a):
     return a*x**(-1/2)
 
-def exp_decay(x, a, d):
-    return a * numpy.exp(-x/d)
+def exp_decay(x, a, B):
+    return a * B* numpy.exp(-x*B)
 
 def gaussian_quad(x,  *params):
     """
@@ -228,7 +228,7 @@ def plot_1D_SpaCE(file_name, file_path, threshold = None, do_plot = True, do_fit
                   counts,
                   p0=init_fit
                   )
-            print(opti_params[2]*fwhm, numpy.sqrt(cov_arr[2][2])*fwhm)
+            # print(opti_params[2]*fwhm, numpy.sqrt(cov_arr[2][2])*fwhm)
             if do_plot:
                 lin_radii = numpy.linspace(rad_dist[0],
                                 rad_dist[-1], 100)
@@ -269,8 +269,8 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
     # Get a linear list of time values for the fit
     t_min = min(t_vals)
     t_max = max(t_vals)
-    print(t_vals)
-    print(widths_master_list)
+    # print(t_vals)
+    # print(2*numpy.pi*NA*numpy.array(widths_error)/wavelength*fwhm)
     # lin_x_vals = numpy.linspace(t_min,
     #                 t_max, 100)
     lin_x_vals = numpy.logspace(numpy.log10(t_min), numpy.log10(t_max), 100)
@@ -287,27 +287,36 @@ def plot_width_vs_dur(file_list, t_vals, path, threshold):
     #### modified inverse quarter####
     x0=7.0156 #Position of this Airy disk (n2), in dimensionless units
     C = bessel_scnd_der(x0) #Calculate a constant to use in fit
-    print(C) 
+    # print(C) 
     # print(t_vals)
     # Estimate the lower limit and convert to dimentionless units below
-    R_guess = 10 #nm 
-    fit_func = lambda t, e, a, R: width_scaling_w_mods(t, C, e, a, R) 
-    init_fit = [ 0.006, 10, 2*numpy.pi*NA*R_guess/wavelength]
+    R_guess = 5 #nm 
+    e = 0.0008723151593412476
+    fit_func = lambda t, a, R: width_scaling_w_mods(t, C, e, a, R) 
+    init_fit = [  0.005, 2*numpy.pi*NA*R_guess/wavelength]
     
     #convert extracted value for sigma of peaks to fwhm:
     widths_master_list_fwhm = numpy.array(widths_master_list)*fwhm
     # convert fwhm to dimensionless unit.
     widths_master_list_x = 2*numpy.pi*NA*widths_master_list_fwhm/wavelength
     
+    widths_error_fwhm = numpy.array(widths_error)*fwhm
+    widths_error_fwhm_x = 2*numpy.pi*NA*widths_error_fwhm/wavelength
+    
+    # print('widths_master_list_x: ' + str(widths_master_list_x))
     opti_params, cov_arr = curve_fit(fit_func,
           t_vals,widths_master_list_x,p0=init_fit,
-           bounds=(0, [1, numpy.inf, numpy.inf])
+          sigma = widths_error_fwhm_x,
+          absolute_sigma = True,
+            # bounds=(0, [numpy.inf, 2*numpy.pi*NA*20/wavelength]) #1
           )
     
-    print('e = {:.7f} +/- {:.7f}'.format(opti_params[0], numpy.sqrt(cov_arr[0][0])))
-    print('a = {:.14f} +/- {:.14f}'.format(opti_params[1], numpy.sqrt(cov_arr[1][1])))
-    R_val_conv = (opti_params[2])*wavelength/(2*numpy.pi*NA)
-    R_err_conv = numpy.sqrt(cov_arr[2][2])*wavelength/(2*numpy.pi*NA)
+    # init_fit = [ 0.0000035 , 2*numpy.pi*NA*(4.7-8) /wavelength]
+    # opti_params = init_fit
+    # print('e = {:.7f} +/- {:.7f}'.format(opti_params[2], numpy.sqrt(cov_arr[2][2])))
+    print('a = {:.14f} +/- {:.14f}'.format(opti_params[0], numpy.sqrt(cov_arr[0][0])))
+    R_val_conv = (opti_params[1])*wavelength/(2*numpy.pi*NA)
+    R_err_conv = numpy.sqrt(cov_arr[1][1])*wavelength/(2*numpy.pi*NA)
     print('R = {:.5f} +/- {:.5f}'.format(R_val_conv, R_err_conv))
     # print('Opti params: ' + str(opti_params))
     # print(cov_arr)
@@ -439,7 +448,8 @@ def plot_heights_vs_dur(file_list, t_vals, path, threshold):
         t_vals.append(nv_sig['CPG_laser_dur']/10**6)
 
 
-
+    print('t_vals = ' + str(t_vals))
+    print('heights_error = ' + str(heights_error))
     t_min = min(t_vals)
     t_max = max(t_vals)
     lin_x_vals = numpy.linspace(t_min,
@@ -455,8 +465,25 @@ def plot_heights_vs_dur(file_list, t_vals, path, threshold):
     #### exp decay###
     init_fit = [10, 1]
     opti_params, cov_arr = curve_fit(exp_decay,
-          t_vals,heights_master_list,p0=init_fit)
+          t_vals,heights_master_list,p0=init_fit,
+          sigma = heights_error,
+          absolute_sigma = True)
+    Beta = opti_params[1]
+    x0=7.0156 #Position of this Airy disk, in dimensionless units
+    j = j1(x0)
+    # v1 = 1.6e13#2.3e12
+    # P = 20
+    # NA = 1.3
+    # wavelength = 638
+    # I0 = P*NA**2*numpy.pi/wavelength**2
+    alpha = numpy.log(2) / 0.00000309393011#alpha from fwhm fit
+    # epsilon = numpy.sqrt(Beta/(v1*I0**2)) - (2*j/x0)**2
+    epsilon = numpy.sqrt(Beta/(alpha)) - (2*j/x0)**2
+    epsilon_err = numpy.sqrt(numpy.sqrt(cov_arr[1][1])/(alpha)) - (2*j/x0)**2
+    # print(j)
     print('Opti params: ' + str(opti_params))
+    print('A: ' + str(opti_params[0]) + ' +/-' + str(numpy.sqrt(cov_arr[0][0])))
+    print('epsilon: ' + str(epsilon) + ' +/- ' + str(epsilon_err))
     ax.plot(lin_x_vals, exp_decay(lin_x_vals, *opti_params), 
             color = 'red', linestyle = 'dashed' , linewidth = 1)
     

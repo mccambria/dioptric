@@ -684,8 +684,8 @@ def create_image_figure(
     Returns:
         matplotlib.figure.Figure
     """
-    
-    
+
+
     # plt.rcParams.update({'font.size': 22})
 
     if um_scaled:
@@ -1027,8 +1027,11 @@ def lorentzian(x, x0, A, L, offset):
             3: offset, constant y value offset
     """
     x_center = x - x0
-    return offset + A * 0.5 * L / (x_center ** 2 + (0.5 * L) ** 2)
+    return offset + A * 0.5*L / (x_center**2 + (0.5*L)**2)
 
+
+def exp_decay(x, amp, decay, offset):
+    return offset + amp * np.exp(-x / decay)
 
 def gaussian(x, *params):
     """
@@ -2067,7 +2070,7 @@ def set_drift(drift):
 
 def reset_drift():
     set_drift([0.0, 0.0, 0.0])
-    
+
 def adjust_coords_for_drift(coords, drift=None):
     if drift is None:
         drift = get_drift()

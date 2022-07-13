@@ -736,7 +736,7 @@ def data_collection_with_cxn(cxn, nv_sig,opti_nv_sig,  coords_list, run_num,
                 init_laser_power, pulse_laser_power, read_laser_power,
                 movement_delay, total_movement_delay,  movement_incr, 
                 apd_indices[0],]
-    # print(seq_args)
+    #print(seq_args)
     # return
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = cxn.pulse_streamer.stream_load(file_name, seq_args_string)
